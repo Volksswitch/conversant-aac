@@ -1,24 +1,30 @@
 import * as tts from './tts.js';
 import * as storage from './storage.js';
 
-const FILLERS = [
-    "Just a second...",
-    "Let me think about that...",
-    "Hmm, one moment...",
-    "Give me a moment...",
-    "Hold on...",
-    "Let me consider that...",
-    "One sec...",
-];
-
+let fillers = [];
 let timer = null;
-let fillerIndex = 0;
 let active = false;
+let lastSpoken = -1;
 
-export function start() {
+async function loadFillers() {
+    if (fillers.length > 0) return;
+    const response = await fetch('data/placeholders.json');
+    fillers = await response.json();
+}
+
+function pickRandom() {
+    if (fillers.length <= 1) return 0;
+    let index;
+    do {
+        index = Math.floor(Math.random() * fillers.length);
+    } while (index === lastSpoken);
+    return index;
+}
+
+export async function start() {
     stop();
+    await loadFillers();
     active = true;
-    fillerIndex = 0;
     const { initialDelay } = storage.loadPlaceholderSettings();
     timer = setTimeout(speakAndScheduleNext, initialDelay * 1000);
 }
@@ -34,9 +40,8 @@ export function stop() {
 
 async function speakAndScheduleNext() {
     if (!active) return;
-    const filler = FILLERS[fillerIndex % FILLERS.length];
-    fillerIndex++;
-    await tts.speak(filler);
+    lastSpoken = pickRandom();
+    await tts.speak(fillers[lastSpoken]);
 
     if (!active) return;
     const { subsequentDelay } = storage.loadPlaceholderSettings();
