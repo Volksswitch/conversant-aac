@@ -1,0 +1,17 @@
+# Research materials and prior demos (stay on OneDrive only)
+Other/
+
+# OS artifacts
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Editor artifacts
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Claude Code local state
+.claude/
