@@ -144,6 +144,10 @@ dialog input {
     margin-bottom: 1rem;
 }
 
+#apiKeyInput {
+    -webkit-text-security: disc;
+}
+
 .dialog-actions {
     display: flex;
     gap: 0.5rem;

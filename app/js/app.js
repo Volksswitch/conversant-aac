@@ -7,7 +7,7 @@ import * as storage from './storage.js';
 const conversationHistory = [];
 let isListening = false;
 
-async function initApp() {
+function initApp() {
     if (!stt.isSupported()) {
         ui.setStatus('Speech recognition not supported in this browser. Use Chrome or Edge.');
         return;
@@ -21,7 +21,7 @@ async function initApp() {
     ui.onListenClick(toggleListening);
     ui.onSettingsClick(openSettings);
 
-    const savedKey = await tryLoadApiKey();
+    const savedKey = storage.loadApiKey();
     if (savedKey) {
         llm.setApiKey(savedKey);
         ui.setStatus('Ready — API key loaded');
@@ -81,29 +81,18 @@ async function handleResponseSelected(text, index) {
     ui.setStatus('Ready — tap Listen for the next exchange');
 }
 
-async function tryLoadApiKey() {
-    try {
-        return await storage.loadApiKey();
-    } catch {
-        return null;
-    }
-}
-
 function openSettings() {
     const dialog = document.getElementById('settingsDialog');
     const input = document.getElementById('apiKeyInput');
+    input.value = storage.loadApiKey() || '';
     dialog.showModal();
 
-    document.getElementById('saveSettingsBtn').onclick = async () => {
+    document.getElementById('saveSettingsBtn').onclick = () => {
         const key = input.value.trim();
         if (key) {
             llm.setApiKey(key);
-            try {
-                await storage.saveApiKey(key);
-                ui.setStatus('API key saved');
-            } catch {
-                ui.setStatus('API key set for this session (storage not available)');
-            }
+            storage.saveApiKey(key);
+            ui.setStatus('API key saved');
         }
         dialog.close();
     };

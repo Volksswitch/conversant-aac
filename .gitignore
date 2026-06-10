@@ -1,5 +1,13 @@
-# Research materials and prior demos (stay on OneDrive only)
+# Research materials and working documents (stay on OneDrive only)
 Other/
+*.docx
+*.msg
+*.url
+*.pdf
+Architecture Diagrams.html
+
+# Local user data (synced by OneDrive between machines, not by git)
+userdata/
 
 # OS artifacts
 Thumbs.db
@@ -15,3 +23,6 @@ Desktop.ini
 
 # Claude Code local state
 .claude/
+
+# Node (local dev tooling only)
+node_modules/

@@ -1,6 +1,8 @@
 let recognition = null;
 let onTranscript = null;
 let onStatusChange = null;
+let lastInterim = '';
+let gotFinal = false;
 
 export function isSupported() {
     return 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
@@ -27,12 +29,17 @@ export function init({ onResult, onStatus }) {
                 interim += transcript;
             }
         }
+        if (final) gotFinal = true;
+        if (interim) lastInterim = interim;
         if (onTranscript) {
             onTranscript({ final, interim });
         }
     };
 
     recognition.onend = () => {
+        if (!gotFinal && lastInterim && onTranscript) {
+            onTranscript({ final: lastInterim, interim: '' });
+        }
         if (onStatusChange) onStatusChange('stopped');
     };
 
@@ -43,6 +50,8 @@ export function init({ onResult, onStatus }) {
 
 export function startListening() {
     if (!recognition) return;
+    lastInterim = '';
+    gotFinal = false;
     recognition.start();
     if (onStatusChange) onStatusChange('listening');
 }

@@ -1,3 +1,5 @@
+const STORAGE_KEY = 'aac_settings';
+
 let dirHandle = null;
 
 export async function requestStorageAccess() {
@@ -28,20 +30,24 @@ async function writeFile(filename, content) {
     await writable.close();
 }
 
-export async function loadApiKey() {
-    const data = await readFile('settings.json');
-    if (!data) return null;
+function loadSettings() {
     try {
-        return JSON.parse(data).apiKey || null;
+        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
     } catch {
-        return null;
+        return {};
     }
 }
 
-export async function saveApiKey(apiKey) {
-    const data = await readFile('settings.json');
-    let settings = {};
-    try { settings = JSON.parse(data) || {}; } catch { /* start fresh */ }
+function saveSettings(settings) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+}
+
+export function loadApiKey() {
+    return loadSettings().apiKey || null;
+}
+
+export function saveApiKey(apiKey) {
+    const settings = loadSettings();
     settings.apiKey = apiKey;
-    await writeFile('settings.json', JSON.stringify(settings, null, 2));
+    saveSettings(settings);
 }
