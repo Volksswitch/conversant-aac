@@ -153,6 +153,8 @@ Ken collected Conversation Analysis (CA) literature and had it synthesized into 
 
 Format: **major.minor** (e.g., `0.1`, `0.2`). All pre-release versions use major `0`. The decision to increment to `1.0` or beyond is made jointly by Ken and Claude Code based on maturity and readiness.
 
+**Release publishing is always public.** GitHub releases for this project are public by standing decision — Claude Code is authorized to push tags and publish releases publicly without pausing for confirmation. (Ken, June 2026.)
+
 Phase-to-version mapping (update as releases are tagged):
 
 | Version | Phase | Notes |
