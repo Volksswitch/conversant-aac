@@ -42,7 +42,7 @@ Literate, non-speaking individual with cerebral palsy (CP), 16+, using **direct 
 
 **Speech-to-text transcript validation:** Displaying the transcript of what the partner said is **critical** — not optional. The user must be able to confirm the system heard correctly before selecting a response.
 
-**End-of-utterance detection:** Goal is automatic silence detection. Manual trigger (user taps "done listening") is acceptable for MVP.
+**End-of-utterance detection (continuous partner capture):** A silence period (the "Optional Responses silence period" setting) is a *checkpoint, not a stop*. Each time the partner pauses for that period, the speech collected so far is sent to the AI for response options and a placeholder is spoken; recording continues. Resumed speech is appended and the combined utterance is re-sent after the next pause, so each checkpoint yields a more complete option set. Recording stops only when the user selects a response, at which point the transcript is cleaned once and the exchange is stored. A "latest-wins" generation token discards superseded in-flight requests, and a persistent "Please repeat what you said." control discards a garbled capture and keeps listening. (Implemented June 2026; see `Continuous-Partner-Capture.docx` and Architecture Overview §9. This is the Phase 1 realization of the COMPLETE/INCOMPLETE/CONTINUING classifier and filler ladder above.)
 
 **Voice/TTS:** Browser built-in TTS acceptable for MVP. Voice banking (personalized/cloned voice) is a valuable future feature.
 
@@ -109,6 +109,46 @@ Ken has screenshots of and has presented live demos of a prior team's shelved pr
 
 ---
 
+## Conversation Analysis Design Layer (June 2026)
+
+Ken collected Conversation Analysis (CA) literature and had it synthesized into `CA-Concepts-for-AAC-Architecture.docx` (on Ken's Desktop). Three design documents in this folder map those concepts to the system. **All project decisions are recorded here in CLAUDE.md** (Ken's preference — this folder syncs across machines; Claude's machine-local memory does not).
+
+**Documents** (all Word, styled like Ken's papers — Arial, "Volksswitch.org | June 2026 | For internal use" footer; figures `ui-fig1..7.png` alongside, generated with Python/Pillow, regenerable on request):
+1. `Conversation-Engine-Design.docx` — CA concepts → programmatic flow
+2. `UI-Design.docx` — presentation layer and dynamic UI
+3. `Configuration-Model.docx` — user-owned settings registry and experimentation loop
+
+### Settled decisions — Conversation Engine
+
+- **Sequence stack, not turn alternation**: conversation state is a stack of open sequences (adjacency pairs); repair sequences nest on top; the original obligation is restored automatically when they resolve.
+- **Four-slot move palette**: PREFERRED / DISPREFERRED (hedge + account) / INITIATIVE / REPAIR — structurally distinct conversational moves, positionally stable for motor automaticity. (Refines the earlier "3 response options" default: the palette is typed by move, not just counted; option count remains configurable.)
+- **Five modes**: LISTENING, RESPONDING, REPAIR-OF-SELF, INITIATING, PRE-CLOSING/CLOSING.
+- **Access method independent of conversation logic**: engine emits a typed, prioritized palette descriptor; renderers (direct select now; scanning/eye gaze later) present it. Consistent with the direct-select initial target while keeping the expansion path clean.
+- **System infers mode, user overrides** via persistent buttons (default set: Say again / Hold on / Pardon? / Wind down).
+- **Single combined LLM call** classifies the partner's action (FPP type) AND generates options; classification is emitted first in structured output so it is inspectable. LLM stateless; app injects state.
+- **Filler ladder** (refines the placeholder mechanism and the old 4 s initial delay): rung 1 acknowledgment token ≤1 s after end-of-utterance (no LLM — this is what makes transcript validation affordable), rung 2 projection filler ~2.5 s covering the confirm window, rung 3 periodic re-fill. CA: silence becomes meaningful past ~1 s.
+- **Backchannels/continuers deferred**; end-of-utterance classification schema reserves COMPLETE | INCOMPLETE | CONTINUING so they slot in later without rework.
+- **Highest-leverage near-term item**: REPAIR-OF-SELF mode — partner says "What?" → re-speak / rephrase / expand the user's last utterance.
+
+### Settled decisions — UI
+
+- Four screen regions: transcript (with mode chip), move palette, persistent controls, composer access. Geometry never reflows on mode change — "the cards changed," never "the screen changed."
+- Move card anatomy: glanceable hint (primary reading target; names the action, not a truncation), full TTS text, slot badge, format tag, latency dot (filled = instant, hollow = generation round-trip).
+- **Triple coding**: slot identity = position + color + text badge; never color alone. Defaults: green preferred, amber dispreferred, blue initiative, purple repair.
+- Transcript is a three-state gate: amber UNCONFIRMED → blue CONFIRMED·GENERATING → green OPTIONS READY. Options are never generated from an unconfirmed transcript (default; auto-confirm above a confidence threshold is configurable).
+- **Nothing is spoken on the user's behalf invisibly** — every filler/token is displayed as it plays.
+- **Palette updates queue until a selection boundary**: options never change under a user mid-selection (mandatory for future scanning/dwell renderers).
+- Engine→UI contract is a versioned palette-descriptor JSON with `priority` and `droppable` per move; renderers drop/page by priority, never by move type.
+
+### Configurability philosophy (overarching)
+
+- **As many decisions as possible are user-determined and configurable.** This population is made up of unique individuals; the user experiments with a flow and adjusts from experience. Behavioral statements in the design docs are *defaults of the standard profile*, not rules.
+- **Invariants are guaranteed capabilities, not fixed behaviors**: a repair path, a floor-holding path, a closing path, free composition, visibility of system speech, and revertibility must always exist; how they manifest is configurable. Config validation enforces "at least one path" rules at save time, with explanation — never silent correction.
+- Three settings tiers by *when* a change is safe — Quick (mid-conversation) / Profile (between conversations) / Setup (rare, may be supporter-assisted) — all user-owned; nothing locked away from the user.
+- Experimentation loop: named profiles (bindable to Practice Mode scenarios), automatic change journal, session review metrics (descriptive, local, private — inform the user, never score them), guided trials, one-tap revert. Revertibility is the one absolute.
+
+---
+
 ## Versioning
 
 Format: **major.minor** (e.g., `0.1`, `0.2`). All pre-release versions use major `0`. The decision to increment to `1.0` or beyond is made jointly by Ken and Claude Code based on maturity and readiness.
@@ -122,7 +162,7 @@ Phase-to-version mapping (update as releases are tagged):
 ---
 
 ## Open Questions (remaining)
-- Response option UI layout: exact screen allocation between traditional AAC and AI-facilitated options (requires design discussion)
+- Response option UI layout: `UI-Design.docx` now specifies the four-region layout and move palette; remaining question is screen allocation between traditional AAC vocabulary and the AI-facilitated regions (composer-access region is the integration point; ultimately user-configurable per the Configuration Model)
 - Worldview questionnaire: what specific questions to include and how to structure chunked sessions
-- Placeholder utterances: currently drawn randomly from a static JSON file (app/data/placeholders.json). Predictable fillers will become a joke to communication partners over time. LLM-generated contextual fillers would sound more natural and could acknowledge the topic, but must be evaluated against token cost impact. The architecture already supports user-funded API keys, so any added cost is borne by the user.
+- Placeholder utterances: currently drawn randomly from a static JSON file (app/data/placeholders.json). Predictable fillers will become a joke to communication partners over time. LLM-generated contextual fillers would sound more natural and could acknowledge the topic, but must be evaluated against token cost impact. The architecture already supports user-funded API keys, so any added cost is borne by the user. *Design now specified:* the filler ladder in `Conversation-Engine-Design.docx` §6 (rung 1 static token ≤1 s, rung 2 static-or-contextual, rung 3 re-fill); contextual fillers are the rung-2 LLM option in the Configuration Model. Remaining work is implementation and the token-cost evaluation.
 - TTS inflection: browser TTS has limited control (pitch, rate, volume on SpeechSynthesisUtterance). Natural-sounding placeholder delivery matters — monotone fillers will sound robotic. Voice banking / cloned voices (future) would give much better inflection control. Evaluate whether pitch/rate tweaks on fillers can improve naturalness in the near term.
