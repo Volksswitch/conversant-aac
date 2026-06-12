@@ -4,9 +4,31 @@ const NUM_OPTIONS = 3;
 
 let apiKey = null;
 let onUsageUpdate = null;
+let userName = '';
+let userAbout = '';
 
 export function setApiKey(key) {
     apiKey = key;
+}
+
+export function setUserProfile({ name = '', about = '' } = {}) {
+    userName = (name || '').trim();
+    userAbout = (about || '').trim();
+}
+
+// Builds the personalization + placeholder-safety block appended to the
+// response-generation system prompt. Even with no profile set, the
+// no-brackets instruction prevents the model from emitting "[Name]" blanks.
+function buildProfileBlock() {
+    const facts = [];
+    if (userName) facts.push(`The user's name is ${userName}.`);
+    if (userAbout) facts.push(`About the user: ${userAbout}`);
+
+    const persona = facts.length
+        ? `\n\nYou are speaking AS the user, in the first person — not as an assistant. ${facts.join(' ')} Use these details whenever they are relevant; for example, if the partner asks the user's name, give it directly.`
+        : '';
+
+    return `${persona}\n\nNever output placeholder text in square brackets such as [Name], [your name], or [city]. If you do not know a personal detail, phrase the response so it is not needed.`;
 }
 
 export function onUsage(callback) {
@@ -68,7 +90,7 @@ Rules:
 - The first option should be your best guess at what the user most likely wants to say
 - Return ONLY a JSON array of strings, no other text
 
-Example format: ["response 1", "response 2", "response 3"]`;
+Example format: ["response 1", "response 2", "response 3"]${buildProfileBlock()}`;
 
     const messages = conversationHistory.map(entry => ({
         role: entry.role === 'partner' ? 'user' : 'assistant',

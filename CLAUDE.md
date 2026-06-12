@@ -82,6 +82,7 @@ Key Phase 1 features:
 - **Placeholder/filler utterances** (e.g., "Just a second…", "Let me think about that") automatically generated and spoken while the user is selecting; customization supported
 - **Conversation initiation:** via a set of canned conversation starters (pre-configured phrases the user can select to open a conversation); later refined by situational awareness in Phase 2
 - **Compressed display / expanded speech** for response options (see above)
+- **Minimal identity seed (name + "About You"):** Settings → General has a **Your Name** field and an optional short **About You** free-text field. These are injected into the response-generation system prompt so the assistant speaks *as* the user (first person) and can answer with the real name instead of emitting a `[Name]` placeholder. Even with both blank, the prompt forbids bracketed placeholders like `[Name]`/`[city]` and tells the model to phrase around any unknown detail. This is the smallest precursor to the Phase 3 worldview model, not a replacement for it. Stored locally in `aac_settings`; sent to the Claude API only as part of generating responses. (Implemented June 2026.)
 - **Offline review/feedback mode:** deferred — too complex even in rudimentary form
 - **Response option UI layout:** requires a design discussion on how much of the screen is allocated to traditional AAC vocabulary vs. AI-facilitated response options; ultimately user-configurable
 

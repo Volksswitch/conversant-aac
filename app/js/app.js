@@ -43,6 +43,8 @@ function initApp() {
 
     llm.onUsage((input, output) => storage.addUsageTokens(input, output));
 
+    llm.setUserProfile(storage.loadUserProfile());
+
     const savedKey = storage.loadApiKey();
     if (savedKey) {
         llm.setApiKey(savedKey);
@@ -246,6 +248,8 @@ async function updateUsageDisplay() {
 function openSettings() {
     const dialog = document.getElementById('settingsDialog');
     const apiKeyInput = document.getElementById('apiKeyInput');
+    const userNameInput = document.getElementById('userNameInput');
+    const userAboutInput = document.getElementById('userAboutInput');
     const voiceSelect = document.getElementById('voiceSelect');
     const silenceThresholdInput = document.getElementById('silenceThresholdInput');
     const autoRelistenInput = document.getElementById('autoRelistenInput');
@@ -253,6 +257,9 @@ function openSettings() {
     const subsequentDelayInput = document.getElementById('subsequentDelayInput');
 
     apiKeyInput.value = storage.loadApiKey() || '';
+    const profile = storage.loadUserProfile();
+    userNameInput.value = profile.name;
+    userAboutInput.value = profile.about;
     populateVoiceSelect();
     silenceThresholdInput.value = storage.loadSilenceThreshold();
     autoRelistenInput.checked = storage.loadAutoRelisten();
@@ -297,6 +304,10 @@ function openSettings() {
             llm.setApiKey(key);
             storage.saveApiKey(key);
         }
+        const profileName = userNameInput.value.trim();
+        const profileAbout = userAboutInput.value.trim();
+        storage.saveUserProfile(profileName, profileAbout);
+        llm.setUserProfile({ name: profileName, about: profileAbout });
         const voiceURI = voiceSelect.value || null;
         tts.setVoice(voiceURI);
         storage.saveVoiceURI(voiceURI);

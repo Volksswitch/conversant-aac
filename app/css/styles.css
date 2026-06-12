@@ -235,12 +235,24 @@ dialog label {
 }
 
 dialog input,
-dialog select {
+dialog select,
+dialog textarea {
     width: 100%;
     padding: 0.5rem;
     border: 1px solid #ccc;
     border-radius: 4px;
     font-size: 1rem;
+}
+
+dialog textarea {
+    font-family: inherit;
+    resize: vertical;
+}
+
+.setting-optional {
+    color: #999;
+    font-weight: normal;
+    font-size: 0.85rem;
 }
 
 dialog select {
