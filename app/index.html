@@ -32,6 +32,9 @@
             <div id="responseOptions" class="panel">
                 <p class="placeholder">Response options will appear here</p>
             </div>
+            <div id="persistentControls">
+                <button id="repeatBtn" type="button">Please repeat what you said.</button>
+            </div>
         </section>
 
         <section id="statusSection" aria-label="Status">
@@ -58,7 +61,7 @@
                         <button id="testVoiceBtn" type="button">Test</button>
                     </div>
                     <div class="setting-group">
-                        <label for="silenceThresholdInput">Silence Threshold</label>
+                        <label for="silenceThresholdInput">Optional Responses silence period</label>
                         <select id="silenceThresholdInput">
                             <option value="1.5">1.5 seconds</option>
                             <option value="2" selected>2 seconds</option>
@@ -66,7 +69,7 @@
                             <option value="4">4 seconds</option>
                             <option value="5">5 seconds</option>
                         </select>
-                        <p class="setting-hint">How long to wait after the partner stops speaking before processing their speech.</p>
+                        <p class="setting-hint">How long the partner can pause before the speech collected so far is sent for response options. Recording keeps going — if the partner continues, the combined speech is re-sent after the next pause. Recording stops only when you choose a response.</p>
                     </div>
                     <div class="setting-group">
                         <label>Data Folder</label>

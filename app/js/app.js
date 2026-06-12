@@ -8,6 +8,12 @@ import * as placeholders from './placeholders.js';
 const conversationHistory = [];
 let isListening = false;
 let lastResponseOptions = [];
+// Raw, combined speech-to-text for the partner's current (uncommitted) turn.
+// Grows across silence periods until the user picks a response.
+let currentPartnerText = '';
+// Increments on every silence period / reset so that a slower, earlier
+// option-generation round-trip can't overwrite a newer one — latest wins.
+let generationToken = 0;
 
 function initApp() {
     if (!stt.isSupported()) {
@@ -20,11 +26,13 @@ function initApp() {
 
     stt.init({
         onResult: handleSpeechResult,
+        onSilence: handleSilencePeriod,
         onStatus: handleSttStatus
     });
 
     document.getElementById('startBtn').addEventListener('click', handleStart);
     ui.onListenClick(toggleListening);
+    ui.onRepeatClick(handleRepeatRequest);
     ui.onSettingsClick(openSettings);
     initSettingsTabs();
 
@@ -44,29 +52,20 @@ function initApp() {
     }
 }
 
-async function handleSpeechResult({ final, interim, display }) {
-    if (display && interim) {
-        ui.showTranscript(interim, false);
-        return;
-    }
+function handleSpeechResult(liveText) {
+    // Live transcript while the partner is speaking — provisional, not yet
+    // confirmed. Confirmation happens implicitly when the user picks a response.
+    ui.showTranscript(liveText, false);
+}
 
-    if (final) {
-        ui.showTranscript(final, false);
-        ui.setStatus('Cleaning up transcript...');
-        let cleaned;
-        try {
-            cleaned = await llm.cleanupTranscript(final, conversationHistory);
-            ui.showTranscript(cleaned, true);
-            conversationHistory.push({ role: 'partner', text: cleaned });
-        } catch {
-            cleaned = final;
-            ui.showTranscript(final, true);
-            conversationHistory.push({ role: 'partner', text: final });
-        }
-        storage.logPartnerSpeech({ rawTranscript: final, cleanedTranscript: cleaned });
-        placeholders.start();
-        generateOptions();
-    }
+// Fired each time the partner pauses for the configured silence period.
+// Recording continues; we just take everything collected so far and refresh
+// the response options from it. A later (more complete) period supersedes this.
+async function handleSilencePeriod(text) {
+    currentPartnerText = text;
+    ui.showTranscript(text, false);
+    placeholders.start();
+    await generateOptions(text);
 }
 
 function handleSttStatus(status, detail) {
@@ -92,31 +91,79 @@ function toggleListening() {
     if (isListening) {
         stt.stopListening();
     } else {
+        currentPartnerText = '';
+        generationToken++;
+        ui.showTranscript('', false);
+        ui.clearResponseOptions();
         stt.startListening();
     }
 }
 
-async function generateOptions() {
+async function generateOptions(partnerText) {
+    const token = ++generationToken;
     ui.setStatus('Generating response options...');
     ui.clearResponseOptions();
 
+    // Generate from prior committed turns plus the partner's current
+    // (provisional, uncleaned) speech — the transcript is cleaned only once, at
+    // the end, when the user selects a response.
+    const history = [...conversationHistory, { role: 'partner', text: partnerText }];
+
     try {
-        const options = await llm.generateResponses(conversationHistory);
+        const options = await llm.generateResponses(history);
+        if (token !== generationToken) return; // a newer silence period superseded this
         lastResponseOptions = options;
         ui.showResponseOptions(options, handleResponseSelected);
         ui.setStatus('Select a response');
     } catch (err) {
+        if (token !== generationToken) return;
         ui.setStatus(`Error: ${err.message}`);
     }
 }
 
 async function handleResponseSelected(text, index) {
     placeholders.stop();
-    conversationHistory.push({ role: 'user', text });
-    storage.logUserResponse({ selectedText: text, selectedIndex: index, allOptions: lastResponseOptions });
+    generationToken++; // invalidate any in-flight generation
+    stt.stopListening();
+
+    const raw = currentPartnerText;
+    currentPartnerText = '';
+
     ui.setStatus('Speaking...');
     await tts.speak(text);
+
+    // The exchange is settled — now clean the combined transcript once and
+    // commit the partner turn (cleaned text feeds context for future turns),
+    // followed by the user's response. Cleaning happens after speaking so it
+    // never delays the user's selected words.
+    if (raw) {
+        let cleaned = raw;
+        try {
+            cleaned = await llm.cleanupTranscript(raw, conversationHistory);
+        } catch { /* fall back to raw */ }
+        conversationHistory.push({ role: 'partner', text: cleaned });
+        ui.showTranscript(cleaned, true);
+        storage.logPartnerSpeech({ rawTranscript: raw, cleanedTranscript: cleaned });
+    }
+    conversationHistory.push({ role: 'user', text });
+    storage.logUserResponse({ selectedText: text, selectedIndex: index, allOptions: lastResponseOptions });
+
     ui.setStatus('Ready — tap Listen for the next exchange');
+}
+
+// Persistent "Please repeat what you said." control. Discards everything
+// collected for the current exchange and keeps listening for the restatement —
+// nothing is committed or stored.
+async function handleRepeatRequest() {
+    placeholders.stop();
+    generationToken++; // invalidate any in-flight generation
+    currentPartnerText = '';
+    stt.resetTranscript();
+    ui.showTranscript('', false);
+    ui.clearResponseOptions();
+    ui.setStatus('Speaking...');
+    await tts.speak('Please repeat what you said.');
+    ui.setStatus(isListening ? 'Listening...' : 'Ready');
 }
 
 // --- Settings dialog ---

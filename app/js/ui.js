@@ -42,6 +42,10 @@ export function onListenClick(handler) {
     listenBtn.addEventListener('click', handler);
 }
 
+export function onRepeatClick(handler) {
+    document.getElementById('repeatBtn').addEventListener('click', handler);
+}
+
 export function onSettingsClick(handler) {
     document.getElementById('settingsBtn').addEventListener('click', handler);
 }

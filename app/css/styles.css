@@ -136,6 +136,29 @@ h2 {
     outline: none;
 }
 
+#persistentControls {
+    margin-top: 0.75rem;
+}
+
+#repeatBtn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: #ede7f6;
+    border: 2px solid #b39ddb;
+    border-radius: 6px;
+    padding: 0.8rem 1rem;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: border-color 0.15s;
+}
+
+#repeatBtn:hover,
+#repeatBtn:focus {
+    border-color: #673ab7;
+    outline: none;
+}
+
 #statusBar {
     font-size: 0.85rem;
     color: #555;
