@@ -91,12 +91,17 @@ function toggleListening() {
     if (isListening) {
         stt.stopListening();
     } else {
-        currentPartnerText = '';
-        generationToken++;
-        ui.showTranscript('', false);
-        ui.clearResponseOptions();
-        stt.startListening();
+        startFreshListening();
     }
+}
+
+// Begin a new partner-capture session with a cleared transcript and options.
+function startFreshListening() {
+    currentPartnerText = '';
+    generationToken++;
+    ui.showTranscript('', false);
+    ui.clearResponseOptions();
+    stt.startListening();
 }
 
 async function generateOptions(partnerText) {
@@ -148,7 +153,11 @@ async function handleResponseSelected(text, index) {
     conversationHistory.push({ role: 'user', text });
     storage.logUserResponse({ selectedText: text, selectedIndex: index, allOptions: lastResponseOptions });
 
-    ui.setStatus('Ready — tap Listen for the next exchange');
+    if (storage.loadAutoRelisten()) {
+        startFreshListening();
+    } else {
+        ui.setStatus('Ready — tap Listen for the next exchange');
+    }
 }
 
 // Persistent "Please repeat what you said." control. Discards everything
@@ -239,12 +248,14 @@ function openSettings() {
     const apiKeyInput = document.getElementById('apiKeyInput');
     const voiceSelect = document.getElementById('voiceSelect');
     const silenceThresholdInput = document.getElementById('silenceThresholdInput');
+    const autoRelistenInput = document.getElementById('autoRelistenInput');
     const initialDelayInput = document.getElementById('initialDelayInput');
     const subsequentDelayInput = document.getElementById('subsequentDelayInput');
 
     apiKeyInput.value = storage.loadApiKey() || '';
     populateVoiceSelect();
     silenceThresholdInput.value = storage.loadSilenceThreshold();
+    autoRelistenInput.checked = storage.loadAutoRelisten();
     updateUsageDisplay();
     const placeholderSettings = storage.loadPlaceholderSettings();
     initialDelayInput.value = placeholderSettings.initialDelay;
@@ -292,6 +303,7 @@ function openSettings() {
         const threshold = Number(silenceThresholdInput.value);
         stt.setSilenceThreshold(threshold);
         storage.saveSilenceThreshold(threshold);
+        storage.saveAutoRelisten(autoRelistenInput.checked);
         storage.savePlaceholderSettings(
             Number(initialDelayInput.value),
             Number(subsequentDelayInput.value)

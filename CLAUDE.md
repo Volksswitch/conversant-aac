@@ -42,7 +42,7 @@ Literate, non-speaking individual with cerebral palsy (CP), 16+, using **direct 
 
 **Speech-to-text transcript validation:** Displaying the transcript of what the partner said is **critical** — not optional. The user must be able to confirm the system heard correctly before selecting a response.
 
-**End-of-utterance detection (continuous partner capture):** A silence period (the "Optional Responses silence period" setting) is a *checkpoint, not a stop*. Each time the partner pauses for that period, the speech collected so far is sent to the AI for response options and a placeholder is spoken; recording continues. Resumed speech is appended and the combined utterance is re-sent after the next pause, so each checkpoint yields a more complete option set. Recording stops only when the user selects a response, at which point the transcript is cleaned once and the exchange is stored. A "latest-wins" generation token discards superseded in-flight requests, and a persistent "Please repeat what you said." control discards a garbled capture and keeps listening. (Implemented June 2026; see `Continuous-Partner-Capture.docx` and Architecture Overview §9. This is the Phase 1 realization of the COMPLETE/INCOMPLETE/CONTINUING classifier and filler ladder above.)
+**End-of-utterance detection (continuous partner capture):** A silence period (the "Optional Responses silence period" setting) is a *checkpoint, not a stop*. Each time the partner pauses for that period, the speech collected so far is sent to the AI for response options and a placeholder is spoken; recording continues. Resumed speech is appended and the combined utterance is re-sent after the next pause, so each checkpoint yields a more complete option set. Recording stops only when the user selects a response, at which point the transcript is cleaned once and the exchange is stored. A "latest-wins" generation token discards superseded in-flight requests, and a persistent "Please repeat what you said." control discards a garbled capture and keeps listening. An **auto-resume-listening** setting (Settings → General; default **off**) turns partner recording back on automatically after a response is spoken, so the user need not tap Start Listening between exchanges. (Implemented June 2026; see `Continuous-Partner-Capture.docx` and Architecture Overview §9. This is the Phase 1 realization of the COMPLETE/INCOMPLETE/CONTINUING classifier and filler ladder above.)
 
 **Voice/TTS:** Browser built-in TTS acceptable for MVP. Voice banking (personalized/cloned voice) is a valuable future feature.
 
@@ -158,6 +158,7 @@ Phase-to-version mapping (update as releases are tagged):
 | Version | Phase | Notes |
 |---------|-------|-------|
 | 0.1     | 1     | Core conversation loop proof of concept |
+| 0.2     | 1     | Continuous partner capture; persistent "Please repeat" control; auto-resume-listening setting |
 
 ---
 

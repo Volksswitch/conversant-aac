@@ -151,6 +151,16 @@ export function saveSilenceThreshold(seconds) {
     saveSettings(settings);
 }
 
+export function loadAutoRelisten() {
+    return loadSettings().autoRelisten ?? false;
+}
+
+export function saveAutoRelisten(enabled) {
+    const settings = loadSettings();
+    settings.autoRelisten = enabled;
+    saveSettings(settings);
+}
+
 // --- Conversation logging ---
 
 let conversationDirHandle = null;

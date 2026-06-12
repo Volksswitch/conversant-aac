@@ -387,7 +387,7 @@ const doc = new Document({
 
             heading2("Settings"),
             para("The settings dialog provides a tabbed interface with three tabs:"),
-            bulletBold("General: ", "Claude API key entry, voice selection (with a test button), the Optional Responses silence period (how long the partner can pause before the speech collected so far is sent for options — see the Conversation Flow below), and data folder selection via the File System Access API."),
+            bulletBold("General: ", "Claude API key entry, voice selection (with a test button), the Optional Responses silence period (how long the partner can pause before the speech collected so far is sent for options — see the Conversation Flow below), an auto-resume-listening toggle (default off; when on, partner recording turns back on automatically after a response is spoken), and data folder selection via the File System Access API."),
             bulletBold("Placeholders: ", "Configurable initial delay (2–6 seconds, default 4) and subsequent delay (6–15 seconds, default 10) for filler utterances."),
             bulletBold("About: ", "Application version, description, license (MIT), and link to Volksswitch.org."),
             emptyPara(),
@@ -399,7 +399,7 @@ const doc = new Document({
             numberedItem("The partner pauses for the configured Optional Responses silence period. The speech collected so far is sent to the Claude API with the conversation history; a filler utterance (“Just a second…”) is spoken to hold the floor. Recording continues."),
             numberedItem("Response options appear as buttons. If the partner resumes, the new speech is appended; the next silence period sends the combined speech for a fresh set of options and speaks another filler. This repeats for as long as the partner keeps talking."),
             numberedItem("The user taps a response at any time. Recording stops, filler utterances stop, and the selected response is spoken aloud via TTS."),
-            numberedItem("The combined transcript is cleaned once and the exchange is committed to conversation history. The user taps “Start Listening” for the next exchange. Alternatively, the user taps the persistent “Please repeat what you said.” control, which discards the current capture and keeps listening for the partner’s restatement."),
+            numberedItem("The combined transcript is cleaned once and the exchange is committed to conversation history. The user taps “Start Listening” for the next exchange — or, if the auto-resume-listening setting is on, recording restarts automatically. Alternatively, the user taps the persistent “Please repeat what you said.” control, which discards the current capture and keeps listening for the partner’s restatement."),
             emptyPara(),
 
             heading2("Continuous Partner Capture"),
