@@ -169,6 +169,8 @@ The worldview model (Architecture Overview §6) now has a concrete questionnaire
 
 **Build order (from the plan doc):** 1) data model + registry → 2) questionnaire UI → 3) LLM integration (structured `missing_facts`, profile block, gaps recording) → 4) migrate + remove Name/About You → 5) expand Tier-B/Tier-C content → 6) RAG-lite.
 
+**Token budget / RAG timing (plan doc §6):** We are *not* close to needing a RAG database. The questionnaire profile is bounded (~1–3K tokens fully answered = 0.1–0.3% of Sonnet 4.6's 1M context; ~a penny per conversation with prompt caching). RAG is driven by *unbounded cross-session memory* (Phase 3), not the structured fields — rough trigger is an always-relevant slice exceeding ~10–20K tokens. `buildBlock()` ships as simple heuristic selection (always-include core + topical facts on-topic; many turns need none); progression is heuristic → client-side embeddings (IndexedDB) → server-side vector store, the last only if cross-session memory becomes a headline feature (awkward in a no-backend app).
+
 **Decisions still open (need Ken):** size of first-cut Tier-A set; per-field "may share if I pick it" toggle for contact info vs. strict phrase-around; chunk size per session; whether B5 beliefs ships in this build; symbol/picture answers + supporter-assisted mode now or later.
 
 **Next-session kickoff prompt:**
