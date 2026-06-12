@@ -1,0 +1,82 @@
+/* AAC Conversation Assistant — service worker
+ *
+ * Strategy:
+ *   - Same-origin GET requests: network-first, falling back to cache when
+ *     offline. Network-first keeps the app fresh whenever GitHub Pages
+ *     redeploys; the cache only serves when the network is unavailable.
+ *   - Cross-origin requests (the Claude API at api.anthropic.com, the speech
+ *     services, etc.) are never intercepted — they pass straight through.
+ *
+ * Bump CACHE_VERSION whenever the precached shell changes so old caches are
+ * cleaned out on activate.
+ */
+const CACHE_VERSION = 'aac-v0.2.0';
+const CACHE_NAME = `aac-shell-${CACHE_VERSION}`;
+
+// App shell precached on install so the app can cold-start offline.
+// Paths are relative to the service worker scope (the site root).
+const SHELL = [
+  './',
+  './index.html',
+  './css/styles.css',
+  './js/app.js',
+  './js/stt.js',
+  './js/tts.js',
+  './js/llm.js',
+  './js/ui.js',
+  './js/storage.js',
+  './js/placeholders.js',
+  './data/placeholders.json',
+  './data/pricing.json',
+  './manifest.webmanifest',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
+  './icons/icon-maskable-512.png'
+];
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      // addAll is atomic; if any file 404s the whole install fails, so keep
+      // SHELL in sync with what actually ships.
+      .then((cache) => cache.addAll(SHELL))
+      .then(() => self.skipWaiting())
+  );
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys()
+      .then((keys) => Promise.all(
+        keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))
+      ))
+      .then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+
+  // Only handle same-origin GETs. Everything else (Claude API POSTs,
+  // cross-origin assets) bypasses the worker entirely.
+  if (request.method !== 'GET') return;
+  if (new URL(request.url).origin !== self.location.origin) return;
+
+  event.respondWith(
+    fetch(request)
+      .then((response) => {
+        // Cache a copy of successful responses for offline fallback.
+        if (response && response.ok && response.type === 'basic') {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+        }
+        return response;
+      })
+      .catch(() => caches.match(request).then((cached) => {
+        if (cached) return cached;
+        // Navigation requests fall back to the cached app shell.
+        if (request.mode === 'navigate') return caches.match('./index.html');
+        return Response.error();
+      }))
+  );
+});
