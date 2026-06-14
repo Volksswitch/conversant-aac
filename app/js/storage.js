@@ -161,21 +161,6 @@ export function saveAutoRelisten(enabled) {
     saveSettings(settings);
 }
 
-export function loadUserProfile() {
-    const settings = loadSettings();
-    return {
-        name: settings.userName ?? '',
-        about: settings.userAbout ?? ''
-    };
-}
-
-export function saveUserProfile(name, about) {
-    const settings = loadSettings();
-    settings.userName = name;
-    settings.userAbout = about;
-    saveSettings(settings);
-}
-
 // --- Conversation logging ---
 
 let conversationDirHandle = null;

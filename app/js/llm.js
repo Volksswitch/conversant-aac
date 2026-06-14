@@ -4,22 +4,15 @@ const NUM_OPTIONS = 3;
 
 let apiKey = null;
 let onUsageUpdate = null;
-let userName = '';
-let userAbout = '';
 let worldviewBlock = '';
 
 export function setApiKey(key) {
     apiKey = key;
 }
 
-export function setUserProfile({ name = '', about = '' } = {}) {
-    userName = (name || '').trim();
-    userAbout = (about || '').trim();
-}
-
 // The compact worldview profile text (worldview.buildBlock()). Set fresh before
-// each generation so questionnaire edits take effect immediately. Successor to
-// the interim name/about injection, which stays until Build Step 4.
+// each generation so questionnaire edits take effect immediately. This is the
+// sole personalization channel now that the interim name/about fields are gone.
 export function setWorldviewBlock(text) {
     worldviewBlock = (text || '').trim();
 }
@@ -29,20 +22,7 @@ export function setWorldviewBlock(text) {
 // no-brackets instruction prevents the model from emitting "[Name]" blanks.
 function buildProfileBlock() {
     const sections = [];
-
     if (worldviewBlock) sections.push(`\n\n${worldviewBlock}`);
-
-    // Interim name/about (Settings) — kept alongside the worldview profile until
-    // Build Step 4 migrates and removes it.
-    const facts = [];
-    if (userName) facts.push(`The user's name is ${userName}.`);
-    if (userAbout) facts.push(`About the user: ${userAbout}`);
-    if (facts.length) {
-        sections.push(worldviewBlock
-            ? `\n\nAlso: ${facts.join(' ')}`
-            : `\n\nYou are speaking AS the user, in the first person — not as an assistant. ${facts.join(' ')} Use these details whenever they are relevant; for example, if the partner asks the user's name, give it directly.`);
-    }
-
     sections.push(`\n\nNever output placeholder text in square brackets such as [Name], [your name], or [city]. If you do not know a personal detail, phrase the response so it is not needed.`);
     return sections.join('');
 }
