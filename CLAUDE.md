@@ -118,6 +118,8 @@ Ken has screenshots of and has presented live demos of a prior team's shelved pr
 
 Ken collected Conversation Analysis (CA) literature and had it synthesized into `CA-Concepts-for-AAC-Architecture.docx` (on Ken's Desktop). Three design documents in this folder map those concepts to the system. **All project decisions are recorded here in CLAUDE.md** (Ken's preference — this folder syncs across machines; Claude's machine-local memory does not).
 
+**Document convention (Ken, June 14 2026): all project documents use American English spelling** (e.g. "color", "center", "personalized", "emphasized" — not "colour", "centre", "personalised", "emphasised"). Applies to every generated document.
+
 **Documents** (all Word, styled like Ken's papers — Arial, "Volksswitch.org | June 2026 | For internal use" footer; figures `ui-fig1..7.png` alongside, generated with Python/Pillow, regenerable on request):
 1. `Conversation-Engine-Design.docx` — CA concepts → programmatic flow
 2. `UI-Design.docx` — presentation layer and dynamic UI
@@ -296,6 +298,22 @@ Built (Ken's list) on top of the shared keyboard component (`app/js/keyboard.js`
 
 APP_VERSION / CACHE_VERSION → `0.2.11`. **Verified in preview** (on-screen mode, composer focused): keys 64px tall; letters page has no digit row + a `123` toggle; symbols page shows digits + specials + `ABC`/space/⌫/↵; one-shot shift capitalizes one letter then reverts (`Ab`); double-tap engages caps lock (`CD` stays upper); single tap (after >300 ms) unlocks; page toggles both ways; no console errors.
 
+### Selectable layouts + window-aware docking (v0.2.13)
+
+The twenty layouts from `Keyboard-Layout-Options.docx` are now **implemented as data and user-selectable**.
+- **`app/js/keyboard-layouts.js`** — all 20 layouts (S1–S10 side, B1–B10 bottom) encoded as rows of typed cells (`char`/`space`/`action`/`blank`/`pred`), each cell carrying a `span` (= flex weight, so any row width fills the keyboard and wide keys keep their proportions). Plus a per-dock `SYMBOLS` page (side 5-wide / bottom 10-wide) for the 123 key, and ordered `SIDE_LAYOUTS`/`BOTTOM_LAYOUTS` lists for the menus. **Layout is data, not code** — adding one (e.g. a future frequency layout) is a new entry here.
+- **`keyboard.js`** — renders the selected layout for the current dock; `renderRows()` is span-aware and renders `blank`/`pred` cells as inert fillers. New API: `setSideLayout`/`setBottomLayout`/`setSideDockPosition`. The side dock now positions left **or** right (`kbd-side-left`/`kbd-side-right`).
+- **Three Settings (Speech & Input tab):** "Bottom-docked keyboard layout" (select, default B1), "Side-docked keyboard layout" (select, default S1), and a binary **Left/Right slider** for the side dock (default Right). Stored in `aac_settings` (`bottomLayout`/`sideLayout`/`sideDockPosition`); `storage.js` accessors; live-applied on change and persisted on Save; set on init.
+- **Docking is still context-fixed for now:** conversation → bottom, About Me → side (Ken: revisit conditions after more conversation-UI design).
+
+**Layout-independent fixes (the v0.2.12 side-dock problems Ken flagged):**
+- **Side dock fills its column** — rows `flex:1` (removed the `justify-content:center` that left empty bands above/below). Keys size from row height. Fixes wasted vertical space + tiny keys.
+- **About Me uses all remaining horizontal space** — removed `#worldviewContent`'s `max-width:800px`/centering; it now fills the width, and only the keyboard's docked side is reserved (`padding-left`/`-right`).
+- **Conversation field stays visible** — bottom dock caps at `48vh` and the content reserves `padding-bottom:50vh`, so the focused composer scrolls clear above the keys (verified: composer bottom above keyboard top).
+- **Both docks are window-size aware** (full-screen or windowed): key heights `clamp(2.2rem,7.5vh,4rem)`, side width `min(26rem,46vw)`, bottom cap `48vh`, reservations in `vh`/`vw`.
+
+APP_VERSION / CACHE_VERSION → `0.2.13`. **Verified in preview:** Settings shows the 3 controls (10+10 options, slider); selecting B3 renders the 3-row 13-wide bottom keyboard; About Me side dock fills the column height and renders S1, content reserves the keyboard side and otherwise fills width; switching to S6 + Left re-renders the 11-row layout docked left with the reservation flipped; composer stays above the bottom keyboard; no console errors. *Touch + real-window behavior to confirm on the tablet.*
+
 ## Settings Panel — usability pass (June 14 2026), v0.2.8
 
 Six Settings-panel improvements shipped (Ken's list), modeled on the Keyguard Designer web app's settings panel (`keyguard-designer-web/app.html`, the second working directory):
@@ -330,6 +348,7 @@ Phase-to-version mapping (update as releases are tagged):
 | 0.2.10  | 1     | Auto-update on launch/Start: SW revalidates (no-cache) to beat the GitHub Pages HTTP cache; controllerchange auto-reload rolls in a redeployed worker; update check on Start |
 | 0.2.11  | 1     | App keyboard: 25%-taller keys, numbers/specials moved to a separate page, one-shot shift with double-tap caps lock; Settings panel fixed to a constant size per tab |
 | 0.2.12  | 1     | App keyboard: dropped QWERTY for an Alphabetical layout (only layout for now); context-based docking — side dock for About Me/Settings, bottom dock for conversation |
+| 0.2.13  | 1     | App keyboard: 20 selectable layouts (data-driven) + Settings (side/bottom layout selects, left/right slider); side dock fills its column, About Me fills width, conversation field stays above the keyboard, both docks window-aware |
 
 ---
 

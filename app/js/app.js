@@ -7,11 +7,12 @@ import * as placeholders from './placeholders.js';
 import * as worldview from './worldview.js';
 import * as worldviewUI from './worldview-ui.js';
 import * as keyboard from './keyboard.js';
+import { SIDE_LAYOUTS, BOTTOM_LAYOUTS } from './keyboard-layouts.js';
 
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.2.12';
+const APP_VERSION = '0.2.13';
 
 const conversationHistory = [];
 let isListening = false;
@@ -48,6 +49,9 @@ function initApp() {
     worldviewUI.init();
     keyboard.init();
     keyboard.setMode(storage.loadKeyboardMode());
+    keyboard.setSideLayout(storage.loadSideLayout());
+    keyboard.setBottomLayout(storage.loadBottomLayout());
+    keyboard.setSideDockPosition(storage.loadSideDockPosition());
     initSettingsTabs();
     initSettingsDrag();
     const versionEl = document.getElementById('aboutVersion');
@@ -313,6 +317,17 @@ function populateVoiceSelect() {
     });
 }
 
+function fillLayoutSelect(select, layouts, selectedId) {
+    select.innerHTML = '';
+    layouts.forEach(({ id, name }) => {
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = `${id} — ${name}`;
+        if (id === selectedId) opt.selected = true;
+        select.appendChild(opt);
+    });
+}
+
 function updateFolderDisplay() {
     const nameEl = document.getElementById('dataFolderName');
     const name = storage.getDataFolderName();
@@ -364,6 +379,12 @@ function openSettings() {
     const keyboardMode = storage.loadKeyboardMode();
     const keyboardRadio = document.querySelector(`input[name="keyboardMode"][value="${keyboardMode}"]`);
     if (keyboardRadio) keyboardRadio.checked = true;
+    const bottomLayoutSelect = document.getElementById('bottomLayoutSelect');
+    const sideLayoutSelect = document.getElementById('sideLayoutSelect');
+    const sideDockPositionToggle = document.getElementById('sideDockPositionToggle');
+    fillLayoutSelect(bottomLayoutSelect, BOTTOM_LAYOUTS, storage.loadBottomLayout());
+    fillLayoutSelect(sideLayoutSelect, SIDE_LAYOUTS, storage.loadSideLayout());
+    sideDockPositionToggle.checked = storage.loadSideDockPosition() === 'right';
     updateUsageDisplay();
     const placeholderSettings = storage.loadPlaceholderSettings();
     initialDelayInput.value = placeholderSettings.initialDelay;
@@ -413,6 +434,10 @@ function openSettings() {
             document.querySelector('input[name="keyboardMode"]:checked')?.value || 'physical'
         );
     });
+    bottomLayoutSelect.onchange = () => keyboard.setBottomLayout(bottomLayoutSelect.value);
+    sideLayoutSelect.onchange = () => keyboard.setSideLayout(sideLayoutSelect.value);
+    sideDockPositionToggle.onchange = () =>
+        keyboard.setSideDockPosition(sideDockPositionToggle.checked ? 'right' : 'left');
 
     document.getElementById('saveSettingsBtn').onclick = () => {
         const key = apiKeyInput.value.trim();
@@ -430,6 +455,13 @@ function openSettings() {
         const keyboardMode = document.querySelector('input[name="keyboardMode"]:checked')?.value || 'physical';
         storage.saveKeyboardMode(keyboardMode);
         keyboard.setMode(keyboardMode);
+        storage.saveBottomLayout(bottomLayoutSelect.value);
+        keyboard.setBottomLayout(bottomLayoutSelect.value);
+        storage.saveSideLayout(sideLayoutSelect.value);
+        keyboard.setSideLayout(sideLayoutSelect.value);
+        const sideDockPosition = sideDockPositionToggle.checked ? 'right' : 'left';
+        storage.saveSideDockPosition(sideDockPosition);
+        keyboard.setSideDockPosition(sideDockPosition);
         storage.savePlaceholderSettings(
             Number(initialDelayInput.value),
             Number(subsequentDelayInput.value)

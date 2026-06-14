@@ -20,11 +20,19 @@
  * preventDefault) so the caret never moves and no field blurs mid-type.
  */
 
+import { LAYOUTS, SYMBOLS } from './keyboard-layouts.js';
+
 const IN_SCOPE = '#composerInput, .wv-text';
 
 let mode = 'physical';          // 'physical' | 'onscreen'
 let rootEl = null;              // the keyboard panel
 let activeField = null;         // the input/textarea currently being typed into
+
+// Selected layouts per dock + which side the side dock sits on (user Settings).
+let sideLayoutId = 'S1';
+let bottomLayoutId = 'B1';
+let sideDockPosition = 'right'; // 'left' | 'right'
+let currentDock = 'bottom';     // set per focused field by dockFor()
 
 // Shift state machine (CLAUDE.md keyboard spec, June 2026):
 //   'off'   — lowercase
@@ -44,24 +52,17 @@ const SHIFT_DOUBLE_TAP_MS = 300;
 // on the symbols page because editing is impossible without them.
 let page = 'letters';
 
-// Layout: ALPHABETICAL only for now (Ken, June 14 2026 — dropped QWERTY: the
-// users aren't touch-typists, so A–Z order is the easiest to scan). Other
-// layouts (e.g. frequency-based) are a later phase, at which point layout
-// becomes a Settings option; the rows are pure data so adding one is data,
-// not code.
-const LETTER_ROWS = [
-    ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'],
-    ['j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r'],
-    ['s', 't', 'u', 'v', 'w', 'x', 'y', 'z', { action: 'backspace', label: '⌫' }],
-    [{ action: 'shift', label: '⇧' }, { action: 'page', label: '123' }, ',', { action: 'space', label: 'space', wide: true }, '.', { action: 'enter', label: '↵' }]
-];
+// Layout is ALPHABETICAL (QWERTY dropped). The specific arrangement is a user
+// Setting — twenty layouts live in keyboard-layouts.js (S1–S10 side, B1–B10
+// bottom), one chosen per dock. The active letters page = the selected layout
+// for the current dock; the 123 key flips to a dock-appropriate symbols page.
 
-const SYMBOL_ROWS = [
-    ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
-    ['@', '#', '$', '%', '&', '*', '(', ')', '-', '+'],
-    ['!', '?', "'", '"', ':', ';', '/', '=', '_', '~'],
-    [{ action: 'page', label: 'ABC' }, { action: 'space', label: 'space', wide: true }, { action: 'backspace', label: '⌫' }, { action: 'enter', label: '↵' }]
-];
+// Returns the rows to render right now (active layout's letters, or symbols).
+function currentRows() {
+    if (page === 'symbols') return SYMBOLS[currentDock] || SYMBOLS.bottom;
+    const id = currentDock === 'side' ? sideLayoutId : bottomLayoutId;
+    return (LAYOUTS[id] || LAYOUTS[currentDock === 'side' ? 'S1' : 'B1']).rows;
+}
 
 // --- field helpers ----------------------------------------------------------
 
@@ -190,27 +191,38 @@ function build() {
 }
 
 // (Re)builds the key buttons for the current page. The pointerdown handler is
-// delegated on rootEl, so swapping the inner rows on a page toggle is safe.
+// delegated on rootEl, so swapping the inner rows on a page/layout change is
+// safe. Each cell's `span` becomes its flex weight, so a row of any width fills
+// the keyboard and wide keys (space, etc.) keep their proportions.
 function renderRows() {
     if (!rootEl) return;
     rootEl.innerHTML = '';
-    const rows = page === 'symbols' ? SYMBOL_ROWS : LETTER_ROWS;
-    for (const row of rows) {
+    for (const row of currentRows()) {
         const rowEl = document.createElement('div');
         rowEl.className = 'kbd-row';
-        for (const key of row) {
+        for (const cell of row) {
+            const span = cell.span || 1;
+            if (cell.kind === 'blank' || cell.kind === 'pred') {
+                // Inert filler / future prediction slot — no key, just holds space.
+                const filler = document.createElement('div');
+                filler.className = 'kbd-key kbd-' + cell.kind;
+                filler.style.flex = `${span} 1 0`;
+                rowEl.appendChild(filler);
+                continue;
+            }
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'kbd-key';
-            if (typeof key === 'string') {
-                btn.dataset.char = key;
-                btn.textContent = key;
-                if (/[a-z]/i.test(key)) btn.classList.add('kbd-letter');
+            btn.style.flex = `${span} 1 0`;
+            if (cell.kind === 'char') {
+                btn.dataset.char = cell.char;
+                btn.textContent = cell.char;
+                if (/[a-z]/i.test(cell.char)) btn.classList.add('kbd-letter');
+                else btn.classList.add('kbd-char');
             } else {
-                btn.dataset.action = key.action;
-                btn.textContent = key.label;
-                btn.classList.add('kbd-' + key.action);
-                if (key.wide) btn.classList.add('kbd-wide');
+                btn.dataset.action = cell.action;
+                btn.textContent = cell.label;
+                btn.classList.add('kbd-' + cell.action);
             }
             rowEl.appendChild(btn);
         }
@@ -231,19 +243,31 @@ function dockFor(field) {
 }
 
 function setDock(dock) {
+    currentDock = dock;
     const side = dock === 'side';
-    rootEl.classList.toggle('kbd-dock-side', side);
-    rootEl.classList.toggle('kbd-dock-bottom', !side);
-    document.body.classList.toggle('kbd-dock-side', side);
-    document.body.classList.toggle('kbd-dock-bottom', !side);
+    const left = side && sideDockPosition === 'left';
+    const right = side && sideDockPosition === 'right';
+    for (const el of [rootEl, document.body]) {
+        el.classList.toggle('kbd-dock-side', side);
+        el.classList.toggle('kbd-dock-bottom', !side);
+        el.classList.toggle('kbd-side-left', left);
+        el.classList.toggle('kbd-side-right', right);
+    }
+}
+
+function visible() {
+    return rootEl && !rootEl.classList.contains('hidden');
 }
 
 function show(field) {
     activeField = field;
     setDock(dockFor(field));
+    renderRows();
     rootEl.classList.remove('hidden');
     document.body.classList.add('kbd-open');
-    // Keep the field visible clear of the keyboard.
+    // Keep the focused field clear of the keyboard. The content area reserves
+    // viewport-relative padding (CSS) so the field can scroll above a
+    // bottom dock; centring it lands it in the visible band above the keys.
     requestAnimationFrame(() => {
         try { field.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch { /* ignore */ }
     });
@@ -256,7 +280,7 @@ function hide() {
     page = 'letters';
     renderRows();
     if (rootEl) rootEl.classList.add('hidden');
-    document.body.classList.remove('kbd-open', 'kbd-dock-side', 'kbd-dock-bottom');
+    document.body.classList.remove('kbd-open', 'kbd-dock-side', 'kbd-dock-bottom', 'kbd-side-left', 'kbd-side-right');
 }
 
 // --- public API -------------------------------------------------------------
@@ -305,4 +329,23 @@ export function setMode(next) {
 
 export function getMode() {
     return mode;
+}
+
+// --- layout / dock-position settings (live-applied from Settings) -----------
+
+export function setSideLayout(id) {
+    if (!LAYOUTS[id]) return;
+    sideLayoutId = id;
+    if (visible() && currentDock === 'side' && page === 'letters') renderRows();
+}
+
+export function setBottomLayout(id) {
+    if (!LAYOUTS[id]) return;
+    bottomLayoutId = id;
+    if (visible() && currentDock === 'bottom' && page === 'letters') renderRows();
+}
+
+export function setSideDockPosition(pos) {
+    sideDockPosition = pos === 'left' ? 'left' : 'right';
+    if (visible() && currentDock === 'side') setDock('side');
 }

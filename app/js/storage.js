@@ -174,6 +174,39 @@ export function saveKeyboardMode(mode) {
     saveSettings(settings);
 }
 
+// Which on-screen keyboard layout to use in each dock (ids from
+// keyboard-layouts.js — side: S1..S10, bottom: B1..B10) and which side the
+// side dock sits on ('left' | 'right'). Defaults: S1 / B1 / right.
+export function loadSideLayout() {
+    return loadSettings().sideLayout || 'S1';
+}
+
+export function saveSideLayout(id) {
+    const settings = loadSettings();
+    settings.sideLayout = id;
+    saveSettings(settings);
+}
+
+export function loadBottomLayout() {
+    return loadSettings().bottomLayout || 'B1';
+}
+
+export function saveBottomLayout(id) {
+    const settings = loadSettings();
+    settings.bottomLayout = id;
+    saveSettings(settings);
+}
+
+export function loadSideDockPosition() {
+    return loadSettings().sideDockPosition === 'left' ? 'left' : 'right';
+}
+
+export function saveSideDockPosition(pos) {
+    const settings = loadSettings();
+    settings.sideDockPosition = pos === 'left' ? 'left' : 'right';
+    saveSettings(settings);
+}
+
 // --- Conversation logging ---
 
 let conversationDirHandle = null;

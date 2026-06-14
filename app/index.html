@@ -120,6 +120,28 @@
                         </div>
                         <p class="setting-hint">How you type into the app's text fields ("About Me" and "In your own words"). <strong>On-screen keyboard</strong> shows the app's own keyboard and stops Windows from popping its keyboard. <strong>Physical keyboard</strong> uses the keyboard attached to your tablet. Takes effect on the next field you tap.</p>
                     </div>
+                    <div class="setting-group" id="onscreenLayoutGroup">
+                        <label for="bottomLayoutSelect">Bottom-docked keyboard layout</label>
+                        <select id="bottomLayoutSelect"></select>
+                        <p class="setting-hint">The on-screen keyboard used along the bottom during a conversation.</p>
+                    </div>
+                    <div class="setting-group">
+                        <label for="sideLayoutSelect">Side-docked keyboard layout</label>
+                        <select id="sideLayoutSelect"></select>
+                        <p class="setting-hint">The on-screen keyboard used in a side column on the About Me screen.</p>
+                    </div>
+                    <div class="setting-group">
+                        <label for="sideDockPositionToggle">Side keyboard position</label>
+                        <div class="slider-row">
+                            <span class="slider-end">Left</span>
+                            <label class="switch">
+                                <input type="checkbox" id="sideDockPositionToggle">
+                                <span class="switch-track"></span>
+                            </label>
+                            <span class="slider-end">Right</span>
+                        </div>
+                        <p class="setting-hint">Which side of the screen the side-docked keyboard sits on.</p>
+                    </div>
                 </div>
                 <div class="tab-panel" data-tab="conversation">
                     <div class="setting-group">

@@ -404,6 +404,65 @@ dialog select {
     line-height: 1.4;
 }
 
+/* Binary slider (Left / Right) for the side-dock position. */
+.slider-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 0.35rem;
+}
+
+.slider-end {
+    font-size: 0.9rem;
+    color: #444;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 3rem;
+    height: 1.5rem;
+    flex-shrink: 0;
+}
+
+.switch input {
+    position: absolute;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    cursor: pointer;
+}
+
+.switch-track {
+    position: absolute;
+    inset: 0;
+    background: #c9d2d8;
+    border-radius: 1.5rem;
+    transition: background 0.15s;
+}
+
+.switch-track::before {
+    content: '';
+    position: absolute;
+    top: 0.15rem;
+    left: 0.15rem;
+    width: 1.2rem;
+    height: 1.2rem;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    transition: transform 0.15s;
+}
+
+.switch input:checked + .switch-track {
+    background: #2c3e50;
+}
+
+.switch input:checked + .switch-track::before {
+    transform: translateX(1.5rem);
+}
+
 dialog label.checkbox-label {
     display: flex;
     align-items: center;
@@ -564,10 +623,12 @@ label.radio-label input[type="radio"] {
 #worldviewContent {
     flex: 1;
     overflow-y: auto;
-    max-width: 800px;
     width: 100%;
-    margin: 0 auto;
-    padding: 1rem 1.25rem 3rem;
+    /* Use all remaining horizontal space for the questions and answers (Ken,
+       June 2026). When the side keyboard is open, its padding-left/right
+       reservation (above) keeps the content clear of the keys; otherwise the
+       cards fill the full width. */
+    padding: 1rem 1.5rem 3rem;
 }
 
 .wv-intro {
@@ -861,28 +922,47 @@ label.radio-label input[type="radio"] {
 }
 
 /* Bottom dock — conversation composer (competes for vertical space, so it's a
-   full-width strip along the bottom). */
+   full-width strip along the bottom). Window-aware: capped to a share of the
+   viewport height so a short window shrinks it instead of overflowing. */
 #appKeyboard.kbd-dock-bottom {
     left: 0;
     right: 0;
     bottom: 0;
+    max-height: 48vh;
     border-top: 1px solid #c4ccd2;
     box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.18);
     padding: 0.5rem 0.5rem calc(0.5rem + env(safe-area-inset-bottom, 0px));
 }
 
 /* Side dock — About Me / Settings (compete for horizontal space, so the
-   keyboard takes a full-height column on the right and leaves the screen its
-   full height). Left vs. right is a future config knob. */
+   keyboard takes a full-height column and the rows STRETCH to fill that
+   height — no centred dead band). The column width is a share of the window. */
 #appKeyboard.kbd-dock-side {
     top: 0;
-    right: 0;
     bottom: 0;
-    width: min(26rem, 50vw);
+    width: min(26rem, 46vw);
+    padding: 0.5rem;
+}
+
+#appKeyboard.kbd-dock-side.kbd-side-right {
+    right: 0;
     border-left: 1px solid #c4ccd2;
     box-shadow: -4px 0 16px rgba(0, 0, 0, 0.18);
-    padding: 0.5rem;
-    justify-content: center;   /* center the rows in the full-height column */
+}
+
+#appKeyboard.kbd-dock-side.kbd-side-left {
+    left: 0;
+    border-right: 1px solid #c4ccd2;
+    box-shadow: 4px 0 16px rgba(0, 0, 0, 0.18);
+}
+
+/* In the side dock each row stretches to share the full column height. */
+#appKeyboard.kbd-dock-side .kbd-row {
+    flex: 1 1 0;
+}
+
+#appKeyboard.kbd-dock-side .kbd-key {
+    min-height: 0;   /* let the row height (flex) drive key height */
 }
 
 #appKeyboard.hidden {
@@ -898,7 +978,8 @@ label.radio-label input[type="radio"] {
 .kbd-key {
     flex: 1 1 0;
     min-width: 0;
-    min-height: 4rem;            /* 25% taller than the original 3.2rem */
+    /* Window-aware height: scales with the viewport, clamped to sane bounds. */
+    min-height: clamp(2.2rem, 7.5vh, 4rem);
     border: 1px solid #b8c0c6;
     border-radius: 8px;
     background: #fff;
@@ -907,6 +988,9 @@ label.radio-label input[type="radio"] {
     font-family: inherit;
     cursor: pointer;
     box-shadow: 0 1px 0 #b8c0c6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .kbd-key:active {
@@ -915,17 +999,32 @@ label.radio-label input[type="radio"] {
     box-shadow: none;
 }
 
-.kbd-key.kbd-wide {           /* space bar */
-    flex: 6 1 0;
-}
-
+/* Controls (shift / backspace / enter / 123-ABC) — grey; sizing comes from each
+   key's inline flex (its span), so no flex override here. */
 .kbd-shift,
 .kbd-backspace,
 .kbd-enter,
 .kbd-page {
-    flex: 1.5 1 0;
     background: #d4dade;
     font-size: 1.2rem;
+}
+
+.kbd-space {
+    background: #eef3f6;
+}
+
+/* Inert filler (grid gaps) and future word-prediction slots. */
+.kbd-blank {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+    cursor: default;
+}
+
+.kbd-pred {
+    background: #fff8e1;
+    border-color: #ffe082;
+    cursor: default;
 }
 
 /* One-shot shift (next letter only) — lighter than the solid caps-lock state. */
@@ -943,13 +1042,17 @@ label.radio-label input[type="radio"] {
 }
 
 /* Reserve room so the focused field clears the keyboard. Bottom dock reserves
-   vertical space (composer in main; worldview if ever bottom-docked); side dock
-   reserves horizontal space on the About Me screen. */
+   vertical space (viewport-relative, so the field can always scroll above the
+   keys); side dock reserves horizontal space on the side it's docked. */
 body.kbd-open.kbd-dock-bottom main,
 body.kbd-open.kbd-dock-bottom #worldviewContent {
-    padding-bottom: 23rem;
+    padding-bottom: 50vh;
 }
 
-body.kbd-open.kbd-dock-side #worldviewContent {
-    padding-right: min(26rem, 50vw);
+body.kbd-open.kbd-dock-side.kbd-side-right #worldviewContent {
+    padding-right: min(26rem, 46vw);
+}
+
+body.kbd-open.kbd-dock-side.kbd-side-left #worldviewContent {
+    padding-left: min(26rem, 46vw);
 }
