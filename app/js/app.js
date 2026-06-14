@@ -12,7 +12,7 @@ import { SIDE_LAYOUTS, BOTTOM_LAYOUTS } from './keyboard-layouts.js';
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.2.18';
+const APP_VERSION = '0.2.19';
 
 const conversationHistory = [];
 let isListening = false;
@@ -487,21 +487,25 @@ function openSettings() {
             handleSettingsTab(document.querySelector('#settingsTabs .settings-tab.active')?.dataset.tab);
         };
     });
-    // Focusing or changing a layout control previews that dock; the selects
-    // re-render the live keyboard so the choice is visible immediately.
-    bottomLayoutSelect.onfocus = () => keyboard.previewShow('bottom');
+    // Tapping (or focusing, or changing) a keyboard-layout control previews
+    // that dock — and shows the keyboard if it's currently hidden (e.g. after
+    // Hide). pointerdown covers re-tapping an already-focused control, where no
+    // focus event fires. The selects also re-render so the choice shows live.
+    const previewBottom = () => keyboard.previewShow('bottom');
+    const previewSide = () => keyboard.previewShow('side');
+    bottomLayoutSelect.onpointerdown = bottomLayoutSelect.onfocus = previewBottom;
     bottomLayoutSelect.onchange = () => {
         keyboard.setBottomLayout(bottomLayoutSelect.value);
         storage.saveBottomLayout(bottomLayoutSelect.value);
         keyboard.previewShow('bottom');
     };
-    sideLayoutSelect.onfocus = () => keyboard.previewShow('side');
+    sideLayoutSelect.onpointerdown = sideLayoutSelect.onfocus = previewSide;
     sideLayoutSelect.onchange = () => {
         keyboard.setSideLayout(sideLayoutSelect.value);
         storage.saveSideLayout(sideLayoutSelect.value);
         keyboard.previewShow('side');
     };
-    sideDockPositionToggle.onfocus = () => keyboard.previewShow('side');
+    sideDockPositionToggle.onpointerdown = sideDockPositionToggle.onfocus = previewSide;
     sideDockPositionToggle.onchange = () => {
         const pos = sideDockPositionToggle.checked ? 'right' : 'left';
         keyboard.setSideDockPosition(pos);

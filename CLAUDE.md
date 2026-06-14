@@ -285,6 +285,8 @@ Built (Ken's list) on top of the shared keyboard component (`app/js/keyboard.js`
 
 **Hide (close) button — DONE (v0.2.18).** The toolbar above the keys now has a **Hide ⌄** button (right-aligned, dark) that dismisses the keyboard while leaving any open panel — notably **Settings** — in place (Ken: "have the keyboard close and just have the settings panel open"). `keyboard.js dismiss()`: ends preview mode, `hide()`s, and **blurs the field** so a later tap re-opens it. Works from both the typing context (API field) and the Speech-tab layout preview. Verified: Hide closes the keyboard with Settings still open and the field blurred; re-focusing the field reopens it; no console errors.
 
+**Reshow on tapping a layout setting — DONE (v0.2.19).** Tapping any keyboard-layout control (side/bottom layout selects, side-position slider) reshows the keyboard if it was hidden via Hide. The trigger is **`onpointerdown`** (not just `onfocus`), because the common case is re-tapping a select that *still has focus* after Hide — where no `focus` event fires. pointerdown fires on every tap regardless of focus state; the bottom select previews the bottom dock, the side controls the side dock.
+
 **RESOLVED — keyboard layout (Ken, June 14 2026): Alphabetical only, QWERTY dropped.** The target users aren't touch-typists, so QWERTY had no value; **A–Z order is easiest to scan.** Shipped as the single layout (`LETTER_ROWS` = a–i / j–r / s–z+⌫ / ⇧·123·,·space·.·↵). **No layout Settings option yet** — other layouts (e.g. frequency-based) are a **later phase**, at which point layout becomes a user setting; the rows stay pure data so adding one is data, not code. (Matrix/grid layouts remain the natural future fit for scanning/eye-gaze renderers, but that's later.)
 
 **RESOLVED — keyboard docking is CONTEXT-based, not layout- or (yet) orientation-based (Ken, June 14 2026).** Correction to the earlier note: **don't tie docking to layout.** The dock follows the *screen*, not the device orientation (for now):
@@ -362,6 +364,7 @@ Phase-to-version mapping (update as releases are tagged):
 | 0.2.16  | 1     | Removed the Settings Save button — every control applies AND persists immediately (live test bench, esp. for side-dock keyboard layouts); Close just dismisses |
 | 0.2.17  | 1     | Settings keyboard-layout live preview: the keyboard stays shown on the Speech & Input tab (no focused field) and re-renders as you change layout/side, so layouts can be tried without it vanishing |
 | 0.2.18  | 1     | App keyboard Hide button (toolbar) — dismisses the keyboard while leaving the Settings panel open; blurs the field so a later tap reopens it |
+| 0.2.19  | 1     | Tapping a keyboard-layout setting reshows the keyboard if hidden — pointerdown trigger covers re-tapping an already-focused select (no focus event) |
 
 ---
 
