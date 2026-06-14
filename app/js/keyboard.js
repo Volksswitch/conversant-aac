@@ -37,6 +37,10 @@ let sideLayoutId = 'S1';
 let bottomLayoutId = 'B1';
 let sideDockPosition = 'right'; // 'left' | 'right'
 let currentDock = 'bottom';     // set per focused field by dockFor()
+// Settings "layout preview": the keyboard is shown for previewing a layout
+// without a focused field (so it doesn't vanish when you leave a text field to
+// change layouts on the Speech & Input tab).
+let previewing = false;
 
 // Shift state machine (CLAUDE.md keyboard spec, June 2026):
 //   'off'   — lowercase
@@ -372,6 +376,7 @@ export function init() {
         // next focusin) — keys preventDefault, so typing never fires this.
         const next = e.relatedTarget;
         if (next && (isScoped(next) || (rootEl && rootEl.contains(next)))) return;
+        if (previewing) return;   // keep the Settings layout-preview keyboard up
         hide();
     });
 
@@ -395,7 +400,34 @@ export function init() {
 export function setMode(next) {
     mode = next === 'onscreen' ? 'onscreen' : 'physical';
     applyInputModeAll();
-    if (mode === 'physical') hide();
+    if (mode === 'physical') { previewing = false; hide(); }
+}
+
+// --- Settings layout preview ------------------------------------------------
+// Show the keyboard as a non-typing preview in the given dock (no focused
+// field) so layouts can be tried on the Speech & Input tab without the keyboard
+// vanishing. Hosted in the open Settings dialog so it shares the modal's top
+// layer. previewHide() takes it down again (unless a real field is focused).
+
+export function previewShow(dock) {
+    if (!rootEl || mode !== 'onscreen') return;
+    previewing = true;
+    activeField = null;
+    page = 'letters';
+    shiftState = 'off';
+    setDock(dock);
+    const dlg = document.getElementById('settingsDialog');
+    const host = (dlg && dlg.open) ? dlg : document.body;
+    if (rootEl.parentNode !== host) host.appendChild(rootEl);
+    renderRows();
+    rootEl.classList.remove('hidden');
+    document.body.classList.add('kbd-open');
+}
+
+export function previewHide() {
+    if (!previewing) return;
+    previewing = false;
+    if (!activeField) hide();
 }
 
 export function getMode() {

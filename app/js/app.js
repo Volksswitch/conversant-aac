@@ -12,7 +12,7 @@ import { SIDE_LAYOUTS, BOTTOM_LAYOUTS } from './keyboard-layouts.js';
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.2.16';
+const APP_VERSION = '0.2.17';
 
 const conversationHistory = [];
 let isListening = false;
@@ -54,6 +54,14 @@ function initApp() {
     keyboard.setSideDockPosition(storage.loadSideDockPosition());
     initSettingsTabs();
     initSettingsDrag();
+    // Clean up the nudge + keyboard preview when Settings is dismissed. The
+    // Close button does this explicitly; this 'cancel' listener covers Escape
+    // (the dialog 'close' event proved unreliable here).
+    const settingsDialog = document.getElementById('settingsDialog');
+    settingsDialog.addEventListener('cancel', () => {
+        settingsDialog.classList.remove('nudge-left', 'nudge-right');
+        keyboard.previewHide();
+    });
     const versionEl = document.getElementById('aboutVersion');
     if (versionEl) versionEl.textContent = APP_VERSION;
 
@@ -247,8 +255,20 @@ function initSettingsTabs() {
             document.querySelectorAll('#settingsContent .tab-panel').forEach(p => p.classList.remove('active'));
             tab.classList.add('active');
             document.querySelector(`.tab-panel[data-tab="${tab.dataset.tab}"]`).classList.add('active');
+            handleSettingsTab(tab.dataset.tab);
         });
     });
+}
+
+// On the Speech & Input tab the user changes keyboard layouts but there's no
+// text field to type into, so show the keyboard as a live preview (side dock by
+// default — that's the one being tuned). Any other tab takes the preview down.
+function handleSettingsTab(tabName) {
+    if (tabName === 'speech' && storage.loadKeyboardMode() === 'onscreen') {
+        keyboard.previewShow('side');
+    } else {
+        keyboard.previewHide();
+    }
 }
 
 // Drag-to-move for the Settings dialog (pattern borrowed from the Keyguard
@@ -463,21 +483,31 @@ function openSettings() {
             keyboard.setMode(mode);
             storage.saveKeyboardMode(mode);
             updateSettingsNudge();
+            // Reflect the change in the live preview on the Speech & Input tab.
+            handleSettingsTab(document.querySelector('#settingsTabs .settings-tab.active')?.dataset.tab);
         };
     });
+    // Focusing or changing a layout control previews that dock; the selects
+    // re-render the live keyboard so the choice is visible immediately.
+    bottomLayoutSelect.onfocus = () => keyboard.previewShow('bottom');
     bottomLayoutSelect.onchange = () => {
         keyboard.setBottomLayout(bottomLayoutSelect.value);
         storage.saveBottomLayout(bottomLayoutSelect.value);
+        keyboard.previewShow('bottom');
     };
+    sideLayoutSelect.onfocus = () => keyboard.previewShow('side');
     sideLayoutSelect.onchange = () => {
         keyboard.setSideLayout(sideLayoutSelect.value);
         storage.saveSideLayout(sideLayoutSelect.value);
+        keyboard.previewShow('side');
     };
+    sideDockPositionToggle.onfocus = () => keyboard.previewShow('side');
     sideDockPositionToggle.onchange = () => {
         const pos = sideDockPositionToggle.checked ? 'right' : 'left';
         keyboard.setSideDockPosition(pos);
         storage.saveSideDockPosition(pos);
         updateSettingsNudge();
+        keyboard.previewShow('side');
     };
     const persistPlaceholders = () => storage.savePlaceholderSettings(
         Number(initialDelayInput.value),
@@ -488,6 +518,7 @@ function openSettings() {
 
     document.getElementById('closeSettingsBtn').onclick = () => {
         dialog.classList.remove('nudge-left', 'nudge-right');
+        keyboard.previewHide();
         dialog.close();
     };
 }
