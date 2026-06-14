@@ -18,7 +18,7 @@
  *                                                  returns it to unanswered.
  */
 
-import { readFile, writeFile } from './storage.js';
+import { readFile, writeFile, hasDataFolder } from './storage.js';
 
 const PROFILE_FILE = 'worldview.json';
 const CACHE_KEY = 'aac_worldview';
@@ -116,6 +116,50 @@ async function save() {
     profile.updated = new Date().toISOString();
     writeCache(profile);
     await writeFile(PROFILE_FILE, JSON.stringify(profile, null, 2));
+}
+
+/**
+ * Reconcile the localStorage cache with the data folder once a folder
+ * becomes available. Call this right after a folder is granted/restored.
+ *
+ * While no folder is granted, answers persist only in the localStorage
+ * cache. The moment a folder is available we must promote that cache to the
+ * portable worldview.json so the data stops being machine-local. If a file
+ * already exists on disk (e.g. a returning folder), the newer of {disk,
+ * cache} by `updated` wins to avoid clobbering more-recent edits from either
+ * side; the winner is written through to both stores and becomes the
+ * in-memory profile. Returns 'wrote' | 'adopted' | 'noop'.
+ */
+export async function syncToFolder() {
+    if (!hasDataFolder()) return 'noop';   // nothing to sync to yet
+
+    const cache = readCache();
+    const raw = await readFile(PROFILE_FILE);
+    let disk = null;
+    if (raw) { try { disk = JSON.parse(raw); } catch { disk = null; } }
+
+    if (!disk) {
+        // No portable file yet — promote whatever we have to disk.
+        profile = normalize(cache || profile || defaultProfile());
+        await save();
+        return 'wrote';
+    }
+    if (!cache) {
+        profile = normalize(disk);
+        writeCache(profile);
+        return 'adopted';
+    }
+
+    const diskTime = Date.parse(disk.updated) || 0;
+    const cacheTime = Date.parse(cache.updated) || 0;
+    if (cacheTime > diskTime) {
+        profile = normalize(cache);
+        await save();                      // local edits are newer — persist them
+        return 'wrote';
+    }
+    profile = normalize(disk);
+    writeCache(profile);
+    return 'adopted';
 }
 
 // --- Field state ------------------------------------------------------------

@@ -99,9 +99,11 @@ function handleSttStatus(status, detail) {
 
 async function handleStart() {
     try { await storage.restoreDataFolder(); } catch { /* no stored handle yet */ }
-    // Reload the worldview profile from the (now-restored) data folder so
-    // generation uses the on-disk profile, not just the localStorage cache.
+    // Reload the worldview profile from the (now-restored) data folder, then
+    // reconcile: if answers accumulated only in the localStorage cache (no
+    // folder earlier), promote them to the on-disk worldview.json now.
     try { await worldview.load(); } catch { /* keep cached/empty profile */ }
+    try { await worldview.syncToFolder(); } catch { /* best-effort */ }
     document.getElementById('startOverlay').classList.add('hidden');
     document.querySelector('main').classList.remove('disabled');
 }
@@ -317,6 +319,9 @@ function openSettings() {
     document.getElementById('pickFolderBtn').onclick = async () => {
         try {
             await storage.pickDataFolder();
+            // A folder just became available — flush any cache-only worldview
+            // answers to the on-disk worldview.json.
+            try { await worldview.syncToFolder(); } catch { /* best-effort */ }
             updateFolderDisplay();
         } catch (err) {
             if (err.name !== 'AbortError') {

@@ -91,6 +91,9 @@ export async function open() {
         return;
     }
     await wv.load();
+    // If the folder was just restored and answers were cache-only, promote
+    // them to the on-disk worldview.json.
+    try { await wv.syncToFolder(); } catch { /* best-effort */ }
     renderHome();
     screenEl.classList.remove('hidden');
     setBackgroundInert(true);
