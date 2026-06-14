@@ -260,6 +260,17 @@ Free composition is one of the **invariants** (Configuration Model): the user mu
 
 Open sub-questions deferred to build time: where the composer sits relative to the move palette (screen allocation — already an open UI question), and whether the type-and-speak composer should also push the spoken utterance into conversation history like a selected response.
 
+## Auto-update on launch / Start (June 14 2026), v0.2.10
+
+**Problem (Ken):** the app didn't pick up new deployments on launch or when Start was pressed — the old "Ctrl+Shift+R dance." Two causes: (a) the network-first worker's `fetch(request)` still hit the **browser HTTP cache** (GitHub Pages serves `Cache-Control: max-age=600`), so a launch within 10 min of a deploy got stale assets; (b) the registration never rolled a redeployed worker into the running page — a new `sw.js` installed but the page kept the version it launched with.
+
+**Fix (three parts):**
+1. **`sw.js` revalidates.** Runtime fetch is `fetch(new Request(request, { cache: 'no-cache' }))` (ETag revalidation — can't serve stale within the max-age window). Precache `addAll` uses `new Request(u, { cache: 'reload' })` so the precached shell is fresh too. (`self.skipWaiting()` on install + `clients.claim()` on activate were already there.)
+2. **Auto-reload on new worker (`index.html`).** A `controllerchange` listener reloads the page once when a freshly-activated worker takes control. Guarded with `hadController` (skip the first-ever install, which has no prior controller) and a `reloading` flag (no loop). `reg.update()` is called on `load` to check for a new worker every launch.
+3. **Update check on Start (`app.js` `handleStart`).** `navigator.serviceWorker.getRegistration().then(r => r && r.update())` — a cheap no-op when nothing's new; if a new worker is found it activates and the `controllerchange` handler reloads. Covers the "left open, redeploy, press Start" case.
+
+APP_VERSION / CACHE_VERSION → `0.2.10`. **Verified in preview:** worker registers + activates + controls the page, version 0.2.10 in About, no console errors, **no reload loop** on localhost (controllerchange doesn't fire after the first claim when nothing's new). *The redeploy→auto-reload path itself can't be exercised in the preview (needs a real new deployment) — confirm on the test tablet that a fresh deploy now appears on relaunch without a hard refresh.*
+
 ## Settings Panel — usability pass (June 14 2026), v0.2.8
 
 Six Settings-panel improvements shipped (Ken's list), modeled on the Keyguard Designer web app's settings panel (`keyguard-designer-web/app.html`, the second working directory):
@@ -291,6 +302,7 @@ Phase-to-version mapping (update as releases are tagged):
 | 0.2     | 1     | Continuous partner capture; persistent "Please repeat" control; auto-resume-listening setting |
 | 0.2.8   | 1     | Settings panel usability pass: Close label, draggable modal, live-apply settings, point-release version in About, scrolling panel, General tab split into Speech & Input + Conversation tabs |
 | 0.2.9   | 1     | Fix v0.2.8 regression: dialog flex layout scoped to [open] so the panel no longer shows at startup and Close works; touch-action:none on the drag handle for full-distance touch drags |
+| 0.2.10  | 1     | Auto-update on launch/Start: SW revalidates (no-cache) to beat the GitHub Pages HTTP cache; controllerchange auto-reload rolls in a redeployed worker; update check on Start |
 
 ---
 

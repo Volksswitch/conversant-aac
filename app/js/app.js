@@ -11,7 +11,7 @@ import * as keyboard from './keyboard.js';
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.2.9';
+const APP_VERSION = '0.2.10';
 
 const conversationHistory = [];
 let isListening = false;
@@ -106,6 +106,14 @@ function handleSttStatus(status, detail) {
 }
 
 async function handleStart() {
+    // Check for a newer deployed version when the session starts. If one is
+    // found the worker activates and the controllerchange handler in index.html
+    // reloads the page; when nothing is new this is a cheap no-op.
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistration()
+            .then((reg) => reg && reg.update())
+            .catch(() => { /* update check is best-effort */ });
+    }
     try { await storage.restoreDataFolder(); } catch { /* no stored handle yet */ }
     // Reload the worldview profile from the (now-restored) data folder, then
     // reconcile: if answers accumulated only in the localStorage cache (no

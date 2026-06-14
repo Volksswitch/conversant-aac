@@ -10,7 +10,7 @@
  * Bump CACHE_VERSION whenever the precached shell changes so old caches are
  * cleaned out on activate.
  */
-const CACHE_VERSION = 'aac-v0.2.9';
+const CACHE_VERSION = 'aac-v0.2.10';
 const CACHE_NAME = `aac-shell-${CACHE_VERSION}`;
 
 // App shell precached on install so the app can cold-start offline.
@@ -42,8 +42,10 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       // addAll is atomic; if any file 404s the whole install fails, so keep
-      // SHELL in sync with what actually ships.
-      .then((cache) => cache.addAll(SHELL))
+      // SHELL in sync with what actually ships. `cache: 'reload'` bypasses the
+      // browser HTTP cache (GitHub Pages serves max-age=600) so a freshly
+      // deployed shell is precached, not a stale copy.
+      .then((cache) => cache.addAll(SHELL.map((u) => new Request(u, { cache: 'reload' }))))
       .then(() => self.skipWaiting())
   );
 });
@@ -67,7 +69,10 @@ self.addEventListener('fetch', (event) => {
   if (new URL(request.url).origin !== self.location.origin) return;
 
   event.respondWith(
-    fetch(request)
+    // `cache: 'no-cache'` forces revalidation with the server (ETag) instead of
+    // letting the browser's HTTP cache serve a stale copy within GitHub Pages'
+    // max-age=600 window — so a launch while online always gets the latest.
+    fetch(new Request(request, { cache: 'no-cache' }))
       .then((response) => {
         // Cache a copy of successful responses for offline fallback.
         if (response && response.ok && response.type === 'basic') {
