@@ -22,7 +22,11 @@
 
 import { LAYOUTS, SYMBOLS } from './keyboard-layouts.js';
 
-const IN_SCOPE = '#composerInput, .wv-text';
+// Fields the app keyboard handles. Includes the Settings API-key field so the
+// Windows keyboard is suppressed there too and the app's own (side-docked)
+// keyboard is used instead (Ken, June 14 2026 — resolves the OS-vs-app keyboard
+// question for Settings in favor of the app keyboard).
+const IN_SCOPE = '#composerInput, .wv-text, #apiKeyInput';
 
 let mode = 'physical';          // 'physical' | 'onscreen'
 let rootEl = null;              // the keyboard panel
@@ -239,6 +243,8 @@ function renderRows() {
 // conversation composer docks it to the BOTTOM. Dynamic orientation-aware
 // docking is a later refinement.
 function dockFor(field) {
+    // Settings fields and About Me both compete for horizontal space → side.
+    if (field.closest('#settingsDialog')) return 'side';
     return field.matches('.wv-text') ? 'side' : 'bottom';
 }
 
@@ -262,6 +268,15 @@ function visible() {
 function show(field) {
     activeField = field;
     setDock(dockFor(field));
+    // A modal <dialog> (Settings) lives in the top layer and renders above —
+    // and makes inert — anything in normal flow. So when the focused field is
+    // inside an open modal dialog, host the keyboard inside that dialog so it's
+    // in the same top layer and stays interactive. The keyboard is
+    // position:fixed (viewport-relative) and the dialog sets no containing
+    // block (no transform), so it still docks to the screen edge and isn't
+    // clipped by the dialog's overflow.
+    const host = field.closest('dialog[open]') || document.body;
+    if (rootEl.parentNode !== host) host.appendChild(rootEl);
     renderRows();
     rootEl.classList.remove('hidden');
     document.body.classList.add('kbd-open');
