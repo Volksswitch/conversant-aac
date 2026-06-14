@@ -12,7 +12,7 @@ import { SIDE_LAYOUTS, BOTTOM_LAYOUTS } from './keyboard-layouts.js';
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.2.20';
+const APP_VERSION = '0.2.21';
 
 const conversationHistory = [];
 let isListening = false;
@@ -59,7 +59,10 @@ function initApp() {
     // dialog 'close' event proved unreliable here). The panel nudge is pure CSS
     // (driven by the keyboard's body classes), so nothing to clean up there.
     const settingsDialog = document.getElementById('settingsDialog');
-    settingsDialog.addEventListener('cancel', () => keyboard.previewHide());
+    settingsDialog.addEventListener('cancel', () => { keyboard.previewHide(); resetSettingsPosition(); });
+    // When the keyboard's dock/side changes, re-snap a dragged panel so it
+    // clears the keyboard again (the CSS auto-position then takes over).
+    document.addEventListener('kbd-dock-change', () => resetSettingsPosition());
     const versionEl = document.getElementById('aboutVersion');
     if (versionEl) versionEl.textContent = APP_VERSION;
 
@@ -269,27 +272,42 @@ function handleSettingsTab(tabName) {
     }
 }
 
+// Tracks whether the user has dragged the Settings panel (pinning it with
+// inline left/top, which override the CSS auto-position). Reset when the
+// keyboard's dock/side changes so the panel re-snaps to clear the keyboard.
+let settingsDragged = false;
+
+function resetSettingsPosition() {
+    const dialog = document.getElementById('settingsDialog');
+    if (!dialog || !settingsDragged) return;
+    dialog.style.margin = '';
+    dialog.style.left = '';
+    dialog.style.top = '';
+    settingsDragged = false;
+}
+
 // Drag-to-move for the Settings dialog (pattern borrowed from the Keyguard
 // Designer app). The panel stays modal — the backdrop still blocks the app
 // behind it — but can be dragged aside by its title bar so live UI changes are
 // visible behind it. A native <dialog> is centered by the UA with auto margins;
 // on the first drag we convert that to pixel left/top with margin:0, then track
-// the pointer, clamping to the viewport. Position persists for the session.
+// the pointer, clamping to the viewport. Position persists until the keyboard
+// state changes (resetSettingsPosition) or Settings closes.
 function initSettingsDrag() {
     const dialog = document.getElementById('settingsDialog');
     const handle = document.getElementById('settingsHeader');
     if (!dialog || !handle) return;
-    let dragging = false, offsetX = 0, offsetY = 0, positioned = false;
+    let dragging = false, offsetX = 0, offsetY = 0;
 
     handle.addEventListener('pointerdown', (e) => {
         // On the first drag, pin the dialog to its current rect so left/top win
-        // over the UA's centering margins.
+        // over the UA's centering margins / CSS auto-position.
         const r = dialog.getBoundingClientRect();
-        if (!positioned) {
+        if (!settingsDragged) {
             dialog.style.margin = '0';
             dialog.style.left = `${r.left}px`;
             dialog.style.top = `${r.top}px`;
-            positioned = true;
+            settingsDragged = true;
         }
         dragging = true;
         offsetX = e.clientX - r.left;
@@ -416,6 +434,11 @@ function openSettings() {
     document.querySelector('.tab-panel[data-tab="general"]').classList.add('active');
 
     dialog.showModal();
+    // Park focus on the (non-input) header so the dialog doesn't autofocus the
+    // API-key field — which would pop the on-screen keyboard on open and race
+    // with tab switches. The keyboard then appears only when a field or a
+    // layout setting is tapped.
+    document.getElementById('settingsHeader')?.focus();
 
     document.getElementById('pickFolderBtn').onclick = async () => {
         try {
@@ -503,6 +526,7 @@ function openSettings() {
 
     document.getElementById('closeSettingsBtn').onclick = () => {
         keyboard.previewHide();
+        resetSettingsPosition();
         dialog.close();
     };
 }

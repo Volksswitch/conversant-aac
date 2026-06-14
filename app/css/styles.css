@@ -260,6 +260,15 @@ body.kbd-open.kbd-dock-side.kbd-side-left #settingsDialog {
     max-width: min(560px, calc(100vw - min(26rem, 46vw) - 2rem));
 }
 
+/* A BOTTOM keyboard covers the lower part of the screen, so pin the panel to
+   the top region (and cap its height to what's left) instead of leaving it
+   centred and overlapping the keys. */
+body.kbd-open.kbd-dock-bottom #settingsDialog {
+    top: 1rem;
+    bottom: auto;
+    max-height: calc(52vh - 1.5rem);
+}
+
 dialog::backdrop {
     background: rgba(0, 0, 0, 0.5);
 }

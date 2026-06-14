@@ -323,6 +323,8 @@ function dockFor(field) {
     return field.matches('.wv-text') ? 'side' : 'bottom';
 }
 
+let lastDockKey = '';
+
 function setDock(dock) {
     currentDock = dock;
     const side = dock === 'side';
@@ -333,6 +335,13 @@ function setDock(dock) {
         el.classList.toggle('kbd-dock-bottom', !side);
         el.classList.toggle('kbd-side-left', left);
         el.classList.toggle('kbd-side-right', right);
+    }
+    // Notify listeners (the Settings panel re-snaps clear of the keyboard) only
+    // when the effective dock/side actually changes — not on every re-show.
+    const key = side ? (left ? 'side-left' : 'side-right') : 'bottom';
+    if (key !== lastDockKey) {
+        lastDockKey = key;
+        document.dispatchEvent(new CustomEvent('kbd-dock-change', { detail: { dock: key } }));
     }
 }
 
