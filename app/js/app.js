@@ -4,6 +4,7 @@ import * as llm from './llm.js';
 import * as ui from './ui.js';
 import * as storage from './storage.js';
 import * as placeholders from './placeholders.js';
+import * as worldview from './worldview.js';
 import * as worldviewUI from './worldview-ui.js';
 
 const conversationHistory = [];
@@ -50,6 +51,13 @@ function initApp() {
 
     llm.setUserProfile(storage.loadUserProfile());
 
+    // Load the worldview registry + profile so generation can inject the
+    // profile block even before the user opens "About Me". The data folder
+    // isn't restored until Start, so this first load uses the localStorage
+    // cache; handleStart() reloads from the folder once it's granted.
+    worldview.loadRegistry().catch(() => { /* registry optional at startup */ });
+    worldview.load().catch(() => { /* falls back to empty profile */ });
+
     const savedKey = storage.loadApiKey();
     if (savedKey) {
         llm.setApiKey(savedKey);
@@ -90,6 +98,9 @@ function handleSttStatus(status, detail) {
 
 async function handleStart() {
     try { await storage.restoreDataFolder(); } catch { /* no stored handle yet */ }
+    // Reload the worldview profile from the (now-restored) data folder so
+    // generation uses the on-disk profile, not just the localStorage cache.
+    try { await worldview.load(); } catch { /* keep cached/empty profile */ }
     document.getElementById('startOverlay').classList.add('hidden');
     document.querySelector('main').classList.remove('disabled');
 }
@@ -121,12 +132,21 @@ async function generateOptions(partnerText) {
     // the end, when the user selects a response.
     const history = [...conversationHistory, { role: 'partner', text: partnerText }];
 
+    // Inject the current worldview profile so the assistant speaks AS the user.
+    // Rebuilt each turn so questionnaire edits take effect immediately.
+    llm.setWorldviewBlock(worldview.buildBlock());
+
     try {
-        const options = await llm.generateResponses(history);
+        const { options, missingFacts } = await llm.generateResponses(history);
         if (token !== generationToken) return; // a newer silence period superseded this
         lastResponseOptions = options;
         ui.showResponseOptions(options, handleResponseSelected);
         ui.setStatus('Select a response');
+        // Record facts the model lacked — drives the questionnaire's "suggested
+        // next." Open gaps only; recordGaps drops answered/declined keys.
+        if (missingFacts && missingFacts.length) {
+            worldview.recordGaps(missingFacts, partnerText).catch(() => { /* non-fatal */ });
+        }
     } catch (err) {
         if (token !== generationToken) return;
         ui.setStatus(`Error: ${err.message}`);

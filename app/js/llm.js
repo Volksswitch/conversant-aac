@@ -6,6 +6,7 @@ let apiKey = null;
 let onUsageUpdate = null;
 let userName = '';
 let userAbout = '';
+let worldviewBlock = '';
 
 export function setApiKey(key) {
     apiKey = key;
@@ -16,19 +17,34 @@ export function setUserProfile({ name = '', about = '' } = {}) {
     userAbout = (about || '').trim();
 }
 
+// The compact worldview profile text (worldview.buildBlock()). Set fresh before
+// each generation so questionnaire edits take effect immediately. Successor to
+// the interim name/about injection, which stays until Build Step 4.
+export function setWorldviewBlock(text) {
+    worldviewBlock = (text || '').trim();
+}
+
 // Builds the personalization + placeholder-safety block appended to the
 // response-generation system prompt. Even with no profile set, the
 // no-brackets instruction prevents the model from emitting "[Name]" blanks.
 function buildProfileBlock() {
+    const sections = [];
+
+    if (worldviewBlock) sections.push(`\n\n${worldviewBlock}`);
+
+    // Interim name/about (Settings) — kept alongside the worldview profile until
+    // Build Step 4 migrates and removes it.
     const facts = [];
     if (userName) facts.push(`The user's name is ${userName}.`);
     if (userAbout) facts.push(`About the user: ${userAbout}`);
+    if (facts.length) {
+        sections.push(worldviewBlock
+            ? `\n\nAlso: ${facts.join(' ')}`
+            : `\n\nYou are speaking AS the user, in the first person — not as an assistant. ${facts.join(' ')} Use these details whenever they are relevant; for example, if the partner asks the user's name, give it directly.`);
+    }
 
-    const persona = facts.length
-        ? `\n\nYou are speaking AS the user, in the first person — not as an assistant. ${facts.join(' ')} Use these details whenever they are relevant; for example, if the partner asks the user's name, give it directly.`
-        : '';
-
-    return `${persona}\n\nNever output placeholder text in square brackets such as [Name], [your name], or [city]. If you do not know a personal detail, phrase the response so it is not needed.`;
+    sections.push(`\n\nNever output placeholder text in square brackets such as [Name], [your name], or [city]. If you do not know a personal detail, phrase the response so it is not needed.`);
+    return sections.join('');
 }
 
 export function onUsage(callback) {
@@ -78,6 +94,9 @@ Return ONLY the corrected transcript text, nothing else.${contextLines ? '\n\nCo
     return data.content[0].text.trim();
 }
 
+// Single combined call: classify the partner's action AND generate options AND
+// report which personal facts were missing (for the worldview gaps log).
+// Returns { options: string[], classification: {fpp, about}, missingFacts: string[] }.
 export async function generateResponses(conversationHistory) {
     if (!apiKey) throw new Error('API key not set');
 
@@ -88,9 +107,14 @@ Rules:
 - Vary the responses: include different tones or directions the conversation could go
 - Keep responses concise — these will be spoken aloud
 - The first option should be your best guess at what the user most likely wants to say
-- Return ONLY a JSON array of strings, no other text
 
-Example format: ["response 1", "response 2", "response 3"]${buildProfileBlock()}`;
+Return ONLY a JSON object, no other text, with exactly this shape:
+{"classification": {"fpp": "question|statement|request|greeting|closing|other", "about": "<1-3 word topic>"}, "options": ["...", "...", "..."], "missing_facts": ["<key>", ...]}
+
+Where:
+- "classification.fpp" is what the partner's utterance is doing; "about" is a short topic label.
+- "options" is exactly ${NUM_OPTIONS} response strings following the rules above.
+- "missing_facts" lists lowercase snake_case keys for personal facts about the user you needed to answer well but were not given (e.g. "home_city", "fav_team", "occupation"). Use [] if none. Always phrase the options around any missing fact — never output bracketed placeholders.${buildProfileBlock()}`;
 
     const messages = conversationHistory.map(entry => ({
         role: entry.role === 'partner' ? 'user' : 'assistant',
@@ -107,7 +131,7 @@ Example format: ["response 1", "response 2", "response 3"]${buildProfileBlock()}
         },
         body: JSON.stringify({
             model: MODEL,
-            max_tokens: 300,
+            max_tokens: 500,
             system: systemPrompt,
             messages
         })
@@ -120,13 +144,30 @@ Example format: ["response 1", "response 2", "response 3"]${buildProfileBlock()}
 
     const data = await response.json();
     trackUsage(data);
-    const text = data.content[0].text.trim();
+    return parseGeneration(data.content[0].text.trim());
+}
 
+// Robustly parse the structured generation output. Tolerates a bare array
+// (legacy/best-effort) and stray prose around the JSON object.
+function parseGeneration(text) {
+    let parsed = null;
     try {
-        return JSON.parse(text);
+        parsed = JSON.parse(text);
     } catch {
-        const match = text.match(/\[[\s\S]*\]/);
-        if (match) return JSON.parse(match[0]);
-        throw new Error('Could not parse response options from API');
+        const obj = text.match(/\{[\s\S]*\}/);
+        const arr = text.match(/\[[\s\S]*\]/);
+        if (obj) { try { parsed = JSON.parse(obj[0]); } catch { /* fall through */ } }
+        if (!parsed && arr) { try { parsed = JSON.parse(arr[0]); } catch { /* fall through */ } }
     }
+    if (Array.isArray(parsed)) {
+        return { options: parsed, classification: null, missingFacts: [] };
+    }
+    if (parsed && Array.isArray(parsed.options)) {
+        return {
+            options: parsed.options,
+            classification: parsed.classification || null,
+            missingFacts: Array.isArray(parsed.missing_facts) ? parsed.missing_facts : []
+        };
+    }
+    throw new Error('Could not parse response options from API');
 }
