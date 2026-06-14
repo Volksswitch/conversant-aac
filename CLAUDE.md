@@ -237,6 +237,8 @@ Format: **major.minor** (e.g., `0.1`, `0.2`). All pre-release versions use major
 
 **Release publishing is always public.** GitHub releases for this project are public by standing decision — Claude Code is authorized to push tags and publish releases publicly without pausing for confirmation. (Ken, June 2026.)
 
+**Commit and push every completed step (current phase).** While Ken is the only person with access to the GitHub Pages deployment, Claude Code should **commit and push to `main` automatically as each step is completed** — no need to ask. This will change once beta testers are engaged: Ken will say so, and at that point we become more conservative about what is shared on GitHub Pages (commit locally, push deliberately). (Ken, June 14 2026.)
+
 Phase-to-version mapping (update as releases are tagged):
 
 | Version | Phase | Notes |
