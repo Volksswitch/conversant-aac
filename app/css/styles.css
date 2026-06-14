@@ -218,16 +218,20 @@ dialog {
     width: 92%;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
     overflow: hidden;
-    /* Flex column so the header + footer stay put and only the content scrolls.
-       Cap the height so a long tab scrolls instead of overflowing the viewport. */
-    display: flex;
-    flex-direction: column;
     max-height: calc(100vh - 3rem);
-    /* display:flex drops the UA's auto-centering of a modal <dialog>, so restore
-       it explicitly. inset:0 + margin:auto centers; the drag code (initSettingsDrag)
-       overrides with margin:0 + left/top to reposition. */
+    /* inset:0 + margin:auto restores the centering that display:flex (applied
+       only to the OPEN dialog below) would otherwise drop. The drag code
+       (initSettingsDrag) overrides with margin:0 + left/top to reposition. */
     inset: 0;
     margin: auto;
+}
+
+/* Flex column (header + footer pinned, content scrolls) only when the dialog is
+   actually open — scoping to [open] so it doesn't override the UA's
+   `dialog:not([open]) { display: none }` and leave the panel visible at startup. */
+dialog[open] {
+    display: flex;
+    flex-direction: column;
 }
 
 dialog::backdrop {
@@ -247,6 +251,9 @@ dialog::backdrop {
     cursor: move;
     user-select: none;
     flex-shrink: 0;
+    /* Stop the browser from claiming the touch gesture for scroll/pan, so a
+       touch drag moves the panel the full distance instead of a few mm. */
+    touch-action: none;
 }
 
 #settingsTitle {
