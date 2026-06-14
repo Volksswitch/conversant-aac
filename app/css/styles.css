@@ -1000,6 +1000,21 @@ label.radio-label input[type="radio"] {
     transform: translateY(1px);
 }
 
+/* Hide/dismiss the keyboard — pushed to the right edge, visually distinct. */
+.kbd-tool-hide {
+    margin-left: auto;
+    flex: 0 0 auto;
+    padding: 0 1rem;
+    background: #2c3e50;
+    color: #fff;
+    border-color: #2c3e50;
+    font-weight: 600;
+}
+
+.kbd-tool-hide:active {
+    background: #1d2b38;
+}
+
 .kbd-row {
     display: flex;
     gap: 0.4rem;

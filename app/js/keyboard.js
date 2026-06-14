@@ -184,7 +184,18 @@ function deleteSelection() {
     f.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
+// Explicitly dismiss the keyboard (the toolbar's Hide button) while leaving any
+// open panel (e.g. Settings) in place. Blurs the field so a later tap re-opens
+// it; ends preview mode so it stays down until re-triggered.
+function dismiss() {
+    previewing = false;
+    const f = activeField;
+    hide();                       // clears activeField + hides
+    if (f) { try { f.blur(); } catch { /* ignore */ } }
+}
+
 async function handleTool(tool) {
+    if (tool === 'hide') { dismiss(); return; }
     if (!activeField) return;
     if (tool === 'copy' || tool === 'cut') {
         const text = selectedText();
@@ -236,15 +247,19 @@ function build() {
         handleKey(keyEl);
     });
 
-    // Persistent Cut/Copy/Paste toolbar above the keys (layout-independent).
+    // Persistent toolbar above the keys (layout-independent): Cut/Copy/Paste,
+    // plus a Hide button (pushed right) that dismisses the keyboard while
+    // leaving any open panel — e.g. Settings — in place.
     const toolbar = document.createElement('div');
     toolbar.className = 'kbd-toolbar';
-    for (const [tool, label] of [['cut', 'Cut'], ['copy', 'Copy'], ['paste', 'Paste']]) {
+    for (const [tool, label] of [['cut', 'Cut'], ['copy', 'Copy'], ['paste', 'Paste'], ['hide', 'Hide ⌄']]) {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'kbd-tool';
+        if (tool === 'hide') btn.classList.add('kbd-tool-hide');
         btn.dataset.tool = tool;
         btn.textContent = label;
+        if (tool === 'hide') btn.title = 'Hide the keyboard';
         toolbar.appendChild(btn);
     }
     rootEl.appendChild(toolbar);
