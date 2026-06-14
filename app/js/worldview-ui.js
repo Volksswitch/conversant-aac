@@ -1,0 +1,341 @@
+/* AAC Conversation Assistant — worldview questionnaire UI (Build Step 2)
+ *
+ * Renders the "About Me" questionnaire over the conversation screen. Reads and
+ * writes through worldview.js (the Step 1 model). No LLM wiring here — that is
+ * Build Step 3.
+ *
+ * Flow (Implementation-Plan §7):
+ *   Home    — intro, "suggested next" (gaps-driven), module list with progress,
+ *             and Restart.
+ *   Module  — a chunk: every field in one module as an answerable card
+ *             (answer / in my own words / prefer not to say / skip / edit).
+ *
+ * Per the resolved decisions: nothing is required, no fixed chunk size, every
+ * answer optional and revisable. Each card carries an in-flow "Speak" control
+ * (CLAUDE.md Build Step 2 design intent) — opt-in, never automatic.
+ */
+
+import * as wv from './worldview.js';
+import { speak } from './tts.js';
+import * as storage from './storage.js';
+
+let screenEl, contentEl, titleEl;
+
+// --- tiny DOM helper --------------------------------------------------------
+
+function el(tag, props = {}, children = []) {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(props)) {
+        if (v == null) continue;
+        if (k === 'class') n.className = v;
+        else if (k === 'text') n.textContent = v;
+        else if (k === 'html') n.innerHTML = v;
+        else if (k.startsWith('on') && typeof v === 'function') n.addEventListener(k.slice(2).toLowerCase(), v);
+        else n.setAttribute(k, v);
+    }
+    for (const c of (Array.isArray(children) ? children : [children])) {
+        if (c == null || c === false) continue;
+        n.append(c.nodeType ? c : document.createTextNode(String(c)));
+    }
+    return n;
+}
+
+// --- value formatting (display + speak) -------------------------------------
+
+function formatValue(value) {
+    if (value == null || value === '') return '';
+    if (Array.isArray(value)) {
+        return value.map((v) => (v && typeof v === 'object'
+            ? Object.values(v).filter(Boolean).join(' — ')
+            : v)).filter(Boolean).join(', ');
+    }
+    if (typeof value === 'object') return Object.values(value).filter(Boolean).join(' — ');
+    return String(value);
+}
+
+// --- lifecycle --------------------------------------------------------------
+
+export function init() {
+    screenEl = document.getElementById('worldviewScreen');
+    contentEl = document.getElementById('worldviewContent');
+    titleEl = document.getElementById('worldviewTitle');
+    document.getElementById('worldviewCloseBtn').addEventListener('click', close);
+}
+
+export async function open() {
+    // Best-effort: make sure the user-owned data folder is restored so answers
+    // persist to worldview.json (falls back to the localStorage cache if not).
+    try { await storage.restoreDataFolder(); } catch { /* no stored handle yet */ }
+    try {
+        await wv.loadRegistry();
+    } catch {
+        contentEl.innerHTML = '<p class="wv-intro">Could not load the question set.</p>';
+        screenEl.classList.remove('hidden');
+        return;
+    }
+    await wv.load();
+    renderHome();
+    screenEl.classList.remove('hidden');
+}
+
+export function close() {
+    screenEl.classList.add('hidden');
+}
+
+// --- Home -------------------------------------------------------------------
+
+function renderHome() {
+    titleEl.textContent = 'About Me';
+    contentEl.scrollTop = 0;
+    contentEl.innerHTML = '';
+
+    contentEl.append(el('p', { class: 'wv-intro', text:
+        'Answer as many or as few as you like, whenever you like. Nothing here is required, and you can change or remove any answer later.' }));
+
+    const suggested = wv.suggestedNext(5);
+    if (suggested.length) {
+        contentEl.append(el('h3', { class: 'wv-section-title', text: 'Suggested next' }));
+        const wrap = el('div', { class: 'wv-suggested' });
+        for (const f of suggested) {
+            wrap.append(el('button', {
+                class: 'wv-suggested-chip',
+                text: f.q,
+                onclick: () => openModuleForField(f.key)
+            }));
+        }
+        contentEl.append(wrap);
+    }
+
+    contentEl.append(el('h3', { class: 'wv-section-title', text: 'Topics' }));
+    for (const mod of wv.getModules()) {
+        const pct = mod.total ? Math.round((mod.answered / mod.total) * 100) : 0;
+        const meta = `${mod.answered} of ${mod.total} answered`
+            + (mod.declined ? ` · ${mod.declined} skipped` : '');
+        contentEl.append(el('button', { class: 'wv-module-row', onclick: () => renderModule(mod.id) }, [
+            el('div', { class: 'wv-module-main' }, [
+                el('div', { class: 'wv-module-title', text: mod.title }),
+                el('div', { class: 'wv-module-meta', text: meta }),
+                el('div', { class: 'wv-progress' }, [
+                    el('div', { class: 'wv-progress-fill', style: `width:${pct}%` })
+                ])
+            ]),
+            el('div', { class: 'wv-chevron', text: '›' })
+        ]));
+    }
+
+    contentEl.append(el('div', { class: 'wv-home-footer' }, [
+        el('button', { class: 'wv-btn wv-btn-danger', text: 'Restart — clear all answers', onclick: onRestart })
+    ]));
+}
+
+async function onRestart() {
+    if (!confirm('Clear every answer and start over? This cannot be undone.')) return;
+    await wv.resetAll();
+    renderHome();
+}
+
+function openModuleForField(key) {
+    const meta = wv.fieldMeta(key);
+    if (!meta) return;
+    renderModule(meta.moduleId);
+    const card = document.getElementById('wvcard-' + key);
+    if (card) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        card.classList.add('wv-flash');
+    }
+}
+
+// --- Module (a chunk of cards) ----------------------------------------------
+
+function renderModule(moduleId) {
+    const mod = wv.getRegistry().modules.find((m) => m.id === moduleId);
+    if (!mod) return renderHome();
+
+    titleEl.textContent = mod.title;
+    contentEl.scrollTop = 0;
+    contentEl.innerHTML = '';
+
+    contentEl.append(el('button', { class: 'wv-back', text: '‹ All topics', onclick: renderHome }));
+    for (const field of mod.fields) {
+        contentEl.append(buildCard(field));
+    }
+    contentEl.append(el('div', { class: 'wv-home-footer' }, [
+        el('button', { class: 'wv-btn wv-btn-primary', text: 'Done', onclick: renderHome })
+    ]));
+}
+
+function refreshCard(field) {
+    const old = document.getElementById('wvcard-' + field.key);
+    if (old) old.replaceWith(buildCard(field));
+}
+
+// --- Card -------------------------------------------------------------------
+
+function buildCard(field) {
+    const state = wv.getState(field.key);
+    const card = el('div', { class: 'wv-card', id: 'wvcard-' + field.key });
+
+    const head = el('div', { class: 'wv-card-head' }, [
+        el('div', { class: 'wv-question', text: field.q })
+    ]);
+    if (state === 'answered') head.append(el('span', { class: 'wv-badge wv-badge-answered', text: '✓ Answered' }));
+    else if (state === 'declined') head.append(el('span', { class: 'wv-badge wv-badge-declined', text: 'Prefer not to say' }));
+    card.append(head);
+
+    if (state === 'declined') {
+        card.append(el('div', { class: 'wv-actions' }, [
+            el('button', { class: 'wv-btn wv-btn-link', text: 'Undo — ask me this again',
+                onclick: async () => { await wv.resetField(field.key); refreshCard(field); } })
+        ]));
+        return card;
+    }
+
+    card.append(buildInput(field));
+
+    const actions = el('div', { class: 'wv-actions' });
+    const current = wv.getField(field.key);
+    const speakBtn = el('button', {
+        class: 'wv-btn wv-btn-speak',
+        text: '🔊 Speak my answer',
+        onclick: () => { const v = formatValue(wv.getField(field.key)); if (v) speak(v); }
+    });
+    if (!formatValue(current)) speakBtn.setAttribute('disabled', 'true');
+    actions.append(speakBtn);
+    actions.append(el('button', { class: 'wv-btn wv-btn-link', text: 'Prefer not to say',
+        onclick: async () => { await wv.declineField(field.key); refreshCard(field); } }));
+    card.append(actions);
+
+    return card;
+}
+
+// Build the type-appropriate input region and wire saving.
+function buildInput(field) {
+    const current = wv.getField(field.key);
+    const hasOptions = Array.isArray(field.options) && field.options.length > 0;
+
+    if (field.type === 'choice') return buildChoice(field, current);
+    if (field.type === 'multi' && hasOptions) return buildMultiChips(field, current);
+    if (field.type === 'multi') return buildFreeMulti(field, current);
+    if (field.type === 'repeat') return buildRepeat(field, current);
+    return buildTextish(field, current);   // text | number
+}
+
+function saveAndRefresh(field, value) {
+    return wv.setField(field.key, value).then(() => refreshCard(field));
+}
+
+// choice — single select chips + "in my own words"
+function buildChoice(field, current) {
+    const wrap = el('div', { class: 'wv-input' });
+    const chips = el('div', { class: 'wv-chips' });
+    for (const opt of field.options) {
+        chips.append(el('button', {
+            class: 'wv-chip' + (current === opt ? ' wv-chip-on' : ''),
+            text: opt,
+            onclick: () => saveAndRefresh(field, opt)
+        }));
+    }
+    wrap.append(chips);
+
+    // free-text alternative (also shows the current value if it is custom)
+    const isCustom = current != null && !field.options.includes(current);
+    const input = el('input', { type: 'text', class: 'wv-text', placeholder: 'In my own words…',
+        value: isCustom ? current : '' });
+    const save = el('button', { class: 'wv-btn wv-btn-primary', text: 'Save',
+        onclick: () => { const v = input.value.trim(); if (v) saveAndRefresh(field, v); } });
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') save.click(); });
+    wrap.append(el('div', { class: 'wv-own' }, [input, save]));
+    return wrap;
+}
+
+// multi with a fixed option list — toggle chips + add your own
+function buildMultiChips(field, current) {
+    const selected = Array.isArray(current) ? [...current] : [];
+    const wrap = el('div', { class: 'wv-input' });
+    const chips = el('div', { class: 'wv-chips' });
+    const all = [...field.options, ...selected.filter((s) => !field.options.includes(s))];
+    for (const opt of all) {
+        chips.append(el('button', {
+            class: 'wv-chip' + (selected.includes(opt) ? ' wv-chip-on' : ''),
+            text: opt,
+            onclick: () => {
+                const next = selected.includes(opt) ? selected.filter((s) => s !== opt) : [...selected, opt];
+                if (next.length) saveAndRefresh(field, next);
+                else wv.resetField(field.key).then(() => refreshCard(field));
+            }
+        }));
+    }
+    wrap.append(chips);
+
+    const input = el('input', { type: 'text', class: 'wv-text', placeholder: 'Add your own…' });
+    const add = el('button', { class: 'wv-btn wv-btn-primary', text: 'Add',
+        onclick: () => { const v = input.value.trim(); if (v && !selected.includes(v)) saveAndRefresh(field, [...selected, v]); } });
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') add.click(); });
+    wrap.append(el('div', { class: 'wv-own' }, [input, add]));
+    return wrap;
+}
+
+// multi without options — comma-separated free text
+function buildFreeMulti(field, current) {
+    const wrap = el('div', { class: 'wv-input' });
+    const value = Array.isArray(current) ? current.join(', ') : '';
+    const input = el('input', { type: 'text', class: 'wv-text', placeholder: 'Separate with commas…', value });
+    const save = el('button', { class: 'wv-btn wv-btn-primary', text: 'Save',
+        onclick: () => {
+            const parts = input.value.split(',').map((s) => s.trim()).filter(Boolean);
+            if (parts.length) saveAndRefresh(field, parts);
+            else wv.resetField(field.key).then(() => refreshCard(field));
+        } });
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') save.click(); });
+    wrap.append(el('div', { class: 'wv-own' }, [input, save]));
+    return wrap;
+}
+
+// text | number
+function buildTextish(field, current) {
+    const wrap = el('div', { class: 'wv-input' });
+    const input = el('input', {
+        type: field.type === 'number' ? 'text' : 'text',
+        class: 'wv-text',
+        placeholder: 'Type your answer…',
+        value: current != null ? String(current) : ''
+    });
+    const save = el('button', { class: 'wv-btn wv-btn-primary', text: 'Save',
+        onclick: () => { const v = input.value.trim(); if (v) saveAndRefresh(field, v); else wv.resetField(field.key).then(() => refreshCard(field)); } });
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') save.click(); });
+    wrap.append(el('div', { class: 'wv-own' }, [input, save]));
+    return wrap;
+}
+
+// repeat — rows of sub-fields (e.g. name + relationship)
+function buildRepeat(field, current) {
+    const entries = Array.isArray(current) ? [...current] : [];
+    const subs = field.fields && field.fields.length ? field.fields : ['value'];
+    const wrap = el('div', { class: 'wv-input' });
+
+    if (entries.length) {
+        const list = el('div', { class: 'wv-entry-list' });
+        entries.forEach((entry, i) => {
+            list.append(el('div', { class: 'wv-entry' }, [
+                el('span', { text: formatValue(entry) }),
+                el('button', { class: 'wv-entry-remove', text: '✕', 'aria-label': 'Remove',
+                    onclick: () => {
+                        const next = entries.filter((_, j) => j !== i);
+                        if (next.length) saveAndRefresh(field, next);
+                        else wv.resetField(field.key).then(() => refreshCard(field));
+                    } })
+            ]));
+        });
+        wrap.append(list);
+    }
+
+    const inputs = subs.map((s) => el('input', { type: 'text', class: 'wv-text wv-text-sub', placeholder: s }));
+    const add = el('button', { class: 'wv-btn wv-btn-primary', text: 'Add',
+        onclick: () => {
+            const obj = {};
+            subs.forEach((s, i) => { obj[s] = inputs[i].value.trim(); });
+            if (Object.values(obj).some(Boolean)) saveAndRefresh(field, [...entries, obj]);
+        } });
+    wrap.append(el('div', { class: 'wv-entry-add' }, [...inputs, add]));
+    return wrap;
+}

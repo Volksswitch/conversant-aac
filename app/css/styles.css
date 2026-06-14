@@ -58,7 +58,13 @@ header h1 {
     font-weight: 600;
 }
 
-#settingsBtn {
+.header-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+#settingsBtn,
+#aboutMeBtn {
     background: transparent;
     color: white;
     border: 1px solid rgba(255, 255, 255, 0.4);
@@ -440,4 +446,331 @@ label.checkbox-label input[type="checkbox"] {
     background: #2c3e50;
     color: white;
     border-color: #2c3e50;
+}
+
+/* --- Worldview "About Me" questionnaire --- */
+
+#worldviewScreen {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: #f0f0f0;
+    display: flex;
+    flex-direction: column;
+}
+
+#worldviewScreen.hidden {
+    display: none;
+}
+
+.worldview-header {
+    background: #2c3e50;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.worldview-header h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+#worldviewCloseBtn {
+    background: transparent;
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    padding: 0.4rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.95rem;
+}
+
+#worldviewContent {
+    flex: 1;
+    overflow-y: auto;
+    max-width: 800px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 1rem 1.25rem 3rem;
+}
+
+.wv-intro {
+    color: #555;
+    line-height: 1.5;
+    margin-bottom: 1.25rem;
+}
+
+.wv-section-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #444;
+    margin: 1.25rem 0 0.5rem;
+}
+
+.wv-suggested {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+}
+
+.wv-suggested-chip {
+    text-align: left;
+    background: #fff8e1;
+    border: 1px solid #ffe082;
+    border-radius: 6px;
+    padding: 0.6rem 0.8rem;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.wv-suggested-chip:hover {
+    border-color: #ffca28;
+}
+
+.wv-module-row {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    text-align: left;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 0.9rem 1rem;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+}
+
+.wv-module-row:hover {
+    border-color: #2c3e50;
+}
+
+.wv-module-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.wv-module-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.wv-module-meta {
+    font-size: 0.85rem;
+    color: #777;
+    margin: 0.15rem 0 0.4rem;
+}
+
+.wv-progress {
+    height: 6px;
+    background: #eee;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.wv-progress-fill {
+    height: 100%;
+    background: #43a047;
+    transition: width 0.2s;
+}
+
+.wv-chevron {
+    font-size: 1.6rem;
+    color: #bbb;
+    padding-left: 0.75rem;
+}
+
+.wv-back {
+    background: transparent;
+    border: none;
+    color: #06c;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 0.25rem 0;
+    margin-bottom: 0.75rem;
+}
+
+.wv-card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.wv-card.wv-flash {
+    animation: wv-flash 1.2s ease-out;
+}
+
+@keyframes wv-flash {
+    0% { border-color: #ffca28; box-shadow: 0 0 0 3px rgba(255, 202, 40, 0.4); }
+    100% { border-color: #e0e0e0; box-shadow: none; }
+}
+
+.wv-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.6rem;
+}
+
+.wv-question {
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+
+.wv-badge {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.2rem 0.5rem;
+    border-radius: 10px;
+    white-space: nowrap;
+}
+
+.wv-badge-answered {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.wv-badge-declined {
+    background: #eceff1;
+    color: #607d8b;
+}
+
+.wv-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 0.6rem;
+}
+
+.wv-chip {
+    background: #f8f9fa;
+    border: 2px solid #dee2e6;
+    border-radius: 20px;
+    padding: 0.45rem 0.9rem;
+    font-size: 0.95rem;
+    cursor: pointer;
+}
+
+.wv-chip:hover {
+    border-color: #2c3e50;
+}
+
+.wv-chip-on {
+    background: #2c3e50;
+    color: white;
+    border-color: #2c3e50;
+}
+
+.wv-own,
+.wv-entry-add {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.wv-text {
+    flex: 1;
+    min-width: 0;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-family: inherit;
+}
+
+.wv-text-sub {
+    flex: 1 1 40%;
+}
+
+.wv-entry-list {
+    margin-bottom: 0.5rem;
+}
+
+.wv-entry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 0.4rem 0.6rem;
+    margin-bottom: 0.3rem;
+    font-size: 0.95rem;
+}
+
+.wv-entry-remove {
+    background: transparent;
+    border: none;
+    color: #c0392b;
+    cursor: pointer;
+    font-size: 0.95rem;
+}
+
+.wv-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.6rem;
+}
+
+.wv-btn {
+    border-radius: 6px;
+    padding: 0.5rem 0.9rem;
+    font-size: 0.95rem;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    background: #f8f9fa;
+}
+
+.wv-btn-primary {
+    background: #2c3e50;
+    color: white;
+    border-color: #2c3e50;
+}
+
+.wv-btn-speak {
+    background: #e3f2fd;
+    border-color: #90caf9;
+    color: #1565c0;
+}
+
+.wv-btn-speak:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.wv-btn-link {
+    background: transparent;
+    border: none;
+    color: #607d8b;
+    padding: 0.5rem 0.4rem;
+}
+
+.wv-btn-link:hover {
+    color: #2c3e50;
+    text-decoration: underline;
+}
+
+.wv-btn-danger {
+    background: #fff;
+    border-color: #e57373;
+    color: #c62828;
+}
+
+.wv-home-footer {
+    margin-top: 1.5rem;
+}
+
+.wv-home-footer .wv-btn {
+    width: 100%;
+    padding: 0.7rem;
+    font-size: 1rem;
 }

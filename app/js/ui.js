@@ -50,6 +50,10 @@ export function onSettingsClick(handler) {
     document.getElementById('settingsBtn').addEventListener('click', handler);
 }
 
+export function onAboutMeClick(handler) {
+    document.getElementById('aboutMeBtn').addEventListener('click', handler);
+}
+
 // --- "In your own words" composer ---
 
 export function onSpeakClick(handler) {

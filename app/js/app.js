@@ -4,6 +4,7 @@ import * as llm from './llm.js';
 import * as ui from './ui.js';
 import * as storage from './storage.js';
 import * as placeholders from './placeholders.js';
+import * as worldviewUI from './worldview-ui.js';
 
 const conversationHistory = [];
 let isListening = false;
@@ -36,6 +37,8 @@ function initApp() {
     ui.onSpeakClick(handleSpeakComposed);
     ui.onClearComposerClick(() => ui.clearComposer());
     ui.onSettingsClick(openSettings);
+    ui.onAboutMeClick(worldviewUI.open);
+    worldviewUI.init();
     initSettingsTabs();
 
     tts.onVoicesReady(() => {

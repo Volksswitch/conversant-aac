@@ -14,7 +14,10 @@
 <body>
     <header>
         <h1>AAC Conversation Assistant</h1>
-        <button id="settingsBtn" aria-label="Settings">Settings</button>
+        <div class="header-actions">
+            <button id="aboutMeBtn" aria-label="About Me">About Me</button>
+            <button id="settingsBtn" aria-label="Settings">Settings</button>
+        </div>
     </header>
 
     <div id="startOverlay">
@@ -57,6 +60,14 @@
             <div id="statusBar" class="panel">Ready</div>
         </section>
     </main>
+
+    <div id="worldviewScreen" class="hidden">
+        <header class="worldview-header">
+            <h2 id="worldviewTitle">About Me</h2>
+            <button id="worldviewCloseBtn" type="button">Done</button>
+        </header>
+        <div id="worldviewContent"></div>
+    </div>
 
     <dialog id="settingsDialog">
         <div id="settingsLayout">
