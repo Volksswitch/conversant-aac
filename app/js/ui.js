@@ -49,3 +49,21 @@ export function onRepeatClick(handler) {
 export function onSettingsClick(handler) {
     document.getElementById('settingsBtn').addEventListener('click', handler);
 }
+
+// --- "In your own words" composer ---
+
+export function onSpeakClick(handler) {
+    document.getElementById('speakBtn').addEventListener('click', handler);
+}
+
+export function onClearComposerClick(handler) {
+    document.getElementById('clearComposerBtn').addEventListener('click', handler);
+}
+
+export function getComposerText() {
+    return document.getElementById('composerInput').value.trim();
+}
+
+export function clearComposer() {
+    document.getElementById('composerInput').value = '';
+}

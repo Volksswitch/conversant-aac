@@ -33,6 +33,8 @@ function initApp() {
     document.getElementById('startBtn').addEventListener('click', handleStart);
     ui.onListenClick(toggleListening);
     ui.onRepeatClick(handleRepeatRequest);
+    ui.onSpeakClick(handleSpeakComposed);
+    ui.onClearComposerClick(() => ui.clearComposer());
     ui.onSettingsClick(openSettings);
     initSettingsTabs();
 
@@ -160,6 +162,19 @@ async function handleResponseSelected(text, index) {
     } else {
         ui.setStatus('Ready — tap Listen for the next exchange');
     }
+}
+
+// "In your own words" composer — speak free-composed text in the user's
+// selected voice. The manual realization of the free-composition invariant and
+// the hand-test pathway for worldview output. MVP: speak only; whether to also
+// commit to conversation history is a deferred decision (see CLAUDE.md).
+async function handleSpeakComposed() {
+    const text = ui.getComposerText();
+    if (!text) return;
+    placeholders.stop();
+    ui.setStatus('Speaking...');
+    await tts.speak(text);
+    ui.setStatus(isListening ? 'Listening...' : 'Ready');
 }
 
 // Persistent "Please repeat what you said." control. Discards everything

@@ -159,6 +159,42 @@ h2 {
     outline: none;
 }
 
+#composerInput {
+    width: 100%;
+    padding: 0.6rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 1.1rem;
+    resize: vertical;
+}
+
+#composerControls {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+#speakBtn {
+    flex: 1;
+    background: #2c3e50;
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+#clearComposerBtn {
+    background: #f8f9fa;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 0.6rem 1.2rem;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
 #statusBar {
     font-size: 0.85rem;
     color: #555;
