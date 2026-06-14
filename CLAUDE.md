@@ -38,7 +38,7 @@ Literate, non-speaking individual with cerebral palsy (CP), 16+, using **direct 
 
 **Cross-device transfer:** Later feature — user manually exports a data package and moves it via iCloud, Google Drive, or OneDrive.
 
-**AI vendor:** Claude API (Anthropic) first. Multi-vendor support added later. User creates their own Anthropic account; free tier supported, user upgrades as needed. API key stored locally.
+**AI vendor:** Claude API (Anthropic) first. Multi-vendor support added later. User creates their own Anthropic account and supplies their own API key. The Claude API is pay-as-you-go, billed per token — there is **no ongoing free tier for API access** (the free tier on the consumer claude.ai app does not apply to the developer API). The user pays only for the conversations they actually have. API key stored locally.
 
 **Speech-to-text transcript validation:** Displaying the transcript of what the partner said is **critical** — not optional. The user must be able to confirm the system heard correctly before selecting a response.
 
@@ -150,9 +150,20 @@ Ken collected Conversation Analysis (CA) literature and had it synthesized into 
 
 ---
 
-## Worldview Questionnaire (June 2026) — design complete, implementation NOT started
+## Worldview Questionnaire (June 2026) — Build Step 1 DONE; UI (Step 2) is next
 
-The worldview model (Architecture Overview §6) now has a concrete questionnaire design and a build-ready implementation plan. **This is where to pick up next.**
+The worldview model (Architecture Overview §6) has a concrete questionnaire design, a build-ready implementation plan, and **Build Step 1 (data model + registry) is now implemented and verified** (June 14 2026).
+
+**Build Step 1 — shipped (not yet committed; awaiting Ken's go):**
+- `app/data/worldview-questions.json` — static registry. Scope per resolved decisions: **full Tier-A** (A1 About You, A2 Where You Are, A3 People, A4 Daily Life, A5 Contact) + **Tier-C starter** (C1 Favorites, C2 Passions). Each field: `key`, `q`, `type` (text/number/choice/multi/repeat), `options`, `fills` (placeholder synonyms), `sensitive`, `defaultPrivacy`. A5 fields are `defaultPrivacy: private`.
+- `app/js/worldview.js` — model layer: `loadRegistry()`, `load()`/save (data-folder `worldview.json` write-through + localStorage cache), `getField`/`setField`/`declineField`/`resetField`/`resetAll`, three states (unanswered=key absent / answered / declined=sticky), `effectivePrivacy`/`setPrivacy`, gaps `recordGaps`/`listGaps`/`clearGaps`, `getModules` (progress), `suggestedNext` (gaps-first), and `buildBlock()` (compact profile text; labels from `fills[0]`; declined + private fields surface only as a phrase-around instruction, never with their values).
+- `app/sw.js` — precache list updated (worldview.js + registry), CACHE_VERSION → `aac-v0.2.1`.
+- **Verified in preview:** set/decline/reset/un-decline state transitions; cache round-trip; `buildBlock()` includes shareable facts and withholds private (phone) values while listing age+phone as phrase-around; gaps add/bump/drop-answered/clear; suggested-next ordering. *Caveat:* verification exercised the in-memory + localStorage-cache path; the on-disk FSA `worldview.json` write goes through the same `storage.writeFile` that conversation logging already uses, but confirming an actual on-disk file requires a user-granted data folder (FSA needs a user gesture).
+- **Not touched:** the interim Name/About You Settings fields (they stay until Build Step 4), per guardrail.
+
+**Remaining build order:** 2) questionnaire UI (`worldview-ui.js` — render/answer/own-words/decline/skip/edit/restart, module progress, suggested-next) → 3) LLM integration (structured `{options, missing_facts}`, inject `buildBlock()`, record gaps) → 4) migrate + remove Name/About You → 5) expand Tier-B + rest of Tier-C → 6) RAG-lite.
+
+**Build Step 2 design intent — "Speak my answer" control (Ken, June 14 2026).** The questionnaire UI must include an on-demand **"speak my answer"** control during worldview collection, rendered **in-flow and close at hand** next to each answer — explicitly **not** in the Settings panel. Speaking an answer is opt-in/on-demand, never the automatic behavior that selecting a conversation *response* has. Rationale (scenarios that make spoken answers useful during collection): supporter-assisted entry (speech is the user's channel to the human helping); auditory proofread of free-text / "in my own words" answers; voice-match calibration (esp. B8 "Your Voice, in Your Words" — judge "does this sound like me?"); and doing the "getting to know you" session as a real conversation with another person. An **auto-speak toggle** (for the supporter-assisted and conversation-as-collection scenarios) is a reasonable later addition, but the always-available per-answer control is the requirement.
 
 **Origin:** The interim *Your Name / About You* fields in Settings (shipped June 2026 to stop the LLM emitting `[Name]` placeholders) are a stopgap. The worldview questionnaire replaces and generalizes them. Bracketed placeholders are the signal of which personal facts conversations demand; the design turns that signal into a self-populating profile.
 
@@ -171,7 +182,14 @@ The worldview model (Architecture Overview §6) now has a concrete questionnaire
 
 **Token budget / RAG timing (plan doc §6):** We are *not* close to needing a RAG database. The questionnaire profile is bounded (~1–3K tokens fully answered = 0.1–0.3% of Sonnet 4.6's 1M context; ~a penny per conversation with prompt caching). RAG is driven by *unbounded cross-session memory* (Phase 3), not the structured fields — rough trigger is an always-relevant slice exceeding ~10–20K tokens. `buildBlock()` ships as simple heuristic selection (always-include core + topical facts on-topic; many turns need none); progression is heuristic → client-side embeddings (IndexedDB) → server-side vector store, the last only if cross-session memory becomes a headline feature (awkward in a no-backend app).
 
-**Decisions still open (need Ken):** size of first-cut Tier-A set; per-field "may share if I pick it" toggle for contact info vs. strict phrase-around; chunk size per session; whether B5 beliefs ships in this build; symbol/picture answers + supporter-assisted mode now or later.
+**Decisions resolved (Ken, June 14 2026) — these scope Build Step 1:**
+1. **First-cut Tier-A set: FULL.** Author all Concrete-Core fields from the question bank now (not a smaller starter). Plus a starter of Tier-C interests (per build order).
+2. **Contact info (A5): STRICT phrase-around for now.** Stored but never volunteered or shared in output. *Note / TODO:* add a per-field "assistant may share if I pick it" sharing control in a later build.
+3. **Chunk size: NO FIXED CHUNK.** No enforced per-session stopping point; user answers as many or as few as they like each sitting. (The "suggested next" from the gaps log still guides ordering.)
+4. **Tier-B beliefs (B5): DEFERRED** to a later build.
+5. **Symbol/picture answers + supporter-assisted mode: LATER.** Build Step 1 supports typed/selected text answers only.
+
+Also decided this session: the **type-and-speak composer** ("In My Own Words", § "Free Composition + Virtual Keyboard") is built alongside Build Step 1 as the manual worldview test pathway. See that section.
 
 **Next-session kickoff prompt:**
 > We're continuing the AI-Enabled AAC worldview questionnaire work. Read the "Worldview Questionnaire (June 2026)" section of CLAUDE.md and the two design docs in this folder: `Worldview-Questionnaire-Draft1.docx` (question bank) and `Worldview-Implementation-Plan.docx` (build-ready plan). Two phases this session.
@@ -183,6 +201,35 @@ The worldview model (Architecture Overview §6) now has a concrete questionnaire
 > Guardrails: do NOT touch the interim Name/About You Settings fields (they stay until Build Step 4). Honor declined/private at buildBlock time (never volunteer; phrase around). Gaps come from structured `missing_facts` in the generation response, not regex (plan §4) — that wiring is Build Step 3; for now just build the gaps add/list/clear API. Verify in the preview that worldview.js round-trips `worldview.json` through the data folder (set/decline/reset, buildBlock output, gaps add/list) before stopping. No commit or deploy unless I ask.
 
 ---
+
+## "In My Own Words" — Free Composition + Virtual Keyboard (June 2026) — decided, not yet built
+
+Free composition is one of the **invariants** (Configuration Model): the user must always have a path to type/compose something the AI did not generate and have the app speak it in the selected voice. The UI's **composer-access region** (UI-Design.docx four-region layout) is where this lives. "In my own words" is the user-facing name for that path.
+
+**Why this surfaced now:** to test the worldview Tier model (and any response shaping) by hand before the AI generation path exercises it, we need a manual way to compose an utterance and speak it. So the simple composer is no longer just a far-future nicety — it's the **test harness for worldview output** and is wanted alongside Build Step 1.
+
+### Settled decisions
+
+- **The keyboard is the easy part; voice + return-to-UI are essentially free.** Any keyboard (OS or in-app) just deposits text into a focused field in the page. The app then speaks it via the existing `tts.speak()` path (already uses the app-selected voice), and the app UI was never actually left. No integration risk on the "speak in the app's voice" / "return to the app" requirements regardless of keyboard choice.
+
+- **OS / browser keyboard cannot be reliably summoned, and is a black box — so it is a *fallback*, not the foundation.** Technical reality on a Windows tablet (Edge/Chrome):
+  - There is **no web API to programmatically launch the Windows touch keyboard.** It auto-appears only when an editable element (`input`/`textarea`/`contenteditable`) receives focus *and* the device is in a touch context. "Invoke from a button" therefore means "focus a text field and hope the OS pops the keyboard."
+  - On a Surface with the type cover attached (laptop mode) it often won't auto-pop at all. Behavior varies by tablet mode, Windows version, and browser.
+  - The Chromium **VirtualKeyboard API** (`navigator.virtualKeyboard.show()`) only manages an already-available keyboard's overlay; it still requires focus on an editable element. Not a reliable on-demand "open system keyboard" switch.
+  - It gives **zero control** over layout, key size, spacing, prediction, or access method — exactly the things that matter for a CP user's motor accessibility.
+
+- **The real path is an in-app virtual keyboard.** It is the only option that:
+  1. **Honors access-method independence** (engine emits a palette descriptor; renderers present it — direct select now, scanning / eye-gaze later). An OS keyboard can't participate in the future scanning renderer; an in-app keyboard *is* just another renderer.
+  2. **Unlocks AI-assisted composition** — type a few words → expand into a full sentence *in the user's voice* (worldview model); personalized word/phrase prediction. The OS keyboard can touch none of this.
+  3. Keeps visual + behavioral consistency (key sizing, triple-coding, dark mode, latency dots).
+
+### Build order (decided)
+
+1. **Type-and-speak composer — DONE (June 14 2026, not yet committed).** Added an "In your own words:" region to `index.html` (textarea + Speak + Clear), `ui.js` helpers (`onSpeakClick`/`onClearComposerClick`/`getComposerText`/`clearComposer`), and `handleSpeakComposed()` in `app.js` → `tts.speak()` in the selected voice. MVP behavior: speaks the composed text, guards empty/whitespace input, returns status to Listening/Ready. Works with whatever keyboard the OS offers (and a hardware keyboard in dev). This is the MVP realization of the free-composition invariant. **Deferred sub-decision (still open):** whether a spoken composed utterance should also be pushed into conversation history like a selected response (currently it is not). A "use system keyboard" affordance was not added (and must never be depended on for summoning the OS keyboard).
+2. **In-app virtual keyboard (later).** A real renderer: on-screen keys sized for direct select, integrated with the app's look and the future access-method renderers.
+3. **AI-assisted composition (later, after worldview lands).** Few-words → full-sentence expansion in the user's voice; personalized prediction.
+
+Open sub-questions deferred to build time: where the composer sits relative to the move palette (screen allocation — already an open UI question), and whether the type-and-speak composer should also push the spoken utterance into conversation history like a selected response.
 
 ## Versioning
 
@@ -201,6 +248,6 @@ Phase-to-version mapping (update as releases are tagged):
 
 ## Open Questions (remaining)
 - Response option UI layout: `UI-Design.docx` now specifies the four-region layout and move palette; remaining question is screen allocation between traditional AAC vocabulary and the AI-facilitated regions (composer-access region is the integration point; ultimately user-configurable per the Configuration Model)
-- Worldview questionnaire: design now complete — see the **Worldview Questionnaire (June 2026)** section above and `Worldview-Questionnaire-Draft1.docx` / `Worldview-Implementation-Plan.docx`. Remaining: the decisions-to-confirm listed there, then implementation (Build Step 1 is the next pick-up).
+- Worldview questionnaire: design complete and the five open decisions resolved (June 14 2026); **Build Step 1 (data model + registry) implemented and verified**. See the **Worldview Questionnaire (June 2026)** section. Next pick-up is Build Step 2 (questionnaire UI).
 - Placeholder utterances: currently drawn randomly from a static JSON file (app/data/placeholders.json). Predictable fillers will become a joke to communication partners over time. LLM-generated contextual fillers would sound more natural and could acknowledge the topic, but must be evaluated against token cost impact. The architecture already supports user-funded API keys, so any added cost is borne by the user. *Design now specified:* the filler ladder in `Conversation-Engine-Design.docx` §6 (rung 1 static token ≤1 s, rung 2 static-or-contextual, rung 3 re-fill); contextual fillers are the rung-2 LLM option in the Configuration Model. Remaining work is implementation and the token-cost evaluation.
 - TTS inflection: browser TTS has limited control (pitch, rate, volume on SpeechSynthesisUtterance). Natural-sounding placeholder delivery matters — monotone fillers will sound robotic. Voice banking / cloned voices (future) would give much better inflection control. Evaluate whether pitch/rate tweaks on fillers can improve naturalness in the near term.
