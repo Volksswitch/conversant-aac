@@ -418,8 +418,39 @@ Phase-to-version mapping (update as releases are tagged):
 
 ---
 
+## Conversation & Relationship Goals — three-layer model (design recorded June 15 2026; NOT built)
+
+**Ken's insight (June 15 2026):** everyone has goals for every conversation — consciously or not — from "maintain the connection with this person" to "steer the conversation toward X." Goals should be a first-class input to generation. The key framing: **"relationship goals" is really *three distinct things on three time horizons*,** and they map to three different stores — lumping them together is what makes it hard.
+
+**The three layers:**
+1. **Disposition** — how you generally are with people (durable, trait-level): "I keep things light," "I want to be seen as capable." Not tied to one person or conversation; the *prior/default stance*.
+2. **Standing relationship goal** — what you want from a *specific relationship* (durable, person-level): "stay close to my sister," "I want my boss to see me as competent." Stable across many conversations with that person.
+3. **Conversation goal** — what you want from *this exchange right now* (ephemeral, session-level): "today I need to ask Dad for help," "steer toward planning the trip." Set at/just-before conversation start, injected into that conversation's prompt, then discarded.
+
+**Mapping to existing stores (two of three already have a home):**
+| Layer | Store | Notes |
+|---|---|---|
+| Disposition | `worldview.json` **Tier-B** (how you treat different people, register/values) | Exactly what Tier-B is for; designed, not yet built. |
+| Standing relationship goal | `relationships.json` **edge `attrs`** (e.g. `attrs.goals`) | **Clean fit today, no schema change** — a goal is an attribute of the `me→person` edge. |
+| Conversation goal | **Session runtime** (Conversation Engine state), optionally appended to the `conversations/*.json` log for Phase-3 review | Genuinely new, but it's runtime state, **not a new persistent store**. |
+
+**Recording mechanism (per layer):**
+- Standing relationship goal → a **"what I want from this relationship"** control in the **People editor** (the one built in v0.2.27), writing to the edge `attrs`.
+- Conversation goal → set at **conversation initiation** (pairs with Phase-1 canned starters and Phase-2 partner recognition — "you're talking to Dad; what do you want from this?"), with a quick mid-conversation control (fits the persistent-controls region); stored in session memory.
+- Disposition → Tier-B questionnaire when built.
+- **Expression format — DECIDED (Ken, June 15 2026): curated menu + free text.** A short list of common goals (stay close / be understood / be seen as capable / keep it light / get support / repair things) **plus** an "in my own words" option — fast to pick (matters for the CP target user) yet still personal. (Not menu-only, not free-text-only.)
+
+**Why it matters / how it's used:** goals shape and **rank the four-slot move palette** (PREFERRED / DISPREFERRED / INITIATIVE / REPAIR): "maintain connection" → favor affiliative PREFERRED; "steer toward X" → surface a high-ranked INITIATIVE toward X; "wind down" → favor PRE-CLOSING. They become explicit generation inputs, **layered most-specific-wins** exactly like the prompt blocks already are: disposition (worldview) → standing relationship goal (graph) → conversation goal (session).
+
+**Nice property:** goals are **never spoken** — they only steer generation — so they sidestep the privacy machinery entirely (unlike facts, a goal can't be accidentally said aloud).
+
+**Status:** design recorded; expression format decided (curated menu + free text). **Build deferred** (Ken: "just record the design") — revisit when the conversation-engine work matures. Standing relationship goals are the smallest first build when we resume (they slot straight onto the existing graph edge + People editor).
+
+---
+
 ## Open Questions (remaining)
-- **Relationship data restructure — BUILT (v0.2.27):** `relationships.json` graph model, People editor in About Me, LLM injection, one-time A3 migration. See the **Relationship Data** section above. Remaining refinements: per-person richer attrs, person↔person edge editing in the UI, and confirming on-disk persistence on the tablet.
+- **Relationship data restructure — BUILT (v0.2.27):** `relationships.json` graph model, People editor in About Me, LLM injection. See the **Relationship Data** section above. Remaining refinements: per-person richer attrs, person↔person edge editing in the UI, and confirming on-disk persistence on the tablet.
+- **Conversation & relationship goals — design recorded, not built:** three-layer model (disposition → standing relationship goal → conversation goal) mapping to worldview Tier-B / `relationships.json` edges / session runtime; expression = curated menu + free text. See the **Conversation & Relationship Goals** section above. Standing relationship goals are the smallest first build (slot onto the existing graph edge + People editor).
 - Response option UI layout: `UI-Design.docx` now specifies the four-region layout and move palette; remaining question is screen allocation between traditional AAC vocabulary and the AI-facilitated regions (composer-access region is the integration point; ultimately user-configurable per the Configuration Model)
 - Worldview questionnaire: design complete and the five open decisions resolved (June 14 2026); **Build Steps 1–4 implemented and verified — core worldview feature complete** (data model + registry, questionnaire UI, LLM integration, interim Name/About You removed). See the **Worldview Questionnaire (June 2026)** section. Remaining steps (5 expand Tier-B/C content, 6 RAG-lite) are enhancements.
 - Placeholder utterances: currently drawn randomly from a static JSON file (app/data/placeholders.json). Predictable fillers will become a joke to communication partners over time. LLM-generated contextual fillers would sound more natural and could acknowledge the topic, but must be evaluated against token cost impact. The architecture already supports user-funded API keys, so any added cost is borne by the user. *Design now specified:* the filler ladder in `Conversation-Engine-Design.docx` §6 (rung 1 static token ≤1 s, rung 2 static-or-contextual, rung 3 re-fill); contextual fillers are the rung-2 LLM option in the Configuration Model. Remaining work is implementation and the token-cost evaluation.
