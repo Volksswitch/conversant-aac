@@ -122,44 +122,43 @@ async function save() {
  * Reconcile the localStorage cache with the data folder once a folder
  * becomes available. Call this right after a folder is granted/restored.
  *
- * While no folder is granted, answers persist only in the localStorage
- * cache. The moment a folder is available we must promote that cache to the
- * portable worldview.json so the data stops being machine-local. If a file
- * already exists on disk (e.g. a returning folder), the newer of {disk,
- * cache} by `updated` wins to avoid clobbering more-recent edits from either
- * side; the winner is written through to both stores and becomes the
- * in-memory profile. Returns 'wrote' | 'adopted' | 'noop'.
+ * The file in the data folder is the source of truth — the folder is the
+ * portable profile, the localStorage cache is only a same-machine mirror and a
+ * stopgap for when no folder is granted. So the rule is simple and predictable
+ * (Ken, June 15 2026): **if a worldview.json is present in the connected
+ * folder, that file wins — always.** Copying a profile in from another machine
+ * therefore just works; the file is never entered into a timestamp contest
+ * against the browser cache and is never overwritten by it. The cache is
+ * promoted to disk only when there is NO file on disk yet (answers entered
+ * before a folder was ever granted). The winner is written through to both
+ * stores and becomes the in-memory profile. Returns 'wrote' | 'adopted' |
+ * 'noop'.
+ *
+ * Trade-off (accepted): answers entered while a folder was disconnected, then
+ * re-connecting a folder that already holds a file, are dropped in favor of the
+ * file. A future "this folder and this browser differ — which do you want?"
+ * prompt is the way to make that case loss-free.
  */
 export async function syncToFolder() {
     if (!hasDataFolder()) return 'noop';   // nothing to sync to yet
 
-    const cache = readCache();
     const raw = await readFile(PROFILE_FILE);
     let disk = null;
     if (raw) { try { disk = JSON.parse(raw); } catch { disk = null; } }
 
-    if (!disk) {
-        // No portable file yet — promote whatever we have to disk.
-        profile = normalize(cache || profile || defaultProfile());
-        await save();
-        return 'wrote';
-    }
-    if (!cache) {
+    if (disk) {
+        // A file in the connected folder is the source of truth — adopt it,
+        // mirror it to the cache. Never let the cache overwrite it.
         profile = normalize(disk);
         writeCache(profile);
         return 'adopted';
     }
 
-    const diskTime = Date.parse(disk.updated) || 0;
-    const cacheTime = Date.parse(cache.updated) || 0;
-    if (cacheTime > diskTime) {
-        profile = normalize(cache);
-        await save();                      // local edits are newer — persist them
-        return 'wrote';
-    }
-    profile = normalize(disk);
-    writeCache(profile);
-    return 'adopted';
+    // No portable file yet — promote whatever the cache holds to disk so the
+    // data stops being machine-local.
+    profile = normalize(readCache() || profile || defaultProfile());
+    await save();
+    return 'wrote';
 }
 
 // --- Field state ------------------------------------------------------------
