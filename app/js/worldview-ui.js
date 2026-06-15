@@ -274,6 +274,20 @@ function buildPersonCard(p) {
     return card;
 }
 
+// Standard relationships offered in the People editor, grouped for scanning.
+// "Other…" reveals a free-text field. One relationship per person for now
+// (the data model stores a single me->person edge); multiple relationships
+// with one person — e.g. "cousin" + "wife" — is a deliberate later refinement.
+const REL_GROUPS = [
+    { label: 'Family', items: ['Mother', 'Father', 'Sister', 'Brother', 'Daughter', 'Son', 'Grandmother', 'Grandfather', 'Aunt', 'Uncle', 'Cousin', 'Niece', 'Nephew'] },
+    { label: 'Partner', items: ['Wife', 'Husband', 'Partner'] },
+    { label: 'Friends & social', items: ['Friend', 'Best friend', 'Roommate', 'Neighbor', 'Classmate', 'Coworker'] },
+    { label: 'Care & support', items: ['Caregiver', 'Support worker', 'Teacher', 'Boss', 'Doctor', 'Therapist'] },
+    { label: 'Pet', items: ['Pet'] }
+];
+const REL_KNOWN = new Set(REL_GROUPS.flatMap((g) => g.items.map((s) => s.toLowerCase())));
+const OTHER = '__other__';
+
 // Edit form for an existing person, or the blank "add someone" form when
 // `existing` is null.
 function buildPersonForm(existing) {
@@ -281,8 +295,34 @@ function buildPersonForm(existing) {
 
     const nameIn = el('input', { type: 'text', class: 'wv-text', placeholder: 'Name',
         value: existing ? existing.name : '' });
-    const relIn = el('input', { type: 'text', class: 'wv-text', placeholder: 'Relationship (mother, friend, dog…)',
-        value: existing ? existing.relationship : '' });
+
+    // Relationship — standard list + "Other…" (free text).
+    const relSelect = el('select', { class: 'wv-select' });
+    relSelect.append(el('option', { value: '' }, 'Relationship…'));
+    for (const g of REL_GROUPS) {
+        const og = el('optgroup', { label: g.label });
+        for (const it of g.items) og.append(el('option', { value: it }, it));
+        relSelect.append(og);
+    }
+    relSelect.append(el('option', { value: OTHER }, 'Other…'));
+
+    const otherIn = el('input', { type: 'text', class: 'wv-text', placeholder: 'Relationship (your words)' });
+    const otherWrap = el('div', { class: 'wv-rel-other' }, [otherIn]);
+    const syncOther = () => { otherWrap.style.display = relSelect.value === OTHER ? '' : 'none'; };
+    relSelect.addEventListener('change', syncOther);
+
+    if (existing && existing.relationship) {
+        const r = existing.relationship;
+        if (REL_KNOWN.has(r.toLowerCase())) {
+            relSelect.value = REL_GROUPS.flatMap((g) => g.items).find((s) => s.toLowerCase() === r.toLowerCase());
+        } else {
+            relSelect.value = OTHER;
+            otherIn.value = r;
+        }
+    }
+    syncOther();
+    const getRelationship = () => (relSelect.value === OTHER ? otherIn.value.trim() : relSelect.value);
+
     const aboutIn = el('input', { type: 'text', class: 'wv-text', placeholder: 'Anything worth knowing (optional)',
         value: existing ? existing.about : '' });
 
@@ -293,12 +333,12 @@ function buildPersonForm(existing) {
         privCheck, el('span', { text: 'Private — never name this person' })
     ]);
 
-    card.append(el('div', { class: 'wv-person-fields' }, [nameIn, relIn, aboutIn, privRow]));
+    card.append(el('div', { class: 'wv-person-fields' }, [nameIn, relSelect, otherWrap, aboutIn, privRow]));
 
     const save = el('button', { class: 'wv-btn wv-btn-primary', text: existing ? 'Save' : 'Add person',
         onclick: async () => {
             const name = nameIn.value.trim();
-            const relationship = relIn.value.trim();
+            const relationship = getRelationship();
             if (!name && !relationship) return;   // nothing to save
             if (existing) {
                 await rel.updatePerson(existing.id, { name, relationship, about: aboutIn.value.trim(), isPrivate: privCheck.checked });

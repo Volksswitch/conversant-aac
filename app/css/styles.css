@@ -931,6 +931,16 @@ label.radio-label input[type="radio"] {
     flex: 1 1 40%;
 }
 
+.wv-select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-family: inherit;
+    background: #fff;
+}
+
 .wv-entry-list {
     margin-bottom: 0.5rem;
 }
