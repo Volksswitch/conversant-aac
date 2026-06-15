@@ -639,6 +639,33 @@ label.radio-label input[type="radio"] {
     font-size: 0.95rem;
 }
 
+/* Wide, high-contrast scrollbars for the long scroll areas — far easier to grab
+   for users with limited motor control (Ken, June 2026). Chromium (Edge/Chrome,
+   the Surface browsers) honours ::-webkit-scrollbar width. */
+#worldviewContent::-webkit-scrollbar,
+#settingsContent::-webkit-scrollbar {
+    width: 22px;
+}
+
+#worldviewContent::-webkit-scrollbar-track,
+#settingsContent::-webkit-scrollbar-track {
+    background: #e2e6ea;
+}
+
+#worldviewContent::-webkit-scrollbar-thumb,
+#settingsContent::-webkit-scrollbar-thumb {
+    background: #8a97a4;
+    border-radius: 11px;
+    border: 3px solid #e2e6ea;   /* track-coloured inset around the thumb */
+}
+
+#worldviewContent::-webkit-scrollbar-thumb:hover,
+#worldviewContent::-webkit-scrollbar-thumb:active,
+#settingsContent::-webkit-scrollbar-thumb:hover,
+#settingsContent::-webkit-scrollbar-thumb:active {
+    background: #66727e;
+}
+
 #worldviewContent {
     flex: 1;
     overflow-y: auto;
@@ -1109,9 +1136,12 @@ body.kbd-open.kbd-dock-bottom #worldviewContent {
 }
 
 /* Side dock reserves horizontal space on the About Me SCREEN (so both the
-   header and the centred content column clear the keyboard, on either side). */
+   header and the content clear the keyboard, on either side). The extra 1.5rem
+   on the keyboard-on-right case keeps the (right-edge) scrollbar from hugging
+   the keys, so reaching for it can't accidentally hit a key. (Keyboard-on-left
+   is fine — the scrollbar stays on the far right, away from the keyboard.) */
 body.kbd-open.kbd-dock-side.kbd-side-right #worldviewScreen {
-    padding-right: min(26rem, 46vw);
+    padding-right: calc(min(26rem, 46vw) + 1.5rem);
 }
 
 body.kbd-open.kbd-dock-side.kbd-side-left #worldviewScreen {
