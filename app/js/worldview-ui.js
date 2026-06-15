@@ -19,6 +19,7 @@ import * as wv from './worldview.js';
 import * as rel from './relationships.js';
 import { speak } from './tts.js';
 import * as storage from './storage.js';
+import { confirmDanger } from './confirm-dialog.js';
 
 let screenEl, contentEl, titleEl;
 
@@ -203,7 +204,13 @@ function renderHome() {
 }
 
 async function onRestart() {
-    if (!confirm('Clear every answer, including people, and start over? This cannot be undone.')) return;
+    const ok = await confirmDanger({
+        title: 'Clear everything?',
+        body: 'This permanently deletes every answer and all the people you have added. This cannot be undone.',
+        confirmLabel: 'Yes, clear it all',
+        cancelLabel: 'Keep my answers'
+    });
+    if (!ok) return;
     await wv.resetAll();
     await rel.resetAll();
     renderHome();
@@ -266,7 +273,13 @@ function buildPersonCard(p) {
         el('button', { class: 'wv-btn wv-btn-link', text: 'Edit', onclick: () => renderPeople(p.id) }),
         el('button', { class: 'wv-btn wv-btn-link', text: 'Remove',
             onclick: async () => {
-                if (!confirm(`Remove ${p.name || 'this person'}?`)) return;
+                const ok = await confirmDanger({
+                    title: `Remove ${p.name || 'this person'}?`,
+                    body: 'This removes them and your relationship from your profile. This cannot be undone.',
+                    confirmLabel: 'Remove',
+                    cancelLabel: 'Cancel'
+                });
+                if (!ok) return;
                 await rel.removePerson(p.id);
                 renderPeople();
             } })

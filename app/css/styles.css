@@ -931,6 +931,85 @@ label.radio-label input[type="radio"] {
     flex: 1 1 40%;
 }
 
+/* Danger confirmation modal — deliberately distinct from routine/permission
+   dialogs so a destructive action reads as dangerous (Ken, June 15 2026). */
+.danger-dialog {
+    border: none;
+    border-top: 6px solid #c62828;
+    border-radius: 10px;
+    padding: 1.5rem;
+    max-width: 26rem;
+    width: calc(100vw - 2rem);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    font-family: inherit;
+}
+
+.danger-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.danger-head {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.75rem;
+}
+
+.danger-mark {
+    font-size: 1.6rem;
+    line-height: 1;
+    color: #c62828;
+}
+
+.danger-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #c62828;
+}
+
+.danger-body {
+    margin: 0 0 1.25rem;
+    color: #333;
+    line-height: 1.5;
+}
+
+.danger-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+}
+
+.danger-cancel,
+.danger-confirm {
+    padding: 0.7rem 1.1rem;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.danger-cancel {
+    background: #f0f0f0;
+    border: 1px solid #ccc;
+    color: #333;
+}
+
+.danger-confirm {
+    background: #c62828;
+    border: 1px solid #c62828;
+    color: #fff;
+}
+
+.danger-confirm:hover {
+    background: #b71c1c;
+}
+
+.danger-cancel:hover {
+    background: #e4e4e4;
+}
+
 .wv-select {
     width: 100%;
     padding: 0.5rem;
