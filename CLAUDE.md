@@ -446,7 +446,12 @@ Phase-to-version mapping (update as releases are tagged):
 
 **Nice property:** goals are **never spoken** — they only steer generation — so they sidestep the privacy machinery entirely (unlike facts, a goal can't be accidentally said aloud).
 
-**Status:** design recorded; expression format decided (curated menu + free text). **Build deferred** (Ken: "just record the design") — revisit when the conversation-engine work matures. Standing relationship goals are the smallest first build when we resume (they slot straight onto the existing graph edge + People editor).
+**Open sub-questions (not yet decided — pin before building, so they aren't silently assumed):**
+1. **Single vs. multiple goals per layer.** The mapping sketches `attrs.goals` (plural), but we only decided single-*relationship* (the relationship picker). Whether a relationship or a conversation can hold more than one goal at once is undecided. (Parallels the single-relationship-per-person call.)
+2. **User-set vs. system-suggested goals.** Everything here assumes the user sets the goal explicitly. Whether the system may ever *infer/suggest* a goal (from partner recognition, history, etc.) is open — current default is explicit/user-set only.
+3. **Per-person vs. relationship-type goals.** "With authority figures I want to seem competent" is a goal on a relationship *type*, not one person. The graph stores `type` on the edge, not as its own node, so type-level goals would need a convention (or a small types table). For now goals would attach per-person only.
+
+**Status:** design recorded; expression format decided (curated menu + free text); three sub-questions above left open. **Build deferred** (Ken: "just record the design") — revisit when the conversation-engine work matures. Standing relationship goals are the smallest first build when we resume (they slot straight onto the existing graph edge + People editor).
 
 ---
 
