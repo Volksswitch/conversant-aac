@@ -19,6 +19,7 @@ import * as wv from './worldview.js';
 import * as rel from './relationships.js';
 import { speak } from './tts.js';
 import * as storage from './storage.js';
+import * as keyboard from './keyboard.js';
 import { confirmDanger } from './confirm-dialog.js';
 
 let screenEl, contentEl, titleEl;
@@ -105,6 +106,9 @@ export async function open() {
 }
 
 export function close() {
+    // The keyboard is kept up when focus moves to in-screen buttons (so Save
+    // doesn't dismiss it); take it down explicitly now that About Me is closing.
+    keyboard.hideKeyboard();
     setBackgroundInert(false);
     screenEl.classList.add('hidden');
 }
@@ -143,6 +147,10 @@ function renderFolderPrompt() {
 }
 
 function renderHome() {
+    // The home list has no text field; if the keyboard was kept up while
+    // navigating out of a module (focus moved to a Back/Done button), take it
+    // down here so it doesn't float over the topic list.
+    keyboard.hideKeyboard();
     titleEl.textContent = 'About Me';
     contentEl.scrollTop = 0;
     contentEl.innerHTML = '';

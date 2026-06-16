@@ -14,7 +14,7 @@ import { SIDE_LAYOUTS, BOTTOM_LAYOUTS } from './keyboard-layouts.js';
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.3.5';
+const APP_VERSION = '0.3.6';
 
 const conversationHistory = [];
 let isListening = false;
@@ -85,7 +85,17 @@ function initApp() {
     // dialog 'close' event proved unreliable here). The panel nudge is pure CSS
     // (driven by the keyboard's body classes), so nothing to clean up there.
     const settingsDialog = document.getElementById('settingsDialog');
-    settingsDialog.addEventListener('cancel', () => { keyboard.previewHide(); resetSettingsPosition(); });
+    settingsDialog.addEventListener('cancel', () => {
+        // Mirror the Close button: persist the API key (covers paste paths that
+        // didn't fire `input`) and take the keyboard fully down.
+        const apiKeyInput = document.getElementById('apiKeyInput');
+        if (apiKeyInput) {
+            const key = apiKeyInput.value.trim();
+            if (key !== (storage.loadApiKey() || '')) { llm.setApiKey(key); storage.saveApiKey(key); }
+        }
+        keyboard.hideKeyboard();
+        resetSettingsPosition();
+    });
     // When the keyboard's dock/side changes, re-snap a dragged panel so it
     // clears the keyboard again (the CSS auto-position then takes over).
     document.addEventListener('kbd-dock-change', () => resetSettingsPosition());
@@ -696,7 +706,19 @@ function openSettings() {
     subsequentDelayInput.onchange = persistPlaceholders;
 
     document.getElementById('closeSettingsBtn').onclick = () => {
-        keyboard.previewHide();
+        // Belt-and-suspenders: persist the API key from the field on Close.
+        // `oninput` already saves on every keystroke/paste, but some paste paths
+        // (e.g. autofill, or an OS paste that doesn't dispatch `input`) can leave
+        // the field populated yet unsaved — Ken's bug 1. Saving here guarantees
+        // whatever is in the field when the user closes Settings is persisted.
+        const key = apiKeyInput.value.trim();
+        if (key !== (storage.loadApiKey() || '')) {
+            llm.setApiKey(key);
+            storage.saveApiKey(key);
+        }
+        // The keyboard is now kept up when focus moves to in-dialog controls, so
+        // take it down explicitly on close (covers both real-typing and preview).
+        keyboard.hideKeyboard();
         resetSettingsPosition();
         dialog.close();
     };

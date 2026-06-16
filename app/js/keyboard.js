@@ -413,6 +413,14 @@ export function init() {
         // next focusin) — keys preventDefault, so typing never fires this.
         const next = e.relatedTarget;
         if (next && (isScoped(next) || (rootEl && rootEl.contains(next)))) return;
+        // Keep the keyboard up when focus moves to a control WITHIN the panel the
+        // keyboard is serving (a Save/action button in About Me, a control in
+        // Settings). Tapping such a button must not (a) hide the keyboard — Ken's
+        // bug 2 — nor (b) reflow the layout out from under the tap, which steals
+        // the first click and forces a second press — Ken's bug 3. The panels'
+        // own close paths (worldview close(), Settings Close) hide the keyboard
+        // explicitly, so it doesn't linger after the panel is dismissed.
+        if (next && next.closest && next.closest('#worldviewScreen, #settingsDialog')) return;
         if (previewing) return;   // keep the Settings layout-preview keyboard up
         hide();
     });
@@ -465,6 +473,15 @@ export function previewHide() {
     if (!previewing) return;
     previewing = false;
     if (!activeField) hide();
+}
+
+// Programmatically dismiss the keyboard (used by a panel's close path, where we
+// keep the keyboard up when focus moves to in-panel buttons but must take it
+// down once the panel itself closes). Unlike the toolbar Hide button this does
+// not suppress the next click — the caller is already closing the panel.
+export function hideKeyboard() {
+    previewing = false;
+    hide();
 }
 
 export function getMode() {
