@@ -193,6 +193,20 @@ Two defects Ken found running the live conversation-engine test suite, with **Ke
 
 CACHE_VERSION/APP_VERSION → **`0.3.4`**. **Verified in preview** (no mic/speaker — the acoustic loop itself needs the tablet): app boots clean, no console errors; `tts.onSpeakingChange` broadcasts the spoken text; the `isEcho` matching table passes for all echo cases (exact/prefix/padded filler, ACK token, noise) **and** all genuine-partner cases pass through (including "okay so what do you think" and "right after lunch we left"). *Still to confirm on the test tablet with the mic on: that real placeholder TTS is no longer transcribed back into the partner turn, and that the first placeholder now lands at the user's `initialDelay`.*
 
+**Acknowledgment-token cleanup (Ken, June 16 2026), v0.3.5.** Ken flagged that "Okay." is a poor rung-1 token — it's a common *real* response to a greeting, so a partner hears it as the user's actual reply, not a stall (and being a short common word it also makes TTS-echo filtering fragile). Removed the response-like tokens from `ACK_TOKENS` ("Okay.", "Right.", "I see."); kept only clearly-stalling ones ("Hmm.", "Ah.", "Good question.", "Let me think.", "Oh.", "Mm.", "Well…"). **Design principle for fillers going forward: a placeholder must read as floor-holding "I'm thinking," never as a substantive answer.** The filler set is user-owned/configurable later (Configuration Model); this is just a better default.
+
+### Single-instance enforcement — design question (Ken, June 16 2026; my recommendation, NOT built)
+
+Ken asked whether we can prevent multiple instances/launches of the app. **Yes, and it matters for this app specifically:** two live instances (two tabs/windows) each run their own mic + TTS, so instance A's spoken placeholder is captured by instance B's mic — **cross-instance feedback the v0.3.4 content-echo filter cannot catch** (B doesn't know what A said). Two instances also race on the FSA data-folder writes (`worldview.json` / `relationships.json` / conversation logs) and can double-speak. So single-instance is a robustness requirement, not just polish.
+
+**Recommended approach (two layers, covers the realistic cases on a dedicated Surface in one browser):**
+1. **Web Locks API (`navigator.locks.request`) for detection + a blocking "already open" screen.** On startup request an exclusive named lock (e.g. `aac-single-instance`) held for the page's lifetime via a never-resolving promise. The first instance gets it; later instances' requests stay pending → they detect another instance holds it and show a full-screen "AAC is already running in another window — switch to it" overlay instead of starting the mic/engine. Well-supported in Edge/Chrome (Chromium). Covers multiple tabs *and* windows in the same browser profile.
+2. **PWA `launch_handler: { client_mode: "focus-existing" }` in the manifest** so re-*launching* the installed app focuses the running window rather than spawning a new one (the app is intended to be installed app-style on the Surface). Complements layer 1, which still backstops a manually-opened second tab.
+
+**Boundary / limitation:** web APIs can't coordinate across *different* browser profiles or *different* browsers (Edge AND Chrome both open) — they don't share locks/localStorage/BroadcastChannel. On a dedicated device using one browser this is an acceptable boundary; if it ever matters, an FSA folder lock-file (write a PID/heartbeat into the data folder, stale-timeout to recover from crashes) is the only cross-browser option and is heavier/more fragile. *Not built — awaiting Ken's go-ahead. When built: bump version, add to the privacy/consent behavior already in flight, and note the cross-browser boundary in the docs.*
+
+**Future: partner voice recognition as an extraneous-speech filter (Ken, June 16 2026).** When Phase-2 partner recognition lands, real-time speaker identification could filter out speech that isn't the recognized communication partner (the app's own TTS, bystanders, background voices) — a more general solution than content-matching the app's own fillers. Records alongside the v0.3.4 echo filter as the eventual upgrade path; the content filter is the no-extra-infrastructure stopgap until then. **[→ Overview To Do — Phase 2 partner recognition / privacy section]**
+
 ---
 
 ## Worldview Questionnaire (June 2026) — Build Steps 1–4 DONE; core build complete
@@ -440,6 +454,7 @@ Phase-to-version mapping (update as releases are tagged):
 | 0.2.32  | 1     | Start Listening gating: never auto-listens at startup; auto-resume fires only after the user manually starts listening at least once this session (`manualListenArmed`), and a manual Stop re-arms the requirement |
 | 0.3.0   | 1     | Conversation Engine (Phase-1 full mode set: sequence stack, five modes, four-slot move palette, REPAIR-OF-SELF, persistent overrides, §6 filler ladder, §9 combined classify+generate contract) behind a degenerate diagnostic UI; no transcript-confirmation gate (generation fires on the silence period) |
 | 0.3.4   | 1     | Test-suite Pass-1 fixes: filler ladder honors the user's Settings (first placeholder lands `initialDelay`s after the partner stops; re-fills every `subsequentDelay`s — was hardcoded 0.8s/1.7s); STT discards its own TTS echo by content match (mic stays on) so placeholder speech no longer renews the partner's turn, delays, or abandons the generated responses |
+| 0.3.5   | 1     | Removed response-like acknowledgment tokens ("Okay.", "Right.", "I see.") from the rung-1 filler set — they read as the user's actual reply (e.g. to a greeting), not a stall, and are fragile for echo filtering |
 
 ---
 

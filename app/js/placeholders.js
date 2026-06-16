@@ -20,10 +20,14 @@ import * as storage from './storage.js';
  */
 
 // Rung 1 — short acknowledgment tokens. Inline (no fetch) so no round-trip
-// delays the first placeholder.
+// delays the first placeholder. These must read as floor-holding "I'm
+// thinking" sounds, NOT as substantive replies: a token like "Okay." / "Right."
+// / "I see." would be taken by the partner as the user's actual answer (e.g. to
+// a greeting), and being short common words they also make TTS-echo filtering
+// fragile. Keep only clearly-stalling tokens. (Ken, June 16 2026.)
 const ACK_TOKENS = [
-    'Hmm.', 'Ah.', 'Good question.', 'Right.', 'Okay.', 'Let me think.',
-    'Oh.', 'Mm.', 'I see.', 'Well…',
+    'Hmm.', 'Ah.', 'Good question.', 'Let me think.',
+    'Oh.', 'Mm.', 'Well…',
 ];
 
 // Floor for the rung-1 delay when the initial-delay setting is at/below the
