@@ -89,6 +89,15 @@ export function setStatus(message) {
 export function setListenButtonState(listening) {
     listenBtn.textContent = listening ? 'Stop Listening' : 'Start Listening';
     listenBtn.classList.toggle('listening', listening);
+    // Mic capture is an I/O state, separate from the engine's CA mode — surface
+    // it on its own row so "Mode: LISTENING" (the engine's resting mode) isn't
+    // misread as "the microphone is on".
+    const cap = document.getElementById('engineCapture');
+    if (cap) {
+        cap.textContent = listening ? 'on' : 'off';
+        cap.classList.toggle('capture-on', listening);
+        cap.classList.toggle('capture-off', !listening);
+    }
 }
 
 export function onListenClick(handler) {
