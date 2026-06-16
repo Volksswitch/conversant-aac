@@ -53,9 +53,30 @@ const engineEls = {
     lastUser: document.getElementById('engineLastUser'),
 };
 
+// The Mode cell depends on BOTH the engine snapshot and the mic-capture state:
+// when the engine is genuinely at rest we show "STANDBY" instead of the engine's
+// resting "LISTENING" (which otherwise reads as if the mic were live). This is a
+// presentation-only relabel — the engine's internal mode stays LISTENING. Kept
+// as a separate helper because either input (snapshot or capture) can change
+// independently and must re-render the cell.
+let lastSnap = null;
+let capturing = false;
+
+function renderModeCell() {
+    if (!engineEls.mode || !lastSnap) return;
+    const s = lastSnap;
+    const atRest = !capturing
+        && s.mode === 'LISTENING'
+        && (s.floor || 'open') === 'open'
+        && (!s.sequenceStack || s.sequenceStack.length === 0)
+        && (!s.palette || s.palette.length === 0);
+    engineEls.mode.textContent = atRest ? 'STANDBY' : s.mode;
+}
+
 export function showEngineState(snap) {
     if (!snap) return;
-    engineEls.mode.textContent = snap.mode;
+    lastSnap = snap;
+    renderModeCell();
     engineEls.phase.textContent = snap.phase;
     if (engineEls.floor) {
         const floor = snap.floor || 'open';
@@ -104,6 +125,10 @@ export function setListenButtonState(listening) {
         cap.classList.toggle('capture-on', listening);
         cap.classList.toggle('capture-off', !listening);
     }
+    // Mic state feeds the STANDBY-vs-LISTENING relabel — re-render the Mode cell
+    // so it flips the instant capture toggles, not only on the next snapshot.
+    capturing = listening;
+    renderModeCell();
 }
 
 export function onListenClick(handler) {
