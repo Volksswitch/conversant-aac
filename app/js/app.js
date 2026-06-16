@@ -14,7 +14,7 @@ import { SIDE_LAYOUTS, BOTTOM_LAYOUTS } from './keyboard-layouts.js';
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.3.3';
+const APP_VERSION = '0.3.4';
 
 const conversationHistory = [];
 let isListening = false;
@@ -46,6 +46,15 @@ function initApp() {
         onResult: handleSpeechResult,
         onSilence: handleSilencePeriod,
         onStatus: handleSttStatus
+    });
+
+    // Tell the STT layer what the app is speaking so it can discard its own TTS
+    // echo (filler ladder, prompts) instead of mistaking it for the partner and
+    // renewing the partner's turn. The mic stays on throughout — only matching
+    // echo content is dropped.
+    tts.onSpeakingChange((speaking, text) => {
+        if (speaking) stt.noteSpokenStart(text);
+        else stt.noteSpokenEnd();
     });
 
     document.getElementById('startBtn').addEventListener('click', handleStart);
