@@ -362,6 +362,15 @@ function visible() {
     return rootEl && !rootEl.classList.contains('hidden');
 }
 
+// Is a panel the keyboard serves (About Me / Settings) currently open? Used to
+// keep the keyboard up when an in-panel button (Save, etc.) blurs the field —
+// see the focusout handler. Robust where `relatedTarget` isn't the button.
+function servingPanelOpen() {
+    const dlg = document.getElementById('settingsDialog');
+    const wv = document.getElementById('worldviewScreen');
+    return !!((dlg && dlg.open) || (wv && !wv.classList.contains('hidden')));
+}
+
 function show(field) {
     activeField = field;
     setDock(dockFor(field));
@@ -413,14 +422,17 @@ export function init() {
         // next focusin) — keys preventDefault, so typing never fires this.
         const next = e.relatedTarget;
         if (next && (isScoped(next) || (rootEl && rootEl.contains(next)))) return;
-        // Keep the keyboard up when focus moves to a control WITHIN the panel the
-        // keyboard is serving (a Save/action button in About Me, a control in
-        // Settings). Tapping such a button must not (a) hide the keyboard — Ken's
-        // bug 2 — nor (b) reflow the layout out from under the tap, which steals
-        // the first click and forces a second press — Ken's bug 3. The panels'
-        // own close paths (worldview close(), Settings Close) hide the keyboard
-        // explicitly, so it doesn't linger after the panel is dismissed.
-        if (next && next.closest && next.closest('#worldviewScreen, #settingsDialog')) return;
+        // Keep the keyboard up while a panel it serves (About Me / Settings) is
+        // still open. Tapping an in-panel button (Save, etc.) blurs the field,
+        // but on many browsers — especially touch — the button does NOT become
+        // `relatedTarget`, so we can't rely on it. Keeping the keyboard whenever
+        // the serving panel is open is robust and matches the desired behavior:
+        // - it must not hide on Save (Ken's bug 2), and
+        // - it must not reflow the layout out from under the tap, which steals
+        //   the first click and forces a second Save press (Ken's bug 3).
+        // The panels' explicit close paths (worldview close(), Settings
+        // Close/Escape, renderHome) and the Hide button take it down.
+        if (servingPanelOpen()) return;
         if (previewing) return;   // keep the Settings layout-preview keyboard up
         hide();
     });
