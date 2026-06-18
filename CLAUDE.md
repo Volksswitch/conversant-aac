@@ -415,7 +415,12 @@ CACHE_VERSION → `aac-v0.2.9`; APP_VERSION → `0.2.9`. **Verified in preview:*
 
 ## Versioning
 
-Format: **major.minor** (e.g., `0.1`, `0.2`). All pre-release versions use major `0`. The decision to increment to `1.0` or beyond is made jointly by Ken and Claude Code based on maturity and readiness.
+Format: **major.minor.patch** (e.g., `0.3.8`). All pre-release versions use major `0`.
+
+**When to bump which digit (agreed Ken, June 18 2026):**
+- **Patch (third digit)** — the default for almost everything: bug fixes, refinements to existing behavior, and small self-contained features that *extend* the existing feature set. Mental test: "Is this changing or fixing how an existing capability works?" → patch.
+- **Minor (second digit)** — reserved for a substantial **new architectural layer or subsystem** that later work builds on (e.g. `0.2` continuous partner capture; `0.3.0` the Conversation Engine). The bar is deliberately high: "new layer," not just "new feature" — the worldview questionnaire and relationship graph shipped as `0.2.x` patches because they slotted into the existing app rather than restructuring it. Roughly aligns with crossing a Phase boundary or adding a Phase's defining capability. Mental test: "Did this add a genuinely new subsystem the app didn't have before?" → minor.
+- **Major (`1.0` and beyond)** — **Ken's call alone** (Ken, June 18 2026), based on maturity and readiness. Claude Code does not make the 0.x→1.0 transition without Ken explicitly directing it.
 
 **Release publishing is always public.** GitHub releases for this project are public by standing decision — Claude Code is authorized to push tags and publish releases publicly without pausing for confirmation. (Ken, June 2026.)
 
