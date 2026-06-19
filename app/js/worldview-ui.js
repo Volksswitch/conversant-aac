@@ -418,17 +418,13 @@ function renderModule(moduleId) {
 }
 
 function refreshCard(field) {
-    const old = document.getElementById('wvcardgroup-' + field.key);
+    const old = document.getElementById('wvcard-' + field.key);
     if (old) old.replaceWith(buildCard(field));
 }
 
 // --- Card -------------------------------------------------------------------
 
 function buildCard(field) {
-    // Wrap card + any follow-ups in a group so they can all be refreshed together
-    // when either the parent or a follow-up answer changes.
-    const group = el('div', { class: 'wv-card-group', id: 'wvcardgroup-' + field.key });
-
     const state = wv.getState(field.key);
     const card = el('div', { class: 'wv-card', id: 'wvcard-' + field.key });
 
@@ -467,60 +463,6 @@ function buildCard(field) {
     actions.append(el('button', { class: 'wv-btn wv-btn-link', text: 'Prefer not to say',
         onclick: async () => { await wv.declineField(field.key); refreshCard(field); } }));
     card.append(actions);
-    group.append(card);
-
-    // Follow-up questions appear inline below the parent once it is answered.
-    // when === '*' means always show when parent is answered.
-    if (state === 'answered' && field.followups && field.followups.length) {
-        for (let i = 0; i < field.followups.length; i++) {
-            const fu = field.followups[i];
-            if (fu.when !== '*') continue;
-            const fuField = { key: `${field.key}_fu_${i}`, q: fu.q, type: 'text' };
-            group.append(buildFollowupCard(fuField, field));
-        }
-    }
-
-    return group;
-}
-
-// A follow-up card is indented below the parent and saves by refreshing the
-// parent group (which re-renders the parent card + all follow-ups together).
-function buildFollowupCard(fuField, parentField) {
-    const state = wv.getState(fuField.key);
-    const card = el('div', { class: 'wv-card wv-followup-card', id: 'wvcard-' + fuField.key });
-
-    const head = el('div', { class: 'wv-card-head' }, [
-        el('div', { class: 'wv-question' }, [
-            el('span', { class: 'wv-followup-arrow', text: '↳ ' }),
-            document.createTextNode(fuField.q)
-        ])
-    ]);
-    if (state === 'answered') head.append(el('span', { class: 'wv-badge wv-badge-answered', text: '✓ Answered' }));
-    card.append(head);
-
-    const current = wv.getField(fuField.key);
-    const input = el('input', {
-        type: 'text', class: 'wv-text',
-        placeholder: 'In my own words…',
-        value: current != null ? String(current) : ''
-    });
-    const saveBtn = el('button', { class: 'wv-btn wv-btn-primary', text: 'Save',
-        onclick: () => {
-            const v = input.value.trim();
-            const op = v ? wv.setField(fuField.key, v) : wv.resetField(fuField.key);
-            op.then(() => refreshCard(parentField));
-        }
-    });
-    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveBtn.click(); });
-    card.append(el('div', { class: 'wv-input' }, [el('div', { class: 'wv-own' }, [input, saveBtn])]));
-
-    const speakBtn = el('button', {
-        class: 'wv-btn wv-btn-speak',
-        text: '🔊 Speak my answer',
-        onclick: () => { const v = formatValue(wv.getField(fuField.key)); if (v) speak(v); }
-    });
-    if (!formatValue(current)) speakBtn.setAttribute('disabled', 'true');
-    card.append(el('div', { class: 'wv-actions' }, [speakBtn]));
 
     return card;
 }

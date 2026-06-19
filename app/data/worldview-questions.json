@@ -82,12 +82,7 @@
           "options": ["Sports — playing or watching", "Music", "Gaming", "Art, making, or crafts", "Reading", "Cooking or food", "Animals", "Tech & computers", "The outdoors / nature", "Movies & TV", "Collecting something", "Faith or community", "Volunteering / helping"],
           "fills": ["hobby", "interest", "passion"],
           "sensitive": false,
-          "defaultPrivacy": "shareable",
-          "followups": [
-            { "when": "*", "q": "How long have you been into it?", "prepared": true },
-            { "when": "*", "q": "What do you love most about it?", "prepared": true },
-            { "when": "*", "q": "Casual fan, or really into it?", "prepared": true }
-          ]
+          "defaultPrivacy": "shareable"
         }
       ]
     }
