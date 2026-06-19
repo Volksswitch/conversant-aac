@@ -39,6 +39,19 @@ export async function loadRegistry() {
     for (const mod of registry.modules) {
         for (const f of mod.fields) {
             fieldIndex[f.key] = { ...f, moduleId: mod.id, moduleTitle: mod.title };
+            // Index follow-up fields so buildBlock() and fieldMeta() can find them.
+            // They are NOT added to mod.fields — the UI renders them inline below
+            // the parent card, not as standalone cards in the module list.
+            if (f.followups) {
+                f.followups.forEach((fu, i) => {
+                    const fuKey = `${f.key}_fu_${i}`;
+                    fieldIndex[fuKey] = {
+                        key: fuKey, q: fu.q, type: 'text', fills: [],
+                        _parentKey: f.key, _fuIndex: i, _fuWhen: fu.when,
+                        moduleId: mod.id, moduleTitle: mod.title
+                    };
+                });
+            }
         }
     }
     return registry;
@@ -349,10 +362,18 @@ export function buildBlock() {
                 if (state !== 'answered') continue;
                 const v = formatValue(getField(f.key));
                 if (!v) continue;
-                if (effectivePrivacy(f.key) === 'private') {
-                    privateKnown.push(`- ${labelFor(f.key)}: ${v}`);
-                } else {
-                    facts.push(`- ${labelFor(f.key)}: ${v}`);
+                const isPrivate = effectivePrivacy(f.key) === 'private';
+                const target = isPrivate ? privateKnown : facts;
+                target.push(`- ${labelFor(f.key)}: ${v}`);
+                // Follow-up answers injected right after their parent
+                if (f.followups) {
+                    f.followups.forEach((fu, i) => {
+                        const fuKey = `${f.key}_fu_${i}`;
+                        if (getState(fuKey) !== 'answered') return;
+                        const fuV = formatValue(getField(fuKey));
+                        if (!fuV) return;
+                        target.push(`  - ${fu.q}: ${fuV}`);
+                    });
                 }
             }
         }
