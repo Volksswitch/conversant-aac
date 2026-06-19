@@ -205,7 +205,17 @@
                             <option value="15">15 seconds</option>
                         </select>
                     </div>
-                    <p class="setting-hint">The initial delay is how long after the partner finishes speaking before the first placeholder is spoken. Subsequent delays are the interval between additional placeholders while you choose a response.</p>
+                    <div class="setting-group">
+                        <label for="maxPlaceholdersInput">Maximum placeholders per turn</label>
+                        <select id="maxPlaceholdersInput">
+                            <option value="1">1</option>
+                            <option value="2" selected>2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="0">No limit</option>
+                        </select>
+                    </div>
+                    <p class="setting-hint">The initial delay is how long after the response options appear before the first placeholder is spoken — so a quick choice plays none. Subsequent delays are the interval between additional placeholders while you choose. The first placeholder acknowledges ("Good question."); later ones say you're still thinking. The maximum caps how many play before the system stays quiet (2 keeps them from sounding repetitive).</p>
                 </div>
                 <div class="tab-panel" data-tab="about">
                     <h3>AAC Conversation Assistant</h3>

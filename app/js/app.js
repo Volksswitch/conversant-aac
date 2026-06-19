@@ -14,7 +14,7 @@ import { SIDE_LAYOUTS, BOTTOM_LAYOUTS } from './keyboard-layouts.js';
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.3.9';
+const APP_VERSION = '0.3.10';
 
 const conversationHistory = [];
 let isListening = false;
@@ -639,6 +639,7 @@ function openSettings() {
     const autoRelistenInput = document.getElementById('autoRelistenInput');
     const initialDelayInput = document.getElementById('initialDelayInput');
     const subsequentDelayInput = document.getElementById('subsequentDelayInput');
+    const maxPlaceholdersInput = document.getElementById('maxPlaceholdersInput');
 
     apiKeyInput.value = storage.loadApiKey() || '';
     populateVoiceSelect();
@@ -657,6 +658,7 @@ function openSettings() {
     const placeholderSettings = storage.loadPlaceholderSettings();
     initialDelayInput.value = placeholderSettings.initialDelay;
     subsequentDelayInput.value = placeholderSettings.subsequentDelay;
+    maxPlaceholdersInput.value = placeholderSettings.maxPlaceholders;
     updateFolderDisplay();
 
     // Reset to General tab
@@ -751,10 +753,12 @@ function openSettings() {
     };
     const persistPlaceholders = () => storage.savePlaceholderSettings(
         Number(initialDelayInput.value),
-        Number(subsequentDelayInput.value)
+        Number(subsequentDelayInput.value),
+        Number(maxPlaceholdersInput.value)
     );
     initialDelayInput.onchange = persistPlaceholders;
     subsequentDelayInput.onchange = persistPlaceholders;
+    maxPlaceholdersInput.onchange = persistPlaceholders;
 
     document.getElementById('closeSettingsBtn').onclick = () => {
         // Belt-and-suspenders: persist the API key from the field on Close.

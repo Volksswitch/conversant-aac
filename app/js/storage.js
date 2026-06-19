@@ -305,13 +305,19 @@ export function loadPlaceholderSettings() {
     const settings = loadSettings();
     return {
         initialDelay: settings.initialDelay ?? 4,
-        subsequentDelay: settings.subsequentDelay ?? 10
+        subsequentDelay: settings.subsequentDelay ?? 10,
+        // Cap on placeholders spoken per choosing window. Default 2 so the user
+        // hears at most one "I heard you" filler plus one "still thinking" filler
+        // — two different roles, never two same-category fillers back to back.
+        // 0 = unlimited.
+        maxPlaceholders: settings.maxPlaceholders ?? 2
     };
 }
 
-export function savePlaceholderSettings(initialDelay, subsequentDelay) {
+export function savePlaceholderSettings(initialDelay, subsequentDelay, maxPlaceholders) {
     const settings = loadSettings();
     settings.initialDelay = initialDelay;
     settings.subsequentDelay = subsequentDelay;
+    if (maxPlaceholders !== undefined) settings.maxPlaceholders = maxPlaceholders;
     saveSettings(settings);
 }
