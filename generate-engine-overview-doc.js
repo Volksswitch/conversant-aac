@@ -241,7 +241,7 @@ const doc = new Document({
             heading2("Sequences: Adjacency Pairs and the Obligation Stack"),
             para("The smallest unit of conversational order is the adjacency pair: a first action by one party that makes a particular kind of second action conditionally relevant from the other — question and answer, invitation and acceptance/declination, greeting and return. When the partner produces a first pair part, the engine records the obligation it creates; that obligation is cleared only when the user makes an answering move."),
             para("Real conversation routinely interrupts one pair with another before the first is finished — a question answered with a clarifying question, for instance. CA calls this sequence expansion. The engine models it as a stack of open obligations, innermost on top. If the user has to stop and check what the partner meant, that repair is pushed onto the stack above the original question; when the partner clarifies and the repair resolves, it is popped and the original question — still owed — is automatically back on top. The user is never left having silently dropped an obligation, and never has to manually remember where they were."),
-            ...figure("engine-fig2.png", "Figure 2. A clarification (Pardon?) nests on top of the still-owed question, then pops when the partner restates — the original obligation is restored automatically.", 600),
+            ...figure("engine-fig2.png", "Figure 1. A clarification (Pardon?) nests on top of the still-owed question, then pops when the partner restates — the original obligation is restored automatically.", 600),
 
             // ---- Preference and the palette ----
             heading2("Preference Organization and the Move Palette"),
@@ -256,7 +256,7 @@ const doc = new Document({
                 ],
                 [2600, 6760]
             ),
-            ...figure("engine-fig3.png", "Figure 3. The four move types — different social actions, not paraphrases — in a stable left-to-right order.", 620),
+            ...figure("engine-fig3.png", "Figure 2. The four move types — different social actions, not paraphrases — in a stable left-to-right order.", 620),
             para("Preference here is the CA sense of the word — a structural property of how responses are designed and delivered, not the user's personal liking. Building the dispreferred option in its proper shape matters clinically: it lets the user decline or disagree in a way that preserves the relationship, rather than being limited to a blunt refusal because that was the only quick option available. The first position is always the system's best single guess; there is no special highlight, the design goal being simply that the first option is most often the right one, improving over time."),
             emptyPara(),
 
@@ -267,6 +267,7 @@ const doc = new Document({
             bullet("Partner initiates repair on the user's turn (other-initiated self-repair). When the partner signals they did not catch the user — “What?”, “Say that again?” — the system does not generate a fresh answer. It switches to a repair-of-self posture and offers operations on the user's own last turn: say it again unchanged, say it differently, or expand it. This is the user repairing their own talk in response to the partner's signal."),
             bullet("User initiates repair on the partner's turn (other-initiation). A persistent control lets the user say, in effect, “I didn't catch that” at any moment. This pushes a repair onto the obligation stack and hands the turn back to the partner; the partner's restatement resolves it and restores whatever was owed beneath."),
             bullet("User repairs their own turn on their own initiative (self-initiated self-repair). The same say-again / rephrase / expand operations are available to the user without any partner prompt, through the persistent controls."),
+            ...figure("engine-fig5.png", "Figure 3. The repair system mapped onto the engine: who signals the trouble, whose turn it was, and the mechanism that handles each case.", 640),
             para("Crucially, what the speech recognizer heard is always displayed to the user. The system does not require the user to confirm the transcript before it generates options — that would slow every single turn — but it does always show it, so an error is visible and the repair path is there to catch it. Showing understanding and keeping repair available is how the engine protects intersubjectivity without making the user pay a confirmation tax on every exchange.", { after: 160 }),
             emptyPara(),
 
@@ -294,7 +295,7 @@ const doc = new Document({
             // ---- Processing loop ----
             heading2("How a Single Exchange Flows"),
             para("In plain terms, one round of the conversation proceeds as follows."),
-            ...figure("engine-fig1.png", "Figure 1. One exchange from the partner speaking to the user's move being spoken. An unfinished turn yields no options; a complete one yields the typed palette.", 560),
+            ...figure("engine-fig1.png", "Figure 5. One exchange from the partner speaking to the user's move being spoken. An unfinished turn yields no options; a complete one yields the typed palette.", 560),
             numberedItem("The partner speaks. A live transcript appears so the user can see what was heard."),
             numberedItem("The partner pauses. The system takes the speech so far and, in one combined step, asks the AI both to classify what the partner just did and to generate candidate moves fitted to it. The classification is produced first, so the system commits to what kind of act it is responding to before any wording is chosen."),
             numberedItem("If the turn was judged unfinished, the system keeps listening and offers nothing, waiting for a real completion point. If it was complete, the engine records the new obligation, sets the floor to the user, and displays the typed palette."),
@@ -341,7 +342,7 @@ const doc = new Document({
                 dlg("User taps “Pardon?” →", "“Sorry, what was that?”", { color: "6A1B9A" }),
                 dlg("Partner:", "“Thursday — are we still meeting?”"),
                 dlg("User speaks:", "“Yes — Thursday works.”", { color: "2E7D32" }),
-                engineNote("A clarification was inserted before the answer. The engine pushed a repair onto the obligation stack, above the still-owed question; the partner's restatement resolved it, the original question was automatically restored, and the user's answer then cleared it. This is the sequence shown in Figure 2."),
+                engineNote("A clarification was inserted before the answer. The engine pushed a repair onto the obligation stack, above the still-owed question; the partner's restatement resolved it, the original question was automatically restored, and the user's answer then cleared it. This is the sequence shown in Figure 1."),
             ]),
             emptyPara(),
 

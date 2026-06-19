@@ -55,13 +55,27 @@
   .mcol { width: 178px; display: flex; flex-direction: column; align-items: center; }
   .trig { font-size: 11.5px; color: #2E75B6; font-weight: bold; text-align: center; margin-bottom: 2px; min-height: 28px; }
   .ret { font-size: 11px; color: #999; font-style: italic; margin-top: 4px; text-align: center; }
+
+  /* Fig 5 — repair typology grid */
+  .grid { border-collapse: separate; border-spacing: 8px; width: 100%; }
+  .grid th, .grid td { vertical-align: top; }
+  .grid .corner { width: 150px; }
+  .grid .chead { background: #1F4E79; color: #fff; font-size: 13px; font-weight: bold;
+                 padding: 8px 10px; border-radius: 7px; text-align: center; }
+  .grid .rhead { background: #E7F0F8; color: #1F4E79; font-size: 13px; font-weight: bold;
+                 padding: 8px 10px; border-radius: 7px; text-align: center; width: 150px; }
+  .gcell { border: 1.5px solid #BBB; border-radius: 8px; padding: 10px 12px; background: #fff; }
+  .gcell .ctype { font-size: 12px; font-weight: bold; color: #6A1B9A; margin-bottom: 4px; }
+  .gcell .sit { font-size: 12.5px; color: #333; margin-bottom: 7px; line-height: 1.35; }
+  .gcell .mech { font-size: 12.5px; color: #1F4E79; line-height: 1.35; }
+  .gcell .mech b { color: #2E7D32; }
 </style>
 </head>
 <body>
 
 <!-- FIG 1 — single-exchange flow -->
 <div class="diagram-section">
-  <div class="dtitle">Figure 1.  One exchange, end to end</div>
+  <div class="dtitle">One exchange, end to end</div>
   <div class="flow">
     <div class="box">Partner speaks <small>— live transcript shown on screen</small></div>
     <div class="arrow">&#9660;</div>
@@ -92,7 +106,7 @@
 
 <!-- FIG 2 — obligation stack with a nested repair -->
 <div class="diagram-section">
-  <div class="dtitle">Figure 2.  The obligation stack &mdash; a clarification nested inside a question</div>
+  <div class="dtitle">The obligation stack &mdash; a clarification nested inside a question</div>
   <div class="snaps">
     <div class="snap">
       <div class="cap"><b>1.</b> Partner asks a question</div>
@@ -130,7 +144,7 @@
 
 <!-- FIG 3 — the four-slot palette -->
 <div class="diagram-section">
-  <div class="dtitle">Figure 3.  The move palette &mdash; four structurally distinct responses</div>
+  <div class="dtitle">The move palette &mdash; four structurally distinct responses</div>
   <div class="ord">Stable left-to-right order &nbsp;<span>1 Preferred</span> &rarr; <span>2 Dispreferred</span> &rarr; <span>3 Initiative</span> &rarr; <span>4 Repair</span></div>
   <div class="cards">
     <div class="card green">
@@ -159,7 +173,7 @@
 
 <!-- FIG 4 — modes & floor -->
 <div class="diagram-section">
-  <div class="dtitle">Figure 4.  The five modes &mdash; the system&rsquo;s posture, and where the floor sits</div>
+  <div class="dtitle">The five modes &mdash; the system&rsquo;s posture, and where the floor sits</div>
   <div class="center">
     <div class="mbox"><div class="mn">LISTENING / STANDBY</div><div class="fl">floor: partner, or open at rest</div></div>
   </div>
@@ -186,6 +200,44 @@
       <div class="ret">&rarr; toward ending the conversation</div>
     </div>
   </div>
+</div>
+
+<!-- FIG 5 — repair typology grid -->
+<div class="diagram-section">
+  <div class="dtitle">Repair &mdash; who signals the trouble, and whose turn it was</div>
+  <table class="grid">
+    <tr>
+      <td class="corner"></td>
+      <td class="chead">Trouble is in the USER&rsquo;s turn</td>
+      <td class="chead">Trouble is in the PARTNER&rsquo;s turn</td>
+    </tr>
+    <tr>
+      <td class="rhead">Signaled by the USER</td>
+      <td class="gcell">
+        <div class="ctype">Self-initiated self-repair</div>
+        <div class="sit">The user decides their own last turn needs fixing.</div>
+        <div class="mech">&rarr; <b>Repair-of-self</b> on the user&rsquo;s own initiative: say it again, say it differently, or expand it.</div>
+      </td>
+      <td class="gcell">
+        <div class="ctype">Other-initiation, partner self-repairs</div>
+        <div class="sit">The user didn&rsquo;t catch the partner.</div>
+        <div class="mech">&rarr; <b>&ldquo;Pardon?&rdquo;</b> pushes a repair onto the stack and hands the turn back; the partner restates.</div>
+      </td>
+    </tr>
+    <tr>
+      <td class="rhead">Signaled by the PARTNER</td>
+      <td class="gcell">
+        <div class="ctype">Other-initiated self-repair</div>
+        <div class="sit">The partner didn&rsquo;t catch the user (&ldquo;What?&rdquo;).</div>
+        <div class="mech">&rarr; <b>Repair-of-self mode</b>: the same say-again / rephrase / expand operations on the user&rsquo;s prior turn. (The highest-leverage case.)</div>
+      </td>
+      <td class="gcell">
+        <div class="ctype">Self-repair by the partner</div>
+        <div class="sit">The partner corrects their own turn spontaneously.</div>
+        <div class="mech">&rarr; No special mechanism: the restatement is simply re-captured and the options regenerate on the corrected utterance.</div>
+      </td>
+    </tr>
+  </table>
 </div>
 
 </body>
