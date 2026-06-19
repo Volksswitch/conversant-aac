@@ -179,7 +179,7 @@ const doc = new Document({
             default: new Header({ children: [
                 new Paragraph({
                     alignment: AlignmentType.RIGHT,
-                    children: [new TextRun({ text: "AI-Driven AAC — Architecture Overview", italics: true, color: "808080", size: 18, font: "Arial" })]
+                    children: [new TextRun({ text: "Conversant AAC — Architecture Overview", italics: true, color: "808080", size: 18, font: "Arial" })]
                 })
             ]})
         },
@@ -199,7 +199,7 @@ const doc = new Document({
             new Paragraph({
                 spacing: { before: 480, after: 120 },
                 alignment: AlignmentType.CENTER,
-                children: [new TextRun({ text: "AI-Driven AAC System", bold: true, color: "1F4E79", size: 52, font: "Arial" })]
+                children: [new TextRun({ text: "Conversant AAC", bold: true, color: "1F4E79", size: 52, font: "Arial" })]
             }),
             new Paragraph({
                 spacing: { before: 0, after: 80 },
@@ -928,6 +928,6 @@ const doc = new Document({
 });
 
 Packer.toBuffer(doc).then(buffer => {
-    fs.writeFileSync("AI-Driven AAC Architecture Overview.docx", buffer);
+    fs.writeFileSync("Conversant AAC Architecture Overview.docx", buffer);
     console.log("Document generated successfully with embedded diagrams.");
 });

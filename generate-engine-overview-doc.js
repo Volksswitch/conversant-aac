@@ -168,7 +168,7 @@ const doc = new Document({
             margin: { top: MARGIN, right: MARGIN, bottom: MARGIN, left: MARGIN } } },
         headers: { default: new Header({ children: [new Paragraph({
             alignment: AlignmentType.RIGHT,
-            children: [new TextRun({ text: "AI-Driven AAC — Conversation Engine Overview", italics: true, color: "808080", size: 18, font: "Arial" })]
+            children: [new TextRun({ text: "Conversant AAC — Conversation Engine Overview", italics: true, color: "808080", size: 18, font: "Arial" })]
         })]})},
         footers: { default: new Footer({ children: [new Paragraph({
             alignment: AlignmentType.CENTER,
@@ -186,12 +186,12 @@ const doc = new Document({
             }),
             new Paragraph({
                 spacing: { before: 0, after: 240 },
-                children: [new TextRun({ text: "How an AI-driven AAC system organizes real-time talk — for clinicians and conversation-analysis readers", italics: true, color: "595959", size: 26, font: "Arial" })]
+                children: [new TextRun({ text: "How Conversant AAC organizes real-time talk — for clinicians and conversation-analysis readers", italics: true, color: "595959", size: 26, font: "Arial" })]
             }),
 
             // ---- About this document ----
             heading2("About This Document"),
-            para("This overview describes the Conversation Engine — the part of the AI-driven AAC system that decides what kind of conversational move the user might want to make next, and when. It is written to be understood by a clinician without a background in linguistics, and at the same time to show a reader trained in Conversation Analysis (CA) that the engine is built on the structures CA has documented in ordinary talk: turn-taking, adjacency pairs, preference, repair, and the organization of openings and closings."),
+            para("This overview describes the Conversation Engine — the part of the Conversant AAC system that decides what kind of conversational move the user might want to make next, and when. It is written to be understood by a clinician without a background in linguistics, and at the same time to show a reader trained in Conversation Analysis (CA) that the engine is built on the structures CA has documented in ordinary talk: turn-taking, adjacency pairs, preference, repair, and the organization of openings and closings."),
             para("The engine is one layer of a larger system. It does not listen, speak, or draw anything on the screen; it reasons about the structure of the conversation and hands a small, typed set of candidate moves to the presentation layer, which displays them for the user to choose from. Keeping that boundary strict is deliberate, and is itself a CA-informed choice: the organization of talk is treated as a thing in its own right, separable from how any one person accesses it."),
             emptyPara(),
 

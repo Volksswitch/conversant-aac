@@ -316,7 +316,7 @@ const doc = new Document({
         properties: { page: { size: { width: PAGE_W, height: 15840 },
             margin: { top: MARGIN, right: MARGIN, bottom: MARGIN, left: MARGIN } } },
         headers: { default: new Header({ children: [new Paragraph({ alignment: AlignmentType.RIGHT,
-            children: [new TextRun({ text: "AI-Driven AAC — Conversation Engine Design", italics: true, color: "808080", size: 18, font: "Arial" })] })] }) },
+            children: [new TextRun({ text: "Conversant AAC — Conversation Engine Design", italics: true, color: "808080", size: 18, font: "Arial" })] })] }) },
         footers: { default: new Footer({ children: [new Paragraph({ alignment: AlignmentType.CENTER,
             children: [
                 new TextRun({ text: "Volksswitch.org  |  June 2026  |  For internal use  |  Page ", size: 18, font: "Arial", color: "808080" }),
