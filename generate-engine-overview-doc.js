@@ -5,7 +5,7 @@
 // with "Page m of n"). American English spelling throughout.
 const fs = require('fs');
 const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
-        Header, Footer, AlignmentType, LevelFormat,
+        Header, Footer, AlignmentType, LevelFormat, ImageRun,
         HeadingLevel, BorderStyle, WidthType, ShadingType, PageNumber } = require('docx');
 
 const PAGE_W = 12240;
@@ -55,6 +55,67 @@ function numberedItem(text) {
     });
 }
 function emptyPara() { return new Paragraph({ children: [] }); }
+
+// Read a PNG's pixel dimensions from its IHDR (bytes 16-23).
+function pngSize(file) {
+    const b = fs.readFileSync(file);
+    return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) };
+}
+
+// A captured figure scaled to a max display width, centered, with an italic
+// caption beneath it.
+function figure(file, caption, maxWidth = 600) {
+    const { w, h } = pngSize(file);
+    const scale = Math.min(1, maxWidth / w);
+    const width = Math.round(w * scale);
+    const height = Math.round(h * scale);
+    return [
+        new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 80, after: 60 },
+            children: [new ImageRun({ type: "png", data: fs.readFileSync(file), transformation: { width, height } })]
+        }),
+        new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 0, after: 200 },
+            children: [new TextRun({ text: caption, italics: true, color: "595959", size: 18 })]
+        }),
+    ];
+}
+
+// --- Illustrative-exchange callout boxes ---
+function dlg(label, text, opts = {}) {
+    const kids = [];
+    if (label) kids.push(new TextRun({ text: label + "  ", bold: true, color: opts.color || "1F4E79", size: 20 }));
+    kids.push(new TextRun({ text, italics: !!opts.italics, size: 20 }));
+    return new Paragraph({
+        spacing: { before: 0, after: opts.after ?? 50 },
+        indent: opts.indent ? { left: opts.indent } : undefined,
+        children: kids
+    });
+}
+function engineNote(text) {
+    return new Paragraph({
+        spacing: { before: 80, after: 0 },
+        children: [
+            new TextRun({ text: "What the engine is doing:  ", bold: true, italics: true, color: "2E75B6", size: 20 }),
+            new TextRun({ text, italics: true, size: 20 })
+        ]
+    });
+}
+function exchangeBox(title, body) {
+    const cell = new TableCell({
+        shading: { type: ShadingType.CLEAR, fill: "F4F8FC" },
+        margins: { top: 130, bottom: 130, left: 170, right: 170 },
+        children: [
+            new Paragraph({ spacing: { before: 0, after: 90 },
+                children: [new TextRun({ text: title, bold: true, color: "1F4E79", size: 22 })] }),
+            ...body
+        ]
+    });
+    return new Table({ width: { size: 9360, type: WidthType.DXA }, borders,
+        rows: [new TableRow({ children: [cell] })] });
+}
 
 function simpleTable(headers, rows, widths) {
     const headerCell = (text, w) => new TableCell({
@@ -180,7 +241,7 @@ const doc = new Document({
             heading2("Sequences: Adjacency Pairs and the Obligation Stack"),
             para("The smallest unit of conversational order is the adjacency pair: a first action by one party that makes a particular kind of second action conditionally relevant from the other — question and answer, invitation and acceptance/declination, greeting and return. When the partner produces a first pair part, the engine records the obligation it creates; that obligation is cleared only when the user makes an answering move."),
             para("Real conversation routinely interrupts one pair with another before the first is finished — a question answered with a clarifying question, for instance. CA calls this sequence expansion. The engine models it as a stack of open obligations, innermost on top. If the user has to stop and check what the partner meant, that repair is pushed onto the stack above the original question; when the partner clarifies and the repair resolves, it is popped and the original question — still owed — is automatically back on top. The user is never left having silently dropped an obligation, and never has to manually remember where they were."),
-            emptyPara(),
+            ...figure("engine-fig2.png", "Figure 2. A clarification (Pardon?) nests on top of the still-owed question, then pops when the partner restates — the original obligation is restored automatically.", 600),
 
             // ---- Preference and the palette ----
             heading2("Preference Organization and the Move Palette"),
@@ -195,7 +256,7 @@ const doc = new Document({
                 ],
                 [2600, 6760]
             ),
-            para("", { after: 80 }),
+            ...figure("engine-fig3.png", "Figure 3. The four move types — different social actions, not paraphrases — in a stable left-to-right order.", 620),
             para("Preference here is the CA sense of the word — a structural property of how responses are designed and delivered, not the user's personal liking. Building the dispreferred option in its proper shape matters clinically: it lets the user decline or disagree in a way that preserves the relationship, rather than being limited to a blunt refusal because that was the only quick option available. The first position is always the system's best single guess; there is no special highlight, the design goal being simply that the first option is most often the right one, improving over time."),
             emptyPara(),
 
@@ -228,17 +289,68 @@ const doc = new Document({
                 ],
                 [2100, 4060, 3200]
             ),
-            emptyPara(),
+            ...figure("engine-fig4.png", "Figure 4. The partner's action (or a user override) moves the system from its listening posture into one of the active modes, then back.", 620),
 
             // ---- Processing loop ----
             heading2("How a Single Exchange Flows"),
             para("In plain terms, one round of the conversation proceeds as follows."),
+            ...figure("engine-fig1.png", "Figure 1. One exchange from the partner speaking to the user's move being spoken. An unfinished turn yields no options; a complete one yields the typed palette.", 560),
             numberedItem("The partner speaks. A live transcript appears so the user can see what was heard."),
             numberedItem("The partner pauses. The system takes the speech so far and, in one combined step, asks the AI both to classify what the partner just did and to generate candidate moves fitted to it. The classification is produced first, so the system commits to what kind of act it is responding to before any wording is chosen."),
             numberedItem("If the turn was judged unfinished, the system keeps listening and offers nothing, waiting for a real completion point. If it was complete, the engine records the new obligation, sets the floor to the user, and displays the typed palette."),
             numberedItem("While the user reads and chooses — and only when the partner asked something that warrants it — a brief reflective placeholder may be spoken to hold the floor, so the pause does not read as trouble. A quick choice means none is spoken at all."),
             numberedItem("The user selects a move. It is spoken in the user's voice; the obligation it answers is cleared from the stack; the exchange is recorded for context; and the floor opens again for the next turn."),
             para("At any point the user may step outside this flow through the persistent controls — open a conversation, hold the floor, ask the partner to repeat, repair their own last turn, wind down, or end the conversation outright — regardless of the mode the system has inferred.", { after: 160 }),
+            emptyPara(),
+
+            // ---- Illustrative exchanges ----
+            heading2("Illustrative Exchanges"),
+            para("Five short exchanges show the structures above at work. In each, “Partner” is the spoken input the system heard, “On screen” is the palette the user saw, and the move the user chose is what the system then spoke in the user's voice."),
+            emptyPara(),
+
+            exchangeBox("1.  A question, answered plainly (the preferred move)", [
+                dlg("Partner:", "“Hey — how was your weekend?”"),
+                dlg("On screen:", "", { after: 30 }),
+                dlg("", "Preferred — “Pretty good — mostly took it easy.”", { indent: 360, after: 20 }),
+                dlg("", "Dispreferred — “Honestly, a rough one — didn't sleep much.”", { indent: 360, after: 20 }),
+                dlg("", "Initiative — “Good — what did you get up to?”", { indent: 360, after: 20 }),
+                dlg("", "Repair — “Sorry — my weekend?”", { indent: 360, after: 30 }),
+                dlg("User speaks:", "“Pretty good — mostly took it easy.”", { color: "2E7D32" }),
+                engineNote("The partner's question is a first pair part, which makes an answer due. Choosing the preferred move delivers the fitting second pair part, clears the obligation, and opens the floor for the next turn."),
+            ]),
+            emptyPara(),
+
+            exchangeBox("2.  Declining an invitation, in proper shape (the dispreferred move)", [
+                dlg("Partner:", "“Do you want to come over for dinner tonight?”"),
+                dlg("User speaks:", "“I'd love to, but I'm wiped out tonight — could we do this weekend instead?”", { color: "B26A00" }),
+                engineNote("The partner's action is an invitation. The dispreferred response is not a bare “No”: it is delayed and softened — appreciation (“I'd love to”), the declination, an account (“I'm wiped out”), and a counter-offer. That dispreferred turn shape lets the user decline while protecting the relationship."),
+            ]),
+            emptyPara(),
+
+            exchangeBox("3.  The partner didn't catch the user (repair of the user's own turn)", [
+                dlg("User had just said:", "“Let's meet by the library.”", { color: "2E7D32" }),
+                dlg("Partner:", "“Sorry — what?”"),
+                dlg("On screen:", "Say it again  ·  Say it differently  ·  Expand it", { after: 30 }),
+                dlg("User speaks:", "“Let's meet by the front entrance of the library, around three.” (expanded)", { color: "6A1B9A" }),
+                engineNote("The partner signaled trouble with the user's prior turn, so the system does not generate a new answer. It switches to repair-of-self and offers operations on that turn — re-speak, rephrase, or expand. This is other-initiated self-repair."),
+            ]),
+            emptyPara(),
+
+            exchangeBox("4.  The user didn't catch the partner (a clarification nested in the stack)", [
+                dlg("Partner:", "“Are we still on for the thing on Thursday?” (heard as garbled)"),
+                dlg("User taps “Pardon?” →", "“Sorry, what was that?”", { color: "6A1B9A" }),
+                dlg("Partner:", "“Thursday — are we still meeting?”"),
+                dlg("User speaks:", "“Yes — Thursday works.”", { color: "2E7D32" }),
+                engineNote("A clarification was inserted before the answer. The engine pushed a repair onto the obligation stack, above the still-owed question; the partner's restatement resolved it, the original question was automatically restored, and the user's answer then cleared it. This is the sequence shown in Figure 2."),
+            ]),
+            emptyPara(),
+
+            exchangeBox("5.  Starting and ending a conversation (openings and closings)", [
+                dlg("Opening — user taps Start conversation →", "“Hey, got a minute?”", { color: "1F4E79" }),
+                dlg("", "… the conversation runs …", { italics: true, after: 30 }),
+                dlg("Closing — user taps Wind down →", "“This was really nice — I should get going.”", { color: "1F4E79" }),
+                engineNote("Conversations are entered and left through recognizable sequences, not started and stopped arbitrarily. The opener bids for the partner's engagement; the pre-closing makes the ending mutual rather than abrupt."),
+            ]),
             emptyPara(),
 
             // ---- Floor holding ----
