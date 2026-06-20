@@ -222,7 +222,11 @@ async function onRestart() {
 // model also supports person<->person edges for later.
 function renderPeople(editingId = null) {
     titleEl.textContent = 'People in Your Life';
-    contentEl.scrollTop = 0;
+    // Don't snap to the top when re-rendering to edit a specific person — the
+    // user may have scrolled down to reach someone below the fold (Ken, June 19
+    // 2026). We scroll their edit form into view after building instead. Only
+    // reset to the top when arriving at the People list fresh (no edit target).
+    if (!editingId) contentEl.scrollTop = 0;
     contentEl.innerHTML = '';
 
     contentEl.append(el('button', { class: 'wv-back', text: '‹ All topics', onclick: renderHome }));
@@ -242,6 +246,13 @@ function renderPeople(editingId = null) {
     contentEl.append(el('div', { class: 'wv-home-footer' }, [
         el('button', { class: 'wv-btn wv-btn-primary', text: 'Done', onclick: renderHome })
     ]));
+
+    // Keep the person being edited in view instead of jumping to the top of the
+    // list (the form replaced their card in place, but the rebuild reset scroll).
+    if (editingId) {
+        const form = document.getElementById('wvpersonform-' + editingId);
+        if (form) form.scrollIntoView({ block: 'center' });
+    }
 }
 
 function buildPersonCard(p) {
@@ -302,7 +313,8 @@ const OTHER = '__other__';
 // Edit form for an existing person, or the blank "add someone" form when
 // `existing` is null.
 function buildPersonForm(existing) {
-    const card = el('div', { class: 'wv-card wv-person-form' });
+    const card = el('div', { class: 'wv-card wv-person-form',
+        id: existing ? 'wvpersonform-' + existing.id : null });
 
     const nameIn = el('input', { type: 'text', class: 'wv-text', placeholder: 'Name',
         value: existing ? existing.name : '' });

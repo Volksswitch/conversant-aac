@@ -28,6 +28,19 @@ import { LAYOUTS, SYMBOLS } from './keyboard-layouts.js';
 // question for Settings in favor of the app keyboard).
 const IN_SCOPE = '#composerInput, .wv-text, #apiKeyInput';
 
+// Controls that must NOT dismiss the keyboard when tapped, even though tapping
+// them blurs the composer textarea. The composer (unlike About Me / Settings)
+// has no serving panel, so without this its Speak/Clear buttons trip the
+// focusout → hide() path, which reflows the layout out from under the finger and
+// steals the first click — so Speak only worked on the second press (Ken, June
+// 19 2026). Keeping the keyboard up keeps the layout stable so the tap lands.
+const KEEP_OPEN_CONTROLS = '#speakBtn, #clearComposerBtn';
+
+// The element under the most recent pointerdown. On touch a tapped <button> is
+// frequently NOT reported as focusout.relatedTarget, so relatedTarget alone
+// can't tell us the blur was caused by tapping a keep-open control — this can.
+let lastPointerDownEl = null;
+
 let mode = 'physical';          // 'physical' | 'onscreen'
 let rootEl = null;              // the keyboard panel
 let activeField = null;         // the input/textarea currently being typed into
@@ -420,6 +433,14 @@ function hide() {
 export function init() {
     build();
 
+    // Track the last pointerdown target so focusout can tell whether the blur
+    // was caused by tapping a keep-open control (Speak/Clear), even on touch
+    // where the button isn't reported as relatedTarget. Capture phase so we see
+    // it before the keyboard's own handlers / the focusout fire.
+    document.addEventListener('pointerdown', (e) => {
+        lastPointerDownEl = e.target instanceof Element ? e.target : null;
+    }, true);
+
     document.addEventListener('focusin', (e) => {
         if (mode !== 'onscreen') return;
         if (isScoped(e.target)) {
@@ -445,6 +466,11 @@ export function init() {
         // Close/Escape, renderHome) and the Hide button take it down.
         if (servingPanelOpen()) return;
         if (previewing) return;   // keep the Settings layout-preview keyboard up
+        // Keep up when the blur was caused by tapping a composer control (Speak /
+        // Clear) so the reflow doesn't steal the tap. relatedTarget covers
+        // desktop; lastPointerDownEl covers touch where the button isn't reported.
+        const tapTarget = next || lastPointerDownEl;
+        if (tapTarget && tapTarget.closest && tapTarget.closest(KEEP_OPEN_CONTROLS)) return;
         hide();
     });
 

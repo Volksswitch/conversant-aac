@@ -14,7 +14,7 @@ import { SIDE_LAYOUTS, BOTTOM_LAYOUTS } from './keyboard-layouts.js';
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.3.14';
+const APP_VERSION = '0.3.15';
 
 const conversationHistory = [];
 let isListening = false;
@@ -403,8 +403,10 @@ async function handleHoldOn() {
     placeholders.stop();
     ui.setStatus('Speaking...');
     // Softened from "Hold on, let me think." — imperative phrasing reads as curt
-    // through the flat built-in voices (Ken, June 18 2026).
-    await tts.speak('Hmm, let me think about that.');
+    // through the flat built-in voices (Ken, June 18 2026). The leading "Hmm,"
+    // (v0.3.14) was dropped (Ken, June 19 2026) — the built-in voices render it
+    // unintelligibly, so it read as garble rather than a thinking beat.
+    await tts.speak('Let me think about that.');
     ui.setStatus(isListening ? 'Listening...' : 'Ready');
 }
 

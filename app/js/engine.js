@@ -166,21 +166,35 @@ export function ingestClassification(result, partnerText) {
         return getSnapshot();
     }
 
-    // COMPLETE turn. If the user had a repair sequence open on top (Pardon?),
-    // the partner's re-speak resolves it — pop it, then re-activate the FPP
-    // beneath against the now-clarified utterance (§3, §7.1).
-    const top = state.sequenceStack[state.sequenceStack.length - 1];
-    if (top && top.action === 'REPAIR' && top.openedBy === 'USER') {
+    // COMPLETE turn. If the user had repair sequence(s) open on top (Pardon?),
+    // the partner's re-speak resolves them — pop ALL contiguous user-opened
+    // REPAIR entries (pardon() now dedups, but clear any that pre-date that fix
+    // or arrived another way), then re-activate the FPP beneath against the
+    // now-clarified utterance (§3, §7.1).
+    let top = state.sequenceStack[state.sequenceStack.length - 1];
+    let resolvedPardon = false;
+    while (top && top.action === 'REPAIR' && top.openedBy === 'USER') {
         state.sequenceStack.pop();
+        resolvedPardon = true;
+        top = state.sequenceStack[state.sequenceStack.length - 1];
     }
 
-    // Push the partner's FPP as a newly-owed sequence.
-    state.sequenceStack.push({
-        action: state.lastClassification.partner_action,
-        openedBy: 'PARTNER',
-        utterance: partnerText,
-        sttConfidence: state.lastPartnerUtterance.confidence,
-    });
+    if (resolvedPardon && top && top.openedBy === 'PARTNER') {
+        // The re-speak CLARIFIES the partner's existing FPP — it is the same
+        // obligation, just heard correctly this time. Update it in place rather
+        // than pushing a duplicate (the stack should again hold one question).
+        top.action = state.lastClassification.partner_action;
+        top.utterance = partnerText;
+        top.sttConfidence = state.lastPartnerUtterance.confidence;
+    } else {
+        // Push the partner's FPP as a newly-owed sequence.
+        state.sequenceStack.push({
+            action: state.lastClassification.partner_action,
+            openedBy: 'PARTNER',
+            utterance: partnerText,
+            sttConfidence: state.lastPartnerUtterance.confidence,
+        });
+    }
 
     // Partner produced a complete turn — the floor is now the user's to respond.
     state.floor = FLOOR.SELF;
@@ -274,10 +288,19 @@ export function completeRepairOfSelf(spokenText) {
 // Pardon? — user initiates repair on the partner's turn. Push a nested repair
 // sequence; on the partner's re-speak (next COMPLETE), it resolves (see ingest).
 export function pardon() {
-    state.sequenceStack.push({
-        action: 'REPAIR', openedBy: 'USER', utterance: '(asked partner to clarify)',
-        sttConfidence: null,
-    });
+    // Only one open user-repair makes sense at a time: tapping Pardon? again
+    // before the partner has re-spoken is the same unresolved "I didn't catch
+    // that" obligation, not a new one. Don't stack a second REPAIR* on top of an
+    // existing one (Ken, Pass 6, June 19 2026) — the partner's single re-speak
+    // resolves the repair, so duplicates would never get popped.
+    const top = state.sequenceStack[state.sequenceStack.length - 1];
+    const alreadyRepairing = top && top.action === 'REPAIR' && top.openedBy === 'USER';
+    if (!alreadyRepairing) {
+        state.sequenceStack.push({
+            action: 'REPAIR', openedBy: 'USER', utterance: '(asked partner to clarify)',
+            sttConfidence: null,
+        });
+    }
     state.mode = MODE.LISTENING;
     // We've handed back to the partner to re-do their turn.
     state.floor = FLOOR.PARTNER;
