@@ -24,6 +24,12 @@ import { confirmDanger } from './confirm-dialog.js';
 
 let screenEl, contentEl, titleEl;
 
+// Scroll position of the People list captured when "Edit" is pressed, so that
+// returning from the edit form (Save/Cancel) restores exactly where the list
+// was rather than jumping to the top (Ken, June 19 2026). Consumed (and cleared)
+// by the next non-editing renderPeople(); null means a fresh entry → top.
+let peopleReturnScroll = null;
+
 // While the questionnaire overlay is open, make the app header + conversation
 // screen behind it inert so keyboard Tab stays inside the form (it never leaks
 // out to the Settings button or the conversation controls underneath).
@@ -222,11 +228,6 @@ async function onRestart() {
 // model also supports person<->person edges for later.
 function renderPeople(editingId = null) {
     titleEl.textContent = 'People in Your Life';
-    // Don't snap to the top when re-rendering to edit a specific person — the
-    // user may have scrolled down to reach someone below the fold (Ken, June 19
-    // 2026). We scroll their edit form into view after building instead. Only
-    // reset to the top when arriving at the People list fresh (no edit target).
-    if (!editingId) contentEl.scrollTop = 0;
     contentEl.innerHTML = '';
 
     contentEl.append(el('button', { class: 'wv-back', text: '‹ All topics', onclick: renderHome }));
@@ -247,11 +248,19 @@ function renderPeople(editingId = null) {
         el('button', { class: 'wv-btn wv-btn-primary', text: 'Done', onclick: renderHome })
     ]));
 
-    // Keep the person being edited in view instead of jumping to the top of the
-    // list (the form replaced their card in place, but the rebuild reset scroll).
+    // Restore scroll after the rebuild:
+    //  - editing: bring the edit form into view (the user just tapped Edit);
+    //  - returning from an edit (Save/Cancel): go back to where the list was
+    //    when Edit was pressed (heights match — the form became a card again);
+    //  - fresh entry from the home screen: top.
     if (editingId) {
         const form = document.getElementById('wvpersonform-' + editingId);
         if (form) form.scrollIntoView({ block: 'center' });
+    } else if (peopleReturnScroll != null) {
+        contentEl.scrollTop = peopleReturnScroll;
+        peopleReturnScroll = null;
+    } else {
+        contentEl.scrollTop = 0;
     }
 }
 
@@ -279,7 +288,8 @@ function buildPersonCard(p) {
     if (p.about) card.append(el('p', { class: 'wv-person-about', text: p.about }));
 
     card.append(el('div', { class: 'wv-actions' }, [
-        el('button', { class: 'wv-btn wv-btn-link', text: 'Edit', onclick: () => renderPeople(p.id) }),
+        el('button', { class: 'wv-btn wv-btn-link', text: 'Edit',
+            onclick: () => { peopleReturnScroll = contentEl.scrollTop; renderPeople(p.id); } }),
         el('button', { class: 'wv-btn wv-btn-link', text: 'Remove',
             onclick: async () => {
                 const ok = await confirmDanger({
