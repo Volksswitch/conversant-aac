@@ -22,6 +22,7 @@
 
 import { LAYOUTS, SYMBOLS } from './keyboard-layouts.js';
 import { setIconButton } from './icons.js';
+import * as prediction from './prediction.js';
 
 // Fields the app keyboard handles. Includes the Settings API-key field so the
 // Windows keyboard is suppressed there too and the app's own (side-docked)
@@ -45,6 +46,8 @@ let lastPointerDownEl = null;
 let mode = 'physical';          // 'physical' | 'onscreen'
 let rootEl = null;              // the keyboard panel
 let activeField = null;         // the input/textarea currently being typed into
+let predWrap = null;            // the word-prediction button container in the toolbar
+const PRED_COUNT = 3;           // number of prediction slots
 
 // Selected layouts per dock + which side the side dock sits on (user Settings).
 let sideLayoutId = 'S1';
@@ -246,15 +249,67 @@ function handleKey(keyEl) {
     const action = keyEl.dataset.action;
     if (action === 'shift') { onShift(); return; }
     if (action === 'page') { page = page === 'symbols' ? 'letters' : 'symbols'; renderRows(); return; }
-    if (action === 'backspace') { backspace(); return; }
-    if (action === 'space') { insert(' '); consumeShift(); return; }
-    if (action === 'enter') { enter(); return; }
+    if (action === 'backspace') { backspace(); updatePredictions(); return; }
+    // Space / Enter close a word — learn it before the boundary, then refresh.
+    if (action === 'space') { learnCurrentWord(); insert(' '); consumeShift(); updatePredictions(); return; }
+    if (action === 'enter') { learnCurrentWord(); enter(); updatePredictions(); return; }
 
     const ch = keyEl.dataset.char;
     if (ch == null) return;
     const upper = shiftState !== 'off';
     insert(upper && /[a-z]/i.test(ch) ? ch.toUpperCase() : ch);
     consumeShift();
+    updatePredictions();
+}
+
+// --- word prediction (local; see prediction.js) ----------------------------
+
+// The partial word immediately before the caret (letters/apostrophe). Empty for
+// the API-key field (a key is not natural-language) and when not on a word.
+function currentWordPrefix() {
+    const f = activeField;
+    if (!f || f.id === 'apiKeyInput') return '';
+    const caret = f.selectionStart ?? f.value.length;
+    const m = f.value.slice(0, caret).match(/[A-Za-z']+$/);
+    return m ? m[0] : '';
+}
+
+function learnCurrentWord() {
+    const w = currentWordPrefix();
+    if (w) prediction.learn(w);
+}
+
+// Fill the toolbar's prediction buttons from the current prefix; hide the spare
+// slots. Called after every text change.
+function updatePredictions() {
+    if (!predWrap) return;
+    const prefix = currentWordPrefix();
+    const preds = prefix ? prediction.predict(prefix, PRED_COUNT) : [];
+    predWrap.querySelectorAll('.kbd-pred-btn').forEach((b, i) => {
+        const w = preds[i];
+        if (w) { b.textContent = w; b.dataset.word = w; b.hidden = false; }
+        else { b.textContent = ''; delete b.dataset.word; b.hidden = true; }
+    });
+}
+
+// Replace the partial word at the caret with the chosen prediction + a space,
+// matching the typed prefix's capitalization, then learn it.
+function applyPrediction(word) {
+    const f = activeField;
+    if (!f) return;
+    const caret = f.selectionStart ?? f.value.length;
+    const before = f.value.slice(0, caret);
+    const m = before.match(/[A-Za-z']+$/);
+    const start = m ? caret - m[0].length : caret;
+    let out = word;
+    if (m && m[0][0] === m[0][0].toUpperCase()) out = word.charAt(0).toUpperCase() + word.slice(1);
+    f.value = f.value.slice(0, start) + out + ' ' + f.value.slice(caret);
+    const pos = start + out.length + 1;
+    f.setSelectionRange(pos, pos);
+    f.dispatchEvent(new Event('input', { bubbles: true }));
+    prediction.learn(word);
+    updatePredictions();
+    if (f.tagName === 'INPUT') requestAnimationFrame(() => { if (f.isConnected) f.scrollLeft = f.scrollWidth; });
 }
 
 // --- DOM build --------------------------------------------------------------
@@ -271,6 +326,8 @@ function build() {
     rootEl.addEventListener('pointerdown', (e) => {
         const tool = e.target.closest('.kbd-tool');
         if (tool) { e.preventDefault(); handleTool(tool.dataset.tool); return; }
+        const pred = e.target.closest('.kbd-pred-btn');
+        if (pred) { e.preventDefault(); if (pred.dataset.word) applyPrediction(pred.dataset.word); return; }
         const keyEl = e.target.closest('.kbd-key');
         if (!keyEl) return;
         e.preventDefault();
@@ -283,20 +340,34 @@ function build() {
     const toolbar = document.createElement('div');
     toolbar.className = 'kbd-toolbar';
     // Icon-only toolbar buttons (Rule 4); the accessible name is kept via
-    // aria-label/title. Converting from text labels also frees the row's
-    // horizontal space — the planned home for the word-prediction buttons.
-    for (const [tool, label, icon] of [
-        ['cut', 'Cut', 'cut'], ['copy', 'Copy', 'copy'],
-        ['paste', 'Paste', 'paste'], ['hide', 'Hide the keyboard', 'hide'],
-    ]) {
+    // aria-label/title. Converting from text labels frees the row's horizontal
+    // space, which the word-prediction buttons now fill.
+    const makeTool = (tool, label, icon) => {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'kbd-tool';
         if (tool === 'hide') btn.classList.add('kbd-tool-hide');
         btn.dataset.tool = tool;
         setIconButton(btn, icon, label);
-        toolbar.appendChild(btn);
+        return btn;
+    };
+    toolbar.appendChild(makeTool('cut', 'Cut', 'cut'));
+    toolbar.appendChild(makeTool('copy', 'Copy', 'copy'));
+    toolbar.appendChild(makeTool('paste', 'Paste', 'paste'));
+    // Word-prediction buttons (local, no AI — see prediction.js) fill the
+    // reclaimed toolbar space. They show predicted words as TEXT (content —
+    // exempt from the icon-only rule) and stay hidden until there's a prefix.
+    predWrap = document.createElement('div');
+    predWrap.className = 'kbd-preds';
+    for (let i = 0; i < PRED_COUNT; i++) {
+        const pb = document.createElement('button');
+        pb.type = 'button';
+        pb.className = 'kbd-pred-btn';
+        pb.hidden = true;
+        predWrap.appendChild(pb);
     }
+    toolbar.appendChild(predWrap);
+    toolbar.appendChild(makeTool('hide', 'Hide the keyboard', 'hide'));
     rootEl.appendChild(toolbar);
 
     renderRows();
@@ -413,6 +484,7 @@ function show(field) {
     renderRows();
     rootEl.classList.remove('hidden');
     document.body.classList.add('kbd-open');
+    updatePredictions(); // seed predictions for any text already in the field
     // Keep the focused field clear of the keyboard. The content area reserves
     // viewport-relative padding (CSS) so the field can scroll above a
     // bottom dock; centring it lands it in the visible band above the keys.
@@ -430,6 +502,7 @@ function hide() {
     shiftState = 'off';
     page = 'letters';
     renderRows();
+    updatePredictions(); // clears the prediction buttons (no active field)
     if (rootEl) rootEl.classList.add('hidden');
     document.body.classList.remove('kbd-open', 'kbd-dock-side', 'kbd-dock-bottom', 'kbd-side-left', 'kbd-side-right');
 }
@@ -438,6 +511,7 @@ function hide() {
 
 export function init() {
     build();
+    prediction.load(); // bundled word list + personalized frequencies (async)
 
     // Track the last pointerdown target so focusout can tell whether the blur
     // was caused by tapping a keep-open control (Speak/Clear), even on touch

@@ -1655,6 +1655,35 @@ label.radio-label input[type="radio"] {
     background: #1d2b38;
 }
 
+/* Word-prediction buttons in the reclaimed toolbar space (local prediction —
+   prediction.js). Content buttons (predicted word as text, ellipsis-truncated),
+   so exempt from the icon-only rule. The container reserves its row space even
+   when empty (static layout). */
+.kbd-preds {
+    flex: 3 1 0;
+    display: flex;
+    gap: 0.4rem;
+    min-width: 0;
+}
+.kbd-pred-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 2.4rem;
+    border: 1px solid #ffe082;
+    border-radius: 8px;
+    background: #fff8e1;
+    color: var(--ink);
+    font-size: 1rem;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.kbd-pred-btn[hidden] { display: none; }
+.kbd-pred-btn:active { background: #ffe082; transform: translateY(1px); }
+
 .kbd-row {
     display: flex;
     gap: 0.4rem;
