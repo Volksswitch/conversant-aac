@@ -469,6 +469,10 @@ function show(field) {
     // the composer). One-shot reverts to lowercase after that first character.
     // The API key is case-sensitive and lowercase ("sk-ant-…"), so leave it off.
     shiftState = field.id === 'apiKeyInput' ? 'off' : 'shift';
+    // Suppress the toolbar Hide button during the "In my own words" modal
+    // (#composerInput): there, Speak/Reframe/Cancel are the only exits and they
+    // dismiss the keyboard, so Hide is redundant. Keep it for About Me/Settings.
+    rootEl.classList.toggle('kbd-no-hide', field.id === 'composerInput');
     setDock(dockFor(field));
     // A modal <dialog> (Settings) lives in the top layer and renders above —
     // and makes inert — anything in normal flow. So when the focused field is
@@ -587,6 +591,7 @@ export function previewShow(dock) {
     activeField = null;
     page = 'letters';
     shiftState = 'off';
+    rootEl.classList.remove('kbd-no-hide'); // Settings preview keeps Hide
     setDock(dock);
     const dlg = document.getElementById('settingsDialog');
     const host = (dlg && dlg.open) ? dlg : document.body;

@@ -1784,6 +1784,12 @@ label.radio-label input[type="radio"] {
     background: #1d2b38;
 }
 
+/* Suppress Hide during the "In my own words" modal — Speak/Reframe/Cancel are
+   the only exits there and they dismiss the keyboard (Ken). */
+#appKeyboard.kbd-no-hide .kbd-tool-hide {
+    display: none;
+}
+
 /* Word-prediction buttons in the reclaimed toolbar space (local prediction —
    prediction.js). Content buttons (predicted word as text, ellipsis-truncated),
    so exempt from the icon-only rule. The container reserves its row space even
