@@ -16,7 +16,7 @@ import * as fastPhrases from './fast-phrases.js';
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.5.3';
+const APP_VERSION = '0.5.4';
 
 const conversationHistory = [];
 let isListening = false;
@@ -604,10 +604,13 @@ function openComposer() {
     ui.setStatus('Type your own words');
 }
 
-// Close the modal (any of the three buttons does this): dismiss the input box
-// and the keyboard.
+// Close the modal (Speak / Reframe / Cancel all do this): dismiss the input box
+// AND the keyboard. The keyboard is dismissed explicitly — blurring the textarea
+// alone won't reliably hide it, because Speak/Reframe/Cancel are "keep-open"
+// controls (so their tap doesn't trip the focusout-hide before the handler runs).
 function closeComposer() {
     ui.hideComposerOverlay();
+    keyboard.hideKeyboard();
 }
 
 // Speak: say the composed text, take the floor + commit, then dismiss the modal.
