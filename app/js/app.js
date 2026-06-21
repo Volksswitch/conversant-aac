@@ -14,7 +14,7 @@ import { SIDE_LAYOUTS, BOTTOM_LAYOUTS } from './keyboard-layouts.js';
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.3.19';
+const APP_VERSION = '0.3.20';
 
 const conversationHistory = [];
 let isListening = false;
@@ -61,6 +61,7 @@ function initApp() {
     ui.onListenClick(toggleListening);
     ui.onRegenerateClick(handleRegenerate);
     ui.onSpeakClick(handleSpeakComposed);
+    ui.onReframeClick(handleReframe);
     ui.onClearComposerClick(() => ui.clearComposer());
     ui.onSettingsClick(openSettings);
     ui.onAboutMeClick(worldviewUI.open);
@@ -466,6 +467,46 @@ async function handleRegenerate() {
     } catch (err) {
         if (token !== generationToken) return;
         ui.setStatus(`Error: ${err.message}`);
+    }
+}
+
+// "Reframe" — the second verb on the "In your own words" composer (Ken, June 21
+// 2026). Instead of speaking the box text verbatim (Speak), hand it to the AI as
+// steering/context and regenerate the suggested responses around it for the SAME
+// partner turn. A *guided* regenerate: same engine.refreshPalette seam as
+// handleRegenerate (stack / mode / floor untouched — we do NOT re-ingest the
+// classification, which would push a duplicate FPP). One-shot: the steer applies
+// to this regeneration only and the box is CLEARED on success, so an empty box
+// reliably means "nothing pending" (a lingering value would read as a persistent
+// steer — that sticky/conversation-goal version is deferred to the Goals
+// subsystem). Guarded to an active partner turn with a palette, like regenerate.
+async function handleReframe() {
+    const steer = ui.getComposerText();
+    if (!steer) return;
+    if (!currentPartnerText || !lastPalette.length) {
+        ui.setStatus('Reframe needs an active response — wait for options first');
+        return;
+    }
+    const token = ++generationToken;
+    placeholders.stop();
+    ui.setStatus('Reworking options with your input...');
+
+    llm.setWorldviewBlock(worldview.buildBlock());
+    llm.setRelationshipsBlock(relationships.buildBlock());
+    const history = [...conversationHistory, { role: 'partner', text: currentPartnerText }];
+
+    try {
+        const result = await llm.generateResponses(history, engine.buildRequestContext(), { steer });
+        if (token !== generationToken) return; // superseded
+        const snap = engine.refreshPalette(result.moves);
+        ui.showEngineState(snap);
+        lastPalette = snap.palette;
+        ui.showMoves(snap.palette, handleMoveSelected);
+        ui.clearComposer();           // one-shot: consume the box so it doesn't read as sticky
+        ui.setStatus('Select a response');
+    } catch (err) {
+        if (token !== generationToken) return;
+        ui.setStatus(`Error: ${err.message}`); // keep the box text so the user can retry
     }
 }
 

@@ -156,6 +156,10 @@ export function onSpeakClick(handler) {
     document.getElementById('speakBtn').addEventListener('click', handler);
 }
 
+export function onReframeClick(handler) {
+    document.getElementById('reframeBtn').addEventListener('click', handler);
+}
+
 export function onClearComposerClick(handler) {
     document.getElementById('clearComposerBtn').addEventListener('click', handler);
 }

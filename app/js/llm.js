@@ -98,11 +98,23 @@ Return ONLY the corrected transcript text, nothing else.${contextLines ? '\n\nCo
 // rejected as "not quite right" — set by the "Show me different options"
 // regenerate control. When present, the model is told to take a different angle
 // and not repeat those.
+// `opts.steer` (optional): free-text guidance the user typed in the "In your own
+// words" box and submitted via Reframe — additional context and/or direction for
+// THIS regeneration ("I'm worried about the cost", "keep it short, lean toward
+// declining", "I actually beat Tyler at chess last night"). One-shot: the caller
+// does not persist it. Because it is user-authored it is ground truth — the model
+// may treat any specifics in it as real (it is exactly how the user supplies the
+// facts the anti-fabrication rule forbids the model from inventing).
 export async function generateResponses(conversationHistory, context = {}, opts = {}) {
     if (!apiKey) throw new Error('API key not set');
 
     const avoidBlock = (Array.isArray(opts.avoid) && opts.avoid.length)
         ? `\n\nThe user found the previous options not quite right and asked for a different set. Produce a meaningfully DIFFERENT palette — take a different angle, tone, or content; do not just reword these. Previous options to avoid repeating:\n${opts.avoid.map((t) => `- ${t}`).join('\n')}`
+        : '';
+
+    const steerText = (opts.steer || '').trim();
+    const steerBlock = steerText
+        ? `\n\nThe user typed this guidance for how to respond right now — treat it as additional context AND direction, and shape every move around it. It may state facts to convey (use them — being user-authored, they are TRUE and override the "keep it general" caution), and/or how to come across (tone, length, stance). Honor it while keeping the four-slot structure. User's guidance:\n"${steerText}"`
         : '';
 
     const systemPrompt = `You are an AAC (Augmentative and Alternative Communication) assistant. A non-speaking user is in a live conversation. You speak AS the user, in their voice — not as a helpful assistant. Their communication partner just spoke. First classify what the partner is doing, then generate a palette of structurally distinct response moves the user might want to say.
@@ -140,7 +152,7 @@ Get to the point: NO move may begin with an empty filler interjection — no "Ah
 - "missing_facts": lowercase snake_case keys for personal facts about the user you needed but were not given (e.g. "home_city", "fav_team", "occupation"). Use [] if none. Always phrase moves around any missing fact — never output bracketed placeholders.
 
 Conversation context (engine state — use it, do not echo it):
-${JSON.stringify(context)}${buildProfileBlock()}${avoidBlock}`;
+${JSON.stringify(context)}${buildProfileBlock()}${avoidBlock}${steerBlock}`;
 
     const messages = conversationHistory.map(entry => ({
         role: entry.role === 'partner' ? 'user' : 'assistant',
