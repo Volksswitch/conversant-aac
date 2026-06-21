@@ -53,16 +53,21 @@ const P = (text, cat = 'back', speak) => (speak ? { text, cat, speak } : { text,
 // Ordered within each set by likely frequency / utility — position is stable so
 // the user builds motor automaticity, and a small keyguard grid that shows only
 // the first N still surfaces the most useful phrases.
+// Substantive sets are padded to 32 phrases — enough to fill the non-space key
+// cells of a 5-wide keyboard layout (33 keys − space). Smaller layouts use the
+// first N; MINIMAL is deliberately left short.
 export const PHRASE_SETS = {
   CORE: {
-    name: 'Core conversation (24)',
+    name: 'Core conversation (32)',
     phrases: [
       P('Yes','affirm'), P('No','affirm'), P('Yes please','affirm'), P('No thank you','affirm'),
-      P('Maybe','affirm'), P("I don't know",'affirm'), P("I'm not sure",'affirm'), P('Okay','back'),
-      P('Please','social'), P('Thank you','social'), P("You're welcome",'social'), P('Got it','back'),
-      P('Hi','social'), P('Bye','social'), P('Sorry','social'), P('Excuse me','social'),
-      P('Wait','pace'), P('One moment','pace'), P('Stop','pace'), P('Go on','pace'),
-      P('More','pace'), P('Why?','repair'), P('Say that again','repair'), P('Help','need'),
+      P('Maybe','affirm'), P("I don't know",'affirm'), P("I'm not sure",'affirm'), P('I think so','affirm'),
+      P('Okay','back'), P('Got it','back'), P("That's funny",'back'), P('I agree','affirm'),
+      P('Please','social'), P('Thank you','social'), P("You're welcome",'social'), P('Sorry','social'),
+      P('Excuse me','social'), P('Hi','social'), P('Hello','social'), P('Bye','social'),
+      P('See you later','social'), P('Wait','pace'), P('One moment','pace'), P('Stop','pace'),
+      P('Go on','pace'), P('More','pace'), P('Not now','pace'), P('Almost done','pace'),
+      P('Let me think','pace'), P('Why?','repair'), P('Say that again','repair'), P('Help','need'),
     ],
   },
   MINIMAL: {
@@ -73,29 +78,42 @@ export const PHRASE_SETS = {
     ],
   },
   SOCIAL: {
-    name: 'Social (16)',
+    name: 'Social (32)',
     phrases: [
-      P('Hi','social'), P('Hello','social'), P('Bye','social'), P('See you later','social'),
-      P('Thank you','social'), P("You're welcome",'social'), P('Please','social'), P('Sorry','social'),
-      P('Excuse me','social'), P('Nice to see you','social'), P('How are you?','social'), P('Good, thanks','social'),
-      P('Take care','social'), P('Of course','back'), P('Really?','back'), P("That's funny",'back'),
+      P('Hi','social'), P('Hello','social'), P('Good morning','social'), P('Good night','social'),
+      P('Bye','social'), P('See you later','social'), P('Talk soon','social'), P('Take care','social'),
+      P('Thank you','social'), P("You're welcome",'social'), P('My pleasure','social'), P('Please','social'),
+      P('Sorry','social'), P('Excuse me','social'), P('No worries','back'), P('Of course','back'),
+      P('Nice to see you','social'), P('Happy to see you','social'), P('How are you?','social'), P('How have you been?','social'),
+      P("It's been a while",'social'), P('I missed you','social'), P('Congratulations','social'), P('Good luck','social'),
+      P('Welcome','social'), P('Same to you','social'), P('Have a good one','social'), P('Take it easy','social'),
+      P('Cheers','social'), P('Really?','back'), P("That's funny",'back'), P('Good, thanks','social'),
     ],
   },
   REGULATE: {
-    name: 'Pace & repair (16)',
+    name: 'Pace & repair (32)',
     phrases: [
-      P('Wait','pace'), P('One moment','pace'), P('Hold on','pace'), P('Stop','pace'),
-      P('Go on','pace'), P('Slow down','pace'), P('Keep going','pace'), P('Almost done','pace'),
-      P('Not now','pace'), P('Later','pace'), P('Never mind','repair'), P('Say that again','repair'),
-      P("I didn't get that",'repair'), P('Let me think','pace'), P('I need a break','need'), P('Enough','pace'),
+      P('Wait','pace'), P('One moment','pace'), P('Hold on','pace'), P('Hang on','pace'),
+      P('Give me a second','pace'), P('Stop','pace'), P('Pause','pace'), P('Go on','pace'),
+      P('Continue','pace'), P('Keep going','pace'), P('Slow down','pace'), P('Too fast','pace'),
+      P('Almost done','pace'), P('Almost there','pace'), P('Not now','pace'), P('Later','pace'),
+      P('Move on','pace'), P('Come back to that','pace'), P('One thing at a time','pace'), P('Start over','repair'),
+      P('Never mind','repair'), P('Say that again','repair'), P('Repeat that','repair'), P('What was that?','repair'),
+      P("I didn't get that",'repair'), P("I'm lost",'repair'), P('Let me think','pace'), P('I need a break','need'),
+      P('I need help','need'), P('Enough','pace'), P("I'm done",'pace'), P('Ready','pace'),
     ],
   },
   BACKCHANNEL: {
-    name: 'Backchannels (12)',
+    name: 'Backchannels (32)',
     phrases: [
       P('Okay','back'), P('Got it','back'), P('I see','back'), P('Right','back'),
-      P('Exactly','back'), P('Of course','back'), P('Really?','back'), P('Wow','back'),
-      P("That's funny",'back'), P('Good point','back'), P('Makes sense','back'), P('I agree','affirm'),
+      P('Exactly','back'), P('Of course','back'), P('Sure','back'), P('Yeah','back'),
+      P('Totally','back'), P('Absolutely','back'), P('For sure','back'), P('Definitely','affirm'),
+      P('Agreed','affirm'), P('I agree','affirm'), P('True','back'), P('Fair enough','back'),
+      P('Makes sense','back'), P('Good point','back'), P('Well said','back'), P('Noted','back'),
+      P('Understood','back'), P('I hear you','back'), P('Good to know','back'), P('Sounds good','back'),
+      P('Interesting','back'), P('Nice','back'), P('Cool','back'), P('Wow','back'),
+      P('Really?','back'), P('Seriously?','back'), P('No way','back'), P("That's funny",'back'),
     ],
   },
 };
