@@ -16,7 +16,7 @@ import * as fastPhrases from './fast-phrases.js';
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.5.10';
+const APP_VERSION = '0.5.11';
 
 const conversationHistory = [];
 let isListening = false;
@@ -311,6 +311,12 @@ async function generateOptions(partnerText) {
 async function handleMoveSelected(move, index) {
     if (move.op) return handleRepairOfSelf(move);
 
+    // Opening the conversation: after the user's opening statement is spoken, the
+    // partner is expected to reply, so start recording automatically (Ken) —
+    // regardless of the auto-resume setting, and arm the session so later
+    // exchanges can auto-resume too. Captured before selectMove clears the mode.
+    const wasOpener = move.slot === 'OPENER';
+
     placeholders.stop();
     generationToken++; // invalidate any in-flight generation
     stt.stopListening();
@@ -325,7 +331,12 @@ async function handleMoveSelected(move, index) {
     ui.showEngineState(engine.getSnapshot());
 
     await commitExchange(raw, move.text, index);
-    resumeOrIdle();
+    if (wasOpener) {
+        manualListenArmed = true;   // starting a conversation arms auto-resume
+        startFreshListening();      // begin capturing the partner now
+    } else {
+        resumeOrIdle();
+    }
 }
 
 // REPAIR-OF-SELF (design §7.2): re-speak verbatim (instant, no LLM), or
