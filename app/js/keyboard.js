@@ -53,7 +53,8 @@ const PRED_COUNT = 3;           // number of prediction slots
 let sideLayoutId = 'S1';
 let bottomLayoutId = 'B1';
 let sideDockPosition = 'right'; // 'left' | 'right'
-let currentDock = 'bottom';     // set per focused field by dockFor()
+let keyboardDock = 'bottom';    // 'side' | 'bottom' — the user's single choice
+let currentDock = 'bottom';     // the dock currently applied
 // Settings "layout preview": the keyboard is shown for previewing a layout
 // without a focused field (so it doesn't vanish when you leave a text field to
 // change layouts on the Speech & Input tab).
@@ -418,15 +419,12 @@ function renderRows() {
 
 // --- show / hide ------------------------------------------------------------
 
-// Context-based docking (Ken, June 14 2026 — NOT tied to layout or, for now,
-// to orientation): About Me / Settings fields dock the keyboard to the SIDE
-// (those screens compete for horizontal space and want full height); the
-// conversation composer docks it to the BOTTOM. Dynamic orientation-aware
-// docking is a later refinement.
-function dockFor(field) {
-    // Settings fields and About Me both compete for horizontal space → side.
-    if (field.closest('#settingsDialog')) return 'side';
-    return field.matches('.wv-text') ? 'side' : 'bottom';
+// Docking is now a single USER CHOICE applied to every typing context (Ken,
+// June 21 2026 — replaces the old context-based rule where About Me/Settings
+// were side and the conversation composer was bottom). Whichever dock the user
+// picked in Settings is used wherever the keyboard appears.
+function dockFor(/* field */) {
+    return keyboardDock;
 }
 
 let lastDockKey = '';
@@ -634,4 +632,11 @@ export function setBottomLayout(id) {
 export function setSideDockPosition(pos) {
     sideDockPosition = pos === 'left' ? 'left' : 'right';
     if (visible() && currentDock === 'side') setDock('side');
+}
+
+// The user's single dock choice ('side' | 'bottom'), applied to every typing
+// context. If the keyboard is showing a real field, re-dock it live.
+export function setKeyboardDock(dock) {
+    keyboardDock = dock === 'side' ? 'side' : 'bottom';
+    if (visible() && activeField) { setDock(keyboardDock); renderRows(); }
 }

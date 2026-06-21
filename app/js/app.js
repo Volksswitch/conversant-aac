@@ -16,7 +16,7 @@ import * as fastPhrases from './fast-phrases.js';
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.4.5';
+const APP_VERSION = '0.4.6';
 
 const conversationHistory = [];
 let isListening = false;
@@ -94,6 +94,7 @@ function initApp() {
     keyboard.setSideLayout(storage.loadSideLayout());
     keyboard.setBottomLayout(storage.loadBottomLayout());
     keyboard.setSideDockPosition(storage.loadSideDockPosition());
+    keyboard.setKeyboardDock(storage.loadKeyboardDock());
     initSettingsTabs();
     initSettingsDrag();
     // Take the keyboard preview down when Settings is dismissed. The Close
@@ -636,15 +637,30 @@ function initSettingsTabs() {
     });
 }
 
-// On the Speech & Input tab the user changes keyboard layouts but there's no
-// text field to type into, so show the keyboard as a live preview (side dock by
-// default — that's the one being tuned). Any other tab takes the preview down.
+// On the Speech & Input tab the user changes keyboard layout/position but there's
+// no text field to type into, so show the keyboard as a live preview of the
+// CHOSEN dock. Any other tab takes the preview down.
 function handleSettingsTab(tabName) {
     if (tabName === 'speech' && storage.loadKeyboardMode() === 'onscreen') {
-        keyboard.previewShow('side');
+        keyboard.previewShow(storage.loadKeyboardDock());
     } else {
         keyboard.previewHide();
     }
+}
+
+// Show only the controls relevant to the chosen dock: side → which-side + side
+// layout; bottom → bottom layout. Keeps Settings from implying both docks exist
+// at once now that it's a single choice.
+function updateKeyboardPositionGroups() {
+    const dock = storage.loadKeyboardDock();
+    const side = dock === 'side';
+    const set = (id, show) => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = show ? '' : 'none';
+    };
+    set('sidePositionGroup', side);
+    set('sideLayoutGroup', side);
+    set('bottomLayoutGroup', !side);
 }
 
 // Tracks whether the user has dragged the Settings panel (pinning it with
@@ -797,6 +813,10 @@ function openSettings() {
     fillLayoutSelect(bottomLayoutSelect, BOTTOM_LAYOUTS, storage.loadBottomLayout());
     fillLayoutSelect(sideLayoutSelect, SIDE_LAYOUTS, storage.loadSideLayout());
     sideDockPositionToggle.checked = storage.loadSideDockPosition() === 'right';
+    // Keyboard dock (side/bottom) — one choice for every typing context.
+    const dockRadio = document.querySelector(`input[name="keyboardDock"][value="${storage.loadKeyboardDock()}"]`);
+    if (dockRadio) dockRadio.checked = true;
+    updateKeyboardPositionGroups();
     updateUsageDisplay();
     const placeholderSettings = storage.loadPlaceholderSettings();
     initialDelayInput.value = placeholderSettings.initialDelay;
@@ -909,6 +929,17 @@ function openSettings() {
         storage.saveSideDockPosition(pos);
         keyboard.previewShow('side');
     };
+    // Keyboard dock (side/bottom): the single choice. Persist, apply, show/hide
+    // the dock-specific groups, and preview the chosen dock.
+    document.querySelectorAll('input[name="keyboardDock"]').forEach((radio) => {
+        radio.onchange = () => {
+            const dock = document.querySelector('input[name="keyboardDock"]:checked')?.value || 'bottom';
+            storage.saveKeyboardDock(dock);
+            keyboard.setKeyboardDock(dock);
+            updateKeyboardPositionGroups();
+            if (storage.loadKeyboardMode() === 'onscreen') keyboard.previewShow(dock);
+        };
+    });
     const persistPlaceholders = () => storage.savePlaceholderSettings(
         Number(initialDelayInput.value),
         Number(subsequentDelayInput.value),

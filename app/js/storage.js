@@ -197,6 +197,19 @@ export function saveBottomLayout(id) {
     saveSettings(settings);
 }
 
+// Where the single on-screen keyboard docks, for EVERY typing context (Ken,
+// June 21 2026 — replaces the old context-based side/bottom rule). 'side' pairs
+// with sideDockPosition (left/right); 'bottom' is the full-width strip.
+export function loadKeyboardDock() {
+    return loadSettings().keyboardDock === 'side' ? 'side' : 'bottom';
+}
+
+export function saveKeyboardDock(dock) {
+    const settings = loadSettings();
+    settings.keyboardDock = dock === 'side' ? 'side' : 'bottom';
+    saveSettings(settings);
+}
+
 export function loadSideDockPosition() {
     return loadSettings().sideDockPosition === 'left' ? 'left' : 'right';
 }
