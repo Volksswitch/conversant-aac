@@ -273,7 +273,9 @@ body.conv-bottom .fp-row { flex: 0 0 auto; }  /* natural height in the bottom st
     min-height: 0;
     overflow-y: auto;
     background: transparent;     /* not an input — no light card background */
-    padding: 0.25rem 0;
+    border: 1px solid #b7c0c8;   /* delineate the conversation box */
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
     box-shadow: none;
 }
 
