@@ -14,7 +14,7 @@ import { SIDE_LAYOUTS, BOTTOM_LAYOUTS } from './keyboard-layouts.js';
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.3.20';
+const APP_VERSION = '0.4.0';
 
 const conversationHistory = [];
 let isListening = false;
@@ -56,6 +56,11 @@ function initApp() {
         if (speaking) stt.noteSpokenStart(text);
         else stt.noteSpokenEnd();
     });
+
+    // Surface what the app is saying on the user's behalf (fillers, the spoken
+    // response, prompts) as text in Region A — nothing the system speaks is
+    // invisible (UI-Design.docx §7). Cleared when speech ends.
+    tts.onSpeakingChange((speaking, text) => ui.setNowPlaying(speaking ? text : null));
 
     document.getElementById('startBtn').addEventListener('click', handleStart);
     ui.onListenClick(toggleListening);
@@ -135,6 +140,7 @@ function handleSpeechResult(liveText) {
     // Live transcript while the partner is speaking — provisional, not yet
     // confirmed. Confirmation happens implicitly when the user picks a response.
     ui.showTranscript(liveText, false);
+    if (liveText) ui.setTranscriptState('unconfirmed');
 }
 
 // Fired each time the partner pauses for the configured silence period.
@@ -209,6 +215,7 @@ function startFreshListening() {
     currentPartnerText = '';
     generationToken++;
     ui.showTranscript('', false);
+    ui.setTranscriptState('idle');
     ui.clearResponseOptions();
     stt.startListening();
 }
@@ -232,6 +239,7 @@ function shouldPlayFiller(snap) {
 async function generateOptions(partnerText) {
     const token = ++generationToken;
     ui.setStatus('Generating response options...');
+    ui.setTranscriptState('generating');
     ui.clearResponseOptions();
 
     // Generate from prior committed turns plus the partner's current
@@ -259,9 +267,11 @@ async function generateOptions(partnerText) {
             // holding the floor and keep listening for the rest of the turn.
             placeholders.stop();
             ui.clearResponseOptions();
+            ui.setTranscriptState('unconfirmed');
             ui.setStatus('Partner still speaking…');
         } else {
             ui.showMoves(snap.palette, handleMoveSelected);
+            ui.setTranscriptState('ready');
             ui.setStatus(snap.mode === engine.MODE.REPAIR_OF_SELF
                 ? 'Partner didn\'t catch that — choose how to repeat'
                 : 'Select a response');
@@ -378,6 +388,7 @@ function resumeOrIdle() {
     if (manualListenArmed && storage.loadAutoRelisten()) {
         startFreshListening();
     } else {
+        ui.setTranscriptState('idle');
         ui.setStatus('Ready — tap Listen for the next exchange');
     }
 }
@@ -433,6 +444,7 @@ async function handlePardon() {
     stt.resetTranscript();        // …and the accumulated STT, so the re-speak is fresh
     ui.showEngineState(snap);
     ui.showTranscript('', false);
+    ui.setTranscriptState('idle');
     ui.clearResponseOptions();
     ui.setStatus('Speaking...');
     await tts.speak("Sorry, I didn't catch that. Could you say it again?");
@@ -538,6 +550,7 @@ function handleEndConversation() {
     ui.showEngineState(engine.getSnapshot());
     ui.clearResponseOptions();
     ui.showTranscript('', false);
+    ui.setTranscriptState('idle');
     ui.setStatus('Conversation ended — tap Start conversation or Listen to begin again');
 }
 

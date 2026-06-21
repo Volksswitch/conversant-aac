@@ -2,41 +2,160 @@ const transcriptText = document.getElementById('transcriptText');
 const responseOptions = document.getElementById('responseOptions');
 const statusBar = document.getElementById('statusBar');
 const listenBtn = document.getElementById('listenBtn');
+const transcriptPanel = document.getElementById('transcript');
+const transcriptStateLabel = document.getElementById('transcriptState');
+const modeChip = document.getElementById('modeChip');
+const nowPlaying = document.getElementById('nowPlaying');
+const nowPlayingText = document.getElementById('nowPlayingText');
+
+function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    ));
+}
 
 export function showTranscript(text, isFinal) {
-    transcriptText.textContent = text || 'Waiting for partner to speak...';
+    transcriptText.textContent = text || 'Waiting for partner to speak…';
     transcriptText.classList.toggle('placeholder', !text);
-    if (!isFinal) {
-        transcriptText.style.opacity = '0.6';
+    transcriptText.style.opacity = isFinal ? '1' : '0.6';
+}
+
+// --- Region A: mode chip + three-state transcript display (UI-Design.docx
+// §3.1, §6). The chip names the engine's inferred mode; the transcript panel's
+// state (UNCONFIRMED → GENERATING → OPTIONS READY) is informational — it no
+// longer GATES generation (generation fires on the silence period, Ken's
+// decision), so the states reassure rather than block. ---
+
+// Friendly, user-facing mode labels (the engine's enum is internal). The
+// dominant slot color of each mode drives the chip color (token table §10).
+const MODE_CHIP = {
+    STANDBY:             { label: 'Standby',             cls: 'chip-standby' },
+    LISTENING:           { label: 'Listening',           cls: 'chip-listening' },
+    RESPONDING:          { label: 'Choose a response',   cls: 'chip-responding' },
+    REPAIR_OF_SELF:      { label: 'They need that again', cls: 'chip-repair' },
+    INITIATING:          { label: 'Start the conversation', cls: 'chip-initiating' },
+    PRE_CLOSING_CLOSING: { label: 'Wrapping up',         cls: 'chip-closing' },
+};
+
+const TRANSCRIPT_STATE = {
+    idle:        { cls: 'state-idle',        label: '' },
+    unconfirmed: { cls: 'state-unconfirmed', label: 'Heard' },
+    generating:  { cls: 'state-generating',  label: 'Thinking…' },
+    ready:       { cls: 'state-ready',       label: 'Options ready' },
+};
+
+function renderModeChip() {
+    if (!modeChip || !lastSnap) return;
+    const s = lastSnap;
+    // STANDBY relabel when genuinely at rest (mirrors the diagnostic Mode cell):
+    // the engine's resting mode is LISTENING, but with the mic off and nothing
+    // owed it reads wrong — show Standby instead.
+    const atRest = !capturing
+        && s.mode === 'LISTENING'
+        && (s.floor || 'open') === 'open'
+        && (!s.sequenceStack || s.sequenceStack.length === 0)
+        && (!s.palette || s.palette.length === 0);
+    const key = atRest ? 'STANDBY' : s.mode;
+    const meta = MODE_CHIP[key] || MODE_CHIP.LISTENING;
+    modeChip.textContent = meta.label;
+    modeChip.className = `mode-chip ${meta.cls}`;
+}
+
+export function setTranscriptState(state) {
+    if (!transcriptPanel) return;
+    const meta = TRANSCRIPT_STATE[state] || TRANSCRIPT_STATE.idle;
+    transcriptPanel.className = `panel transcript-panel ${meta.cls}`;
+    if (transcriptStateLabel) transcriptStateLabel.textContent = meta.label;
+}
+
+// The currently-playing automatic utterance (filler) or spoken response, shown
+// as text so the system never speaks on the user's behalf invisibly (§7).
+export function setNowPlaying(text) {
+    if (!nowPlaying || !nowPlayingText) return;
+    if (text) {
+        nowPlayingText.textContent = text;
+        nowPlaying.hidden = false;
     } else {
-        transcriptText.style.opacity = '1';
+        nowPlayingText.textContent = '';
+        nowPlaying.hidden = true;
     }
 }
 
-// Degenerate renderer for the engine's move palette. Each move is a plain
-// button labeled "[SLOT] text" — no cards, color coding, latency dots, or
-// compressed-hint styling (that's the future Presentation Layer, deliberately
-// not built yet). For round-trip moves (REPAIR-OF-SELF rephrase/expand) the
-// text isn't generated until selection, so we show the hint instead.
+// --- Region B: the move palette as triple-coded cards (UI-Design.docx §4).
+// Each card carries: slot badge (text), slot color (border + badge), the
+// glanceable hint (primary reading target), the full utterance (smaller), an
+// optional format tag, and a latency dot (filled = instant, hollow = a
+// generation round-trip on selection). Position + color + badge = triple coding,
+// so meaning never rests on color alone. ---
+
+// slot enum → { badge label, css class, friendly aria name }. Covers the four
+// RESPONDING slots plus the repair-of-self ops and the opener/closer palettes
+// the engine also emits, so every move the engine can produce renders.
+const SLOT_META = {
+    PREFERRED:       { badge: 'PREFERRED',    cls: 'slot-preferred' },
+    DISPREFERRED:    { badge: 'DISPREFERRED', cls: 'slot-dispreferred' },
+    INITIATIVE:      { badge: 'INITIATIVE',   cls: 'slot-initiative' },
+    REPAIR:          { badge: 'REPAIR',       cls: 'slot-repair' },
+    REPAIR_RESPEAK:  { badge: 'SAY AGAIN',    cls: 'slot-repair' },
+    REPAIR_REPHRASE: { badge: 'REPHRASE',     cls: 'slot-repair' },
+    REPAIR_EXPAND:   { badge: 'EXPLAIN MORE', cls: 'slot-repair' },
+    OPENER:          { badge: 'OPENER',       cls: 'slot-initiative' },
+    CLOSING:         { badge: 'CLOSING',      cls: 'slot-persistent' },
+};
+
 export function showMoves(palette, onSelect) {
-    responseOptions.innerHTML = '';
     if (!palette || palette.length === 0) {
         clearResponseOptions();
         return;
     }
+    responseOptions.classList.remove('is-empty');
+    responseOptions.innerHTML = '';
+    // Brief crossfade of contents on each render (geometry never moves) —
+    // motion informs ("the cards changed"), never relocates (§5). Honoring
+    // prefers-reduced-motion is handled in CSS.
+    responseOptions.classList.remove('palette-enter');
+    void responseOptions.offsetWidth; // restart the animation
+    responseOptions.classList.add('palette-enter');
+
     palette.forEach((move, index) => {
-        const btn = document.createElement('button');
-        btn.className = 'option-btn';
-        const label = move.text && move.text.trim() ? move.text : `(${move.hint})`;
-        const latency = move.latency === 'roundtrip' ? ' ⟳' : '';
-        btn.innerHTML = `<span class="move-slot">${move.slot}${latency}</span><span class="move-text">${label}</span>`;
-        btn.setAttribute('aria-label', `Move ${index + 1}, ${move.slot}: ${label}`);
-        btn.addEventListener('click', () => onSelect(move, index));
-        responseOptions.appendChild(btn);
+        const meta = SLOT_META[move.slot] || { badge: move.slot, cls: 'slot-persistent' };
+        const roundtrip = move.latency === 'roundtrip';
+        const hasText = move.text && move.text.trim();
+
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = `move-card ${meta.cls} ${roundtrip ? 'latency-roundtrip' : 'latency-instant'}`;
+        card.setAttribute('aria-label',
+            `${meta.badge}: ${move.hint || move.text || ''}${roundtrip ? ' (generates on selection)' : ''}`);
+
+        const formatTag = move.format
+            ? `<span class="move-format">${escapeHtml(move.format)}</span>` : '';
+        // Show the full utterance under the hint when it exists; round-trip moves
+        // (rephrase/expand) have no text yet, so the hint stands alone.
+        const fullText = hasText
+            ? `<span class="move-text">${escapeHtml(move.text)}</span>` : '';
+
+        card.innerHTML = `
+            <span class="move-card-top">
+                <span class="move-badge">${escapeHtml(meta.badge)}</span>
+                <span class="move-latency" title="${roundtrip ? 'Generates when selected' : 'Speaks instantly'}"></span>
+            </span>
+            <span class="move-hint">${escapeHtml(move.hint || move.text || '')}</span>
+            ${fullText}
+            ${formatTag}
+        `;
+        card.addEventListener('click', () => {
+            // Latency transparency: a round-trip card shows it's working in place
+            // while the generation/TTS happens (the next render replaces it).
+            if (roundtrip) card.classList.add('working');
+            onSelect(move, index);
+        });
+        responseOptions.appendChild(card);
     });
 }
 
 export function clearResponseOptions() {
+    responseOptions.classList.add('is-empty');
     responseOptions.innerHTML = '<p class="placeholder">Response options will appear here</p>';
 }
 
@@ -77,6 +196,8 @@ export function showEngineState(snap) {
     if (!snap) return;
     lastSnap = snap;
     renderModeCell();
+    renderModeChip();
+    if (!engineEls.phase) return; // diagnostics panel collapsed/absent
     engineEls.phase.textContent = snap.phase;
     if (engineEls.floor) {
         const floor = snap.floor || 'open';
@@ -132,6 +253,7 @@ export function setListenButtonState(listening) {
     // so it flips the instant capture toggles, not only on the next snapshot.
     capturing = listening;
     renderModeCell();
+    renderModeChip();
 }
 
 export function onListenClick(handler) {
