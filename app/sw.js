@@ -10,7 +10,7 @@
  * Bump CACHE_VERSION whenever the precached shell changes so old caches are
  * cleaned out on activate.
  */
-const CACHE_VERSION = 'aac-v0.4.0';
+const CACHE_VERSION = 'aac-v0.4.1';
 const CACHE_NAME = `aac-shell-${CACHE_VERSION}`;
 
 // App shell precached on install so the app can cold-start offline.
@@ -33,6 +33,7 @@ const SHELL = [
   './js/confirm-dialog.js',
   './js/keyboard.js',
   './js/keyboard-layouts.js',
+  './js/viewport.js',
   './data/placeholders.json',
   './data/pricing.json',
   './data/worldview-questions.json',

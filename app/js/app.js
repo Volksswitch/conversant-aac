@@ -10,11 +10,12 @@ import * as relationships from './relationships.js';
 import * as worldviewUI from './worldview-ui.js';
 import * as keyboard from './keyboard.js';
 import { SIDE_LAYOUTS, BOTTOM_LAYOUTS } from './keyboard-layouts.js';
+import * as viewport from './viewport.js';
 
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.4.0';
+const APP_VERSION = '0.4.1';
 
 const conversationHistory = [];
 let isListening = false;
@@ -34,6 +35,11 @@ let generationToken = 0;
 let manualListenArmed = false;
 
 function initApp() {
+    // Log the display metrics (and re-log on every viewport change) so we — and
+    // beta testers — can see the real pixel box the app is running in. Started
+    // first so the initial numbers are captured even if STT is unsupported.
+    viewport.init();
+
     if (!stt.isSupported()) {
         ui.setStatus('Speech recognition not supported in this browser. Use Chrome or Edge.');
         return;
