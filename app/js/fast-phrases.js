@@ -40,12 +40,14 @@ const P = (text, speak) => (speak ? { text, speak } : { text });
 // the first N still surfaces the most useful phrases.
 export const PHRASE_SETS = {
   CORE: {
-    name: 'Core conversation (16)',
+    name: 'Core conversation (24)',
     phrases: [
       P('Yes'), P('No'), P('Yes please'), P('No thank you'),
-      P('Maybe'), P("I don't know"), P('Please'), P('Thank you'),
-      P('Hi'), P('Bye'), P('Okay'), P('Wait'),
-      P('Stop'), P('Go on'), P('Why?'), P('Help'),
+      P('Maybe'), P("I don't know"), P("I'm not sure"), P('Okay'),
+      P('Please'), P('Thank you'), P("You're welcome"), P('Got it'),
+      P('Hi'), P('Bye'), P('Sorry'), P('Excuse me'),
+      P('Wait'), P('One moment'), P('Stop'), P('Go on'),
+      P('More'), P('Why?'), P('Say that again'), P('Help'),
     ],
   },
   MINIMAL: {
@@ -55,19 +57,29 @@ export const PHRASE_SETS = {
     ],
   },
   SOCIAL: {
-    name: 'Social (12)',
+    name: 'Social (16)',
     phrases: [
       P('Hi'), P('Hello'), P('Bye'), P('See you later'),
       P('Thank you'), P("You're welcome"), P('Please'), P('Sorry'),
       P('Excuse me'), P('Nice to see you'), P('How are you?'), P('Good, thanks'),
+      P('Take care'), P('Of course'), P('Really?'), P("That's funny"),
     ],
   },
   REGULATE: {
-    name: 'Pace & repair (12)',
+    name: 'Pace & repair (16)',
     phrases: [
-      P('Wait'), P('One moment'), P('Stop'), P('Go on'),
-      P('Slow down'), P('Say that again'), P('Almost done'), P('Not now'),
-      P('Later'), P('Never mind'), P('I need a break'), P('Let me think'),
+      P('Wait'), P('One moment'), P('Hold on'), P('Stop'),
+      P('Go on'), P('Slow down'), P('Keep going'), P('Almost done'),
+      P('Not now'), P('Later'), P('Never mind'), P('Say that again'),
+      P("I didn't get that"), P('Let me think'), P('I need a break'), P('Enough'),
+    ],
+  },
+  BACKCHANNEL: {
+    name: 'Backchannels (12)',
+    phrases: [
+      P('Okay'), P('Got it'), P('I see'), P('Right'),
+      P('Exactly'), P('Of course'), P('Really?'), P('Wow'),
+      P("That's funny"), P('Good point'), P('Makes sense'), P('I agree'),
     ],
   },
 };

@@ -252,6 +252,21 @@ Ken is establishing the rules **every conversation-screen layout must obey, BEFO
 
 *(More rules to come. Where these conflict with the UI-Design.docx defaults — notably icon-only buttons vs. the doc's text-badge move cards, and the move-card text-hint anatomy — these field-driven rules win for the control surface; reconcile fully when we pick the first concrete layout.)*
 
+### Word prediction — local tiers, no AI per keystroke (Ken, June 21 2026)
+
+Resolves the prediction half of the long-recorded composition roadmap (the keyboard `pred` slots + the "AI-assisted composition" build-order item). **Predicted-word boxes on the on-screen keyboard are fully LOCAL — no API round-trip per keypress** (per-keystroke latency + token cost make AI infeasible there, and it's a solved offline problem). Three layerable, instant, offline techniques:
+1. **Prefix completion** from a bundled word-frequency list (trie / sorted array, ~10–30k words ≈ 100–300 KB, precached): "th" → the / that / this / they.
+2. **Next-word n-gram** (bundled bigram/trigram table, pruned to top-k per context): fills the boxes before the next word is even started.
+3. **Personalized local learning**: track the user's own word/phrase frequency + recency in the data folder (the user-owned-data model), boosting their actual vocabulary over time — no network, no privacy cost.
+
+**Two complementary tiers, kept distinct:** *local prediction* handles **every keystroke** (free, instant); the *LLM* is reserved for occasional, **explicit phrase expansion** — a few words → a full sentence in the user's voice (the existing "In My Own Words" build-order item #3, "AI-assisted composition") — **never per keypress**. So the keyboard's prediction boxes are NOT an AI feature; the AI tier is a separate, deliberate action.
+
+**Where the boxes live (Ken, June 21 2026):** the keyboard already scaffolds them — `pred` cells in `keyboard-layouts.js` + `.kbd-pred` CSS. **Plan: convert the existing keyboard toolbar buttons (Cut / Copy / Paste / Hide) to ICON buttons (rule 4)** — they're control buttons, icon-only anyway — which **reclaims the horizontal space their text labels took, and that toolbar row hosts the word-prediction buttons.** (Prediction buttons show predicted words as text → content, exempt from rule 4, like the phrases panel and move cards.) Not built — recorded as the plan; needs the bundled word list + a prediction engine module.
+
+### Fast Phrases starter content (June 21 2026)
+
+`app/js/fast-phrases.js` seeds five selectable starter sets — **CORE (24)**, MINIMAL (6), SOCIAL (16), REGULATE/pace-&-repair (16), BACKCHANNEL (12) — content only, modeled on `keyboard-layouts.js`; the geometry (grid pairing with a keyboard layout, per the keyguard-overlay principle in rule 9) and the panel rendering are bound in the held base-layout pass. User-owned/editable later (its own editor + data-folder JSON), like the other configurable sets. Not yet imported/wired.
+
 ### Single-instance enforcement — design question (Ken, June 16 2026; my recommendation, NOT built)
 
 Ken asked whether we can prevent multiple instances/launches of the app. **Yes, and it matters for this app specifically:** two live instances (two tabs/windows) each run their own mic + TTS, so instance A's spoken placeholder is captured by instance B's mic — **cross-instance feedback the v0.3.4 content-echo filter cannot catch** (B doesn't know what A said). Two instances also race on the FSA data-folder writes (`worldview.json` / `relationships.json` / conversation logs) and can double-speak. So single-instance is a robustness requirement, not just polish.
