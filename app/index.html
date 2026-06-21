@@ -24,84 +24,64 @@
         <button id="startBtn">Start</button>
     </div>
 
-    <!-- Four-region Presentation Layer (UI-Design.docx §3). Region geometry is
-         fixed; only card CONTENTS change as the engine changes mode. -->
-    <main class="disabled">
-        <!-- Region A — Transcript. Partner's words, the mode chip (the engine's
-             inferred mode, informational — overriding happens in Region C), the
-             three-state validation display, and the now-playing filler line so
-             nothing the system says on the user's behalf is invisible. -->
-        <section id="transcriptSection" class="region" aria-label="Partner speech transcript">
-            <div class="transcript-head">
-                <h2>Partner said</h2>
-                <span id="modeChip" class="mode-chip chip-standby" aria-live="polite">Standby</span>
-            </div>
-            <div id="transcript" class="panel transcript-panel state-idle">
-                <span id="transcriptState" class="transcript-state-label"></span>
-                <p id="transcriptText" class="placeholder">Waiting for partner to speak…</p>
-                <p id="nowPlaying" class="now-playing" hidden><span class="np-icon">♪</span> <span id="nowPlayingText"></span></p>
-            </div>
-            <div id="listenControls">
-                <button id="listenBtn">Start Listening</button>
-            </div>
-        </section>
-
-        <!-- Region B — Move palette. Cards rendered from the engine's palette
-             descriptor; slot order is fixed (preferred first, repair last). -->
-        <section id="responsesSection" class="region" aria-label="Response options">
-            <div id="responseOptions" class="palette-grid" aria-live="polite">
-                <p class="placeholder">Response options will appear here</p>
-            </div>
-            <div id="paletteFooter">
-                <button id="regenerateBtn" type="button" class="regenerate-btn">↻ Show me different options</button>
-            </div>
-        </section>
-
-        <!-- Fast phrases — BASE UI quick-speak panel (Rule 9). Content buttons
-             (text, ellipsis-truncated), category-colored. Provisional placement
-             here; final home is the keyboard's side, grid-congruent with a
-             keyboard layout for keyguard overlay (held base-layout pass). -->
-        <section id="fastPhrasesSection" class="region" aria-label="Quick phrases">
-            <h2>Quick phrases</h2>
-            <div id="fastPhrases" class="fast-phrases-panel"></div>
-        </section>
-
-        <!-- Region C — Persistent controls. Always present, always the same
-             order, in every mode (UI-Design.docx §3.3). The four CA overrides on
-             top; the session-level controls below. -->
-        <section id="controlsSection" class="region" aria-label="Persistent controls">
-            <div id="overrideControls" aria-label="Conversation overrides">
-                <button id="sayAgainBtn" type="button" class="persist-btn">Say again</button>
-                <button id="holdOnBtn" type="button" class="persist-btn">Hold on</button>
-                <button id="pardonBtn" type="button" class="persist-btn">Pardon?</button>
-                <button id="windDownBtn" type="button" class="persist-btn">Wind down</button>
-            </div>
-            <div id="sessionControls" aria-label="Conversation session controls">
-                <button id="initiateBtn" type="button" class="session-btn">Start conversation</button>
-                <button id="endConversationBtn" type="button" class="session-btn session-btn-end">End conversation</button>
-            </div>
-        </section>
-
-        <!-- Region D — Composer access (free composition: the always-available
-             "in your own words" path). Speak takes the floor; Reframe steers the
-             AI; Clear empties the box. -->
-        <section id="composerSection" class="region" aria-label="Compose in your own words">
-            <h2>In your own words</h2>
-            <div class="panel composer-panel">
-                <textarea id="composerInput" rows="2" placeholder="Type here, then tap Speak to say it — or Reframe to get new options based on it." autocomplete="off"></textarea>
-                <div id="composerControls">
-                    <button id="speakBtn" type="button" class="composer-btn composer-btn-primary">Speak</button>
-                    <button id="reframeBtn" type="button" class="composer-btn">Reframe</button>
-                    <button id="clearComposerBtn" type="button" class="composer-btn composer-btn-quiet">Clear</button>
+    <!-- Conversation screen: a MAIN area + a DOCK area. The dock area occupies
+         exactly the on-screen keyboard's real-estate (side or bottom, per the
+         Settings dock choice); it shows the fast-phrase panel at rest and the
+         keyboard during the "In my own words" modal — so one static keyguard
+         overlays both (CLAUDE.md keyguard-overlay principle). -->
+    <main class="disabled" id="conversationMain">
+        <div id="mainArea">
+            <!-- Transcript: partner's words, the mode chip (informational), the
+                 three-state display, the now-playing line, and the session-level
+                 Start/End controls. -->
+            <section id="transcriptSection" class="region" aria-label="Partner speech transcript">
+                <div class="transcript-head">
+                    <h2>Partner said</h2>
+                    <span id="modeChip" class="mode-chip chip-standby" aria-live="polite">Standby</span>
+                    <span class="head-session">
+                        <button id="initiateBtn" type="button" class="session-btn">Start conversation</button>
+                        <button id="endConversationBtn" type="button" class="session-btn session-btn-end">End conversation</button>
+                    </span>
                 </div>
-            </div>
-        </section>
+                <div id="transcript" class="panel transcript-panel state-idle">
+                    <span id="transcriptState" class="transcript-state-label"></span>
+                    <p id="transcriptText" class="placeholder">Waiting for partner to speak…</p>
+                    <p id="nowPlaying" class="now-playing" hidden><span class="np-icon">♪</span> <span id="nowPlayingText"></span></p>
+                </div>
+                <div id="listenControls">
+                    <button id="listenBtn">Start Listening</button>
+                </div>
+            </section>
 
-        <div id="statusBar" aria-live="polite">Ready</div>
+            <!-- Response region. A fixed footprint (4 cards: 2×2 with a side dock,
+                 1×4 with a bottom dock) + the "New 4" regenerate button. The
+                 footprint is ALWAYS reserved (Rule 1) because the "In my own
+                 words" input box overlays exactly this space. -->
+            <section id="responsesSection" class="region" aria-label="Response options">
+                <div id="responseArea">
+                    <div id="responseOptions" class="palette-grid" aria-live="polite">
+                        <p class="placeholder">Response options will appear here</p>
+                    </div>
+                    <button id="regenerateBtn" type="button" class="regenerate-btn" aria-label="New 4 — different options">New 4</button>
+                    <!-- "In my own words" modal input box — overlays the response
+                         footprint, base UI NOT blurred. Shown by the In-my-own-words
+                         fast-phrase button; any of the 3 buttons dismisses it. -->
+                    <div id="composerOverlay" class="composer-overlay" hidden aria-label="In my own words">
+                        <textarea id="composerInput" rows="2" placeholder="Type here, then Speak it, Reframe to get new options from it, or Cancel." autocomplete="off"></textarea>
+                        <div id="composerControls">
+                            <button id="speakBtn" type="button" class="composer-btn composer-btn-primary">Speak</button>
+                            <button id="reframeBtn" type="button" class="composer-btn">Reframe</button>
+                            <button id="cancelComposerBtn" type="button" class="composer-btn composer-btn-quiet">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
-        <!-- Engine diagnostics — collapsed by default. The mode chip in Region A
-             is the user-facing inference; this is for development/bug reports. -->
-        <details id="engineDetails">
+            <div id="statusBar" aria-live="polite">Ready</div>
+
+            <!-- Engine diagnostics — collapsed by default. The mode chip is the
+                 user-facing inference; this is for development/bug reports. -->
+            <details id="engineDetails">
             <summary>Engine diagnostics</summary>
             <div id="enginePanel" class="panel">
                 <div class="engine-row"><span class="engine-label">Capture (mic)</span><span id="engineCapture" class="engine-val capture-off">off</span></div>
@@ -114,7 +94,24 @@
                 <div class="engine-row"><span class="engine-label">Sequence stack</span><span id="engineStack" class="engine-val">(empty)</span></div>
                 <div class="engine-row"><span class="engine-label">Last user said</span><span id="engineLastUser" class="engine-val">—</span></div>
             </div>
-        </details>
+            </details>
+        </div><!-- /#mainArea -->
+
+        <!-- Dock area — occupies the keyboard's real-estate. Holds the fast-phrase
+             panel at rest (top row = persistent overrides; grid = phrases matching
+             the selected keyboard layout, with the space cell as "In my own
+             words"). The keyboard overlays this same space during the modal. -->
+        <div id="dockArea">
+            <div id="fastPhrases" class="fast-phrases-panel">
+                <div id="fpControls" aria-label="Conversation overrides">
+                    <button id="sayAgainBtn" type="button" class="persist-btn">Say again</button>
+                    <button id="holdOnBtn" type="button" class="persist-btn">Hold on</button>
+                    <button id="pardonBtn" type="button" class="persist-btn">Pardon?</button>
+                    <button id="windDownBtn" type="button" class="persist-btn">Wind down</button>
+                </div>
+                <div id="fpGrid" aria-label="Quick phrases"></div>
+            </div>
+        </div>
     </main>
 
     <div id="worldviewScreen" class="hidden">

@@ -105,6 +105,20 @@ const SLOT_META = {
     CLOSING:         { badge: 'CLOSING',      cls: 'slot-persistent' },
 };
 
+// The response footprint is a fixed RESERVED grid (Rule 1) — 4 slots (2×2 with a
+// side dock, 1×4 with a bottom dock). Empty slots are real estate held open even
+// at rest, because the "In my own words" input box overlays this exact space.
+const RESERVED_SLOTS = 4;
+
+function appendEmptyCards(n) {
+    for (let i = 0; i < n; i++) {
+        const empty = document.createElement('div');
+        empty.className = 'move-card move-card-empty';
+        empty.setAttribute('aria-hidden', 'true');
+        responseOptions.appendChild(empty);
+    }
+}
+
 export function showMoves(palette, onSelect) {
     if (!palette || palette.length === 0) {
         clearResponseOptions();
@@ -154,25 +168,34 @@ export function showMoves(palette, onSelect) {
         });
         responseOptions.appendChild(card);
     });
+    // Pad to the reserved footprint so the grid geometry never changes.
+    if (palette.length < RESERVED_SLOTS) appendEmptyCards(RESERVED_SLOTS - palette.length);
 }
 
 export function clearResponseOptions() {
-    responseOptions.classList.add('is-empty');
-    responseOptions.innerHTML = '<p class="placeholder">Response options will appear here</p>';
+    // Keep the reserved footprint: render empty card slots, not a placeholder
+    // line, so the region's size is held even with no options / no conversation.
+    responseOptions.classList.remove('is-empty');
+    responseOptions.classList.remove('palette-enter');
+    responseOptions.innerHTML = '';
+    appendEmptyCards(RESERVED_SLOTS);
 }
 
-// --- Fast-phrases panel (base UI quick-speak, Rule 9). Category-colored content
-// buttons; the phrase text is the primary cue (color is secondary grouping).
-// Activation is single-tap or a confirming double-tap (Rule 10): in double mode
-// the first tap "arms" the button (visually distinct) and a second tap within
-// doubleTapMs confirms; otherwise it disarms. Speaking is the caller's job
-// (onSpeak), so the panel stays presentation-only. ---
-const fastPhrasesPanel = document.getElementById('fastPhrases');
+// --- Fast-phrases panel (base UI quick-speak, Rules 9/10). The grid mirrors the
+// SELECTED KEYBOARD LAYOUT cell-for-cell (so one static keyguard overlays both):
+// each key cell becomes a category-colored phrase button (phrases drawn in order
+// from the pool); the keyboard's SPACE cell becomes the "In my own words" button
+// (distinct color, same span); blank/pred cells and any leftover cells stay
+// blank. The persistent-override row above (#fpControls) corresponds to the
+// keyboard's toolbar row and is static HTML. Activation: single-tap, or a
+// confirming double-tap (first tap arms, second within doubleTapMs confirms).
+// Speaking / opening the modal is the caller's job, so this stays presentational.
+const fpGrid = document.getElementById('fpGrid');
 
-export function renderFastPhrases(phrases, categories, opts = {}) {
-    if (!fastPhrasesPanel) return;
-    const { tapMode = 'single', doubleTapMs = 400, onSpeak } = opts;
-    fastPhrasesPanel.innerHTML = '';
+export function renderFastPhrases(layoutRows, phrases, categories, opts = {}) {
+    if (!fpGrid) return;
+    const { tapMode = 'single', doubleTapMs = 400, onSpeak, onInMyOwnWords } = opts;
+    fpGrid.innerHTML = '';
 
     let armedBtn = null;
     let armTimer = null;
@@ -181,26 +204,58 @@ export function renderFastPhrases(phrases, categories, opts = {}) {
         armedBtn = null;
         if (armTimer) { clearTimeout(armTimer); armTimer = null; }
     };
+    const blank = (span) => {
+        const f = document.createElement('div');
+        f.className = 'fp-cell-blank';
+        f.style.flex = `${span} 1 0`;
+        return f;
+    };
 
-    (phrases || []).forEach((p) => {
-        const cat = categories[p.cat] || {};
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'fp-btn';
-        btn.style.setProperty('--fp-color', cat.color || '#546E7A');
-        btn.style.setProperty('--fp-tint', cat.tint || '#eceff1');
-        btn.title = p.text;
-        btn.setAttribute('aria-label', p.text);
-        btn.innerHTML = `<span class="fp-text">${escapeHtml(p.text)}</span>`;
-        btn.addEventListener('click', () => {
-            if (tapMode === 'double') {
-                if (armedBtn === btn) { disarm(); onSpeak && onSpeak(p); }
-                else { disarm(); armedBtn = btn; btn.classList.add('fp-armed'); armTimer = setTimeout(disarm, doubleTapMs); }
-            } else {
-                onSpeak && onSpeak(p);
+    let pi = 0; // index into the ordered phrase pool
+    (layoutRows || []).forEach((row) => {
+        const rowEl = document.createElement('div');
+        rowEl.className = 'fp-row';
+        (row || []).forEach((cell) => {
+            const span = cell.span || 1;
+            if (cell.kind === 'space') {
+                // The space counterpart: "In my own words" (distinct color, single tap).
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'fp-btn fp-imow';
+                b.style.flex = `${span} 1 0`;
+                b.title = 'In my own words';
+                b.setAttribute('aria-label', 'In my own words');
+                b.innerHTML = '<span class="fp-text">In my own words</span>';
+                b.addEventListener('click', () => onInMyOwnWords && onInMyOwnWords());
+                rowEl.appendChild(b);
+                return;
             }
+            if (cell.kind === 'blank' || cell.kind === 'pred') {
+                rowEl.appendChild(blank(span));
+                return;
+            }
+            // char or non-space action cell → next phrase, or blank if exhausted.
+            const p = phrases[pi++];
+            if (!p) { rowEl.appendChild(blank(span)); return; }
+            const cat = categories[p.cat] || {};
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'fp-btn';
+            b.style.flex = `${span} 1 0`;
+            b.style.setProperty('--fp-color', cat.color || '#546E7A');
+            b.style.setProperty('--fp-tint', cat.tint || '#eceff1');
+            b.title = p.text;
+            b.setAttribute('aria-label', p.text);
+            b.innerHTML = `<span class="fp-text">${escapeHtml(p.text)}</span>`;
+            b.addEventListener('click', () => {
+                if (tapMode === 'double') {
+                    if (armedBtn === b) { disarm(); onSpeak && onSpeak(p); }
+                    else { disarm(); armedBtn = b; b.classList.add('fp-armed'); armTimer = setTimeout(disarm, doubleTapMs); }
+                } else { onSpeak && onSpeak(p); }
+            });
+            rowEl.appendChild(b);
         });
-        fastPhrasesPanel.appendChild(btn);
+        fpGrid.appendChild(rowEl);
     });
 }
 
@@ -314,11 +369,28 @@ export function applyControlIcons() {
     setIconButton(document.getElementById('windDownBtn'), 'windDown', 'Wind down');
     setIconButton(document.getElementById('initiateBtn'), 'startChat', 'Start conversation');
     setIconButton(document.getElementById('endConversationBtn'), 'endChat', 'End conversation');
-    setIconButton(document.getElementById('regenerateBtn'), 'shuffle', 'Show me different options');
+    setIconButton(document.getElementById('regenerateBtn'), 'shuffle', 'New 4 — different options');
     setIconButton(document.getElementById('speakBtn'), 'speak', 'Speak');
     setIconButton(document.getElementById('reframeBtn'), 'reframe', 'Reframe — new options from this');
-    setIconButton(document.getElementById('clearComposerBtn'), 'clear', 'Clear');
+    setIconButton(document.getElementById('cancelComposerBtn'), 'clear', 'Cancel');
     setListenButtonState(false); // initialize the Listen button's mic icon
+}
+
+// --- "In my own words" modal overlay (Rule 8). Shows the input box over the
+// reserved response footprint without blurring the base UI; focusing the textarea
+// brings up the keyboard in the dock region. ---
+export function showComposerOverlay() {
+    const ov = document.getElementById('composerOverlay');
+    if (ov) ov.hidden = false;
+    const ta = document.getElementById('composerInput');
+    if (ta) ta.focus(); // triggers the on-screen keyboard (if onscreen mode)
+}
+
+export function hideComposerOverlay() {
+    const ta = document.getElementById('composerInput');
+    if (ta) ta.blur(); // dismisses the on-screen keyboard
+    const ov = document.getElementById('composerOverlay');
+    if (ov) ov.hidden = true;
 }
 
 export function onListenClick(handler) {
@@ -347,8 +419,8 @@ export function onReframeClick(handler) {
     document.getElementById('reframeBtn').addEventListener('click', handler);
 }
 
-export function onClearComposerClick(handler) {
-    document.getElementById('clearComposerBtn').addEventListener('click', handler);
+export function onCancelComposerClick(handler) {
+    document.getElementById('cancelComposerBtn').addEventListener('click', handler);
 }
 
 export function getComposerText() {

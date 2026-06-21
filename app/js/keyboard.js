@@ -36,7 +36,7 @@ const IN_SCOPE = '#composerInput, .wv-text, #apiKeyInput';
 // focusout → hide() path, which reflows the layout out from under the finger and
 // steals the first click — so Speak only worked on the second press (Ken, June
 // 19 2026). Keeping the keyboard up keeps the layout stable so the tap lands.
-const KEEP_OPEN_CONTROLS = '#speakBtn, #reframeBtn, #clearComposerBtn';
+const KEEP_OPEN_CONTROLS = '#speakBtn, #reframeBtn, #cancelComposerBtn';
 
 // The element under the most recent pointerdown. On touch a tapped <button> is
 // frequently NOT reported as focusout.relatedTarget, so relatedTarget alone

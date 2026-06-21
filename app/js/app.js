@@ -9,14 +9,14 @@ import * as worldview from './worldview.js';
 import * as relationships from './relationships.js';
 import * as worldviewUI from './worldview-ui.js';
 import * as keyboard from './keyboard.js';
-import { SIDE_LAYOUTS, BOTTOM_LAYOUTS } from './keyboard-layouts.js';
+import { SIDE_LAYOUTS, BOTTOM_LAYOUTS, LAYOUTS } from './keyboard-layouts.js';
 import * as viewport from './viewport.js';
 import * as fastPhrases from './fast-phrases.js';
 
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.4.6';
+const APP_VERSION = '0.5.0';
 
 const conversationHistory = [];
 let isListening = false;
@@ -74,7 +74,7 @@ function initApp() {
     ui.onRegenerateClick(handleRegenerate);
     ui.onSpeakClick(handleSpeakComposed);
     ui.onReframeClick(handleReframe);
-    ui.onClearComposerClick(() => ui.clearComposer());
+    ui.onCancelComposerClick(handleCancelComposed);
     ui.onSettingsClick(openSettings);
     ui.onAboutMeClick(worldviewUI.open);
     // Persistent override controls (Conversation-Engine-Design.docx §5.1) — the
@@ -87,6 +87,8 @@ function initApp() {
     ui.onEndConversationClick(handleEndConversation);
     ui.showEngineState(engine.getSnapshot());
     ui.applyControlIcons();
+    applyConversationDockClasses();
+    ui.clearResponseOptions(); // render the reserved empty card footprint at rest
     renderFastPhrasesPanel();
     worldviewUI.init();
     keyboard.init();
@@ -504,6 +506,10 @@ async function handleRegenerate() {
 // subsystem). Guarded to an active partner turn with a palette, like regenerate.
 async function handleReframe() {
     const steer = ui.getComposerText();
+    // Clicking any of the three buttons dismisses the modal (Ken). Capture the
+    // steer first, then close.
+    ui.clearComposer();
+    closeComposer();
     if (!steer) return;
     if (!currentPartnerText || !lastPalette.length) {
         ui.setStatus('Reframe needs an active response — wait for options first');
@@ -524,11 +530,10 @@ async function handleReframe() {
         ui.showEngineState(snap);
         lastPalette = snap.palette;
         ui.showMoves(snap.palette, handleMoveSelected);
-        ui.clearComposer();           // one-shot: consume the box so it doesn't read as sticky
         ui.setStatus('Select a response');
     } catch (err) {
         if (token !== generationToken) return;
-        ui.setStatus(`Error: ${err.message}`); // keep the box text so the user can retry
+        ui.setStatus(`Error: ${err.message}`);
     }
 }
 
@@ -564,18 +569,13 @@ function handleEndConversation() {
     ui.setStatus('Conversation ended — tap Start conversation or Listen to begin again');
 }
 
-// "In your own words" composer — speak free-composed text in the user's
-// selected voice (the manual realization of the free-composition invariant and
-// the hand-test pathway for worldview output). Tapping Speak is the user TAKING
-// THE FLOOR with their own words, so it behaves like selecting a response (Ken,
-// Pass 14, June 21 2026 — resolves the previously-deferred "push to history?"
-// question): it terminates the partner's open turn (engine.selectMove pops the
-// partner FPP), stops recording, commits the exchange to history, and then
-// resumes listening iff auto-resume is armed (same gate as a palette pick).
-async function handleSpeakComposed() {
-    const text = ui.getComposerText();
-    if (!text) return;
-
+// The user is TAKING THE FLOOR with their own words — shared by the composer's
+// Speak and by a fast phrase. It behaves like selecting a response: terminates
+// the partner's open turn (engine.selectMove pops the partner FPP), stops
+// recording, commits the exchange to history, and resumes listening iff
+// auto-resume is armed. `historyText` is what's logged/displayed; `spokenText`
+// is what TTS says (a fast phrase may carry a distinct pronunciation form).
+async function speakAsUserTurn(historyText, spokenText = historyText) {
     placeholders.stop();
     generationToken++;            // invalidate any in-flight generation on the partner turn
     stt.stopListening();
@@ -584,43 +584,90 @@ async function handleSpeakComposed() {
     currentPartnerText = '';
 
     ui.setStatus('Speaking...');
-    await tts.speak(text);
+    await tts.speak(spokenText);
 
-    // Take the floor: pops the partner's open FPP (terminates their statement),
-    // records this as lastUserUtterance, returns to LISTENING with floor OPEN.
-    engine.selectMove({ text });
+    engine.selectMove({ text: historyText });
     ui.showEngineState(engine.getSnapshot());
     ui.clearResponseOptions();    // any AI palette shown is now stale
-    ui.clearComposer();           // the composed text has been spoken + committed
 
-    await commitExchange(raw, text, -1);
+    await commitExchange(raw, historyText, -1);
     resumeOrIdle();
+}
+
+// --- "In my own words" modal (Rule 8) ---
+
+// Open the modal: show the input box overlay over the reserved response
+// footprint (base UI not blurred) and bring up the keyboard in the dock region.
+function openComposer() {
+    ui.clearComposer();
+    ui.showComposerOverlay();
+    ui.setStatus('Type your own words');
+}
+
+// Close the modal (any of the three buttons does this): dismiss the input box
+// and the keyboard.
+function closeComposer() {
+    ui.hideComposerOverlay();
+}
+
+// Speak: say the composed text, take the floor + commit, then dismiss the modal.
+async function handleSpeakComposed() {
+    const text = ui.getComposerText();
+    if (!text) { closeComposer(); return; }
+    ui.clearComposer();
+    closeComposer();
+    await speakAsUserTurn(text);
+}
+
+// Cancel: discard the box and dismiss the modal (no speech).
+function handleCancelComposed() {
+    ui.clearComposer();
+    closeComposer();
 }
 
 // --- Fast phrases (base UI quick-speak, Rule 9) ---
 
-// Render the selected starter set into the panel with the current tap settings.
-// Re-called when the set / tap mode / interval changes in Settings.
+// The fast-phrase panel mirrors the SELECTED keyboard layout (so one keyguard
+// overlays both): grab the layout rows for whichever dock is chosen and hand
+// them to the renderer along with the phrase pool. Re-called when the set, tap
+// settings, dock, or layout changes.
+function fpLayoutRows() {
+    const dock = storage.loadKeyboardDock();
+    const id = dock === 'side' ? storage.loadSideLayout() : storage.loadBottomLayout();
+    return (LAYOUTS[id] && LAYOUTS[id].rows) || [];
+}
+
 function renderFastPhrasesPanel() {
     const setId = storage.loadFastPhraseSet();
     const set = fastPhrases.PHRASE_SETS[setId]
         || fastPhrases.PHRASE_SETS[fastPhrases.DEFAULT_PHRASE_SET];
-    ui.renderFastPhrases(set.phrases, fastPhrases.CATEGORIES, {
+    ui.renderFastPhrases(fpLayoutRows(), set.phrases, fastPhrases.CATEGORIES, {
         tapMode: storage.loadFastPhraseTapMode(),
         doubleTapMs: storage.loadDoubleTapMs(),
         onSpeak: handleSpeakFastPhrase,
+        onInMyOwnWords: openComposer,
     });
 }
 
-// A fast phrase was activated (single tap, or confirmed double tap). It speaks
-// directly (Rule 9) — it is not a composer starter and, for now, does not commit
-// to history or take the floor (varies by phrase: a backchannel isn't a turn).
-// The spoken text uses the optional per-phrase pronunciation override.
+// Body classes that place the dock area (fast-phrase panel / keyboard) on the
+// chosen edge with the keyboard's real-estate, and select the 2×2 (side) vs 1×4
+// (bottom) response-card arrangement. Kept in sync with the keyboard dock choice.
+function applyConversationDockClasses() {
+    const dock = storage.loadKeyboardDock();
+    const side = dock === 'side';
+    const right = storage.loadSideDockPosition() === 'right';
+    document.body.classList.toggle('conv-bottom', !side);
+    document.body.classList.toggle('conv-side', side);
+    document.body.classList.toggle('conv-side-right', side && right);
+    document.body.classList.toggle('conv-side-left', side && !right);
+}
+
+// A fast phrase was activated (single tap, or confirmed double tap). It is the
+// user speaking, so it behaves like a selected response: spoken AND committed to
+// history (Ken — "anything spoken is part of the conversation"). Routed through
+// the shared speak-as-a-turn path.
 async function handleSpeakFastPhrase(phrase) {
-    placeholders.stop();
-    ui.setStatus('Speaking...');
-    await tts.speak(phrase.speak || phrase.text);
-    ui.setStatus(isListening ? 'Listening...' : 'Ready');
+    await speakAsUserTurn(phrase.text, phrase.speak || phrase.text);
 }
 
 // --- Settings dialog ---
@@ -914,12 +961,14 @@ function openSettings() {
     bottomLayoutSelect.onchange = () => {
         keyboard.setBottomLayout(bottomLayoutSelect.value);
         storage.saveBottomLayout(bottomLayoutSelect.value);
+        renderFastPhrasesPanel(); // the panel mirrors the layout
         keyboard.previewShow('bottom');
     };
     sideLayoutSelect.onpointerdown = sideLayoutSelect.onfocus = previewSide;
     sideLayoutSelect.onchange = () => {
         keyboard.setSideLayout(sideLayoutSelect.value);
         storage.saveSideLayout(sideLayoutSelect.value);
+        renderFastPhrasesPanel();
         keyboard.previewShow('side');
     };
     sideDockPositionToggle.onpointerdown = sideDockPositionToggle.onfocus = previewSide;
@@ -927,6 +976,7 @@ function openSettings() {
         const pos = sideDockPositionToggle.checked ? 'right' : 'left';
         keyboard.setSideDockPosition(pos);
         storage.saveSideDockPosition(pos);
+        applyConversationDockClasses();
         keyboard.previewShow('side');
     };
     // Keyboard dock (side/bottom): the single choice. Persist, apply, show/hide
@@ -937,6 +987,8 @@ function openSettings() {
             storage.saveKeyboardDock(dock);
             keyboard.setKeyboardDock(dock);
             updateKeyboardPositionGroups();
+            applyConversationDockClasses(); // move the dock area + re-pick 2×2/1×4
+            renderFastPhrasesPanel();        // mirror the now-current dock's layout
             if (storage.loadKeyboardMode() === 'onscreen') keyboard.previewShow(dock);
         };
     });

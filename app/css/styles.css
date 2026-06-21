@@ -122,19 +122,70 @@ header h1 {
     font-size: 0.9rem;
 }
 
+/* Conversation screen = a MAIN area + a DOCK area (the keyboard's real-estate).
+   Arrangement follows the Settings dock choice (body conv-* classes): side dock
+   → a row (dock right or left); bottom dock → a column (dock at the bottom). */
 main {
     flex: 1;
     display: flex;
+    min-height: 0;
+    width: 100%;
+}
+body.conv-side-right main { flex-direction: row; }
+body.conv-side-left  main { flex-direction: row-reverse; }
+body.conv-bottom     main { flex-direction: column; }
+
+#mainArea {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
     flex-direction: column;
-    /* vertical rhythm → vh; horizontal padding → vw; content cap → proportional
-       to width (was a fixed 1100px, which pinned the column to the same pixels
-       on every device — the opposite of proportional). */
     gap: clamp(0.5rem, 1.6vh, 1.2rem);
     padding: clamp(0.5rem, 1.6vh, 1.2rem) clamp(0.75rem, 1.6vw, 2rem);
-    max-width: min(96vw, 1600px);
-    width: 100%;
-    margin: 0 auto;
+    overflow: auto;
 }
+
+/* Dock area — same footprint as the keyboard so one keyguard overlays both. */
+#dockArea {
+    flex: 0 0 auto;
+    display: flex;
+    min-height: 0;
+    background: #e9edf0;
+}
+body.conv-side #dockArea { width: min(26rem, 46vw); }
+body.conv-bottom #dockArea { width: 100%; border-top: 1px solid #c4ccd2; }
+body.conv-side-right #dockArea { border-left: 1px solid #c4ccd2; }
+body.conv-side-left  #dockArea { border-right: 1px solid #c4ccd2; }
+
+/* Fast-phrase panel: top row (#fpControls = persistent overrides, matching the
+   keyboard's toolbar row) + the phrase grid (#fpGrid, mirroring the layout). */
+#fastPhrases {
+    flex: 1 1 auto;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 0.5rem;
+}
+#fpControls {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 0.4rem;
+}
+#fpGrid {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    min-height: 0;
+}
+.fp-row {
+    display: flex;
+    gap: 0.4rem;
+}
+body.conv-side .fp-row { flex: 1 1 0; }       /* stretch to fill the column height */
+body.conv-bottom .fp-row { flex: 0 0 auto; }  /* natural height in the bottom strip */
 
 .region h2 {
     font-size: 0.95rem;
@@ -159,12 +210,25 @@ main {
 .transcript-head {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 0.5rem;
     margin-bottom: 0.5rem;
 }
 
 .transcript-head h2 {
     margin-bottom: 0;
+    margin-right: auto;   /* push the chip + session controls to the right */
+}
+
+/* Session-level controls (Start / End conversation) live in the transcript head,
+   right-aligned — icon buttons (Rule 4). */
+.head-session {
+    display: flex;
+    gap: 0.4rem;
+    flex: 0 0 auto;
+}
+.head-session .session-btn {
+    flex: 0 0 auto;
+    padding: 0.4rem 0.55rem;
 }
 
 /* Mode chip — the engine's inferred mode, colored by the mode's dominant slot.
@@ -251,16 +315,70 @@ main {
    never does, and it stays constant within a session — mode changes swap card
    CONTENTS, never the geometry ("the cards changed", not "the screen changed",
    §5). At RESPONDING width this reads as the 2×2 grid of the spec. */
+/* Response region: a fixed RESERVED footprint = the card grid + the "New 4"
+   button, with the "In my own words" input box overlaying it. Card grid is 2×2
+   when the dock is on a side, 1×4 when it's on the bottom (Ken). */
+#responseArea {
+    position: relative;
+    flex: 0 0 auto;
+    display: flex;
+    gap: clamp(0.4rem, 0.8vw, 0.8rem);
+    align-items: stretch;
+}
 .palette-grid {
+    flex: 1 1 auto;
     display: grid;
-    /* column min-width + gap on the horizontal axis (vw); the 1fr columns make
-       the rest of the horizontal sizing proportional for free. */
-    grid-template-columns: repeat(auto-fit, minmax(clamp(12rem, 20vw, 18rem), 1fr));
     gap: clamp(0.5rem, 0.9vw, 1rem);
     align-items: stretch;
 }
-.palette-grid.is-empty {
-    display: block;
+body.conv-side .palette-grid {
+    grid-template-columns: repeat(2, 1fr);   /* 2×2 */
+    grid-auto-rows: 1fr;
+}
+body.conv-bottom .palette-grid {
+    grid-template-columns: repeat(4, 1fr);   /* 1×4 */
+}
+/* Reserved empty slot — holds the footprint open at rest / between options. */
+.move-card-empty {
+    background: #f4f6f8;
+    border: 2px dashed #dde3e8;
+    border-left-width: 6px;
+    border-left-color: #dde3e8;
+    box-shadow: none;
+    cursor: default;
+    min-height: clamp(4rem, 9vh, 7rem);
+}
+
+/* "In my own words" input box — overlays the response footprint (base UI NOT
+   blurred). Dismissed by Speak / Reframe / Cancel. */
+.composer-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 6;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.6rem;
+    background: #fff;
+    border: 2px solid var(--header);
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+.composer-overlay[hidden] { display: none; }
+.composer-overlay #composerInput {
+    flex: 1 1 auto;
+    min-height: 3rem;
+    padding: 0.6rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 1.1rem;
+    resize: none;
+}
+.composer-overlay #composerControls {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 0.5rem;
 }
 
 /* Crossfade card contents on each render (≤200 ms, §10). Geometry is unchanged
@@ -389,40 +507,33 @@ main {
 .slot-persistent .move-latency   { color: var(--slot-persistent); }
 .slot-persistent .move-badge     { background: var(--slot-persistent); color: #fff; }
 
-/* --- Fast phrases panel (base UI quick-speak, Rule 9). Category-colored
-   content buttons (color is the SECONDARY cue — text is always shown). Each
-   button is sized to a compact target; long phrases ellipsis-truncate. The grid
-   wraps; horizontal sizing on vw, vertical on vh (two-axis model). Provisional
-   placement — final home is the keyboard's side, grid-congruent for keyguard
-   overlay. --- */
-.fast-phrases-panel {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(clamp(6rem, 10vw, 9rem), 1fr));
-    gap: clamp(0.3rem, 0.7vh, 0.6rem) clamp(0.3rem, 0.6vw, 0.6rem);
-}
+/* --- Fast-phrase buttons. The grid MIRRORS the selected keyboard layout
+   (cell flex = the key's span), so the panel and the keyboard overlay 1:1 for a
+   single keyguard. Category-colored (secondary cue; text always shown), long
+   phrases ellipsis-truncate. --- */
 .fp-btn {
     --fp-color: #546E7A;
     --fp-tint: #eceff1;
-    min-height: clamp(2.4rem, 6vh, 3.4rem);
-    padding: 0.3rem 0.6rem;
+    min-width: 0;
+    padding: 0.2rem 0.4rem;
     border: 1px solid var(--fp-color);
     border-left: 5px solid var(--fp-color);
     border-radius: 8px;
     background: var(--fp-tint);
     color: var(--ink);
-    font-size: 1rem;
+    font-size: clamp(0.8rem, 1.4vh, 1.05rem);
     font-weight: 600;
     cursor: pointer;
-    text-align: left;
+    overflow: hidden;
     display: flex;
     align-items: center;
-    overflow: hidden;
+    justify-content: center;
 }
+body.conv-bottom .fp-btn { min-height: clamp(2.2rem, 7.5vh, 4rem); }
 .fp-text {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    width: 100%;
 }
 .fp-btn:hover,
 .fp-btn:focus-visible {
@@ -437,6 +548,17 @@ main {
     color: #fff;
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--fp-color) 35%, transparent);
 }
+/* "In my own words" — the space-cell counterpart, distinct (dark) background. */
+.fp-btn.fp-imow {
+    --fp-color: #2c3e50;
+    background: #2c3e50;
+    color: #fff;
+}
+.fp-btn.fp-imow .fp-text { font-weight: 700; }
+.fp-btn.fp-imow:hover,
+.fp-btn.fp-imow:focus-visible { background: #1d2b38; color: #fff; outline-color: #1d2b38; }
+/* Inert grid spacer (matches a blank/pred or leftover key cell). */
+.fp-cell-blank { min-width: 0; }
 
 /* Icon-only control buttons (Rule 4). The glyph inherits the button's text
    color (currentColor) and scales with the proportional font (sized in em). */
@@ -452,17 +574,16 @@ main {
     justify-content: center;
 }
 
-/* Palette footer — the whole-palette regenerate control (icon button, not a
-   long thin box — Ken). Compact, slate, sits under the palette. */
-#paletteFooter {
-    margin-top: 0.6rem;
-}
+/* "New 4" — regenerate a different set of four. Icon button to the right of the
+   response grid, spanning its full height (2 rows for 2×2, 1 for 1×4). */
 .regenerate-btn {
+    flex: 0 0 auto;
+    align-self: stretch;
+    width: clamp(2.6rem, 6vw, 3.6rem);
     background: #fff;
     border: 2px solid var(--slot-persistent);
     color: var(--slot-persistent);
     border-radius: 8px;
-    padding: 0.5rem 0.7rem;
     cursor: pointer;
 }
 .regenerate-btn:hover,
@@ -1759,7 +1880,9 @@ label.radio-label input[type="radio"] {
 /* Reserve room so the focused field clears the keyboard. Bottom dock reserves
    vertical space (viewport-relative, so the field can always scroll above the
    keys); side dock reserves horizontal space on the side it's docked. */
-body.kbd-open.kbd-dock-bottom main,
+/* About Me reserves bottom space for a bottom keyboard. The CONVERSATION screen
+   does NOT — its dock area already occupies the keyboard's footprint and the
+   keyboard overlays the dock, so no padding on main. */
 body.kbd-open.kbd-dock-bottom #worldviewContent {
     padding-bottom: 50vh;
 }
