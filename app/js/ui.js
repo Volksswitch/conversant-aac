@@ -1,3 +1,5 @@
+import { setIconButton } from './icons.js';
+
 const transcriptText = document.getElementById('transcriptText');
 const responseOptions = document.getElementById('responseOptions');
 const statusBar = document.getElementById('statusBar');
@@ -281,7 +283,9 @@ export function setStatus(message) {
 }
 
 export function setListenButtonState(listening) {
-    listenBtn.textContent = listening ? 'Stop Listening' : 'Start Listening';
+    // Icon-only (Rule 4); the .listening (selected/red) state signals capture is
+    // on (Rule 6 — a sticky action shown as a selected button).
+    setIconButton(listenBtn, 'mic', listening ? 'Stop listening' : 'Start listening');
     listenBtn.classList.toggle('listening', listening);
     // Mic capture is an I/O state, separate from the engine's CA mode — surface
     // it on its own row so "Mode: LISTENING" (the engine's resting mode) isn't
@@ -297,6 +301,24 @@ export function setListenButtonState(listening) {
     capturing = listening;
     renderModeCell();
     renderModeChip();
+}
+
+// Convert the control buttons to icon-only (Rule 4), keeping each one's
+// accessible name (aria-label + title). Content buttons — move/response cards
+// and fast-phrase buttons — are intentionally NOT touched (they show text).
+// Called once at startup.
+export function applyControlIcons() {
+    setIconButton(document.getElementById('sayAgainBtn'), 'replay', 'Say again');
+    setIconButton(document.getElementById('holdOnBtn'), 'pause', 'Hold on');
+    setIconButton(document.getElementById('pardonBtn'), 'pardon', "Pardon? — ask them to repeat");
+    setIconButton(document.getElementById('windDownBtn'), 'windDown', 'Wind down');
+    setIconButton(document.getElementById('initiateBtn'), 'startChat', 'Start conversation');
+    setIconButton(document.getElementById('endConversationBtn'), 'endChat', 'End conversation');
+    setIconButton(document.getElementById('regenerateBtn'), 'shuffle', 'Show me different options');
+    setIconButton(document.getElementById('speakBtn'), 'speak', 'Speak');
+    setIconButton(document.getElementById('reframeBtn'), 'reframe', 'Reframe — new options from this');
+    setIconButton(document.getElementById('clearComposerBtn'), 'clear', 'Clear');
+    setListenButtonState(false); // initialize the Listen button's mic icon
 }
 
 export function onListenClick(handler) {

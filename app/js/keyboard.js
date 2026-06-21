@@ -21,6 +21,7 @@
  */
 
 import { LAYOUTS, SYMBOLS } from './keyboard-layouts.js';
+import { setIconButton } from './icons.js';
 
 // Fields the app keyboard handles. Includes the Settings API-key field so the
 // Windows keyboard is suppressed there too and the app's own (side-docked)
@@ -281,14 +282,19 @@ function build() {
     // leaving any open panel — e.g. Settings — in place.
     const toolbar = document.createElement('div');
     toolbar.className = 'kbd-toolbar';
-    for (const [tool, label] of [['cut', 'Cut'], ['copy', 'Copy'], ['paste', 'Paste'], ['hide', 'Hide ⌄']]) {
+    // Icon-only toolbar buttons (Rule 4); the accessible name is kept via
+    // aria-label/title. Converting from text labels also frees the row's
+    // horizontal space — the planned home for the word-prediction buttons.
+    for (const [tool, label, icon] of [
+        ['cut', 'Cut', 'cut'], ['copy', 'Copy', 'copy'],
+        ['paste', 'Paste', 'paste'], ['hide', 'Hide the keyboard', 'hide'],
+    ]) {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'kbd-tool';
         if (tool === 'hide') btn.classList.add('kbd-tool-hide');
         btn.dataset.tool = tool;
-        btn.textContent = label;
-        if (tool === 'hide') btn.title = 'Hide the keyboard';
+        setIconButton(btn, icon, label);
         toolbar.appendChild(btn);
     }
     rootEl.appendChild(toolbar);

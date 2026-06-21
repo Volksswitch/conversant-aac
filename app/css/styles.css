@@ -438,22 +438,38 @@ main {
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--fp-color) 35%, transparent);
 }
 
-/* Palette footer — the whole-palette regenerate control, attached to Region B. */
+/* Icon-only control buttons (Rule 4). The glyph inherits the button's text
+   color (currentColor) and scales with the proportional font (sized in em). */
+.icon {
+    width: 1.5em;
+    height: 1.5em;
+    display: block;
+    flex: 0 0 auto;
+}
+.icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Palette footer — the whole-palette regenerate control (icon button, not a
+   long thin box — Ken). Compact, slate, sits under the palette. */
 #paletteFooter {
     margin-top: 0.6rem;
 }
 .regenerate-btn {
-    background: transparent;
-    border: 1px dashed #b0bec5;
-    color: #546e7a;
-    border-radius: 6px;
-    padding: 0.5rem 1rem;
-    font-size: 0.9rem;
+    background: #fff;
+    border: 2px solid var(--slot-persistent);
+    color: var(--slot-persistent);
+    border-radius: 8px;
+    padding: 0.5rem 0.7rem;
     cursor: pointer;
 }
-.regenerate-btn:hover {
-    border-color: var(--slot-initiative);
-    color: var(--slot-initiative);
+.regenerate-btn:hover,
+.regenerate-btn:focus-visible {
+    background: var(--slot-persistent);
+    color: #fff;
+    outline: none;
 }
 
 /* Engine diagnostics — collapsed <details> for development / bug reports. The
