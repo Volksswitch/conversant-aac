@@ -34,18 +34,22 @@
             <!-- Transcript: partner's words, the mode chip (informational), the
                  three-state display, the now-playing line, and the session-level
                  Start/End controls. -->
-            <section id="transcriptSection" class="region" aria-label="Partner speech transcript">
+            <section id="transcriptSection" class="region" aria-label="Conversation transcript">
                 <div class="transcript-head">
-                    <h2>Partner said</h2>
+                    <h2>Conversation</h2>
                     <span id="modeChip" class="mode-chip chip-standby" aria-live="polite">Standby</span>
                     <span class="head-session">
                         <button id="initiateBtn" type="button" class="session-btn">Start conversation</button>
                         <button id="endConversationBtn" type="button" class="session-btn session-btn-end">End conversation</button>
                     </span>
                 </div>
-                <div id="transcript" class="panel transcript-panel state-idle">
-                    <span id="transcriptState" class="transcript-state-label"></span>
-                    <p id="transcriptText" class="placeholder">Waiting for partner to speak…</p>
+                <!-- Scrolling conversation transcript — fixed height (it scrolls
+                     internally; the layout must NEVER grow, for the static
+                     keyguard). Partner and user turns are styled differently.
+                     Not an input, so no light/card background. -->
+                <div id="transcript" class="transcript-log" aria-live="polite">
+                    <div id="transcriptLog"></div>
+                    <div id="liveTurn" class="turn turn-partner turn-live" hidden></div>
                     <p id="nowPlaying" class="now-playing" hidden><span class="np-icon">♪</span> <span id="nowPlayingText"></span></p>
                 </div>
                 <div id="listenControls">

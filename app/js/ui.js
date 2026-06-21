@@ -1,11 +1,11 @@
 import { setIconButton } from './icons.js';
 
-const transcriptText = document.getElementById('transcriptText');
 const responseOptions = document.getElementById('responseOptions');
 const statusBar = document.getElementById('statusBar');
 const listenBtn = document.getElementById('listenBtn');
-const transcriptPanel = document.getElementById('transcript');
-const transcriptStateLabel = document.getElementById('transcriptState');
+const transcriptBox = document.getElementById('transcript');     // fixed-height scroller
+const transcriptLog = document.getElementById('transcriptLog');  // committed turns
+const liveTurn = document.getElementById('liveTurn');            // in-progress partner turn
 const modeChip = document.getElementById('modeChip');
 const nowPlaying = document.getElementById('nowPlaying');
 const nowPlayingText = document.getElementById('nowPlayingText');
@@ -16,10 +16,35 @@ function escapeHtml(s) {
     ));
 }
 
-export function showTranscript(text, isFinal) {
-    transcriptText.textContent = text || 'Waiting for partner to speak…';
-    transcriptText.classList.toggle('placeholder', !text);
-    transcriptText.style.opacity = isFinal ? '1' : '0.6';
+// --- Conversation transcript (scrolling, FIXED height — the layout never grows,
+// for the static keyguard). Committed turns are rendered from history (partner
+// vs user styled differently); the in-progress partner turn is a separate live
+// entry; the now-playing filler is a transient entry. All scroll INSIDE the box. ---
+
+function scrollLogToBottom() {
+    if (transcriptBox) transcriptBox.scrollTop = transcriptBox.scrollHeight;
+}
+
+// Render the committed conversation (array of {role:'partner'|'user', text}).
+export function renderConversation(history) {
+    if (!transcriptLog) return;
+    transcriptLog.innerHTML = '';
+    (history || []).forEach((t) => {
+        const div = document.createElement('div');
+        div.className = `turn turn-${t.role === 'partner' ? 'partner' : 'user'}`;
+        div.textContent = t.text;
+        transcriptLog.appendChild(div);
+    });
+    scrollLogToBottom();
+}
+
+// The in-progress partner turn (live STT, provisional) — shown below the
+// committed turns. Empty text hides it.
+export function setLiveTranscript(text) {
+    if (!liveTurn) return;
+    if (text) { liveTurn.textContent = text; liveTurn.hidden = false; }
+    else { liveTurn.textContent = ''; liveTurn.hidden = true; }
+    scrollLogToBottom();
 }
 
 // --- Region A: mode chip + three-state transcript display (UI-Design.docx
@@ -39,13 +64,6 @@ const MODE_CHIP = {
     PRE_CLOSING_CLOSING: { label: 'Wrapping up',         cls: 'chip-closing' },
 };
 
-const TRANSCRIPT_STATE = {
-    idle:        { cls: 'state-idle',        label: '' },
-    unconfirmed: { cls: 'state-unconfirmed', label: 'Heard' },
-    generating:  { cls: 'state-generating',  label: 'Thinking…' },
-    ready:       { cls: 'state-ready',       label: 'Options ready' },
-};
-
 function renderModeChip() {
     if (!modeChip || !lastSnap) return;
     const s = lastSnap;
@@ -63,11 +81,12 @@ function renderModeChip() {
     modeChip.className = `mode-chip ${meta.cls}`;
 }
 
+// Three-state cue (UNCONFIRMED → GENERATING → READY) applied subtly to the live
+// partner turn (a colored left accent) — informational, doesn't gate anything.
 export function setTranscriptState(state) {
-    if (!transcriptPanel) return;
-    const meta = TRANSCRIPT_STATE[state] || TRANSCRIPT_STATE.idle;
-    transcriptPanel.className = `panel transcript-panel ${meta.cls}`;
-    if (transcriptStateLabel) transcriptStateLabel.textContent = meta.label;
+    if (!liveTurn) return;
+    liveTurn.classList.remove('state-unconfirmed', 'state-generating', 'state-ready');
+    if (state && state !== 'idle') liveTurn.classList.add(`state-${state}`);
 }
 
 // The currently-playing automatic utterance (filler) or spoken response, shown

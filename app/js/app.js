@@ -16,7 +16,7 @@ import * as fastPhrases from './fast-phrases.js';
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.5.5';
+const APP_VERSION = '0.5.6';
 
 const conversationHistory = [];
 let isListening = false;
@@ -151,7 +151,7 @@ function initApp() {
 function handleSpeechResult(liveText) {
     // Live transcript while the partner is speaking — provisional, not yet
     // confirmed. Confirmation happens implicitly when the user picks a response.
-    ui.showTranscript(liveText, false);
+    ui.setLiveTranscript(liveText);
     if (liveText) ui.setTranscriptState('unconfirmed');
 }
 
@@ -162,7 +162,7 @@ function handleSpeechResult(liveText) {
 // silence — there is no confirm-the-transcript step.
 async function handleSilencePeriod(text) {
     currentPartnerText = text;
-    ui.showTranscript(text, false);
+    ui.setLiveTranscript(text);
     engine.partnerSpeaking(text);
     // Placeholders no longer start here (Ken, June 18 2026). A filler must cover
     // the user's READING/CHOOSING window, not the AI-latency gap, and must only
@@ -226,7 +226,7 @@ function toggleListening() {
 function startFreshListening() {
     currentPartnerText = '';
     generationToken++;
-    ui.showTranscript('', false);
+    ui.setLiveTranscript('');
     ui.setTranscriptState('idle');
     ui.clearResponseOptions();
     stt.startListening();
@@ -366,6 +366,8 @@ async function handleRepairOfSelf(move) {
     }
     conversationHistory.push({ role: 'user', text });
     storage.logUserResponse({ selectedText: text, selectedIndex: -1, allOptions: [] });
+    ui.renderConversation(conversationHistory);
+    ui.setLiveTranscript('');
     resumeOrIdle();
 }
 
@@ -380,7 +382,6 @@ async function commitExchange(raw, userText, index) {
             cleaned = await llm.cleanupTranscript(raw, conversationHistory);
         } catch { /* fall back to raw */ }
         conversationHistory.push({ role: 'partner', text: cleaned });
-        ui.showTranscript(cleaned, true);
         storage.logPartnerSpeech({ rawTranscript: raw, cleanedTranscript: cleaned });
     }
     conversationHistory.push({ role: 'user', text: userText });
@@ -392,6 +393,9 @@ async function commitExchange(raw, userText, index) {
         // palette, so don't log the (possibly stale) last palette against it.
         allOptions: index >= 0 ? lastPalette.map(m => m.text).filter(Boolean) : [],
     });
+    // Render the running transcript and clear the in-progress (live) partner turn.
+    ui.renderConversation(conversationHistory);
+    ui.setLiveTranscript('');
 }
 
 // Auto-resume only if the user has manually started listening this session (and
@@ -455,7 +459,7 @@ async function handlePardon() {
     currentPartnerText = '';      // discard the misheard capture…
     stt.resetTranscript();        // …and the accumulated STT, so the re-speak is fresh
     ui.showEngineState(snap);
-    ui.showTranscript('', false);
+    ui.setLiveTranscript('');
     ui.setTranscriptState('idle');
     ui.clearResponseOptions();
     ui.setStatus('Speaking...');
@@ -564,7 +568,7 @@ function handleEndConversation() {
     engine.reset();
     ui.showEngineState(engine.getSnapshot());
     ui.clearResponseOptions();
-    ui.showTranscript('', false);
+    ui.setLiveTranscript('');
     ui.setTranscriptState('idle');
     ui.setStatus('Conversation ended — tap Start conversation or Listen to begin again');
 }
