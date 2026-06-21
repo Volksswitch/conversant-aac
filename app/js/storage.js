@@ -221,17 +221,7 @@ export function saveSideDockPosition(pos) {
 }
 
 // --- Fast-phrases panel (base UI) ---
-
-// Which starter set is shown. Default the CORE set.
-export function loadFastPhraseSet() {
-    return loadSettings().fastPhraseSet || 'CORE';
-}
-
-export function saveFastPhraseSet(id) {
-    const settings = loadSettings();
-    settings.fastPhraseSet = id;
-    saveSettings(settings);
-}
+// (No set selector — one canonical list is always shown.)
 
 // Tap mode for speaking a fast phrase: 'single' (speak on one tap) or 'double'
 // (require a confirming second tap to guard against false hits — Rule 10).

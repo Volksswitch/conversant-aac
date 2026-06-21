@@ -16,7 +16,7 @@ import * as fastPhrases from './fast-phrases.js';
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.5.2';
+const APP_VERSION = '0.5.3';
 
 const conversationHistory = [];
 let isListening = false;
@@ -638,10 +638,8 @@ function fpLayoutRows() {
 }
 
 function renderFastPhrasesPanel() {
-    const setId = storage.loadFastPhraseSet();
-    const set = fastPhrases.PHRASE_SETS[setId]
-        || fastPhrases.PHRASE_SETS[fastPhrases.DEFAULT_PHRASE_SET];
-    ui.renderFastPhrases(fpLayoutRows(), set.phrases, fastPhrases.CATEGORIES, {
+    // One canonical list, always shown in full (no selectable sets — Ken).
+    ui.renderFastPhrases(fpLayoutRows(), fastPhrases.PHRASES, fastPhrases.CATEGORIES, {
         tapMode: storage.loadFastPhraseTapMode(),
         doubleTapMs: storage.loadDoubleTapMs(),
         onSpeak: handleSpeakFastPhrase,
@@ -869,17 +867,8 @@ function openSettings() {
     initialDelayInput.value = placeholderSettings.initialDelay;
     subsequentDelayInput.value = placeholderSettings.subsequentDelay;
     maxPlaceholdersInput.value = placeholderSettings.maxPlaceholders;
-    // Fast-phrases panel controls.
-    const fastPhraseSetSelect = document.getElementById('fastPhraseSetSelect');
+    // Fast-phrases panel controls (no set selector — one list, always shown).
     const doubleTapMsSelect = document.getElementById('doubleTapMsSelect');
-    fastPhraseSetSelect.innerHTML = '';
-    fastPhrases.PHRASE_SET_LIST.forEach(({ id, name }) => {
-        const opt = document.createElement('option');
-        opt.value = id;
-        opt.textContent = name;
-        if (id === storage.loadFastPhraseSet()) opt.selected = true;
-        fastPhraseSetSelect.appendChild(opt);
-    });
     const tapMode = storage.loadFastPhraseTapMode();
     const tapRadio = document.querySelector(`input[name="fastPhraseTapMode"][value="${tapMode}"]`);
     if (tapRadio) tapRadio.checked = true;
@@ -1002,10 +991,6 @@ function openSettings() {
     maxPlaceholdersInput.onchange = persistPlaceholders;
 
     // Fast-phrases: persist + live-re-render the panel on any change.
-    fastPhraseSetSelect.onchange = () => {
-        storage.saveFastPhraseSet(fastPhraseSetSelect.value);
-        renderFastPhrasesPanel();
-    };
     document.querySelectorAll('input[name="fastPhraseTapMode"]').forEach((radio) => {
         radio.onchange = () => {
             const mode = document.querySelector('input[name="fastPhraseTapMode"]:checked')?.value || 'single';
