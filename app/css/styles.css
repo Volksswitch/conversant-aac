@@ -803,7 +803,7 @@ dialog {
     border: none;
     border-radius: 8px;
     padding: 0;
-    max-width: 560px;
+    max-width: 840px;   /* 50% wider (Ken) */
     width: 92%;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
     overflow: hidden;
@@ -830,7 +830,7 @@ dialog[open] {
    while editing a Settings field, panel + keyboard still can't both fit
    vertically — see the keyboard-for-Settings discussion in CLAUDE.md.) */
 #settingsDialog {
-    height: min(30rem, calc(100vh - 3rem));
+    height: min(52.5rem, calc(100vh - 3rem));   /* 75% taller (Ken) */
 }
 
 /* Nudge the (centred) Settings panel into the free region beside a SIDE-docked
@@ -841,12 +841,12 @@ dialog[open] {
    overflow off-screen. A dragged panel keeps its inline left/top (drag wins). */
 body.kbd-open.kbd-dock-side.kbd-side-right #settingsDialog {
     right: min(26rem, 46vw);
-    max-width: min(560px, calc(100vw - min(26rem, 46vw) - 2rem));
+    max-width: min(840px, calc(100vw - min(26rem, 46vw) - 2rem));
 }
 
 body.kbd-open.kbd-dock-side.kbd-side-left #settingsDialog {
     left: min(26rem, 46vw);
-    max-width: min(560px, calc(100vw - min(26rem, 46vw) - 2rem));
+    max-width: min(840px, calc(100vw - min(26rem, 46vw) - 2rem));
 }
 
 /* A BOTTOM keyboard covers the lower part of the screen, so pin the panel to
@@ -933,8 +933,22 @@ dialog::backdrop {
     display: none;
 }
 
+/* Two-column layout so the denser tabs fit WITHOUT scrolling (scrolling is
+   problematic for this audience — Ken). Each setting-group stays intact across
+   the column break. The About tab is prose, so it stays single-column. */
 .tab-panel.active {
     display: block;
+    column-count: 2;
+    column-gap: 1.75rem;
+}
+/* About is prose — take it out of multi-column entirely (column-count:1 still
+   creates a multicol context that mis-sizes height; `auto` is plain block). The
+   taller panel fits it without scrolling. */
+.tab-panel[data-tab="about"].active {
+    column-count: auto;
+}
+.setting-group {
+    break-inside: avoid;
 }
 
 /* Settings form elements */
