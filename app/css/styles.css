@@ -4,6 +4,30 @@
     padding: 0;
 }
 
+/* --- Proportional layout, two independent axes (Ken, June 21 2026). Every
+   element is a PREDICTABLE FRACTION of the screen — same share on every tablet,
+   physically larger on a 13" and smaller on a 10" (elements need not be the
+   same physical size, only the same share of the pixel box). Crucially the two
+   axes scale INDEPENDENTLY, each off its own pixel capacity, so an off-3:2
+   window (split-screen, portrait, a resized window) uses each axis on its own
+   terms instead of collapsing both to the smaller one:
+     • horizontal sizes (content cap, column min-width, column gaps) → `vw`
+       — though most of the horizontal axis is already proportional for free,
+         since the grid's 1fr columns and flex buttons fill width;
+     • vertical sizes (region/card heights, row gaps, vertical padding, the
+       keyboard dock) → `vh`;
+     • font-size → `vmin` (a glyph is a single scalar — it can't scale W and H
+       independently — so type must pick ONE basis; vmin keeps text fitting the
+       smaller/squeezed axis, which in landscape is height).
+   `clamp()` bounds each so a tiny/split window floors and a large external
+   monitor ceilings — the bounds sit OUTSIDE the real fleet (~1280–1465 wide,
+   ~853–976 tall) so within the fleet everything scales linearly. Native pixels
+   and physical density are irrelevant (the platform can't report them); the CSS
+   pixel box can, and that's what we anchor to. --- */
+:root {
+    font-size: clamp(14px, 1.6vmin + 1.8px, 24px);
+}
+
 /* --- Design tokens (UI-Design.docx §10). Slot colors carry move identity as
    one leg of the triple coding (position + color + text badge); never the only
    cue. Transcript-state colors match §6. Tinted fills are pale; the border and
@@ -102,9 +126,12 @@ main {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-    padding: 1rem;
-    max-width: 1100px;
+    /* vertical rhythm → vh; horizontal padding → vw; content cap → proportional
+       to width (was a fixed 1100px, which pinned the column to the same pixels
+       on every device — the opposite of proportional). */
+    gap: clamp(0.5rem, 1.6vh, 1.2rem);
+    padding: clamp(0.5rem, 1.6vh, 1.2rem) clamp(0.75rem, 1.6vw, 2rem);
+    max-width: min(96vw, 1600px);
     width: 100%;
     margin: 0 auto;
 }
@@ -165,7 +192,7 @@ main {
     position: relative;
     border-left: 5px solid transparent;
     transition: border-color 0.2s;
-    min-height: 3.5rem;
+    min-height: clamp(3rem, 6vh, 5rem);   /* vertical axis */
 }
 .transcript-panel.state-unconfirmed { border-left-color: var(--state-unconfirmed); }
 .transcript-panel.state-generating  { border-left-color: var(--state-generating); }
@@ -226,8 +253,10 @@ main {
    §5). At RESPONDING width this reads as the 2×2 grid of the spec. */
 .palette-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-    gap: 0.75rem;
+    /* column min-width + gap on the horizontal axis (vw); the 1fr columns make
+       the rest of the horizontal sizing proportional for free. */
+    grid-template-columns: repeat(auto-fit, minmax(clamp(12rem, 20vw, 18rem), 1fr));
+    gap: clamp(0.5rem, 0.9vw, 1rem);
     align-items: stretch;
 }
 .palette-grid.is-empty {
@@ -253,15 +282,16 @@ main {
 .move-card {
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: clamp(0.2rem, 0.6vh, 0.45rem);
     text-align: left;
     background: #fff;
     border: 2px solid #dee2e6;
     border-left-width: 6px;
     border-radius: 10px;
-    padding: 0.9rem 1rem;
+    /* vertical padding → vh, horizontal padding → vw (independent axes). */
+    padding: clamp(0.6rem, 1.4vh, 1.1rem) clamp(0.7rem, 1.2vw, 1.2rem);
     cursor: pointer;
-    min-height: 5rem;          /* ≥ 20 mm touch target, profile-scalable later */
+    min-height: clamp(4rem, 9vh, 7rem);   /* vertical axis; was a fixed 5rem */
     transition: box-shadow 0.12s, transform 0.05s;
 }
 .move-card:hover,
