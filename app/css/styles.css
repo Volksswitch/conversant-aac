@@ -688,6 +688,7 @@ body.conv-bottom .ep-btn { min-height: clamp(2.2rem, 7.5vh, 4rem); }
 .ee-badge-feeling { background: #00838F; }
 .ee-fields { display: flex; flex: 1 1 auto; gap: 0.4rem; flex-wrap: wrap; min-width: 0; }
 .ee-fields input, .ee-fields select { flex: 1 1 8rem; min-width: 0; padding: 0.35rem 0.5rem; border: 1px solid #c4ccd2; border-radius: 6px; font-size: 0.95rem; }
+.ee-fields .ee-name-select { flex: 2 1 16rem; } /* the "Choose a name" dropdown — twice as wide */
 .ee-tools { flex: 0 0 auto; display: flex; gap: 0.25rem; }
 .ee-tools button { width: 2rem; height: 2rem; border: 1px solid #c4ccd2; background: #f4f6f8; border-radius: 6px; cursor: pointer; font-size: 1rem; line-height: 1; }
 .ee-tools button:disabled { opacity: 0.35; cursor: default; }
@@ -1045,6 +1046,13 @@ dialog::backdrop {
    creates a multicol context that mis-sizes height; `auto` is plain block). The
    taller panel fits it without scrolling. */
 .tab-panel[data-tab="about"].active {
+    column-count: auto;
+}
+/* The Express Panel editor is a vertical list of rows that needs the full width
+   (so each row's fields — incl. the wider "Choose a name" dropdown — fit on one
+   line). Keep it single-column, not flowed into the dense multi-column layout. */
+.tab-panel[data-tab="express"].active,
+body.conv-bottom .tab-panel[data-tab="express"].active {
     column-count: auto;
 }
 .setting-group {

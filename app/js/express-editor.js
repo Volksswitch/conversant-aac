@@ -206,8 +206,9 @@ function buildRow(item, i) {
     } else if (item.type === 'partner') {
         // Pick from People I Know, or type a name (Custom).
         const sel = document.createElement('select');
+        sel.className = 'ee-name-select';
         const customOpt = document.createElement('option');
-        customOpt.value = ''; customOpt.textContent = '— Type a name —';
+        customOpt.value = ''; customOpt.textContent = '— Choose a name —';
         sel.appendChild(customOpt);
         relationships.listPeople().forEach((p) => {
             const o = document.createElement('option');
