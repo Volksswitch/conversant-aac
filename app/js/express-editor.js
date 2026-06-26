@@ -20,7 +20,7 @@
 
 import * as expressPanel from './express-panel.js';
 import * as relationships from './relationships.js';
-import { CATEGORIES, FEELING_PRESETS, makeId } from './express-items.js';
+import { CATEGORIES, INFLUENCER_COLORS, FEELING_PRESETS, makeId } from './express-items.js';
 import { confirmDanger } from './confirm-dialog.js';
 
 let container = null;
@@ -89,6 +89,46 @@ function textInput(value, placeholder, oninput) {
     return inp;
 }
 
+// Color control. A phrase's color is the only effect of its "category", so the
+// user picks the BUTTON COLOR directly (the category names are hidden — they mean
+// nothing to the user). Partner and Feeling have one fixed color per type, shown
+// as a single, non-editable swatch so the available color is still visible.
+function colorControl(item) {
+    const wrap = document.createElement('div');
+    wrap.className = 'ee-swatches';
+    if (item.type === 'phrase') {
+        Object.keys(CATEGORIES).forEach((key, idx) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'ee-swatch' + (item.cat === key ? ' ee-swatch-on' : '');
+            b.style.background = CATEGORIES[key].color;
+            b.title = 'Button color';
+            b.setAttribute('aria-label', `Button color ${idx + 1}`);
+            b.setAttribute('aria-pressed', String(item.cat === key));
+            b.addEventListener('click', () => {
+                item.cat = key;
+                wrap.querySelectorAll('.ee-swatch').forEach((s) => {
+                    s.classList.remove('ee-swatch-on');
+                    s.setAttribute('aria-pressed', 'false');
+                });
+                b.classList.add('ee-swatch-on');
+                b.setAttribute('aria-pressed', 'true');
+                commit(false); // save + live-update the panel; no editor re-render
+            });
+            wrap.appendChild(b);
+        });
+    } else {
+        const c = INFLUENCER_COLORS[item.type] || {};
+        const sw = document.createElement('span');
+        sw.className = 'ee-swatch ee-swatch-static';
+        sw.style.background = c.color || '#888';
+        sw.title = `Button color (fixed for ${item.type})`;
+        sw.setAttribute('aria-label', 'Button color (fixed)');
+        wrap.appendChild(sw);
+    }
+    return wrap;
+}
+
 function buildRow(item, i) {
     const row = document.createElement('div');
     row.className = `ee-row ee-${item.type}`;
@@ -105,15 +145,9 @@ function buildRow(item, i) {
 
     if (item.type === 'phrase') {
         fields.appendChild(textInput(item.text, 'Phrase to speak', (v) => { item.text = v; commit(false); }));
-        const sel = document.createElement('select');
-        Object.entries(CATEGORIES).forEach(([key, c]) => {
-            const o = document.createElement('option');
-            o.value = key; o.textContent = c.label;
-            if (key === item.cat) o.selected = true;
-            sel.appendChild(o);
-        });
-        sel.addEventListener('change', () => { item.cat = sel.value; commit(false); });
-        fields.appendChild(sel);
+        // The category only sets the button color, and its names ("Affirm / deny"…)
+        // mean nothing to the user (Ken) — so pick by COLOR, not by category name.
+        fields.appendChild(colorControl(item));
     } else if (item.type === 'partner') {
         // Pick from People I Know, or type a name (Custom).
         const sel = document.createElement('select');
@@ -139,12 +173,14 @@ function buildRow(item, i) {
             commit(true); // refresh the name/nickname fields below
         });
         fields.appendChild(sel);
-        fields.appendChild(textInput(item.name, 'Name', (v) => { item.name = v; if (!item.personId) commit(false); else commit(false); }));
+        fields.appendChild(textInput(item.name, 'Name', (v) => { item.name = v; commit(false); }));
         fields.appendChild(textInput(item.nickname, 'What I call them (optional)', (v) => { item.nickname = v; commit(false); }));
+        fields.appendChild(colorControl(item)); // fixed color for this type, shown
     } else { // feeling
         const inp = textInput(item.text, 'Feeling (e.g. Happy)', (v) => { item.text = v; commit(false); });
         inp.setAttribute('list', 'ee-feeling-presets');
         fields.appendChild(inp);
+        fields.appendChild(colorControl(item)); // fixed color for this type, shown
     }
     row.appendChild(fields);
 

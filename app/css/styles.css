@@ -692,6 +692,11 @@ body.conv-bottom .ep-btn { min-height: clamp(2.2rem, 7.5vh, 4rem); }
 .ee-tools button { width: 2rem; height: 2rem; border: 1px solid #c4ccd2; background: #f4f6f8; border-radius: 6px; cursor: pointer; font-size: 1rem; line-height: 1; }
 .ee-tools button:disabled { opacity: 0.35; cursor: default; }
 .ee-tools .ee-del { color: #c0392b; border-color: #e0a4a0; }
+/* Button-color picker — pick by color, not by (meaningless) category name. */
+.ee-swatches { flex: 0 0 auto; display: flex; gap: 0.3rem; align-items: center; flex-wrap: wrap; }
+.ee-swatch { width: 1.7rem; height: 1.7rem; padding: 0; border-radius: 5px; border: 2px solid rgba(0, 0, 0, 0.25); cursor: pointer; }
+.ee-swatch-on { outline: 3px solid #2c3e50; outline-offset: 1px; border-color: #fff; }
+.ee-swatch-static { cursor: default; }
 
 /* Engine diagnostics — collapsed <details> for development / bug reports. The
    user-facing inference is the mode chip in Region A. */
