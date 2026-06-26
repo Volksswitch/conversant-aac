@@ -1,7 +1,7 @@
 /* Conversation Engine — the CA (Conversation Analysis) core.
  *
  * Implements Conversation-Engine-Design.docx: a sequence stack (what is
- * currently "owed"), five conversational modes, and a typed, prioritized move
+ * currently "owed"), five conversational modes, and a typed, prioritized response
  * palette. This module knows CA structure ONLY — never the UI, the access
  * method, or how anything is drawn (design §2, strict one-way knowledge). It
  * ingests the LLM's combined classify+generate result, updates state, and emits
@@ -36,7 +36,7 @@ export const FLOOR = {
     SELF: 'self',       // it is the user's turn to act
 };
 
-// --- Move slots (design §4). Ordinal position is stable across modes so the
+// --- Response slots (design §4). Ordinal position is stable across modes so the
 // user gets motor automaticity (preferred always first, repair always last). ---
 export const SLOT = {
     PREFERRED: 'PREFERRED',
@@ -84,7 +84,7 @@ const state = {
     mode: MODE.LISTENING,
     floor: FLOOR.OPEN,            // whose turn it is — see FLOOR
     lastClassification: null,     // {partner_action, turn_status, is_repair_initiator} — inspectable
-    palette: [],                  // current move descriptors
+    palette: [],                  // current response descriptors
 };
 
 export function reset() {
@@ -123,8 +123,8 @@ export function buildRequestContext() {
     // When the innermost open sequence was opened by the USER (an opener /
     // pre-question like "Can I ask you something?") and isn't a repair, the
     // partner's reply is an SPP to the user — so the user now holds the floor to
-    // LEAD, and generation must produce "continue/lead" moves rather than
-    // "answer the partner" moves. Surfaced explicitly so the model doesn't read
+    // LEAD, and generation must produce "continue/lead" responses rather than
+    // "answer the partner" responses. Surfaced explicitly so the model doesn't read
     // the partner's go-ahead as if the partner had asked the opener.
     const top = state.sequenceStack[state.sequenceStack.length - 1];
     const userHoldsFloorToLead = !!(top && top.openedBy === 'USER' && top.action !== 'REPAIR');
@@ -146,7 +146,7 @@ export function partnerSpeaking(text, confidence = null) {
 }
 
 // Ingest the combined classify+generate result (design §9.2) and update state.
-// `result` = { classification:{partner_action,turn_status,is_repair_initiator}, moves:[...] }.
+// `result` = { classification:{partner_action,turn_status,is_repair_initiator}, responses:[...] }.
 export function ingestClassification(result, partnerText) {
     const c = result.classification || {};
     state.lastClassification = {
@@ -224,17 +224,17 @@ export function ingestClassification(result, partnerText) {
         state.palette = closingPalette();
     } else {
         state.mode = MODE.RESPONDING;
-        state.palette = paletteFromMoves(result.moves);
+        state.palette = paletteFromResponses(result.responses);
     }
     return getSnapshot();
 }
 
-// Convert the LLM's typed moves into prioritized palette descriptors. All
-// pre-generated moves are instant to select (the text already exists); only
+// Convert the LLM's typed responses into prioritized palette descriptors. All
+// pre-generated responses are instant to select (the text already exists); only
 // REPAIR-OF-SELF rephrase/expand carry a round-trip (latency class, §2).
-function paletteFromMoves(moves) {
-    if (!Array.isArray(moves)) return [];
-    return moves
+function paletteFromResponses(responses) {
+    if (!Array.isArray(responses)) return [];
+    return responses
         .filter(m => m && m.slot && typeof m.text === 'string' && m.text.trim())
         .map(m => ({
             slot: m.slot,
@@ -248,13 +248,13 @@ function paletteFromMoves(moves) {
         .sort((a, b) => a.priority - b.priority);
 }
 
-// Replace the current move palette WITHOUT touching the sequence stack, mode,
+// Replace the current response palette WITHOUT touching the sequence stack, mode,
 // or floor — used by "Show me different options" (regenerate). The partner's
 // turn and the open obligation are unchanged; only the offered responses are
 // refreshed, so we must NOT re-ingest the classification (that would push a
 // duplicate FPP). Guards against being called when there's nothing to refresh.
-export function refreshPalette(moves) {
-    state.palette = paletteFromMoves(moves);
+export function refreshPalette(responses) {
+    state.palette = paletteFromResponses(responses);
     return getSnapshot();
 }
 
@@ -285,18 +285,18 @@ function closingPalette() {
 
 // --- User actions on the palette ---
 
-// A normal RESPONDING (or opener/closer) move was selected. Its SPP closes the
+// A normal RESPONDING (or opener/closer) response was selected. Its SPP closes the
 // open partner FPP — pop it. Record lastUserUtterance for later self-repair.
-export function selectMove(move) {
-    state.lastUserUtterance = move.text;
+export function selectResponse(response) {
+    state.lastUserUtterance = response.text;
     // The user is OPENING the conversation (selected an opener). They produced an
     // FPP (a greeting / pre-question) the partner is now expected to respond to,
     // so push it as a USER-opened sequence. The partner's reply is then read as
     // an SPP to the user (ingestClassification pops it and lets the user lead),
     // NOT as a fresh partner FPP. Floor goes to the partner — we await their reply.
-    if (move.slot === SLOT.OPENER) {
+    if (response.slot === SLOT.OPENER) {
         state.sequenceStack.push({
-            action: 'OPENER', openedBy: 'USER', utterance: move.text, sttConfidence: null,
+            action: 'OPENER', openedBy: 'USER', utterance: response.text, sttConfidence: null,
         });
         state.mode = MODE.LISTENING;
         state.floor = FLOOR.PARTNER;

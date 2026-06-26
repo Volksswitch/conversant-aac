@@ -18,7 +18,7 @@ import * as expressEditor from './express-editor.js';
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.5.18';
+const APP_VERSION = '0.5.19';
 
 const conversationHistory = [];
 let isListening = false;
@@ -301,7 +301,7 @@ async function generateOptions(partnerText) {
             ui.setTranscriptState('unconfirmed');
             ui.setStatus('Partner still speaking…');
         } else {
-            ui.showMoves(snap.palette, handleMoveSelected);
+            ui.showResponses(snap.palette, handleResponseSelected);
             ui.setTranscriptState('ready');
             ui.setStatus(snap.mode === engine.MODE.REPAIR_OF_SELF
                 ? 'Partner didn\'t catch that — choose how to repeat'
@@ -325,16 +325,16 @@ async function generateOptions(partnerText) {
     }
 }
 
-// A move from the palette was selected. Repair-of-self operations act on the
+// A response from the palette was selected. Repair-of-self operations act on the
 // user's own last utterance; everything else is a normal SPP / opener / closer.
-async function handleMoveSelected(move, index) {
-    if (move.op) return handleRepairOfSelf(move);
+async function handleResponseSelected(response, index) {
+    if (response.op) return handleRepairOfSelf(response);
 
     // Opening the conversation: after the user's opening statement is spoken, the
     // partner is expected to reply, so start recording automatically (Ken) —
     // regardless of the auto-resume setting, and arm the session so later
-    // exchanges can auto-resume too. Captured before selectMove clears the mode.
-    const wasOpener = move.slot === 'OPENER';
+    // exchanges can auto-resume too. Captured before selectResponse clears the mode.
+    const wasOpener = response.slot === 'OPENER';
 
     placeholders.stop();
     generationToken++; // invalidate any in-flight generation
@@ -344,12 +344,12 @@ async function handleMoveSelected(move, index) {
     currentPartnerText = '';
 
     ui.setStatus('Speaking...');
-    await tts.speak(move.text);
+    await tts.speak(response.text);
 
-    engine.selectMove(move);
+    engine.selectResponse(response);
     ui.showEngineState(engine.getSnapshot());
 
-    await commitExchange(raw, move.text, index);
+    await commitExchange(raw, response.text, index);
     if (wasOpener) {
         manualListenArmed = true;   // starting a conversation arms auto-resume
         startFreshListening();      // begin capturing the partner now
@@ -360,7 +360,7 @@ async function handleMoveSelected(move, index) {
 
 // REPAIR-OF-SELF (design §7.2): re-speak verbatim (instant, no LLM), or
 // rephrase / expand the user's last utterance via a round-trip.
-async function handleRepairOfSelf(move) {
+async function handleRepairOfSelf(response) {
     placeholders.stop();
     generationToken++;
     stt.stopListening();
@@ -370,10 +370,10 @@ async function handleRepairOfSelf(move) {
         ui.setStatus('Nothing to repeat yet');
         return;
     }
-    if (move.op !== 'respeak') {
-        ui.setStatus(move.op === 'expand' ? 'Expanding…' : 'Rephrasing…');
+    if (response.op !== 'respeak') {
+        ui.setStatus(response.op === 'expand' ? 'Expanding…' : 'Rephrasing…');
         try {
-            text = await llm.repairSelf(engine.getLastUserUtterance(), move.op, conversationHistory);
+            text = await llm.repairSelf(engine.getLastUserUtterance(), response.op, conversationHistory);
         } catch (err) {
             ui.setStatus(`Error: ${err.message}`);
             return;
@@ -471,7 +471,7 @@ function handleInitiate() {
     const partnerName = activePartner ? (activePartner.nickname || activePartner.name) : '';
     const snap = engine.initiate({ partnerName });
     ui.showEngineState(snap);
-    ui.showMoves(snap.palette, handleMoveSelected);
+    ui.showResponses(snap.palette, handleResponseSelected);
     ui.setStatus('Pick an opener');
 }
 
@@ -528,7 +528,7 @@ async function handlePardon() {
 // the rejected options passed as `avoid`, then refreshes ONLY the palette
 // (engine.refreshPalette) — the sequence stack / mode / floor are unchanged, so
 // we deliberately do NOT re-ingest the classification (that would push a
-// duplicate FPP). Whole-palette regenerate (not per-move) — see CLAUDE.md to-do.
+// duplicate FPP). Whole-palette regenerate (not per-response) — see CLAUDE.md to-do.
 async function handleRegenerate() {
     if (!currentPartnerText || !lastPalette.length) return;
     const token = ++generationToken;
@@ -544,10 +544,10 @@ async function handleRegenerate() {
     try {
         const result = await llm.generateResponses(history, engine.buildRequestContext(), { avoid: prior, perCategory: storage.loadResponsesPerCategory() });
         if (token !== generationToken) return; // superseded
-        const snap = engine.refreshPalette(result.moves);
+        const snap = engine.refreshPalette(result.responses);
         ui.showEngineState(snap);
         lastPalette = snap.palette;
-        ui.showMoves(snap.palette, handleMoveSelected);
+        ui.showResponses(snap.palette, handleResponseSelected);
         ui.setStatus('Select a response');
     } catch (err) {
         if (token !== generationToken) return;
@@ -588,10 +588,10 @@ async function handleReframe() {
     try {
         const result = await llm.generateResponses(history, engine.buildRequestContext(), { steer, perCategory: storage.loadResponsesPerCategory() });
         if (token !== generationToken) return; // superseded
-        const snap = engine.refreshPalette(result.moves);
+        const snap = engine.refreshPalette(result.responses);
         ui.showEngineState(snap);
         lastPalette = snap.palette;
-        ui.showMoves(snap.palette, handleMoveSelected);
+        ui.showResponses(snap.palette, handleResponseSelected);
         ui.setStatus('Select a response');
     } catch (err) {
         if (token !== generationToken) return;
@@ -604,7 +604,7 @@ function handleWindDown() {
     placeholders.stop();
     const snap = engine.windDown();
     ui.showEngineState(snap);
-    ui.showMoves(snap.palette, handleMoveSelected);
+    ui.showResponses(snap.palette, handleResponseSelected);
     ui.setStatus('Pick a closing');
 }
 
@@ -623,7 +623,7 @@ function handleEndConversation() {
 
 // The user is TAKING THE FLOOR with their own words — shared by the composer's
 // Speak and by an Express Panel phrase. It behaves like selecting a response: terminates
-// the partner's open turn (engine.selectMove pops the partner FPP), stops
+// the partner's open turn (engine.selectResponse pops the partner FPP), stops
 // recording, commits the exchange to history, and resumes listening iff
 // auto-resume is armed. `historyText` is what's logged/displayed; `spokenText`
 // is what TTS says (an Express Panel phrase may carry a distinct pronunciation form).
@@ -638,7 +638,7 @@ async function speakAsUserTurn(historyText, spokenText = historyText) {
     ui.setStatus('Speaking...');
     await tts.speak(spokenText);
 
-    engine.selectMove({ text: historyText });
+    engine.selectResponse({ text: historyText });
     ui.showEngineState(engine.getSnapshot());
     ui.clearResponseOptions();    // any AI palette shown is now stale
 

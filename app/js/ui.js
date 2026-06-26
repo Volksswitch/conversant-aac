@@ -102,7 +102,7 @@ export function setNowPlaying(text) {
     }
 }
 
-// --- Region B: the move palette as triple-coded cards (UI-Design.docx §4).
+// --- Region B: the response palette as triple-coded cards (UI-Design.docx §4).
 // Each card carries: slot badge (text), slot color (border + badge), the
 // glanceable hint (primary reading target), the full utterance (smaller), an
 // optional format tag, and a latency dot (filled = instant, hollow = a
@@ -111,7 +111,7 @@ export function setNowPlaying(text) {
 
 // slot enum → { badge label, css class, friendly aria name }. Covers the four
 // RESPONDING slots plus the repair-of-self ops and the opener/closer palettes
-// the engine also emits, so every move the engine can produce renders.
+// the engine also emits, so every response the engine can produce renders.
 const SLOT_META = {
     PREFERRED:       { badge: 'PREFERRED',    cls: 'slot-preferred' },
     DISPREFERRED:    { badge: 'DISPREFERRED', cls: 'slot-dispreferred' },
@@ -136,36 +136,36 @@ const CATEGORY_SLOTS = ['PREFERRED', 'DISPREFERRED', 'INITIATIVE', 'REPAIR'];
 // color + fixed position carry the category, so the category pill is gone, and
 // every card is spoken instantly, so the latency dot is gone too. `half` shrinks
 // the text for a 2-up (stacked) category cell.
-function buildMoveCard(move, index, onSelect, half) {
-    const meta = SLOT_META[move.slot] || { badge: move.slot, cls: 'slot-persistent' };
-    const roundtrip = move.latency === 'roundtrip';
-    // Round-trip moves (rephrase/expand) have no text yet → show their hint label.
-    const text = (move.text && move.text.trim()) ? move.text : (move.hint || '');
+function buildResponseCard(response, index, onSelect, half) {
+    const meta = SLOT_META[response.slot] || { badge: response.slot, cls: 'slot-persistent' };
+    const roundtrip = response.latency === 'roundtrip';
+    // Round-trip responses (rephrase/expand) have no text yet → show their hint label.
+    const text = (response.text && response.text.trim()) ? response.text : (response.hint || '');
 
     const card = document.createElement('button');
     card.type = 'button';
-    card.className = `move-card ${meta.cls}${half ? ' move-card-half' : ''}`;
+    card.className = `response-card ${meta.cls}${half ? ' response-card-half' : ''}`;
     // Category isn't shown visually, so name it in the accessible label only.
     card.setAttribute('aria-label', `${meta.badge}: ${text}`);
-    card.innerHTML = `<span class="move-response">${escapeHtml(text)}</span>`;
+    card.innerHTML = `<span class="response-text">${escapeHtml(text)}</span>`;
     card.addEventListener('click', () => {
         if (roundtrip) card.classList.add('working');
-        onSelect(move, index);
+        onSelect(response, index);
     });
     return card;
 }
 
 function buildEmptyCell(slotCls) {
     const cell = document.createElement('div');
-    cell.className = `move-cell ${slotCls}`;
+    cell.className = `response-cell ${slotCls}`;
     const empty = document.createElement('div');
-    empty.className = `move-card move-card-empty ${slotCls}`;
+    empty.className = `response-card response-card-empty ${slotCls}`;
     empty.setAttribute('aria-hidden', 'true');
     cell.appendChild(empty);
     return cell;
 }
 
-export function showMoves(palette, onSelect) {
+export function showResponses(palette, onSelect) {
     responseOptions.classList.remove('is-empty');
     responseOptions.innerHTML = '';
     // Brief crossfade of contents on each render (geometry never moves, §5).
@@ -177,29 +177,29 @@ export function showMoves(palette, onSelect) {
 
     // RESPONDING palettes group into the 4 fixed category cells (each may hold
     // 1–2 stacked options); other palettes (openers / closers / repair-of-self)
-    // place one move per cell.
+    // place one response per cell.
     const isResponding = palette.some((m) => CATEGORY_SLOTS.includes(m.slot));
     let cells;
     if (isResponding) {
         cells = CATEGORY_SLOTS.map((slot, i) => ({
-            moves: palette.filter((m) => m.slot === slot),
+            responses: palette.filter((m) => m.slot === slot),
             slotCls: SLOT_ORDER[i],
         }));
     } else {
-        cells = palette.map((m) => ({ moves: [m], slotCls: (SLOT_META[m.slot] || {}).cls || 'slot-persistent' }));
+        cells = palette.map((m) => ({ responses: [m], slotCls: (SLOT_META[m.slot] || {}).cls || 'slot-persistent' }));
     }
 
     const count = Math.max(RESERVED_SLOTS, cells.length);
     for (let i = 0; i < count; i++) {
         const cell = cells[i];
-        if (!cell || !cell.moves.length) {
+        if (!cell || !cell.responses.length) {
             responseOptions.appendChild(buildEmptyCell(cell ? cell.slotCls : (SLOT_ORDER[i] || 'slot-persistent')));
             continue;
         }
         const el = document.createElement('div');
-        el.className = `move-cell ${cell.slotCls}${cell.moves.length > 1 ? ' move-cell-split' : ''}`;
-        const half = cell.moves.length > 1;
-        cell.moves.forEach((move) => el.appendChild(buildMoveCard(move, palette.indexOf(move), onSelect, half)));
+        el.className = `response-cell ${cell.slotCls}${cell.responses.length > 1 ? ' response-cell-split' : ''}`;
+        const half = cell.responses.length > 1;
+        cell.responses.forEach((response) => el.appendChild(buildResponseCard(response, palette.indexOf(response), onSelect, half)));
         responseOptions.appendChild(el);
     }
 }
@@ -434,7 +434,7 @@ export function setListenButtonState(listening) {
 }
 
 // Convert the control buttons to icon-only (Rule 4), keeping each one's
-// accessible name (aria-label + title). Content buttons — move/response cards
+// accessible name (aria-label + title). Content buttons — response cards
 // and Express Panel buttons — are intentionally NOT touched (they show text).
 // Called once at startup.
 export function applyControlIcons() {

@@ -94,17 +94,17 @@ Return ONLY the corrected transcript text, nothing else.${contextLines ? '\n\nCo
 }
 
 // Single combined call (Conversation-Engine-Design.docx §9): classify the
-// partner's action AND generate a typed, slot-structured move palette AND report
+// partner's action AND generate a typed, slot-structured response palette AND report
 // which personal facts were missing (worldview gaps log). The classification is
 // emitted FIRST in the output so it is inspectable and so the model commits to
-// the action type before producing moves (the CA recommendation as a structural
+// the action type before producing responses (the CA recommendation as a structural
 // property of the output).
 //
 // `context` is the engine's request context (design §9.1): { stt_confidence,
 // sequence_stack, register, phase, last_user_utterance }. Optional.
 //
 // Returns { classification:{partner_action,turn_status,is_repair_initiator},
-//           moves:[{slot,text,hint,...}], missingFacts:string[] }.
+//           responses:[{slot,text,hint,...}], missingFacts:string[] }.
 // `opts.avoid` (optional): an array of previously-offered option texts the user
 // rejected as "not quite right" — set by the "Show me different options"
 // regenerate control. When present, the model is told to take a different angle
@@ -125,24 +125,24 @@ export async function generateResponses(conversationHistory, context = {}, opts 
 
     const steerText = (opts.steer || '').trim();
     const steerBlock = steerText
-        ? `\n\nThe user typed this guidance for how to respond right now — treat it as additional context AND direction, and shape every move around it. It may state facts to convey (use them — being user-authored, they are TRUE and override the "keep it general" caution), and/or how to come across (tone, length, stance). Honor it while keeping the four-slot structure. User's guidance:\n"${steerText}"`
+        ? `\n\nThe user typed this guidance for how to respond right now — treat it as additional context AND direction, and shape every response around it. It may state facts to convey (use them — being user-authored, they are TRUE and override the "keep it general" caution), and/or how to come across (tone, length, stance). Honor it while keeping the four-slot structure. User's guidance:\n"${steerText}"`
         : '';
 
     // 1 or 2 options per category (Settings, max 2). When 2, offer two genuinely
     // different alternatives per slot so each category cell can show a choice.
     const perCat = opts.perCategory === 2 ? 2 : 1;
     const perCatBlock = perCat === 2
-        ? `\n\nProvide TWO distinct options for EACH of the four slots — 8 moves total (2 PREFERRED, 2 DISPREFERRED, 2 INITIATIVE, 2 REPAIR), in that slot order, best-first within each slot. The two options within a slot must be meaningfully DIFFERENT alternatives (different wording, angle, or content), both valid for that slot — not minor rephrasings.`
+        ? `\n\nProvide TWO distinct options for EACH of the four slots — 8 responses total (2 PREFERRED, 2 DISPREFERRED, 2 INITIATIVE, 2 REPAIR), in that slot order, best-first within each slot. The two options within a slot must be meaningfully DIFFERENT alternatives (different wording, angle, or content), both valid for that slot — not minor rephrasings.`
         : '';
 
-    const systemPrompt = `You are an AAC (Augmentative and Alternative Communication) assistant. A non-speaking user is in a live conversation. You speak AS the user, in their voice — not as a helpful assistant. Their communication partner just spoke. First classify what the partner is doing, then generate a palette of structurally distinct response moves the user might want to say.
+    const systemPrompt = `You are an AAC (Augmentative and Alternative Communication) assistant. A non-speaking user is in a live conversation. You speak AS the user, in their voice — not as a helpful assistant. Their communication partner just spoke. First classify what the partner is doing, then generate a palette of structurally distinct responses the user might want to say.
 
 Return ONLY a JSON object, no other text, with exactly this shape:
 {
   "partner_action": "INVITATION|QUESTION|REQUEST|STATEMENT|GREETING|ASSESSMENT|CLOSING|OTHER",
   "turn_status": "COMPLETE|INCOMPLETE|CONTINUING",
   "is_repair_initiator": false,
-  "moves": [
+  "responses": [
     {"slot": "PREFERRED", "text": "...", "hint": "..."},
     {"slot": "DISPREFERRED", "text": "...", "hint": "...", "account": true},
     {"slot": "INITIATIVE", "text": "...", "hint": "...", "format": "counter-offer|return-question|expansion"},
@@ -153,23 +153,23 @@ Return ONLY a JSON object, no other text, with exactly this shape:
 
 Speak only to what is real — this is the most important rule. You are voicing a real person in a real conversation, NOT writing fiction about a character. Never invent specific events, episodes, outcomes, results, scores, dates, numbers, places, or names that you were not given. Do NOT fabricate autobiography: e.g. never produce "I beat Tyler at a game last night", "I won three matches", "we went to the lake on Saturday", or any concrete happening you have not been told occurred. You MAY draw on the standing facts in the user's profile below (habitual activities, interests, the people in their life) and you MAY offer general, open, or non-committal replies. When a natural answer would otherwise need a specific detail you don't have, keep it GENERAL ("Been playing online games with friends lately") instead of inventing the specifics ("I won last night"). Every option must be something the user could select and have it be TRUE — either grounded in their profile, or general enough that only they would know the particulars. The user is the sole source of truth about their own life; never put invented events in their mouth.
 
-Classification (commit to these BEFORE writing moves):
+Classification (commit to these BEFORE writing responses):
 - "partner_action": the first-pair-part type the partner's utterance performs.
 - "turn_status": COMPLETE if the partner's turn is grammatically and pragmatically finished; INCOMPLETE if it trails off mid-utterance; CONTINUING if they are mid-telling, paused at a clause boundary.
 - "is_repair_initiator": true ONLY if the partner is asking the USER to repeat or clarify the user's own last utterance ("What?", "Huh?", "You want what?", "Say that again?").
 
-Moves (omit entirely — return "moves": [] — when turn_status is not COMPLETE, or when is_repair_initiator is true):
-- "hint" is a short glanceable label naming the move (a few words), not a truncation of "text".
+Responses (omit entirely — return "responses": [] — when turn_status is not COMPLETE, or when is_repair_initiator is true):
+- "hint" is a short glanceable label naming the response (a few words), not a truncation of "text".
 - PREFERRED: the most likely thing THIS user would say, delivered plainly, no hedging.
 - DISPREFERRED: a properly formed reluctant / declining / disagreeing reply — a brief MEANINGFUL softener that carries content ("I'd love to, but…", "I wish I could —"), the declination, and a short account/reason. Never a bare "No." Keep the account GENERAL or grounded in the profile — do not invent a specific excuse (a named appointment, a concrete prior plan) the user may not actually have; "I'm pretty wiped today" or "it's not really my thing" are safe, "I have a dentist appointment at 3" is fabricated.
-- INITIATIVE: a move that stops the user being purely responsive — a counter-offer, a return question, or a topic expansion. Vary its grammatical format (conditional / declarative / interrogative) from the other moves.
+- INITIATIVE: a response that stops the user being purely responsive — a counter-offer, a return question, or a topic expansion. Vary its grammatical format (conditional / declarative / interrogative) from the other responses.
 - REPAIR: a clarification request on the PARTNER's turn — open-class ("Sorry?") when overall confidence is low, restricted ("Dinner where?") when a specific span is uncertain.
 
-User is leading: if the engine context has "user_holds_floor_to_lead": true, the partner has just RESPONDED to something the USER initiated (an opener or pre-question such as "Can I ask you something?"). The user now holds the floor to LEAD — do NOT generate replies as if answering the partner. Treat the partner's short reply ("sure", "go ahead", "what's up?", "of course") as a go-ahead, not as a question to the user. Generate moves that let the user CONTINUE and lead: PREFERRED advances what the user wanted to say or asks their actual question; INITIATIVE offers a topic or question to raise; DISPREFERRED can gracefully back off ("Actually, never mind"); REPAIR stays a clarification on the partner only if their reply was unclear.
+User is leading: if the engine context has "user_holds_floor_to_lead": true, the partner has just RESPONDED to something the USER initiated (an opener or pre-question such as "Can I ask you something?"). The user now holds the floor to LEAD — do NOT generate replies as if answering the partner. Treat the partner's short reply ("sure", "go ahead", "what's up?", "of course") as a go-ahead, not as a question to the user. Generate responses that let the user CONTINUE and lead: PREFERRED advances what the user wanted to say or asks their actual question; INITIATIVE offers a topic or question to raise; DISPREFERRED can gracefully back off ("Actually, never mind"); REPAIR stays a clarification on the partner only if their reply was unclear.
 
-Get to the point: NO move may begin with an empty filler interjection — no "Ah", "Oh", "Um", "Er", "Well", "So", "Hmm", "You know" at the start. Open with the substance. (A meaningful softener on DISPREFERRED, like "I'd love to, but…", is fine; a bare interjection is not.)
+Get to the point: NO response may begin with an empty filler interjection — no "Ah", "Oh", "Um", "Er", "Well", "So", "Hmm", "You know" at the start. Open with the substance. (A meaningful softener on DISPREFERRED, like "I'd love to, but…", is fine; a bare interjection is not.)
 
-- "missing_facts": lowercase snake_case keys for personal facts about the user you needed but were not given (e.g. "home_city", "fav_team", "occupation"). Use [] if none. Always phrase moves around any missing fact — never output bracketed placeholders.
+- "missing_facts": lowercase snake_case keys for personal facts about the user you needed but were not given (e.g. "home_city", "fav_team", "occupation"). Use [] if none. Always phrase responses around any missing fact — never output bracketed placeholders.
 
 Conversation context (engine state — use it, do not echo it):
 ${JSON.stringify(context)}${buildProfileBlock()}${avoidBlock}${steerBlock}${perCatBlock}`;
@@ -268,7 +268,7 @@ function parseGeneration(text) {
     if (Array.isArray(parsed)) {
         return {
             classification: null,
-            moves: parsed.map((t, i) => ({ slot: SLOTS[i] || 'PREFERRED', text: String(t), hint: '' })),
+            responses: parsed.map((t, i) => ({ slot: SLOTS[i] || 'PREFERRED', text: String(t), hint: '' })),
             missingFacts: [],
         };
     }
@@ -279,20 +279,20 @@ function parseGeneration(text) {
             turn_status: parsed.turn_status || 'COMPLETE',
             is_repair_initiator: !!parsed.is_repair_initiator,
         };
-        // Preferred shape: typed moves.
-        if (Array.isArray(parsed.moves)) {
-            return { classification, moves: parsed.moves, missingFacts: arr(parsed.missing_facts) };
+        // Preferred shape: typed responses.
+        if (Array.isArray(parsed.responses)) {
+            return { classification, responses: parsed.responses, missingFacts: arr(parsed.missing_facts) };
         }
         // Legacy {options:[...]}.
         if (Array.isArray(parsed.options)) {
             return {
                 classification,
-                moves: parsed.options.map((t, i) => ({ slot: SLOTS[i] || 'PREFERRED', text: String(t), hint: '' })),
+                responses: parsed.options.map((t, i) => ({ slot: SLOTS[i] || 'PREFERRED', text: String(t), hint: '' })),
                 missingFacts: arr(parsed.missing_facts),
             };
         }
     }
-    throw new Error('Could not parse response moves from API');
+    throw new Error('Could not parse responses from API');
 }
 
 function arr(v) { return Array.isArray(v) ? v : []; }

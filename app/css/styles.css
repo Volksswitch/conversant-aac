@@ -28,7 +28,7 @@
     font-size: clamp(14px, 1.6vmin + 1.8px, 24px);
 }
 
-/* --- Design tokens (UI-Design.docx §10). Slot colors carry move identity as
+/* --- Design tokens (UI-Design.docx §10). Slot colors carry response identity as
    one leg of the triple coding (position + color + text badge); never the only
    cue. Transcript-state colors match §6. Tinted fills are pale; the border and
    badge carry the hue. --- */
@@ -349,7 +349,7 @@ body.conv-bottom .ep-row { flex: 0 0 auto; }  /* natural height in the bottom st
     background: #c0392b;
 }
 
-/* Region B — move palette. A grid of cards in fixed priority order (preferred
+/* Region B — response palette. A grid of cards in fixed priority order (preferred
    first, repair last). The column count adapts to viewport width but the order
    never does, and it stays constant within a session — mode changes swap card
    CONTENTS, never the geometry ("the cards changed", not "the screen changed",
@@ -381,14 +381,14 @@ body.conv-bottom .palette-grid {
 /* Each grid item is a CATEGORY CELL holding 1–2 stacked option buttons (the
    "responses per category" setting). The reserved (doubled) height lives on the
    cell; the card(s) inside split it. */
-.move-cell {
+.response-cell {
     display: flex;
     flex-direction: column;
     gap: clamp(0.3rem, 0.7vh, 0.6rem);
     min-height: clamp(8rem, 18vh, 14rem);
 }
-.move-cell > .move-card,
-.move-cell > .move-card-empty {
+.response-cell > .response-card,
+.response-cell > .response-card-empty {
     flex: 1 1 0;
     min-height: 0;
 }
@@ -397,7 +397,7 @@ body.conv-bottom .palette-grid {
    Shows its SLOT color even when empty (the slot class supplies the tinted
    background + colored left border); the empty treatment is just dashed + faded
    + inert. So the four slot colors are visible before a conversation begins. */
-.move-card-empty {
+.response-card-empty {
     border-style: dashed;
     box-shadow: none;
     cursor: default;
@@ -449,11 +449,11 @@ body.conv-bottom .palette-grid {
 
 @media (prefers-reduced-motion: reduce) {
     .palette-grid.palette-enter { animation: none; }
-    .move-card { transition: none; }
+    .response-card { transition: none; }
 }
 
-/* The move card (§4). Slot color: tinted fill, hued left border + badge. */
-.move-card {
+/* The response card (§4). Slot color: tinted fill, hued left border + badge. */
+.response-card {
     display: flex;
     flex-direction: column;
     gap: clamp(0.2rem, 0.6vh, 0.45rem);
@@ -467,14 +467,14 @@ body.conv-bottom .palette-grid {
     cursor: pointer;
     transition: box-shadow 0.12s, transform 0.05s;
 }
-.move-card:hover,
-.move-card:focus-visible {
+.response-card:hover,
+.response-card:focus-visible {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
     outline: none;
 }
-.move-card:active { transform: translateY(1px); }
+.response-card:active { transform: translateY(1px); }
 
-.move-card-top {
+.response-card-top {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -482,7 +482,7 @@ body.conv-bottom .palette-grid {
 }
 
 /* Slot badge — the text leg of the triple coding. */
-.move-badge {
+.response-badge {
     font-size: 0.68rem;
     font-weight: 800;
     letter-spacing: 0.05em;
@@ -493,20 +493,20 @@ body.conv-bottom .palette-grid {
 
 /* Latency dot — filled = speaks instantly; hollow = a generation round-trip on
    selection (the user never taps into an unexpected wait, §4). */
-.move-latency {
+.response-latency {
     width: 0.7rem;
     height: 0.7rem;
     border-radius: 50%;
     flex-shrink: 0;
     border: 2px solid currentColor;
 }
-.latency-instant .move-latency { background: currentColor; }
-.latency-roundtrip .move-latency { background: transparent; }
+.latency-instant .response-latency { background: currentColor; }
+.latency-roundtrip .response-latency { background: transparent; }
 
 /* Response text — the LARGE, easy-to-read primary element (no separate hint —
    Ken). It IS the words TTS will speak, big enough to read at a glance. Fills the
    card; clamps to a few lines if very long. */
-.move-response {
+.response-text {
     flex: 1 1 auto;
     display: flex;
     align-items: center;
@@ -518,7 +518,7 @@ body.conv-bottom .palette-grid {
 }
 /* In a 2-up (stacked) category cell each card is half-height, so size the text
    down a notch and clamp more tightly. */
-.move-card-half .move-response {
+.response-card-half .response-text {
     font-size: clamp(1rem, 1.9vh, 1.4rem);
     -webkit-line-clamp: 3;
     display: -webkit-box;
@@ -527,7 +527,7 @@ body.conv-bottom .palette-grid {
 }
 
 /* Round-trip card mid-generation: dim slightly so the wait reads as in-progress. */
-.move-card.working {
+.response-card.working {
     opacity: 0.55;
     cursor: default;
 }
@@ -539,21 +539,21 @@ body.conv-bottom .palette-grid {
 .slot-repair       { border-left-color: var(--slot-repair);       background: var(--slot-repair-tint); }
 .slot-persistent   { border-left-color: var(--slot-persistent); }
 
-.slot-preferred .move-badge,
-.slot-preferred .move-latency    { color: var(--slot-preferred); }
-.slot-preferred .move-badge      { background: var(--slot-preferred); color: #fff; }
-.slot-dispreferred .move-badge,
-.slot-dispreferred .move-latency { color: var(--slot-dispreferred); }
-.slot-dispreferred .move-badge   { background: var(--slot-dispreferred); color: #fff; }
-.slot-initiative .move-badge,
-.slot-initiative .move-latency   { color: var(--slot-initiative); }
-.slot-initiative .move-badge     { background: var(--slot-initiative); color: #fff; }
-.slot-repair .move-badge,
-.slot-repair .move-latency       { color: var(--slot-repair); }
-.slot-repair .move-badge         { background: var(--slot-repair); color: #fff; }
-.slot-persistent .move-badge,
-.slot-persistent .move-latency   { color: var(--slot-persistent); }
-.slot-persistent .move-badge     { background: var(--slot-persistent); color: #fff; }
+.slot-preferred .response-badge,
+.slot-preferred .response-latency    { color: var(--slot-preferred); }
+.slot-preferred .response-badge      { background: var(--slot-preferred); color: #fff; }
+.slot-dispreferred .response-badge,
+.slot-dispreferred .response-latency { color: var(--slot-dispreferred); }
+.slot-dispreferred .response-badge   { background: var(--slot-dispreferred); color: #fff; }
+.slot-initiative .response-badge,
+.slot-initiative .response-latency   { color: var(--slot-initiative); }
+.slot-initiative .response-badge     { background: var(--slot-initiative); color: #fff; }
+.slot-repair .response-badge,
+.slot-repair .response-latency       { color: var(--slot-repair); }
+.slot-repair .response-badge         { background: var(--slot-repair); color: #fff; }
+.slot-persistent .response-badge,
+.slot-persistent .response-latency   { color: var(--slot-persistent); }
+.slot-persistent .response-badge     { background: var(--slot-persistent); color: #fff; }
 
 /* --- Express Panel buttons. The grid MIRRORS the selected keyboard layout
    (cell flex = the key's span), so the panel and the keyboard overlay 1:1 for a

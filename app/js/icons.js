@@ -7,7 +7,7 @@
  * here — callers set aria-label/title (Rule 4: keep the accessible name even
  * though the visible control is just the glyph).
  *
- * Content buttons (move/response cards, Express Panel buttons) are EXEMPT — they
+ * Content buttons (response cards, Express Panel buttons) are EXEMPT — they
  * show text — so they are not in this module.
  */
 
