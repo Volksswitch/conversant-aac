@@ -18,7 +18,7 @@ import * as expressEditor from './express-editor.js';
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.5.20';
+const APP_VERSION = '0.5.21';
 
 const conversationHistory = [];
 let isListening = false;
@@ -101,7 +101,7 @@ function initApp() {
     ui.clearResponseOptions(); // render the reserved empty card footprint at rest
     renderExpressPanel();
     expressEditor.init(document.getElementById('expressEditor'), { onChange: renderExpressPanel });
-    worldviewUI.init();
+    worldviewUI.init({ onClose: renderExpressPanel }); // refresh household buttons on close
     keyboard.init();
     keyboard.setMode(storage.loadKeyboardMode());
     keyboard.setSideLayout(storage.loadSideLayout());
@@ -692,9 +692,28 @@ function expressLayoutRows() {
     return (LAYOUTS[id] && LAYOUTS[id].rows) || [];
 }
 
+// The effective panel item list: the user's edited items, plus (when the
+// auto-household option is on) a Partner button for each person the user lives
+// with, injected right AFTER the feelings so they appear just below them (Ken).
+// These are generated from the relationship graph at render time — not stored in
+// the editable list — so they track adds/edits/removes in About Me. Anyone
+// already added manually as a Partner (same personId) is not duplicated.
+function expressItemsForPanel() {
+    const items = expressPanel.getItems();
+    if (!storage.loadExpressAutoHousehold()) return items;
+    const existing = new Set(items.filter((it) => it.type === 'partner' && it.personId).map((it) => it.personId));
+    const auto = relationships.listPeople()
+        .filter((p) => p.livesWithMe && p.name && !existing.has(p.id))
+        .map((p) => ({ id: 'live:' + p.id, type: 'partner', name: p.name, nickname: p.nickname || '', personId: p.id, auto: true }));
+    if (!auto.length) return items;
+    let idx = -1; // index of the last feeling item
+    for (let i = 0; i < items.length; i++) if (items[i].type === 'feeling') idx = i;
+    return [...items.slice(0, idx + 1), ...auto, ...items.slice(idx + 1)];
+}
+
 function renderExpressPanel() {
-    // The user-editable, ordered typed-item list (phrase / partner / feeling).
-    ui.renderExpressPanel(expressLayoutRows(), expressPanel.getItems(), {
+    // The user-editable items + auto household Partner buttons (phrase/partner/feeling).
+    ui.renderExpressPanel(expressLayoutRows(), expressItemsForPanel(), {
         categories: expressItems.CATEGORIES,
         influencerColors: expressItems.INFLUENCER_COLORS,
         activePartnerId: activePartner ? activePartner.id : null,
@@ -970,6 +989,8 @@ function openSettings() {
     const tapRadio = document.querySelector(`input[name="expressTapMode"][value="${tapMode}"]`);
     if (tapRadio) tapRadio.checked = true;
     doubleTapMsSelect.value = storage.loadDoubleTapMs();
+    const autoHouseholdInput = document.getElementById('autoHouseholdInput');
+    autoHouseholdInput.checked = storage.loadExpressAutoHousehold();
     updateFolderDisplay();
 
     // Reset to General tab
@@ -1101,6 +1122,10 @@ function openSettings() {
     });
     doubleTapMsSelect.onchange = () => {
         storage.saveDoubleTapMs(Number(doubleTapMsSelect.value));
+        renderExpressPanel();
+    };
+    autoHouseholdInput.onchange = () => {
+        storage.saveExpressAutoHousehold(autoHouseholdInput.checked);
         renderExpressPanel();
     };
 
