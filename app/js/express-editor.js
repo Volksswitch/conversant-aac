@@ -48,10 +48,10 @@ function mkBtn(label, cls) {
 
 function buildToolbar() {
     const bar = document.createElement('div');
-    bar.className = 'pe-toolbar';
+    bar.className = 'ee-toolbar';
 
     const addItem = (label, factory) => {
-        const b = mkBtn(label, 'pe-add');
+        const b = mkBtn(label, 'ee-add');
         b.addEventListener('click', () => {
             current.push({ id: makeId(), ...factory() });
             commit(true);
@@ -62,10 +62,10 @@ function buildToolbar() {
     addItem('+ Partner', () => ({ type: 'partner', name: '', nickname: '' }));
     addItem('+ Feeling', () => ({ type: 'feeling', text: '' }));
 
-    const reset = mkBtn('Reset to default', 'pe-reset');
+    const reset = mkBtn('Reset to default', 'ee-reset');
     reset.addEventListener('click', async () => {
         const ok = await confirmDanger({
-            title: 'Reset quick phrases?',
+            title: 'Reset the Express Panel?',
             body: 'This replaces your edited list with the default starting layout. Your customizations will be lost.',
             confirmLabel: 'Reset to default',
             cancelLabel: 'Keep mine',
@@ -91,17 +91,17 @@ function textInput(value, placeholder, oninput) {
 
 function buildRow(item, i) {
     const row = document.createElement('div');
-    row.className = `pe-row pe-${item.type}`;
+    row.className = `ee-row ee-${item.type}`;
 
     // Type badge.
     const badge = document.createElement('span');
-    badge.className = `pe-badge pe-badge-${item.type}`;
+    badge.className = `ee-badge ee-badge-${item.type}`;
     badge.textContent = item.type;
     row.appendChild(badge);
 
     // Type-specific fields.
     const fields = document.createElement('div');
-    fields.className = 'pe-fields';
+    fields.className = 'ee-fields';
 
     if (item.type === 'phrase') {
         fields.appendChild(textInput(item.text, 'Phrase to speak', (v) => { item.text = v; commit(false); }));
@@ -143,19 +143,19 @@ function buildRow(item, i) {
         fields.appendChild(textInput(item.nickname, 'What I call them (optional)', (v) => { item.nickname = v; commit(false); }));
     } else { // feeling
         const inp = textInput(item.text, 'Feeling (e.g. Happy)', (v) => { item.text = v; commit(false); });
-        inp.setAttribute('list', 'pe-feeling-presets');
+        inp.setAttribute('list', 'ee-feeling-presets');
         fields.appendChild(inp);
     }
     row.appendChild(fields);
 
     // Reorder + delete.
     const tools = document.createElement('div');
-    tools.className = 'pe-tools';
+    tools.className = 'ee-tools';
     const up = mkBtn('↑'); up.disabled = i === 0;
     up.addEventListener('click', () => { [current[i - 1], current[i]] = [current[i], current[i - 1]]; commit(true); });
     const down = mkBtn('↓'); down.disabled = i === current.length - 1;
     down.addEventListener('click', () => { [current[i + 1], current[i]] = [current[i], current[i + 1]]; commit(true); });
-    const del = mkBtn('✕', 'pe-del');
+    const del = mkBtn('✕', 'ee-del');
     del.addEventListener('click', () => { current.splice(i, 1); commit(true); });
     tools.append(up, down, del);
     row.appendChild(tools);
@@ -171,12 +171,12 @@ export function render() {
 
     // datalist of suggested feelings (shared by all feeling rows).
     const dl = document.createElement('datalist');
-    dl.id = 'pe-feeling-presets';
+    dl.id = 'ee-feeling-presets';
     FEELING_PRESETS.forEach((f) => { const o = document.createElement('option'); o.value = f; dl.appendChild(o); });
     container.appendChild(dl);
 
     const list = document.createElement('div');
-    list.className = 'pe-list';
+    list.className = 'ee-list';
     if (!current.length) {
         const p = document.createElement('p');
         p.className = 'setting-hint';

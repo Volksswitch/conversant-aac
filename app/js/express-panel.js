@@ -18,7 +18,6 @@ import { DEFAULT_ITEMS, ensureIds } from './express-items.js';
 
 const FILE = 'express-panel.json';
 const CACHE_KEY = 'aac_express_items';
-const LEGACY_SETTINGS_KEY = 'aac_settings'; // items used to live here under .fastItems
 
 let items = null; // in-memory working copy
 
@@ -30,15 +29,8 @@ function parseItems(value) {
 
 function readCache() {
     try {
-        const direct = parseItems(JSON.parse(localStorage.getItem(CACHE_KEY)));
-        if (direct) return direct;
-    } catch { /* ignore */ }
-    // One-time migration: items previously lived in aac_settings.fastItems.
-    try {
-        const legacy = JSON.parse(localStorage.getItem(LEGACY_SETTINGS_KEY));
-        if (legacy && Array.isArray(legacy.fastItems) && legacy.fastItems.length) return legacy.fastItems;
-    } catch { /* ignore */ }
-    return null;
+        return parseItems(JSON.parse(localStorage.getItem(CACHE_KEY)));
+    } catch { return null; }
 }
 
 function writeCache(list) {
@@ -51,7 +43,7 @@ function writeDisk(list) {
         .catch(() => { /* disk write is best-effort */ });
 }
 
-/** Load: data folder (source of truth) → cache (or legacy) → defaults. */
+/** Load: data folder (source of truth) → cache → defaults. */
 export async function load() {
     let loaded = null;
     const raw = await readFile(FILE);

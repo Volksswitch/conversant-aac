@@ -164,9 +164,9 @@ body.conv-bottom #dockArea { width: 100%; border-top: 1px solid #c4ccd2; }
 body.conv-side-right #dockArea { border-left: 1px solid #c4ccd2; }
 body.conv-side-left  #dockArea { border-right: 1px solid #c4ccd2; }
 
-/* Fast-phrase panel: top row (#fpControls = persistent overrides, matching the
-   keyboard's toolbar row) + the phrase grid (#fpGrid, mirroring the layout). */
-#fastPhrases {
+/* Express Panel: top row (#epControls = persistent overrides, matching the
+   keyboard's toolbar row) + the phrase grid (#epGrid, mirroring the layout). */
+#expressPanel {
     flex: 1 1 auto;
     width: 100%;
     display: flex;
@@ -174,24 +174,24 @@ body.conv-side-left  #dockArea { border-right: 1px solid #c4ccd2; }
     gap: 0.4rem;
     padding: 0.5rem;
 }
-#fpControls {
+#epControls {
     flex: 0 0 auto;
     display: flex;
     gap: 0.4rem;
 }
-#fpGrid {
+#epGrid {
     flex: 1 1 auto;
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
     min-height: 0;
 }
-.fp-row {
+.ep-row {
     display: flex;
     gap: 0.4rem;
 }
-body.conv-side .fp-row { flex: 1 1 0; }       /* stretch to fill the column height */
-body.conv-bottom .fp-row { flex: 0 0 auto; }  /* natural height in the bottom strip */
+body.conv-side .ep-row { flex: 1 1 0; }       /* stretch to fill the column height */
+body.conv-bottom .ep-row { flex: 0 0 auto; }  /* natural height in the bottom strip */
 
 .region h2 {
     font-size: 0.95rem;
@@ -555,19 +555,19 @@ body.conv-bottom .palette-grid {
 .slot-persistent .move-latency   { color: var(--slot-persistent); }
 .slot-persistent .move-badge     { background: var(--slot-persistent); color: #fff; }
 
-/* --- Fast-phrase buttons. The grid MIRRORS the selected keyboard layout
+/* --- Express Panel buttons. The grid MIRRORS the selected keyboard layout
    (cell flex = the key's span), so the panel and the keyboard overlay 1:1 for a
    single keyguard. Category-colored (secondary cue; text always shown), long
    phrases ellipsis-truncate. --- */
-.fp-btn {
-    --fp-color: #546E7A;
-    --fp-tint: #eceff1;
+.ep-btn {
+    --ep-color: #546E7A;
+    --ep-tint: #eceff1;
     min-width: 0;
     padding: 0.2rem 0.4rem;
-    border: 1px solid var(--fp-color);
-    border-left: 5px solid var(--fp-color);
+    border: 1px solid var(--ep-color);
+    border-left: 5px solid var(--ep-color);
     border-radius: 8px;
-    background: var(--fp-tint);
+    background: var(--ep-tint);
     color: var(--ink);
     font-size: clamp(0.8rem, 1.4vh, 1.05rem);
     font-weight: 600;
@@ -577,10 +577,10 @@ body.conv-bottom .palette-grid {
     align-items: center;
     justify-content: center;
 }
-body.conv-bottom .fp-btn { min-height: clamp(2.2rem, 7.5vh, 4rem); }
+body.conv-bottom .ep-btn { min-height: clamp(2.2rem, 7.5vh, 4rem); }
 /* Word-wrap the phrase onto multiple lines (less need for ellipsis); clamp to
    3 lines with an ellipsis fallback only for the very longest. */
-.fp-text {
+.ep-text {
     white-space: normal;
     overflow: hidden;
     text-align: center;
@@ -589,56 +589,56 @@ body.conv-bottom .fp-btn { min-height: clamp(2.2rem, 7.5vh, 4rem); }
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
 }
-.fp-btn:hover,
-.fp-btn:focus-visible {
+.ep-btn:hover,
+.ep-btn:focus-visible {
     background: #fff;
-    outline: 2px solid var(--fp-color);
+    outline: 2px solid var(--ep-color);
     outline-offset: -1px;
 }
-.fp-btn:active { transform: translateY(1px); }
+.ep-btn:active { transform: translateY(1px); }
 /* Armed: first tap of a required double-tap — clearly "waiting for confirm". */
-.fp-btn.fp-armed {
-    background: var(--fp-color);
+.ep-btn.ep-armed {
+    background: var(--ep-color);
     color: #fff;
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--fp-color) 35%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ep-color) 35%, transparent);
 }
 /* "In my own words" — the space-cell counterpart, distinct (dark) background. */
-.fp-btn.fp-imow {
-    --fp-color: #2c3e50;
+.ep-btn.ep-imow {
+    --ep-color: #2c3e50;
     background: #2c3e50;
     color: #fff;
 }
-.fp-btn.fp-imow .fp-text { font-weight: 700; }
-.fp-btn.fp-imow:hover,
-.fp-btn.fp-imow:focus-visible { background: #1d2b38; color: #fff; outline-color: #1d2b38; }
+.ep-btn.ep-imow .ep-text { font-weight: 700; }
+.ep-btn.ep-imow:hover,
+.ep-btn.ep-imow:focus-visible { background: #1d2b38; color: #fff; outline-color: #1d2b38; }
 /* Partner / Feeling influencer TOGGLES — solid fill so they read apart from the
    pastel phrase buttons and from each other (distinct hues set inline). The
    toggled-ON state adds a heavy ring + check so "this is active" is unmistakable
    (Rule 6 — a sticky/latched action shows as a selected button). */
-.fp-btn.fp-partner,
-.fp-btn.fp-feeling {
-    background: var(--fp-color);
+.ep-btn.ep-partner,
+.ep-btn.ep-feeling {
+    background: var(--ep-color);
     color: #fff;
-    border-color: var(--fp-color);
+    border-color: var(--ep-color);
 }
-.fp-btn.fp-partner:hover, .fp-btn.fp-partner:focus-visible,
-.fp-btn.fp-feeling:hover, .fp-btn.fp-feeling:focus-visible {
-    background: color-mix(in srgb, var(--fp-color) 82%, #000);
+.ep-btn.ep-partner:hover, .ep-btn.ep-partner:focus-visible,
+.ep-btn.ep-feeling:hover, .ep-btn.ep-feeling:focus-visible {
+    background: color-mix(in srgb, var(--ep-color) 82%, #000);
     color: #fff;
-    outline-color: var(--fp-color);
+    outline-color: var(--ep-color);
 }
-.fp-btn.fp-on {
-    box-shadow: inset 0 0 0 3px #fff, 0 0 0 3px var(--fp-color);
+.ep-btn.ep-on {
+    box-shadow: inset 0 0 0 3px #fff, 0 0 0 3px var(--ep-color);
     position: relative;
     z-index: 1;
 }
-.fp-btn.fp-on .fp-text::after {
+.ep-btn.ep-on .ep-text::after {
     content: ' ✓';
     font-weight: 800;
 }
 
 /* Inert grid spacer (matches a blank/pred or leftover key cell). */
-.fp-cell-blank { min-width: 0; }
+.ep-cell-blank { min-width: 0; }
 
 /* Icon-only control buttons (Rule 4). The glyph inherits the button's text
    color (currentColor) and scales with the proportional font (sized in em). */
@@ -673,25 +673,25 @@ body.conv-bottom .fp-btn { min-height: clamp(2.2rem, 7.5vh, 4rem); }
     outline: none;
 }
 
-/* --- Fast-phrase editor (Settings → Phrases): an ordered list of typed items. --- */
-#phraseEditor { display: flex; flex-direction: column; gap: 0.5rem; }
-.pe-toolbar { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
-.pe-toolbar .pe-add { background: #2c3e50; color: #fff; border: none; border-radius: 6px; padding: 0.4rem 0.7rem; font-weight: 600; cursor: pointer; }
-.pe-toolbar .pe-add:hover { filter: brightness(1.1); }
-.pe-toolbar .pe-reset { margin-left: auto; background: #fff; color: #c0392b; border: 1px solid #e0a4a0; border-radius: 6px; padding: 0.4rem 0.7rem; cursor: pointer; }
-.pe-toolbar .pe-reset:hover { background: #c0392b; color: #fff; }
-.pe-list { display: flex; flex-direction: column; gap: 0.35rem; }
-.pe-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem; border: 1px solid #d6dde2; border-radius: 8px; background: #fff; }
-.pe-badge { flex: 0 0 auto; font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #fff; border-radius: 4px; padding: 0.25rem 0.4rem; min-width: 4.2rem; text-align: center; }
-.pe-badge-phrase  { background: #546E7A; }
-.pe-badge-partner { background: #5D4037; }
-.pe-badge-feeling { background: #00838F; }
-.pe-fields { display: flex; flex: 1 1 auto; gap: 0.4rem; flex-wrap: wrap; min-width: 0; }
-.pe-fields input, .pe-fields select { flex: 1 1 8rem; min-width: 0; padding: 0.35rem 0.5rem; border: 1px solid #c4ccd2; border-radius: 6px; font-size: 0.95rem; }
-.pe-tools { flex: 0 0 auto; display: flex; gap: 0.25rem; }
-.pe-tools button { width: 2rem; height: 2rem; border: 1px solid #c4ccd2; background: #f4f6f8; border-radius: 6px; cursor: pointer; font-size: 1rem; line-height: 1; }
-.pe-tools button:disabled { opacity: 0.35; cursor: default; }
-.pe-tools .pe-del { color: #c0392b; border-color: #e0a4a0; }
+/* --- Express Panel editor (Settings → Express Panel): an ordered list of typed items. --- */
+#expressEditor { display: flex; flex-direction: column; gap: 0.5rem; }
+.ee-toolbar { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+.ee-toolbar .ee-add { background: #2c3e50; color: #fff; border: none; border-radius: 6px; padding: 0.4rem 0.7rem; font-weight: 600; cursor: pointer; }
+.ee-toolbar .ee-add:hover { filter: brightness(1.1); }
+.ee-toolbar .ee-reset { margin-left: auto; background: #fff; color: #c0392b; border: 1px solid #e0a4a0; border-radius: 6px; padding: 0.4rem 0.7rem; cursor: pointer; }
+.ee-toolbar .ee-reset:hover { background: #c0392b; color: #fff; }
+.ee-list { display: flex; flex-direction: column; gap: 0.35rem; }
+.ee-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem; border: 1px solid #d6dde2; border-radius: 8px; background: #fff; }
+.ee-badge { flex: 0 0 auto; font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #fff; border-radius: 4px; padding: 0.25rem 0.4rem; min-width: 4.2rem; text-align: center; }
+.ee-badge-phrase  { background: #546E7A; }
+.ee-badge-partner { background: #5D4037; }
+.ee-badge-feeling { background: #00838F; }
+.ee-fields { display: flex; flex: 1 1 auto; gap: 0.4rem; flex-wrap: wrap; min-width: 0; }
+.ee-fields input, .ee-fields select { flex: 1 1 8rem; min-width: 0; padding: 0.35rem 0.5rem; border: 1px solid #c4ccd2; border-radius: 6px; font-size: 0.95rem; }
+.ee-tools { flex: 0 0 auto; display: flex; gap: 0.25rem; }
+.ee-tools button { width: 2rem; height: 2rem; border: 1px solid #c4ccd2; background: #f4f6f8; border-radius: 6px; cursor: pointer; font-size: 1rem; line-height: 1; }
+.ee-tools button:disabled { opacity: 0.35; cursor: default; }
+.ee-tools .ee-del { color: #c0392b; border-color: #e0a4a0; }
 
 /* Engine diagnostics — collapsed <details> for development / bug reports. The
    user-facing inference is the mode chip in Region A. */

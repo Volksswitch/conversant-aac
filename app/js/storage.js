@@ -238,14 +238,13 @@ export function saveResponsesPerCategory(n) {
 
 // Tap mode for speaking an Express Panel phrase: 'single' (speak on one tap) or
 // 'double' (require a confirming second tap to guard against false hits — Rule 10).
-// Storage key stays `fastPhraseTapMode` so existing user settings carry over.
 export function loadExpressTapMode() {
-    return loadSettings().fastPhraseTapMode === 'double' ? 'double' : 'single';
+    return loadSettings().expressTapMode === 'double' ? 'double' : 'single';
 }
 
 export function saveExpressTapMode(mode) {
     const settings = loadSettings();
-    settings.fastPhraseTapMode = mode === 'double' ? 'double' : 'single';
+    settings.expressTapMode = mode === 'double' ? 'double' : 'single';
     saveSettings(settings);
 }
 

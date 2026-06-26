@@ -1,4 +1,4 @@
-/* Fast Phrases — base-UI quick-speak + influencer panel (June 2026)
+/* Express Panel — base-UI quick-speak + influencer panel (June 2026)
  *
  * The panel is now a single USER-EDITABLE, ORDERED list of typed items (Ken,
  * June 26 2026). Each item is one of three types, and the item's position in the

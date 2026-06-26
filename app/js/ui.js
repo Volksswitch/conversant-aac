@@ -212,16 +212,16 @@ export function clearResponseOptions() {
     for (let i = 0; i < RESERVED_SLOTS; i++) responseOptions.appendChild(buildEmptyCell(SLOT_ORDER[i]));
 }
 
-// --- Fast-phrases panel (base UI quick-speak, Rules 9/10). The grid mirrors the
+// --- Express Panel (base UI quick-speak, Rules 9/10). The grid mirrors the
 // SELECTED KEYBOARD LAYOUT cell-for-cell (so one static keyguard overlays both):
 // each key cell becomes a category-colored phrase button (phrases drawn in order
 // from the pool); the keyboard's SPACE cell becomes the "In my own words" button
 // (distinct color, same span); blank/pred cells and any leftover cells stay
-// blank. The persistent-override row above (#fpControls) corresponds to the
+// blank. The persistent-override row above (#epControls) corresponds to the
 // keyboard's toolbar row and is static HTML. Activation: single-tap, or a
 // confirming double-tap (first tap arms, second within doubleTapMs confirms).
 // Speaking / opening the modal is the caller's job, so this stays presentational.
-const fpGrid = document.getElementById('fpGrid');
+const epGrid = document.getElementById('epGrid');
 
 // Render the editable, ordered typed-item list (phrase / partner / feeling) into
 // the grid cells of the paired keyboard layout, in order. The space cell becomes
@@ -229,61 +229,61 @@ const fpGrid = document.getElementById('fpGrid');
 // feeling buttons are TOGGLES with distinct colors and an active (selected)
 // state. `items` are the typed items; opts carries the lookups + callbacks.
 export function renderExpressPanel(layoutRows, items, opts = {}) {
-    if (!fpGrid) return;
+    if (!epGrid) return;
     const {
         categories = {}, influencerColors = {},
         activePartnerId = null, activeFeelingId = null,
         tapMode = 'single', doubleTapMs = 400,
         onSpeak, onTogglePartner, onToggleFeeling, onInMyOwnWords,
     } = opts;
-    fpGrid.innerHTML = '';
+    epGrid.innerHTML = '';
 
     let armedBtn = null;
     let armTimer = null;
     const disarm = () => {
-        if (armedBtn) armedBtn.classList.remove('fp-armed');
+        if (armedBtn) armedBtn.classList.remove('ep-armed');
         armedBtn = null;
         if (armTimer) { clearTimeout(armTimer); armTimer = null; }
     };
     const blank = (span) => {
         const f = document.createElement('div');
-        f.className = 'fp-cell-blank';
+        f.className = 'ep-cell-blank';
         f.style.flex = `${span} 1 0`;
         return f;
     };
     const setColor = (b, color, tint) => {
-        b.style.setProperty('--fp-color', color || '#546E7A');
-        b.style.setProperty('--fp-tint', tint || '#eceff1');
+        b.style.setProperty('--ep-color', color || '#546E7A');
+        b.style.setProperty('--ep-tint', tint || '#eceff1');
     };
 
     const buildItemBtn = (item, span) => {
         const b = document.createElement('button');
         b.type = 'button';
-        b.className = 'fp-btn';
+        b.className = 'ep-btn';
         b.style.flex = `${span} 1 0`;
 
         if (item.type === 'partner') {
             const label = item.nickname || item.name || 'Partner';
             const ic = influencerColors.partner || {};
             setColor(b, ic.color, ic.tint);
-            b.classList.add('fp-partner');
-            if (item.id && item.id === activePartnerId) b.classList.add('fp-on');
+            b.classList.add('ep-partner');
+            if (item.id && item.id === activePartnerId) b.classList.add('ep-on');
             b.title = `Talking with ${label}`;
             b.setAttribute('aria-label', `Talking with ${label}${item.id === activePartnerId ? ' (on)' : ''}`);
             b.setAttribute('aria-pressed', String(item.id === activePartnerId));
-            b.innerHTML = `<span class="fp-text">${escapeHtml(label)}</span>`;
+            b.innerHTML = `<span class="ep-text">${escapeHtml(label)}</span>`;
             b.addEventListener('click', () => onTogglePartner && onTogglePartner(item));
             return b;
         }
         if (item.type === 'feeling') {
             const ic = influencerColors.feeling || {};
             setColor(b, ic.color, ic.tint);
-            b.classList.add('fp-feeling');
-            if (item.id && item.id === activeFeelingId) b.classList.add('fp-on');
+            b.classList.add('ep-feeling');
+            if (item.id && item.id === activeFeelingId) b.classList.add('ep-on');
             b.title = `Feeling ${item.text}`;
             b.setAttribute('aria-label', `Feeling ${item.text}${item.id === activeFeelingId ? ' (on)' : ''}`);
             b.setAttribute('aria-pressed', String(item.id === activeFeelingId));
-            b.innerHTML = `<span class="fp-text">${escapeHtml(item.text)}</span>`;
+            b.innerHTML = `<span class="ep-text">${escapeHtml(item.text)}</span>`;
             b.addEventListener('click', () => onToggleFeeling && onToggleFeeling(item));
             return b;
         }
@@ -292,11 +292,11 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         setColor(b, cat.color, cat.tint);
         b.title = item.text;
         b.setAttribute('aria-label', item.text);
-        b.innerHTML = `<span class="fp-text">${escapeHtml(item.text)}</span>`;
+        b.innerHTML = `<span class="ep-text">${escapeHtml(item.text)}</span>`;
         b.addEventListener('click', () => {
             if (tapMode === 'double') {
                 if (armedBtn === b) { disarm(); onSpeak && onSpeak(item); }
-                else { disarm(); armedBtn = b; b.classList.add('fp-armed'); armTimer = setTimeout(disarm, doubleTapMs); }
+                else { disarm(); armedBtn = b; b.classList.add('ep-armed'); armTimer = setTimeout(disarm, doubleTapMs); }
             } else { onSpeak && onSpeak(item); }
         });
         return b;
@@ -305,18 +305,18 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
     let pi = 0; // index into the ordered item list
     (layoutRows || []).forEach((row) => {
         const rowEl = document.createElement('div');
-        rowEl.className = 'fp-row';
+        rowEl.className = 'ep-row';
         (row || []).forEach((cell) => {
             const span = cell.span || 1;
             if (cell.kind === 'space') {
                 // The space counterpart: "In my own words" (distinct color, single tap).
                 const b = document.createElement('button');
                 b.type = 'button';
-                b.className = 'fp-btn fp-imow';
+                b.className = 'ep-btn ep-imow';
                 b.style.flex = `${span} 1 0`;
                 b.title = 'In my own words';
                 b.setAttribute('aria-label', 'In my own words');
-                b.innerHTML = '<span class="fp-text">In my own words</span>';
+                b.innerHTML = '<span class="ep-text">In my own words</span>';
                 b.addEventListener('click', () => onInMyOwnWords && onInMyOwnWords());
                 rowEl.appendChild(b);
                 return;
@@ -330,7 +330,7 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
             if (!item) { rowEl.appendChild(blank(span)); return; }
             rowEl.appendChild(buildItemBtn(item, span));
         });
-        fpGrid.appendChild(rowEl);
+        epGrid.appendChild(rowEl);
     });
 }
 
@@ -435,7 +435,7 @@ export function setListenButtonState(listening) {
 
 // Convert the control buttons to icon-only (Rule 4), keeping each one's
 // accessible name (aria-label + title). Content buttons — move/response cards
-// and fast-phrase buttons — are intentionally NOT touched (they show text).
+// and Express Panel buttons — are intentionally NOT touched (they show text).
 // Called once at startup.
 export function applyControlIcons() {
     setIconButton(document.getElementById('sayAgainBtn'), 'replay', 'Say again');

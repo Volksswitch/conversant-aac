@@ -26,7 +26,7 @@
 
     <!-- Conversation screen: a MAIN area + a DOCK area. The dock area occupies
          exactly the on-screen keyboard's real-estate (side or bottom, per the
-         Settings dock choice); it shows the fast-phrase panel at rest and the
+         Settings dock choice); it shows the Express Panel at rest and the
          keyboard during the "In my own words" modal — so one static keyguard
          overlays both (CLAUDE.md keyguard-overlay principle). -->
     <main class="disabled" id="conversationMain">
@@ -67,7 +67,7 @@
                     <button id="regenerateBtn" type="button" class="regenerate-btn" aria-label="New 4 — different options">New 4</button>
                     <!-- "In my own words" modal input box — overlays the response
                          footprint, base UI NOT blurred. Shown by the In-my-own-words
-                         fast-phrase button; any of the 3 buttons dismisses it. -->
+                         Express Panel button; any of the 3 buttons dismisses it. -->
                     <div id="composerOverlay" class="composer-overlay" hidden aria-label="In my own words">
                         <textarea id="composerInput" rows="2" placeholder="Type here, then Speak it, Reframe to get new options from it, or Cancel." autocomplete="off"></textarea>
                         <div id="composerControls">
@@ -82,19 +82,19 @@
             <div id="statusBar" aria-live="polite">Ready</div>
         </div><!-- /#mainArea -->
 
-        <!-- Dock area — occupies the keyboard's real-estate. Holds the fast-phrase
+        <!-- Dock area — occupies the keyboard's real-estate. Holds the Express Panel
              panel at rest (top row = persistent overrides; grid = phrases matching
              the selected keyboard layout, with the space cell as "In my own
              words"). The keyboard overlays this same space during the modal. -->
         <div id="dockArea">
-            <div id="fastPhrases" class="fast-phrases-panel">
-                <div id="fpControls" aria-label="Conversation overrides">
+            <div id="expressPanel" class="express-panel">
+                <div id="epControls" aria-label="Conversation overrides">
                     <button id="sayAgainBtn" type="button" class="persist-btn">Say again</button>
                     <button id="holdOnBtn" type="button" class="persist-btn">Hold on</button>
                     <button id="pardonBtn" type="button" class="persist-btn">Pardon?</button>
                     <button id="windDownBtn" type="button" class="persist-btn">Wind down</button>
                 </div>
-                <div id="fpGrid" aria-label="Express Panel"></div>
+                <div id="epGrid" aria-label="Express Panel"></div>
             </div>
         </div>
     </main>
@@ -117,7 +117,7 @@
                 <div class="settings-tab active" data-tab="general">General</div>
                 <div class="settings-tab" data-tab="speech">Speech &amp; Input</div>
                 <div class="settings-tab" data-tab="conversation">Conversation</div>
-                <div class="settings-tab" data-tab="phrases">Express Panel</div>
+                <div class="settings-tab" data-tab="express">Express Panel</div>
                 <div class="settings-tab" data-tab="about">About</div>
             </nav>
             <div id="settingsContent">
@@ -252,14 +252,14 @@
                     </div>
                     <p class="setting-hint">The initial delay is how long after the response options appear before the first placeholder is spoken — so a quick choice plays none. Subsequent delays are the interval between additional placeholders while you choose. The first placeholder acknowledges ("Good question."); later ones say you're still thinking. The maximum caps how many play before the system stays quiet (2 keeps them from sounding repetitive).</p>
                     <div class="setting-group">
-                        <label>Speaking a quick phrase</label>
+                        <label>Speaking an Express Panel phrase</label>
                         <div class="radio-row">
                             <label class="radio-label">
-                                <input type="radio" name="fastPhraseTapMode" value="single" checked>
+                                <input type="radio" name="expressTapMode" value="single" checked>
                                 Single tap speaks it
                             </label>
                             <label class="radio-label">
-                                <input type="radio" name="fastPhraseTapMode" value="double">
+                                <input type="radio" name="expressTapMode" value="double">
                                 Require a double tap (guards against accidental taps)
                             </label>
                         </div>
@@ -276,9 +276,9 @@
                         <p class="setting-hint">When double tap is required, how long the first tap stays armed waiting for the second. A longer interval is more forgiving for slower or less precise taps.</p>
                     </div>
                 </div>
-                <div class="tab-panel" data-tab="phrases">
+                <div class="tab-panel" data-tab="express">
                     <p class="setting-hint">Edit the <strong>Express Panel</strong>. Each item is a <strong>Phrase</strong> (speaks when tapped), a <strong>Partner</strong> (who you're talking with — personalizes openers and tells the AI who's there), or a <strong>Feeling</strong> (sets the mood of the suggestions). Order here = position in the panel; use ↑ ↓ to arrange and ✕ to remove.</p>
-                    <div id="phraseEditor"></div>
+                    <div id="expressEditor"></div>
                 </div>
                 <div class="tab-panel" data-tab="about">
                     <h3>Conversant AAC</h3>

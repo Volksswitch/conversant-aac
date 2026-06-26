@@ -18,7 +18,7 @@ import * as expressEditor from './express-editor.js';
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.5.17';
+const APP_VERSION = '0.5.18';
 
 const conversationHistory = [];
 let isListening = false;
@@ -100,7 +100,7 @@ function initApp() {
     applyConversationDockClasses();
     ui.clearResponseOptions(); // render the reserved empty card footprint at rest
     renderExpressPanel();
-    expressEditor.init(document.getElementById('phraseEditor'), { onChange: renderExpressPanel });
+    expressEditor.init(document.getElementById('expressEditor'), { onChange: renderExpressPanel });
     worldviewUI.init();
     keyboard.init();
     keyboard.setMode(storage.loadKeyboardMode());
@@ -780,7 +780,7 @@ function initSettingsTabs() {
 // no text field to type into, so show the keyboard as a live preview of the
 // CHOSEN dock. Any other tab takes the preview down.
 function handleSettingsTab(tabName) {
-    if (tabName === 'phrases') { expressEditor.render(); keyboard.previewHide(); return; }
+    if (tabName === 'express') { expressEditor.render(); keyboard.previewHide(); return; }
     if (tabName === 'speech' && storage.loadKeyboardMode() === 'onscreen') {
         keyboard.previewShow(storage.loadKeyboardDock());
     } else {
@@ -967,7 +967,7 @@ function openSettings() {
     // Express Panel tap controls (no set selector — one list, always shown).
     const doubleTapMsSelect = document.getElementById('doubleTapMsSelect');
     const tapMode = storage.loadExpressTapMode();
-    const tapRadio = document.querySelector(`input[name="fastPhraseTapMode"][value="${tapMode}"]`);
+    const tapRadio = document.querySelector(`input[name="expressTapMode"][value="${tapMode}"]`);
     if (tapRadio) tapRadio.checked = true;
     doubleTapMsSelect.value = storage.loadDoubleTapMs();
     updateFolderDisplay();
@@ -1092,9 +1092,9 @@ function openSettings() {
     maxPlaceholdersInput.onchange = persistPlaceholders;
 
     // Express Panel: persist + live-re-render the panel on any change.
-    document.querySelectorAll('input[name="fastPhraseTapMode"]').forEach((radio) => {
+    document.querySelectorAll('input[name="expressTapMode"]').forEach((radio) => {
         radio.onchange = () => {
-            const mode = document.querySelector('input[name="fastPhraseTapMode"]:checked')?.value || 'single';
+            const mode = document.querySelector('input[name="expressTapMode"]:checked')?.value || 'single';
             storage.saveExpressTapMode(mode);
             renderExpressPanel();
         };
