@@ -12,6 +12,11 @@
  * carries their personId + name + nickname so the conversation can use their
  * preferred term of address.
  *
+ * Inserting in place (Ken): each row has a "＋" button that opens an inline
+ * Phrase / Partner / Feeling picker RIGHT THERE; choosing a type inserts the new
+ * item above that row and focuses it — no scrolling up to a toolbar and back. The
+ * toolbar's add buttons append to the end (and seed an empty list).
+ *
  * Editing rules: structural changes (add / delete / reorder / pick a person)
  * re-render the editor; plain text edits commit WITHOUT re-rendering so the field
  * keeps focus while typing. Every change persists and calls onChange so the live
@@ -26,10 +31,11 @@ import { confirmDanger } from './confirm-dialog.js';
 let container = null;
 let onChangeCb = null;
 let current = [];
-// The id of the item that newly-added items are inserted BEFORE (Ken). null =
-// append at the end. Lets the user place a new entry near the top without many
-// "move up" taps: select a target row, then tap + Phrase / Partner / Feeling.
-let insertBeforeId = null;
+// The id of the row whose inline insert picker is open (null = none). And the id
+// of a just-added row to focus + scroll into view after the next render, so the
+// user can type immediately without hunting for the new row.
+let pickerForId = null;
+let pendingFocusId = null;
 
 export function init(el, opts = {}) {
     container = el;
@@ -50,24 +56,35 @@ function mkBtn(label, cls) {
     return b;
 }
 
+function newItem(type) {
+    if (type === 'partner') return { id: makeId(), type: 'partner', name: '', nickname: '' };
+    if (type === 'feeling') return { id: makeId(), type: 'feeling', text: '' };
+    return { id: makeId(), type: 'phrase', text: '', cat: 'back' };
+}
+
+// Insert a new item of `type` at `at` (or append when `at` is null/-1), then
+// focus it after the re-render.
+function addAt(type, at) {
+    const item = newItem(type);
+    if (Number.isInteger(at) && at >= 0) current.splice(at, 0, item);
+    else current.push(item);
+    pickerForId = null;
+    pendingFocusId = item.id;
+    commit(true);
+}
+
 function buildToolbar() {
     const bar = document.createElement('div');
     bar.className = 'ee-toolbar';
 
-    const addItem = (label, factory) => {
+    const addItem = (label, type) => {
         const b = mkBtn(label, 'ee-add');
-        b.addEventListener('click', () => {
-            const item = { id: makeId(), ...factory() };
-            const at = insertBeforeId ? current.findIndex((it) => it.id === insertBeforeId) : -1;
-            if (at >= 0) current.splice(at, 0, item); // insert before the selected row
-            else current.push(item);                  // no target → append at the end
-            commit(true); // insertBeforeId is kept, so consecutive adds stack above it
-        });
+        b.addEventListener('click', () => addAt(type, null)); // append at end + focus
         bar.appendChild(b);
     };
-    addItem('+ Phrase', () => ({ type: 'phrase', text: '', cat: 'back' }));
-    addItem('+ Partner', () => ({ type: 'partner', name: '', nickname: '' }));
-    addItem('+ Feeling', () => ({ type: 'feeling', text: '' }));
+    addItem('+ Phrase', 'phrase');
+    addItem('+ Partner', 'partner');
+    addItem('+ Feeling', 'feeling');
 
     const reset = mkBtn('Reset to default', 'ee-reset');
     reset.addEventListener('click', async () => {
@@ -78,7 +95,7 @@ function buildToolbar() {
             cancelLabel: 'Keep mine',
         });
         if (!ok) return;
-        insertBeforeId = null;
+        pickerForId = null;
         expressPanel.resetItems();
         if (onChangeCb) onChangeCb();
         render();
@@ -137,22 +154,39 @@ function colorControl(item) {
     return wrap;
 }
 
+// Inline insert picker shown directly above a row when its ＋ is tapped: choose a
+// type and the new item is inserted right there (index `at`), then focused.
+function buildInsertBar(at) {
+    const bar = document.createElement('div');
+    bar.className = 'ee-insertbar';
+    bar.appendChild(Object.assign(document.createElement('span'), { className: 'ee-insertbar-label', textContent: 'Insert here:' }));
+    [['Phrase', 'phrase'], ['Partner', 'partner'], ['Feeling', 'feeling']].forEach(([label, type]) => {
+        const b = mkBtn(label, 'ee-add');
+        b.addEventListener('click', () => addAt(type, at));
+        bar.appendChild(b);
+    });
+    const cancel = mkBtn('✕', 'ee-insertbar-cancel');
+    cancel.title = 'Cancel';
+    cancel.addEventListener('click', () => { pickerForId = null; render(); });
+    bar.appendChild(cancel);
+    return bar;
+}
+
 function buildRow(item, i) {
     const row = document.createElement('div');
-    row.className = `ee-row ee-${item.type}` + (item.id === insertBeforeId ? ' ee-row-target' : '');
+    row.className = `ee-row ee-${item.type}`;
+    row.dataset.id = item.id;
 
-    // Insert-point marker: tap to make new items insert ABOVE this row (tap again
-    // to clear → back to appending at the end). Editor-only state, not persisted.
-    const mark = mkBtn('↧', 'ee-mark');
-    if (item.id === insertBeforeId) mark.classList.add('ee-mark-on');
-    mark.title = 'Add new items above this one';
-    mark.setAttribute('aria-label', 'Add new items above this one');
-    mark.setAttribute('aria-pressed', String(item.id === insertBeforeId));
-    mark.addEventListener('click', () => {
-        insertBeforeId = (insertBeforeId === item.id) ? null : item.id;
+    // Insert button: open the inline type picker above this row (tap again closes).
+    const ins = mkBtn('＋', 'ee-ins');
+    if (item.id === pickerForId) ins.classList.add('ee-ins-on');
+    ins.title = 'Insert a new item above this row';
+    ins.setAttribute('aria-label', 'Insert a new item above this row');
+    ins.addEventListener('click', () => {
+        pickerForId = (pickerForId === item.id) ? null : item.id;
         render();
     });
-    row.appendChild(mark);
+    row.appendChild(ins);
 
     // Type badge.
     const badge = document.createElement('span');
@@ -214,7 +248,7 @@ function buildRow(item, i) {
     down.addEventListener('click', () => { [current[i + 1], current[i]] = [current[i], current[i + 1]]; commit(true); });
     const del = mkBtn('✕', 'ee-del');
     del.addEventListener('click', () => {
-        if (current[i].id === insertBeforeId) insertBeforeId = null; // target removed
+        if (current[i].id === pickerForId) pickerForId = null;
         current.splice(i, 1);
         commit(true);
     });
@@ -224,31 +258,17 @@ function buildRow(item, i) {
     return row;
 }
 
-// Status line: where will the next added item go?
-function buildInsertStatus() {
-    const p = document.createElement('p');
-    p.className = 'ee-insert-status setting-hint';
-    if (insertBeforeId) {
-        const t = current.find((it) => it.id === insertBeforeId);
-        const label = !t ? '' : (t.type === 'partner' ? (t.nickname || t.name || 'Partner') : (t.text || t.type));
-        p.append(document.createTextNode(`New items will be added above “${label}”. `));
-        const clr = mkBtn('Add at the end instead', 'ee-clear-target');
-        clr.addEventListener('click', () => { insertBeforeId = null; render(); });
-        p.appendChild(clr);
-    } else {
-        p.textContent = 'New items are added at the end. Tap ↧ on a row to add them above that row instead.';
-    }
-    return p;
-}
-
 export function render() {
     if (!container) return;
     current = expressPanel.getItems();
-    // Drop a stale target (e.g. after an external change removed it).
-    if (insertBeforeId && !current.some((it) => it.id === insertBeforeId)) insertBeforeId = null;
+    if (pickerForId && !current.some((it) => it.id === pickerForId)) pickerForId = null;
     container.innerHTML = '';
     container.appendChild(buildToolbar());
-    container.appendChild(buildInsertStatus());
+
+    const hint = document.createElement('p');
+    hint.className = 'setting-hint ee-hint';
+    hint.textContent = 'The buttons above add to the end. To insert somewhere specific, tap ＋ on a row.';
+    container.appendChild(hint);
 
     // datalist of suggested feelings (shared by all feeling rows).
     const dl = document.createElement('datalist');
@@ -264,7 +284,20 @@ export function render() {
         p.textContent = 'No items yet — add a phrase, partner, or feeling above.';
         list.appendChild(p);
     } else {
-        current.forEach((item, i) => list.appendChild(buildRow(item, i)));
+        current.forEach((item, i) => {
+            if (item.id === pickerForId) list.appendChild(buildInsertBar(i)); // picker above the row
+            list.appendChild(buildRow(item, i));
+        });
     }
     container.appendChild(list);
+
+    // Focus + reveal a just-added row so the user can type in place.
+    if (pendingFocusId) {
+        const row = list.querySelector(`.ee-row[data-id="${pendingFocusId}"]`);
+        pendingFocusId = null;
+        if (row) {
+            row.scrollIntoView({ block: 'nearest' });
+            (row.querySelector('.ee-fields input') || row.querySelector('.ee-fields select'))?.focus();
+        }
+    }
 }
