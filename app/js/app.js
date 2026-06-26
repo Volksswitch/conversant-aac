@@ -17,7 +17,7 @@ import * as fastEditor from './fastphrase-editor.js';
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.5.15';
+const APP_VERSION = '0.5.16';
 
 const conversationHistory = [];
 let isListening = false;
