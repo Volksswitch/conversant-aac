@@ -261,20 +261,6 @@ export function saveDoubleTapMs(ms) {
     saveSettings(settings);
 }
 
-// Auto-add a Partner button to the Express Panel for each person the user lives
-// with (relationship graph `livesWithMe`). On by default — it no-ops until the
-// user adds household people in About Me (the panel exists before any people do,
-// which is why this is an automatic option rather than fixed items). Ken.
-export function loadExpressAutoHousehold() {
-    return loadSettings().expressAutoHousehold !== false; // default true
-}
-
-export function saveExpressAutoHousehold(on) {
-    const settings = loadSettings();
-    settings.expressAutoHousehold = !!on;
-    saveSettings(settings);
-}
-
 // --- Conversation logging ---
 
 let conversationDirHandle = null;

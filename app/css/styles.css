@@ -697,6 +697,12 @@ body.conv-bottom .ep-btn { min-height: clamp(2.2rem, 7.5vh, 4rem); }
 .ee-swatch { width: 1.7rem; height: 1.7rem; padding: 0; border-radius: 5px; border: 2px solid rgba(0, 0, 0, 0.25); cursor: pointer; }
 .ee-swatch-on { outline: 3px solid #2c3e50; outline-offset: 1px; border-color: #fff; }
 .ee-swatch-static { cursor: default; }
+/* Insert-point marker + selected-target highlight (add new items above a chosen row). */
+.ee-mark { flex: 0 0 auto; width: 2rem; height: 2rem; border: 1px solid #c4ccd2; background: #f4f6f8; border-radius: 6px; cursor: pointer; font-size: 1rem; line-height: 1; }
+.ee-mark-on { background: #2c3e50; color: #fff; border-color: #2c3e50; }
+.ee-row-target { border-top: 3px solid #2c3e50; }
+.ee-insert-status { margin: 0.25rem 0 0.5rem; }
+.ee-clear-target { background: none; border: none; color: #1565C0; text-decoration: underline; cursor: pointer; font: inherit; padding: 0; }
 
 /* Engine diagnostics — collapsed <details> for development / bug reports. The
    user-facing inference is the mode chip in Region A. */

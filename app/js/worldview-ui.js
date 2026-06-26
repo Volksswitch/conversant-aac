@@ -81,13 +81,10 @@ function formatValue(value) {
 
 // --- lifecycle --------------------------------------------------------------
 
-let onCloseCb = null;
-
-export function init(opts = {}) {
+export function init() {
     screenEl = document.getElementById('worldviewScreen');
     contentEl = document.getElementById('worldviewContent');
     titleEl = document.getElementById('worldviewTitle');
-    onCloseCb = opts.onClose || null;
     document.getElementById('worldviewCloseBtn').addEventListener('click', close);
 }
 
@@ -120,9 +117,6 @@ export function close() {
     keyboard.hideKeyboard();
     setBackgroundInert(false);
     screenEl.classList.add('hidden');
-    // People (incl. who the user lives with) may have changed — let the app
-    // refresh the Express Panel's auto household buttons.
-    if (onCloseCb) onCloseCb();
 }
 
 // --- Home -------------------------------------------------------------------

@@ -26,6 +26,10 @@ import { confirmDanger } from './confirm-dialog.js';
 let container = null;
 let onChangeCb = null;
 let current = [];
+// The id of the item that newly-added items are inserted BEFORE (Ken). null =
+// append at the end. Lets the user place a new entry near the top without many
+// "move up" taps: select a target row, then tap + Phrase / Partner / Feeling.
+let insertBeforeId = null;
 
 export function init(el, opts = {}) {
     container = el;
@@ -53,8 +57,11 @@ function buildToolbar() {
     const addItem = (label, factory) => {
         const b = mkBtn(label, 'ee-add');
         b.addEventListener('click', () => {
-            current.push({ id: makeId(), ...factory() });
-            commit(true);
+            const item = { id: makeId(), ...factory() };
+            const at = insertBeforeId ? current.findIndex((it) => it.id === insertBeforeId) : -1;
+            if (at >= 0) current.splice(at, 0, item); // insert before the selected row
+            else current.push(item);                  // no target → append at the end
+            commit(true); // insertBeforeId is kept, so consecutive adds stack above it
         });
         bar.appendChild(b);
     };
@@ -71,6 +78,7 @@ function buildToolbar() {
             cancelLabel: 'Keep mine',
         });
         if (!ok) return;
+        insertBeforeId = null;
         expressPanel.resetItems();
         if (onChangeCb) onChangeCb();
         render();
@@ -131,7 +139,20 @@ function colorControl(item) {
 
 function buildRow(item, i) {
     const row = document.createElement('div');
-    row.className = `ee-row ee-${item.type}`;
+    row.className = `ee-row ee-${item.type}` + (item.id === insertBeforeId ? ' ee-row-target' : '');
+
+    // Insert-point marker: tap to make new items insert ABOVE this row (tap again
+    // to clear → back to appending at the end). Editor-only state, not persisted.
+    const mark = mkBtn('↧', 'ee-mark');
+    if (item.id === insertBeforeId) mark.classList.add('ee-mark-on');
+    mark.title = 'Add new items above this one';
+    mark.setAttribute('aria-label', 'Add new items above this one');
+    mark.setAttribute('aria-pressed', String(item.id === insertBeforeId));
+    mark.addEventListener('click', () => {
+        insertBeforeId = (insertBeforeId === item.id) ? null : item.id;
+        render();
+    });
+    row.appendChild(mark);
 
     // Type badge.
     const badge = document.createElement('span');
@@ -192,18 +213,42 @@ function buildRow(item, i) {
     const down = mkBtn('↓'); down.disabled = i === current.length - 1;
     down.addEventListener('click', () => { [current[i + 1], current[i]] = [current[i], current[i + 1]]; commit(true); });
     const del = mkBtn('✕', 'ee-del');
-    del.addEventListener('click', () => { current.splice(i, 1); commit(true); });
+    del.addEventListener('click', () => {
+        if (current[i].id === insertBeforeId) insertBeforeId = null; // target removed
+        current.splice(i, 1);
+        commit(true);
+    });
     tools.append(up, down, del);
     row.appendChild(tools);
 
     return row;
 }
 
+// Status line: where will the next added item go?
+function buildInsertStatus() {
+    const p = document.createElement('p');
+    p.className = 'ee-insert-status setting-hint';
+    if (insertBeforeId) {
+        const t = current.find((it) => it.id === insertBeforeId);
+        const label = !t ? '' : (t.type === 'partner' ? (t.nickname || t.name || 'Partner') : (t.text || t.type));
+        p.append(document.createTextNode(`New items will be added above “${label}”. `));
+        const clr = mkBtn('Add at the end instead', 'ee-clear-target');
+        clr.addEventListener('click', () => { insertBeforeId = null; render(); });
+        p.appendChild(clr);
+    } else {
+        p.textContent = 'New items are added at the end. Tap ↧ on a row to add them above that row instead.';
+    }
+    return p;
+}
+
 export function render() {
     if (!container) return;
     current = expressPanel.getItems();
+    // Drop a stale target (e.g. after an external change removed it).
+    if (insertBeforeId && !current.some((it) => it.id === insertBeforeId)) insertBeforeId = null;
     container.innerHTML = '';
     container.appendChild(buildToolbar());
+    container.appendChild(buildInsertStatus());
 
     // datalist of suggested feelings (shared by all feeling rows).
     const dl = document.createElement('datalist');
