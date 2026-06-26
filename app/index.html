@@ -204,11 +204,12 @@
                     <div class="setting-group">
                         <label for="silenceThresholdInput">Optional Responses silence period</label>
                         <select id="silenceThresholdInput">
+                            <option value="0.5">0.5 seconds</option>
+                            <option value="1">1.0 seconds</option>
                             <option value="1.5">1.5 seconds</option>
-                            <option value="2" selected>2 seconds</option>
-                            <option value="3">3 seconds</option>
-                            <option value="4">4 seconds</option>
-                            <option value="5">5 seconds</option>
+                            <option value="2" selected>2.0 seconds</option>
+                            <option value="2.5">2.5 seconds</option>
+                            <option value="3">3.0 seconds</option>
                         </select>
                         <p class="setting-hint">How long the partner can pause before the speech collected so far is sent for response options. Recording keeps going — if the partner continues, the combined speech is re-sent after the next pause. Recording stops only when you choose a response.</p>
                     </div>
