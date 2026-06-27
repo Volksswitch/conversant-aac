@@ -50,6 +50,18 @@
 
     --ink: #1a1a1a;
     --header: #2c3e50;
+
+    /* --- The DOCK region (Spatial Stability, Ken June 2026). The keyboard /
+       Express Panel footprint is ONE fixed region used identically on EVERY
+       screen (conversation, About Me, Settings) so a single physical keyguard
+       overlays them all. Two fundamental layouts: SIDE (a fixed-width full-height
+       column on the chosen edge) and BOTTOM (a fixed-height full-width strip).
+       Overlays reserve this region (leaving it blank at rest) and put their
+       content in the MAIN AREA; the keyboard fills the dock when typing. These
+       two values are the single source of truth for the dock size everywhere. */
+    --dock-w: min(26rem, 46vw);   /* side dock width  */
+    --dock-h: 48vh;               /* bottom dock height (fixed, so the Express
+                                     Panel and the keyboard occupy the same band) */
 }
 
 body {
@@ -159,10 +171,28 @@ body.conv-bottom     main { flex-direction: column; }
     min-height: 0;
     background: #e9edf0;
 }
-body.conv-side #dockArea { width: min(26rem, 46vw); }
-body.conv-bottom #dockArea { width: 100%; border-top: 1px solid #c4ccd2; }
-body.conv-side-right #dockArea { border-left: 1px solid #c4ccd2; }
-body.conv-side-left  #dockArea { border-right: 1px solid #c4ccd2; }
+/* SIDE dock: a FULL-HEIGHT fixed column on the chosen edge (y0..bottom), so the
+   Express Panel occupies the exact same region the keyboard and the About Me /
+   Settings dock reservations do — otherwise the app header would push the panel
+   down and its grid wouldn't line up with the keyboard under one keyguard. The
+   conversation main area + the app header are confined to the main-area rect
+   beside it. (BOTTOM dock keeps its in-flow strip — no header conflict there.) */
+body.conv-side #dockArea {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    width: var(--dock-w);
+    z-index: 50;
+}
+body.conv-side-right #dockArea { right: 0; border-left: 1px solid #c4ccd2; }
+body.conv-side-left  #dockArea { left: 0;  border-right: 1px solid #c4ccd2; }
+body.conv-side-right #conversationMain { padding-right: var(--dock-w); }
+body.conv-side-left  #conversationMain { padding-left: var(--dock-w); }
+body.conv-side-right header { padding-right: calc(var(--dock-w) + 1.5rem); }
+body.conv-side-left  header { padding-left: calc(var(--dock-w) + 1.5rem); }
+/* FIXED bottom dock height so the Express Panel and the keyboard occupy the
+   identical band (one keyguard). */
+body.conv-bottom #dockArea { width: 100%; height: var(--dock-h); flex: 0 0 var(--dock-h); border-top: 1px solid #c4ccd2; }
 
 /* Express Panel: top row (#epControls = persistent overrides, matching the
    keyboard's toolbar row) + the phrase grid (#epGrid, mirroring the layout). */
@@ -190,8 +220,10 @@ body.conv-side-left  #dockArea { border-right: 1px solid #c4ccd2; }
     display: flex;
     gap: 0.4rem;
 }
-body.conv-side .ep-row { flex: 1 1 0; }       /* stretch to fill the column height */
-body.conv-bottom .ep-row { flex: 0 0 auto; }  /* natural height in the bottom strip */
+/* Rows stretch to fill the dock in BOTH layouts (the dock is a fixed size each
+   way), so the Express Panel exactly fills the dock region the keyboard occupies. */
+body.conv-side .ep-row,
+body.conv-bottom .ep-row { flex: 1 1 0; }
 
 .region h2 {
     font-size: 0.95rem;
@@ -871,18 +903,18 @@ body.conv-bottom .ep-btn { min-height: clamp(2.2rem, 7.5vh, 4rem); }
 
 /* --- Settings dialog --- */
 
+/* Spatial Stability (Ken June 2026): Settings is no longer a floating/draggable
+   modal — it fills the MAIN-AREA rect (the same footprint as the conversation
+   main area and About Me), leaving the DOCK region for the keyboard, so one
+   keyguard fits every screen. Positioned per the fundamental layout (conv-*).
+   Still a <dialog> opened with showModal() (its backdrop dims + blocks the app
+   behind, and it shares the top layer the keyboard reparents into). */
+/* Generic dialog base — keeps the small confirm/danger dialog centered (the UA
+   centers a modal via inset:0 + margin:auto, which display:flex below would
+   otherwise drop, so restore it here). #settingsDialog overrides all of this. */
 dialog {
     border: none;
-    border-radius: 8px;
     padding: 0;
-    max-width: 840px;   /* 50% wider (Ken) */
-    width: 92%;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-    overflow: hidden;
-    max-height: calc(100vh - 3rem);
-    /* inset:0 + margin:auto restores the centering that display:flex (applied
-       only to the OPEN dialog below) would otherwise drop. The drag code
-       (initSettingsDrag) overrides with margin:0 + left/top to reposition. */
     inset: 0;
     margin: auto;
 }
@@ -895,58 +927,25 @@ dialog[open] {
     flex-direction: column;
 }
 
-/* FIXED panel dimensions (Ken's rule — always strive for fixed-dimension UI
-   elements; the eventual goal is for this panel to match a base-UI element's
-   size + location so ONE keyguard supports every screen). Same size on every
-   tab, independent of how much content a tab has. Per-dock fixed sizes (the
-   bottom-dock override below sits in the top region so it clears the keyboard);
-   a fixed size that's larger than its content just has blank space — fine — as
-   long as it doesn't reach into the keyboard. */
+/* Settings fills the viewport, then carves out the dock region per the
+   fundamental layout so it occupies exactly the main-area rect (the keyboard
+   fills the dock). A flat full-rect panel (no rounding/shadow), like About Me. */
 #settingsDialog {
-    height: min(52.5rem, calc(100vh - 3rem));
-}
-
-/* Nudge the (centred) Settings panel into the free region beside a SIDE-docked
-   keyboard so it clears the keys and stays on-screen. Driven entirely by the
-   body classes the keyboard sets, so it's automatically correct for whichever
-   side is showing — and absent when the keyboard is bottom-docked or hidden
-   (no stale nudge). max-width caps the panel to the free region so it can't
-   overflow off-screen. A dragged panel keeps its inline left/top (drag wins). */
-body.kbd-open.kbd-dock-side.kbd-side-right #settingsDialog {
-    right: min(26rem, 46vw);
-    max-width: min(840px, calc(100vw - min(26rem, 46vw) - 2rem));
-}
-
-body.kbd-open.kbd-dock-side.kbd-side-left #settingsDialog {
-    left: min(26rem, 46vw);
-    max-width: min(840px, calc(100vw - min(26rem, 46vw) - 2rem));
-}
-
-/* A BOTTOM keyboard covers the lower part of the screen, so pin the panel to
-   the top region (and cap its height to what's left) instead of leaving it
-   centred and overlapping the keys. */
-body.kbd-open.kbd-dock-bottom #settingsDialog {
-    top: 1rem;
-    bottom: auto;
-    max-height: calc(52vh - 1.5rem);
-}
-
-/* When the keyboard dock is BOTTOM, the keyboard owns the lower ~half of the
-   screen. The Settings panel takes a FIXED size that matches the conversation
-   MAIN AREA (the top region, full width, above the dock) — clear of the keyboard
-   and aligned with a base-UI element toward the one-keyguard goal. Full width
-   lets the content use 3 columns so even dense tabs fit without scrolling.
-   (Side dock has no vertical conflict — the panel keeps its centered size.) */
-body.conv-bottom #settingsDialog {
-    top: 1rem;
-    bottom: auto;
-    left: 1rem;
-    right: 1rem;
+    position: fixed;
+    inset: 0;
     margin: 0;
-    max-width: none;
     width: auto;
-    height: calc(52vh - 2rem);
+    height: auto;
+    max-width: none;
+    max-height: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: #fff;
+    overflow: hidden;
 }
+body.conv-side-right #settingsDialog { right: var(--dock-w); }
+body.conv-side-left  #settingsDialog { left: var(--dock-w); }
+body.conv-bottom     #settingsDialog { bottom: var(--dock-h); }
 body.conv-bottom .tab-panel.active {
     column-count: 3;
 }
@@ -973,23 +972,13 @@ dialog::backdrop {
     padding: 0.6rem 1rem;
     background: #2c3e50;
     color: #fff;
-    cursor: move;
     user-select: none;
     flex-shrink: 0;
-    /* Stop the browser from claiming the touch gesture for scroll/pan, so a
-       touch drag moves the panel the full distance instead of a few mm. */
-    touch-action: none;
 }
 
 #settingsTitle {
     font-size: 1rem;
     font-weight: 600;
-}
-
-#settingsDragHint {
-    font-size: 0.7rem;
-    opacity: 0.55;
-    font-weight: 400;
 }
 
 #settingsLayout {
@@ -1868,11 +1857,14 @@ label.radio-label input[type="radio"] {
     left: 0;
     right: 0;
     bottom: 0;
-    max-height: 48vh;
+    height: var(--dock-h);   /* exactly fills the bottom dock band (= #dockArea) */
     border-top: 1px solid #c4ccd2;
     box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.18);
     padding: 0.5rem 0.5rem calc(0.5rem + env(safe-area-inset-bottom, 0px));
 }
+/* Key rows stretch to fill the fixed-height bottom dock (like the side dock). */
+#appKeyboard.kbd-dock-bottom .kbd-row { flex: 1 1 0; }
+#appKeyboard.kbd-dock-bottom .kbd-key { min-height: 0; }
 
 /* Side dock — About Me / Settings (compete for horizontal space, so the
    keyboard takes a full-height column and the rows STRETCH to fill that
@@ -1880,7 +1872,7 @@ label.radio-label input[type="radio"] {
 #appKeyboard.kbd-dock-side {
     top: 0;
     bottom: 0;
-    width: min(26rem, 46vw);
+    width: var(--dock-w);
     padding: 0.5rem;
 }
 
@@ -2055,25 +2047,13 @@ label.radio-label input[type="radio"] {
     border-color: #2c3e50;
 }
 
-/* Reserve room so the focused field clears the keyboard. Bottom dock reserves
-   vertical space (viewport-relative, so the field can always scroll above the
-   keys); side dock reserves horizontal space on the side it's docked. */
-/* About Me reserves bottom space for a bottom keyboard. The CONVERSATION screen
-   does NOT — its dock area already occupies the keyboard's footprint and the
-   keyboard overlays the dock, so no padding on main. */
-body.kbd-open.kbd-dock-bottom #worldviewContent {
-    padding-bottom: 50vh;
-}
-
-/* Side dock reserves horizontal space on the About Me SCREEN (so both the
-   header and the content clear the keyboard, on either side). The extra 1.5rem
-   on the keyboard-on-right case keeps the (right-edge) scrollbar from hugging
-   the keys, so reaching for it can't accidentally hit a key. (Keyboard-on-left
-   is fine — the scrollbar stays on the far right, away from the keyboard.) */
-body.kbd-open.kbd-dock-side.kbd-side-right #worldviewScreen {
-    padding-right: calc(min(26rem, 46vw) + 1.5rem);
-}
-
-body.kbd-open.kbd-dock-side.kbd-side-left #worldviewScreen {
-    padding-left: min(26rem, 46vw);
-}
+/* Spatial Stability (Ken June 2026): About Me reserves the DOCK region at ALL
+   times (not just when typing), so its content sits in the same MAIN-AREA rect as
+   the conversation screen and the dock region is fixed blank space the keyboard
+   fills on focus — one keyguard fits. Reservation follows the fundamental layout
+   (conv-*), independent of whether the keyboard is currently showing, so the
+   content never shifts when the keyboard appears. The extra 1.5rem on the
+   keyboard-on-right case keeps the right-edge scrollbar off the keys. */
+body.conv-side-right #worldviewScreen { padding-right: calc(var(--dock-w) + 1.5rem); }
+body.conv-side-left  #worldviewScreen { padding-left: var(--dock-w); }
+body.conv-bottom     #worldviewScreen { padding-bottom: var(--dock-h); }

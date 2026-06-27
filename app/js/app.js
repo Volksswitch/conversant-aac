@@ -18,7 +18,7 @@ import * as expressEditor from './express-editor.js';
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.5.24';
+const APP_VERSION = '0.5.25';
 
 const conversationHistory = [];
 let isListening = false;
@@ -109,11 +109,10 @@ function initApp() {
     keyboard.setSideDockPosition(storage.loadSideDockPosition());
     keyboard.setKeyboardDock(storage.loadKeyboardDock());
     initSettingsTabs();
-    initSettingsDrag();
     // Take the keyboard preview down when Settings is dismissed. The Close
     // button does this explicitly; this 'cancel' listener covers Escape (the
-    // dialog 'close' event proved unreliable here). The panel nudge is pure CSS
-    // (driven by the keyboard's body classes), so nothing to clean up there.
+    // dialog 'close' event proved unreliable here). Settings is now a fixed
+    // main-area panel (Spatial Stability), so there's no drag position to reset.
     const settingsDialog = document.getElementById('settingsDialog');
     settingsDialog.addEventListener('cancel', () => {
         // Mirror the Close button: persist the API key (covers paste paths that
@@ -124,11 +123,7 @@ function initApp() {
             if (key !== (storage.loadApiKey() || '')) { llm.setApiKey(key); storage.saveApiKey(key); }
         }
         keyboard.hideKeyboard();
-        resetSettingsPosition();
     });
-    // When the keyboard's dock/side changes, re-snap a dragged panel so it
-    // clears the keyboard again (the CSS auto-position then takes over).
-    document.addEventListener('kbd-dock-change', () => resetSettingsPosition());
     const versionEl = document.getElementById('aboutVersion');
     if (versionEl) versionEl.textContent = APP_VERSION;
 
@@ -803,67 +798,6 @@ function updateKeyboardPositionGroups() {
     set('bottomLayoutGroup', !side);
 }
 
-// Tracks whether the user has dragged the Settings panel (pinning it with
-// inline left/top, which override the CSS auto-position). Reset when the
-// keyboard's dock/side changes so the panel re-snaps to clear the keyboard.
-let settingsDragged = false;
-
-function resetSettingsPosition() {
-    const dialog = document.getElementById('settingsDialog');
-    if (!dialog || !settingsDragged) return;
-    dialog.style.margin = '';
-    dialog.style.left = '';
-    dialog.style.top = '';
-    settingsDragged = false;
-}
-
-// Drag-to-move for the Settings dialog (pattern borrowed from the Keyguard
-// Designer app). The panel stays modal — the backdrop still blocks the app
-// behind it — but can be dragged aside by its title bar so live UI changes are
-// visible behind it. A native <dialog> is centered by the UA with auto margins;
-// on the first drag we convert that to pixel left/top with margin:0, then track
-// the pointer, clamping to the viewport. Position persists until the keyboard
-// state changes (resetSettingsPosition) or Settings closes.
-function initSettingsDrag() {
-    const dialog = document.getElementById('settingsDialog');
-    const handle = document.getElementById('settingsHeader');
-    if (!dialog || !handle) return;
-    let dragging = false, offsetX = 0, offsetY = 0;
-
-    handle.addEventListener('pointerdown', (e) => {
-        // On the first drag, pin the dialog to its current rect so left/top win
-        // over the UA's centering margins / CSS auto-position.
-        const r = dialog.getBoundingClientRect();
-        if (!settingsDragged) {
-            dialog.style.margin = '0';
-            dialog.style.left = `${r.left}px`;
-            dialog.style.top = `${r.top}px`;
-            settingsDragged = true;
-        }
-        dragging = true;
-        offsetX = e.clientX - r.left;
-        offsetY = e.clientY - r.top;
-        handle.setPointerCapture(e.pointerId);
-        e.preventDefault();
-    });
-
-    handle.addEventListener('pointermove', (e) => {
-        if (!dragging) return;
-        const maxX = window.innerWidth - dialog.offsetWidth;
-        const maxY = window.innerHeight - dialog.offsetHeight;
-        dialog.style.left = `${Math.max(0, Math.min(e.clientX - offsetX, maxX))}px`;
-        dialog.style.top = `${Math.max(0, Math.min(e.clientY - offsetY, maxY))}px`;
-    });
-
-    const stop = (e) => {
-        if (!dragging) return;
-        dragging = false;
-        try { handle.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
-    };
-    handle.addEventListener('pointerup', stop);
-    handle.addEventListener('pointercancel', stop);
-}
-
 function populateVoiceSelect() {
     const select = document.getElementById('voiceSelect');
     const voices = tts.getVoices();
@@ -1118,7 +1052,6 @@ function openSettings() {
         // The keyboard is now kept up when focus moves to in-dialog controls, so
         // take it down explicitly on close (covers both real-typing and preview).
         keyboard.hideKeyboard();
-        resetSettingsPosition();
         dialog.close();
     };
 }
