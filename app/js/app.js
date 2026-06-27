@@ -18,7 +18,7 @@ import * as expressEditor from './express-editor.js';
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.5.30';
+const APP_VERSION = '0.5.31';
 
 const conversationHistory = [];
 let isListening = false;
@@ -620,7 +620,21 @@ function handleWindDown() {
 // discarded.
 function handleEndConversation() {
     terminateConversation();
+    // Ending a conversation clears the situation influencers — the next person /
+    // mood shouldn't inherit this conversation's Partner & Feeling selections.
+    // (Done here, NOT in the shared terminateConversation, because Start
+    // conversation reuses that and still needs the active Partner to personalize
+    // its openers.)
+    clearInfluencers();
     ui.setStatus('Conversation ended — tap Start conversation or Listen to begin again');
+}
+
+// Clear the active Partner / Feeling toggles and refresh the panel so their
+// selected rings drop.
+function clearInfluencers() {
+    activePartner = null;
+    activeFeeling = null;
+    renderExpressPanel();
 }
 
 // The user is TAKING THE FLOOR with their own words — shared by the composer's
