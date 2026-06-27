@@ -163,24 +163,43 @@ const B = {
 
 export const LAYOUTS = { ...S, ...B };
 
-// Symbols/numbers page (reached with the 123 key). One per dock so the page
-// suits the dock's shape; the ABC key returns to the active letters layout.
-export const SYMBOLS = {
-  side: [
-    r('1 2 3 4 5'), r('6 7 8 9 0'),
-    [C('@'), C('#'), C('$'), C('%'), C('&')],
-    [C('*'), C('('), C(')'), C('-'), C('+')],
-    [C('!'), C('?'), C("'"), C('"'), C(':')],
-    [C(';'), C('/'), C('='), C('_'), C('~')],
-    [PG('ABC'), SP(2), BK(), EN()],
-  ],
-  bottom: [
-    r('1 2 3 4 5 6 7 8 9 0'),
-    [C('@'), C('#'), C('$'), C('%'), C('&'), C('*'), C('('), C(')'), C('-'), C('+')],
-    [C('!'), C('?'), C("'"), C('"'), C(':'), C(';'), C('/'), C('='), C('_'), C('~')],
-    [PG('ABC'), SP(5), C(','), C('.'), BK(), EN()],
-  ],
-};
+// --- symbols/numbers page (reached with the 123 key) ------------------------
+//
+// Spatial Stability (Ken, June 2026): a single static physical keyguard overlays
+// the keyboard, so EVERY page must share ONE geometry — the holes can't move when
+// the user taps 123. A fixed symbols page (one per dock) breaks this the moment
+// the chosen letters layout isn't the same shape (e.g. the 3-wide S6 vs. a 5-wide
+// symbols page). So the symbols page is GENERATED from the active letters layout:
+// identical rows, identical spans, action/space/blank/pred cells left exactly
+// where they are — only each LETTER cell becomes a symbol (in pool order) and the
+// 123 key relabels to ABC. The grid is therefore guaranteed congruent with the
+// letters page for whichever layout is selected, so one keyguard fits both pages.
+//
+// Pool order = importance: digits first, then the common specials, then the rarer
+// ones so even a large-grid layout (many letter cells) is filled. A layout with
+// more letter cells than pool symbols leaves the surplus cells blank (still in the
+// same position — geometry preserved); a layout with fewer simply uses a prefix.
+const SYMBOL_POOL = [
+  '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
+  '@', '#', '$', '%', '&', '*', '(', ')', '-', '+',
+  '!', '?', "'", '"', ':', ';', '/', '=', '_', '~',
+  '.', ',', '<', '>', '[', ']', '{', '}', '\\', '|', '^', '`',
+];
+
+// Build the symbols page for a given letters layout's rows, preserving geometry.
+export function buildSymbolsPage(letterRows) {
+  let i = 0;
+  return (letterRows || []).map((row) => (row || []).map((cell) => {
+    if (cell.kind === 'char') {
+      const sym = SYMBOL_POOL[i++];
+      return sym === undefined ? BL(cell.span) : C(sym, cell.span);
+    }
+    // The 123 key becomes the ABC key (same cell, same span/position).
+    if (cell.kind === 'action' && cell.action === 'page') return PG('ABC', cell.span);
+    // space / shift / backspace / enter / blank / pred — unchanged, same place.
+    return cell;
+  }));
+}
 
 // Ordered lists for the Settings select menus.
 export const SIDE_LAYOUTS = Object.keys(S).map((id) => ({ id, name: S[id].name }));

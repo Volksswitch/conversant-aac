@@ -20,7 +20,7 @@
  * preventDefault) so the caret never moves and no field blurs mid-type.
  */
 
-import { LAYOUTS, SYMBOLS } from './keyboard-layouts.js';
+import { LAYOUTS, buildSymbolsPage } from './keyboard-layouts.js';
 import { setIconButton } from './icons.js';
 import * as prediction from './prediction.js';
 
@@ -83,11 +83,13 @@ let page = 'letters';
 // bottom), one chosen per dock. The active letters page = the selected layout
 // for the current dock; the 123 key flips to a dock-appropriate symbols page.
 
-// Returns the rows to render right now (active layout's letters, or symbols).
+// Returns the rows to render right now (active layout's letters, or the symbols
+// page GENERATED from that same layout so its geometry matches — one keyguard
+// fits both pages, per Spatial Stability).
 function currentRows() {
-    if (page === 'symbols') return SYMBOLS[currentDock] || SYMBOLS.bottom;
     const id = currentDock === 'side' ? sideLayoutId : bottomLayoutId;
-    return (LAYOUTS[id] || LAYOUTS[currentDock === 'side' ? 'S1' : 'B1']).rows;
+    const rows = (LAYOUTS[id] || LAYOUTS[currentDock === 'side' ? 'S1' : 'B1']).rows;
+    return page === 'symbols' ? buildSymbolsPage(rows) : rows;
 }
 
 // --- field helpers ----------------------------------------------------------
