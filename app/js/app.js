@@ -18,7 +18,7 @@ import * as expressEditor from './express-editor.js';
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.5.28';
+const APP_VERSION = '0.5.29';
 
 const conversationHistory = [];
 let isListening = false;
@@ -823,7 +823,9 @@ function fillLayoutSelect(select, layouts, selectedId) {
     layouts.forEach(({ id, name }) => {
         const opt = document.createElement('option');
         opt.value = id;
-        opt.textContent = `${id} — ${name}`;
+        // Show only the human-readable name — the S1/B1 ids are internal and mean
+        // nothing to the user; the id stays as the option's value.
+        opt.textContent = name;
         if (id === selectedId) opt.selected = true;
         select.appendChild(opt);
     });
