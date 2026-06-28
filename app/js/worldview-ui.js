@@ -152,6 +152,43 @@ function renderFolderPrompt() {
     contentEl.append(card);
 }
 
+// Gaps-driven "Questions worth answering" (Ken, June 28 2026 — restores a
+// surface for the progressive-profiling gaps log, which had no UI after v0.2.31
+// removed the old "Suggested next" section). Distinct from the Topics list: it
+// shows ONLY facts the AI actually needed but didn't have during real
+// conversations (worldview.recordGaps from missing_facts), most-asked first, so
+// answering these has the biggest payoff. Renders nothing when there are no
+// open gaps (e.g. before any live-API conversations), so it never duplicates the
+// topic pages.
+function renderGaps() {
+    const items = [];
+    const seen = new Set();
+    for (const g of wv.listGaps()) {
+        if (wv.getState(g.key) !== 'unanswered') continue;   // answered since it was logged
+        if (seen.has(g.key)) continue;
+        const meta = wv.fieldMeta(g.key);
+        if (!meta) continue;                                  // gap key not in the registry
+        seen.add(g.key);
+        items.push({ meta, count: g.count });
+    }
+    if (!items.length) return;
+
+    contentEl.append(el('h3', { class: 'wv-section-title', text: 'Questions worth answering' }));
+    contentEl.append(el('p', { class: 'wv-intro', text:
+        'These came up in real conversations but I didn’t have the answer. Filling them in gives the biggest payoff.' }));
+    for (const { meta, count } of items) {
+        const note = count > 1 ? `Came up ${count} times` : 'Came up once';
+        contentEl.append(el('button', { class: 'wv-module-row',
+            onclick: () => renderModule(meta.moduleId, meta.key) }, [
+            el('div', { class: 'wv-module-main' }, [
+                el('div', { class: 'wv-module-title', text: meta.q }),
+                el('div', { class: 'wv-module-meta', text: `${note} · ${meta.moduleTitle}` })
+            ]),
+            el('div', { class: 'wv-chevron', text: '›' })
+        ]));
+    }
+}
+
 function renderHome() {
     // The home list has no text field; if the keyboard was kept up while
     // navigating out of a module (focus moved to a Back/Done button), take it
@@ -165,6 +202,8 @@ function renderHome() {
         'Answer as many or as few as you like, whenever you like. Nothing here is required, and you can change or remove any answer later.' }));
 
     if (!storage.hasDataFolder()) renderFolderPrompt();
+
+    renderGaps();
 
     contentEl.append(el('h3', { class: 'wv-section-title', text: 'Topics' }));
     const registry = wv.getRegistry();
@@ -414,7 +453,7 @@ function buildPersonForm(existing) {
 
 // --- Module (a chunk of cards) ----------------------------------------------
 
-function renderModule(moduleId) {
+function renderModule(moduleId, focusKey = null) {
     const mod = wv.getRegistry().modules.find((m) => m.id === moduleId);
     if (!mod) return renderHome();
 
@@ -436,6 +475,16 @@ function renderModule(moduleId) {
         el('button', { class: 'wv-btn wv-btn-primary', text: 'Done', onclick: renderHome })
     ]));
 
+    // Deep-link from the gaps section: jump to a specific field's card and focus
+    // it, rather than the module's first field.
+    if (focusKey) {
+        const card = document.getElementById('wvcard-' + focusKey);
+        if (card) {
+            card.scrollIntoView({ block: 'center' });
+            focusFirstField(card);
+            return;
+        }
+    }
     focusFirstField();
 }
 

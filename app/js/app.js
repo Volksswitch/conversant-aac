@@ -18,7 +18,7 @@ import * as expressEditor from './express-editor.js';
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.5.31';
+const APP_VERSION = '0.5.32';
 
 const conversationHistory = [];
 let isListening = false;
@@ -173,11 +173,12 @@ async function handleSilencePeriod(text) {
     currentPartnerText = text;
     ui.setLiveTranscript(text);
     engine.partnerSpeaking(text);
-    // Placeholders no longer start here (Ken, June 18 2026). A filler must cover
-    // the user's READING/CHOOSING window, not the AI-latency gap, and must only
-    // fire for the partner actions that warrant it (questions, not statements or
-    // closings) — neither is known until the classification comes back. So the
-    // ladder is started inside generateOptions, gated on the result.
+    // Start the initial-delay clock at the pause (Ken, June 28 2026) so a slow AI
+    // round-trip doesn't leave dead air. arm() only starts the clock; the filler
+    // is still gated on the classification (questions only) inside generateOptions,
+    // which calls placeholders.start() (fires immediately if the delay already
+    // elapsed) or placeholders.stop() (not filler-worthy).
+    placeholders.arm();
     await generateOptions(text);
 }
 
@@ -514,10 +515,13 @@ async function handlePardon() {
     placeholders.stop();
     generationToken++;            // invalidate any in-flight generation on the garbled capture
     const snap = engine.pardon(); // push REPAIR* (dedups); floor → partner
-    currentPartnerText = '';      // discard the misheard capture…
-    stt.resetTranscript();        // …and the accumulated STT, so the re-speak is fresh
+    // Discard only the partner's LAST statement (Ken, June 28 2026) — if they
+    // said several sentences this turn and only the last was garbled, the earlier
+    // good ones are kept and the re-speak appends to them.
+    const remaining = stt.dropLastStatement();
+    currentPartnerText = remaining;
     ui.showEngineState(snap);
-    ui.setLiveTranscript('');
+    ui.setLiveTranscript(remaining);
     ui.setTranscriptState('idle');
     ui.clearResponseOptions();
     ui.setStatus('Speaking...');

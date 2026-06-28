@@ -3,6 +3,7 @@ let onTranscript = null;
 let onSilencePeriod = null;
 let onStatusChange = null;
 let accumulatedText = '';
+let segments = [];          // each finalized statement, in order (accumulatedText = segments.join(''))
 let currentInterim = '';
 let silenceTimer = null;
 let silenceThreshold = 2000;
@@ -123,6 +124,7 @@ export function init({ onResult, onSilence, onStatus }) {
             // content gets through.
             if (isEcho(transcript)) continue;
             if (event.results[i].isFinal) {
+                segments.push(transcript);   // track boundaries so Pardon can drop just the last one
                 accumulatedText += transcript;
                 latestInterim = '';
                 heardPartner = true;
@@ -191,6 +193,7 @@ function clearSilenceTimer() {
 export function startListening() {
     if (!recognition) return;
     accumulatedText = '';
+    segments = [];
     currentInterim = '';
     listeningIntent = true;
     try { recognition.start(); } catch { /* already started */ }
@@ -209,6 +212,23 @@ export function stopListening() {
 // and the system keeps listening for the partner's restated utterance.
 export function resetTranscript() {
     accumulatedText = '';
+    segments = [];
     currentInterim = '';
     clearSilenceTimer();
+}
+
+// Discard only the partner's most recent statement (the last finalized segment
+// plus any in-progress interim), keeping earlier statements in the same turn.
+// Used by Pardon? when only the last thing the partner said was garbled — the
+// good earlier sentences shouldn't be thrown away. A "statement" is one final
+// recognition result (≈ one utterance separated by a pause); if the recognizer
+// split one sentence across results this drops only the last piece. Returns the
+// remaining accumulated text. The silence timer is cleared so the dropped
+// fragment can't fire a checkpoint; recording continues.
+export function dropLastStatement() {
+    currentInterim = '';
+    if (segments.length) segments.pop();
+    accumulatedText = segments.join('');
+    clearSilenceTimer();
+    return accumulatedText.trim();
 }

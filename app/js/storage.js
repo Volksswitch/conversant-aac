@@ -371,7 +371,7 @@ export function loadPlaceholderSettings() {
         // Cap on placeholders spoken per choosing window. Default 2 so the user
         // hears at most one "I heard you" filler plus one "still thinking" filler
         // — two different roles, never two same-category fillers back to back.
-        // 0 = unlimited.
+        // 0 = none (the user finds fillers artificial/robotic); -1 = no limit.
         maxPlaceholders: settings.maxPlaceholders ?? 2
     };
 }

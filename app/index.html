@@ -242,14 +242,15 @@
                     <div class="setting-group">
                         <label for="maxPlaceholdersInput">Maximum placeholders per turn</label>
                         <select id="maxPlaceholdersInput">
+                            <option value="0">0 (none)</option>
                             <option value="1">1</option>
                             <option value="2" selected>2</option>
                             <option value="3">3</option>
                             <option value="4">4</option>
-                            <option value="0">No limit</option>
+                            <option value="-1">No limit</option>
                         </select>
                     </div>
-                    <p class="setting-hint">The initial delay is how long after the response options appear before the first placeholder is spoken — so a quick choice plays none. Subsequent delays are the interval between additional placeholders while you choose. The first placeholder acknowledges ("Good question."); later ones say you're still thinking. The maximum caps how many play before the system stays quiet (2 keeps them from sounding repetitive).</p>
+                    <p class="setting-hint">The initial delay is how long after the partner stops speaking before the first placeholder is spoken — the clock starts at the pause, so if the response options are slow to arrive a placeholder still fills the silence (a quick choice plays none). Subsequent delays are the interval between additional placeholders while you choose. The first placeholder acknowledges ("Good question."); later ones say you're still thinking. The maximum caps how many play before the system stays quiet — set it to 0 if you find fillers artificial, or "No limit" to keep them coming (2 keeps them from sounding repetitive).</p>
                     <div class="setting-group">
                         <label>Speaking an Express Panel phrase</label>
                         <div class="radio-row">

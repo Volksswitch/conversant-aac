@@ -2,10 +2,17 @@ import * as tts from './tts.js';
 import * as storage from './storage.js';
 
 /* Floor-holding placeholders — role-differentiated by position (Ken, June 18
- * 2026). start() is called when the AI's response options ARRIVE (not at the
- * partner-silence checkpoint) and only when the partner's action warrants it (a
- * question — the gating lives in app.js), so a placeholder fills the user's
- * READING/CHOOSING window, not the AI-latency gap.
+ * 2026).
+ *
+ * Timing model (Ken, June 28 2026): the initial-delay clock starts when the
+ * partner STOPS speaking (the silence checkpoint), not when the AI's options
+ * arrive. arm() is called at the checkpoint to start that clock; start() is
+ * called once the classification comes back AND the partner's action warrants a
+ * filler (a question — the gating lives in app.js). start() then plays the first
+ * filler as soon as the armed initial delay has elapsed — which may be
+ * immediately if the AI round-trip was slow, so a long generation no longer
+ * leaves dead air. A quick selection cancels everything via stop(). Holding the
+ * utterance until classification keeps fillers off statements/closings.
  *
  * Why role-differentiated: a small flat pool makes two sequential fillers sound
  * stupid — "That's interesting." right after "Hmm, interesting." even when they
@@ -49,6 +56,8 @@ let timer = null;
 let active = false;
 let count = 0;               // placeholders spoken this window (for role + cap)
 let lastIndex = { acknowledgment: -1, thinking: -1 };
+let armTime = 0;             // when the partner stopped (initial-delay clock origin)
+let armed = false;           // arm() was called and start() hasn't consumed it
 
 // Accept the role-keyed object shape; tolerate a legacy flat array by using it
 // for both roles so an old file still works.
@@ -94,20 +103,41 @@ function pickFrom(role) {
     return list[index];
 }
 
+// Called at the silence checkpoint (partner stopped). Starts the initial-delay
+// clock and resets per-window state, but speaks nothing yet — start() decides
+// whether this window warrants fillers once the classification is known.
+export function arm() {
+    if (timer) { clearTimeout(timer); timer = null; }
+    active = false;
+    armed = true;
+    armTime = Date.now();
+    count = 0;
+    lastIndex = { acknowledgment: -1, thinking: -1 };
+    loadPools().catch(() => { /* fallback handled in loadPools */ });
+}
+
 export async function start() {
-    stop();
+    if (timer) { clearTimeout(timer); timer = null; }
+    const { initialDelay, maxPlaceholders } = storage.loadPlaceholderSettings();
+    // 0 = the user wants no placeholders at all (they read as artificial).
+    if (maxPlaceholders === 0) { active = false; armed = false; return; }
     active = true;
     count = 0;
     lastIndex = { acknowledgment: -1, thinking: -1 };
     loadPools().catch(() => { /* fallback handled in loadPools */ });
-    // First placeholder lands initialDelay seconds after the options appeared
-    // (= after start()). A quick selection cancels it via stop().
-    const { initialDelay } = storage.loadPlaceholderSettings(); // seconds
-    timer = setTimeout(speakNext, initialDelay * 1000);
+    // The clock started at the partner's pause (arm()); if start() is reached
+    // without an arm (defensive), measure from now. The first filler waits only
+    // the remainder of initialDelay — so a slow AI round-trip that already ate
+    // the delay plays the first filler immediately instead of leaving silence.
+    const base = armed ? armTime : Date.now();
+    armed = false;
+    const firstDelay = Math.max(0, initialDelay * 1000 - (Date.now() - base));
+    timer = setTimeout(speakNext, firstDelay);
 }
 
 export function stop() {
     active = false;
+    armed = false;
     if (timer) {
         clearTimeout(timer);
         timer = null;
@@ -127,9 +157,10 @@ async function speakNext() {
     count++;
     if (phrase) await tts.speak(phrase);
     if (!active) return;
-    // Cap: stop after maxPlaceholders fillers (0 = unlimited).
+    // Cap: stop after maxPlaceholders fillers. -1 = no limit (0 = none is
+    // handled in start(), which never schedules a first filler).
     const { maxPlaceholders } = storage.loadPlaceholderSettings();
-    if (maxPlaceholders > 0 && count >= maxPlaceholders) return;
+    if (maxPlaceholders >= 1 && count >= maxPlaceholders) return;
     scheduleNext();
 }
 
