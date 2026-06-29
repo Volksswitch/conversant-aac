@@ -120,40 +120,9 @@ main.disabled {
     opacity: 0.4;
 }
 
-header {
-    background: #2c3e50;
-    color: white;
-    padding: 0.75rem 1.5rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-header h1 {
-    font-size: 1.25rem;
-    font-weight: 600;
-}
-
-.header-actions {
-    display: flex;
-    gap: 0.5rem;
-}
-
-#settingsBtn,
-#aboutMeBtn {
-    background: transparent;
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    border-radius: 4px;
-    cursor: pointer;
-    /* Same fixed size as an Express Panel override button (Ken): the shared
-       control-row height and the persist-btn's width/padding/font floor, so the
-       header controls read as the same-size targets as the dock controls. */
-    min-height: var(--btn-min-dim);
-    min-width: 6rem;
-    padding: 0 0.8rem;
-    font-size: 1rem;
-}
+/* Title bar removed (Ken, June 29 2026): About Me moved into the Settings panel
+   and Settings into the Command Bar, so the header (app title + About Me +
+   Settings buttons) is gone. The conversation main area now fills from the top. */
 
 /* Conversation screen = a MAIN area + a DOCK area (the keyboard's real-estate).
    Arrangement follows the Settings dock choice (body conv-* classes): side dock
@@ -203,14 +172,14 @@ body.conv-side-right #dockArea { right: 0; border-left: 1px solid #c4ccd2; }
 body.conv-side-left  #dockArea { left: 0;  border-right: 1px solid #c4ccd2; }
 body.conv-side-right #conversationMain { padding-right: var(--dock-w); }
 body.conv-side-left  #conversationMain { padding-left: var(--dock-w); }
-body.conv-side-right header { padding-right: calc(var(--dock-w) + 1.5rem); }
-body.conv-side-left  header { padding-left: calc(var(--dock-w) + 1.5rem); }
 /* FIXED bottom dock height so the Express Panel and the keyboard occupy the
    identical band (one keyguard). */
 body.conv-bottom #dockArea { width: 100%; height: var(--dock-h); flex: 0 0 var(--dock-h); border-top: 1px solid #c4ccd2; }
 
-/* Express Panel: top row (#epControls = persistent overrides, matching the
-   keyboard's toolbar row) + the phrase grid (#epGrid, mirroring the layout). */
+/* Express Panel: just the phrase grid now (#epGrid, mirroring the keyboard
+   layout). The old #epControls override row was removed (Ken, June 29 2026) when
+   the overrides moved to the Command Bar — so the grid starts at the top of the
+   dock, matching the keyboard which also dropped its toolbar row (one keyguard). */
 #expressPanel {
     flex: 1 1 auto;
     width: 100%;
@@ -218,14 +187,6 @@ body.conv-bottom #dockArea { width: 100%; height: var(--dock-h); flex: 0 0 var(-
     flex-direction: column;
     gap: 0.4rem;
     padding: 0.5rem;
-}
-#epControls {
-    /* Pinned to the shared control-row height so it lines up with the keyboard's
-       toolbar (.kbd-toolbar) — the grids below both start at the same y. The four
-       persist-btns stretch to fill it (flex default align-items: stretch). */
-    flex: 0 0 var(--btn-min-dim);
-    display: flex;
-    gap: 0.4rem;
 }
 #epGrid {
     flex: 1 1 auto;
@@ -260,34 +221,6 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
 .placeholder {
     color: #888;
     font-style: italic;
-}
-
-/* Region A — transcript head: title + mode chip side by side. */
-.transcript-head {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-}
-
-.transcript-head h2 {
-    margin-bottom: 0;
-    margin-right: auto;   /* push the chip + session controls to the right */
-}
-
-/* Session-level controls (Start / End conversation) live in the transcript head
-   — icon buttons (Rule 4), sized to MATCH the Say again / Hold on persistent
-   controls (Ken). More buttons may join this row over time. */
-.head-session {
-    display: flex;
-    gap: 0.5rem;
-    flex: 1 1 auto;
-}
-.head-session .session-btn {
-    flex: 1 1 0;          /* fill + share the row like the persist-btn overrides */
-    min-width: 6rem;
-    padding: 0.7rem 0.8rem;
-    font-size: 1rem;
 }
 
 /* Mode chip — the engine's inferred mode, colored by the mode's dominant slot.
@@ -380,19 +313,58 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
 .now-playing[hidden] { display: none; }
 .np-icon { font-style: normal; }
 
+/* Command Bar — the conversation control surface (Ken, June 29 2026): the
+   Start Listening / Start & End conversation / overrides / Settings controls in
+   one row of equal-width icon buttons (Rule 4). */
 #listenControls {
     margin-top: 0.5rem;
+    flex: 0 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+#listenControls > button {
+    flex: 1 1 0;
+    min-width: var(--btn-min-dim);
+    min-height: var(--btn-min-dim);
 }
 
 #listenBtn {
     background: var(--header);
     color: white;
     border: none;
-    padding: 0.7rem 1.2rem;
-    border-radius: 6px;
+    border-radius: 8px;
     font-size: 1.05rem;
     cursor: pointer;
-    width: 100%;
+}
+
+/* Command Bar buttons — slate-outlined like the former persistent overrides;
+   the session ones (start/end) and Settings sit in the same row, distinguished
+   by icon and (for End) color. */
+.cmd-btn {
+    background: #fff;
+    border: 2px solid var(--slot-persistent);
+    color: var(--slot-persistent);
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.12s;
+}
+.cmd-btn:hover,
+.cmd-btn:focus-visible {
+    background: var(--slot-persistent);
+    color: #fff;
+    outline: none;
+}
+.cmd-btn-end {
+    border-color: #e0a4a0;
+    color: #c0392b;
+}
+.cmd-btn-end:hover,
+.cmd-btn-end:focus-visible {
+    background: #c0392b;
+    border-color: #c0392b;
+    color: #fff;
 }
 
 #listenBtn.listening {
@@ -1116,6 +1088,30 @@ dialog select {
 #apiKeyInput {
     -webkit-text-security: disc;
 }
+
+/* API-key row: the field + a Paste button (replaces the keyboard's removed
+   clipboard toolbar for pasting a long `sk-ant-…` key). */
+#apiKeyRow {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+}
+#apiKeyRow #apiKeyInput {
+    flex: 1;
+    width: auto;
+}
+#pasteApiKeyBtn {
+    flex: 0 0 auto;
+    padding: 0.5rem 0.9rem;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+#pasteApiKeyBtn:hover { background: #eef1f4; }
 
 #testVoiceBtn {
     margin-top: 0.4rem;
@@ -1937,36 +1933,10 @@ label.radio-label input[type="radio"] {
     display: none;
 }
 
-/* Control strip above the keys — same for every layout & dock. Spatial Stability
-   (Ken): this row must occupy the SAME real-estate as the Express Panel's
-   #epControls row, so a single keyguard overlays both. It's pinned to the shared
-   control-row height (--btn-min-dim) and laid out as a FOUR-column grid matching
-   the four ¼-width persist-btn overrides; the three tools — Cut / Copy / Paste —
-   fill the LEFT THREE cells (= the Say again / Hold on / Pardon? holes) and the
-   4th cell stays empty (no 4th tool is needed — Ken). */
-.kbd-toolbar {
-    position: relative;                      /* anchor for the prediction overlay */
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);   /* 4 cells = the 4 #epControls buttons */
-    gap: 0.4rem;
-    flex: 0 0 var(--btn-min-dim);            /* fixed height, identical to #epControls */
-}
-
-.kbd-tool {
-    min-height: var(--btn-min-dim);          /* one grid cell = one express-panel button */
-    border: 1px solid #b8c0c6;
-    border-radius: 8px;
-    background: #dfe6ea;
-    color: #1a1a1a;
-    font-size: 1rem;
-    font-family: inherit;
-    cursor: pointer;
-}
-
-.kbd-tool:active {
-    background: #c9d2d8;
-    transform: translateY(1px);
-}
+/* Cut/Copy/Paste toolbar above the keys REMOVED (Ken, June 29 2026): the key
+   rows now start at the top of the dock, matching the Express Panel which lost
+   its #epControls row — one keyguard still overlays both. (Re-adding a control
+   row would need a matching reserved row on the Express Panel for alignment.) */
 
 /* Word-prediction buttons (local prediction — prediction.js). Content buttons
    (predicted word as text), exempt from the icon-only rule.
@@ -1977,13 +1947,16 @@ label.radio-label input[type="radio"] {
    The base overlay styling below is retained so re-enabling is cheap: remove the
    `display: none` and restore the active/inactive toggle:
        .kbd-preds.kbd-preds-active { pointer-events: auto; }
-       .kbd-preds:not(.kbd-preds-active) { display: none; } */
+       .kbd-preds:not(.kbd-preds-active) { display: none; }
+   NOTE: the old Cut/Copy/Paste toolbar that anchored this overlay is gone, so it
+   now sits directly on the keyboard root (#appKeyboard, position:fixed). When
+   prediction display is re-introduced it will need its own placement/anchor. */
 .kbd-preds {
     position: absolute;
     inset: 0;
     gap: 0.4rem;
     min-width: 0;
-    background: #e9edf0;            /* mask the tool buttons behind the gaps */
+    background: #e9edf0;
     pointer-events: none;
     display: none;                 /* prediction display dropped for now (Ken) */
 }

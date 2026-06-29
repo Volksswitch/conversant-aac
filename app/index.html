@@ -12,14 +12,6 @@
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <header>
-        <h1>Conversant AAC</h1>
-        <div class="header-actions">
-            <button id="aboutMeBtn" aria-label="About Me">About Me</button>
-            <button id="settingsBtn" aria-label="Settings">Settings</button>
-        </div>
-    </header>
-
     <div id="startOverlay">
         <button id="startBtn">Start</button>
     </div>
@@ -35,12 +27,6 @@
                  three-state display, the now-playing line, and the session-level
                  Start/End controls. -->
             <section id="transcriptSection" class="region" aria-label="Conversation transcript">
-                <div class="transcript-head">
-                    <span class="head-session">
-                        <button id="initiateBtn" type="button" class="session-btn">Start conversation</button>
-                        <button id="endConversationBtn" type="button" class="session-btn session-btn-end">End conversation</button>
-                    </span>
-                </div>
                 <!-- Scrolling conversation transcript — fixed height (it scrolls
                      internally; the layout must NEVER grow, for the static
                      keyguard). Partner and user turns are styled differently.
@@ -50,8 +36,18 @@
                     <div id="liveTurn" class="turn turn-partner turn-live" hidden></div>
                     <p id="nowPlaying" class="now-playing" hidden><span class="np-icon">♪</span> <span id="nowPlayingText"></span></p>
                 </div>
-                <div id="listenControls">
-                    <button id="listenBtn">Start Listening</button>
+                <!-- Command Bar — the conversation's control surface. All buttons
+                     are icon-only (Rule 4); each keeps an accessible name. Holds the
+                     session controls, the persistent overrides, and Settings. -->
+                <div id="listenControls" aria-label="Command Bar">
+                    <button id="listenBtn" type="button">Start Listening</button>
+                    <button id="initiateBtn" type="button" class="cmd-btn">Start conversation</button>
+                    <button id="endConversationBtn" type="button" class="cmd-btn cmd-btn-end">End conversation</button>
+                    <button id="sayAgainBtn" type="button" class="cmd-btn">Repeat what I said</button>
+                    <button id="holdOnBtn" type="button" class="cmd-btn">Hold on</button>
+                    <button id="pardonBtn" type="button" class="cmd-btn">Ask them to repeat</button>
+                    <button id="windDownBtn" type="button" class="cmd-btn">Wind down</button>
+                    <button id="settingsBtn" type="button" class="cmd-btn" aria-label="Settings">Settings</button>
                 </div>
             </section>
 
@@ -88,12 +84,6 @@
              words"). The keyboard overlays this same space during the modal. -->
         <div id="dockArea">
             <div id="expressPanel" class="express-panel">
-                <div id="epControls" aria-label="Conversation overrides">
-                    <button id="sayAgainBtn" type="button" class="persist-btn">Say again</button>
-                    <button id="holdOnBtn" type="button" class="persist-btn">Hold on</button>
-                    <button id="pardonBtn" type="button" class="persist-btn">Pardon?</button>
-                    <button id="windDownBtn" type="button" class="persist-btn">Wind down</button>
-                </div>
                 <div id="epGrid" aria-label="Express Panel"></div>
             </div>
         </div>
@@ -113,6 +103,10 @@
         </div>
         <div id="settingsLayout">
             <nav id="settingsTabs">
+                <!-- About Me launches the full-screen questionnaire overlay
+                     directly (no panel of its own); it lives here now that the
+                     title bar is gone. -->
+                <div class="settings-tab" data-tab="aboutme">About Me</div>
                 <div class="settings-tab active" data-tab="general">General</div>
                 <div class="settings-tab" data-tab="speech">Speech &amp; Input</div>
                 <div class="settings-tab" data-tab="conversation">Conversation</div>
@@ -123,8 +117,11 @@
             <div id="settingsContent">
                 <div class="tab-panel active" data-tab="general">
                     <div class="setting-group">
-                        <label for="apiKeyInput">Claude API Key</label>
-                        <input type="text" id="apiKeyInput" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
+                        <label for="apiKeyInput">API Key</label>
+                        <div id="apiKeyRow">
+                            <input type="text" id="apiKeyInput" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
+                            <button id="pasteApiKeyBtn" type="button" aria-label="Paste API key">Paste</button>
+                        </div>
                     </div>
                     <div class="setting-group">
                         <label>Data Folder</label>

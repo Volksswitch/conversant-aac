@@ -217,9 +217,10 @@ export function clearResponseOptions() {
 // each key cell becomes a category-colored phrase button (phrases drawn in order
 // from the pool); the keyboard's SPACE cell becomes the "In my own words" button
 // (distinct color, same span); blank/pred cells and any leftover cells stay
-// blank. The persistent-override row above (#epControls) corresponds to the
-// keyboard's toolbar row and is static HTML. Activation: single-tap, or a
-// confirming double-tap (first tap arms, second within doubleTapMs confirms).
+// blank. (The persistent overrides that used to sit above the grid have moved to
+// the Command Bar — Ken, June 29 2026 — so the panel is just the phrase grid.)
+// Activation: single-tap, or a confirming double-tap (first tap arms, second
+// within doubleTapMs confirms).
 // Speaking / opening the modal is the caller's job, so this stays presentational.
 const epGrid = document.getElementById('epGrid');
 
@@ -438,12 +439,15 @@ export function setListenButtonState(listening) {
 // and Express Panel buttons — are intentionally NOT touched (they show text).
 // Called once at startup.
 export function applyControlIcons() {
-    setIconButton(document.getElementById('sayAgainBtn'), 'replay', 'Say again');
+    // Two distinct repeat controls, named speaker-specifically (Ken): one
+    // re-speaks the USER's last words, one asks the PARTNER to repeat.
+    setIconButton(document.getElementById('sayAgainBtn'), 'replay', 'Repeat what I said');
     setIconButton(document.getElementById('holdOnBtn'), 'pause', 'Hold on');
-    setIconButton(document.getElementById('pardonBtn'), 'pardon', "Pardon? — ask them to repeat");
+    setIconButton(document.getElementById('pardonBtn'), 'pardon', 'Ask them to repeat');
     setIconButton(document.getElementById('windDownBtn'), 'windDown', 'Wind down');
     setIconButton(document.getElementById('initiateBtn'), 'startChat', 'Start conversation');
     setIconButton(document.getElementById('endConversationBtn'), 'endChat', 'End conversation');
+    setIconButton(document.getElementById('settingsBtn'), 'settings', 'Settings');
     setIconButton(document.getElementById('regenerateBtn'), 'shuffle', 'New 4 — different options');
     setIconButton(document.getElementById('speakBtn'), 'speak', 'Speak');
     setIconButton(document.getElementById('reframeBtn'), 'reframe', 'Reframe — new options from this');
@@ -479,10 +483,8 @@ export function onRegenerateClick(handler) {
 export function onSettingsClick(handler) {
     document.getElementById('settingsBtn').addEventListener('click', handler);
 }
-
-export function onAboutMeClick(handler) {
-    document.getElementById('aboutMeBtn').addEventListener('click', handler);
-}
+// (onAboutMeClick removed — About Me is now launched from the Settings panel's
+// "About Me" tab, not a title-bar button.)
 
 // --- "In your own words" composer ---
 

@@ -21,7 +21,6 @@
  */
 
 import { LAYOUTS, buildSymbolsPage } from './keyboard-layouts.js';
-import { setIconButton } from './icons.js';
 import * as prediction from './prediction.js';
 
 // Fields the app keyboard handles. Includes the Settings API-key field so the
@@ -341,33 +340,18 @@ function build() {
         handleKey(keyEl);
     });
 
-    // Persistent toolbar above the keys (layout-independent): Cut / Copy / Paste.
-    // Spatial Stability (Ken): the row is a 4-column grid matching the Express
-    // Panel's four ¼-width overrides, and the three tools occupy the LEFT THREE
-    // cells (= the Say again / Hold on / Pardon? holes); the 4th cell stays empty.
-    // No Hide button — every context the keyboard serves has its own dismissal
-    // (the "In my own words" modal: Speak/Reframe/Cancel; Settings: Close; About
-    // Me: Done), so a 4th tool isn't needed (Ken).
-    const toolbar = document.createElement('div');
-    toolbar.className = 'kbd-toolbar';
-    // Icon-only toolbar buttons (Rule 4); the accessible name is kept via
-    // aria-label/title.
-    const makeTool = (tool, label, icon) => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'kbd-tool';
-        btn.dataset.tool = tool;
-        setIconButton(btn, icon, label);
-        return btn;
-    };
-    toolbar.appendChild(makeTool('cut', 'Cut', 'cut'));
-    toolbar.appendChild(makeTool('copy', 'Copy', 'copy'));
-    toolbar.appendChild(makeTool('paste', 'Paste', 'paste'));
+    // Cut / Copy / Paste toolbar REMOVED (Ken, June 29 2026): the keyboard's key
+    // rows now start at the top of the dock, matching the Express Panel which no
+    // longer has its #epControls override row — so a single keyguard still
+    // overlays both. (Paste of a long `sk-ant-…` key is handled by the Paste
+    // button beside the API-key field in Settings.)
+    //
     // Word-prediction buttons (local, no AI — see prediction.js). DISPLAY is
     // dropped for now (Ken, June 28 2026): we still BUILD the overlay and keep
     // updatePredictions/learning running (infrastructure intact), but CSS hides
     // it (.kbd-preds { display:none }) while button-size questions that will
-    // shape how prediction re-enters the UI are resolved.
+    // shape how prediction re-enters the UI are resolved. It now sits directly on
+    // the keyboard root (the old toolbar that hosted it is gone).
     predWrap = document.createElement('div');
     predWrap.className = 'kbd-preds';
     for (let i = 0; i < PRED_COUNT; i++) {
@@ -377,8 +361,7 @@ function build() {
         pb.hidden = true;
         predWrap.appendChild(pb);
     }
-    toolbar.appendChild(predWrap);
-    rootEl.appendChild(toolbar);
+    rootEl.appendChild(predWrap);
 
     renderRows();
     document.body.appendChild(rootEl);

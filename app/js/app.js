@@ -20,7 +20,7 @@ import * as controlEditor from './control-phrases-editor.js';
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.5.39';
+const APP_VERSION = '0.5.40';
 
 const conversationHistory = [];
 let isListening = false;
@@ -88,7 +88,8 @@ function initApp() {
     ui.onReframeClick(handleReframe);
     ui.onCancelComposerClick(handleCancelComposed);
     ui.onSettingsClick(openSettings);
-    ui.onAboutMeClick(worldviewUI.open);
+    // About Me is no longer a title-bar button — it's launched from the Settings
+    // panel's "About Me" tab (see initSettingsTabs).
     // Persistent override controls (Conversation-Engine-Design.docx §5.1) — the
     // user's escape hatch when the engine's mode inference is wrong.
     ui.onInitiateClick(handleInitiate);
@@ -826,6 +827,14 @@ async function handleSpeakExpressItem(phrase) {
 function initSettingsTabs() {
     document.querySelectorAll('#settingsTabs .settings-tab').forEach(tab => {
         tab.addEventListener('click', () => {
+            // "About Me" has no panel of its own — it launches the full-screen
+            // questionnaire overlay directly (closing Settings first).
+            if (tab.dataset.tab === 'aboutme') {
+                keyboard.hideKeyboard();
+                document.getElementById('settingsDialog').close();
+                worldviewUI.open();
+                return;
+            }
             document.querySelectorAll('#settingsTabs .settings-tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('#settingsContent .tab-panel').forEach(p => p.classList.remove('active'));
             tab.classList.add('active');
@@ -1022,6 +1031,17 @@ function openSettings() {
         const key = apiKeyInput.value.trim();
         llm.setApiKey(key);
         storage.saveApiKey(key);
+    };
+    // Paste button beside the API-key field — replaces the keyboard's removed
+    // clipboard toolbar as the way to paste a long `sk-ant-…` key.
+    document.getElementById('pasteApiKeyBtn').onclick = async () => {
+        try {
+            const text = (await navigator.clipboard.readText())?.trim();
+            if (text) {
+                apiKeyInput.value = text;
+                apiKeyInput.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        } catch { /* clipboard read blocked/denied — user can type instead */ }
     };
     voiceSelect.onchange = () => {
         const voiceURI = voiceSelect.value || null;
