@@ -144,10 +144,15 @@ header h1 {
     background: transparent;
     color: white;
     border: 1px solid rgba(255, 255, 255, 0.4);
-    padding: 0.4rem 0.8rem;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 0.9rem;
+    /* Same fixed size as an Express Panel override button (Ken): the shared
+       control-row height and the persist-btn's width/padding/font floor, so the
+       header controls read as the same-size targets as the dock controls. */
+    min-height: var(--btn-min-dim);
+    min-width: 6rem;
+    padding: 0 0.8rem;
+    font-size: 1rem;
 }
 
 /* Conversation screen = a MAIN area + a DOCK area (the keyboard's real-estate).
@@ -1932,17 +1937,21 @@ label.radio-label input[type="radio"] {
     display: none;
 }
 
-/* Cut / Copy / Paste strip above the keys — same for every layout & dock. Pinned
-   to the shared control-row height (--btn-min-dim) so it matches the Express
-   Panel's #epControls row exactly and the keys below align with the phrase grid. */
+/* Control strip above the keys — same for every layout & dock. Spatial Stability
+   (Ken): this row must occupy the SAME real-estate as the Express Panel's
+   #epControls row, so a single keyguard overlays both. It's pinned to the shared
+   control-row height (--btn-min-dim) AND laid out as FOUR equal cells — Cut /
+   Copy / Paste / Hide — each ¼ of the row, matching the four ¼-width persist-btn
+   overrides above the Express Panel hole-for-hole. */
 .kbd-toolbar {
+    position: relative;             /* anchor for the prediction overlay */
     display: flex;
     gap: 0.4rem;
     flex: 0 0 var(--btn-min-dim);   /* fixed height, identical to #epControls */
 }
 
 .kbd-tool {
-    flex: 1 1 0;
+    flex: 1 1 0;                    /* ¼-width cell, = one express-panel button */
     min-height: var(--btn-min-dim);
     border: 1px solid #b8c0c6;
     border-radius: 8px;
@@ -1958,11 +1967,11 @@ label.radio-label input[type="radio"] {
     transform: translateY(1px);
 }
 
-/* Hide/dismiss the keyboard — pushed to the right edge, visually distinct. */
+/* Hide/dismiss the keyboard — the 4th cell (so Cut/Copy/Paste stay at ¼).
+   Visually distinct. (Open: Ken is questioning whether Hide is still needed now
+   that Settings/About Me each have their own close path — if it goes, this cell
+   needs a new occupant to preserve the 4-hole alignment.) */
 .kbd-tool-hide {
-    margin-left: auto;
-    flex: 0 0 auto;
-    padding: 0 1rem;
     background: #2c3e50;
     color: #fff;
     border-color: #2c3e50;
@@ -1974,21 +1983,31 @@ label.radio-label input[type="radio"] {
 }
 
 /* Suppress Hide during the "In my own words" modal — Speak/Reframe/Cancel are
-   the only exits there and they dismiss the keyboard (Ken). */
+   the only exits there and they dismiss the keyboard (Ken). visibility:hidden
+   (not display:none) so the 4th cell's space is RESERVED and Cut/Copy/Paste
+   stay at ¼ width, keeping the keyguard holes aligned in the modal too. */
 #appKeyboard.kbd-no-hide .kbd-tool-hide {
-    display: none;
+    visibility: hidden;
 }
 
-/* Word-prediction buttons in the reclaimed toolbar space (local prediction —
-   prediction.js). Content buttons (predicted word as text, ellipsis-truncated),
-   so exempt from the icon-only rule. The container reserves its row space even
-   when empty (static layout). */
+/* Word-prediction buttons (local prediction — prediction.js). Content buttons
+   (predicted word as text), exempt from the icon-only rule. INTERIM design
+   (Ken: word prediction needs its own dedicated layout — "think further"): the
+   buttons OVERLAY the control row in the same real-estate, shown only while
+   there's a prefix to predict and hidden otherwise, so they neither steal the
+   Cut/Copy/Paste/Hide cells' width nor add a row that would offset the keys from
+   the Express Panel grid. */
 .kbd-preds {
-    flex: 3 1 0;
+    position: absolute;
+    inset: 0;
     display: flex;
     gap: 0.4rem;
     min-width: 0;
+    background: #e9edf0;            /* mask the tool buttons behind the gaps */
+    pointer-events: none;
 }
+.kbd-preds.kbd-preds-active { pointer-events: auto; }
+.kbd-preds:not(.kbd-preds-active) { display: none; }
 .kbd-pred-btn {
     flex: 1 1 0;
     min-width: 0;

@@ -288,11 +288,15 @@ function updatePredictions() {
     if (!predWrap) return;
     const prefix = currentWordPrefix();
     const preds = prefix ? prediction.predict(prefix, PRED_COUNT) : [];
+    let any = false;
     predWrap.querySelectorAll('.kbd-pred-btn').forEach((b, i) => {
         const w = preds[i];
-        if (w) { b.textContent = w; b.dataset.word = w; b.hidden = false; }
+        if (w) { b.textContent = w; b.dataset.word = w; b.hidden = false; any = true; }
         else { b.textContent = ''; delete b.dataset.word; b.hidden = true; }
     });
+    // Show the prediction overlay only when there's something to predict; when
+    // empty it's display:none so taps fall through to Cut/Copy/Paste/Hide.
+    predWrap.classList.toggle('kbd-preds-active', any);
 }
 
 // Replace the partial word at the caret with the chosen prediction + a space,
