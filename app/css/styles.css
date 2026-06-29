@@ -164,8 +164,12 @@ body.conv-bottom     main { flex-direction: column; }
     min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: clamp(0.5rem, 1.6vh, 1.2rem);
-    padding: clamp(0.5rem, 1.6vh, 1.2rem) clamp(0.75rem, 1.6vw, 2rem);
+    /* The spacing BETWEEN regions and the padding AROUND them is the keyguard
+       rail width — the same --grid-gap as between buttons (Ken, June 29 2026:
+       the gap is also the padding around non-button elements like the
+       transcript, since a rail surrounds them too). */
+    gap: var(--grid-gap);
+    padding: var(--grid-gap);
     overflow: auto;
 }
 
@@ -407,13 +411,13 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
     position: relative;
     flex: 0 0 auto;
     display: flex;
-    gap: clamp(0.4rem, 0.8vw, 0.8rem);
+    gap: var(--grid-gap);    /* rail width between the cards and the "New 4" button */
     align-items: stretch;
 }
 .palette-grid {
     flex: 1 1 auto;
     display: grid;
-    gap: clamp(0.5rem, 0.9vw, 1rem);
+    gap: var(--grid-gap);    /* rail width between response cards */
     align-items: stretch;
 }
 body.conv-side .palette-grid {
@@ -430,7 +434,7 @@ body.conv-bottom .palette-grid {
 .response-cell {
     display: flex;
     flex-direction: column;
-    gap: clamp(0.3rem, 0.7vh, 0.6rem);
+    gap: var(--grid-gap);    /* rail width between the two stacked cards in a cell */
     min-height: clamp(8rem, 18vh, 14rem);
 }
 .response-cell > .response-card,
@@ -700,12 +704,25 @@ body.conv-bottom .ep-btn { min-height: clamp(2.2rem, 7.5vh, 4rem); }
     justify-content: center;
 }
 
+/* "Button size" applies to EVERY tappable element on EVERY surface (Ken, June 29
+   2026): a button is anything you can tap that has an action — Command Bar,
+   response cards, "New 4", composer, Express Panel, and the Settings / About Me
+   controls. They are all at least --btn-min-dim tall (the critical tap
+   dimension); icon-only buttons are also at least that wide (square-ish targets).
+   EXCEPTION: the on-screen-keyboard keys (.kbd-key / .kbd-tool / .kbd-pred-btn)
+   are sized BY the dock band — which is itself derived from --btn-min-dim — so a
+   hard min there would overflow the fixed dock; they scale through the dock. */
+button:not(.kbd-key):not(.kbd-tool):not(.kbd-pred-btn) {
+    min-height: var(--btn-min-dim);
+}
+.icon-btn { min-width: var(--btn-min-dim); }
+
 /* "New 4" — regenerate a different set of four. Icon button to the right of the
    response grid, spanning its full height (2 rows for 2×2, 1 for 1×4). */
 .regenerate-btn {
     flex: 0 0 auto;
     align-self: stretch;
-    width: clamp(2.6rem, 6vw, 3.6rem);
+    width: var(--btn-min-dim);   /* a button — at least the button size wide */
     background: #fff;
     border: 2px solid var(--slot-persistent);
     color: var(--slot-persistent);
@@ -1047,7 +1064,7 @@ dialog::backdrop {
 
 #settingsContent {
     flex: 1;
-    padding: 1.25rem;
+    padding: var(--grid-gap);   /* surface padding = the universal gap (Ken) */
     overflow-y: auto;
 }
 
@@ -1347,9 +1364,9 @@ label.radio-label input[type="radio"] {
 
 .dialog-actions {
     display: flex;
-    gap: 0.5rem;
+    gap: var(--grid-gap);
     justify-content: flex-end;
-    padding: 0.75rem 1.25rem;
+    padding: var(--grid-gap);
     border-top: 1px solid #ddd;
     background: #f9f9f9;
     flex-shrink: 0;
@@ -1440,7 +1457,7 @@ label.radio-label input[type="radio"] {
        content box is already "window − keyboard"; no max-width cap, so the
        questions use all of that space (and all of the window when no keyboard
        is shown). */
-    padding: 1.25rem 2rem 3rem;
+    padding: var(--grid-gap);   /* surface padding = the universal gap (Ken) */
 }
 
 .wv-intro {
