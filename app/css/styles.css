@@ -1969,23 +1969,24 @@ label.radio-label input[type="radio"] {
 }
 
 /* Word-prediction buttons (local prediction — prediction.js). Content buttons
-   (predicted word as text), exempt from the icon-only rule. INTERIM design
-   (Ken: word prediction needs its own dedicated layout — "think further"): the
-   buttons OVERLAY the control row in the same real-estate, shown only while
-   there's a prefix to predict and hidden otherwise, so they neither steal the
-   Cut/Copy/Paste/Hide cells' width nor add a row that would offset the keys from
-   the Express Panel grid. */
+   (predicted word as text), exempt from the icon-only rule.
+   DISPLAY DROPPED for now (Ken, June 28 2026): the prediction INFRASTRUCTURE is
+   kept (prediction.js, updatePredictions, and learning on space/enter all keep
+   running), but the buttons are NOT shown while several button-size questions —
+   which will shape how prediction is brought back into the UI — are worked out.
+   The base overlay styling below is retained so re-enabling is cheap: remove the
+   `display: none` and restore the active/inactive toggle:
+       .kbd-preds.kbd-preds-active { pointer-events: auto; }
+       .kbd-preds:not(.kbd-preds-active) { display: none; } */
 .kbd-preds {
     position: absolute;
     inset: 0;
-    display: flex;
     gap: 0.4rem;
     min-width: 0;
     background: #e9edf0;            /* mask the tool buttons behind the gaps */
     pointer-events: none;
+    display: none;                 /* prediction display dropped for now (Ken) */
 }
-.kbd-preds.kbd-preds-active { pointer-events: auto; }
-.kbd-preds:not(.kbd-preds-active) { display: none; }
 .kbd-pred-btn {
     flex: 1 1 0;
     min-width: 0;

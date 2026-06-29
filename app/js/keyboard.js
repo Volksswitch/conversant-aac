@@ -363,10 +363,11 @@ function build() {
     toolbar.appendChild(makeTool('cut', 'Cut', 'cut'));
     toolbar.appendChild(makeTool('copy', 'Copy', 'copy'));
     toolbar.appendChild(makeTool('paste', 'Paste', 'paste'));
-    // Word-prediction buttons (local, no AI — see prediction.js). INTERIM: they
-    // overlay the control row in the same real-estate, shown only while there's a
-    // prefix (a dedicated prediction layout is still TBD — Ken). They show
-    // predicted words as TEXT (content — exempt from the icon-only rule).
+    // Word-prediction buttons (local, no AI — see prediction.js). DISPLAY is
+    // dropped for now (Ken, June 28 2026): we still BUILD the overlay and keep
+    // updatePredictions/learning running (infrastructure intact), but CSS hides
+    // it (.kbd-preds { display:none }) while button-size questions that will
+    // shape how prediction re-enters the UI are resolved.
     predWrap = document.createElement('div');
     predWrap.className = 'kbd-preds';
     for (let i = 0; i < PRED_COUNT; i++) {
