@@ -266,7 +266,7 @@ export function saveDoubleTapMs(ms) {
 // by visual "feel". Both feed the keyguard (target size + bar width), so they're
 // Setup-tier, supporter-assisted. Defaults reproduce the historical look.
 const DEFAULT_BTN_SIZE_POS = 33;   // → --btn-min-dim ≈4rem (see app.js SIZE_*_REM)
-const DEFAULT_BTN_GAP_POS = 20;    // → --grid-gap 0.4rem
+const DEFAULT_BTN_GAP_POS = 0;     // → --grid-gap 0 (flush by default, Ken June 30 2026)
 
 function clampPos(v, dflt) {
     const n = Number(v);

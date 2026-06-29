@@ -201,6 +201,41 @@ body.conv-side-left  #conversationMain { padding-left: var(--dock-w); }
    identical band (one keyguard). */
 body.conv-bottom #dockArea { width: 100%; height: var(--dock-h); flex: 0 0 var(--dock-h); border-top: 1px solid #c4ccd2; }
 
+/* ============================================================================
+   SIDE DOCK — default percentage layout (Ken, June 30 2026).
+   Dock = 30% width, full height. Main area = the remaining 70% width, split
+   VERTICALLY: transcript 30% / command bar 10% / response palette 60% (the
+   3:1:6 flex auto-absorbs the inter-region gaps). Components are surrounded by
+   ½·gap and separated by 1·gap. Buttons FILL their region (their size is
+   derived from these percentages; what button-size / gap / minimum-gap changes
+   DO to this is the deferred step, so those sliders don't drive the side dock
+   yet). Default gap = 0 → everything flush (borders still separate buttons).
+   ============================================================================ */
+body.conv-side { --dock-w: 30vw; }   /* replaces the button-size-driven width (deferred growth) */
+
+body.conv-side #mainArea {
+    padding: calc(var(--grid-gap) / 2);   /* ½·gap around the cluster */
+    gap: var(--grid-gap);                  /* 1·gap between regions */
+}
+/* Vertical budget: 30 / 10 / 60. */
+body.conv-side #transcriptSection { flex: 3 1 0; min-height: 0; }
+body.conv-side #listenControls    { flex: 1 1 0; min-height: 0; margin-top: 0; }
+body.conv-side #responsesSection  { flex: 6 1 0; min-height: 0; display: flex; }
+
+/* Command bar: 8 buttons, each 1/8 of the width, full region height. */
+body.conv-side #listenControls { align-items: stretch; }
+body.conv-side #listenControls > button { flex: 1 1 0; min-width: 0; min-height: 0; }
+
+/* Response palette region fills its 60%; inside it the cards take 90% width and
+   the "New 4" button 10% (9:1 absorbs the gap). Cards are a 2×2 grid → each
+   card 50% height; let them fill (no fixed min that would overflow). */
+body.conv-side #responseArea { flex: 1 1 0; height: auto; min-height: 0; }
+body.conv-side .palette-grid  { flex: 9 1 0; }
+body.conv-side .regenerate-btn { flex: 1 1 0; width: auto; }
+body.conv-side .response-cell { min-height: 0; }
+body.conv-side .response-card,
+body.conv-side .response-card-empty { min-height: 0; }
+
 /* Express Panel: just the phrase grid now (#epGrid, mirroring the keyboard
    layout). The old #epControls override row was removed (Ken, June 29 2026) when
    the overrides moved to the Command Bar — so the grid starts at the top of the

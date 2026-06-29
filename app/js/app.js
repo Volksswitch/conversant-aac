@@ -20,7 +20,7 @@ import * as controlEditor from './control-phrases-editor.js';
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.5.45';
+const APP_VERSION = '0.5.46';
 
 const conversationHistory = [];
 let isListening = false;
@@ -823,7 +823,7 @@ function applyConversationDockClasses() {
 // layout's rows/cols × these tokens (the max()/calc() lives in styles.css), so
 // keys/Express cells always clear the minimum. ---
 const SIZE_MIN_REM = 2.75, SIZE_MAX_REM = 6.5;   // --btn-min-dim (button size) range
-const GAP_MIN_REM = 0.15, GAP_MAX_REM = 1.4;     // --grid-gap range
+const GAP_MIN_REM = 0, GAP_MAX_REM = 1.4;        // --grid-gap range (default 0 = flush, Ken)
 const lerp = (pos, lo, hi) => lo + (Math.max(0, Math.min(100, pos)) / 100) * (hi - lo);
 
 // Count the rows + widest total span of the active dock layout, so the CSS dock

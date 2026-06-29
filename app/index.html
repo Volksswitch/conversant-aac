@@ -36,20 +36,22 @@
                     <div id="liveTurn" class="turn turn-partner turn-live" hidden></div>
                     <p id="nowPlaying" class="now-playing" hidden><span class="np-icon">♪</span> <span id="nowPlayingText"></span></p>
                 </div>
-                <!-- Command Bar — the conversation's control surface. All buttons
-                     are icon-only (Rule 4); each keeps an accessible name. Holds the
-                     session controls, the persistent overrides, and Settings. -->
-                <div id="listenControls" aria-label="Command Bar">
-                    <button id="listenBtn" type="button">Start Listening</button>
-                    <button id="initiateBtn" type="button" class="cmd-btn">Start conversation</button>
-                    <button id="endConversationBtn" type="button" class="cmd-btn cmd-btn-end">End conversation</button>
-                    <button id="sayAgainBtn" type="button" class="cmd-btn">Repeat what I said</button>
-                    <button id="holdOnBtn" type="button" class="cmd-btn">Hold on</button>
-                    <button id="pardonBtn" type="button" class="cmd-btn">Ask them to repeat</button>
-                    <button id="windDownBtn" type="button" class="cmd-btn">Wind down</button>
-                    <button id="settingsBtn" type="button" class="cmd-btn" aria-label="Settings">Settings</button>
-                </div>
             </section>
+
+            <!-- Command Bar — the conversation's control surface, its OWN region
+                 (own vertical budget). All buttons are icon-only (Rule 4); each
+                 keeps an accessible name. Session controls, persistent overrides,
+                 and Settings. -->
+            <div id="listenControls" aria-label="Command Bar">
+                <button id="listenBtn" type="button">Start Listening</button>
+                <button id="initiateBtn" type="button" class="cmd-btn">Start conversation</button>
+                <button id="endConversationBtn" type="button" class="cmd-btn cmd-btn-end">End conversation</button>
+                <button id="sayAgainBtn" type="button" class="cmd-btn">Repeat what I said</button>
+                <button id="holdOnBtn" type="button" class="cmd-btn">Hold on</button>
+                <button id="pardonBtn" type="button" class="cmd-btn">Ask them to repeat</button>
+                <button id="windDownBtn" type="button" class="cmd-btn">Wind down</button>
+                <button id="settingsBtn" type="button" class="cmd-btn" aria-label="Settings">Settings</button>
+            </div>
 
             <!-- Response region. A fixed footprint (4 cards: 2×2 with a side dock,
                  1×4 with a bottom dock) + the "New 4" regenerate button. The
