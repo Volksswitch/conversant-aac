@@ -20,7 +20,7 @@ import * as controlEditor from './control-phrases-editor.js';
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.5.49';
+const APP_VERSION = '0.5.50';
 
 const conversationHistory = [];
 let isListening = false;
@@ -869,11 +869,11 @@ function applyButtonSizing() {
     let dockW = 0.30 * VW;
     let transcriptV = 0.30 * VH;
 
+    const minTranscript = MIN_TRANSCRIPT_REM * rem;
     if (storage.loadKeyboardDock() === 'side') {
         const minBtn = MIN_BTN_REM * rem;
         // Main-area minimum width: the command bar's 8 buttons bind first.
         const minMainW = 8 * minBtn + 9 * gap;
-        const minTranscript = MIN_TRANSCRIPT_REM * rem;
         if (growth > 0) {
             // GROW: the dock widens (main shrinks W → command/response buttons
             // narrow) and the transcript shrinks V (command/response grow V).
@@ -886,6 +886,18 @@ function applyButtonSizing() {
         }
         root.setProperty('--conv-dock-w', `${Math.round(dockW)}px`);
         root.setProperty('--conv-transcript-v', `${Math.round(transcriptV)}px`);
+    } else {
+        // BOTTOM dock: the dock's expandable axis is VERTICAL. GROW makes the
+        // dock taller (its buttons taller); command (10vh) + response (30vh)
+        // stay fixed, the transcript yields vertically to its floor.
+        let dockH = 0.30 * VH;
+        if (growth > 0) {
+            const maxDockH = Math.max(0.30 * VH, 0.60 * VH - minTranscript); // transcript→floor
+            dockH = 0.30 * VH + growth * (maxDockH - 0.30 * VH);
+        } else if (growth < 0) {
+            gap = Math.max(gap, minGap) + (-growth) * SHRINK_GAP_REM * rem;
+        }
+        root.setProperty('--conv-dock-h', `${Math.round(dockH)}px`);
     }
 
     root.setProperty('--grid-gap', `${gap.toFixed(2)}px`);

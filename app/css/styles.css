@@ -228,7 +228,7 @@ body.conv-bottom #dockArea { width: 100%; height: var(--dock-h); flex: 0 0 var(-
    fallback 30vw = the default middle. BOTTOM still uses the fixed 30vh default
    (its solver is the next step). */
 body.conv-side   { --dock-w: var(--conv-dock-w, 30vw); }
-body.conv-bottom { --dock-h: 30vh; }
+body.conv-bottom { --dock-h: var(--conv-dock-h, 30vh); }
 
 /* Outer padding around the cluster = min-gap; regions separated by 1·gap. */
 body.conv-side #mainArea,
@@ -240,9 +240,11 @@ body.conv-bottom #mainArea { padding: var(--gap-min); gap: var(--grid-gap); }
 body.conv-side   #transcriptSection { flex: 0 0 var(--conv-transcript-v, 30vh); min-height: 0; }
 body.conv-side   #listenControls    { flex: 1 1 0; min-height: 0; margin-top: 0; }
 body.conv-side   #responsesSection  { flex: 6 1 0; min-height: 0; display: flex; }
-body.conv-bottom #transcriptSection { flex: 3 1 0; min-height: 0; }
-body.conv-bottom #listenControls    { flex: 1 1 0; min-height: 0; margin-top: 0; }
-body.conv-bottom #responsesSection  { flex: 3 1 0; min-height: 0; display: flex; }
+/* BOTTOM: command (10vh) + response (30vh) are FIXED; the transcript yields
+   vertically (flex, with a floor) as the dock grows taller. */
+body.conv-bottom #transcriptSection { flex: 1 1 0; min-height: var(--conv-transcript-floor, 3rem); }
+body.conv-bottom #listenControls    { flex: 0 0 10vh; min-height: 0; margin-top: 0; }
+body.conv-bottom #responsesSection  { flex: 0 0 30vh; min-height: 0; display: flex; }
 
 /* Command bar: 8 buttons, each 1/8 of the width, full region height (both docks). */
 body.conv-side #listenControls,
