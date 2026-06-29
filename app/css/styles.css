@@ -69,6 +69,13 @@
        size (the gap expands the dock, it never steals from the buttons). Capped
        (min(cap, …)) so it can't erase the main area on a small screen. */
     --grid-gap: 0.4rem;           /* gap between dock cells (matches .ep-row / .kbd-row) */
+    /* Minimum gap (Ken, June 30 2026): a hard floor on the gap (future slider,
+       default 0, precedence over button size). It is ALSO the OUTER padding
+       around the whole collection of top-level components (screen-edge → cluster)
+       — inter-component spacing stays 1·gap, the dock's internal surround ½·gap.
+       The outer-padding wiring (incl. insetting the fixed dock) lands with the
+       min-gap slider in the deferred change-rules; at 0 it's flush/invisible. */
+    --gap-min: 0;
     --dock-pad: 1rem;             /* the dock panel's own padding on the scarce axis (0.5+0.5) */
     --kbd-rows: 7;                /* rows in the active layout — JS overrides per layout */
     --kbd-cols: 5;                /* widest row's total span — JS overrides per layout */
