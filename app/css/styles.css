@@ -246,7 +246,7 @@ body.conv-side .response-card-empty { min-height: 0; }
     display: flex;
     flex-direction: column;
     gap: var(--grid-gap);
-    padding: 0.5rem;
+    padding: calc(var(--grid-gap) / 2);   /* ½·gap surround (0 at default → flush), matches the keyboard */
 }
 #epGrid {
     flex: 1 1 auto;
@@ -1982,7 +1982,8 @@ label.radio-label input[type="radio"] {
     height: var(--dock-h);   /* exactly fills the bottom dock band (= #dockArea) */
     border-top: 1px solid #c4ccd2;
     box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.18);
-    padding: 0.5rem 0.5rem calc(0.5rem + env(safe-area-inset-bottom, 0px));
+    /* ½·gap surround (matches #expressPanel); keep the safe-area inset at the bottom. */
+    padding: calc(var(--grid-gap) / 2) calc(var(--grid-gap) / 2) calc(var(--grid-gap) / 2 + env(safe-area-inset-bottom, 0px));
 }
 /* Key rows stretch to fill the fixed-height bottom dock (like the side dock). */
 #appKeyboard.kbd-dock-bottom .kbd-row { flex: 1 1 0; }
@@ -1995,7 +1996,7 @@ label.radio-label input[type="radio"] {
     top: 0;
     bottom: 0;
     width: var(--dock-w);
-    padding: 0.5rem;
+    padding: calc(var(--grid-gap) / 2);   /* ½·gap surround (matches #expressPanel) */
 }
 
 #appKeyboard.kbd-dock-side.kbd-side-right {
