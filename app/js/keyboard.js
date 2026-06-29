@@ -45,8 +45,27 @@ let lastPointerDownEl = null;
 let mode = 'physical';          // 'physical' | 'onscreen'
 let rootEl = null;              // the keyboard panel
 let activeField = null;         // the input/textarea currently being typed into
-let predWrap = null;            // the word-prediction button container in the toolbar
+let predWrap = null;            // the word-prediction button container (display dropped)
 const PRED_COUNT = 3;           // number of prediction slots
+
+// --- Inline word-prediction ghost (Ken, June 29 2026) -----------------------
+// A non-interactive overlay mirrors the active field's text so the single best
+// completion appears INLINE, right after what the user has typed (Smart-Compose
+// style). It's purely visual — the user accepts by typing any word-separator
+// (space / comma / period / …), which fixed keys already provide, so there's no
+// moving tap target (keyguard-safe) and no contenteditable. Shown only when the
+// caret is at the END of the value (true "appending"), so the mirror never has
+// to place text after the ghost.
+let ghostEl = null;             // the overlay box (mirrors the field)
+let ghostInner = null;          // inner wrapper (carries the scroll transform)
+let ghostWord = null;           // the full predicted word currently shown (canonical case)
+let ghostField = null;          // the field the scroll listener is bound to
+const GHOST_STYLE_PROPS = [
+    'fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'fontVariant', 'letterSpacing',
+    'wordSpacing', 'lineHeight', 'textAlign', 'textIndent', 'textTransform', 'tabSize',
+    'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
+    'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth', 'boxSizing',
+];
 
 // Selected layouts per dock + which side the side dock sits on (user Settings).
 let sideLayoutId = 'S1';
@@ -252,12 +271,24 @@ function handleKey(keyEl) {
     if (action === 'shift') { onShift(); return; }
     if (action === 'page') { page = page === 'symbols' ? 'letters' : 'symbols'; renderRows(); return; }
     if (action === 'backspace') { backspace(); updatePredictions(); return; }
-    // Space / Enter close a word — learn it before the boundary, then refresh.
-    if (action === 'space') { learnCurrentWord(); insert(' '); consumeShift(); updatePredictions(); return; }
-    if (action === 'enter') { learnCurrentWord(); enter(); updatePredictions(); return; }
+    // Space / Enter close a word. If an inline ghost is showing, the separator
+    // ACCEPTS it (completes the word) first; otherwise we just learn the typed
+    // word. Then the separator itself is inserted, and predictions refresh.
+    if (action === 'space') {
+        if (!acceptGhost()) learnCurrentWord();
+        insert(' '); consumeShift(); updatePredictions(); return;
+    }
+    if (action === 'enter') {
+        if (!acceptGhost()) learnCurrentWord();
+        enter(); updatePredictions(); return;
+    }
 
     const ch = keyEl.dataset.char;
     if (ch == null) return;
+    // A non-word character (comma, period, etc.) is also a word separator: if a
+    // ghost is showing, accept it before inserting the separator.
+    const isSeparator = !/[A-Za-z']/.test(ch);
+    if (isSeparator) acceptGhost();
     const upper = shiftState !== 'off';
     insert(upper && /[a-z]/i.test(ch) ? ch.toUpperCase() : ch);
     consumeShift();
@@ -296,6 +327,8 @@ function updatePredictions() {
     // Show the prediction overlay only when there's something to predict; when
     // empty it's display:none so taps fall through to Cut/Copy/Paste/Hide.
     predWrap.classList.toggle('kbd-preds-active', any);
+    // Drive the inline ghost too (the surfaced form of prediction).
+    updateGhost();
 }
 
 // Replace the partial word at the caret with the chosen prediction + a space,
@@ -316,6 +349,113 @@ function applyPrediction(word) {
     prediction.learn(word);
     updatePredictions();
     if (f.tagName === 'INPUT') requestAnimationFrame(() => { if (f.isConnected) f.scrollLeft = f.scrollWidth; });
+}
+
+// --- inline ghost prediction ------------------------------------------------
+
+function ensureGhostEl() {
+    if (ghostEl) return;
+    ghostEl = document.createElement('div');
+    ghostEl.id = 'predGhost';
+    ghostEl.setAttribute('aria-hidden', 'true');
+    ghostInner = document.createElement('div');
+    ghostInner.className = 'pred-ghost-inner';
+    ghostEl.appendChild(ghostInner);
+    document.body.appendChild(ghostEl);
+}
+
+function clearGhost() {
+    ghostWord = null;
+    if (ghostEl) ghostEl.style.display = 'none';
+}
+
+// Match the predicted word's case to what the user actually typed (so a
+// capitalized prefix yields a capitalized completion).
+function caseMatch(word, typed) {
+    return typed && typed[0] === typed[0].toUpperCase()
+        ? word.charAt(0).toUpperCase() + word.slice(1)
+        : word;
+}
+
+// Recompute + show the inline completion for the active field. Only when the
+// caret is at the END of the value (appending) and there's a real completion
+// longer than the typed prefix; otherwise hide.
+function updateGhost() {
+    const f = activeField;
+    if (!f || f.id === 'apiKeyInput') { clearGhost(); return; }
+    const caret = f.selectionStart ?? f.value.length;
+    if (caret !== f.value.length) { clearGhost(); return; }   // only when appending
+    const prefix = currentWordPrefix();
+    if (!prefix) { clearGhost(); return; }
+    const pred = prediction.predict(prefix, 1)[0];
+    if (!pred || pred.toLowerCase() === prefix.toLowerCase()) { clearGhost(); return; }
+    ghostWord = pred;
+    renderGhost();
+}
+
+// Position the mirror overlay exactly over the field and draw: the typed text
+// (transparent — it only reserves the right width) + the completion SUFFIX
+// (styled). Caret is at the end, so nothing follows the ghost.
+function renderGhost() {
+    const f = activeField;
+    if (!f || !ghostWord) return;
+    ensureGhostEl();
+    // Host in the same top-layer as the field when it's inside an open modal
+    // dialog (Settings), so the overlay isn't hidden behind the dialog.
+    const host = f.closest('dialog[open]') || document.body;
+    if (ghostEl.parentNode !== host) host.appendChild(ghostEl);
+
+    const cs = getComputedStyle(f);
+    const rect = f.getBoundingClientRect();
+    const s = ghostEl.style;
+    s.display = 'block';
+    s.top = `${rect.top}px`;
+    s.left = `${rect.left}px`;
+    s.width = `${rect.width}px`;
+    s.height = `${rect.height}px`;
+    for (const p of GHOST_STYLE_PROPS) s[p] = cs[p];
+    s.whiteSpace = f.tagName === 'TEXTAREA' ? 'pre-wrap' : 'pre';
+    s.overflowWrap = cs.overflowWrap;
+
+    const typed = f.value;
+    const m = typed.match(/[A-Za-z']+$/);
+    const out = caseMatch(ghostWord, m ? m[0] : '');
+    const suffix = out.slice(m ? m[0].length : 0);
+    ghostInner.textContent = '';
+    ghostInner.appendChild(document.createTextNode(typed));   // transparent, reserves width
+    const span = document.createElement('span');
+    span.className = 'pred-ghost-word';
+    span.textContent = suffix;
+    ghostInner.appendChild(span);
+    // Mirror the field's scroll so the ghost lines up with the visible text.
+    ghostInner.style.transform = `translate(${-f.scrollLeft}px, ${-f.scrollTop}px)`;
+}
+
+function repositionGhost() {
+    if (ghostWord && activeField) renderGhost();
+}
+
+// Accept the showing ghost: replace the typed prefix with the full predicted
+// word (NO trailing space — the separator the user just typed is inserted next
+// by the caller). Returns true if a ghost was accepted.
+function acceptGhost() {
+    if (!ghostWord) return false;
+    const f = activeField;
+    if (!f) return false;
+    const caret = f.selectionStart ?? f.value.length;
+    const before = f.value.slice(0, caret);
+    const m = before.match(/[A-Za-z']+$/);
+    if (!m) { clearGhost(); return false; }
+    const start = caret - m[0].length;
+    const out = caseMatch(ghostWord, m[0]);
+    f.value = f.value.slice(0, start) + out + f.value.slice(caret);
+    const pos = start + out.length;
+    f.setSelectionRange(pos, pos);
+    f.dispatchEvent(new Event('input', { bubbles: true }));
+    prediction.learn(ghostWord);
+    clearGhost();
+    if (f.tagName === 'INPUT') requestAnimationFrame(() => { if (f.isConnected) f.scrollLeft = f.scrollWidth; });
+    return true;
 }
 
 // --- DOM build --------------------------------------------------------------
@@ -478,6 +618,10 @@ function show(field) {
     renderRows();
     rootEl.classList.remove('hidden');
     document.body.classList.add('kbd-open');
+    // Re-sync the inline ghost when the field scrolls its own text.
+    if (ghostField && ghostField !== field) ghostField.removeEventListener('scroll', repositionGhost);
+    field.addEventListener('scroll', repositionGhost);
+    ghostField = field;
     updatePredictions(); // seed predictions for any text already in the field
     // Keep the focused field clear of the keyboard. The content area reserves
     // viewport-relative padding (CSS) so the field can scroll above a
@@ -487,11 +631,14 @@ function show(field) {
         // Scroll the input so the end of any existing text stays visible after
         // the keyboard opens and potentially narrows the field.
         if (field.tagName === 'INPUT') field.scrollLeft = field.scrollWidth;
+        repositionGhost();   // the field just moved — re-place the ghost over it
     });
 }
 
 function hide() {
+    if (ghostField) { ghostField.removeEventListener('scroll', repositionGhost); ghostField = null; }
     activeField = null;
+    clearGhost();
     // Reset to a clean slate for the next field: lowercase, letters page.
     shiftState = 'off';
     page = 'letters';
@@ -506,6 +653,10 @@ function hide() {
 export function init() {
     build();
     prediction.load(); // bundled word list + personalized frequencies (async)
+
+    // Keep the inline ghost aligned if the page scrolls or the window resizes.
+    window.addEventListener('resize', repositionGhost);
+    window.addEventListener('scroll', repositionGhost, true);
 
     // Track the last pointerdown target so focusout can tell whether the blur
     // was caused by tapping a keep-open control (Speak/Clear), even on touch

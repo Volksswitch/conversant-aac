@@ -85,6 +85,13 @@
        it grows, and the dock (above) grows so keys/Express cells clear it too.
        Wire new control buttons to this token rather than a bare rem value. */
     --btn-min-dim: 2.75rem;
+
+    /* Inline word-prediction ghost (Ken, June 29 2026). Bold + a subtle tint
+       mark the completion as provisional WITHOUT relying on low contrast, so it
+       stays legible for low vision (bold also relaxes WCAG contrast to 3:1).
+       Tunable — judge the actual color on the device. */
+    --pred-ghost-color: #0b4ea2;
+    --pred-ghost-bg: rgba(21, 101, 192, 0.14);
 }
 
 body {
@@ -2003,6 +2010,31 @@ label.radio-label input[type="radio"] {
 }
 .kbd-pred-btn[hidden] { display: none; }
 .kbd-pred-btn:active { background: #ffe082; transform: translateY(1px); }
+
+/* Inline word-prediction ghost overlay (keyboard.js renderGhost). A
+   non-interactive mirror of the active field: the typed text is transparent (it
+   only reserves the right width) and the predicted SUFFIX is drawn bold + tinted
+   so it reads as a provisional inline completion. Positioned exactly over the
+   field, so the real field text shows through underneath and the two read as one
+   line. The JS copies the field's font/padding/border so the metrics match. */
+#predGhost {
+    position: fixed;
+    z-index: 150;
+    pointer-events: none;
+    margin: 0;
+    background: transparent;
+    color: transparent;          /* mirrored typed text is invisible — spacing only */
+    border-style: solid;
+    border-color: transparent;   /* widths copied from the field for exact alignment */
+    overflow: hidden;
+}
+#predGhost .pred-ghost-inner { will-change: transform; }
+#predGhost .pred-ghost-word {
+    color: var(--pred-ghost-color);
+    background: var(--pred-ghost-bg);
+    font-weight: 700;            /* bold (Ken — italic is harder to read) */
+    border-radius: 3px;
+}
 
 .kbd-row {
     display: flex;
