@@ -341,19 +341,21 @@ function build() {
         handleKey(keyEl);
     });
 
-    // Persistent toolbar above the keys (layout-independent): Cut/Copy/Paste,
-    // plus a Hide button (pushed right) that dismisses the keyboard while
-    // leaving any open panel — e.g. Settings — in place.
+    // Persistent toolbar above the keys (layout-independent): Cut / Copy / Paste.
+    // Spatial Stability (Ken): the row is a 4-column grid matching the Express
+    // Panel's four ¼-width overrides, and the three tools occupy the LEFT THREE
+    // cells (= the Say again / Hold on / Pardon? holes); the 4th cell stays empty.
+    // No Hide button — every context the keyboard serves has its own dismissal
+    // (the "In my own words" modal: Speak/Reframe/Cancel; Settings: Close; About
+    // Me: Done), so a 4th tool isn't needed (Ken).
     const toolbar = document.createElement('div');
     toolbar.className = 'kbd-toolbar';
     // Icon-only toolbar buttons (Rule 4); the accessible name is kept via
-    // aria-label/title. Converting from text labels frees the row's horizontal
-    // space, which the word-prediction buttons now fill.
+    // aria-label/title.
     const makeTool = (tool, label, icon) => {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'kbd-tool';
-        if (tool === 'hide') btn.classList.add('kbd-tool-hide');
         btn.dataset.tool = tool;
         setIconButton(btn, icon, label);
         return btn;
@@ -361,9 +363,10 @@ function build() {
     toolbar.appendChild(makeTool('cut', 'Cut', 'cut'));
     toolbar.appendChild(makeTool('copy', 'Copy', 'copy'));
     toolbar.appendChild(makeTool('paste', 'Paste', 'paste'));
-    // Word-prediction buttons (local, no AI — see prediction.js) fill the
-    // reclaimed toolbar space. They show predicted words as TEXT (content —
-    // exempt from the icon-only rule) and stay hidden until there's a prefix.
+    // Word-prediction buttons (local, no AI — see prediction.js). INTERIM: they
+    // overlay the control row in the same real-estate, shown only while there's a
+    // prefix (a dedicated prediction layout is still TBD — Ken). They show
+    // predicted words as TEXT (content — exempt from the icon-only rule).
     predWrap = document.createElement('div');
     predWrap.className = 'kbd-preds';
     for (let i = 0; i < PRED_COUNT; i++) {
@@ -374,7 +377,6 @@ function build() {
         predWrap.appendChild(pb);
     }
     toolbar.appendChild(predWrap);
-    toolbar.appendChild(makeTool('hide', 'Hide the keyboard', 'hide'));
     rootEl.appendChild(toolbar);
 
     renderRows();

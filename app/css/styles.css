@@ -1940,19 +1940,20 @@ label.radio-label input[type="radio"] {
 /* Control strip above the keys — same for every layout & dock. Spatial Stability
    (Ken): this row must occupy the SAME real-estate as the Express Panel's
    #epControls row, so a single keyguard overlays both. It's pinned to the shared
-   control-row height (--btn-min-dim) AND laid out as FOUR equal cells — Cut /
-   Copy / Paste / Hide — each ¼ of the row, matching the four ¼-width persist-btn
-   overrides above the Express Panel hole-for-hole. */
+   control-row height (--btn-min-dim) and laid out as a FOUR-column grid matching
+   the four ¼-width persist-btn overrides; the three tools — Cut / Copy / Paste —
+   fill the LEFT THREE cells (= the Say again / Hold on / Pardon? holes) and the
+   4th cell stays empty (no 4th tool is needed — Ken). */
 .kbd-toolbar {
-    position: relative;             /* anchor for the prediction overlay */
-    display: flex;
+    position: relative;                      /* anchor for the prediction overlay */
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);   /* 4 cells = the 4 #epControls buttons */
     gap: 0.4rem;
-    flex: 0 0 var(--btn-min-dim);   /* fixed height, identical to #epControls */
+    flex: 0 0 var(--btn-min-dim);            /* fixed height, identical to #epControls */
 }
 
 .kbd-tool {
-    flex: 1 1 0;                    /* ¼-width cell, = one express-panel button */
-    min-height: var(--btn-min-dim);
+    min-height: var(--btn-min-dim);          /* one grid cell = one express-panel button */
     border: 1px solid #b8c0c6;
     border-radius: 8px;
     background: #dfe6ea;
@@ -1965,29 +1966,6 @@ label.radio-label input[type="radio"] {
 .kbd-tool:active {
     background: #c9d2d8;
     transform: translateY(1px);
-}
-
-/* Hide/dismiss the keyboard — the 4th cell (so Cut/Copy/Paste stay at ¼).
-   Visually distinct. (Open: Ken is questioning whether Hide is still needed now
-   that Settings/About Me each have their own close path — if it goes, this cell
-   needs a new occupant to preserve the 4-hole alignment.) */
-.kbd-tool-hide {
-    background: #2c3e50;
-    color: #fff;
-    border-color: #2c3e50;
-    font-weight: 600;
-}
-
-.kbd-tool-hide:active {
-    background: #1d2b38;
-}
-
-/* Suppress Hide during the "In my own words" modal — Speak/Reframe/Cancel are
-   the only exits there and they dismiss the keyboard (Ken). visibility:hidden
-   (not display:none) so the 4th cell's space is RESERVED and Cut/Copy/Paste
-   stay at ¼ width, keeping the keyguard holes aligned in the modal too. */
-#appKeyboard.kbd-no-hide .kbd-tool-hide {
-    visibility: hidden;
 }
 
 /* Word-prediction buttons (local prediction — prediction.js). Content buttons
