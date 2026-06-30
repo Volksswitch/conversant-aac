@@ -1218,8 +1218,11 @@ dialog select {
     margin-top: 0.25rem;
 }
 #apiKeyRow #apiKeyInput {
-    flex: 1;
+    /* The key is masked to dots, so it needs no room to read — keep it short so
+       the Paste button shows fully and the column isn't crowded (Ken). */
+    flex: 0 1 9rem;
     width: auto;
+    min-width: 0;
 }
 #pasteApiKeyBtn {
     flex: 0 0 auto;
