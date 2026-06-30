@@ -20,7 +20,7 @@ import * as controlEditor from './control-phrases-editor.js';
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.5.53';
+const APP_VERSION = '0.5.54';
 
 const conversationHistory = [];
 let isListening = false;
@@ -1184,6 +1184,23 @@ function openSettings() {
     document.getElementById('resetUsageBtn').onclick = () => {
         storage.resetUsage();
         updateUsageDisplay();
+    };
+
+    // Diagnostic: report the transcript control's pixel center + size, measured
+    // from the upper-left of the page viewport (getBoundingClientRect space).
+    document.getElementById('transcriptGeomBtn').onclick = () => {
+        const el = document.getElementById('transcript');
+        if (!el) { window.alert('Transcript control not found.'); return; }
+        const r = el.getBoundingClientRect();
+        const cx = Math.round(r.left + r.width / 2);
+        const cy = Math.round(r.top + r.height / 2);
+        window.alert(
+            'Transcript control\n\n' +
+            `Center (x, y): ${cx}, ${cy}\n` +
+            `Width:  ${Math.round(r.width)} px\n` +
+            `Height: ${Math.round(r.height)} px\n\n` +
+            '(measured from the upper-left of the page viewport)'
+        );
     };
 
     document.getElementById('testVoiceBtn').onclick = () => {
