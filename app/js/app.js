@@ -20,7 +20,7 @@ import * as controlEditor from './control-phrases-editor.js';
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.5.55';
+const APP_VERSION = '0.5.56';
 
 const conversationHistory = [];
 let isListening = false;
@@ -1186,34 +1186,26 @@ function openSettings() {
         updateUsageDisplay();
     };
 
-    // Diagnostic: report the transcript control's pixel center + size, in both
-    // CSS pixels (the page-viewport space getBoundingClientRect returns) and
-    // device/framebuffer pixels (CSS × devicePixelRatio — what a screenshot or
-    // ruler measures). devicePixelRatio is read straight off the window with no
-    // user input; it folds OS display scaling together with browser/page zoom.
+    // Diagnostic: report the transcript control's pixel center + size in
+    // device/framebuffer pixels (CSS px × devicePixelRatio) — i.e. the values
+    // you'd measure off a screenshot in Paint. devicePixelRatio is read straight
+    // off the window with no user input; it folds OS display scaling together
+    // with browser/page zoom. Y is from the page top-left; a full-screen
+    // screenshot adds the window title-bar height above the page (adjust as
+    // needed).
     document.getElementById('transcriptGeomBtn').onclick = () => {
         const el = document.getElementById('transcript');
         if (!el) { window.alert('Transcript control not found.'); return; }
         const r = el.getBoundingClientRect();
         const dpr = window.devicePixelRatio || 1;
-        const cssCx = Math.round(r.left + r.width / 2);
-        const cssCy = Math.round(r.top + r.height / 2);
-        const px = (n) => Math.round(n * dpr); // CSS px → device/framebuffer px
+        const px = (n) => Math.round(n * dpr); // CSS px → device/screenshot px
         window.alert(
-            'Transcript control\n\n' +
-            'CSS pixels (from the page viewport top-left):\n' +
-            `  Center (x, y): ${cssCx}, ${cssCy}\n` +
-            `  Width:  ${Math.round(r.width)} px\n` +
-            `  Height: ${Math.round(r.height)} px\n\n` +
-            `devicePixelRatio: ${Math.round(dpr * 1000) / 1000}\n` +
-            `Display (CSS px):   ${screen.width} x ${screen.height}\n` +
-            `Native (device px): ${Math.round(screen.width * dpr)} x ${Math.round(screen.height * dpr)}\n\n` +
-            'Device pixels (CSS x devicePixelRatio - matches a screenshot):\n' +
-            `  Center (x, y): ${px(r.left + r.width / 2)}, ${px(r.top + r.height / 2)}\n` +
-            `  Width:  ${px(r.width)} px\n` +
-            `  Height: ${px(r.height)} px\n\n` +
-            'Note: a full-screen screenshot also includes the window title bar\n' +
-            'above the page, so the screenshot Y is larger by the title-bar height.'
+            'Transcript control (pixels, as measured in Paint)\n\n' +
+            `Center (x, y): ${px(r.left + r.width / 2)}, ${px(r.top + r.height / 2)}\n` +
+            `Width:  ${px(r.width)} px\n` +
+            `Height: ${px(r.height)} px\n\n` +
+            '(Y is from the page top-left; add the window title-bar height for a\n' +
+            'full-screen screenshot.)'
         );
     };
 
