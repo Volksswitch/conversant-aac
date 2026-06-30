@@ -81,10 +81,13 @@ function formatValue(value) {
 
 // --- lifecycle --------------------------------------------------------------
 
-export function init() {
+let onCloseCb = null;
+
+export function init(opts = {}) {
     screenEl = document.getElementById('worldviewScreen');
     contentEl = document.getElementById('worldviewContent');
     titleEl = document.getElementById('worldviewTitle');
+    onCloseCb = opts.onClose || null;
     document.getElementById('worldviewCloseBtn').addEventListener('click', close);
 }
 
@@ -117,6 +120,9 @@ export function close() {
     keyboard.hideKeyboard();
     setBackgroundInert(false);
     screenEl.classList.add('hidden');
+    // About Me is launched from the Settings panel's "About Me" tab, so Done
+    // returns there (Ken, June 29 2026).
+    if (onCloseCb) onCloseCb();
 }
 
 // --- Home -------------------------------------------------------------------

@@ -20,7 +20,7 @@ import * as controlEditor from './control-phrases-editor.js';
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.5.50';
+const APP_VERSION = '0.5.51';
 
 const conversationHistory = [];
 let isListening = false;
@@ -108,7 +108,11 @@ function initApp() {
     renderExpressPanel();
     expressEditor.init(document.getElementById('expressEditor'), { onChange: renderExpressPanel });
     controlEditor.init(document.getElementById('controlEditor'), { onChange: applyControlPhrases });
-    worldviewUI.init();
+    // About Me is launched from the Settings → About Me tab, so Done returns there.
+    worldviewUI.init({ onClose: openSettings });
+    applyFontScales();   // user-set Transcript / Composer / Express text sizes
+    initSliderSteppers(); // − / + fine-step buttons on the size sliders
+    ui.setRegenerateLabel(storage.loadResponsesPerCategory() * 4); // "New 4"/"New 8"
     keyboard.init();
     keyboard.setMode(storage.loadKeyboardMode());
     keyboard.setSideLayout(storage.loadSideLayout());
@@ -410,25 +414,29 @@ async function handleRepairOfSelf(response) {
     resumeOrIdle();
 }
 
-// Clean the combined partner transcript once, then commit the partner turn
-// (cleaned text feeds context for future turns) followed by the user's
-// response. Cleaning happens after speaking so it never delays the user's
-// words. `raw` may be empty (openers / closers have no captured partner turn).
+// Commit the partner turn (it feeds context for future turns) followed by the
+// user's response. The user's spoken words are rendered to the transcript
+// IMMEDIATELY (Ken, June 29 2026 — they were lagging several seconds behind the
+// speech because we awaited the partner-transcript cleanup round-trip first); the
+// partner turn is shown with its raw text at once and quietly upgraded to the
+// cleaned text when that round-trip returns. `raw` may be empty (openers /
+// closers have no captured partner turn).
 async function commitExchange(raw, userText, index) {
+    // Snapshot the history BEFORE this exchange — that's the context the cleanup
+    // pass should see (it shouldn't include the turn it's cleaning).
+    const cleanupContext = [...conversationHistory];
+
+    let partnerIdx = -1;
     if (raw) {
-        let cleaned = raw;
-        try {
-            cleaned = await llm.cleanupTranscript(raw, conversationHistory);
-        } catch { /* fall back to raw */ }
-        conversationHistory.push({ role: 'partner', text: cleaned });
-        storage.logPartnerSpeech({
-            rawTranscript: raw,
-            cleanedTranscript: cleaned,
-            partner: partnerStamp(),   // who spoke (the active Partner), or null
-        });
+        conversationHistory.push({ role: 'partner', text: raw });
+        partnerIdx = conversationHistory.length - 1;
     }
     conversationHistory.push({ role: 'user', text: userText });
-    storage.logUserResponse({
+    // Render the running transcript (user turn visible now) and clear the live turn.
+    ui.renderConversation(conversationHistory);
+    ui.setLiveTranscript('');
+
+    const userLog = {
         selectedText: userText,
         selectedIndex: index,
         // Only a palette selection (index >= 0) has a meaningful "all options"
@@ -438,10 +446,26 @@ async function commitExchange(raw, userText, index) {
         // Stamp the situation at this turn (who, how the user felt) — null when off.
         partner: partnerStamp(),
         feeling: feelingStamp(),
-    });
-    // Render the running transcript and clear the in-progress (live) partner turn.
-    ui.renderConversation(conversationHistory);
-    ui.setLiveTranscript('');
+    };
+
+    if (raw) {
+        // Clean the partner transcript in the background, patch its turn in place
+        // when it returns (without delaying the user's words), then log the
+        // exchange in proper partner-then-user order.
+        const stamp = partnerStamp();
+        (async () => {
+            let cleaned = raw;
+            try { cleaned = await llm.cleanupTranscript(raw, cleanupContext); } catch { /* fall back to raw */ }
+            if (conversationHistory[partnerIdx]) {
+                conversationHistory[partnerIdx].text = cleaned;
+                ui.renderConversation(conversationHistory);
+            }
+            await storage.logPartnerSpeech({ rawTranscript: raw, cleanedTranscript: cleaned, partner: stamp });
+            await storage.logUserResponse(userLog);
+        })();
+    } else {
+        storage.logUserResponse(userLog);
+    }
 }
 
 // Auto-resume only if the user has manually started listening this session (and
@@ -597,6 +621,7 @@ async function handleRegenerate() {
 // steer — that sticky/conversation-goal version is deferred to the Goals
 // subsystem). Guarded to an active partner turn with a palette, like regenerate.
 async function handleReframe() {
+    keyboard.acceptPendingGhost(); // fold a showing word-prediction ghost into the text first
     const steer = ui.getComposerText();
     // Clicking any of the three buttons dismisses the modal (Ken). Capture the
     // steer first, then close.
@@ -712,6 +737,7 @@ function closeComposer() {
 
 // Speak: say the composed text, take the floor + commit, then dismiss the modal.
 async function handleSpeakComposed() {
+    keyboard.acceptPendingGhost(); // fold a showing word-prediction ghost into the text first
     const text = ui.getComposerText();
     if (!text) { closeComposer(); return; }
     ui.clearComposer();
@@ -907,6 +933,33 @@ function applyButtonSizing() {
     root.setProperty('--kbd-cols', String(cols));
 }
 
+// Apply the user-set text-size scales (Transcript / Composer / Express Panel) as
+// CSS multipliers on each surface's base font-size. 1 = the design default.
+function applyFontScales() {
+    const root = document.documentElement.style;
+    root.setProperty('--transcript-font-scale', String(storage.loadTranscriptFontScale()));
+    root.setProperty('--composer-font-scale', String(storage.loadComposerFontScale()));
+    root.setProperty('--express-font-scale', String(storage.loadExpressFontScale()));
+}
+
+// The − / + buttons flanking each size slider nudge it by a small fixed step
+// (Ken: the slider "grows uncontrollably quickly" when dragged right — the
+// steppers give precise control). They dispatch the slider's own 'input' event so
+// the existing persist/apply/clamp handlers run unchanged.
+function initSliderSteppers() {
+    const content = document.getElementById('settingsContent');
+    if (!content) return;
+    content.addEventListener('click', (e) => {
+        const step = e.target.closest('.slider-step');
+        if (!step) return;
+        const slider = document.getElementById(step.dataset.target);
+        if (!slider) return;
+        const next = Math.max(0, Math.min(100, Number(slider.value) + Number(step.dataset.step)));
+        slider.value = String(next);
+        slider.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+}
+
 // An Express Panel phrase was activated (single tap, or confirmed double tap). It
 // is the user speaking, so it behaves like a selected response: spoken AND
 // committed to history (Ken — "anything spoken is part of the conversation").
@@ -1080,6 +1133,13 @@ function openSettings() {
     buttonSizeSlider.value = storage.loadButtonSizePos();
     buttonGapSlider.value = storage.loadButtonGapPos();
     minGapSlider.value = storage.loadMinGapPos();
+    // Text-size selects (string-valued multipliers).
+    const transcriptFontSelect = document.getElementById('transcriptFontSelect');
+    const composerFontSelect = document.getElementById('composerFontSelect');
+    const expressFontSelect = document.getElementById('expressFontSelect');
+    transcriptFontSelect.value = String(storage.loadTranscriptFontScale());
+    composerFontSelect.value = String(storage.loadComposerFontScale());
+    expressFontSelect.value = String(storage.loadExpressFontScale());
     updateFolderDisplay();
 
     // Reset to General tab
@@ -1154,7 +1214,11 @@ function openSettings() {
         storage.saveSilenceThreshold(threshold);
     };
     autoRelistenInput.onchange = () => storage.saveAutoRelisten(autoRelistenInput.checked);
-    responsesPerCategoryInput.onchange = () => storage.saveResponsesPerCategory(Number(responsesPerCategoryInput.value));
+    responsesPerCategoryInput.onchange = () => {
+        const n = Number(responsesPerCategoryInput.value);
+        storage.saveResponsesPerCategory(n);
+        ui.setRegenerateLabel((n === 2 ? 2 : 1) * 4); // "New 4" ↔ "New 8"
+    };
     document.querySelectorAll('input[name="keyboardMode"]').forEach(radio => {
         radio.onchange = () => {
             const mode = document.querySelector('input[name="keyboardMode"]:checked')?.value || 'physical';
@@ -1254,6 +1318,20 @@ function openSettings() {
         }
         applyButtonSizing();
     };
+
+    // Reset button size / spacing / minimum gap to their defaults (Ken).
+    document.getElementById('resetSizingBtn').onclick = () => {
+        storage.resetButtonSizing();
+        buttonSizeSlider.value = String(storage.loadButtonSizePos());
+        buttonGapSlider.value = String(storage.loadButtonGapPos());
+        minGapSlider.value = String(storage.loadMinGapPos());
+        applyButtonSizing();
+    };
+
+    // Text-size selects — persist + apply live.
+    transcriptFontSelect.onchange = () => { storage.saveTranscriptFontScale(transcriptFontSelect.value); applyFontScales(); };
+    composerFontSelect.onchange = () => { storage.saveComposerFontScale(composerFontSelect.value); applyFontScales(); };
+    expressFontSelect.onchange = () => { storage.saveExpressFontScale(expressFontSelect.value); applyFontScales(); };
 
     document.getElementById('closeSettingsBtn').onclick = () => {
         // Belt-and-suspenders: persist the API key from the field on Close.

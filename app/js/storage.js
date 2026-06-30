@@ -302,6 +302,53 @@ export function saveMinGapPos(pos) {
     saveSettings(settings);
 }
 
+// Restore button size / spacing / minimum-gap to their defaults (the "Reset
+// buttons and gaps to default" control). Removing the keys makes the loaders
+// return the defaults again.
+export function resetButtonSizing() {
+    const settings = loadSettings();
+    delete settings.buttonSizePos;
+    delete settings.buttonGapPos;
+    delete settings.minGapPos;
+    saveSettings(settings);
+}
+
+// --- Text-size scales (Transcript / Composer / Express Panel) ---
+// Unitless multipliers (1 = the design default) applied to each surface's base
+// font-size via a CSS variable. Independent of the button-size sliders (which
+// size touch targets, not text). Clamped to a sane range.
+function clampScale(v) {
+    const n = Number(v);
+    return Number.isFinite(n) ? Math.max(0.6, Math.min(2, n)) : 1;
+}
+export function loadTranscriptFontScale() {
+    const s = loadSettings();
+    return s.transcriptFontScale == null ? 1 : clampScale(s.transcriptFontScale);
+}
+export function saveTranscriptFontScale(v) {
+    const settings = loadSettings();
+    settings.transcriptFontScale = clampScale(v);
+    saveSettings(settings);
+}
+export function loadComposerFontScale() {
+    const s = loadSettings();
+    return s.composerFontScale == null ? 1 : clampScale(s.composerFontScale);
+}
+export function saveComposerFontScale(v) {
+    const settings = loadSettings();
+    settings.composerFontScale = clampScale(v);
+    saveSettings(settings);
+}
+export function loadExpressFontScale() {
+    const s = loadSettings();
+    return s.expressFontScale == null ? 1 : clampScale(s.expressFontScale);
+}
+export function saveExpressFontScale(v) {
+    const settings = loadSettings();
+    settings.expressFontScale = clampScale(v);
+    saveSettings(settings);
+}
+
 // --- Conversation logging ---
 
 let conversationDirHandle = null;

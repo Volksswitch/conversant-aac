@@ -270,7 +270,11 @@ function handleKey(keyEl) {
     const action = keyEl.dataset.action;
     if (action === 'shift') { onShift(); return; }
     if (action === 'page') { page = page === 'symbols' ? 'letters' : 'symbols'; renderRows(); return; }
-    if (action === 'backspace') { backspace(); updatePredictions(); return; }
+    // Backspace deletes; it must NOT re-show an inline ghost. Re-completing a word
+    // the user is actively deleting reads as the suffix being "selected" (the
+    // tinted bold ghost looks like a highlight), so clear it and don't predict
+    // again until the user types forward (Ken, June 29 2026).
+    if (action === 'backspace') { backspace(); clearGhost(); return; }
     // Space / Enter close a word. If an inline ghost is showing, the separator
     // ACCEPTS it (completes the word) first; otherwise we just learn the typed
     // word. Then the separator itself is inserted, and predictions refresh.
@@ -761,6 +765,15 @@ export function hideKeyboard() {
 
 export function getMode() {
     return mode;
+}
+
+// Accept whatever inline ghost completion is currently showing, committing it
+// into the active field (no trailing space). Used by the composer's Speak /
+// Reframe so a pending prediction is included rather than dropped (Ken, June 29
+// 2026 — "What is your n" + ghost "name" → Speak should say "What is your name").
+// No-op (returns false) when nothing is pending.
+export function acceptPendingGhost() {
+    return acceptGhost();
 }
 
 // --- layout / dock-position settings (live-applied from Settings) -----------

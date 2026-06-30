@@ -366,7 +366,8 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
     padding: 0.4rem 0.7rem;
     border-radius: 10px;
     line-height: 1.3;
-    font-size: 1.05rem;
+    /* User-settable transcript text size (Settings → Speech & Input). */
+    font-size: calc(1.05rem * var(--transcript-font-scale, 1));
     word-break: break-word;
 }
 .turn-partner {
@@ -687,7 +688,8 @@ body.conv-bottom .palette-grid {
     border-radius: 8px;
     background: var(--ep-tint);
     color: var(--ink);
-    font-size: clamp(0.8rem, 1.4vh, 1.05rem);
+    /* Base size scaled by the user-set Express Panel text size (Settings). */
+    font-size: calc(clamp(0.8rem, 1.4vh, 1.05rem) * var(--express-font-scale, 1));
     font-weight: 600;
     cursor: pointer;
     overflow: hidden;
@@ -972,7 +974,8 @@ button:not(.kbd-key):not(.kbd-tool):not(.kbd-pred-btn):not(.ep-btn) {
     border: 1px solid #ccc;
     border-radius: 6px;
     font-family: inherit;
-    font-size: 1.1rem;
+    /* User-settable "In my own words" text size (Settings → Speech & Input). */
+    font-size: calc(1.1rem * var(--composer-font-scale, 1));
     resize: vertical;
 }
 
@@ -1134,7 +1137,6 @@ dialog::backdrop {
 
 #settingsContent {
     flex: 1;
-    padding: var(--grid-gap);   /* surface padding = the universal gap (Ken) */
     overflow-y: auto;
 }
 
@@ -1144,11 +1146,17 @@ dialog::backdrop {
 
 /* Two-column layout so the denser tabs fit WITHOUT scrolling (scrolling is
    problematic for this audience — Ken). Each setting-group stays intact across
-   the column break. The About tab is prose, so it stays single-column. */
+   the column break. The About tab is prose, so it stays single-column.
+   Surface padding = the universal gap, but with a small minimum so the controls
+   never sit flush against the panel edge at the default (zero) gap (Ken, June 29
+   2026 — "a couple of millimeters of padding"). The Express Panel and About Me
+   tabs are excluded (Express needs the full width for its rows; About Me is its
+   own full-screen overlay). */
 .tab-panel.active {
     display: block;
     column-count: 2;
     column-gap: 1.75rem;
+    padding: max(var(--grid-gap), 0.6rem);
 }
 /* About is prose — take it out of multi-column entirely (column-count:1 still
    creates a multicol context that mis-sizes height; `auto` is plain block). The
@@ -1162,6 +1170,7 @@ dialog::backdrop {
 .tab-panel[data-tab="express"].active,
 body.conv-bottom .tab-panel[data-tab="express"].active {
     column-count: auto;
+    padding: 0;   /* the editor rows manage their own spacing and need full width */
 }
 .setting-group {
     break-inside: avoid;
@@ -1285,14 +1294,44 @@ dialog select {
     color: #444;
 }
 
-/* Range sliders (Minimum button size / Button spacing) fill the row between
-   their Smaller/Larger end labels. */
+/* Range sliders (Button size / spacing / minimum gap) fill the row between
+   their − / + stepper buttons. */
 .size-slider {
     flex: 1 1 auto;
     width: auto;
     min-width: 0;
     cursor: pointer;
 }
+
+/* − / + fine-step buttons flanking a size slider (Ken: precise control vs. the
+   slider racing right when dragged). Square-ish, easy targets. */
+.slider-step {
+    flex: 0 0 auto;
+    width: 2.6rem;
+    padding: 0;
+    border: 1px solid #bbb;
+    border-radius: 6px;
+    background: #fff;
+    color: #2c3e50;
+    font-size: 1.4rem;
+    line-height: 1;
+    cursor: pointer;
+}
+.slider-step:hover { background: #eef1f4; }
+.slider-step:active { transform: translateY(1px); }
+
+/* "Reset buttons and gaps to default" — a quiet full-width action. */
+.reset-sizing-btn {
+    width: 100%;
+    padding: 0.45rem 0.7rem;
+    border: 1px solid #bbb;
+    border-radius: 6px;
+    background: #fff;
+    color: #2c3e50;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+.reset-sizing-btn:hover { background: #eef1f4; }
 
 .switch {
     position: relative;

@@ -68,6 +68,7 @@ const DEFAULT_OPENERS = [
     'Hi {name}, got a minute?',
     'Can I ask you something, {name}?',
     'Guess what, {name}.',
+    'Hey {name}, how are you doing?',
 ];
 const DEFAULT_CLOSERS = [
     'I should get going.',

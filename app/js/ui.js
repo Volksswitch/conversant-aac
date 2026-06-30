@@ -480,6 +480,16 @@ export function onRegenerateClick(handler) {
     document.getElementById('regenerateBtn').addEventListener('click', handler);
 }
 
+// Update the regenerate button's accessible name / tooltip to match how many
+// cards are actually shown — "New 4" with 1 per category, "New 8" with 2 (Ken).
+export function setRegenerateLabel(count) {
+    const btn = document.getElementById('regenerateBtn');
+    if (!btn) return;
+    const label = `New ${count} — different options`;
+    btn.setAttribute('aria-label', label);
+    btn.title = label;
+}
+
 export function onSettingsClick(handler) {
     document.getElementById('settingsBtn').addEventListener('click', handler);
 }

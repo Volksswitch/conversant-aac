@@ -138,29 +138,62 @@
                     <div class="setting-group">
                         <label for="buttonSizeSlider">Button size</label>
                         <div class="slider-row">
-                            <span class="slider-end">Smaller</span>
+                            <button type="button" class="slider-step" data-target="buttonSizeSlider" data-step="-4" aria-label="Smaller">&minus;</button>
                             <input type="range" id="buttonSizeSlider" min="0" max="100" step="1" class="size-slider">
-                            <span class="slider-end">Larger</span>
+                            <button type="button" class="slider-step" data-target="buttonSizeSlider" data-step="4" aria-label="Larger">+</button>
                         </div>
-                        <p class="setting-hint">How big the buttons are, for limited motor control and larger fingers. Bigger buttons grow the keyboard / Express Panel area in the direction it can expand — a side panel widens (and the panel beside it shrinks), a bottom panel grows taller (and the transcript shrinks). Changing this moves the keyguard holes, so re-cut the keyguard to match.</p>
+                        <p class="setting-hint">How big the buttons are, for limited motor control and larger fingers. Use the &minus; and + buttons for a small, precise step, or drag the slider. Bigger buttons grow the keyboard / Express Panel area in the direction it can expand — a side panel widens (and the panel beside it shrinks), a bottom panel grows taller (and the transcript shrinks). Changing this moves the keyguard holes, so re-cut the keyguard to match.</p>
                     </div>
                     <div class="setting-group">
                         <label for="buttonGapSlider">Button spacing</label>
                         <div class="slider-row">
-                            <span class="slider-end">Tighter</span>
+                            <button type="button" class="slider-step" data-target="buttonGapSlider" data-step="-4" aria-label="Tighter">&minus;</button>
                             <input type="range" id="buttonGapSlider" min="0" max="100" step="1" class="size-slider">
-                            <span class="slider-end">Wider</span>
+                            <button type="button" class="slider-step" data-target="buttonGapSlider" data-step="4" aria-label="Wider">+</button>
                         </div>
                         <p class="setting-hint">The gap between buttons — the width of the bars on a 3D-printed keyguard. Wider spacing grows the dock area where it can expand rather than shrinking the buttons. Cannot go below the minimum gap.</p>
                     </div>
                     <div class="setting-group">
                         <label for="minGapSlider">Minimum gap</label>
                         <div class="slider-row">
-                            <span class="slider-end">None</span>
+                            <button type="button" class="slider-step" data-target="minGapSlider" data-step="-4" aria-label="Smaller minimum gap">&minus;</button>
                             <input type="range" id="minGapSlider" min="0" max="100" step="1" class="size-slider">
-                            <span class="slider-end">Wider</span>
+                            <button type="button" class="slider-step" data-target="minGapSlider" data-step="4" aria-label="Larger minimum gap">+</button>
                         </div>
                         <p class="setting-hint">A hard floor on the gap in every direction. It has priority over button size — buttons stop growing (or shrink) so this minimum is always kept. Raising it also raises the button-spacing value to match.</p>
+                    </div>
+                    <div class="setting-group">
+                        <button id="resetSizingBtn" type="button" class="reset-sizing-btn">Reset buttons and gaps to default</button>
+                    </div>
+                    <div class="setting-group">
+                        <label for="transcriptFontSelect">Transcript text size</label>
+                        <select id="transcriptFontSelect" class="font-size-select">
+                            <option value="0.85">Smaller</option>
+                            <option value="1" selected>Default</option>
+                            <option value="1.2">Larger</option>
+                            <option value="1.45">Largest</option>
+                        </select>
+                        <p class="setting-hint">Size of the text in the conversation transcript.</p>
+                    </div>
+                    <div class="setting-group">
+                        <label for="composerFontSelect">“In my own words” text size</label>
+                        <select id="composerFontSelect" class="font-size-select">
+                            <option value="0.85">Smaller</option>
+                            <option value="1" selected>Default</option>
+                            <option value="1.2">Larger</option>
+                            <option value="1.45">Largest</option>
+                        </select>
+                        <p class="setting-hint">Size of the text you type in the “In my own words” box.</p>
+                    </div>
+                    <div class="setting-group">
+                        <label for="expressFontSelect">Express Panel text size</label>
+                        <select id="expressFontSelect" class="font-size-select">
+                            <option value="0.85">Smaller</option>
+                            <option value="1" selected>Default</option>
+                            <option value="1.2">Larger</option>
+                            <option value="1.45">Largest</option>
+                        </select>
+                        <p class="setting-hint">Size of the text on the Express Panel buttons.</p>
                     </div>
                     <div class="setting-group">
                         <label for="voiceSelect">Voice</label>
