@@ -20,7 +20,7 @@ import * as controlEditor from './control-phrases-editor.js';
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.5.51';
+const APP_VERSION = '0.5.52';
 
 const conversationHistory = [];
 let isListening = false;
@@ -856,6 +856,7 @@ function applyConversationDockClasses() {
 // split, exact shrink curve, calibration of the slider's right end to the true
 // max-growth point) are reasonable choices here, to react to.
 const GAP_MAX_REM = 1.4, MINGAP_MAX_REM = 1.4;   // slider 0–100 → 0..max rem
+const DOCKSEP_MAX_REM = 4.0;      // keyboard-separation slider 0–100 → 0..4rem
 const MIN_BTN_REM = 2.0;          // smallest still-recognizable button (icon + border)
 const MIN_TRANSCRIPT_REM = 3.0;   // transcript floor (~2 lines)
 const SHRINK_GAP_REM = 1.4;       // how much gap a full left-shrink adds
@@ -928,6 +929,10 @@ function applyButtonSizing() {
 
     root.setProperty('--grid-gap', `${gap.toFixed(2)}px`);
     root.setProperty('--gap-min', `${minGap.toFixed(2)}px`);
+    // Keyboard separation: gap between the dock and the rest of the UI (does not
+    // touch the dock footprint, so the keyguard holes don't move).
+    const dockSep = lerp(storage.loadDockSepPos(), 0, DOCKSEP_MAX_REM) * rem;
+    root.setProperty('--dock-sep', `${dockSep.toFixed(2)}px`);
     const { rows, cols } = activeLayoutGrid();
     root.setProperty('--kbd-rows', String(rows));
     root.setProperty('--kbd-cols', String(cols));
@@ -1130,9 +1135,11 @@ function openSettings() {
     const buttonSizeSlider = document.getElementById('buttonSizeSlider');
     const buttonGapSlider = document.getElementById('buttonGapSlider');
     const minGapSlider = document.getElementById('minGapSlider');
+    const dockSepSlider = document.getElementById('dockSepSlider');
     buttonSizeSlider.value = storage.loadButtonSizePos();
     buttonGapSlider.value = storage.loadButtonGapPos();
     minGapSlider.value = storage.loadMinGapPos();
+    dockSepSlider.value = storage.loadDockSepPos();
     // Text-size selects (string-valued multipliers).
     const transcriptFontSelect = document.getElementById('transcriptFontSelect');
     const composerFontSelect = document.getElementById('composerFontSelect');
@@ -1318,6 +1325,12 @@ function openSettings() {
         }
         applyButtonSizing();
     };
+    // Keyboard separation — independent of the inter-button gap; shifts the rest
+    // of the UI away from the dock without resizing buttons or the dock footprint.
+    dockSepSlider.oninput = () => {
+        storage.saveDockSepPos(Number(dockSepSlider.value));
+        applyButtonSizing();
+    };
 
     // Reset button size / spacing / minimum gap to their defaults (Ken).
     document.getElementById('resetSizingBtn').onclick = () => {
@@ -1325,6 +1338,8 @@ function openSettings() {
         buttonSizeSlider.value = String(storage.loadButtonSizePos());
         buttonGapSlider.value = String(storage.loadButtonGapPos());
         minGapSlider.value = String(storage.loadMinGapPos());
+        // dockSepSlider is intentionally left untouched — keyboard separation is
+        // not part of the button/gap sizing the reset restores (Ken).
         applyButtonSizing();
     };
 

@@ -76,6 +76,12 @@
        The outer-padding wiring (incl. insetting the fixed dock) lands with the
        min-gap slider in the deferred change-rules; at 0 it's flush/invisible. */
     --gap-min: 0;
+    /* Keyboard separation (Ken, June 30 2026): the gap BETWEEN the dock (keyboard
+       / Express Panel) and the rest of the UI. Independent of --grid-gap (the
+       inter-button gap). The dock keeps its footprint at the screen edge; this
+       only pushes the MAIN content away from it, so it does NOT move the keyguard
+       holes. Default 0 = flush (the prior look). JS slider sets it. */
+    --dock-sep: 0px;
     --dock-pad: 1rem;             /* the dock panel's own padding on the scarce axis (0.5+0.5) */
     --kbd-rows: 7;                /* rows in the active layout — JS overrides per layout */
     --kbd-cols: 5;                /* widest row's total span — JS overrides per layout */
@@ -202,11 +208,13 @@ body.conv-side #dockArea {
 }
 body.conv-side-right #dockArea { right: 0; border-left: 1px solid #c4ccd2; }
 body.conv-side-left  #dockArea { left: 0;  border-right: 1px solid #c4ccd2; }
-body.conv-side-right #conversationMain { padding-right: var(--dock-w); }
-body.conv-side-left  #conversationMain { padding-left: var(--dock-w); }
+/* Reserve the dock width PLUS the separation gap, so the main content stops
+   --dock-sep short of the fixed dock and the page background shows between them. */
+body.conv-side-right #conversationMain { padding-right: calc(var(--dock-w) + var(--dock-sep)); }
+body.conv-side-left  #conversationMain { padding-left: calc(var(--dock-w) + var(--dock-sep)); }
 /* FIXED bottom dock height so the Express Panel and the keyboard occupy the
-   identical band (one keyguard). */
-body.conv-bottom #dockArea { width: 100%; height: var(--dock-h); flex: 0 0 var(--dock-h); border-top: 1px solid #c4ccd2; }
+   identical band (one keyguard). margin-top opens the separation gap above it. */
+body.conv-bottom #dockArea { width: 100%; height: var(--dock-h); flex: 0 0 var(--dock-h); margin-top: var(--dock-sep); border-top: 1px solid #c4ccd2; }
 
 /* ============================================================================
    CONVERSATION default percentage layout (Ken, June 30 2026).
@@ -1065,9 +1073,9 @@ dialog[open] {
     background: #fff;
     overflow: hidden;
 }
-body.conv-side-right #settingsDialog { right: var(--dock-w); }
-body.conv-side-left  #settingsDialog { left: var(--dock-w); }
-body.conv-bottom     #settingsDialog { bottom: var(--dock-h); }
+body.conv-side-right #settingsDialog { right: calc(var(--dock-w) + var(--dock-sep)); }
+body.conv-side-left  #settingsDialog { left: calc(var(--dock-w) + var(--dock-sep)); }
+body.conv-bottom     #settingsDialog { bottom: calc(var(--dock-h) + var(--dock-sep)); }
 body.conv-bottom .tab-panel.active {
     column-count: 3;
 }
@@ -2246,6 +2254,6 @@ label.radio-label input[type="radio"] {
    (conv-*), independent of whether the keyboard is currently showing, so the
    content never shifts when the keyboard appears. The extra 1.5rem on the
    keyboard-on-right case keeps the right-edge scrollbar off the keys. */
-body.conv-side-right #worldviewScreen { padding-right: calc(var(--dock-w) + 1.5rem); }
-body.conv-side-left  #worldviewScreen { padding-left: var(--dock-w); }
-body.conv-bottom     #worldviewScreen { padding-bottom: var(--dock-h); }
+body.conv-side-right #worldviewScreen { padding-right: calc(var(--dock-w) + var(--dock-sep) + 1.5rem); }
+body.conv-side-left  #worldviewScreen { padding-left: calc(var(--dock-w) + var(--dock-sep)); }
+body.conv-bottom     #worldviewScreen { padding-bottom: calc(var(--dock-h) + var(--dock-sep)); }

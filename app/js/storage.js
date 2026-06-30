@@ -268,6 +268,7 @@ export function saveDoubleTapMs(ms) {
 const DEFAULT_BTN_SIZE_POS = 50;   // MIDDLE = the % default layout (Ken June 30 2026); R grows, L shrinks
 const DEFAULT_BTN_GAP_POS = 0;     // → gap 0 (flush by default)
 const DEFAULT_MIN_GAP_POS = 0;     // → min-gap 0 by default
+const DEFAULT_DOCK_SEP_POS = 0;    // → no gap between the dock (keyboard / Express Panel) and the rest of the UI
 
 function clampPos(v, dflt) {
     const n = Number(v);
@@ -301,6 +302,20 @@ export function saveMinGapPos(pos) {
     settings.minGapPos = clampPos(pos, DEFAULT_MIN_GAP_POS);
     saveSettings(settings);
 }
+// Keyboard separation — the gap between the dock (keyboard / Express Panel) and
+// the rest of the UI (transcript / command bar / response palette, and the main
+// content of About Me & Settings). Independent of the inter-button gap: it shifts
+// where the MAIN content sits, NOT the dock's own footprint, so changing it does
+// NOT move the keyguard holes.
+export function loadDockSepPos() {
+    const s = loadSettings();
+    return s.dockSepPos == null ? DEFAULT_DOCK_SEP_POS : clampPos(s.dockSepPos, DEFAULT_DOCK_SEP_POS);
+}
+export function saveDockSepPos(pos) {
+    const settings = loadSettings();
+    settings.dockSepPos = clampPos(pos, DEFAULT_DOCK_SEP_POS);
+    saveSettings(settings);
+}
 
 // Restore button size / spacing / minimum-gap to their defaults (the "Reset
 // buttons and gaps to default" control). Removing the keys makes the loaders
@@ -310,6 +325,8 @@ export function resetButtonSizing() {
     delete settings.buttonSizePos;
     delete settings.buttonGapPos;
     delete settings.minGapPos;
+    // NOTE: dockSepPos (keyboard separation) is deliberately NOT reset here — it's
+    // an independent layout preference, not part of button sizing (Ken).
     saveSettings(settings);
 }
 
