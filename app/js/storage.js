@@ -365,6 +365,31 @@ export function saveExpressFontScale(v) {
     settings.expressFontScale = clampScale(v);
     saveSettings(settings);
 }
+export function loadResponseFontScale() {
+    const s = loadSettings();
+    return s.responseFontScale == null ? 1 : clampScale(s.responseFontScale);
+}
+export function saveResponseFontScale(v) {
+    const settings = loadSettings();
+    settings.responseFontScale = clampScale(v);
+    saveSettings(settings);
+}
+
+// --- Conversation privacy (Ken, July 2026) ---
+// The user can hold a conversation that is NOT written to the data folder, for
+// privacy. `conversationSaving` is the live per-conversation state (gated below);
+// `noSaveDefault` is the Settings default that seeds it at the start of each
+// conversation. When saving is off, the log functions below no-op entirely — no
+// file is created and no turn is written.
+let conversationSaving = true;
+export function setConversationSaving(on) { conversationSaving = !!on; }
+export function isConversationSaving() { return conversationSaving; }
+export function loadNoSaveDefault() { return !!loadSettings().noSaveDefault; }
+export function saveNoSaveDefault(v) {
+    const settings = loadSettings();
+    settings.noSaveDefault = !!v;
+    saveSettings(settings);
+}
 
 // --- Conversation logging ---
 
@@ -382,6 +407,7 @@ async function getConversationsDir() {
 }
 
 export async function startConversationLog() {
+    if (!conversationSaving) return null; // this conversation is private — don't record
     const dir = await getConversationsDir();
     if (!dir) return null;
 
@@ -404,6 +430,7 @@ export async function startConversationLog() {
 // Stamped on every turn so a Phase-3 review can see who the user was talking to
 // and how they felt for each exchange, even as those change mid-conversation.
 export async function logPartnerSpeech({ rawTranscript, cleanedTranscript, partner = null }) {
+    if (!conversationSaving) return; // private conversation — nothing is written
     if (!currentLogData) await startConversationLog();
     if (!currentLogData) return;
 
@@ -418,6 +445,7 @@ export async function logPartnerSpeech({ rawTranscript, cleanedTranscript, partn
 }
 
 export async function logUserResponse({ selectedText, selectedIndex, allOptions, partner = null, feeling = null }) {
+    if (!conversationSaving) return; // private conversation — nothing is written
     if (!currentLogData) return;
 
     currentLogData.exchanges.push({
@@ -474,9 +502,9 @@ export function loadPlaceholderSettings() {
         initialDelay: settings.initialDelay ?? 4,
         subsequentDelay: settings.subsequentDelay ?? 10,
         // Cap on placeholders spoken per choosing window. Default 2 so the user
-        // hears at most one "I heard you" filler plus one "still thinking" filler
-        // — two different roles, never two same-category fillers back to back.
-        // 0 = none (the user finds fillers artificial/robotic); -1 = no limit.
+        // hears at most one "I heard you" placeholder plus one "still thinking" placeholder
+        // — two different roles, never two same-category placeholders back to back.
+        // 0 = none (the user finds placeholders artificial/robotic); -1 = no limit.
         maxPlaceholders: settings.maxPlaceholders ?? 2
     };
 }

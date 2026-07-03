@@ -50,6 +50,7 @@
                 <button id="holdOnBtn" type="button" class="cmd-btn">Hold on</button>
                 <button id="pardonBtn" type="button" class="cmd-btn">Ask them to repeat</button>
                 <button id="windDownBtn" type="button" class="cmd-btn">Wind down</button>
+                <button id="privacyBtn" type="button" class="cmd-btn" aria-pressed="false" aria-label="Don't save this conversation">Don't save</button>
                 <button id="settingsBtn" type="button" class="cmd-btn" aria-label="Settings">Settings</button>
             </div>
 
@@ -108,8 +109,9 @@
                 <!-- About Me launches the full-screen questionnaire overlay
                      directly (no panel of its own); it lives here now that the
                      title bar is gone. -->
-                <div class="settings-tab" data-tab="aboutme">About Me</div>
                 <div class="settings-tab active" data-tab="general">General</div>
+                <div class="settings-tab" data-tab="aboutme">About Me</div>
+                <div class="settings-tab" data-tab="textsize">Text Size</div>
                 <div class="settings-tab" data-tab="speech">Speech &amp; Input</div>
                 <div class="settings-tab" data-tab="conversation">Conversation</div>
                 <div class="settings-tab" data-tab="express">Express Panel</div>
@@ -133,6 +135,48 @@
                             <button id="pickFolderBtn" type="button">Choose Folder</button>
                         </div>
                         <p class="setting-hint">Local folder for conversation history and user data. Synced by OneDrive, not uploaded to the cloud.</p>
+                    </div>
+                </div>
+                <div class="tab-panel" data-tab="textsize">
+                    <div class="setting-group">
+                        <label for="responseFontSelect">Response card text size</label>
+                        <select id="responseFontSelect" class="font-size-select">
+                            <option value="0.85">Smaller</option>
+                            <option value="1" selected>Default</option>
+                            <option value="1.2">Larger</option>
+                            <option value="1.45">Largest</option>
+                        </select>
+                        <p class="setting-hint">Size of the text on the suggested response cards.</p>
+                    </div>
+                    <div class="setting-group">
+                        <label for="transcriptFontSelect">Transcript text size</label>
+                        <select id="transcriptFontSelect" class="font-size-select">
+                            <option value="0.85">Smaller</option>
+                            <option value="1" selected>Default</option>
+                            <option value="1.2">Larger</option>
+                            <option value="1.45">Largest</option>
+                        </select>
+                        <p class="setting-hint">Size of the text in the conversation transcript.</p>
+                    </div>
+                    <div class="setting-group">
+                        <label for="composerFontSelect">“In my own words” text size</label>
+                        <select id="composerFontSelect" class="font-size-select">
+                            <option value="0.85">Smaller</option>
+                            <option value="1" selected>Default</option>
+                            <option value="1.2">Larger</option>
+                            <option value="1.45">Largest</option>
+                        </select>
+                        <p class="setting-hint">Size of the text you type in the “In my own words” box.</p>
+                    </div>
+                    <div class="setting-group">
+                        <label for="expressFontSelect">Express Panel text size</label>
+                        <select id="expressFontSelect" class="font-size-select">
+                            <option value="0.85">Smaller</option>
+                            <option value="1" selected>Default</option>
+                            <option value="1.2">Larger</option>
+                            <option value="1.45">Largest</option>
+                        </select>
+                        <p class="setting-hint">Size of the text on the Express Panel buttons.</p>
                     </div>
                 </div>
                 <div class="tab-panel" data-tab="speech">
@@ -164,6 +208,10 @@
                         <p class="setting-hint">A hard floor on the gap in every direction. It has priority over button size — buttons stop growing (or shrink) so this minimum is always kept. Raising it also raises the button-spacing value to match.</p>
                     </div>
                     <div class="setting-group">
+                        <button id="resetSizingBtn" type="button" class="reset-sizing-btn">Reset buttons and gaps to default</button>
+                        <p class="setting-hint">Restores button size, spacing, and the minimum gap to their defaults. Does not change the keyboard separation below.</p>
+                    </div>
+                    <div class="setting-group">
                         <label for="dockSepSlider">Keyboard separation</label>
                         <div class="slider-row">
                             <button type="button" class="slider-step" data-target="dockSepSlider" data-step="-4" aria-label="Less separation">&minus;</button>
@@ -171,39 +219,6 @@
                             <button type="button" class="slider-step" data-target="dockSepSlider" data-step="4" aria-label="More separation">+</button>
                         </div>
                         <p class="setting-hint">The gap between the keyboard / Express Panel and the rest of the screen. It only shifts the other content away from the keyboard — the keyboard itself stays put, so changing this does not move the keyguard holes.</p>
-                    </div>
-                    <div class="setting-group">
-                        <button id="resetSizingBtn" type="button" class="reset-sizing-btn">Reset buttons and gaps to default</button>
-                    </div>
-                    <div class="setting-group">
-                        <label for="transcriptFontSelect">Transcript text size</label>
-                        <select id="transcriptFontSelect" class="font-size-select">
-                            <option value="0.85">Smaller</option>
-                            <option value="1" selected>Default</option>
-                            <option value="1.2">Larger</option>
-                            <option value="1.45">Largest</option>
-                        </select>
-                        <p class="setting-hint">Size of the text in the conversation transcript.</p>
-                    </div>
-                    <div class="setting-group">
-                        <label for="composerFontSelect">“In my own words” text size</label>
-                        <select id="composerFontSelect" class="font-size-select">
-                            <option value="0.85">Smaller</option>
-                            <option value="1" selected>Default</option>
-                            <option value="1.2">Larger</option>
-                            <option value="1.45">Largest</option>
-                        </select>
-                        <p class="setting-hint">Size of the text you type in the “In my own words” box.</p>
-                    </div>
-                    <div class="setting-group">
-                        <label for="expressFontSelect">Express Panel text size</label>
-                        <select id="expressFontSelect" class="font-size-select">
-                            <option value="0.85">Smaller</option>
-                            <option value="1" selected>Default</option>
-                            <option value="1.2">Larger</option>
-                            <option value="1.45">Largest</option>
-                        </select>
-                        <p class="setting-hint">Size of the text on the Express Panel buttons.</p>
                     </div>
                     <div class="setting-group">
                         <label for="voiceSelect">Voice</label>
@@ -263,6 +278,13 @@
                 </div>
                 <div class="tab-panel" data-tab="conversation">
                     <div class="setting-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="noSaveDefaultInput">
+                            Do not save conversations to my data folder
+                        </label>
+                        <p class="setting-hint">When on, new conversations start private — nothing is written to your data folder. This sets the <em>starting</em> state; you can still turn saving on or off for the current conversation with the “Don't save” button in the Command Bar. Default is off (conversations are saved).</p>
+                    </div>
+                    <div class="setting-group">
                         <label for="responsesPerCategoryInput">Suggestions per category</label>
                         <select id="responsesPerCategoryInput">
                             <option value="1" selected>1 (four cards)</option>
@@ -320,7 +342,7 @@
                             <option value="-1">No limit</option>
                         </select>
                     </div>
-                    <p class="setting-hint">The initial delay is how long after the partner stops speaking before the first placeholder is spoken — the clock starts at the pause, so if the response options are slow to arrive a placeholder still fills the silence (a quick choice plays none). Subsequent delays are the interval between additional placeholders while you choose. The first placeholder acknowledges ("Good question."); later ones say you're still thinking. The maximum caps how many play before the system stays quiet — set it to 0 if you find fillers artificial, or "No limit" to keep them coming (2 keeps them from sounding repetitive).</p>
+                    <p class="setting-hint">The initial delay is how long after the partner stops speaking before the first placeholder is spoken — the clock starts at the pause, so if the response options are slow to arrive a placeholder still fills the silence (a quick choice plays none). Subsequent delays are the interval between additional placeholders while you choose. The first placeholder acknowledges ("Good question."); later ones say you're still thinking. The maximum caps how many play before the system stays quiet — set it to 0 if you find placeholders artificial, or "No limit" to keep them coming (2 keeps them from sounding repetitive).</p>
                     <div class="setting-group">
                         <label>Speaking an Express Panel phrase</label>
                         <div class="radio-row">

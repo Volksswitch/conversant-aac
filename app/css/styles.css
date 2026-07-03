@@ -473,6 +473,15 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
     background: #c0392b;
 }
 
+/* "Don't save" toggle — selected (private) state is a filled amber button so the
+   user can see at a glance that the current conversation is NOT being recorded
+   (Rule 6: a sticky action shown as a selected button). */
+#privacyBtn.private-on {
+    background: #b9770e;
+    border-color: #b9770e;
+    color: #fff;
+}
+
 /* Region B — response palette. A grid of cards in fixed priority order (preferred
    first, repair last). The column count adapts to viewport width but the order
    never does, and it stays constant within a session — mode changes swap card
@@ -634,7 +643,7 @@ body.conv-bottom .palette-grid {
     flex: 1 1 auto;
     display: flex;
     align-items: center;
-    font-size: clamp(1.3rem, 2.6vh, 1.9rem);
+    font-size: calc(clamp(1.3rem, 2.6vh, 1.9rem) * var(--response-font-scale, 1));
     font-weight: 600;
     line-height: 1.18;
     color: var(--ink);
@@ -643,7 +652,7 @@ body.conv-bottom .palette-grid {
 /* In a 2-up (stacked) category cell each card is half-height, so size the text
    down a notch and clamp more tightly. */
 .response-card-half .response-text {
-    font-size: clamp(1rem, 1.9vh, 1.4rem);
+    font-size: calc(clamp(1rem, 1.9vh, 1.4rem) * var(--response-font-scale, 1));
     -webkit-line-clamp: 3;
     display: -webkit-box;
     -webkit-box-orient: vertical;

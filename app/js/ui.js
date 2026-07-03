@@ -19,7 +19,7 @@ function escapeHtml(s) {
 // --- Conversation transcript (scrolling, FIXED height — the layout never grows,
 // for the static keyguard). Committed turns are rendered from history (partner
 // vs user styled differently); the in-progress partner turn is a separate live
-// entry; the now-playing filler is a transient entry. All scroll INSIDE the box. ---
+// entry; the now-playing placeholder is a transient entry. All scroll INSIDE the box. ---
 
 function scrollLogToBottom() {
     if (transcriptBox) transcriptBox.scrollTop = transcriptBox.scrollHeight;
@@ -89,7 +89,7 @@ export function setTranscriptState(state) {
     if (state && state !== 'idle') liveTurn.classList.add(`state-${state}`);
 }
 
-// The currently-playing automatic utterance (filler) or spoken response, shown
+// The currently-playing automatic utterance (placeholder) or spoken response, shown
 // as text so the system never speaks on the user's behalf invisibly (§7).
 export function setNowPlaying(text) {
     if (!nowPlaying || !nowPlayingText) return;
@@ -408,6 +408,23 @@ export function onWindDownClick(handler) {
 export function onEndConversationClick(handler) {
     document.getElementById('endConversationBtn').addEventListener('click', handler);
 }
+export function onPrivacyToggleClick(handler) {
+    document.getElementById('privacyBtn').addEventListener('click', handler);
+}
+
+// Reflect the "don't save this conversation" state on the Command Bar button —
+// a sticky toggle shown as a selected button (Rule 6). `private` true = saving OFF.
+export function setPrivacyState(isPrivate) {
+    const btn = document.getElementById('privacyBtn');
+    if (!btn) return;
+    btn.classList.toggle('private-on', isPrivate);
+    btn.setAttribute('aria-pressed', String(isPrivate));
+    const label = isPrivate
+        ? 'This conversation is NOT being saved — tap to save'
+        : "Don't save this conversation";
+    btn.setAttribute('aria-label', label);
+    btn.title = label;
+}
 
 export function setStatus(message) {
     statusBar.textContent = message;
@@ -447,6 +464,7 @@ export function applyControlIcons() {
     setIconButton(document.getElementById('windDownBtn'), 'windDown', 'Wind down');
     setIconButton(document.getElementById('initiateBtn'), 'startChat', 'Start conversation');
     setIconButton(document.getElementById('endConversationBtn'), 'endChat', 'End conversation');
+    setIconButton(document.getElementById('privacyBtn'), 'noSave', "Don't save this conversation");
     setIconButton(document.getElementById('settingsBtn'), 'settings', 'Settings');
     setIconButton(document.getElementById('regenerateBtn'), 'shuffle', 'New 4 — different options');
     setIconButton(document.getElementById('speakBtn'), 'speak', 'Speak');

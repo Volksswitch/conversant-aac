@@ -8,23 +8,23 @@ import * as storage from './storage.js';
  * partner STOPS speaking (the silence checkpoint), not when the AI's options
  * arrive. arm() is called at the checkpoint to start that clock; start() is
  * called once the classification comes back AND the partner's action warrants a
- * filler (a question — the gating lives in app.js). start() then plays the first
- * filler as soon as the armed initial delay has elapsed — which may be
+ * placeholder (a question — the gating lives in app.js). start() then plays the first
+ * placeholder as soon as the armed initial delay has elapsed — which may be
  * immediately if the AI round-trip was slow, so a long generation no longer
  * leaves dead air. A quick selection cancels everything via stop(). Holding the
- * utterance until classification keeps fillers off statements/closings.
+ * utterance until classification keeps placeholders off statements/closings.
  *
- * Why role-differentiated: a small flat pool makes two sequential fillers sound
+ * Why role-differentiated: a small flat pool makes two sequential placeholders sound
  * stupid — "That's interesting." right after "Hmm, interesting." even when they
  * aren't the identical string (semantic clustering). The fix is structural: the
- * first and any later filler do DIFFERENT jobs, so a long window progresses
+ * first and any later placeholder do DIFFERENT jobs, so a long window progresses
  * naturally instead of echoing:
  *   - acknowledgment  ("Good question.", "Let me see.")  — "I heard you, I'm on it"
  *   - thinking        ("Still thinking it through.")     — "still working on it"
- * The first filler is drawn from `acknowledgment`, every later one from
+ * The first placeholder is drawn from `acknowledgment`, every later one from
  * `thinking`. Combined with a CAP (Settings "Maximum placeholders per turn",
- * default 2) you hear at most one acknowledgment + one thinking filler — never
- * two same-category fillers back to back. After the cap we go quiet; silence
+ * default 2) you hear at most one acknowledgment + one thinking placeholder — never
+ * two same-category placeholders back to back. After the cap we go quiet; silence
  * after "Good question… still thinking it through" reads fine, and the user
  * still has the manual "Hold on" button.
  *
@@ -105,7 +105,7 @@ function pickFrom(role) {
 
 // Called at the silence checkpoint (partner stopped). Starts the initial-delay
 // clock and resets per-window state, but speaks nothing yet — start() decides
-// whether this window warrants fillers once the classification is known.
+// whether this window warrants placeholders once the classification is known.
 export function arm() {
     if (timer) { clearTimeout(timer); timer = null; }
     active = false;
@@ -126,9 +126,9 @@ export async function start() {
     lastIndex = { acknowledgment: -1, thinking: -1 };
     loadPools().catch(() => { /* fallback handled in loadPools */ });
     // The clock started at the partner's pause (arm()); if start() is reached
-    // without an arm (defensive), measure from now. The first filler waits only
+    // without an arm (defensive), measure from now. The first placeholder waits only
     // the remainder of initialDelay — so a slow AI round-trip that already ate
-    // the delay plays the first filler immediately instead of leaving silence.
+    // the delay plays the first placeholder immediately instead of leaving silence.
     const base = armed ? armTime : Date.now();
     armed = false;
     const firstDelay = Math.max(0, initialDelay * 1000 - (Date.now() - base));
@@ -151,14 +151,14 @@ async function speakNext() {
         try { await loadPools(); } catch { /* ignore */ }
     }
     if (!active || !pools) return;
-    // Role by position: first filler acknowledges, later ones say "still thinking".
+    // Role by position: first placeholder acknowledges, later ones say "still thinking".
     const role = count === 0 ? 'acknowledgment' : 'thinking';
     const phrase = pickFrom(role);
     count++;
     if (phrase) await tts.speak(phrase);
     if (!active) return;
-    // Cap: stop after maxPlaceholders fillers. -1 = no limit (0 = none is
-    // handled in start(), which never schedules a first filler).
+    // Cap: stop after maxPlaceholders placeholders. -1 = no limit (0 = none is
+    // handled in start(), which never schedules a first placeholder).
     const { maxPlaceholders } = storage.loadPlaceholderSettings();
     if (maxPlaceholders >= 1 && count >= maxPlaceholders) return;
     scheduleNext();

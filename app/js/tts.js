@@ -3,7 +3,7 @@ let selectedVoiceURI = null;
 
 // Speaking-state broadcast. Anything that needs to know when the app is
 // producing audio subscribes here — notably the STT layer, which uses the
-// spoken text to recognize and discard its own TTS echo (filler tokens, the
+// spoken text to recognize and discard its own TTS echo (placeholder tokens, the
 // spoken response, prompts) so our own speech isn't mistaken for the partner
 // and doesn't renew the partner's turn. Listeners get (speaking, text): text
 // is the phrase on a start, null on an end. A monotonic token guards against a
@@ -56,7 +56,7 @@ export function speak(text) {
         };
         utterance.onend = finish;
         utterance.onerror = finish;
-        // Announce the phrase on every start (even back-to-back fillers) so the
+        // Announce the phrase on every start (even back-to-back placeholders) so the
         // STT echo filter always knows the current spoken text.
         speaking = true;
         notifySpeaking(text);

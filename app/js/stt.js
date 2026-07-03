@@ -2,15 +2,16 @@ let recognition = null;
 let onTranscript = null;
 let onSilencePeriod = null;
 let onStatusChange = null;
+let onPartnerActivity = null;   // fired when genuine (non-echo) partner speech arrives
 let accumulatedText = '';
 let segments = [];          // each finalized statement, in order (accumulatedText = segments.join(''))
 let currentInterim = '';
 let silenceTimer = null;
 let silenceThreshold = 2000;
 let listeningIntent = false;
-// Echo filtering. While the app speaks (filler ladder, prompts), the mic would
+// Echo filtering. While the app speaks (placeholder ladder, prompts), the mic would
 // otherwise capture our own TTS, treat it as partner speech, append it to
-// accumulatedText and renew the silence timer — restarting the filler ladder
+// accumulatedText and renew the silence timer — restarting the placeholder ladder
 // and abandoning the in-flight response generation. We do NOT mute the mic
 // (that would also drop a partner who talks over us). Instead we keep a list of
 // phrases the app is currently speaking and discard any captured segment that
@@ -83,7 +84,7 @@ export function noteSpokenEnd() {
 //             interim results build up as a growing prefix ("give", "give me",
 //             "give me a", …) of what we're saying.
 //   - embed:  the phrase appears inside the segment — covers the recognizer
-//             padding/merging our filler with noise. Restricted to MULTI-WORD
+//             padding/merging our placeholder with noise. Restricted to MULTI-WORD
 //             phrases so a short, common acknowledgment token ("Okay.", "Right.")
 //             can't swallow real partner speech that merely contains that word
 //             (e.g. "okay so what do you think").
@@ -103,10 +104,11 @@ function isEcho(transcript) {
     });
 }
 
-export function init({ onResult, onSilence, onStatus }) {
+export function init({ onResult, onSilence, onStatus, onPartnerSpeech }) {
     onTranscript = onResult;
     onSilencePeriod = onSilence;
     onStatusChange = onStatus;
+    onPartnerActivity = onPartnerSpeech;
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     recognition = new SpeechRecognition();
@@ -139,7 +141,14 @@ export function init({ onResult, onSilence, onStatus }) {
         // Pure echo leaves the checkpoint alone (content filter), and any audio
         // captured while we speak — including mis-transcribed echo the filter
         // missed — must not renew the turn either (trigger-level loop guard).
-        if (heardPartner && !speechActive()) resetSilenceTimer();
+        if (heardPartner && !speechActive()) {
+            // Genuine partner speech: restart the silence checkpoint AND tell the
+            // app the partner is talking again. If the partner resumes after a
+            // pause that already fired a checkpoint, the app cancels the pending
+            // placeholder so it doesn't speak over the partner (Ken, July 2026).
+            resetSilenceTimer();
+            if (onPartnerActivity) onPartnerActivity();
+        }
 
         if (onTranscript) onTranscript((accumulatedText + currentInterim).trim());
     };

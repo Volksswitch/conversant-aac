@@ -20,7 +20,7 @@ import * as controlEditor from './control-phrases-editor.js';
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.5.58';
+const APP_VERSION = '0.5.59';
 
 const conversationHistory = [];
 let isListening = false;
@@ -47,6 +47,22 @@ let manualListenArmed = false;
 let activePartner = null;
 let activeFeeling = null;
 
+// Conversation privacy (Ken, July 2026): when true, the current conversation is
+// NOT written to the data folder — the user may want a conversation that can't be
+// retrieved later. Seeded from the Settings default at the start of each
+// conversation; the Command Bar "Don't save" button toggles it live.
+let conversationPrivate = false;
+
+function applyPrivacyState() {
+    storage.setConversationSaving(!conversationPrivate);
+    ui.setPrivacyState(conversationPrivate);
+}
+
+function handlePrivacyToggle() {
+    conversationPrivate = !conversationPrivate;
+    applyPrivacyState();
+}
+
 function initApp() {
     // Log the display metrics (and re-log on every viewport change) so we — and
     // beta testers — can see the real pixel box the app is running in. Started
@@ -64,11 +80,12 @@ function initApp() {
     stt.init({
         onResult: handleSpeechResult,
         onSilence: handleSilencePeriod,
-        onStatus: handleSttStatus
+        onStatus: handleSttStatus,
+        onPartnerSpeech: handlePartnerResumed
     });
 
     // Tell the STT layer what the app is speaking so it can discard its own TTS
-    // echo (filler ladder, prompts) instead of mistaking it for the partner and
+    // echo (placeholder ladder, prompts) instead of mistaking it for the partner and
     // renewing the partner's turn. The mic stays on throughout — only matching
     // echo content is dropped.
     tts.onSpeakingChange((speaking, text) => {
@@ -76,7 +93,7 @@ function initApp() {
         else stt.noteSpokenEnd();
     });
 
-    // Surface what the app is saying on the user's behalf (fillers, the spoken
+    // Surface what the app is saying on the user's behalf (placeholders, the spoken
     // response, prompts) as text in Region A — nothing the system speaks is
     // invisible (UI-Design.docx §7). Cleared when speech ends.
     tts.onSpeakingChange((speaking, text) => ui.setNowPlaying(speaking ? text : null));
@@ -98,6 +115,11 @@ function initApp() {
     ui.onPardonClick(handlePardon);
     ui.onWindDownClick(handleWindDown);
     ui.onEndConversationClick(handleEndConversation);
+    ui.onPrivacyToggleClick(handlePrivacyToggle);
+    // Seed the privacy state from the Settings default (per-conversation button
+    // can override it live; it re-seeds at each Start/End conversation).
+    conversationPrivate = storage.loadNoSaveDefault();
+    applyPrivacyState();
     ui.showEngineState(engine.getSnapshot());
     ui.applyControlIcons();
     applyConversationDockClasses();
@@ -177,6 +199,16 @@ function handleSpeechResult(liveText) {
     if (liveText) ui.setTranscriptState('unconfirmed');
 }
 
+// The partner produced genuine (non-echo) speech. If they resumed after a pause
+// that already fired a checkpoint, a placeholder may be scheduled or mid-utterance
+// to hold the floor while the user chooses — but the partner is talking again, so
+// that response window is stale. Cancel the placeholder timer (and any playing
+// placeholder) so nothing is spoken over the partner; the next silence checkpoint
+// re-arms and regenerates from the combined speech.
+function handlePartnerResumed() {
+    placeholders.stop();
+}
+
 // Fired each time the partner pauses for the configured silence period.
 // Recording continues; we just take everything collected so far and refresh
 // the response options from it. A later (more complete) period supersedes this.
@@ -187,10 +219,10 @@ async function handleSilencePeriod(text) {
     ui.setLiveTranscript(text);
     engine.partnerSpeaking(text);
     // Start the initial-delay clock at the pause (Ken, June 28 2026) so a slow AI
-    // round-trip doesn't leave dead air. arm() only starts the clock; the filler
+    // round-trip doesn't leave dead air. arm() only starts the clock; the placeholder
     // is still gated on the classification (questions only) inside generateOptions,
     // which calls placeholders.start() (fires immediately if the delay already
-    // elapsed) or placeholders.stop() (not filler-worthy).
+    // elapsed) or placeholders.stop() (not placeholder-worthy).
     placeholders.arm();
     await generateOptions(text);
 }
@@ -267,16 +299,16 @@ function startFreshListening() {
 // where a "I'm-thinking-about-your-question" placeholder reads as natural. For
 // statements, greetings, assessments and closings a placeholder feels off (Ken,
 // June 18 2026), so we stay quiet.
-const FILLER_WORTHY_ACTIONS = new Set(['QUESTION', 'INVITATION', 'REQUEST']);
+const PLACEHOLDER_WORTHY_ACTIONS = new Set(['QUESTION', 'INVITATION', 'REQUEST']);
 
-function shouldPlayFiller(snap) {
+function shouldPlayPlaceholder(snap) {
     const c = snap.lastClassification;
     if (!c) return false;
     if (c.turn_status !== 'COMPLETE' || c.is_repair_initiator) return false;
     // Never during winding-down / closing.
     if (snap.mode === engine.MODE.PRE_CLOSING_CLOSING) return false;
     if (snap.phase === 'PRE_CLOSING' || snap.phase === 'CLOSING') return false;
-    return FILLER_WORTHY_ACTIONS.has(c.partner_action);
+    return PLACEHOLDER_WORTHY_ACTIONS.has(c.partner_action);
 }
 
 async function generateOptions(partnerText) {
@@ -323,7 +355,7 @@ async function generateOptions(partnerText) {
             // did, start the floor-holding placeholders ONLY when they're
             // warranted (a question, not a statement/greeting/closing). The first
             // one lands initialDelay after this point; a quick pick cancels it.
-            if (shouldPlayFiller(snap)) placeholders.start();
+            if (shouldPlayPlaceholder(snap)) placeholders.start();
             else placeholders.stop();
         }
 
@@ -500,6 +532,10 @@ function terminateConversation() {
     ui.setTranscriptState('idle');
     ui.clearResponseOptions();          // clear all cards (back to empty reserved)
     ui.showEngineState(engine.getSnapshot());
+    // Re-seed conversation privacy from the Settings default — a per-conversation
+    // "Don't save" choice does not carry into the next conversation (Ken).
+    conversationPrivate = storage.loadNoSaveDefault();
+    applyPrivacyState();
 }
 
 // Start conversation — terminate the current one (clear window + cards), then
@@ -537,7 +573,7 @@ async function handleSayAgain() {
     ui.setStatus(isListening ? 'Listening...' : 'Ready');
 }
 
-// Hold on — manually fire a floor-holding filler. Instant.
+// Hold on — manually fire a floor-holding placeholder. Instant.
 async function handleHoldOn() {
     placeholders.stop();
     ui.setStatus('Speaking...');
@@ -665,7 +701,7 @@ function handleWindDown() {
 }
 
 // End conversation — hard terminate (Ken, June 18 2026). Tears everything down
-// and returns the engine to STANDBY: stop the filler ladder, cancel any speech,
+// and returns the engine to STANDBY: stop the placeholder ladder, cancel any speech,
 // stop listening, invalidate in-flight generation, drop the partner's
 // uncommitted turn, clear the palette/transcript, and reset the engine (empty
 // stack, floor OPEN). No danger-confirm — it's the "hang up" control, and the
@@ -945,6 +981,7 @@ function applyFontScales() {
     root.setProperty('--transcript-font-scale', String(storage.loadTranscriptFontScale()));
     root.setProperty('--composer-font-scale', String(storage.loadComposerFontScale()));
     root.setProperty('--express-font-scale', String(storage.loadExpressFontScale()));
+    root.setProperty('--response-font-scale', String(storage.loadResponseFontScale()));
 }
 
 // The − / + buttons flanking each size slider nudge it by a small fixed step
@@ -1213,9 +1250,16 @@ function openSettings() {
     const transcriptFontSelect = document.getElementById('transcriptFontSelect');
     const composerFontSelect = document.getElementById('composerFontSelect');
     const expressFontSelect = document.getElementById('expressFontSelect');
+    const responseFontSelect = document.getElementById('responseFontSelect');
     transcriptFontSelect.value = String(storage.loadTranscriptFontScale());
     composerFontSelect.value = String(storage.loadComposerFontScale());
     expressFontSelect.value = String(storage.loadExpressFontScale());
+    responseFontSelect.value = String(storage.loadResponseFontScale());
+    // Conversation privacy default (the Command Bar "Don't save" button overrides
+    // it live for the current conversation).
+    const noSaveDefaultInput = document.getElementById('noSaveDefaultInput');
+    noSaveDefaultInput.checked = storage.loadNoSaveDefault();
+    noSaveDefaultInput.onchange = () => storage.saveNoSaveDefault(noSaveDefaultInput.checked);
     updateFolderDisplay();
 
     // Reset to General tab
@@ -1418,6 +1462,7 @@ function openSettings() {
     transcriptFontSelect.onchange = () => { storage.saveTranscriptFontScale(transcriptFontSelect.value); applyFontScales(); };
     composerFontSelect.onchange = () => { storage.saveComposerFontScale(composerFontSelect.value); applyFontScales(); };
     expressFontSelect.onchange = () => { storage.saveExpressFontScale(expressFontSelect.value); applyFontScales(); };
+    responseFontSelect.onchange = () => { storage.saveResponseFontScale(responseFontSelect.value); applyFontScales(); };
 
     document.getElementById('closeSettingsBtn').onclick = () => {
         // Belt-and-suspenders: persist the API key from the field on Close.

@@ -36,7 +36,7 @@ export const CATEGORIES = {
   pace:   { label: 'Pace / turn',   color: '#E65100', tint: '#fff3e0' }, // deep orange
   repair: { label: 'Repair',        color: '#6A1B9A', tint: '#f3e5f5' }, // purple
   need:   { label: 'Needs',         color: '#AD1457', tint: '#fce4ec' }, // magenta
-  back:   { label: 'Backchannel',   color: '#546E7A', tint: '#eceff1' }, // blue-grey
+  cont:   { label: 'Continuer',     color: '#546E7A', tint: '#eceff1' }, // blue-grey
 };
 
 // Distinct, saturated colors for the two influencer TYPES — different from each
@@ -54,7 +54,7 @@ export const FEELING_PRESETS = [
 ];
 
 // --- item builders (defaults only) ------------------------------------------
-const PH = (text, cat = 'back', speak) => (speak ? { type: 'phrase', text, cat, speak } : { type: 'phrase', text, cat });
+const PH = (text, cat = 'cont', speak) => (speak ? { type: 'phrase', text, cat, speak } : { type: 'phrase', text, cat });
 const FE = (text) => ({ type: 'feeling', text });
 
 // The provided STARTING LAYOUT (Ken: "a starting layout should be provided").
@@ -68,7 +68,7 @@ export const DEFAULT_ITEMS = [
   FE('Happy'), FE('Sad'), FE('Stressed'), FE('Curious'), FE('Tired'), FE('Excited'),
   PH('Yes', 'affirm'), PH('No', 'affirm'), PH('Yes please', 'affirm'), PH('No thank you', 'affirm'),
   PH('Maybe', 'affirm'), PH("I don't know", 'affirm'), PH("I'm not sure", 'affirm'), PH('I think so', 'affirm'),
-  PH('Okay', 'back'), PH('Got it', 'back'), PH("That's funny", 'back'), PH('I agree', 'affirm'),
+  PH('Okay', 'cont'), PH('Got it', 'cont'), PH("That's funny", 'cont'), PH('I agree', 'affirm'),
   PH('Please', 'social'), PH('Thank you', 'social'), PH("You're welcome", 'social'), PH('Sorry', 'social'),
   PH('Excuse me', 'social'), PH('Hi', 'social'), PH('Bye', 'social'), PH('See you later', 'social'),
   PH('Wait', 'pace'), PH('One moment', 'pace'), PH('Go on', 'pace'), PH('Not now', 'pace'),
