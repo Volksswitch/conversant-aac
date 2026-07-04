@@ -74,15 +74,15 @@ export function collectWhatsNew(sinceVersion, currentVersion) {
         .flatMap((v) => (RELEASE_NOTES[v] || []).filter(Boolean));
 }
 
-// Render the announcement INLINE into the pre-start block that overlays the
-// transcript space (#whatsNewPanel), rather than as a full-screen modal — so it
-// sits in the transcript region alongside the centered Start button (Ken, July 4
-// 2026). `notes` is a flat array of plain-text strings. "Got it" collapses the
-// panel, leaving the Start button centered in the space.
-function renderWhatsNewPanel(currentVersion, notes) {
-    const panel = document.getElementById('whatsNewPanel');
-    if (!panel) return;
-    panel.textContent = '';
+// Show the announcement as a top-layer modal dialog AFTER Start is pressed (Ken,
+// July 4 2026). By the time Start is pressed the page is fully loaded and stable
+// (the service-worker auto-update reload happens on load), so the notice can't
+// flash. `notes` is a flat array of plain-text strings. "Got it" is the ONLY way to
+// dismiss it — Escape and backdrop clicks do nothing — so it persists until the
+// user acknowledges it, and only then is the version recorded as seen.
+function showWhatsNewModal(currentVersion, notes) {
+    const dlg = document.createElement('dialog');
+    dlg.className = 'whatsnew-dialog';
 
     const head = document.createElement('div');
     head.className = 'whatsnew-head';
@@ -115,20 +115,33 @@ function renderWhatsNewPanel(currentVersion, notes) {
     const okBtn = document.createElement('button');
     okBtn.className = 'whatsnew-ok';
     okBtn.textContent = 'Got it';
-    // Mark seen only on this explicit acknowledgment (not at render), so an
-    // auto-update page reload can't wipe an unread announcement.
-    okBtn.addEventListener('click', () => { markSeen(currentVersion); panel.hidden = true; });
     actions.append(okBtn);
 
-    panel.append(head, intro, list, actions);
-    panel.hidden = false;
+    dlg.append(head, intro, list, actions);
+
+    let settled = false;
+    const done = () => {
+        if (settled) return;
+        settled = true;
+        markSeen(currentVersion);              // record only on explicit acknowledgment
+        try { dlg.close(); } catch { /* already closing */ }
+        dlg.remove();
+    };
+    okBtn.addEventListener('click', done);
+    // Persist until "Got it": Escape must not close it, and there is no
+    // backdrop-click handler.
+    dlg.addEventListener('cancel', (e) => e.preventDefault());
+
+    document.body.append(dlg);
+    dlg.showModal();   // top layer — sits above the conversation screen
+    okBtn.focus();
 }
 
-// Called once at app load. Shows the notice when the running version is newer than
-// the last one the user acknowledged, then records the current version. A run with
-// no prior record (brand-new user, OR the first version to ship this feature — older
-// versions never stored the value) just establishes the baseline silently: the
-// version that INTRODUCES the notice cannot announce itself.
+// Called from handleStart — i.e. AFTER the user presses Start (Ken, July 4 2026).
+// Shows the notice when the running version is newer than the last one the user
+// acknowledged. A run with no prior record (brand-new user, OR the first version to
+// ship this feature — older versions never stored the value) just establishes the
+// baseline silently: the version that INTRODUCES the notice cannot announce itself.
 export function maybeShowWhatsNew(currentVersion) {
     const seen = storage.loadLastSeenVersion();
     if (seen == null) {
@@ -137,18 +150,14 @@ export function maybeShowWhatsNew(currentVersion) {
     }
     if (compareVersions(seen, currentVersion) >= 0) return; // already current (or ahead)
     const notes = collectWhatsNew(seen, currentVersion);
-    // Do NOT record lastSeen here. The app auto-updates by RELOADING the page (the
-    // service-worker controllerchange handler in index.html), which would wipe a
-    // panel that had already marked itself seen — the user would get only a flash.
-    // Instead the panel persists across reloads and is marked seen only when the
-    // user acknowledges it ("Got it") or moves on (presses Start). See markSeen().
-    if (notes.length) renderWhatsNewPanel(currentVersion, notes);
+    // Do NOT record lastSeen here — only when the user taps "Got it" (see
+    // showWhatsNewModal). So if they never acknowledge it, it shows again next time.
+    if (notes.length) showWhatsNewModal(currentVersion, notes);
 }
 
 // Record that the user has seen the current version's announcement, so it won't
-// reappear on the next launch. Called on explicit acknowledgment ("Got it") or when
-// the conversation starts (Start hides the pre-start block). Deferred to this point
-// — not done at render time — so an auto-update reload can't wipe an unread notice.
+// reappear on the next launch. Called only when the user taps "Got it" in the modal
+// — deferred to that explicit acknowledgment, never at render time.
 export function markSeen(currentVersion) {
     storage.saveLastSeenVersion(currentVersion);
 }

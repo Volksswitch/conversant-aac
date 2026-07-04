@@ -13,6 +13,10 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+### Changes
+
+- **The "What's new" notice now appears right after you press Start**, instead of on the opening screen. It stays up until you tap "Got it", so you can read it at your own pace.
+
 ## Version 0.5.65
 
 ### Changes

@@ -272,10 +272,11 @@ async function handleStart() {
     ui.showEngineState(engine.getSnapshot());
     document.getElementById('startBlock').classList.add('hidden');
     document.querySelector('main').classList.remove('disabled');
-    // Pressing Start moves past the pre-start "What's new" panel — count that as
-    // acknowledging it so it doesn't reappear next launch (it's deferred until
-    // now, not marked seen at render, so an auto-update reload can't wipe it unread).
-    whatsNew.markSeen(APP_VERSION);
+    // Show the post-update "What's new" notice now, AFTER Start (Ken, July 4 2026).
+    // By this point the page is fully loaded and stable (the service-worker
+    // auto-update reload happens on load), so the modal can't flash; it persists
+    // until the user taps "Got it".
+    whatsNew.maybeShowWhatsNew(APP_VERSION);
 }
 
 function toggleListening() {
@@ -1488,8 +1489,3 @@ function openSettings() {
 }
 
 initApp();
-
-// After the app auto-updates itself (SW controllerchange → reload), show a short
-// summary of what changed since the version the user last saw. Independent of STT,
-// so it runs even if initApp() bailed early on an unsupported browser.
-whatsNew.maybeShowWhatsNew(APP_VERSION);
