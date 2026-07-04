@@ -16,11 +16,12 @@ import * as expressPanel from './express-panel.js';
 import * as expressEditor from './express-editor.js';
 import * as controlPhrases from './control-phrases.js';
 import * as controlEditor from './control-phrases-editor.js';
+import * as whatsNew from './whats-new.js';
 
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.5.61';
+const APP_VERSION = '0.5.62';
 
 const conversationHistory = [];
 let isListening = false;
@@ -1299,6 +1300,9 @@ function openSettings() {
         updateUsageDisplay();
     };
 
+    const whatsNewBtn = document.getElementById('whatsNewBtn');
+    if (whatsNewBtn) whatsNewBtn.onclick = () => whatsNew.showWhatsNewForVersion(APP_VERSION);
+
     document.getElementById('generateOpeningsBtn').onclick = generateScreenOpenings;
 
     document.getElementById('testVoiceBtn').onclick = () => {
@@ -1483,3 +1487,8 @@ function openSettings() {
 }
 
 initApp();
+
+// After the app auto-updates itself (SW controllerchange → reload), show a short
+// summary of what changed since the version the user last saw. Independent of STT,
+// so it runs even if initApp() bailed early on an unsupported browser.
+whatsNew.maybeShowWhatsNew(APP_VERSION);

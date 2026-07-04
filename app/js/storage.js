@@ -391,6 +391,19 @@ export function saveNoSaveDefault(v) {
     saveSettings(settings);
 }
 
+// --- "What's new" notice: the highest APP_VERSION whose post-update summary the
+// user has already seen. null until first recorded (a brand-new install, or an
+// app old enough to predate this feature) — that first run just sets a baseline
+// silently. See whats-new.js.
+export function loadLastSeenVersion() {
+    return loadSettings().lastSeenVersion ?? null;
+}
+export function saveLastSeenVersion(version) {
+    const settings = loadSettings();
+    settings.lastSeenVersion = version;
+    saveSettings(settings);
+}
+
 // --- Conversation logging ---
 
 let conversationDirHandle = null;
