@@ -304,7 +304,7 @@ function renderPeople(editingId = null) {
     contentEl.append(buildPersonForm(null));
 
     contentEl.append(el('div', { class: 'wv-home-footer' }, [
-        el('button', { class: 'wv-btn wv-btn-primary', text: 'Done', onclick: renderHome })
+        el('button', { class: 'wv-btn wv-btn-primary', text: '‹ Back to topics', onclick: renderHome })
     ]));
 
     // Restore scroll after the rebuild:
@@ -491,8 +491,11 @@ function renderModule(moduleId, focusKey = null) {
     for (const field of mod.fields) {
         contentEl.append(buildCard(field));
     }
+    // Bottom control returns to the topic list (same as the "‹ All topics" link
+    // above) — NOT the same as the header "Done", which closes About Me. Labeled
+    // to match its destination so the two are not confused (Ken, July 2026).
     contentEl.append(el('div', { class: 'wv-home-footer' }, [
-        el('button', { class: 'wv-btn wv-btn-primary', text: 'Done', onclick: renderHome })
+        el('button', { class: 'wv-btn wv-btn-primary', text: '‹ Back to topics', onclick: renderHome })
     ]));
 
     // Deep-link from the gaps section: jump to a specific field's card and focus
@@ -533,9 +536,13 @@ function buildCard(field) {
     }
 
     if (state === 'declined') {
+        // Undo restores the prior answer if there was one (decline never destroys
+        // it), otherwise it just re-opens the question (Ken, July 2026).
+        const hadAnswer = wv.hasStashedAnswer(field.key);
         card.append(el('div', { class: 'wv-actions' }, [
-            el('button', { class: 'wv-btn wv-btn-link', text: 'Undo — ask me this again',
-                onclick: async () => { await wv.resetField(field.key); refreshCard(field); } })
+            el('button', { class: 'wv-btn wv-btn-link',
+                text: hadAnswer ? 'Undo — bring my answer back' : 'Undo — ask me this again',
+                onclick: async () => { await wv.undeclineField(field.key); refreshCard(field); } })
         ]));
         return card;
     }

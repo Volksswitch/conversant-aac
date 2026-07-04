@@ -181,8 +181,37 @@ export async function setField(key, value) {
 }
 
 export async function declineField(key) {
-    ensureLoaded().fields[key] = { value: null, state: 'declined', updated: new Date().toISOString() };
+    // Preserve any existing answer so "Prefer not to say" is reversible — it must
+    // not silently destroy a saved answer (Ken, July 2026). The stashed value is
+    // NEVER sent to the AI: getField() returns null for a declined field and
+    // buildBlock() treats declined as phrase-around with no value. It lives only
+    // to let undeclineField() put the answer back.
+    const existing = ensureLoaded().fields[key];
+    const prev = existing && existing.state === 'answered' ? existing.value
+        : (existing && existing.prevValue != null ? existing.prevValue : null);
+    profile.fields[key] = { value: null, prevValue: prev, state: 'declined', updated: new Date().toISOString() };
     clearGapEntry(key);   // declined is a real answer — stop surfacing it
+    await save();
+}
+
+/** True if a declined field has a stashed prior answer that undecline can restore. */
+export function hasStashedAnswer(key) {
+    const f = ensureLoaded().fields[key];
+    return !!(f && f.state === 'declined' && f.prevValue != null && f.prevValue !== '');
+}
+
+/**
+ * Undo a decline: restore the prior answer if there was one, otherwise return the
+ * field to the unanswered state (ask me again). This is what the declined card's
+ * Undo control calls, so a decline never loses a saved answer.
+ */
+export async function undeclineField(key) {
+    const f = ensureLoaded().fields[key];
+    if (f && f.state === 'declined' && f.prevValue != null && f.prevValue !== '') {
+        profile.fields[key] = { value: f.prevValue, state: 'answered', updated: new Date().toISOString() };
+    } else {
+        delete profile.fields[key];
+    }
     await save();
 }
 

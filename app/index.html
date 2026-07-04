@@ -196,20 +196,20 @@
                             <input type="range" id="buttonGapSlider" min="0" max="100" step="1" class="size-slider">
                             <button type="button" class="slider-step" data-target="buttonGapSlider" data-step="4" aria-label="Wider">+</button>
                         </div>
-                        <p class="setting-hint">The gap between buttons — the width of the bars on a 3D-printed keyguard. Wider spacing grows the dock area where it can expand rather than shrinking the buttons. Cannot go below the minimum gap.</p>
+                        <p class="setting-hint">The gap between buttons — the width of the bars on a 3D-printed keyguard. Wider spacing grows the dock area where it can expand rather than shrinking the buttons. Cannot go below the minimum spacing.</p>
                     </div>
                     <div class="setting-group">
-                        <label for="minGapSlider">Minimum gap</label>
+                        <label for="minGapSlider">Minimum spacing</label>
                         <div class="slider-row">
-                            <button type="button" class="slider-step" data-target="minGapSlider" data-step="-4" aria-label="Smaller minimum gap">&minus;</button>
+                            <button type="button" class="slider-step" data-target="minGapSlider" data-step="-4" aria-label="Less minimum spacing">&minus;</button>
                             <input type="range" id="minGapSlider" min="0" max="100" step="1" class="size-slider">
-                            <button type="button" class="slider-step" data-target="minGapSlider" data-step="4" aria-label="Larger minimum gap">+</button>
+                            <button type="button" class="slider-step" data-target="minGapSlider" data-step="4" aria-label="More minimum spacing">+</button>
                         </div>
                         <p class="setting-hint">A hard floor on the gap in every direction. It has priority over button size — buttons stop growing (or shrink) so this minimum is always kept. Raising it also raises the button-spacing value to match.</p>
                     </div>
                     <div class="setting-group">
                         <button id="resetSizingBtn" type="button" class="reset-sizing-btn">Reset buttons and gaps to default</button>
-                        <p class="setting-hint">Restores button size, spacing, and the minimum gap to their defaults. Does not change the keyboard separation below.</p>
+                        <p class="setting-hint">Restores button size, spacing, and the minimum spacing to their defaults. Does not change the keyboard separation below.</p>
                     </div>
                     <div class="setting-group">
                         <label for="dockSepSlider">Keyboard separation</label>
@@ -293,7 +293,7 @@
                         <p class="setting-hint">How many suggested responses to offer in each of the four categories (preferred, dispreferred, initiative, repair). Choosing 2 gives eight cards — two stacked in each category — in the same space as four.</p>
                     </div>
                     <div class="setting-group">
-                        <label for="silenceThresholdInput">Optional Responses silence period</label>
+                        <label for="silenceThresholdInput">Silence period</label>
                         <select id="silenceThresholdInput">
                             <option value="0.5">0.5 seconds</option>
                             <option value="1">1.0 seconds</option>
@@ -312,7 +312,7 @@
                         <p class="setting-hint">When on, partner recording turns back on by itself after you select a response and it is spoken — no need to tap Start Listening for the next exchange. Default is off.</p>
                     </div>
                     <div class="setting-group">
-                        <label for="initialDelayInput">Initial Placeholder Statement Delay</label>
+                        <label for="initialDelayInput">Initial placeholder delay</label>
                         <select id="initialDelayInput">
                             <option value="2">2 seconds</option>
                             <option value="3">3 seconds</option>
@@ -322,7 +322,7 @@
                         </select>
                     </div>
                     <div class="setting-group">
-                        <label for="subsequentDelayInput">Subsequent Placeholder Statement Delay</label>
+                        <label for="subsequentDelayInput">Subsequent placeholder delay</label>
                         <select id="subsequentDelayInput">
                             <option value="6">6 seconds</option>
                             <option value="8">8 seconds</option>
