@@ -13,6 +13,8 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+## Version 0.5.67
+
 ### Changes
 
 - **The "What's new" notice now appears in the transcript area** (rather than centered on the screen), so it stays clear of a keyguard. Press Start to see it, then tap "Got it" to begin.

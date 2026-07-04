@@ -21,6 +21,9 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.5.67": [
+    "The \"What's new\" notice now appears in the transcript area (rather than centered on the screen), so it stays clear of a keyguard. Press Start to see it, then tap \"Got it\" to begin."
+  ],
   "0.5.66": [
     "The \"What's new\" notice now appears right after you press Start, instead of on the opening screen. It stays up until you tap \"Got it\", so you can read it at your own pace."
   ],
