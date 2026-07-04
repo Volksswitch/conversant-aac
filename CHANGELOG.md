@@ -13,6 +13,8 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+## Version 0.5.64
+
 ### Improvements
 
 - **A short welcome line now appears beneath the Start button** on the opening screen.
