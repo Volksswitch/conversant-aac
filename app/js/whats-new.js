@@ -21,6 +21,10 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.5.65": [
+    "The temporary welcome line beneath the Start button has been removed.",
+    "The \"What's new\" notice now stays on screen until you dismiss it. It no longer disappears on its own when the app finishes updating — read it at your own pace, then tap \"Got it\" (or just press Start)."
+  ],
   "0.5.64": [
     "A short welcome line now appears beneath the Start button on the opening screen."
   ],

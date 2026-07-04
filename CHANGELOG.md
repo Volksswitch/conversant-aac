@@ -13,6 +13,8 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+## Version 0.5.65
+
 ### Changes
 
 - **The temporary welcome line beneath the Start button has been removed.**
