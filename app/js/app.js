@@ -272,6 +272,10 @@ async function handleStart() {
     ui.showEngineState(engine.getSnapshot());
     document.getElementById('startBlock').classList.add('hidden');
     document.querySelector('main').classList.remove('disabled');
+    // Pressing Start moves past the pre-start "What's new" panel — count that as
+    // acknowledging it so it doesn't reappear next launch (it's deferred until
+    // now, not marked seen at render, so an auto-update reload can't wipe it unread).
+    whatsNew.markSeen(APP_VERSION);
 }
 
 function toggleListening() {

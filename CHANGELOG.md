@@ -13,6 +13,10 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+### Fixes
+
+- **The "What's new" notice now stays on screen until you dismiss it.** It no longer disappears on its own when the app finishes updating — read it at your own pace, then tap "Got it" (or just press Start).
+
 ## Version 0.5.64
 
 ### Improvements

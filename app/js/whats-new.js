@@ -111,7 +111,9 @@ function renderWhatsNewPanel(currentVersion, notes) {
     const okBtn = document.createElement('button');
     okBtn.className = 'whatsnew-ok';
     okBtn.textContent = 'Got it';
-    okBtn.addEventListener('click', () => { panel.hidden = true; });
+    // Mark seen only on this explicit acknowledgment (not at render), so an
+    // auto-update page reload can't wipe an unread announcement.
+    okBtn.addEventListener('click', () => { markSeen(currentVersion); panel.hidden = true; });
     actions.append(okBtn);
 
     panel.append(head, intro, list, actions);
@@ -131,6 +133,18 @@ export function maybeShowWhatsNew(currentVersion) {
     }
     if (compareVersions(seen, currentVersion) >= 0) return; // already current (or ahead)
     const notes = collectWhatsNew(seen, currentVersion);
-    storage.saveLastSeenVersion(currentVersion);            // record before showing (a reload can't re-trigger)
+    // Do NOT record lastSeen here. The app auto-updates by RELOADING the page (the
+    // service-worker controllerchange handler in index.html), which would wipe a
+    // panel that had already marked itself seen — the user would get only a flash.
+    // Instead the panel persists across reloads and is marked seen only when the
+    // user acknowledges it ("Got it") or moves on (presses Start). See markSeen().
     if (notes.length) renderWhatsNewPanel(currentVersion, notes);
+}
+
+// Record that the user has seen the current version's announcement, so it won't
+// reappear on the next launch. Called on explicit acknowledgment ("Got it") or when
+// the conversation starts (Start hides the pre-start block). Deferred to this point
+// — not done at render time — so an auto-update reload can't wipe an unread notice.
+export function markSeen(currentVersion) {
+    storage.saveLastSeenVersion(currentVersion);
 }
