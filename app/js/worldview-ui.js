@@ -303,9 +303,8 @@ function renderPeople(editingId = null) {
     contentEl.append(el('h3', { class: 'wv-section-title', text: 'Add someone' }));
     contentEl.append(buildPersonForm(null));
 
-    contentEl.append(el('div', { class: 'wv-home-footer' }, [
-        el('button', { class: 'wv-btn wv-btn-primary', text: '‹ Back to topics', onclick: renderHome })
-    ]));
+    // No bottom "back to topics" button — the "‹ All topics" link at the top of
+    // the page is the single, unambiguous way back (Ken, July 3 2026).
 
     // Restore scroll after the rebuild:
     //  - editing: bring the edit form into view (the user just tapped Edit);
@@ -491,12 +490,8 @@ function renderModule(moduleId, focusKey = null) {
     for (const field of mod.fields) {
         contentEl.append(buildCard(field));
     }
-    // Bottom control returns to the topic list (same as the "‹ All topics" link
-    // above) — NOT the same as the header "Done", which closes About Me. Labeled
-    // to match its destination so the two are not confused (Ken, July 2026).
-    contentEl.append(el('div', { class: 'wv-home-footer' }, [
-        el('button', { class: 'wv-btn wv-btn-primary', text: '‹ Back to topics', onclick: renderHome })
-    ]));
+    // No bottom "back to topics" button — the "‹ All topics" link at the top of
+    // the page is the single, unambiguous way back (Ken, July 3 2026).
 
     // Deep-link from the gaps section: jump to a specific field's card and focus
     // it, rather than the module's first field.
