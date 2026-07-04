@@ -123,21 +123,30 @@ body {
     flex-direction: column;
 }
 
-#startOverlay {
-    position: fixed;
+/* Pre-start block: overlays the transcript region (empty before a conversation)
+   and centers the Start button in it, with the "What's new" panel above when an
+   update just landed. Transparent, so the transcript's bordered box shows through
+   and Start reads as sitting inside the conversation space. */
+#startBlock {
+    position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.45);
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    z-index: 100;
+    gap: 1rem;
+    padding: 1rem;
+    overflow: auto;
+    z-index: 5;
+    pointer-events: auto;   /* clickable even while main is disabled */
 }
 
-#startOverlay.hidden {
+#startBlock.hidden {
     display: none;
 }
 
 #startBtn {
+    flex: 0 0 auto;
     background: #2c3e50;
     color: white;
     border: none;
@@ -149,8 +158,18 @@ body {
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
+/* Before Start, block interaction with the whole conversation surface and dim
+   everything EXCEPT the transcript region — that's where the Start button (and
+   the "What's new" panel) live and must stay crisp and tappable. Opacity can't be
+   un-inherited, so the dim is applied to the sibling regions, not to main. */
 main.disabled {
     pointer-events: none;
+}
+
+main.disabled #listenControls,
+main.disabled #responsesSection,
+main.disabled #statusBar,
+main.disabled #dockArea {
     opacity: 0.4;
 }
 
@@ -351,6 +370,7 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
     min-height: 0;
     display: flex;
     flex-direction: column;
+    position: relative;   /* positioning context for #startBlock */
 }
 .transcript-log {
     flex: 1 1 auto;
@@ -1953,21 +1973,25 @@ label.radio-label input[type="radio"] {
     background: #e4e4e4;
 }
 
-/* --- "What's new" post-update notice (whats-new.js). Friendly (blue) sibling of
-   the danger dialog — same top-layer <dialog> structure, non-alarming color. --- */
-.whatsnew-dialog {
-    border: none;
+/* --- "What's new" post-update notice (whats-new.js). Rendered INLINE as a card
+   inside the pre-start block that overlays the transcript region (Ken, July 4
+   2026) — sits above the centered Start button. Friendly blue accent. --- */
+#whatsNewPanel {
+    flex: 0 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    width: min(30rem, 100%);
+    background: #fff;
+    border: 1px solid #d0d7de;
     border-top: 6px solid var(--slot-initiative);
     border-radius: 10px;
-    padding: 1.5rem;
-    max-width: 30rem;
-    width: calc(100vw - 2rem);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-    font-family: inherit;
+    padding: 1rem 1.1rem;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
 }
 
-.whatsnew-dialog::backdrop {
-    background: rgba(0, 0, 0, 0.5);
+#whatsNewPanel[hidden] {
+    display: none;
 }
 
 .whatsnew-head {
@@ -1996,9 +2020,12 @@ label.radio-label input[type="radio"] {
 }
 
 .whatsnew-list {
-    margin: 0 0 1.25rem;
+    /* Scroll INSIDE the panel so a long list never pushes the Start button out of
+       the transcript region — the panel is height-capped, the list takes the slack. */
+    flex: 1 1 auto;
+    min-height: 0;
+    margin: 0 0 0.75rem;
     padding-left: 1.25rem;
-    max-height: 60vh;
     overflow-y: auto;
     color: #333;
     line-height: 1.5;

@@ -21,7 +21,7 @@ import * as whatsNew from './whats-new.js';
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.5.62';
+const APP_VERSION = '0.5.63';
 
 const conversationHistory = [];
 let isListening = false;
@@ -270,7 +270,7 @@ async function handleStart() {
     // Fresh conversation state for this session.
     engine.reset();
     ui.showEngineState(engine.getSnapshot());
-    document.getElementById('startOverlay').classList.add('hidden');
+    document.getElementById('startBlock').classList.add('hidden');
     document.querySelector('main').classList.remove('disabled');
 }
 
@@ -1299,9 +1299,6 @@ function openSettings() {
         storage.resetUsage();
         updateUsageDisplay();
     };
-
-    const whatsNewBtn = document.getElementById('whatsNewBtn');
-    if (whatsNewBtn) whatsNewBtn.onclick = () => whatsNew.showWhatsNewForVersion(APP_VERSION);
 
     document.getElementById('generateOpeningsBtn').onclick = generateScreenOpenings;
 

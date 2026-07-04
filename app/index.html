@@ -12,10 +12,6 @@
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <div id="startOverlay">
-        <button id="startBtn">Start</button>
-    </div>
-
     <!-- Conversation screen: a MAIN area + a DOCK area. The dock area occupies
          exactly the on-screen keyboard's real-estate (side or bottom, per the
          Settings dock choice); it shows the Express Panel at rest and the
@@ -35,6 +31,14 @@
                     <div id="transcriptLog"></div>
                     <div id="liveTurn" class="turn turn-partner turn-live" hidden></div>
                     <p id="nowPlaying" class="now-playing" hidden><span class="np-icon">♪</span> <span id="nowPlayingText"></span></p>
+                </div>
+                <!-- Pre-start block: overlays the transcript space (empty before the
+                     conversation begins). Holds the "What's new" announcement (shown
+                     only after an auto-update) and the Start button, centered. Hidden
+                     once Start is pressed and the transcript becomes the live log. -->
+                <div id="startBlock">
+                    <div id="whatsNewPanel" hidden></div>
+                    <button id="startBtn">Start</button>
                 </div>
             </section>
 
@@ -391,9 +395,6 @@
                     <h3>Conversant AAC</h3>
                     <p class="about-version">Version <span id="aboutVersion">0.2</span> — Phase 1 Proof of Concept</p>
                     <p class="about-description">Conversant AAC gives non-speaking individuals access to real-time conversation. Generative AI presents response options within seconds of a communication partner's utterance.</p>
-                    <div class="setting-group">
-                        <button id="whatsNewBtn" type="button">See what's new in this version</button>
-                    </div>
                     <div class="setting-group usage-group">
                         <label>Estimated API Cost</label>
                         <div id="usageDisplay">

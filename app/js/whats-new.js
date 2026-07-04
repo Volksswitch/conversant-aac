@@ -67,11 +67,15 @@ export function collectWhatsNew(sinceVersion, currentVersion) {
         .flatMap((v) => (RELEASE_NOTES[v] || []).filter(Boolean));
 }
 
-// Build + show the modal. `notes` is a flat array of plain-text strings. `heading`
-// tailors the intro line (post-update vs. an on-demand "what's new in this version").
-function showWhatsNewModal(currentVersion, notes, { onDemand = false } = {}) {
-    const dlg = document.createElement('dialog');
-    dlg.className = 'whatsnew-dialog';
+// Render the announcement INLINE into the pre-start block that overlays the
+// transcript space (#whatsNewPanel), rather than as a full-screen modal — so it
+// sits in the transcript region alongside the centered Start button (Ken, July 4
+// 2026). `notes` is a flat array of plain-text strings. "Got it" collapses the
+// panel, leaving the Start button centered in the space.
+function renderWhatsNewPanel(currentVersion, notes) {
+    const panel = document.getElementById('whatsNewPanel');
+    if (!panel) return;
+    panel.textContent = '';
 
     const head = document.createElement('div');
     head.className = 'whatsnew-head';
@@ -86,14 +90,10 @@ function showWhatsNewModal(currentVersion, notes, { onDemand = false } = {}) {
 
     const intro = document.createElement('p');
     intro.className = 'whatsnew-intro';
-    if (onDemand) {
-        intro.textContent = `Version ${currentVersion} — here's what changed:`;
-    } else {
-        intro.append('The app updated itself to version ');
-        const b = document.createElement('b');
-        b.textContent = currentVersion;
-        intro.append(b, ". Here's what changed:");
-    }
+    intro.append('The app updated itself to version ');
+    const b = document.createElement('b');
+    b.textContent = currentVersion;
+    intro.append(b, ". Here's what changed:");
 
     const list = document.createElement('ul');
     list.className = 'whatsnew-list';
@@ -108,24 +108,11 @@ function showWhatsNewModal(currentVersion, notes, { onDemand = false } = {}) {
     const okBtn = document.createElement('button');
     okBtn.className = 'whatsnew-ok';
     okBtn.textContent = 'Got it';
+    okBtn.addEventListener('click', () => { panel.hidden = true; });
     actions.append(okBtn);
 
-    dlg.append(head, intro, list, actions);
-
-    let settled = false;
-    const done = () => {
-        if (settled) return;
-        settled = true;
-        try { dlg.close(); } catch { /* already closing */ }
-        dlg.remove();
-    };
-    okBtn.addEventListener('click', done);
-    dlg.addEventListener('cancel', (e) => { e.preventDefault(); done(); });   // Escape
-    dlg.addEventListener('click', (e) => { if (e.target === dlg) done(); });  // backdrop
-
-    document.body.append(dlg);
-    dlg.showModal();   // top layer — sits above the full-screen overlays
-    okBtn.focus();
+    panel.append(head, intro, list, actions);
+    panel.hidden = false;
 }
 
 // Called once at app load. Shows the notice when the running version is newer than
@@ -142,17 +129,5 @@ export function maybeShowWhatsNew(currentVersion) {
     if (compareVersions(seen, currentVersion) >= 0) return; // already current (or ahead)
     const notes = collectWhatsNew(seen, currentVersion);
     storage.saveLastSeenVersion(currentVersion);            // record before showing (a reload can't re-trigger)
-    if (notes.length) showWhatsNewModal(currentVersion, notes);
-}
-
-// On-demand view (Settings → About "See what's new"): shows the notes for the
-// current version regardless of what's been seen. Falls back to a friendly message
-// when this version carries no user-facing notes.
-export function showWhatsNewForVersion(currentVersion) {
-    const notes = (RELEASE_NOTES[currentVersion] || []).filter(Boolean);
-    if (notes.length) {
-        showWhatsNewModal(currentVersion, notes, { onDemand: true });
-    } else {
-        showWhatsNewModal(currentVersion, ['No notable changes are listed for this version.'], { onDemand: true });
-    }
+    if (notes.length) renderWhatsNewPanel(currentVersion, notes);
 }
