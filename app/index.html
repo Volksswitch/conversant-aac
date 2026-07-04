@@ -33,10 +33,13 @@
                     <p id="nowPlaying" class="now-playing" hidden><span class="np-icon">♪</span> <span id="nowPlayingText"></span></p>
                 </div>
                 <!-- Pre-start block: overlays the transcript space (empty before the
-                     conversation begins) and centers the Start button. Hidden once
-                     Start is pressed and the transcript becomes the live log. (The
-                     "What's new" notice is a modal shown AFTER Start — see whats-new.js.) -->
+                     conversation begins) and centers the Start button. On the FIRST
+                     Start press the app reveals its layout and, if a post-update notice
+                     is pending, shows it here IN THE TRANSCRIPT REGION (a keyguard
+                     opening, so nothing is obscured); a SECOND Start press dismisses it
+                     and enters the conversation. See whats-new.js + handleStart. -->
                 <div id="startBlock">
+                    <div id="whatsNewPanel" hidden></div>
                     <button id="startBtn">Start</button>
                 </div>
             </section>

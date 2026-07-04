@@ -77,15 +77,30 @@ export function collectWhatsNew(sinceVersion, currentVersion) {
         .flatMap((v) => (RELEASE_NOTES[v] || []).filter(Boolean));
 }
 
-// Show the announcement as a top-layer modal dialog AFTER Start is pressed (Ken,
-// July 4 2026). By the time Start is pressed the page is fully loaded and stable
-// (the service-worker auto-update reload happens on load), so the notice can't
-// flash. `notes` is a flat array of plain-text strings. "Got it" is the ONLY way to
-// dismiss it — Escape and backdrop clicks do nothing — so it persists until the
-// user acknowledges it, and only then is the version recorded as seen.
-function showWhatsNewModal(currentVersion, notes) {
-    const dlg = document.createElement('dialog');
-    dlg.className = 'whatsnew-dialog';
+// The notes to announce for this version, or [] if there's nothing to show. Also
+// handles the silent baseline: a run with no prior record (brand-new user, OR the
+// first version to ship this feature) just records the current version — the version
+// that INTRODUCES the notice cannot announce itself. Does NOT render anything.
+export function pending(currentVersion) {
+    const seen = storage.loadLastSeenVersion();
+    if (seen == null) {
+        storage.saveLastSeenVersion(currentVersion);       // baseline, no notice
+        return [];
+    }
+    if (compareVersions(seen, currentVersion) >= 0) return []; // already current
+    return collectWhatsNew(seen, currentVersion);
+}
+
+// Render the announcement as a card INSIDE the pre-start block — i.e. within the
+// Transcript control's footprint, a keyguard opening, so nothing (including "Got it")
+// is obscured (Ken, July 4 2026, Spatial Stability). Called after the user presses
+// Start; the app has already re-rendered itself post-update, so the transcript's
+// location is known. `onDismiss` runs after "Got it" (which also records the version
+// as seen — deferred to that explicit acknowledgment, never at render time).
+export function renderPanel(currentVersion, notes, onDismiss) {
+    const panel = document.getElementById('whatsNewPanel');
+    if (!panel) return;
+    panel.textContent = '';
 
     const head = document.createElement('div');
     head.className = 'whatsnew-head';
@@ -120,47 +135,24 @@ function showWhatsNewModal(currentVersion, notes) {
     okBtn.textContent = 'Got it';
     actions.append(okBtn);
 
-    dlg.append(head, intro, list, actions);
-
     let settled = false;
-    const done = () => {
+    okBtn.addEventListener('click', () => {
         if (settled) return;
         settled = true;
-        markSeen(currentVersion);              // record only on explicit acknowledgment
-        try { dlg.close(); } catch { /* already closing */ }
-        dlg.remove();
-    };
-    okBtn.addEventListener('click', done);
-    // Persist until "Got it": Escape must not close it, and there is no
-    // backdrop-click handler.
-    dlg.addEventListener('cancel', (e) => e.preventDefault());
+        markSeen(currentVersion);
+        panel.hidden = true;
+        panel.textContent = '';
+        if (onDismiss) onDismiss();
+    });
 
-    document.body.append(dlg);
-    dlg.showModal();   // top layer — sits above the conversation screen
+    panel.append(head, intro, list, actions);
+    panel.hidden = false;
     okBtn.focus();
 }
 
-// Called from handleStart — i.e. AFTER the user presses Start (Ken, July 4 2026).
-// Shows the notice when the running version is newer than the last one the user
-// acknowledged. A run with no prior record (brand-new user, OR the first version to
-// ship this feature — older versions never stored the value) just establishes the
-// baseline silently: the version that INTRODUCES the notice cannot announce itself.
-export function maybeShowWhatsNew(currentVersion) {
-    const seen = storage.loadLastSeenVersion();
-    if (seen == null) {
-        storage.saveLastSeenVersion(currentVersion);       // baseline, no notice
-        return;
-    }
-    if (compareVersions(seen, currentVersion) >= 0) return; // already current (or ahead)
-    const notes = collectWhatsNew(seen, currentVersion);
-    // Do NOT record lastSeen here — only when the user taps "Got it" (see
-    // showWhatsNewModal). So if they never acknowledge it, it shows again next time.
-    if (notes.length) showWhatsNewModal(currentVersion, notes);
-}
-
 // Record that the user has seen the current version's announcement, so it won't
-// reappear on the next launch. Called only when the user taps "Got it" in the modal
-// — deferred to that explicit acknowledgment, never at render time.
+// reappear on the next launch. Called only when the user taps "Got it" — deferred to
+// that explicit acknowledgment, never at render time (so nothing marks it seen early).
 export function markSeen(currentVersion) {
     storage.saveLastSeenVersion(currentVersion);
 }

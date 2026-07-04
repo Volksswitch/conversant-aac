@@ -270,13 +270,28 @@ async function handleStart() {
     // Fresh conversation state for this session.
     engine.reset();
     ui.showEngineState(engine.getSnapshot());
+    // Post-update "What's new" notice (Ken, July 4 2026). The app has already
+    // re-rendered itself after the update (the auto-update reload happens on load),
+    // so the transcript's location is known. If there's something to announce, show
+    // it as a card IN the transcript region (a keyguard opening, so nothing is
+    // obscured — Spatial Stability), hiding the Start button; "Got it" dismisses it
+    // and enters the conversation. Otherwise enter the conversation now.
+    const whatsNewNotes = whatsNew.pending(APP_VERSION);
+    if (whatsNewNotes.length) {
+        document.getElementById('startBtn').hidden = true;   // panel carries its own "Got it"
+        whatsNew.renderPanel(APP_VERSION, whatsNewNotes, finishStart);
+    } else {
+        finishStart();
+    }
+}
+
+// Leave the pre-start screen and enter the conversation: hide the start block and
+// un-dim the conversation surface. Called either directly (no notice) or from the
+// "What's new" panel's "Got it" (after the user reads it).
+function finishStart() {
+    document.getElementById('startBtn').hidden = false;   // restore for any later start screen
     document.getElementById('startBlock').classList.add('hidden');
     document.querySelector('main').classList.remove('disabled');
-    // Show the post-update "What's new" notice now, AFTER Start (Ken, July 4 2026).
-    // By this point the page is fully loaded and stable (the service-worker
-    // auto-update reload happens on load), so the modal can't flash; it persists
-    // until the user taps "Got it".
-    whatsNew.maybeShowWhatsNew(APP_VERSION);
 }
 
 function toggleListening() {
