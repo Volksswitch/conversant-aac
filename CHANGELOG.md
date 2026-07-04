@@ -13,6 +13,10 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+### Changes
+
+- **The "What's new" notice is easier to read** — it fills the transcript area, drops the header line, and moves the Close button up next to the title, so more of the space is given to the list of changes.
+
 ## Version 0.5.67
 
 ### Changes

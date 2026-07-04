@@ -135,7 +135,9 @@ body {
     align-items: center;
     justify-content: center;
     gap: 1rem;
-    padding: 1rem;
+    /* No padding: when the "What's new" card shows it fills the ENTIRE transcript
+       control (Ken). The pre-start Start button just centers in the same space. */
+    padding: 0;
     overflow: auto;
     z-index: 5;
     pointer-events: auto;   /* clickable even while main is disabled */
@@ -1980,17 +1982,18 @@ label.radio-label input[type="radio"] {
    presses Start (the app has already re-rendered itself post-update, so it knows the
    transcript's location); "Got it" dismisses it and enters the conversation. --- */
 #whatsNewPanel {
-    flex: 0 1 auto;
+    /* Fill the ENTIRE transcript control (Ken) so the scrolling list of notes gets
+       the full height — grows to fill vertically, stretches to fill horizontally. */
+    flex: 1 1 auto;
+    align-self: stretch;
     min-height: 0;
     display: flex;
     flex-direction: column;
-    width: min(32rem, 100%);
     background: #fff;
-    border: 1px solid #d0d7de;
+    border: 1px solid #b7c0c8;              /* match the conversation box */
     border-top: 6px solid var(--slot-initiative);
-    border-radius: 10px;
-    padding: 1rem 1.1rem;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
 }
 
 #whatsNewPanel[hidden] {
@@ -2001,12 +2004,9 @@ label.radio-label input[type="radio"] {
     display: flex;
     align-items: center;
     gap: 0.6rem;
-    margin-bottom: 0.5rem;
-}
-
-.whatsnew-mark {
-    font-size: 1.6rem;
-    line-height: 1;
+    /* Title left, Close right — one compact row so the notes list gets the height. */
+    justify-content: space-between;
+    margin-bottom: 0.4rem;
 }
 
 .whatsnew-title {
@@ -2014,20 +2014,19 @@ label.radio-label input[type="radio"] {
     font-size: 1.25rem;
     font-weight: 700;
     color: var(--slot-initiative);
-}
-
-.whatsnew-intro {
-    margin: 0 0 0.75rem;
-    color: #333;
-    line-height: 1.5;
+    /* Take the row's width and truncate rather than wrap, so the header stays one line. */
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .whatsnew-list {
-    /* Scroll INSIDE the card so a long list never pushes the Start button (the
-       dismiss control) out of the transcript region — the card is height-capped. */
+    /* Fill the rest of the card and scroll internally. */
     flex: 1 1 auto;
     min-height: 0;
-    margin: 0 0 0.75rem;
+    margin: 0;
     padding-left: 1.25rem;
     overflow-y: auto;
     color: #333;
@@ -2038,13 +2037,15 @@ label.radio-label input[type="radio"] {
     margin-bottom: 0.5rem;
 }
 
-.whatsnew-actions {
-    display: flex;
-    justify-content: flex-end;
-}
-
-.whatsnew-ok {
-    padding: 0.7rem 1.3rem;
+/* #whatsNewPanel qualifier gives this higher specificity than the global
+   button { min-height: var(--btn-min-dim) } floor, so the button can be short. */
+#whatsNewPanel .whatsnew-ok {
+    /* Exempt from the global button-size floor: this sits in the transcript opening
+       (not a keyguard hole), and a short button in the header row leaves the notes
+       list more room to read (Ken). */
+    flex: 0 0 auto;
+    min-height: 0;
+    padding: 0.35rem 1.3rem;
     border-radius: 6px;
     font-size: 1rem;
     font-weight: 600;
@@ -2055,7 +2056,7 @@ label.radio-label input[type="radio"] {
     color: #fff;
 }
 
-.whatsnew-ok:hover {
+#whatsNewPanel .whatsnew-ok:hover {
     background: #0d4f9e;
 }
 

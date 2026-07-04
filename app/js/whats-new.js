@@ -105,23 +105,17 @@ export function renderPanel(currentVersion, notes, onDismiss) {
     if (!panel) return;
     panel.textContent = '';
 
+    // Header row: title on the left, Close on the right (saves the vertical space a
+    // bottom button row would take — Ken). No decorative graphic.
     const head = document.createElement('div');
     head.className = 'whatsnew-head';
-    const mark = document.createElement('span');
-    mark.className = 'whatsnew-mark';
-    mark.setAttribute('aria-hidden', 'true');
-    mark.textContent = '✨';
     const h = document.createElement('h2');
     h.className = 'whatsnew-title';
     h.textContent = "What's new in Conversant AAC";
-    head.append(mark, h);
-
-    const intro = document.createElement('p');
-    intro.className = 'whatsnew-intro';
-    intro.append('The app updated itself to version ');
-    const b = document.createElement('b');
-    b.textContent = currentVersion;
-    intro.append(b, ". Here's what changed:");
+    const okBtn = document.createElement('button');
+    okBtn.className = 'whatsnew-ok';
+    okBtn.textContent = 'Close';
+    head.append(h, okBtn);
 
     const list = document.createElement('ul');
     list.className = 'whatsnew-list';
@@ -130,13 +124,6 @@ export function renderPanel(currentVersion, notes, onDismiss) {
         li.textContent = String(note);
         list.appendChild(li);
     }
-
-    const actions = document.createElement('div');
-    actions.className = 'whatsnew-actions';
-    const okBtn = document.createElement('button');
-    okBtn.className = 'whatsnew-ok';
-    okBtn.textContent = 'Got it';
-    actions.append(okBtn);
 
     let settled = false;
     okBtn.addEventListener('click', () => {
@@ -148,7 +135,7 @@ export function renderPanel(currentVersion, notes, onDismiss) {
         if (onDismiss) onDismiss();
     });
 
-    panel.append(head, intro, list, actions);
+    panel.append(head, list);
     panel.hidden = false;
     okBtn.focus();
 }
