@@ -13,6 +13,8 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+## Version 0.5.71
+
 ### Changes
 
 - **Word prediction: tap the box to accept a suggestion, not space.** The suggested

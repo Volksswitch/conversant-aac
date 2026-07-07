@@ -21,6 +21,9 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.5.71": [
+    "Word prediction: tap the box to accept a suggestion, not space. The suggested word completion is now taken only when you tap anywhere in the typing box — typing a space, comma, period or Enter no longer accepts it. This fixes cases like typing \"Yes\" and ending up with \"Yesterday\" when you only wanted \"Yes\" followed by a space (which could happen without you even seeing the box)."
+  ],
   "0.5.70": [
     "The on-screen keyboard now stays put when you open \"In my own words.\" On the tablet the keyboard could still fail to appear (or vanish immediately) when the typing box opened — especially right after using an Express Panel phrase. It now stays up the whole time the typing box is open, in both the side and bottom layouts.",
     "A \"Reload the app\" button in Settings → About. Forces a fresh reload to pick up the latest version — the same as a hard refresh, but without needing to attach a keyboard to press Ctrl+Shift+R.",
