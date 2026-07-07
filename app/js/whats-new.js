@@ -21,6 +21,11 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.5.69": [
+    "Conversations you start yourself are now saved. When you opened a conversation with an opener or an Express Panel phrase, that first thing you said wasn't being recorded — and if the whole conversation was just you speaking (no partner captured), nothing was saved to your data folder at all. Now the conversation is recorded from your very first words.",
+    "The keyboard now always appears when you open \"In my own words.\" In some situations — especially right after using an Express Panel phrase — the typing box could open without the on-screen keyboard showing. It now comes up reliably.",
+    "The \"In my own words\" buttons now line up with the response cards. Speak and Reframe sit exactly over the response-card area and Cancel over the \"New 4\" button, so a single keyguard fits both the response cards and the typing buttons — in both the side and bottom layouts."
+  ],
   "0.5.68": [
     "The \"What's new\" notice is easier to read — it fills the transcript area, drops the header line, and moves the Close button up next to the title, so more of the space is given to the list of changes."
   ],
