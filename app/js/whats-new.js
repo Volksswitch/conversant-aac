@@ -21,6 +21,9 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.5.73": [
+    "Error reports now include the conversation. The error log groups errors by the conversation they happened in (newest first), and Copy puts a full report on the clipboard — each conversation's transcript together with its errors — so you can send the whole picture, not just the error message."
+  ],
   "0.5.72": [
     "The app now keeps an error log you can look at. When something goes wrong — most importantly when the AI doesn't return any response options — it's recorded with a timestamp and the conversation it happened in, so a problem from a live demo leaves a trace. View it in Settings → About → Error log (with Copy and Clear); it's also saved as errors.log in your data folder.",
     "You now see why response options didn't appear. If a generation request fails, the response area shows the reason and a Try again button instead of just sitting empty."

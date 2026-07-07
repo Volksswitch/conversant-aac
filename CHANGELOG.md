@@ -13,6 +13,8 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+## Version 0.5.73
+
 ### Changes
 
 - **Error reports now include the conversation.** The error log groups errors by
