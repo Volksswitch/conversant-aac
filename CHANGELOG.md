@@ -13,6 +13,8 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+## Version 0.5.70
+
 ### Fixes
 
 - **The on-screen keyboard now stays put when you open "In my own words."** On the

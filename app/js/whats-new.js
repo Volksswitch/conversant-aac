@@ -21,6 +21,11 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.5.70": [
+    "The on-screen keyboard now stays put when you open \"In my own words.\" On the tablet the keyboard could still fail to appear (or vanish immediately) when the typing box opened — especially right after using an Express Panel phrase. It now stays up the whole time the typing box is open, in both the side and bottom layouts.",
+    "A \"Reload the app\" button in Settings → About. Forces a fresh reload to pick up the latest version — the same as a hard refresh, but without needing to attach a keyboard to press Ctrl+Shift+R.",
+    "\"In my own words\" buttons are now a single row in the side layout too. Speak, Reframe and Cancel sit in one horizontal row in both the side and bottom layouts (previously Speak and Reframe were stacked in the side layout)."
+  ],
   "0.5.69": [
     "Conversations you start yourself are now saved. When you opened a conversation with an opener or an Express Panel phrase, that first thing you said wasn't being recorded — and if the whole conversation was just you speaking (no partner captured), nothing was saved to your data folder at all. Now the conversation is recorded from your very first words.",
     "The keyboard now always appears when you open \"In my own words.\" In some situations — especially right after using an Express Panel phrase — the typing box could open without the on-screen keyboard showing. It now comes up reliably.",
