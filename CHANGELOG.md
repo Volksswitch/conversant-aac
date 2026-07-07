@@ -13,6 +13,8 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+## Version 0.5.72
+
 ### New
 
 - **The app now keeps an error log you can look at.** When something goes wrong —
