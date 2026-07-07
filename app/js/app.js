@@ -1326,6 +1326,26 @@ function openSettings() {
         updateUsageDisplay();
     };
 
+    // Reload the app (About tab) — a keyboard-free equivalent of Ctrl+Shift+R for a
+    // tablet with no keyboard attached (Ken, July 2026). Refreshes the service
+    // worker and clears its caches so the reload re-fetches the latest code from
+    // the network instead of an offline copy. Not destructive: committed exchanges
+    // are already logged to disk; only the on-screen (uncommitted) state resets.
+    document.getElementById('reloadAppBtn').onclick = async () => {
+        ui.setStatus('Reloading the app…');
+        try {
+            if ('serviceWorker' in navigator) {
+                const reg = await navigator.serviceWorker.getRegistration();
+                if (reg) await reg.update();
+            }
+            if (window.caches && caches.keys) {
+                const keys = await caches.keys();
+                await Promise.all(keys.map((k) => caches.delete(k)));
+            }
+        } catch { /* best effort — reload anyway */ }
+        location.reload();
+    };
+
     document.getElementById('generateOpeningsBtn').onclick = generateScreenOpenings;
 
     document.getElementById('testVoiceBtn').onclick = () => {

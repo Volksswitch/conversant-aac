@@ -21,6 +21,12 @@ regenerate the bundled notes in `app/js/whats-new.js`.
   stays up the whole time the typing box is open, in both the side and bottom
   layouts.
 
+### New
+
+- **A "Reload the app" button in Settings → About.** Forces a fresh reload to pick
+  up the latest version — the same as a hard refresh, but without needing to attach
+  a keyboard to press Ctrl+Shift+R.
+
 ### Changes
 
 - **"In my own words" buttons are now a single row in the side layout too.** Speak,
