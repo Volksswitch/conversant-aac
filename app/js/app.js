@@ -780,6 +780,12 @@ async function speakAsUserTurn(historyText, spokenText = historyText) {
 function openComposer() {
     ui.clearComposer();
     ui.showComposerOverlay();
+    // Summon the keyboard explicitly rather than relying on the textarea's
+    // focusin side effect — that event can be swallowed (e.g. after an Express
+    // phrase auto-resumes listening, or when the field already holds focus), so
+    // the composer could open with no keyboard. showFor() is a no-op in physical
+    // mode. (Ken, July 2026.)
+    keyboard.showFor(document.getElementById('composerInput'));
     ui.setStatus('Type your own words');
 }
 

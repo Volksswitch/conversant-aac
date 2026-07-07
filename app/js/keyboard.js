@@ -768,6 +768,20 @@ export function hideKeyboard() {
     hide();
 }
 
+// Explicitly summon the keyboard for a field, without relying on a `focusin`
+// event. Normally the keyboard appears as a side effect of the field gaining
+// focus (the document `focusin` listener → show()), but that event is not
+// guaranteed to fire: `.focus()` is a no-op (dispatches nothing) when the field
+// is already the active element, and a focus race after an auto-resume can
+// swallow it — leaving the field focused with no keyboard. Callers that open a
+// keyboard-backed surface (the "In my own words" composer) call this so the
+// keyboard shows deterministically. No-op in physical mode. show() is idempotent,
+// so a real focusin firing too just re-renders harmlessly. (Ken, July 2026.)
+export function showFor(field) {
+    if (mode !== 'onscreen' || !field) return;
+    show(field);
+}
+
 export function getMode() {
     return mode;
 }

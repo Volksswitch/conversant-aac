@@ -459,6 +459,12 @@ export async function logPartnerSpeech({ rawTranscript, cleanedTranscript, partn
 
 export async function logUserResponse({ selectedText, selectedIndex, allOptions, partner = null, feeling = null }) {
     if (!conversationSaving) return; // private conversation — nothing is written
+    // Start the log lazily if this user turn is the FIRST turn of the conversation
+    // — an opener (Start conversation) or an Express-panel phrase takes the floor
+    // before any partner speech, so the log wouldn't exist yet. Without this, the
+    // opening utterance is dropped and a conversation that never reaches a partner
+    // turn is never written at all (mirrors logPartnerSpeech). (Ken, July 2026.)
+    if (!currentLogData) await startConversationLog();
     if (!currentLogData) return;
 
     currentLogData.exchanges.push({

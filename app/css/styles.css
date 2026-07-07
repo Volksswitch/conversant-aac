@@ -569,11 +569,14 @@ body.conv-bottom .palette-grid {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    padding: 0.6rem;
+    /* No HORIZONTAL inset: the controls must reach the response-footprint edges so
+       Speak/Reframe/Cancel line up with the card + "New 4" holes under one keyguard
+       (Spatial Stability). The framing border is drawn as an INSET shadow (paint
+       only, no layout box) instead of a real border for the same reason. */
+    padding: 0.6rem 0;
     background: #fff;
-    border: 2px solid var(--header);
     border-radius: 10px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18), inset 0 0 0 2px var(--header);
 }
 .composer-overlay[hidden] { display: none; }
 .composer-overlay #composerInput {
@@ -586,10 +589,45 @@ body.conv-bottom .palette-grid {
     font-size: 1.1rem;
     resize: none;
 }
+/* Mirror the response footprint beneath (Ken — Spatial Stability, BOTH docks):
+   Speak + Reframe together tile the four card holes and Cancel matches "New 4",
+   so one physical keyguard overlays the response cards at rest and the composer
+   buttons during "In my own words". The controls row REUSES the exact flex/grid
+   structure and gaps of #responseArea (card region flex: 9, "New 4" flex: 1), so
+   Cancel gets precisely "New 4"'s width and #composerResponses precisely the card
+   grid's width — no fixed fractions that could drift from the real layout. */
 .composer-overlay #composerControls {
     flex: 0 0 auto;
     display: flex;
-    gap: 0.5rem;
+    gap: var(--grid-gap);      /* = #responseArea gap (card region ↔ "New 4") */
+    align-items: stretch;
+}
+/* Holds Speak + Reframe; mirrors .palette-grid (its flex:9 and inter-card gap). */
+#composerResponses {
+    flex: 9 1 0;
+    display: grid;
+    gap: var(--grid-gap);
+    align-items: stretch;
+}
+/* SIDE dock (cards 2×2): each pair is a full row → Speak stacked over Reframe. */
+body.conv-side #composerResponses {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 1fr;
+}
+/* BOTTOM dock (cards 1×4): each pair is two cards → Speak and Reframe side by side. */
+body.conv-bottom #composerResponses {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr;
+}
+/* Cancel mirrors #regenerateBtn exactly: same flex (1 1 0), same --btn-min-dim
+   floor, and — like "New 4" — NO padding, so it's pixel-identical to "New 4" at
+   every viewport width (both are icon-only, so there's no label to clip). The
+   default .composer-btn padding (1.2rem) would otherwise make Cancel wider and
+   steal width from Speak/Reframe. */
+.composer-overlay #cancelComposerBtn {
+    flex: 1 1 0;
+    min-width: var(--btn-min-dim);
+    padding: 0;
 }
 
 /* Crossfade card contents on each render (≤200 ms, §10). Geometry is unchanged

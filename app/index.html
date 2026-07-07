@@ -76,8 +76,13 @@
                     <div id="composerOverlay" class="composer-overlay" hidden aria-label="In my own words">
                         <textarea id="composerInput" rows="2" placeholder="Type here, then Speak it, Reframe to get new options from it, or Cancel." autocomplete="off"></textarea>
                         <div id="composerControls">
-                            <button id="speakBtn" type="button" class="composer-btn composer-btn-primary">Speak</button>
-                            <button id="reframeBtn" type="button" class="composer-btn">Reframe</button>
+                            <!-- Speak + Reframe tile the response-card region (mirrors
+                                 .palette-grid); Cancel mirrors the "New 4" button — so
+                                 one keyguard overlays the cards and these buttons. -->
+                            <div id="composerResponses">
+                                <button id="speakBtn" type="button" class="composer-btn composer-btn-primary">Speak</button>
+                                <button id="reframeBtn" type="button" class="composer-btn">Reframe</button>
+                            </div>
                             <button id="cancelComposerBtn" type="button" class="composer-btn composer-btn-quiet">Cancel</button>
                         </div>
                     </div>
