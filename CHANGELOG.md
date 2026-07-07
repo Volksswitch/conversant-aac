@@ -13,6 +13,20 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+### Fixes
+
+- **The on-screen keyboard now stays put when you open "In my own words."** On the
+  tablet the keyboard could still fail to appear (or vanish immediately) when the
+  typing box opened — especially right after using an Express Panel phrase. It now
+  stays up the whole time the typing box is open, in both the side and bottom
+  layouts.
+
+### Changes
+
+- **"In my own words" buttons are now a single row in the side layout too.** Speak,
+  Reframe and Cancel sit in one horizontal row in both the side and bottom
+  layouts (previously Speak and Reframe were stacked in the side layout).
+
 ## Version 0.5.69
 
 ### Fixes

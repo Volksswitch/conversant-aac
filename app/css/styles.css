@@ -589,35 +589,24 @@ body.conv-bottom .palette-grid {
     font-size: 1.1rem;
     resize: none;
 }
-/* Mirror the response footprint beneath (Ken — Spatial Stability, BOTH docks):
-   Speak + Reframe together tile the four card holes and Cancel matches "New 4",
-   so one physical keyguard overlays the response cards at rest and the composer
-   buttons during "In my own words". The controls row REUSES the exact flex/grid
-   structure and gaps of #responseArea (card region flex: 9, "New 4" flex: 1), so
-   Cancel gets precisely "New 4"'s width and #composerResponses precisely the card
-   grid's width — no fixed fractions that could drift from the real layout. */
+/* Composer controls: Speak, Reframe and Cancel in a SINGLE horizontal row in
+   BOTH docks (Ken, July 2026). The row mirrors #responseArea's flex split — the
+   Speak+Reframe pair sits in a flex:9 region (matching the response-card region)
+   and Cancel in a flex:1 slot exactly the width of "New 4" — so one keyguard
+   still lines up with the card region + "New 4", and Speak/Reframe never stack. */
 .composer-overlay #composerControls {
     flex: 0 0 auto;
     display: flex;
     gap: var(--grid-gap);      /* = #responseArea gap (card region ↔ "New 4") */
     align-items: stretch;
 }
-/* Holds Speak + Reframe; mirrors .palette-grid (its flex:9 and inter-card gap). */
+/* Holds Speak + Reframe side by side; mirrors .palette-grid (flex:9 + its gap). */
 #composerResponses {
     flex: 9 1 0;
     display: grid;
+    grid-template-columns: 1fr 1fr;   /* Speak | Reframe, single row, both docks */
     gap: var(--grid-gap);
     align-items: stretch;
-}
-/* SIDE dock (cards 2×2): each pair is a full row → Speak stacked over Reframe. */
-body.conv-side #composerResponses {
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr 1fr;
-}
-/* BOTTOM dock (cards 1×4): each pair is two cards → Speak and Reframe side by side. */
-body.conv-bottom #composerResponses {
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr;
 }
 /* Cancel mirrors #regenerateBtn exactly: same flex (1 1 0), same --btn-min-dim
    floor, and — like "New 4" — NO padding, so it's pixel-identical to "New 4" at

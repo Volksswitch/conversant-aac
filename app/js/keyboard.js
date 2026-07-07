@@ -589,13 +589,22 @@ function visible() {
     return rootEl && !rootEl.classList.contains('hidden');
 }
 
-// Is a panel the keyboard serves (About Me / Settings) currently open? Used to
-// keep the keyboard up when an in-panel button (Save, etc.) blurs the field —
-// see the focusout handler. Robust where `relatedTarget` isn't the button.
+// Is a surface the keyboard serves (About Me / Settings / the "In my own words"
+// composer) currently open? Used to keep the keyboard up when a blur that isn't a
+// real dismissal fires — an in-panel button (Save, etc.), or, on the device, a
+// stray focusout from a reflow / the auto-resumed mic re-rendering just after the
+// composer opens (Ken, July 2026 — the "keyboard doesn't display" bug: the field
+// gains focus but a following focusout hides the keyboard before the user can
+// type). Robust where `relatedTarget` isn't the tapped element. The surfaces'
+// explicit close paths (worldview close(), Settings Close/Escape, the composer's
+// Speak/Reframe/Cancel) still take the keyboard down.
 function servingPanelOpen() {
     const dlg = document.getElementById('settingsDialog');
     const wv = document.getElementById('worldviewScreen');
-    return !!((dlg && dlg.open) || (wv && !wv.classList.contains('hidden')));
+    const composer = document.getElementById('composerOverlay');
+    return !!((dlg && dlg.open) ||
+        (wv && !wv.classList.contains('hidden')) ||
+        (composer && !composer.hidden));
 }
 
 function show(field) {
