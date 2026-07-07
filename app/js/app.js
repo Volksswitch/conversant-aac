@@ -1239,20 +1239,83 @@ async function updateUsageDisplay() {
     document.getElementById('usageSince').textContent = `since ${sinceDate}`;
 }
 
-// Render the error-log viewer (Settings → About). Most-recent-last, one line per
-// error with its timestamp, conversation id and message — the same shape as the
-// data-folder errors.log, so a copy-paste is a usable bug report.
+// Group the error log by conversation, most-recent conversation first. Errors
+// with no conversation id ('(none)') sort last. Returns [ [convId, entries], … ].
+function groupErrorsByConversation() {
+    const groups = new Map();
+    for (const e of storage.loadErrorLog()) {
+        const k = e.conversation || '(none)';
+        if (!groups.has(k)) groups.set(k, []);
+        groups.get(k).push(e);
+    }
+    // ids are timestamp strings, so a lexical sort is chronological; reverse →
+    // newest first. '(none)' sorts before digits, so after reverse it lands last.
+    return [...groups.keys()].sort().reverse().map((id) => [id, groups.get(id)]);
+}
+
+// Render the error-log viewer (Settings → About): errors GROUPED BY CONVERSATION
+// (Ken, July 2026), newest conversation first, so all the errors from one exchange
+// sit together. Compact here (no transcript); the full transcript is bundled by
+// Copy (buildErrorReport).
 function renderErrorLog() {
     const view = document.getElementById('errorLogView');
     const countEl = document.getElementById('errorLogCount');
     if (!view) return;
     const log = storage.loadErrorLog();
     if (countEl) countEl.textContent = log.length ? `(${log.length})` : '';
-    view.value = log.map((e) =>
-        `${e.ts} v${e.version || '?'} conv=${e.conversation || '-'} [${e.context}] ${e.message}`
-        + (e.extra ? ` | ${JSON.stringify(e.extra)}` : '')
-    ).join('\n');
-    view.scrollTop = view.scrollHeight;   // newest at the bottom, scrolled into view
+    const lines = [];
+    for (const [id, errs] of groupErrorsByConversation()) {
+        lines.push(`━━━ Conversation ${id} (${errs.length} error${errs.length > 1 ? 's' : ''}) ━━━`);
+        for (const e of errs) {
+            lines.push(`  ${e.ts} [${e.context}] ${e.message}` + (e.extra ? ` | ${JSON.stringify(e.extra)}` : ''));
+        }
+    }
+    view.value = lines.join('\n');
+    view.scrollTop = 0;   // groups are newest-first, so the most relevant is at top
+}
+
+// Format one exchange of a saved conversation log as a transcript line.
+function transcriptLine(ex) {
+    if (ex.role === 'partner') return `  partner: ${ex.cleanedTranscript || ex.rawTranscript || ''}`;
+    return `  user: ${ex.selectedText || ''}`;
+}
+
+// Build the full bug report: for each conversation that had errors, its transcript
+// (read back from the data folder, or the live in-memory turns for the current
+// conversation) followed by that conversation's errors. This is what Copy puts on
+// the clipboard so a report carries the conversation, not just the error (Ken).
+async function buildErrorReport() {
+    const groups = groupErrorsByConversation();
+    const out = [
+        'Conversant AAC — error report',
+        `App version: ${APP_VERSION}`,
+        `Generated: ${new Date().toISOString()}`,
+        '',
+    ];
+    if (!groups.length) { out.push('(no errors recorded)'); return out.join('\n'); }
+
+    for (const [id, errs] of groups) {
+        out.push(`════════ Conversation ${id} ════════`);
+        const convLog = id !== '(none)' ? await storage.readConversationLog(id) : null;
+        if (convLog && convLog.exchanges && convLog.exchanges.length) {
+            out.push(`Started: ${convLog.started || '?'}`);
+            out.push('Transcript:');
+            for (const ex of convLog.exchanges) out.push(transcriptLine(ex));
+        } else if (id === storage.getConversationId() && conversationHistory.length) {
+            // The current conversation may not be fully on disk yet (an error can
+            // fire before the turn is committed) — fall back to the live turns.
+            out.push('Transcript (live — this conversation is still open):');
+            for (const t of conversationHistory) out.push(`  ${t.role}: ${t.text}`);
+        } else {
+            out.push('Transcript: [not available — no data folder, or the conversation was not saved]');
+        }
+        out.push('', `Errors (${errs.length}):`);
+        for (const e of errs) {
+            out.push(`  ${e.ts} v${e.version || '?'} [${e.context}] ${e.message}` + (e.extra ? ` | ${JSON.stringify(e.extra)}` : ''));
+        }
+        out.push('');
+    }
+    return out.join('\n');
 }
 
 function openSettings() {
@@ -1382,7 +1445,12 @@ function openSettings() {
     // reset the in-app view (the data-folder errors.log stays as the permanent record).
     renderErrorLog();
     document.getElementById('copyErrorLogBtn').onclick = async () => {
-        try { await navigator.clipboard.writeText(document.getElementById('errorLogView').value); } catch { /* ignore */ }
+        const btn = document.getElementById('copyErrorLogBtn');
+        try {
+            await navigator.clipboard.writeText(await buildErrorReport());
+            const orig = btn.textContent; btn.textContent = 'Copied ✓';
+            setTimeout(() => { btn.textContent = orig; }, 1500);
+        } catch { /* clipboard blocked/denied */ }
     };
     document.getElementById('clearErrorLogBtn').onclick = async () => {
         if (!(await confirmDanger({

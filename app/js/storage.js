@@ -437,6 +437,23 @@ async function getConversationsDir() {
     return conversationDirHandle;
 }
 
+// Read a saved conversation log back by its id (the `<id>.json` file). Used to
+// bundle a conversation's transcript with its errors in a bug report (Ken, July
+// 2026). Returns the parsed log object, or null if there's no folder / no such
+// file (e.g. the conversation wasn't saved).
+export async function readConversationLog(id) {
+    if (!id) return null;
+    const dir = await getConversationsDir();
+    if (!dir) return null;
+    try {
+        const fh = await dir.getFileHandle(`${id}.json`);
+        const file = await fh.getFile();
+        return JSON.parse(await file.text());
+    } catch {
+        return null;
+    }
+}
+
 export async function startConversationLog() {
     if (!conversationSaving) return null; // this conversation is private — don't record
     const dir = await getConversationsDir();

@@ -13,6 +13,13 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+### Changes
+
+- **Error reports now include the conversation.** The error log groups errors by
+  the conversation they happened in (newest first), and **Copy** puts a full
+  report on the clipboard — each conversation's transcript together with its
+  errors — so you can send the whole picture, not just the error message.
+
 ## Version 0.5.72
 
 ### New
