@@ -17,6 +17,7 @@ import * as expressEditor from './express-editor.js';
 import * as controlPhrases from './control-phrases.js';
 import * as controlEditor from './control-phrases-editor.js';
 import * as whatsNew from './whats-new.js';
+import { confirmDanger } from './confirm-dialog.js';
 
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
@@ -65,6 +66,9 @@ function handlePrivacyToggle() {
 }
 
 function initApp() {
+    // Stamp the error log with this build's version (Ken, July 2026).
+    storage.setAppVersion(APP_VERSION);
+
     // Log the display metrics (and re-log on every viewport change) so we — and
     // beta testers — can see the real pixel box the app is running in. Started
     // first so the initial numbers are captured even if STT is unsupported.
@@ -387,6 +391,10 @@ async function generateOptions(partnerText) {
         }
     } catch (err) {
         if (token !== generationToken) return;
+        storage.logError('generateOptions', err.message, { partner: (partnerText || '').slice(0, 200) });
+        placeholders.stop();
+        ui.setTranscriptState('idle');
+        ui.showResponseError(`Couldn't get responses: ${err.message}`, () => generateOptions(partnerText));
         ui.setStatus(`Error: ${err.message}`);
     }
 }
@@ -441,6 +449,7 @@ async function handleRepairOfSelf(response) {
         try {
             text = await llm.repairSelf(engine.getLastUserUtterance(), response.op, conversationHistory);
         } catch (err) {
+            storage.logError('repairSelf', err.message, { op: response.op });
             ui.setStatus(`Error: ${err.message}`);
             return;
         }
@@ -508,7 +517,8 @@ async function commitExchange(raw, userText, index) {
         const stamp = partnerStamp();
         (async () => {
             let cleaned = raw;
-            try { cleaned = await llm.cleanupTranscript(raw, cleanupContext); } catch { /* fall back to raw */ }
+            try { cleaned = await llm.cleanupTranscript(raw, cleanupContext); }
+            catch (err) { storage.logError('cleanupTranscript', err.message); /* fall back to raw */ }
             if (conversationHistory[partnerIdx]) {
                 conversationHistory[partnerIdx].text = cleaned;
                 ui.renderConversation(conversationHistory);
@@ -547,6 +557,7 @@ function terminateConversation() {
     currentPartnerText = '';
     lastPalette = [];
     conversationHistory.length = 0;     // clear the conversation window
+    storage.resetConversationId();       // next conversation gets a fresh id (error-log correlation)
     engine.reset();
     ui.renderConversation(conversationHistory);
     ui.setLiveTranscript('');
@@ -663,6 +674,8 @@ async function handleRegenerate() {
         ui.setStatus('Select a response');
     } catch (err) {
         if (token !== generationToken) return;
+        storage.logError('regenerate', err.message);
+        ui.showResponseError(`Couldn't get new options: ${err.message}`, handleRegenerate);
         ui.setStatus(`Error: ${err.message}`);
     }
 }
@@ -708,6 +721,8 @@ async function handleReframe() {
         ui.setStatus('Select a response');
     } catch (err) {
         if (token !== generationToken) return;
+        storage.logError('reframe', err.message);
+        ui.showResponseError(`Couldn't rework the options: ${err.message}`);
         ui.setStatus(`Error: ${err.message}`);
     }
 }
@@ -1224,6 +1239,22 @@ async function updateUsageDisplay() {
     document.getElementById('usageSince').textContent = `since ${sinceDate}`;
 }
 
+// Render the error-log viewer (Settings → About). Most-recent-last, one line per
+// error with its timestamp, conversation id and message — the same shape as the
+// data-folder errors.log, so a copy-paste is a usable bug report.
+function renderErrorLog() {
+    const view = document.getElementById('errorLogView');
+    const countEl = document.getElementById('errorLogCount');
+    if (!view) return;
+    const log = storage.loadErrorLog();
+    if (countEl) countEl.textContent = log.length ? `(${log.length})` : '';
+    view.value = log.map((e) =>
+        `${e.ts} v${e.version || '?'} conv=${e.conversation || '-'} [${e.context}] ${e.message}`
+        + (e.extra ? ` | ${JSON.stringify(e.extra)}` : '')
+    ).join('\n');
+    view.scrollTop = view.scrollHeight;   // newest at the bottom, scrolled into view
+}
+
 function openSettings() {
     const dialog = document.getElementById('settingsDialog');
     const apiKeyInput = document.getElementById('apiKeyInput');
@@ -1344,6 +1375,23 @@ function openSettings() {
             }
         } catch { /* best effort — reload anyway */ }
         location.reload();
+    };
+
+    // Error log viewer (About tab) — populate now (Settings just opened) so Ken can
+    // read what failed without a keyboard/devtools; Copy for a bug report, Clear to
+    // reset the in-app view (the data-folder errors.log stays as the permanent record).
+    renderErrorLog();
+    document.getElementById('copyErrorLogBtn').onclick = async () => {
+        try { await navigator.clipboard.writeText(document.getElementById('errorLogView').value); } catch { /* ignore */ }
+    };
+    document.getElementById('clearErrorLogBtn').onclick = async () => {
+        if (!(await confirmDanger({
+            title: 'Clear the error log?',
+            body: 'This clears the in-app error list. The errors.log file in your data folder is kept.',
+            confirmLabel: 'Clear',
+        }))) return;
+        storage.clearErrorLog();
+        renderErrorLog();
     };
 
     document.getElementById('generateOpeningsBtn').onclick = generateScreenOpenings;

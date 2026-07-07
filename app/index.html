@@ -407,6 +407,15 @@
                         <button id="reloadAppBtn" type="button">Reload the app</button>
                         <p class="setting-hint">Forces a fresh reload to pick up the latest version — the same as a hard refresh (Ctrl+Shift+R), but no keyboard needed.</p>
                     </div>
+                    <div class="setting-group">
+                        <label>Error log <span id="errorLogCount" class="setting-hint"></span></label>
+                        <textarea id="errorLogView" readonly rows="6" placeholder="No errors recorded." aria-label="Error log"></textarea>
+                        <div id="errorLogActions">
+                            <button id="copyErrorLogBtn" type="button">Copy</button>
+                            <button id="clearErrorLogBtn" type="button">Clear</button>
+                        </div>
+                        <p class="setting-hint">Recent errors (most recent last), each tagged with the conversation it happened in. Also written to <code>errors.log</code> in your data folder.</p>
+                    </div>
                     <div class="setting-group usage-group">
                         <label>Estimated API Cost</label>
                         <div id="usageDisplay">

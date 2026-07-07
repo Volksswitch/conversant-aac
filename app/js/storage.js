@@ -411,6 +411,24 @@ let currentLogHandle = null;
 let currentLogName = null;
 let currentLogData = null;
 
+// One ID per conversation, shared by the conversation log file AND any error-log
+// entries in that conversation, so the two can be correlated (Ken, July 2026).
+// It is the timestamp base of the log filename (`<id>.json`). Created lazily the
+// first time it's needed (first turn, or first error) and reused until the
+// conversation is terminated (resetConversationId, called from
+// terminateConversation) — so every turn and error in one conversation shares it,
+// even before the log file is written and even when the conversation isn't saved.
+let currentConversationId = null;
+
+function ensureConversationId() {
+    if (!currentConversationId) {
+        currentConversationId = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    }
+    return currentConversationId;
+}
+export function getConversationId() { return currentConversationId; }
+export function resetConversationId() { currentConversationId = null; }
+
 async function getConversationsDir() {
     if (!dirHandle) return null;
     if (!conversationDirHandle) {
@@ -425,9 +443,10 @@ export async function startConversationLog() {
     if (!dir) return null;
 
     const now = new Date();
-    const stamp = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    currentLogName = `${stamp}.json`;
+    const id = ensureConversationId();     // shared with the error log
+    currentLogName = `${id}.json`;
     currentLogData = {
+        id,
         started: now.toISOString(),
         exchanges: []
     };
@@ -486,6 +505,65 @@ async function flushLog() {
         await writable.write(JSON.stringify(currentLogData, null, 2));
         await writable.close();
     } catch { /* silent — don't interrupt conversation flow */ }
+}
+
+// --- Error log (diagnostics, Ken July 2026) ---
+// A persistent record of errors (API failures, JSON parse failures, etc.) so an
+// intermittent problem from a live demo leaves a trace we can refer to later —
+// previously errors went only to the (now hidden) status bar and the console.
+// Two sinks: a capped localStorage ring buffer (always available, shown in
+// Settings → About) and an append-only `errors.log` in the data folder (permanent,
+// inspectable offline) when a folder is granted. Every entry carries the current
+// conversation ID so an error can be matched to its conversation log file.
+const ERROR_LOG_KEY = 'aac_error_log';
+const ERROR_LOG_MAX = 200;
+let appVersion = '';
+export function setAppVersion(v) { appVersion = v || ''; }
+
+export function loadErrorLog() {
+    try { return JSON.parse(localStorage.getItem(ERROR_LOG_KEY)) || []; }
+    catch { return []; }
+}
+
+export function clearErrorLog() {
+    localStorage.removeItem(ERROR_LOG_KEY);
+}
+
+// Record an error. `context` is where it happened (e.g. 'generateOptions'),
+// `message` the error text, `extra` any small JSON-able detail (e.g. the partner
+// text). Best-effort and never throws — it must not itself break the flow.
+export function logError(context, message, extra = null) {
+    const entry = {
+        ts: new Date().toISOString(),
+        version: appVersion,
+        conversation: ensureConversationId(),   // matches the <id>.json log file
+        context: String(context || ''),
+        message: String(message || ''),
+    };
+    if (extra != null) entry.extra = extra;
+    try {
+        const log = loadErrorLog();
+        log.push(entry);
+        while (log.length > ERROR_LOG_MAX) log.shift();
+        localStorage.setItem(ERROR_LOG_KEY, JSON.stringify(log));
+    } catch { /* ignore quota/serialize issues */ }
+    appendErrorFile(entry);   // fire-and-forget to the data folder
+    try { console.error(`[${entry.context}] ${entry.message}`, extra ?? ''); } catch { /* ignore */ }
+    return entry;
+}
+
+async function appendErrorFile(entry) {
+    if (!dirHandle) return;
+    try {
+        const line = `${entry.ts} v${entry.version} conv=${entry.conversation} [${entry.context}] ${entry.message}`
+            + (entry.extra ? ` | ${JSON.stringify(entry.extra)}` : '') + '\n';
+        const fh = await dirHandle.getFileHandle('errors.log', { create: true });
+        const writable = await fh.createWritable({ keepExistingData: true });
+        const file = await fh.getFile();
+        await writable.seek(file.size);   // append
+        await writable.write(line);
+        await writable.close();
+    } catch { /* best effort — don't interrupt the app */ }
 }
 
 // --- Usage tracking ---

@@ -533,6 +533,51 @@ body.conv-bottom .palette-grid {
     grid-template-columns: repeat(4, 1fr);   /* 1×4 */
 }
 
+/* Visible generation error in the response region (Ken, July 2026) — replaces the
+   blank/empty look when a generation call fails, since the status bar is hidden. */
+.palette-grid.has-error { display: flex; }
+.response-error {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    text-align: center;
+    border: 2px dashed var(--slot-dispreferred, #d9822b);
+    border-radius: 10px;
+    background: rgba(217, 130, 43, 0.08);
+}
+.response-error-msg { margin: 0; color: #8a4b00; font-weight: 600; }
+.response-error-retry {
+    border: 2px solid var(--slot-dispreferred, #d9822b);
+    background: #fff;
+    color: #8a4b00;
+    border-radius: 8px;
+    padding: 0.5rem 1.25rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+.response-error-retry:hover { background: rgba(217, 130, 43, 0.15); }
+
+/* Error-log viewer (Settings → About). */
+#errorLogView {
+    width: 100%;
+    font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+    font-size: 0.78rem;
+    line-height: 1.35;
+    white-space: pre;
+    overflow: auto;
+    resize: vertical;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 0.5rem;
+    background: #fafafa;
+    color: #333;
+}
+#errorLogActions { display: flex; gap: 0.5rem; margin-top: 0.4rem; }
+
 /* Each grid item is a CATEGORY CELL holding 1–2 stacked option buttons (the
    "responses per category" setting). The reserved (doubled) height lives on the
    cell; the card(s) inside split it. */

@@ -207,9 +207,34 @@ export function showResponses(palette, onSelect) {
 export function clearResponseOptions() {
     // Keep the reserved footprint: 4 empty slot-colored cells (not a placeholder
     // line), so the region's size is held even with no options / no conversation.
-    responseOptions.classList.remove('is-empty', 'palette-enter');
+    responseOptions.classList.remove('is-empty', 'palette-enter', 'has-error');
     responseOptions.innerHTML = '';
     for (let i = 0; i < RESERVED_SLOTS; i++) responseOptions.appendChild(buildEmptyCell(SLOT_ORDER[i]));
+}
+
+// Show a VISIBLE error in the response region (Ken, July 2026): when a generation
+// call fails the region would otherwise just sit empty (the status bar is hidden),
+// which reads as "no response options for no reason". This surfaces the reason and
+// a Try again action right where the options would have been.
+export function showResponseError(message, onRetry) {
+    responseOptions.classList.remove('is-empty', 'palette-enter');
+    responseOptions.classList.add('has-error');
+    responseOptions.innerHTML = '';
+    const box = document.createElement('div');
+    box.className = 'response-error';
+    const msg = document.createElement('p');
+    msg.className = 'response-error-msg';
+    msg.textContent = message;
+    box.appendChild(msg);
+    if (onRetry) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'response-error-retry';
+        btn.textContent = 'Try again';
+        btn.addEventListener('click', onRetry);
+        box.appendChild(btn);
+    }
+    responseOptions.appendChild(box);
 }
 
 // --- Express Panel (base UI quick-speak, Rules 9/10). The grid mirrors the

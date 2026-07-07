@@ -13,6 +13,17 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+### New
+
+- **The app now keeps an error log you can look at.** When something goes wrong —
+  most importantly when the AI doesn't return any response options — it's recorded
+  with a timestamp and the conversation it happened in, so a problem from a live
+  demo leaves a trace. View it in Settings → About → Error log (with Copy and
+  Clear); it's also saved as `errors.log` in your data folder.
+- **You now see why response options didn't appear.** If a generation request
+  fails, the response area shows the reason and a **Try again** button instead of
+  just sitting empty.
+
 ## Version 0.5.71
 
 ### Changes
