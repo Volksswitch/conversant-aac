@@ -51,11 +51,14 @@ const PRED_COUNT = 3;           // number of prediction slots
 // --- Inline word-prediction ghost (Ken, June 29 2026) -----------------------
 // A non-interactive overlay mirrors the active field's text so the single best
 // completion appears INLINE, right after what the user has typed (Smart-Compose
-// style). It's purely visual — the user accepts by typing any word-separator
-// (space / comma / period / …), which fixed keys already provide, so there's no
-// moving tap target (keyguard-safe) and no contenteditable. Shown only when the
-// caret is at the END of the value (true "appending"), so the mirror never has
-// to place text after the ghost.
+// style). It's purely visual. **Acceptance is an explicit TAP anywhere in the
+// field** (Ken, July 2026) — the field is one big fixed acceptance target, so
+// there's no moving inline tap target (keyguard-safe) and no contenteditable.
+// Separators (space / comma / period / Enter) DO NOT accept: a separator must
+// never silently swap the typed word for a prediction ("Yes" + space stays
+// "Yes", not "Yesterday"), especially since the user may not be looking at the
+// box. Shown only when the caret is at the END of the value (true "appending"),
+// so the mirror never has to place text after the ghost.
 let ghostEl = null;             // the overlay box (mirrors the field)
 let ghostInner = null;          // inner wrapper (carries the scroll transform)
 let ghostWord = null;           // the full predicted word currently shown (canonical case)
@@ -275,24 +278,27 @@ function handleKey(keyEl) {
     // tinted bold ghost looks like a highlight), so clear it and don't predict
     // again until the user types forward (Ken, June 29 2026).
     if (action === 'backspace') { backspace(); clearGhost(); return; }
-    // Space / Enter close a word. If an inline ghost is showing, the separator
-    // ACCEPTS it (completes the word) first; otherwise we just learn the typed
-    // word. Then the separator itself is inserted, and predictions refresh.
+    // Space / Enter close a word. They do NOT accept the inline ghost — a
+    // separator must never silently swap the typed word for a prediction ("Yes"
+    // + space stays "Yes", not "Yesterday"), and the user may not even be looking
+    // at the box. Acceptance is an explicit tap in the field (see the pointerdown
+    // handler in init). So just learn the typed word, dismiss the ghost, and
+    // insert the separator. (Ken, July 2026.)
     if (action === 'space') {
-        if (!acceptGhost()) learnCurrentWord();
+        learnCurrentWord(); clearGhost();
         insert(' '); consumeShift(); updatePredictions(); return;
     }
     if (action === 'enter') {
-        if (!acceptGhost()) learnCurrentWord();
+        learnCurrentWord(); clearGhost();
         enter(); updatePredictions(); return;
     }
 
     const ch = keyEl.dataset.char;
     if (ch == null) return;
-    // A non-word character (comma, period, etc.) is also a word separator: if a
-    // ghost is showing, accept it before inserting the separator.
+    // A non-word character (comma, period, etc.) is a word separator too — it
+    // likewise does NOT accept the ghost; learn the typed word and dismiss it.
     const isSeparator = !/[A-Za-z']/.test(ch);
-    if (isSeparator) acceptGhost();
+    if (isSeparator) { learnCurrentWord(); clearGhost(); }
     const upper = shiftState !== 'off';
     insert(upper && /[a-z]/i.test(ch) ? ch.toUpperCase() : ch);
     consumeShift();
@@ -678,6 +684,22 @@ export function init() {
     document.addEventListener('pointerdown', (e) => {
         lastPointerDownEl = e.target instanceof Element ? e.target : null;
     }, true);
+
+    // Tapping anywhere in the active field ACCEPTS the showing inline ghost
+    // (Ken, July 2026): the field is one big fixed acceptance target — no moving
+    // inline tap target to chase (keyguard-safe), and acceptance is deliberate
+    // and visible rather than a silent side effect of a separator. Trade-off
+    // (accepted): while a ghost is showing, a tap no longer positions the caret.
+    // The ghost overlay is pointer-events:none, so the tap lands on the field.
+    document.addEventListener('pointerdown', (e) => {
+        if (mode !== 'onscreen' || !ghostWord) return;
+        const field = e.target instanceof Element ? e.target.closest(IN_SCOPE) : null;
+        if (field && field === activeField) {
+            e.preventDefault();   // keep focus + don't move the caret to the tap
+            acceptGhost();
+            updatePredictions();
+        }
+    });
 
     document.addEventListener('focusin', (e) => {
         if (mode !== 'onscreen') return;

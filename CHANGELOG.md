@@ -13,6 +13,14 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+### Changes
+
+- **Word prediction: tap the box to accept a suggestion, not space.** The suggested
+  word completion is now taken only when you tap anywhere in the typing box —
+  typing a space, comma, period or Enter no longer accepts it. This fixes cases
+  like typing "Yes" and ending up with "Yesterday" when you only wanted "Yes"
+  followed by a space (which could happen without you even seeing the box).
+
 ## Version 0.5.70
 
 ### Fixes
