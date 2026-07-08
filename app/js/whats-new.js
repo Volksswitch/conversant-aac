@@ -21,6 +21,14 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.5.78": [
+    "When the partner asks you to repeat, all three options now show the actual words. If the partner doesn't catch what you said, the \"say it again / say it differently / explain it more\" choices now display the real, ready-to-speak sentences on the cards (prepared the moment they ask), so you can read and pick — instead of showing a label and only producing the wording after you tap.",
+    "\"Don't save this conversation\" now covers everything. When a conversation is marked not to be saved, the partner's words are also kept out of the app's error records and out of any copied bug report — previously a technical hiccup could still tuck a snippet of what the partner said into those. Nothing from a private conversation is written down now.",
+    "With 8 response cards chosen, you now see 8 slots everywhere. When \"Suggestions per category\" is set to 2 (8 cards), the response area now shows eight slots when the app opens and between turns — not four — so it matches what you see while choosing a reply, and a keyguard lines up the same way throughout.",
+    "More conversation closings, so \"Wind down\" fills all eight. There are now eight built-in closings (added \"I need to head out.\", \"Let's talk again soon.\", \"Take care!\", \"Catch you later.\") to match the eight starters, so an 8-card layout fills every slot when you start or end a conversation.",
+    "New built-in starters and closings now appear automatically. When an update adds new default conversation starters or closings, they're added to the end of your existing list on their own — you no longer have to reset to see them. Anything you've edited or removed is still respected: your own wording stays, and a card you deleted won't come back.",
+    "A placeholder now plays after anything the partner says — including a greeting. Previously the \"I'm thinking…\" placeholders only played after a question. Now the partner always hears a short response coming while you choose, so they're never left wondering whether you heard them or can communicate. After a question you'll hear a question-style \"Good question.\"; after a greeting or statement, a neutral \"Let me see.\" / \"One moment.\" (The initial delay and the per-turn limit still apply, so a quick pick plays none, and you can still set the limit to 0 to turn placeholders off.)"
+  ],
   "0.5.77": [
     "Interrupting the partner now records what they had said. If you cut in with an instant statement (like a \"Bye\" Express phrase) while the partner is still talking, the words they'd said up to that point are now saved in the transcript — placed just before your interruption — instead of vanishing. If auto-listen is on, the partner keeps being recorded afterward too if they continue."
   ],

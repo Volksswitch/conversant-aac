@@ -13,6 +13,8 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+## Version 0.5.78
+
 - **When the partner asks you to repeat, all three options now show the actual words.**
   If the partner doesn't catch what you said, the "say it again / say it differently /
   explain it more" choices now display the real, ready-to-speak sentences on the cards
