@@ -69,6 +69,12 @@ function initApp() {
     // Stamp the error log with this build's version (Ken, July 2026).
     storage.setAppVersion(APP_VERSION);
 
+    // Any logged error (thrown API/parse failure OR a silent no-responses path)
+    // trips a faint-red wash on the transcript — a non-verbal heads-up that a
+    // hiccup occurred and behavior may deviate; cleared on the next working
+    // cycle (a real palette render) or on conversation reset.
+    window.addEventListener('aac-error-logged', () => ui.setTranscriptError(true));
+
     // Log the display metrics (and re-log on every viewport change) so we — and
     // beta testers — can see the real pixel box the app is running in. Started
     // first so the initial numbers are captured even if STT is unsupported.
@@ -562,6 +568,7 @@ function terminateConversation() {
     ui.renderConversation(conversationHistory);
     ui.setLiveTranscript('');
     ui.setTranscriptState('idle');
+    ui.setTranscriptError(false);        // fresh conversation starts clean
     ui.clearResponseOptions();          // clear all cards (back to empty reserved)
     ui.showEngineState(engine.getSnapshot());
     // Re-seed conversation privacy from the Settings default — a per-conversation

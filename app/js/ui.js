@@ -89,6 +89,18 @@ export function setTranscriptState(state) {
     if (state && state !== 'idle') liveTurn.classList.add(`state-${state}`);
 }
 
+// Faint-red wash on the whole transcript box, signalling that the app hit an
+// error during this conversation (any error routed through storage.logError —
+// a thrown API/parse failure OR a silent no-usable-responses path). It is a
+// non-verbal heads-up to the user/partner ("expect a hiccup; pass it to
+// support") — no worded message on screen; the details go to the error log.
+// STICKY until the next working cycle: cleared the moment a real response
+// palette renders (see showResponses) or the conversation resets.
+export function setTranscriptError(on) {
+    if (!transcriptBox) return;
+    transcriptBox.classList.toggle('has-error', !!on);
+}
+
 // The currently-playing automatic utterance (placeholder) or spoken response, shown
 // as text so the system never speaks on the user's behalf invisibly (§7).
 export function setNowPlaying(text) {
@@ -166,6 +178,9 @@ function buildEmptyCell(slotCls) {
 }
 
 export function showResponses(palette, onSelect) {
+    // A real palette rendering means a working cycle completed — clear any
+    // sticky error wash on the transcript (sticky-until-next-success).
+    setTranscriptError(false);
     responseOptions.classList.remove('is-empty');
     responseOptions.innerHTML = '';
     // Brief crossfade of contents on each render (geometry never moves, §5).

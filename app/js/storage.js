@@ -566,6 +566,9 @@ export function logError(context, message, extra = null) {
     } catch { /* ignore quota/serialize issues */ }
     appendErrorFile(entry);   // fire-and-forget to the data folder
     try { console.error(`[${entry.context}] ${entry.message}`, extra ?? ''); } catch { /* ignore */ }
+    // Let the UI put up a non-verbal heads-up (faint-red transcript) without
+    // storage depending on the UI layer. Any logged error trips it.
+    try { window.dispatchEvent(new CustomEvent('aac-error-logged', { detail: entry })); } catch { /* non-DOM context */ }
     return entry;
 }
 
