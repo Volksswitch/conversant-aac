@@ -32,22 +32,22 @@ The tracker bounds the window; judging relevance within it is done at review tim
 
 ## Baseline (Ken chose option (a), July 8 2026)
 
-Every document below is marked **⚠ catch-up pending**: several have drifted, so each
-gets a real catch-up review *before* its baseline is stamped to a commit. As each
-doc's catch-up is completed, its row moves to `✓ current` with `At commit` = the
-`HEAD` at that time. Until then, do not treat `At commit` as a trustworthy baseline
-for that row.
+Each document gets a real catch-up review *before* its baseline is stamped to a
+commit; a completed row shows `✓ current` with `At commit` = the `HEAD` at review
+time, and a `⚠ catch-up pending` row's `At commit` is not yet a trustworthy baseline.
 
-Recommended catch-up order (beta-facing first): **Product Overview → Architecture
-Overview → User Manual**, then the design docs.
+**Done July 8 2026 (commit `9f02669`): the three beta-facing docs — Product Overview,
+Architecture Overview, User Manual.** The remaining design docs are still pending
+(next catch-up pass). The Architecture Overview has an image residual noted in its
+row (Figures 6 & 7).
 
 ## Documents
 
 | Document | Status | Last reviewed | At commit | Outstanding / notes |
 |---|---|---|---|---|
-| Conversant AAC Product Overview.docx | ⚠ catch-up pending | — | — | Positioning + feature set drift. Pending items in CLAUDE.md **"Overview-Document To Do List"**: "What This System Is Not" section; conversational honesty; multi-party (future); deliberate Start-Listening + no auto-listen; partner recording indicator; target-age (16+) rationale; future near-real-time/batched comms. Plus recent features: Express Panel, Response Palette (4/8 cards), placeholders-after-any-turn, per-conversation privacy ("Don't save"). |
-| Conversant AAC Architecture Overview.docx | ⚠ catch-up pending | — | — | Pending items in CLAUDE.md **"Overview-Document To Do List"**: conversational honesty (generation principle) + no-fabricated-autobiography; multi-party; Start-Listening/consent behavior; recording indicator; supporter-locked appropriateness filter; user-authored "my views" docs into RAG (Phase 3); system-requirements section (cloud now / onboard AI as a future track); near-real-time/batched comms. Plus: the security posture (shared-origin, CSP, private-conversation gating) and the planned settings-persistence / per-device-profile model. |
-| Conversant AAC User Manual.docx | ⚠ catch-up pending | — | — | UI has moved since last review: Command Bar (title bar removed), About Me inside Settings, Text Size tab, per-conversation "Don't save", 8-card mode → 8 slots, new starters/closings + auto-append, placeholders now after any partner turn, repair options show real text, error-log viewer + transcript wash. Verify every asserted UI label against source (CLAUDE.md working guideline). |
+| Conversant AAC Product Overview.docx | ✓ current | 2026-07-08 | `9f02669` | Caught up July 8 2026: corrected the transcript description (no confirm-gate by default) and removed the never-built "low-confidence words underlined" + the card "hint"; Filler→Placeholder and Move Palette→Response Palette throughout; added "What This System Is Not", conversational honesty, consent + deliberate-listening, per-conversation privacy, Express Panel + Spatial Stability (incl. glossary entries), and a future-directions line (multi-party / batched / cloned voices). Residual: the renamed "Response Palette" glossary entry was left in its former alphabetical slot. |
+| Conversant AAC Architecture Overview.docx | ✓ current | 2026-07-08 | `9f02669` | Caught up July 8 2026: Filler→Placeholder; replaced the abandoned "filler ladder" with the shipped single-pool-after-any-turn placeholder model (§11 Timing, §12 Timing Feedback, config registry, JSON schema sketch); corrected the Transcript Validation States section (informational, no gate by default; dropped the low-confidence underline); added a "Conversational Honesty, Consent, and Privacy Behavior" subsection to §9. **RESIDUAL (next pass):** Figures 6 & 7 still depict the old transcript-gate / ladder and need regenerating (no image toolchain on this box); still to add — multi-party (future), a system-requirements section (cloud now / onboard AI as a future track), user-authored "my views" documents into RAG (§6 Phase 3), and the supporter-locked appropriateness filter. |
+| Conversant AAC User Manual.docx | ✓ current | 2026-07-08 | `9f02669` | Reviewed July 8 2026 — already current from the v0.5.60 (July 3) manual-review pass. Fixed only: "In my own words" is a compose (pencil) icon now, not a text-labeled button, and standardized "In your own words" → "In my own words" (§4.4 + §7.4, verified against `ui.js`); enhanced the glossary Placeholder entry (plays after anything the partner says). No other drift found (9-button Command Bar table, "four or eight" palette, per-conversation privacy all current). |
 | Conversant AAC Conversation Engine Design.docx | ⚠ catch-up pending | — | — | Reconcile with shipped engine: no transcript-confirmation gate (fires on silence); placeholder ladder → single pool, fires after ANY complete partner turn; repair-of-self pre-generates rephrase+expand; floor as a first-class field. Design-doc §6 transcript-gate language still asserts the gate as mandatory (flagged in CLAUDE.md) — relax to "default off". |
 | Conversant AAC Conversation Engine Overview.docx | ⚠ catch-up pending | — | — | Same reconciliation as the Design doc, at overview altitude. |
 | Conversant AAC Configuration Model.docx | ⚠ catch-up pending | — | — | Check against the current settings surface (Text Size tab, button-size/gap/min-gap sliders, keyboard-separation, per-conversation privacy default) and the additive-merge reconciliation policy for user-owned default sets. |
