@@ -17,10 +17,10 @@ regenerate the bundled notes in `app/js/whats-new.js`.
   added, and when you have "Suggestions per category" set to 2 (eight cards),
   **Start conversation** now fills all eight cards with different openers.
 - **Your own statements go straight into the transcript.** When you pick a
-  response, type your own words, or tap an Express phrase, it now shows up in the
-  conversation as you say it, instead of appearing first as a faint "about to
-  say" preview line. That preview line is now only used for the app's
-  place-holding phrases.
+  response, type your own words, or tap an Express phrase, it is added to the
+  conversation right after it has been spoken, instead of appearing first as a
+  faint "about to say" preview line. That preview line is now only used for the
+  app's place-holding phrases.
 - **"Repeat what I said", "Hold on", and "Ask them to repeat" now appear in the
   transcript.** Anything the app says out loud for you is now part of the written
   conversation.

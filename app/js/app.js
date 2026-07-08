@@ -445,16 +445,15 @@ async function handleResponseSelected(response, index) {
     const raw = currentPartnerText;
     currentPartnerText = '';
 
-    // Update the engine and COMMIT the exchange to the transcript BEFORE speaking,
-    // so the user's chosen statement appears as a real transcript entry rather
-    // than as tentative "now-playing" pre-text (Ken). speakUserStatement then
-    // suppresses the now-playing line for its duration.
+    ui.setStatus('Speaking...');
+    await speakUserStatement(response.text);
+
+    // Append the exchange to the transcript AFTER it has been spoken (Ken). The
+    // now-playing line is suppressed for user statements (speakUserStatement), so
+    // the statement isn't shown as pre-text — it appears once it has been said.
     engine.selectResponse(response);
     ui.showEngineState(engine.getSnapshot());
     await commitExchange(raw, response.text, index);
-
-    ui.setStatus('Speaking...');
-    await speakUserStatement(response.text);
 
     if (wasOpener) {
         manualListenArmed = true;   // starting a conversation arms auto-resume
@@ -512,8 +511,11 @@ async function handleRepairOfSelf(response) {
     const raw = currentPartnerText; // the partner's repair-initiator turn ("What?")
     currentPartnerText = '';
 
-    // Commit BEFORE speaking (Ken) so the restated turn shows in the transcript,
-    // not as tentative now-playing pre-text.
+    ui.setStatus('Speaking...');
+    await speakUserStatement(text);
+
+    // Append to the transcript AFTER speaking (Ken); the now-playing line stays
+    // suppressed during the speech, so there's no pre-text preview.
     engine.completeRepairOfSelf(text);
     ui.showEngineState(engine.getSnapshot());
 
@@ -526,9 +528,6 @@ async function handleRepairOfSelf(response) {
     storage.logUserResponse({ selectedText: text, selectedIndex: -1, allOptions: [] });
     ui.renderConversation(conversationHistory);
     ui.setLiveTranscript('');
-
-    ui.setStatus('Speaking...');
-    await speakUserStatement(text);
     resumeOrIdle();
 }
 
@@ -680,9 +679,9 @@ async function handleSayAgain() {
     const text = engine.getLastUserUtterance();
     if (!text) { ui.setStatus('Nothing to repeat yet'); return; }
     placeholders.stop();
-    logSpokenUserTurn(text);          // it's spoken aloud → show it in the transcript
     ui.setStatus('Speaking...');
     await speakUserStatement(text);
+    logSpokenUserTurn(text);          // append to the transcript AFTER speaking (Ken)
     ui.setStatus(isListening ? 'Listening...' : 'Ready');
 }
 
@@ -694,9 +693,9 @@ async function handleHoldOn() {
     // voices (Ken, June 18 2026), and the leading "Hmm," (v0.3.14) was dropped
     // (June 19 2026) as the built-in voices render it unintelligibly.
     const text = controlPhrases.getPhrases().holdOn;
-    logSpokenUserTurn(text);          // spoken aloud → part of the conversation
     ui.setStatus('Speaking...');
     await speakUserStatement(text);
+    logSpokenUserTurn(text);          // append to the transcript AFTER speaking (Ken)
     ui.setStatus(isListening ? 'Listening...' : 'Ready');
 }
 
@@ -725,9 +724,9 @@ async function handlePardon() {
     ui.setTranscriptState('idle');
     ui.clearResponseOptions();
     const text = controlPhrases.getPhrases().pardon; // user-editable (Settings → Controls)
-    logSpokenUserTurn(text);          // spoken aloud → show it in the transcript (Ken)
     ui.setStatus('Speaking...');
     await speakUserStatement(text);
+    logSpokenUserTurn(text);          // append to the transcript AFTER speaking (Ken)
     ui.setStatus(isListening ? 'Listening...' : 'Ready');
 }
 
@@ -882,15 +881,15 @@ async function speakAsUserTurn(historyText, spokenText = historyText) {
     const raw = currentPartnerText;
     currentPartnerText = '';
 
-    // Commit to the transcript BEFORE speaking (Ken) so the statement shows as a
-    // real transcript entry, not tentative now-playing pre-text.
+    ui.setStatus('Speaking...');
+    ui.clearResponseOptions();    // any AI palette shown is now stale
+    await speakUserStatement(spokenText);
+
+    // Append to the transcript AFTER speaking (Ken); now-playing stays suppressed
+    // during the speech, so there's no pre-text preview.
     engine.selectResponse({ text: historyText });
     ui.showEngineState(engine.getSnapshot());
-    ui.clearResponseOptions();    // any AI palette shown is now stale
     await commitExchange(raw, historyText, -1);
-
-    ui.setStatus('Speaking...');
-    await speakUserStatement(spokenText);
     resumeOrIdle();
 }
 
