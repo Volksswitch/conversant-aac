@@ -562,6 +562,16 @@ export function clearErrorLog() {
 // `message` the error text, `extra` any small JSON-able detail (e.g. the partner
 // text). Best-effort and never throws — it must not itself break the flow.
 export function logError(context, message, extra = null) {
+    // Backstop for the per-conversation privacy toggle (SEC-2): the conversation
+    // log is gated on `conversationSaving`, but the error sinks (the localStorage
+    // ring buffer AND errors.log on disk) are not. Partner speech reaches here via
+    // extra.partner (generateOptions), so if the current conversation is private,
+    // strip it before it can be persisted — even if a caller forgets to. Keep the
+    // error itself (context/message/timestamp); only the captured speech is dropped.
+    if (extra && !conversationSaving && Object.prototype.hasOwnProperty.call(extra, 'partner')) {
+        extra = { ...extra };
+        delete extra.partner;
+    }
     const entry = {
         ts: new Date().toISOString(),
         version: appVersion,

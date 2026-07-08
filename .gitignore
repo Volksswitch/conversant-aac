@@ -26,3 +26,18 @@ Desktop.ini
 
 # Node (local dev tooling only)
 node_modules/
+
+# Experimental / throwaway app copies — kept locally, NEVER deployed or committed.
+# Only app/ is published (see .github/workflows/deploy.yml), so nothing here can
+# reach users; this keeps the stale experiment out of the public repo entirely.
+experiments/
+# Hard guard (SEC-4): the "-Helix2" experiment must never live inside the deploy
+# root again — a stray `git add` there would publish a stale, unescaped copy.
+app/**/*-Helix2*
+
+# Local document-editing working files and one-off scripts (SEC-10). The unpacked_*
+# dirs hold extracted internals of internal Word docs; keep them out of the public repo.
+__pycache__/
+unpacked_*/
+cleanup_docx.py
+edit_docx.py

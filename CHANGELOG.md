@@ -13,6 +13,12 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+- **"Don't save this conversation" now covers everything.** When a conversation is
+  marked not to be saved, the partner's words are also kept out of the app's error
+  records and out of any copied bug report — previously a technical hiccup could
+  still tuck a snippet of what the partner said into those. Nothing from a private
+  conversation is written down now.
+
 ## Version 0.5.77
 
 - **Interrupting the partner now records what they had said.** If you cut in with

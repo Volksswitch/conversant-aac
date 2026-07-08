@@ -1436,6 +1436,11 @@ async function buildErrorReport() {
             out.push(`Started: ${convLog.started || '?'}`);
             out.push('Transcript:');
             for (const ex of convLog.exchanges) out.push(transcriptLine(ex));
+        } else if (id === storage.getConversationId() && !storage.isConversationSaving()) {
+            // The current conversation is private ("Don't save this conversation"),
+            // so nothing was written to disk on purpose — don't leak the live turns
+            // into the bug report either (SEC-2).
+            out.push('Transcript: [private conversation — transcript withheld]');
         } else if (id === storage.getConversationId() && conversationHistory.length) {
             // The current conversation may not be fully on disk yet (an error can
             // fire before the turn is committed) — fall back to the live turns.

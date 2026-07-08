@@ -55,7 +55,10 @@ function el(tag, props = {}, children = []) {
         if (v == null) continue;
         if (k === 'class') n.className = v;
         else if (k === 'text') n.textContent = v;
-        else if (k === 'html') n.innerHTML = v;
+        // NOTE: no raw-HTML branch. Everything rendered through el() is set as
+        // textContent, so user- and AI-derived strings can't inject markup (SEC-8).
+        // If a static HTML fragment is ever genuinely needed, build it from real
+        // elements rather than reintroducing an innerHTML sink here.
         else if (k.startsWith('on') && typeof v === 'function') n.addEventListener(k.slice(2).toLowerCase(), v);
         else n.setAttribute(k, v);
     }
