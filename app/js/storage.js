@@ -427,7 +427,19 @@ function ensureConversationId() {
     return currentConversationId;
 }
 export function getConversationId() { return currentConversationId; }
-export function resetConversationId() { currentConversationId = null; }
+export function resetConversationId() {
+    currentConversationId = null;
+    // Also drop the per-conversation log target, so the NEXT conversation writes a
+    // FRESH <id>.json instead of appending to the previous conversation's file.
+    // (Without this, consecutive conversations in one session all merged into the
+    // first conversation's log — and its id — breaking error correlation.)
+    // NOTE: a deferred transcript-cleanup write for the very last exchange
+    // (commitExchange's background round-trip) that lands AFTER this reset will
+    // start its own new file — a rare split, but no turn is lost.
+    currentLogData = null;
+    currentLogHandle = null;
+    currentLogName = null;
+}
 
 async function getConversationsDir() {
     if (!dirHandle) return null;
@@ -564,12 +576,36 @@ export function logError(context, message, extra = null) {
         while (log.length > ERROR_LOG_MAX) log.shift();
         localStorage.setItem(ERROR_LOG_KEY, JSON.stringify(log));
     } catch { /* ignore quota/serialize issues */ }
-    appendErrorFile(entry);   // fire-and-forget to the data folder
+    appendErrorFile(entry);          // fire-and-forget to the data folder (errors.log)
+    logErrorToConversation(entry);   // and interleave it into the conversation JSON (Ken)
     try { console.error(`[${entry.context}] ${entry.message}`, extra ?? ''); } catch { /* ignore */ }
     // Let the UI put up a non-verbal heads-up (faint-red transcript) without
     // storage depending on the UI layer. Any logged error trips it.
     try { window.dispatchEvent(new CustomEvent('aac-error-logged', { detail: entry })); } catch { /* non-DOM context */ }
     return entry;
+}
+
+// Also record the error INSIDE the current conversation's JSON log, interleaved in
+// time order with the turns (Ken, July 2026) — so the conversation file itself
+// shows what went wrong and when, not only the separate errors.log. Written as it
+// occurs (flushed immediately), so a lock-up/crash can't lose it. Skipped for a
+// private (unsaved) conversation, or when no data folder is granted. The error's
+// own timestamp (entry.ts) is used, so sorting exchanges by time is exact.
+async function logErrorToConversation(entry) {
+    if (!conversationSaving || !dirHandle) return;
+    try {
+        if (!currentLogData) await startConversationLog();
+        if (!currentLogData) return;
+        currentLogData.exchanges.push({
+            timestamp: entry.ts,
+            role: 'error',
+            context: entry.context,
+            message: entry.message,
+            version: entry.version,
+            ...(entry.extra != null ? { extra: entry.extra } : {}),
+        });
+        await flushLog();
+    } catch { /* best effort — never break the flow */ }
 }
 
 async function appendErrorFile(entry) {

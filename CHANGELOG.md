@@ -13,6 +13,14 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+- **Errors are now saved inside the conversation file, in order.** If something
+  goes wrong during a conversation, the problem is written into that
+  conversation's saved record at the moment it happens, in time order with what
+  was said — so a support report shows exactly what failed and when. (Your turns
+  were already saved as they happened; this adds the errors alongside them.)
+- **Each conversation is saved to its own file again.** A second conversation in
+  the same session no longer gets appended to the first conversation's file.
+
 - **More ways to start a conversation.** Five new conversation starters were
   added, and when you have "Suggestions per category" set to 2 (eight cards),
   **Start conversation** now fills all eight cards with different openers.

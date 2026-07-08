@@ -1382,6 +1382,7 @@ function renderErrorLog() {
 // Format one exchange of a saved conversation log as a transcript line.
 function transcriptLine(ex) {
     if (ex.role === 'partner') return `  partner: ${ex.cleanedTranscript || ex.rawTranscript || ''}`;
+    if (ex.role === 'error') return `  [error: ${ex.context || ''}] ${ex.message || ''}`;
     return `  user: ${ex.selectedText || ''}`;
 }
 
