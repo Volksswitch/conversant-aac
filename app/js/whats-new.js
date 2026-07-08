@@ -21,6 +21,16 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.5.76": [
+    "Errors are now saved inside the conversation file, in order. If something goes wrong during a conversation, the problem is written into that conversation's saved record at the moment it happens, in time order with what was said — so a support report shows exactly what failed and when. (Your turns were already saved as they happened; this adds the errors alongside them.)",
+    "Each conversation is saved to its own file again. A second conversation in the same session no longer gets appended to the first conversation's file.",
+    "More ways to start a conversation. Five new conversation starters were added, and when you have \"Suggestions per category\" set to 2 (eight cards), Start conversation now fills all eight cards with different openers.",
+    "Your own statements go straight into the transcript. When you pick a response, type your own words, or tap an Express phrase, it is added to the conversation right after it has been spoken, instead of appearing first as a faint \"about to say\" preview line. That preview line is now only used for the app's place-holding phrases.",
+    "\"Repeat what I said\", \"Hold on\", and \"Ask them to repeat\" now appear in the transcript. Anything the app says out loud for you is now part of the written conversation.",
+    "Saying goodbye is quicker. After you pick a wind-down or closing line, the closing options (including \"Bye!\") stay on the cards so you can sign off without waiting for the other person to reply first.",
+    "\"In my own words\" while you hold the floor now suggests statements to steer the conversation. If you've just spoken and it's your turn to lead, type where you'd like things to go and tap Reframe — the app offers statements that take the conversation there, instead of replies to a question.",
+    "Fixed-purpose buttons show an icon. Buttons whose job never changes (like \"In my own words\") now show a clear icon with a tooltip, matching the rest of the control buttons."
+  ],
   "0.5.75": [
     "The conversation area turns faintly red if the app hits a problem. If something goes wrong while getting responses, the conversation box gets a soft red tint — a quiet heads-up that a hiccup happened and things may act oddly for a moment (and worth mentioning if you report it). It clears on its own the next time responses come through normally, or when you start or end a conversation."
   ],
