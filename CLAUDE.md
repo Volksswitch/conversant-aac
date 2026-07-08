@@ -818,6 +818,49 @@ Pending edits to **`AI-Driven AAC Architecture Overview.docx`** and **`AI-Driven
 
 ---
 
+## Development phases (Ken, July 8 2026) — to-do organizing convention
+
+Ken introduced a three-stage rollout vocabulary for organizing the to-do list by *when* work must be done:
+- **alpha** — **where we are now.** Users = Ken + a few user representatives (trusted, hand-held). Data and conversations are Ken's own or demo material.
+- **beta** — a few **real users** (real non-speaking individuals, real communication partners, real private conversations, real API keys, on their own devices).
+- **public release** — general availability.
+
+**The gating principle:** a risk's phase is set by when it can actually bite. Anything that captures/stores a *real* third party's speech, risks *real* user data, or exposes a *real* API key becomes load-bearing at **beta** (not alpha, where the data is Ken's own and the devices are supervised). Purely architectural hardening that needs an external decision (DNS, encryption design) tends to land at **public release**.
+
+*Scope note:* this convention is applied below to the **Security Remediation Backlog** only. The pre-existing items under **Open Questions (remaining)** and the **Overview-Document To Do List** are **not yet** re-sorted by phase — Ken floated doing that project-wide ("we might need to start organizing the to do list by development phase"). Retrofitting the whole list is a separate, deliberate pass (many judgment calls per item); do it when Ken confirms, don't silently restructure the existing lists.
+
+---
+
+## Security Remediation Backlog (from the July 8 2026 security review)
+
+Source: `security issues.docx` in the project root (10 findings, SEC-1…SEC-10, severity-ranked). Organized here by the development phase above. **Phase-1 quick fixes are DONE**; the rest are staged by when they gate the rollout.
+
+### Alpha (done / in progress)
+
+- **DONE — Phase-1 quick fixes (committed to local `main`, July 8 2026, no version bump).**
+  - **SEC-2 (High) — "Don't save this conversation" no longer leaks partner speech.** `storage.logError` strips `extra.partner` when the conversation is private (backstop at the storage choke point, so future call sites are covered); `app.js buildErrorReport` withholds the live transcript of a private conversation from the copied bug report. *(User-facing CHANGELOG note added.)*
+  - **SEC-4 (Medium) — stale `-Helix2` app copy removed from the deploy root.** Moved all 16 `-Helix2` files `app/` → `experiments/` (never deployed); `.gitignore` hard-guards `app/**/*-Helix2*`. That copy had an unescaped `innerHTML` sink predating the current UI's escaping.
+  - **SEC-8 (Low) — removed the dead raw-`innerHTML` branch** from the worldview `el()` helper so it can't become an XSS sink via future misuse.
+  - **SEC-10 (Low) — repo hygiene:** `.gitignore` now covers `experiments/`, `__pycache__/`, `unpacked_*/`, and the one-off `*.py` doc scripts.
+  - **SEC-1 masking sub-point — DROPPED (not a defect).** The API-key field is already masked (`#apiKeyInput { -webkit-text-security: disc }`), which works on the Edge/Chrome targets. Only the *origin* half of SEC-1 remains (below). **Doc TODO:** correct `security issues.docx` — retract the "shown in plain text" claim in SEC-1 and re-scope it to the origin issue only (re-rate to Medium on its own).
+
+### Before beta (real users, real third-party speech, real data/keys)
+
+- **SEC-7 (Medium) — prominent on-screen recording indicator + a "what the mic does with audio" note in the user manual.** As soon as beta captures a *real, unaware* communication partner (and bystanders), audio-consent law (one-party vs. all-party) is live, and Web Speech recognition ships that audio to Google/Microsoft. Make the "listening" state conspicuous for the partner's benefit; document that recognition is cloud-based in the supported browsers. *(Already recorded as a design item in Further Design Thoughts #5 and the Overview To Do — this pins it to the beta gate.)*
+- **SEC-9 (Low, but a data-integrity issue) — build the already-designed Web Locks single-instance guard.** Two open instances race on the whole-file data-folder writes (worldview/relationships/logs) and cross-feed mics. Real users make silent data loss real. *(Full approach already specified under the v0.3.4 "Single-instance enforcement" subsection — this is the build.)*
+- **SEC-6 (Medium), near-term portion — data-folder privacy notice at folder-selection time.** Warn that a OneDrive/cloud-synced folder replicates conversations to the cloud, and recommend a local folder for sensitive use; document BitLocker/account-password as the present-day baseline in the manual. Real users' transcripts record what caregivers/family/medical providers said in private.
+- **SEC-3 (Medium) — add a Content Security Policy** (`<meta http-equiv>`): `default-src 'self'; script-src 'self'; connect-src 'self' https://api.anthropic.com; …`. Requires first moving the inline SW-registration script (`index.html:439`) to a file (or hashing it). Backstop for the escaping discipline as the editor/panel surface grows; test hard in preview (CSP breaks silently).
+- **SEC-5 (Medium), documentation portion — write down the prompt-injection boundary** in the overviews: private facts are protected by *instruction, not isolation*; "Prefer not to say" is the only level that withholds a fact from the model; the manual-selection gate (no option is ever auto-spoken) is a permanent invariant.
+
+### Before public release (architecture / needs a Ken decision)
+
+- **SEC-1 (Medium) — give the app its own origin.** Serving from `volksswitch.github.io` shares localStorage (API key + cached personal data) with every other Volksswitch Pages project, so an XSS/compromise in *any* of them exposes this app's key. Fix = a custom subdomain (e.g. `app.volksswitch.org`): a one-line `CNAME` in `app/` **plus DNS + GitHub Pages custom-domain config — Ken's infra action.** *(Contingent risk — needs a compromise elsewhere on the account — hence Medium and public-release-gated, but pull earlier if a second Pages project starts loading third-party scripts.)*
+- **SEC-1 (Medium) — supporter-locked (PIN) Setup tier for the key field**, so casual device access can't read/change the key. Fits the already-planned Setup-tier / supporter-assisted settings concept.
+- **SEC-6 (Medium) — optional passphrase-based data-folder encryption** (WebCrypto AES-GCM over the JSON files). Feature-sized; trades away the "just copy the file between PCs" simplicity. Warranted before any clinic/multi-user deployment.
+- **SEC-5 (Medium) — flag response cards that contain a Private-marked value.** The app knows the private values it injected, so it can badge any generated option that includes one — making a prompt-injection-induced disclosure conspicuous at selection time.
+
+---
+
 ## Open Questions (remaining)
 
 > **SESSION HANDOFF — where we left off (June 30 2026).** A fresh session should start here. Shipped: v0.5.40 (title bar removed → Command Bar; About Me into Settings) through v0.5.46 (side-dock default percentage layout). **Layout-budget approach now underway (Ken's plan):** (1) define a default layout as %-of-screen per region for each dock mode → (2) subdivide each region → (3) THEN define how button-size / gap / minimum-gap changes perturb it. **v0.5.46 did step 1+2 for the SIDE dock** (dock 30%W; transcript 30 / command 10 / response 60 V; command-bar 8×⅛; palette 90% + New-4 10%; gap default 0). Live threads:
