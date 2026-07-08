@@ -21,6 +21,9 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.5.75": [
+    "The conversation area turns faintly red if the app hits a problem. If something goes wrong while getting responses, the conversation box gets a soft red tint — a quiet heads-up that a hiccup happened and things may act oddly for a moment (and worth mentioning if you report it). It clears on its own the next time responses come through normally, or when you start or end a conversation."
+  ],
   "0.5.73": [
     "Error reports now include the conversation. The error log groups errors by the conversation they happened in (newest first), and Copy puts a full report on the clipboard — each conversation's transcript together with its errors — so you can send the whole picture, not just the error message."
   ],

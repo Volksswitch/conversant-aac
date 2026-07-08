@@ -13,6 +13,8 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+## Version 0.5.75
+
 - **The conversation area turns faintly red if the app hits a problem.** If
   something goes wrong while getting responses, the conversation box gets a soft
   red tint — a quiet heads-up that a hiccup happened and things may act oddly for
