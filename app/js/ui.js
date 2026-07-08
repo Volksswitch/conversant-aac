@@ -134,6 +134,9 @@ const SLOT_META = {
     REPAIR_EXPAND:   { badge: 'EXPLAIN MORE', cls: 'slot-repair' },
     OPENER:          { badge: 'OPENER',       cls: 'slot-initiative' },
     CLOSING:         { badge: 'CLOSING',      cls: 'slot-persistent' },
+    // Lead statements from Reframe-to-steer (the user holds the floor and wants to
+    // take the conversation somewhere) — initiative-colored, one per cell.
+    STATEMENT:       { badge: 'STATEMENT',    cls: 'slot-initiative' },
 };
 
 // The response footprint is a fixed RESERVED grid of 4 CELLS (Rule 1) — 2×2 with
@@ -201,7 +204,18 @@ export function showResponses(palette, onSelect) {
             slotCls: SLOT_ORDER[i],
         }));
     } else {
-        cells = palette.map((m) => ({ responses: [m], slotCls: (SLOT_META[m.slot] || {}).cls || 'slot-persistent' }));
+        // Openers / closers / repair-of-self distribute across the fixed 4-cell
+        // footprint. With more than four (e.g. eight conversation starters in
+        // 8-card mode) stack TWO per cell — matching the 8-card responding
+        // footprint — so all of them fit the same four keyguard cells (Ken).
+        const perCell = palette.length > RESERVED_SLOTS ? 2 : 1;
+        cells = [];
+        for (let i = 0; i < palette.length; i += perCell) {
+            const group = palette.slice(i, i + perCell);
+            cells.push({ responses: group, slotCls: (SLOT_META[group[0].slot] || {}).cls || 'slot-persistent' });
+        }
+        // Never exceed the four fixed cells (the caller caps the palette, but be safe).
+        if (cells.length > RESERVED_SLOTS) cells.length = RESERVED_SLOTS;
     }
 
     const count = Math.max(RESERVED_SLOTS, cells.length);
@@ -350,14 +364,15 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         (row || []).forEach((cell) => {
             const span = cell.span || 1;
             if (cell.kind === 'space') {
-                // The space counterpart: "In my own words" (distinct color, single tap).
+                // The space counterpart: "In my own words" (distinct color, single
+                // tap). It is a CONSTANT control (not a user-editable phrase), so per
+                // the icon-only rule it shows a compose (pencil) icon + tooltip, not
+                // its text label (Ken).
                 const b = document.createElement('button');
                 b.type = 'button';
                 b.className = 'ep-btn ep-imow';
                 b.style.flex = `${span} 1 0`;
-                b.title = 'In my own words';
-                b.setAttribute('aria-label', 'In my own words');
-                b.innerHTML = '<span class="ep-text">In my own words</span>';
+                setIconButton(b, 'compose', 'In my own words');
                 b.addEventListener('click', () => onInMyOwnWords && onInMyOwnWords());
                 rowEl.appendChild(b);
                 return;

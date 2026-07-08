@@ -55,6 +55,23 @@ let activeFeeling = null;
 // conversation; the Command Bar "Don't save" button toggles it live.
 let conversationPrivate = false;
 
+// True while the app is speaking one of the USER's OWN statements (a selected
+// response, composed text, an Express phrase, an opener/closer, a repaired
+// utterance, or a spoken command like Hold on / Ask them to repeat / Repeat what
+// I said). The user's statements are shown directly in the transcript, so they
+// must NOT also appear as the tentative "now-playing" pre-text line (Ken) — that
+// line is reserved for system-generated placeholder speech the user can't
+// otherwise see.
+let speakingUserStatement = false;
+
+// Speak text that IS the user's own statement: suppress the now-playing pre-text
+// line for its duration (the statement is already in the transcript).
+async function speakUserStatement(text) {
+    speakingUserStatement = true;
+    try { await tts.speak(text); }
+    finally { speakingUserStatement = false; }
+}
+
 function applyPrivacyState() {
     storage.setConversationSaving(!conversationPrivate);
     ui.setPrivacyState(conversationPrivate);
@@ -104,10 +121,14 @@ function initApp() {
         else stt.noteSpokenEnd();
     });
 
-    // Surface what the app is saying on the user's behalf (placeholders, the spoken
-    // response, prompts) as text in Region A — nothing the system speaks is
-    // invisible (UI-Design.docx §7). Cleared when speech ends.
-    tts.onSpeakingChange((speaking, text) => ui.setNowPlaying(speaking ? text : null));
+    // Surface what the app is saying on the user's behalf as text in Region A —
+    // nothing the system speaks is invisible (UI-Design.docx §7). Reserved for
+    // SYSTEM speech (placeholders): the user's OWN statements go straight to the
+    // transcript, so showing them here as tentative "pre-text" is redundant (Ken).
+    tts.onSpeakingChange((speaking, text) => {
+        if (speaking && speakingUserStatement) return;
+        ui.setNowPlaying(speaking ? text : null);
+    });
 
     document.getElementById('startBtn').addEventListener('click', handleStart);
     ui.onListenClick(toggleListening);
@@ -415,6 +436,7 @@ async function handleResponseSelected(response, index) {
     // regardless of the auto-resume setting, and arm the session so later
     // exchanges can auto-resume too. Captured before selectResponse clears the mode.
     const wasOpener = response.slot === 'OPENER';
+    const wasClosing = response.slot === 'CLOSING';
 
     placeholders.stop();
     generationToken++; // invalidate any in-flight generation
@@ -423,19 +445,45 @@ async function handleResponseSelected(response, index) {
     const raw = currentPartnerText;
     currentPartnerText = '';
 
-    ui.setStatus('Speaking...');
-    await tts.speak(response.text);
-
+    // Update the engine and COMMIT the exchange to the transcript BEFORE speaking,
+    // so the user's chosen statement appears as a real transcript entry rather
+    // than as tentative "now-playing" pre-text (Ken). speakUserStatement then
+    // suppresses the now-playing line for its duration.
     engine.selectResponse(response);
     ui.showEngineState(engine.getSnapshot());
-
     await commitExchange(raw, response.text, index);
+
+    ui.setStatus('Speaking...');
+    await speakUserStatement(response.text);
+
     if (wasOpener) {
         manualListenArmed = true;   // starting a conversation arms auto-resume
         startFreshListening();      // begin capturing the partner now
+    } else if (wasClosing) {
+        // After a wind-down / closing statement, re-offer the closings (incl.
+        // "Bye!") so the user can sign off without waiting for the partner to
+        // reply to the wind-down (Ken). Listening still resumes if armed.
+        reofferClosings();
     } else {
         resumeOrIdle();
     }
+}
+
+// Re-show the closing palette after a closing was spoken so a farewell is one tap
+// away, and resume listening (if armed) so a partner reply is still captured. The
+// mic-resume mirrors startFreshListening but WITHOUT clearing the palette (we want
+// the closers to stay visible).
+function reofferClosings() {
+    if (manualListenArmed && storage.loadAutoRelisten()) {
+        currentPartnerText = '';
+        generationToken++;
+        ui.setLiveTranscript('');
+        ui.setTranscriptState('idle');
+        stt.startListening();
+    }
+    const snap = engine.windDown();
+    ui.showEngineState(snap);
+    showConversationPalette(snap.palette, 'Say goodbye, or wait for their reply');
 }
 
 // REPAIR-OF-SELF (design §7.2): re-speak verbatim (instant, no LLM), or
@@ -464,9 +512,8 @@ async function handleRepairOfSelf(response) {
     const raw = currentPartnerText; // the partner's repair-initiator turn ("What?")
     currentPartnerText = '';
 
-    ui.setStatus('Speaking...');
-    await tts.speak(text);
-
+    // Commit BEFORE speaking (Ken) so the restated turn shows in the transcript,
+    // not as tentative now-playing pre-text.
     engine.completeRepairOfSelf(text);
     ui.showEngineState(engine.getSnapshot());
 
@@ -479,6 +526,9 @@ async function handleRepairOfSelf(response) {
     storage.logUserResponse({ selectedText: text, selectedIndex: -1, allOptions: [] });
     ui.renderConversation(conversationHistory);
     ui.setLiveTranscript('');
+
+    ui.setStatus('Speaking...');
+    await speakUserStatement(text);
     resumeOrIdle();
 }
 
@@ -577,6 +627,20 @@ function terminateConversation() {
     applyPrivacyState();
 }
 
+// How many opener / closer cards the response footprint can show: 8 with the
+// 2-per-category (8-card) setting, otherwise 4. Openers/closers are a flat list
+// (one per card), so we cap the palette to this before showing it (Ken — 8-card
+// mode fills all 8 with conversation starters).
+function conversationPaletteCap() {
+    return storage.loadResponsesPerCategory() === 2 ? 8 : 4;
+}
+
+// Show an opener/closer palette in the fixed footprint, capped to what fits.
+function showConversationPalette(palette, statusMsg) {
+    ui.showResponses((palette || []).slice(0, conversationPaletteCap()), handleResponseSelected);
+    if (statusMsg) ui.setStatus(statusMsg);
+}
+
 // Start conversation — terminate the current one (clear window + cards), then
 // open a fresh conversation in INITIATING mode with the openers.
 function handleInitiate() {
@@ -586,8 +650,7 @@ function handleInitiate() {
     const partnerName = activePartner ? (activePartner.nickname || activePartner.name) : '';
     const snap = engine.initiate({ partnerName });
     ui.showEngineState(snap);
-    ui.showResponses(snap.palette, handleResponseSelected);
-    ui.setStatus('Pick an opener');
+    showConversationPalette(snap.palette, 'Pick an opener');
 }
 
 // Push the user's edited openers/closers into the engine (Hold on / Pardon? are
@@ -602,25 +665,38 @@ function applyControlPhrases() {
     engine.setConversationPhrases({ openers: clean(p.openers), closers: clean(p.closers) });
 }
 
+// A persistent-control action spoke something AS the user (Say again / Hold on /
+// Ask them to repeat). Anything spoken aloud is part of the conversation, so
+// record it in the transcript + log (Ken). Not a palette pick, so index -1.
+function logSpokenUserTurn(text) {
+    if (!text) return;
+    conversationHistory.push({ role: 'user', text });
+    ui.renderConversation(conversationHistory);
+    storage.logUserResponse({ selectedText: text, selectedIndex: -1, allOptions: [] });
+}
+
 // Say again — re-speak the user's last utterance verbatim. Instant, no LLM.
 async function handleSayAgain() {
     const text = engine.getLastUserUtterance();
     if (!text) { ui.setStatus('Nothing to repeat yet'); return; }
     placeholders.stop();
+    logSpokenUserTurn(text);          // it's spoken aloud → show it in the transcript
     ui.setStatus('Speaking...');
-    await tts.speak(text);
+    await speakUserStatement(text);
     ui.setStatus(isListening ? 'Listening...' : 'Ready');
 }
 
-// Hold on — manually fire a floor-holding placeholder. Instant.
+// Hold on — manually fire a floor-holding statement. Instant.
 async function handleHoldOn() {
     placeholders.stop();
-    ui.setStatus('Speaking...');
     // User-editable (Settings → Controls). The default is softened from "Hold on,
     // let me think." — imperative phrasing reads as curt through the flat built-in
     // voices (Ken, June 18 2026), and the leading "Hmm," (v0.3.14) was dropped
     // (June 19 2026) as the built-in voices render it unintelligibly.
-    await tts.speak(controlPhrases.getPhrases().holdOn);
+    const text = controlPhrases.getPhrases().holdOn;
+    logSpokenUserTurn(text);          // spoken aloud → part of the conversation
+    ui.setStatus('Speaking...');
+    await speakUserStatement(text);
     ui.setStatus(isListening ? 'Listening...' : 'Ready');
 }
 
@@ -648,8 +724,10 @@ async function handlePardon() {
     ui.setLiveTranscript(remaining);
     ui.setTranscriptState('idle');
     ui.clearResponseOptions();
+    const text = controlPhrases.getPhrases().pardon; // user-editable (Settings → Controls)
+    logSpokenUserTurn(text);          // spoken aloud → show it in the transcript (Ken)
     ui.setStatus('Speaking...');
-    await tts.speak(controlPhrases.getPhrases().pardon); // user-editable (Settings → Controls)
+    await speakUserStatement(text);
     ui.setStatus(isListening ? 'Listening...' : 'Ready');
 }
 
@@ -705,31 +783,52 @@ async function handleReframe() {
     ui.clearComposer();
     closeComposer();
     if (!steer) return;
-    if (!currentPartnerText || !lastPalette.length) {
-        ui.setStatus('Reframe needs an active response — wait for options first');
-        return;
-    }
+
     const token = ++generationToken;
     placeholders.stop();
-    ui.setStatus('Reworking options with your input...');
-
     llm.setWorldviewBlock(worldview.buildBlock());
     llm.setRelationshipsBlock(relationships.buildBlock());
     llm.setSituationBlock(buildSituationBlock());
-    const history = [...conversationHistory, { role: 'partner', text: currentPartnerText }];
 
+    // Two modes on the one button, chosen by whether a partner turn is on the floor:
+    //  • Partner turn active → rework the SUGGESTED RESPONSES around the steer (a
+    //    guided regenerate — reply to the partner, taking the input into account).
+    //  • No partner turn (the user just responded / holds the floor) → the user
+    //    wants to LEAD: generate STATEMENTS that take the conversation where they
+    //    want to go (Ken), not replies to a partner.
+    if (currentPartnerText && lastPalette.length) {
+        ui.setStatus('Reworking options with your input...');
+        const history = [...conversationHistory, { role: 'partner', text: currentPartnerText }];
+        try {
+            const result = await llm.generateResponses(history, engine.buildRequestContext(), { steer, perCategory: storage.loadResponsesPerCategory() });
+            if (token !== generationToken) return; // superseded
+            const snap = engine.refreshPalette(result.responses);
+            ui.showEngineState(snap);
+            lastPalette = snap.palette;
+            ui.showResponses(snap.palette, handleResponseSelected);
+            ui.setStatus('Select a response');
+        } catch (err) {
+            if (token !== generationToken) return;
+            storage.logError('reframe', err.message);
+            ui.showResponseError(`Couldn't rework the options: ${err.message}`);
+            ui.setStatus(`Error: ${err.message}`);
+        }
+        return;
+    }
+
+    // Lead mode: the user holds the floor and wants to steer.
+    ui.setStatus('Finding statements to steer the conversation...');
     try {
-        const result = await llm.generateResponses(history, engine.buildRequestContext(), { steer, perCategory: storage.loadResponsesPerCategory() });
+        const result = await llm.generateStatements(steer, conversationHistory, engine.buildRequestContext(), conversationPaletteCap());
         if (token !== generationToken) return; // superseded
         const snap = engine.refreshPalette(result.responses);
         ui.showEngineState(snap);
         lastPalette = snap.palette;
-        ui.showResponses(snap.palette, handleResponseSelected);
-        ui.setStatus('Select a response');
+        showConversationPalette(snap.palette, 'Pick a statement to steer things');
     } catch (err) {
         if (token !== generationToken) return;
-        storage.logError('reframe', err.message);
-        ui.showResponseError(`Couldn't rework the options: ${err.message}`);
+        storage.logError('reframeLead', err.message);
+        ui.showResponseError(`Couldn't get statements: ${err.message}`);
         ui.setStatus(`Error: ${err.message}`);
     }
 }
@@ -739,8 +838,7 @@ function handleWindDown() {
     placeholders.stop();
     const snap = engine.windDown();
     ui.showEngineState(snap);
-    ui.showResponses(snap.palette, handleResponseSelected);
-    ui.setStatus('Pick a closing');
+    showConversationPalette(snap.palette, 'Pick a closing');
 }
 
 // End conversation — hard terminate (Ken, June 18 2026). Tears everything down
@@ -784,14 +882,15 @@ async function speakAsUserTurn(historyText, spokenText = historyText) {
     const raw = currentPartnerText;
     currentPartnerText = '';
 
-    ui.setStatus('Speaking...');
-    await tts.speak(spokenText);
-
+    // Commit to the transcript BEFORE speaking (Ken) so the statement shows as a
+    // real transcript entry, not tentative now-playing pre-text.
     engine.selectResponse({ text: historyText });
     ui.showEngineState(engine.getSnapshot());
     ui.clearResponseOptions();    // any AI palette shown is now stale
-
     await commitExchange(raw, historyText, -1);
+
+    ui.setStatus('Speaking...');
+    await speakUserStatement(spokenText);
     resumeOrIdle();
 }
 

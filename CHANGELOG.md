@@ -13,6 +13,28 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+- **More ways to start a conversation.** Five new conversation starters were
+  added, and when you have "Suggestions per category" set to 2 (eight cards),
+  **Start conversation** now fills all eight cards with different openers.
+- **Your own statements go straight into the transcript.** When you pick a
+  response, type your own words, or tap an Express phrase, it now shows up in the
+  conversation as you say it, instead of appearing first as a faint "about to
+  say" preview line. That preview line is now only used for the app's
+  place-holding phrases.
+- **"Repeat what I said", "Hold on", and "Ask them to repeat" now appear in the
+  transcript.** Anything the app says out loud for you is now part of the written
+  conversation.
+- **Saying goodbye is quicker.** After you pick a wind-down or closing line, the
+  closing options (including "Bye!") stay on the cards so you can sign off without
+  waiting for the other person to reply first.
+- **"In my own words" while you hold the floor now suggests statements to steer
+  the conversation.** If you've just spoken and it's your turn to lead, type where
+  you'd like things to go and tap **Reframe** — the app offers statements that
+  take the conversation there, instead of replies to a question.
+- **Fixed-purpose buttons show an icon.** Buttons whose job never changes (like
+  "In my own words") now show a clear icon with a tooltip, matching the rest of
+  the control buttons.
+
 ## Version 0.5.75
 
 - **The conversation area turns faintly red if the app hits a problem.** If

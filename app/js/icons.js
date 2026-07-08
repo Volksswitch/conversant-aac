@@ -37,6 +37,8 @@ export const ICONS = {
     reframe: SVG('<path d="M12 3l1.7 4.3L18 9l-4.3 1.7L12 15l-1.7-4.3L6 9l4.3-1.7z"/><path d="M5 15l.8 2.2L8 18l-2.2.8L5 21l-.8-2.2L2 18l2.2-.8z"/>'),
     // Clear — X.
     clear: SVG('<line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>'),
+    // Compose / "In my own words" — a pencil (write your own words).
+    compose: SVG('<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>'),
     // Don't-save (privacy) — a shield with a diagonal slash: this conversation is
     // NOT written to the data folder. The .private-on selected state signals it's on.
     noSave: SVG('<path d="M12 3l7 3v5c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6z"/><line x1="4.5" y1="4" x2="19.5" y2="20"/>'),

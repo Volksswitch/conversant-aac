@@ -205,6 +205,78 @@ ${JSON.stringify(context)}${buildProfileBlock()}${avoidBlock}${steerBlock}${perC
     return parseGeneration(data.content[0].text.trim());
 }
 
+// Reframe-to-lead (Ken): the user HOLDS THE FLOOR (they just responded, or the
+// conversation is between turns) and wants to STEER the conversation somewhere.
+// They typed a direction in the "In your own words" box and hit Reframe. Instead
+// of replies to a partner, generate STATEMENTS the user could say next to take the
+// conversation where they want. Returns { responses:[{slot:'STATEMENT',text,hint}] }
+// so it renders one-per-cell like openers/closers. `count` (4 or 8) matches the
+// footprint capacity.
+export async function generateStatements(steer, conversationHistory = [], context = {}, count = 4) {
+    if (!apiKey) throw new Error('API key not set');
+    const n = count === 8 ? 8 : 4;
+
+    const contextLines = conversationHistory.slice(-8).map(entry =>
+        `${entry.role === 'partner' ? 'Partner' : 'User'}: ${entry.text}`
+    ).join('\n');
+
+    const systemPrompt = `You are an AAC assistant speaking AS a non-speaking user in a live conversation. You speak in the user's OWN voice, never as a helpful assistant. The user currently HOLDS THE FLOOR — it is their turn — and they want to LEAD the conversation in a direction. They typed this direction/goal for what they want to say or where they want things to go:
+"${steer}"
+
+Generate ${n} distinct STATEMENTS (or questions) the user could say NEXT to move the conversation toward that goal. These are things the USER initiates — NOT answers to a partner's question. Vary them: some plain statements, some questions that open the topic, some gentle lead-ins. Order them best-first.
+
+Speak only to what is real: never invent specific events, outcomes, dates, numbers, or names you were not given. You MAY use standing facts from the user's profile below and the direction they typed (being user-authored, it is TRUE). When a natural statement would need a specific you don't have, keep it general rather than fabricating.
+
+Do not begin any statement with an empty interjection ("Ah", "Oh", "Well", "So", "Hmm"). Open with the substance.
+
+Return ONLY a JSON array of ${n} strings, nothing else. Example: ["...", "...", "..."].
+
+Conversation context (engine state — use it, do not echo it):
+${JSON.stringify(context)}${buildProfileBlock()}${contextLines ? '\n\nConversation so far:\n' + contextLines : ''}`;
+
+    const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+            model: MODEL,
+            max_tokens: 600,
+            system: systemPrompt,
+            messages: [{ role: 'user', content: steer }]
+        })
+    });
+
+    if (!response.ok) {
+        const err = await response.text();
+        throw new Error(`API error ${response.status}: ${err}`);
+    }
+
+    const data = await response.json();
+    trackUsage(data);
+    return { responses: parseStatements(data.content[0].text.trim(), n) };
+}
+
+// Parse a JSON array of statement strings (tolerating stray prose around it) into
+// STATEMENT-slot response descriptors. Falls back to splitting lines if needed.
+function parseStatements(text, n) {
+    let list = null;
+    try { list = JSON.parse(text); } catch { /* try to extract */ }
+    if (!Array.isArray(list)) {
+        const m = text.match(/\[[\s\S]*\]/);
+        if (m) { try { list = JSON.parse(m[0]); } catch { /* fall through */ } }
+    }
+    if (!Array.isArray(list)) {
+        // Last resort: non-empty lines, stripped of list markers/quotes.
+        list = text.split('\n').map(s => s.replace(/^\s*[-*\d.]*\s*/, '').replace(/^["']|["']$/g, '').trim()).filter(Boolean);
+    }
+    if (!Array.isArray(list) || !list.length) throw new Error('Could not parse statements from API');
+    return list.slice(0, n).map(t => ({ slot: 'STATEMENT', text: String(t).trim(), hint: '' })).filter(m => m.text);
+}
+
 // Repair-of-self (design §7.2): the partner asked the user to repeat/clarify.
 // Re-speak verbatim needs no LLM (the app handles it); this call covers the
 // "rephrase" and "expand" operations on the user's own last utterance.
