@@ -30,19 +30,21 @@ import * as storage from './storage.js';
  *
  * Phrases must stay neutral/reflective, never imperative or directed at the
  * partner ("Let me think", "Give me a second", "Hold on") — flat built-in voices
- * make those read as curt. The pools live in data/placeholders.json (a
- * { acknowledgment:[], thinking:[] } object) and will become user-editable
- * later. start()/stop() keep the signature app.js calls.
+ * make those read as curt. The pools live in data/placeholders.json (an
+ * { acknowledgment:{question:[],general:[]}, thinking:[] } object) and will become
+ * user-editable later. start()/stop() keep the signature app.js calls.
  */
 
-// Inline fallback if data/placeholders.json fails to load.
+// Inline fallback if data/placeholders.json fails to load. The acknowledgment role
+// has two sub-pools: `question` (warm, for a partner question) and `general`
+// (neutral, for a greeting / statement / assessment / closing) — because a
+// placeholder now plays after ANY partner turn (Ken, July 8 2026), and "Good
+// question." after "Hi!" would read worse than silence.
 const FALLBACK_POOLS = {
-    acknowledgment: [
-        'Good question.',
-        "That's a good question.",
-        "That's a fair question.",
-        'Let me see.',
-    ],
+    acknowledgment: {
+        question: ['Good question.', "That's a good question.", "That's a fair question."],
+        general: ['Let me see.', 'One moment.', 'Just a second.'],
+    },
     thinking: [
         'Still thinking it through.',
         "I'm working out what I want to say.",
@@ -51,28 +53,38 @@ const FALLBACK_POOLS = {
     ],
 };
 
-let pools = null;            // { acknowledgment:[], thinking:[] }
+let pools = null;            // { acknowledgment:{question:[],general:[]}, thinking:[] }
 let timer = null;
 let active = false;
 let count = 0;               // placeholders spoken this window (for role + cap)
-let lastIndex = { acknowledgment: -1, thinking: -1 };
+let lastIndex = { question: -1, general: -1, thinking: -1 };
 let armTime = 0;             // when the partner stopped (initial-delay clock origin)
 let armed = false;           // arm() was called and start() hasn't consumed it
+let questionFlavor = false;  // pick question- vs general-flavored acknowledgment
 
-// Accept the role-keyed object shape; tolerate a legacy flat array by using it
-// for both roles so an old file still works.
+// Normalize to { acknowledgment:{question:[],general:[]}, thinking:[] }. Tolerates
+// two legacy shapes: a flat array (used for all pools), and an object whose
+// `acknowledgment` is a flat array (the pre-July-2026 shape — used for both
+// question and general). Empty sub-pools are filled from the others so there is
+// always something to say.
 function normalizePools(data) {
     if (Array.isArray(data) && data.length) {
-        return { acknowledgment: data.slice(), thinking: data.slice() };
+        return { acknowledgment: { question: data.slice(), general: data.slice() }, thinking: data.slice() };
     }
     if (data && typeof data === 'object') {
-        const ack = Array.isArray(data.acknowledgment) ? data.acknowledgment : [];
-        const think = Array.isArray(data.thinking) ? data.thinking : [];
-        if (ack.length || think.length) {
-            return {
-                acknowledgment: ack.length ? ack : think,
-                thinking: think.length ? think : ack,
-            };
+        const think = Array.isArray(data.thinking) ? data.thinking.slice() : [];
+        const ack = data.acknowledgment;
+        let question = [];
+        let general = [];
+        if (Array.isArray(ack)) { question = ack.slice(); general = ack.slice(); }
+        else if (ack && typeof ack === 'object') {
+            question = Array.isArray(ack.question) ? ack.question.slice() : [];
+            general = Array.isArray(ack.general) ? ack.general.slice() : [];
+        }
+        if (!question.length) question = general.length ? general.slice() : think.slice();
+        if (!general.length) general = question.length ? question.slice() : think.slice();
+        if (question.length || general.length || think.length) {
+            return { acknowledgment: { question, general }, thinking: think.length ? think : general.slice() };
         }
     }
     return null;
@@ -84,22 +96,18 @@ async function loadPools() {
         const data = await fetch('data/placeholders.json').then(r => r.json());
         pools = normalizePools(data);
     } catch { /* fall back below */ }
-    if (!pools) pools = { acknowledgment: FALLBACK_POOLS.acknowledgment.slice(),
-                          thinking: FALLBACK_POOLS.thinking.slice() };
+    if (!pools) pools = normalizePools(FALLBACK_POOLS);
 }
 
-// Pick from a role's list, avoiding the immediately-previous phrase in that role.
-function pickFrom(role) {
-    const list = (pools[role] && pools[role].length) ? pools[role]
-               : (pools.thinking && pools.thinking.length) ? pools.thinking
-               : pools.acknowledgment || [];
-    if (!list.length) return null;
-    if (list.length === 1) { lastIndex[role] = 0; return list[0]; }
+// Pick from a list, avoiding the immediately-previous phrase for that key.
+function pick(list, key) {
+    if (!list || !list.length) return null;
+    if (list.length === 1) { lastIndex[key] = 0; return list[0]; }
     let index;
     do {
         index = Math.floor(Math.random() * list.length);
-    } while (index === lastIndex[role]);
-    lastIndex[role] = index;
+    } while (index === lastIndex[key]);
+    lastIndex[key] = index;
     return list[index];
 }
 
@@ -112,18 +120,21 @@ export function arm() {
     armed = true;
     armTime = Date.now();
     count = 0;
-    lastIndex = { acknowledgment: -1, thinking: -1 };
+    lastIndex = { question: -1, general: -1, thinking: -1 };
     loadPools().catch(() => { /* fallback handled in loadPools */ });
 }
 
-export async function start() {
+// `opts.question` selects the QUESTION-flavored acknowledgment ("Good question.")
+// vs. the neutral one ("Let me see.") for the first placeholder.
+export async function start(opts = {}) {
     if (timer) { clearTimeout(timer); timer = null; }
+    questionFlavor = !!opts.question;
     const { initialDelay, maxPlaceholders } = storage.loadPlaceholderSettings();
     // 0 = the user wants no placeholders at all (they read as artificial).
     if (maxPlaceholders === 0) { active = false; armed = false; return; }
     active = true;
     count = 0;
-    lastIndex = { acknowledgment: -1, thinking: -1 };
+    lastIndex = { question: -1, general: -1, thinking: -1 };
     loadPools().catch(() => { /* fallback handled in loadPools */ });
     // The clock started at the partner's pause (arm()); if start() is reached
     // without an arm (defensive), measure from now. The first placeholder waits only
@@ -151,9 +162,15 @@ async function speakNext() {
         try { await loadPools(); } catch { /* ignore */ }
     }
     if (!active || !pools) return;
-    // Role by position: first placeholder acknowledges, later ones say "still thinking".
-    const role = count === 0 ? 'acknowledgment' : 'thinking';
-    const phrase = pickFrom(role);
+    // Role by position: first placeholder acknowledges (question- or general-flavored),
+    // later ones say "still thinking".
+    let phrase;
+    if (count === 0) {
+        const key = questionFlavor ? 'question' : 'general';
+        phrase = pick(pools.acknowledgment[key], key);
+    } else {
+        phrase = pick(pools.thinking, 'thinking');
+    }
     count++;
     if (phrase) await tts.speak(phrase);
     if (!active) return;

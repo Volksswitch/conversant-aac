@@ -31,6 +31,13 @@ regenerate the bundled notes in `app/js/whats-new.js`.
   existing list on their own — you no longer have to reset to see them. Anything
   you've edited or removed is still respected: your own wording stays, and a card you
   deleted won't come back.
+- **A placeholder now plays after anything the partner says — including a greeting.**
+  Previously the "I'm thinking…" placeholders only played after a question. Now the
+  partner always hears a short response coming while you choose, so they're never left
+  wondering whether you heard them or can communicate. After a question you'll hear a
+  question-style "Good question."; after a greeting or statement, a neutral "Let me
+  see." / "One moment." (The initial delay and the per-turn limit still apply, so a
+  quick pick plays none, and you can still set the limit to 0 to turn placeholders off.)
 
 ## Version 0.5.77
 

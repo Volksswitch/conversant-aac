@@ -357,21 +357,26 @@ function startFreshListening() {
     stt.startListening();
 }
 
-// Partner actions that put a real response obligation on the user — the ones
-// where a "I'm-thinking-about-your-question" placeholder reads as natural. For
-// statements, greetings, assessments and closings a placeholder feels off (Ken,
-// June 18 2026), so we stay quiet.
-const PLACEHOLDER_WORTHY_ACTIONS = new Set(['QUESTION', 'INVITATION', 'REQUEST']);
-
+// A placeholder plays after ANY complete partner turn — greeting, statement,
+// question, assessment, closing (Ken, July 8 2026). Rationale: a placeholder is a
+// social-presence signal ("I heard you, I'm formulating a response"); if the
+// partner hears NOTHING after they speak, they may assume the user didn't hear or
+// can't communicate. This reverses the earlier "questions only" gate (June 18).
+// Only two cases still stay silent: an INCOMPLETE turn (the partner is still
+// talking — don't cut in), and a repair-initiator ("What?"/"Huh?" — the partner is
+// asking the USER to repeat, which is the instant repair-of-self flow, where a
+// "let me think" beat before re-speaking the same thing reads wrong).
 function shouldPlayPlaceholder(snap) {
     const c = snap.lastClassification;
     if (!c) return false;
     if (c.turn_status !== 'COMPLETE' || c.is_repair_initiator) return false;
-    // Never during winding-down / closing.
-    if (snap.mode === engine.MODE.PRE_CLOSING_CLOSING) return false;
-    if (snap.phase === 'PRE_CLOSING' || snap.phase === 'CLOSING') return false;
-    return PLACEHOLDER_WORTHY_ACTIONS.has(c.partner_action);
+    return true;
 }
+
+// Which partner actions get the QUESTION-flavored acknowledgment ("Good question.")
+// vs. the neutral one ("Let me see.") — only the flavor of the first placeholder
+// differs; every complete turn still gets one.
+const QUESTION_ACTIONS = new Set(['QUESTION', 'INVITATION', 'REQUEST']);
 
 async function generateOptions(partnerText) {
     const token = ++generationToken;
@@ -414,11 +419,16 @@ async function generateOptions(partnerText) {
                 ? 'Partner didn\'t catch that — choose how to repeat'
                 : 'Select a response');
             // Now that the options are on screen and we know what the partner
-            // did, start the floor-holding placeholders ONLY when they're
-            // warranted (a question, not a statement/greeting/closing). The first
-            // one lands initialDelay after this point; a quick pick cancels it.
-            if (shouldPlayPlaceholder(snap)) placeholders.start();
-            else placeholders.stop();
+            // did, start the floor-holding placeholders for any complete partner turn
+            // (see shouldPlayPlaceholder). The first lands initialDelay after this
+            // point; a quick pick cancels it. Question-type turns get a
+            // question-flavored acknowledgment ("Good question."); everything else a
+            // neutral one ("Let me see.").
+            if (shouldPlayPlaceholder(snap)) {
+                placeholders.start({ question: QUESTION_ACTIONS.has(snap.lastClassification.partner_action) });
+            } else {
+                placeholders.stop();
+            }
         }
 
         // Record facts the model lacked — drives the questionnaire's "suggested
