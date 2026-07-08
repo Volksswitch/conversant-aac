@@ -846,6 +846,7 @@ Source: `security issues.docx` in the project root (10 findings, SEC-1…SEC-10,
 
 ### Before beta (real users, real third-party speech, real data/keys)
 
+- **Settings persistence to the data folder + per-device profiles (Ken, July 8 2026) — PRE-BETA, see the dedicated "Settings persistence" design section below.** Today all Settings live only in origin-scoped, machine-local `localStorage`, so the SEC-1 origin move would reset every tester's settings and settings don't travel across a tester's devices. Move them into the data folder, split portable vs. device-specific, key the device-specific set by an app-minted id with a user-named "which device is this?" picker. **Ken (July 8 2026): this must go in prior to beta.**
 - **SEC-7 (Medium) — prominent on-screen recording indicator + a "what the mic does with audio" note in the user manual.** As soon as beta captures a *real, unaware* communication partner (and bystanders), audio-consent law (one-party vs. all-party) is live, and Web Speech recognition ships that audio to Google/Microsoft. Make the "listening" state conspicuous for the partner's benefit; document that recognition is cloud-based in the supported browsers. *(Already recorded as a design item in Further Design Thoughts #5 and the Overview To Do — this pins it to the beta gate.)*
 - **SEC-9 (Low, but a data-integrity issue) — build the already-designed Web Locks single-instance guard.** Two open instances race on the whole-file data-folder writes (worldview/relationships/logs) and cross-feed mics. Real users make silent data loss real. *(Full approach already specified under the v0.3.4 "Single-instance enforcement" subsection — this is the build.)*
 - **SEC-6 (Medium), near-term portion — data-folder privacy notice at folder-selection time.** Warn that a OneDrive/cloud-synced folder replicates conversations to the cloud, and recommend a local folder for sensitive use; document BitLocker/account-password as the present-day baseline in the manual. Real users' transcripts record what caregivers/family/medical providers said in private.
@@ -858,6 +859,28 @@ Source: `security issues.docx` in the project root (10 findings, SEC-1…SEC-10,
 - **SEC-1 (Medium) — supporter-locked (PIN) Setup tier for the key field**, so casual device access can't read/change the key. Fits the already-planned Setup-tier / supporter-assisted settings concept.
 - **SEC-6 (Medium) — optional passphrase-based data-folder encryption** (WebCrypto AES-GCM over the JSON files). Feature-sized; trades away the "just copy the file between PCs" simplicity. Warranted before any clinic/multi-user deployment.
 - **SEC-5 (Medium) — flag response cards that contain a Private-marked value.** The app knows the private values it injected, so it can badge any generated option that includes one — making a prompt-injection-induced disclosure conspicuous at selection time.
+
+---
+
+## Settings persistence — data folder + per-device profiles (Ken, July 8 2026) — PRE-BETA, not yet built
+
+**Problem.** Every Setting currently lives only in `localStorage` (`aac_settings`), which is **origin-scoped and machine-local**. Two consequences: (a) the SEC-1 dedicated-origin move would reset every tester's settings to defaults (the new origin gets an empty `localStorage`), and (b) settings never travel with the data folder across a user's machines. The fix is to persist settings to the **data folder** (the origin-independent source of truth). **Ken (July 8 2026): this must ship before beta.**
+
+**Why not one settings file, and why not key by hardware.** The data folder is shared across machines (OneDrive), so a single `settings.json` would make two devices fight over screen-dependent values. Settings split into two kinds (below). And we **cannot key by the real machine** — the browser exposes *no* hardware/system identity (hostname, serial, MAC, `COMPUTERNAME`) by design (anti-fingerprinting). `navigator.userAgent` gives OS+browser only, identical across two of the same tablet. So there is no automatic "system name as a subfolder."
+
+**Design decisions (Ken, July 8 2026):**
+- **App-minted device id + user-friendly name (not hardware-derived).** On first launch on a machine, mint a random UUID, store it in that machine's `localStorage` (per-machine, does not sync — Chrome/Edge profile sync does not sync site `localStorage`), and ask the user for a label ("Ken's Surface"). Device-specific settings go to `settings/<uuid>.json` in the data folder, with the friendly name stored inside the file.
+- **Two files — portable vs. device-specific:**
+  - **Device-specific** (`settings/<uuid>.json`): keyboard dock/layout/side (`keyboardDock`, `sideLayout`, `bottomLayout`, `sideDockPosition`), button sizing (`buttonSizePos`, `buttonGapPos`, `minGapPos`, `dockSepPos`), the font scales, `voiceURI`, and `keyboardMode` (physical/onscreen). These depend on the physical screen, the voices installed on that machine, and whether that device has a physical keyboard.
+  - **Portable** (a shared `settings.json`): `silenceThreshold`, `initialDelay`/`subsequentDelay`, `maxPlaceholders`, `expressTapMode`, `doubleTapMs`, `noSaveDefault`, `responsesPerCategory`. These are the *person's* preferences and should be identical on every device.
+  - *(Ambiguous, treated device-specific for now: font scales and `keyboardMode` — rendered size and keyboard availability track the device; revisit if a user wants them to travel.)*
+- **Load on launch, write on change.** After the folder connects, read the local uuid → load `settings/<uuid>.json` + the shared `settings.json`; the folder is source of truth (same **"file in folder wins"** rule as worldview v0.2.25). Any settings change writes back to the folder.
+- **"Which device is this?" picker — the graceful path for the origin move, a new/replaced device, or cleared browser data.** When no local uuid matches a file in `settings/`, present the friendly names already there and let the user **adopt** one (re-bind this machine) or **create** a new named profile. This is what makes the SEC-1 migration painless: re-pick folder → pick device → layout/voice/timings return. (The local uuid is itself lost on the origin move, so the picker, not the uuid, is what recovers the profile.)
+- **API key stays OUT of the folder — re-entered per machine.** Putting the plaintext `sk-ant-…` key in a possibly-cloud-synced folder collides with **SEC-6** (unencrypted-at-rest). `lastSeenVersion` and the usage counters also stay in `localStorage` (per-install / cosmetic).
+
+**Ties to:** **SEC-1** (the dedicated-origin migration that motivated this) and the long-planned **Cross-device transfer** feature — this *is* the mechanism that makes moving between tablets work, not merely surviving the origin change.
+
+**Build (when authorized):** storage schema (the two files + a `settings/` subfolder + the device-id accessor), load/save wiring in `storage.js` and `app.js` (`applyButtonSizing`, `openSettings`/`saveSettings`, init), the device-profile picker UI, and a one-time migration reading the current `aac_settings` into the split files. **Status: PRE-BETA, not yet built.**
 
 ---
 
