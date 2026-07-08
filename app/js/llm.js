@@ -320,6 +320,65 @@ Return ONLY the new utterance text, nothing else.${buildProfileBlock()}${context
     return data.content[0].text.trim();
 }
 
+// Pre-generate BOTH repair-of-self rewordings in ONE call (Ken, July 8 2026), so
+// the Rephrase and Expand cards can show their real, immediately-speakable text
+// instead of a hint + a post-tap round-trip. Fired when the partner asks the user
+// to repeat ("What?"). Returns { rephrase, expand } (either '' if parsing failed).
+// Re-speak needs no LLM (it's the user's last utterance verbatim), so it's not here.
+export async function repairOptions(lastUserUtterance, conversationHistory = []) {
+    if (!apiKey) throw new Error('API key not set');
+
+    const contextLines = conversationHistory.slice(-4).map(entry =>
+        `${entry.role === 'partner' ? 'Partner' : 'User'}: ${entry.text}`
+    ).join('\n');
+
+    const systemPrompt = `You are an AAC assistant speaking AS a non-speaking user. The partner did not understand the user's last spoken turn, so the user may want to say it again a different way. Produce TWO alternatives to the user's last utterance, both in the user's own voice:
+- "rephrase": the same meaning, worded differently and possibly clearer. Same length or shorter.
+- "expand": the same point with a little more detail added, so it is clearer.
+
+Return ONLY a JSON object, no other text: {"rephrase": "...", "expand": "..."}${buildProfileBlock()}${contextLines ? '\n\nConversation so far:\n' + contextLines : ''}`;
+
+    const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+            model: MODEL,
+            max_tokens: 300,
+            system: systemPrompt,
+            messages: [{ role: 'user', content: lastUserUtterance }]
+        })
+    });
+
+    if (!response.ok) {
+        const err = await response.text();
+        throw new Error(`API error ${response.status}: ${err}`);
+    }
+
+    const data = await response.json();
+    trackUsage(data);
+    return parseRepairOptions(data.content[0].text.trim());
+}
+
+function parseRepairOptions(text) {
+    let parsed = null;
+    try { parsed = JSON.parse(text); } catch {
+        const m = text.match(/\{[\s\S]*\}/);
+        if (m) { try { parsed = JSON.parse(m[0]); } catch { /* fall through */ } }
+    }
+    if (parsed && typeof parsed === 'object') {
+        return {
+            rephrase: typeof parsed.rephrase === 'string' ? parsed.rephrase.trim() : '',
+            expand: typeof parsed.expand === 'string' ? parsed.expand.trim() : '',
+        };
+    }
+    return { rephrase: '', expand: '' };
+}
+
 // Robustly parse the structured generation output. Tolerates a bare array or a
 // legacy {options:[...]} object (older builds / best-effort) by mapping it onto
 // the slot palette, plus stray prose around the JSON object.

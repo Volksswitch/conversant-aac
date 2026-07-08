@@ -298,6 +298,19 @@ export function refreshPalette(responses) {
     return getSnapshot();
 }
 
+// Fill the pre-generated rephrase/expand wording into the current repair-of-self
+// palette (Ken, July 8 2026), so those cards show real, immediately-speakable text
+// instead of a hint. Only touches the REPAIR_REPHRASE/REPAIR_EXPAND entries; once
+// their text is set they become instant (no post-tap round-trip). No-op for any
+// other palette, or for a wording that came back empty.
+export function setRepairOptions({ rephrase = '', expand = '' } = {}) {
+    for (const entry of state.palette) {
+        if (entry.op === 'rephrase' && rephrase) { entry.text = rephrase; entry.latency = 'instant'; }
+        if (entry.op === 'expand' && expand) { entry.text = expand; entry.latency = 'instant'; }
+    }
+    return getSnapshot();
+}
+
 function repairSelfPalette() {
     return [
         { slot: SLOT.REPAIR_RESPEAK, op: 'respeak', text: state.lastUserUtterance || '',

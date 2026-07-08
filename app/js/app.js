@@ -429,6 +429,10 @@ async function generateOptions(partnerText) {
             } else {
                 placeholders.stop();
             }
+            // Repair-of-self ("What?"): pre-generate the rephrase + expand wordings
+            // in ONE call so those cards show real, speakable text instead of a hint
+            // (Ken). Re-speak is already in-hand (the user's last utterance).
+            if (snap.mode === engine.MODE.REPAIR_OF_SELF) prefetchRepairOptions(token);
         }
 
         // Record facts the model lacked — drives the questionnaire's "suggested
@@ -509,6 +513,27 @@ function reofferClosings() {
 
 // REPAIR-OF-SELF (design §7.2): re-speak verbatim (instant, no LLM), or
 // rephrase / expand the user's last utterance via a round-trip.
+// Pre-generate the rephrase + expand wordings (one combined call) when the partner
+// asks the user to repeat, so their cards show real text instead of a hint (Ken).
+// Best-effort: on failure/supersession the cards keep their hints and tapping
+// falls back to an on-demand round-trip in handleRepairOfSelf.
+async function prefetchRepairOptions(token) {
+    const last = engine.getLastUserUtterance();
+    if (!last) return;
+    let opts;
+    try {
+        opts = await llm.repairOptions(last, conversationHistory);
+    } catch (err) {
+        storage.logError('repairOptions', err.message);
+        return;
+    }
+    // Bail if a newer turn superseded this, or the user already left repair-of-self.
+    if (token !== generationToken) return;
+    if (engine.getMode() !== engine.MODE.REPAIR_OF_SELF) return;
+    const snap = engine.setRepairOptions(opts);
+    ui.showResponses(snap.palette, handleResponseSelected);
+}
+
 async function handleRepairOfSelf(response) {
     placeholders.stop();
     generationToken++;
@@ -520,13 +545,19 @@ async function handleRepairOfSelf(response) {
         return;
     }
     if (response.op !== 'respeak') {
-        ui.setStatus(response.op === 'expand' ? 'Expanding…' : 'Rephrasing…');
-        try {
-            text = await llm.repairSelf(engine.getLastUserUtterance(), response.op, conversationHistory);
-        } catch (err) {
-            storage.logError('repairSelf', err.message, { op: response.op });
-            ui.setStatus(`Error: ${err.message}`);
-            return;
+        // Prefer the pre-generated wording already shown on the card; only round-trip
+        // if the pre-generation hasn't arrived yet or failed.
+        if (response.text && response.text.trim()) {
+            text = response.text.trim();
+        } else {
+            ui.setStatus(response.op === 'expand' ? 'Expanding…' : 'Rephrasing…');
+            try {
+                text = await llm.repairSelf(engine.getLastUserUtterance(), response.op, conversationHistory);
+            } catch (err) {
+                storage.logError('repairSelf', err.message, { op: response.op });
+                ui.setStatus(`Error: ${err.message}`);
+                return;
+            }
         }
     }
 

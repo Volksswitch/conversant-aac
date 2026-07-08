@@ -13,6 +13,12 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+- **When the partner asks you to repeat, all three options now show the actual words.**
+  If the partner doesn't catch what you said, the "say it again / say it differently /
+  explain it more" choices now display the real, ready-to-speak sentences on the cards
+  (prepared the moment they ask), so you can read and pick — instead of showing a
+  label and only producing the wording after you tap.
+
 - **"Don't save this conversation" now covers everything.** When a conversation is
   marked not to be saved, the partner's words are also kept out of the app's error
   records and out of any copied bug report — previously a technical hiccup could
