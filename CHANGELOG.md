@@ -11,7 +11,7 @@ This is the single source of truth for those in-app notes. After editing it, run
 `node scripts/apply-release-notes.mjs` (or say "apply release notes" to Claude) to
 regenerate the bundled notes in `app/js/whats-new.js`.
 
-## Unreleased (next release)
+## Version 0.5.77
 
 - **Interrupting the partner now records what they had said.** If you cut in with
   an instant statement (like a "Bye" Express phrase) while the partner is still

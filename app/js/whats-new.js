@@ -21,6 +21,9 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.5.77": [
+    "Interrupting the partner now records what they had said. If you cut in with an instant statement (like a \"Bye\" Express phrase) while the partner is still talking, the words they'd said up to that point are now saved in the transcript — placed just before your interruption — instead of vanishing. If auto-listen is on, the partner keeps being recorded afterward too if they continue."
+  ],
   "0.5.76": [
     "Errors are now saved inside the conversation file, in order. If something goes wrong during a conversation, the problem is written into that conversation's saved record at the moment it happens, in time order with what was said — so a support report shows exactly what failed and when. (Your turns were already saved as they happened; this adds the errors alongside them.)",
     "Each conversation is saved to its own file again. A second conversation in the same session no longer gets appended to the first conversation's file.",
