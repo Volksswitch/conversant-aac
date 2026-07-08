@@ -25,9 +25,12 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 - **More conversation closings, so "Wind down" fills all eight.** There are now eight
   built-in closings (added "I need to head out.", "Let's talk again soon.", "Take
   care!", "Catch you later.") to match the eight starters, so an 8-card layout fills
-  every slot when you start or end a conversation. *(If your openers/closings still
-  show only a few, tap Settings → Controls → "Reset to default" once to pick up the
-  new set — your own edited list is kept as-is until you do.)*
+  every slot when you start or end a conversation.
+- **New built-in starters and closings now appear automatically.** When an update adds
+  new default conversation starters or closings, they're added to the end of your
+  existing list on their own — you no longer have to reset to see them. Anything
+  you've edited or removed is still respected: your own wording stays, and a card you
+  deleted won't come back.
 
 ## Version 0.5.77
 

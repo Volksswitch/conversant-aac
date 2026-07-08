@@ -69,12 +69,43 @@ function normalize(value) {
         const arr = x.map((s) => (typeof s === 'string' ? s : ''));
         return arr.length ? arr : d.slice();
     };
+    const seededList = (x) => (Array.isArray(x) ? x.filter((s) => typeof s === 'string') : []);
+    const seeded = (v.seeded && typeof v.seeded === 'object') ? v.seeded : {};
     return {
         holdOn: str(v.holdOn, DEFAULTS.holdOn),
         pardon: str(v.pardon, DEFAULTS.pardon),
         openers: list(v.openers, DEFAULTS.openers),
         closers: list(v.closers, DEFAULTS.closers),
+        // Watermark: every default opener/closer value ever injected into this
+        // user's set. Drives additive merging (mergeNewDefaults) so a release that
+        // adds new default cards shows them to existing users automatically,
+        // WITHOUT resurrecting cards the user deliberately deleted.
+        seeded: { openers: seededList(seeded.openers), closers: seededList(seeded.closers) },
     };
+}
+
+// Append default openers/closers the user has NOT been offered before to the END
+// of their list — the "be smart about new functionality, but protect edits" rule
+// (Ken, July 8 2026). "File in folder wins" still protects the user's edits; this
+// only ADDS genuinely-new defaults. A default already in `seeded` is respected
+// as-is: kept if present, and NOT re-added if the user removed it. A default NOT in
+// `seeded` is new — appended once (unless already present) and recorded. There is
+// no cap on how many can be defined (only on how many the UI shows at once), so
+// appending is always safe. Returns true if anything changed (persist if so).
+function mergeNewDefaults(p) {
+    let changed = false;
+    for (const key of ['openers', 'closers']) {
+        const seededSet = new Set(p.seeded[key]);
+        const present = new Set(p[key]);
+        for (const d of DEFAULTS[key]) {
+            if (seededSet.has(d)) continue;   // already offered in a past release
+            p.seeded[key].push(d);
+            seededSet.add(d);
+            if (!present.has(d)) { p[key].push(d); present.add(d); }  // append at the end
+            changed = true;
+        }
+    }
+    return changed;
 }
 
 function readCache() {
@@ -95,7 +126,9 @@ export async function load() {
     if (raw) { try { loaded = JSON.parse(raw); } catch { loaded = null; } }
     if (!loaded) loaded = readCache();
     phrases = normalize(loaded);
+    const changed = mergeNewDefaults(phrases);   // append any new default cards
     writeCache(phrases);
+    if (changed) writeDisk(phrases);              // persist the appended defaults + watermark
     return phrases;
 }
 
@@ -107,7 +140,11 @@ export function getPhrases() {
 
 /** Persist an edited set (cache immediately, disk in the background). */
 export function setPhrases(next) {
-    phrases = normalize(next);
+    // Carry the seeded watermark forward — the editor doesn't send it, and losing
+    // it would make a deleted default reappear on the next load (mergeNewDefaults).
+    const priorSeeded = (phrases && phrases.seeded) ? phrases.seeded : { openers: [], closers: [] };
+    const incoming = (next && typeof next === 'object') ? next : {};
+    phrases = normalize({ ...incoming, seeded: incoming.seeded || priorSeeded });
     writeCache(phrases);
     writeDisk(phrases);
     return getPhrases();
@@ -116,6 +153,9 @@ export function setPhrases(next) {
 /** Restore the default phrases. */
 export function resetPhrases() {
     phrases = normalize(DEFAULTS);
+    // A reset adopts the full current defaults, so watermark them all — a later
+    // release still appends only genuinely-new cards, not these.
+    phrases.seeded = { openers: DEFAULTS.openers.slice(), closers: DEFAULTS.closers.slice() };
     writeCache(phrases);
     writeDisk(phrases);
     return getPhrases();
@@ -133,7 +173,9 @@ export async function syncToFolder() {
     if (raw) { try { disk = JSON.parse(raw); } catch { disk = null; } }
     if (disk) {
         phrases = normalize(disk);
+        const changed = mergeNewDefaults(phrases);   // append any new default cards
         writeCache(phrases);
+        if (changed) await writeFile(FILE, JSON.stringify({ version: 1, updated: new Date().toISOString(), ...phrases }, null, 2));
         return 'adopted';
     }
     phrases = getPhrases();

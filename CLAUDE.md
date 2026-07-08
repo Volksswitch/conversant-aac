@@ -884,6 +884,20 @@ Source: `security issues.docx` in the project root (10 findings, SEC-1…SEC-10,
 
 ---
 
+## Reconciliation policy for user-owned default sets — additive merge, not "file wins wholesale" (Ken, July 8 2026)
+
+**Principle:** "File in folder wins" protects the user's **edits**; it must NOT **hide new functionality**. When a release adds new *default* entries to a user-owned configurable set, those new defaults should **append to the end** of the user's existing list automatically — the user shouldn't have to "Reset to default" (which would blow away their edits) to discover them. Ken (July 8 2026): *"It's one thing to protect user data and another to ignore settings or hide new functionality… we could simply append the new options to the options already configured by the user."* (There's no cap on how many can be *defined* — only on how many the UI *shows at once* — so appending is always safe.)
+
+**Mechanism — a "seeded" watermark (implemented for control-phrases openers/closers, July 8 2026).** The stored file records `seeded: { openers:[…], closers:[…] }` = every default value ever injected into this user's set. On load/adopt, `mergeNewDefaults()` appends each current default that is **not** in `seeded` (recording it), and **skips** any default already in `seeded`. This distinguishes the two cases that a naive "append every default not currently present" cannot:
+- **New default** (not in `seeded`) → append once, at the end. So new starters/closings appear for existing users automatically.
+- **User-deleted default** (in `seeded`, absent from the list) → left alone. A card the user removed does **not** come back.
+
+Rules that keep it correct: the merge runs only on **load/adopt**, never in `setPhrases` (a user edit must not trigger re-append); `setPhrases` **carries the watermark forward** (the editor doesn't send it) so a deletion sticks across the next load; `resetPhrases` seeds the **full** current defaults (a reset means "I have them all"); an existing file **without** a `seeded` field is treated as `seeded = []` → a one-time append of all current defaults not already present (the migration that gave Ken the missing closings without a manual reset). *Accepted one-time cost:* that first migration can re-add a default a pre-watermark user had deliberately deleted; harmless and one-time, and Ken had not curated any down.
+
+**Apply this pattern to the other user-owned default sets when they next expand** — Express Panel items (`express-panel.js` / `express-items.js`), placeholder pools (`placeholders.json`, when the editor lands), and any future configurable set. The same seeded-watermark approach generalizes (give list items stable ids if the values aren't naturally unique). This is the standing reconciliation policy, alongside the v0.2.25 "file in folder wins" rule (which still governs *edited* values and cross-machine copies).
+
+---
+
 ## Open Questions (remaining)
 
 > **SESSION HANDOFF — where we left off (June 30 2026).** A fresh session should start here. Shipped: v0.5.40 (title bar removed → Command Bar; About Me into Settings) through v0.5.46 (side-dock default percentage layout). **Layout-budget approach now underway (Ken's plan):** (1) define a default layout as %-of-screen per region for each dock mode → (2) subdivide each region → (3) THEN define how button-size / gap / minimum-gap changes perturb it. **v0.5.46 did step 1+2 for the SIDE dock** (dock 30%W; transcript 30 / command 10 / response 60 V; command-bar 8×⅛; palette 90% + New-4 10%; gap default 0). Live threads:
