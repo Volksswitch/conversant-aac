@@ -77,6 +77,15 @@ function applyPrivacyState() {
     ui.setPrivacyState(conversationPrivate);
 }
 
+// What the partner has said so far this turn, at the moment the user acts. The
+// live STT transcript is more complete than currentPartnerText (which is only
+// refreshed at each silence checkpoint), so interrupting the partner mid-utterance
+// — e.g. an instant "Bye" before they've paused — still records what they'd said
+// up to that point instead of dropping it (Ken). Falls back to currentPartnerText.
+function heardPartnerText() {
+    return (stt.getCurrentTranscript() || currentPartnerText || '').trim();
+}
+
 function handlePrivacyToggle() {
     conversationPrivate = !conversationPrivate;
     applyPrivacyState();
@@ -440,9 +449,11 @@ async function handleResponseSelected(response, index) {
 
     placeholders.stop();
     generationToken++; // invalidate any in-flight generation
+    // Capture the partner's speech BEFORE stopping the mic — if they were still
+    // talking (resumed after the options appeared), grab what they'd said, not just
+    // the last checkpoint's text.
+    const raw = heardPartnerText();
     stt.stopListening();
-
-    const raw = currentPartnerText;
     currentPartnerText = '';
 
     ui.setStatus('Speaking...');
@@ -538,7 +549,13 @@ async function handleRepairOfSelf(response) {
 // partner turn is shown with its raw text at once and quietly upgraded to the
 // cleaned text when that round-trip returns. `raw` may be empty (openers /
 // closers have no captured partner turn).
-async function commitExchange(raw, userText, index) {
+//
+// `opts.cleanup` (default true): run the AI transcript-cleanup pass on the partner
+// text. Set FALSE for the interruption case — when the user cuts the partner off
+// with an instant statement, we just record what we heard verbatim; there's no
+// completed utterance to clean and no point spending an AI call on a fragment (Ken).
+async function commitExchange(raw, userText, index, opts = {}) {
+    const { cleanup = true } = opts;
     // Snapshot the history BEFORE this exchange — that's the context the cleanup
     // pass should see (it shouldn't include the turn it's cleaning).
     const cleanupContext = [...conversationHistory];
@@ -565,7 +582,7 @@ async function commitExchange(raw, userText, index) {
         feeling: feelingStamp(),
     };
 
-    if (raw) {
+    if (raw && cleanup) {
         // Clean the partner transcript in the background, patch its turn in place
         // when it returns (without delaying the user's words), then log the
         // exchange in proper partner-then-user order.
@@ -579,6 +596,15 @@ async function commitExchange(raw, userText, index) {
                 ui.renderConversation(conversationHistory);
             }
             await storage.logPartnerSpeech({ rawTranscript: raw, cleanedTranscript: cleaned, partner: stamp });
+            await storage.logUserResponse(userLog);
+        })();
+    } else if (raw) {
+        // Interruption case: record the partner's raw heard text as-is, no AI
+        // cleanup (Ken). The turn is already rendered above; just log it, partner
+        // before user, so the JSON keeps the interleaving.
+        const stamp = partnerStamp();
+        (async () => {
+            await storage.logPartnerSpeech({ rawTranscript: raw, cleanedTranscript: raw, partner: stamp });
             await storage.logUserResponse(userLog);
         })();
     } else {
@@ -876,9 +902,11 @@ function clearInfluencers() {
 async function speakAsUserTurn(historyText, spokenText = historyText) {
     placeholders.stop();
     generationToken++;            // invalidate any in-flight generation on the partner turn
+    // Capture the partner's speech BEFORE stopping the mic, so interrupting them
+    // mid-utterance (an instant Express phrase / composed statement) still records
+    // what they'd said up to the interruption (Ken).
+    const raw = heardPartnerText();
     stt.stopListening();
-
-    const raw = currentPartnerText;
     currentPartnerText = '';
 
     ui.setStatus('Speaking...');
@@ -889,7 +917,8 @@ async function speakAsUserTurn(historyText, spokenText = historyText) {
     // during the speech, so there's no pre-text preview.
     engine.selectResponse({ text: historyText });
     ui.showEngineState(engine.getSnapshot());
-    await commitExchange(raw, historyText, -1);
+    // Interruption: record the partner's raw heard text verbatim, no AI cleanup (Ken).
+    await commitExchange(raw, historyText, -1, { cleanup: false });
     resumeOrIdle();
 }
 

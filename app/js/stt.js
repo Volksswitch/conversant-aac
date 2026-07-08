@@ -216,6 +216,14 @@ export function stopListening() {
     recognition.stop();
 }
 
+// The partner's speech heard so far this listening session — the finalized
+// segments plus the in-progress interim. Lets the app capture what the partner
+// had said the instant the user interrupts them (before a silence checkpoint has
+// pushed it to the app), so an interruption doesn't lose their partial speech (Ken).
+export function getCurrentTranscript() {
+    return (accumulatedText + currentInterim).trim();
+}
+
 // Discard the speech collected so far without stopping recording. Used when the
 // user asks the partner to repeat — the current exchange's text is thrown away
 // and the system keeps listening for the partner's restated utterance.

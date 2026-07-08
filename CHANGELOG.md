@@ -13,6 +13,12 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+- **Interrupting the partner now records what they had said.** If you cut in with
+  an instant statement (like a "Bye" Express phrase) while the partner is still
+  talking, the words they'd said up to that point are now saved in the transcript
+  — placed just before your interruption — instead of vanishing. If auto-listen is
+  on, the partner keeps being recorded afterward too if they continue.
+
 ## Version 0.5.76
 
 - **Errors are now saved inside the conversation file, in order.** If something
