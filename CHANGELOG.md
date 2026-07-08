@@ -18,6 +18,16 @@ regenerate the bundled notes in `app/js/whats-new.js`.
   records and out of any copied bug report — previously a technical hiccup could
   still tuck a snippet of what the partner said into those. Nothing from a private
   conversation is written down now.
+- **With 8 response cards chosen, you now see 8 slots everywhere.** When "Suggestions
+  per category" is set to 2 (8 cards), the response area now shows eight slots when
+  the app opens and between turns — not four — so it matches what you see while
+  choosing a reply, and a keyguard lines up the same way throughout.
+- **More conversation closings, so "Wind down" fills all eight.** There are now eight
+  built-in closings (added "I need to head out.", "Let's talk again soon.", "Take
+  care!", "Catch you later.") to match the eight starters, so an 8-card layout fills
+  every slot when you start or end a conversation. *(If your openers/closings still
+  show only a few, tap Settings → Controls → "Reset to default" once to pick up the
+  new set — your own edited list is kept as-is until you do.)*
 
 ## Version 0.5.77
 

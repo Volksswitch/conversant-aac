@@ -48,6 +48,10 @@ export const DEFAULTS = {
         'This was really nice, thanks.',
         'Great seeing you.',
         'Bye!',
+        'I need to head out.',
+        "Let's talk again soon.",
+        'Take care!',
+        'Catch you later.',
     ],
 };
 

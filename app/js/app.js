@@ -167,6 +167,7 @@ function initApp() {
     applyButtonSizing();   // compute the conversation layout (region sizes + gaps)
     // Region sizes depend on the viewport — recompute on resize/orientation.
     window.addEventListener('resize', applyButtonSizing);
+    ui.setCardsPerCategory(storage.loadResponsesPerCategory()); // 8-card mode → 8 reserved slots
     ui.clearResponseOptions(); // render the reserved empty card footprint at rest
     renderExpressPanel();
     expressEditor.init(document.getElementById('expressEditor'), { onChange: renderExpressPanel });
@@ -1643,6 +1644,8 @@ function openSettings() {
         const n = Number(responsesPerCategoryInput.value);
         storage.saveResponsesPerCategory(n);
         ui.setRegenerateLabel((n === 2 ? 2 : 1) * 4); // "New 4" ↔ "New 8"
+        ui.setCardsPerCategory(n);
+        ui.clearResponseOptions(); // re-render the reserved footprint (4 vs 8 slots)
     };
     document.querySelectorAll('input[name="keyboardMode"]').forEach(radio => {
         radio.onchange = () => {

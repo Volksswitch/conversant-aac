@@ -147,6 +147,14 @@ const RESERVED_SLOTS = 4;
 const SLOT_ORDER = ['slot-preferred', 'slot-dispreferred', 'slot-initiative', 'slot-repair'];
 const CATEGORY_SLOTS = ['PREFERRED', 'DISPREFERRED', 'INITIATIVE', 'REPAIR'];
 
+// How many option cards each of the four fixed cells holds (the "responses per
+// category" setting): 1 or 2. In 2-mode the four cells are split (8 slots total),
+// so the reserved/empty footprint must ALSO show split cells — otherwise the app
+// launches (and rests between turns) showing 4 slots but fills 8 (Ken). app.js
+// keeps this in sync via setCardsPerCategory.
+let cardsPerCategory = 1;
+export function setCardsPerCategory(n) { cardsPerCategory = Number(n) === 2 ? 2 : 1; }
+
 // A card shows ONLY the RESPONSE TEXT, large and easy to read (Ken): the slot
 // color + fixed position carry the category, so the category pill is gone, and
 // every card is spoken instantly, so the latency dot is gone too. `half` shrinks
@@ -170,13 +178,18 @@ function buildResponseCard(response, index, onSelect, half) {
     return card;
 }
 
-function buildEmptyCell(slotCls) {
+// `split` (2-per-category mode) renders the cell as two stacked empty slots so an
+// empty/reserved cell matches the height and slot count of a filled 8-card cell.
+function buildEmptyCell(slotCls, split = false) {
     const cell = document.createElement('div');
-    cell.className = `response-cell ${slotCls}`;
-    const empty = document.createElement('div');
-    empty.className = `response-card response-card-empty ${slotCls}`;
-    empty.setAttribute('aria-hidden', 'true');
-    cell.appendChild(empty);
+    cell.className = `response-cell ${slotCls}${split ? ' response-cell-split' : ''}`;
+    const n = split ? 2 : 1;
+    for (let i = 0; i < n; i++) {
+        const empty = document.createElement('div');
+        empty.className = `response-card response-card-empty ${slotCls}${split ? ' response-card-half' : ''}`;
+        empty.setAttribute('aria-hidden', 'true');
+        cell.appendChild(empty);
+    }
     return cell;
 }
 
@@ -222,7 +235,7 @@ export function showResponses(palette, onSelect) {
     for (let i = 0; i < count; i++) {
         const cell = cells[i];
         if (!cell || !cell.responses.length) {
-            responseOptions.appendChild(buildEmptyCell(cell ? cell.slotCls : (SLOT_ORDER[i] || 'slot-persistent')));
+            responseOptions.appendChild(buildEmptyCell(cell ? cell.slotCls : (SLOT_ORDER[i] || 'slot-persistent'), cardsPerCategory === 2));
             continue;
         }
         const el = document.createElement('div');
@@ -238,7 +251,8 @@ export function clearResponseOptions() {
     // line), so the region's size is held even with no options / no conversation.
     responseOptions.classList.remove('is-empty', 'palette-enter', 'has-error');
     responseOptions.innerHTML = '';
-    for (let i = 0; i < RESERVED_SLOTS; i++) responseOptions.appendChild(buildEmptyCell(SLOT_ORDER[i]));
+    const split = cardsPerCategory === 2;
+    for (let i = 0; i < RESERVED_SLOTS; i++) responseOptions.appendChild(buildEmptyCell(SLOT_ORDER[i], split));
 }
 
 // Show a VISIBLE error in the response region (Ken, July 2026): when a generation

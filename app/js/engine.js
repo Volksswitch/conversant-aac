@@ -80,6 +80,10 @@ const DEFAULT_CLOSERS = [
     'This was really nice, thanks.',
     'Great seeing you.',
     'Bye!',
+    'I need to head out.',
+    "Let's talk again soon.",
+    'Take care!',
+    'Catch you later.',
 ];
 let openers = DEFAULT_OPENERS.slice();
 let closers = DEFAULT_CLOSERS.slice();
