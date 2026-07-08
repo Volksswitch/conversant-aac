@@ -819,24 +819,6 @@ Product-document currency is tracked by [`DOC-SYNC.md`](DOC-SYNC.md) (any root d
 
 **History note:** the first catch-up of the three beta-facing docs (July 8 2026) was done *before* this backup rule existed, so those three were edited in place without a pre-edit snapshot; OneDrive version history (and `Other/Previous Doc Version/` for the two overviews) is the recovery path for their pre-edit state. Every sync from now on backs up first.
 
-## Overview-Document To Do List (batch when enough accumulate)
-
-> **Now tracked by [`DOC-SYNC.md`](DOC-SYNC.md) (Ken, July 8 2026).** Product-document currency is managed by the doc-sync tracker: any root document named `Conversant AAC *` records the git commit it was last reviewed against, and "update doc X" diffs `git log <that commit>..HEAD`. The pending items below are folded into the **Product Overview** and **Architecture Overview** rows of `DOC-SYNC.md` as their outstanding catch-up; this list stays as the detailed backing notes for those two docs (add new overview-drift items here, and they'll be picked up in the next catch-up pass). The docs were renamed `AI-Driven AAC …` → `Conversant AAC …`.
-
-Pending edits to **`Conversant AAC Architecture Overview.docx`** and **`Conversant AAC Product Overview.docx`**. Don't edit those docs for one or two items — let these accumulate and do a batched editing pass. (Ken, June 15 2026.) Each item notes which doc and the source thought.
-
-- **Product Overview — add a "What This System Is Not" section.** (Thought #3 above.) Not a personal assistant / productivity agent / smart speaker; a conversation tool that speaks *as* the user.
-- **Product Overview (+ Architecture, generation principle) — conversational honesty.** (Thought #2.) The user can be uncertain, wrong, or say "I don't know"; the system must not make them an encyclopedia/oracle to be exploited.
-- **Both overviews — multi-party conversations as a future capability.** (Thought #1.)
-- **Both overviews — deliberate per-session Start Listening + no auto-listen at startup (privacy/consent behavior).** (Thought #4.)
-- **Both overviews — recording indicator for the communication partner (privacy/consent).** (Thought #5.) On-screen now; hardware LED a future-hardware concern.
-- **Product Overview — target-age (16+) rationale; Architecture — supporter-locked appropriateness filter** (Setup-tier, for minors/supporter-managed accounts; not a nanny on adult self-managed use). (Thought #6.)
-- **Architecture (worldview/RAG, Phase 3) + Product Overview — accept user-authored "my views" documents into RAG.** (Thought #7.)
-- **Architecture — system-requirements section: recommended specs for the cloud build now; onboard/local AI as a separate future track with much higher requirements.** (Thought #8.)
-- **Both overviews — future near-real-time and batched communication (email, messaging, stored text/speech).** (Thought #9.)
-
----
-
 ## Development phases (Ken, July 8 2026) — to-do organizing convention
 
 Ken introduced a three-stage rollout vocabulary for organizing the to-do list by *when* work must be done:
