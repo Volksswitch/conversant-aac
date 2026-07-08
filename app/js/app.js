@@ -22,7 +22,7 @@ import { confirmDanger } from './confirm-dialog.js';
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.5.76';
+const APP_VERSION = '0.5.77';
 
 const conversationHistory = [];
 let isListening = false;

@@ -11,6 +11,8 @@ This is the single source of truth for those in-app notes. After editing it, run
 `node scripts/apply-release-notes.mjs` (or say "apply release notes" to Claude) to
 regenerate the bundled notes in `app/js/whats-new.js`.
 
+## Unreleased (next release)
+
 ## Version 0.5.76
 
 - **Errors are now saved inside the conversation file, in order.** If something
