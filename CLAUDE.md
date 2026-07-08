@@ -804,7 +804,9 @@ A batch of Ken's thoughts captured this session. **Status: recorded only — non
 
 ## Overview-Document To Do List (batch when enough accumulate)
 
-Pending edits to **`AI-Driven AAC Architecture Overview.docx`** and **`AI-Driven AAC Product Overview.docx`**. Don't edit those docs for one or two items — let these accumulate and do a batched editing pass. (Ken, June 15 2026.) Each item notes which doc and the source thought.
+> **Now tracked by [`DOC-SYNC.md`](DOC-SYNC.md) (Ken, July 8 2026).** Product-document currency is managed by the doc-sync tracker: any root document named `Conversant AAC *` records the git commit it was last reviewed against, and "update doc X" diffs `git log <that commit>..HEAD`. The pending items below are folded into the **Product Overview** and **Architecture Overview** rows of `DOC-SYNC.md` as their outstanding catch-up; this list stays as the detailed backing notes for those two docs (add new overview-drift items here, and they'll be picked up in the next catch-up pass). The docs were renamed `AI-Driven AAC …` → `Conversant AAC …`.
+
+Pending edits to **`Conversant AAC Architecture Overview.docx`** and **`Conversant AAC Product Overview.docx`**. Don't edit those docs for one or two items — let these accumulate and do a batched editing pass. (Ken, June 15 2026.) Each item notes which doc and the source thought.
 
 - **Product Overview — add a "What This System Is Not" section.** (Thought #3 above.) Not a personal assistant / productivity agent / smart speaker; a conversation tool that speaks *as* the user.
 - **Product Overview (+ Architecture, generation principle) — conversational honesty.** (Thought #2.) The user can be uncertain, wrong, or say "I don't know"; the system must not make them an encyclopedia/oracle to be exploited.
