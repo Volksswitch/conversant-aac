@@ -21,12 +21,19 @@ design decisions), and `CHANGELOG.md` are all version-controlled; the `.docx` fi
 themselves are git-ignored (OneDrive), so their timestamps were never the right
 anchor.
 
-**To bring a document current** ("update the Product Overview"):
+**Trigger phrase (Ken):** **"sync docs"**, optionally naming documents — e.g. "sync
+docs", "sync docs Product Overview", "sync docs the two overviews and the user manual".
+
+**To bring a document current** ("sync docs: Product Overview"):
+0. **Back up first (MANDATORY):** copy the `.docx` to `Doc Backups/<name> <YYYY-MM-DD_HHMMSS>.docx`
+   before touching it. Never edit a product document without a fresh backup in the
+   same pass.
 1. `git log <that doc's At-commit>..HEAD` — the exact commits since its last review.
 2. Read the `CLAUDE.md` / `CHANGELOG.md` entries added in that window.
-3. Filter to what's relevant to *that* document's scope, and apply the edits.
-4. Update the doc's row here: `Last reviewed` = today, `At commit` = current `HEAD`,
-   and a one-line note of what the pass covered.
+3. Filter to what's relevant to *that* document's scope, verify any UI detail against
+   source, and apply the edits.
+4. Update the doc's row here: `Status` = `✓ current`, `Last reviewed` = today,
+   `At commit` = current `HEAD`, and a note of what the pass covered + any residual.
 
 The tracker bounds the window; judging relevance within it is done at review time.
 

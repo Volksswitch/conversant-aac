@@ -802,6 +802,23 @@ A batch of Ken's thoughts captured this session. **Status: recorded only — non
 
 ---
 
+## Keeping product documents in sync — trigger phrase "sync docs" (Ken, July 8 2026)
+
+Product-document currency is tracked by [`DOC-SYNC.md`](DOC-SYNC.md) (any root document named `Conversant AAC *`, each stamped with the git commit it was last reviewed against — never file modification date, which a format-only edit would bump).
+
+**Trigger phrase (Ken only): "sync docs"**, optionally followed by which documents (names or keywords). Examples: **"sync docs"** (every row not marked `✓ current` in DOC-SYNC.md), **"sync docs Product Overview"**, **"sync docs the two overviews and the user manual"**. This runs the workflow below.
+
+**Workflow for each named document `X` (in order):**
+0. **Back up first — MANDATORY.** Before modifying `X`, copy it to `Doc Backups/<X> <YYYY-MM-DD_HHMMSS>.docx`. **Never edit a product document without making a fresh backup in the same turn.** (The `.docx` live on OneDrive, which also keeps version history, but the explicit local snapshot makes any mistake trivially reversible — restore by copying the snapshot back over the working file.)
+1. Read `X`'s last-reviewed commit from DOC-SYNC.md, then `git log <that commit>..HEAD` plus the CLAUDE.md / CHANGELOG entries added since — that's the change window.
+2. Filter to what's relevant to `X`'s scope. **Verify any UI detail against source before asserting it** (standing working guideline) — e.g. confirm a button's label/icon in `ui.js`/`index.html`.
+3. Apply the edits; verify (paragraph/content scans; render in Word if a toolchain is available).
+4. **Stamp `X`'s row in DOC-SYNC.md:** Status `✓ current`, Last reviewed = today, At commit = current `HEAD`, Notes = what changed + any residual. Commit DOC-SYNC.md (the `.docx` itself stays on OneDrive, git-ignored).
+
+**Tooling note (this dev box):** docx edits are made with `python-docx` (no pandoc / LibreOffice / zip); backups are a file copy; images/figures cannot be regenerated here, so flag figure changes as a residual in the doc's DOC-SYNC row.
+
+**History note:** the first catch-up of the three beta-facing docs (July 8 2026) was done *before* this backup rule existed, so those three were edited in place without a pre-edit snapshot; OneDrive version history (and `Other/Previous Doc Version/` for the two overviews) is the recovery path for their pre-edit state. Every sync from now on backs up first.
+
 ## Overview-Document To Do List (batch when enough accumulate)
 
 > **Now tracked by [`DOC-SYNC.md`](DOC-SYNC.md) (Ken, July 8 2026).** Product-document currency is managed by the doc-sync tracker: any root document named `Conversant AAC *` records the git commit it was last reviewed against, and "update doc X" diffs `git log <that commit>..HEAD`. The pending items below are folded into the **Product Overview** and **Architecture Overview** rows of `DOC-SYNC.md` as their outstanding catch-up; this list stays as the detailed backing notes for those two docs (add new overview-drift items here, and they'll be picked up in the next catch-up pass). The docs were renamed `AI-Driven AAC …` → `Conversant AAC …`.

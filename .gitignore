@@ -41,3 +41,7 @@ __pycache__/
 unpacked_*/
 cleanup_docx.py
 edit_docx.py
+
+# Pre-edit backups of the product documents (made before each "sync docs" pass).
+# The .docx are already ignored; this keeps the folder + its README out of git too.
+Doc Backups/
