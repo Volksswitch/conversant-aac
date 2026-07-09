@@ -13,6 +13,8 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+## Version 0.5.79
+
 - **The app keeps working when the AI can't be reached.** If the AI service (or
   your internet) is unavailable, response suggestions can't be generated — but the
   partner's words are still shown in the transcript in blue italics (raw, since the

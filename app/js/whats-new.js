@@ -21,6 +21,10 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.5.79": [
+    "The app keeps working when the AI can't be reached. If the AI service (or your internet) is unavailable, response suggestions can't be generated — but the partner's words are still shown in the transcript in blue italics (raw, since the AI couldn't tidy them up), the transcript takes on a faint red tint to flag the hiccup, and the problem is recorded in the error log. You can keep the conversation going with the Express Panel and \"In my own words\" — everything you say is spoken, shown in the transcript, and saved as usual. (Note: the browser's speech recognition itself needs an internet connection, so with no internet at all the partner's words can't be transcribed — the red tint is your signal that something's wrong.)",
+    "Cleaner \"In my own words\" box. The typing box no longer draws a border around itself, and the Cancel button now has the same dark border as Reframe."
+  ],
   "0.5.78": [
     "When the partner asks you to repeat, all three options now show the actual words. If the partner doesn't catch what you said, the \"say it again / say it differently / explain it more\" choices now display the real, ready-to-speak sentences on the cards (prepared the moment they ask), so you can read and pick — instead of showing a label and only producing the wording after you tap.",
     "\"Don't save this conversation\" now covers everything. When a conversation is marked not to be saved, the partner's words are also kept out of the app's error records and out of any copied bug report — previously a technical hiccup could still tuck a snippet of what the partner said into those. Nothing from a private conversation is written down now.",
