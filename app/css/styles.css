@@ -643,12 +643,13 @@ body.conv-bottom .palette-grid {
     gap: 0.5rem;
     /* No HORIZONTAL inset: the controls must reach the response-footprint edges so
        Speak/Reframe/Cancel line up with the card + "New 4" holes under one keyguard
-       (Spatial Stability). The framing border is drawn as an INSET shadow (paint
-       only, no layout box) instead of a real border for the same reason. */
+       (Spatial Stability). No framing border either (Ken): its rounded corner was
+       clipped at the footprint edges so it read as "cut off" — and a flush,
+       borderless container matches the Response Palette it overlays. */
     padding: 0.6rem 0;
     background: #fff;
     border-radius: 10px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18), inset 0 0 0 2px var(--header);
+    box-shadow: none;
 }
 .composer-overlay[hidden] { display: none; }
 .composer-overlay #composerInput {
