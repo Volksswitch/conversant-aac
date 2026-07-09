@@ -169,6 +169,11 @@ export function init({ onResult, onSilence, onStatus, onPartnerSpeech }) {
 
     recognition.onerror = (event) => {
         if (event.error === 'no-speech' || event.error === 'aborted') return;
+        // A surfaced error (network / not-allowed / service-not-allowed /
+        // audio-capture) is fatal for this session — clear the listening intent so
+        // onend doesn't immediately restart into the same error (a tight loop when
+        // offline, since recognition is cloud-based). The user re-taps to try again.
+        listeningIntent = false;
         if (onStatusChange) onStatusChange('error', event.error);
     };
 }

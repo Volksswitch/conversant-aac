@@ -32,6 +32,9 @@ export function renderConversation(history) {
     (history || []).forEach((t) => {
         const div = document.createElement('div');
         div.className = `turn turn-${t.role === 'partner' ? 'partner' : 'user'}`;
+        // A partner turn recorded without the AI cleanup pass (AI unreachable, or an
+        // interruption fragment) is marked raw — blue/italic.
+        if (t.uncleaned) div.classList.add('turn-uncleaned');
         div.textContent = t.text;
         transcriptLog.appendChild(div);
     });
@@ -85,7 +88,7 @@ function renderModeChip() {
 // partner turn (a colored left accent) — informational, doesn't gate anything.
 export function setTranscriptState(state) {
     if (!liveTurn) return;
-    liveTurn.classList.remove('state-unconfirmed', 'state-generating', 'state-ready');
+    liveTurn.classList.remove('state-unconfirmed', 'state-generating', 'state-ready', 'state-uncleaned');
     if (state && state !== 'idle') liveTurn.classList.add(`state-${state}`);
 }
 

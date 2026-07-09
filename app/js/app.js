@@ -275,6 +275,12 @@ function handleSttStatus(status, detail) {
 
     if (status === 'error') {
         ui.setStatus(`Microphone error: ${detail}`);
+        // Record it — this also trips the transcript red-wash (via the
+        // 'aac-error-logged' event) so a speech-recognition failure isn't silent now
+        // that the status bar is hidden. The common case is 'network': the browser's
+        // speech recognition is cloud-based (Chrome→Google, Edge→Microsoft), so with
+        // no internet it can't transcribe at all and this is the only signal the user gets.
+        storage.logError('stt', detail || 'unknown');
     } else if (status === 'listening') {
         ui.setStatus('Listening...');
     } else if (status === 'stopped') {
@@ -444,8 +450,17 @@ async function generateOptions(partnerText) {
         if (token !== generationToken) return;
         storage.logError('generateOptions', err.message, { partner: (partnerText || '').slice(0, 200) });
         placeholders.stop();
-        ui.setTranscriptState('idle');
-        ui.showResponseError(`Couldn't get responses: ${err.message}`, () => generateOptions(partnerText));
+        // The AI is unreachable, so it can neither suggest responses NOR tidy the
+        // transcript. Keep the partner's raw words visible, marked blue/italic
+        // (state 'uncleaned'), so the user can read them and reply with the Express
+        // Panel / "In my own words" — those commit + save on top of this (the red
+        // wash from logError flags the hiccup). Nothing is committed here: when the
+        // user replies, the partner turn is committed uncleaned via
+        // commitExchange({cleanup:false}), so the words aren't duplicated and none
+        // are lost if the partner keeps talking. Try again retries the same turn.
+        ui.setLiveTranscript(partnerText);
+        ui.setTranscriptState('uncleaned');
+        ui.showResponseError('AI is unavailable — reply using the Express Panel or “In my own words.” The partner\'s words are shown above.', () => generateOptions(partnerText));
         ui.setStatus(`Error: ${err.message}`);
     }
 }
@@ -604,7 +619,9 @@ async function commitExchange(raw, userText, index, opts = {}) {
 
     let partnerIdx = -1;
     if (raw) {
-        conversationHistory.push({ role: 'partner', text: raw });
+        // cleanup:false means the AI never tidied this turn (interruption fragment,
+        // or AI unreachable) — flag it so the transcript renders it raw (blue/italic).
+        conversationHistory.push({ role: 'partner', text: raw, uncleaned: !cleanup });
         partnerIdx = conversationHistory.length - 1;
     }
     conversationHistory.push({ role: 'user', text: userText });

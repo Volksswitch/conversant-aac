@@ -435,6 +435,23 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
 .turn-live[hidden] { display: none; }
 .turn-live.state-unconfirmed { border-left-color: var(--state-unconfirmed); }
 .turn-live.state-generating  { border-left-color: var(--state-generating); }
+/* AI unreachable: the partner's raw words stay visible but can't be tidied, so
+   they read blue + italic ("raw / not cleaned up"). Same convention as a committed
+   uncleaned turn below. */
+.turn-live.state-uncleaned {
+    opacity: 1;
+    color: var(--slot-initiative);
+    font-style: italic;
+    border-left-color: var(--slot-initiative);
+}
+
+/* A committed partner turn recorded verbatim from speech recognition WITHOUT the
+   AI cleanup pass — because the AI was unreachable, or the user interrupted the
+   partner mid-utterance. Blue + italic marks it as raw / unverified (Ken). */
+.turn-uncleaned {
+    color: var(--slot-initiative);
+    font-style: italic;
+}
 
 /* Now-playing — what the system is currently saying on the user's behalf, shown
    as text so nothing is spoken invisibly (§7). A transient line in the log. */
@@ -638,7 +655,9 @@ body.conv-bottom .palette-grid {
     flex: 1 1 auto;
     min-height: 3rem;
     padding: 0.6rem;
-    border: 1px solid #ccc;
+    /* No border (Ken): the whole box is the tap target for accepting a predicted
+       word, so a border read as a selection/emphasis outline around it. */
+    border: none;
     border-radius: 6px;
     font-family: inherit;
     font-size: 1.1rem;
@@ -1125,7 +1144,8 @@ button:not(.kbd-key):not(.kbd-tool):not(.kbd-pred-btn):not(.ep-btn) {
 .composer-btn-primary:hover { filter: brightness(1.1); background: var(--header); }
 .composer-btn-quiet {
     flex: 0 0 auto;
-    border-color: #ccc;
+    /* Solid dark border matching Reframe (.composer-btn's var(--header)) (Ken). */
+    border-color: var(--header);
     color: #666;
 }
 
