@@ -21,6 +21,9 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.5.80": [
+    "Fixed a leftover clipped-looking border on the \"In my own words\" box. A thin framing line around the box had a rounded corner that got cut off at the edge of the response area, making it look broken. It's now flush and borderless, matching the response cards behind it."
+  ],
   "0.5.79": [
     "The app keeps working when the AI can't be reached. If the AI service (or your internet) is unavailable, response suggestions can't be generated — but the partner's words are still shown in the transcript in blue italics (raw, since the AI couldn't tidy them up), the transcript takes on a faint red tint to flag the hiccup, and the problem is recorded in the error log. You can keep the conversation going with the Express Panel and \"In my own words\" — everything you say is spoken, shown in the transcript, and saved as usual. (Note: the browser's speech recognition itself needs an internet connection, so with no internet at all the partner's words can't be transcribed — the red tint is your signal that something's wrong.)",
     "Cleaner \"In my own words\" box. The typing box no longer draws a border around itself, and the Cancel button now has the same dark border as Reframe."

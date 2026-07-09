@@ -13,6 +13,13 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+## Version 0.5.80
+
+- **Fixed a leftover clipped-looking border on the "In my own words" box.** A thin
+  framing line around the box had a rounded corner that got cut off at the edge of
+  the response area, making it look broken. It's now flush and borderless, matching
+  the response cards behind it.
+
 ## Version 0.5.79
 
 - **The app keeps working when the AI can't be reached.** If the AI service (or
