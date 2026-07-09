@@ -655,13 +655,23 @@ body.conv-bottom .palette-grid {
     flex: 1 1 auto;
     min-height: 3rem;
     padding: 0.6rem;
-    /* No border (Ken): the whole box is the tap target for accepting a predicted
-       word, so a border read as a selection/emphasis outline around it. */
+    /* No edge in ANY state (Ken): the whole box is the tap target for accepting a
+       predicted word, so a border/outline read as a selection highlight. The box is
+       auto-focused when the composer opens, so we must also suppress the browser's
+       focus ring (outline) and any box-shadow — not just the border. */
     border: none;
+    outline: none;
+    box-shadow: none;
     border-radius: 6px;
     font-family: inherit;
     font-size: 1.1rem;
     resize: none;
+}
+/* Focus is what draws the ring; keep the input edgeless when selected too. */
+.composer-overlay #composerInput:focus,
+.composer-overlay #composerInput:focus-visible {
+    outline: none;
+    box-shadow: none;
 }
 /* Composer controls: Speak, Reframe and Cancel in a SINGLE horizontal row in
    BOTH docks (Ken, July 2026). The row mirrors #responseArea's flex split — the
