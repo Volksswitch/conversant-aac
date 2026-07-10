@@ -13,6 +13,8 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+## Version 0.5.81
+
 - **Fixed: conversations you start yourself now work.** When you opened a
   conversation with a starter (for example "Hi Tyler, got a minute?") and the other
   person replied with a short go-ahead ("Yeah, sure — any time"), the app could go
