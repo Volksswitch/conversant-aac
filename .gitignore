@@ -45,3 +45,10 @@ edit_docx.py
 # Pre-edit backups of the product documents (made before each "sync docs" pass).
 # The .docx are already ignored; this keeps the folder + its README out of git too.
 Doc Backups/
+
+# API key for the Tier-3 live scenario tests (tests/live.test.mjs). Ken supplies
+# this file; it holds a real Anthropic key and must NEVER be committed. Belt and
+# suspenders: match the bare file and any variant.
+.anthropic-key
+.anthropic-key.*
+tests/.anthropic-key*

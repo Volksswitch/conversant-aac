@@ -1,4 +1,9 @@
 {
+  "scripts": {
+    "test": "node --test \"tests/**/*.test.mjs\"",
+    "test:live": "node --test tests/live.test.mjs",
+    "test:watch": "node --test --watch \"tests/**/*.test.mjs\""
+  },
   "devDependencies": {
     "puppeteer": "^25.1.0"
   },
