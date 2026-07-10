@@ -402,7 +402,8 @@ async function generateOptions(partnerText) {
     llm.setSituationBlock(buildSituationBlock());
 
     try {
-        const result = await llm.generateResponses(history, engine.buildRequestContext(), { perCategory: storage.loadResponsesPerCategory() });
+        const requestContext = engine.buildRequestContext();
+        const result = await llm.generateResponses(history, requestContext, { perCategory: storage.loadResponsesPerCategory() });
         if (token !== generationToken) return; // a newer silence period superseded this
 
         // Engine ingests the classification and updates mode / stack / palette.
@@ -418,7 +419,32 @@ async function generateOptions(partnerText) {
             ui.clearResponseOptions();
             ui.setTranscriptState('unconfirmed');
             ui.setStatus('Partner still speaking…');
+            // Silent-dead-end tripwire (Ken, July 10 2026): a genuine mid-sentence
+            // pause here is NORMAL (frequent in continuous capture) and must not be
+            // logged. But if the user is LEADING (partner replied to the user's own
+            // opener), a non-COMPLETE status is the signature of the user-started
+            // silent-stall bug — the engine now forces COMPLETE there, so this
+            // should never fire; it's a regression tripwire. Logging trips the
+            // transcript red-wash + errors.log so a recurrence is never silent again.
+            if (requestContext.user_holds_floor_to_lead) {
+                storage.logError('generateOptions',
+                    `no options while user leading (turn_status=${snap.lastClassification.turn_status}) — partner reply to an opener misclassified as incomplete`,
+                    { partner: (partnerText || '').slice(0, 200) });
+            }
         } else {
+            // Silent-dead-end tripwire (Ken, July 10 2026): the classification says
+            // the user is owed a response (COMPLETE, or repair-of-self), but the
+            // palette came back empty — the model claimed a complete turn yet gave no
+            // usable responses. In healthy operation this never happens; when it does
+            // the user is left staring at empty cards, so log it (red-wash +
+            // errors.log) rather than failing silently. REPAIR_OF_SELF is exempt: its
+            // rephrase/expand cards are filled by a follow-up prefetch, so an
+            // initially-sparse palette there is expected.
+            if (!snap.palette.length && snap.mode !== engine.MODE.REPAIR_OF_SELF) {
+                storage.logError('generateOptions',
+                    `no options for a complete turn (action=${snap.lastClassification && snap.lastClassification.partner_action}, mode=${snap.mode}, user_leading=${requestContext.user_holds_floor_to_lead})`,
+                    { partner: (partnerText || '').slice(0, 200) });
+            }
             ui.showResponses(snap.palette, handleResponseSelected);
             ui.setTranscriptState('ready');
             ui.setStatus(snap.mode === engine.MODE.REPAIR_OF_SELF
