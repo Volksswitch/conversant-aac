@@ -13,6 +13,8 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+## Version 0.5.82
+
 - **The app no longer goes quiet trying to guess when the other person is finished.**
   Every time the other person pauses, it offers response suggestions (and refines them
   if they keep talking), until you pick one or end the conversation — you decide when

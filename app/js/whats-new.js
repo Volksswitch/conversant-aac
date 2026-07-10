@@ -21,6 +21,9 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.5.82": [
+    "The app no longer goes quiet trying to guess when the other person is finished. Every time the other person pauses, it offers response suggestions (and refines them if they keep talking), until you pick one or end the conversation — you decide when their turn is over, not the app. This removes a whole class of glitch where a conversation you started could stall with no responses and no thinking-out-loud placeholder."
+  ],
   "0.5.81": [
     "Fixed: conversations you start yourself now work. When you opened a conversation with a starter (for example \"Hi Tyler, got a minute?\") and the other person replied with a short go-ahead (\"Yeah, sure — any time\"), the app could go silent: no thinking-out-loud placeholder and no suggested responses. It now correctly treats their reply as your cue to lead and offers responses as expected."
   ],
