@@ -92,6 +92,71 @@ export function mockFetch(payload, opts = {}) {
 
 export function restoreFetch() { globalThis.fetch = nativeFetch; }
 
+// --- localStorage shim (for storage.js + the modules that cache through it) ---
+// storage.js touches IndexedDB / the File System Access API only inside functions
+// we never call in tests (restore/pick/clear); with no data folder, hasDataFolder()
+// is false, readFile() returns null and writeFile() is a no-op — so the modules
+// fall back to their localStorage cache, which is all these tests exercise.
+if (!globalThis.localStorage) {
+    const store = new Map();
+    globalThis.localStorage = {
+        getItem: (k) => (store.has(String(k)) ? store.get(String(k)) : null),
+        setItem: (k, v) => store.set(String(k), String(v)),
+        removeItem: (k) => store.delete(String(k)),
+        clear: () => store.clear(),
+        key: (i) => [...store.keys()][i] ?? null,
+        get length() { return store.size; },
+    };
+}
+export function resetLocalStorage() { globalThis.localStorage.clear(); }
+// Write a value straight into the aac_settings blob (many storage.js accessors read
+// from there). Merges so multiple calls compose.
+export function setSetting(key, value) {
+    let s = {};
+    try { s = JSON.parse(globalThis.localStorage.getItem('aac_settings')) || {}; } catch { /* fresh */ }
+    s[key] = value;
+    globalThis.localStorage.setItem('aac_settings', JSON.stringify(s));
+}
+
+// --- speechSynthesis shim (tts.js reads window.speechSynthesis at import) ------
+// Records every phrase spoken so a test can observe what placeholders.js / tts.js
+// produced. onend fires on the next tick so awaited speak() resolves.
+export const spokenTexts = [];
+export function resetSpoken() { spokenTexts.length = 0; }
+if (!globalThis.SpeechSynthesisUtterance) {
+    globalThis.SpeechSynthesisUtterance = class {
+        constructor(text) { this.text = text; this.voice = null; this.onend = null; this.onerror = null; }
+    };
+}
+if (!globalThis.window.speechSynthesis) {
+    globalThis.window.speechSynthesis = {
+        speaking: false,
+        speak(u) { this.speaking = true; spokenTexts.push(u.text); setTimeout(() => { this.speaking = false; u.onend && u.onend(); }, 0); },
+        cancel() { this.speaking = false; },
+        getVoices() { return []; },
+        onvoiceschanged: null,
+    };
+}
+
+// --- fetch bundled app/data/*.json off disk (registry, words, placeholder pools) --
+// worldview.loadRegistry(), prediction.load(), placeholders.loadPools() fetch
+// relative data/*.json URLs; route those to the real files so tests run against the
+// shipped data. Everything else 404s.
+export function mockFetchFromDisk() {
+    fetchCalls = [];
+    globalThis.fetch = async (url) => {
+        const m = String(url).match(/data\/([\w.-]+\.json)$/);
+        if (m) {
+            try {
+                const text = readFileSync(new URL('../app/data/' + m[1], import.meta.url), 'utf8');
+                const json = JSON.parse(text);
+                return { ok: true, status: 200, async json() { return json; }, async text() { return text; } };
+            } catch { /* fall through to 404 */ }
+        }
+        return { ok: false, status: 404, async json() { throw new Error('404'); }, async text() { return ''; } };
+    };
+}
+
 // --- API key for the live tier ----------------------------------------------
 // Order: ANTHROPIC_API_KEY env var, then a gitignored `.anthropic-key` file at the
 // repo root. Returns null when neither is present (the live tier then skips).

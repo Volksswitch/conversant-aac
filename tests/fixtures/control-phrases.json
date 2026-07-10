@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "updated": "2026-01-01T00:00:00.000Z",
+  "holdOn": "Let me think about that.",
+  "pardon": "Sorry, I didn't catch that. Could you say it again?",
+  "openers": [
+    "Hi {name}, got a minute?",
+    "Can I ask you something, {name}?",
+    "Guess what, {name}.",
+    "Hey {name}, how are you doing?",
+    "Good to see you, {name}.",
+    "How have you been, {name}?",
+    "What's new with you, {name}?",
+    "I was just thinking about you, {name}.",
+    "Got a story for you, {name}.",
+    "TEST FIXTURE opener — one two three, {name}?"
+  ],
+  "closers": [
+    "I should get going.",
+    "This was really nice, thanks.",
+    "Great seeing you.",
+    "Bye!",
+    "I need to head out.",
+    "Let's talk again soon.",
+    "Take care!",
+    "Catch you later."
+  ],
+  "seeded": {
+    "openers": [
+      "Hi {name}, got a minute?",
+      "Can I ask you something, {name}?",
+      "Guess what, {name}.",
+      "Hey {name}, how are you doing?",
+      "Good to see you, {name}.",
+      "How have you been, {name}?",
+      "What's new with you, {name}?",
+      "I was just thinking about you, {name}.",
+      "Got a story for you, {name}."
+    ],
+    "closers": [
+      "I should get going.",
+      "This was really nice, thanks.",
+      "Great seeing you.",
+      "Bye!",
+      "I need to head out.",
+      "Let's talk again soon.",
+      "Take care!",
+      "Catch you later."
+    ]
+  }
+}

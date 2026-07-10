@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "updated": "2026-01-01T00:00:00.000Z",
+  "people": [
+    { "id": "test-mom", "name": "Jordan", "private": false, "attrs": { "about": "", "nickname": "Mom", "livesWithMe": true } },
+    { "id": "test-friend", "name": "Sam", "private": false, "attrs": { "about": "chess partner", "nickname": "", "livesWithMe": false } },
+    { "id": "test-doc", "name": "Dr. Lee", "private": true, "attrs": { "about": "", "nickname": "", "livesWithMe": false } }
+  ],
+  "edges": [
+    { "from": "me", "to": "test-mom", "type": "mother", "attrs": {} },
+    { "from": "me", "to": "test-friend", "type": "friend", "attrs": {} },
+    { "from": "me", "to": "test-doc", "type": "doctor", "attrs": {} }
+  ]
+}

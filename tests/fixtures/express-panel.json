@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "updated": "2026-01-01T00:00:00.000Z",
+  "items": [
+    { "id": "d0", "type": "feeling", "text": "Happy" },
+    { "id": "d1", "type": "feeling", "text": "Tired" },
+    { "id": "d2", "type": "feeling", "text": "Curious" },
+    { "id": "tp1", "type": "partner", "name": "Jordan", "nickname": "Mom", "personId": "test-mom" },
+    { "id": "tp2", "type": "partner", "name": "Sam", "nickname": "", "personId": "test-friend" },
+    { "id": "p0", "type": "phrase", "text": "Yes", "cat": "affirm" },
+    { "id": "p1", "type": "phrase", "text": "No", "cat": "affirm" },
+    { "id": "p2", "type": "phrase", "text": "Thank you", "cat": "social" },
+    { "id": "p3", "type": "phrase", "text": "One moment", "cat": "pace" },
+    { "id": "p4", "type": "phrase", "text": "Say that again", "cat": "repair" }
+  ]
+}

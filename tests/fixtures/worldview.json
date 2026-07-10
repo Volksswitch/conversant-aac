@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "updated": "2026-01-01T00:00:00.000Z",
+  "fields": {
+    "name_preferred": { "value": "Alex", "state": "answered", "updated": "2026-01-01T00:00:00.000Z" },
+    "name_full": { "value": "Alex Rivera", "state": "answered", "updated": "2026-01-01T00:00:00.000Z" },
+    "nickname": { "value": "Al", "state": "answered", "updated": "2026-01-01T00:00:00.000Z" },
+    "pronouns": { "value": "they/them", "state": "answered", "updated": "2026-01-01T00:00:00.000Z" },
+    "languages": { "value": ["English"], "state": "answered", "updated": "2026-01-01T00:00:00.000Z" },
+    "living_situation": { "value": "lives with family", "state": "answered", "updated": "2026-01-01T00:00:00.000Z" },
+    "age_birthyear": { "state": "declined", "updated": "2026-01-01T00:00:00.000Z" }
+  },
+  "privacy": { "living_situation": "private" },
+  "gaps": []
+}

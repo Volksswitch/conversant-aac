@@ -135,3 +135,34 @@ test('repairOptions parses {rephrase, expand}', async () => {
     assert.equal(r.rephrase, 'I was at the market.');
     assert.equal(r.expand, 'I went to the market for fruit.');
 });
+
+test('cleanupTranscript returns the corrected text', async () => {
+    mockFetch('Hey Mark, how are you?');
+    const out = await llm.cleanupTranscript('kmart how are you', [{ role: 'partner', text: 'x' }]);
+    assert.equal(out, 'Hey Mark, how are you?');
+});
+
+test('cleanupTranscript falls back to the raw text with no API key', async () => {
+    llm.setApiKey('');   // no key
+    const out = await llm.cleanupTranscript('raw and uncleaned');
+    assert.equal(out, 'raw and uncleaned');
+});
+
+test('cleanupTranscript falls back to the raw text on an API error', async () => {
+    mockFetch('boom', { ok: false, status: 500 });
+    const out = await llm.cleanupTranscript('raw and uncleaned', []);
+    assert.equal(out, 'raw and uncleaned');
+});
+
+test('repairSelf(expand) instructs the model to expand and returns the new utterance', async () => {
+    mockFetch('I went to the market to buy some fruit.');
+    const out = await llm.repairSelf('I went to the market.', 'expand', []);
+    assert.equal(out, 'I went to the market to buy some fruit.');
+    assert.match(getFetchCalls()[0].body.system, /Expand and clarify/);
+});
+
+test('repairSelf(rephrase) instructs the model to rephrase', async () => {
+    mockFetch('I was at the market.');
+    await llm.repairSelf('I went to the market.', 'rephrase', []);
+    assert.match(getFetchCalls()[0].body.system, /Rephrase/);
+});

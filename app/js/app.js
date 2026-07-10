@@ -5,6 +5,7 @@ import * as ui from './ui.js';
 import * as storage from './storage.js';
 import * as placeholders from './placeholders.js';
 import * as engine from './engine.js';
+import * as convLogic from './conversation-logic.js';
 import * as worldview from './worldview.js';
 import * as relationships from './relationships.js';
 import * as worldviewUI from './worldview-ui.js';
@@ -363,26 +364,6 @@ function startFreshListening() {
     stt.startListening();
 }
 
-// A placeholder plays after ANY complete partner turn — greeting, statement,
-// question, assessment, closing (Ken, July 8 2026). Rationale: a placeholder is a
-// social-presence signal ("I heard you, I'm formulating a response"); if the
-// partner hears NOTHING after they speak, they may assume the user didn't hear or
-// can't communicate. This reverses the earlier "questions only" gate (June 18).
-// Only two cases still stay silent: an INCOMPLETE turn (the partner is still
-// talking — don't cut in), and a repair-initiator ("What?"/"Huh?" — the partner is
-// asking the USER to repeat, which is the instant repair-of-self flow, where a
-// "let me think" beat before re-speaking the same thing reads wrong).
-function shouldPlayPlaceholder(snap) {
-    const c = snap.lastClassification;
-    if (!c) return false;
-    if (c.turn_status !== 'COMPLETE' || c.is_repair_initiator) return false;
-    return true;
-}
-
-// Which partner actions get the QUESTION-flavored acknowledgment ("Good question.")
-// vs. the neutral one ("Let me see.") — only the flavor of the first placeholder
-// differs; every complete turn still gets one.
-const QUESTION_ACTIONS = new Set(['QUESTION', 'INVITATION', 'REQUEST']);
 
 async function generateOptions(partnerText) {
     const token = ++generationToken;
@@ -411,40 +392,24 @@ async function generateOptions(partnerText) {
         ui.showEngineState(snap);
         lastPalette = snap.palette;
 
-        if (snap.lastClassification && snap.lastClassification.turn_status !== 'COMPLETE'
-            && !snap.lastClassification.is_repair_initiator) {
+        // Decide what to do with the ingested snapshot, and whether this is a
+        // silent dead-end worth logging — pure logic, unit-tested in
+        // conversation-logic.js. Logging trips the transcript red-wash + errors.log
+        // so a recurrence of the user-started stall (or any "complete turn, no
+        // options") is never invisible again (Ken, July 10 2026).
+        const outcome = convLogic.generationOutcome(snap, requestContext);
+        if (outcome.anomaly) {
+            storage.logError(outcome.anomaly.context, outcome.anomaly.message, { partner: (partnerText || '').slice(0, 200) });
+        }
+
+        if (!outcome.respond) {
             // Mid-utterance pause (INCOMPLETE / CONTINUING) — don't respond. Stop
             // holding the floor and keep listening for the rest of the turn.
             placeholders.stop();
             ui.clearResponseOptions();
             ui.setTranscriptState('unconfirmed');
             ui.setStatus('Partner still speaking…');
-            // Silent-dead-end tripwire (Ken, July 10 2026): a genuine mid-sentence
-            // pause here is NORMAL (frequent in continuous capture) and must not be
-            // logged. But if the user is LEADING (partner replied to the user's own
-            // opener), a non-COMPLETE status is the signature of the user-started
-            // silent-stall bug — the engine now forces COMPLETE there, so this
-            // should never fire; it's a regression tripwire. Logging trips the
-            // transcript red-wash + errors.log so a recurrence is never silent again.
-            if (requestContext.user_holds_floor_to_lead) {
-                storage.logError('generateOptions',
-                    `no options while user leading (turn_status=${snap.lastClassification.turn_status}) — partner reply to an opener misclassified as incomplete`,
-                    { partner: (partnerText || '').slice(0, 200) });
-            }
         } else {
-            // Silent-dead-end tripwire (Ken, July 10 2026): the classification says
-            // the user is owed a response (COMPLETE, or repair-of-self), but the
-            // palette came back empty — the model claimed a complete turn yet gave no
-            // usable responses. In healthy operation this never happens; when it does
-            // the user is left staring at empty cards, so log it (red-wash +
-            // errors.log) rather than failing silently. REPAIR_OF_SELF is exempt: its
-            // rephrase/expand cards are filled by a follow-up prefetch, so an
-            // initially-sparse palette there is expected.
-            if (!snap.palette.length && snap.mode !== engine.MODE.REPAIR_OF_SELF) {
-                storage.logError('generateOptions',
-                    `no options for a complete turn (action=${snap.lastClassification && snap.lastClassification.partner_action}, mode=${snap.mode}, user_leading=${requestContext.user_holds_floor_to_lead})`,
-                    { partner: (partnerText || '').slice(0, 200) });
-            }
             ui.showResponses(snap.palette, handleResponseSelected);
             ui.setTranscriptState('ready');
             ui.setStatus(snap.mode === engine.MODE.REPAIR_OF_SELF
@@ -456,8 +421,8 @@ async function generateOptions(partnerText) {
             // point; a quick pick cancels it. Question-type turns get a
             // question-flavored acknowledgment ("Good question."); everything else a
             // neutral one ("Let me see.").
-            if (shouldPlayPlaceholder(snap)) {
-                placeholders.start({ question: QUESTION_ACTIONS.has(snap.lastClassification.partner_action) });
+            if (convLogic.shouldPlayPlaceholder(snap)) {
+                placeholders.start({ question: convLogic.isQuestionFlavored(snap) });
             } else {
                 placeholders.stop();
             }

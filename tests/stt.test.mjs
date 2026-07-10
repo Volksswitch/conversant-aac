@@ -110,3 +110,55 @@ test('user-started flow: opener spoken, then the partner replies → checkpoint 
     await sleep(THRESHOLD_S * 1000 + 60);
     assert.deepEqual(silences, ['Yeah sure, any time you want, just let me know.']);
 });
+
+test('onend auto-restarts recognition while listening intent holds (silences bridged)', async () => {
+    stt.startListening();
+    assert.equal(rec.capturing, true);
+    rec._started = false;   // the browser stopped continuous recognition on its own
+    rec.onend();
+    await sleep(5);
+    assert.equal(rec.capturing, true, 'restarted so the partner floor stays open');
+});
+
+test('a surfaced error (network) is reported and stops the restart loop', async () => {
+    stt.startListening();
+    rec.onerror({ error: 'network' });
+    assert.ok(statuses.includes('error'), 'network error surfaced');
+    // listeningIntent is cleared, so onend reports stopped instead of restarting
+    // (no tight loop when offline — browser STT is cloud-based).
+    rec.onend();
+    await sleep(5);
+    assert.equal(statuses.at(-1), 'stopped');
+});
+
+test('benign errors (no-speech / aborted) are ignored', () => {
+    stt.startListening();
+    const before = statuses.length;
+    rec.onerror({ error: 'no-speech' });
+    rec.onerror({ error: 'aborted' });
+    assert.equal(statuses.length, before, 'no error status for benign recognizer events');
+});
+
+test('resetTranscript discards the accumulated turn', () => {
+    stt.startListening();
+    rec.emitFinal('some words here');
+    assert.notEqual(stt.getCurrentTranscript(), '');
+    stt.resetTranscript();
+    assert.equal(stt.getCurrentTranscript(), '');
+});
+
+test('echo filter: an interim PREFIX of what the app is saying is dropped', () => {
+    stt.startListening();
+    stt.noteSpokenStart('Still thinking it through.');
+    rec.emitInterim('still thinking');   // recognizer interim = growing prefix of our speech
+    assert.equal(stt.getCurrentTranscript(), '', 'prefix echo dropped');
+    stt.noteSpokenEnd();
+});
+
+test('echo filter: a multiword phrase EMBEDDED in a longer captured segment is dropped', () => {
+    stt.startListening();
+    stt.noteSpokenStart('good question');
+    rec.emitFinal('well good question then');   // recognizer padded our phrase
+    stt.noteSpokenEnd();
+    assert.equal(stt.getCurrentTranscript(), '', 'embedded multiword echo dropped');
+});
