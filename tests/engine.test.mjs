@@ -42,15 +42,32 @@ test('partner-started COMPLETE question → RESPONDING, floor SELF, 4-slot palet
     assert.deepEqual(s.sequenceStack.map(x => [x.action, x.openedBy]), [['QUESTION', 'PARTNER']]);
 });
 
-test('partner-started INCOMPLETE → LISTENING, floor PARTNER, empty palette (false-TRP guard preserved)', () => {
+test('turn_status no longer gates: an "incomplete"-looking turn STILL yields a palette', () => {
+    // Deliberate reversal of design §8 (Ken, July 10 2026): we never suppress on a
+    // turn_status guess. Every checkpoint shows options; the user decides when to act.
     engine.reset();
     engine.partnerSpeaking('So the other day I was walking and');
     const s = engine.ingestClassification(
-        { classification: { partner_action: 'STATEMENT', turn_status: 'INCOMPLETE', is_repair_initiator: false }, responses: [] },
+        { classification: { partner_action: 'STATEMENT', turn_status: 'INCOMPLETE', is_repair_initiator: false }, responses: fourSlots },
         'So the other day I was walking and');
-    assert.equal(s.mode, engine.MODE.LISTENING);
-    assert.equal(s.floor, engine.FLOOR.PARTNER);
-    assert.equal(s.palette.length, 0);
+    assert.equal(s.mode, engine.MODE.RESPONDING);
+    assert.equal(s.floor, engine.FLOOR.SELF);
+    assert.equal(s.palette.length, 4);
+});
+
+test('a later pause refining the SAME ongoing partner turn updates the FPP in place (no duplicate)', () => {
+    // Continuous capture re-ingests on every pause; the partner holds the floor until
+    // the user responds, so the stack must hold ONE partner FPP, not one per pause.
+    engine.reset();
+    engine.partnerSpeaking('So the other day');
+    engine.ingestClassification(COMPLETE('STATEMENT', fourSlots), 'So the other day');
+    engine.partnerSpeaking('So the other day I was walking and I saw a dog.');
+    const s = engine.ingestClassification(COMPLETE('STATEMENT', fourSlots), 'So the other day I was walking and I saw a dog.');
+    assert.deepEqual(s.sequenceStack.map(x => [x.action, x.openedBy]), [['STATEMENT', 'PARTNER']]);
+    assert.equal(s.sequenceStack[0].utterance, 'So the other day I was walking and I saw a dog.');
+    // ...and once the user responds, the single FPP is popped.
+    const s2 = engine.selectResponse({ slot: 'PREFERRED', text: 'Oh nice!' });
+    assert.deepEqual(s2.sequenceStack, []);
 });
 
 test('repair-initiator ("What?") → REPAIR_OF_SELF with respeak = last user utterance', () => {
@@ -92,7 +109,11 @@ test('selecting an OPENER pushes a USER-opened sequence, floor → PARTNER, pale
     assert.equal(engine.buildRequestContext().user_holds_floor_to_lead, true);
 });
 
-test('REGRESSION: user-led + partner go-ahead → the lead palette shows, for COMPLETE AND misclassified INCOMPLETE/CONTINUING', () => {
+test('user-led: the partner replying to the opener pops it and shows the lead palette (any turn_status)', () => {
+    // The opener-pop stack handling is unchanged; with turn_status no longer gating,
+    // the lead palette shows regardless of how the model labeled the go-ahead. This
+    // covers both July 2026 stall cases (a later disfluent go-ahead reproduces the
+    // same way — the app always shows options now).
     for (const status of ['COMPLETE', 'INCOMPLETE', 'CONTINUING']) {
         engine.reset();
         engine.selectResponse({ slot: 'OPENER', text: 'Hi Tyler, got a minute?' });
@@ -103,45 +124,8 @@ test('REGRESSION: user-led + partner go-ahead → the lead palette shows, for CO
         assert.equal(s.mode, engine.MODE.RESPONDING, `mode for ${status}`);
         assert.equal(s.floor, engine.FLOOR.SELF, `floor for ${status}`);
         assert.equal(s.palette.length, 4, `palette for ${status} must NOT be empty`);
-        assert.equal(s.lastClassification.turn_status, 'COMPLETE', `status normalized for ${status}`);
         assert.deepEqual(s.sequenceStack, [], `opener popped for ${status}`);
     }
-});
-
-test('forceComplete normalizes a misclassified-incomplete partner turn into a response palette (pause-to-complete fallback)', () => {
-    // The v0.5.82 case: a LATER disfluent go-ahead ("Go ahead. Uh, my, uh, my ears
-    // are wide open."), with an EMPTY stack (not user-leading), misread as CONTINUING.
-    engine.reset();
-    engine.partnerSpeaking('Go ahead. Uh, my, uh, my ears are wide open.');
-    const s = engine.ingestClassification(
-        { classification: { partner_action: 'STATEMENT', turn_status: 'CONTINUING', is_repair_initiator: false }, responses: fourSlots },
-        'Go ahead. Uh, my, uh, my ears are wide open.',
-        { forceComplete: true });
-    assert.equal(s.mode, engine.MODE.RESPONDING);
-    assert.equal(s.palette.length, 4);
-    assert.equal(s.lastClassification.turn_status, 'COMPLETE');
-});
-
-test('WITHOUT forceComplete, the same misclassified turn still suppresses (guard intact until the fallback fires)', () => {
-    engine.reset();
-    engine.partnerSpeaking('Go ahead. Uh, my, uh, my ears are wide open.');
-    const s = engine.ingestClassification(
-        { classification: { partner_action: 'STATEMENT', turn_status: 'CONTINUING', is_repair_initiator: false }, responses: [] },
-        'Go ahead. Uh, my, uh, my ears are wide open.');
-    assert.equal(s.mode, engine.MODE.LISTENING);
-    assert.equal(s.palette.length, 0);
-});
-
-test('user-led normalization does NOT leak to a normal partner-started turn (guard still holds)', () => {
-    // Regression guard for the fix: an ordinary partner-started INCOMPLETE (no
-    // user-opened sequence on the stack) must still suppress the palette.
-    engine.reset();
-    engine.partnerSpeaking('I was thinking maybe we could');
-    const s = engine.ingestClassification(
-        { classification: { partner_action: 'STATEMENT', turn_status: 'INCOMPLETE', is_repair_initiator: false }, responses: [] },
-        'I was thinking maybe we could');
-    assert.equal(s.mode, engine.MODE.LISTENING);
-    assert.equal(s.palette.length, 0);
 });
 
 // --- SPP / pardon / closing / initiate --------------------------------------

@@ -42,15 +42,6 @@ let generationToken = 0;
 // is exactly the boundary auto-resume is meant to continue past.
 let manualListenArmed = false;
 
-// Pause-to-complete fallback (Ken, July 10 2026). When a partner turn is suppressed
-// as INCOMPLETE/CONTINUING but the partner then stays quiet (doesn't resume), the
-// classification was wrong and the app would otherwise stall silently forever. After
-// this grace period of continued silence we re-generate FORCING a complete
-// interpretation. Cleared the moment the partner resumes (handlePartnerResumed) or a
-// newer generation/selection/reset supersedes it. Tunable.
-let incompleteFallbackTimer = null;
-const INCOMPLETE_FALLBACK_MS = 2500;
-
 // Active influencer TOGGLES from the Express Panel (Ken, June 26 2026). One
 // active Partner (who the user is talking with) and one active Feeling (current
 // mood) at a time. The Partner personalizes openers + tells the AI who the
@@ -258,11 +249,13 @@ function handleSpeechResult(liveText) {
 // placeholder) so nothing is spoken over the partner; the next silence checkpoint
 // re-arms and regenerates from the combined speech.
 function handlePartnerResumed() {
+    // The partner started talking again — abort and reset the placeholder ladder so
+    // nothing is spoken over them (Ken). The next silence checkpoint regenerates from
+    // the fuller utterance and re-arms placeholders. Detecting resumption fast matters
+    // here; it's caught on the first interim STT result (except while a placeholder is
+    // actively playing, where the echo guard blocks detection until it finishes — a
+    // known limitation until Phase-2 partner voice recognition).
     placeholders.stop();
-    // The partner is talking again, so a turn we'd suppressed as "incomplete" was
-    // genuinely incomplete — cancel the pause-to-complete fallback; the next silence
-    // checkpoint will regenerate from the fuller utterance.
-    clearIncompleteFallback();
 }
 
 // Fired each time the partner pauses for the configured silence period.
@@ -378,9 +371,8 @@ function startFreshListening() {
 }
 
 
-async function generateOptions(partnerText, opts = {}) {
+async function generateOptions(partnerText) {
     const token = ++generationToken;
-    clearIncompleteFallback();   // a fresh generation supersedes any pending pause-fallback
     ui.setStatus('Generating response options...');
     ui.setTranscriptState('generating');
     ui.clearResponseOptions();
@@ -398,64 +390,42 @@ async function generateOptions(partnerText, opts = {}) {
 
     try {
         const requestContext = engine.buildRequestContext();
-        // Pause-fallback re-entry: the partner paused and stayed quiet after a turn we
-        // suppressed as "incomplete" — tell the model to treat it as complete.
-        if (opts.forceComplete) requestContext.partner_has_paused = true;
         const result = await llm.generateResponses(history, requestContext, { perCategory: storage.loadResponsesPerCategory() });
         if (token !== generationToken) return; // a newer silence period superseded this
 
         // Engine ingests the classification and updates mode / stack / palette.
-        const snap = engine.ingestClassification(result, partnerText, { forceComplete: !!opts.forceComplete });
+        const snap = engine.ingestClassification(result, partnerText);
         ui.showEngineState(snap);
         lastPalette = snap.palette;
 
-        // Decide what to do with the ingested snapshot, and whether this is a
-        // silent dead-end worth logging — pure logic, unit-tested in
-        // conversation-logic.js. Logging trips the transcript red-wash + errors.log
-        // so a recurrence of the user-started stall (or any "complete turn, no
-        // options") is never invisible again (Ken, July 10 2026).
-        const outcome = convLogic.generationOutcome(snap, requestContext);
+        // Every checkpoint shows a palette now — we no longer suppress on a
+        // turn_status guess (Ken, July 10 2026). generationOutcome still flags the one
+        // real anomaly: the model returned an EMPTY palette when it owed responses
+        // (logs → transcript red-wash + errors.log). Pure logic, unit-tested in
+        // conversation-logic.js.
+        const outcome = convLogic.generationOutcome(snap);
         if (outcome.anomaly) {
             storage.logError(outcome.anomaly.context, outcome.anomaly.message, { partner: (partnerText || '').slice(0, 200) });
         }
 
-        if (!outcome.respond) {
-            // Mid-utterance pause (INCOMPLETE / CONTINUING) — don't respond. Stop
-            // holding the floor and keep listening for the rest of the turn.
-            placeholders.stop();
-            ui.clearResponseOptions();
-            ui.setTranscriptState('unconfirmed');
-            ui.setStatus('Partner still speaking…');
-            // ...but if the partner has actually FINISHED (a misclassified-complete
-            // turn — a short/disfluent go-ahead, etc.), they'll stay quiet, no new
-            // checkpoint fires, and we'd stall silently forever. So after a grace
-            // period of continued silence, re-generate forcing a complete
-            // interpretation. Cleared if the partner resumes (handlePartnerResumed).
-            // Not re-armed on a forced attempt (the engine normalizes that to COMPLETE,
-            // so it takes the respond branch — belt-and-suspenders against a loop).
-            if (!opts.forceComplete) armIncompleteFallback(token, partnerText);
+        ui.showResponses(snap.palette, handleResponseSelected);
+        ui.setTranscriptState('ready');
+        ui.setStatus(snap.mode === engine.MODE.REPAIR_OF_SELF
+            ? 'Partner didn\'t catch that — choose how to repeat'
+            : 'Select a response');
+        // Start the floor-holding placeholders (see shouldPlayPlaceholder — every
+        // turn except a repair-initiator). The first lands initialDelay after the
+        // PAUSE; the partner resuming aborts the ladder (handlePartnerResumed); a
+        // quick pick cancels it. Question-type turns get a question-flavored
+        // acknowledgment ("Good question."); everything else a neutral one.
+        if (convLogic.shouldPlayPlaceholder(snap)) {
+            placeholders.start({ question: convLogic.isQuestionFlavored(snap) });
         } else {
-            ui.showResponses(snap.palette, handleResponseSelected);
-            ui.setTranscriptState('ready');
-            ui.setStatus(snap.mode === engine.MODE.REPAIR_OF_SELF
-                ? 'Partner didn\'t catch that — choose how to repeat'
-                : 'Select a response');
-            // Now that the options are on screen and we know what the partner
-            // did, start the floor-holding placeholders for any complete partner turn
-            // (see shouldPlayPlaceholder). The first lands initialDelay after this
-            // point; a quick pick cancels it. Question-type turns get a
-            // question-flavored acknowledgment ("Good question."); everything else a
-            // neutral one ("Let me see.").
-            if (convLogic.shouldPlayPlaceholder(snap)) {
-                placeholders.start({ question: convLogic.isQuestionFlavored(snap) });
-            } else {
-                placeholders.stop();
-            }
-            // Repair-of-self ("What?"): pre-generate the rephrase + expand wordings
-            // in ONE call so those cards show real, speakable text instead of a hint
-            // (Ken). Re-speak is already in-hand (the user's last utterance).
-            if (snap.mode === engine.MODE.REPAIR_OF_SELF) prefetchRepairOptions(token);
+            placeholders.stop();
         }
+        // Repair-of-self ("What?"): pre-generate the rephrase + expand wordings in ONE
+        // call so those cards show real, speakable text (re-speak is already in hand).
+        if (snap.mode === engine.MODE.REPAIR_OF_SELF) prefetchRepairOptions(token);
 
         // Record facts the model lacked — drives the questionnaire's "suggested
         // next." Open gaps only; recordGaps drops answered/declined keys.
@@ -479,28 +449,6 @@ async function generateOptions(partnerText, opts = {}) {
         ui.showResponseError('AI is unavailable — reply using the Express Panel or “In my own words.” The partner\'s words are shown above.', () => generateOptions(partnerText));
         ui.setStatus(`Error: ${err.message}`);
     }
-}
-
-// Arm the pause-to-complete fallback (see INCOMPLETE_FALLBACK_MS). If the partner
-// stays quiet for the grace period, the suppressed turn was really complete — log
-// the classifier misfire (so it's visible) and re-generate forcing complete. The
-// token guard means a newer generation (partner resumed → next checkpoint, or the
-// user acted) cancels it; handlePartnerResumed also clears it the instant the
-// partner speaks again.
-function armIncompleteFallback(token, partnerText) {
-    clearIncompleteFallback();
-    incompleteFallbackTimer = setTimeout(() => {
-        incompleteFallbackTimer = null;
-        if (token !== generationToken) return;   // superseded
-        storage.logError('generateOptions',
-            'partner paused after a turn classified incomplete — forcing a complete interpretation',
-            { partner: (partnerText || '').slice(0, 200) });
-        generateOptions(partnerText, { forceComplete: true });
-    }, INCOMPLETE_FALLBACK_MS);
-}
-
-function clearIncompleteFallback() {
-    if (incompleteFallbackTimer) { clearTimeout(incompleteFallbackTimer); incompleteFallbackTimer = null; }
 }
 
 // A response from the palette was selected. Repair-of-self operations act on the
@@ -728,7 +676,6 @@ function resumeOrIdle() {
 // engine to STANDBY. Shared by End conversation and Start conversation.
 function terminateConversation() {
     placeholders.stop();
-    clearIncompleteFallback();
     tts.cancel();
     manualListenArmed = false;
     stt.stopListening();

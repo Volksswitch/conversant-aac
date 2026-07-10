@@ -30,7 +30,8 @@ function assertStructure(r) {
     assert.ok(Array.isArray(r.responses), 'responses is an array');
 }
 function assertLeadPalette(r) {
-    assert.equal(r.classification.turn_status, 'COMPLETE', 'a go-ahead reply must be COMPLETE');
+    // turn_status is now informational (we never gate on it) — assert the app-visible
+    // contract instead: a non-empty palette of lead responses.
     assert.ok(r.responses.length >= 4, `expected >= 4 lead responses, got ${r.responses.length}`);
     assert.ok(r.responses.some(x => x.slot === 'PREFERRED'), 'a PREFERRED lead response');
     assert.ok(r.responses.every(x => x.text && x.text.trim()), 'no empty response text');
@@ -65,12 +66,12 @@ test('LIVE: user-started with a one-word go-ahead ("Sure.") also leads', OPTS, a
     assertLeadPalette(r);
 });
 
-test('LIVE: a later disfluent go-ahead mid-conversation is COMPLETE with a palette (the v0.5.82 case)', OPTS, async (t) => {
+test('LIVE: a later disfluent go-ahead mid-conversation still yields a palette (the v0.5.82 case)', OPTS, async (t) => {
     if (skip) return t.skip(skip);
-    // The exact sequence that stalled again in 0.5.81: opener → go-ahead → the user
-    // leads with a pre-announcement → the partner gives ANOTHER, disfluent go-ahead.
-    // The stack is empty here (not user-leading), so this leans on the base-prompt
-    // disfluency hardening, not the user_holds_floor_to_lead exemption.
+    // The sequence that stalled in 0.5.81: opener → go-ahead → the user leads with a
+    // pre-announcement → the partner gives ANOTHER, disfluent go-ahead. The stack is
+    // empty (not user-leading). We no longer care what turn_status the model reports —
+    // the app always shows options — so we assert the palette, not the label.
     const r = await llm.generateResponses([
         { role: 'user', text: 'Hi, got a minute?' },
         { role: 'partner', text: 'Sure, for you anything.' },
@@ -78,27 +79,23 @@ test('LIVE: a later disfluent go-ahead mid-conversation is COMPLETE with a palet
         { role: 'partner', text: 'Go ahead. Uh, my, uh, my ears are wide open.' },
     ], {});
     assertStructure(r);
-    assert.equal(r.classification.turn_status, 'COMPLETE', 'a disfluent go-ahead is a complete turn');
-    assert.ok(r.responses.length >= 1, 'and must produce responses');
+    assert.ok(r.responses.length >= 1, 'must produce responses regardless of turn_status');
 });
 
-test('LIVE: partner_has_paused forces a complete interpretation + responses (the fallback path)', OPTS, async (t) => {
+test('LIVE: a genuinely trailing utterance STILL yields responses (never an empty palette)', OPTS, async (t) => {
     if (skip) return t.skip(skip);
-    // Even a genuinely trailing utterance, once the partner has gone quiet, must yield
-    // responses rather than an eternal stall.
-    const r = await llm.generateResponses(
-        [{ role: 'partner', text: 'So the other day I was walking and' }],
-        { partner_has_paused: true });
-    assert.equal(r.classification.turn_status, 'COMPLETE');
-    assert.ok(r.responses.length >= 1, 'a paused-and-finished turn yields responses');
+    // Even mid-sentence, the model must return options now — the user decides whether
+    // to use them; the app never withholds.
+    const r = await llm.generateResponses([{ role: 'partner', text: 'So the other day I was walking and' }], {});
+    assertStructure(r);
+    assert.ok(r.responses.length >= 1, 'a mid-sentence turn still yields responses');
 });
 
-test('LIVE: partner-started question → COMPLETE with a non-empty palette', OPTS, async (t) => {
+test('LIVE: partner-started question yields a non-empty palette', OPTS, async (t) => {
     if (skip) return t.skip(skip);
     const r = await llm.generateResponses([{ role: 'partner', text: 'How was your weekend?' }], {});
     assertStructure(r);
-    assert.equal(r.classification.turn_status, 'COMPLETE');
-    assert.ok(r.responses.length >= 1, 'a complete question must yield responses');
+    assert.ok(r.responses.length >= 1, 'a question must yield responses');
 });
 
 test('LIVE: partner mid-sentence returns a valid structure (status is the model\'s call)', OPTS, async (t) => {

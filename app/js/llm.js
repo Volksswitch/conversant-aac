@@ -130,13 +130,6 @@ export async function generateResponses(conversationHistory, context = {}, opts 
 
     // 1 or 2 options per category (Settings, max 2). When 2, offer two genuinely
     // different alternatives per slot so each category cell can show a choice.
-    // The app determined the partner has paused and gone quiet (see the
-    // pause-to-complete fallback in app.js) — so an "incomplete"-looking turn is
-    // actually finished. Force a complete interpretation with real responses.
-    const pausedBlock = context && context.partner_has_paused
-        ? `\n\nThe partner has PAUSED and gone quiet — they have FINISHED their turn. Treat it as COMPLETE: set "turn_status": "COMPLETE" and return the four responses (NEVER an empty responses array), even if the wording seems to trail off or contains filler/disfluencies ("uh", "um", repeated words). Do NOT classify it as INCOMPLETE or CONTINUING.`
-        : '';
-
     const perCat = opts.perCategory === 2 ? 2 : 1;
     const perCatBlock = perCat === 2
         ? `\n\nProvide TWO distinct options for EACH of the four slots — 8 responses total (2 PREFERRED, 2 DISPREFERRED, 2 INITIATIVE, 2 REPAIR), in that slot order, best-first within each slot. The two options within a slot must be meaningfully DIFFERENT alternatives (different wording, angle, or content), both valid for that slot — not minor rephrasings.`
@@ -162,24 +155,24 @@ Speak only to what is real — this is the most important rule. You are voicing 
 
 Classification (commit to these BEFORE writing responses):
 - "partner_action": the first-pair-part type the partner's utterance performs.
-- "turn_status": COMPLETE if the partner's turn is grammatically and pragmatically finished; INCOMPLETE if it trails off mid-utterance; CONTINUING if they are mid-telling, paused at a clause boundary. Filler and disfluency — "uh", "um", repeated words ("my, uh, my"), a trailing "you know" — do NOT make a turn incomplete; judge by whether the pragmatic action is finished, not by smoothness. A short reply or go-ahead ("Sure.", "Go ahead.", "My ears are wide open.") is COMPLETE.
+- "turn_status": your read of whether the turn sounds finished (COMPLETE) or still in progress (INCOMPLETE / CONTINUING). This is INFORMATIONAL ONLY — it does NOT change what you output; always produce responses regardless (the app, and ultimately the user, decides when to actually respond, not you).
 - "is_repair_initiator": true ONLY if the partner is asking the USER to repeat or clarify the user's own last utterance ("What?", "Huh?", "You want what?", "Say that again?").
 
-Responses (omit entirely — return "responses": [] — when turn_status is not COMPLETE, or when is_repair_initiator is true):
+Responses (ALWAYS return all four — even if the turn seems to trail off, is short, or contains filler/disfluencies; the ONLY time you return "responses": [] is when is_repair_initiator is true):
 - "hint" is a short glanceable label naming the response (a few words), not a truncation of "text".
 - PREFERRED: the most likely thing THIS user would say, delivered plainly, no hedging.
 - DISPREFERRED: a properly formed reluctant / declining / disagreeing reply — a brief MEANINGFUL softener that carries content ("I'd love to, but…", "I wish I could —"), the declination, and a short account/reason. Never a bare "No." Keep the account GENERAL or grounded in the profile — do not invent a specific excuse (a named appointment, a concrete prior plan) the user may not actually have; "I'm pretty wiped today" or "it's not really my thing" are safe, "I have a dentist appointment at 3" is fabricated.
 - INITIATIVE: a response that stops the user being purely responsive — a counter-offer, a return question, or a topic expansion. Vary its grammatical format (conditional / declarative / interrogative) from the other responses.
 - REPAIR: a clarification request on the PARTNER's turn — open-class ("Sorry?") when overall confidence is low, restricted ("Dinner where?") when a specific span is uncertain.
 
-User is leading: if the engine context has "user_holds_floor_to_lead": true, the partner has just RESPONDED to something the USER initiated (an opener or pre-question such as "Can I ask you something?"). The user now holds the floor to LEAD — do NOT generate replies as if answering the partner. In this case the partner's reply is a COMPLETE turn by definition: you MUST set "turn_status": "COMPLETE" and you MUST return the four responses (NEVER an empty responses array), even when the partner's reply is short ("sure", "go ahead", "what's up?", "of course", "any time"). Do NOT classify a short go-ahead as INCOMPLETE or CONTINUING — treat it as a go-ahead, not as a question to the user. Generate responses that let the user CONTINUE and lead: PREFERRED advances what the user wanted to say or asks their actual question; INITIATIVE offers a topic or question to raise; DISPREFERRED can gracefully back off ("Actually, never mind"); REPAIR stays a clarification on the partner only if their reply was unclear.
+User is leading: if the engine context has "user_holds_floor_to_lead": true, the partner has just RESPONDED to something the USER initiated (an opener or pre-question such as "Can I ask you something?"). The user now holds the floor to LEAD — do NOT generate replies as if answering the partner. Treat the partner's reply, even a short one ("sure", "go ahead", "of course", "any time"), as a go-ahead, not as a question to the user. Generate responses that let the user CONTINUE and lead: PREFERRED advances what the user wanted to say or asks their actual question; INITIATIVE offers a topic or question to raise; DISPREFERRED can gracefully back off ("Actually, never mind"); REPAIR stays a clarification on the partner only if their reply was unclear.
 
 Get to the point: NO response may begin with an empty interjection — no "Ah", "Oh", "Um", "Er", "Well", "So", "Hmm", "You know" at the start. Open with the substance. (A meaningful softener on DISPREFERRED, like "I'd love to, but…", is fine; a bare interjection is not.)
 
 - "missing_facts": lowercase snake_case keys for personal facts about the user you needed but were not given (e.g. "home_city", "fav_team", "occupation"). Use [] if none. Always phrase responses around any missing fact — never output bracketed placeholders.
 
 Conversation context (engine state — use it, do not echo it):
-${JSON.stringify(context)}${buildProfileBlock()}${avoidBlock}${steerBlock}${pausedBlock}${perCatBlock}`;
+${JSON.stringify(context)}${buildProfileBlock()}${avoidBlock}${steerBlock}${perCatBlock}`;
 
     const messages = conversationHistory.map(entry => ({
         role: entry.role === 'partner' ? 'user' : 'assistant',

@@ -187,14 +187,19 @@ export function partnerSpeaking(text, confidence = null) {
 
 // Ingest the combined classify+generate result (design §9.2) and update state.
 // `result` = { classification:{partner_action,turn_status,is_repair_initiator}, responses:[...] }.
-// `opts.forceComplete` (Ken, July 10 2026): the app has determined the partner has
-// finished (they paused and stayed quiet), so a lingering INCOMPLETE/CONTINUING is a
-// misclassification — normalize it to COMPLETE so we respond instead of stalling.
-export function ingestClassification(result, partnerText, opts = {}) {
+//
+// We DO NOT gate on turn_status (Ken, July 10 2026 — deliberately reverses design §8's
+// false-TRP guard): trying to detect when the partner is "done" from possibly-garbled
+// STT is fragile and it's a hard problem even for humans, and it caused repeated
+// silent stalls. Instead: every silence checkpoint produces AND shows a palette; the
+// partner's turn is "complete" only when the USER responds or ends the conversation.
+// turn_status is now informational only. `partner_action` and `is_repair_initiator`
+// are still used ("what kind of action", far more robust than "are they done").
+export function ingestClassification(result, partnerText) {
     const c = result.classification || {};
     state.lastClassification = {
         partner_action: c.partner_action || 'OTHER',
-        turn_status: c.turn_status || 'COMPLETE',
+        turn_status: c.turn_status || 'COMPLETE',   // informational only
         is_repair_initiator: !!c.is_repair_initiator,
     };
     state.lastPartnerUtterance = {
@@ -211,63 +216,33 @@ export function ingestClassification(result, partnerText, opts = {}) {
         return getSnapshot();
     }
 
-    // Is the partner replying to something the USER opened (an opener / pre-question)?
-    // If so the user holds the floor to LEAD, and the partner's reply is a complete
-    // SPP by definition — a short go-ahead ("sure", "any time you want, just let me
-    // know") that the classifier can misread as INCOMPLETE/CONTINUING. We must NOT
-    // apply the false-TRP suppression there, or the user's lead is silently stalled
-    // (no palette, no placeholder) — the user-started-conversation bug (Ken, July 10
-    // 2026). Normalize the status to COMPLETE so downstream (placeholder gating,
-    // "should respond?") agrees.
-    const leadTop = state.sequenceStack[state.sequenceStack.length - 1];
-    const userLeading = !!(leadTop && leadTop.openedBy === 'USER' && leadTop.action !== 'REPAIR');
-    // Force COMPLETE when the user is leading (partner replying to the user's opener/
-    // pre-sequence) OR when the app determined the partner has paused-and-finished
-    // (opts.forceComplete — the general pause-to-complete fallback, which covers every
-    // later turn and any misclassified-complete turn, not just the first opener reply).
-    if (userLeading || opts.forceComplete) state.lastClassification.turn_status = 'COMPLETE';
-
-    // Mid-utterance pause — responding here is the high-stakes false-TRP error
-    // (§8). Keep listening; show no palette. The partner still holds the floor.
-    // (Skipped when the user is leading — see above.)
-    if (state.lastClassification.turn_status !== 'COMPLETE') {
-        state.mode = MODE.LISTENING;
-        state.floor = FLOOR.PARTNER;
-        state.palette = [];
-        return getSnapshot();
-    }
-
-    // COMPLETE turn. If the user had repair sequence(s) open on top (Pardon?),
-    // the partner's re-speak resolves them — pop ALL contiguous user-opened
-    // REPAIR entries (pardon() now dedups, but clear any that pre-date that fix
-    // or arrived another way), then re-activate the FPP beneath against the
-    // now-clarified utterance (§3, §7.1).
+    // Resolve any open user REPAIR (Pardon?) sequences: the partner's re-speak pops
+    // them, then re-activates the FPP beneath against the now-clarified utterance
+    // (§3, §7.1). pardon() dedups, but clear any that arrived another way.
     let top = state.sequenceStack[state.sequenceStack.length - 1];
-    let resolvedPardon = false;
     while (top && top.action === 'REPAIR' && top.openedBy === 'USER') {
         state.sequenceStack.pop();
-        resolvedPardon = true;
         top = state.sequenceStack[state.sequenceStack.length - 1];
     }
 
-    if (resolvedPardon && top && top.openedBy === 'PARTNER') {
-        // The re-speak CLARIFIES the partner's existing FPP — it is the same
-        // obligation, just heard correctly this time. Update it in place rather
-        // than pushing a duplicate (the stack should again hold one question).
+    if (top && top.openedBy === 'PARTNER') {
+        // The partner still owns this FPP — either they re-spoke after a Pardon, or
+        // (with turn_status no longer gating) this is a LATER pause refining the SAME
+        // ongoing partner turn. Continuous capture re-ingests on every pause, and the
+        // partner holds the floor until the user produces an SPP, so UPDATE the FPP in
+        // place — never stack a duplicate per pause.
         top.action = state.lastClassification.partner_action;
         top.utterance = partnerText;
         top.sttConfidence = state.lastPartnerUtterance.confidence;
     } else if (top && top.openedBy === 'USER' && top.action !== 'REPAIR') {
-        // The partner is RESPONDING to something the USER initiated — an opener
-        // or pre-question ("Can I ask you something?" → "sure"). That reply is an
-        // SPP from the partner, NOT a new FPP: it closes the user's opened
-        // sequence and hands the floor back to the user to LEAD. Pop the user's
-        // FPP; do NOT push a partner FPP. (Bug fix — without this, the partner's
-        // "sure" was treated as if the PARTNER had asked the opener, so the
-        // options answered the user's own opener instead of letting them lead.)
+        // The partner is RESPONDING to something the USER initiated — an opener or
+        // pre-question ("Can I ask you something?" → "sure"). That reply is an SPP from
+        // the partner, NOT a new FPP: it closes the user's opened sequence and hands
+        // the floor back to the user to LEAD. Pop the user's FPP; push no partner FPP.
         state.sequenceStack.pop();
     } else {
-        // Push the partner's FPP as a newly-owed sequence.
+        // A new partner turn (empty stack, or after the user's SPP popped the last
+        // one) — push the partner's FPP as a newly-owed sequence.
         state.sequenceStack.push({
             action: state.lastClassification.partner_action,
             openedBy: 'PARTNER',
@@ -276,7 +251,7 @@ export function ingestClassification(result, partnerText, opts = {}) {
         });
     }
 
-    // Partner produced a complete turn — the floor is now the user's to respond.
+    // The floor is now the user's to respond (they judge when to actually take it).
     state.floor = FLOOR.SELF;
     if (state.lastClassification.partner_action === 'CLOSING') {
         state.phase = 'PRE_CLOSING';
