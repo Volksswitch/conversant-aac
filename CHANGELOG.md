@@ -13,6 +13,14 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+- **Fixed another silent stall later in a conversation you started.** After you
+  opened and the first go-ahead worked, a *second* short or hesitant go-ahead from
+  the other person ("Go ahead. Uh, my — my ears are wide open.") could still leave
+  the app silent — no placeholder, no responses. Two changes fix it: the app now
+  understands that filler and hesitation don't mean someone is still talking, and if
+  it ever does misjudge a pause, it now recovers on its own after a moment and offers
+  responses instead of waiting forever.
+
 ## Version 0.5.81
 
 - **Fixed: conversations you start yourself now work.** When you opened a

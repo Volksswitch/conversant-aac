@@ -130,6 +130,13 @@ export async function generateResponses(conversationHistory, context = {}, opts 
 
     // 1 or 2 options per category (Settings, max 2). When 2, offer two genuinely
     // different alternatives per slot so each category cell can show a choice.
+    // The app determined the partner has paused and gone quiet (see the
+    // pause-to-complete fallback in app.js) — so an "incomplete"-looking turn is
+    // actually finished. Force a complete interpretation with real responses.
+    const pausedBlock = context && context.partner_has_paused
+        ? `\n\nThe partner has PAUSED and gone quiet — they have FINISHED their turn. Treat it as COMPLETE: set "turn_status": "COMPLETE" and return the four responses (NEVER an empty responses array), even if the wording seems to trail off or contains filler/disfluencies ("uh", "um", repeated words). Do NOT classify it as INCOMPLETE or CONTINUING.`
+        : '';
+
     const perCat = opts.perCategory === 2 ? 2 : 1;
     const perCatBlock = perCat === 2
         ? `\n\nProvide TWO distinct options for EACH of the four slots — 8 responses total (2 PREFERRED, 2 DISPREFERRED, 2 INITIATIVE, 2 REPAIR), in that slot order, best-first within each slot. The two options within a slot must be meaningfully DIFFERENT alternatives (different wording, angle, or content), both valid for that slot — not minor rephrasings.`
@@ -155,7 +162,7 @@ Speak only to what is real — this is the most important rule. You are voicing 
 
 Classification (commit to these BEFORE writing responses):
 - "partner_action": the first-pair-part type the partner's utterance performs.
-- "turn_status": COMPLETE if the partner's turn is grammatically and pragmatically finished; INCOMPLETE if it trails off mid-utterance; CONTINUING if they are mid-telling, paused at a clause boundary.
+- "turn_status": COMPLETE if the partner's turn is grammatically and pragmatically finished; INCOMPLETE if it trails off mid-utterance; CONTINUING if they are mid-telling, paused at a clause boundary. Filler and disfluency — "uh", "um", repeated words ("my, uh, my"), a trailing "you know" — do NOT make a turn incomplete; judge by whether the pragmatic action is finished, not by smoothness. A short reply or go-ahead ("Sure.", "Go ahead.", "My ears are wide open.") is COMPLETE.
 - "is_repair_initiator": true ONLY if the partner is asking the USER to repeat or clarify the user's own last utterance ("What?", "Huh?", "You want what?", "Say that again?").
 
 Responses (omit entirely — return "responses": [] — when turn_status is not COMPLETE, or when is_repair_initiator is true):
@@ -172,7 +179,7 @@ Get to the point: NO response may begin with an empty interjection — no "Ah", 
 - "missing_facts": lowercase snake_case keys for personal facts about the user you needed but were not given (e.g. "home_city", "fav_team", "occupation"). Use [] if none. Always phrase responses around any missing fact — never output bracketed placeholders.
 
 Conversation context (engine state — use it, do not echo it):
-${JSON.stringify(context)}${buildProfileBlock()}${avoidBlock}${steerBlock}${perCatBlock}`;
+${JSON.stringify(context)}${buildProfileBlock()}${avoidBlock}${steerBlock}${pausedBlock}${perCatBlock}`;
 
     const messages = conversationHistory.map(entry => ({
         role: entry.role === 'partner' ? 'user' : 'assistant',

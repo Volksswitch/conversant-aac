@@ -187,7 +187,10 @@ export function partnerSpeaking(text, confidence = null) {
 
 // Ingest the combined classify+generate result (design §9.2) and update state.
 // `result` = { classification:{partner_action,turn_status,is_repair_initiator}, responses:[...] }.
-export function ingestClassification(result, partnerText) {
+// `opts.forceComplete` (Ken, July 10 2026): the app has determined the partner has
+// finished (they paused and stayed quiet), so a lingering INCOMPLETE/CONTINUING is a
+// misclassification — normalize it to COMPLETE so we respond instead of stalling.
+export function ingestClassification(result, partnerText, opts = {}) {
     const c = result.classification || {};
     state.lastClassification = {
         partner_action: c.partner_action || 'OTHER',
@@ -218,7 +221,11 @@ export function ingestClassification(result, partnerText) {
     // "should respond?") agrees.
     const leadTop = state.sequenceStack[state.sequenceStack.length - 1];
     const userLeading = !!(leadTop && leadTop.openedBy === 'USER' && leadTop.action !== 'REPAIR');
-    if (userLeading) state.lastClassification.turn_status = 'COMPLETE';
+    // Force COMPLETE when the user is leading (partner replying to the user's opener/
+    // pre-sequence) OR when the app determined the partner has paused-and-finished
+    // (opts.forceComplete — the general pause-to-complete fallback, which covers every
+    // later turn and any misclassified-complete turn, not just the first opener reply).
+    if (userLeading || opts.forceComplete) state.lastClassification.turn_status = 'COMPLETE';
 
     // Mid-utterance pause — responding here is the high-stakes false-TRP error
     // (§8). Keep listening; show no palette. The partner still holds the floor.

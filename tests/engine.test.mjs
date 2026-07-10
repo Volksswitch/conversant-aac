@@ -108,6 +108,30 @@ test('REGRESSION: user-led + partner go-ahead → the lead palette shows, for CO
     }
 });
 
+test('forceComplete normalizes a misclassified-incomplete partner turn into a response palette (pause-to-complete fallback)', () => {
+    // The v0.5.82 case: a LATER disfluent go-ahead ("Go ahead. Uh, my, uh, my ears
+    // are wide open."), with an EMPTY stack (not user-leading), misread as CONTINUING.
+    engine.reset();
+    engine.partnerSpeaking('Go ahead. Uh, my, uh, my ears are wide open.');
+    const s = engine.ingestClassification(
+        { classification: { partner_action: 'STATEMENT', turn_status: 'CONTINUING', is_repair_initiator: false }, responses: fourSlots },
+        'Go ahead. Uh, my, uh, my ears are wide open.',
+        { forceComplete: true });
+    assert.equal(s.mode, engine.MODE.RESPONDING);
+    assert.equal(s.palette.length, 4);
+    assert.equal(s.lastClassification.turn_status, 'COMPLETE');
+});
+
+test('WITHOUT forceComplete, the same misclassified turn still suppresses (guard intact until the fallback fires)', () => {
+    engine.reset();
+    engine.partnerSpeaking('Go ahead. Uh, my, uh, my ears are wide open.');
+    const s = engine.ingestClassification(
+        { classification: { partner_action: 'STATEMENT', turn_status: 'CONTINUING', is_repair_initiator: false }, responses: [] },
+        'Go ahead. Uh, my, uh, my ears are wide open.');
+    assert.equal(s.mode, engine.MODE.LISTENING);
+    assert.equal(s.palette.length, 0);
+});
+
 test('user-led normalization does NOT leak to a normal partner-started turn (guard still holds)', () => {
     // Regression guard for the fix: an ordinary partner-started INCOMPLETE (no
     // user-opened sequence on the stack) must still suppress the palette.

@@ -65,6 +65,34 @@ test('LIVE: user-started with a one-word go-ahead ("Sure.") also leads', OPTS, a
     assertLeadPalette(r);
 });
 
+test('LIVE: a later disfluent go-ahead mid-conversation is COMPLETE with a palette (the v0.5.82 case)', OPTS, async (t) => {
+    if (skip) return t.skip(skip);
+    // The exact sequence that stalled again in 0.5.81: opener → go-ahead → the user
+    // leads with a pre-announcement → the partner gives ANOTHER, disfluent go-ahead.
+    // The stack is empty here (not user-leading), so this leans on the base-prompt
+    // disfluency hardening, not the user_holds_floor_to_lead exemption.
+    const r = await llm.generateResponses([
+        { role: 'user', text: 'Hi, got a minute?' },
+        { role: 'partner', text: 'Sure, for you anything.' },
+        { role: 'user', text: "There's something I've been wanting to ask you." },
+        { role: 'partner', text: 'Go ahead. Uh, my, uh, my ears are wide open.' },
+    ], {});
+    assertStructure(r);
+    assert.equal(r.classification.turn_status, 'COMPLETE', 'a disfluent go-ahead is a complete turn');
+    assert.ok(r.responses.length >= 1, 'and must produce responses');
+});
+
+test('LIVE: partner_has_paused forces a complete interpretation + responses (the fallback path)', OPTS, async (t) => {
+    if (skip) return t.skip(skip);
+    // Even a genuinely trailing utterance, once the partner has gone quiet, must yield
+    // responses rather than an eternal stall.
+    const r = await llm.generateResponses(
+        [{ role: 'partner', text: 'So the other day I was walking and' }],
+        { partner_has_paused: true });
+    assert.equal(r.classification.turn_status, 'COMPLETE');
+    assert.ok(r.responses.length >= 1, 'a paused-and-finished turn yields responses');
+});
+
 test('LIVE: partner-started question → COMPLETE with a non-empty palette', OPTS, async (t) => {
     if (skip) return t.skip(skip);
     const r = await llm.generateResponses([{ role: 'partner', text: 'How was your weekend?' }], {});

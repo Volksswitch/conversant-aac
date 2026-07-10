@@ -110,6 +110,14 @@ test('conversation history maps partner→user and user→assistant roles', asyn
     ]);
 });
 
+test('partner_has_paused injects a force-complete instruction into the prompt', async () => {
+    mockFetch(structured);
+    await llm.generateResponses([{ role: 'partner', text: 'Go ahead. Uh, my ears are wide open.' }], { partner_has_paused: true });
+    const sys = getFetchCalls()[0].body.system;
+    assert.match(sys, /PAUSED and gone quiet/);
+    assert.match(sys, /never an empty responses array/i);
+});
+
 test('DATA PATH: a mocked COMPLETE result flows through the engine to a 4-card palette', async () => {
     mockFetch(structured);
     engine.reset();

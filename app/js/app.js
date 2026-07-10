@@ -42,6 +42,15 @@ let generationToken = 0;
 // is exactly the boundary auto-resume is meant to continue past.
 let manualListenArmed = false;
 
+// Pause-to-complete fallback (Ken, July 10 2026). When a partner turn is suppressed
+// as INCOMPLETE/CONTINUING but the partner then stays quiet (doesn't resume), the
+// classification was wrong and the app would otherwise stall silently forever. After
+// this grace period of continued silence we re-generate FORCING a complete
+// interpretation. Cleared the moment the partner resumes (handlePartnerResumed) or a
+// newer generation/selection/reset supersedes it. Tunable.
+let incompleteFallbackTimer = null;
+const INCOMPLETE_FALLBACK_MS = 2500;
+
 // Active influencer TOGGLES from the Express Panel (Ken, June 26 2026). One
 // active Partner (who the user is talking with) and one active Feeling (current
 // mood) at a time. The Partner personalizes openers + tells the AI who the
@@ -250,6 +259,10 @@ function handleSpeechResult(liveText) {
 // re-arms and regenerates from the combined speech.
 function handlePartnerResumed() {
     placeholders.stop();
+    // The partner is talking again, so a turn we'd suppressed as "incomplete" was
+    // genuinely incomplete — cancel the pause-to-complete fallback; the next silence
+    // checkpoint will regenerate from the fuller utterance.
+    clearIncompleteFallback();
 }
 
 // Fired each time the partner pauses for the configured silence period.
@@ -365,8 +378,9 @@ function startFreshListening() {
 }
 
 
-async function generateOptions(partnerText) {
+async function generateOptions(partnerText, opts = {}) {
     const token = ++generationToken;
+    clearIncompleteFallback();   // a fresh generation supersedes any pending pause-fallback
     ui.setStatus('Generating response options...');
     ui.setTranscriptState('generating');
     ui.clearResponseOptions();
@@ -384,11 +398,14 @@ async function generateOptions(partnerText) {
 
     try {
         const requestContext = engine.buildRequestContext();
+        // Pause-fallback re-entry: the partner paused and stayed quiet after a turn we
+        // suppressed as "incomplete" — tell the model to treat it as complete.
+        if (opts.forceComplete) requestContext.partner_has_paused = true;
         const result = await llm.generateResponses(history, requestContext, { perCategory: storage.loadResponsesPerCategory() });
         if (token !== generationToken) return; // a newer silence period superseded this
 
         // Engine ingests the classification and updates mode / stack / palette.
-        const snap = engine.ingestClassification(result, partnerText);
+        const snap = engine.ingestClassification(result, partnerText, { forceComplete: !!opts.forceComplete });
         ui.showEngineState(snap);
         lastPalette = snap.palette;
 
@@ -409,6 +426,14 @@ async function generateOptions(partnerText) {
             ui.clearResponseOptions();
             ui.setTranscriptState('unconfirmed');
             ui.setStatus('Partner still speaking…');
+            // ...but if the partner has actually FINISHED (a misclassified-complete
+            // turn — a short/disfluent go-ahead, etc.), they'll stay quiet, no new
+            // checkpoint fires, and we'd stall silently forever. So after a grace
+            // period of continued silence, re-generate forcing a complete
+            // interpretation. Cleared if the partner resumes (handlePartnerResumed).
+            // Not re-armed on a forced attempt (the engine normalizes that to COMPLETE,
+            // so it takes the respond branch — belt-and-suspenders against a loop).
+            if (!opts.forceComplete) armIncompleteFallback(token, partnerText);
         } else {
             ui.showResponses(snap.palette, handleResponseSelected);
             ui.setTranscriptState('ready');
@@ -454,6 +479,28 @@ async function generateOptions(partnerText) {
         ui.showResponseError('AI is unavailable — reply using the Express Panel or “In my own words.” The partner\'s words are shown above.', () => generateOptions(partnerText));
         ui.setStatus(`Error: ${err.message}`);
     }
+}
+
+// Arm the pause-to-complete fallback (see INCOMPLETE_FALLBACK_MS). If the partner
+// stays quiet for the grace period, the suppressed turn was really complete — log
+// the classifier misfire (so it's visible) and re-generate forcing complete. The
+// token guard means a newer generation (partner resumed → next checkpoint, or the
+// user acted) cancels it; handlePartnerResumed also clears it the instant the
+// partner speaks again.
+function armIncompleteFallback(token, partnerText) {
+    clearIncompleteFallback();
+    incompleteFallbackTimer = setTimeout(() => {
+        incompleteFallbackTimer = null;
+        if (token !== generationToken) return;   // superseded
+        storage.logError('generateOptions',
+            'partner paused after a turn classified incomplete — forcing a complete interpretation',
+            { partner: (partnerText || '').slice(0, 200) });
+        generateOptions(partnerText, { forceComplete: true });
+    }, INCOMPLETE_FALLBACK_MS);
+}
+
+function clearIncompleteFallback() {
+    if (incompleteFallbackTimer) { clearTimeout(incompleteFallbackTimer); incompleteFallbackTimer = null; }
 }
 
 // A response from the palette was selected. Repair-of-self operations act on the
@@ -681,6 +728,7 @@ function resumeOrIdle() {
 // engine to STANDBY. Shared by End conversation and Start conversation.
 function terminateConversation() {
     placeholders.stop();
+    clearIncompleteFallback();
     tts.cancel();
     manualListenArmed = false;
     stt.stopListening();
