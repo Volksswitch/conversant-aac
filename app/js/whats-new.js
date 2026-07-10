@@ -21,6 +21,9 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.5.81": [
+    "Fixed: conversations you start yourself now work. When you opened a conversation with a starter (for example \"Hi Tyler, got a minute?\") and the other person replied with a short go-ahead (\"Yeah, sure — any time\"), the app could go silent: no thinking-out-loud placeholder and no suggested responses. It now correctly treats their reply as your cue to lead and offers responses as expected."
+  ],
   "0.5.80": [
     "Fixed a leftover clipped-looking border on the \"In my own words\" box. A thin framing line around the box had a rounded corner that got cut off at the edge of the response area, making it look broken. It's now flush and borderless, matching the response cards behind it."
   ],

@@ -208,8 +208,21 @@ export function ingestClassification(result, partnerText) {
         return getSnapshot();
     }
 
+    // Is the partner replying to something the USER opened (an opener / pre-question)?
+    // If so the user holds the floor to LEAD, and the partner's reply is a complete
+    // SPP by definition — a short go-ahead ("sure", "any time you want, just let me
+    // know") that the classifier can misread as INCOMPLETE/CONTINUING. We must NOT
+    // apply the false-TRP suppression there, or the user's lead is silently stalled
+    // (no palette, no placeholder) — the user-started-conversation bug (Ken, July 10
+    // 2026). Normalize the status to COMPLETE so downstream (placeholder gating,
+    // "should respond?") agrees.
+    const leadTop = state.sequenceStack[state.sequenceStack.length - 1];
+    const userLeading = !!(leadTop && leadTop.openedBy === 'USER' && leadTop.action !== 'REPAIR');
+    if (userLeading) state.lastClassification.turn_status = 'COMPLETE';
+
     // Mid-utterance pause — responding here is the high-stakes false-TRP error
     // (§8). Keep listening; show no palette. The partner still holds the floor.
+    // (Skipped when the user is leading — see above.)
     if (state.lastClassification.turn_status !== 'COMPLETE') {
         state.mode = MODE.LISTENING;
         state.floor = FLOOR.PARTNER;

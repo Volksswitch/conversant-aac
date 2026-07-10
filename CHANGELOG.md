@@ -13,6 +13,12 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+- **Fixed: conversations you start yourself now work.** When you opened a
+  conversation with a starter (for example "Hi Tyler, got a minute?") and the other
+  person replied with a short go-ahead ("Yeah, sure — any time"), the app could go
+  silent: no thinking-out-loud placeholder and no suggested responses. It now
+  correctly treats their reply as your cue to lead and offers responses as expected.
+
 ## Version 0.5.80
 
 - **Fixed a leftover clipped-looking border on the "In my own words" box.** A thin
