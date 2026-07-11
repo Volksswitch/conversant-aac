@@ -21,6 +21,13 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.5.85": [
+    "Move between Settings tabs with the arrow keys. If you use a physical keyboard, you can now Tab once to the column of Settings tabs and then use the up/down arrow keys to jump straight to another tab — General, About Me, Speech, and so on — instead of tabbing through everything on the current tab first.",
+    "The on-screen keyboard's keys are no longer part of keyboard \"Tab\" navigation. Tabbing through Settings with a physical keyboard used to walk through all forty-odd on-screen keys; it now skips them (you still tap them as before).",
+    "A \"Save\" button on each Express Panel item. When you edit a phrase, partner, or feeling and are using the on-screen keyboard, tap that item's Save to keep the change and put the keyboard away so you can see the panel again.",
+    "Clearer names for the keyboard/Express Panel layouts. In Settings they're now \"Side Layout 1\", \"Bottom Layout 1\", and so on (they set the layout for both the on-screen keyboard and the Express Panel).",
+    "Simpler wording on the button that loads a saved settings profile: just \"Load\"."
+  ],
   "0.5.84": [
     "Fixed: wind-down replies now show the right number of cards. When the other person replied to your wind-down and the app offered your goodbyes again, it showed eight of them even when you'd chosen one card per category. It now matches your setting — four cards (or eight, if you picked eight).",
     "Faster goodbyes. While you're wrapping up, if the other person simply says goodbye, your closing cards now come back right away instead of after a short wait — so you can say your own goodbye sooner. (If they say something other than a plain farewell, the app still asks the AI for suggestions as usual.)",

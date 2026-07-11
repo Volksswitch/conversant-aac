@@ -30,23 +30,23 @@ const r  = (str) => str.split(' ').filter(Boolean).map((c) => C(c)); // a row of
 
 // --- side-dock layouts (S1–S10) --------------------------------------------
 const S = {
-  S1: { name: 'Side Keyboard 1', dock: 'side', rows: [
+  S1: { name: 'Side Layout 1', dock: 'side', rows: [
     r('a b c d e'), r('f g h i j'), r('k l m n o'), r('p q r s t'), r('u v w x y'),
     [C('z'), C(','), C('.'), BK(), SH()],
     [PG(), SP(3), EN()],
   ]},
-  S2: { name: 'Side Keyboard 2', dock: 'side', rows: [
+  S2: { name: 'Side Layout 2', dock: 'side', rows: [
     r('a b c d'), r('e f g h'), r('i j k l'), r('m n o p'), r('q r s t'), r('u v w x'),
     [C('y'), C('z'), C(','), C('.')],
     [SH(), PG(), BK(), EN()],
     [SP(4)],
   ]},
-  S3: { name: 'Side Keyboard 3', dock: 'side', rows: [
+  S3: { name: 'Side Layout 3', dock: 'side', rows: [
     r('a b c d e f'), r('g h i j k l'), r('m n o p q r'), r('s t u v w x'),
     [C('y'), C('z'), C(','), C('.'), BK(), SH()],
     [PG(), SP(4), EN()],
   ]},
-  S4: { name: 'Side Keyboard 4', dock: 'side', rows: [
+  S4: { name: 'Side Layout 4', dock: 'side', rows: [
     [C('a'), C('b'), C('c'), C('d'), C('e'), BK()],
     [C('f'), C('g'), C('h'), C('i'), C('j'), SH()],
     [C('k'), C('l'), C('m'), C('n'), C('o'), EN()],
@@ -54,18 +54,18 @@ const S = {
     [C('u'), C('v'), C('w'), C('x'), C('y'), C(',')],
     [C('z'), SP(4), C('.')],
   ]},
-  S5: { name: 'Side Keyboard 5', dock: 'side', rows: [
+  S5: { name: 'Side Layout 5', dock: 'side', rows: [
     r('a b c d e'), r('f g h i j'), r('k l m n o'), r('p q r s t'), r('u v w x y'),
     [C('z'), C(','), C('.'), BK(), SH()],
     [PG(), SP(2), EN(), BL(1)],
   ]},
-  S6: { name: 'Side Keyboard 6', dock: 'side', rows: [
+  S6: { name: 'Side Layout 6', dock: 'side', rows: [
     r('a b c'), r('d e f'), r('g h i'), r('j k l'), r('m n o'), r('p q r'), r('s t u'), r('v w x'),
     [C('y'), C('z'), BK()],
     [SH(), PG(), EN()],
     [C(','), SP(1), C('.')],
   ]},
-  S7: { name: 'Side Keyboard 7', dock: 'side', rows: [
+  S7: { name: 'Side Layout 7', dock: 'side', rows: [
     [C('a'), C('g'), C('m'), C('s'), C('y')],
     [C('b'), C('h'), C('n'), C('t'), C('z')],
     [C('c'), C('i'), C('o'), C('u'), BK()],
@@ -74,18 +74,18 @@ const S = {
     [C('f'), C('l'), C('r'), C('x'), EN()],
     [C(','), SP(3), C('.')],
   ]},
-  S8: { name: 'Side Keyboard 8', dock: 'side', rows: [
+  S8: { name: 'Side Layout 8', dock: 'side', rows: [
     r('a b c d e'), r('f g h i j'), r('k l m n o'), r('p q r s t'), r('u v w x y'),
     [C('z'), C(',', 2), C('.', 2)],
     [SH(), PG(), BK(), EN(2)],
     [SP(5)],
   ]},
-  S9: { name: 'Side Keyboard 9', dock: 'side', rows: [
+  S9: { name: 'Side Layout 9', dock: 'side', rows: [
     r('a b c d e'), r('f g h i j'), r('k l m n o'), r('p q r s t'), r('u v w x y'),
     [C('z'), C(','), C('.'), SH(), PG()],
     [BK(2), SP(2), EN()],
   ]},
-  S10: { name: 'Side Keyboard 10', dock: 'side', rows: [
+  S10: { name: 'Side Layout 10', dock: 'side', rows: [
     r('a b c d e'), r('f g h i j'), r('k l m n o'), r('p q r s t'), r('u v w x y'),
     [C('z'), C(','), C('.'), BK(), SH()],
     r('1 2 3 4 5'), r('6 7 8 9 0'),
@@ -95,49 +95,49 @@ const S = {
 
 // --- bottom-dock layouts (B1–B10) ------------------------------------------
 const B = {
-  B1: { name: 'Bottom Keyboard 1', dock: 'bottom', rows: [
+  B1: { name: 'Bottom Layout 1', dock: 'bottom', rows: [
     r('a b c d e f g h i'), r('j k l m n o p q r'),
     [C('s'), C('t'), C('u'), C('v'), C('w'), C('x'), C('y'), C('z'), BK()],
     [SH(), PG(), C(','), SP(4), C('.'), EN()],
   ]},
-  B2: { name: 'Bottom Keyboard 2', dock: 'bottom', rows: [
+  B2: { name: 'Bottom Layout 2', dock: 'bottom', rows: [
     r('a b c d e f g h i j'), r('k l m n o p q r s t'),
     [C('u'), C('v'), C('w'), C('x'), C('y'), C('z'), C(','), C('.'), BK(), SH()],
     [PG(), SP(8), EN()],
   ]},
-  B3: { name: 'Bottom Keyboard 3', dock: 'bottom', rows: [
+  B3: { name: 'Bottom Layout 3', dock: 'bottom', rows: [
     r('a b c d e f g h i j k l m'), r('n o p q r s t u v w x y z'),
     [SH(), PG(), C(','), SP(7), C('.'), BK(), EN()],
   ]},
-  B4: { name: 'Bottom Keyboard 4', dock: 'bottom', rows: [
+  B4: { name: 'Bottom Layout 4', dock: 'bottom', rows: [
     r('a b c d e f g'), r('h i j k l m n'), r('o p q r s t u'),
     [C('v'), C('w'), C('x'), C('y'), C('z'), C(','), C('.')],
     [SH(), PG(), BK(), SP(3), EN()],
   ]},
-  B5: { name: 'Bottom Keyboard 5', dock: 'bottom', rows: [
+  B5: { name: 'Bottom Layout 5', dock: 'bottom', rows: [
     r('a b c d e f g h i'), r('j k l m n o p q r'),
     [C('s'), C('t'), C('u'), C('v'), C('w'), C('x'), C('y'), C('z'), BK()],
     [SH(), PG(), C(','), C('.'), SP(2), EN(), BL(1), BL(1)],
   ]},
-  B6: { name: 'Bottom Keyboard 6', dock: 'bottom', rows: [
+  B6: { name: 'Bottom Layout 6', dock: 'bottom', rows: [
     r('a b c d e f g h i'), r('j k l m n o p q r'),
     [C('s'), C('t'), C('u'), C('v'), C('w'), C('x'), C('y'), C('z'), BK()],
     [SH(), PG(), C(','), SP(3), C('.'), BK(), EN()],
   ]},
-  B7: { name: 'Bottom Keyboard 7', dock: 'bottom', rows: [
+  B7: { name: 'Bottom Layout 7', dock: 'bottom', rows: [
     [C('a'), C('b'), C('c'), C('d'), C('e'), C('f'), C('g'), C('h'), BK(), SH()],
     [C('i'), C('j'), C('k'), C('l'), C('m'), C('n'), C('o'), C('p'), EN(), PG()],
     [C('q'), C('r'), C('s'), C('t'), C('u'), C('v'), C('w'), C('x'), C(','), C('.')],
     [C('y'), C('z'), SP(8)],
   ]},
-  B8: { name: 'Bottom Keyboard 8', dock: 'bottom', rows: [
+  B8: { name: 'Bottom Layout 8', dock: 'bottom', rows: [
     [C('a'), C('b'), C('c'), C('d'), BL(1), C('n'), C('o'), C('p'), C('q')],
     [C('e'), C('f'), C('g'), C('h'), BL(1), C('r'), C('s'), C('t'), C('u')],
     [C('i'), C('j'), C('k'), C('l'), BL(1), C('v'), C('w'), C('x'), C('y')],
     [C('m'), C(','), C('.'), BK(), BL(1), C('z'), SH(), PG(), EN()],
     [SP(4), BL(1), SP(4)],
   ]},
-  B9: { name: 'Bottom Keyboard 9', dock: 'bottom', rows: [
+  B9: { name: 'Bottom Layout 9', dock: 'bottom', rows: [
     r('1 2 3 4 5 6 7 8 9 0'),
     r('a b c d e f g h i j'), r('k l m n o p q r s t'),
     [C('u'), C('v'), C('w'), C('x'), C('y'), C('z'), C(','), C('.'), BK(), SH()],
@@ -145,7 +145,7 @@ const B = {
   ]},
   // Prediction slots removed (Ken, June 29 2026): the on-keyboard prediction
   // display is dropped for now (v0.5.39), so this is a plain alphabetical layout.
-  B10: { name: 'Bottom Keyboard 10', dock: 'bottom', rows: [
+  B10: { name: 'Bottom Layout 10', dock: 'bottom', rows: [
     r('a b c d e f g h i'), r('j k l m n o p q r'),
     [C('s'), C('t'), C('u'), C('v'), C('w'), C('x'), C('y'), C('z'), BK()],
     [SH(), PG(), C(','), SP(4), C('.'), EN()],
@@ -155,7 +155,7 @@ const B = {
   // so the letters are easy to find and never shift between rows; space is on the
   // bottom row. Each row sums to 12 units so the columns line up. Infrequent
   // special characters live on the shared symbols page (the 123 key).
-  B11: { name: 'Bottom Keyboard 11 (QWERTY)', dock: 'bottom', rows: [
+  B11: { name: 'Bottom Layout 11 (QWERTY)', dock: 'bottom', rows: [
     [C('q'), C('w'), C('e'), C('r'), C('t'), C('y'), C('u'), C('i'), C('o'), C('p'), BK(2)],
     [C('a'), C('s'), C('d'), C('f'), C('g'), C('h'), C('j'), C('k'), C('l'), SH(), EN(2)],
     [C('z'), C('x'), C('c'), C('v'), C('b'), C('n'), C('m'), PG(), SP(2), C(','), C('.')],

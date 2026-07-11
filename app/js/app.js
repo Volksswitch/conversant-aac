@@ -1343,15 +1343,49 @@ async function generateScreenOpenings() {
 }
 
 function initSettingsTabs() {
-    document.querySelectorAll('#settingsTabs .settings-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            document.querySelectorAll('#settingsTabs .settings-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('#settingsContent .tab-panel').forEach(p => p.classList.remove('active'));
-            tab.classList.add('active');
-            document.querySelector(`.tab-panel[data-tab="${tab.dataset.tab}"]`).classList.add('active');
-            handleSettingsTab(tab.dataset.tab);
-        });
+    const tablist = document.getElementById('settingsTabs');
+    const tabs = Array.from(tablist.querySelectorAll('.settings-tab'));
+    tablist.setAttribute('role', 'tablist');
+    tablist.setAttribute('aria-orientation', 'vertical');   // the tabs stack in a column
+    tabs.forEach(tab => {
+        tab.setAttribute('role', 'tab');
+        const on = tab.classList.contains('active');
+        tab.tabIndex = on ? 0 : -1;            // roving tabindex: one Tab stop for the strip
+        tab.setAttribute('aria-selected', String(on));
+        tab.addEventListener('click', () => activateSettingsTab(tab, false));
     });
+    // Up/Down arrows move BETWEEN tabs (Ken, July 2026 — the tabs stack in a
+    // vertical column, so up/down is the natural axis). The strip is a single Tab
+    // stop (roving tabindex), so a physical-keyboard user doesn't have to Tab
+    // through every tab AND its content to reach another tab — they Tab to the
+    // strip once, arrow to the tab they want, then Tab on into the panel content.
+    tablist.addEventListener('keydown', (e) => {
+        const i = tabs.indexOf(document.activeElement);
+        if (i < 0) return;
+        let j = -1;
+        if (e.key === 'ArrowDown') j = (i + 1) % tabs.length;
+        else if (e.key === 'ArrowUp') j = (i - 1 + tabs.length) % tabs.length;
+        else if (e.key === 'Home') j = 0;
+        else if (e.key === 'End') j = tabs.length - 1;
+        else return;
+        e.preventDefault();
+        activateSettingsTab(tabs[j], true);   // move focus + switch the tab
+    });
+}
+
+// Select a Settings tab: show its panel, update the roving tabindex + aria state,
+// optionally move focus to it (arrow-key navigation), and run its side effects.
+function activateSettingsTab(tab, focus) {
+    document.querySelectorAll('#settingsTabs .settings-tab').forEach(t => {
+        const on = t === tab;
+        t.classList.toggle('active', on);
+        t.tabIndex = on ? 0 : -1;
+        t.setAttribute('aria-selected', String(on));
+    });
+    document.querySelectorAll('#settingsContent .tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelector(`.tab-panel[data-tab="${tab.dataset.tab}"]`).classList.add('active');
+    if (focus) tab.focus();
+    handleSettingsTab(tab.dataset.tab);
 }
 
 // On the Speech & Input tab the user changes keyboard layout/position but there's
@@ -1639,10 +1673,14 @@ function openSettings() {
     noSaveDefaultInput.onchange = () => storage.saveNoSaveDefault(noSaveDefaultInput.checked);
     updateFolderDisplay();
 
-    // Reset to General tab
-    document.querySelectorAll('#settingsTabs .settings-tab').forEach(t => t.classList.remove('active'));
+    // Reset to General tab (keep the roving tabindex + aria-selected in sync).
+    document.querySelectorAll('#settingsTabs .settings-tab').forEach(t => {
+        const on = t.dataset.tab === 'general';
+        t.classList.toggle('active', on);
+        t.tabIndex = on ? 0 : -1;
+        t.setAttribute('aria-selected', String(on));
+    });
     document.querySelectorAll('#settingsContent .tab-panel').forEach(p => p.classList.remove('active'));
-    document.querySelector('.settings-tab[data-tab="general"]').classList.add('active');
     document.querySelector('.tab-panel[data-tab="general"]').classList.add('active');
 
     dialog.showModal();
@@ -1749,7 +1787,7 @@ function openSettings() {
         if (!(await confirmDanger({
             title: 'Load these settings?',
             body: `This replaces all of your current settings with the “${name}” profile, then reloads the app. Your API key stays as it is.`,
-            confirmLabel: 'Load & reload',
+            confirmLabel: 'Load',
         }))) return;
         try {
             await storage.applySettingsProfile(name);

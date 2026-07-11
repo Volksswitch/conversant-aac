@@ -25,6 +25,7 @@
 
 import * as expressPanel from './express-panel.js';
 import * as relationships from './relationships.js';
+import * as keyboard from './keyboard.js';
 import { CATEGORIES, INFLUENCER_COLORS, FEELING_PRESETS, makeId } from './express-items.js';
 import { confirmDanger } from './confirm-dialog.js';
 
@@ -244,6 +245,14 @@ function buildRow(item, i) {
     // Reorder + delete.
     const tools = document.createElement('div');
     tools.className = 'ee-tools';
+    // Save this item and take the on-screen keyboard down so the panel/list is
+    // visible again (Ken, July 2026). Edits already auto-commit on input; this is
+    // the explicit "I'm done with this item" that dismisses the keyboard — the
+    // Hide button having been removed, this is how an on-screen-keyboard user gets
+    // the keyboard out of the way. No-op on the keyboard in physical mode.
+    const save = mkBtn('Save', 'ee-save');
+    save.title = 'Save this item and hide the on-screen keyboard';
+    save.addEventListener('click', () => { commit(false); keyboard.hideKeyboard(); });
     const up = mkBtn('↑'); up.disabled = i === 0;
     up.addEventListener('click', () => { [current[i - 1], current[i]] = [current[i], current[i - 1]]; commit(true); });
     const down = mkBtn('↓'); down.disabled = i === current.length - 1;
@@ -254,7 +263,7 @@ function buildRow(item, i) {
         current.splice(i, 1);
         commit(true);
     });
-    tools.append(up, down, del);
+    tools.append(save, up, down, del);
     row.appendChild(tools);
 
     return row;

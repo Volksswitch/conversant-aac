@@ -995,6 +995,9 @@ button:not(.kbd-key):not(.kbd-tool):not(.kbd-pred-btn):not(.ep-btn) {
 .ee-tools button { width: 2rem; height: 2rem; border: 1px solid #c4ccd2; background: #f4f6f8; border-radius: 6px; cursor: pointer; font-size: 1rem; line-height: 1; }
 .ee-tools button:disabled { opacity: 0.35; cursor: default; }
 .ee-tools .ee-del { color: #c0392b; border-color: #e0a4a0; }
+/* "Save" is a text button, not a 2rem icon: give it its own width + primary color. */
+.ee-tools .ee-save { width: auto; padding: 0 0.7rem; background: #2c7a3f; color: #fff; border: none; font-weight: 600; }
+.ee-tools .ee-save:hover { filter: brightness(1.1); }
 /* Button-color picker — pick by color, not by (meaningless) category name. */
 .ee-swatches { flex: 0 0 auto; display: flex; gap: 0.3rem; align-items: center; flex-wrap: wrap; }
 .ee-swatch { width: 1.7rem; height: 1.7rem; padding: 0; border-radius: 5px; border: 2px solid rgba(0, 0, 0, 0.25); cursor: pointer; }
@@ -1301,6 +1304,12 @@ dialog::backdrop {
     background: #d8e6f8;
     font-weight: 600;
     color: #06c;
+}
+
+/* Keyboard focus ring for arrow-key tab navigation (the tabs are focusable divs). */
+.settings-tab:focus-visible {
+    outline: 3px solid #06c;
+    outline-offset: -3px;
 }
 
 #settingsContent {

@@ -508,6 +508,7 @@ function build() {
         const pb = document.createElement('button');
         pb.type = 'button';
         pb.className = 'kbd-pred-btn';
+        pb.tabIndex = -1;   // pointer target only (see the key buttons above)
         pb.hidden = true;
         predWrap.appendChild(pb);
     }
@@ -541,6 +542,11 @@ function renderRows() {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'kbd-key';
+            // Keys are pointer/touch targets, never Tab targets — a physical-
+            // keyboard user tabbing through Settings must not walk through ~40
+            // keys, and an on-screen-keyboard user reaches keys by tapping, not
+            // Tab. So keep them out of the tab order in both modes (Ken, July 2026).
+            btn.tabIndex = -1;
             btn.style.flex = `${span} 1 0`;
             if (cell.kind === 'char') {
                 btn.dataset.char = cell.char;
