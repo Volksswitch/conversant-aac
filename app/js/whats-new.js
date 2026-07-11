@@ -23,6 +23,7 @@ import * as storage from './storage.js';
 const RELEASE_NOTES = {
   "0.5.84": [
     "Fixed: wind-down replies now show the right number of cards. When the other person replied to your wind-down and the app offered your goodbyes again, it showed eight of them even when you'd chosen one card per category. It now matches your setting — four cards (or eight, if you picked eight).",
+    "Faster goodbyes. While you're wrapping up, if the other person simply says goodbye, your closing cards now come back right away instead of after a short wait — so you can say your own goodbye sooner. (If they say something other than a plain farewell, the app still asks the AI for suggestions as usual.)",
     "You can now Tab between the controls in the \"In my own words\" box. Pressing Tab (or Shift+Tab) on a physical keyboard cycles through the typing box and the Speak, Reframe, and Cancel buttons instead of jumping away to controls behind the box.",
     "Keyguard-design settings are together on the Keyguard Design tab. \"Keyboard separation\" moved there from Speech & Input, and a new \"Transcript separation\" sets the gap between the transcript and the buttons below it (by making the transcript a little shorter). Both leave room for a keyguard bar without moving any button holes."
   ],

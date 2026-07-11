@@ -374,6 +374,33 @@ function startFreshListening() {
 
 async function generateOptions(partnerText) {
     const token = ++generationToken;
+
+    // FAST PATH — winding down + a plain farewell reply: re-offer the goodbyes
+    // NOW, skipping the AI round-trip, so the user can speak another closing
+    // without waiting (Ken, July 2026 — saving time matters more than saving
+    // tokens here). We feed the engine a synthetic CLOSING classification (the
+    // same object shape the AI path produces), so all sequence-stack/floor
+    // bookkeeping is identical; the AI would have classified this CLOSING and we'd
+    // have shown the static closers anyway. Scoped to the pre-closing phase, and
+    // precision-biased, so a non-match just falls through to the normal path
+    // below. See conversation-logic.looksLikeClosing for the field-feedback note.
+    const preSnap = engine.getSnapshot();
+    const windingDown = preSnap.mode === engine.MODE.PRE_CLOSING_CLOSING
+        || preSnap.phase === 'PRE_CLOSING' || preSnap.phase === 'CLOSING';
+    if (windingDown && convLogic.looksLikeClosing(partnerText)) {
+        placeholders.stop(); // a farewell doesn't need a "let me think" filler
+        ui.setLiveTranscript(partnerText);
+        const snap = engine.ingestClassification(
+            { classification: { partner_action: 'CLOSING', turn_status: 'COMPLETE', is_repair_initiator: false }, responses: [] },
+            partnerText,
+        );
+        ui.showEngineState(snap);
+        lastPalette = snap.palette;
+        showConversationPalette(snap.palette, 'Say goodbye, or wait for their reply');
+        ui.setTranscriptState('ready');
+        return;
+    }
+
     ui.setStatus('Generating response options...');
     ui.setTranscriptState('generating');
     ui.clearResponseOptions();

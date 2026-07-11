@@ -18,6 +18,11 @@ regenerate the bundled notes in `app/js/whats-new.js`.
   eight of them even when you'd chosen one card per category. It now matches your
   setting — four cards (or eight, if you picked eight).
 
+- **Faster goodbyes.** While you're wrapping up, if the other person simply says
+  goodbye, your closing cards now come back right away instead of after a short wait —
+  so you can say your own goodbye sooner. (If they say something other than a plain
+  farewell, the app still asks the AI for suggestions as usual.)
+
 - **You can now Tab between the controls in the "In my own words" box.** Pressing Tab
   (or Shift+Tab) on a physical keyboard cycles through the typing box and the Speak,
   Reframe, and Cancel buttons instead of jumping away to controls behind the box.

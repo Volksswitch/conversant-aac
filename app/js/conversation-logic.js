@@ -30,6 +30,56 @@ export function isQuestionFlavored(snap) {
     return !!(c && QUESTION_ACTIONS.has(c.partner_action));
 }
 
+// --- Fast-path closing detection (Ken, July 2026) ---------------------------
+//
+// When the user is winding down and the partner replies with a plain farewell,
+// re-offer the goodbyes IMMEDIATELY without an AI round-trip. The AI would have
+// classified the reply CLOSING and we'd have discarded its generated responses
+// for the static closer list anyway, so the round-trip only adds latency — and
+// here SPEED (letting the user speak another closing sooner) matters more than
+// the token saving.
+//
+// FIELD-FEEDBACK NOTE / DECISION: this is a deliberately dumb keyword+length
+// heuristic, applied ONLY while winding down (see app.js generateOptions'
+// pre-closing guard). It is biased toward PRECISION, because the two error modes
+// are asymmetric:
+//   - A MISS (a real farewell we don't recognize, e.g. an unusual phrasing or a
+//     reply longer than MAX_CLOSING_WORDS) simply falls through to the normal AI
+//     path — same behavior as before, no harm, just no time saved.
+//   - A FALSE POSITIVE (we treat a NON-farewell as a goodbye) would show closings
+//     when the partner actually REOPENED the conversation. That's the annoying
+//     case, so the patterns require a clear farewell token in a short reply, and
+//     ambiguous bare words ("later", "night") are intentionally excluded.
+// If the field reports either (goodbyes that still lag, or closings appearing when
+// the partner kept talking), tune MAX_CLOSING_WORDS / FAREWELL_PATTERNS here — or
+// remove the fast path entirely to always defer to the AI classification.
+const FAREWELL_PATTERNS = [
+    /\bbye\b/, /\bgoodbye\b/, /\bgood bye\b/, /\bbye bye\b/, /\bcya\b/, /\bttyl\b/,
+    /\bfarewell\b/, /\bso long\b/, /\bpeace out\b/,
+    /\bsee (you|ya|u)\b/, /\btake care\b/, /\btake it easy\b/,
+    /\bgood ?night\b/,
+    /\btalk (to you )?(soon|later)\b/, /\bcatch you later\b/,
+    /\bhave a (good|great|nice) (one|day|night|evening|weekend|rest|time)\b/,
+    /\b(gotta|got to|have to|need to|should|must) (get )?go(ing)?\b/,
+    /\bi('m| am) off\b/,
+    /\buntil next time\b/,
+    /\byou too\b/,
+    /\b(nice|good|great) (talking|seeing|chatting)\b/,
+];
+
+const MAX_CLOSING_WORDS = 6;
+
+// Does this partner reply read as a plain farewell? Normalizes to lowercase
+// letters/digits/apostrophes, requires it to be short, and to contain one of the
+// farewell patterns above. Pure and side-effect-free (unit-tested).
+export function looksLikeClosing(text) {
+    if (!text) return false;
+    const norm = String(text).toLowerCase().replace(/[^a-z0-9\s']/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!norm) return false;
+    if (norm.split(' ').length > MAX_CLOSING_WORDS) return false;
+    return FAREWELL_PATTERNS.some((re) => re.test(norm));
+}
+
 /**
  * Decide whether an ingested snapshot represents a silent dead-end worth logging.
  * We always show a palette now (no turn_status suppression — Ken, July 10 2026), so

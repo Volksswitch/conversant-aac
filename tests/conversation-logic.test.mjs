@@ -40,6 +40,40 @@ test('isQuestionFlavored: true only for QUESTION/INVITATION/REQUEST', () => {
     }
 });
 
+// --- looksLikeClosing (fast-path farewell detection) -------------------------
+
+test('looksLikeClosing: matches plain farewells', () => {
+    for (const t of [
+        'Bye!', 'Goodbye', 'Bye bye', 'See you later', 'See ya!', 'Take care',
+        'Talk to you soon', 'Talk later', 'Catch you later', 'Good night',
+        'Goodnight', 'You too, bye', 'Gotta go', 'I have to go', "I'm off",
+        'Have a good one', 'Nice talking to you', 'Take it easy', 'Until next time',
+        'Peace out', 'So long!',
+    ]) {
+        assert.equal(cl.looksLikeClosing(t), true, t);
+    }
+});
+
+test('looksLikeClosing: does NOT match a reopening / non-farewell reply', () => {
+    for (const t of [
+        'Actually, before you go, let me tell you about the meeting tomorrow',
+        "Wait, I forgot to mention the thing about the car we talked about",
+        "I'll call you tonight about it",           // "tonight" must not hit /night/
+        'Can we meet later today to finish this up', // "later" alone must not match
+        'It was last night that we went there',      // "night" alone must not match
+        'How are you doing today',
+        '',
+        '   ',
+    ]) {
+        assert.equal(cl.looksLikeClosing(t), false, t);
+    }
+});
+
+test('looksLikeClosing: a farewell buried in a long reply falls through (length guard)', () => {
+    // A genuine goodbye we DON'T fast-path just defers to the AI — harmless.
+    assert.equal(cl.looksLikeClosing('Okay well it was really great seeing you today take care now'), false);
+});
+
 // --- generationOutcome: always respond; the one empty-palette tripwire ---------
 
 test('respond, no anomaly: a normal turn with a palette', () => {
