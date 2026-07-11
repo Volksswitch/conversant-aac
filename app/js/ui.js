@@ -221,16 +221,22 @@ export function showResponses(palette, onSelect) {
         }));
     } else {
         // Openers / closers / repair-of-self distribute across the fixed 4-cell
-        // footprint. With more than four (e.g. eight conversation starters in
-        // 8-card mode) stack TWO per cell — matching the 8-card responding
-        // footprint — so all of them fit the same four keyguard cells (Ken).
-        const perCell = palette.length > RESERVED_SLOTS ? 2 : 1;
+        // footprint. A palette of four or fewer (repair-of-self = 3, a short
+        // opener list) always shows one per cell. When it exceeds four (openers /
+        // closers can be up to eight) the user's "responses per category" setting
+        // decides: 1-card mode caps to four (one per cell); 8-card mode stacks TWO
+        // per cell (up to eight) — matching the responding footprint so a single
+        // keyguard lines up either way (Ken). A partner's reply to a wind-down
+        // comes back as the FULL closer list, so without the cap it showed eight
+        // closers even in 1-card mode.
+        const perCell = (palette.length > RESERVED_SLOTS && cardsPerCategory === 2) ? 2 : 1;
+        const capped = palette.slice(0, RESERVED_SLOTS * perCell);
         cells = [];
-        for (let i = 0; i < palette.length; i += perCell) {
-            const group = palette.slice(i, i + perCell);
+        for (let i = 0; i < capped.length; i += perCell) {
+            const group = capped.slice(i, i + perCell);
             cells.push({ responses: group, slotCls: (SLOT_META[group[0].slot] || {}).cls || 'slot-persistent' });
         }
-        // Never exceed the four fixed cells (the caller caps the palette, but be safe).
+        // Never exceed the four fixed cells (the caller caps too, but be safe).
         if (cells.length > RESERVED_SLOTS) cells.length = RESERVED_SLOTS;
     }
 
@@ -548,14 +554,41 @@ export function applyControlIcons() {
 // --- "In my own words" modal overlay (Rule 8). Shows the input box over the
 // reserved response footprint without blurring the base UI; focusing the textarea
 // brings up the keyboard in the dock region. ---
+
+// The composer is a "soft" modal — the base UI is deliberately left interactive
+// (Rule 8), NOT inert — so a physical-keyboard Tab would leak focus straight into
+// the base controls behind/under it (Command Bar, Express Panel) and appear to do
+// nothing useful (Ken). Trap Tab / Shift+Tab so it cycles the composer's own
+// controls (textarea → Speak → Reframe → Cancel → back), the way a real modal
+// dialog does.
+function composerTabTrap(e) {
+    if (e.key !== 'Tab') return;
+    const ov = document.getElementById('composerOverlay');
+    if (!ov || ov.hidden) return;
+    const items = [...ov.querySelectorAll('textarea, button')]
+        .filter((el) => !el.disabled && el.getClientRects().length > 0);
+    if (!items.length) return;
+    const first = items[0];
+    const last = items[items.length - 1];
+    const active = document.activeElement;
+    if (e.shiftKey) {
+        if (active === first || !ov.contains(active)) { e.preventDefault(); last.focus(); }
+    } else if (active === last || !ov.contains(active)) {
+        e.preventDefault();
+        first.focus();
+    }
+}
+
 export function showComposerOverlay() {
     const ov = document.getElementById('composerOverlay');
     if (ov) ov.hidden = false;
+    document.addEventListener('keydown', composerTabTrap, true);
     const ta = document.getElementById('composerInput');
     if (ta) ta.focus(); // triggers the on-screen keyboard (if onscreen mode)
 }
 
 export function hideComposerOverlay() {
+    document.removeEventListener('keydown', composerTabTrap, true);
     const ta = document.getElementById('composerInput');
     if (ta) ta.blur(); // dismisses the on-screen keyboard
     const ov = document.getElementById('composerOverlay');

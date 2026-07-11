@@ -228,16 +228,7 @@
                     </div>
                     <div class="setting-group">
                         <button id="resetSizingBtn" type="button" class="reset-sizing-btn">Reset buttons and gaps to default</button>
-                        <p class="setting-hint">Restores button size, spacing, and the minimum spacing to their defaults. Does not change the keyboard separation below.</p>
-                    </div>
-                    <div class="setting-group">
-                        <label for="dockSepSlider">Keyboard separation</label>
-                        <div class="slider-row">
-                            <button type="button" class="slider-step" data-target="dockSepSlider" data-step="-4" aria-label="Less separation">&minus;</button>
-                            <input type="range" id="dockSepSlider" min="0" max="100" step="1" class="size-slider">
-                            <button type="button" class="slider-step" data-target="dockSepSlider" data-step="4" aria-label="More separation">+</button>
-                        </div>
-                        <p class="setting-hint">The gap between the keyboard / Express Panel and the rest of the screen. It only shifts the other content away from the keyboard — the keyboard itself stays put, so changing this does not move the keyguard holes.</p>
+                        <p class="setting-hint">Restores button size, spacing, and the minimum spacing to their defaults. Does not change the keyboard or transcript separation (on the Keyguard Design tab).</p>
                     </div>
                     <div class="setting-group">
                         <label for="voiceSelect">Voice</label>
@@ -396,6 +387,24 @@
                     <div id="controlEditor"></div>
                 </div>
                 <div class="tab-panel" data-tab="keyguard">
+                    <div class="setting-group">
+                        <label for="dockSepSlider">Keyboard separation</label>
+                        <div class="slider-row">
+                            <button type="button" class="slider-step" data-target="dockSepSlider" data-step="-4" aria-label="Less separation">&minus;</button>
+                            <input type="range" id="dockSepSlider" min="0" max="100" step="1" class="size-slider">
+                            <button type="button" class="slider-step" data-target="dockSepSlider" data-step="4" aria-label="More separation">+</button>
+                        </div>
+                        <p class="setting-hint">The gap between the keyboard / Express Panel and the rest of the screen. It only shifts the other content away from the keyboard — the keyboard itself stays put, so changing this does not move the keyguard holes. Widening it leaves room for a keyguard bar between the two areas.</p>
+                    </div>
+                    <div class="setting-group">
+                        <label for="transcriptSepSlider">Transcript separation</label>
+                        <div class="slider-row">
+                            <button type="button" class="slider-step" data-target="transcriptSepSlider" data-step="-4" aria-label="Less separation">&minus;</button>
+                            <input type="range" id="transcriptSepSlider" min="0" max="100" step="1" class="size-slider">
+                            <button type="button" class="slider-step" data-target="transcriptSepSlider" data-step="4" aria-label="More separation">+</button>
+                        </div>
+                        <p class="setting-hint">The gap between the transcript and the command bar below it. It makes the transcript shorter to open the gap — the command bar and everything below it stay put, so this does not move the keyguard holes. Widening it leaves room for a keyguard bar between the transcript and the buttons.</p>
+                    </div>
                     <p class="setting-hint">Generate a <strong>Screen Openings.txt</strong> file describing each control on the main conversation screen — for cutting a physical keyguard. Positions and sizes are in <strong>device (screenshot) pixels</strong>, measured from the upper-left of the screen. Enter your window's title-bar height so each opening's Y matches a full-screen screenshot.</p>
                     <div class="setting-group">
                         <label for="titleBarHeightInput">Title Bar Height (px)</label>

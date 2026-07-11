@@ -13,6 +13,20 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+- **Fixed: wind-down replies now show the right number of cards.** When the other
+  person replied to your wind-down and the app offered your goodbyes again, it showed
+  eight of them even when you'd chosen one card per category. It now matches your
+  setting — four cards (or eight, if you picked eight).
+
+- **You can now Tab between the controls in the "In my own words" box.** Pressing Tab
+  (or Shift+Tab) on a physical keyboard cycles through the typing box and the Speak,
+  Reframe, and Cancel buttons instead of jumping away to controls behind the box.
+
+- **Keyguard-design settings are together on the Keyguard Design tab.** "Keyboard
+  separation" moved there from Speech & Input, and a new **"Transcript separation"**
+  sets the gap between the transcript and the buttons below it (by making the transcript
+  a little shorter). Both leave room for a keyguard bar without moving any button holes.
+
 ## Version 0.5.83
 
 - **About Me now opens like every other Settings tab.** Instead of taking over the

@@ -1122,6 +1122,7 @@ function applyConversationDockClasses() {
 // max-growth point) are reasonable choices here, to react to.
 const GAP_MAX_REM = 1.4, MINGAP_MAX_REM = 1.4;   // slider 0–100 → 0..max rem
 const DOCKSEP_MAX_REM = 4.0;      // keyboard-separation slider 0–100 → 0..4rem
+const TRANSCRIPTSEP_MAX_REM = 4.0; // transcript-separation slider 0–100 → 0..4rem
 const MIN_BTN_REM = 2.0;          // smallest still-recognizable button (icon + border)
 const MIN_TRANSCRIPT_REM = 3.0;   // transcript floor (~2 lines)
 const SHRINK_GAP_REM = 1.4;       // how much gap a full left-shrink adds
@@ -1198,6 +1199,10 @@ function applyButtonSizing() {
     // touch the dock footprint, so the keyguard holes don't move).
     const dockSep = lerp(storage.loadDockSepPos(), 0, DOCKSEP_MAX_REM) * rem;
     root.setProperty('--dock-sep', `${dockSep.toFixed(2)}px`);
+    // Transcript separation: shortens the transcript vertically to open a gap
+    // above the command bar (does not move the command-bar / dock holes).
+    const transcriptSep = lerp(storage.loadTranscriptSepPos(), 0, TRANSCRIPTSEP_MAX_REM) * rem;
+    root.setProperty('--transcript-sep', `${transcriptSep.toFixed(2)}px`);
     const { rows, cols } = activeLayoutGrid();
     root.setProperty('--kbd-rows', String(rows));
     root.setProperty('--kbd-cols', String(cols));
@@ -1585,10 +1590,12 @@ function openSettings() {
     const buttonGapSlider = document.getElementById('buttonGapSlider');
     const minGapSlider = document.getElementById('minGapSlider');
     const dockSepSlider = document.getElementById('dockSepSlider');
+    const transcriptSepSlider = document.getElementById('transcriptSepSlider');
     buttonSizeSlider.value = storage.loadButtonSizePos();
     buttonGapSlider.value = storage.loadButtonGapPos();
     minGapSlider.value = storage.loadMinGapPos();
     dockSepSlider.value = storage.loadDockSepPos();
+    transcriptSepSlider.value = storage.loadTranscriptSepPos();
     // Text-size selects (string-valued multipliers).
     const transcriptFontSelect = document.getElementById('transcriptFontSelect');
     const composerFontSelect = document.getElementById('composerFontSelect');
@@ -1884,6 +1891,12 @@ function openSettings() {
     // of the UI away from the dock without resizing buttons or the dock footprint.
     dockSepSlider.oninput = () => {
         storage.saveDockSepPos(Number(dockSepSlider.value));
+        applyButtonSizing();
+    };
+    // Transcript separation — shortens the transcript to open a gap above the
+    // command bar; a keyguard-design concern, so it lives on the Keyguard tab.
+    transcriptSepSlider.oninput = () => {
+        storage.saveTranscriptSepPos(Number(transcriptSepSlider.value));
         applyButtonSizing();
     };
 

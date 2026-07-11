@@ -21,6 +21,11 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.5.84": [
+    "Fixed: wind-down replies now show the right number of cards. When the other person replied to your wind-down and the app offered your goodbyes again, it showed eight of them even when you'd chosen one card per category. It now matches your setting — four cards (or eight, if you picked eight).",
+    "You can now Tab between the controls in the \"In my own words\" box. Pressing Tab (or Shift+Tab) on a physical keyboard cycles through the typing box and the Speak, Reframe, and Cancel buttons instead of jumping away to controls behind the box.",
+    "Keyguard-design settings are together on the Keyguard Design tab. \"Keyboard separation\" moved there from Speech & Input, and a new \"Transcript separation\" sets the gap between the transcript and the buttons below it (by making the transcript a little shorter). Both leave room for a keyguard bar without moving any button holes."
+  ],
   "0.5.83": [
     "About Me now opens like every other Settings tab. Instead of taking over the whole screen with its own title bar and \"Done\" button, About Me appears in the panel next to the Settings tabs, just like General, Text Size, and the rest. Use the same Close button to return to the conversation.",
     "Save and reload your settings as named profiles. In Settings → General → Settings profiles, you can now save all of your settings (voice, silence period, dock and layout, button and gap sizes, tap mode, text sizes, placeholders) under a name, and bring them back later in one tap. Handy for keeping a known setup to return to, or copying your setup to another device — the profiles are stored in your data folder. Your API key and cost counters are not included.",

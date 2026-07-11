@@ -385,6 +385,7 @@ const DEFAULT_BTN_SIZE_POS = 50;   // MIDDLE = the % default layout (Ken June 30
 const DEFAULT_BTN_GAP_POS = 0;     // → gap 0 (flush by default)
 const DEFAULT_MIN_GAP_POS = 0;     // → min-gap 0 by default
 const DEFAULT_DOCK_SEP_POS = 0;    // → no gap between the dock (keyboard / Express Panel) and the rest of the UI
+const DEFAULT_TRANSCRIPT_SEP_POS = 0; // → no extra gap between the transcript and the command bar
 
 function clampPos(v, dflt) {
     const n = Number(v);
@@ -430,6 +431,20 @@ export function loadDockSepPos() {
 export function saveDockSepPos(pos) {
     const settings = loadSettings();
     settings.dockSepPos = clampPos(pos, DEFAULT_DOCK_SEP_POS);
+    saveSettings(settings);
+}
+
+// Transcript separation — extra gap between the transcript and the command
+// (control) bar below it, opened by making the transcript shorter vertically.
+// Like keyboard separation it's a keyguard-design concern (a physical bar sits
+// between the two openings) and doesn't move the command-bar / dock holes.
+export function loadTranscriptSepPos() {
+    const s = loadSettings();
+    return s.transcriptSepPos == null ? DEFAULT_TRANSCRIPT_SEP_POS : clampPos(s.transcriptSepPos, DEFAULT_TRANSCRIPT_SEP_POS);
+}
+export function saveTranscriptSepPos(pos) {
+    const settings = loadSettings();
+    settings.transcriptSepPos = clampPos(pos, DEFAULT_TRANSCRIPT_SEP_POS);
     saveSettings(settings);
 }
 
