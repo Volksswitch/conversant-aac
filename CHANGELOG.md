@@ -13,6 +13,8 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+## Version 0.5.83
+
 - **About Me now opens like every other Settings tab.** Instead of taking over the
   whole screen with its own title bar and "Done" button, About Me appears in the
   panel next to the Settings tabs, just like General, Text Size, and the rest. Use
