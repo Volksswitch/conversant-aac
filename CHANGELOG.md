@@ -13,6 +13,8 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+## Version 0.5.84
+
 - **Fixed: wind-down replies now show the right number of cards.** When the other
   person replied to your wind-down and the app offered your goodbyes again, it showed
   eight of them even when you'd chosen one card per category. It now matches your
