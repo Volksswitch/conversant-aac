@@ -173,8 +173,9 @@ function initApp() {
     renderExpressPanel();
     expressEditor.init(document.getElementById('expressEditor'), { onChange: renderExpressPanel });
     controlEditor.init(document.getElementById('controlEditor'), { onChange: applyControlPhrases });
-    // About Me is launched from the Settings → About Me tab, so Done returns there.
-    worldviewUI.init({ onClose: openSettings });
+    // About Me is an ordinary Settings tab — it renders into its tab-panel and is
+    // dismissed by the shared Settings Close button (no overlay of its own).
+    worldviewUI.init();
     applyFontScales();   // user-set Transcript / Composer / Express text sizes
     initSliderSteppers(); // − / + fine-step buttons on the size sliders
     ui.setRegenerateLabel(storage.loadResponsesPerCategory() * 4); // "New 4"/"New 8"
@@ -470,6 +471,13 @@ async function handleResponseSelected(response, index) {
     // the last checkpoint's text.
     const raw = heardPartnerText();
     stt.stopListening();
+    // Discard the STT buffer now that the partner turn has been consumed.
+    // stopListening() leaves accumulatedText intact, so without this a follow-up
+    // selection whose mic never restarts (e.g. re-offered closings with
+    // auto-resume off) would read the SAME partner speech back out of
+    // heardPartnerText() and re-commit it — the last utterance appearing once per
+    // closing pick (Ken, July 10 2026).
+    stt.resetTranscript();
     currentPartnerText = '';
 
     ui.setStatus('Speaking...');
@@ -1305,14 +1313,6 @@ async function generateScreenOpenings() {
 function initSettingsTabs() {
     document.querySelectorAll('#settingsTabs .settings-tab').forEach(tab => {
         tab.addEventListener('click', () => {
-            // "About Me" has no panel of its own — it launches the full-screen
-            // questionnaire overlay directly (closing Settings first).
-            if (tab.dataset.tab === 'aboutme') {
-                keyboard.hideKeyboard();
-                document.getElementById('settingsDialog').close();
-                worldviewUI.open();
-                return;
-            }
             document.querySelectorAll('#settingsTabs .settings-tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('#settingsContent .tab-panel').forEach(p => p.classList.remove('active'));
             tab.classList.add('active');
@@ -1326,12 +1326,18 @@ function initSettingsTabs() {
 // no text field to type into, so show the keyboard as a live preview of the
 // CHOSEN dock. Any other tab takes the preview down.
 function handleSettingsTab(tabName) {
-    if (tabName === 'express') { expressEditor.render(); keyboard.previewHide(); return; }
-    if (tabName === 'controls') { controlEditor.render(); keyboard.previewHide(); return; }
+    // About Me renders into its own tab-panel and keeps the on-screen keyboard up
+    // (a preview when no field is focused; a typing keyboard once a card field is).
+    if (tabName === 'aboutme') { worldviewUI.open(); return; }
+    if (tabName === 'express') { expressEditor.render(); keyboard.hideKeyboard(); return; }
+    if (tabName === 'controls') { controlEditor.render(); keyboard.hideKeyboard(); return; }
     if (tabName === 'speech' && storage.loadKeyboardMode() === 'onscreen') {
         keyboard.previewShow(storage.loadKeyboardDock());
     } else {
-        keyboard.previewHide();
+        // hideKeyboard (not previewHide) so leaving any tab forcibly drops the
+        // keyboard even if a field there still holds stale focus (e.g. an About Me
+        // card field whose focusout was suppressed while Settings is open).
+        keyboard.hideKeyboard();
     }
 }
 
@@ -1451,6 +1457,37 @@ function renderErrorLog() {
     }
     view.value = lines.join('\n');
     view.scrollTop = 0;   // groups are newest-first, so the most relevant is at top
+}
+
+// Populate the Settings-profiles picker (About tab) from the data folder. Disables
+// the picker's Load/Delete when there are none, and shows a hint when no folder is
+// granted (profiles live in the folder).
+async function renderSettingsProfiles() {
+    const select = document.getElementById('settingsProfileSelect');
+    const loadBtn = document.getElementById('loadSettingsProfileBtn');
+    const delBtn = document.getElementById('deleteSettingsProfileBtn');
+    const status = document.getElementById('settingsProfilesStatus');
+    if (!select) return;
+    if (!storage.hasDataFolder()) {
+        select.innerHTML = '<option value="">— Choose a data folder first —</option>';
+        select.disabled = loadBtn.disabled = delBtn.disabled = true;
+        return;
+    }
+    select.disabled = false;
+    const names = await storage.listSettingsProfiles();
+    if (!names.length) {
+        select.innerHTML = '<option value="">— No saved profiles —</option>';
+        loadBtn.disabled = delBtn.disabled = true;
+        return;
+    }
+    select.innerHTML = names.map((n) => `<option value="${n}">${n}</option>`).join('');
+    loadBtn.disabled = delBtn.disabled = false;
+    void status; // status is set by the action handlers
+}
+
+function setProfileStatus(msg) {
+    const status = document.getElementById('settingsProfilesStatus');
+    if (status) status.textContent = msg || '';
 }
 
 // Format one exchange of a saved conversation log as a transcript line.
@@ -1645,6 +1682,59 @@ function openSettings() {
         }))) return;
         storage.clearErrorLog();
         renderErrorLog();
+    };
+
+    // Settings profiles (About tab) — save the whole settings bundle to the data
+    // folder under a name, and re-apply it later. Populate the picker now.
+    renderSettingsProfiles();
+    setProfileStatus('');
+    const profileNameInput = document.getElementById('settingsProfileNameInput');
+    const profileSelect = document.getElementById('settingsProfileSelect');
+    document.getElementById('saveSettingsProfileBtn').onclick = async () => {
+        const name = profileNameInput.value;
+        try {
+            if (await storage.settingsProfileExists(name)) {
+                if (!(await confirmDanger({
+                    title: 'Overwrite that profile?',
+                    body: `A settings profile named "${name.trim()}" already exists. Replace it with your current settings?`,
+                    confirmLabel: 'Overwrite',
+                }))) return;
+            }
+            const saved = await storage.saveSettingsProfile(name);
+            profileNameInput.value = '';
+            await renderSettingsProfiles();
+            profileSelect.value = saved;
+            setProfileStatus(`Saved “${saved}”.`);
+        } catch (err) {
+            setProfileStatus(err.message || 'Could not save the profile.');
+        }
+    };
+    document.getElementById('loadSettingsProfileBtn').onclick = async () => {
+        const name = profileSelect.value;
+        if (!name) return;
+        if (!(await confirmDanger({
+            title: 'Load these settings?',
+            body: `This replaces all of your current settings with the “${name}” profile, then reloads the app. Your API key stays as it is.`,
+            confirmLabel: 'Load & reload',
+        }))) return;
+        try {
+            await storage.applySettingsProfile(name);
+            location.reload(); // re-apply every setting exactly as at startup
+        } catch (err) {
+            setProfileStatus(err.message || 'Could not load the profile.');
+        }
+    };
+    document.getElementById('deleteSettingsProfileBtn').onclick = async () => {
+        const name = profileSelect.value;
+        if (!name) return;
+        if (!(await confirmDanger({
+            title: 'Delete this profile?',
+            body: `Delete the settings profile “${name}”? This removes its file from your data folder.`,
+            confirmLabel: 'Delete',
+        }))) return;
+        await storage.deleteSettingsProfile(name);
+        await renderSettingsProfiles();
+        setProfileStatus(`Deleted “${name}”.`);
     };
 
     document.getElementById('generateOpeningsBtn').onclick = generateScreenOpenings;

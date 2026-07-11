@@ -103,23 +103,12 @@
         </div>
     </main>
 
-    <div id="worldviewScreen" class="hidden">
-        <header class="worldview-header">
-            <h2 id="worldviewTitle">About Me</h2>
-            <button id="worldviewCloseBtn" type="button">Done</button>
-        </header>
-        <div id="worldviewContent"></div>
-    </div>
-
     <dialog id="settingsDialog">
         <div id="settingsHeader" tabindex="-1">
             <span id="settingsTitle">Settings</span>
         </div>
         <div id="settingsLayout">
             <nav id="settingsTabs">
-                <!-- About Me launches the full-screen questionnaire overlay
-                     directly (no panel of its own); it lives here now that the
-                     title bar is gone. -->
                 <div class="settings-tab active" data-tab="general">General</div>
                 <div class="settings-tab" data-tab="aboutme">About Me</div>
                 <div class="settings-tab" data-tab="textsize">Text Size</div>
@@ -147,6 +136,25 @@
                         </div>
                         <p class="setting-hint">Local folder for conversation history and user data. Synced by OneDrive, not uploaded to the cloud.</p>
                     </div>
+                    <div class="setting-group" id="settingsProfilesGroup">
+                        <label>Settings profiles</label>
+                        <p class="setting-hint">Save <b>all</b> of your settings (voice, silence period, dock &amp; layout, button/gap sizes, tap mode, text sizes, placeholders) as a named profile in your data folder, then re-apply it in one tap — handy for a repeatable test baseline or moving your setup to another device. Your API key and usage counters are <b>not</b> included. Needs a data folder (above).</p>
+                        <div class="profiles-row">
+                            <select id="settingsProfileSelect" aria-label="Saved settings profiles">
+                                <option value="">— No saved profiles —</option>
+                            </select>
+                            <button id="loadSettingsProfileBtn" type="button">Load</button>
+                            <button id="deleteSettingsProfileBtn" type="button">Delete</button>
+                        </div>
+                        <div class="profiles-row">
+                            <input id="settingsProfileNameInput" type="text" placeholder="Profile name" aria-label="New profile name" maxlength="60">
+                            <button id="saveSettingsProfileBtn" type="button">Save current settings</button>
+                        </div>
+                        <p class="setting-hint" id="settingsProfilesStatus" role="status" aria-live="polite"></p>
+                    </div>
+                </div>
+                <div class="tab-panel" data-tab="aboutme">
+                    <div id="worldviewContent"></div>
                 </div>
                 <div class="tab-panel" data-tab="textsize">
                     <div class="setting-group">

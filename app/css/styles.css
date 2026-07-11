@@ -605,6 +605,12 @@ body.conv-bottom .palette-grid {
 }
 #errorLogActions { display: flex; gap: 0.5rem; margin-top: 0.4rem; }
 
+/* Settings-profiles controls (About tab) — a picker row + a save row. */
+.profiles-row { display: flex; gap: 0.5rem; margin-top: 0.4rem; align-items: center; flex-wrap: wrap; }
+.profiles-row #settingsProfileSelect,
+.profiles-row #settingsProfileNameInput { flex: 1 1 10rem; min-width: 0; }
+#settingsProfilesStatus:empty { display: none; }
+
 /* Each grid item is a CATEGORY CELL holding 1–2 stacked option buttons (the
    "responses per category" setting). The reserved (doubled) height lives on the
    cell; the card(s) inside split it. */
@@ -1646,43 +1652,23 @@ label.radio-label input[type="radio"] {
 
 /* --- Worldview "About Me" questionnaire --- */
 
-#worldviewScreen {
-    position: fixed;
-    inset: 0;
-    z-index: 200;
-    background: #f0f0f0;
-    display: flex;
-    flex-direction: column;
+/* About Me is an ordinary Settings tab (Ken, July 2026): it renders into its
+   tab-panel with no title bar and no "Done" button — the shared Settings Close
+   button dismisses it. The panel fills the settings content area and lets its
+   inner #worldviewContent be the single scroll container (so the existing
+   scroll-to-top / scroll-into-view logic in worldview-ui.js keeps working). */
+.tab-panel[data-tab="aboutme"].active,
+body.conv-bottom .tab-panel[data-tab="aboutme"].active {
+    column-count: auto;   /* single-column, full width — like the Express Panel tab */
+    padding: 0;           /* #worldviewContent manages its own surface padding */
+    height: 100%;         /* fill the content area so the inner div scrolls */
 }
 
-#worldviewScreen.hidden {
-    display: none;
-}
-
-.worldview-header {
-    background: #2c3e50;
-    color: white;
-    padding: 0.75rem 1.5rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-shrink: 0;
-}
-
-.worldview-header h2 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin: 0;
-}
-
-#worldviewCloseBtn {
-    background: transparent;
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    padding: 0.4rem 1rem;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.95rem;
+.wv-page-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0.25rem 0 0.75rem;
 }
 
 /* Wide, high-contrast scrollbars for the long scroll areas — far easier to grab
@@ -1713,15 +1699,13 @@ label.radio-label input[type="radio"] {
 }
 
 #worldviewContent {
-    flex: 1;
-    overflow-y: auto;
+    height: 100%;
+    overflow-y: auto;   /* the About Me tab's scroll container */
     width: 100%;
-    /* Fill the available width minus a reasonable margin (Ken, June 2026). The
-       side keyboard's reservation lives on #worldviewScreen (below), so this
-       content box is already "window − keyboard"; no max-width cap, so the
-       questions use all of that space (and all of the window when no keyboard
-       is shown). */
-    padding: var(--grid-gap);   /* surface padding = the universal gap (Ken) */
+    /* The Settings dialog already carves out the dock region, so this content box
+       is "settings area − keyboard"; no max-width cap, so the questions use all of
+       that space. */
+    padding: max(var(--grid-gap), 0.6rem);   /* surface padding = the universal gap (Ken) */
 }
 
 .wv-intro {
@@ -2476,13 +2460,3 @@ label.radio-label input[type="radio"] {
     border-color: #2c3e50;
 }
 
-/* Spatial Stability (Ken June 2026): About Me reserves the DOCK region at ALL
-   times (not just when typing), so its content sits in the same MAIN-AREA rect as
-   the conversation screen and the dock region is fixed blank space the keyboard
-   fills on focus — one keyguard fits. Reservation follows the fundamental layout
-   (conv-*), independent of whether the keyboard is currently showing, so the
-   content never shifts when the keyboard appears. The extra 1.5rem on the
-   keyboard-on-right case keeps the right-edge scrollbar off the keys. */
-body.conv-side-right #worldviewScreen { padding-right: calc(var(--dock-w) + var(--dock-sep) + 1.5rem); }
-body.conv-side-left  #worldviewScreen { padding-left: calc(var(--dock-w) + var(--dock-sep)); }
-body.conv-bottom     #worldviewScreen { padding-bottom: calc(var(--dock-h) + var(--dock-sep)); }

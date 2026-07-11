@@ -27,7 +27,7 @@ import * as prediction from './prediction.js';
 // Windows keyboard is suppressed there too and the app's own (side-docked)
 // keyboard is used instead (Ken, June 14 2026 — resolves the OS-vs-app keyboard
 // question for Settings in favor of the app keyboard).
-const IN_SCOPE = '#composerInput, .wv-text, #apiKeyInput, #controlEditor input, #expressEditor input';
+const IN_SCOPE = '#composerInput, .wv-text, #apiKeyInput, #controlEditor input, #expressEditor input, #settingsProfileNameInput';
 
 // Controls that must NOT dismiss the keyboard when tapped, even though tapping
 // them blurs the composer textarea. The composer (unlike About Me / Settings)
@@ -605,11 +605,11 @@ function visible() {
 // explicit close paths (worldview close(), Settings Close/Escape, the composer's
 // Speak/Reframe/Cancel) still take the keyboard down.
 function servingPanelOpen() {
+    // About Me now lives inside the Settings dialog (a normal tab), so `dlg.open`
+    // already covers it — no separate #worldviewScreen check needed.
     const dlg = document.getElementById('settingsDialog');
-    const wv = document.getElementById('worldviewScreen');
     const composer = document.getElementById('composerOverlay');
     return !!((dlg && dlg.open) ||
-        (wv && !wv.classList.contains('hidden')) ||
         (composer && !composer.hidden));
 }
 

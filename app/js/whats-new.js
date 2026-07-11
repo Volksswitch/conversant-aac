@@ -21,6 +21,11 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.5.83": [
+    "About Me now opens like every other Settings tab. Instead of taking over the whole screen with its own title bar and \"Done\" button, About Me appears in the panel next to the Settings tabs, just like General, Text Size, and the rest. Use the same Close button to return to the conversation.",
+    "Save and reload your settings as named profiles. In Settings → General → Settings profiles, you can now save all of your settings (voice, silence period, dock and layout, button and gap sizes, tap mode, text sizes, placeholders) under a name, and bring them back later in one tap. Handy for keeping a known setup to return to, or copying your setup to another device — the profiles are stored in your data folder. Your API key and cost counters are not included.",
+    "Fixed: saying goodbye no longer repeats the other person's last words. When you picked several farewells in a row from Wind down (for example \"Great seeing you,\" then \"This was really nice,\" then \"Bye!\"), the other person's final sentence was wrongly repeated in the conversation before each of your goodbyes. It's now recorded just once, the way it was actually said."
+  ],
   "0.5.82": [
     "The app no longer goes quiet trying to guess when the other person is finished. Every time the other person pauses, it offers response suggestions (and refines them if they keep talking), until you pick one or end the conversation — you decide when their turn is over, not the app. This removes a whole class of glitch where a conversation you started could stall with no responses and no thinking-out-loud placeholder."
   ],

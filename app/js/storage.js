@@ -121,6 +121,122 @@ function saveSettings(settings) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
 }
 
+// --- Named settings profiles (data folder) ---
+// Save the whole settings bundle under a name and re-apply it later — a repeatable
+// baseline for on-device test runs, and the seed of cross-device transfer (Ken,
+// July 2026). A profile is stored as settings/<name>.json in the data folder, so it
+// is portable and survives clearing site data. Machine-local secrets/counters are
+// deliberately EXCLUDED so they never travel in a possibly cloud-synced folder and
+// so loading a profile can't clobber them: the API key (SEC-6 — plaintext key must
+// not be written to the folder), the token-usage counters, and lastSeenVersion.
+const SETTINGS_DIR = 'settings';
+const PROFILE_EXCLUDE = ['apiKey', 'usageInputTokens', 'usageOutputTokens', 'usageSince', 'lastSeenVersion'];
+
+// Filesystem-safe profile name — no path separators, bounded length. Used as-is for
+// the <name>.json filename and shown in the picker.
+function sanitizeProfileName(name) {
+    return String(name || '').trim().replace(/[^A-Za-z0-9 _-]/g, '').replace(/\s+/g, ' ').slice(0, 60);
+}
+
+async function getSettingsDir(create) {
+    if (!dirHandle) return null;
+    try {
+        return await dirHandle.getDirectoryHandle(SETTINGS_DIR, { create: !!create });
+    } catch {
+        return null;
+    }
+}
+
+// The portable subset of the current settings (everything except the excluded
+// machine-local keys).
+function exportSettingsBundle() {
+    const s = loadSettings();
+    const out = {};
+    for (const k of Object.keys(s)) {
+        if (!PROFILE_EXCLUDE.includes(k)) out[k] = s[k];
+    }
+    return out;
+}
+
+// Write the current settings as settings/<name>.json. Returns the cleaned name.
+// Throws with a user-facing message if there's no name or no data folder.
+export async function saveSettingsProfile(name) {
+    const clean = sanitizeProfileName(name);
+    if (!clean) throw new Error('Please enter a profile name.');
+    const dir = await getSettingsDir(true);
+    if (!dir) throw new Error('Choose a data folder first.');
+    const payload = {
+        name: clean,
+        savedAt: new Date().toISOString(),
+        version: appVersion,
+        settings: exportSettingsBundle(),
+    };
+    const fh = await dir.getFileHandle(`${clean}.json`, { create: true });
+    const w = await fh.createWritable();
+    await w.write(JSON.stringify(payload, null, 2));
+    await w.close();
+    return clean;
+}
+
+// Names of the saved profiles (sorted), or [] if no folder / none saved.
+export async function listSettingsProfiles() {
+    const dir = await getSettingsDir(false);
+    if (!dir) return [];
+    const names = [];
+    try {
+        for await (const [entryName, handle] of dir.entries()) {
+            if (handle.kind === 'file' && entryName.toLowerCase().endsWith('.json')) {
+                names.push(entryName.slice(0, -5));
+            }
+        }
+    } catch { /* ignore */ }
+    names.sort((a, b) => a.localeCompare(b));
+    return names;
+}
+
+export async function settingsProfileExists(name) {
+    const clean = sanitizeProfileName(name);
+    if (!clean) return false;
+    return (await listSettingsProfiles()).some((n) => n.toLowerCase() === clean.toLowerCase());
+}
+
+// Apply a saved profile: replace the whole settings bundle with the profile's,
+// PRESERVING the excluded machine-local keys (API key, usage, lastSeenVersion).
+// This is a full replace (not a merge) of the portable keys, so the profile's
+// state is reproduced exactly — a key absent from the profile reverts to its
+// default. The caller reloads the app so every setting re-applies as at startup.
+export async function applySettingsProfile(name) {
+    const clean = sanitizeProfileName(name);
+    const dir = await getSettingsDir(false);
+    if (!dir) throw new Error('Choose a data folder first.');
+    let payload;
+    try {
+        const fh = await dir.getFileHandle(`${clean}.json`);
+        const file = await fh.getFile();
+        payload = JSON.parse(await file.text());
+    } catch {
+        throw new Error('Could not read that profile.');
+    }
+    const incoming = (payload && payload.settings) || {};
+    const current = loadSettings();
+    const merged = {};
+    for (const k of PROFILE_EXCLUDE) {
+        if (current[k] !== undefined) merged[k] = current[k];
+    }
+    for (const k of Object.keys(incoming)) {
+        if (!PROFILE_EXCLUDE.includes(k)) merged[k] = incoming[k];
+    }
+    saveSettings(merged);
+    return clean;
+}
+
+export async function deleteSettingsProfile(name) {
+    const clean = sanitizeProfileName(name);
+    const dir = await getSettingsDir(false);
+    if (!dir) return;
+    try { await dir.removeEntry(`${clean}.json`); } catch { /* already gone */ }
+}
+
 export function loadApiKey() {
     return loadSettings().apiKey || null;
 }

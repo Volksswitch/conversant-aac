@@ -22,23 +22,13 @@ import * as storage from './storage.js';
 import * as keyboard from './keyboard.js';
 import { confirmDanger } from './confirm-dialog.js';
 
-let screenEl, contentEl, titleEl;
+let contentEl;
 
 // Scroll position of the People list captured when "Edit" is pressed, so that
 // returning from the edit form (Save/Cancel) restores exactly where the list
 // was rather than jumping to the top (Ken, June 19 2026). Consumed (and cleared)
 // by the next non-editing renderPeople(); null means a fresh entry → top.
 let peopleReturnScroll = null;
-
-// While the questionnaire overlay is open, make the app header + conversation
-// screen behind it inert so keyboard Tab stays inside the form (it never leaks
-// out to the Settings button or the conversation controls underneath).
-function setBackgroundInert(on) {
-    for (const sel of ['body > header', 'main']) {
-        const node = document.querySelector(sel);
-        if (node) node.inert = on;
-    }
-}
 
 // Move keyboard focus to the first answerable control within `scope`
 // (a chip or a text input — whichever comes first in the card).
@@ -84,14 +74,12 @@ function formatValue(value) {
 
 // --- lifecycle --------------------------------------------------------------
 
-let onCloseCb = null;
-
-export function init(opts = {}) {
-    screenEl = document.getElementById('worldviewScreen');
+export function init() {
+    // About Me is now an ordinary Settings tab (Ken, July 2026) — it renders into
+    // its tab-panel like every other tab, with no title bar and no "Done" button.
+    // The Settings panel's shared "Close" button closes it and returns to the
+    // conversation. So there's no separate overlay to show/hide/inert here.
     contentEl = document.getElementById('worldviewContent');
-    titleEl = document.getElementById('worldviewTitle');
-    onCloseCb = opts.onClose || null;
-    document.getElementById('worldviewCloseBtn').addEventListener('click', close);
 }
 
 // Show the on-screen keyboard in the user's configured dock and keep it up for
@@ -105,6 +93,9 @@ function showDockKeyboard() {
     }
 }
 
+// Load the user-owned data + render the questionnaire into the About Me tab
+// panel. Called by the Settings tab handler when the About Me tab is activated;
+// safe to call again (re-renders home).
 export async function open() {
     // Best-effort: make sure the user-owned data folder is restored so answers
     // persist to worldview.json (falls back to the localStorage cache if not).
@@ -113,7 +104,6 @@ export async function open() {
         await wv.loadRegistry();
     } catch {
         contentEl.innerHTML = '<p class="wv-intro">Could not load the question set.</p>';
-        screenEl.classList.remove('hidden');
         return;
     }
     await wv.load();
@@ -124,19 +114,6 @@ export async function open() {
     try { await rel.load(); } catch { /* cache/empty graph */ }
     try { await rel.syncToFolder(); } catch { /* best-effort */ }
     renderHome();
-    screenEl.classList.remove('hidden');
-    setBackgroundInert(true);
-}
-
-export function close() {
-    // The keyboard is kept up when focus moves to in-screen buttons (so Save
-    // doesn't dismiss it); take it down explicitly now that About Me is closing.
-    keyboard.hideKeyboard();
-    setBackgroundInert(false);
-    screenEl.classList.add('hidden');
-    // About Me is launched from the Settings panel's "About Me" tab, so Done
-    // returns there (Ken, June 29 2026).
-    if (onCloseCb) onCloseCb();
 }
 
 // --- Home -------------------------------------------------------------------
@@ -210,14 +187,13 @@ function renderGaps() {
 }
 
 function renderHome() {
-    // Keep the on-screen keyboard up the entire time About Me is open (Ken, June
-    // 30 2026), including on this home/topic list which has no text field, so the
-    // user can enter/modify entries without it appearing and disappearing. The
-    // dock area is reserved on #worldviewScreen at all times (v0.5.25), so the
-    // keyboard just fills that reserved band — it never covers the topic list.
-    // close() takes it down when the user is done.
+    // Keep the on-screen keyboard up the entire time the About Me tab is open (Ken,
+    // June 30 2026), including on this home/topic list which has no text field, so
+    // the user can enter/modify entries without it appearing and disappearing. The
+    // Settings dialog reserves the dock region, so the keyboard just fills that
+    // reserved band — it never covers the topic list. Leaving the tab / closing
+    // Settings takes it down (handleSettingsTab / the Close button).
     showDockKeyboard();
-    titleEl.textContent = 'About Me';
     contentEl.scrollTop = 0;
     contentEl.innerHTML = '';
 
@@ -289,10 +265,10 @@ async function onRestart() {
 // they get a dedicated editor. The UI edits me->person relationships; the data
 // model also supports person<->person edges for later.
 function renderPeople(editingId = null) {
-    titleEl.textContent = 'People in Your Life';
     contentEl.innerHTML = '';
 
     contentEl.append(el('button', { class: 'wv-back', text: '‹ All topics', onclick: renderHome }));
+    contentEl.append(el('h3', { class: 'wv-page-title', text: 'People in Your Life' }));
     contentEl.append(el('p', { class: 'wv-intro', text:
         'Add the people (and pets) who matter to you — name, how they relate to you, '
         + 'and anything worth knowing. Mark someone private and the assistant will know about them '
@@ -479,11 +455,11 @@ function renderModule(moduleId, focusKey = null) {
     const mod = wv.getRegistry().modules.find((m) => m.id === moduleId);
     if (!mod) return renderHome();
 
-    titleEl.textContent = mod.title;
     contentEl.scrollTop = 0;
     contentEl.innerHTML = '';
 
     contentEl.append(el('button', { class: 'wv-back', text: '‹ All topics', onclick: renderHome }));
+    contentEl.append(el('h3', { class: 'wv-page-title', text: mod.title }));
 
     // Show module-level note if present (e.g. the "Private by default" notice on A5)
     if (mod.note) {
