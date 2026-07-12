@@ -159,6 +159,19 @@ export function init({ onResult, onSilence, onStatus, onPartnerSpeech }) {
         // its own (e.g. after a pause) — restart it so the partner's floor
         // stays open across silences. accumulatedText persists across restarts.
         if (listeningIntent) {
+            // currentInterim holds words the recognizer has NOT finalized yet.
+            // Ending the session discards them and the restarted session does not
+            // re-hear audio already spoken — so an interim shown live but not yet
+            // final vanishes on restart. If the user then interrupts right after,
+            // those words are lost from the captured turn (Ken, July 12 2026:
+            // partner said ~10 words, all shown live, but only the one finalized
+            // segment "I was" was recorded on interrupt). Flush the pending interim
+            // into accumulatedText before restarting so it's retained. No
+            // duplication: the fresh session only transcribes audio from now on.
+            if (currentInterim.trim()) {
+                segments.push(currentInterim);
+                accumulatedText += currentInterim;
+            }
             currentInterim = '';
             try { recognition.start(); } catch { /* already starting */ }
             return;

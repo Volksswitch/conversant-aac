@@ -13,6 +13,11 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+- **Fixed: the partner's full words are kept when you interrupt them.** If you cut in
+  (with an Express Panel phrase or "In my own words") while the partner was mid-sentence,
+  sometimes only their first few words were saved. Now everything they'd said up to your
+  interruption is kept in the conversation and the saved transcript.
+
 ## Version 0.5.86
 
 - **The partner's last words are kept when you end a conversation.** If the partner

@@ -120,6 +120,25 @@ test('onend auto-restarts recognition while listening intent holds (silences bri
     assert.equal(rec.capturing, true, 'restarted so the partner floor stays open');
 });
 
+test('an interim not yet finalized is preserved across an onend restart', async () => {
+    // Ken, July 12 2026: partner spoke ~10 words (shown live from the interim), the
+    // browser restarted recognition mid-utterance, and the not-yet-final interim was
+    // wiped — only the one finalized segment survived, so interrupting them recorded
+    // just "I was". onend must flush the pending interim before restarting.
+    stt.startListening();
+    rec.emitFinal('I was ');
+    rec.emitInterim('going to ask you something important');
+    assert.equal(stt.getCurrentTranscript(), 'I was going to ask you something important');
+    rec._started = false;   // the browser stopped continuous recognition on its own
+    rec.onend();            // ...and restarts — the interim must not be lost
+    await sleep(5);
+    assert.equal(
+        stt.getCurrentTranscript(),
+        'I was going to ask you something important',
+        'the interim words survive the restart (retained on interrupt)',
+    );
+});
+
 test('a surfaced error (network) is reported and stops the restart loop', async () => {
     stt.startListening();
     rec.onerror({ error: 'network' });
