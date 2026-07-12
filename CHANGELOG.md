@@ -13,6 +13,8 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+## Version 0.5.87
+
 - **The settings-profile picker now shows which profile is in use.** After you save or
   load a profile — and after restarting — the drop-down reflects the profile that's
   actually in effect (with an "In use" note), instead of resetting to the first name in
