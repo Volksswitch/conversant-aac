@@ -105,7 +105,7 @@ export function render() {
 
     container.append(
         singleSection('“Hold on” phrase', 'Spoken when you tap Hold on — a brief beat to hold the floor while you choose.', 'holdOn'),
-        singleSection('“Pardon?” phrase', 'Spoken when you tap Pardon? — asks the partner to repeat what they said.', 'pardon'),
+        singleSection('“Ask them to repeat” phrase', 'Spoken when you tap Ask them to repeat — asks the partner to say again what they said.', 'pardon'),
         listSection('Openers (Start conversation)',
             'The cards shown when you tap Start conversation. Use {name} where the person’s name should go — it fills in when a Partner is selected and is left out otherwise.', 'openers'),
         listSection('Closings (Wind down)',

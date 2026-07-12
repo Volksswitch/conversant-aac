@@ -13,6 +13,17 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+- **The settings-profile picker now shows which profile is in use.** After you save or
+  load a profile — and after restarting — the drop-down reflects the profile that's
+  actually in effect (with an "In use" note), instead of resetting to the first name in
+  the list. (Your settings were always applied correctly; only the name shown was wrong.)
+- **Press Enter to save a settings profile.** Typing a name in the profile box and
+  pressing Enter now saves your current settings under that name.
+- **"Ask them to repeat" no longer erases what the partner said.** Tapping it asks the
+  partner to say it again and keeps listening, but it now keeps everything they'd
+  already said in the conversation — their repeat is added to it, nothing is thrown away.
+- **Renamed the setting "'Pardon?' phrase" to "'Ask them to repeat' phrase"** to match
+  the button's name.
 - **Fixed: the partner's full words are kept when you interrupt them.** If you cut in
   (with an Express Panel phrase or "In my own words") while the partner was mid-sentence,
   sometimes only their first few words were saved. Now everything they'd said up to your

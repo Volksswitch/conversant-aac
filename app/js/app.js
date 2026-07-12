@@ -830,29 +830,30 @@ async function handleHoldOn() {
     ui.setStatus(isListening ? 'Listening...' : 'Ready');
 }
 
-// Pardon? — the single "I didn't catch what the partner said" control. The user
-// shouldn't have to reason about sequence-stack mechanics, so this one action
-// does everything the misheard-partner case needs (Ken, June 19 2026 —
-// consolidates the former "Pardon?" + "Please repeat what you said." controls,
-// each of which did only half the job): it (1) asks the partner to repeat, (2)
-// discards the garbled capture so the re-speak starts clean (the old "Please
-// repeat" did this; "Pardon?" did not — it left the mumble in the transcript to
-// be appended to), and (3) pushes a repair sequence so the partner's re-speak
-// resolves correctly against the original question (the old "Pardon?" did this;
-// "Please repeat" did not touch the stack). engine.pardon() dedups, so tapping
-// it again before the re-speak doesn't stack a second repair.
+// "Ask them to repeat" (formerly "Pardon?") — the "I didn't catch what the partner
+// said" control. The user shouldn't have to reason about sequence-stack mechanics,
+// so this one action does what the misheard-partner case needs: it (1) asks the
+// partner to repeat, and (2) pushes a repair sequence so the partner's re-speak
+// resolves correctly against the original question. engine.pardon() dedups, so
+// tapping it again before the re-speak doesn't stack a second repair.
+//
+// It does NOT throw away the partner's transcript (Ken, July 12 2026 — reverses the
+// v0.5.32 "drop the last statement" behavior): what the partner already said is kept
+// in the conversation, and their re-speak appends to it. The AI makes sense of the
+// combined text when it regenerates. (Previously it discarded the last statement so
+// the re-speak started clean; Ken's call is that we shouldn't discard what was heard.)
 async function handlePardon() {
     placeholders.stop();
     generationToken++;            // invalidate any in-flight generation on the garbled capture
     const snap = engine.pardon(); // push REPAIR* (dedups); floor → partner
-    // Discard only the partner's LAST statement (Ken, June 28 2026) — if they
-    // said several sentences this turn and only the last was garbled, the earlier
-    // good ones are kept and the re-speak appends to them.
-    const remaining = stt.dropLastStatement();
-    currentPartnerText = remaining;
+    // Keep the full captured transcript (do NOT discard it). Refresh currentPartnerText
+    // from the fullest heard text so a later checkpoint regenerates from everything the
+    // partner said plus their re-speak.
+    const kept = heardPartnerText();
+    currentPartnerText = kept;
     ui.showEngineState(snap);
-    ui.setLiveTranscript(remaining);
-    ui.setTranscriptState('idle');
+    ui.setLiveTranscript(kept);
+    ui.setTranscriptState(kept ? 'unconfirmed' : 'idle');
     ui.clearResponseOptions();
     const text = controlPhrases.getPhrases().pardon; // user-editable (Settings → Controls)
     ui.setStatus('Speaking...');
@@ -1568,11 +1569,22 @@ async function renderSettingsProfiles() {
     if (!names.length) {
         select.innerHTML = '<option value="">— No saved profiles —</option>';
         loadBtn.disabled = delBtn.disabled = true;
+        setProfileStatus('');
         return;
     }
     select.innerHTML = names.map((n) => `<option value="${n}">${n}</option>`).join('');
     loadBtn.disabled = delBtn.disabled = false;
-    void status; // status is set by the action handlers
+    // Reflect the profile currently in effect (persisted across reloads) rather than
+    // defaulting to the first name — so after a load/restart the picker shows what's
+    // actually in use (Ken, July 12 2026).
+    const active = storage.loadActiveSettingsProfile();
+    if (active && names.includes(active)) {
+        select.value = active;
+        setProfileStatus(`In use: “${active}”.`);
+    } else {
+        setProfileStatus('');
+    }
+    void status;
 }
 
 function setProfileStatus(msg) {
@@ -1786,7 +1798,7 @@ function openSettings() {
     setProfileStatus('');
     const profileNameInput = document.getElementById('settingsProfileNameInput');
     const profileSelect = document.getElementById('settingsProfileSelect');
-    document.getElementById('saveSettingsProfileBtn').onclick = async () => {
+    const saveCurrentProfile = async () => {
         const name = profileNameInput.value;
         try {
             if (await storage.settingsProfileExists(name)) {
@@ -1797,13 +1809,21 @@ function openSettings() {
                 }))) return;
             }
             const saved = await storage.saveSettingsProfile(name);
+            // The just-saved profile now matches the current settings — mark it active
+            // so the picker reflects it (here and after a reload).
+            storage.saveActiveSettingsProfile(saved);
             profileNameInput.value = '';
             await renderSettingsProfiles();
             profileSelect.value = saved;
-            setProfileStatus(`Saved “${saved}”.`);
+            setProfileStatus(`Saved “${saved}”. In use: “${saved}”.`);
         } catch (err) {
             setProfileStatus(err.message || 'Could not save the profile.');
         }
+    };
+    document.getElementById('saveSettingsProfileBtn').onclick = saveCurrentProfile;
+    // Enter in the name box saves the current settings under that name (Ken).
+    profileNameInput.onkeydown = (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); saveCurrentProfile(); }
     };
     document.getElementById('loadSettingsProfileBtn').onclick = async () => {
         const name = profileSelect.value;
@@ -1815,6 +1835,9 @@ function openSettings() {
         }))) return;
         try {
             await storage.applySettingsProfile(name);
+            // Record which profile is now in effect (written after the merge, since
+            // it's an excluded key) so the picker reflects it after the reload.
+            storage.saveActiveSettingsProfile(name);
             location.reload(); // re-apply every setting exactly as at startup
         } catch (err) {
             setProfileStatus(err.message || 'Could not load the profile.');
@@ -1829,6 +1852,9 @@ function openSettings() {
             confirmLabel: 'Delete',
         }))) return;
         await storage.deleteSettingsProfile(name);
+        // If the deleted profile was the one in effect, forget the pointer (the live
+        // settings are unchanged; they're just no longer "named").
+        if (storage.loadActiveSettingsProfile() === name) storage.saveActiveSettingsProfile('');
         await renderSettingsProfiles();
         setProfileStatus(`Deleted “${name}”.`);
     };

@@ -130,7 +130,25 @@ function saveSettings(settings) {
 // so loading a profile can't clobber them: the API key (SEC-6 — plaintext key must
 // not be written to the folder), the token-usage counters, and lastSeenVersion.
 const SETTINGS_DIR = 'settings';
-const PROFILE_EXCLUDE = ['apiKey', 'usageInputTokens', 'usageOutputTokens', 'usageSince', 'lastSeenVersion'];
+// 'activeSettingsProfile' is a machine-local pointer to which saved profile is
+// currently in effect (for the picker to reflect after a reload) — it must NOT be
+// captured into a profile file (a profile can't "own" which profile is active) and
+// must be preserved across a load, so it lives in the excluded set alongside the
+// secrets/counters.
+const PROFILE_EXCLUDE = ['apiKey', 'usageInputTokens', 'usageOutputTokens', 'usageSince', 'lastSeenVersion', 'activeSettingsProfile'];
+
+// Which saved profile is currently in effect (machine-local; '' when none / custom
+// unsaved settings). Set when a profile is saved or loaded; cleared if that profile
+// is deleted. Lets the picker show the active profile after a reload instead of
+// defaulting to the first name alphabetically.
+export function loadActiveSettingsProfile() {
+    return loadSettings().activeSettingsProfile || '';
+}
+export function saveActiveSettingsProfile(name) {
+    const s = loadSettings();
+    s.activeSettingsProfile = name || '';
+    saveSettings(s);
+}
 
 // Filesystem-safe profile name — no path separators, bounded length. Used as-is for
 // the <name>.json filename and shown in the picker.
