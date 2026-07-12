@@ -709,16 +709,28 @@ function resumeOrIdle() {
 // listening, invalidate in-flight generation, drop the uncommitted partner turn,
 // CLEAR the conversation window (transcript history) and ALL cards, and reset the
 // engine to STANDBY. Shared by End conversation and Start conversation.
-function terminateConversation() {
+async function terminateConversation() {
     placeholders.stop();
     tts.cancel();
     manualListenArmed = false;
     stt.stopListening();
+    // Capture the partner's pending (uncommitted) turn BEFORE we discard the STT
+    // buffer / history. If the partner spoke but the user ended / restarted before
+    // choosing a reply, commit their words to THIS conversation instead of dropping
+    // them (Ken, July 12 2026). Grab the situation stamp now too — it's captured
+    // before clearInfluencers() (End's caller) can null the active Partner.
+    const pendingRaw = heardPartnerText();
+    const pendingStamp = partnerStamp();
+    // stopListening() deliberately keeps accumulatedText (it survives restarts across
+    // silences), so discard the partner's captured speech explicitly now that we've
+    // grabbed it — otherwise it would leak into the next conversation: heardPartnerText()
+    // would read the stale buffer when the user picks the next opener, and it would be
+    // committed at the top of the new conversation though nobody spoke.
+    stt.resetTranscript();
     generationToken++;                 // invalidate any in-flight generation
     currentPartnerText = '';
     lastPalette = [];
     conversationHistory.length = 0;     // clear the conversation window
-    storage.resetConversationId();       // next conversation gets a fresh id (error-log correlation)
     engine.reset();
     ui.renderConversation(conversationHistory);
     ui.setLiveTranscript('');
@@ -726,8 +738,21 @@ function terminateConversation() {
     ui.setTranscriptError(false);        // fresh conversation starts clean
     ui.clearResponseOptions();          // clear all cards (back to empty reserved)
     ui.showEngineState(engine.getSnapshot());
+
+    // Write the pending partner turn (if any) to the CURRENT <id>.json, THEN reset
+    // the id. Ordered/awaited so the write lands in this conversation's file, not the
+    // next one's, and done BEFORE the privacy re-seed below so it uses THIS
+    // conversation's save setting. Logged raw (no AI cleanup round-trip) — a dangling
+    // turn with no user reply isn't part of a completed exchange, and raw keeps the
+    // flush fast so it can't race the id reset.
+    if (pendingRaw) {
+        await storage.logPartnerSpeech({ rawTranscript: pendingRaw, cleanedTranscript: pendingRaw, partner: pendingStamp });
+    }
+    storage.resetConversationId();       // next conversation gets a fresh id (error-log correlation)
+
     // Re-seed conversation privacy from the Settings default — a per-conversation
-    // "Don't save" choice does not carry into the next conversation (Ken).
+    // "Don't save" choice does not carry into the next conversation (Ken). After the
+    // flush above, so the pending turn is written under this conversation's setting.
     conversationPrivate = storage.loadNoSaveDefault();
     applyPrivacyState();
 }
@@ -748,8 +773,8 @@ function showConversationPalette(palette, statusMsg) {
 
 // Start conversation — terminate the current one (clear window + cards), then
 // open a fresh conversation in INITIATING mode with the openers.
-function handleInitiate() {
-    terminateConversation();
+async function handleInitiate() {
+    await terminateConversation();
     // If a Partner is active, personalize the openers with their name ("Hi Tim,
     // have you got a minute?" instead of "Hey, got a minute?").
     const partnerName = activePartner ? (activePartner.nickname || activePartner.name) : '';
@@ -948,14 +973,13 @@ function handleWindDown() {
 
 // End conversation — hard terminate (Ken, June 18 2026). Tears everything down
 // and returns the engine to STANDBY: stop the placeholder ladder, cancel any speech,
-// stop listening, invalidate in-flight generation, drop the partner's
-// uncommitted turn, clear the palette/transcript, and reset the engine (empty
-// stack, floor OPEN). No danger-confirm — it's the "hang up" control, and the
-// conversation history is already logged exchange-by-exchange. Committed
-// exchanges remain in conversationHistory; only the current, unselected turn is
-// discarded.
-function handleEndConversation() {
-    terminateConversation();
+// stop listening, invalidate in-flight generation, commit the partner's pending
+// (uncommitted) turn to the log if they spoke without a reply (Ken, July 12 2026),
+// clear the palette/transcript, and reset the engine (empty stack, floor OPEN). No
+// danger-confirm — it's the "hang up" control, and the conversation history is
+// already logged exchange-by-exchange.
+async function handleEndConversation() {
+    await terminateConversation();
     // Ending a conversation clears the situation influencers — the next person /
     // mood shouldn't inherit this conversation's Partner & Feeling selections.
     // (Done here, NOT in the shared terminateConversation, because Start

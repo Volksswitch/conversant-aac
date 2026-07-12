@@ -13,6 +13,14 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+## Version 0.5.86
+
+- **The partner's last words are kept when you end a conversation.** If the partner
+  spoke but you ended (or restarted) the conversation before choosing a reply, their
+  words are now saved to that conversation instead of being dropped. This also fixes a
+  bug where those words could reappear at the top of your *next* conversation as if the
+  partner had just said them, even though no one had spoken.
+
 ## Version 0.5.85
 
 - **Move between Settings tabs with the arrow keys.** If you use a physical keyboard,

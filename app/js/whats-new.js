@@ -21,6 +21,9 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.5.86": [
+    "The partner's last words are kept when you end a conversation. If the partner spoke but you ended (or restarted) the conversation before choosing a reply, their words are now saved to that conversation instead of being dropped. This also fixes a bug where those words could reappear at the top of your next conversation as if the partner had just said them, even though no one had spoken."
+  ],
   "0.5.85": [
     "Move between Settings tabs with the arrow keys. If you use a physical keyboard, you can now Tab once to the column of Settings tabs and then use the up/down arrow keys to jump straight to another tab — General, About Me, Speech, and so on — instead of tabbing through everything on the current tab first.",
     "The on-screen keyboard's keys are no longer part of keyboard \"Tab\" navigation. Tabbing through Settings with a physical keyboard used to walk through all forty-odd on-screen keys; it now skips them (you still tap them as before).",
