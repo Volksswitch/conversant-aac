@@ -40,6 +40,17 @@ test('a final result fires a silence checkpoint once the partner goes quiet', as
     assert.ok(partnerActivity >= 1);
 });
 
+test('consecutive final segments are joined with a single space, not concatenated', async () => {
+    // Ken July 13 2026: the recognizer returns segments without a separating space,
+    // so "Good morning." + "How was your weekend?" was becoming "…weekend.How…".
+    stt.startListening();
+    rec.emitFinal('Good morning.');
+    rec.emitFinal('How was your weekend?');
+    assert.equal(stt.getCurrentTranscript(), 'Good morning. How was your weekend?');
+    await sleep(THRESHOLD_S * 1000 + 60);
+    assert.equal(silences.at(-1), 'Good morning. How was your weekend?', 'the checkpoint text is spaced too');
+});
+
 test('interim then final accumulate; the checkpoint carries the combined text', async () => {
     stt.startListening();
     rec.emitInterim('I was thinking');

@@ -4,7 +4,7 @@ let onSilencePeriod = null;
 let onStatusChange = null;
 let onPartnerActivity = null;   // fired when genuine (non-echo) partner speech arrives
 let accumulatedText = '';
-let segments = [];          // each finalized statement, in order (accumulatedText = segments.join(''))
+let segments = [];          // each finalized statement, in order (accumulatedText = joinParts(segments))
 let currentInterim = '';
 let silenceTimer = null;
 let silenceThreshold = 2000;
@@ -45,6 +45,14 @@ let speechSettleUntil = 0;     // ms epoch the tail window after speech ends
 
 function speechActive() {
     return appSpeaking || Date.now() < speechSettleUntil;
+}
+
+// Join finalized segments (and/or the in-progress interim) with single spaces. The
+// recognizer returns each segment WITHOUT a separating space, so "Good morning."
+// + "How are you?" would otherwise concatenate into "Good morning.How are you?"
+// (Ken, July 13 2026). Trims each part and drops empties so there are no doubles.
+function joinParts(parts) {
+    return parts.map((s) => (s || '').trim()).filter(Boolean).join(' ');
 }
 
 export function isSupported() {
@@ -188,7 +196,7 @@ export function init({ onResult, onSilence, onStatus, onPartnerSpeech }) {
             if (isEcho(transcript)) continue;
             if (event.results[i].isFinal) {
                 segments.push(transcript);   // track boundaries so Pardon can drop just the last one
-                accumulatedText += transcript;
+                accumulatedText = joinParts(segments);   // single spaces between segments
                 latestInterim = '';
                 heardPartner = true;
             } else {
@@ -211,7 +219,7 @@ export function init({ onResult, onSilence, onStatus, onPartnerSpeech }) {
             if (onPartnerActivity) onPartnerActivity();
         }
 
-        if (onTranscript) onTranscript((accumulatedText + currentInterim).trim());
+        if (onTranscript) onTranscript(joinParts([accumulatedText, currentInterim]));
     };
 
     recognition.onend = () => {
@@ -231,7 +239,7 @@ export function init({ onResult, onSilence, onStatus, onPartnerSpeech }) {
             // duplication: the fresh session only transcribes audio from now on.
             if (currentInterim.trim()) {
                 segments.push(currentInterim);
-                accumulatedText += currentInterim;
+                accumulatedText = joinParts(segments);
             }
             currentInterim = '';
             try { recognition.start(); } catch { /* already starting */ }
@@ -267,7 +275,7 @@ function fireSilenceCheckpoint() {
         silenceTimer = setTimeout(fireSilenceCheckpoint, 200);
         return;
     }
-    const text = (accumulatedText + currentInterim).trim();
+    const text = joinParts([accumulatedText, currentInterim]);
     if (text && onSilencePeriod) onSilencePeriod(text);
 }
 
@@ -300,7 +308,7 @@ export function stopListening() {
 // had said the instant the user interrupts them (before a silence checkpoint has
 // pushed it to the app), so an interruption doesn't lose their partial speech (Ken).
 export function getCurrentTranscript() {
-    return (accumulatedText + currentInterim).trim();
+    return joinParts([accumulatedText, currentInterim]);
 }
 
 // Discard the speech collected so far without stopping recording. Used when the
@@ -324,7 +332,7 @@ export function resetTranscript() {
 export function dropLastStatement() {
     currentInterim = '';
     if (segments.length) segments.pop();
-    accumulatedText = segments.join('');
+    accumulatedText = joinParts(segments);
     clearSilenceTimer();
-    return accumulatedText.trim();
+    return accumulatedText;
 }

@@ -13,6 +13,13 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+- **"Ask them to repeat" now keeps the reply as its own turn.** After you ask the other
+  person to repeat, what they say next appears as a new turn *after* your "could you say
+  that again?" line — instead of being tacked onto the end of what they said before.
+- **Sentences no longer run together in the transcript.** When someone's speech comes in
+  as separate pieces, they're now joined with a space ("Good morning. How was your
+  weekend?") instead of stuck together ("Good morning.How was your weekend?").
+
 ## Version 0.5.91
 
 - **A placeholder no longer talks over a button you pressed.** Pressing a button that

@@ -150,6 +150,14 @@ function placePartnerTurn(raw, uncleaned) {
     return conversationHistory.length - 1;
 }
 
+// Finalize the storage-side pending partner turn as-is (raw = cleaned, no AI
+// round-trip), so a later interim can't re-open and append to it. Used by Pardon,
+// where the partner's re-speak must start a fresh turn.
+function finalizePendingPartnerTurn() {
+    const h = storage.detachPendingPartnerTurn();
+    if (h) storage.finalizePartnerTurn(h, { rawTranscript: h.rawTranscript, cleanedTranscript: h.rawTranscript, partner: partnerStamp() });
+}
+
 function handlePrivacyToggle() {
     conversationPrivate = !conversationPrivate;
     applyPrivacyState();
@@ -945,27 +953,33 @@ async function handleHoldOn() {
 // tapping it again before the re-speak doesn't stack a second repair.
 //
 // It does NOT throw away the partner's transcript (Ken, July 12 2026 — reverses the
-// v0.5.32 "drop the last statement" behavior): what the partner already said is kept
-// in the conversation, and their re-speak appends to it. The AI makes sense of the
-// combined text when it regenerates. (Previously it discarded the last statement so
-// the re-speak started clean; Ken's call is that we shouldn't discard what was heard.)
+// v0.5.32 "drop the last statement" behavior): what the partner already said is KEPT
+// as its own committed turn. But their RE-SPEAK is a SEPARATE new turn AFTER our
+// pardon statement — NOT appended to the earlier one (Ken, July 13 2026, refines the
+// v0.5.87 "appends to it" behavior, which mis-merged two partner statements and put
+// the re-speak before the pardon). The AI still sees everything as ordered turns.
 async function handlePardon() {
     placeholders.stop();
     generationToken++;            // invalidate any in-flight generation on the garbled capture
     const snap = engine.pardon(); // push REPAIR* (dedups); floor → partner
-    // Keep the full captured transcript (do NOT discard it). Refresh currentPartnerText
-    // from the fullest heard text so a later checkpoint regenerates from everything the
-    // partner said plus their re-speak.
+    // Show what the partner already said, then commit it (via logSpokenUserTurn) and
+    // speak the pardon.
     const kept = heardPartnerText();
     currentPartnerText = kept;
     ui.showEngineState(snap);
     updatePartnerLive(kept);
-    ui.setTranscriptState(kept ? 'unconfirmed' : 'idle');
     ui.clearResponseOptions();
     const text = controlPhrases.getPhrases().pardon; // user-editable (Settings → Controls)
     ui.setStatus('Speaking...');
     await speakUserStatement(text);
-    logSpokenUserTurn(text);          // append to the transcript AFTER speaking (Ken)
+    logSpokenUserTurn(text);          // commits the partner's kept turn, then the pardon after it
+    // Finalize the partner's kept turn and RESET capture so their re-speak becomes a
+    // fresh turn after this pardon — not appended to the earlier one.
+    finalizePendingPartnerTurn();
+    stt.resetTranscript();
+    currentPartnerText = '';
+    pendingPartnerHistoryIdx = -1;
+    ui.setTranscriptState('idle');
     ui.setStatus(isListening ? 'Listening...' : 'Ready');
 }
 

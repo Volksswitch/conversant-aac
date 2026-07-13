@@ -21,6 +21,10 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.5.92": [
+    "\"Ask them to repeat\" now keeps the reply as its own turn. After you ask the other person to repeat, what they say next appears as a new turn after your \"could you say that again?\" line — instead of being tacked onto the end of what they said before.",
+    "Sentences no longer run together in the transcript. When someone's speech comes in as separate pieces, they're now joined with a space (\"Good morning. How was your weekend?\") instead of stuck together (\"Good morning.How was your weekend?\")."
+  ],
   "0.5.91": [
     "A placeholder no longer talks over a button you pressed. Pressing a button that speaks — a response, an Express Panel phrase, or Repeat what I said / Hold on — now stops any \"let me think\" placeholder instantly, so it can't cut in partway through what you're saying. (Your response options still appear as usual.)"
   ],
