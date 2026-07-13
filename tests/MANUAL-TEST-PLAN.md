@@ -12,6 +12,12 @@ privacy/withholding logic, word prediction, keyboard-layout geometry, and the
 user-started "lead" fix — including a live-API check. Run those with `npm test`
 before you start here; this document is only the on-device remainder.
 
+**Terminology (Ken, July 2026).** In this plan **the transcript** means the saved
+JSON file (`conversations/<id>.json`) in your data folder; **the conversation pane**
+means the on-screen scrolling conversation log. The transcript is designed to
+**mirror the conversation pane at all times** (§8), so it's a reliable record of any
+misbehavior.
+
 ## Before you start
 
 - [ ] Note the version shown at **Settings → About** (report it with every issue).
@@ -23,8 +29,8 @@ before you start here; this document is only the on-device remainder.
       through a speaker near the mic).
 
 For each case: do the **Steps**, confirm the **Expect**, tick the box. If it fails,
-record the version, what you did, and what happened (and grab the conversation JSON
-from the data folder + **Settings → About → error log** if relevant).
+record the version, what you did, and what happened (and grab the transcript
+`conversations/<id>.json` from the data folder + **Settings → About → error log** if relevant).
 
 ---
 
@@ -76,8 +82,8 @@ Re-flash the data folder from `tests/fixtures/` between runs to return to baseli
 ## 1. Microphone capture & the core loop (partner-started)
 
 - [ ] **1.1 Listen + transcribe.** Tap **Start Listening**; the partner says "How
-  was your weekend?" **Expect:** the words appear in the transcript within ~1–2 s of
-  them finishing; the Listen button shows its active/latched state while capturing.
+  was your weekend?" **Expect:** the words appear in the conversation pane within
+  ~1–2 s of them finishing; the Listen button shows its active/latched state while capturing.
 - [ ] **1.2 Options appear.** After the partner pauses (~2 s, the silence period),
   **Expect:** four response cards appear (or eight, if "Suggestions per category" = 2),
   color-coded by category.
@@ -86,8 +92,8 @@ Re-flash the data folder from `tests/fixtures/` between runs to return to baseli
   waiting, "Still thinking it through."), at most the configured **Maximum
   placeholders per turn**, and each is shown on the ♪ now-playing line as it plays.
 - [ ] **1.4 Speak a response.** Tap a card. **Expect:** the app speaks the full
-  text in the selected voice; the spoken line then appears in the transcript as
-  your turn (not before it's spoken).
+  text in the selected voice; the spoken line then appears in the conversation pane
+  as your turn (not before it's spoken).
 - [ ] **1.5 Auto-resume.** With auto-resume on, **Expect:** listening restarts on
   its own after your turn is spoken, ready for the partner's next turn.
 
@@ -99,15 +105,15 @@ Re-flash the data folder from `tests/fixtures/` between runs to return to baseli
   AND a set of lead response cards (things *you* say next), NOT silence.
 - [ ] **2.2 One-word go-ahead.** Repeat with the partner saying just "Sure."
   **Expect:** same — lead options appear.
-- [ ] **2.3 No red wash.** **Expect:** the transcript does not turn faint red (no
-  error logged) during 2.1–2.2.
+- [ ] **2.3 No red wash.** **Expect:** the conversation pane does not turn faint red
+  (no error logged) during 2.1–2.2.
 
 ## 3. The echo feedback loop (mic hears the app's own speech)
 
 - [ ] **3.1 Placeholder isn't re-captured.** During a long choosing window where a
-  placeholder plays aloud, **Expect:** the placeholder text does NOT appear in the
-  partner transcript, the options do not flicker/regenerate, and no runaway loop
-  occurs.
+  placeholder plays aloud, **Expect:** the placeholder text does NOT appear as
+  partner speech in the conversation pane, the options do not flicker/regenerate, and
+  no runaway loop occurs.
 - [ ] **3.2 Partner over the placeholder.** Have the partner start talking while a
   placeholder is playing. **Expect:** the partner's real words are still captured
   (the mic isn't muted), and generation picks them up on the next pause.
@@ -123,21 +129,21 @@ Re-flash the data folder from `tests/fixtures/` between runs to return to baseli
   captured statement, and keeps listening; the partner's re-say produces fresh
   options without stacking duplicates.
 - [ ] **4.3 Say again.** Tap **Repeat what I said**. **Expect:** your last utterance
-  is re-spoken and re-appears in the transcript.
+  is re-spoken and re-appears in the conversation pane.
 
 ## 5. Wind down / closings
 
 - [ ] **5.1 Wind down.** Tap **Wind down**. **Expect:** closing cards appear ("Bye!",
   etc.). Pick one — it speaks, and the closings are re-offered so you can say a final
   goodbye without waiting for the partner.
-- [ ] **5.2 End conversation.** Tap **End conversation**. **Expect:** the transcript
-  and cards clear, listening stops, and the active Partner/Feeling toggles clear.
+- [ ] **5.2 End conversation.** Tap **End conversation**. **Expect:** the conversation
+  pane and cards clear, listening stops, and the active Partner/Feeling toggles clear.
 
 ## 6. Express Panel
 
 - [ ] **6.1 Speak a phrase.** Tap a phrase (e.g. "Thank you"). **Expect:** it speaks
-  and is recorded as your turn in the transcript. Confirm your **single-tap vs.
-  double-tap** setting behaves as chosen (and the double-tap interval).
+  and is recorded as your turn in the conversation pane (and the transcript). Confirm
+  your **single-tap vs. double-tap** setting behaves as chosen (and the double-tap interval).
 - [ ] **6.2 Partner toggle.** Tap a Partner (e.g. "Tyler"). **Expect:** it shows a
   selected ring; openers personalize with that name; generated responses reflect
   talking to them. Tapping again clears it.
@@ -169,30 +175,51 @@ Re-flash the data folder from `tests/fixtures/` between runs to return to baseli
   color is legible on the device.
 - [ ] **7.8 Keyboard docking.** Switch dock to Side (Left/Right) and Bottom, and try
   a few layouts. **Expect:** the Express Panel and the keyboard occupy the same dock
-  footprint (one keyguard fits both); the transcript/composer stay visible.
+  footprint (one keyguard fits both); the conversation pane / composer stay visible.
 
-## 8. Data folder persistence (needs a granted folder)
+## 8. The transcript mirrors the conversation pane (needs a granted folder)
 
-- [ ] **8.1 Conversation logged.** Hold a conversation, then open
-  `conversations/<timestamp>.json` in the folder. **Expect:** partner turns (raw +
-  cleaned), your turns, and any error entries, in time order.
-- [ ] **8.2 Consecutive conversations don't merge.** End one, start another.
-  **Expect:** a NEW `<timestamp>.json` for the second — not appended to the first.
-- [ ] **8.3 About Me persists.** Answer some About Me questions; confirm
+The transcript (`conversations/<id>.json`) must match the conversation pane at all
+times. Watch the file update live — re-open it after each step, or use an editor that
+reloads on change. (The order of `exchanges` entries is what to check, not the exact
+wording — recognition and AI cleanup are non-deterministic.)
+
+- [ ] **8.1 File created on Listen / Start.** Tap **Start Listening** (or **Start
+  conversation**) with nobody speaking yet. **Expect:** a new `conversations/<id>.json`
+  appears **immediately**, with an empty `exchanges` list — before any turn.
+- [ ] **8.2 Partner pause writes the raw line at once.** Partner says P1 and pauses.
+  **Expect:** during that pause a `partner` entry is written with `rawTranscript` = what
+  was heard and `cleanedTranscript` **empty**.
+- [ ] **8.3 Continuation overwrites, doesn't duplicate.** Partner keeps talking after
+  the pause (P1 then more). **Expect:** the **same** `partner` entry's `rawTranscript` is
+  overwritten with the fuller text and `cleanedTranscript` stays empty — NOT a second
+  partner entry.
+- [ ] **8.4 Your response is written immediately; the partner turn is cleaned in
+  place.** Pick a response. **Expect:** your `user` turn appears in the file **right
+  away** (not seconds later); a moment after, the partner entry's `cleanedTranscript`
+  fills in (tidied text), and the order stays **partner-then-user**.
+- [ ] **8.5 Opener / interruption / End-with-partner-mid-turn are all recorded.** An
+  opener writes your turn; interrupting the partner (instant Express phrase) writes
+  their partial raw text **then** your turn; ending while the partner is mid-turn still
+  writes their pending turn. **Expect:** no turn is silently dropped, order preserved.
+- [ ] **8.6 Consecutive conversations don't merge.** End one, start another.
+  **Expect:** a NEW `<id>.json` for the second — not appended to the first.
+- [ ] **8.7 About Me persists.** Answer some About Me questions; confirm
   `worldview.json` updates. Copy it to a second machine's folder and open the app
   there. **Expect:** the copied answers show up (file-in-folder wins).
-- [ ] **8.4 People / Express / Controls persist.** Add a person, edit an Express
+- [ ] **8.8 People / Express / Controls persist.** Add a person, edit an Express
   item and a control phrase; confirm `relationships.json`, `express-panel.json`,
   `control-phrases.json` update.
-- [ ] **8.5 Error log.** Force an error (e.g. wrong API key, then converse). **Expect:**
+- [ ] **8.9 Error log.** Force an error (e.g. wrong API key, then converse). **Expect:**
   `errors.log` in the folder gets an entry stamped with the version + conversation id,
-  and it also shows in Settings → About → error log.
+  it also shows in Settings → About → error log, and (for a saved conversation) the
+  error is interleaved into the transcript in time order.
 
 ## 9. Graceful degradation (AI / network down)
 
 - [ ] **9.1 Bad key.** Set an invalid API key and have the partner speak. **Expect:**
-  the partner's raw words stay visible (blue/italic "uncleaned"), the transcript
-  shows the faint-red wash, and you can still reply via the Express Panel / "In my
+  the partner's raw words stay visible (blue/italic "uncleaned"), the conversation
+  pane shows the faint-red wash, and you can still reply via the Express Panel / "In my
   own words" (which commit and save).
 - [ ] **9.2 No internet.** Disable the network and tap Start Listening. **Expect:**
   a microphone/network error is surfaced (STT is cloud-based), the red wash trips,
@@ -204,8 +231,8 @@ Re-flash the data folder from `tests/fixtures/` between runs to return to baseli
   the open app). **Expect:** it reloads to the new version without a manual hard
   refresh; Settings → About shows the new number.
 - [ ] **10.2 What's new.** **Expect:** after the update, a "What's new" card appears
-  in the transcript region above Start, listing the changes since the version you
-  last saw; "Close" dismisses it and doesn't reappear next launch.
+  in the conversation-pane region above Start, listing the changes since the version
+  you last saw; "Close" dismisses it and doesn't reappear next launch.
 - [ ] **10.3 Reload the app.** Settings → About → **Reload the app**. **Expect:**
   clears caches and reloads fresh (a keyboard-free hard refresh).
 
@@ -217,10 +244,15 @@ Re-flash the data folder from `tests/fixtures/` between runs to return to baseli
 - [ ] **11.2 Text sizes.** Settings → Text Size: change the Response / Transcript /
   Composer / Express sizes. **Expect:** each surface resizes independently.
 - [ ] **11.3 Button size & gaps.** Settings → Speech & Input: move the Button size,
-  Button spacing, Minimum gap, and Keyboard separation sliders. **Expect:** the dock
-  grows/shrinks accordingly, the transcript yields, and the keyguard footprint stays
-  coherent. (Confirm on both side and bottom docks.)
-- [ ] **11.4 Voice.** Pick a different TTS voice and confirm it's used and persists.
+  Button spacing, and Minimum gap sliders. **Expect:** the dock grows/shrinks
+  accordingly, the conversation pane yields, and the keyguard footprint stays coherent.
+  (Confirm on both side and bottom docks.)
+- [ ] **11.4 Keyguard separations.** Settings → **Keyguard Design**: move **Keyboard
+  separation** (gap between the dock and the rest of the screen) and **Transcript
+  separation** (shortens the conversation pane to open a gap above the command bar).
+  **Expect:** each gap opens as described and the button / dock hole positions do NOT
+  move. (Confirm on both side and bottom docks.)
+- [ ] **11.5 Voice.** Pick a different TTS voice and confirm it's used and persists.
 
 ## 12. Keyguard alignment (visual)
 
@@ -243,5 +275,6 @@ Re-flash the data folder from `tests/fixtures/` between runs to return to baseli
 ## Reporting
 
 For any failure, include: **version** (Settings → About), the **steps**, **what you
-expected vs. saw**, and — if a conversation was involved — the **conversation JSON**
-and the **error log** text. The version number is the single most useful field.
+expected vs. saw**, and — if a conversation was involved — the **transcript**
+(`conversations/<id>.json`) and the **error log** text. The version number is the
+single most useful field.
