@@ -915,6 +915,33 @@ Rules that keep it correct: the merge runs only on **load/adopt**, never in `set
 
 ---
 
+## Usage Instrumentation / Metrics (design recorded July 12 2026; NOT built) — BETA-gated
+
+**Origin (Ken, July 12 2026).** A developer of a similar (now-shut-down) AI-AAC product told Ken: *"the biggest lesson we learned was that there is no substitute for user feedback… the only real way to measure success is people consistently using the feature, something we (unfortunately) never really achieved."* Ken's response: build **instrumentation** into the product so that, **on request**, beta testers can report usage numbers (and durations) of the app's features. Agreed as a design item; write-up below.
+
+**The framing that matters — three instruments, not one.** "Usage numbers of features" is the easy part and can miss the actual lesson. The developer's failure was a **retention/engagement** miss ("people didn't *consistently* use it"), not a "we didn't know which button was popular" miss. So capture three distinct things:
+1. **Engagement / retention — the North Star (the real success metric).** Are conversations happening, and do they keep happening? Conversations per day/week, active days, days-since-last-use, session length, turns per conversation, week-1 → week-4 continuation. This is precisely the signal the other product was blind to.
+2. **Feature usage — diagnostic (what to fix or cut).** How often Reframe / Express Panel / "In my own words" / placeholders / regenerate / openers-closers are used; which openers get picked; features **never** touched (candidates to remove or redesign).
+3. **Friction / funnels — the most actionable.** Options generated but **no response selected** (the "no options were good enough" signal — pairs with the transcript red-wash + error log already built); composer opened then Cancelled; long time-to-first-response; repeated Pardon?/regenerate (the AI is missing). Each points at a specific fix.
+Durations feed all three: conversation length, time-to-first-response after a partner pause, time spent choosing before a pick.
+
+**Why it fits Conversant's architecture unusually well.**
+- **Privacy is free here.** Metrics are **counts and timings, not content** — e.g. `{event: response_selected, slot: PREFERRED, choose_ms: 3200}` carries no partner speech. Instrumentation therefore sidesteps the entire privacy/consent problem that dominates the rest of the app (unlike most products, where analytics *is* the privacy problem). Events, **never** content, is the load-bearing rule.
+- **"On request" IS the existing model.** Mirrors `errors.log` and the per-conversation JSON: an **append-only local event log in the data folder**, aggregated **on demand** into a copy-able plain-language summary the tester sends back. **No backend, no phone-home** — consistent with the "no server infrastructure" strategy that is the very reason this project can outlast the one that failed.
+- **Pairs with the planned issue-reporting page** (Open-Questions TODO): same upload/report channel, same "show the tester exactly what's being sent" consent step, same auto-attach app version + `viewport.js` metrics.
+
+**Why BETA-gated (per the dev-phases convention).** In **alpha** (Ken + a few reps, supervised, demo data) it's noise. It becomes load-bearing the moment **real testers are on their own devices** and Ken isn't in the room — which is exactly the blind spot ("are they actually using it?") that sank the other product. So this lands with the beta rollout, alongside the issue-reporting page and SEC-7 recording indicator.
+
+**Two standing cautions (part of the design, not asides).**
+- **Small-N beta: instrumentation SUPPLEMENTS interviews, never replaces them.** With a handful of testers the log tells you *what* happened; only talking to them tells you *why*. A dashboard must not become a substitute for asking a tester "why did you stop." The lesson was about needing real usage, not better charts.
+- **Define "consistent use" honestly for this population.** A non-speaking CP user opens an AAC tool when a **communication opportunity** arises, not out of daily habit — so naïve "daily active use" would read as failure even for a beloved tool. The meaningful signal is closer to *"when a conversation opportunity arises, do they reach for this?"*, which may have to be learned partly from the tester, not the log. **Decide the one or two headline success metrics before building** — that choice determines what the instrumentation must capture.
+
+**Build sketch (when authorized, at beta).** A small `metrics.js` that appends timestamped **events** to `metrics.json` / `events.log` in the data folder — conversation start/end, turn committed (slot + latency), feature invoked, generation-with-no-selection, session boundaries — plus an aggregation view in **Settings → About** producing a plain-language summary (like the error-log viewer) the tester can **copy or attach to a report**. **Opt-in and visible**, in keeping with the recording-indicator ethos. Events only, never content. Honors the per-conversation "Don't save" choice (a not-saved conversation contributes no content-bearing events; counts/timings are still safe). Data-folder-portable like the other user-owned files. **Open sub-questions to pin at build time:** the headline success metric(s) (above); what constitutes a "session"; whether metrics are on by default in beta or explicitly enabled per tester; retention/aggregation window; and whether the summary is human-readable-only or also a machine-readable export for Ken to aggregate across testers.
+
+**Status: recorded only — not built. Gate: beta.** Relates to the issue-reporting page TODO, the error-log/red-wash work (v0.5.72–0.5.75), and the dev-phases convention.
+
+---
+
 ## Open Questions (remaining)
 
 > **SESSION HANDOFF — where we left off (June 30 2026).** A fresh session should start here. Shipped: v0.5.40 (title bar removed → Command Bar; About Me into Settings) through v0.5.46 (side-dock default percentage layout). **Layout-budget approach now underway (Ken's plan):** (1) define a default layout as %-of-screen per region for each dock mode → (2) subdivide each region → (3) THEN define how button-size / gap / minimum-gap changes perturb it. **v0.5.46 did step 1+2 for the SIDE dock** (dock 30%W; transcript 30 / command 10 / response 60 V; command-bar 8×⅛; palette 90% + New-4 10%; gap default 0). Live threads:
