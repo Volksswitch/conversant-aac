@@ -13,6 +13,8 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+## Version 0.5.90
+
 - **The app's own speech no longer leaks into the other person's words.** When the app
   spoke — a placeholder, or a repeated statement from "Repeat what I said" — the
   microphone sometimes caught a piece of it (often slightly mis-heard, like "still" as
