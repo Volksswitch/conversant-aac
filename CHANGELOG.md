@@ -13,6 +13,8 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+## Version 0.5.88
+
 - **Saved conversations are now written as they happen.** The conversation file kept in
   your data folder now mirrors what's on screen moment to moment — it's created the
   instant you start listening, the other person's words are saved at each pause (and
