@@ -13,6 +13,8 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+## Version 0.5.89
+
 - **Fixed: a repeated statement no longer jumps above the other person's words.** When
   you used **Repeat what I said** (or Hold on / Ask them to repeat) while the other
   person's latest words were still on screen, your spoken line was shown *above* theirs.
