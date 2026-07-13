@@ -13,6 +13,8 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+## Version 0.5.91
+
 - **A placeholder no longer talks over a button you pressed.** Pressing a button that
   speaks — a response, an Express Panel phrase, or **Repeat what I said** / **Hold on** —
   now stops any "let me think" placeholder instantly, so it can't cut in partway through
