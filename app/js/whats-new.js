@@ -21,6 +21,9 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.5.91": [
+    "A placeholder no longer talks over a button you pressed. Pressing a button that speaks — a response, an Express Panel phrase, or Repeat what I said / Hold on — now stops any \"let me think\" placeholder instantly, so it can't cut in partway through what you're saying. (Your response options still appear as usual.)"
+  ],
   "0.5.90": [
     "The app's own speech no longer leaks into the other person's words. When the app spoke — a placeholder, or a repeated statement from \"Repeat what I said\" — the microphone sometimes caught a piece of it (often slightly mis-heard, like \"still\" as \"steel\") and tacked it onto what the other person said. The filter that removes the app's own voice is now much better at catching those partial and mis-heard pieces, so they're kept out of the conversation. The microphone still stays on the whole time, so the other person can still talk over the app."
   ],

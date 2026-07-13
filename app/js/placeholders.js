@@ -61,6 +61,12 @@ let lastIndex = { question: -1, general: -1, thinking: -1 };
 let armTime = 0;             // when the partner stopped (initial-delay clock origin)
 let armed = false;           // arm() was called and start() hasn't consumed it
 let questionFlavor = false;  // pick question- vs general-flavored acknowledgment
+// A gate the app sets so a placeholder never speaks OVER the user's own statement
+// (a spoken command / response / Express phrase). Pressing a speaking button must
+// abort placeholders instantly (Ken, July 2026) — this is the hard backstop even
+// if a stray scheduled placeholder fires while the user's TTS is playing.
+let userSpeaking = () => false;
+export function setUserSpeakingGate(fn) { userSpeaking = typeof fn === 'function' ? fn : () => false; }
 
 // Normalize to { acknowledgment:{question:[],general:[]}, thinking:[] }. Tolerates
 // two legacy shapes: a flat array (used for all pools), and an object whose
@@ -162,6 +168,11 @@ async function speakNext() {
         try { await loadPools(); } catch { /* ignore */ }
     }
     if (!active || !pools) return;
+    // Never speak over the user's own statement (a spoken button). If one is
+    // playing right now, try again after the normal interval rather than barging
+    // in and cancelling it. No await between here and tts.speak below, so this one
+    // check holds until we actually speak.
+    if (userSpeaking()) { scheduleNext(); return; }
     // Role by position: first placeholder acknowledges (question- or general-flavored),
     // later ones say "still thinking".
     let phrase;

@@ -31,6 +31,17 @@ let lastPalette = [];
 // Raw, combined speech-to-text for the partner's current (uncommitted) turn.
 // Grows across silence periods until the user picks a response.
 let currentPartnerText = '';
+// Bumped whenever a speaking button that does NOT consume the partner turn (Say
+// again / Hold on / Wind down) fires, so an already-in-flight generateOptions won't
+// re-schedule a placeholder after the user has acted — WITHOUT discarding the
+// response options it's still producing (that's why this is separate from
+// generationToken, which a response selection uses to cancel generation outright).
+let placeholderEpoch = 0;
+// Abort placeholders now AND stop an in-flight generation from restarting one.
+function abortPlaceholders() {
+    placeholders.stop();
+    placeholderEpoch++;
+}
 // Index in conversationHistory of the partner's current turn ONCE it has been
 // promoted from the bottom "live" line into the ordered history — which happens
 // when a user turn (a Say-again / Hold on / Ask-them-to-repeat command) is logged
@@ -173,6 +184,11 @@ function initApp() {
         onStatus: handleSttStatus,
         onPartnerSpeech: handlePartnerResumed
     });
+
+    // Hard backstop: a placeholder must never speak over the user's own statement
+    // (a spoken button). If a stray scheduled placeholder fires while the user's TTS
+    // is playing, placeholders defers instead of barging in (Ken, July 2026).
+    placeholders.setUserSpeakingGate(() => speakingUserStatement);
 
     // Tell the STT layer what the app is speaking so it can discard its own TTS
     // echo (placeholder ladder, prompts) instead of mistaking it for the partner and
@@ -436,6 +452,7 @@ function startFreshListening() {
 
 async function generateOptions(partnerText) {
     const token = ++generationToken;
+    const pEpoch = placeholderEpoch;   // if a speaking button fires mid-generation, don't restart placeholders
 
     // FAST PATH — winding down + a plain farewell reply: re-offer the goodbyes
     // NOW, skipping the AI round-trip, so the user can speak another closing
@@ -508,7 +525,11 @@ async function generateOptions(partnerText) {
         // PAUSE; the partner resuming aborts the ladder (handlePartnerResumed); a
         // quick pick cancels it. Question-type turns get a question-flavored
         // acknowledgment ("Good question."); everything else a neutral one.
-        if (convLogic.shouldPlayPlaceholder(snap)) {
+        // Skip if a speaking button (Say again / Hold on / Wind down) fired while
+        // this generation was in flight — the user has acted, so a placeholder must
+        // not start now (it would speak over / right after their statement). The
+        // response options above still show; only the placeholder is suppressed.
+        if (pEpoch === placeholderEpoch && convLogic.shouldPlayPlaceholder(snap)) {
             placeholders.start({ question: convLogic.isQuestionFlavored(snap) });
         } else {
             placeholders.stop();
@@ -893,7 +914,9 @@ function logSpokenUserTurn(text) {
 async function handleSayAgain() {
     const text = engine.getLastUserUtterance();
     if (!text) { ui.setStatus('Nothing to repeat yet'); return; }
-    placeholders.stop();
+    // Abort placeholders instantly AND stop an in-flight generation from restarting
+    // one (Ken) — without discarding the partner turn's response options.
+    abortPlaceholders();
     ui.setStatus('Speaking...');
     await speakUserStatement(text);
     logSpokenUserTurn(text);          // append to the transcript AFTER speaking (Ken)
@@ -902,7 +925,7 @@ async function handleSayAgain() {
 
 // Hold on — manually fire a floor-holding statement. Instant.
 async function handleHoldOn() {
-    placeholders.stop();
+    abortPlaceholders();   // instant abort + no in-flight generation restart (options kept)
     // User-editable (Settings → Controls). The default is softened from "Hold on,
     // let me think." — imperative phrasing reads as curt through the flat built-in
     // voices (Ken, June 18 2026), and the leading "Hmm," (v0.3.14) was dropped
@@ -1051,6 +1074,9 @@ async function handleReframe() {
 // Wind down — enter PRE-CLOSING and swap to the closing palette.
 function handleWindDown() {
     placeholders.stop();
+    // Invalidate any in-flight generation so it can't overwrite the closings with
+    // response options — or restart a placeholder — after the user chose to wind down.
+    generationToken++;
     const snap = engine.windDown();
     ui.showEngineState(snap);
     showConversationPalette(snap.palette, 'Pick a closing');

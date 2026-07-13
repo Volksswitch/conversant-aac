@@ -20,6 +20,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 beforeEach(() => {
     placeholders.stop();       // clear any timer from a prior test
+    placeholders.setUserSpeakingGate(() => false);   // singleton — reset per test
     resetLocalStorage();
     resetSpoken();
     mockFetchFromDisk();       // serve the real placeholder pools
@@ -58,6 +59,22 @@ test('consecutive thinking placeholders are never the same phrase back-to-back',
     await sleep(260);
     assert.equal(spokenTexts.length, 3);
     assert.notEqual(spokenTexts[1], spokenTexts[2], 'two thinking placeholders in a row must differ');
+});
+
+test('userSpeakingGate: a placeholder waits for the user statement to finish instead of barging in', async () => {
+    // Ken July 2026: pressing a speaking button must not let a (stray, in-flight)
+    // placeholder cut into the user's own speech. The gate defers it, then it speaks
+    // once the user is done — it isn't lost.
+    storage.savePlaceholderSettings(0.02, 0.03, 2);
+    let userSpeaking = true;
+    placeholders.setUserSpeakingGate(() => userSpeaking);
+    placeholders.arm();
+    await placeholders.start({ question: true });
+    await sleep(90);
+    assert.equal(spokenTexts.length, 0, 'nothing is spoken while the user statement plays');
+    userSpeaking = false;                 // the user statement finished
+    await sleep(120);                     // the deferred attempt (subsequentDelay) fires
+    assert.ok(spokenTexts.length >= 1, 'the placeholder speaks once the user is done — not dropped');
 });
 
 test('stop() cancels a scheduled placeholder before it speaks', async () => {
