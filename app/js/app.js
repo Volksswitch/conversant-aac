@@ -31,6 +31,13 @@ let lastPalette = [];
 // Raw, combined speech-to-text for the partner's current (uncommitted) turn.
 // Grows across silence periods until the user picks a response.
 let currentPartnerText = '';
+// Index in conversationHistory of the partner's current turn ONCE it has been
+// promoted from the bottom "live" line into the ordered history — which happens
+// when a user turn (a Say-again / Hold on / Ask-them-to-repeat command) is logged
+// mid-turn, so that user turn renders AFTER the partner turn (mirroring the
+// transcript, where the partner turn is written at its pause). -1 = not promoted
+// (still the live line). Reset per partner turn; commitExchange finalizes it.
+let pendingPartnerHistoryIdx = -1;
 // Increments on every silence period / reset so that a slower, earlier
 // option-generation round-trip can't overwrite a newer one — latest wins.
 let generationToken = 0;
@@ -85,6 +92,51 @@ function applyPrivacyState() {
 // up to that point instead of dropping it (Ken). Falls back to currentPartnerText.
 function heardPartnerText() {
     return (stt.getCurrentTranscript() || currentPartnerText || '').trim();
+}
+
+// Show the partner's in-progress text. Normally the bottom "live" line; but once
+// the turn has been promoted into the history (a user turn was logged mid-turn),
+// keep updating THAT entry in place so the partner turn stays correctly positioned
+// above the later user turn (no duplicate live line).
+function updatePartnerLive(text) {
+    if (pendingPartnerHistoryIdx >= 0 && conversationHistory[pendingPartnerHistoryIdx]) {
+        conversationHistory[pendingPartnerHistoryIdx].text = text;
+        ui.renderConversation(conversationHistory);
+        ui.setLiveTranscript('');
+    } else {
+        ui.setLiveTranscript(text);
+    }
+}
+
+// Promote the live partner turn into the conversation history so a user turn logged
+// now renders AFTER it (mirroring the transcript). Idempotent per turn (guarded by
+// pendingPartnerHistoryIdx); commitExchange finalizes this entry. No-op when there's
+// no live partner text.
+function flushLivePartnerToHistory() {
+    if (pendingPartnerHistoryIdx >= 0) return; // already promoted this turn
+    const raw = heardPartnerText();
+    if (!raw) return;
+    conversationHistory.push({ role: 'partner', text: raw });
+    pendingPartnerHistoryIdx = conversationHistory.length - 1;
+    ui.renderConversation(conversationHistory);
+    ui.setLiveTranscript('');
+}
+
+// Place the partner turn in the history for a commit: if it was already promoted
+// (a mid-turn user command), update that entry in place (preserving its position
+// before the intervening user turn); otherwise append it. Returns its index; clears
+// the promoted-turn tracker.
+function placePartnerTurn(raw, uncleaned) {
+    if (pendingPartnerHistoryIdx >= 0 && conversationHistory[pendingPartnerHistoryIdx]) {
+        const idx = pendingPartnerHistoryIdx;
+        conversationHistory[idx].text = raw;
+        conversationHistory[idx].uncleaned = uncleaned;
+        pendingPartnerHistoryIdx = -1;
+        return idx;
+    }
+    pendingPartnerHistoryIdx = -1;
+    conversationHistory.push({ role: 'partner', text: raw, uncleaned });
+    return conversationHistory.length - 1;
 }
 
 function handlePrivacyToggle() {
@@ -239,7 +291,7 @@ function initApp() {
 function handleSpeechResult(liveText) {
     // Live transcript while the partner is speaking — provisional, not yet
     // confirmed. Confirmation happens implicitly when the user picks a response.
-    ui.setLiveTranscript(liveText);
+    updatePartnerLive(liveText);
     if (liveText) ui.setTranscriptState('unconfirmed');
 }
 
@@ -266,7 +318,7 @@ function handlePartnerResumed() {
 // silence — there is no confirm-the-transcript step.
 async function handleSilencePeriod(text) {
     currentPartnerText = text;
-    ui.setLiveTranscript(text);
+    updatePartnerLive(text);
     // Mirror the pane in the transcript: write the partner's raw line now (Ken).
     // Each pause overwrites it and clears the cleaned line; it's finalized (cleaned
     // filled) when the user responds. Fire-and-forget so it doesn't delay options.
@@ -368,6 +420,7 @@ function toggleListening() {
 // Begin a new partner-capture session with a cleared transcript and options.
 function startFreshListening() {
     currentPartnerText = '';
+    pendingPartnerHistoryIdx = -1;   // fresh partner turn — not yet promoted to history
     generationToken++;
     ui.setLiveTranscript('');
     ui.setTranscriptState('idle');
@@ -398,7 +451,7 @@ async function generateOptions(partnerText) {
         || preSnap.phase === 'PRE_CLOSING' || preSnap.phase === 'CLOSING';
     if (windingDown && convLogic.looksLikeClosing(partnerText)) {
         placeholders.stop(); // a farewell doesn't need a "let me think" filler
-        ui.setLiveTranscript(partnerText);
+        updatePartnerLive(partnerText);
         const snap = engine.ingestClassification(
             { classification: { partner_action: 'CLOSING', turn_status: 'COMPLETE', is_repair_initiator: false }, responses: [] },
             partnerText,
@@ -481,7 +534,7 @@ async function generateOptions(partnerText) {
         // user replies, the partner turn is committed uncleaned via
         // commitExchange({cleanup:false}), so the words aren't duplicated and none
         // are lost if the partner keeps talking. Try again retries the same turn.
-        ui.setLiveTranscript(partnerText);
+        updatePartnerLive(partnerText);
         ui.setTranscriptState('uncleaned');
         ui.showResponseError('AI is unavailable — reply using the Express Panel or “In my own words.” The partner\'s words are shown above.', () => generateOptions(partnerText));
         ui.setStatus(`Error: ${err.message}`);
@@ -621,7 +674,7 @@ async function handleRepairOfSelf(response) {
     // partner's "What?" was already written at its pause, so finalize that pending
     // entry (raw, no cleanup) rather than appending a duplicate.
     if (raw) {
-        conversationHistory.push({ role: 'partner', text: raw });
+        placePartnerTurn(raw, false);   // in place if promoted mid-turn, else append
         const h = storage.detachPendingPartnerTurn();
         storage.finalizePartnerTurn(h, { rawTranscript: raw, cleanedTranscript: raw });
     }
@@ -654,8 +707,9 @@ async function commitExchange(raw, userText, index, opts = {}) {
     if (raw) {
         // cleanup:false means the AI never tidied this turn (interruption fragment,
         // or AI unreachable) — flag it so the transcript renders it raw (blue/italic).
-        conversationHistory.push({ role: 'partner', text: raw, uncleaned: !cleanup });
-        partnerIdx = conversationHistory.length - 1;
+        // placePartnerTurn updates the entry in place if it was already promoted by a
+        // mid-turn user command (so it stays before that command), else appends it.
+        partnerIdx = placePartnerTurn(raw, !cleanup);
     }
     conversationHistory.push({ role: 'user', text: userText });
     // Render the running transcript (user turn visible now) and clear the live turn.
@@ -748,6 +802,7 @@ async function terminateConversation() {
     currentPartnerText = '';
     lastPalette = [];
     conversationHistory.length = 0;     // clear the conversation window
+    pendingPartnerHistoryIdx = -1;
     engine.reset();
     ui.renderConversation(conversationHistory);
     ui.setLiveTranscript('');
@@ -821,6 +876,14 @@ function applyControlPhrases() {
 // record it in the transcript + log (Ken). Not a palette pick, so index -1.
 function logSpokenUserTurn(text) {
     if (!text) return;
+    // A live partner turn must sit BEFORE this user turn in both the pane and the
+    // transcript (Ken — they mirror). Write the partner's heard text to the
+    // transcript (a no-op/overwrite if a pause already wrote it — it does NOT
+    // finalize the turn, which the partner still holds), and promote it into the
+    // pane history, before appending this user turn.
+    const partnerRaw = heardPartnerText();
+    if (partnerRaw) storage.logPartnerInterim({ rawTranscript: partnerRaw, partner: partnerStamp() });
+    flushLivePartnerToHistory();
     conversationHistory.push({ role: 'user', text });
     ui.renderConversation(conversationHistory);
     storage.logUserResponse({ selectedText: text, selectedIndex: -1, allOptions: [] });
@@ -873,7 +936,7 @@ async function handlePardon() {
     const kept = heardPartnerText();
     currentPartnerText = kept;
     ui.showEngineState(snap);
-    ui.setLiveTranscript(kept);
+    updatePartnerLive(kept);
     ui.setTranscriptState(kept ? 'unconfirmed' : 'idle');
     ui.clearResponseOptions();
     const text = controlPhrases.getPhrases().pardon; // user-editable (Settings → Controls)

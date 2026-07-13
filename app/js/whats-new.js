@@ -21,6 +21,9 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.5.89": [
+    "Fixed: a repeated statement no longer jumps above the other person's words. When you used Repeat what I said (or Hold on / Ask them to repeat) while the other person's latest words were still on screen, your spoken line was shown above theirs. It now appears in the right place — after what they said — matching the saved record."
+  ],
   "0.5.88": [
     "Saved conversations are now written as they happen. The conversation file kept in your data folder now mirrors what's on screen moment to moment — it's created the instant you start listening, the other person's words are saved at each pause (and updated as they keep talking), and your responses are saved the moment they appear. So if the app ever hiccups mid-conversation, the saved record still shows exactly what led up to it."
   ],
