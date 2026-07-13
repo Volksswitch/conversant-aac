@@ -181,3 +181,46 @@ test('echo filter: a multiword phrase EMBEDDED in a longer captured segment is d
     stt.noteSpokenEnd();
     assert.equal(stt.getCurrentTranscript(), '', 'embedded multiword echo dropped');
 });
+
+// --- Hardened echo excision (Ken, July 13 2026) — partial / mis-heard / lagged echo.
+// The reported failure: after "Repeat what I said", the mic caught only the TAIL of
+// the re-spoken response ("had some time to relax") and appended it to the partner's
+// turn; a placeholder "Still mulling that over" came back mis-heard as "Steel …".
+
+test('echo filter: a SUFFIX slice of what the app said is dropped', () => {
+    stt.startListening();
+    stt.noteSpokenStart('Pretty good, thanks for asking! Had some time to relax.');
+    stt.noteSpokenEnd();
+    rec.emitFinal('had some time to relax');   // recognizer caught only the tail of our TTS
+    assert.equal(stt.getCurrentTranscript(), '', 'partial (suffix) echo dropped');
+});
+
+test('echo filter: a mis-transcribed echo is dropped (still → steel)', () => {
+    stt.startListening();
+    stt.noteSpokenStart('Still mulling that over.');
+    stt.noteSpokenEnd();
+    rec.emitFinal('Steel mulling that over.');
+    assert.equal(stt.getCurrentTranscript(), '', 'fuzzy echo dropped despite the mis-hearing');
+});
+
+test('echo filter: a LATE echo (past the checkpoint tail, within the match window) is still dropped', async () => {
+    stt.startListening();
+    stt.noteSpokenStart('Let me think about that for a moment.');
+    stt.noteSpokenEnd();
+    await sleep(1600);   // past ECHO_TAIL_MS (1500) — the OLD window; within ECHO_MATCH_MS (4000)
+    rec.emitFinal('let me think about that for a moment');
+    // Excision is the point: the late echo must not accumulate into the partner
+    // turn even though it arrived after the (short) checkpoint-gate tail expired.
+    // (Only the excision is asserted — a stray silence checkpoint here would come
+    // from a leaked timer of an earlier test's stt instance, not from this echo,
+    // since the excised echo never calls resetSilenceTimer.)
+    assert.equal(stt.getCurrentTranscript(), '', 'late echo still excised');
+});
+
+test('echo filter: genuine partner speech sharing only a couple words is NOT dropped', () => {
+    stt.startListening();
+    stt.noteSpokenStart('Had some time to relax.');
+    stt.noteSpokenEnd();
+    rec.emitFinal('Did you get out and see any friends this weekend?');
+    assert.ok(stt.getCurrentTranscript().includes('friends'), 'a different partner sentence is kept');
+});

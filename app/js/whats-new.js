@@ -21,6 +21,9 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.5.90": [
+    "The app's own speech no longer leaks into the other person's words. When the app spoke — a placeholder, or a repeated statement from \"Repeat what I said\" — the microphone sometimes caught a piece of it (often slightly mis-heard, like \"still\" as \"steel\") and tacked it onto what the other person said. The filter that removes the app's own voice is now much better at catching those partial and mis-heard pieces, so they're kept out of the conversation. The microphone still stays on the whole time, so the other person can still talk over the app."
+  ],
   "0.5.89": [
     "Fixed: a repeated statement no longer jumps above the other person's words. When you used Repeat what I said (or Hold on / Ask them to repeat) while the other person's latest words were still on screen, your spoken line was shown above theirs. It now appears in the right place — after what they said — matching the saved record."
   ],

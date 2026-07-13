@@ -18,8 +18,16 @@ let listeningIntent = false;
 // matches one — only genuinely new partner content renews the turn. Each phrase
 // stays active for a tail window past the end of speech to cover recognition
 // lag and the trailing audio.
-const activePhrases = [];      // [{ text: <normalized>, expires: <ms epoch|Infinity> }]
-const ECHO_TAIL_MS = 1500;     // how long a phrase stays matchable after speech ends
+const activePhrases = [];      // [{ text: <normalized>, tokens: <string[]>, expires: <ms epoch|Infinity> }]
+// Two separate windows after the app stops speaking (Ken, July 13 2026):
+//  - ECHO_TAIL_MS: the checkpoint gate (speechActive) — kept short so a genuine
+//    partner reply right after we speak isn't delayed.
+//  - ECHO_MATCH_MS: how long a spoken phrase stays MATCHABLE for excision — kept
+//    longer because the cloud recognizer often returns our echo a couple seconds
+//    late (after the tail), and if the phrase has already expired the late echo
+//    slips through and pollutes the partner turn.
+const ECHO_TAIL_MS = 1500;
+const ECHO_MATCH_MS = 4000;
 
 // Trigger-level guard against the TTS feedback loop (Ken, June 18 2026). The
 // content filter (isEcho) drops captured segments that MATCH what we're saying,
@@ -62,16 +70,64 @@ export function noteSpokenStart(text) {
     const norm = normalizeForEcho(text || '');
     if (!norm) return;
     // While speaking, the phrase never expires; noteSpokenEnd sets the deadline.
-    activePhrases.push({ text: norm, expires: Infinity });
+    // Pre-tokenize for the fuzzy slice matcher (isEcho).
+    activePhrases.push({ text: norm, tokens: norm.split(' '), expires: Infinity });
 }
 
 export function noteSpokenEnd() {
     appSpeaking = false;
-    speechSettleUntil = Date.now() + ECHO_TAIL_MS;
-    const deadline = speechSettleUntil;
+    speechSettleUntil = Date.now() + ECHO_TAIL_MS;      // checkpoint gate — short
+    const deadline = Date.now() + ECHO_MATCH_MS;        // matchable window — longer
     for (const p of activePhrases) {
         if (p.expires === Infinity) p.expires = deadline;
     }
+}
+
+// Levenshtein distance, only meaningful for the small threshold we compare against
+// (early-out when the lengths differ by more than 2 — too far for a mis-hearing).
+function editDistance(a, b) {
+    if (Math.abs(a.length - b.length) > 2) return 3;
+    const dp = Array.from({ length: a.length + 1 }, (_, i) => i);
+    for (let j = 1; j <= b.length; j++) {
+        let prev = dp[0];
+        dp[0] = j;
+        for (let i = 1; i <= a.length; i++) {
+            const tmp = dp[i];
+            dp[i] = Math.min(dp[i] + 1, dp[i - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1));
+            prev = tmp;
+        }
+    }
+    return dp[a.length];
+}
+
+// Two tokens are "similar" if equal or a short mis-hearing apart — the recognizer
+// swaps a vowel/consonant on our own playback ("still" → "steel"). Allow up to 2
+// edits for words of length >= 4, 1 for length 3; short words must match exactly
+// (too easy to collide otherwise).
+function tokensSimilar(a, b) {
+    if (a === b) return true;
+    const minLen = Math.min(a.length, b.length);
+    if (minLen < 3) return false;
+    return editDistance(a, b) <= (minLen >= 4 ? 2 : 1);
+}
+
+// Is `needle` (tokens) a fuzzy CONTIGUOUS slice of `haystack` (tokens)? Slides the
+// needle across the haystack; a window matches if at most ~1 token per 3 differs
+// (a mis-heard word). This is what catches a partial echo — a suffix or middle
+// slice of what we said, e.g. the recognizer returns only "had some time to relax"
+// out of a longer response — which exact/prefix matching missed entirely.
+function fuzzySlice(haystack, needle) {
+    const nn = needle.length, hn = haystack.length;
+    if (nn === 0 || nn > hn) return false;
+    const maxMiss = Math.floor(nn / 3);
+    for (let start = 0; start + nn <= hn; start++) {
+        let miss = 0, ok = true;
+        for (let k = 0; k < nn; k++) {
+            if (!tokensSimilar(haystack[start + k], needle[k]) && ++miss > maxMiss) { ok = false; break; }
+        }
+        if (ok) return true;
+    }
+    return false;
 }
 
 // A captured segment is echo if, after normalizing, it matches an active spoken
@@ -80,14 +136,16 @@ export function noteSpokenEnd() {
 //
 // Matching, in increasing risk:
 //   - exact:  the segment IS the phrase.
-//   - prefix: the segment is a leading slice of the phrase — the recognizer's
-//             interim results build up as a growing prefix ("give", "give me",
-//             "give me a", …) of what we're saying.
-//   - embed:  the phrase appears inside the segment — covers the recognizer
-//             padding/merging our placeholder with noise. Restricted to MULTI-WORD
-//             phrases so a short, common acknowledgment token ("Okay.", "Right.")
-//             can't swallow real partner speech that merely contains that word
-//             (e.g. "okay so what do you think").
+//   - prefix: the segment is a leading (sub-word) slice of the phrase — the
+//             recognizer's interim results build up as a growing prefix ("give",
+//             "give me", "give me a", …) of what we're saying.
+//   - slice:  the segment fuzzily matches a CONTIGUOUS run of tokens ANYWHERE in
+//             the phrase — a suffix or middle slice of our playback, tolerant of a
+//             mis-heard word ("still"→"steel"). This catches the partial/lagged
+//             echoes exact/prefix missed (Ken, July 13 2026). Multi-word only.
+//   - embed:  our phrase fuzzily appears inside a longer captured segment — the
+//             recognizer merged our playback with adjacent noise. Multi-word only,
+//             so a short common token can't swallow real partner speech.
 function isEcho(transcript) {
     const now = Date.now();
     for (let i = activePhrases.length - 1; i >= 0; i--) {
@@ -96,10 +154,13 @@ function isEcho(transcript) {
     if (activePhrases.length === 0) return false;
     const t = normalizeForEcho(transcript);
     if (!t) return true;
-    return activePhrases.some(({ text: p }) => {
-        if (p === t) return true;
-        if (p.startsWith(t)) return true;
-        if (p.includes(' ') && t.includes(p)) return true;
+    const segTokens = t.split(' ');
+    const multiWord = segTokens.length >= 2;
+    return activePhrases.some(({ text: p, tokens: pTokens }) => {
+        if (p === t) return true;                                       // exact
+        if (p.startsWith(t)) return true;                              // interim prefix
+        if (multiWord && fuzzySlice(pTokens, segTokens)) return true;  // echo is a slice of our phrase
+        if (pTokens.length >= 2 && fuzzySlice(segTokens, pTokens)) return true; // our phrase inside a longer segment
         return false;
     });
 }
