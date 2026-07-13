@@ -13,6 +13,8 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+## Version 0.5.92
+
 - **"Ask them to repeat" now keeps the reply as its own turn.** After you ask the other
   person to repeat, what they say next appears as a new turn *after* your "could you say
   that again?" line — instead of being tacked onto the end of what they said before.
