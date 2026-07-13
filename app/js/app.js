@@ -267,6 +267,10 @@ function handlePartnerResumed() {
 async function handleSilencePeriod(text) {
     currentPartnerText = text;
     ui.setLiveTranscript(text);
+    // Mirror the pane in the transcript: write the partner's raw line now (Ken).
+    // Each pause overwrites it and clears the cleaned line; it's finalized (cleaned
+    // filled) when the user responds. Fire-and-forget so it doesn't delay options.
+    if (text) storage.logPartnerInterim({ rawTranscript: text, partner: partnerStamp() });
     engine.partnerSpeaking(text);
     // Start the initial-delay clock at the pause (Ken, June 28 2026) so a slow AI
     // round-trip doesn't leave dead air. arm() only starts the clock; the placeholder
@@ -368,6 +372,11 @@ function startFreshListening() {
     ui.setLiveTranscript('');
     ui.setTranscriptState('idle');
     ui.clearResponseOptions();
+    // Create the transcript file as soon as we enter Listen mode, so it exists and
+    // mirrors the conversation pane from the very start (Ken). Idempotent — a no-op
+    // if this conversation's log already exists. Fire-and-forget (needs a granted
+    // data folder; a no-op without one).
+    storage.startConversationLog();
     stt.startListening();
 }
 
@@ -608,10 +617,13 @@ async function handleRepairOfSelf(response) {
     engine.completeRepairOfSelf(text);
     ui.showEngineState(engine.getSnapshot());
 
-    // Log the partner's repair initiation and the user's restated turn.
+    // Log the partner's repair initiation and the user's restated turn. The
+    // partner's "What?" was already written at its pause, so finalize that pending
+    // entry (raw, no cleanup) rather than appending a duplicate.
     if (raw) {
         conversationHistory.push({ role: 'partner', text: raw });
-        storage.logPartnerSpeech({ rawTranscript: raw, cleanedTranscript: raw });
+        const h = storage.detachPendingPartnerTurn();
+        storage.finalizePartnerTurn(h, { rawTranscript: raw, cleanedTranscript: raw });
     }
     conversationHistory.push({ role: 'user', text });
     storage.logUserResponse({ selectedText: text, selectedIndex: -1, allOptions: [] });
@@ -663,10 +675,14 @@ async function commitExchange(raw, userText, index, opts = {}) {
     };
 
     if (raw && cleanup) {
-        // Clean the partner transcript in the background, patch its turn in place
-        // when it returns (without delaying the user's words), then log the
-        // exchange in proper partner-then-user order.
+        // The partner's raw turn is already in the transcript (written at each
+        // pause). Detach it so a resumed partner turn can't overwrite it, write the
+        // USER turn to the transcript immediately (Ken — no longer waiting on the
+        // cleanup round-trip), then clean the partner text in the background and
+        // finalize its entry in place (fills the cleaned line) when it returns.
         const stamp = partnerStamp();
+        const partnerHandle = storage.detachPendingPartnerTurn();
+        storage.logUserResponse(userLog);
         (async () => {
             let cleaned = raw;
             try { cleaned = await llm.cleanupTranscript(raw, cleanupContext); }
@@ -675,16 +691,17 @@ async function commitExchange(raw, userText, index, opts = {}) {
                 conversationHistory[partnerIdx].text = cleaned;
                 ui.renderConversation(conversationHistory);
             }
-            await storage.logPartnerSpeech({ rawTranscript: raw, cleanedTranscript: cleaned, partner: stamp });
-            await storage.logUserResponse(userLog);
+            await storage.finalizePartnerTurn(partnerHandle, { rawTranscript: raw, cleanedTranscript: cleaned, partner: stamp });
         })();
     } else if (raw) {
         // Interruption case: record the partner's raw heard text as-is, no AI
-        // cleanup (Ken). The turn is already rendered above; just log it, partner
-        // before user, so the JSON keeps the interleaving.
+        // cleanup (Ken). Finalize the partner entry (its cleaned line = raw), THEN
+        // write the user turn, so the transcript keeps partner-then-user order —
+        // whether or not a pause had already written the partner line.
         const stamp = partnerStamp();
+        const partnerHandle = storage.detachPendingPartnerTurn();
         (async () => {
-            await storage.logPartnerSpeech({ rawTranscript: raw, cleanedTranscript: raw, partner: stamp });
+            await storage.finalizePartnerTurn(partnerHandle, { rawTranscript: raw, cleanedTranscript: raw, partner: stamp });
             await storage.logUserResponse(userLog);
         })();
     } else {
@@ -739,14 +756,18 @@ async function terminateConversation() {
     ui.clearResponseOptions();          // clear all cards (back to empty reserved)
     ui.showEngineState(engine.getSnapshot());
 
-    // Write the pending partner turn (if any) to the CURRENT <id>.json, THEN reset
-    // the id. Ordered/awaited so the write lands in this conversation's file, not the
-    // next one's, and done BEFORE the privacy re-seed below so it uses THIS
-    // conversation's save setting. Logged raw (no AI cleanup round-trip) — a dangling
-    // turn with no user reply isn't part of a completed exchange, and raw keeps the
-    // flush fast so it can't race the id reset.
-    if (pendingRaw) {
-        await storage.logPartnerSpeech({ rawTranscript: pendingRaw, cleanedTranscript: pendingRaw, partner: pendingStamp });
+    // Finalize the pending partner turn (if any) in the CURRENT <id>.json, THEN
+    // reset the id. Ordered/awaited so the write lands in this conversation's file,
+    // not the next one's, and done BEFORE the privacy re-seed below so it uses THIS
+    // conversation's save setting. Finalized raw (no AI cleanup round-trip) — a
+    // dangling turn with no user reply isn't a completed exchange, and raw keeps
+    // the flush fast so it can't race the id reset. `heardPartnerText()` may hold
+    // speech captured since the last pause, so prefer it over the pending entry's
+    // last-written raw.
+    const pendingHandle = storage.detachPendingPartnerTurn();
+    const finalRaw = pendingRaw || (pendingHandle ? pendingHandle.rawTranscript : '');
+    if (finalRaw) {
+        await storage.finalizePartnerTurn(pendingHandle, { rawTranscript: finalRaw, cleanedTranscript: finalRaw, partner: pendingStamp });
     }
     storage.resetConversationId();       // next conversation gets a fresh id (error-log correlation)
 

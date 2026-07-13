@@ -1,3 +1,5 @@
+import * as tlog from './transcript-log.js';
+
 const STORAGE_KEY = 'aac_settings';
 const IDB_NAME = 'aac-db';
 const IDB_STORE = 'handles';
@@ -559,6 +561,11 @@ let conversationDirHandle = null;
 let currentLogHandle = null;
 let currentLogName = null;
 let currentLogData = null;
+// The partner's in-progress ("pending") turn in currentLogData.exchanges, so each
+// pause OVERWRITES it (rather than appending) and the user's response FINALIZES it
+// (fills the cleaned line). Null between partner turns. (Ken, July 2026 — the
+// transcript mirrors the conversation pane.)
+let pendingPartnerTurn = null;
 
 // One ID per conversation, shared by the conversation log file AND any error-log
 // entries in that conversation, so the two can be correlated (Ken, July 2026).
@@ -588,6 +595,7 @@ export function resetConversationId() {
     currentLogData = null;
     currentLogHandle = null;
     currentLogName = null;
+    pendingPartnerTurn = null;
 }
 
 async function getConversationsDir() {
@@ -615,8 +623,14 @@ export async function readConversationLog(id) {
     }
 }
 
+// Create the conversation's <id>.json. Idempotent: once a log exists for the
+// current conversation it's a no-op, so it can be called eagerly when the user
+// enters Listen mode / starts a conversation (Ken — the file should exist as soon
+// as capture begins) as well as lazily on the first turn. A fresh conversation
+// (after resetConversationId) starts a new file.
 export async function startConversationLog() {
     if (!conversationSaving) return null; // this conversation is private — don't record
+    if (currentLogData) return currentLogName; // already started for this conversation
     const dir = await getConversationsDir();
     if (!dir) return null;
 
@@ -628,6 +642,7 @@ export async function startConversationLog() {
         started: now.toISOString(),
         exchanges: []
     };
+    pendingPartnerTurn = null;
 
     currentLogHandle = await dir.getFileHandle(currentLogName, { create: true });
     await flushLog();
@@ -639,18 +654,47 @@ export async function startConversationLog() {
 // is active. `partner` = { id: personId|null, label }; `feeling` = { id, text }.
 // Stamped on every turn so a Phase-3 review can see who the user was talking to
 // and how they felt for each exchange, even as those change mid-conversation.
-export async function logPartnerSpeech({ rawTranscript, cleanedTranscript, partner = null }) {
+// Write/overwrite the partner's in-progress turn at a silence checkpoint, so the
+// transcript mirrors the conversation pane's live line (Ken). The FIRST pause
+// appends a pending partner entry (raw text, empty cleaned line); each later pause
+// OVERWRITES the raw line and CLEARS the cleaned line (the partner kept talking).
+// Creates the log lazily if needed. The cleaned line is filled later, by
+// finalizePartnerTurn, when the user responds.
+export async function logPartnerInterim({ rawTranscript, partner = null }) {
     if (!conversationSaving) return; // private conversation — nothing is written
     if (!currentLogData) await startConversationLog();
     if (!currentLogData) return;
+    pendingPartnerTurn = tlog.upsertPartnerInterim(currentLogData.exchanges, pendingPartnerTurn, { rawTranscript, partner });
+    await flushLog();
+}
 
-    currentLogData.exchanges.push({
-        timestamp: new Date().toISOString(),
-        role: 'partner',
-        rawTranscript,
-        cleanedTranscript,
-        partner            // who spoke (the active Partner), or null
-    });
+// Detach the current pending partner turn (if any) and stop tracking it, so a new
+// partner turn appends a fresh entry rather than overwriting this one. Returns the
+// detached turn object (an opaque handle for finalizePartnerTurn), or null.
+export function detachPendingPartnerTurn() {
+    const t = pendingPartnerTurn;
+    pendingPartnerTurn = null;
+    return t;
+}
+
+// Finalize a partner turn with its cleaned text. `handle` is what
+// detachPendingPartnerTurn returned: if set, the pending entry is updated IN PLACE
+// (keeping its position, before the user's turn); if null, a fresh finalized
+// partner entry is appended (an interruption captured before any pause was
+// written). Creates the log lazily if needed.
+export async function finalizePartnerTurn(handle, { rawTranscript, cleanedTranscript, partner = null }) {
+    if (!conversationSaving) return; // private conversation — nothing is written
+    if (!handle) {
+        if (!currentLogData) await startConversationLog();
+        if (!currentLogData) return;
+    }
+    // With a handle we mutate that entry in place (finalizePartner ignores the
+    // exchanges array); the array is only needed for the append (handle-null) path.
+    // currentLogData may be null here if the conversation was reset before a
+    // background cleanup landed — the raw partner line is already on disk, so this
+    // just no-ops the cleaned-line update (the rare deferred-cleanup split).
+    const exchanges = currentLogData ? currentLogData.exchanges : null;
+    tlog.finalizePartner(exchanges, handle, { rawTranscript, cleanedTranscript, partner });
     await flushLog();
 }
 

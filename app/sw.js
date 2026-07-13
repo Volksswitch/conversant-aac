@@ -28,6 +28,7 @@ const SHELL = [
   './js/placeholders.js',
   './js/engine.js',
   './js/conversation-logic.js',
+  './js/transcript-log.js',
   './js/worldview.js',
   './js/relationships.js',
   './js/worldview-ui.js',

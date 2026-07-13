@@ -21,6 +21,9 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.5.88": [
+    "Saved conversations are now written as they happen. The conversation file kept in your data folder now mirrors what's on screen moment to moment — it's created the instant you start listening, the other person's words are saved at each pause (and updated as they keep talking), and your responses are saved the moment they appear. So if the app ever hiccups mid-conversation, the saved record still shows exactly what led up to it."
+  ],
   "0.5.87": [
     "The settings-profile picker now shows which profile is in use. After you save or load a profile — and after restarting — the drop-down reflects the profile that's actually in effect (with an \"In use\" note), instead of resetting to the first name in the list. (Your settings were always applied correctly; only the name shown was wrong.)",
     "Press Enter to save a settings profile. Typing a name in the profile box and pressing Enter now saves your current settings under that name.",
