@@ -18,6 +18,14 @@
   .lbl { font-size: 12.5px; color: #2E75B6; font-weight: bold; margin-bottom: 3px; }
   .loopnote { font-size: 12.5px; color: #777; font-style: italic; margin-top: 4px; max-width: 200px; text-align: center; }
 
+  /* Fig 1 — loop badge (partner resumes -> same step refines in place) + reversal note */
+  .loopwrap { display: flex; align-items: center; gap: 16px; }
+  .loopbadge { border: 1.5px dashed #2E75B6; border-radius: 8px; background: #F7FBFF; color: #1F4E79;
+               padding: 8px 12px; font-size: 11.5px; max-width: 210px; line-height: 1.3; text-align: left; }
+  .loopbadge .ic { font-size: 15px; margin-right: 3px; }
+  .revnote { font-size: 12px; color: #1F4E79; background: #EAF3FA; border-radius: 6px; padding: 7px 16px;
+             max-width: 640px; text-align: center; font-style: italic; line-height: 1.35; }
+
   /* Fig 2 — stack snapshots */
   .snaps { display: flex; align-items: flex-end; justify-content: center; gap: 6px; }
   .snap { width: 168px; display: flex; flex-direction: column; align-items: center; }
@@ -97,28 +105,19 @@
   <div class="flow">
     <div class="box">Partner speaks <small>— live transcript shown on screen</small></div>
     <div class="arrow">&#9660;</div>
-    <div class="box">Partner pauses <small>(the silence checkpoint)</small></div>
+    <div class="box">Partner pauses <small>(a silence checkpoint)</small></div>
     <div class="arrow">&#9660;</div>
-    <div class="box hl">One AI call &mdash; <u>classify</u> what the partner just did, then <u>generate</u> moves fitted to it<br><small>classification is committed before any wording is chosen</small></div>
+    <div class="box hl">One AI call &mdash; <u>classify</u> what the partner just did, then <u>generate</u> responses fitted to it<br><small>classification is committed before any wording is chosen</small></div>
     <div class="arrow">&#9660;</div>
-    <div class="box">Turn complete?</div>
-    <div class="branch">
-      <div class="col">
-        <div class="lbl">No &mdash; unfinished / continuing</div>
-        <div class="arrow">&#9660;</div>
-        <div class="box">Keep listening &middot; offer nothing</div>
-        <div class="loopnote">waits for a real transition point, then re-checks</div>
-      </div>
-      <div class="col">
-        <div class="lbl">Yes &mdash; a complete first pair part</div>
-        <div class="arrow">&#9660;</div>
-        <div class="box">Record the obligation on the stack &middot; floor &rarr; user &middot; show the typed palette<br><small>a brief placeholder may hold the floor while choosing</small></div>
-        <div class="arrow">&#9660;</div>
-        <div class="box">User selects a move</div>
-        <div class="arrow">&#9660;</div>
-        <div class="box hl">Speak in the user&rsquo;s voice &middot; clear the obligation &middot; record the exchange &middot; floor opens</div>
-      </div>
+    <div class="loopwrap">
+      <div class="box">Record or refresh the obligation on the stack &middot; floor &rarr; user &middot; show the typed palette<br><small>a brief placeholder may hold the floor while the user reads and chooses</small></div>
+      <div class="loopbadge"><span class="ic">&#8635;</span>If the partner resumes and pauses again, this step re-runs &mdash; the SAME palette is refreshed in place, never duplicated</div>
     </div>
+    <div class="revnote">Turn completeness no longer gates this step (reversed July 2026): every pause reaches here, whether the classifier calls the turn finished or not. The partner's turn counts as done only once the user acts, below.</div>
+    <div class="arrow">&#9660;</div>
+    <div class="box">User selects a response</div>
+    <div class="arrow">&#9660;</div>
+    <div class="box hl">Speak in the user&rsquo;s voice &middot; clear the obligation &middot; record the exchange &middot; floor opens</div>
   </div>
 </div>
 
@@ -162,7 +161,7 @@
 
 <!-- FIG 3 — the four-slot palette -->
 <div class="diagram-section">
-  <div class="dtitle">The move palette &mdash; four structurally distinct responses</div>
+  <div class="dtitle">The Response Palette &mdash; four structurally distinct responses</div>
   <div class="ord">Stable left-to-right order &nbsp;<span>1 Preferred</span> &rarr; <span>2 Dispreferred</span> &rarr; <span>3 Initiative</span> &rarr; <span>4 Repair</span></div>
   <div class="cards">
     <div class="card green">
@@ -198,14 +197,14 @@
   <div class="arrow">&#9660;&nbsp;&nbsp;the partner&rsquo;s action (or a user override) sets the posture&nbsp;&nbsp;&#9660;</div>
   <div class="mrow">
     <div class="mcol">
-      <div class="trig">partner completes a question / invitation</div>
+      <div class="trig">partner pauses after a question / invitation &mdash; complete or not</div>
       <div class="mbox"><div class="mn">RESPONDING</div><div class="fl">floor: user</div></div>
-      <div class="ret">&rarr; back to Listening after the move</div>
+      <div class="ret">&rarr; back to Listening after the response</div>
     </div>
     <div class="mcol">
       <div class="trig">partner: &ldquo;What?&rdquo; (didn&rsquo;t catch the user)</div>
       <div class="mbox"><div class="mn">REPAIR-OF-SELF</div><div class="fl">floor: user</div></div>
-      <div class="ret">&rarr; back to Listening after the move</div>
+      <div class="ret">&rarr; back to Listening after the response</div>
     </div>
     <div class="mcol">
       <div class="trig">user opens the conversation</div>
