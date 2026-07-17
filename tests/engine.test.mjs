@@ -173,12 +173,22 @@ test('partner CLOSING → PRE_CLOSING_CLOSING with a closing palette', () => {
     assert.ok(s.palette.every(p => p.slot === 'CLOSING'));
 });
 
-test('windDown → PRE_CLOSING_CLOSING with closers, floor SELF', () => {
+test('windDown → PRE_CLOSING_CLOSING with WIND_DOWN cards, floor SELF', () => {
     engine.reset();
     const s = engine.windDown();
     assert.equal(s.mode, engine.MODE.PRE_CLOSING_CLOSING);
     assert.equal(s.floor, engine.FLOOR.SELF);
-    assert.ok(s.palette.every(p => p.slot === 'CLOSING'));
+    assert.ok(s.palette.length > 0);
+    assert.ok(s.palette.every(p => p.slot === 'WIND_DOWN'), 'Wind down shows wind-down statements, not goodbyes');
+});
+
+test('showClosings → the goodbye (CLOSING) palette, floor SELF', () => {
+    engine.reset();
+    const s = engine.showClosings();
+    assert.equal(s.mode, engine.MODE.PRE_CLOSING_CLOSING);
+    assert.equal(s.floor, engine.FLOOR.SELF);
+    assert.ok(s.palette.length > 0);
+    assert.ok(s.palette.every(p => p.slot === 'CLOSING'), 'closings are the actual goodbyes');
 });
 
 test('initiate substitutes {name} when a partner is active and drops it cleanly when not', () => {
@@ -205,16 +215,26 @@ test('refreshPalette swaps responses without touching the stack/mode/floor', () 
     assert.equal(s.mode, engine.MODE.RESPONDING);
 });
 
-test('setConversationPhrases injects edited openers/closers; ignores empty lists', () => {
-    engine.setConversationPhrases({ openers: ['Yo {name}!'], closers: ['Later.'] });
+test('setConversationPhrases injects edited openers/wind-downs/closings; ignores empty lists', () => {
+    engine.setConversationPhrases({ openers: ['Yo {name}!'], windDowns: ['Gotta bounce.'], closings: ['Later.'] });
     engine.reset();
     const s = engine.initiate({ partnerName: 'Sam' });
     assert.ok(s.palette.some(p => p.text === 'Yo Sam!'));
+    assert.ok(engine.windDown().palette.some(p => p.text === 'Gotta bounce.'), 'edited wind-downs injected');
+    assert.ok(engine.showClosings().palette.some(p => p.text === 'Later.'), 'edited closings injected');
     // Empty list must not wipe the openers.
     engine.setConversationPhrases({ openers: [] });
     engine.reset();
     const s2 = engine.initiate({ partnerName: 'Sam' });
     assert.ok(s2.palette.some(p => p.text === 'Yo Sam!'), 'empty list should be ignored, keeping prior openers');
     // Restore defaults for any later test file (this process is isolated, but tidy).
-    engine.setConversationPhrases({ openers: ['Hi {name}, got a minute?'], closers: ['Bye!'] });
+    engine.setConversationPhrases({ openers: ['Hi {name}, got a minute?'], windDowns: ['I should get going.'], closings: ['Bye!'] });
+});
+
+test('setConversationPhrases still accepts a legacy `closers` list as wind-downs', () => {
+    engine.setConversationPhrases({ closers: ['Old wind-down.'] });
+    engine.reset();
+    assert.ok(engine.windDown().palette.some(p => p.text === 'Old wind-down.'),
+        'a legacy closers list maps onto the wind-downs (the list the button used to show)');
+    engine.setConversationPhrases({ windDowns: ['I should get going.'] });  // restore
 });

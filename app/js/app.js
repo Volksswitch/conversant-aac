@@ -483,7 +483,7 @@ async function generateOptions(partnerText) {
         );
         ui.showEngineState(snap);
         lastPalette = snap.palette;
-        showConversationPalette(snap.palette, 'Say goodbye, or wait for their reply');
+        renderStaticPalette('closing', snap.palette, 'Say goodbye, or wait for their reply');
         ui.setTranscriptState('ready');
         return;
     }
@@ -523,7 +523,14 @@ async function generateOptions(partnerText) {
             storage.logError(outcome.anomaly.context, outcome.anomaly.message, { partner: (partnerText || '').slice(0, 200) });
         }
 
-        ui.showResponses(snap.palette, handleResponseSelected);
+        // The partner themselves closed → offer the goodbyes as a pageable static
+        // palette (New N dips further); otherwise the normal response cards.
+        if (snap.mode === engine.MODE.PRE_CLOSING_CLOSING) {
+            renderStaticPalette('closing', snap.palette, 'Say goodbye, or wait for their reply');
+        } else {
+            currentStatic = { kind: null, full: [] };  // AI responses — New N regenerates, not pages
+            ui.showResponses(snap.palette, handleResponseSelected);
+        }
         ui.setTranscriptState('ready');
         ui.setStatus(snap.mode === engine.MODE.REPAIR_OF_SELF
             ? 'Partner didn\'t catch that — choose how to repeat'
@@ -580,6 +587,7 @@ async function handleResponseSelected(response, index) {
     // regardless of the auto-resume setting, and arm the session so later
     // exchanges can auto-resume too. Captured before selectResponse clears the mode.
     const wasOpener = response.slot === 'OPENER';
+    const wasWindDown = response.slot === 'WIND_DOWN';
     const wasClosing = response.slot === 'CLOSING';
 
     placeholders.stop();
@@ -611,21 +619,21 @@ async function handleResponseSelected(response, index) {
     if (wasOpener) {
         manualListenArmed = true;   // starting a conversation arms auto-resume
         startFreshListening();      // begin capturing the partner now
-    } else if (wasClosing) {
-        // After a wind-down / closing statement, re-offer the closings (incl.
-        // "Bye!") so the user can sign off without waiting for the partner to
-        // reply to the wind-down (Ken). Listening still resumes if armed.
-        reofferClosings();
+    } else if (wasWindDown || wasClosing) {
+        // After a wind-down statement, offer the goodbyes so the user can sign off
+        // without waiting for the partner to reply; after a goodbye, re-offer them
+        // (the partner may say bye back). Listening still resumes if armed (Ken).
+        offerClosings();
     } else {
         resumeOrIdle();
     }
 }
 
-// Re-show the closing palette after a closing was spoken so a farewell is one tap
-// away, and resume listening (if armed) so a partner reply is still captured. The
-// mic-resume mirrors startFreshListening but WITHOUT clearing the palette (we want
-// the closers to stay visible).
-function reofferClosings() {
+// Show the CLOSING palette (goodbyes) after a wind-down or closing was spoken, so a
+// farewell is one tap away, and resume listening (if armed) so a partner reply is
+// still captured. The mic-resume mirrors startFreshListening but WITHOUT clearing
+// the palette (we want the closings to stay visible).
+function offerClosings() {
     if (manualListenArmed && storage.loadAutoRelisten()) {
         currentPartnerText = '';
         generationToken++;
@@ -633,9 +641,9 @@ function reofferClosings() {
         ui.setTranscriptState('idle');
         stt.startListening();
     }
-    const snap = engine.windDown();
+    const snap = engine.showClosings();
     ui.showEngineState(snap);
-    showConversationPalette(snap.palette, 'Say goodbye, or wait for their reply');
+    renderStaticPalette('closing', snap.palette, 'Say goodbye, or wait for their reply');
 }
 
 // REPAIR-OF-SELF (design §7.2): re-speak verbatim (instant, no LLM), or
@@ -830,6 +838,7 @@ async function terminateConversation() {
     generationToken++;                 // invalidate any in-flight generation
     currentPartnerText = '';
     lastPalette = [];
+    resetStaticPaging();                 // opener/wind-down/closing paging starts fresh
     conversationHistory.length = 0;     // clear the conversation window
     pendingPartnerHistoryIdx = -1;
     engine.reset();
@@ -862,16 +871,59 @@ async function terminateConversation() {
     applyPrivacyState();
 }
 
-// How many opener / closer cards the response footprint can show: 8 with the
-// 2-per-category (8-card) setting, otherwise 4. Openers/closers are a flat list
-// (one per card), so we cap the palette to this before showing it (Ken — 8-card
-// mode fills all 8 with conversation starters).
+// How many opener / wind-down / closing cards the response footprint can show: 8
+// with the 2-per-category (8-card) setting, otherwise 4. These are flat lists (one
+// per card), so we cap the palette to this before showing it (Ken — 8-card mode
+// fills all 8 with conversation starters).
 function conversationPaletteCap() {
     return storage.loadResponsesPerCategory() === 2 ? 8 : 4;
 }
 
-// Show an opener/closer palette in the fixed footprint, capped to what fits.
+// --- Static conversation palettes: openers / wind-downs / closings -------------
+// These predefined, user-owned lists (control-phrases.js) can define MORE cards
+// than the footprint shows. The user pages through the extra cards (Ken, July
+// 2026): re-pressing Wind down dips to the next set of wind-downs, and the "New N"
+// button dips into whichever static set is showing. A per-kind offset persists for
+// the whole conversation and wraps; it's reset when a conversation starts/ends.
+const staticOffsets = { opener: 0, windDown: 0, closing: 0 };
+let currentStatic = { kind: null, full: [] };  // static palette currently shown (for New N)
+let windDownShown = false;                       // has Wind down been shown this conversation?
+
+// A window of `cap` cards starting at `offset`, wrapping so the footprint stays
+// full even when the list isn't a whole number of pages.
+function pageWindow(list, offset, cap) {
+    const arr = list || [];
+    if (arr.length <= cap) return arr.slice();
+    const out = [];
+    for (let i = 0; i < cap; i++) out.push(arr[(offset + i) % arr.length]);
+    return out;
+}
+
+// Render a predefined static palette (opener/windDown/closing), optionally
+// advancing to the next page first (the Wind down re-press / New N "dip").
+function renderStaticPalette(kind, full, statusMsg, { advance = false } = {}) {
+    const cap = conversationPaletteCap();
+    if (advance && full.length > cap) {
+        staticOffsets[kind] = (staticOffsets[kind] + cap) % full.length;
+    }
+    currentStatic = { kind, full: full || [] };
+    ui.showResponses(pageWindow(currentStatic.full, staticOffsets[kind], cap), handleResponseSelected);
+    if (statusMsg) ui.setStatus(statusMsg);
+}
+
+function resetStaticPaging() {
+    staticOffsets.opener = 0;
+    staticOffsets.windDown = 0;
+    staticOffsets.closing = 0;
+    currentStatic = { kind: null, full: [] };
+    windDownShown = false;
+}
+
+// Show a non-paged conversation palette (the Reframe-to-steer STATEMENT cards,
+// which the LLM already returns capped). Clears the static-paging cursor so the
+// "New N" button doesn't try to page an LLM result.
 function showConversationPalette(palette, statusMsg) {
+    currentStatic = { kind: null, full: [] };
     ui.showResponses((palette || []).slice(0, conversationPaletteCap()), handleResponseSelected);
     if (statusMsg) ui.setStatus(statusMsg);
 }
@@ -885,19 +937,23 @@ async function handleInitiate() {
     const partnerName = activePartner ? (activePartner.nickname || activePartner.name) : '';
     const snap = engine.initiate({ partnerName });
     ui.showEngineState(snap);
-    showConversationPalette(snap.palette, 'Pick an opener');
+    renderStaticPalette('opener', snap.palette, 'Pick an opener');
 }
 
-// Push the user's edited openers/closers into the engine (Hold on / Pardon? are
-// read straight from the model at tap time). Called after load/sync and on every
-// edit via the editor's onChange.
+// Push the user's edited openers / wind-downs / closings into the engine (Hold on /
+// Pardon? are read straight from the model at tap time). Called after load/sync and
+// on every edit via the editor's onChange.
 function applyControlPhrases() {
     const p = controlPhrases.getPhrases();
     // Drop blank rows (the editor allows a transient empty row) so no empty card
     // reaches the palette; setConversationPhrases ignores a fully-empty list and
     // keeps the defaults.
-    const clean = (a) => a.map((s) => s.trim()).filter(Boolean);
-    engine.setConversationPhrases({ openers: clean(p.openers), closers: clean(p.closers) });
+    const clean = (a) => (a || []).map((s) => s.trim()).filter(Boolean);
+    engine.setConversationPhrases({
+        openers: clean(p.openers),
+        windDowns: clean(p.windDowns),
+        closings: clean(p.closings),
+    });
 }
 
 // A persistent-control action spoke something AS the user (Say again / Hold on /
@@ -990,6 +1046,13 @@ async function handlePardon() {
 // we deliberately do NOT re-ingest the classification (that would push a
 // duplicate FPP). Whole-palette regenerate (not per-response) — see CLAUDE.md to-do.
 async function handleRegenerate() {
+    // If a predefined static palette is showing (openers / wind-downs / closings),
+    // "New N" dips to the next page of that set rather than calling the AI (Ken,
+    // July 2026). Only pages when more cards are defined than fit; otherwise no-op.
+    if (currentStatic.kind) {
+        renderStaticPalette(currentStatic.kind, currentStatic.full, null, { advance: true });
+        return;
+    }
     if (!currentPartnerText || !lastPalette.length) return;
     const token = ++generationToken;
     placeholders.stop();
@@ -1085,15 +1148,19 @@ async function handleReframe() {
     }
 }
 
-// Wind down — enter PRE-CLOSING and swap to the closing palette.
+// Wind down — enter PRE-CLOSING and offer the WIND-DOWN statements (intent to end,
+// not a goodbye). Selecting one auto-offers the closings. If the partner doesn't
+// reciprocate, pressing Wind down again dips to the next page of wind-downs (Ken,
+// July 2026) — the first press of a conversation shows page 0, each re-press advances.
 function handleWindDown() {
     placeholders.stop();
-    // Invalidate any in-flight generation so it can't overwrite the closings with
+    // Invalidate any in-flight generation so it can't overwrite the wind-downs with
     // response options — or restart a placeholder — after the user chose to wind down.
     generationToken++;
     const snap = engine.windDown();
     ui.showEngineState(snap);
-    showConversationPalette(snap.palette, 'Pick a closing');
+    renderStaticPalette('windDown', snap.palette, 'Signal you\'d like to wrap up', { advance: windDownShown });
+    windDownShown = true;
 }
 
 // End conversation — hard terminate (Ken, June 18 2026). Tears everything down

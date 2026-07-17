@@ -21,6 +21,10 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.5.93": [
+    "Winding down and saying goodbye are now two separate steps. Tapping Wind down shows statements that signal you'd like to wrap up (\"I should get going.\", \"Great catching up with you.\") — not goodbyes. Once you pick one, the actual goodbyes (\"Bye!\", \"Take care!\") appear automatically. If the other person doesn't take the hint, tap Wind down again to politely restate it.",
+    "More wind-down statements and goodbyes to choose from. When you've set up more than fit on screen, the New button (and tapping Wind down again) brings up a different set — it also works this way for your conversation starters."
+  ],
   "0.5.92": [
     "\"Ask them to repeat\" now keeps the reply as its own turn. After you ask the other person to repeat, what they say next appears as a new turn after your \"could you say that again?\" line — instead of being tacked onto the end of what they said before.",
     "Sentences no longer run together in the transcript. When someone's speech comes in as separate pieces, they're now joined with a space (\"Good morning. How was your weekend?\") instead of stuck together (\"Good morning.How was your weekend?\")."

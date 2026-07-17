@@ -47,15 +47,18 @@ export const SLOT = {
     REPAIR_RESPEAK: 'REPAIR_RESPEAK',
     REPAIR_REPHRASE: 'REPAIR_REPHRASE',
     REPAIR_EXPAND: 'REPAIR_EXPAND',
-    // Conversation-level openers / closers (static for Phase 1; configurable later).
+    // Conversation-level openers / wind-downs / closings (static for Phase 1;
+    // configurable later). WIND_DOWN = "I'm ready to wrap up" (no goodbye yet);
+    // CLOSING = the actual goodbye, offered after a wind-down.
     OPENER: 'OPENER',
+    WIND_DOWN: 'WIND_DOWN',
     CLOSING: 'CLOSING',
 };
 
 const SLOT_PRIORITY = {
     PREFERRED: 1, DISPREFERRED: 2, INITIATIVE: 3, REPAIR: 4,
     REPAIR_RESPEAK: 1, REPAIR_REPHRASE: 2, REPAIR_EXPAND: 3,
-    OPENER: 1, CLOSING: 1,
+    OPENER: 1, WIND_DOWN: 1, CLOSING: 1,
 };
 
 // Static Phase-1 palettes for the modes that don't need an LLM round-trip. These
@@ -75,18 +78,29 @@ const DEFAULT_OPENERS = [
     'I was just thinking about you, {name}.',
     'Got a story for you, {name}.',
 ];
-const DEFAULT_CLOSERS = [
+const DEFAULT_WIND_DOWNS = [
     'I should get going.',
-    'This was really nice, thanks.',
-    'Great seeing you.',
-    'Bye!',
     'I need to head out.',
-    "Let's talk again soon.",
+    'This was really nice, thanks.',
+    'Great catching up with you.',
+    'Anyway, I should let you go.',
+    "It's been good seeing you.",
+    'I should probably wrap up.',
+    "I've got to run soon.",
+];
+const DEFAULT_CLOSINGS = [
+    'Bye!',
     'Take care!',
+    'See you later!',
+    "Let's talk again soon.",
+    'Have a good day!',
+    'Talk soon!',
+    'Goodbye!',
     'Catch you later.',
 ];
 let openers = DEFAULT_OPENERS.slice();
-let closers = DEFAULT_CLOSERS.slice();
+let windDowns = DEFAULT_WIND_DOWNS.slice();
+let closings = DEFAULT_CLOSINGS.slice();
 
 // Replace {name} with the active Partner's name; when there is no name, drop the
 // token AND an adjacent comma, repairing spacing/punctuation so the opener still
@@ -107,11 +121,15 @@ function applyName(template, name) {
         .trim();
 }
 
-// Inject the user's edited openers/closers (control-phrases.js). Empty/missing
-// lists are ignored so the engine never ends up with no opener or closer cards.
+// Inject the user's edited openers / wind-downs / closings (control-phrases.js).
+// Empty/missing lists are ignored so the engine never ends up with no cards. A
+// legacy caller may still pass `closers`; treat it as the wind-downs (the list the
+// "Wind down" button historically showed) so nothing breaks mid-migration.
 export function setConversationPhrases(p = {}) {
     if (Array.isArray(p.openers) && p.openers.length) openers = p.openers.slice();
-    if (Array.isArray(p.closers) && p.closers.length) closers = p.closers.slice();
+    if (Array.isArray(p.windDowns) && p.windDowns.length) windDowns = p.windDowns.slice();
+    else if (Array.isArray(p.closers) && p.closers.length) windDowns = p.closers.slice();
+    if (Array.isArray(p.closings) && p.closings.length) closings = p.closings.slice();
 }
 
 // --- ConversationState (design §3) ---
@@ -324,8 +342,14 @@ function openerPalette(partnerName = '') {
     });
 }
 
+function windDownPalette() {
+    return windDowns.map((text, i) => ({
+        slot: SLOT.WIND_DOWN, text, hint: text, priority: i + 1, latency: 'instant',
+    }));
+}
+
 function closingPalette() {
-    return closers.map((text, i) => ({
+    return closings.map((text, i) => ({
         slot: SLOT.CLOSING, text, hint: text, priority: i + 1, latency: 'instant',
     }));
 }
@@ -401,11 +425,26 @@ export function pardon() {
     return getSnapshot();
 }
 
-// Wind down — enter PRE-CLOSING and swap to the closing palette.
+// Wind down — enter PRE-CLOSING and offer the WIND-DOWN statements ("I should get
+// going.") — an intent to end, not a goodbye. Selecting one leads to showClosings.
+// The "Wind down" button always lands here (Ken, July 2026); re-pressing it after
+// the partner didn't reciprocate re-offers the wind-downs (the app pages to a
+// different set when more are defined than fit).
 export function windDown() {
     state.phase = 'PRE_CLOSING';
     state.mode = MODE.PRE_CLOSING_CLOSING;
     state.floor = FLOOR.SELF; // the user is taking the floor to wind things down
+    state.palette = windDownPalette();
+    return getSnapshot();
+}
+
+// Offer the CLOSING statements (the actual goodbyes). Reached automatically once
+// the user has selected a wind-down statement, and when the partner themselves
+// closes. Stays in the pre-closing phase.
+export function showClosings() {
+    state.phase = 'PRE_CLOSING';
+    state.mode = MODE.PRE_CLOSING_CLOSING;
+    state.floor = FLOOR.SELF;
     state.palette = closingPalette();
     return getSnapshot();
 }

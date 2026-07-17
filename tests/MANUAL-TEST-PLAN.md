@@ -133,11 +133,19 @@ Re-flash the data folder from `tests/fixtures/` between runs to return to baseli
 
 ## 5. Wind down / closings
 
-- [ ] **5.1 Wind down.** Tap **Wind down**. **Expect:** closing cards appear ("Bye!",
-  etc.). Pick one — it speaks, and the closings are re-offered so you can say a final
-  goodbye without waiting for the partner.
-- [ ] **5.2 End conversation.** Tap **End conversation**. **Expect:** the conversation
-  pane and cards clear, listening stops, and the active Partner/Feeling toggles clear.
+- [ ] **5.1 Wind down → closings.** Tap **Wind down**. **Expect:** *wind-down* statements
+  appear ("I should get going.", "Great catching up with you." — NOT goodbyes). Pick one —
+  it speaks, then the *closings* (goodbyes: "Bye!", "Take care!") appear automatically. Pick
+  a goodbye — it speaks and the goodbyes are re-offered so you can say a final one.
+- [ ] **5.2 Re-press Wind down (partner didn't reciprocate).** With goodbyes showing, tap
+  **Wind down** again. **Expect:** wind-down statements return — and, if you have more than
+  fit on screen, a *different* set than the first press (each re-press dips to the next).
+- [ ] **5.3 "New N" pages the static sets.** With wind-downs (or goodbyes, or conversation
+  starters) showing, tap the **New** button. **Expect:** the next set of that category's
+  cards, wrapping around — no AI call, no waiting.
+- [ ] **5.4 End conversation.** Tap **End conversation**. **Expect:** the conversation
+  pane and cards clear, listening stops, and the active Partner/Feeling toggles clear. A
+  new conversation's first **Wind down** press shows page 0 again.
 
 ## 6. Express Panel
 

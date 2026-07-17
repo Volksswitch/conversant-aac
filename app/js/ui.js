@@ -136,6 +136,9 @@ const SLOT_META = {
     REPAIR_REPHRASE: { badge: 'REPHRASE',     cls: 'slot-repair' },
     REPAIR_EXPAND:   { badge: 'EXPLAIN MORE', cls: 'slot-repair' },
     OPENER:          { badge: 'OPENER',       cls: 'slot-initiative' },
+    // Wind-down and closing never appear together, so they share the slate
+    // "persistent" hue (the wrapping-up family); position + timing distinguish them.
+    WIND_DOWN:       { badge: 'WIND DOWN',    cls: 'slot-persistent' },
     CLOSING:         { badge: 'CLOSING',      cls: 'slot-persistent' },
     // Lead statements from Reframe-to-steer (the user holds the floor and wants to
     // take the conversation somewhere) — initiative-colored, one per cell.

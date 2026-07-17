@@ -13,6 +13,15 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+- **Winding down and saying goodbye are now two separate steps.** Tapping **Wind down**
+  shows statements that signal you'd like to wrap up ("I should get going.", "Great
+  catching up with you.") — not goodbyes. Once you pick one, the actual goodbyes ("Bye!",
+  "Take care!") appear automatically. If the other person doesn't take the hint, tap **Wind
+  down** again to politely restate it.
+- **More wind-down statements and goodbyes to choose from.** When you've set up more than
+  fit on screen, the **New** button (and tapping **Wind down** again) brings up a different
+  set — it also works this way for your conversation starters.
+
 ## Version 0.5.92
 
 - **"Ask them to repeat" now keeps the reply as its own turn.** After you ask the other

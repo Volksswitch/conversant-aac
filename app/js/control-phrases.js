@@ -7,8 +7,18 @@
  *   - pardon   : spoken when "Pardon?" is tapped (asks the partner to repeat)
  *   - openers  : the cards shown by "Start conversation" (templates; {name} is
  *                replaced with the active Partner's name, dropped when none)
- *   - closers  : the cards shown by "Wind down"
+ *   - windDowns: the cards shown by "Wind down" — signal an intent to end the
+ *                conversation ("I should get going.") WITHOUT saying goodbye yet
+ *   - closings : the actual goodbyes ("Bye!", "Take care!") that appear once the
+ *                user has selected a wind-down statement
  * ("Say again" has no editable phrase — it re-speaks the user's own last words.)
+ *
+ * Wind-down vs. closing (Ken, July 2026): these are two distinct steps of the CA
+ * closing sequence. "Wind down" surfaces the wind-downs; selecting one auto-offers
+ * the closings; if the partner doesn't reciprocate, re-pressing "Wind down" dips
+ * to the next page of wind-downs. Legacy files had a single `closers` list — it is
+ * dropped and both new lists reseed from defaults (single-user pre-beta; re-edit
+ * via Settings → Controls if you'd customized the old closers).
  *
  * Stored like the other user-owned data (express-panel.js, worldview.js):
  *   - <data folder>/control-phrases.json   portable source of truth (FSA)
@@ -43,14 +53,26 @@ export const DEFAULTS = {
         'I was just thinking about you, {name}.',
         'Got a story for you, {name}.',
     ],
-    closers: [
+    // Wind-down statements: signal "I'm ready to wrap up" without saying goodbye.
+    windDowns: [
         'I should get going.',
-        'This was really nice, thanks.',
-        'Great seeing you.',
-        'Bye!',
         'I need to head out.',
-        "Let's talk again soon.",
+        'This was really nice, thanks.',
+        'Great catching up with you.',
+        'Anyway, I should let you go.',
+        "It's been good seeing you.",
+        'I should probably wrap up.',
+        "I've got to run soon.",
+    ],
+    // Closing statements: the actual goodbyes, offered after a wind-down.
+    closings: [
+        'Bye!',
         'Take care!',
+        'See you later!',
+        "Let's talk again soon.",
+        'Have a good day!',
+        'Talk soon!',
+        'Goodbye!',
         'Catch you later.',
     ],
 };
@@ -71,16 +93,24 @@ function normalize(value) {
     };
     const seededList = (x) => (Array.isArray(x) ? x.filter((s) => typeof s === 'string') : []);
     const seeded = (v.seeded && typeof v.seeded === 'object') ? v.seeded : {};
+    // A legacy file has `closers` and neither new key — since windDowns/closings
+    // are absent, list(undefined, DEFAULTS.*) reseeds both from defaults and the old
+    // `closers` (which mixed the two senses) is simply ignored. No auto-classify.
     return {
         holdOn: str(v.holdOn, DEFAULTS.holdOn),
         pardon: str(v.pardon, DEFAULTS.pardon),
         openers: list(v.openers, DEFAULTS.openers),
-        closers: list(v.closers, DEFAULTS.closers),
-        // Watermark: every default opener/closer value ever injected into this
-        // user's set. Drives additive merging (mergeNewDefaults) so a release that
-        // adds new default cards shows them to existing users automatically,
+        windDowns: list(v.windDowns, DEFAULTS.windDowns),
+        closings: list(v.closings, DEFAULTS.closings),
+        // Watermark: every default opener/windDown/closing value ever injected into
+        // this user's set. Drives additive merging (mergeNewDefaults) so a release
+        // that adds new default cards shows them to existing users automatically,
         // WITHOUT resurrecting cards the user deliberately deleted.
-        seeded: { openers: seededList(seeded.openers), closers: seededList(seeded.closers) },
+        seeded: {
+            openers: seededList(seeded.openers),
+            windDowns: seededList(seeded.windDowns),
+            closings: seededList(seeded.closings),
+        },
     };
 }
 
@@ -94,7 +124,7 @@ function normalize(value) {
 // appending is always safe. Returns true if anything changed (persist if so).
 function mergeNewDefaults(p) {
     let changed = false;
-    for (const key of ['openers', 'closers']) {
+    for (const key of ['openers', 'windDowns', 'closings']) {
         const seededSet = new Set(p.seeded[key]);
         const present = new Set(p[key]);
         for (const d of DEFAULTS[key]) {
@@ -135,14 +165,19 @@ export async function load() {
 /** Synchronous read for the editor / engine injection (returns a copy). */
 export function getPhrases() {
     if (!phrases) phrases = normalize(readCache());
-    return { ...phrases, openers: phrases.openers.slice(), closers: phrases.closers.slice() };
+    return {
+        ...phrases,
+        openers: phrases.openers.slice(),
+        windDowns: phrases.windDowns.slice(),
+        closings: phrases.closings.slice(),
+    };
 }
 
 /** Persist an edited set (cache immediately, disk in the background). */
 export function setPhrases(next) {
     // Carry the seeded watermark forward — the editor doesn't send it, and losing
     // it would make a deleted default reappear on the next load (mergeNewDefaults).
-    const priorSeeded = (phrases && phrases.seeded) ? phrases.seeded : { openers: [], closers: [] };
+    const priorSeeded = (phrases && phrases.seeded) ? phrases.seeded : { openers: [], windDowns: [], closings: [] };
     const incoming = (next && typeof next === 'object') ? next : {};
     phrases = normalize({ ...incoming, seeded: incoming.seeded || priorSeeded });
     writeCache(phrases);
@@ -155,7 +190,11 @@ export function resetPhrases() {
     phrases = normalize(DEFAULTS);
     // A reset adopts the full current defaults, so watermark them all — a later
     // release still appends only genuinely-new cards, not these.
-    phrases.seeded = { openers: DEFAULTS.openers.slice(), closers: DEFAULTS.closers.slice() };
+    phrases.seeded = {
+        openers: DEFAULTS.openers.slice(),
+        windDowns: DEFAULTS.windDowns.slice(),
+        closings: DEFAULTS.closings.slice(),
+    };
     writeCache(phrases);
     writeDisk(phrases);
     return getPhrases();

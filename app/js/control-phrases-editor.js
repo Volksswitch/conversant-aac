@@ -1,10 +1,11 @@
 /* Control phrases editor (Settings → Controls) — Ken, June 28 2026
  *
  * Edits the spoken text behind the persistent override controls and the
- * opener/closer cards (control-phrases.js): the "Hold on" and "Pardon?" phrases
- * (single strings) and the "Start conversation" openers / "Wind down" closers
- * (ordered lists). "Say again" has no editable phrase — it re-speaks the user's
- * own last words — so it's shown as a read-only note.
+ * opener / wind-down / closing cards (control-phrases.js): the "Hold on" and
+ * "Pardon?" phrases (single strings) and the "Start conversation" openers, the
+ * "Wind down" statements, and the closings/goodbyes (ordered lists). "Say again"
+ * has no editable phrase — it re-speaks the user's own last words — so it's shown
+ * as a read-only note.
  *
  * Reuses the Express-editor (.ee-*) styles for rows/buttons. Plain text edits
  * commit WITHOUT re-rendering so the field keeps focus while typing; structural
@@ -17,7 +18,7 @@ import { confirmDanger } from './confirm-dialog.js';
 
 let container = null;
 let onChangeCb = null;
-let data = null;            // working copy { holdOn, pardon, openers, closers }
+let data = null;            // working copy { holdOn, pardon, openers, windDowns, closings }
 let pendingFocus = null;    // { key, index } of a just-added list row to focus
 
 export function init(el, opts = {}) {
@@ -108,8 +109,10 @@ export function render() {
         singleSection('“Ask them to repeat” phrase', 'Spoken when you tap Ask them to repeat — asks the partner to say again what they said.', 'pardon'),
         listSection('Openers (Start conversation)',
             'The cards shown when you tap Start conversation. Use {name} where the person’s name should go — it fills in when a Partner is selected and is left out otherwise.', 'openers'),
-        listSection('Closings (Wind down)',
-            'The cards shown when you tap Wind down to end the conversation.', 'closers'),
+        listSection('Wind-down statements (Wind down)',
+            'The cards shown when you tap Wind down — they signal you’d like to end the conversation without saying goodbye yet (“I should get going.”). Selecting one brings up the closings below.', 'windDowns'),
+        listSection('Closings (goodbyes)',
+            'The goodbyes (“Bye!”, “Take care!”) that appear after you pick a wind-down statement.', 'closings'),
     );
 
     // "Say again" — read-only note (no editable phrase).
@@ -122,7 +125,7 @@ export function render() {
     reset.addEventListener('click', async () => {
         const ok = await confirmDanger({
             title: 'Reset control phrases?',
-            body: 'This restores the default wording for Hold on, Pardon?, the openers and the closings. Your edits will be lost.',
+            body: 'This restores the default wording for Hold on, Pardon?, the openers, the wind-down statements and the closings. Your edits will be lost.',
             confirmLabel: 'Reset to default',
             cancelLabel: 'Keep mine',
         });
@@ -137,8 +140,9 @@ export function render() {
     if (pendingFocus) {
         const sel = `.ee-list`;
         const lists = container.querySelectorAll(sel);
-        // openers list is the first .ee-list, closers the second — match by key order.
-        const idx = pendingFocus.key === 'openers' ? 0 : 1;
+        // The .ee-list order matches the listSection order: openers, windDowns, closings.
+        const order = { openers: 0, windDowns: 1, closings: 2 };
+        const idx = order[pendingFocus.key] ?? 0;
         const rows = lists[idx]?.querySelectorAll('.ee-row input');
         const inp = rows && rows[pendingFocus.index];
         pendingFocus = null;

@@ -10,7 +10,7 @@ no real personal data.
 | `worldview.json` | About Me: a few shareable facts, one **Private** field (`living_situation`), one **declined** field (`age_birthyear`) — exercises all three privacy levels. |
 | `relationships.json` | People: Jordan ("Mom", lives with me), Sam (friend), Dr. Lee (**private**). |
 | `express-panel.json` | Express Panel: feelings, two Partner buttons (Jordan/Sam), a few phrases. |
-| `control-phrases.json` | Default openers/closers **plus one distinctive opener** ("TEST FIXTURE opener…") so you can confirm the seed loaded by opening **Start conversation**. |
+| `control-phrases.json` | Default openers / wind-downs / closings **plus one distinctive opener** ("TEST FIXTURE opener…") so you can confirm the seed loaded by opening **Start conversation**. |
 
 ## Use
 

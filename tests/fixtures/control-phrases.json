@@ -15,14 +15,24 @@
     "Got a story for you, {name}.",
     "TEST FIXTURE opener — one two three, {name}?"
   ],
-  "closers": [
+  "windDowns": [
     "I should get going.",
-    "This was really nice, thanks.",
-    "Great seeing you.",
-    "Bye!",
     "I need to head out.",
-    "Let's talk again soon.",
+    "This was really nice, thanks.",
+    "Great catching up with you.",
+    "Anyway, I should let you go.",
+    "It's been good seeing you.",
+    "I should probably wrap up.",
+    "I've got to run soon."
+  ],
+  "closings": [
+    "Bye!",
     "Take care!",
+    "See you later!",
+    "Let's talk again soon.",
+    "Have a good day!",
+    "Talk soon!",
+    "Goodbye!",
     "Catch you later."
   ],
   "seeded": {
@@ -37,14 +47,24 @@
       "I was just thinking about you, {name}.",
       "Got a story for you, {name}."
     ],
-    "closers": [
+    "windDowns": [
       "I should get going.",
-      "This was really nice, thanks.",
-      "Great seeing you.",
-      "Bye!",
       "I need to head out.",
-      "Let's talk again soon.",
+      "This was really nice, thanks.",
+      "Great catching up with you.",
+      "Anyway, I should let you go.",
+      "It's been good seeing you.",
+      "I should probably wrap up.",
+      "I've got to run soon."
+    ],
+    "closings": [
+      "Bye!",
       "Take care!",
+      "See you later!",
+      "Let's talk again soon.",
+      "Have a good day!",
+      "Talk soon!",
+      "Goodbye!",
       "Catch you later."
     ]
   }
