@@ -13,6 +13,8 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+## Version 0.5.93
+
 - **Winding down and saying goodbye are now two separate steps.** Tapping **Wind down**
   shows statements that signal you'd like to wrap up ("I should get going.", "Great
   catching up with you.") — not goodbyes. Once you pick one, the actual goodbyes ("Bye!",
