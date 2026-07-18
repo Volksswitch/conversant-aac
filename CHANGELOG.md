@@ -13,6 +13,8 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+## Version 0.5.97
+
 - **Practice Mode — rehearse a conversation with the AI.** On the opening screen, tap
   "Practice a conversation" and pick a scenario (ordering coffee, meeting a new colleague,
   a doctor's visit, catching up with a friend, a job interview). The AI plays the other
@@ -22,6 +24,8 @@ regenerate the bundled notes in `app/js/whats-new.js`.
   You can set the practice partner's voice in Settings → Speech & Input, and End conversation
   returns you to the opening screen. (Practice needs a Claude API key, since the AI both plays
   the partner and suggests your responses.)
+
+## Version 0.5.96
 
 - **A clearer, one-at-a-time startup.** The opening screens now appear in order — press
   Start, then (if the app just updated) the "What's new" summary, then a note about the
