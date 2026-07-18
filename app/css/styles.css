@@ -1413,6 +1413,51 @@ dialog select {
 }
 #pasteApiKeyBtn:hover { background: #eef1f4; }
 
+/* "Test" button beside the API key field — verifies the key against the API. */
+#testApiKeyBtn {
+    flex: 0 0 auto;
+    padding: 0.5rem 0.9rem;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    background: #fff;
+    cursor: pointer;
+}
+#testApiKeyBtn:hover { background: #eef1f4; }
+#testApiKeyBtn:disabled { opacity: 0.6; cursor: default; }
+
+/* Format-warning / verify-result line under the API key field (Ken, July 2026). */
+.api-key-status {
+    margin: 0.45rem 0 0;
+    font-size: 0.9rem;
+    line-height: 1.35;
+}
+.api-key-status[hidden] { display: none; }
+.api-key-status.warn { color: #b3261e; }
+.api-key-status.ok   { color: #1b7f34; }
+.api-key-status.checking { color: #555; }
+
+/* Pre-start "no API key" prompt — a visible card above Start. The status bar is
+   hidden (v0.5.2), so this is how the user is told a key is missing. Amber
+   "action needed" accent; informational (they can still Start without a key). */
+#apiKeyPrompt {
+    flex: 0 0 auto;
+    max-width: 34rem;
+    background: #fff8e6;
+    border: 1px solid #e6c34a;
+    border-left: 6px solid #d99a00;
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    text-align: center;
+}
+#apiKeyPrompt[hidden] { display: none; }
+.apikey-prompt-title { margin: 0 0 0.35rem; font-weight: 700; color: #7a5300; }
+.apikey-prompt-body  { margin: 0 0 0.8rem; color: #5a4a1e; line-height: 1.45; }
+#apiKeyPromptBtn {
+    background: #2c3e50; color: #fff; border: none;
+    padding: 0.7rem 1.4rem; border-radius: 8px; font-size: 1rem; cursor: pointer;
+}
+#apiKeyPromptBtn:hover { background: #22303d; }
+
 #testVoiceBtn {
     margin-top: 0.4rem;
     padding: 0.3rem 0.7rem;

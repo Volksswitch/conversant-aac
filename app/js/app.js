@@ -217,6 +217,8 @@ function initApp() {
     });
 
     document.getElementById('startBtn').addEventListener('click', handleStart);
+    // The pre-start "no API key" prompt's button just opens Settings (General tab).
+    document.getElementById('apiKeyPromptBtn').addEventListener('click', openSettings);
     ui.onListenClick(toggleListening);
     ui.onRegenerateClick(handleRegenerate);
     ui.onSpeakClick(handleSpeakComposed);
@@ -308,8 +310,48 @@ function initApp() {
         llm.setApiKey(savedKey);
         ui.setStatus('Ready — API key loaded');
     } else {
+        // The status bar is visually hidden (v0.5.2), so a setStatus message alone is
+        // invisible. Show the visible pre-start prompt instead (it lives in the start
+        // block over the transcript). Keep the aria-live status for screen readers.
         ui.setStatus('No API key set — open Settings to add your Claude API key');
     }
+    refreshApiKeyPrompt();
+}
+
+// --- API key surfaces (Ken, July 2026) -----------------------------------------
+// The manual (§3.2) promises a red invalid-key warning under the field and cues the
+// user to add a key; neither existed. Three surfaces: (1) a format warning under the
+// API Key field as you type; (2) a "Test" button that verifies the key against the
+// API; (3) a visible "no API key yet" prompt on the pre-start screen (the hidden
+// status bar can't show one). refreshApiKeyPrompt drives (3); the two below drive (1)/(2).
+
+function showApiKeyStatus(kind, msg) {
+    const el = document.getElementById('apiKeyStatus');
+    if (!el) return;
+    if (!msg) { el.hidden = true; el.textContent = ''; el.className = 'api-key-status'; return; }
+    el.hidden = false;
+    el.textContent = msg;
+    el.className = 'api-key-status ' + (kind === 'ok' ? 'ok' : kind === 'checking' ? 'checking' : 'warn');
+}
+
+// Format-check the current field value and reflect it under the field. Empty is not
+// "invalid" (that's the missing-key case), so it just clears the line.
+function reflectApiKeyFormat() {
+    const key = (document.getElementById('apiKeyInput')?.value || '').trim();
+    if (!key) { showApiKeyStatus(null, ''); return; }
+    const v = llm.validateKeyFormat(key);
+    if (v.ok) { showApiKeyStatus(null, ''); return; }
+    const msg = v.reason === 'prefix' ? "This doesn't look right — a Claude key starts with sk-ant-."
+        : v.reason === 'whitespace' ? 'Remove the spaces — a key is one unbroken string.'
+        : 'This looks too short — check you copied the whole key.';
+    showApiKeyStatus('warn', msg);
+}
+
+// Show/hide the pre-start "no API key" prompt based on whether a key is saved.
+function refreshApiKeyPrompt() {
+    const prompt = document.getElementById('apiKeyPrompt');
+    if (!prompt) return;
+    prompt.hidden = !!(storage.loadApiKey() || '').trim();
 }
 
 function handleSpeechResult(liveText) {
@@ -2064,7 +2106,10 @@ function openSettings() {
         const key = apiKeyInput.value.trim();
         llm.setApiKey(key);
         storage.saveApiKey(key);
+        reflectApiKeyFormat();     // red warning under the field if it looks malformed
+        refreshApiKeyPrompt();     // clear/show the pre-start "no key" prompt
     };
+    reflectApiKeyFormat();          // reflect the current saved value on open
     // Paste button beside the API-key field — replaces the keyboard's removed
     // clipboard toolbar as the way to paste a long `sk-ant-…` key.
     document.getElementById('pasteApiKeyBtn').onclick = async () => {
@@ -2075,6 +2120,21 @@ function openSettings() {
                 apiKeyInput.dispatchEvent(new Event('input', { bubbles: true }));
             }
         } catch { /* clipboard read blocked/denied — user can type instead */ }
+    };
+    // Test button — the only way to catch a subtly-wrong key (right format, wrong
+    // characters). Verifies against the API (GET /v1/models, bills no tokens).
+    document.getElementById('testApiKeyBtn').onclick = async () => {
+        const key = apiKeyInput.value.trim();
+        if (!key) { showApiKeyStatus('warn', 'Enter your key first, then tap Test.'); return; }
+        const btn = document.getElementById('testApiKeyBtn');
+        btn.disabled = true;
+        showApiKeyStatus('checking', 'Checking your key…');
+        const res = await llm.testApiKey(key);
+        btn.disabled = false;
+        if (res.ok) showApiKeyStatus('ok', '✓ Your key is working.');
+        else if (res.reason === 'rejected') showApiKeyStatus('warn', '✗ The key was rejected — check you copied all of it, including the end.');
+        else if (res.reason === 'empty') showApiKeyStatus('warn', 'Enter your key first, then tap Test.');
+        else showApiKeyStatus('warn', "Couldn't reach the service — check your internet connection and try again.");
     };
     voiceSelect.onchange = () => {
         const voiceURI = voiceSelect.value || null;

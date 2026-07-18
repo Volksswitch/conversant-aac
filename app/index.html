@@ -40,6 +40,11 @@
                      and enters the conversation. See whats-new.js + handleStart. -->
                 <div id="startBlock">
                     <div id="whatsNewPanel" hidden></div>
+                    <div id="apiKeyPrompt" hidden>
+                        <p class="apikey-prompt-title">No Claude API key yet</p>
+                        <p class="apikey-prompt-body">The AI can't suggest responses until you add your Anthropic API key. You can still start and use the app to speak in your own words.</p>
+                        <button id="apiKeyPromptBtn" type="button">Open Settings to add your key</button>
+                    </div>
                     <button id="startBtn">Start</button>
                 </div>
             </section>
@@ -126,7 +131,9 @@
                         <div id="apiKeyRow">
                             <input type="text" id="apiKeyInput" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
                             <button id="pasteApiKeyBtn" type="button" aria-label="Paste API key">Paste</button>
+                            <button id="testApiKeyBtn" type="button">Test</button>
                         </div>
+                        <p id="apiKeyStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
                     </div>
                     <div class="setting-group">
                         <label>Data Folder</label>

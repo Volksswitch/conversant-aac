@@ -21,6 +21,10 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.5.94": [
+    "The app now tells you when your API key is missing or looks wrong. On the opening screen, if you haven't added your Claude API key yet, a clear notice appears above Start explaining the AI can't suggest responses until you add one (you can still Start and speak in your own words). In Settings → General, typing a key that doesn't look right (wrong start, spaces, too short) shows a red note under the field.",
+    "New \"Test\" button for your API key (Settings → General, next to Paste). Tap it to check your key against Anthropic — it tells you \"✓ Your key is working\" or \"✗ The key was rejected,\" which catches a key that was pasted incompletely. The test costs nothing."
+  ],
   "0.5.93": [
     "Winding down and saying goodbye are now two separate steps. Tapping Wind down shows statements that signal you'd like to wrap up (\"I should get going.\", \"Great catching up with you.\") — not goodbyes. Once you pick one, the actual goodbyes (\"Bye!\", \"Take care!\") appear automatically. If the other person doesn't take the hint, tap Wind down again to politely restate it.",
     "More wind-down statements and goodbyes to choose from. When you've set up more than fit on screen, the New button (and tapping Wind down again) brings up a different set — it also works this way for your conversation starters."

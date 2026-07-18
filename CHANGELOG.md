@@ -13,6 +13,15 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+- **The app now tells you when your API key is missing or looks wrong.** On the opening
+  screen, if you haven't added your Claude API key yet, a clear notice appears above Start
+  explaining the AI can't suggest responses until you add one (you can still Start and speak
+  in your own words). In **Settings → General**, typing a key that doesn't look right (wrong
+  start, spaces, too short) shows a red note under the field.
+- **New "Test" button for your API key** (Settings → General, next to Paste). Tap it to check
+  your key against Anthropic — it tells you "✓ Your key is working" or "✗ The key was
+  rejected," which catches a key that was pasted incompletely. The test costs nothing.
+
 ## Version 0.5.93
 
 - **Winding down and saying goodbye are now two separate steps.** Tapping **Wind down**

@@ -11,6 +11,43 @@ export function setApiKey(key) {
     apiKey = key;
 }
 
+// Cheap client-side format check (no network). Catches the gross paste mistakes —
+// missing prefix, embedded whitespace, obviously-truncated — but NOT a key that is
+// subtly wrong (e.g. missing a few characters) since Anthropic keys have no fixed
+// public length. That case needs testApiKey (a live call). Returns { ok, reason }.
+export function validateKeyFormat(key) {
+    const k = (key || '').trim();
+    if (!k) return { ok: false, reason: 'empty' };
+    if (/\s/.test(k)) return { ok: false, reason: 'whitespace' };
+    if (!k.startsWith('sk-ant-')) return { ok: false, reason: 'prefix' };
+    if (k.length < 40) return { ok: false, reason: 'short' };
+    return { ok: true };
+}
+
+// Live verification against the API (the only way to catch a subtly-wrong key).
+// Uses GET /v1/models — it authenticates the key but bills no tokens — so a "Test"
+// costs nothing. 200 = valid; 401/403 = the key is rejected; anything else (incl. a
+// thrown fetch) = couldn't reach the service. Returns { ok, reason, status }.
+export async function testApiKey(key) {
+    const k = (key ?? apiKey ?? '').trim();
+    if (!k) return { ok: false, reason: 'empty' };
+    try {
+        const res = await fetch('https://api.anthropic.com/v1/models?limit=1', {
+            method: 'GET',
+            headers: {
+                'x-api-key': k,
+                'anthropic-version': '2023-06-01',
+                'anthropic-dangerous-direct-browser-access': 'true',
+            },
+        });
+        if (res.ok) return { ok: true, status: res.status };
+        if (res.status === 401 || res.status === 403) return { ok: false, reason: 'rejected', status: res.status };
+        return { ok: false, reason: 'error', status: res.status };
+    } catch (err) {
+        return { ok: false, reason: 'network', message: err.message };
+    }
+}
+
 // The compact worldview profile text (worldview.buildBlock()). Set fresh before
 // each generation so questionnaire edits take effect immediately. This is the
 // sole personalization channel now that the interim name/about fields are gone.
