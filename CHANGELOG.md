@@ -13,6 +13,8 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+## Version 0.5.96
+
 - **A clearer, one-at-a-time startup.** The opening screens now appear in order — press
   Start, then (if the app just updated) the "What's new" summary, then a note about the
   API key — instead of the API-key note piling on top of the "What's new" screen. The
@@ -21,9 +23,9 @@ regenerate the bundled notes in `app/js/whats-new.js`.
   a key) and "Add API key to Settings".
 
 - **A clearer sign that the device is listening.** When you start listening, the app now plays
-  a short chime and shows a red frame around the screen while the microphone is on. The chime
-  is an audible heads-up for the person you're talking with — they're facing you, not the
-  screen — that the device has started listening. You can turn the chime off in
+  a short chime and the Listen button turns red and gently pulses while the microphone is on.
+  The chime is an audible heads-up for the person you're talking with — they're facing you, not
+  the screen — that the device has started listening. You can turn the chime off in
   Settings → Conversation ("Play a chime when listening starts"); it's on by default.
 
 ## Version 0.5.95

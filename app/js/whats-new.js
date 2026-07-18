@@ -23,7 +23,7 @@ import * as storage from './storage.js';
 const RELEASE_NOTES = {
   "0.5.96": [
     "A clearer, one-at-a-time startup. The opening screens now appear in order — press Start, then (if the app just updated) the \"What's new\" summary, then a note about the API key — instead of the API-key note piling on top of the \"What's new\" screen. The API-key note explains that a key is what lets the AI suggest responses, with two buttons: \"Close\" to go straight into the app (listening and speaking in your own words work without a key) and \"Add API key to Settings\".",
-    "A clearer sign that the device is listening. When you start listening, the app now plays a short chime and shows a red frame around the screen while the microphone is on. The chime is an audible heads-up for the person you're talking with — they're facing you, not the screen — that the device has started listening. You can turn the chime off in Settings → Conversation (\"Play a chime when listening starts\"); it's on by default."
+    "A clearer sign that the device is listening. When you start listening, the app now plays a short chime and the Listen button turns red and gently pulses while the microphone is on. The chime is an audible heads-up for the person you're talking with — they're facing you, not the screen — that the device has started listening. You can turn the chime off in Settings → Conversation (\"Play a chime when listening starts\"); it's on by default."
   ],
   "0.5.95": [
     "No more flicker when you pick a response. Selecting a response card no longer makes a scrollbar flash across the whole screen and the command buttons and cards briefly shrink and jump left. Only the conversation area scrolls now, and the buttons stay put.",
