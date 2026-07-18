@@ -13,6 +13,8 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+## Version 0.5.94
+
 - **The app now tells you when your API key is missing or looks wrong.** On the opening
   screen, if you haven't added your Claude API key yet, a clear notice appears above Start
   explaining the AI can't suggest responses until you add one (you can still Start and speak
