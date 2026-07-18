@@ -562,8 +562,16 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
     color: #fff;
 }
 
+/* Recording indicator (Ken, July 18 2026) — the Listen button turns red and the
+   whole button slowly brightens and dims (the fill breathes) while the mic is live,
+   so it reads as "recording" without any screen-wide frame. */
 #listenBtn.listening {
     background: #c0392b;
+    animation: listen-btn-pulse 2s ease-in-out infinite;
+}
+@keyframes listen-btn-pulse {
+    0%, 100% { filter: brightness(0.9); }
+    50%      { filter: brightness(1.3); }
 }
 
 /* "Don't save" toggle — selected (private) state is a filled amber button so the
@@ -767,6 +775,8 @@ body.conv-bottom .palette-grid {
 @media (prefers-reduced-motion: reduce) {
     .palette-grid.palette-enter { animation: none; }
     .response-card { transition: none; }
+    /* Keep the recording indicator visible, just steady (no pulse). */
+    #listenBtn.listening { animation: none; }
 }
 
 /* The response card (§4). Slot color: tinted fill, hued left border + badge. */
@@ -1484,13 +1494,24 @@ dialog select {
     text-align: center;
 }
 #apiKeyPrompt[hidden] { display: none; }
-.apikey-prompt-title { margin: 0 0 0.35rem; font-weight: 700; color: #7a5300; }
-.apikey-prompt-body  { margin: 0 0 0.8rem; color: #5a4a1e; line-height: 1.45; }
+.apikey-prompt-title { margin: 0 0 0.9rem; font-weight: 700; color: #7a5300; line-height: 1.45; }
+.apikey-prompt-actions {
+    display: flex;
+    gap: 0.6rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
 #apiKeyPromptBtn {
+    background: #fff; color: #7a5300; border: 2px solid #d99a00;
+    padding: 0.7rem 1.4rem; border-radius: 8px; font-size: 1rem; cursor: pointer;
+}
+#apiKeyPromptBtn:hover { background: #fdeec2; }
+/* Continue is the primary action — proceed into the app (the API key is optional). */
+.apikey-continue {
     background: #2c3e50; color: #fff; border: none;
     padding: 0.7rem 1.4rem; border-radius: 8px; font-size: 1rem; cursor: pointer;
 }
-#apiKeyPromptBtn:hover { background: #22303d; }
+.apikey-continue:hover { background: #22303d; }
 
 #testVoiceBtn {
     margin-top: 0.4rem;

@@ -26,6 +26,7 @@ const SHELL = [
   './js/ui.js',
   './js/storage.js',
   './js/placeholders.js',
+  './js/chime.js',
   './js/engine.js',
   './js/conversation-logic.js',
   './js/transcript-log.js',

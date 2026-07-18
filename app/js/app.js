@@ -18,6 +18,7 @@ import * as expressEditor from './express-editor.js';
 import * as controlPhrases from './control-phrases.js';
 import * as controlEditor from './control-phrases-editor.js';
 import * as whatsNew from './whats-new.js';
+import * as chime from './chime.js';
 import { confirmDanger } from './confirm-dialog.js';
 
 // Point-release version shown in Settings → About. Bump alongside the
@@ -183,6 +184,11 @@ function initApp() {
         return;
     }
 
+    // Recording indicator: whether the start-of-listening chime is enabled
+    // (partner-awareness cue — see chime.js). Applied here so it's active before
+    // the first listen; also live-updated from Settings.
+    chime.setEnabled(storage.loadListenChime());
+
     const savedThreshold = storage.loadSilenceThreshold();
     stt.setSilenceThreshold(savedThreshold);
 
@@ -217,8 +223,10 @@ function initApp() {
     });
 
     document.getElementById('startBtn').addEventListener('click', handleStart);
-    // The pre-start "no API key" prompt's button just opens Settings (General tab).
+    // API-key notice (step 3 of the pre-start sequence): "Add an API key" opens
+    // Settings; "Continue" proceeds into the conversation without a key.
     document.getElementById('apiKeyPromptBtn').addEventListener('click', openSettings);
+    document.getElementById('apiKeyContinueBtn').addEventListener('click', finishStart);
     ui.onListenClick(toggleListening);
     ui.onRegenerateClick(handleRegenerate);
     ui.onSpeakClick(handleSpeakComposed);
@@ -315,7 +323,8 @@ function initApp() {
         // block over the transcript). Keep the aria-live status for screen readers.
         ui.setStatus('No API key set — open Settings to add your Claude API key');
     }
-    refreshApiKeyPrompt();
+    // The visible "no API key" notice is NOT shown here — it's step 3 of the
+    // pre-start sequence (afterWhatsNew), so it never overlaps the upgrade screen.
 }
 
 // --- API key surfaces (Ken, July 2026) -----------------------------------------
@@ -323,7 +332,8 @@ function initApp() {
 // user to add a key; neither existed. Three surfaces: (1) a format warning under the
 // API Key field as you type; (2) a "Test" button that verifies the key against the
 // API; (3) a visible "no API key yet" prompt on the pre-start screen (the hidden
-// status bar can't show one). refreshApiKeyPrompt drives (3); the two below drive (1)/(2).
+// status bar can't show one). Step 3 of the pre-start sequence (afterWhatsNew)
+// drives (3); the two functions below drive (1)/(2).
 
 function showApiKeyStatus(kind, msg) {
     const el = document.getElementById('apiKeyStatus');
@@ -345,13 +355,6 @@ function reflectApiKeyFormat() {
         : v.reason === 'whitespace' ? 'Remove the spaces — a key is one unbroken string.'
         : 'This looks too short — check you copied the whole key.';
     showApiKeyStatus('warn', msg);
-}
-
-// Show/hide the pre-start "no API key" prompt based on whether a key is saved.
-function refreshApiKeyPrompt() {
-    const prompt = document.getElementById('apiKeyPrompt');
-    if (!prompt) return;
-    prompt.hidden = !!(storage.loadApiKey() || '').trim();
 }
 
 function handleSpeechResult(liveText) {
@@ -447,26 +450,43 @@ async function handleStart() {
     // Fresh conversation state for this session.
     engine.reset();
     ui.showEngineState(engine.getSnapshot());
-    // Post-update "What's new" notice (Ken, July 4 2026). The app has already
-    // re-rendered itself after the update (the auto-update reload happens on load),
-    // so the transcript's location is known. If there's something to announce, show
-    // it as a card IN the transcript region (a keyguard opening, so nothing is
-    // obscured — Spatial Stability), hiding the Start button; "Got it" dismisses it
-    // and enters the conversation. Otherwise enter the conversation now.
+    // Pre-start screens run in a strict SEQUENCE, never overlapping (Ken, July 18
+    // 2026): Start (greyed screen) → the "What's new" upgrade screen (Close) → the
+    // API-key notice (Continue) → the conversation. Each step hands off to the next
+    // only when dismissed, so the API-key notice never sits on top of the upgrade
+    // screen. Both intermediate screens are optional and skipped when not needed.
     const whatsNewNotes = whatsNew.pending(APP_VERSION);
     if (whatsNewNotes.length) {
-        document.getElementById('startBtn').hidden = true;   // panel carries its own "Got it"
-        whatsNew.renderPanel(APP_VERSION, whatsNewNotes, finishStart);
+        // Step 2 — upgrade screen. The app has already re-rendered post-update, so
+        // the transcript's location is known; the panel fills that region (a
+        // keyguard opening — Spatial Stability). "Close" advances to step 3.
+        document.getElementById('startBtn').hidden = true;   // panel carries its own "Close"
+        whatsNew.renderPanel(APP_VERSION, whatsNewNotes, afterWhatsNew);
+    } else {
+        afterWhatsNew();
+    }
+}
+
+// Step 3 — the API-key notice, shown only when no key is set (informational: the
+// app works without one). "Continue" enters the conversation; "Add an API key"
+// opens Settings. When a key IS set, skip straight into the conversation.
+function afterWhatsNew() {
+    const hasKey = !!(storage.loadApiKey() || '').trim();
+    const prompt = document.getElementById('apiKeyPrompt');
+    if (!hasKey && prompt) {
+        document.getElementById('startBtn').hidden = true;   // Continue is the proceed control here
+        document.getElementById('whatsNewPanel').hidden = true;
+        prompt.hidden = false;
     } else {
         finishStart();
     }
 }
 
-// Leave the pre-start screen and enter the conversation: hide the start block and
-// un-dim the conversation surface. Called either directly (no notice) or from the
-// "What's new" panel's "Got it" (after the user reads it).
+// Leave the pre-start sequence and enter the conversation: hide the start block and
+// un-dim the conversation surface. The end of the Start → upgrade → API-key chain.
 function finishStart() {
     document.getElementById('startBtn').hidden = false;   // restore for any later start screen
+    document.getElementById('apiKeyPrompt').hidden = true;
     document.getElementById('startBlock').classList.add('hidden');
     document.querySelector('main').classList.remove('disabled');
 }
@@ -1881,6 +1901,7 @@ function openSettings() {
     const voiceSelect = document.getElementById('voiceSelect');
     const silenceThresholdInput = document.getElementById('silenceThresholdInput');
     const autoRelistenInput = document.getElementById('autoRelistenInput');
+    const listenChimeInput = document.getElementById('listenChimeInput');
     const initialDelayInput = document.getElementById('initialDelayInput');
     const subsequentDelayInput = document.getElementById('subsequentDelayInput');
     const maxPlaceholdersInput = document.getElementById('maxPlaceholdersInput');
@@ -1890,6 +1911,7 @@ function openSettings() {
     populateVoiceSelect();
     silenceThresholdInput.value = storage.loadSilenceThreshold();
     autoRelistenInput.checked = storage.loadAutoRelisten();
+    listenChimeInput.checked = storage.loadListenChime();
     responsesPerCategoryInput.value = storage.loadResponsesPerCategory();
     const keyboardMode = storage.loadKeyboardMode();
     const keyboardRadio = document.querySelector(`input[name="keyboardMode"][value="${keyboardMode}"]`);
@@ -2107,7 +2129,6 @@ function openSettings() {
         llm.setApiKey(key);
         storage.saveApiKey(key);
         reflectApiKeyFormat();     // red warning under the field if it looks malformed
-        refreshApiKeyPrompt();     // clear/show the pre-start "no key" prompt
     };
     reflectApiKeyFormat();          // reflect the current saved value on open
     // Paste button beside the API-key field — replaces the keyboard's removed
@@ -2147,6 +2168,10 @@ function openSettings() {
         storage.saveSilenceThreshold(threshold);
     };
     autoRelistenInput.onchange = () => storage.saveAutoRelisten(autoRelistenInput.checked);
+    listenChimeInput.onchange = () => {
+        storage.saveListenChime(listenChimeInput.checked);
+        chime.setEnabled(listenChimeInput.checked);
+    };
     responsesPerCategoryInput.onchange = () => {
         const n = Number(responsesPerCategoryInput.value);
         storage.saveResponsesPerCategory(n);

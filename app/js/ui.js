@@ -1,4 +1,5 @@
 import { setIconButton } from './icons.js';
+import * as chime from './chime.js';
 
 const responseOptions = document.getElementById('responseOptions');
 const statusBar = document.getElementById('statusBar');
@@ -512,6 +513,15 @@ export function setStatus(message) {
 }
 
 export function setListenButtonState(listening) {
+    // Recording indicator (Ken, July 18 2026). The transition INTO capture is the
+    // single choke point for the start-of-listening chime — audible, so it reaches a
+    // partner not looking at the screen. Only on the false→true edge: the recognizer's
+    // mid-session restarts don't re-emit 'listening', so this fires once per genuine
+    // listen start, not on every restart. `capturing` still holds the PREVIOUS state
+    // here (reassigned below). The on-screen half is the pulsing red Listen button
+    // (.listening) set below — no screen-wide frame.
+    if (listening && !capturing) chime.playListenChime();
+
     // Icon-only (Rule 4); the .listening (selected/red) state signals capture is
     // on (Rule 6 — a sticky action shown as a selected button).
     setIconButton(listenBtn, 'mic', listening ? 'Stop listening' : 'Start listening');

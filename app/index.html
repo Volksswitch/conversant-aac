@@ -41,9 +41,11 @@
                 <div id="startBlock">
                     <div id="whatsNewPanel" hidden></div>
                     <div id="apiKeyPrompt" hidden>
-                        <p class="apikey-prompt-title">No Claude API key yet</p>
-                        <p class="apikey-prompt-body">The AI can't suggest responses until you add your Anthropic API key. You can still start and use the app to speak in your own words.</p>
-                        <button id="apiKeyPromptBtn" type="button">Open Settings to add your key</button>
+                        <p class="apikey-prompt-title">To receive response suggestions from the AI, please provide an API key.</p>
+                        <div class="apikey-prompt-actions">
+                            <button id="apiKeyContinueBtn" type="button" class="apikey-continue">Close</button>
+                            <button id="apiKeyPromptBtn" type="button">Add API key to Settings</button>
+                        </div>
                     </div>
                     <button id="startBtn">Start</button>
                 </div>
@@ -327,6 +329,13 @@
                             Resume listening automatically after speaking a response
                         </label>
                         <p class="setting-hint">When on, partner recording turns back on by itself after you select a response and it is spoken — no need to tap Start Listening for the next exchange. Default is off.</p>
+                    </div>
+                    <div class="setting-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="listenChimeInput">
+                            Play a chime when listening starts
+                        </label>
+                        <p class="setting-hint">A short tone plays each time you start listening — an audible cue for the person you're talking with that the device is now listening (they're facing you, not the screen). Default is on.</p>
                     </div>
                     <div class="setting-group">
                         <label for="initialDelayInput">Initial placeholder delay</label>

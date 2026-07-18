@@ -297,6 +297,18 @@ export function saveAutoRelisten(enabled) {
     saveSettings(settings);
 }
 
+// Start-of-listening chime — an audible cue for the communication partner that
+// capture has begun (see chime.js). Default on. Machine-independent preference.
+export function loadListenChime() {
+    return loadSettings().listenChime ?? true;
+}
+
+export function saveListenChime(enabled) {
+    const settings = loadSettings();
+    settings.listenChime = enabled;
+    saveSettings(settings);
+}
+
 // 'physical' (use the attached keyboard) | 'onscreen' (the app's own keyboard).
 // Default 'physical' — the primary Surface setup is the type cover in laptop
 // position, where Windows shows no keyboard and the physical one is in use.
