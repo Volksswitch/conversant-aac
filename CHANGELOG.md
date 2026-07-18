@@ -13,6 +13,8 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+## Version 0.5.95
+
 - **No more flicker when you pick a response.** Selecting a response card no longer makes a
   scrollbar flash across the whole screen and the command buttons and cards briefly shrink
   and jump left. Only the conversation area scrolls now, and the buttons stay put.
