@@ -19,6 +19,7 @@ import * as controlPhrases from './control-phrases.js';
 import * as controlEditor from './control-phrases-editor.js';
 import * as whatsNew from './whats-new.js';
 import * as chime from './chime.js';
+import * as practiceScenarios from './practice-scenarios.js';
 import { confirmDanger } from './confirm-dialog.js';
 
 // Point-release version shown in Settings → About. Bump alongside the
@@ -29,6 +30,10 @@ const APP_VERSION = '0.5.97';
 const conversationHistory = [];
 let isListening = false;
 let lastPalette = [];
+// Practice Mode (§8): the AI plays the partner; the mic is bypassed. When active,
+// the listen/response/teardown paths fork to the practice equivalents below.
+let practiceMode = false;
+let practiceScenario = null;
 // Raw, combined speech-to-text for the partner's current (uncommitted) turn.
 // Grows across silence periods until the user picks a response.
 let currentPartnerText = '';
@@ -227,6 +232,8 @@ function initApp() {
     // Settings; "Continue" proceeds into the conversation without a key.
     document.getElementById('apiKeyPromptBtn').addEventListener('click', openSettings);
     document.getElementById('apiKeyContinueBtn').addEventListener('click', finishStart);
+    // Practice Mode launcher (pre-start screen) → the scenario picker.
+    document.getElementById('practiceBtn').addEventListener('click', openPracticePicker);
     ui.onListenClick(toggleListening);
     ui.onRegenerateClick(handleRegenerate);
     ui.onSpeakClick(handleSpeakComposed);
@@ -492,6 +499,10 @@ function finishStart() {
 }
 
 function toggleListening() {
+    // Practice Mode: "Start Listening" does NOT open the mic — it cues the AI
+    // partner to speak, reinforcing the same step (and honoring the same
+    // manualListenArmed / auto-resume gate) as a real conversation.
+    if (practiceMode) return togglePracticeCue();
     if (isListening) {
         // Manual stop: disarm auto-resume until the user starts again.
         manualListenArmed = false;
@@ -658,14 +669,18 @@ async function handleResponseSelected(response, index) {
     // talking (resumed after the options appeared), grab what they'd said, not just
     // the last checkpoint's text.
     const raw = heardPartnerText();
-    stt.stopListening();
-    // Discard the STT buffer now that the partner turn has been consumed.
-    // stopListening() leaves accumulatedText intact, so without this a follow-up
-    // selection whose mic never restarts (e.g. re-offered closings with
-    // auto-resume off) would read the SAME partner speech back out of
-    // heardPartnerText() and re-commit it — the last utterance appearing once per
-    // closing pick (Ken, July 10 2026).
-    stt.resetTranscript();
+    // In Practice Mode there is no mic — the partner line lives in currentPartnerText
+    // (set when it was fed through the pipeline), and touching STT is unnecessary.
+    if (!practiceMode) {
+        stt.stopListening();
+        // Discard the STT buffer now that the partner turn has been consumed.
+        // stopListening() leaves accumulatedText intact, so without this a follow-up
+        // selection whose mic never restarts (e.g. re-offered closings with
+        // auto-resume off) would read the SAME partner speech back out of
+        // heardPartnerText() and re-commit it — the last utterance appearing once per
+        // closing pick (Ken, July 10 2026).
+        stt.resetTranscript();
+    }
     currentPartnerText = '';
 
     ui.setStatus('Speaking...');
@@ -865,11 +880,189 @@ async function commitExchange(raw, userText, index, opts = {}) {
 // Auto-resume only if the user has manually started listening this session (and
 // hasn't since manually stopped) — see manualListenArmed.
 function resumeOrIdle() {
+    if (practiceMode) return practiceResumeOrIdle();
     if (manualListenArmed && storage.loadAutoRelisten()) {
         startFreshListening();
     } else {
         ui.setTranscriptState('idle');
         ui.setStatus('Ready — tap Listen for the next exchange');
+    }
+}
+
+// --- Practice Mode (§8) --------------------------------------------------------
+// The AI plays the communication partner. "Start Listening" cues the partner (no
+// mic); the partner's line is spoken in a distinct voice and fed through the SAME
+// generation pipeline as a real utterance, so the user picks responses exactly as
+// in a real conversation. The listen gate (manualListenArmed + auto-resume) is the
+// real one, so practice rehearses the actual discipline.
+
+// Reverse of finishStart: bring the pre-start screen back (Start / Practice), used
+// when Practice ends.
+function showStartScreen() {
+    document.getElementById('whatsNewPanel').hidden = true;
+    document.getElementById('apiKeyPrompt').hidden = true;
+    document.getElementById('practicePicker').hidden = true;
+    document.getElementById('startBtn').hidden = false;
+    document.getElementById('practiceBtn').hidden = false;
+    document.getElementById('startBlock').classList.remove('hidden');
+    document.querySelector('main').classList.add('disabled');
+}
+
+// The voice the AI partner speaks in: the user's chosen partner voice, or — if
+// none set — the first available voice that isn't the user's own, so it's audibly
+// distinct out of the box.
+function pickPartnerVoice() {
+    const chosen = storage.loadPartnerVoice();
+    if (chosen) return chosen;
+    const own = tts.getSelectedVoiceURI();
+    const other = tts.getVoices().find(v => v.voiceURI !== own);
+    return other ? other.voiceURI : undefined;
+}
+
+// Practice launcher (pre-start screen). Requires an API key (the partner and the
+// response options are both AI-generated). Renders the scenario picker.
+function openPracticePicker() {
+    const picker = document.getElementById('practicePicker');
+    document.getElementById('startBtn').hidden = true;
+    document.getElementById('practiceBtn').hidden = true;
+    document.getElementById('whatsNewPanel').hidden = true;
+    document.getElementById('apiKeyPrompt').hidden = true;
+
+    picker.textContent = '';
+    const hasKey = !!(storage.loadApiKey() || '').trim();
+    if (!hasKey) {
+        // Practice needs the AI for both the partner and the response suggestions.
+        const msg = document.createElement('p');
+        msg.className = 'practice-note';
+        msg.textContent = 'Practice needs a Claude API key — the AI plays the other person and suggests your responses. Add one in Settings, then try again.';
+        const row = document.createElement('div');
+        row.className = 'practice-actions';
+        const settingsBtn = mkButton('Add API key to Settings', 'practice-add-key', () => { openPracticePickerBack(); openSettings(); });
+        const backBtn = mkButton('Back', 'practice-back', openPracticePickerBack);
+        row.append(settingsBtn, backBtn);
+        picker.append(msg, row);
+        picker.hidden = false;
+        return;
+    }
+
+    const title = document.createElement('h2');
+    title.className = 'practice-title';
+    title.textContent = 'Choose something to practice';
+    picker.appendChild(title);
+
+    const list = document.createElement('div');
+    list.className = 'practice-list';
+    for (const scenario of practiceScenarios.SCENARIOS) {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'practice-card';
+        const cat = document.createElement('span');
+        cat.className = 'practice-cat';
+        cat.textContent = scenario.category;
+        const name = document.createElement('span');
+        name.className = 'practice-name';
+        name.textContent = scenario.title;
+        const desc = document.createElement('span');
+        desc.className = 'practice-desc';
+        desc.textContent = scenario.description;
+        card.append(cat, name, desc);
+        card.addEventListener('click', () => startPractice(scenario));
+        list.appendChild(card);
+    }
+    picker.appendChild(list);
+
+    const backBtn = mkButton('Back', 'practice-back', openPracticePickerBack);
+    picker.appendChild(backBtn);
+    picker.hidden = false;
+}
+
+// Close the picker and return to the Start / Practice choice.
+function openPracticePickerBack() {
+    document.getElementById('practicePicker').hidden = true;
+    document.getElementById('startBtn').hidden = false;
+    document.getElementById('practiceBtn').hidden = false;
+}
+
+function mkButton(label, cls, onClick) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = cls;
+    b.textContent = label;
+    b.addEventListener('click', onClick);
+    return b;
+}
+
+// Enter Practice Mode with the chosen scenario: a fresh conversation, on the real
+// conversation screen, waiting for the user to tap Start Listening to cue the
+// partner (never auto-plays — reinforces the step).
+async function startPractice(scenario) {
+    practiceMode = true;
+    practiceScenario = scenario;
+    finishStart();                 // reveal the conversation screen
+    await terminateConversation(); // fresh conversation state + log (keeps practiceMode)
+    isListening = false;
+    manualListenArmed = false;
+    ui.setListenButtonState(false);
+    ui.setStatus(`Practice: ${scenario.title}. Tap Start Listening to hear the other person.`);
+}
+
+// The partner takes a turn: author their line, speak it in the partner voice, then
+// feed it through the normal pipeline so the user's response palette appears.
+async function advancePracticePartner() {
+    if (!practiceMode) return;
+    const token = ++generationToken;   // aborts if the user ends/pauses mid-generation
+    isListening = true;
+    ui.setListenButtonState(true);     // red pulse + chime (rehearse the "listening" feel)
+    ui.setStatus('The other person is speaking…');
+    let line;
+    try {
+        line = await llm.generatePartnerUtterance(practiceScenario, conversationHistory);
+    } catch (e) {
+        storage.logError('practice-partner', e.message || String(e), { partner: partnerStamp() });
+        ui.setStatus('Could not reach the AI. Check your API key and internet, then tap Start Listening.');
+        isListening = false;
+        ui.setListenButtonState(false);
+        return;
+    }
+    if (token !== generationToken || !practiceMode) return;   // superseded (ended/paused)
+    // Speak the partner's line in the DISTINCT partner voice. The mic is off in
+    // practice, so there's no echo to filter.
+    await tts.speak(line, { voiceURI: pickPartnerVoice() });
+    if (token !== generationToken || !practiceMode) return;
+    // Feed the spoken line through the normal pipeline (logs the partner turn,
+    // updates the engine, generates the user's response palette). Mic-free.
+    await handleSilencePeriod(line);
+}
+
+// "Start Listening" in practice: cue the partner (or pause if already in a turn).
+function togglePracticeCue() {
+    if (isListening) {
+        // Pause: stop the current partner turn and disarm auto-resume (mirrors a
+        // manual Stop). The user taps again to continue.
+        manualListenArmed = false;
+        isListening = false;
+        generationToken++;             // abort any in-flight partner/options generation
+        placeholders.stop();
+        tts.cancel();
+        ui.setListenButtonState(false);
+        ui.setStatus('Paused — tap Start Listening to continue.');
+    } else {
+        manualListenArmed = true;      // arm auto-resume for the rest of the session
+        advancePracticePartner();
+    }
+}
+
+// After the user responds in practice, either auto-cue the next partner turn (if
+// auto-resume is armed) or wait for the user to tap Start Listening — the SAME gate
+// as a real conversation.
+function practiceResumeOrIdle() {
+    if (manualListenArmed && storage.loadAutoRelisten()) {
+        advancePracticePartner();
+    } else {
+        isListening = false;
+        ui.setTranscriptState('idle');
+        ui.setListenButtonState(false);
+        ui.setStatus('Your turn is done — tap Start Listening to hear their reply.');
     }
 }
 
@@ -1233,6 +1426,11 @@ function handleWindDown() {
 // danger-confirm — it's the "hang up" control, and the conversation history is
 // already logged exchange-by-exchange.
 async function handleEndConversation() {
+    const wasPractice = practiceMode;
+    // Exit Practice Mode BEFORE teardown so the paths (resumeOrIdle, stamps) revert
+    // to real-conversation behavior.
+    practiceMode = false;
+    practiceScenario = null;
     await terminateConversation();
     // Ending a conversation clears the situation influencers — the next person /
     // mood shouldn't inherit this conversation's Partner & Feeling selections.
@@ -1240,7 +1438,14 @@ async function handleEndConversation() {
     // conversation reuses that and still needs the active Partner to personalize
     // its openers.)
     clearInfluencers();
-    ui.setStatus('Conversation ended — tap Start conversation or Listen to begin again');
+    if (wasPractice) {
+        // Practice was launched from the pre-start screen — return there so the user
+        // can pick another scenario or start a real conversation.
+        showStartScreen();
+        ui.setStatus('Practice ended');
+    } else {
+        ui.setStatus('Conversation ended — tap Start conversation or Listen to begin again');
+    }
 }
 
 // Clear the active Partner / Feeling toggles and refresh the panel so their
@@ -1373,6 +1578,12 @@ function buildSituationBlock() {
 // relationship graph, plus the display label; `feeling` keeps id + text. Each is
 // null when its toggle is off.
 function partnerStamp() {
+    // In Practice Mode the "partner" is the AI playing a scenario — flag every turn
+    // so the saved conversation is reviewable but clearly distinguishable from a real
+    // one (Ken: saved, flagged as practice).
+    if (practiceMode && practiceScenario) {
+        return { id: null, label: `Practice: ${practiceScenario.title}` };
+    }
     if (!activePartner) return null;
     return {
         id: activePartner.personId || null,
@@ -1720,6 +1931,29 @@ function populateVoiceSelect() {
     });
 }
 
+// Practice partner voice select — same voice list, with an "Auto" default that
+// picks a voice different from the user's own.
+function populatePartnerVoiceSelect() {
+    const select = document.getElementById('partnerVoiceSelect');
+    if (!select) return;
+    const voices = tts.getVoices();
+    const saved = storage.loadPartnerVoice();
+    select.innerHTML = '';
+
+    const autoOpt = document.createElement('option');
+    autoOpt.value = '';
+    autoOpt.textContent = 'Auto (a voice that isn\'t yours)';
+    select.appendChild(autoOpt);
+
+    voices.forEach(voice => {
+        const opt = document.createElement('option');
+        opt.value = voice.voiceURI;
+        opt.textContent = `${voice.name} (${voice.lang})`;
+        if (voice.voiceURI === saved) opt.selected = true;
+        select.appendChild(opt);
+    });
+}
+
 function fillLayoutSelect(select, layouts, selectedId) {
     select.innerHTML = '';
     layouts.forEach(({ id, name }) => {
@@ -1909,6 +2143,7 @@ function openSettings() {
 
     apiKeyInput.value = storage.loadApiKey() || '';
     populateVoiceSelect();
+    populatePartnerVoiceSelect();
     silenceThresholdInput.value = storage.loadSilenceThreshold();
     autoRelistenInput.checked = storage.loadAutoRelisten();
     listenChimeInput.checked = storage.loadListenChime();
@@ -2162,6 +2397,10 @@ function openSettings() {
         tts.setVoice(voiceURI);
         storage.saveVoiceURI(voiceURI);
     };
+    const partnerVoiceSelect = document.getElementById('partnerVoiceSelect');
+    if (partnerVoiceSelect) {
+        partnerVoiceSelect.onchange = () => storage.savePartnerVoice(partnerVoiceSelect.value || '');
+    }
     silenceThresholdInput.onchange = () => {
         const threshold = Number(silenceThresholdInput.value);
         stt.setSilenceThreshold(threshold);

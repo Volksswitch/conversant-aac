@@ -48,6 +48,10 @@
                         </div>
                     </div>
                     <button id="startBtn">Start</button>
+                    <button id="practiceBtn" type="button">Practice a conversation</button>
+                    <!-- Practice Mode scenario picker (rendered by app.js) — overlays
+                         the transcript region like the other pre-start panels. -->
+                    <div id="practicePicker" hidden></div>
                 </div>
             </section>
 
@@ -243,6 +247,11 @@
                         <label for="voiceSelect">Voice</label>
                         <select id="voiceSelect"></select>
                         <button id="testVoiceBtn" type="button">Test</button>
+                    </div>
+                    <div class="setting-group">
+                        <label for="partnerVoiceSelect">Practice partner voice</label>
+                        <select id="partnerVoiceSelect"></select>
+                        <p class="setting-hint">In Practice Mode, the AI plays the other person. Give them a different voice from yours so you can tell who's speaking. "Auto" picks a voice that isn't yours.</p>
                     </div>
                     <div class="setting-group">
                         <label>Keyboard for typing</label>

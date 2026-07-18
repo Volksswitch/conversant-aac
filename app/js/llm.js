@@ -242,6 +242,60 @@ ${JSON.stringify(context)}${buildProfileBlock()}${avoidBlock}${steerBlock}${perC
     return parseGeneration(data.content[0].text.trim());
 }
 
+// Practice Mode (§8): the AI plays the communication PARTNER. Given a scenario
+// persona and the conversation so far, produce the partner's next spoken line. The
+// ROLES ARE INVERTED from generateResponses — here the model IS the partner, so the
+// partner's own prior lines are 'assistant' and the user's responses are 'user'.
+// Returns a plain string (the words to speak). Requires a key like any generation.
+export async function generatePartnerUtterance(scenario, conversationHistory = []) {
+    if (!apiKey) throw new Error('API key not set');
+
+    const systemPrompt = `You are role-playing a communication partner so a non-speaking AAC user can PRACTICE having a conversation. ${scenario.partnerPersona}
+
+The register is: ${scenario.register}.
+
+Produce ONLY your next spoken line, as the partner — the exact words you would say out loud. Rules:
+- One short, natural turn (usually one or two sentences). It is spoken aloud, so keep it easy to follow.
+- Speak directly to the user in the first person. Use their name only if it is natural.
+- Output ONLY the words you speak — no quotation marks, no stage directions, no narration, no role labels.
+- React naturally to what the user just said and keep the conversation moving. If the conversation is just beginning, greet them and open the scenario.
+- Stay in character and appropriate to the register at all times.`;
+
+    const messages = conversationHistory.map(entry => ({
+        role: entry.role === 'partner' ? 'assistant' : 'user',
+        content: entry.text
+    }));
+    // The API requires a non-empty messages array starting with a 'user' turn. When
+    // the partner opens (no history, or history that starts with the partner's own
+    // line), prime it with a neutral cue so the model produces the opening line.
+    if (messages.length === 0 || messages[0].role !== 'user') {
+        messages.unshift({ role: 'user', content: '(Begin the conversation.)' });
+    }
+
+    const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({ model: MODEL, max_tokens: 200, system: systemPrompt, messages })
+    });
+
+    if (!response.ok) {
+        const err = await response.text();
+        throw new Error(`API error ${response.status}: ${err}`);
+    }
+
+    const data = await response.json();
+    trackUsage(data);
+    let line = data.content[0].text.trim();
+    // Strip a stray wrapping pair of quotes the model sometimes adds.
+    line = line.replace(/^["'“”']+/, '').replace(/["'“”']+$/, '').trim();
+    return line;
+}
+
 // Reframe-to-lead (Ken): the user HOLDS THE FLOOR (they just responded, or the
 // conversation is between turns) and wants to STEER the conversation somewhere.
 // They typed a direction in the "In your own words" box and hit Reframe. Instead

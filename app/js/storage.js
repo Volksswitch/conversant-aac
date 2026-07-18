@@ -309,6 +309,18 @@ export function saveListenChime(enabled) {
     saveSettings(settings);
 }
 
+// Practice Mode partner voice — the voice the AI communication partner speaks in,
+// distinct from the user's own voice. Empty/null → auto-pick a different voice.
+export function loadPartnerVoice() {
+    return loadSettings().partnerVoiceURI || '';
+}
+
+export function savePartnerVoice(voiceURI) {
+    const settings = loadSettings();
+    settings.partnerVoiceURI = voiceURI || '';
+    saveSettings(settings);
+}
+
 // 'physical' (use the attached keyboard) | 'onscreen' (the app's own keyboard).
 // Default 'physical' — the primary Surface setup is the type cover in laptop
 // position, where Windows shows no keyboard and the physical one is in use.

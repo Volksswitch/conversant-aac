@@ -33,17 +33,21 @@ export function getSelectedVoiceURI() {
     return selectedVoiceURI;
 }
 
-function findVoice() {
-    if (!selectedVoiceURI) return null;
-    return synth.getVoices().find(v => v.voiceURI === selectedVoiceURI) || null;
+function findVoice(voiceURI) {
+    const uri = voiceURI || selectedVoiceURI;
+    if (!uri) return null;
+    return synth.getVoices().find(v => v.voiceURI === uri) || null;
 }
 
-export function speak(text) {
+// speak(text, opts). opts.voiceURI overrides the user's selected voice for this
+// utterance — used by Practice Mode so the AI partner speaks in a DISTINCT voice
+// from the user, making partner-vs-self clear aurally.
+export function speak(text, opts = {}) {
     return new Promise((resolve) => {
         if (synth.speaking) synth.cancel();
         const myToken = ++speakToken;
         const utterance = new SpeechSynthesisUtterance(text);
-        const voice = findVoice();
+        const voice = findVoice(opts.voiceURI);
         if (voice) utterance.voice = voice;
         const finish = () => {
             // Only report the end if no newer speak()/cancel() superseded this
