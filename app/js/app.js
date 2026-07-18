@@ -1561,6 +1561,14 @@ function renderExpressPanel() {
 // is also a known person; this just adds "you're talking with them right now".
 function buildSituationBlock() {
     const lines = [];
+    // Practice Mode: the response-generation call goes through the normal path and
+    // otherwise has NO idea it's a role-play — so ground it in the scenario, or it
+    // suggests responses that don't fit the setting (e.g. root beer at a coffee
+    // shop). The partner-authoring call already gets the full persona; this grounds
+    // the USER's suggested responses to the same setting.
+    if (practiceMode && practiceScenario) {
+        lines.push(`This is a PRACTICE role-play. The situation is: ${practiceScenario.title} (${practiceScenario.register}). Keep every suggested response realistic and appropriate to THIS setting — only refer to things that would actually make sense here.`);
+    }
     if (activePartner) {
         const label = (activePartner.nickname || activePartner.name || '').trim();
         if (label) lines.push(`You are currently talking with ${label}. When you address or refer to them, use "${label}".`);
