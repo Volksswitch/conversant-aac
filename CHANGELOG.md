@@ -13,6 +13,16 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+- **No more flicker when you pick a response.** Selecting a response card no longer makes a
+  scrollbar flash across the whole screen and the command buttons and cards briefly shrink
+  and jump left. Only the conversation area scrolls now, and the buttons stay put.
+- **The conversation scrollbar is wider and easier to grab.** The scrollbar on the
+  conversation area is now a chunky, high-contrast bar — much easier to use with limited
+  hand control.
+- **Your spoken statements now sit in a neat bubble.** Each of your statements in the
+  conversation is now only as wide as its words (a bubble on the right), instead of a wide
+  blue band that stretched most of the way across.
+
 ## Version 0.5.94
 
 - **The app now tells you when your API key is missing or looks wrong.** On the opening

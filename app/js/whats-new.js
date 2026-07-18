@@ -21,6 +21,11 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.5.95": [
+    "No more flicker when you pick a response. Selecting a response card no longer makes a scrollbar flash across the whole screen and the command buttons and cards briefly shrink and jump left. Only the conversation area scrolls now, and the buttons stay put.",
+    "The conversation scrollbar is wider and easier to grab. The scrollbar on the conversation area is now a chunky, high-contrast bar — much easier to use with limited hand control.",
+    "Your spoken statements now sit in a neat bubble. Each of your statements in the conversation is now only as wide as its words (a bubble on the right), instead of a wide blue band that stretched most of the way across."
+  ],
   "0.5.94": [
     "The app now tells you when your API key is missing or looks wrong. On the opening screen, if you haven't added your Claude API key yet, a clear notice appears above Start explaining the AI can't suggest responses until you add one (you can still Start and speak in your own words). In Settings → General, typing a key that doesn't look right (wrong start, spaces, too short) shows a red note under the field.",
     "New \"Test\" button for your API key (Settings → General, next to Paste). Tap it to check your key against Anthropic — it tells you \"✓ Your key is working\" or \"✗ The key was rejected,\" which catches a key that was pasted incompletely. The test costs nothing."

@@ -209,7 +209,14 @@ body.conv-bottom     main { flex-direction: column; }
        transcript, since a rail surrounds them too). */
     gap: var(--grid-gap);
     padding: var(--grid-gap);
-    overflow: auto;
+    /* NEVER scroll here. #mainArea holds the transcript AND the command bar AND the
+       response palette; a scrollbar on it shrinks the width of ALL three at once. The
+       transcript (.transcript-log) is the ONLY intended scroll container. Before this
+       was `overflow: auto`, so appending a turn on a card tap momentarily overflowed
+       mainArea → a transient scrollbar spanning all regions → the command buttons and
+       cards jumped left (Ken, July 2026). `clip` (falls back to hidden) never paints a
+       scrollbar; the transcript's own overflow-y absorbs the growth. */
+    overflow: clip;
 }
 
 /* Dock area — same footprint as the keyboard so one keyguard overlays both. */
@@ -398,6 +405,27 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
     box-shadow: none;
     transition: background-color 0.25s ease, border-color 0.25s ease;
 }
+/* Wide, high-contrast scrollbar for limited motor control (Ken, July 2026) —
+   matches the About Me / Settings treatment (v0.2.23). The transcript is the ONLY
+   conversation-screen scroll container, so this is the only scrollbar the user
+   drives during a conversation; the default ~11px bar is hard to grab. Chromium
+   (Edge/Chrome, the Surface browsers) honours ::-webkit-scrollbar width. */
+.transcript-log::-webkit-scrollbar {
+    width: 22px;
+}
+.transcript-log::-webkit-scrollbar-track {
+    background: #e2e6ea;
+    border-radius: 11px;
+}
+.transcript-log::-webkit-scrollbar-thumb {
+    background: #8a97a4;
+    border-radius: 11px;
+    border: 3px solid #e2e6ea;   /* track-coloured inset around the thumb */
+}
+.transcript-log::-webkit-scrollbar-thumb:hover,
+.transcript-log::-webkit-scrollbar-thumb:active {
+    background: #66727e;
+}
 /* Error heads-up: a faint-red wash (+ red border) on the transcript box when the
    app has logged an error this conversation. Deliberately subtle — signals "a
    hiccup occurred, expect a deviation / report it" without a worded message.
@@ -411,6 +439,12 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
 /* Turn entries — partner vs user styled DIFFERENTLY (distinct font, color,
    side). */
 .turn {
+    /* Shrink the coloured bubble to its text (a block div would otherwise fill the
+       whole 88% width, so a short user turn showed a wide blue box with the text
+       hugging the right and empty colour to the left — Ken, July 2026). fit-content
+       + the margin-auto below makes proper chat bubbles: partner hugs left, user
+       hugs right, each only as wide as its words; max-width still wraps long turns. */
+    width: fit-content;
     max-width: 88%;
     margin: 0.25rem 0;
     padding: 0.4rem 0.7rem;
