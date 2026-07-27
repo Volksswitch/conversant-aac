@@ -238,3 +238,174 @@ test('setConversationPhrases still accepts a legacy `closers` list as wind-downs
         'a legacy closers list maps onto the wind-downs (the list the button used to show)');
     engine.setConversationPhrases({ windDowns: ['I should get going.'] });  // restore
 });
+
+// --- Closed-set (alternative-question) turns ----------------------------------
+// The partner offers an explicit menu ("mild, moderate, or severe?"). The doctor
+// practice scenario surfaced the defect this covers: the palette came back as four
+// structural variations on ONE alternative, so the other two the partner actually
+// offered were unreachable (Ken, July 2026).
+
+const choiceResult = {
+    classification: {
+        partner_action: 'QUESTION',
+        turn_status: 'COMPLETE',
+        is_repair_initiator: false,
+        offered_options: ['mild', 'moderate', 'severe'],
+    },
+    responses: [
+        { slot: 'CHOICE', text: "It's been pretty mild.", hint: 'mild' },
+        { slot: 'CHOICE', text: "I'd call it moderate.", hint: 'moderate' },
+        { slot: 'CHOICE', text: "Honestly, it's been severe.", hint: 'severe' },
+        { slot: 'CHOICE_OTHER', text: "It's somewhere between mild and moderate.", hint: 'in between' },
+    ],
+};
+
+test('closed set: palette offers every alternative the partner named, in order', () => {
+    engine.reset();
+    engine.partnerSpeaking('Would you say the tiredness is mild, moderate, or severe?');
+    const s = engine.ingestClassification(choiceResult, 'Would you say the tiredness is mild, moderate, or severe?');
+    assert.equal(s.mode, engine.MODE.RESPONDING);
+    assert.deepEqual(s.palette.map(p => p.hint), ['mild', 'moderate', 'severe', 'in between'],
+        'each offered alternative gets its own card, in the order the partner offered them');
+    assert.equal(s.palette.filter(p => p.slot === engine.SLOT.CHOICE).length, 3);
+    assert.equal(s.palette[3].slot, engine.SLOT.CHOICE_OTHER, 'the escape hatch sorts last');
+});
+
+test('closed set: cards speak a full sentence, never the bare option label', () => {
+    engine.reset();
+    const s = engine.ingestClassification(choiceResult, 'Mild, moderate, or severe?');
+    for (const card of s.palette) {
+        assert.ok(card.text.split(/\s+/).length > 1, `"${card.text}" should be a sentence, not a bare label`);
+        assert.equal(card.latency, 'instant', 'a choice card is already written — no round-trip on selection');
+    }
+});
+
+test('closed set: no CHOICE card carries one of the four structural slots', () => {
+    // The renderer groups by the four category slots the moment ANY card uses one,
+    // which would drop the choice cards. Keeping them a separate slot family is what
+    // makes them lay out one-per-cell.
+    engine.reset();
+    const s = engine.ingestClassification(choiceResult, 'Mild, moderate, or severe?');
+    const structural = ['PREFERRED', 'DISPREFERRED', 'INITIATIVE', 'REPAIR'];
+    assert.ok(s.palette.every(p => !structural.includes(p.slot)),
+        'choice cards must not use the category slots, or the renderer groups them into four cells');
+});
+
+test('closed set: offered_options is recorded on the classification', () => {
+    engine.reset();
+    const s = engine.ingestClassification(choiceResult, 'Mild, moderate, or severe?');
+    assert.deepEqual(s.lastClassification.offered_options, ['mild', 'moderate', 'severe']);
+});
+
+test('ordinary turn: offered_options defaults to empty, four slots unchanged', () => {
+    engine.reset();
+    const s = engine.ingestClassification(COMPLETE('QUESTION', fourSlots), 'How have you been feeling?');
+    assert.deepEqual(s.lastClassification.offered_options, []);
+    assert.deepEqual(s.palette.map(p => p.slot), ['PREFERRED', 'DISPREFERRED', 'INITIATIVE', 'REPAIR']);
+});
+
+test('closed set: a two-way question fills the spare cells rather than leaving them empty', () => {
+    // Two alternatives leave two cells free; an empty cell is something the user
+    // cannot say, so the model fills them (here: a second out-of-set answer and a
+    // question back). Order must be choices → other → ask → repair.
+    engine.reset();
+    const s = engine.ingestClassification({
+        classification: {
+            partner_action: 'QUESTION', turn_status: 'COMPLETE', is_repair_initiator: false,
+            offered_options: ['better', 'worse'],
+        },
+        responses: [
+            { slot: 'CHOICE', text: "Better, I think.", hint: 'better' },
+            { slot: 'CHOICE', text: "Worse, honestly.", hint: 'worse' },
+            { slot: 'CHOICE_OTHER', text: "About the same.", hint: 'about the same' },
+            { slot: 'CHOICE_ASK', text: "What should I be watching for?", hint: 'ask them' },
+        ],
+    }, 'Is the pain better or worse?');
+    assert.deepEqual(s.palette.map(p => p.slot),
+        ['CHOICE', 'CHOICE', 'CHOICE_OTHER', 'CHOICE_ASK']);
+    assert.equal(s.palette.length, 4, 'all four cells earn their keep');
+});
+
+test('closed set: fillers sort after the choices in usefulness order', () => {
+    engine.reset();
+    // Deliberately shuffled — the engine must order them, not the model.
+    const s = engine.ingestClassification({
+        classification: {
+            partner_action: 'QUESTION', turn_status: 'COMPLETE', is_repair_initiator: false,
+            offered_options: ['tea', 'coffee'],
+        },
+        responses: [
+            { slot: 'CHOICE_REPAIR', text: 'Sorry, what were the options?', hint: 'say again' },
+            { slot: 'CHOICE_ASK', text: 'What are you having?', hint: 'ask them' },
+            { slot: 'CHOICE', text: 'Tea, please.', hint: 'tea' },
+            { slot: 'CHOICE_OTHER', text: 'Neither, thanks.', hint: 'neither' },
+            { slot: 'CHOICE', text: 'Coffee, please.', hint: 'coffee' },
+        ],
+    }, 'Tea or coffee?');
+    assert.deepEqual(s.palette.map(p => p.hint),
+        ['tea', 'coffee', 'neither', 'ask them', 'say again']);
+});
+
+test('closed set: two out-of-set answers are both allowed, in the order given', () => {
+    engine.reset();
+    const s = engine.ingestClassification({
+        classification: {
+            partner_action: 'QUESTION', turn_status: 'COMPLETE', is_repair_initiator: false,
+            offered_options: ['better', 'worse'],
+        },
+        responses: [
+            { slot: 'CHOICE', text: 'Better.', hint: 'better' },
+            { slot: 'CHOICE', text: 'Worse.', hint: 'worse' },
+            { slot: 'CHOICE_OTHER', text: 'About the same.', hint: 'about the same' },
+            { slot: 'CHOICE_OTHER', text: 'It comes and goes.', hint: 'comes and goes' },
+        ],
+    }, 'Better or worse?');
+    assert.deepEqual(s.palette.map(p => p.hint),
+        ['better', 'worse', 'about the same', 'comes and goes']);
+});
+
+test('closed set: every filler stays outside the four structural slots', () => {
+    // If any filler used a category slot the renderer would group the palette into
+    // the four category cells and drop every choice card.
+    const structural = ['PREFERRED', 'DISPREFERRED', 'INITIATIVE', 'REPAIR'];
+    for (const slot of [engine.SLOT.CHOICE, engine.SLOT.CHOICE_OTHER, engine.SLOT.CHOICE_ASK, engine.SLOT.CHOICE_REPAIR]) {
+        assert.ok(!structural.includes(slot), `${slot} must not collide with a category slot`);
+    }
+});
+
+// --- Declining the partner's closing ------------------------------------------
+// A pre-closing is an OFFER to end, and CA makes declining it ("Actually, before
+// you go —") relevant at exactly that moment. Before this the palette offered only
+// goodbyes, so the user could accept the closing or leave the palette entirely.
+
+test('declining the closing returns the conversation to its body', () => {
+    engine.reset();
+    // Partner initiates a closing → pre-closing phase, goodbyes offered.
+    engine.ingestClassification(COMPLETE('CLOSING'), 'Anyway, I should let you go.');
+    const closing = engine.getSnapshot();
+    assert.equal(closing.phase, 'PRE_CLOSING');
+    assert.equal(closing.mode, engine.MODE.PRE_CLOSING_CLOSING);
+
+    // The user declines — the conversation is open again.
+    const s = engine.reopenFromClosing();
+    assert.equal(s.phase, 'BODY', 'a declined closing puts the conversation back in its body');
+    assert.equal(s.mode, engine.MODE.LISTENING);
+    assert.equal(s.floor, engine.FLOOR.OPEN);
+    assert.deepEqual(s.palette, [], 'the goodbyes are dropped');
+});
+
+test('selectResponse alone does NOT leave pre-closing (why reopenFromClosing exists)', () => {
+    // selectResponse deliberately keeps PRE_CLOSING_CLOSING — a closing in progress
+    // stays in progress — so declining needs its own explicit exit. If this ever
+    // changes, reopenFromClosing becomes redundant rather than wrong.
+    engine.reset();
+    engine.ingestClassification(COMPLETE('CLOSING'), 'I should get going.');
+    engine.selectResponse({ text: 'Bye!' });
+    assert.equal(engine.getSnapshot().mode, engine.MODE.PRE_CLOSING_CLOSING);
+});
+
+test('CLOSING_DECLINE is not one of the four structural slots', () => {
+    // It rides in the static closing palette, which lays out one card per cell.
+    const structural = ['PREFERRED', 'DISPREFERRED', 'INITIATIVE', 'REPAIR'];
+    assert.ok(!structural.includes(engine.SLOT.CLOSING_DECLINE));
+});

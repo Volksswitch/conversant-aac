@@ -47,6 +47,14 @@ export const INFLUENCER_COLORS = {
   feeling: { color: '#00838F', tint: '#e0f7fa' }, // cyan
 };
 
+// Choice chips: the alternatives the partner just offered ("mild / moderate /
+// severe"), filled into the Express Panel's reserved leading cells and cleared
+// when the turn ends. Green, echoing the CHOICE response cards they steer, so the
+// two surfaces read as the same idea. Not user-editable — these are transient and
+// AI-derived, which is exactly why they live in RESERVED cells rather than
+// displacing the user's own phrases.
+export const CHOICE_COLOR = { color: '#2E7D32', tint: '#e8f5e9' }; // green
+
 // Suggested feelings for the editor's quick-add (the user can type any).
 export const FEELING_PRESETS = [
   'Happy', 'Sad', 'Angry', 'Stressed', 'Curious', 'Bored',

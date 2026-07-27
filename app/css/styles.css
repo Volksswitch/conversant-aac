@@ -165,37 +165,12 @@ body {
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
-/* Practice launcher — secondary to Start (outline, smaller). */
-#practiceBtn {
-    flex: 0 0 auto;
-    background: #fff;
-    color: #2c3e50;
-    border: 2px solid #2c3e50;
-    padding: 0.7rem 1.8rem;
-    border-radius: 10px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    cursor: pointer;
-}
-#practiceBtn:hover, #practiceBtn:focus-visible { background: #eef2f5; outline: none; }
-#practiceBtn[hidden] { display: none; }
-
-/* Practice scenario picker — fills the transcript region like the other pre-start
-   panels; a scrolling list of scenario cards. */
-#practicePicker {
-    flex: 1 1 auto;
-    align-self: stretch;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-    overflow-y: auto;
-    padding: 0.5rem 1rem;
-}
-#practicePicker[hidden] { display: none; }
+/* Practice Mode panel (Settings → Practice): the scenario list, or — while a
+   practice conversation is running — the way out of it. */
+#practicePanel { display: flex; flex-direction: column; gap: 0.6rem; }
 .practice-title { margin: 0 0 0.2rem; font-size: 1.3rem; font-weight: 700; color: #2c3e50; }
 .practice-note { margin: 0 0 0.6rem; color: #5a4a1e; line-height: 1.45; }
-.practice-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+.practice-active { margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--slot-initiative); }
 .practice-list { display: flex; flex-direction: column; gap: 0.5rem; }
 .practice-card {
     display: flex;
@@ -213,12 +188,12 @@ body {
 .practice-cat { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--slot-initiative); font-weight: 700; }
 .practice-name { font-size: 1.15rem; font-weight: 700; color: #2c3e50; }
 .practice-desc { color: #555; }
-.practice-back, .practice-add-key {
+.practice-add-key, .practice-end {
     align-self: flex-start;
-    background: #fff; color: #2c3e50; border: 2px solid #2c3e50;
+    background: #2c3e50; color: #fff; border: 2px solid #2c3e50;
     padding: 0.5rem 1.2rem; border-radius: 8px; font-size: 1rem; cursor: pointer;
 }
-.practice-add-key { background: #2c3e50; color: #fff; }
+.practice-end { background: var(--slot-dispreferred); border-color: var(--slot-dispreferred); }
 
 /* Before Start, block interaction with the whole conversation surface and dim
    everything EXCEPT the transcript region — that's where the Start button (and
@@ -996,6 +971,23 @@ body.conv-bottom .palette-grid {
 .ep-btn.ep-imow .ep-text { font-weight: 700; }
 .ep-btn.ep-imow:hover,
 .ep-btn.ep-imow:focus-visible { background: #1d2b38; color: #fff; outline-color: #1d2b38; }
+/* Choice chips — the alternatives the partner just offered, filled into the
+   reserved leading cells. Solid green (echoing the CHOICE response cards they
+   steer) so they read apart from the pastel phrases, and dashed-outlined to say
+   "this one is on offer right now", unlike the user's permanent phrases. */
+.ep-btn.ep-choice {
+    background: var(--ep-color);
+    color: #fff;
+    border-color: var(--ep-color);
+    border-style: dashed;
+    border-left-style: solid;
+}
+.ep-btn.ep-choice:hover,
+.ep-btn.ep-choice:focus-visible {
+    background: color-mix(in srgb, var(--ep-color) 82%, #000);
+    color: #fff;
+    outline-color: var(--ep-color);
+}
 /* Partner / Feeling influencer TOGGLES — solid fill so they read apart from the
    pastel phrase buttons and from each other (distinct hues set inline). The
    toggled-ON state adds a heavy ring + check so "this is active" is unmistakable

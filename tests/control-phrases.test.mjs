@@ -84,3 +84,20 @@ test('a legacy file (single `closers` list, no windDowns/closings) reseeds both 
     assert.deepEqual(p.closings, cp.DEFAULTS.closings, 'closings reseeded from defaults');
     assert.equal(p.closers, undefined, 'the legacy key is dropped');
 });
+
+test('declineClosing has a default and survives an edit round-trip', async () => {
+    await cp.load();
+    assert.equal(cp.getPhrases().declineClosing, cp.DEFAULTS.declineClosing);
+    assert.match(cp.getPhrases().declineClosing, /before you go/i);
+    cp.setPhrases({ ...cp.getPhrases(), declineClosing: 'Hang on, one more thing.' });
+    assert.equal(cp.getPhrases().declineClosing, 'Hang on, one more thing.');
+});
+
+test('a stored file predating declineClosing falls back to the default', async () => {
+    // Files written before this phrase existed must not yield an empty card — an
+    // empty phrase renders no decline option at all.
+    seedCache({ holdOn: 'x', pardon: 'y', openers: ['Hi'], windDowns: ['Bye soon'], closings: ['Bye'] });
+    const p = await cp.load();
+    assert.equal(p.declineClosing, cp.DEFAULTS.declineClosing);
+    assert.equal(p.holdOn, 'x', 'the rest of the stored file is untouched');
+});

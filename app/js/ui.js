@@ -22,8 +22,22 @@ function escapeHtml(s) {
 // vs user styled differently); the in-progress partner turn is a separate live
 // entry; the now-playing placeholder is a transient entry. All scroll INSIDE the box. ---
 
+// Keep the newest content in view. Scrolls TWICE: once now, and once on the next
+// frame (Ken, July 2026 — the partner's in-progress line was often left hidden
+// behind the command bar while they spoke). Anything that restyles the live turn
+// AFTER we scroll can rewrap it taller — `state-uncleaned` adds italics, which
+// changes text metrics — and the box was then one line short of the bottom. A
+// synchronous scroll can't see a reflow that hasn't happened yet, so we follow up
+// once the frame has settled. Cheap, and idempotent when nothing moved.
+let pendingScroll = 0;
 function scrollLogToBottom() {
-    if (transcriptBox) transcriptBox.scrollTop = transcriptBox.scrollHeight;
+    if (!transcriptBox) return;
+    transcriptBox.scrollTop = transcriptBox.scrollHeight;
+    if (pendingScroll) return;              // one follow-up per frame is enough
+    pendingScroll = requestAnimationFrame(() => {
+        pendingScroll = 0;
+        if (transcriptBox) transcriptBox.scrollTop = transcriptBox.scrollHeight;
+    });
 }
 
 // Render the committed conversation (array of {role:'partner'|'user', text}).
@@ -91,6 +105,10 @@ export function setTranscriptState(state) {
     if (!liveTurn) return;
     liveTurn.classList.remove('state-unconfirmed', 'state-generating', 'state-ready', 'state-uncleaned');
     if (state && state !== 'idle') liveTurn.classList.add(`state-${state}`);
+    // These classes change how the live line renders (state-uncleaned italicises
+    // it), which can rewrap it taller — so re-assert the bottom rather than leaving
+    // the partner's in-progress words pushed below the fold.
+    scrollLogToBottom();
 }
 
 // Faint-red wash on the whole transcript box, signalling that the app hit an
@@ -116,6 +134,10 @@ export function setNowPlaying(text) {
         nowPlayingText.textContent = '';
         nowPlaying.hidden = true;
     }
+    // This line sits BELOW the live partner turn in the same scroll box, so showing
+    // it adds height at the bottom and would push the partner's in-progress words
+    // out of view if we didn't follow.
+    scrollLogToBottom();
 }
 
 // --- Region B: the response palette as triple-coded cards (UI-Design.docx §4).
@@ -141,9 +163,24 @@ const SLOT_META = {
     // "persistent" hue (the wrapping-up family); position + timing distinguish them.
     WIND_DOWN:       { badge: 'WIND DOWN',    cls: 'slot-persistent' },
     CLOSING:         { badge: 'CLOSING',      cls: 'slot-persistent' },
+    // Declining the partner's closing is an INITIATIVE move — the user is seizing
+    // the floor rather than winding up — so it takes the initiative blue and reads
+    // apart from the slate goodbyes it sits beside.
+    CLOSING_DECLINE: { badge: 'ONE MORE THING', cls: 'slot-initiative' },
     // Lead statements from Reframe-to-steer (the user holds the floor and wants to
     // take the conversation somewhere) — initiative-colored, one per cell.
     STATEMENT:       { badge: 'STATEMENT',    cls: 'slot-initiative' },
+    // Closed-set turns: one card per alternative the partner offered, plus an
+    // escape hatch. The choices are all straightforward answers, so they take the
+    // preferred hue; the "none of these / in between" card takes the dispreferred
+    // amber, which is what it is. Being outside CATEGORY_SLOTS, they lay out one
+    // per cell like the openers rather than grouping into the four categories.
+    CHOICE:          { badge: 'CHOICE',       cls: 'slot-preferred' },
+    // The free-cell fillers keep the hue of the structural move they stand in for,
+    // so the colors mean the same thing on a closed-set turn as on any other.
+    CHOICE_OTHER:    { badge: 'SOMETHING ELSE', cls: 'slot-dispreferred' },
+    CHOICE_ASK:      { badge: 'ASK THEM',     cls: 'slot-initiative' },
+    CHOICE_REPAIR:   { badge: 'SAY AGAIN',    cls: 'slot-repair' },
 };
 
 // The response footprint is a fixed RESERVED grid of 4 CELLS (Rule 1) — 2×2 with
@@ -317,6 +354,12 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         activePartnerId = null, activeFeelingId = null,
         tapMode = 'single', doubleTapMs = 400,
         onSpeak, onTogglePartner, onToggleFeeling, onInMyOwnWords,
+        // Choice chips take the leading cells for exactly as long as the partner has
+        // a closed set on the table, and only as many cells as there are choices
+        // (Ken, July 2026 — no standing reservation). With none on offer the panel
+        // is byte-for-byte the phrase grid it was before the feature existed; with
+        // N on offer the phrases shift N cells along and the last N drop off the end.
+        choiceChips = [], choiceColor = {}, onChoiceChip,
     } = opts;
     epGrid.innerHTML = '';
 
@@ -384,7 +427,25 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         return b;
     };
 
-    let pi = 0; // index into the ordered item list
+    // A choice chip: one of the alternatives the partner just offered.
+    const buildChoiceCell = (chip, span) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'ep-btn ep-choice';
+        b.style.flex = `${span} 1 0`;
+        setColor(b, choiceColor.color, choiceColor.tint);
+        b.title = `Answer with "${chip.label}" — rebuilds the response cards around it`;
+        b.setAttribute('aria-label', `Answer with ${chip.label}`);
+        b.innerHTML = `<span class="ep-text">${escapeHtml(chip.label)}</span>`;
+        // Always single-tap: this doesn't speak, it asks the AI for responses built
+        // around the chosen alternative, so a mis-tap costs a round-trip, not a
+        // wrong thing said aloud. The double-tap safeguard guards SPEAKING.
+        b.addEventListener('click', () => onChoiceChip && onChoiceChip(chip));
+        return b;
+    };
+
+    let pi = 0;              // index into the ordered item list
+    let ci = 0;              // index into the offered chips (they take the lead cells)
     (layoutRows || []).forEach((row) => {
         const rowEl = document.createElement('div');
         rowEl.className = 'ep-row';
@@ -406,6 +467,12 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
             }
             if (cell.kind === 'blank' || cell.kind === 'pred') {
                 rowEl.appendChild(blank(span));
+                return;
+            }
+            // Chips claim the leading cells while a choice is on offer, pushing the
+            // phrases along; the ones that fall off the end are simply not rendered.
+            if (ci < choiceChips.length) {
+                rowEl.appendChild(buildChoiceCell(choiceChips[ci++], span));
                 return;
             }
             // char or non-space action cell → next item, or blank if exhausted.

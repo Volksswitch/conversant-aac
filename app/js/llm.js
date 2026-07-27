@@ -153,6 +153,11 @@ Return ONLY the corrected transcript text, nothing else.${contextLines ? '\n\nCo
 // does not persist it. Because it is user-authored it is ground truth — the model
 // may treat any specifics in it as real (it is exactly how the user supplies the
 // facts the anti-fabrication rule forbids the model from inventing).
+// `opts.focusChoice` (optional): one of the alternatives the partner offered, set
+// when the user taps a choice chip in the Express Panel. The user has picked it and
+// wants the four structural responses built around THAT alternative, so it
+// deliberately overrides the closed-set rule (which would otherwise re-detect the
+// menu and return the choice cards again).
 export async function generateResponses(conversationHistory, context = {}, opts = {}) {
     if (!apiKey) throw new Error('API key not set');
 
@@ -172,6 +177,19 @@ export async function generateResponses(conversationHistory, context = {}, opts 
         ? `\n\nProvide TWO distinct options for EACH of the four slots — 8 responses total (2 PREFERRED, 2 DISPREFERRED, 2 INITIATIVE, 2 REPAIR), in that slot order, best-first within each slot. The two options within a slot must be meaningfully DIFFERENT alternatives (different wording, angle, or content), both valid for that slot — not minor rephrasings.`
         : '';
 
+    // How many cards the palette footprint can show (4 cells × 1 or 2 per cell).
+    // A choice palette must fit it, so the model is told the ceiling.
+    const paletteCap = perCat === 2 ? 8 : 4;
+
+    // The user tapped a choice chip: they have PICKED one of the alternatives the
+    // partner offered and now want the full structural treatment of it. This must
+    // override the closed-set rule below — otherwise the model re-detects the same
+    // menu and hands back the choice cards again, and the chip does nothing.
+    const pick = (opts.focusChoice || '').trim();
+    const focusBlock = pick
+        ? `\n\nTHE USER HAS ALREADY CHOSEN. Of the alternatives the partner offered, the user wants to answer with "${pick}". The choice is settled, so the closed-set rule does NOT apply to this response: return "offered_options": [] and use the normal four structural slots. EVERY response must answer with "${pick}" — do not offer the other alternatives again, and do not hedge about which one they picked. PREFERRED states it plainly; DISPREFERRED says it with a softening or a caveat (still "${pick}", just more reluctantly or with a qualification); INITIATIVE says it and adds something — a detail, a consequence, or a question back; REPAIR stays a clarification on the partner's turn. Vary the wording so the four are genuinely different ways of saying it, not one sentence reworded.`
+        : '';
+
     const systemPrompt = `You are an AAC (Augmentative and Alternative Communication) assistant. A non-speaking user is in a live conversation. You speak AS the user, in their voice — not as a helpful assistant. Their communication partner just spoke. First classify what the partner is doing, then generate a palette of structurally distinct responses the user might want to say.
 
 Return ONLY a JSON object, no other text, with exactly this shape:
@@ -179,7 +197,11 @@ Return ONLY a JSON object, no other text, with exactly this shape:
   "partner_action": "INVITATION|QUESTION|REQUEST|STATEMENT|GREETING|ASSESSMENT|CLOSING|OTHER",
   "turn_status": "COMPLETE|INCOMPLETE|CONTINUING",
   "is_repair_initiator": false,
+  "offered_options": [],
   "responses": [
+    // for a CLOSED-SET turn (offered_options non-empty) the responses are instead:
+    //   {"slot": "CHOICE|CHOICE_OTHER|CHOICE_ASK|CHOICE_REPAIR", "text": "...", "hint": "..."}
+    // and NONE of the four structural slots below are used. See the closed-set rule.
     {"slot": "PREFERRED", "text": "...", "hint": "..."},
     {"slot": "DISPREFERRED", "text": "...", "hint": "...", "account": true},
     {"slot": "INITIATIVE", "text": "...", "hint": "...", "format": "counter-offer|return-question|expansion"},
@@ -194,8 +216,28 @@ Classification (commit to these BEFORE writing responses):
 - "partner_action": the first-pair-part type the partner's utterance performs.
 - "turn_status": your read of whether the turn sounds finished (COMPLETE) or still in progress (INCOMPLETE / CONTINUING). This is INFORMATIONAL ONLY — it does NOT change what you output; always produce responses regardless (the app, and ultimately the user, decides when to actually respond, not you).
 - "is_repair_initiator": true ONLY if the partner is asking the USER to repeat or clarify the user's own last utterance ("What?", "Huh?", "You want what?", "Say that again?").
+- "CLOSING" specifically — the partner is moving to END THE CONVERSATION. Do NOT look only for a farewell word: the move that OPENS a closing is usually semantically EMPTY — "Well…", "So…", "Anyway…", "Okay then", "Right", often trailing off. It says nothing precisely because its job is to signal "I have nothing more to add." Also classify as CLOSING: a reason framed around the USER's time ("I should let you go", "I'll let you get back to it"), an arrangement for next time ("See you Tuesday", "Talk soon", "I'll call you"), an appreciation that wraps things up ("It was really good seeing you", "Thanks for calling"), a service-encounter sign-off ("Have a good one", "Take care now", "Enjoy the rest of your day"), and of course the plain farewell ("Bye", "Goodbye", "Night").
+  CRITICAL GUARD — ending a TOPIC is not ending the CONVERSATION. The same empty markers also introduce a new topic: "Anyway, what did you think of the film?" and "So, how's the new job?" are NOT closings — the partner is carrying on. Classify CLOSING only when they are moving to end the WHOLE conversation. When the marker is followed by a fresh question or a new subject, it is not a closing. If genuinely unsure, do NOT classify CLOSING — a wrong CLOSING replaces the user's response options with goodbyes while their partner is still talking, which is far more disruptive than missing one.
+- "offered_options": the specific things the partner has just PUT ON THE TABLE for the user to choose among, IN THE ORDER THEY SAID THEM, as short bare labels ("mild", "moderate", "severe"). TWO forms count, and the second is the more common one in everyday talk:
+  (a) an alternative question, where the list IS the question — "mild, moderate, or severe?", "coffee or tea?", "would you rather walk or drive?";
+  (b) a list offered in a STATEMENT — "We've got muffins, croissants, and a few different pastries today — anything jump out at you?", "I could do Tuesday, Wednesday, or Friday.", "There's soup, salad, or a sandwich if you're hungry." The list does NOT have to be exhaustive. A question after the list ("anything jump out at you?") is a STRONG SIGNAL that the options are being offered, but it is NOT required — a plain declarative offer counts too, as the last two examples show, and those are common in casual planning. If the partner named things the user could pick, list them.
+  The test is whether the partner is OFFERING them for the user to choose from — not merely mentioning them. A narrative list is NOT an offer: "I picked up milk, eggs, and bread on the way home" puts nothing on the table, so use []. An open question with no named options ("how have you been feeling?", "what do you fancy?") is [] too. NEVER invent an option the partner did not say.
+  If one item is vague or open-ended ("a few different pastries", "some other bits"), do not pretend it is a definite choice — either make its card ask about it naturally ("What kind of pastries do you have?") or leave it out. And since a list like this is usually not the whole menu, keep a CHOICE_OTHER card for what the user actually wants whenever a cell is free.
 
-Responses (ALWAYS return all four — even if the turn seems to trail off, is short, or contains filler/disfluencies; the ONLY time you return "responses": [] is when is_repair_initiator is true):
+CLOSED-SET TURNS override the slot structure. When "offered_options" is NOT empty, the four structural slots are the wrong shape for this turn: the user needs to be able to pick ANY of the offered alternatives, not four variations on one of them. Returning four takes on a single option is a FAILURE — it silently strips away the choices the partner actually offered. So when "offered_options" is not empty, do NOT use PREFERRED/DISPREFERRED/INITIATIVE/REPAIR at all. Instead return at most ${paletteCap} responses total, in this order:
+
+FIRST, one {"slot": "CHOICE", "text": "...", "hint": "..."} per offered alternative, IN THE ORDER OFFERED — "text" is a natural, complete sentence answering with that alternative in the user's voice ("It's been pretty mild."), and "hint" is the bare option label ("mild"). Never make "text" the bare label on its own.
+
+THE PARTNER'S OWN ALTERNATIVES ALWAYS TAKE PRECEDENCE over anything you would add. Never drop, merge, or omit one of them to make room for a filler below. If the alternatives exactly fill the palette — four alternatives with ${paletteCap} cells, say — return those alternatives ALONE and no fillers at all. If they somehow exceed ${paletteCap}, return the first ${paletteCap} and no fillers.
+
+THEN, ONLY IF CELLS REMAIN, FILL EVERY ONE, up to ${paletteCap} total. A partner who offers two alternatives leaves two cells free, and leaving them empty wastes what the user can say. Fill them from this list, most useful first — each at most once unless noted:
+- {"slot": "CHOICE_OTHER"} — an answer OUTSIDE the offered set: in-between, neither, or it-depends ("It's somewhere between mild and moderate.", "Neither, thanks.", "Honestly, it changes day to day."). Include this whenever a cell is free; a real person's answer often isn't on the menu. Never a bare "I don't know."
+- A SECOND {"slot": "CHOICE_OTHER"} — use this when the situation has another obvious answer that isn't in the set. Two-way questions especially ("better or worse?" → "About the same." AND "It comes and goes."). Prefer this over the two below when such an answer genuinely exists; it is usually the most useful thing in a free cell.
+- {"slot": "CHOICE_ASK"} — turn the question back or ask for what you need to decide ("What would you recommend?", "What are you having?", "What are my options if neither works?"). Good when the user could reasonably not know or want the partner's steer.
+- {"slot": "CHOICE_REPAIR"} — ask the partner to say the choices again ("Sorry, what were the options?"). Include when the alternatives were long, unusual, or may have been misheard.
+Every one of these needs the same natural "text" plus a short "hint" (a few words naming it: "in between", "ask them", "say again").
+
+Responses — the four structural slots below apply when "offered_options" is EMPTY (for a closed set, use the CHOICE shape above instead). ALWAYS return all four — even if the turn seems to trail off, is short, or contains filler/disfluencies; the ONLY time you return "responses": [] is when is_repair_initiator is true:
 - "hint" is a short glanceable label naming the response (a few words), not a truncation of "text".
 - PREFERRED: the most likely thing THIS user would say, delivered plainly, no hedging.
 - DISPREFERRED: a properly formed reluctant / declining / disagreeing reply — a brief MEANINGFUL softener that carries content ("I'd love to, but…", "I wish I could —"), the declination, and a short account/reason. Never a bare "No." Keep the account GENERAL or grounded in the profile — do not invent a specific excuse (a named appointment, a concrete prior plan) the user may not actually have; "I'm pretty wiped today" or "it's not really my thing" are safe, "I have a dentist appointment at 3" is fabricated.
@@ -209,7 +251,7 @@ Get to the point: NO response may begin with an empty interjection — no "Ah", 
 - "missing_facts": lowercase snake_case keys for personal facts about the user you needed but were not given (e.g. "home_city", "fav_team", "occupation"). Use [] if none. Always phrase responses around any missing fact — never output bracketed placeholders.
 
 Conversation context (engine state — use it, do not echo it):
-${JSON.stringify(context)}${buildProfileBlock()}${avoidBlock}${steerBlock}${perCatBlock}`;
+${JSON.stringify(context)}${buildProfileBlock()}${avoidBlock}${steerBlock}${perCatBlock}${focusBlock}`;
 
     const messages = conversationHistory.map(entry => ({
         role: entry.role === 'partner' ? 'user' : 'assistant',
@@ -500,6 +542,9 @@ function parseGeneration(text) {
             partner_action: parsed.partner_action || (parsed.classification && parsed.classification.fpp) || 'OTHER',
             turn_status: parsed.turn_status || 'COMPLETE',
             is_repair_initiator: !!parsed.is_repair_initiator,
+            // The closed set of alternatives the partner offered ("mild, moderate,
+            // severe"), [] for an ordinary turn. Drives the CHOICE palette.
+            offered_options: arr(parsed.offered_options).map((o) => String(o).trim()).filter(Boolean),
         };
         // Preferred shape: typed responses.
         if (Array.isArray(parsed.responses)) {

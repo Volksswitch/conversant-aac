@@ -40,6 +40,12 @@ const CACHE_KEY = 'aac_control_phrases';
 export const DEFAULTS = {
     holdOn: 'Let me think about that.',
     pardon: "Sorry, I didn't catch that. Could you say it again?",
+    // Shown alongside the goodbyes when the PARTNER starts closing. A pre-closing
+    // is an offer to end, and CA is explicit that declining it — raising one more
+    // thing — is made maximally relevant at exactly that moment. Without this card
+    // the user's only options are to say goodbye or leave the palette (Ken, July
+    // 27 2026). It buys the floor; the user then says the thing itself.
+    declineClosing: 'Actually, before you go —',
     // {name} → the active Partner's name; dropped (with tidy punctuation) when
     // no Partner is active. Kept in sync with engine.js's inline fallback.
     openers: [
@@ -99,6 +105,7 @@ function normalize(value) {
     return {
         holdOn: str(v.holdOn, DEFAULTS.holdOn),
         pardon: str(v.pardon, DEFAULTS.pardon),
+        declineClosing: str(v.declineClosing, DEFAULTS.declineClosing),
         openers: list(v.openers, DEFAULTS.openers),
         windDowns: list(v.windDowns, DEFAULTS.windDowns),
         closings: list(v.closings, DEFAULTS.closings),

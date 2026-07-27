@@ -113,6 +113,9 @@ export function render() {
             'The cards shown when you tap Wind down — they signal you’d like to end the conversation without saying goodbye yet (“I should get going.”). Selecting one brings up the closings below.', 'windDowns'),
         listSection('Closings (goodbyes)',
             'The goodbyes (“Bye!”, “Take care!”) that appear after you pick a wind-down statement.', 'closings'),
+        singleSection('“One more thing” phrase',
+            'Shown beside the goodbyes when the OTHER person starts wrapping up, so you can hold them a moment instead of only being able to say goodbye. Selecting it speaks the phrase and keeps the conversation open.',
+            'declineClosing'),
     );
 
     // "Say again" — read-only note (no editable phrase).

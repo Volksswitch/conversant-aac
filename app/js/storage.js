@@ -392,6 +392,24 @@ export function saveResponsesPerCategory(n) {
     saveSettings(settings);
 }
 
+// --- Choice chips (Express Panel) ---
+// The MOST chips to show at once when the partner offers a set of choices. They
+// take cells only while a set is on offer and only as many as there are choices
+// (Ken, July 2026), so this is a ceiling, not a reservation — it stops an unusually
+// long list from pushing half the phrase panel off the end. 0 turns them off.
+
+export function loadChoiceChipMax() {
+    const n = Number(loadSettings().choiceChipMax);
+    return Number.isFinite(n) && n >= 0 && n <= 4 ? Math.floor(n) : 4;
+}
+
+export function saveChoiceChipMax(n) {
+    const settings = loadSettings();
+    const v = Number(n);
+    settings.choiceChipMax = Number.isFinite(v) && v >= 0 && v <= 4 ? Math.floor(v) : 4;
+    saveSettings(settings);
+}
+
 // --- Express Panel tap behavior ---
 // (The item list itself lives in the express-panel.js model — data folder +
 // cache — not here.)

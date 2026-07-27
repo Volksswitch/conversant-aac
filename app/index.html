@@ -48,10 +48,6 @@
                         </div>
                     </div>
                     <button id="startBtn">Start</button>
-                    <button id="practiceBtn" type="button">Practice a conversation</button>
-                    <!-- Practice Mode scenario picker (rendered by app.js) — overlays
-                         the transcript region like the other pre-start panels. -->
-                    <div id="practicePicker" hidden></div>
                 </div>
             </section>
 
@@ -125,6 +121,7 @@
                 <div class="settings-tab" data-tab="textsize">Text Size</div>
                 <div class="settings-tab" data-tab="speech">Speech &amp; Input</div>
                 <div class="settings-tab" data-tab="conversation">Conversation</div>
+                <div class="settings-tab" data-tab="practice">Practice</div>
                 <div class="settings-tab" data-tab="express">Express Panel</div>
                 <div class="settings-tab" data-tab="controls">Controls</div>
                 <div class="settings-tab" data-tab="keyguard">Keyguard Design</div>
@@ -321,6 +318,16 @@
                         <p class="setting-hint">How many suggested responses to offer in each of the four categories (preferred, dispreferred, initiative, repair). Choosing 2 gives eight cards — two stacked in each category — in the same space as four.</p>
                     </div>
                     <div class="setting-group">
+                        <label for="choiceChipMaxInput">Most choice buttons in the Express Panel</label>
+                        <select id="choiceChipMaxInput">
+                            <option value="0">0 (off)</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4" selected>4</option>
+                        </select>
+                        <p class="setting-hint">When your partner offers a set of choices ("mild, moderate, or severe?"), those choices also appear as green buttons at the start of the Express Panel. Tapping one asks the AI for a full set of responses built around <em>that</em> choice — a plainer one, a more hesitant one, one that adds a detail. The response cards already let you answer in one tap; these are for when you want to say more about one of them. The buttons appear only while a choice is on offer and take only as many spaces as there are choices; your phrases shift along to make room and slide back afterwards. This sets the most that can appear at once, so a long list can't push too many phrases off. Set to 0 to turn them off.</p>
+                    </div>
+                    <div class="setting-group">
                         <label for="silenceThresholdInput">Silence period</label>
                         <select id="silenceThresholdInput">
                             <option value="0.5">0.5 seconds</option>
@@ -402,6 +409,10 @@
                         </select>
                         <p class="setting-hint">When double tap is required, how long the first tap stays armed waiting for the second. A longer interval is more forgiving for slower or less precise taps.</p>
                     </div>
+                </div>
+                <div class="tab-panel" data-tab="practice">
+                    <p class="setting-hint">In <strong>Practice Mode</strong> the AI plays the other person, so you can rehearse a conversation without a microphone and without spending anyone's patience. Pick something to practice below; the conversation screen works exactly as it normally does, except <strong>Start Listening</strong> cues the other person to speak instead of opening the mic. Give them their own voice under <strong>Speech &amp; Input</strong>.</p>
+                    <div id="practicePanel"></div>
                 </div>
                 <div class="tab-panel" data-tab="express">
                     <p class="setting-hint">Edit the <strong>Express Panel</strong>. Each item is a <strong>Phrase</strong> (speaks when tapped), a <strong>Partner</strong> (who you're talking with — personalizes openers and tells the AI who's there), or a <strong>Feeling</strong> (sets the mood of the suggestions). Order here = position in the panel; use ↑ ↓ to arrange and ✕ to remove.</p>

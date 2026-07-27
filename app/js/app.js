@@ -37,6 +37,20 @@ let practiceScenario = null;
 // Raw, combined speech-to-text for the partner's current (uncommitted) turn.
 // Grows across silence periods until the user picks a response.
 let currentPartnerText = '';
+// The alternatives the partner has on the table right now ("mild","moderate",
+// "severe") — from the classification's offered_options. They fill the Express
+// Panel's reserved choice cells so the user can ask for the full four-response
+// treatment of one of them; [] whenever no closed set is open.
+let offeredChoices = [];
+// How the user has steered THIS partner turn: a tapped choice chip and/or the
+// text they typed into Reframe. "New N" must re-apply it (Ken, July 27 2026 —
+// pressing it after choosing "milk" was throwing the choice away and coming back
+// with all three options): "give me different options" means different options
+// UNDER THE SAME STEERING, not a reset. The two are independent — a chip replaces
+// the chip, Reframe text replaces the text — and both last only as long as the
+// partner turn they steer, which is what keeps Reframe one-shot ACROSS turns
+// (the standing v0.3.20 decision) while making it stick WITHIN one.
+let activeSteer = { focusChoice: null, steer: null };
 // Bumped whenever a speaking button that does NOT consume the partner turn (Say
 // again / Hold on / Wind down) fires, so an already-in-flight generateOptions won't
 // re-schedule a placeholder after the user has acted — WITHOUT discarding the
@@ -193,6 +207,9 @@ function initApp() {
     // (partner-awareness cue — see chime.js). Applied here so it's active before
     // the first listen; also live-updated from Settings.
     chime.setEnabled(storage.loadListenChime());
+    // With auto-resume on, the mic restarts every exchange — chime only at the
+    // start of the conversation rather than on each one (Ken).
+    chime.setOncePerConversation(storage.loadAutoRelisten());
 
     const savedThreshold = storage.loadSilenceThreshold();
     stt.setSilenceThreshold(savedThreshold);
@@ -232,8 +249,6 @@ function initApp() {
     // Settings; "Continue" proceeds into the conversation without a key.
     document.getElementById('apiKeyPromptBtn').addEventListener('click', openSettings);
     document.getElementById('apiKeyContinueBtn').addEventListener('click', finishStart);
-    // Practice Mode launcher (pre-start screen) → the scenario picker.
-    document.getElementById('practiceBtn').addEventListener('click', openPracticePicker);
     ui.onListenClick(toggleListening);
     ui.onRegenerateClick(handleRegenerate);
     ui.onSpeakClick(handleSpeakComposed);
@@ -517,6 +532,8 @@ function toggleListening() {
 // Begin a new partner-capture session with a cleared transcript and options.
 function startFreshListening() {
     currentPartnerText = '';
+    setOfferedChoices([]);   // a new partner turn — last turn's choices are gone
+    clearTurnSteering();
     pendingPartnerHistoryIdx = -1;   // fresh partner turn — not yet promoted to history
     generationToken++;
     ui.setLiveTranscript('');
@@ -556,7 +573,9 @@ async function generateOptions(partnerText) {
         );
         ui.showEngineState(snap);
         lastPalette = snap.palette;
-        renderStaticPalette('closing', snap.palette, 'Say goodbye, or wait for their reply');
+        // The PARTNER started closing, so offer the decline alongside the goodbyes.
+        renderStaticPalette('closing', snap.palette,
+            'Say goodbye — or hold them a moment', { pin: declineClosingCard() });
         ui.setTranscriptState('ready');
         return;
     }
@@ -564,6 +583,9 @@ async function generateOptions(partnerText) {
     ui.setStatus('Generating response options...');
     ui.setTranscriptState('generating');
     ui.clearResponseOptions();
+    // The partner has said more, so this is a fresh offer: any steering of the
+    // shorter turn is dropped rather than silently shaping the new palette.
+    clearTurnSteering();
 
     // Generate from prior committed turns plus the partner's current
     // (provisional, uncleaned) speech — the transcript is cleaned only once, at
@@ -599,15 +621,28 @@ async function generateOptions(partnerText) {
         // The partner themselves closed → offer the goodbyes as a pageable static
         // palette (New N dips further); otherwise the normal response cards.
         if (snap.mode === engine.MODE.PRE_CLOSING_CLOSING) {
-            renderStaticPalette('closing', snap.palette, 'Say goodbye, or wait for their reply');
+            // Partner-initiated close — pin the decline so they can be held a moment.
+            renderStaticPalette('closing', snap.palette,
+                'Say goodbye — or hold them a moment', { pin: declineClosingCard() });
         } else {
             currentStatic = { kind: null, full: [] };  // AI responses — New N regenerates, not pages
             ui.showResponses(snap.palette, handleResponseSelected);
         }
         ui.setTranscriptState('ready');
-        ui.setStatus(snap.mode === engine.MODE.REPAIR_OF_SELF
-            ? 'Partner didn\'t catch that — choose how to repeat'
-            : 'Select a response');
+        // A closed set on the table → offer the alternatives as Express Panel chips
+        // too, so the user can escalate from a one-tap answer to the full four-way
+        // treatment of one of them.
+        const offered = (snap.lastClassification && snap.lastClassification.offered_options) || [];
+        setOfferedChoices(offered);
+        // Leave the closing branch's own message alone — it set a more specific one
+        // above and this line used to overwrite it.
+        if (snap.mode === engine.MODE.REPAIR_OF_SELF) {
+            ui.setStatus('Partner didn\'t catch that — choose how to repeat');
+        } else if (snap.mode !== engine.MODE.PRE_CLOSING_CLOSING) {
+            ui.setStatus(offered.length
+                ? 'Pick one of their options, or say something else'
+                : 'Select a response');
+        }
         // Start the floor-holding placeholders (see shouldPlayPlaceholder — every
         // turn except a repair-initiator). The first lands initialDelay after the
         // PAUSE; the partner resuming aborts the ladder (handlePartnerResumed); a
@@ -662,6 +697,7 @@ async function handleResponseSelected(response, index) {
     const wasOpener = response.slot === 'OPENER';
     const wasWindDown = response.slot === 'WIND_DOWN';
     const wasClosing = response.slot === 'CLOSING';
+    const wasDecline = response.slot === engine.SLOT.CLOSING_DECLINE;
 
     placeholders.stop();
     generationToken++; // invalidate any in-flight generation
@@ -693,7 +729,25 @@ async function handleResponseSelected(response, index) {
     ui.showEngineState(engine.getSnapshot());
     await commitExchange(raw, response.text, index);
 
-    if (wasOpener) {
+    if (wasDecline) {
+        // The user held the partner back, so the conversation is open again: leave
+        // pre-closing, drop the goodbyes, and start listening for their reply (the
+        // user has just claimed the floor to say something, and the partner will
+        // typically wait). From here "In my own words" / Reframe generate the lead.
+        ui.showEngineState(engine.reopenFromClosing());
+        resetStaticPaging();
+        ui.clearResponseOptions();
+        if (practiceMode) {
+            // No mic in practice: wait for the user to say their piece (composer /
+            // Express), then Start Listening cues the partner's reply as usual.
+            isListening = false;
+            ui.setListenButtonState(false);
+        } else {
+            manualListenArmed = true;
+            startFreshListening();   // the partner will likely wait — capture their reply
+        }
+        ui.setStatus('Go ahead — say what you wanted to say');
+    } else if (wasOpener) {
         manualListenArmed = true;   // starting a conversation arms auto-resume
         startFreshListening();      // begin capturing the partner now
     } else if (wasWindDown || wasClosing) {
@@ -813,6 +867,11 @@ async function handleRepairOfSelf(response) {
 // completed utterance to clean and no point spending an AI call on a fragment (Ken).
 async function commitExchange(raw, userText, index, opts = {}) {
     const { cleanup = true } = opts;
+    // The user has taken the floor, so the partner's turn — and any choices it put
+    // on the table, and any steering of it — is done. Shared by every path that
+    // commits a user turn (response pick, Express phrase, composer, repair-of-self).
+    setOfferedChoices([]);
+    clearTurnSteering();
     // Snapshot the history BEFORE this exchange — that's the context the cleanup
     // pass should see (it shouldn't include the turn it's cleaning).
     const cleanupContext = [...conversationHistory];
@@ -895,18 +954,10 @@ function resumeOrIdle() {
 // generation pipeline as a real utterance, so the user picks responses exactly as
 // in a real conversation. The listen gate (manualListenArmed + auto-resume) is the
 // real one, so practice rehearses the actual discipline.
-
-// Reverse of finishStart: bring the pre-start screen back (Start / Practice), used
-// when Practice ends.
-function showStartScreen() {
-    document.getElementById('whatsNewPanel').hidden = true;
-    document.getElementById('apiKeyPrompt').hidden = true;
-    document.getElementById('practicePicker').hidden = true;
-    document.getElementById('startBtn').hidden = false;
-    document.getElementById('practiceBtn').hidden = false;
-    document.getElementById('startBlock').classList.remove('hidden');
-    document.querySelector('main').classList.add('disabled');
-}
+//
+// Practice is entered and left from Settings → Practice (Ken, July 2026), not the
+// pre-start screen: it's a mode you drop into and out of from the conversation
+// screen, so leaving practice returns there rather than to the Start screen.
 
 // The voice the AI partner speaks in: the user's chosen partner voice, or — if
 // none set — the first available voice that isn't the user's own, so it's audibly
@@ -919,36 +970,45 @@ function pickPartnerVoice() {
     return other ? other.voiceURI : undefined;
 }
 
-// Practice launcher (pre-start screen). Requires an API key (the partner and the
-// response options are both AI-generated). Renders the scenario picker.
-function openPracticePicker() {
-    const picker = document.getElementById('practicePicker');
-    document.getElementById('startBtn').hidden = true;
-    document.getElementById('practiceBtn').hidden = true;
-    document.getElementById('whatsNewPanel').hidden = true;
-    document.getElementById('apiKeyPrompt').hidden = true;
+// Settings → Practice tab. Three states: practice already running (show which
+// scenario + the way out), no API key (practice needs the AI for BOTH the partner
+// and the response suggestions), or the scenario list.
+function renderPracticePanel() {
+    const panel = document.getElementById('practicePanel');
+    panel.textContent = '';
 
-    picker.textContent = '';
-    const hasKey = !!(storage.loadApiKey() || '').trim();
-    if (!hasKey) {
-        // Practice needs the AI for both the partner and the response suggestions.
-        const msg = document.createElement('p');
-        msg.className = 'practice-note';
-        msg.textContent = 'Practice needs a Claude API key — the AI plays the other person and suggests your responses. Add one in Settings, then try again.';
-        const row = document.createElement('div');
-        row.className = 'practice-actions';
-        const settingsBtn = mkButton('Add API key to Settings', 'practice-add-key', () => { openPracticePickerBack(); openSettings(); });
-        const backBtn = mkButton('Back', 'practice-back', openPracticePickerBack);
-        row.append(settingsBtn, backBtn);
-        picker.append(msg, row);
-        picker.hidden = false;
+    if (practiceMode && practiceScenario) {
+        const now = document.createElement('p');
+        now.className = 'practice-active';
+        now.textContent = `Practicing: ${practiceScenario.title}`;
+        const endBtn = mkButton('End practice', 'practice-end', async () => {
+            await endPractice();
+            renderPracticePanel();
+            document.getElementById('settingsDialog').close();
+        });
+        const note = document.createElement('p');
+        note.className = 'setting-hint';
+        note.textContent = 'Ends the practice conversation and returns to the normal conversation screen. The End conversation button does the same thing.';
+        panel.append(now, endBtn, note);
         return;
     }
 
-    const title = document.createElement('h2');
+    const hasKey = !!(storage.loadApiKey() || '').trim();
+    if (!hasKey) {
+        const msg = document.createElement('p');
+        msg.className = 'practice-note';
+        msg.textContent = 'Practice needs a Claude API key — the AI plays the other person and suggests your responses. Add one on the General tab, then come back.';
+        const goBtn = mkButton('Go to the General tab', 'practice-add-key', () => {
+            activateSettingsTab(document.querySelector('#settingsTabs .settings-tab[data-tab="general"]'), true);
+        });
+        panel.append(msg, goBtn);
+        return;
+    }
+
+    const title = document.createElement('h3');
     title.className = 'practice-title';
     title.textContent = 'Choose something to practice';
-    picker.appendChild(title);
+    panel.appendChild(title);
 
     const list = document.createElement('div');
     list.className = 'practice-list';
@@ -969,18 +1029,7 @@ function openPracticePicker() {
         card.addEventListener('click', () => startPractice(scenario));
         list.appendChild(card);
     }
-    picker.appendChild(list);
-
-    const backBtn = mkButton('Back', 'practice-back', openPracticePickerBack);
-    picker.appendChild(backBtn);
-    picker.hidden = false;
-}
-
-// Close the picker and return to the Start / Practice choice.
-function openPracticePickerBack() {
-    document.getElementById('practicePicker').hidden = true;
-    document.getElementById('startBtn').hidden = false;
-    document.getElementById('practiceBtn').hidden = false;
+    panel.appendChild(list);
 }
 
 function mkButton(label, cls, onClick) {
@@ -992,18 +1041,26 @@ function mkButton(label, cls, onClick) {
     return b;
 }
 
-// Enter Practice Mode with the chosen scenario: a fresh conversation, on the real
-// conversation screen, waiting for the user to tap Start Listening to cue the
-// partner (never auto-plays — reinforces the step).
+// Enter Practice Mode with the chosen scenario: close Settings, start a fresh
+// conversation on the real conversation screen, and wait for the user to tap Start
+// Listening to cue the partner (never auto-plays — reinforces the step).
 async function startPractice(scenario) {
     practiceMode = true;
     practiceScenario = scenario;
-    finishStart();                 // reveal the conversation screen
+    keyboard.hideKeyboard();
+    document.getElementById('settingsDialog').close();
     await terminateConversation(); // fresh conversation state + log (keeps practiceMode)
     isListening = false;
     manualListenArmed = false;
     ui.setListenButtonState(false);
     ui.setStatus(`Practice: ${scenario.title}. Tap Start Listening to hear the other person.`);
+}
+
+// Abort practice and return to the standard conversation screen. Shared by the
+// Practice tab's "End practice" button and by End conversation while practicing.
+async function endPractice() {
+    if (!practiceMode) return;
+    await handleEndConversation();
 }
 
 // The partner takes a turn: author their line, speak it in the partner voice, then
@@ -1075,6 +1132,8 @@ function practiceResumeOrIdle() {
 async function terminateConversation() {
     placeholders.stop();
     tts.cancel();
+    // A new conversation gets its own start-of-listening cue, whichever mode.
+    chime.resetConversation();
     manualListenArmed = false;
     stt.stopListening();
     // Capture the partner's pending (uncommitted) turn BEFORE we discard the STT
@@ -1092,6 +1151,8 @@ async function terminateConversation() {
     stt.resetTranscript();
     generationToken++;                 // invalidate any in-flight generation
     currentPartnerText = '';
+    setOfferedChoices([]);
+    clearTurnSteering();
     lastPalette = [];
     resetStaticPaging();                 // opener/wind-down/closing paging starts fresh
     conversationHistory.length = 0;     // clear the conversation window
@@ -1156,21 +1217,37 @@ function pageWindow(list, offset, cap) {
 
 // Render a predefined static palette (opener/windDown/closing), optionally
 // advancing to the next page first (the Wind down re-press / New N "dip").
-function renderStaticPalette(kind, full, statusMsg, { advance = false } = {}) {
+// `pin` holds entries that must ALWAYS be on screen: they take the last cells and
+// are excluded from paging, so the paged window shrinks to fit around them. Used
+// for the decline-the-closing card, which is useless if a page turn hides it.
+function renderStaticPalette(kind, full, statusMsg, { advance = false, pin = [] } = {}) {
     const cap = conversationPaletteCap();
-    if (advance && full.length > cap) {
-        staticOffsets[kind] = (staticOffsets[kind] + cap) % full.length;
+    const window = Math.max(1, cap - pin.length);
+    if (advance && full.length > window) {
+        staticOffsets[kind] = (staticOffsets[kind] + window) % full.length;
     }
-    currentStatic = { kind, full: full || [] };
-    ui.showResponses(pageWindow(currentStatic.full, staticOffsets[kind], cap), handleResponseSelected);
+    currentStatic = { kind, full: full || [], pin };
+    ui.showResponses(
+        [...pageWindow(currentStatic.full, staticOffsets[kind], window), ...pin],
+        handleResponseSelected,
+    );
     if (statusMsg) ui.setStatus(statusMsg);
+}
+
+// The "Actually, before you go —" card, offered when the PARTNER starts closing.
+// Selecting it speaks the phrase and takes the floor like any other response, so
+// the user holds the conversation open and can then say the thing itself.
+function declineClosingCard() {
+    const text = (controlPhrases.getPhrases().declineClosing || '').trim();
+    if (!text) return [];
+    return [{ slot: engine.SLOT.CLOSING_DECLINE, text, hint: text, priority: 2, latency: 'instant' }];
 }
 
 function resetStaticPaging() {
     staticOffsets.opener = 0;
     staticOffsets.windDown = 0;
     staticOffsets.closing = 0;
-    currentStatic = { kind: null, full: [] };
+    currentStatic = { kind: null, full: [], pin: [] };
     windDownShown = false;
 }
 
@@ -1305,7 +1382,9 @@ async function handleRegenerate() {
     // "New N" dips to the next page of that set rather than calling the AI (Ken,
     // July 2026). Only pages when more cards are defined than fit; otherwise no-op.
     if (currentStatic.kind) {
-        renderStaticPalette(currentStatic.kind, currentStatic.full, null, { advance: true });
+        // Keep any pinned card (the decline-the-closing one) across the page turn.
+        renderStaticPalette(currentStatic.kind, currentStatic.full, null,
+            { advance: true, pin: currentStatic.pin || [] });
         return;
     }
     if (!currentPartnerText || !lastPalette.length) return;
@@ -1320,13 +1399,23 @@ async function handleRegenerate() {
     const history = [...conversationHistory, { role: 'partner', text: currentPartnerText }];
 
     try {
-        const result = await llm.generateResponses(history, engine.buildRequestContext(), { avoid: prior, perCategory: storage.loadResponsesPerCategory() });
+        // Carry this turn's steering through — otherwise "New N" silently discards
+        // the choice the user tapped (or the guidance they typed) and comes back
+        // with the unsteered palette.
+        const result = await llm.generateResponses(history, engine.buildRequestContext(), {
+            avoid: prior,
+            perCategory: storage.loadResponsesPerCategory(),
+            focusChoice: activeSteer.focusChoice || undefined,
+            steer: activeSteer.steer || undefined,
+        });
         if (token !== generationToken) return; // superseded
         const snap = engine.refreshPalette(result.responses);
         ui.showEngineState(snap);
         lastPalette = snap.palette;
         ui.showResponses(snap.palette, handleResponseSelected);
-        ui.setStatus('Select a response');
+        ui.setStatus(activeSteer.focusChoice
+            ? `More ways to say "${activeSteer.focusChoice}"`
+            : 'Select a response');
     } catch (err) {
         if (token !== generationToken) return;
         storage.logError('regenerate', err.message);
@@ -1345,6 +1434,59 @@ async function handleRegenerate() {
 // reliably means "nothing pending" (a lingering value would read as a persistent
 // steer — that sticky/conversation-goal version is deferred to the Goals
 // subsystem). Guarded to an active partner turn with a palette, like regenerate.
+// Drop this turn's steering. Called wherever the partner turn being steered ends
+// or is replaced, so a steer can never leak into the next turn's options.
+function clearTurnSteering() {
+    activeSteer = { focusChoice: null, steer: null };
+}
+
+// Set (or clear) the alternatives showing as Express Panel choice chips. Cheap
+// no-op when nothing changed, since it re-renders the whole panel.
+function setOfferedChoices(options) {
+    const next = Array.isArray(options) ? options.filter(Boolean) : [];
+    if (next.length === offeredChoices.length && next.every((o, i) => o === offeredChoices[i])) return;
+    offeredChoices = next;
+    renderExpressPanel();
+}
+
+// The user tapped a choice chip: they've decided on one of the partner's
+// alternatives and want the responses built around it. This is a guided
+// regenerate — the SAME seam Reframe uses (refreshPalette leaves the sequence
+// stack, mode and floor untouched, so no duplicate FPP), with the picked
+// alternative as the steer. The chips stay up: a second thought is one tap away.
+async function handleChoiceChip(chip) {
+    const pick = chip && chip.label;
+    if (!pick || !currentPartnerText) return;
+
+    const token = ++generationToken;
+    abortPlaceholders();   // the user has acted — nothing may speak over the result
+    activeSteer.focusChoice = pick;   // "New N" must keep answering with this choice
+    llm.setWorldviewBlock(worldview.buildBlock());
+    llm.setRelationshipsBlock(relationships.buildBlock());
+    llm.setSituationBlock(buildSituationBlock());
+
+    ui.setStatus(`Building responses around "${pick}"...`);
+    const history = [...conversationHistory, { role: 'partner', text: currentPartnerText }];
+    try {
+        const result = await llm.generateResponses(history, engine.buildRequestContext(), {
+            focusChoice: pick,
+            perCategory: storage.loadResponsesPerCategory(),
+        });
+        if (token !== generationToken) return;   // superseded (newer turn, or another chip)
+        const snap = engine.refreshPalette(result.responses);
+        ui.showEngineState(snap);
+        lastPalette = snap.palette;
+        currentStatic = { kind: null, full: [] };  // AI responses — New N regenerates, not pages
+        ui.showResponses(snap.palette, handleResponseSelected);
+        ui.setStatus(`Ways to say "${pick}" — or tap another choice`);
+    } catch (err) {
+        if (token !== generationToken) return;
+        storage.logError('choiceChip', err.message, { partner: (currentPartnerText || '').slice(0, 200) });
+        ui.showResponseError(`Couldn't build responses for "${pick}": ${err.message}`, () => handleChoiceChip(chip));
+        ui.setStatus(`Error: ${err.message}`);
+    }
+}
+
 async function handleReframe() {
     keyboard.acceptPendingGhost(); // fold a showing word-prediction ghost into the text first
     const steer = ui.getComposerText();
@@ -1368,6 +1510,10 @@ async function handleReframe() {
     //    want to go (Ken), not replies to a partner.
     if (currentPartnerText && lastPalette.length) {
         ui.setStatus('Reworking options with your input...');
+        // Remember it for this turn so "New N" reworks the options with the same
+        // guidance instead of discarding it (Ken). Still one-shot ACROSS turns —
+        // it dies with the partner turn, and the box is cleared either way.
+        activeSteer.steer = steer;
         const history = [...conversationHistory, { role: 'partner', text: currentPartnerText }];
         try {
             const result = await llm.generateResponses(history, engine.buildRequestContext(), { steer, perCategory: storage.loadResponsesPerCategory() });
@@ -1439,10 +1585,10 @@ async function handleEndConversation() {
     // its openers.)
     clearInfluencers();
     if (wasPractice) {
-        // Practice was launched from the pre-start screen — return there so the user
-        // can pick another scenario or start a real conversation.
-        showStartScreen();
-        ui.setStatus('Practice ended');
+        // Practice is entered from Settings → Practice, so leaving it drops straight
+        // back to the standard conversation screen (Ken, July 2026) — the mic-backed
+        // conversation is ready to go, no start screen in between.
+        ui.setStatus('Practice ended — back to a normal conversation');
     } else {
         ui.setStatus('Conversation ended — tap Start conversation or Listen to begin again');
     }
@@ -1544,6 +1690,18 @@ function renderExpressPanel() {
     ui.renderExpressPanel(expressLayoutRows(), expressPanel.getItems(), {
         categories: expressItems.CATEGORIES,
         influencerColors: expressItems.INFLUENCER_COLORS,
+        // Choice chips fill the reserved leading cells while the partner has a
+        // closed set on the table; they sit blank the rest of the time.
+        // Gated on the partner's turn still being open: a chip steers a response TO
+        // that turn, so once it's consumed the chips must not linger. Belt and
+        // braces with the explicit clears at each turn boundary — any path that
+        // ends a turn without clearing still can't leave a dead chip on screen.
+        // Capped so a long list can't push most of the phrase panel off the end.
+        choiceChips: (currentPartnerText ? offeredChoices : [])
+            .slice(0, storage.loadChoiceChipMax())
+            .map((label) => ({ label })),
+        choiceColor: expressItems.CHOICE_COLOR,
+        onChoiceChip: handleChoiceChip,
         activePartnerId: activePartner ? activePartner.id : null,
         activeFeelingId: activeFeeling ? activeFeeling.id : null,
         tapMode: storage.loadExpressTapMode(),
@@ -1894,6 +2052,7 @@ function handleSettingsTab(tabName) {
     if (tabName === 'aboutme') { worldviewUI.open(); return; }
     if (tabName === 'express') { expressEditor.render(); keyboard.hideKeyboard(); return; }
     if (tabName === 'controls') { controlEditor.render(); keyboard.hideKeyboard(); return; }
+    if (tabName === 'practice') { renderPracticePanel(); keyboard.hideKeyboard(); return; }
     if (tabName === 'speech' && storage.loadKeyboardMode() === 'onscreen') {
         keyboard.previewShow(storage.loadKeyboardDock());
     } else {
@@ -2148,6 +2307,7 @@ function openSettings() {
     const subsequentDelayInput = document.getElementById('subsequentDelayInput');
     const maxPlaceholdersInput = document.getElementById('maxPlaceholdersInput');
     const responsesPerCategoryInput = document.getElementById('responsesPerCategoryInput');
+    const choiceChipMaxInput = document.getElementById('choiceChipMaxInput');
 
     apiKeyInput.value = storage.loadApiKey() || '';
     populateVoiceSelect();
@@ -2156,6 +2316,7 @@ function openSettings() {
     autoRelistenInput.checked = storage.loadAutoRelisten();
     listenChimeInput.checked = storage.loadListenChime();
     responsesPerCategoryInput.value = storage.loadResponsesPerCategory();
+    choiceChipMaxInput.value = storage.loadChoiceChipMax();
     const keyboardMode = storage.loadKeyboardMode();
     const keyboardRadio = document.querySelector(`input[name="keyboardMode"][value="${keyboardMode}"]`);
     if (keyboardRadio) keyboardRadio.checked = true;
@@ -2414,7 +2575,11 @@ function openSettings() {
         stt.setSilenceThreshold(threshold);
         storage.saveSilenceThreshold(threshold);
     };
-    autoRelistenInput.onchange = () => storage.saveAutoRelisten(autoRelistenInput.checked);
+    autoRelistenInput.onchange = () => {
+        storage.saveAutoRelisten(autoRelistenInput.checked);
+        // Auto-resume decides whether the chime is per-conversation or per-start.
+        chime.setOncePerConversation(autoRelistenInput.checked);
+    };
     listenChimeInput.onchange = () => {
         storage.saveListenChime(listenChimeInput.checked);
         chime.setEnabled(listenChimeInput.checked);
@@ -2425,6 +2590,10 @@ function openSettings() {
         ui.setRegenerateLabel((n === 2 ? 2 : 1) * 4); // "New 4" ↔ "New 8"
         ui.setCardsPerCategory(n);
         ui.clearResponseOptions(); // re-render the reserved footprint (4 vs 8 slots)
+    };
+    choiceChipMaxInput.onchange = () => {
+        storage.saveChoiceChipMax(choiceChipMaxInput.value);
+        renderExpressPanel();
     };
     document.querySelectorAll('input[name="keyboardMode"]').forEach(radio => {
         radio.onchange = () => {

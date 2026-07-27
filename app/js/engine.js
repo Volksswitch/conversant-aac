@@ -43,6 +43,22 @@ export const SLOT = {
     DISPREFERRED: 'DISPREFERRED',
     INITIATIVE: 'INITIATIVE',
     REPAIR: 'REPAIR',
+    // Closed-set (alternative-question) turns: the partner offered an explicit menu
+    // ("mild, moderate, or severe?"), so the meaningful axis is WHICH OPTION, not the
+    // four structural moves — four takes on one alternative silently strips away the
+    // choices the partner offered (Ken, July 2026). CHOICE = one offered alternative;
+    // CHOICE_OTHER = the escape hatch for an answer that isn't in the set. These are
+    // their own slot family so the renderer lays them out one-per-cell rather than
+    // grouping by the four categories.
+    CHOICE: 'CHOICE',
+    // Fillers for the cells a short offered set leaves free — a two-way question
+    // leaves two, and an empty cell is something the user can't say. In usefulness
+    // order: an answer outside the set, a question back, ask them to repeat the
+    // choices. Same family as CHOICE (never the structural slots) so the renderer
+    // keeps laying the whole palette out one-per-cell.
+    CHOICE_OTHER: 'CHOICE_OTHER',
+    CHOICE_ASK: 'CHOICE_ASK',
+    CHOICE_REPAIR: 'CHOICE_REPAIR',
     // Repair-of-self operations on the user's own last utterance (design §7.2).
     REPAIR_RESPEAK: 'REPAIR_RESPEAK',
     REPAIR_REPHRASE: 'REPAIR_REPHRASE',
@@ -53,12 +69,22 @@ export const SLOT = {
     OPENER: 'OPENER',
     WIND_DOWN: 'WIND_DOWN',
     CLOSING: 'CLOSING',
+    // Declining the partner's closing — "Actually, before you go —". A pre-closing
+    // is an OFFER to end, and CA makes declining it relevant at exactly that
+    // moment; without this the user can only say goodbye. Offered only when the
+    // PARTNER initiated the closing, never when the user is winding down.
+    CLOSING_DECLINE: 'CLOSING_DECLINE',
 };
 
 const SLOT_PRIORITY = {
     PREFERRED: 1, DISPREFERRED: 2, INITIATIVE: 3, REPAIR: 4,
     REPAIR_RESPEAK: 1, REPAIR_REPHRASE: 2, REPAIR_EXPAND: 3,
-    OPENER: 1, WIND_DOWN: 1, CLOSING: 1,
+    OPENER: 1, WIND_DOWN: 1, CLOSING: 1, CLOSING_DECLINE: 2,
+    // Every CHOICE shares one priority so the stable sort preserves the order the
+    // partner offered them in; the fillers follow in usefulness order. Two
+    // CHOICE_OTHERs may appear (e.g. "about the same" AND "it comes and goes"),
+    // and the stable sort keeps them in the order the model ranked them.
+    CHOICE: 1, CHOICE_OTHER: 5, CHOICE_ASK: 6, CHOICE_REPAIR: 7,
 };
 
 // Static Phase-1 palettes for the modes that don't need an LLM round-trip. These
@@ -219,6 +245,10 @@ export function ingestClassification(result, partnerText) {
         partner_action: c.partner_action || 'OTHER',
         turn_status: c.turn_status || 'COMPLETE',   // informational only
         is_repair_initiator: !!c.is_repair_initiator,
+        // The closed set of alternatives the partner offered, [] for an ordinary
+        // turn. The palette already carries them as CHOICE responses; keeping the
+        // raw list on the state lets other surfaces offer them too.
+        offered_options: Array.isArray(c.offered_options) ? c.offered_options : [],
     };
     state.lastPartnerUtterance = {
         text: partnerText,
@@ -384,6 +414,20 @@ export function selectResponse(response) {
     if (state.mode !== MODE.PRE_CLOSING_CLOSING) state.mode = MODE.LISTENING;
     // The user produced their turn — the floor is open again (the partner may
     // take it, or it lapses until someone does).
+    state.floor = FLOOR.OPEN;
+    state.palette = [];
+    return getSnapshot();
+}
+
+// The user DECLINED the partner's closing ("Actually, before you go —"). A
+// pre-closing is an offer to end, and declining it puts the conversation back in
+// its body — so undo the pre-closing phase/mode that the partner's CLOSING set,
+// which selectResponse deliberately leaves alone (it assumes a closing in progress
+// stays in progress). Without this the conversation stays stuck in PRE_CLOSING and
+// the next partner turn is still read through the closing fast-path.
+export function reopenFromClosing() {
+    state.phase = 'BODY';
+    state.mode = MODE.LISTENING;
     state.floor = FLOOR.OPEN;
     state.palette = [];
     return getSnapshot();

@@ -13,6 +13,61 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+## Version 0.5.98
+
+- **When someone offers you a set of choices, you now get all of them.** If your partner asks
+  something like "would you say it's mild, moderate, or severe?", the response cards are now the
+  choices they actually offered — one card each, in the order they said them — plus a card for
+  when your real answer isn't on their list ("it's somewhere in between"). Previously all four
+  cards were different ways of saying the *same* one of their choices, so the others were out of
+  reach unless you typed them yourself. This works however they offer the choices — whether they
+  ask "mild, moderate, or severe?" or simply mention what's available, as in "we've got muffins,
+  croissants, and a few different pastries — anything jump out at you?". If one of the things they
+  mention is vague, its card asks about it ("What kind of pastries do you have?") rather than
+  guessing. Just listing things in passing — "I picked up milk, eggs, and bread" — is not an offer
+  and is left alone. If they only offer two choices, the two spare cards are
+  filled with the answers people actually give — "About the same.", "It comes and goes." — or a
+  question back to them, rather than being left empty.
+- **Choice buttons in the Express Panel, for when you want to say more.** Those same choices also
+  appear as green buttons at the start of the Express Panel. Tapping one — "moderate", say — asks
+  the AI for a full set of responses all about *that* choice: a plain way to say it, a more
+  hesitant one, one that adds a detail. So you can answer in one tap from the cards, or take a
+  moment and say something fuller about one of them. The buttons appear only while a choice is on
+  offer, and take only as many spaces as there are choices — your phrases shift along to make room
+  and slide back afterwards. You can cap how many appear, or turn them off, under
+  Settings → Conversation.
+- **The listening beep no longer sounds after every single exchange.** If you have "resume
+  listening automatically" turned on, the microphone restarts each time you reply, and the beep was
+  sounding every time — which turned a one-time "this device is listening" cue into a constant
+  interruption. It now sounds once, at the start of the conversation. With automatic resuming
+  turned off, every time you tap Listen still beeps, because each one is a fresh, deliberate start.
+- **"Actually, before you go —" when someone starts saying goodbye.** When the other person begins
+  wrapping up, the goodbyes now come with one extra card that holds them a moment, so you are not
+  limited to either saying goodbye or scrambling to type. Choosing it speaks the phrase, keeps the
+  conversation open, and hands the floor back to you. You can reword it under
+  Settings → Controls, and it stays put when you press "New 4" for different goodbyes.
+- **Better at noticing when someone is wrapping up.** People rarely end a conversation by saying
+  "goodbye" — they start with "Well…", "Anyway…", "I should let you go", "It was good seeing you",
+  or "Have a good one". The app now recognises these as the beginning of a goodbye, while still
+  leaving well alone when the same words simply introduce a new topic ("Anyway, what did you think
+  of the film?").
+- **You can see what your partner is saying as they say it.** While they were speaking, their
+  words-so-far often sat just out of sight below the bottom of the conversation area, hidden behind
+  the row of buttons — and only came into view once they finished. The conversation now keeps their
+  in-progress words in view the whole time they are talking.
+- **"New 4" no longer forgets what you asked for.** If you picked one of their choices — or typed
+  something into Reframe — and then pressed **New 4** for different wording, it used to throw that
+  away and go back to the plain options. Now it keeps it: you get four *different* ways of saying
+  the same thing. Your steering lasts as long as their turn, so once you reply it starts fresh.
+
+- **Practice Mode moved into Settings.** Practice now lives on its own **Practice** tab in
+  Settings, instead of a button on the opening screen — so you can drop into a practice
+  conversation at any time, not just before you start. The tab lists the scenarios to choose
+  from, and while you are practicing it shows which one you are in, with an **End practice**
+  button to stop. Ending a practice conversation (either with that button or with **End
+  conversation**) now returns you straight to the normal conversation screen, ready for a real
+  conversation, rather than back to the opening screen.
+
 ## Version 0.5.97
 
 - **Practice Mode — rehearse a conversation with the AI.** On the opening screen, tap

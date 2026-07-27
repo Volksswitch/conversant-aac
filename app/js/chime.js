@@ -18,16 +18,35 @@
 let enabled = true;
 let ctx = null;
 
+// Once-per-conversation mode, driven by the "resume listening automatically"
+// setting (Ken, July 27 2026). With auto-resume ON the mic restarts after every
+// single exchange, so chiming each time turns a disclosure into a metronome — the
+// partner has already been told. Listening is effectively continuous for the whole
+// conversation, so the cue belongs at the START of it and nowhere else. With
+// auto-resume OFF each start is a deliberate, discrete listening episode, so every
+// one still chimes.
+let oncePerConversation = false;
+let playedThisConversation = false;
+
 export function setEnabled(on) { enabled = !!on; }
 export function isEnabled() { return enabled; }
+export function setOncePerConversation(on) { oncePerConversation = !!on; }
+
+// Called when a conversation starts or ends, so the next one chimes again.
+export function resetConversation() { playedThisConversation = false; }
 
 // Play the "now listening" cue: two short ascending notes — friendly and
 // unmistakable, distinct from the app's TTS. Called on capture start.
+// Returns whether the cue was ALLOWED to sound (the policy decision), so the
+// gating is testable without a speaker — the audio itself is best-effort and its
+// failure is deliberately invisible.
 export function playListenChime() {
-    if (!enabled) return;
+    if (!enabled) return false;
+    if (oncePerConversation && playedThisConversation) return false;
+    playedThisConversation = true;
     try {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        if (!AudioCtx) return;
+        if (!AudioCtx) return true;   // policy allowed it; this device has no audio
         ctx = ctx || new AudioCtx();
         // The context may start suspended until a user gesture; capture always
         // starts from a tap (Start Listening) or after one earlier in the session,
@@ -37,6 +56,7 @@ export function playListenChime() {
         playNote(t,        660, 0.20);  // E5
         playNote(t + 0.17, 880, 0.26);  // A5
     } catch { /* audio unavailable — silent, never blocks capture */ }
+    return true;
 }
 
 // Peak level of each note (0–1 full scale). Deliberately loud: this is a
