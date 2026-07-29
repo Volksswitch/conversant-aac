@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Conversant AAC — iPad Capability Probe</title>
+<link rel="apple-touch-icon" href="data:,">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="AAC Probe">
+<style>
+  :root {
+    --ok: #2E7D32; --bad: #C62828; --warn: #B26A00; --info: #1565C0; --ink: #1a1a1a;
+    font-size: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    color: var(--ink); background: #f4f6f8; line-height: 1.45;
+    padding: 1rem 1rem calc(3rem + env(safe-area-inset-bottom, 0px));
+    max-width: 60rem; margin: 0 auto;
+    -webkit-text-size-adjust: 100%;
+  }
+  h1 { font-size: 1.3rem; margin-bottom: .2rem; }
+  h2 {
+    font-size: 1.05rem; margin: 1.4rem 0 .5rem; padding-bottom: .25rem;
+    border-bottom: 2px solid #d3dae0; color: #23405c;
+  }
+  .sub { color: #5b6b7a; font-size: .85rem; margin-bottom: .8rem; }
+  .row {
+    display: flex; gap: .6rem; align-items: baseline;
+    padding: .35rem .5rem; border-bottom: 1px solid #e4e9ed;
+    font-size: .9rem; flex-wrap: wrap;
+  }
+  .row:nth-child(odd) { background: #fafbfc; }
+  .k { flex: 0 0 13rem; font-weight: 600; }
+  .v { flex: 1 1 12rem; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .82rem; word-break: break-word; }
+  .chip {
+    flex: 0 0 auto; font-size: .7rem; font-weight: 700; letter-spacing: .04em;
+    padding: .12rem .45rem; border-radius: .25rem; color: #fff; text-transform: uppercase;
+  }
+  .chip.ok { background: var(--ok); } .chip.bad { background: var(--bad); }
+  .chip.warn { background: var(--warn); } .chip.info { background: var(--info); }
+  .chip.pend { background: #78909C; }
+  button {
+    font: inherit; font-weight: 600; padding: .7rem 1.1rem; border-radius: .4rem;
+    border: 1px solid #23405c; background: #23405c; color: #fff; cursor: pointer;
+    min-height: 2.9rem; margin: .3rem .3rem .3rem 0;
+  }
+  button.secondary { background: #fff; color: #23405c; }
+  button:disabled { opacity: .5; cursor: default; }
+  .note {
+    background: #eaf1fa; border-left: 4px solid var(--info);
+    padding: .6rem .8rem; margin: .6rem 0; font-size: .85rem; border-radius: 0 .3rem .3rem 0;
+  }
+  .note.warn { background: #fbf2e6; border-left-color: var(--warn); }
+  input[type=text] {
+    font: inherit; padding: .6rem; width: 100%; max-width: 22rem;
+    border: 2px solid #9aa7b2; border-radius: .35rem; margin-top: .3rem;
+  }
+  #live {
+    font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .8rem;
+    background: #fff; border: 1px solid #c9d2d9; border-radius: .35rem;
+    padding: .5rem; min-height: 5rem; max-height: 14rem; overflow: auto; white-space: pre-wrap;
+  }
+  #report {
+    width: 100%; height: 16rem; font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: .72rem; border: 1px solid #c9d2d9; border-radius: .35rem; padding: .5rem;
+  }
+  .stack { display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; }
+</style>
+</head>
+<body>
+
+<h1>Conversant AAC — iPad Capability Probe</h1>
+<p class="sub">
+  Establishes, on real hardware, which browser capabilities Conversant AAC depends on
+  actually work. Run it in <strong>Safari</strong>, then <strong>Chrome</strong>, then
+  <strong>Edge</strong> — and in each, both as a normal tab and as a Home Screen app
+  (Share → Add to Home Screen). Send the report at the bottom back after each run.
+</p>
+
+<div class="note">
+  <strong>Order matters.</strong> Run the sections top to bottom. The passive checks fill in
+  automatically; the rest need a tap, because iOS only grants microphone, speech, and audio
+  from a real user gesture.
+</div>
+
+<h2>1 · Environment</h2>
+<div id="env"></div>
+
+<h2>2 · Viewport &amp; layout</h2>
+<p class="sub">
+  Conversant's layout is calibrated to ~1280–1465 &times; 853–976 CSS px and sets
+  <code>height: 100vh</code> with <code>overflow: hidden</code>. If the visible height is
+  smaller than <code>100vh</code>, the bottom of the app (the Express Panel / keyboard dock)
+  falls under the browser toolbar and cannot be tapped.
+</p>
+<div id="viewport"></div>
+
+<h2>3 · Speech OUT (text-to-speech)</h2>
+<p class="sub">
+  Conversant speaks placeholder phrases on a <em>timer</em>, not on a tap — so whether
+  <code>speak()</code> works without a fresh gesture is decisive. Practice Mode additionally
+  needs two <em>distinct</em> voices.
+</p>
+<div class="stack">
+  <button id="ttsNoGesture" class="secondary">A · Test speak() with no gesture</button>
+  <button id="ttsGesture">B · Test speak() from this tap</button>
+</div>
+<div id="tts"></div>
+
+<h2>4 · Speech IN (recognition) — the decisive test</h2>
+<p class="sub">
+  Conversant sets <code>continuous = true</code> and <code>interimResults = true</code>, and
+  fires generation after a silence period. Both flags are reported broken or unreliable on
+  iOS. Each test listens for 12 seconds. <strong>Say a couple of sentences, then stop
+  talking and wait</strong> — the pause is part of the test.
+</p>
+<div class="stack">
+  <button id="sttA">A · continuous = true (what the app does today)</button>
+  <button id="sttB" class="secondary">B · continuous = false (the iOS workaround)</button>
+</div>
+<div id="live" aria-live="polite">(live recognition events appear here)</div>
+<div id="stt"></div>
+
+<h2>5 · Microphone capture (the cloud-STT fallback path)</h2>
+<p class="sub">
+  If the built-in recognition fails, the fallback streams microphone audio to a paid
+  transcription service. That needs <code>getUserMedia</code>, an encoder, and AudioWorklet.
+</p>
+<button id="micBtn">Test microphone capture</button>
+<div id="mic"></div>
+
+<h2>6 · Storage</h2>
+<p class="sub">
+  The app's data folder becomes OPFS on iPad. Durability depends on
+  <code>navigator.storage.persist()</code>; without it, WebKit may evict everything after
+  7 days of no use.
+</p>
+<button id="persistBtn" class="secondary">Request persistent storage</button>
+<div id="storage"></div>
+
+<h2>7 · On-screen keyboard suppression</h2>
+<p class="sub">
+  Conversant draws its own keyboard on the keyguard grid and must stop the OS keyboard from
+  appearing. It uses <code>inputmode="none"</code>, which is documented as unreliable on iOS;
+  <code>readonly</code> is the usual workaround. Tap each box. Detection watches for a
+  <code>visualViewport</code> height change.
+</p>
+<div>
+  <label>A · <code>inputmode="none"</code><input type="text" id="kbA" inputmode="none" placeholder="tap here"></label>
+</div>
+<div style="margin-top:.6rem">
+  <label>B · <code>readonly</code><input type="text" id="kbB" readonly placeholder="tap here"></label>
+</div>
+<div style="margin-top:.6rem">
+  <label>C · plain input (control — keyboard SHOULD appear)<input type="text" id="kbC" placeholder="tap here"></label>
+</div>
+<div id="keyboard"></div>
+
+<h2>8 · Other capabilities</h2>
+<div id="misc"></div>
+
+<h2>9 · Report</h2>
+<p class="sub">Tap Build, then Copy, and send it back. Note which browser and whether it was a tab or a Home Screen app.</p>
+<div class="stack">
+  <button id="buildBtn">Build report</button>
+  <button id="copyBtn" class="secondary">Copy to clipboard</button>
+</div>
+<textarea id="report" readonly placeholder="The report appears here."></textarea>
+
+<script>
+'use strict';
+
+// ---------------------------------------------------------------- result store
+const RESULTS = [];   // { section, key, value, verdict }
+
+function add(sectionId, key, value, verdict) {
+  RESULTS.push({ section: sectionId, key, value: String(value), verdict: verdict || 'info' });
+  render(sectionId, key, value, verdict || 'info');
+}
+
+function render(sectionId, key, value, verdict) {
+  const host = document.getElementById(sectionId);
+  if (!host) return;
+  let row = host.querySelector('[data-k="' + cssEscape(key) + '"]');
+  if (!row) {
+    row = document.createElement('div');
+    row.className = 'row';
+    row.dataset.k = key;
+    row.innerHTML = '<span class="k"></span><span class="v"></span><span class="chip"></span>';
+    host.appendChild(row);
+  }
+  row.querySelector('.k').textContent = key;
+  row.querySelector('.v').textContent = value;
+  const chip = row.querySelector('.chip');
+  chip.className = 'chip ' + verdict;
+  chip.textContent = verdict;
+}
+
+// Update an existing entry (tests that resolve later).
+function update(sectionId, key, value, verdict) {
+  const hit = RESULTS.find(r => r.section === sectionId && r.key === key);
+  if (hit) { hit.value = String(value); hit.verdict = verdict || 'info'; render(sectionId, key, value, verdict || 'info'); }
+  else add(sectionId, key, value, verdict);
+}
+
+function cssEscape(s) { return s.replace(/["\\]/g, '\\$&'); }
+function log(msg) {
+  const el = document.getElementById('live');
+  el.textContent += (el.textContent.startsWith('(') ? '' : '\n') + msg;
+  if (el.textContent.startsWith('(')) el.textContent = msg;
+  el.scrollTop = el.scrollHeight;
+}
+
+// ---------------------------------------------------------------- 1 · environment
+(function environment() {
+  const ua = navigator.userAgent;
+  add('env', 'User agent', ua);
+
+  // iPadOS Safari reports itself as a Mac by default ("Request Desktop Website" is the
+  // default for iPad). Any code that sniffs for /iPad/ is therefore WRONG on iPad — worth
+  // knowing before we write any platform branch.
+  const claimsMac = /Macintosh/.test(ua);
+  const touch = navigator.maxTouchPoints || 0;
+  const isRealIPad = touch > 1 && (claimsMac || /iPad/.test(ua));
+  add('env', 'maxTouchPoints', touch);
+  add('env', 'UA claims desktop Mac', claimsMac ? 'YES — UA sniffing for "iPad" would MISS this device' : 'no',
+      claimsMac ? 'warn' : 'ok');
+  add('env', 'Detected as iPad', isRealIPad ? 'yes (via maxTouchPoints)' : 'no / not an iPad', 'info');
+
+  // Which wrapper, and which engine underneath.
+  let browser = 'Safari (or WebKit shell)';
+  if (/CriOS/.test(ua)) browser = 'Chrome for iOS';
+  else if (/EdgiOS/.test(ua)) browser = 'Edge for iOS';
+  else if (/FxiOS/.test(ua)) browser = 'Firefox for iOS';
+  else if (/Chrome\//.test(ua) && !/Safari\/605/.test(ua)) browser = 'Chrome (desktop-class Blink)';
+  add('env', 'Browser wrapper', browser);
+
+  // On iOS every browser is WebKit. AppleWebKit + no real Blink markers is the signature.
+  const blinkOnly = ('chrome' in window) && !!window.chrome && typeof window.chrome === 'object' && 'CSS' in window && CSS.supports('-webkit-app-region: drag');
+  const webkitish = /AppleWebKit/.test(ua);
+  const engine = (isRealIPad || /iPhone|iPad|iPod/.test(ua))
+    ? 'WebKit (forced — iOS/iPadOS requires it outside the EU)'
+    : (blinkOnly ? 'Blink' : (webkitish ? 'WebKit-family' : 'unknown'));
+  add('env', 'Rendering engine', engine, isRealIPad ? 'warn' : 'info');
+
+  const standalone = window.navigator.standalone === true ||
+                     window.matchMedia('(display-mode: standalone)').matches;
+  add('env', 'Display mode', standalone ? 'STANDALONE (Home Screen app)' : 'browser tab', 'info');
+  add('env', 'Secure context', window.isSecureContext ? 'yes' : 'NO — mic/speech will be blocked',
+      window.isSecureContext ? 'ok' : 'bad');
+  add('env', 'Online', navigator.onLine ? 'yes' : 'no', navigator.onLine ? 'ok' : 'warn');
+  add('env', 'Languages', (navigator.languages || []).join(', ') || navigator.language || '—');
+  add('env', 'Device memory (GB)', navigator.deviceMemory !== undefined ? navigator.deviceMemory : 'not reported');
+  add('env', 'CPU cores', navigator.hardwareConcurrency || 'not reported');
+})();
+
+// ---------------------------------------------------------------- 2 · viewport
+function readViewport() {
+  // update(), not add() — this re-runs on resize/orientation change and must not
+  // pile duplicate entries into the report.
+  const set = (k, v, verdict) => update('viewport', k, v, verdict || 'info');
+
+  const w = window.innerWidth, h = window.innerHeight;
+  set('Layout viewport (CSS px)', w + ' × ' + h);
+  set('Screen', screen.width + ' × ' + screen.height);
+  set('devicePixelRatio', window.devicePixelRatio);
+  set('Native pixels (screen × DPR)',
+      Math.round(screen.width * window.devicePixelRatio) + ' × ' + Math.round(screen.height * window.devicePixelRatio));
+  set('Orientation', w >= h ? 'landscape' : 'PORTRAIT — Conversant is landscape-only',
+      w >= h ? 'ok' : 'warn');
+
+  if (window.visualViewport) {
+    const vv = window.visualViewport;
+    set('visualViewport', Math.round(vv.width) + ' × ' + Math.round(vv.height));
+  } else {
+    set('visualViewport', 'NOT SUPPORTED', 'warn');
+  }
+
+  // The 100vh trap: measure a 100vh element against the actually-visible height.
+  const probe = document.createElement('div');
+  probe.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:100vh;pointer-events:none;visibility:hidden';
+  document.body.appendChild(probe);
+  const vh100 = probe.getBoundingClientRect().height;
+  probe.style.height = '100dvh';
+  const dvh100 = probe.getBoundingClientRect().height;
+  probe.remove();
+
+  const visible = window.visualViewport ? window.visualViewport.height : h;
+  const hiddenPx = Math.round(vh100 - visible);
+  // Support must be feature-detected, NOT inferred from the measurement: a
+  // zero-height window makes a real 100dvh measure 0, which would read as
+  // "unsupported" and be reported as a false failure.
+  const dvhSupported = window.CSS && CSS.supports && CSS.supports('height', '100dvh');
+  set('100vh resolves to', Math.round(vh100) + ' px');
+  set('100dvh supported', dvhSupported ? 'yes — resolves to ' + Math.round(dvh100) + ' px' : 'NO — cannot fix the 100vh trap this way',
+      dvhSupported ? 'ok' : 'bad');
+  if (h > 0) {
+    set('Hidden by browser chrome', hiddenPx + ' px' + (hiddenPx > 4 ? ' — the app\'s dock would be UNREACHABLE' : ' — none'),
+        hiddenPx > 4 ? 'bad' : 'ok');
+  }
+
+  // Safe-area insets (notch / home indicator).
+  const sa = document.createElement('div');
+  sa.style.cssText = 'position:fixed;visibility:hidden;top:env(safe-area-inset-top,0px);left:env(safe-area-inset-left,0px);bottom:env(safe-area-inset-bottom,0px);right:env(safe-area-inset-right,0px)';
+  document.body.appendChild(sa);
+  const cs = getComputedStyle(sa);
+  set('Safe-area insets (T/R/B/L)', [cs.top, cs.right, cs.bottom, cs.left].join(' / '));
+  sa.remove();
+
+  // What Conversant's root type rule would compute here, and how the viewport
+  // compares with the fleet the layout was calibrated against (styles.css:23).
+  if (w > 0 && h > 0) {
+    const vmin = Math.min(w, h);
+    const raw = 1.6 * vmin / 100 + 1.8;
+    const clamped = Math.min(24, Math.max(14, raw));
+    set('App root font would be',
+        raw.toFixed(2) + 'px → ' + clamped.toFixed(2) + 'px' +
+        (Math.abs(clamped - raw) > 0.001 ? ' (CLAMPED — type stops scaling with the screen)' : ' (in range)'),
+        Math.abs(clamped - raw) > 0.001 ? 'warn' : 'ok');
+    const inFleet = w >= 1280 && w <= 1465 && h >= 853 && h <= 976;
+    set('Inside the calibrated fleet',
+        inFleet ? 'yes (1280–1465 × 853–976)'
+                : 'NO — ' + (w < 1280 ? 'narrower' : w > 1465 ? 'wider' : 'width ok') + ', ' +
+                  (h < 853 ? 'shorter' : h > 976 ? 'taller' : 'height ok') +
+                  ' than the Surface fleet the clamps were derived from',
+        inFleet ? 'ok' : 'warn');
+  }
+}
+readViewport();
+
+// ---------------------------------------------------------------- 3 · TTS
+add('tts', 'speechSynthesis present', 'speechSynthesis' in window ? 'yes' : 'NO',
+    'speechSynthesis' in window ? 'ok' : 'bad');
+
+function reportVoices() {
+  if (!('speechSynthesis' in window)) return;
+  const voices = speechSynthesis.getVoices();
+  update('tts', 'getVoices() count', voices.length,
+         voices.length === 0 ? 'bad' : (voices.length < 4 ? 'warn' : 'ok'));
+  const en = voices.filter(v => /^en/i.test(v.lang));
+  update('tts', 'English voices', en.length ? en.slice(0, 12).map(v => v.name).join(', ') + (en.length > 12 ? ' …(+' + (en.length - 12) + ')' : '') : 'none',
+         en.length >= 2 ? 'ok' : 'warn');
+  update('tts', 'Two distinct voices (Practice Mode)',
+         en.length >= 2 ? 'yes — partner voice possible' : 'NO — Practice Mode cannot differentiate speakers',
+         en.length >= 2 ? 'ok' : 'bad');
+}
+if ('speechSynthesis' in window) {
+  reportVoices();
+  speechSynthesis.onvoiceschanged = reportVoices;
+  setTimeout(reportVoices, 1200);   // Safari often populates late
+}
+
+// Fires a phrase and reports whether onstart/onend actually arrive.
+function trySpeak(label, key) {
+  return new Promise((resolve) => {
+    if (!('speechSynthesis' in window)) { update('tts', key, 'no speechSynthesis', 'bad'); return resolve(false); }
+    let started = false, ended = false;
+    const u = new SpeechSynthesisUtterance('Testing ' + label + ' speech.');
+    u.onstart = () => { started = true; };
+    u.onend = () => { ended = true; };
+    u.onerror = (e) => { update('tts', key, 'error: ' + (e.error || 'unknown'), 'bad'); };
+    update('tts', key, 'firing…', 'pend');
+    speechSynthesis.speak(u);
+    setTimeout(() => {
+      const verdict = started ? 'ok' : 'bad';
+      update('tts', key,
+        started ? ('SPOKE (onstart fired' + (ended ? ', onend fired' : ', onend did NOT fire') + ')')
+                : 'SILENT — onstart never fired',
+        verdict);
+      resolve(started);
+    }, 3000);
+  });
+}
+
+document.getElementById('ttsNoGesture').addEventListener('click', () => {
+  // Deliberately deferred out of the gesture's call stack, so iOS sees no user activation.
+  update('tts', 'A · speak() without a gesture', 'scheduled for 1.5s from now — stay off the screen', 'pend');
+  setTimeout(() => trySpeak('ungestured', 'A · speak() without a gesture'), 1500);
+});
+document.getElementById('ttsGesture').addEventListener('click', () => {
+  trySpeak('gestured', 'B · speak() inside a gesture');
+});
+
+// ---------------------------------------------------------------- 4 · STT
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+add('stt', 'SpeechRecognition present', SR ? 'yes (' + (window.SpeechRecognition ? 'unprefixed' : 'webkit-prefixed') + ')' : 'NO',
+    SR ? 'ok' : 'bad');
+if (!SR) {
+  add('stt', 'Consequence', 'Built-in recognition unavailable — cloud STT fallback is mandatory', 'bad');
+}
+
+let sttBusy = false;
+function runSTT(continuous, label, keyPrefix) {
+  if (!SR) return;
+  if (sttBusy) { log('! a recognition test is already running'); return; }
+  sttBusy = true;
+  document.getElementById('live').textContent = '';
+  log('=== ' + label + ' — listening 12s. Speak, then go quiet. ===');
+
+  const t0 = Date.now();
+  const ms = () => String(Date.now() - t0).padStart(5) + 'ms ';
+  let started = false, firstResult = null, firstFinal = null, interimSeen = 0, finalSeen = 0;
+  let endCount = 0, errors = [], visibilityEvents = 0, lastText = '';
+
+  const onVis = () => { visibilityEvents++; log(ms() + 'visibilitychange → ' + document.visibilityState); };
+  document.addEventListener('visibilitychange', onVis);
+
+  let rec;
+  try { rec = new SR(); }
+  catch (e) { log('constructor threw: ' + e.message); sttBusy = false; return; }
+  rec.continuous = continuous;
+  rec.interimResults = true;
+  rec.lang = 'en-US';
+
+  rec.onstart = () => { started = true; log(ms() + 'onstart'); };
+  rec.onaudiostart = () => log(ms() + 'onaudiostart');
+  rec.onspeechstart = () => log(ms() + 'onspeechstart');
+  rec.onspeechend = () => log(ms() + 'onspeechend');
+  rec.onresult = (ev) => {
+    if (firstResult === null) firstResult = Date.now() - t0;
+    for (let i = ev.resultIndex; i < ev.results.length; i++) {
+      const txt = ev.results[i][0].transcript;
+      if (ev.results[i].isFinal) {
+        finalSeen++;
+        if (firstFinal === null) firstFinal = Date.now() - t0;
+        log(ms() + 'FINAL   "' + txt + '"');
+      } else {
+        interimSeen++;
+        if (txt !== lastText) { lastText = txt; log(ms() + 'interim "' + txt + '"'); }
+      }
+    }
+  };
+  rec.onerror = (e) => { errors.push(e.error); log(ms() + 'ONERROR ' + e.error); };
+  rec.onend = () => { endCount++; log(ms() + 'onend (#' + endCount + ')'); };
+
+  try { rec.start(); } catch (e) { log('start() threw: ' + e.message); }
+
+  setTimeout(() => {
+    try { rec.stop(); } catch (_) {}
+    document.removeEventListener('visibilitychange', onVis);
+    setTimeout(() => {
+      update('stt', keyPrefix + ' started', started ? 'yes' : 'NO — start() never took effect', started ? 'ok' : 'bad');
+      update('stt', keyPrefix + ' interim results', interimSeen
+        ? interimSeen + ' interim events'
+        : 'NONE — the live transcript, interruption capture and echo filter all depend on these',
+        interimSeen ? 'ok' : 'bad');
+      update('stt', keyPrefix + ' final results', finalSeen
+        ? finalSeen + ' final result(s)'
+        : 'NONE — nothing was ever committed',
+        finalSeen ? 'ok' : 'bad');
+      update('stt', keyPrefix + ' time to first result', firstResult === null ? 'never' : firstResult + ' ms',
+        firstResult === null ? 'bad' : (firstResult < 2500 ? 'ok' : 'warn'));
+      update('stt', keyPrefix + ' onend fired', endCount + ' time(s)' + (endCount === 0 ? ' — session never closed' : ''),
+        'info');
+      update('stt', keyPrefix + ' errors', errors.length ? errors.join(', ') : 'none',
+        errors.length ? 'warn' : 'ok');
+      if (visibilityEvents) update('stt', keyPrefix + ' backgrounded during test', 'yes — results may be invalid', 'warn');
+      log('=== ' + label + ' complete ===');
+      sttBusy = false;
+    }, 900);
+  }, 12000);
+}
+
+document.getElementById('sttA').addEventListener('click',
+  () => runSTT(true, 'continuous = true', 'A · continuous'));
+document.getElementById('sttB').addEventListener('click',
+  () => runSTT(false, 'continuous = false', 'B · non-continuous'));
+
+// ---------------------------------------------------------------- 5 · microphone
+add('mic', 'getUserMedia present', navigator.mediaDevices && navigator.mediaDevices.getUserMedia ? 'yes' : 'NO',
+    navigator.mediaDevices && navigator.mediaDevices.getUserMedia ? 'ok' : 'bad');
+add('mic', 'MediaRecorder present', 'MediaRecorder' in window ? 'yes' : 'NO', 'MediaRecorder' in window ? 'ok' : 'bad');
+if ('MediaRecorder' in window) {
+  const types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/mpeg', 'audio/wav'];
+  const supported = types.filter(t => { try { return MediaRecorder.isTypeSupported(t); } catch (_) { return false; } });
+  add('mic', 'Recordable formats', supported.length ? supported.join(', ') : 'NONE reported',
+      supported.length ? 'ok' : 'bad');
+}
+add('mic', 'AudioWorklet present',
+    (window.AudioContext || window.webkitAudioContext) && 'audioWorklet' in (window.AudioContext || window.webkitAudioContext).prototype ? 'yes' : 'NO',
+    (window.AudioContext || window.webkitAudioContext) && 'audioWorklet' in (window.AudioContext || window.webkitAudioContext).prototype ? 'ok' : 'warn');
+add('mic', 'WebSocket present', 'WebSocket' in window ? 'yes' : 'NO', 'WebSocket' in window ? 'ok' : 'bad');
+
+document.getElementById('micBtn').addEventListener('click', async () => {
+  update('mic', 'Live capture', 'requesting permission…', 'pend');
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const track = stream.getAudioTracks()[0];
+    const settings = track.getSettings ? track.getSettings() : {};
+    update('mic', 'Live capture', 'GRANTED — "' + (track.label || 'unnamed device') + '"', 'ok');
+    update('mic', 'Capture settings',
+      ['sampleRate=' + (settings.sampleRate || '?'),
+       'channels=' + (settings.channelCount || '?'),
+       'echoCancellation=' + (settings.echoCancellation !== undefined ? settings.echoCancellation : '?'),
+       'noiseSuppression=' + (settings.noiseSuppression !== undefined ? settings.noiseSuppression : '?')].join(', '),
+      'info');
+
+    // Confirm real audio actually flows (permission granted but silent stream is a known iOS failure).
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    const ctx = new Ctx();
+    if (ctx.state === 'suspended') await ctx.resume().catch(() => {});
+    const analyser = ctx.createAnalyser();
+    ctx.createMediaStreamSource(stream).connect(analyser);
+    const buf = new Uint8Array(analyser.frequencyBinCount);
+    let peak = 0, samples = 0;
+    update('mic', 'Audio level (say something)', 'measuring for 4s…', 'pend');
+    const timer = setInterval(() => {
+      analyser.getByteTimeDomainData(buf);
+      for (let i = 0; i < buf.length; i++) peak = Math.max(peak, Math.abs(buf[i] - 128));
+      samples++;
+    }, 100);
+    setTimeout(() => {
+      clearInterval(timer);
+      update('mic', 'Audio level (say something)',
+        'peak deviation ' + peak + '/128 over ' + samples + ' samples' + (peak < 3 ? ' — SILENT, no audio reaching the page' : ' — audio flowing'),
+        peak < 3 ? 'bad' : 'ok');
+      update('mic', 'AudioContext state', ctx.state, ctx.state === 'running' ? 'ok' : 'warn');
+      stream.getTracks().forEach(t => t.stop());
+      ctx.close().catch(() => {});
+    }, 4000);
+  } catch (e) {
+    update('mic', 'Live capture', 'FAILED — ' + e.name + ': ' + e.message, 'bad');
+  }
+});
+
+// ---------------------------------------------------------------- 6 · storage
+(async function storageChecks() {
+  add('storage', 'localStorage', (() => {
+    try { localStorage.setItem('__p', '1'); localStorage.removeItem('__p'); return 'works'; }
+    catch (e) { return 'BLOCKED — ' + e.name; }
+  })(), 'info');
+
+  add('storage', 'IndexedDB present', 'indexedDB' in window ? 'yes' : 'NO', 'indexedDB' in window ? 'ok' : 'bad');
+
+  // OPFS — the replacement for the File System Access data folder.
+  const hasOPFS = !!(navigator.storage && navigator.storage.getDirectory);
+  add('storage', 'OPFS present', hasOPFS ? 'yes' : 'NO', hasOPFS ? 'ok' : 'bad');
+  if (hasOPFS) {
+    try {
+      const root = await navigator.storage.getDirectory();
+      const fh = await root.getFileHandle('probe.json', { create: true });
+      const payload = JSON.stringify({ t: Date.now(), note: 'Conversant probe' });
+
+      let wrote = false, how = '';
+      if (fh.createWritable) {
+        const w = await fh.createWritable();
+        await w.write(payload); await w.close();
+        wrote = true; how = 'createWritable';
+      } else if (fh.createSyncAccessHandle) {
+        how = 'createSyncAccessHandle only (worker-scoped — main thread cannot write)';
+      }
+      const back = await (await fh.getFile()).text();
+      add('storage', 'OPFS write/read', wrote && back === payload
+        ? 'round-trip OK via ' + how
+        : (how || 'no write method') + ' — read back ' + (back === payload ? 'matched' : '"' + back.slice(0, 40) + '"'),
+        wrote && back === payload ? 'ok' : 'warn');
+
+      // Directory support — the app needs conversations/ and settings/ subfolders.
+      await root.getDirectoryHandle('conversations', { create: true });
+      let names = [];
+      for await (const [name] of root.entries()) names.push(name);
+      add('storage', 'OPFS subdirectories', 'created + listed: ' + names.join(', '), 'ok');
+      await root.removeEntry('probe.json').catch(() => {});
+      await root.removeEntry('conversations', { recursive: true }).catch(() => {});
+    } catch (e) {
+      add('storage', 'OPFS write/read', 'FAILED — ' + e.name + ': ' + e.message, 'bad');
+    }
+  }
+
+  add('storage', 'showDirectoryPicker (desktop data folder)',
+      'showDirectoryPicker' in window ? 'present' : 'ABSENT — as expected on iPad; OPFS is the replacement',
+      'showDirectoryPicker' in window ? 'ok' : 'warn');
+
+  if (navigator.storage && navigator.storage.persisted) {
+    add('storage', 'Storage already persisted', await navigator.storage.persisted() ? 'yes' : 'no (tap the button above)', 'info');
+  } else {
+    add('storage', 'Storage API persist()', 'NOT SUPPORTED — data is evictable', 'bad');
+  }
+  if (navigator.storage && navigator.storage.estimate) {
+    const est = await navigator.storage.estimate();
+    add('storage', 'Quota',
+      (est.quota ? (est.quota / 1048576).toFixed(0) + ' MB' : '?') + ' (using ' +
+      (est.usage !== undefined ? (est.usage / 1048576).toFixed(2) + ' MB' : '?') + ')', 'info');
+  }
+})();
+
+document.getElementById('persistBtn').addEventListener('click', async () => {
+  if (!(navigator.storage && navigator.storage.persist)) {
+    update('storage', 'persist() result', 'not supported', 'bad'); return;
+  }
+  update('storage', 'persist() result', 'requesting…', 'pend');
+  try {
+    const granted = await navigator.storage.persist();
+    update('storage', 'persist() result',
+      granted ? 'GRANTED — exempt from the 7-day eviction sweep'
+              : 'DENIED — data may be evicted after 7 days of no use',
+      granted ? 'ok' : 'bad');
+  } catch (e) {
+    update('storage', 'persist() result', 'threw ' + e.name, 'bad');
+  }
+});
+
+// ---------------------------------------------------------------- 7 · keyboard suppression
+(function keyboardSuppression() {
+  const baseline = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  add('keyboard', 'Baseline visible height', Math.round(baseline) + ' px', 'info');
+  if (!window.visualViewport) {
+    add('keyboard', 'Detection', 'visualViewport unsupported — judge by eye whether the keyboard appeared', 'warn');
+  }
+
+  // The OS keyboard shrinks visualViewport. Compare shortly after focus.
+  function watch(id, key, expectSuppressed) {
+    const el = document.getElementById(id);
+    el.addEventListener('focus', () => {
+      const before = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+      update('keyboard', key, 'measuring…', 'pend');
+      setTimeout(() => {
+        const after = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+        const shrank = before - after;
+        const appeared = shrank > 60;
+        const good = expectSuppressed ? !appeared : appeared;
+        update('keyboard', key,
+          appeared ? ('OS keyboard APPEARED (viewport lost ' + Math.round(shrank) + ' px)')
+                   : ('no keyboard detected (viewport change ' + Math.round(shrank) + ' px)'),
+          good ? 'ok' : 'bad');
+      }, 900);
+    });
+  }
+  watch('kbA', 'A · inputmode="none" suppresses', true);
+  watch('kbB', 'B · readonly suppresses', true);
+  watch('kbC', 'C · control (should appear)', false);
+})();
+
+// ---------------------------------------------------------------- 8 · misc
+(async function misc() {
+  add('misc', 'Service worker', 'serviceWorker' in navigator ? 'supported' : 'NO', 'serviceWorker' in navigator ? 'ok' : 'bad');
+  add('misc', 'Web Locks (single-instance guard)', 'locks' in navigator ? 'supported' : 'NOT SUPPORTED', 'locks' in navigator ? 'ok' : 'warn');
+  add('misc', 'Wake Lock (keep screen on)', 'wakeLock' in navigator ? 'supported' : 'NOT SUPPORTED', 'wakeLock' in navigator ? 'ok' : 'warn');
+  add('misc', 'Clipboard read (API-key paste)',
+      navigator.clipboard && navigator.clipboard.readText ? 'API present' : 'ABSENT — paste button will not work',
+      navigator.clipboard && navigator.clipboard.readText ? 'ok' : 'warn');
+  add('misc', 'Clipboard write', navigator.clipboard && navigator.clipboard.writeText ? 'API present' : 'ABSENT',
+      navigator.clipboard && navigator.clipboard.writeText ? 'ok' : 'warn');
+  add('misc', 'Vibration', 'vibrate' in navigator ? 'supported' : 'not supported', 'info');
+  add('misc', 'Screen orientation lock',
+      screen.orientation && screen.orientation.lock ? 'API present (usually rejects on iOS)' : 'ABSENT — cannot force landscape',
+      'warn');
+  add('misc', 'Fetch to a cross-origin API', 'not tested here (needs a key)', 'info');
+  if (navigator.getBattery) {
+    try { const b = await navigator.getBattery(); add('misc', 'Battery', Math.round(b.level * 100) + '%' + (b.charging ? ' charging' : ''), 'info'); }
+    catch (_) {}
+  }
+})();
+
+window.addEventListener('orientationchange', () => setTimeout(readViewport, 400));
+window.addEventListener('resize', () => { clearTimeout(window.__rt); window.__rt = setTimeout(readViewport, 500); });
+
+// ---------------------------------------------------------------- 9 · report
+document.getElementById('buildBtn').addEventListener('click', () => {
+  const titles = {
+    env: '1 · ENVIRONMENT', viewport: '2 · VIEWPORT & LAYOUT', tts: '3 · SPEECH OUT',
+    stt: '4 · SPEECH IN', mic: '5 · MICROPHONE', storage: '6 · STORAGE',
+    keyboard: '7 · KEYBOARD SUPPRESSION', misc: '8 · OTHER'
+  };
+  let out = 'CONVERSANT AAC — iPad CAPABILITY PROBE\n';
+  out += 'Generated: ' + new Date().toISOString() + '\n';
+  out += '='.repeat(66) + '\n';
+  for (const id of Object.keys(titles)) {
+    const rows = RESULTS.filter(r => r.section === id);
+    if (!rows.length) continue;
+    out += '\n' + titles[id] + '\n' + '-'.repeat(66) + '\n';
+    for (const r of rows) {
+      out += '[' + r.verdict.toUpperCase().padEnd(4) + '] ' + r.key + ': ' + r.value + '\n';
+    }
+  }
+  const untested = RESULTS.filter(r => r.verdict === 'pend');
+  out += '\n' + '='.repeat(66) + '\n';
+  out += 'Counts — ok:' + RESULTS.filter(r => r.verdict === 'ok').length +
+         '  bad:' + RESULTS.filter(r => r.verdict === 'bad').length +
+         '  warn:' + RESULTS.filter(r => r.verdict === 'warn').length +
+         '  still running:' + untested.length + '\n';
+  const missing = [];
+  if (!RESULTS.some(r => r.key.indexOf('A · continuous') === 0)) missing.push('STT test A');
+  if (!RESULTS.some(r => r.key.indexOf('B · non-continuous') === 0)) missing.push('STT test B');
+  if (!RESULTS.some(r => r.key === 'Live capture')) missing.push('microphone test');
+  if (!RESULTS.some(r => r.key === 'persist() result')) missing.push('persist() request');
+  if (!RESULTS.some(r => r.key.indexOf('A · speak()') === 0)) missing.push('TTS test A');
+  if (!RESULTS.some(r => r.key.indexOf('B · speak()') === 0)) missing.push('TTS test B');
+  if (!RESULTS.some(r => r.key.indexOf('A · inputmode') === 0)) missing.push('keyboard test A');
+  if (missing.length) out += 'NOT RUN: ' + missing.join(', ') + '\n';
+  document.getElementById('report').value = out;
+});
+
+document.getElementById('copyBtn').addEventListener('click', async () => {
+  const ta = document.getElementById('report');
+  if (!ta.value) { document.getElementById('buildBtn').click(); }
+  const btn = document.getElementById('copyBtn');
+  try {
+    await navigator.clipboard.writeText(ta.value);
+    btn.textContent = 'Copied ✓';
+  } catch (_) {
+    ta.removeAttribute('readonly'); ta.select(); ta.setSelectionRange(0, ta.value.length);
+    btn.textContent = document.execCommand('copy') ? 'Copied ✓' : 'Select all and copy manually';
+    ta.setAttribute('readonly', '');
+  }
+  setTimeout(() => { btn.textContent = 'Copy to clipboard'; }, 2500);
+});
+</script>
+</body>
+</html>
