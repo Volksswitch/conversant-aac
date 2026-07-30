@@ -29,29 +29,6 @@ import { confirmDanger } from './confirm-dialog.js';
 // itself disable anything — see applyListenAvailability.
 let listeningUnavailable = null;
 
-// Tell the user, visibly, that listening may not work here — and why, and what to
-// do about it. This CANNOT go through ui.setStatus: that element has been
-// visually hidden since v0.5.2, so a message sent there is never seen. That is
-// exactly how the old "Use Chrome or Edge" text managed to be both wrong on iPad
-// and invisible everywhere.
-//
-// Step 3 of the pre-start SEQUENCE (Ken, July 30 2026), not a notice raised at
-// load. Shown on its own, after the upgrade screen and before the API-key notice,
-// so the pre-start screens never stack on top of each other — the rule set in
-// v0.5.96. `onContinue` advances the chain.
-function showListeningUnavailableNotice(support, onContinue) {
-    const box = document.getElementById('listeningPrompt');
-    if (!box) return onContinue();
-    document.getElementById('listeningPromptReason').textContent = support.reason;
-    document.getElementById('listeningPromptRemedy').textContent =
-        support.remedy + ' Everything else works: you can still speak with the Express Panel and “In my own words”.';
-    document.getElementById('startBtn').hidden = true;      // the panel carries its own proceed control
-    document.getElementById('whatsNewPanel').hidden = true;
-    box.hidden = false;
-    document.getElementById('listeningPromptCloseBtn').onclick = () => { box.hidden = true; onContinue(); };
-    ui.setStatus(support.reason + ' ' + support.remedy);   // aria-live, for screen readers
-}
-
 // Disable the Listen control ONLY where there is no recognizer to call at all —
 // never merely because this platform measured unreliable (Ken, July 30 2026:
 // "for now, don't disable the listening function… give Safari every opportunity to
@@ -399,15 +376,11 @@ function initApp() {
         keyboard.hideKeyboard();
     });
     // Release number with the build appended (Ken, July 30 2026) — "0.5.99 ·
-    // 9e73383". Settings → About is where this belongs permanently, because a bug
-    // report needs the exact code, not just the version, and several deploys share
-    // one version during a dev cycle.
-    //
-    // The copy under the Start button is the TEMPORARY one: it exists only because
-    // a start-up failure makes Settings unreachable, which is exactly when you most
-    // need to know which build you have. Remove #buildStamp (index.html + the
-    // stamping block at the foot of this file + its CSS) once the iPad Home Screen
-    // app reliably gets past Start — Ken's condition.
+    // 9e73383". A bug report needs the exact code, not just the version: several
+    // deploys share one version during a dev cycle. This is the only place it is
+    // shown; the temporary copy under the Start button was removed once the iPad
+    // Home Screen app was confirmed to get that far. The startup-failure card
+    // repeats it, since that is shown when Settings cannot be reached.
     const versionEl = document.getElementById('aboutVersion');
     if (versionEl) versionEl.textContent = `${APP_VERSION} · ${BUILD_ID}`;
 
@@ -634,13 +607,20 @@ async function handleStart() {
     }
 }
 
-// Step 3 — the listening notice, shown only where partner capture measured
-// unreliable or absent. Informational: the Listen button stays live anyway (see
-// applyListenAvailability), so this is a heads-up before the user tries, not a
-// refusal. "Continue anyway" advances to step 4.
+// Step 3 was a "listening may not work here" notice. REMOVED (Ken, July 30 2026)
+// once the iPad Home Screen app was confirmed working apart from capture: "I'm not
+// convinced that it is necessary to keep hitting a person in the face with this
+// warning each time they start the app, they will understand that quickly and
+// probably before they create the desktop app via user documentation."
+//
+// It is a property of the platform, not an event — it is identical on every launch
+// and there is nothing to act on, so a recurring modal step teaches nothing after
+// the first read and costs a tap forever. The user documentation carries it
+// instead. What survives in code: the verdict still reaches the screen-reader
+// status line, still disables the control where there is no recognizer at all, and
+// is still reported by platform.describe() in a bug report.
 function afterWhatsNew() {
-    if (listeningUnavailable) showListeningUnavailableNotice(listeningUnavailable, afterListeningNotice);
-    else afterListeningNotice();
+    afterListeningNotice();
 }
 
 // Step 4 — the API-key notice, shown only when no key is set (informational: the
@@ -664,7 +644,6 @@ function afterListeningNotice() {
 function finishStart() {
     document.getElementById('startBtn').hidden = false;   // restore for any later start screen
     document.getElementById('apiKeyPrompt').hidden = true;
-    document.getElementById('listeningPrompt').hidden = true;
     document.getElementById('startBlock').classList.add('hidden');
     document.querySelector('main').classList.remove('disabled');
 }
@@ -3088,7 +3067,10 @@ function reportStartupFailure(where, err) {
         // red-wash, not in a card the user can no longer see anyway.
         const startBlock = document.getElementById('startBlock');
         if (!startBlock || startBlock.classList.contains('hidden')) return;
-        document.getElementById('startupErrorDetail').textContent = where + ' — ' + msg;
+        // Name the build here: this card is shown precisely when Settings — and so
+        // the version line in About — cannot be reached.
+        document.getElementById('startupErrorDetail').textContent =
+            `v${APP_VERSION} · ${BUILD_ID}\n${where} — ${msg}`;
         box.hidden = false;
     } catch { /* the DOM itself is gone; the console line above is all we have */ }
 }
@@ -3096,13 +3078,12 @@ function reportStartupFailure(where, err) {
 window.addEventListener('error', (e) => reportStartupFailure('script', e.error || e.message));
 window.addEventListener('unhandledrejection', (e) => reportStartupFailure('promise', e.reason));
 
-// Stamp the build BEFORE initApp runs, so it is on screen even if initApp is what
-// fails — that is precisely the case where you need to know which build you have.
-try {
-    const stamp = document.getElementById('buildStamp');
-    if (stamp) stamp.textContent = `v${APP_VERSION} · ${BUILD_ID}`;
-} catch { /* nothing to stamp */ }
-
+// The build used to be stamped under the Start button as well, because a start-up
+// failure made Settings unreachable and there was no other way to tell which build
+// you had. Removed once the iPad Home Screen app was confirmed to get past Start
+// (Ken, July 30 2026) — Settings → About carries it now. The startup-failure card
+// below is what covers the case the stamp was insurance against, and it names the
+// build in its own detail line.
 try {
     initApp();
 } catch (err) {
