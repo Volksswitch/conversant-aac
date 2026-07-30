@@ -1563,6 +1563,41 @@ dialog select {
     text-align: center;
 }
 #apiKeyPrompt[hidden] { display: none; }
+
+/* The other two pre-start notices share the card, so the sequence looks like one
+   thing shown three ways rather than three unrelated screens. The listening notice
+   had no card of its own and rendered as bare text on the transcript background;
+   the startup-failure card is red, because unlike the other two it is not
+   informational — something is actually broken. */
+#listeningPrompt,
+#startupError {
+    flex: 0 0 auto;
+    max-width: 34rem;
+    background: #fff8e6;
+    border: 1px solid #e6c34a;
+    border-left: 6px solid #d99a00;
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    text-align: center;
+}
+#startupError {
+    background: #fdf1f1;
+    border-color: #e2a2a2;
+    border-left-color: #c0392b;
+}
+#startupError .apikey-prompt-title { color: #8a2620; }
+/* The exception text: monospace so a stack trace stays readable, and wrapped so a
+   long single-token message can't push the card wider than the screen. */
+#startupErrorDetail {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    text-align: left;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    max-height: 30vh;
+    overflow-y: auto;
+}
+#listeningPrompt[hidden],
+#startupError[hidden] { display: none; }
 .apikey-prompt-title { margin: 0 0 0.9rem; font-weight: 700; color: #7a5300; line-height: 1.45; }
 .apikey-prompt-actions {
     display: flex;

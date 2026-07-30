@@ -13,6 +13,17 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+- **If the app fails to start, it now says so.** Previously anything that went wrong while
+  the app was starting up left you with buttons that quietly did nothing — most visibly a
+  Start button that appeared to be ignored — and on an iPad there is no way to look under
+  the bonnet. Now a red card on the opening screen names what went wrong, and the same
+  detail is written to the error log for a bug report.
+- **The Start button can no longer be left waiting on your saved data.** If reading your
+  data takes too long or never finishes, the app now gets on with it after a few seconds
+  and opens the conversation, rather than sitting on the opening screen indefinitely.
+- **The note about listening now looks like the other start-up notices** instead of plain
+  text on the background.
+
 - **On an iPad, the app now works when you open it from the Home Screen.** Previously, where
   listening looked unlikely to work — the Home Screen app, and Chrome or Edge on an iPad — the
   app told you everything else still worked, and then nothing did: the Start button did nothing,

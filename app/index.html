@@ -39,6 +39,15 @@
                      opening, so nothing is obscured); a SECOND Start press dismisses it
                      and enters the conversation. See whats-new.js + handleStart. -->
                 <div id="startBlock">
+                    <!-- Startup failure. Shown only when something threw while the
+                         app was wiring itself up, which otherwise leaves dead
+                         controls and no explanation — and on an iPad there is no
+                         console to open. See reportStartupFailure in app.js. -->
+                    <div id="startupError" hidden>
+                        <p class="apikey-prompt-title">The app didn't start up properly.</p>
+                        <p class="setting-hint" id="startupErrorDetail"></p>
+                        <p class="setting-hint">Settings → About → Reload the app is worth trying first. If it keeps happening, this text is the bug report.</p>
+                    </div>
                     <!-- The three optional pre-start screens, in the order the
                          sequence shows them: step 2 upgrade, step 3 listening,
                          step 4 API key. Only ever one at a time. -->

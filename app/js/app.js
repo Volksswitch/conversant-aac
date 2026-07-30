@@ -524,19 +524,28 @@ function handleSttStatus(status, detail) {
     }
 }
 
-async function handleStart() {
-    // Bring the audio context up NOW, while a real tap is in hand. The chime
-    // itself is fired from an async recognizer callback where WebKit would refuse
-    // to start audio (see chime.unlock).
-    chime.unlock();
-    // Check for a newer deployed version when the session starts. If one is
-    // found the worker activates and the controllerchange handler in index.html
-    // reloads the page; when nothing is new this is a cheap no-op.
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistration()
-            .then((reg) => reg && reg.update())
-            .catch(() => { /* update check is best-effort */ });
-    }
+// How long the Start button will wait for storage before going on without it.
+// Generous — this is a stuck-detector, not a performance budget.
+const STORAGE_WARMUP_MS = 6000;
+
+// Resolve `promise`, or give up after `ms` and carry on. Resolves rather than
+// rejects, so callers need no extra error path; a timeout is logged, because a
+// storage layer that stops answering is worth knowing about even though the app
+// survives it.
+function withTimeout(promise, ms, label) {
+    return Promise.race([
+        promise,
+        new Promise((resolve) => setTimeout(() => {
+            try { storage.logError('timeout', `${label} did not finish within ${ms}ms — continuing without it`); } catch { /* best-effort */ }
+            resolve(null);
+        }, ms)),
+    ]);
+}
+
+// Adopt the data folder (or, on iPad, device storage) and reconcile every
+// user-owned file against it: the folder copy wins where it exists, the
+// localStorage cache is promoted where it doesn't (the v0.2.25 rule).
+async function warmUpStorage() {
     try { await storage.restoreDataFolder(); } catch { /* no stored handle yet */ }
     // Reload the worldview profile from the (now-restored) data folder, then
     // reconcile: if answers accumulated only in the localStorage cache (no
@@ -554,6 +563,28 @@ async function handleStart() {
     try { await controlPhrases.load(); } catch { /* keep cached/default phrases */ }
     try { await controlPhrases.syncToFolder(); } catch { /* best-effort */ }
     applyControlPhrases();
+}
+
+async function handleStart() {
+    // Bring the audio context up NOW, while a real tap is in hand. The chime
+    // itself is fired from an async recognizer callback where WebKit would refuse
+    // to start audio (see chime.unlock).
+    chime.unlock();
+    // Check for a newer deployed version when the session starts. If one is
+    // found the worker activates and the controllerchange handler in index.html
+    // reloads the page; when nothing is new this is a cheap no-op.
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistration()
+            .then((reg) => reg && reg.update())
+            .catch(() => { /* update check is best-effort */ });
+    }
+    // Warm up storage, but NEVER let it strand the user on the Start screen. Each
+    // call is already try/caught, which covers a rejection — it does not cover a
+    // promise that simply never settles, and a hung storage call here would leave
+    // Start looking like a dead button with nothing on screen and nothing logged.
+    // The data is a nice-to-have at this moment (every module falls back to its
+    // localStorage cache); getting the user into the conversation is not.
+    await withTimeout(warmUpStorage(), STORAGE_WARMUP_MS, 'storage warm-up');
     // Fresh conversation state for this session.
     engine.reset();
     ui.showEngineState(engine.getSnapshot());
@@ -3008,4 +3039,42 @@ function openSettings() {
     };
 }
 
-initApp();
+/*
+ * Startup failures must be VISIBLE on the device (Ken, July 30 2026).
+ *
+ * initApp() wires every control in the app, in one pass, and used to be called
+ * bare. So a throw anywhere in it left the surviving buttons dead with no clue
+ * why — which on an iPad, where there is no console to open, presents as "the
+ * Start button doesn't do anything". That exact symptom has now cost two rounds of
+ * guessing, so the app says what broke instead of failing mute.
+ *
+ * Deliberately not a recovery mechanism: whatever threw is still broken. This only
+ * ensures the failure names itself, and that a LATER failure can't hide behind an
+ * earlier one (the first message wins, so the root cause stays on screen).
+ */
+function reportStartupFailure(where, err) {
+    const msg = (err && (err.stack || err.message)) || String(err);
+    try { console.error('[startup]', where, err); } catch { /* no console */ }
+    try { storage.logError('startup:' + where, msg); } catch { /* logging is best-effort */ }
+    try {
+        const box = document.getElementById('startupError');
+        if (!box || !box.hidden) return;   // first failure wins — it is the root cause
+        // Only while the pre-start screen is still up. These handlers stay attached
+        // for the whole session, and a rejection during a conversation is not a
+        // startup failure — it belongs in the error log (above) and the transcript
+        // red-wash, not in a card the user can no longer see anyway.
+        const startBlock = document.getElementById('startBlock');
+        if (!startBlock || startBlock.classList.contains('hidden')) return;
+        document.getElementById('startupErrorDetail').textContent = where + ' — ' + msg;
+        box.hidden = false;
+    } catch { /* the DOM itself is gone; the console line above is all we have */ }
+}
+
+window.addEventListener('error', (e) => reportStartupFailure('script', e.error || e.message));
+window.addEventListener('unhandledrejection', (e) => reportStartupFailure('promise', e.reason));
+
+try {
+    initApp();
+} catch (err) {
+    reportStartupFailure('initApp', err);
+}
