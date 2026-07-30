@@ -235,3 +235,22 @@ test('echo filter: genuine partner speech sharing only a couple words is NOT dro
     rec.emitFinal('Did you get out and see any friends this weekend?');
     assert.ok(stt.getCurrentTranscript().includes('friends'), 'a different partner sentence is kept');
 });
+
+/* --- backend selection (Ken, July 30 2026) ---------------------------------
+ * The shared core — accumulation, echo filtering, the silence checkpoint — must be
+ * the same code whichever backend supplies the text, so a paid backend cannot
+ * quietly behave differently from the free one. These check the routing itself:
+ * asking for the paid backend must NOT construct the browser recognizer, and the
+ * default must stay exactly as it was.
+ */
+test('source: "deepgram" does not construct the browser recognizer', () => {
+    const before = recognitions.length;
+    stt.init({ onResult() {}, onSilence() {}, onStatus() {}, onPartnerSpeech() {}, source: 'deepgram', getDeepgramKey: () => '' });
+    assert.equal(recognitions.length, before, 'no Web Speech recognizer may be created for a paid backend');
+});
+
+test('the default is still the browser recognizer', () => {
+    const before = recognitions.length;
+    stt.init({ onResult() {}, onSilence() {}, onStatus() {}, onPartnerSpeech() {} });
+    assert.equal(recognitions.length, before + 1);
+});

@@ -22,6 +22,7 @@ import * as chime from './chime.js';
 import * as practiceScenarios from './practice-scenarios.js';
 import * as dataTransfer from './data-transfer.js';
 import * as platform from './platform.js';
+import * as sttDeepgram from './stt-deepgram.js';
 import { confirmDanger } from './confirm-dialog.js';
 
 // The platform verdict on partner capture (see platform.js), or null when capture
@@ -103,6 +104,10 @@ let activeSteer = { focusChoice: null, steer: null };
 // response options it's still producing (that's why this is separate from
 // generationToken, which a response selection uses to cancel generation outright).
 let placeholderEpoch = 0;
+// Cumulative audio (seconds) the paid transcription backend has uploaded since it
+// was last started — the source reports a running total, so this holds the last
+// value seen in order to store only the increment.
+let sttBilledThisSession = 0;
 // Abort placeholders now AND stop an in-flight generation from restarting one.
 function abortPlaceholders() {
     placeholders.stop();
@@ -252,8 +257,14 @@ function initApp() {
     // than being told plainly. The app remains fully usable without capture (the
     // AI-optional property): the Express Panel and "In my own words" still speak,
     // and turns are still recorded — so this disables listening, not the app.
+    // A paid backend bypasses the platform verdict entirely: it does its own
+    // capture and never touches the browser's recognizer, so "Safari delivers
+    // nothing in a Home Screen app" simply does not apply to it. That is the whole
+    // point of paying — capture where the platform has none.
+    const sttProvider = storage.loadSttProvider();
+    const usingPaidStt = sttProvider === 'deepgram' && !!(storage.loadDeepgramKey() || '').trim();
     const speechSupport = platform.speechRecognitionSupport();
-    listeningUnavailable = speechSupport.usable ? null : speechSupport;
+    listeningUnavailable = (usingPaidStt || speechSupport.usable) ? null : speechSupport;
 
     // Recording indicator: whether the start-of-listening chime is enabled
     // (partner-awareness cue — see chime.js). Applied here so it's active before
@@ -277,13 +288,18 @@ function initApp() {
     // the keyboard, Settings — is what the notice promises still works, and an
     // early return here left an iPad Home Screen app with no working controls at
     // all, Start included (Ken, July 30 2026).
-    if (speechSupport.apiPresent) {
+    if (speechSupport.apiPresent || usingPaidStt) {
         stt.setSilenceThreshold(storage.loadSilenceThreshold());
         stt.init({
             onResult: handleSpeechResult,
             onSilence: handleSilencePeriod,
             onStatus: handleSttStatus,
-            onPartnerSpeech: handlePartnerResumed
+            onPartnerSpeech: handlePartnerResumed,
+            source: usingPaidStt ? 'deepgram' : 'builtin',
+            // Read at start time, so a key pasted into Settings works on the next
+            // Listen rather than needing a reload.
+            getDeepgramKey: () => storage.loadDeepgramKey() || '',
+            onBilled: handleSttBilled,
         });
     }
 
@@ -434,6 +450,15 @@ function initApp() {
 // status bar can't show one). Step 3 of the pre-start sequence (afterWhatsNew)
 // drives (3); the two functions below drive (1)/(2).
 
+function showDeepgramStatus(kind, msg) {
+    const el = document.getElementById('deepgramKeyStatus');
+    if (!el) return;
+    if (!msg) { el.hidden = true; el.textContent = ''; el.className = 'api-key-status'; return; }
+    el.hidden = false;
+    el.textContent = msg;
+    el.className = 'api-key-status ' + (kind === 'ok' ? 'ok' : kind === 'checking' ? 'checking' : 'warn');
+}
+
 function showApiKeyStatus(kind, msg) {
     const el = document.getElementById('apiKeyStatus');
     if (!el) return;
@@ -499,6 +524,17 @@ async function handleSilencePeriod(text) {
     // elapsed) or placeholders.stop() (not placeholder-worthy).
     placeholders.arm();
     await generateOptions(text);
+}
+
+// Audio uploaded to the paid transcription service, in seconds. Reported per
+// speech burst (the gate closing), so the running total reflects what was actually
+// sent rather than how long the microphone was open — which is the difference the
+// gating exists to create, and the number the user is billed on.
+function handleSttBilled(seconds) {
+    // The source reports its cumulative total for the session; store the delta.
+    const delta = seconds - sttBilledThisSession;
+    sttBilledThisSession = seconds;
+    if (delta > 0) storage.addSttSeconds(delta);
 }
 
 function handleSttStatus(status, detail) {
@@ -2855,6 +2891,60 @@ function openSettings() {
         else if (res.reason === 'empty') showApiKeyStatus('warn', 'Enter your key first, then tap Test.');
         else showApiKeyStatus('warn', "Couldn't reach the service — check your internet connection and try again.");
     };
+    // --- Transcription backend (Ken, July 30 2026) ---------------------------
+    // Changing the provider or the key needs a reload, because stt.init() builds
+    // the capture source once at startup. Say so plainly rather than leaving the
+    // user to wonder why the setting appears to do nothing until next time.
+    const deepgramKeyInput = document.getElementById('deepgramKeyInput');
+    const deepgramRow = document.getElementById('deepgramRow');
+    const reflectSttProvider = () => {
+        const provider = storage.loadSttProvider();
+        const radio = document.querySelector(`input[name="sttProvider"][value="${provider}"]`);
+        if (radio) radio.checked = true;
+        if (deepgramRow) deepgramRow.hidden = provider !== 'deepgram';
+    };
+    if (deepgramKeyInput) deepgramKeyInput.value = storage.loadDeepgramKey() || '';
+    reflectSttProvider();
+    document.querySelectorAll('input[name="sttProvider"]').forEach((radio) => {
+        radio.onchange = () => {
+            if (!radio.checked) return;
+            storage.saveSttProvider(radio.value);
+            reflectSttProvider();
+            showDeepgramStatus('ok', 'Saved. Reload the app (About → Reload the app) to start using it.');
+        };
+    });
+    if (deepgramKeyInput) {
+        deepgramKeyInput.oninput = () => storage.saveDeepgramKey(deepgramKeyInput.value.trim());
+    }
+    const pasteDeepgramBtn = document.getElementById('pasteDeepgramKeyBtn');
+    if (pasteDeepgramBtn) {
+        pasteDeepgramBtn.onclick = async () => {
+            try {
+                const text = (await navigator.clipboard.readText())?.trim();
+                if (!text) { showDeepgramStatus('warn', 'The clipboard is empty — copy your key first.'); return; }
+                deepgramKeyInput.value = text;
+                storage.saveDeepgramKey(text);
+                showDeepgramStatus(null, '');
+            } catch {
+                showDeepgramStatus('warn', 'Could not read the clipboard. Touch and hold the box above, then choose Paste.');
+            }
+        };
+    }
+    const testDeepgramBtn = document.getElementById('testDeepgramKeyBtn');
+    if (testDeepgramBtn) {
+        // Opens the streaming socket and closes it again: it authenticates the key
+        // without sending audio, so it bills nothing.
+        testDeepgramBtn.onclick = async () => {
+            const key = (deepgramKeyInput.value || '').trim();
+            if (!key) { showDeepgramStatus('warn', 'Enter your key first, then tap Test.'); return; }
+            testDeepgramBtn.disabled = true;
+            showDeepgramStatus('checking', 'Checking your key…');
+            const res = await sttDeepgram.testKey(key);
+            testDeepgramBtn.disabled = false;
+            showDeepgramStatus(res.ok ? 'ok' : 'warn', res.message);
+        };
+    }
+
     voiceSelect.onchange = () => {
         const voiceURI = voiceSelect.value || null;
         tts.setVoice(voiceURI);

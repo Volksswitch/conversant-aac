@@ -30,6 +30,17 @@ _Nothing yet._
 
 ## Held back — iPad work in progress, not announced
 
+- **The app can now hear the other person on an iPad, using a transcription service.**
+  Settings → General has a new **Hearing the other person** choice: your browser's own
+  (free, and what everyone has been using), or **Deepgram** — a paid service you sign up
+  for yourself, with your own key, exactly like the AI key. This exists because an iPad
+  simply cannot listen on its own: it does nothing in a Home Screen app, and nothing in
+  Chrome or Edge. New Deepgram accounts include $200 of free credit — several hundred
+  hours — and no card is needed to start. It costs roughly 46 cents an hour of speech,
+  **and the app only sends audio while somebody is actually talking**, so the quiet
+  stretches of a conversation cost nothing. Your key stays on the device: it is never
+  written into a backup or a settings profile.
+
 - **The opening screen now shows which build you are running**, in small type under the Start
   button — the version plus the exact code it was built from. Settings → About has the version
   too, but you can't reach Settings before pressing Start, so if start-up itself misbehaves this

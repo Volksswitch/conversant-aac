@@ -42,6 +42,8 @@ const SHELL = [
   './css/styles.css',
   './js/app.js',
   './js/stt.js',
+  './js/stt-deepgram.js',
+  './js/vad.js',
   './js/tts.js',
   './js/llm.js',
   './js/ui.js',
