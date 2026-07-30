@@ -597,6 +597,14 @@ document.getElementById('persistBtn').addEventListener('click', async () => {
       granted ? 'GRANTED — exempt from the 7-day eviction sweep'
               : 'DENIED — data may be evicted after 7 days of no use',
       granted ? 'ok' : 'bad');
+    // Keep the earlier "already persisted" row coherent with what just happened,
+    // so the report cannot show a stale "no" beside a GRANTED result.
+    if (navigator.storage.persisted) {
+      update('storage', 'Storage already persisted', await navigator.storage.persisted() ? 'yes' : 'no', 'info');
+    }
+    update('storage', 'Was the site bookmarked for this attempt?',
+      'ANSWER THIS BY HAND when sending the report — Safari weights site engagement, so a bookmarked site may be granted where a fresh one is denied',
+      'warn');
   } catch (e) {
     update('storage', 'persist() result', 'threw ' + e.name, 'bad');
   }
@@ -610,22 +618,29 @@ document.getElementById('persistBtn').addEventListener('click', async () => {
     add('keyboard', 'Detection', 'visualViewport unsupported — judge by eye whether the keyboard appeared', 'warn');
   }
 
-  // The OS keyboard shrinks visualViewport. Compare shortly after focus.
+  // The OS keyboard shrinks visualViewport. POLL for 2.5s and keep the smallest
+  // height seen, rather than sampling once: the iPad keyboard animates in, and a
+  // single early sample can miss it entirely and report a false "suppressed".
   function watch(id, key, expectSuppressed) {
     const el = document.getElementById(id);
     el.addEventListener('focus', () => {
-      const before = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-      update('keyboard', key, 'measuring…', 'pend');
-      setTimeout(() => {
-        const after = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-        const shrank = before - after;
+      const vpH = () => (window.visualViewport ? window.visualViewport.height : window.innerHeight);
+      const before = vpH();
+      let minSeen = before;
+      update('keyboard', key, 'measuring — keep this box focused for 3 seconds…', 'pend');
+      const started = Date.now();
+      const timer = setInterval(() => {
+        minSeen = Math.min(minSeen, vpH());
+        if (Date.now() - started < 2500) return;
+        clearInterval(timer);
+        const shrank = before - minSeen;
         const appeared = shrank > 60;
         const good = expectSuppressed ? !appeared : appeared;
         update('keyboard', key,
           appeared ? ('OS keyboard APPEARED (viewport lost ' + Math.round(shrank) + ' px)')
-                   : ('no keyboard detected (viewport change ' + Math.round(shrank) + ' px)'),
+                   : ('no keyboard detected (largest viewport change ' + Math.round(shrank) + ' px)'),
           good ? 'ok' : 'bad');
-      }, 900);
+      }, 150);
     });
   }
   watch('kbA', 'A · inputmode="none" suppresses', true);
@@ -681,14 +696,20 @@ document.getElementById('buildBtn').addEventListener('click', () => {
          '  bad:' + RESULTS.filter(r => r.verdict === 'bad').length +
          '  warn:' + RESULTS.filter(r => r.verdict === 'warn').length +
          '  still running:' + untested.length + '\n';
+  // A test that is still measuring counts as NOT RUN — a 'pend' row carries no
+  // answer, and treating it as merely "still running" let an inconclusive
+  // keyboard result look like a completed one.
+  const done = (prefix) => RESULTS.some(r => r.key.indexOf(prefix) === 0 && r.verdict !== 'pend');
   const missing = [];
-  if (!RESULTS.some(r => r.key.indexOf('A · continuous') === 0)) missing.push('STT test A');
-  if (!RESULTS.some(r => r.key.indexOf('B · non-continuous') === 0)) missing.push('STT test B');
-  if (!RESULTS.some(r => r.key === 'Live capture')) missing.push('microphone test');
-  if (!RESULTS.some(r => r.key === 'persist() result')) missing.push('persist() request');
-  if (!RESULTS.some(r => r.key.indexOf('A · speak()') === 0)) missing.push('TTS test A');
-  if (!RESULTS.some(r => r.key.indexOf('B · speak()') === 0)) missing.push('TTS test B');
-  if (!RESULTS.some(r => r.key.indexOf('A · inputmode') === 0)) missing.push('keyboard test A');
+  if (!done('A · continuous')) missing.push('STT test A');
+  if (!done('B · non-continuous')) missing.push('STT test B');
+  if (!done('Live capture')) missing.push('microphone test');
+  if (!done('persist() result')) missing.push('persist() request');
+  if (!done('A · speak()')) missing.push('TTS test A');
+  if (!done('B · speak()')) missing.push('TTS test B');
+  if (!done('A · inputmode')) missing.push('keyboard test A (inputmode)');
+  if (!done('B · readonly')) missing.push('keyboard test B (readonly)');
+  if (!done('C · control')) missing.push('keyboard test C (CONTROL — without it A and B mean nothing)');
   if (missing.length) out += 'NOT RUN: ' + missing.join(', ') + '\n';
   document.getElementById('report').value = out;
 });
