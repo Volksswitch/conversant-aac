@@ -144,7 +144,16 @@
                             <span id="dataFolderName" class="placeholder">No folder selected</span>
                             <button id="pickFolderBtn" type="button">Choose Folder</button>
                         </div>
-                        <p class="setting-hint">Local folder for conversation history and user data. Synced by OneDrive, not uploaded to the cloud.</p>
+                        <p class="setting-hint" id="dataFolderHint">Local folder for conversation history and user data. Synced by OneDrive, not uploaded to the cloud.</p>
+                        <!-- Shown only where the app uses the browser's private
+                             storage (no folder picker — i.e. a tablet). There,
+                             whether the browser has promised to keep the data is a
+                             real and consequential question, so it is stated
+                             plainly rather than left to chance. -->
+                        <div id="storageDurabilityRow" hidden>
+                            <p class="setting-hint" id="storageDurabilityStatus"></p>
+                            <button id="makeStorageDurableBtn" type="button" hidden>Ask the browser to keep my data</button>
+                        </div>
                     </div>
                     <div class="setting-group" id="settingsProfilesGroup">
                         <label>Settings profiles</label>

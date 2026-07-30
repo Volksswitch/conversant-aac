@@ -6,6 +6,11 @@ const IDB_STORE = 'handles';
 const DIR_HANDLE_KEY = 'dataFolder';
 
 let dirHandle = null;
+// Cached 'conversations' subdirectory OF the current root. Declared here rather
+// than down in the conversation-logging section because setRoot() must invalidate
+// it whenever the root changes — a handle from the old root must never leak into
+// the new one.
+let conversationDirHandle = null;
 
 // --- IndexedDB helpers for persisting the directory handle ---
 
@@ -48,35 +53,114 @@ async function idbDelete(key) {
     });
 }
 
-// --- Directory handle persistence ---
+// --- Storage backend (Ken, July 30 2026) ---
+//
+// Two backends behind ONE seam. Everything below this block — readFile, writeFile,
+// getSettingsDir, getConversationsDir, appendErrorFile and every caller of them —
+// is backend-agnostic and was NOT changed, because the Origin Private File System
+// exposes the same FileSystemDirectoryHandle / FileSystemFileHandle interfaces as
+// the File System Access API. Only acquiring the root differs.
+//
+//   FOLDER — File System Access. A real folder the user picked and can open,
+//            copy from, and back up by hand. Windows/desktop. Unchanged.
+//   DEVICE — OPFS, the browser's private per-origin filesystem. iPad/iOS, where
+//            showDirectoryPicker() does not exist. Invisible to the user, which
+//            is exactly why Export/Import (data-transfer.js) had to be built.
+//
+// SELECTION IS BY CAPABILITY, NEVER BY PLATFORM SNIFFING. That is not fastidiousness:
+// iPadOS Safari reports itself as "Macintosh; Intel Mac OS X" by default, so a
+// user-agent test for "iPad" MISSES the one browser the app has to work in
+// (measured July 30 2026). Feature detection cannot be fooled that way.
+//
+// DEVICE is used ONLY when the picker is unavailable. On a desktop that has the
+// picker but no folder chosen yet, we do NOT silently fall back to OPFS — that
+// would quietly divert a Windows user's data into invisible storage instead of
+// prompting them for a folder, which is a regression, not a fallback.
+export const BACKEND = { NONE: 'none', FOLDER: 'folder', DEVICE: 'device' };
+let backend = BACKEND.NONE;
+
+function supportsFolderPicker() {
+    return typeof window !== 'undefined' && typeof window.showDirectoryPicker === 'function';
+}
+
+function supportsDeviceStorage() {
+    return !!(navigator.storage && typeof navigator.storage.getDirectory === 'function');
+}
+
+// Point the seam at a root and invalidate anything cached from the previous one.
+function setRoot(handle, kind) {
+    dirHandle = handle;
+    backend = handle ? kind : BACKEND.NONE;
+    conversationDirHandle = null;   // cached from the OLD root — must not leak across
+}
+
+export function getStorageBackend() {
+    return backend;
+}
+
+// True where the user picks and can see their own folder. The UI uses this to
+// decide whether to offer "Choose Folder" at all — on a tablet there is nothing
+// to pick, so offering it would be an invitation to a dead end.
+export function supportsUserChosenFolder() {
+    return supportsFolderPicker();
+}
+
+// Adopt the browser's private per-origin filesystem as the data folder.
+async function useDeviceStorage() {
+    if (!supportsDeviceStorage()) return false;
+    try {
+        setRoot(await navigator.storage.getDirectory(), BACKEND.DEVICE);
+        return true;
+    } catch {
+        return false;
+    }
+}
 
 export async function restoreDataFolder() {
-    const stored = await idbGet(DIR_HANDLE_KEY);
-    if (!stored) return false;
-
-    try {
-        let perm = await stored.queryPermission({ mode: 'readwrite' });
-        if (perm !== 'granted') {
-            perm = await stored.requestPermission({ mode: 'readwrite' });
+    // Desktop: re-acquire the folder the user picked previously. Unchanged.
+    if (supportsFolderPicker()) {
+        let stored = null;
+        try { stored = await idbGet(DIR_HANDLE_KEY); } catch { /* IDB unavailable */ }
+        if (!stored) return false;
+        try {
+            let perm = await stored.queryPermission({ mode: 'readwrite' });
+            if (perm !== 'granted') {
+                perm = await stored.requestPermission({ mode: 'readwrite' });
+            }
+            if (perm === 'granted') {
+                setRoot(stored, BACKEND.FOLDER);
+                return true;
+            }
+        } catch {
+            await idbDelete(DIR_HANDLE_KEY);
         }
-        if (perm === 'granted') {
-            dirHandle = stored;
-            return true;
-        }
-    } catch {
-        await idbDelete(DIR_HANDLE_KEY);
+        return false;
     }
-    return false;
+    // No picker (iPad): there is nothing for the user to choose, so adopt device
+    // storage automatically and silently. Storage should simply work.
+    return await useDeviceStorage();
 }
 
 export async function pickDataFolder() {
-    dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
-    await idbPut(DIR_HANDLE_KEY, dirHandle);
-    return dirHandle;
+    if (supportsFolderPicker()) {
+        const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+        setRoot(handle, BACKEND.FOLDER);
+        await idbPut(DIR_HANDLE_KEY, handle);
+        return handle;
+    }
+    // Called on a platform with no picker: adopt device storage rather than
+    // throwing an unhandled TypeError at the click handler.
+    if (await useDeviceStorage()) return dirHandle;
+    throw new Error('This browser cannot store data on the device.');
 }
 
 export async function clearDataFolder() {
-    dirHandle = null;
+    // Only meaningful for a user-chosen folder: it forgets the handle, it does not
+    // delete anything. There is no equivalent for device storage — "forgetting" the
+    // private filesystem would strand the data with no way back to it — so this is
+    // deliberately a no-op there.
+    if (backend === BACKEND.DEVICE) return;
+    setRoot(null, BACKEND.NONE);
     await idbDelete(DIR_HANDLE_KEY);
 }
 
@@ -85,7 +169,44 @@ export function hasDataFolder() {
 }
 
 export function getDataFolderName() {
-    return dirHandle ? dirHandle.name : null;
+    if (!dirHandle) return null;
+    return backend === BACKEND.DEVICE ? 'On this device' : dirHandle.name;
+}
+
+// --- Storage durability ---
+// Measured on an iPad July 30 2026: persist() is GRANTED to a Home Screen app and
+// DENIED in a browser tab, in every browser, with or without a bookmark. A denied
+// origin is swept after seven days without user interaction, so on a tablet this
+// is the difference between data that survives a hospital stay and data that does
+// not. The result must therefore be surfaced to the user, not swallowed.
+export async function requestPersistentStorage() {
+    if (!(navigator.storage && typeof navigator.storage.persist === 'function')) return false;
+    try {
+        return await navigator.storage.persist();
+    } catch {
+        return false;
+    }
+}
+
+export async function getStorageStatus() {
+    const status = {
+        backend,
+        supported: !!(navigator.storage && navigator.storage.persisted),
+        persisted: false,
+        quotaMB: null,
+        usageMB: null,
+    };
+    if (navigator.storage && typeof navigator.storage.persisted === 'function') {
+        try { status.persisted = await navigator.storage.persisted(); } catch { /* leave false */ }
+    }
+    if (navigator.storage && typeof navigator.storage.estimate === 'function') {
+        try {
+            const est = await navigator.storage.estimate();
+            if (est.quota) status.quotaMB = Math.round(est.quota / 1048576);
+            if (est.usage !== undefined) status.usageMB = Math.round((est.usage / 1048576) * 100) / 100;
+        } catch { /* leave null */ }
+    }
+    return status;
 }
 
 // --- File read/write via the data folder ---
@@ -663,8 +784,9 @@ export function saveLastSeenVersion(version) {
 }
 
 // --- Conversation logging ---
+// (conversationDirHandle is declared up with dirHandle — it is a cache OF the root
+// and setRoot() must be able to invalidate it.)
 
-let conversationDirHandle = null;
 let currentLogHandle = null;
 let currentLogName = null;
 let currentLogData = null;

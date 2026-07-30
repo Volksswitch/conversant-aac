@@ -2207,6 +2207,22 @@ body.conv-bottom .tab-panel[data-tab="aboutme"].active {
     white-space: pre-line;
 }
 
+/* Storage durability notice (device-storage platforms only). A refused persistence
+   grant means the data can be erased after ~7 days of non-use, so the warning state
+   is deliberately conspicuous rather than a quiet grey hint. */
+.storage-ok {
+    color: var(--slot-preferred);
+    font-weight: 600;
+}
+.storage-warn {
+    color: #8a4b00;
+    font-weight: 600;
+    background: var(--slot-dispreferred-tint);
+    border-left: 4px solid var(--slot-dispreferred);
+    padding: 0.5rem 0.7rem;
+    border-radius: 0 0.3rem 0.3rem 0;
+}
+
 .danger-actions {
     display: flex;
     justify-content: flex-end;

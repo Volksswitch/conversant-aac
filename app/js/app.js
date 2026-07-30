@@ -2145,6 +2145,56 @@ function updateFolderDisplay() {
         nameEl.textContent = 'No folder selected';
         nameEl.classList.add('placeholder');
     }
+
+    // On a platform with no folder picker (iPad), the app stores data in the
+    // browser's own private storage and there is nothing for the user to choose.
+    // Offering "Choose Folder" there would be an invitation to a dead end, so the
+    // whole control is swapped for an explanation of where the data actually is
+    // and how safe it is. Keyed off capability, never off the user-agent — iPadOS
+    // Safari claims to be a Mac.
+    const deviceMode = !storage.supportsUserChosenFolder();
+    const pickBtn = document.getElementById('pickFolderBtn');
+    if (pickBtn) pickBtn.hidden = deviceMode;
+    const hint = document.getElementById('dataFolderHint');
+    if (hint && deviceMode) {
+        hint.textContent = 'This device keeps your data in the app’s own private storage. ' +
+            'You cannot open it as a folder, so use Backup & transfer below to keep a copy you can see and move.';
+    }
+    updateStorageDurability(deviceMode);
+}
+
+// Report whether the browser has promised to keep this data. Only shown where it
+// can actually be in doubt (device storage): measured on an iPad July 30 2026,
+// persistence is granted to a Home Screen app and REFUSED in a browser tab, and a
+// refused origin is erased after seven days without use. A user whose data can
+// evaporate is entitled to know that before it happens, not after.
+async function updateStorageDurability(deviceMode) {
+    const row = document.getElementById('storageDurabilityRow');
+    if (!row) return;
+    row.hidden = !deviceMode;
+    if (!deviceMode) return;
+
+    const statusEl = document.getElementById('storageDurabilityStatus');
+    const btn = document.getElementById('makeStorageDurableBtn');
+    const status = await storage.getStorageStatus();
+    const room = status.quotaMB ? ` About ${status.quotaMB.toLocaleString()} MB of room.` : '';
+
+    if (!status.supported) {
+        statusEl.textContent = 'This browser cannot promise to keep your data. Export a backup regularly.';
+        statusEl.className = 'setting-hint storage-warn';
+        if (btn) btn.hidden = true;
+        return;
+    }
+    if (status.persisted) {
+        statusEl.textContent = `Your data is safe on this device — the browser has promised not to clear it.${room}`;
+        statusEl.className = 'setting-hint storage-ok';
+        if (btn) btn.hidden = true;
+    } else {
+        statusEl.textContent = 'Your data is NOT protected yet. This browser may erase it after about a week ' +
+            'without use. Tap below to ask it not to — and export a backup either way.';
+        statusEl.className = 'setting-hint storage-warn';
+        if (btn) btn.hidden = false;
+    }
 }
 
 let pricingData = null;
@@ -2590,6 +2640,27 @@ function openSettings() {
     };
 
     wireBackupControls();
+
+    document.getElementById('makeStorageDurableBtn').onclick = async (e) => {
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        const granted = await storage.requestPersistentStorage();
+        btn.disabled = false;
+        if (!granted) {
+            // A refusal is not an error to hide. On a tablet this is the difference
+            // between data that survives and data that does not, and the honest
+            // answer is that the browser said no and a backup is now the real
+            // protection — measured behavior in a Safari tab, July 30 2026.
+            const el = document.getElementById('storageDurabilityStatus');
+            el.textContent = 'The browser declined. It may erase this data after about a week without use — ' +
+                'export a backup below and keep it somewhere safe. Installing the app to your Home Screen ' +
+                'usually gets the promise granted.';
+            el.className = 'setting-hint storage-warn';
+            btn.hidden = true;
+            return;
+        }
+        updateStorageDurability(true);
+    };
 
     document.getElementById('generateOpeningsBtn').onclick = generateScreenOpenings;
 
