@@ -41,6 +41,7 @@ function showListeningUnavailableNotice(support) {
         support.remedy + ' Everything else works: you can still speak with the Express Panel and “In my own words”.';
     box.hidden = false;
     document.getElementById('listeningPromptCloseBtn').onclick = () => { box.hidden = true; };
+    ui.setStatus(support.reason + ' ' + support.remedy);   // aria-live, for screen readers
 
     // Disable the Listen control rather than leaving a button that silently does
     // nothing when pressed.
@@ -236,12 +237,7 @@ function initApp() {
     // AI-optional property): the Express Panel and "In my own words" still speak,
     // and turns are still recorded — so this disables listening, not the app.
     const speechSupport = platform.speechRecognitionSupport();
-    if (!speechSupport.usable) {
-        listeningUnavailable = speechSupport;
-        ui.setStatus(speechSupport.reason + ' ' + speechSupport.remedy);
-        showListeningUnavailableNotice(speechSupport);
-        return;
-    }
+    listeningUnavailable = speechSupport.usable ? null : speechSupport;
 
     // Recording indicator: whether the start-of-listening chime is enabled
     // (partner-awareness cue — see chime.js). Applied here so it's active before
@@ -251,15 +247,23 @@ function initApp() {
     // start of the conversation rather than on each one (Ken).
     chime.setOncePerConversation(storage.loadAutoRelisten());
 
-    const savedThreshold = storage.loadSilenceThreshold();
-    stt.setSilenceThreshold(savedThreshold);
-
-    stt.init({
-        onResult: handleSpeechResult,
-        onSilence: handleSilencePeriod,
-        onStatus: handleSttStatus,
-        onPartnerSpeech: handlePartnerResumed
-    });
+    // Only the CAPTURE path is skipped when this environment can't listen. Every
+    // stt entry point is null-safe when init() never ran (`if (!recognition)
+    // return`), so the rest of the app calls them harmlessly and no microphone
+    // is ever lit. Initialization MUST continue past this point: everything
+    // below — the Start button, the Express Panel, "In my own words", the
+    // keyboard, Settings — is what the notice promises still works, and an early
+    // return here left an iPad Home Screen app with no working controls at all,
+    // Start included (Ken, July 30 2026).
+    if (!listeningUnavailable) {
+        stt.setSilenceThreshold(storage.loadSilenceThreshold());
+        stt.init({
+            onResult: handleSpeechResult,
+            onSilence: handleSilencePeriod,
+            onStatus: handleSttStatus,
+            onPartnerSpeech: handlePartnerResumed
+        });
+    }
 
     // Hard backstop: a placeholder must never speak over the user's own statement
     // (a spoken button). If a stray scheduled placeholder fires while the user's TTS
@@ -387,6 +391,10 @@ function initApp() {
     }
     // The visible "no API key" notice is NOT shown here — it's step 3 of the
     // pre-start sequence (afterWhatsNew), so it never overlaps the upgrade screen.
+
+    // Last, so the disabled Listen button and its explanatory tooltip survive
+    // ui.applyControlIcons() above (which rewrites the button's label/title).
+    if (listeningUnavailable) showListeningUnavailableNotice(listeningUnavailable);
 }
 
 // --- API key surfaces (Ken, July 2026) -----------------------------------------
@@ -484,6 +492,10 @@ function handleSttStatus(status, detail) {
 }
 
 async function handleStart() {
+    // Bring the audio context up NOW, while a real tap is in hand. The chime
+    // itself is fired from an async recognizer callback where WebKit would refuse
+    // to start audio (see chime.unlock).
+    chime.unlock();
     // Check for a newer deployed version when the session starts. If one is
     // found the worker activates and the controllerchange handler in index.html
     // reloads the page; when nothing is new this is a cheap no-op.
@@ -554,6 +566,7 @@ function finishStart() {
 }
 
 function toggleListening() {
+    chime.unlock();   // a genuine tap — see handleStart
     // Practice Mode: "Start Listening" does NOT open the mic — it cues the AI
     // partner to speak, reinforcing the same step (and honoring the same
     // manualListenArmed / auto-resume gate) as a real conversation.
@@ -2720,14 +2733,27 @@ function openSettings() {
     reflectApiKeyFormat();          // reflect the current saved value on open
     // Paste button beside the API-key field — replaces the keyboard's removed
     // clipboard toolbar as the way to paste a long `sk-ant-…` key.
+    // Every outcome is reported. Reading the clipboard is not a plain function
+    // call on every platform: Safari answers it by putting up its own "Paste"
+    // confirmation that the user has to tap, and rejects if they don't. Swallowing
+    // that silently made this look like a dead button on an iPad while the OS's
+    // own touch-and-hold Paste worked fine (Ken, July 30 2026) — so a refusal now
+    // names the alternative instead of leaving the user with nothing.
     document.getElementById('pasteApiKeyBtn').onclick = async () => {
         try {
             const text = (await navigator.clipboard.readText())?.trim();
-            if (text) {
-                apiKeyInput.value = text;
-                apiKeyInput.dispatchEvent(new Event('input', { bubbles: true }));
+            if (!text) {
+                showApiKeyStatus('warn', 'The clipboard is empty — copy your key first.');
+                return;
             }
-        } catch { /* clipboard read blocked/denied — user can type instead */ }
+            apiKeyInput.value = text;
+            apiKeyInput.dispatchEvent(new Event('input', { bubbles: true }));
+            // The input handler runs the format check, which reports on its own if
+            // what was pasted doesn't look like a key.
+        } catch {
+            showApiKeyStatus('warn',
+                'Could not read the clipboard. Touch and hold the box above, then choose Paste.');
+        }
     };
     // Test button — the only way to catch a subtly-wrong key (right format, wrong
     // characters). Verifies against the API (GET /v1/models, bills no tokens).
@@ -2789,25 +2815,30 @@ function openSettings() {
     });
     // Tapping (or focusing, or changing) a keyboard-layout control previews
     // that dock — and shows the keyboard if it's currently hidden (e.g. after
-    // Hide). pointerdown covers re-tapping an already-focused control, where no
-    // focus event fires. The selects also re-render so the choice shows live.
+    // Hide). CLICK, not pointerdown: showing the keyboard resizes the Settings
+    // panel (it sits clear of the dock), and moving a <select> out from under a
+    // finger that is still down makes WebKit abandon the tap — so on an iPad the
+    // native picker never opened at all (Ken, July 30 2026). click still covers
+    // the case pointerdown was chosen for in v0.2.19, re-tapping an
+    // already-focused control where no focus event fires, but arrives after the
+    // picker is up. The selects also re-render so the choice shows live.
     const previewBottom = () => keyboard.previewShow('bottom');
     const previewSide = () => keyboard.previewShow('side');
-    bottomLayoutSelect.onpointerdown = bottomLayoutSelect.onfocus = previewBottom;
+    bottomLayoutSelect.onclick = bottomLayoutSelect.onfocus = previewBottom;
     bottomLayoutSelect.onchange = () => {
         keyboard.setBottomLayout(bottomLayoutSelect.value);
         storage.saveBottomLayout(bottomLayoutSelect.value);
         renderExpressPanel(); // the panel mirrors the layout
         keyboard.previewShow('bottom');
     };
-    sideLayoutSelect.onpointerdown = sideLayoutSelect.onfocus = previewSide;
+    sideLayoutSelect.onclick = sideLayoutSelect.onfocus = previewSide;
     sideLayoutSelect.onchange = () => {
         keyboard.setSideLayout(sideLayoutSelect.value);
         storage.saveSideLayout(sideLayoutSelect.value);
         renderExpressPanel();
         keyboard.previewShow('side');
     };
-    sideDockPositionToggle.onpointerdown = sideDockPositionToggle.onfocus = previewSide;
+    sideDockPositionToggle.onclick = sideDockPositionToggle.onfocus = previewSide;
     sideDockPositionToggle.onchange = () => {
         const pos = sideDockPositionToggle.checked ? 'right' : 'left';
         keyboard.setSideDockPosition(pos);

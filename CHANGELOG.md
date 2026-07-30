@@ -13,6 +13,24 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+- **On an iPad, the app now works when you open it from the Home Screen.** Previously, on the
+  screens where listening isn't possible — the Home Screen app, and Chrome or Edge on an iPad —
+  the app told you everything else still worked, and then nothing did: the Start button did
+  nothing, the Express Panel never appeared, and none of the buttons responded. Now only
+  listening is switched off. You can start, speak with the Express Panel and "In my own words",
+  use the keyboard, and open Settings, exactly as promised.
+- **The bottom row of the Express Panel is no longer cut off on an iPad.** It sat too low and ran
+  off the bottom of the screen, while the on-screen keyboard in the same place did not. Both now
+  stop at the same point, so a keyguard fits over either one.
+- **The Express Panel and keyboard layout pickers now open on an iPad.** Tapping one did nothing,
+  because the panel moved underneath your finger before the list could appear.
+- **The Paste button beside your API key now tells you what happened.** If it can't reach the
+  clipboard it says so and tells you to touch and hold the box and choose Paste instead, rather
+  than looking like a button that does nothing.
+- **The listening tone no longer turns up late, attached to the wrong button.** On an iPad it
+  could stay silent when listening started and then sound at the next thing you tapped — such as
+  "End conversation".
+
 - **You can now back up everything in one file, and put it back.** Settings → General has a new
   **Backup & transfer** section. **Export my data** saves your About Me answers, the people you
   know, your Express Panel, your starters and control phrases, your settings, and your saved
