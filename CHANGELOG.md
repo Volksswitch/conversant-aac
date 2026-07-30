@@ -30,6 +30,14 @@ _Nothing yet._
 
 ## Held back — iPad work in progress, not announced
 
+- **Your iPad no longer offers to "Save Password" every time you open the app.** It was
+  asking for a user name, which means nothing for an API key. The key boxes were hidden
+  behind dots, and that is exactly how Safari recognises a password field — so it treated
+  them as one. A saved key is now shown shortened instead, as `sk-ant-…4f2a`: enough to
+  see which key it is, never enough to use. Tap the box and the whole key comes back so
+  you can read or change it. As a bonus this makes a half-copied key visible, which dots
+  hid from you.
+
 - **The app can now hear the other person on an iPad, using a transcription service.**
   Settings → General has a new **Hearing the other person** choice: your browser's own
   (free, and what everyone has been using), or **Deepgram** — a paid service you sign up
