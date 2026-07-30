@@ -398,8 +398,18 @@ function initApp() {
         }
         keyboard.hideKeyboard();
     });
+    // Release number with the build appended (Ken, July 30 2026) — "0.5.99 ·
+    // 9e73383". Settings → About is where this belongs permanently, because a bug
+    // report needs the exact code, not just the version, and several deploys share
+    // one version during a dev cycle.
+    //
+    // The copy under the Start button is the TEMPORARY one: it exists only because
+    // a start-up failure makes Settings unreachable, which is exactly when you most
+    // need to know which build you have. Remove #buildStamp (index.html + the
+    // stamping block at the foot of this file + its CSS) once the iPad Home Screen
+    // app reliably gets past Start — Ken's condition.
     const versionEl = document.getElementById('aboutVersion');
-    if (versionEl) versionEl.textContent = APP_VERSION;
+    if (versionEl) versionEl.textContent = `${APP_VERSION} · ${BUILD_ID}`;
 
     tts.onVoicesReady(() => {
         const savedURI = storage.loadVoiceURI();
