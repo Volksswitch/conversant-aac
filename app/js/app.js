@@ -42,14 +42,25 @@ function showListeningUnavailableNotice(support) {
     box.hidden = false;
     document.getElementById('listeningPromptCloseBtn').onclick = () => { box.hidden = true; };
     ui.setStatus(support.reason + ' ' + support.remedy);   // aria-live, for screen readers
+    applyListenAvailability();
+}
 
-    // Disable the Listen control rather than leaving a button that silently does
-    // nothing when pressed.
-    const listenBtn = document.getElementById('listenBtn');
-    if (listenBtn) {
-        listenBtn.disabled = true;
-        listenBtn.title = support.reason + ' ' + support.remedy;
-    }
+// Disable the Listen control where capture can't work, rather than leaving a
+// button that silently does nothing when pressed — but NOT in Practice Mode,
+// where that same button never opens the microphone: it cues the AI partner to
+// speak. Practice is therefore fully usable on a device that cannot listen, which
+// is precisely where rehearsing without a microphone is most useful, so the
+// disable must not reach it. Re-applied whenever practice starts or ends.
+function applyListenAvailability() {
+    const btn = document.getElementById('listenBtn');
+    if (!btn) return;
+    const blocked = !!listeningUnavailable && !practiceMode;
+    btn.disabled = blocked;
+    if (blocked) btn.title = listeningUnavailable.reason + ' ' + listeningUnavailable.remedy;
+    // Not blocked: let the normal renderer put the icon and its tooltip back.
+    // isListening is false on every path that reaches here, so this cannot fire
+    // the start-of-listening chime (which needs a false→true edge).
+    else ui.setListenButtonState(isListening);
 }
 
 // Point-release version shown in Settings → About. Bump alongside the
@@ -1106,6 +1117,7 @@ async function startPractice(scenario) {
     isListening = false;
     manualListenArmed = false;
     ui.setListenButtonState(false);
+    applyListenAvailability();   // practice needs no mic — re-enable Listen if capture is unavailable
     ui.setStatus(`Practice: ${scenario.title}. Tap Start Listening to hear the other person.`);
 }
 
@@ -1630,6 +1642,7 @@ async function handleEndConversation() {
     // to real-conversation behavior.
     practiceMode = false;
     practiceScenario = null;
+    applyListenAvailability();   // back to a real conversation — Listen follows capture again
     await terminateConversation();
     // Ending a conversation clears the situation influencers — the next person /
     // mood shouldn't inherit this conversation's Partner & Feeling selections.

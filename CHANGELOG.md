@@ -19,6 +19,9 @@ regenerate the bundled notes in `app/js/whats-new.js`.
   nothing, the Express Panel never appeared, and none of the buttons responded. Now only
   listening is switched off. You can start, speak with the Express Panel and "In my own words",
   use the keyboard, and open Settings, exactly as promised.
+- **Practice Mode works even where listening doesn't.** Practice never uses the microphone — the
+  Start Listening button cues the AI to speak — so on an iPad Home Screen app, where the app
+  can't listen, you can still practice a whole conversation.
 - **The bottom row of the Express Panel is no longer cut off on an iPad.** It sat too low and ran
   off the bottom of the screen, while the on-screen keyboard in the same place did not. Both now
   stop at the same point, so a keyguard fits over either one.
