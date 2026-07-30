@@ -24,37 +24,52 @@ import * as dataTransfer from './data-transfer.js';
 import * as platform from './platform.js';
 import { confirmDanger } from './confirm-dialog.js';
 
-// Set when this environment cannot capture partner speech (see platform.js).
-// Non-null means listening is disabled but the rest of the app works.
+// The platform verdict on partner capture (see platform.js), or null when capture
+// is expected to work. Non-null drives the pre-start warning; it does NOT by
+// itself disable anything — see applyListenAvailability.
 let listeningUnavailable = null;
 
-// Tell the user, visibly, that listening will not work here — and why, and what to
+// Tell the user, visibly, that listening may not work here — and why, and what to
 // do about it. This CANNOT go through ui.setStatus: that element has been
 // visually hidden since v0.5.2, so a message sent there is never seen. That is
 // exactly how the old "Use Chrome or Edge" text managed to be both wrong on iPad
 // and invisible everywhere.
-function showListeningUnavailableNotice(support) {
+//
+// Step 3 of the pre-start SEQUENCE (Ken, July 30 2026), not a notice raised at
+// load. Shown on its own, after the upgrade screen and before the API-key notice,
+// so the pre-start screens never stack on top of each other — the rule set in
+// v0.5.96. `onContinue` advances the chain.
+function showListeningUnavailableNotice(support, onContinue) {
     const box = document.getElementById('listeningPrompt');
-    if (!box) return;
+    if (!box) return onContinue();
     document.getElementById('listeningPromptReason').textContent = support.reason;
     document.getElementById('listeningPromptRemedy').textContent =
         support.remedy + ' Everything else works: you can still speak with the Express Panel and “In my own words”.';
+    document.getElementById('startBtn').hidden = true;      // the panel carries its own proceed control
+    document.getElementById('whatsNewPanel').hidden = true;
     box.hidden = false;
-    document.getElementById('listeningPromptCloseBtn').onclick = () => { box.hidden = true; };
+    document.getElementById('listeningPromptCloseBtn').onclick = () => { box.hidden = true; onContinue(); };
     ui.setStatus(support.reason + ' ' + support.remedy);   // aria-live, for screen readers
-    applyListenAvailability();
 }
 
-// Disable the Listen control where capture can't work, rather than leaving a
-// button that silently does nothing when pressed — but NOT in Practice Mode,
-// where that same button never opens the microphone: it cues the AI partner to
-// speak. Practice is therefore fully usable on a device that cannot listen, which
-// is precisely where rehearsing without a microphone is most useful, so the
-// disable must not reach it. Re-applied whenever practice starts or ends.
+// Disable the Listen control ONLY where there is no recognizer to call at all —
+// never merely because this platform measured unreliable (Ken, July 30 2026:
+// "for now, don't disable the listening function… give Safari every opportunity to
+// surprise us"). The user is warned before they start and then allowed to try; a
+// measurement taken on one build of one iPadOS should not permanently refuse to
+// attempt something Apple may have since fixed. Where the API is genuinely absent
+// there is nothing to attempt, so the button would silently do nothing — that case
+// stays disabled.
+//
+// Practice Mode is exempt even then: that same button never opens the microphone,
+// it cues the AI partner to speak. Rehearsing without a mic matters most precisely
+// on a device that cannot listen, so the disable must not reach it. Re-applied
+// whenever practice starts or ends.
 function applyListenAvailability() {
     const btn = document.getElementById('listenBtn');
     if (!btn) return;
-    const blocked = !!listeningUnavailable && !practiceMode;
+    const noRecognizer = !!listeningUnavailable && listeningUnavailable.apiPresent === false;
+    const blocked = noRecognizer && !practiceMode;
     btn.disabled = blocked;
     if (blocked) btn.title = listeningUnavailable.reason + ' ' + listeningUnavailable.remedy;
     // Not blocked: let the normal renderer put the icon and its tooltip back.
@@ -258,15 +273,21 @@ function initApp() {
     // start of the conversation rather than on each one (Ken).
     chime.setOncePerConversation(storage.loadAutoRelisten());
 
-    // Only the CAPTURE path is skipped when this environment can't listen. Every
-    // stt entry point is null-safe when init() never ran (`if (!recognition)
-    // return`), so the rest of the app calls them harmlessly and no microphone
-    // is ever lit. Initialization MUST continue past this point: everything
-    // below — the Start button, the Express Panel, "In my own words", the
-    // keyboard, Settings — is what the notice promises still works, and an early
-    // return here left an iPad Home Screen app with no working controls at all,
-    // Start included (Ken, July 30 2026).
-    if (!listeningUnavailable) {
+    // Wire up capture wherever there is a recognizer to wire — including the
+    // platforms platform.js measured as delivering nothing. That is the whole
+    // point of warning rather than blocking (Ken, July 30 2026): if the button is
+    // live but stt was never initialized, pressing it would do nothing and Safari
+    // could never surprise us. Skipped only where the API is absent, because
+    // `new SpeechRecognition()` would throw.
+    //
+    // Every stt entry point is null-safe when init() never ran (`if (!recognition)
+    // return`), so on that path the rest of the app calls them harmlessly and no
+    // microphone is ever lit. Initialization MUST continue past this point:
+    // everything below — the Start button, the Express Panel, "In my own words",
+    // the keyboard, Settings — is what the notice promises still works, and an
+    // early return here left an iPad Home Screen app with no working controls at
+    // all, Start included (Ken, July 30 2026).
+    if (speechSupport.apiPresent) {
         stt.setSilenceThreshold(storage.loadSilenceThreshold());
         stt.init({
             onResult: handleSpeechResult,
@@ -400,12 +421,13 @@ function initApp() {
         // block over the transcript). Keep the aria-live status for screen readers.
         ui.setStatus('No API key set — open Settings to add your Claude API key');
     }
-    // The visible "no API key" notice is NOT shown here — it's step 3 of the
-    // pre-start sequence (afterWhatsNew), so it never overlaps the upgrade screen.
+    // Neither the "no API key" notice nor the listening notice is shown here —
+    // they are steps 3 and 4 of the pre-start sequence (see handleStart), so they
+    // never overlap the upgrade screen or each other.
 
-    // Last, so the disabled Listen button and its explanatory tooltip survive
+    // Last, so a disabled Listen button and its explanatory tooltip survive
     // ui.applyControlIcons() above (which rewrites the button's label/title).
-    if (listeningUnavailable) showListeningUnavailableNotice(listeningUnavailable);
+    applyListenAvailability();
 }
 
 // --- API key surfaces (Ken, July 2026) -----------------------------------------
@@ -537,9 +559,15 @@ async function handleStart() {
     ui.showEngineState(engine.getSnapshot());
     // Pre-start screens run in a strict SEQUENCE, never overlapping (Ken, July 18
     // 2026): Start (greyed screen) → the "What's new" upgrade screen (Close) → the
-    // API-key notice (Continue) → the conversation. Each step hands off to the next
-    // only when dismissed, so the API-key notice never sits on top of the upgrade
-    // screen. Both intermediate screens are optional and skipped when not needed.
+    // listening notice (Continue anyway) → the API-key notice (Close) → the
+    // conversation. Each step hands off to the next only when dismissed, so no two
+    // ever sit on top of each other. All three intermediate screens are optional
+    // and skipped when not needed.
+    //
+    // The listening notice comes BEFORE the API-key one because it is about where
+    // the user opened the app, and its remedy ("open it in Safari instead") is
+    // something they may want to act on before anything else — whereas the API key
+    // can be added at any time from Settings.
     const whatsNewNotes = whatsNew.pending(APP_VERSION);
     if (whatsNewNotes.length) {
         // Step 2 — upgrade screen. The app has already re-rendered post-update, so
@@ -552,14 +580,23 @@ async function handleStart() {
     }
 }
 
-// Step 3 — the API-key notice, shown only when no key is set (informational: the
-// app works without one). "Continue" enters the conversation; "Add an API key"
-// opens Settings. When a key IS set, skip straight into the conversation.
+// Step 3 — the listening notice, shown only where partner capture measured
+// unreliable or absent. Informational: the Listen button stays live anyway (see
+// applyListenAvailability), so this is a heads-up before the user tries, not a
+// refusal. "Continue anyway" advances to step 4.
 function afterWhatsNew() {
+    if (listeningUnavailable) showListeningUnavailableNotice(listeningUnavailable, afterListeningNotice);
+    else afterListeningNotice();
+}
+
+// Step 4 — the API-key notice, shown only when no key is set (informational: the
+// app works without one). "Close" enters the conversation; "Add an API key"
+// opens Settings. When a key IS set, skip straight into the conversation.
+function afterListeningNotice() {
     const hasKey = !!(storage.loadApiKey() || '').trim();
     const prompt = document.getElementById('apiKeyPrompt');
     if (!hasKey && prompt) {
-        document.getElementById('startBtn').hidden = true;   // Continue is the proceed control here
+        document.getElementById('startBtn').hidden = true;   // Close is the proceed control here
         document.getElementById('whatsNewPanel').hidden = true;
         prompt.hidden = false;
     } else {
@@ -568,10 +605,12 @@ function afterWhatsNew() {
 }
 
 // Leave the pre-start sequence and enter the conversation: hide the start block and
-// un-dim the conversation surface. The end of the Start → upgrade → API-key chain.
+// un-dim the conversation surface. The end of the Start → upgrade → listening →
+// API-key chain.
 function finishStart() {
     document.getElementById('startBtn').hidden = false;   // restore for any later start screen
     document.getElementById('apiKeyPrompt').hidden = true;
+    document.getElementById('listeningPrompt').hidden = true;
     document.getElementById('startBlock').classList.add('hidden');
     document.querySelector('main').classList.remove('disabled');
 }

@@ -13,15 +13,24 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
-- **On an iPad, the app now works when you open it from the Home Screen.** Previously, on the
-  screens where listening isn't possible — the Home Screen app, and Chrome or Edge on an iPad —
-  the app told you everything else still worked, and then nothing did: the Start button did
-  nothing, the Express Panel never appeared, and none of the buttons responded. Now only
-  listening is switched off. You can start, speak with the Express Panel and "In my own words",
-  use the keyboard, and open Settings, exactly as promised.
+- **On an iPad, the app now works when you open it from the Home Screen.** Previously, where
+  listening looked unlikely to work — the Home Screen app, and Chrome or Edge on an iPad — the
+  app told you everything else still worked, and then nothing did: the Start button did nothing,
+  the Express Panel never appeared, and none of the buttons responded. Now everything runs. You
+  can start, speak with the Express Panel and "In my own words", use the keyboard, and open
+  Settings, exactly as promised.
+- **You can now try listening anywhere, even where we expect it not to work.** On an iPad Home
+  Screen app, and in Chrome or Edge on an iPad, listening did nothing when we tested it — so the
+  app tells you so before you begin. But the Start Listening button is left switched on and you
+  are welcome to try it: browsers change, and if listening has started working on your iPad we
+  would rather you found out than be refused on the strength of an old test. If nothing appears
+  when the other person speaks, open Conversant in Safari instead.
+- **Start-up notices come one at a time.** The "what's new" summary, the note about listening,
+  and the reminder to add an API key now appear in turn as you press through them, instead of
+  landing on top of one another.
 - **Practice Mode works even where listening doesn't.** Practice never uses the microphone — the
-  Start Listening button cues the AI to speak — so on an iPad Home Screen app, where the app
-  can't listen, you can still practice a whole conversation.
+  Start Listening button cues the AI to speak — so on a device that can't listen at all, you can
+  still practice a whole conversation.
 - **The bottom row of the Express Panel is no longer cut off on an iPad.** It sat too low and ran
   off the bottom of the screen, while the on-screen keyboard in the same place did not. Both now
   stop at the same point, so a keyguard fits over either one.

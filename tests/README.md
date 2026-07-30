@@ -14,6 +14,7 @@ npm run test:watch  # re-run on file changes
 # coverage for the deterministic tiers:
 node --test --experimental-test-coverage tests/engine.test.mjs tests/stt.test.mjs \
   tests/llm.test.mjs tests/conversation-logic.test.mjs tests/keyboard-layouts.test.mjs \
+  tests/platform.test.mjs \
   tests/express-items.test.mjs tests/whats-new.test.mjs tests/control-phrases.test.mjs \
   tests/worldview.test.mjs tests/relationships.test.mjs tests/prediction.test.mjs \
   tests/placeholders.test.mjs
@@ -35,7 +36,7 @@ path `"C:\Program Files\nodejs\node.exe" --test tests/`.
 
 | Tier | File(s) | Needs API key? | What it covers |
 |------|---------|----------------|----------------|
-| 1 — pure logic | `engine`, `stt`, `conversation-logic`, `worldview`, `relationships`, `control-phrases`, `placeholders`, `whats-new`, `prediction`, `keyboard-layouts`, `express-items` `.test.mjs` | no | The Conversation Engine; the STT layer (checkpoint, echo filter, "app speaking" guard, restart/error); the generateOptions decision logic + silent-dead-end tripwires (`conversation-logic`); the three-level privacy withholding (`worldview`/`relationships`); the seeded-watermark reconciliation (`control-phrases`); placeholder sequencing/cap/gate; semver + notes (`whats-new`); word prediction; layout/symbols-page geometry; Express Panel item data. |
+| 1 — pure logic | `engine`, `stt`, `conversation-logic`, `worldview`, `relationships`, `control-phrases`, `placeholders`, `whats-new`, `prediction`, `keyboard-layouts`, `express-items`, `platform` `.test.mjs` | no | The Conversation Engine; the STT layer (checkpoint, echo filter, "app speaking" guard, restart/error); the generateOptions decision logic + silent-dead-end tripwires (`conversation-logic`); the three-level privacy withholding (`worldview`/`relationships`); the seeded-watermark reconciliation (`control-phrases`); placeholder sequencing/cap/gate; semver + notes (`whats-new`); word prediction; layout/symbols-page geometry; Express Panel item data; the measured per-platform capability verdicts and the warn-don't-block split (`platform`). |
 | 2 — data path | `llm.test.mjs` | no (fetch mocked) | `llm.js` parsing (`generateResponses`/`generateStatements`/`repairOptions`/`cleanupTranscript`/`repairSelf`) across structured, legacy-array, legacy-`options`, prose-wrapped, and malformed cases; request-body shaping (steer / avoid / perCategory / role mapping); and a mocked result flowing **through the engine** to a palette. |
 | 3 — live | `live.test.mjs` | **yes** | A curated set of real conversation openings hitting the actual model, asserting structural properties. The only tier that exercises real classification. Non-deterministic; a smoke test, not a gate. |
 

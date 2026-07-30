@@ -39,24 +39,33 @@
                      opening, so nothing is obscured); a SECOND Start press dismisses it
                      and enters the conversation. See whats-new.js + handleStart. -->
                 <div id="startBlock">
+                    <!-- The three optional pre-start screens, in the order the
+                         sequence shows them: step 2 upgrade, step 3 listening,
+                         step 4 API key. Only ever one at a time. -->
                     <div id="whatsNewPanel" hidden></div>
-                    <div id="apiKeyPrompt" hidden>
-                        <p class="apikey-prompt-title">To receive response suggestions from the AI, please provide an API key.</p>
-                        <div class="apikey-prompt-actions">
-                            <button id="apiKeyContinueBtn" type="button" class="apikey-continue">Close</button>
-                            <button id="apiKeyPromptBtn" type="button">Add API key to Settings</button>
-                        </div>
-                    </div>
-                    <!-- Shown when this browser cannot capture the partner at all.
-                         Measured on iPadOS: recognition starts and then delivers
-                         nothing in a Home Screen app and in Chrome/Edge, so feature
-                         detection cannot be trusted and the user has to be told.
-                         The app still works for speaking — hence "Continue anyway". -->
+                    <!-- Step 3 of the pre-start sequence: shown when partner capture
+                         measured unreliable here. On iPadOS recognition starts and
+                         then delivers nothing in a Home Screen app and in
+                         Chrome/Edge, so feature detection cannot be trusted and the
+                         user has to be told. It WARNS but does not block — the
+                         Listen button stays live so Safari can still surprise us
+                         (Ken, July 30 2026) — and the app works for speaking
+                         regardless, hence "Continue anyway", which advances to the
+                         API-key notice. -->
                     <div id="listeningPrompt" hidden>
                         <p class="apikey-prompt-title" id="listeningPromptReason"></p>
                         <p class="setting-hint" id="listeningPromptRemedy"></p>
                         <div class="apikey-prompt-actions">
                             <button id="listeningPromptCloseBtn" type="button" class="apikey-continue">Continue anyway</button>
+                        </div>
+                    </div>
+                    <!-- Step 4 of the pre-start sequence: shown when no API key is
+                         set. Informational — the app works without one. -->
+                    <div id="apiKeyPrompt" hidden>
+                        <p class="apikey-prompt-title">To receive response suggestions from the AI, please provide an API key.</p>
+                        <div class="apikey-prompt-actions">
+                            <button id="apiKeyContinueBtn" type="button" class="apikey-continue">Close</button>
+                            <button id="apiKeyPromptBtn" type="button">Add API key to Settings</button>
                         </div>
                     </div>
                     <button id="startBtn">Start</button>
