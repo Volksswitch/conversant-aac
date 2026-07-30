@@ -13,6 +13,23 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+_Nothing yet._
+
+<!-- HELD BACK — NOT ANNOUNCED IN THE APP (Ken, July 30 2026).
+     The iPad port is being pushed to the live site continuously, because that is
+     the only way to get a build onto the device. Those pushes reach the Windows
+     users too, and a "What's new" screen full of iPad Home Screen apps and Safari
+     is noise to them at best and alarming at worst.
+
+     The generator ignores every H2 except "## Version X.Y.Z" and "## Unreleased",
+     so notes parked under the heading below are kept as the record WITHOUT being
+     bundled into the app. Do NOT run apply-release-notes.mjs expecting these to
+     ship; move them back under "## Unreleased" when the iPad work is announced,
+     then regenerate. Two of them (Export/Import, the Paste button) matter to
+     Windows users and deserve announcing at the next real release. -->
+
+## Held back — iPad work in progress, not announced
+
 - **The opening screen now shows which build you are running**, in small type under the Start
   button — the version plus the exact code it was built from. Settings → About has the version
   too, but you can't reach Settings before pressing Start, so if start-up itself misbehaves this
