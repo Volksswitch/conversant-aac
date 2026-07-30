@@ -47,6 +47,18 @@
                             <button id="apiKeyPromptBtn" type="button">Add API key to Settings</button>
                         </div>
                     </div>
+                    <!-- Shown when this browser cannot capture the partner at all.
+                         Measured on iPadOS: recognition starts and then delivers
+                         nothing in a Home Screen app and in Chrome/Edge, so feature
+                         detection cannot be trusted and the user has to be told.
+                         The app still works for speaking — hence "Continue anyway". -->
+                    <div id="listeningPrompt" hidden>
+                        <p class="apikey-prompt-title" id="listeningPromptReason"></p>
+                        <p class="setting-hint" id="listeningPromptRemedy"></p>
+                        <div class="apikey-prompt-actions">
+                            <button id="listeningPromptCloseBtn" type="button" class="apikey-continue">Continue anyway</button>
+                        </div>
+                    </div>
                     <button id="startBtn">Start</button>
                 </div>
             </section>

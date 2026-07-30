@@ -14,7 +14,9 @@
  * matches the typed prefix's capitalization when inserting.
  */
 
-const FREQ_KEY = 'aac_word_freq';
+import * as ns from './namespace.js';
+
+const FREQ_KEY = ns.key('aac_word_freq');
 
 let words = [];                 // frequency-ordered dictionary (file order = rank)
 let rank = new Map();           // word -> dictionary index (lower = more common)

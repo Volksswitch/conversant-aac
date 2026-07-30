@@ -33,9 +33,10 @@
  */
 
 import { readFile, writeFile, hasDataFolder } from './storage.js';
+import * as ns from './namespace.js';
 
 const FILE = 'control-phrases.json';
-const CACHE_KEY = 'aac_control_phrases';
+const CACHE_KEY = ns.key('aac_control_phrases');
 
 export const DEFAULTS = {
     holdOn: 'Let me think about that.',

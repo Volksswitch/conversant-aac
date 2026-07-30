@@ -21,7 +21,35 @@ import * as whatsNew from './whats-new.js';
 import * as chime from './chime.js';
 import * as practiceScenarios from './practice-scenarios.js';
 import * as dataTransfer from './data-transfer.js';
+import * as platform from './platform.js';
 import { confirmDanger } from './confirm-dialog.js';
+
+// Set when this environment cannot capture partner speech (see platform.js).
+// Non-null means listening is disabled but the rest of the app works.
+let listeningUnavailable = null;
+
+// Tell the user, visibly, that listening will not work here — and why, and what to
+// do about it. This CANNOT go through ui.setStatus: that element has been
+// visually hidden since v0.5.2, so a message sent there is never seen. That is
+// exactly how the old "Use Chrome or Edge" text managed to be both wrong on iPad
+// and invisible everywhere.
+function showListeningUnavailableNotice(support) {
+    const box = document.getElementById('listeningPrompt');
+    if (!box) return;
+    document.getElementById('listeningPromptReason').textContent = support.reason;
+    document.getElementById('listeningPromptRemedy').textContent =
+        support.remedy + ' Everything else works: you can still speak with the Express Panel and “In my own words”.';
+    box.hidden = false;
+    document.getElementById('listeningPromptCloseBtn').onclick = () => { box.hidden = true; };
+
+    // Disable the Listen control rather than leaving a button that silently does
+    // nothing when pressed.
+    const listenBtn = document.getElementById('listenBtn');
+    if (listenBtn) {
+        listenBtn.disabled = true;
+        listenBtn.title = support.reason + ' ' + support.remedy;
+    }
+}
 
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
@@ -199,8 +227,19 @@ function initApp() {
     // first so the initial numbers are captured even if STT is unsupported.
     viewport.init();
 
-    if (!stt.isSupported()) {
-        ui.setStatus('Speech recognition not supported in this browser. Use Chrome or Edge.');
+    // Can this environment actually capture the partner? platform.js answers from
+    // MEASURED behavior, not feature detection — on iPadOS the API is present and
+    // starts happily in a Home Screen app and in Chrome/Edge, then delivers nothing
+    // at all. Trusting stt.isSupported() there would leave the user staring at a
+    // lit microphone that will never hear a word, which for an AAC user is worse
+    // than being told plainly. The app remains fully usable without capture (the
+    // AI-optional property): the Express Panel and "In my own words" still speak,
+    // and turns are still recorded — so this disables listening, not the app.
+    const speechSupport = platform.speechRecognitionSupport();
+    if (!speechSupport.usable) {
+        listeningUnavailable = speechSupport;
+        ui.setStatus(speechSupport.reason + ' ' + speechSupport.remedy);
+        showListeningUnavailableNotice(speechSupport);
         return;
     }
 

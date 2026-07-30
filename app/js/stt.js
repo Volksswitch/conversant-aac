@@ -1,4 +1,14 @@
+import * as platform from './platform.js';
+
 let recognition = null;
+// Per-platform recognition tuning (see platform.js). Defaults are the desktop
+// values; init() replaces them with the platform's.
+let speechCfg = { continuous: true, restartDelayMs: 0, guardVisibility: false };
+// Set when recognition was stopped because the page went into the background,
+// NOT because the user stopped listening. Distinguishing the two matters:
+// listeningIntent must stay true so we resume on return, but onend must not
+// restart while we are deliberately suspended, or it fights the guard.
+let suspendedForHidden = false;
 let onTranscript = null;
 let onSilencePeriod = null;
 let onStatusChange = null;
@@ -181,7 +191,12 @@ export function init({ onResult, onSilence, onStatus, onPartnerSpeech }) {
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     recognition = new SpeechRecognition();
-    recognition.continuous = true;
+    // Per-platform tuning (platform.js). On iPadOS continuous mode measured 2.4s
+    // slower to a first result than non-continuous, and this app exists to beat the
+    // ~4s awkward-silence threshold — so there it runs non-continuous and leans on
+    // the restart-on-end loop below, which was already the shape of this code.
+    speechCfg = platform.speechConfig();
+    recognition.continuous = speechCfg.continuous;
     recognition.interimResults = true;
     recognition.lang = 'en-US';
 
@@ -227,7 +242,9 @@ export function init({ onResult, onSilence, onStatus, onPartnerSpeech }) {
         // intends to listen, the browser may stop continuous recognition on
         // its own (e.g. after a pause) — restart it so the partner's floor
         // stays open across silences. accumulatedText persists across restarts.
-        if (listeningIntent) {
+        // While suspended for backgrounding, do NOT restart: the visibility guard
+        // owns the restart and will do it when the page comes back.
+        if (listeningIntent && !suspendedForHidden) {
             // currentInterim holds words the recognizer has NOT finalized yet.
             // Ending the session discards them and the restarted session does not
             // re-hear audio already spoken — so an interim shown live but not yet
@@ -242,12 +259,46 @@ export function init({ onResult, onSilence, onStatus, onPartnerSpeech }) {
                 accumulatedText = joinParts(segments);
             }
             currentInterim = '';
-            try { recognition.start(); } catch { /* already starting */ }
+            // A short beat before restarting where the platform needs it: with
+            // continuous off, sessions end constantly by design, and restarting
+            // synchronously into an immediately-ending session spins a tight loop.
+            if (speechCfg.restartDelayMs > 0) {
+                setTimeout(() => {
+                    if (!listeningIntent) return;      // stopped while we waited
+                    try { recognition.start(); } catch { /* already starting */ }
+                }, speechCfg.restartDelayMs);
+            } else {
+                try { recognition.start(); } catch { /* already starting */ }
+            }
             return;
         }
         clearSilenceTimer();
         if (onStatusChange) onStatusChange('stopped');
     };
+
+    // iOS stops recognition when the page is backgrounded WITHOUT telling the app,
+    // which would otherwise leave it showing a live microphone and silently
+    // hearing nothing. Suspend deliberately on hide and resume on return, keeping
+    // listeningIntent intact across the gap so the user's intent is not lost.
+    // (If more benign per-restart errors turn up during device testing, the
+    // onerror allow-list below is where they belong — 'no-speech' and 'aborted'
+    // are already ignored, which covers normal session teardown.)
+    if (speechCfg.guardVisibility && typeof document !== 'undefined') {
+        document.addEventListener('visibilitychange', () => {
+            if (!recognition) return;
+            if (document.hidden) {
+                if (listeningIntent && !suspendedForHidden) {
+                    suspendedForHidden = true;
+                    try { recognition.stop(); } catch { /* not running */ }
+                }
+            } else if (suspendedForHidden) {
+                suspendedForHidden = false;
+                if (listeningIntent) {
+                    try { recognition.start(); } catch { /* already started */ }
+                }
+            }
+        });
+    }
 
     recognition.onerror = (event) => {
         if (event.error === 'no-speech' || event.error === 'aborted') return;
@@ -292,6 +343,7 @@ export function startListening() {
     segments = [];
     currentInterim = '';
     listeningIntent = true;
+    suspendedForHidden = false;   // a fresh start clears any backgrounded state
     try { recognition.start(); } catch { /* already started */ }
     if (onStatusChange) onStatusChange('listening');
 }
@@ -299,6 +351,7 @@ export function startListening() {
 export function stopListening() {
     if (!recognition) return;
     listeningIntent = false;
+    suspendedForHidden = false;   // a deliberate stop outranks a backgrounded suspend
     clearSilenceTimer();
     recognition.stop();
 }

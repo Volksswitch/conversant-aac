@@ -11,7 +11,22 @@
  * cleaned out on activate.
  */
 const CACHE_VERSION = 'aac-v0.5.99';
-const CACHE_NAME = `aac-shell-${CACHE_VERSION}`;
+// Cache Storage is scoped to the ORIGIN, not the path, and activate() below
+// deletes every cache that is not this one. Two Conversant deployments on the same
+// GitHub Pages origin (/conversant-aac/ and the /conversant-aac-ipad/ trial) would
+// therefore delete each other's shell every time the user switched between them —
+// self-healing, since fetch is network-first, but it would look like a bug and
+// would break offline start for whichever was used last. Including the scope's own
+// path segment gives each deployment its own cache namespace.
+const SCOPE_TAG = (() => {
+    try {
+        const seg = new URL(self.registration.scope).pathname.split('/').filter(Boolean).pop();
+        return seg ? `${seg}-` : '';
+    } catch {
+        return '';
+    }
+})();
+const CACHE_NAME = `aac-shell-${SCOPE_TAG}${CACHE_VERSION}`;
 
 // App shell precached on install so the app can cold-start offline.
 // Paths are relative to the service worker scope (the site root).
@@ -41,6 +56,8 @@ const SHELL = [
   './js/express-items.js',
   './js/express-panel.js',
   './js/data-transfer.js',
+  './js/platform.js',
+  './js/namespace.js',
   './js/express-editor.js',
   './js/control-phrases.js',
   './js/control-phrases-editor.js',
