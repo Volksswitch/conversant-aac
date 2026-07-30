@@ -20,6 +20,7 @@ import * as controlEditor from './control-phrases-editor.js';
 import * as whatsNew from './whats-new.js';
 import * as chime from './chime.js';
 import * as practiceScenarios from './practice-scenarios.js';
+import * as dataTransfer from './data-transfer.js';
 import { confirmDanger } from './confirm-dialog.js';
 
 // Point-release version shown in Settings → About. Bump alongside the
@@ -2207,6 +2208,76 @@ function renderErrorLog() {
 // Populate the Settings-profiles picker (About tab) from the data folder. Disables
 // the picker's Load/Delete when there are none, and shows a hint when no folder is
 // granted (profiles live in the folder).
+// --- Backup & transfer (Ken, July 30 2026) ---
+// Export writes one file containing everything; Import replaces everything from
+// one. On Windows this is a convenience over the visible data folder; on a tablet,
+// where the data folder is private to the browser, it is the ONLY way to back up
+// or move data — and the safety net for the measured fact that a browser tab is
+// refused persistent storage, so site data can be evicted after 7 days of non-use.
+function setBackupStatus(msg) {
+    const el = document.getElementById('backupStatus');
+    if (el) el.textContent = msg || '';
+}
+
+function wireBackupControls() {
+    const fileInput = document.getElementById('importDataFile');
+
+    document.getElementById('exportDataBtn').onclick = async () => {
+        setBackupStatus('Preparing your backup…');
+        try {
+            const pkg = await dataTransfer.downloadPackage(APP_VERSION);
+            setBackupStatus('Exported: ' + dataTransfer.summarize(pkg).join(' · '));
+        } catch (err) {
+            storage.logError('export', err.message || String(err));
+            setBackupStatus('Could not build the backup: ' + (err.message || 'unknown error'));
+        }
+    };
+
+    // The picker needs a real user gesture, so the button just opens it; the work
+    // happens on change.
+    document.getElementById('importDataBtn').onclick = () => {
+        setBackupStatus('');
+        fileInput.value = '';       // so re-picking the SAME file still fires change
+        fileInput.click();
+    };
+
+    fileInput.onchange = async () => {
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) return;
+        let pkg;
+        try {
+            pkg = dataTransfer.parsePackage(await file.text());
+        } catch (err) {
+            setBackupStatus(err.message);
+            return;
+        }
+        // Show what's in the file BEFORE replacing anything — the user is about to
+        // overwrite everything and a filename is not enough to judge by.
+        const when = pkg.exportedAt ? new Date(pkg.exportedAt).toLocaleString() : 'an unknown date';
+        if (!(await confirmDanger({
+            title: 'Replace everything with this backup?',
+            body: `This backup was made on ${when} and contains:\n\n• ` +
+                  dataTransfer.summarize(pkg).join('\n• ') +
+                  `\n\nImporting REPLACES what is on this device — your current About Me answers, people, Express Panel, starters and settings will be overwritten. Your API key is left alone. The app will reload afterwards.`,
+            confirmLabel: 'Replace my data',
+        }))) {
+            setBackupStatus('Import cancelled — nothing was changed.');
+            return;
+        }
+        setBackupStatus('Importing…');
+        try {
+            const restored = await dataTransfer.applyPackage(pkg);
+            if (restored.failed.length) {
+                storage.logError('import', 'partial restore, failed: ' + restored.failed.join(', '));
+            }
+            location.reload();      // re-read every store exactly as at startup
+        } catch (err) {
+            storage.logError('import', err.message || String(err));
+            setBackupStatus('Import failed: ' + (err.message || 'unknown error'));
+        }
+    };
+}
+
 async function renderSettingsProfiles() {
     const select = document.getElementById('settingsProfileSelect');
     const loadBtn = document.getElementById('loadSettingsProfileBtn');
@@ -2517,6 +2588,8 @@ function openSettings() {
         await renderSettingsProfiles();
         setProfileStatus(`Deleted “${name}”.`);
     };
+
+    wireBackupControls();
 
     document.getElementById('generateOpeningsBtn').onclick = generateScreenOpenings;
 

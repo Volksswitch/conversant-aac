@@ -162,6 +162,22 @@
                         </div>
                         <p class="setting-hint" id="settingsProfilesStatus" role="status" aria-live="polite"></p>
                     </div>
+                    <!-- Backup / transfer. On Windows the data folder already makes
+                         your data visible and copyable; this adds a single-file
+                         package so a backup is one tap, and it is the ONLY way to
+                         move data on a tablet, where the data folder is private to
+                         the browser. Import replaces everything, so it is
+                         danger-confirmed. -->
+                    <div class="setting-group" id="backupGroup">
+                        <label>Backup &amp; transfer</label>
+                        <p class="setting-hint"><b>Export</b> saves everything — your About Me answers, people, Express Panel, starters, settings and saved conversations — into one file you can keep somewhere safe or move to another device. <b>Import</b> puts a backup file back, <b>replacing</b> what is on this device. Your API key is never included in a backup.</p>
+                        <div class="profiles-row">
+                            <button id="exportDataBtn" type="button">Export my data</button>
+                            <button id="importDataBtn" type="button">Import from a backup</button>
+                            <input id="importDataFile" type="file" accept="application/json,.json" hidden>
+                        </div>
+                        <p class="setting-hint" id="backupStatus" role="status" aria-live="polite"></p>
+                    </div>
                 </div>
                 <div class="tab-panel" data-tab="aboutme">
                     <div id="worldviewContent"></div>

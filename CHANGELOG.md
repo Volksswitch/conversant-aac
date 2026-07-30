@@ -13,6 +13,15 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+- **You can now back up everything in one file, and put it back.** Settings → General has a new
+  **Backup & transfer** section. **Export my data** saves your About Me answers, the people you
+  know, your Express Panel, your starters and control phrases, your settings, and your saved
+  conversations into a single file you can keep somewhere safe or carry to another device.
+  **Import from a backup** puts it all back. Before anything is replaced you are shown exactly
+  what the file contains and when it was made, so you can be sure it is the right one. Your API
+  key is never written into a backup, and importing someone else's backup will not disturb the
+  key already on your device.
+
 ## Version 0.5.98
 
 - **When someone offers you a set of choices, you now get all of them.** If your partner asks

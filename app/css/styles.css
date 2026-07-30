@@ -2200,6 +2200,11 @@ body.conv-bottom .tab-panel[data-tab="aboutme"].active {
     margin: 0 0 1.25rem;
     color: #333;
     line-height: 1.5;
+    /* confirmDanger sets this with textContent, so a body containing newlines (e.g.
+       the import dialog listing what a backup holds) would otherwise render as one
+       run-on paragraph. pre-line honors the line breaks while still collapsing
+       runs of spaces. No effect on single-line bodies. */
+    white-space: pre-line;
 }
 
 .danger-actions {

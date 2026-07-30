@@ -40,6 +40,7 @@ const SHELL = [
   './js/viewport.js',
   './js/express-items.js',
   './js/express-panel.js',
+  './js/data-transfer.js',
   './js/express-editor.js',
   './js/control-phrases.js',
   './js/control-phrases-editor.js',

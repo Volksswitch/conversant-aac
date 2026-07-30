@@ -257,6 +257,71 @@ export async function deleteSettingsProfile(name) {
     try { await dir.removeEntry(`${clean}.json`); } catch { /* already gone */ }
 }
 
+// --- Backup / transfer seams (July 2026) ---
+// Used by data-transfer.js to build and restore a complete export package. These
+// exist because on iPad the data folder is OPFS — invisible to the user — so the
+// "copy worldview.json between machines" flow (v0.2.25) has no equivalent and
+// backup/transfer/ownership all have to become an explicit feature. The same
+// package is what cross-device transfer has always needed on Windows too.
+
+// The portable settings, with machine-local secrets/counters excluded — the SAME
+// exclusion the named-profile feature uses, so an exported backup can never carry
+// the plaintext API key (SEC-6).
+export function getPortableSettings() {
+    return exportSettingsBundle();
+}
+
+// Replace the portable settings from an imported bundle, PRESERVING this machine's
+// excluded keys (API key, usage counters, lastSeenVersion, active profile) exactly
+// as applySettingsProfile does — importing someone's backup must not wipe the key
+// they just typed in on this device.
+export function applyPortableSettings(incoming) {
+    const current = loadSettings();
+    const merged = {};
+    for (const k of PROFILE_EXCLUDE) {
+        if (current[k] !== undefined) merged[k] = current[k];
+    }
+    for (const k of Object.keys(incoming || {})) {
+        if (!PROFILE_EXCLUDE.includes(k)) merged[k] = incoming[k];
+    }
+    saveSettings(merged);
+}
+
+// Every saved conversation, as [{ id, data }]. Returns [] with no data folder.
+export async function listConversationLogs() {
+    const dir = await getConversationsDir();
+    if (!dir) return [];
+    const out = [];
+    try {
+        for await (const [entryName, handle] of dir.entries()) {
+            if (handle.kind !== 'file' || !entryName.toLowerCase().endsWith('.json')) continue;
+            try {
+                const file = await handle.getFile();
+                out.push({ id: entryName.slice(0, -5), data: JSON.parse(await file.text()) });
+            } catch { /* skip an unreadable/corrupt log rather than failing the whole export */ }
+        }
+    } catch { /* ignore */ }
+    out.sort((a, b) => a.id.localeCompare(b.id));
+    return out;
+}
+
+// Write one conversation log back during an import. Overwrites an existing file of
+// the same id, which is intended: the id is a timestamp, so a collision means the
+// same conversation.
+export async function writeConversationLog(id, data) {
+    const dir = await getConversationsDir();
+    if (!dir || !id) return false;
+    try {
+        const fh = await dir.getFileHandle(`${id}.json`, { create: true });
+        const w = await fh.createWritable();
+        await w.write(JSON.stringify(data, null, 2));
+        await w.close();
+        return true;
+    } catch {
+        return false;
+    }
+}
+
 export function loadApiKey() {
     return loadSettings().apiKey || null;
 }
