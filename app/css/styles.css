@@ -168,6 +168,17 @@ body {
     display: none;
 }
 
+/* Build stamp under the Start button — deliberately quiet, but always present:
+   it is the only way to identify a build before Start has run. */
+#buildStamp {
+    flex: 0 0 auto;
+    margin: 0;
+    font-size: 0.8rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: #7a8792;
+    letter-spacing: 0.02em;
+}
+
 #startBtn {
     flex: 0 0 auto;
     background: #2c3e50;

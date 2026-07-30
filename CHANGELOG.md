@@ -13,6 +13,11 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+- **The opening screen now shows which build you are running**, in small type under the Start
+  button — the version plus the exact code it was built from. Settings → About has the version
+  too, but you can't reach Settings before pressing Start, so if start-up itself misbehaves this
+  is the only way to tell a fresh delivery from a cached older one.
+- **"Continue anyway" on the listening notice is now "Clear message"**, which is what it does.
 - **If the app fails to start, it now says so.** Previously anything that went wrong while
   the app was starting up left you with buttons that quietly did nothing — most visibly a
   Start button that appeared to be ignored — and on an iPad there is no way to look under

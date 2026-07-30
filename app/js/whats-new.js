@@ -22,6 +22,8 @@ import * as storage from './storage.js';
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
   "0.5.99": [
+    "The opening screen now shows which build you are running, in small type under the Start button — the version plus the exact code it was built from. Settings → About has the version too, but you can't reach Settings before pressing Start, so if start-up itself misbehaves this is the only way to tell a fresh delivery from a cached older one.",
+    "\"Continue anyway\" on the listening notice is now \"Clear message\", which is what it does.",
     "If the app fails to start, it now says so. Previously anything that went wrong while the app was starting up left you with buttons that quietly did nothing — most visibly a Start button that appeared to be ignored — and on an iPad there is no way to look under the bonnet. Now a red card on the opening screen names what went wrong, and the same detail is written to the error log for a bug report.",
     "The Start button can no longer be left waiting on your saved data. If reading your data takes too long or never finishes, the app now gets on with it after a few seconds and opens the conversation, rather than sitting on the opening screen indefinitely.",
     "The note about listening now looks like the other start-up notices instead of plain text on the background.",

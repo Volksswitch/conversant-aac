@@ -22,6 +22,25 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      # Stamp the commit into the build. Two jobs, both about telling deliveries
+      # apart:
+      #   app.js   — shows "v0.5.99 · 8c1394f" under the Start button, so the build
+      #              can be identified before Start has run (when start-up itself is
+      #              what's broken, Settings → About is unreachable).
+      #   sw.js    — gives every deploy its own cache namespace. Several pushes share
+      #              one APP_VERSION during a dev cycle, so the shell cache key was
+      #              identical across them; activate() only clears caches whose name
+      #              differs, so a mid-cycle redeploy could keep the previous shell.
+      # Both fail loudly if the placeholder is missing, rather than deploying a build
+      # that quietly cannot be identified.
+      - name: Stamp the build
+        run: |
+          set -e
+          SHA="${GITHUB_SHA::7}"
+          grep -q '@@BUILD@@' app/js/app.js || { echo "app.js has no @@BUILD@@ placeholder"; exit 1; }
+          grep -q '@@BUILD@@' app/sw.js   || { echo "sw.js has no @@BUILD@@ placeholder"; exit 1; }
+          sed -i "s/@@BUILD@@/${SHA}/g" app/js/app.js app/sw.js
+          echo "Stamped build ${SHA}"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

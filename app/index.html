@@ -65,7 +65,7 @@
                         <p class="apikey-prompt-title" id="listeningPromptReason"></p>
                         <p class="setting-hint" id="listeningPromptRemedy"></p>
                         <div class="apikey-prompt-actions">
-                            <button id="listeningPromptCloseBtn" type="button" class="apikey-continue">Continue anyway</button>
+                            <button id="listeningPromptCloseBtn" type="button" class="apikey-continue">Clear message</button>
                         </div>
                     </div>
                     <!-- Step 4 of the pre-start sequence: shown when no API key is
@@ -78,6 +78,13 @@
                         </div>
                     </div>
                     <button id="startBtn">Start</button>
+                    <!-- Which build am I actually looking at? Settings → About has
+                         the version, but Settings is unreachable until Start has
+                         run, so a start-up problem leaves no way to tell a new
+                         delivery from a cached old one. The deploy workflow stamps
+                         the commit in; "dev" means it was served straight from the
+                         working copy. -->
+                    <p id="buildStamp"></p>
                 </div>
             </section>
 

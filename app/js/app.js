@@ -83,6 +83,19 @@ function applyListenAvailability() {
 // which build they're on.
 const APP_VERSION = '0.5.99';
 
+// The exact commit this build came from. Rewritten by the deploy workflow (it
+// substitutes the placeholder below); a copy served from the working tree keeps
+// the placeholder and reports "dev".
+//
+// Why this exists: the version alone can't answer "am I looking at the delivery I
+// just pushed?" — several pushes share one version during a dev cycle, and the
+// version lives in Settings → About, which is unreachable until Start has run. So
+// when start-up is what's broken, there was no way to tell a new build from a
+// cached old one (Ken, July 30 2026). This shows on the pre-start screen, before
+// anything can go wrong.
+const BUILD_STAMP = '@@BUILD@@';
+const BUILD_ID = BUILD_STAMP.startsWith('@@') ? 'dev' : BUILD_STAMP;
+
 const conversationHistory = [];
 let isListening = false;
 let lastPalette = [];
@@ -3072,6 +3085,13 @@ function reportStartupFailure(where, err) {
 
 window.addEventListener('error', (e) => reportStartupFailure('script', e.error || e.message));
 window.addEventListener('unhandledrejection', (e) => reportStartupFailure('promise', e.reason));
+
+// Stamp the build BEFORE initApp runs, so it is on screen even if initApp is what
+// fails — that is precisely the case where you need to know which build you have.
+try {
+    const stamp = document.getElementById('buildStamp');
+    if (stamp) stamp.textContent = `v${APP_VERSION} · ${BUILD_ID}`;
+} catch { /* nothing to stamp */ }
 
 try {
     initApp();
