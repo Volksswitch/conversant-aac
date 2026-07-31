@@ -13,7 +13,39 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
-_Nothing yet._
+- **The screen can no longer be zoomed by pinching or double-tapping.** A keyguard's holes
+  are cut in plastic and cannot zoom with the screen, so any zoom — usually an accidental
+  one — puts every button out from under its hole. It was also making the layout itself go
+  wrong: zooming while you were in Settings could shrink the Express Panel and leave it
+  shrunken until you restarted the app. If you want things bigger, the size settings are
+  the way: **Settings → Text Size** for each area, and **Speech & Input → Button size**.
+
+- **"Generate Screen Openings" now tells you what size screenshot it measured**, and refuses
+  to run at all if the screen is zoomed. If your screenshot is not exactly the size it names,
+  the screenshot was resized somewhere along the way — mail apps shrink attached images by
+  default — and that alone will make the openings miss.
+
+- **The opening screen now shows which build you are running**, in small type under the Start
+  button — the version plus the exact code it was built from. Settings → About has the version
+  too, but you can't reach Settings before pressing Start, so if start-up itself misbehaves this
+  is the only way to tell a fresh delivery from a cached older one.
+
+- **The Start button can no longer be left waiting on your saved data.** If reading your
+  data takes too long or never finishes, the app now gets on with it after a few seconds
+  and opens the conversation, rather than sitting on the opening screen indefinitely.
+
+- **The Paste button beside your API key now tells you what happened.** If it can't reach the
+  clipboard it says so and tells you to touch and hold the box and choose Paste instead, rather
+  than looking like a button that does nothing.
+
+- **You can now back up everything in one file, and put it back.** Settings → General has a new
+  **Backup & transfer** section. **Export my data** saves your About Me answers, the people you
+  know, your Express Panel, your starters and control phrases, your settings, and your saved
+  conversations into a single file you can keep somewhere safe or carry to another device.
+  **Import from a backup** puts it all back. Before anything is replaced you are shown exactly
+  what the file contains and when it was made, so you can be sure it is the right one. Your API
+  key is never written into a backup, and importing someone else's backup will not disturb the
+  key already on your device.
 
 <!-- HELD BACK — NOT ANNOUNCED IN THE APP (Ken, July 30 2026).
      The iPad port is being pushed to the live site continuously, because that is
@@ -29,18 +61,6 @@ _Nothing yet._
      Windows users and deserve announcing at the next real release. -->
 
 ## Held back — iPad work in progress, not announced
-
-- **The screen can no longer be zoomed by pinching or double-tapping.** A keyguard's holes
-  are cut in plastic and cannot zoom with the screen, so any zoom — usually an accidental
-  one — puts every button out from under its hole. It was also making the layout itself go
-  wrong: zooming while you were in Settings could shrink the Express Panel and leave it
-  shrunken until you restarted the app. If you want things bigger, the size settings are
-  the way: **Settings → Text Size** for each area, and **Speech & Input → Button size**.
-
-- **"Generate Screen Openings" now tells you what size screenshot it measured**, and refuses
-  to run at all if the screen is zoomed. If your screenshot is not exactly the size it names,
-  the screenshot was resized somewhere along the way — mail apps shrink attached images by
-  default — and that alone will make the openings miss.
 
 - **On an iPad, "Generate Screen Openings" now hands you the file instead of hiding it.**
   It used to say it had written **Screen Openings.txt** to your data folder — which is
@@ -69,19 +89,12 @@ _Nothing yet._
   stretches of a conversation cost nothing. Your key stays on the device: it is never
   written into a backup or a settings profile.
 
-- **The opening screen now shows which build you are running**, in small type under the Start
-  button — the version plus the exact code it was built from. Settings → About has the version
-  too, but you can't reach Settings before pressing Start, so if start-up itself misbehaves this
-  is the only way to tell a fresh delivery from a cached older one.
 - **"Continue anyway" on the listening notice is now "Clear message"**, which is what it does.
 - **If the app fails to start, it now says so.** Previously anything that went wrong while
   the app was starting up left you with buttons that quietly did nothing — most visibly a
   Start button that appeared to be ignored — and on an iPad there is no way to look under
   the bonnet. Now a red card on the opening screen names what went wrong, and the same
   detail is written to the error log for a bug report.
-- **The Start button can no longer be left waiting on your saved data.** If reading your
-  data takes too long or never finishes, the app now gets on with it after a few seconds
-  and opens the conversation, rather than sitting on the opening screen indefinitely.
 - **The note about listening now looks like the other start-up notices** instead of plain
   text on the background.
 
@@ -108,21 +121,9 @@ _Nothing yet._
   stop at the same point, so a keyguard fits over either one.
 - **The Express Panel and keyboard layout pickers now open on an iPad.** Tapping one did nothing,
   because the panel moved underneath your finger before the list could appear.
-- **The Paste button beside your API key now tells you what happened.** If it can't reach the
-  clipboard it says so and tells you to touch and hold the box and choose Paste instead, rather
-  than looking like a button that does nothing.
 - **The listening tone no longer turns up late, attached to the wrong button.** On an iPad it
   could stay silent when listening started and then sound at the next thing you tapped — such as
   "End conversation".
-
-- **You can now back up everything in one file, and put it back.** Settings → General has a new
-  **Backup & transfer** section. **Export my data** saves your About Me answers, the people you
-  know, your Express Panel, your starters and control phrases, your settings, and your saved
-  conversations into a single file you can keep somewhere safe or carry to another device.
-  **Import from a backup** puts it all back. Before anything is replaced you are shown exactly
-  what the file contains and when it was made, so you can be sure it is the right one. Your API
-  key is never written into a backup, and importing someone else's backup will not disturb the
-  key already on your device.
 
 ## Version 0.5.98
 
