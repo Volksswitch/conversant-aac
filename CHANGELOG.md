@@ -20,6 +20,12 @@ regenerate the bundled notes in `app/js/whats-new.js`.
   shrunken until you restarted the app. If you want things bigger, the size settings are
   the way: **Settings → Text Size** for each area, and **Speech & Input → Button size**.
 
+- **Settings profiles now have an "Update" button**, beside Load and Delete. Adjust a
+  setting and one tap puts the change back into the profile you are using — previously you
+  had to retype the profile's exact name in the box below and confirm an overwrite, and a
+  small typo left you with two nearly identical profiles instead. The buttons have also
+  moved onto their own full-width row beneath the profile list, so they are easier to hit.
+
 - **In Practice Mode the other person no longer sounds exactly like you.** If you had never
   picked a voice of your own — leaving it on "Browser default" — "Auto" was handing the
   practice partner that very same voice, so both sides of the conversation spoke in one

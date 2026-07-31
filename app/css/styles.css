@@ -729,6 +729,14 @@ body.conv-bottom .palette-grid {
 .profiles-row { display: flex; gap: 0.5rem; margin-top: 0.4rem; align-items: center; flex-wrap: wrap; }
 .profiles-row #settingsProfileSelect,
 .profiles-row #settingsProfileNameInput { flex: 1 1 10rem; min-width: 0; }
+/* Profile actions sit on their own row UNDER the control they act on, and split
+   its full width evenly — the same treatment as the voice Test buttons. Sharing a
+   row with the select left each one a sliver, and target size is an accessibility
+   requirement for this population, not polish. `flex: 1 1 0` with `min-width: 0`
+   makes the three equal regardless of label length, so "Delete" is no smaller than
+   "Update"; the height floor comes from the global --btn-min-dim rule. */
+.profiles-actions { flex-wrap: nowrap; }
+.profiles-actions button { flex: 1 1 0; min-width: 0; }
 #settingsProfilesStatus:empty { display: none; }
 
 /* Each grid item is a CATEGORY CELL holding 1–2 stacked option buttons (the

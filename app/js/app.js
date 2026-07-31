@@ -2690,23 +2690,30 @@ async function renderSettingsProfiles() {
     const select = document.getElementById('settingsProfileSelect');
     const loadBtn = document.getElementById('loadSettingsProfileBtn');
     const delBtn = document.getElementById('deleteSettingsProfileBtn');
+    const updBtn = document.getElementById('updateSettingsProfileBtn');
     const status = document.getElementById('settingsProfilesStatus');
     if (!select) return;
+    // All three act on the SELECTED profile, so they are enabled and disabled
+    // together — there is never a state where one is meaningful and another is not.
+    const setActionsEnabled = (on) => {
+        loadBtn.disabled = delBtn.disabled = updBtn.disabled = !on;
+    };
     if (!storage.hasDataFolder()) {
         select.innerHTML = '<option value="">— Choose a data folder first —</option>';
-        select.disabled = loadBtn.disabled = delBtn.disabled = true;
+        select.disabled = true;
+        setActionsEnabled(false);
         return;
     }
     select.disabled = false;
     const names = await storage.listSettingsProfiles();
     if (!names.length) {
         select.innerHTML = '<option value="">— No saved profiles —</option>';
-        loadBtn.disabled = delBtn.disabled = true;
+        setActionsEnabled(false);
         setProfileStatus('');
         return;
     }
     select.innerHTML = names.map((n) => `<option value="${n}">${n}</option>`).join('');
-    loadBtn.disabled = delBtn.disabled = false;
+    setActionsEnabled(true);
     // Reflect the profile currently in effect (persisted across reloads) rather than
     // defaulting to the first name — so after a load/restart the picker shows what's
     // actually in use (Ken, July 12 2026).
@@ -2979,6 +2986,29 @@ function openSettings() {
             location.reload(); // re-apply every setting exactly as at startup
         } catch (err) {
             setProfileStatus(err.message || 'Could not load the profile.');
+        }
+    };
+    // Overwrite the SELECTED profile with the settings currently in effect. This is
+    // the counterpart to Load: tweak a setting, then put the change back where it
+    // came from. Confirmed because it destroys the profile's previous contents —
+    // the same bar Save-over-an-existing-name already meets.
+    document.getElementById('updateSettingsProfileBtn').onclick = async () => {
+        const name = profileSelect.value;
+        if (!name) return;
+        if (!(await confirmDanger({
+            title: 'Replace that profile?',
+            body: `Replace the “${name}” profile with your current settings? Whatever it holds now is lost.`,
+            confirmLabel: 'Replace',
+        }))) return;
+        try {
+            const saved = await storage.saveSettingsProfile(name);
+            // It now matches the live settings, so it is the profile in effect.
+            storage.saveActiveSettingsProfile(saved);
+            await renderSettingsProfiles();
+            profileSelect.value = saved;
+            setProfileStatus(`Updated “${saved}”. In use: “${saved}”.`);
+        } catch (err) {
+            setProfileStatus(err.message || 'Could not update the profile.');
         }
     };
     document.getElementById('deleteSettingsProfileBtn').onclick = async () => {
