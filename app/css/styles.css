@@ -1685,13 +1685,24 @@ dialog select {
 }
 .apikey-continue:hover { background: #22303d; }
 
-#testVoiceBtn {
+/* Both voice Test buttons share one rule so they stay identical — the partner one
+   had no rule of its own and inherited the dialog's generic button sizing, which
+   rendered it much narrower than its twin directly above (Ken, July 31 2026).
+   FULL WIDTH, matching the select each one sits under: a narrow target is a real
+   accessibility problem for users with limited motor control, not a cosmetic one,
+   and the horizontal space is already spoken for by the select above. The height
+   floor comes from the global --btn-min-dim rule, so both axes are now honest
+   targets. */
+#testVoiceBtn,
+#testPartnerVoiceBtn {
+    display: block;
+    width: 100%;
     margin-top: 0.4rem;
-    padding: 0.3rem 0.7rem;
+    padding: 0.5rem;
     border-radius: 4px;
     border: 1px solid #ccc;
     cursor: pointer;
-    font-size: 0.85rem;
+    font-size: 1rem;
 }
 
 .setting-group {

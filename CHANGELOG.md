@@ -20,10 +20,17 @@ regenerate the bundled notes in `app/js/whats-new.js`.
   shrunken until you restarted the app. If you want things bigger, the size settings are
   the way: **Settings → Text Size** for each area, and **Speech & Input → Button size**.
 
+- **In Practice Mode the other person no longer sounds exactly like you.** If you had never
+  picked a voice of your own — leaving it on "Browser default" — "Auto" was handing the
+  practice partner that very same voice, so both sides of the conversation spoke in one
+  voice. Auto now works out which voice you are actually using and picks a different one,
+  preferring another voice in the same language rather than simply the next one on the list.
+
 - **The practice partner's voice now has a Test button**, like your own voice above it. It
   works for **Auto** as well, and tells you which voice Auto picked — so you can hear whether
   the other person will sound different enough from you before you start practising, rather
-  than finding out mid-conversation.
+  than finding out mid-conversation. Both Test buttons are now full width, matching the
+  setting above them, so they are easier to hit.
 
 - **"Generate Screen Openings" now tells you what size screenshot it measured**, and refuses
   to run at all if the screen is zoomed. If your screenshot is not exactly the size it names,

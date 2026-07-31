@@ -1212,9 +1212,29 @@ function resumeOrIdle() {
 // currently showing in the select rather than the last-saved one.
 function pickPartnerVoice(chosen = storage.loadPartnerVoice()) {
     if (chosen) return chosen;
-    const own = tts.getSelectedVoiceURI();
-    const other = tts.getVoices().find(v => v.voiceURI !== own);
-    return other ? other.voiceURI : undefined;
+    const voices = tts.getVoices();
+    if (!voices.length) return undefined;
+
+    // Resolve what the user's voice ACTUALLY is before excluding it. When Voice is
+    // left on "Browser default" the app holds no URI, and the earlier version
+    // excluded "no URI" — which excludes nothing, so it returned the first voice in
+    // the list. That is precisely the voice the browser default resolves to, so the
+    // partner came out sounding identical to the user (Ken, July 31 2026, on the
+    // iPad). `default` is the flag that marks it; the first voice is the fallback
+    // where nothing is flagged.
+    const ownURI = tts.getSelectedVoiceURI();
+    const own = voices.find(v => v.voiceURI === ownURI)
+        || voices.find(v => v.default)
+        || voices[0];
+
+    // Prefer a different voice IN THE SAME LANGUAGE. "Any other voice" is fine with
+    // the three or four a desktop offers, but an iPad carries dozens across many
+    // languages, where the first non-match can easily be another language — audibly
+    // distinct and completely unintelligible, which is not the point.
+    const different = v => v.voiceURI !== own.voiceURI;
+    const pick = voices.find(v => different(v) && v.lang === own.lang)
+        || voices.find(different);
+    return pick ? pick.voiceURI : undefined;
 }
 
 // Settings → Practice tab. Three states: practice already running (show which
