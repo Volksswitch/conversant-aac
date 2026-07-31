@@ -13,6 +13,23 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+- **Backups are now saved into your own data folder.** "Export my data" used to hand the
+  file to your browser, which dropped it into Downloads among everything else you have ever
+  downloaded. It now writes it to a **backups** folder inside the data folder you chose — beside
+  the data it protects, in the place you already know and already copy between machines. The
+  backups it finds there are listed by date underneath, so putting one back is choosing it
+  from the list and tapping **Restore selected backup**; you no longer have to go hunting for
+  the file. Importing a file from somewhere else still works, for a backup that came from
+  another machine. On a device with no data folder to choose, nothing changes — the backup is
+  saved through your browser exactly as before.
+
+- **The voice list now tells you which voices are the better ones.** Devices often offer the
+  same voice twice — a plain version and a higher-quality one you downloaded — under exactly
+  the same name, so the list showed two identical entries with no way to tell them apart. Each
+  voice now says which it is, such as "Ava — Enhanced" or "Zoe — Premium". Voices that come in
+  only one quality are listed exactly as before. This applies to both your own voice and the
+  practice partner's.
+
 - **The screen can no longer be zoomed by pinching or double-tapping.** A keyguard's holes
   are cut in plastic and cannot zoom with the screen, so any zoom — usually an accidental
   one — puts every button out from under its hole. It was also making the layout itself go
