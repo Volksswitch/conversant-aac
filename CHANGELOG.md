@@ -30,6 +30,14 @@ _Nothing yet._
 
 ## Held back — iPad work in progress, not announced
 
+- **On an iPad, "Generate Screen Openings" now hands you the file instead of hiding it.**
+  It used to say it had written **Screen Openings.txt** to your data folder — which is
+  true, but on an iPad that folder is private to the browser and invisible in the Files
+  app, so the file was somewhere you could never open it, let alone email it to a keyguard
+  maker. It now comes to you as a normal save: choose **Save to Files**, and it is sitting
+  there ready to attach to an email. On Windows nothing changes — the file still goes
+  straight into your data folder as before.
+
 - **Your iPad no longer offers to "Save Password" every time you open the app.** It was
   asking for a user name, which means nothing for an API key. The key boxes were hidden
   behind dots, and that is exactly how Safari recognises a password field — so it treated
