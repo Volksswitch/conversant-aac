@@ -30,6 +30,18 @@ _Nothing yet._
 
 ## Held back — iPad work in progress, not announced
 
+- **The screen can no longer be zoomed by pinching or double-tapping.** A keyguard's holes
+  are cut in plastic and cannot zoom with the screen, so any zoom — usually an accidental
+  one — puts every button out from under its hole. It was also making the layout itself go
+  wrong: zooming while you were in Settings could shrink the Express Panel and leave it
+  shrunken until you restarted the app. If you want things bigger, the size settings are
+  the way: **Settings → Text Size** for each area, and **Speech & Input → Button size**.
+
+- **"Generate Screen Openings" now tells you what size screenshot it measured**, and refuses
+  to run at all if the screen is zoomed. If your screenshot is not exactly the size it names,
+  the screenshot was resized somewhere along the way — mail apps shrink attached images by
+  default — and that alone will make the openings miss.
+
 - **On an iPad, "Generate Screen Openings" now hands you the file instead of hiding it.**
   It used to say it had written **Screen Openings.txt** to your data folder — which is
   true, but on an iPad that folder is private to the browser and invisible in the Files
