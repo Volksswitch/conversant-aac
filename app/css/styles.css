@@ -1521,7 +1521,16 @@ dialog label {
     margin-bottom: 0.25rem;
 }
 
-dialog input,
+/* Full-width sizing is for TEXT-ENTRY controls, and radios and checkboxes are
+   excluded explicitly (Ken, July 31 2026). Left unscoped, this stretched a radio
+   to the full width of the panel, which pushed its own label text onto the next
+   line — the button ended up sitting ABOVE its label rather than beside it, as the
+   "Hearing the other person" pair did on the iPad. Every other radio and checkbox
+   in the app had been individually patched back to `width: auto`, which is the
+   tell: the rule never meant to include them, and any new one added without the
+   right class inherited the bug. `.switch input` genuinely wants 100% — it is an
+   invisible overlay on the toggle — and still sets it for itself. */
+dialog input:not([type="radio"]):not([type="checkbox"]),
 dialog select,
 dialog textarea {
     width: 100%;

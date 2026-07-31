@@ -80,6 +80,10 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Held back — iPad work in progress, not announced
 
+- **The "Hearing the other person" buttons now sit beside their labels, not above them.**
+  The two round buttons were being stretched the full width of the panel, which pushed each
+  one's wording onto the line below it.
+
 - **The Practice tab no longer cuts a scenario in half.** On an iPad the list ran in two
   columns, and one scenario could be sliced across the gap — its title at the bottom of the
   first column and its description at the top of the second, so it read as two broken

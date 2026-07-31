@@ -167,9 +167,12 @@
                          Home Screen app, and Chrome/Edge on iPad). -->
                     <div class="setting-group">
                         <label>Hearing the other person</label>
-                        <div class="radio-group">
-                            <label><input type="radio" name="sttProvider" value="builtin"> This browser's own (free)</label>
-                            <label><input type="radio" name="sttProvider" value="deepgram"> Deepgram transcription (paid)</label>
+                        <!-- radio-row / radio-label are the standard pair used by every
+                             other radio group here; this one was added later and missed
+                             them, so it had no layout of its own. -->
+                        <div class="radio-row">
+                            <label class="radio-label"><input type="radio" name="sttProvider" value="builtin"> This browser's own (free)</label>
+                            <label class="radio-label"><input type="radio" name="sttProvider" value="deepgram"> Deepgram transcription (paid)</label>
                         </div>
                         <p class="setting-hint">Your browser can usually do this itself, at no cost. On an iPad it can't — listening does nothing in a Home Screen app, and in Chrome or Edge — so a transcription service is the way to have the app hear the other person there.</p>
                         <div id="deepgramRow" hidden>
