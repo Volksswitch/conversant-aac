@@ -62,6 +62,12 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Held back — iPad work in progress, not announced
 
+- **The Practice tab no longer cuts a scenario in half.** On an iPad the list ran in two
+  columns, and one scenario could be sliced across the gap — its title at the bottom of the
+  first column and its description at the top of the second, so it read as two broken
+  entries. The scenarios now run down the page in a single column, which also makes each
+  one a wider, easier target.
+
 - **On an iPad, "Generate Screen Openings" now hands you the file instead of hiding it.**
   It used to say it had written **Screen Openings.txt** to your data folder — which is
   true, but on an iPad that folder is private to the browser and invisible in the Files
