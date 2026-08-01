@@ -13,6 +13,13 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+- **The wording about where your information is kept now fits the device you are on.** A
+  setting called "Do not save conversations to my data folder" makes no sense on a tablet,
+  which has no folder to name — it is now simply **"Do not save my conversations"**. On a
+  device where there is no folder to choose, the Data Folder section of Settings retitles
+  itself **"Where Your Data Is Kept"** and explains where your information actually lives,
+  instead of offering a button that could not lead anywhere.
+
 - **Settings closes with an X in its title bar.** The full-width **Close** button along the
   bottom took a whole button's height out of every tab to hold one control. It is now a small
   **X** at the right-hand end of the blue "Settings" bar, and the space it used to occupy goes
