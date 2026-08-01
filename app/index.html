@@ -171,7 +171,9 @@
                          Deepgram key reachable only through the transcription choice,
                          was the confusion. -->
                     <div class="setting-group">
-                        <label>Data Folder</label>
+                        <!-- Retitled at runtime where there is no folder to choose
+                             (see updateFolderDisplay in app.js). -->
+                        <label id="dataFolderLabel">Data Folder</label>
                         <div id="dataFolderRow">
                             <span id="dataFolderName" class="placeholder">No folder selected</span>
                             <button id="pickFolderBtn" type="button">Choose Folder</button>
@@ -189,7 +191,7 @@
                     </div>
                     <div class="setting-group" id="settingsProfilesGroup">
                         <label>Settings profiles</label>
-                        <p class="setting-hint">Save <b>all</b> of your settings (voice, silence period, dock &amp; layout, button/gap sizes, tap mode, text sizes, placeholders) as a named profile in your data folder, then re-apply it in one tap — handy for a repeatable test baseline or moving your setup to another device. Your API key and usage counters are <b>not</b> included. Needs a data folder (above).</p>
+                        <p class="setting-hint">Save <b>all</b> of your settings (voice, silence period, dock &amp; layout, button/gap sizes, tap mode, text sizes, placeholders) as a named profile, then re-apply it in one tap — handy for a repeatable test baseline or moving your setup to another device. Your API keys and usage counters are <b>not</b> included. Profiles are stored with the rest of your data (above), so they travel with a backup.</p>
                         <!-- Control above, its buttons on their own full-width row below —
                              the same shape as the voice Test buttons. Sharing a row with
                              the select squeezed each button to a sliver, which is a real
@@ -470,9 +472,13 @@
                     <div class="setting-group">
                         <label class="checkbox-label">
                             <input type="checkbox" id="noSaveDefaultInput">
-                            Do not save conversations to my data folder
+                            <!-- Deliberately says nothing about WHERE conversations
+                                 are kept: on a tablet there is no folder to name, so
+                                 the old "to my data folder" wording described
+                                 something that does not exist there. -->
+                            Do not save my conversations
                         </label>
-                        <p class="setting-hint">When on, new conversations start private — nothing is written to your data folder. This sets the <em>starting</em> state; you can still turn saving on or off for the current conversation with the “Don't save” button in the Command Bar. Default is off (conversations are saved).</p>
+                        <p class="setting-hint">When on, new conversations start private — nothing from them is saved. This sets the <em>starting</em> state; you can still turn saving on or off for the current conversation with the “Don't save” button in the Command Bar. Default is off (conversations are saved).</p>
                     </div>
                     <div class="setting-group">
                         <label for="responsesPerCategoryInput">Suggestions per category</label>
@@ -635,7 +641,7 @@
                             <button id="copyErrorLogBtn" type="button">Copy</button>
                             <button id="clearErrorLogBtn" type="button">Clear</button>
                         </div>
-                        <p class="setting-hint">Errors grouped by conversation (newest first). <b>Copy</b> puts the full report on the clipboard — each conversation's transcript together with its errors — ready to paste into a bug report. Also written to <code>errors.log</code> in your data folder.</p>
+                        <p class="setting-hint">Errors grouped by conversation (newest first). <b>Copy</b> puts the full report on the clipboard — each conversation's transcript together with its errors — ready to paste into a bug report. Also written to an <code>errors.log</code> file alongside your data.</p>
                     </div>
                     <!-- Voice-list readout. Exists because a tablet has no console:
                          when a voice installed on the device does not show up in the

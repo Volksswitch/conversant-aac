@@ -2576,6 +2576,13 @@ function updateFolderDisplay() {
         hint.textContent = 'This device keeps your data in the app’s own private storage. ' +
             'You cannot open it as a folder, so use Backup & transfer below to keep a copy you can see and move.';
     }
+    // The group's own label has to move with the hint: "Data Folder" names a thing
+    // that does not exist on a tablet, which is exactly the confusion the swapped
+    // hint below it is there to clear up.
+    const folderLabel = document.getElementById('dataFolderLabel');
+    if (folderLabel) {
+        folderLabel.textContent = deviceMode ? 'Where Your Data Is Kept' : 'Data Folder';
+    }
     updateStorageDurability(deviceMode);
 }
 
