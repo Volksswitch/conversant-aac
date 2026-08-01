@@ -26,6 +26,10 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+_Nothing yet._
+
+## Version 0.6.1
+
 - **Conversant AAC has its own web address: conversant.volksswitch.org.** Everyone now uses
   the same one — the iPad was briefly served from a separate address while iPad support was
   being worked out, and that is finished. The old address still works and sends you to the new
