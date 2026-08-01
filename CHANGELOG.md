@@ -13,6 +13,19 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+- **You can now speak with a much better voice, using a Deepgram key.** On an iPad the
+  device's own voices are a dead end — there is one ordinary voice (Samantha) and a set of
+  joke voices, and installing better ones does not make them available to the app. Under
+  **Settings → General → Your speaking voice** you can now switch to a Deepgram voice and
+  pick from sixteen, including British and Australian ones, with a **Test this voice**
+  button so you can hear each one before choosing. It uses the same key as transcription,
+  and the practice partner gets its own voice too. Phrases the app repeats — placeholders,
+  your Express Panel buttons, starters and goodbyes — are remembered after the first time,
+  so they are instant and cost nothing to say again. It costs roughly three cents per
+  thousand characters spoken. **If the service cannot be reached, the app speaks with your
+  device's own voice instead**, so you are never left unable to say something. The cost
+  shown in Settings → About now includes transcription and speaking alongside the AI.
+
 - **Backups are now saved into your own data folder.** "Export my data" used to hand the
   file to your browser, which dropped it into Downloads among everything else you have ever
   downloaded. It now writes it to a **backups** folder inside the data folder you chose — beside

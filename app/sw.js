@@ -64,6 +64,7 @@ const SHELL = [
   './js/express-items.js',
   './js/express-panel.js',
   './js/data-transfer.js',
+  './js/tts-deepgram.js',
   './js/platform.js',
   './js/namespace.js',
   './js/express-editor.js',
