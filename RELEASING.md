@@ -37,7 +37,10 @@ There is one branch: `main`. There is no separate `dev` or release branch.
   feature or a visible fix), add or edit the matching plain-English bullet under the
   topmost **`## Unreleased (next release)`** heading, **in the same commit as the
   code**. Write it the way a *target user* would read it — not engineering language
-  — matching the voice of the existing entries.
+  — matching the voice of the existing entries. Exclude internal-only work (tests,
+  tooling, refactors with no visible effect); when in doubt, ask Ken. If a change is
+  later backed out, delete its bullet in the same commit. **Ken's own edits to
+  `CHANGELOG.md` are authoritative** — preserve his wording; make only surgical edits.
 - **Scope a note to one platform when the other cannot see it (Ken, Aug 1 2026).** A
   `###` subheading under the version scopes the bullets beneath it — `### On an iPad`,
   `### On a computer`, `### Everyone` — and the app shows each user only what applies
@@ -45,10 +48,7 @@ There is one branch: `main`. There is no separate `dev` or release branch.
   **untagged bullet goes to everyone**, so forgetting to tag one is noise, never
   silence. Ask: *could someone on the other platform notice this at all?* A data folder
   is a computer thing; the Home Screen is an iPad thing; nearly everything else is
-  shared. Never write "Chromium" or "WebKit" — the reader is a user or a supporter. Exclude internal-only work (tests,
-  tooling, refactors with no visible effect); when in doubt, ask Ken. If a change is
-  later backed out, delete its bullet in the same commit. **Ken's own edits to
-  `CHANGELOG.md` are authoritative** — preserve his wording; make only surgical edits.
+  shared. Never write "Chromium" or "WebKit" — the reader is a user or a supporter.
 - The app announces its own new release: after the app auto-updates itself, the
   bundled "What's new" notes (generated from `CHANGELOG.md`) are shown in-app. See
   the "What's new" section of `CLAUDE.md`.
@@ -132,23 +132,10 @@ The ritual:
 6. **Push `origin main`.** GitHub Actions redeploys `app/` to Pages within ~1 minute.
    Users get the new app on their next reload (the service worker swaps it in on one
    load and serves it on the next).
-7. **Publish the iPad site — BEFORE the pre-bump.** `node scripts/publish-ipad-trial.mjs`.
-   It resets a cached clone to `origin/main`, replaces the payload wholesale, applies
-   the same build stamp production got, pushes, and polls the live URL until it
-   actually serves the new stamp.
-
-   > **This step must come before step 8, and the ordering is not cosmetic.** The
-   > pre-bump deliberately puts local `app/` ahead of `origin/main`, and the script
-   > **refuses to run in exactly that state** — correctly, because publishing then
-   > would make the iPad the only place that build exists. Hit on Aug 1 2026 by
-   > pre-bumping first. **Never work around it with `--no-verify`:** the recovery is
-   > `git tag prebump-tmp`, `git reset --hard HEAD~1`, publish, `git cherry-pick
-   > prebump-tmp`, `git tag -d prebump-tmp`.
-
-8. **Start the next cycle — pre-bump.** Immediately bump `APP_VERSION` and
+7. **Start the next cycle — pre-bump.** Immediately bump `APP_VERSION` and
    `CACHE_VERSION` to the next **patch** (`<final>` + 1 patch), commit that locally,
    and **do not push.** The dev copy now leads public by one patch again.
-9. **Restamp any documents synced during the cycle.** `DOC-SYNC.md`'s `At commit` must
+8. **Restamp any documents synced during the cycle.** `DOC-SYNC.md`'s `At commit` must
    name a commit that exists on `origin/main`, so anything reviewed against local-only
    commits is restamped at the release commit now. (See the ordering rule at the top of
    `DOC-SYNC.md`: reader-facing documents are best synced *after* the push, since until

@@ -66,7 +66,6 @@ const SHELL = [
   './js/data-transfer.js',
   './js/tts-deepgram.js',
   './js/platform.js',
-  './js/namespace.js',
   './js/express-editor.js',
   './js/control-phrases.js',
   './js/control-phrases-editor.js',

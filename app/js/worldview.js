@@ -19,10 +19,9 @@
  */
 
 import { readFile, writeFile, hasDataFolder } from './storage.js';
-import * as ns from './namespace.js';
 
 const PROFILE_FILE = 'worldview.json';
-const CACHE_KEY = ns.key('aac_worldview');
+const CACHE_KEY = 'aac_worldview';
 const REGISTRY_URL = 'data/worldview-questions.json';
 
 let registry = null;          // parsed worldview-questions.json

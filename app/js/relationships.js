@@ -23,10 +23,9 @@
  */
 
 import { readFile, writeFile, hasDataFolder } from './storage.js';
-import * as ns from './namespace.js';
 
 const FILE = 'relationships.json';
-const CACHE_KEY = ns.key('aac_relationships');
+const CACHE_KEY = 'aac_relationships';
 const ME = 'me';
 
 let graph = null;

@@ -14,11 +14,10 @@
  */
 
 import { readFile, writeFile, hasDataFolder } from './storage.js';
-import * as ns from './namespace.js';
 import { DEFAULT_ITEMS, ensureIds } from './express-items.js';
 
 const FILE = 'express-panel.json';
-const CACHE_KEY = ns.key('aac_express_items');
+const CACHE_KEY = 'aac_express_items';
 
 let items = null; // in-memory working copy
 

@@ -1,11 +1,7 @@
 import * as tlog from './transcript-log.js';
-import * as ns from './namespace.js';
 
-// Namespaced so a side-by-side trial deployment on the SAME origin cannot share
-// (or corrupt) the production app's settings and data. Unprefixed in production —
-// see namespace.js.
-const STORAGE_KEY = ns.key('aac_settings');
-const IDB_NAME = ns.key('aac-db');
+const STORAGE_KEY = 'aac_settings';
+const IDB_NAME = 'aac-db';
 const IDB_STORE = 'handles';
 const DIR_HANDLE_KEY = 'dataFolder';
 
@@ -98,22 +94,6 @@ function setRoot(handle, kind) {
     conversationDirHandle = null;   // cached from the OLD root — must not leak across
 }
 
-// A trial deployment works inside its own subdirectory, so its worldview.json,
-// conversations/ and settings/ never mix with the production app's — in the user's
-// real folder on desktop, or in the shared per-origin OPFS on a tablet. Production
-// is unprefixed and uses the root exactly as before. Falls back to the root if the
-// subdirectory cannot be created, since a trial writing to the root is better than
-// a trial that cannot save at all.
-async function descendToNamespace(root) {
-    const sub = ns.dataSubdir();
-    if (!root || !sub) return root;
-    try {
-        return await root.getDirectoryHandle(sub, { create: true });
-    } catch {
-        return root;
-    }
-}
-
 export function getStorageBackend() {
     return backend;
 }
@@ -130,7 +110,7 @@ async function useDeviceStorage() {
     if (!supportsDeviceStorage()) return false;
     try {
         const root = await navigator.storage.getDirectory();
-        setRoot(await descendToNamespace(root), BACKEND.DEVICE);
+        setRoot(root, BACKEND.DEVICE);
         return true;
     } catch {
         return false;
@@ -149,9 +129,7 @@ export async function restoreDataFolder() {
                 perm = await stored.requestPermission({ mode: 'readwrite' });
             }
             if (perm === 'granted') {
-                // Permission lives on the folder the user actually picked; the
-                // trial then works inside its own subdirectory of it.
-                setRoot(await descendToNamespace(stored), BACKEND.FOLDER);
+                setRoot(stored, BACKEND.FOLDER);
                 return true;
             }
         } catch {
@@ -167,9 +145,8 @@ export async function restoreDataFolder() {
 export async function pickDataFolder() {
     if (supportsFolderPicker()) {
         const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
-        // Store the PICKED handle (permissions attach to it); work in the subdir.
-        await idbPut(DIR_HANDLE_KEY, handle);
-        setRoot(await descendToNamespace(handle), BACKEND.FOLDER);
+        await idbPut(DIR_HANDLE_KEY, handle);   // permissions attach to this handle
+        setRoot(handle, BACKEND.FOLDER);
         return dirHandle;
     }
     // Called on a platform with no picker: adopt device storage rather than

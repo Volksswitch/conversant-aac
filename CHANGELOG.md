@@ -26,6 +26,11 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- **The iPad now uses the same web address as everyone else.** It was being served from a
+  separate trial address while iPad support was being worked out. That is finished, so there is
+  now one address for everyone: **volksswitch.github.io/conversant-aac**. If you had the old
+  trial address saved or on your Home Screen, remove it and add the new one.
+
 - **The “What’s new” summary now only tells you about changes that affect your own
   device.** A change that only shows up on an iPad is no longer described to someone on a
   Windows tablet, and the other way round — instead you get a single line saying there
