@@ -13,6 +13,14 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+- **The joke voices are out of the way.** Devices — iPads especially — offer a set of
+  novelty voices (Bahh, Boing, Zarvox, Trinoids) that are no use for talking to someone,
+  and on an iPad they were 19 of the 68 in the list, so most of choosing a voice was
+  scrolling past them. They are now hidden, with a **Show this device's joke voices**
+  checkbox under Settings → Speech & Input if you want them back. The practice partner's
+  "Auto" setting never picks one either — on an iPad it now chooses a real voice with a
+  British accent instead of speaking to you as Zarvox.
+
 - **You can now speak with a much better voice, using a Deepgram key.** On an iPad the
   device's own voices are a dead end — there is one ordinary voice (Samantha) and a set of
   joke voices, and installing better ones does not make them available to the app. Under
