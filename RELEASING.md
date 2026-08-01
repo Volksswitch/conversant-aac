@@ -37,7 +37,15 @@ There is one branch: `main`. There is no separate `dev` or release branch.
   feature or a visible fix), add or edit the matching plain-English bullet under the
   topmost **`## Unreleased (next release)`** heading, **in the same commit as the
   code**. Write it the way a *target user* would read it — not engineering language
-  — matching the voice of the existing entries. Exclude internal-only work (tests,
+  — matching the voice of the existing entries.
+- **Scope a note to one platform when the other cannot see it (Ken, Aug 1 2026).** A
+  `###` subheading under the version scopes the bullets beneath it — `### On an iPad`,
+  `### On a computer`, `### Everyone` — and the app shows each user only what applies
+  to them, plus one line saying the other kind of device had improvements too. An
+  **untagged bullet goes to everyone**, so forgetting to tag one is noise, never
+  silence. Ask: *could someone on the other platform notice this at all?* A data folder
+  is a computer thing; the Home Screen is an iPad thing; nearly everything else is
+  shared. Never write "Chromium" or "WebKit" — the reader is a user or a supporter. Exclude internal-only work (tests,
   tooling, refactors with no visible effect); when in doubt, ask Ken. If a change is
   later backed out, delete its bullet in the same commit. **Ken's own edits to
   `CHANGELOG.md` are authoritative** — preserve his wording; make only surgical edits.

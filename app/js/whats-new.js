@@ -21,14 +21,15 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.6.1": [
+    "The “What’s new” summary now only tells you about changes that affect your own device. A change that only shows up on an iPad is no longer described to someone on a Windows tablet, and the other way round — instead you get a single line saying there were improvements for the other kind of device, so you know the update was not empty for other people. Changes that affect everyone, which is most of them, are shown to everyone exactly as before."
+  ],
   "0.6.0": [
-    "Conversant AAC now runs on the iPad, as a supported platform. Open it in Safari — either as a page, or added to your Home Screen so it gets the whole screen — and see the new User Manual for iPad for the difference between the two, which is worth understanding before you choose. One thing to know up front: Apple does not allow a Home Screen app to use the iPad's own speech recognition, so hearing the other person there needs the same paid Deepgram key as the voice above. Many smaller iPad fixes — layout, start-up, the Express Panel, the listening tone — landed alongside it and are not listed individually.",
     "The wording about where your information is kept now fits the device you are on. A setting called \"Do not save conversations to my data folder\" makes no sense on a tablet, which has no folder to name — it is now simply \"Do not save my conversations\". On a device where there is no folder to choose, the Data Folder section of Settings retitles itself \"Where Your Data Is Kept\" and explains where your information actually lives, instead of offering a button that could not lead anywhere.",
     "Settings closes with an X in its title bar. The full-width Close button along the bottom took a whole button's height out of every tab to hold one control. It is now a small X at the right-hand end of the blue \"Settings\" bar, and the space it used to occupy goes to the settings themselves — about four more lines of the panel on every tab.",
     "Everything about hearing and speaking is now on one Settings tab, called Speech. Voices could be set from two different tabs, and the key for the paid services could only be reached through the transcription choice — so if you wanted a better voice but were happy with how the app heard people, the box to put your key in was nowhere on screen. Settings → Speech now holds the key, how the app hears the other person, your speaking voice and the practice partner's voice, in that order. The two choices are independent: you can hear through your browser and speak with a paid voice, or the other way round. Only the voice list for the service you chose is shown. The tab that used to be called \"Speech & Input\" is now Buttons & Keyboard, and holds what its name says.",
     "The joke voices are out of the way. Devices — iPads especially — offer a set of novelty voices (Bahh, Boing, Zarvox, Trinoids) that are no use for talking to someone, and on an iPad they were 19 of the 68 in the list, so most of choosing a voice was scrolling past them. They are now hidden, with a Show this device's joke voices checkbox under Settings → Speech if you want them back. The practice partner's \"Auto\" setting never picks one either — on an iPad it now chooses a real voice with a British accent instead of speaking to you as Zarvox.",
     "You can now speak with a much better voice, using a Deepgram key. On an iPad the device's own voices are a dead end — there is one ordinary voice (Samantha) and a set of joke voices, and installing better ones does not make them available to the app. Under Settings → Speech → Your speaking voice you can now switch to a Deepgram voice and pick from sixteen, including British and Australian ones, with a Test this voice button so you can hear each one before choosing. It uses the same key as transcription, and the practice partner gets its own voice too. Phrases the app repeats — placeholders, your Express Panel buttons, starters and goodbyes — are remembered after the first time, so they are instant and cost nothing to say again. It costs roughly three cents per thousand characters spoken. If the service cannot be reached, the app speaks with your device's own voice instead, so you are never left unable to say something. The cost shown in Settings → About now includes transcription and speaking alongside the AI.",
-    "Backups are now saved into your own data folder. \"Export my data\" used to hand the file to your browser, which dropped it into Downloads among everything else you have ever downloaded. It now writes it to a backups folder inside the data folder you chose — beside the data it protects, in the place you already know and already copy between machines. The backups it finds there are listed by date underneath, so putting one back is choosing it from the list and tapping Restore selected backup; you no longer have to go hunting for the file. Importing a file from somewhere else still works, for a backup that came from another machine. On a device with no data folder to choose, nothing changes — the backup is saved through your browser exactly as before.",
     "The voice list now tells you which voices are the better ones. Devices often offer the same voice twice — a plain version and a higher-quality one you downloaded — under exactly the same name, so the list showed two identical entries with no way to tell them apart. Each voice now says which it is, such as \"Ava — Enhanced\" or \"Zoe — Premium\". Voices that come in only one quality are listed exactly as before. This applies to both your own voice and the practice partner's.",
     "The screen can no longer be zoomed by pinching or double-tapping. A keyguard's holes are cut in plastic and cannot zoom with the screen, so any zoom — usually an accidental one — puts every button out from under its hole. It was also making the layout itself go wrong: zooming while you were in Settings could shrink the Express Panel and leave it shrunken until you restarted the app. If you want things bigger, the size settings are the way: Settings → Text Size for each area, and Buttons & Keyboard → Button size.",
     "Settings profiles now have an \"Update\" button, beside Load and Delete. Adjust a setting and one tap puts the change back into the profile you are using — previously you had to retype the profile's exact name in the box below and confirm an overwrite, and a small typo left you with two nearly identical profiles instead. The buttons have also moved onto their own full-width row beneath the profile list, so they are easier to hit.",
@@ -38,7 +39,15 @@ const RELEASE_NOTES = {
     "The opening screen now shows which build you are running, in small type under the Start button — the version plus the exact code it was built from. Settings → About has the version too, but you can't reach Settings before pressing Start, so if start-up itself misbehaves this is the only way to tell a fresh delivery from a cached older one.",
     "The Start button can no longer be left waiting on your saved data. If reading your data takes too long or never finishes, the app now gets on with it after a few seconds and opens the conversation, rather than sitting on the opening screen indefinitely.",
     "The Paste button beside your API key now tells you what happened. If it can't reach the clipboard it says so and tells you to touch and hold the box and choose Paste instead, rather than looking like a button that does nothing.",
-    "You can now back up everything in one file, and put it back. Settings → General has a new Backup & transfer section. Export my data saves your About Me answers, the people you know, your Express Panel, your starters and control phrases, your settings, and your saved conversations into a single file you can keep somewhere safe or carry to another device. Import from a backup puts it all back. Before anything is replaced you are shown exactly what the file contains and when it was made, so you can be sure it is the right one. Your API key is never written into a backup, and importing someone else's backup will not disturb the key already on your device."
+    "You can now back up everything in one file, and put it back. Settings → General has a new Backup & transfer section. Export my data saves your About Me answers, the people you know, your Express Panel, your starters and control phrases, your settings, and your saved conversations into a single file you can keep somewhere safe or carry to another device. Import from a backup puts it all back. Before anything is replaced you are shown exactly what the file contains and when it was made, so you can be sure it is the right one. Your API key is never written into a backup, and importing someone else's backup will not disturb the key already on your device.",
+    {
+      "for": "ipad",
+      "note": "Conversant AAC now runs on the iPad, as a supported platform. Open it in Safari — either as a page, or added to your Home Screen so it gets the whole screen — and see the new User Manual for iPad for the difference between the two, which is worth understanding before you choose. One thing to know up front: Apple does not allow a Home Screen app to use the iPad's own speech recognition, so hearing the other person there needs the same paid Deepgram key as the voice above. Many smaller iPad fixes — layout, start-up, the Express Panel, the listening tone — landed alongside it and are not listed individually."
+    },
+    {
+      "for": "computer",
+      "note": "Backups are now saved into your own data folder. \"Export my data\" used to hand the file to your browser, which dropped it into Downloads among everything else you have ever downloaded. It now writes it to a backups folder inside the data folder you chose — beside the data it protects, in the place you already know and already copy between machines. The backups it finds there are listed by date underneath, so putting one back is choosing it from the list and tapping Restore selected backup; you no longer have to go hunting for the file. Importing a file from somewhere else still works, for a backup that came from another machine. On a device with no data folder to choose, nothing changes — the backup is saved through your browser exactly as before."
+    }
   ],
   "0.5.98": [
     "When someone offers you a set of choices, you now get all of them. If your partner asks something like \"would you say it's mild, moderate, or severe?\", the response cards are now the choices they actually offered — one card each, in the order they said them — plus a card for when your real answer isn't on their list (\"it's somewhere in between\"). Previously all four cards were different ways of saying the same one of their choices, so the others were out of reach unless you typed them yourself. This works however they offer the choices — whether they ask \"mild, moderate, or severe?\" or simply mention what's available, as in \"we've got muffins, croissants, and a few different pastries — anything jump out at you?\". If one of the things they mention is vague, its card asks about it (\"What kind of pastries do you have?\") rather than guessing. Just listing things in passing — \"I picked up milk, eggs, and bread\" — is not an offer and is left alone. If they only offer two choices, the two spare cards are filled with the answers people actually give — \"About the same.\", \"It comes and goes.\" — or a question back to them, rather than being left empty.",
@@ -223,14 +232,77 @@ export function compareVersions(a, b) {
     return 0;
 }
 
+// --- platform scoping (Ken, Aug 1 2026) --------------------------------------
+// A change that only affects one kind of device should not be announced to
+// everyone: an iPad user reading about a data folder they do not have learns
+// nothing, and the reverse wastes the one screen we get after an update. A note
+// is either for everyone (a bare string, the common case) or scoped to one
+// platform ({ for: 'ipad' | 'computer', note }).
+//
+// When the range DID contain notes for the other platform, we say so in one
+// plain line rather than silently dropping them — the user should know the
+// update was not empty for other people. Never in engine words: the reader is a
+// user or a supporter, and "WebKit" means nothing to them.
+export const PLATFORMS = { IPAD: 'ipad', COMPUTER: 'computer' };
+
+const OTHER_PLATFORM_NOTE = {
+    // Shown to a computer user when the range held iPad-only notes.
+    computer: 'There were also improvements for people using Conversant AAC on an iPad.',
+    // Shown to an iPad user when the range held computer-only notes.
+    ipad: 'There were also improvements for people using Conversant AAC on a Windows '
+        + 'tablet, Chromebook or Mac.',
+};
+
+const noteText = (n) => (typeof n === 'string' ? n : (n && n.note) || '');
+const noteScope = (n) => (typeof n === 'string' ? 'all' : (n && n.for) || 'all');
+
 // Flat combined list (Ken's choice) of every note for versions newer than
 // `sinceVersion` and no newer than `currentVersion`, ordered newest-version-first
 // so the most recent changes read at the top.
-export function collectWhatsNew(sinceVersion, currentVersion) {
-    return Object.keys(RELEASE_NOTES)
+//
+// `platform` is PLATFORMS.IPAD or PLATFORMS.COMPUTER. Omitting it returns every
+// note regardless of scope, which is what the generator's own checks and any
+// caller that just wants "was there anything at all" should use.
+export function collectWhatsNew(sinceVersion, currentVersion, platform) {
+    const inRange = Object.keys(RELEASE_NOTES)
         .filter((v) => compareVersions(v, sinceVersion) > 0 && compareVersions(v, currentVersion) <= 0)
         .sort((a, b) => compareVersions(b, a))                 // newest version first
         .flatMap((v) => (RELEASE_NOTES[v] || []).filter(Boolean));
+
+    if (!platform) return inRange.map(noteText).filter(Boolean);
+
+    const mine = [];
+    let sawOther = false;
+    for (const n of inRange) {
+        const scope = noteScope(n);
+        if (scope === 'all' || scope === platform) {
+            const t = noteText(n);
+            if (t) mine.push(t);
+        } else {
+            sawOther = true;
+        }
+    }
+    // Only worth a line if there is something of their own to read it beside; a
+    // panel consisting solely of "other people got improvements" is not an
+    // announcement, it is a shrug.
+    if (sawOther && mine.length && OTHER_PLATFORM_NOTE[platform]) {
+        mine.push(OTHER_PLATFORM_NOTE[platform]);
+    }
+    return mine;
+}
+
+// Which set of notes this device should see. Deliberately a CAPABILITY test, not
+// a user-agent one: iPadOS Safari reports itself as a Mac, so a UA check gets
+// this exactly backwards. The folder picker is the same signal Settings already
+// uses to decide whether to offer "Choose Folder", and it divides the two
+// configurations precisely.
+//
+// Known edge, and it is the same one the Architecture Overview flags as
+// unmeasured: a Mac running Safari would be classified as an iPad here. It would
+// see the iPad notes, which is the better of the two wrong answers — a Mac
+// without a folder picker has more in common with an iPad than with Chrome.
+export function currentPlatform() {
+    return storage.supportsUserChosenFolder() ? PLATFORMS.COMPUTER : PLATFORMS.IPAD;
 }
 
 // The notes to announce for this version, or [] if there's nothing to show. Also
@@ -244,7 +316,7 @@ export function pending(currentVersion) {
         return [];
     }
     if (compareVersions(seen, currentVersion) >= 0) return []; // already current
-    return collectWhatsNew(seen, currentVersion);
+    return collectWhatsNew(seen, currentVersion, currentPlatform());
 }
 
 // Render the announcement as a card INSIDE the pre-start block — i.e. within the

@@ -11,20 +11,30 @@ This is the single source of truth for those in-app notes. After editing it, run
 `node scripts/apply-release-notes.mjs` (or say "apply release notes" to Claude) to
 regenerate the bundled notes in `app/js/whats-new.js`.
 
+**Notes for one kind of device only.** A `###` subheading under a version scopes the
+bullets beneath it, so a change nobody on the other platform can see is not announced
+to them:
+
+    ### On an iPad          → iPad users only
+    ### On a computer       → Windows, Chromebook and Mac users only
+    ### Everyone            → both (the same as no subheading at all)
+
+Anyone who *doesn't* see a scoped note is still told, in one line, that there were
+improvements for the other kind of device — nothing is hidden, it just isn't spelled
+out for someone it cannot affect. **An untagged bullet goes to everyone**, so
+forgetting to tag one is only ever noise, never silence.
+
 ## Unreleased (next release)
 
-_Nothing yet._
+- **The “What’s new” summary now only tells you about changes that affect your own
+  device.** A change that only shows up on an iPad is no longer described to someone on a
+  Windows tablet, and the other way round — instead you get a single line saying there
+  were improvements for the other kind of device, so you know the update was not empty
+  for other people. Changes that affect everyone, which is most of them, are shown to
+  everyone exactly as before.
 
 ## Version 0.6.0
 
-- **Conversant AAC now runs on the iPad, as a supported platform.** Open it in Safari
-  — either as a page, or added to your Home Screen so it gets the whole screen — and see
-  the new **User Manual for iPad** for the difference between the two, which is worth
-  understanding before you choose. One thing to know up front: Apple does not allow a Home
-  Screen app to use the iPad's own speech recognition, so hearing the other person there
-  needs the same paid Deepgram key as the voice above. Many smaller iPad fixes — layout,
-  start-up, the Express Panel, the listening tone — landed alongside it and are not listed
-  individually.
 
 - **The wording about where your information is kept now fits the device you are on.** A
   setting called "Do not save conversations to my data folder" makes no sense on a tablet,
@@ -68,16 +78,6 @@ _Nothing yet._
   thousand characters spoken. **If the service cannot be reached, the app speaks with your
   device's own voice instead**, so you are never left unable to say something. The cost
   shown in Settings → About now includes transcription and speaking alongside the AI.
-
-- **Backups are now saved into your own data folder.** "Export my data" used to hand the
-  file to your browser, which dropped it into Downloads among everything else you have ever
-  downloaded. It now writes it to a **backups** folder inside the data folder you chose — beside
-  the data it protects, in the place you already know and already copy between machines. The
-  backups it finds there are listed by date underneath, so putting one back is choosing it
-  from the list and tapping **Restore selected backup**; you no longer have to go hunting for
-  the file. Importing a file from somewhere else still works, for a backup that came from
-  another machine. On a device with no data folder to choose, nothing changes — the backup is
-  saved through your browser exactly as before.
 
 - **The voice list now tells you which voices are the better ones.** Devices often offer the
   same voice twice — a plain version and a higher-quality one you downloaded — under exactly
@@ -137,6 +137,29 @@ _Nothing yet._
   what the file contains and when it was made, so you can be sure it is the right one. Your API
   key is never written into a backup, and importing someone else's backup will not disturb the
   key already on your device.
+
+### On an iPad
+
+- **Conversant AAC now runs on the iPad, as a supported platform.** Open it in Safari
+  — either as a page, or added to your Home Screen so it gets the whole screen — and see
+  the new **User Manual for iPad** for the difference between the two, which is worth
+  understanding before you choose. One thing to know up front: Apple does not allow a Home
+  Screen app to use the iPad's own speech recognition, so hearing the other person there
+  needs the same paid Deepgram key as the voice above. Many smaller iPad fixes — layout,
+  start-up, the Express Panel, the listening tone — landed alongside it and are not listed
+  individually.
+
+### On a computer
+
+- **Backups are now saved into your own data folder.** "Export my data" used to hand the
+  file to your browser, which dropped it into Downloads among everything else you have ever
+  downloaded. It now writes it to a **backups** folder inside the data folder you chose — beside
+  the data it protects, in the place you already know and already copy between machines. The
+  backups it finds there are listed by date underneath, so putting one back is choosing it
+  from the list and tapping **Restore selected backup**; you no longer have to go hunting for
+  the file. Importing a file from somewhere else still works, for a backup that came from
+  another machine. On a device with no data folder to choose, nothing changes — the backup is
+  saved through your browser exactly as before.
 
 ## Version 0.5.98
 
