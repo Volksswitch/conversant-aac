@@ -11,7 +11,16 @@ This is the single source of truth for those in-app notes. After editing it, run
 `node scripts/apply-release-notes.mjs` (or say "apply release notes" to Claude) to
 regenerate the bundled notes in `app/js/whats-new.js`.
 
-## Unreleased (next release)
+## Version 0.6.0
+
+- **Conversant AAC now runs on the iPad, as a supported platform.** Open it in Safari
+  — either as a page, or added to your Home Screen so it gets the whole screen — and see
+  the new **User Manual for iPad** for the difference between the two, which is worth
+  understanding before you choose. One thing to know up front: Apple does not allow a Home
+  Screen app to use the iPad's own speech recognition, so hearing the other person there
+  needs the same paid Deepgram key as the voice above. Many smaller iPad fixes — layout,
+  start-up, the Express Panel, the listening tone — landed alongside it and are not listed
+  individually.
 
 - **The wording about where your information is kept now fits the device you are on.** A
   setting called "Do not save conversations to my data folder" makes no sense on a tablet,
@@ -124,94 +133,6 @@ regenerate the bundled notes in `app/js/whats-new.js`.
   what the file contains and when it was made, so you can be sure it is the right one. Your API
   key is never written into a backup, and importing someone else's backup will not disturb the
   key already on your device.
-
-<!-- HELD BACK — NOT ANNOUNCED IN THE APP (Ken, July 30 2026).
-     The iPad port is being pushed to the live site continuously, because that is
-     the only way to get a build onto the device. Those pushes reach the Windows
-     users too, and a "What's new" screen full of iPad Home Screen apps and Safari
-     is noise to them at best and alarming at worst.
-
-     The generator ignores every H2 except "## Version X.Y.Z" and "## Unreleased",
-     so notes parked under the heading below are kept as the record WITHOUT being
-     bundled into the app. Do NOT run apply-release-notes.mjs expecting these to
-     ship; move them back under "## Unreleased" when the iPad work is announced,
-     then regenerate. Two of them (Export/Import, the Paste button) matter to
-     Windows users and deserve announcing at the next real release. -->
-
-## Held back — iPad work in progress, not announced
-
-- **The "Hearing the other person" buttons now sit beside their labels, not above them.**
-  The two round buttons were being stretched the full width of the panel, which pushed each
-  one's wording onto the line below it.
-
-- **The Practice tab no longer cuts a scenario in half.** On an iPad the list ran in two
-  columns, and one scenario could be sliced across the gap — its title at the bottom of the
-  first column and its description at the top of the second, so it read as two broken
-  entries. The scenarios now run down the page in a single column, which also makes each
-  one a wider, easier target.
-
-- **On an iPad, "Generate Screen Openings" now hands you the file instead of hiding it.**
-  It used to say it had written **Screen Openings.txt** to your data folder — which is
-  true, but on an iPad that folder is private to the browser and invisible in the Files
-  app, so the file was somewhere you could never open it, let alone email it to a keyguard
-  maker. It now comes to you as a normal save: choose **Save to Files**, and it is sitting
-  there ready to attach to an email. On Windows nothing changes — the file still goes
-  straight into your data folder as before.
-
-- **Your iPad no longer offers to "Save Password" every time you open the app.** It was
-  asking for a user name, which means nothing for an API key. The key boxes were hidden
-  behind dots, and that is exactly how Safari recognises a password field — so it treated
-  them as one. A saved key is now shown shortened instead, as `sk-ant-…4f2a`: enough to
-  see which key it is, never enough to use. Tap the box and the whole key comes back so
-  you can read or change it. As a bonus this makes a half-copied key visible, which dots
-  hid from you.
-
-- **The app can now hear the other person on an iPad, using a transcription service.**
-  Settings → Speech has a new **Hearing the other person** choice: your browser's own
-  (free, and what everyone has been using), or **Deepgram** — a paid service you sign up
-  for yourself, with your own key, exactly like the AI key. This exists because an iPad
-  simply cannot listen on its own: it does nothing in a Home Screen app, and nothing in
-  Chrome or Edge. New Deepgram accounts include $200 of free credit — several hundred
-  hours — and no card is needed to start. It costs roughly 46 cents an hour of speech,
-  **and the app only sends audio while somebody is actually talking**, so the quiet
-  stretches of a conversation cost nothing. Your key stays on the device: it is never
-  written into a backup or a settings profile.
-
-- **"Continue anyway" on the listening notice is now "Clear message"**, which is what it does.
-- **If the app fails to start, it now says so.** Previously anything that went wrong while
-  the app was starting up left you with buttons that quietly did nothing — most visibly a
-  Start button that appeared to be ignored — and on an iPad there is no way to look under
-  the bonnet. Now a red card on the opening screen names what went wrong, and the same
-  detail is written to the error log for a bug report.
-- **The note about listening now looks like the other start-up notices** instead of plain
-  text on the background.
-
-- **On an iPad, the app now works when you open it from the Home Screen.** Previously, where
-  listening looked unlikely to work — the Home Screen app, and Chrome or Edge on an iPad — the
-  app told you everything else still worked, and then nothing did: the Start button did nothing,
-  the Express Panel never appeared, and none of the buttons responded. Now everything runs. You
-  can start, speak with the Express Panel and "In my own words", use the keyboard, and open
-  Settings, exactly as promised.
-- **You can now try listening anywhere, even where we expect it not to work.** On an iPad Home
-  Screen app, and in Chrome or Edge on an iPad, listening did nothing when we tested it — so the
-  app tells you so before you begin. But the Start Listening button is left switched on and you
-  are welcome to try it: browsers change, and if listening has started working on your iPad we
-  would rather you found out than be refused on the strength of an old test. If nothing appears
-  when the other person speaks, open Conversant in Safari instead.
-- **Start-up notices come one at a time.** The "what's new" summary, the note about listening,
-  and the reminder to add an API key now appear in turn as you press through them, instead of
-  landing on top of one another.
-- **Practice Mode works even where listening doesn't.** Practice never uses the microphone — the
-  Start Listening button cues the AI to speak — so on a device that can't listen at all, you can
-  still practice a whole conversation.
-- **The bottom row of the Express Panel is no longer cut off on an iPad.** It sat too low and ran
-  off the bottom of the screen, while the on-screen keyboard in the same place did not. Both now
-  stop at the same point, so a keyguard fits over either one.
-- **The Express Panel and keyboard layout pickers now open on an iPad.** Tapping one did nothing,
-  because the panel moved underneath your finger before the list could appear.
-- **The listening tone no longer turns up late, attached to the wrong button.** On an iPad it
-  could stay silent when listening started and then sound at the next thing you tapped — such as
-  "End conversation".
 
 ## Version 0.5.98
 
