@@ -276,10 +276,6 @@ export function render() {
     container.innerHTML = '';
     container.appendChild(buildToolbar());
 
-    const hint = document.createElement('p');
-    hint.className = 'setting-hint ee-hint';
-    hint.textContent = 'The buttons above add to the end. To insert somewhere specific, tap ＋ on a row.';
-    container.appendChild(hint);
 
     // datalist of suggested feelings (shared by all feeling rows).
     const dl = document.createElement('datalist');

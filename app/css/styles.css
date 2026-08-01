@@ -1144,7 +1144,6 @@ button:not(.kbd-key):not(.kbd-tool):not(.kbd-pred-btn):not(.ep-btn) {
 .ee-swatch-on { outline: 3px solid #2c3e50; outline-offset: 1px; border-color: #fff; }
 .ee-swatch-static { cursor: default; }
 /* Per-row insert button + inline type picker (insert a new item in place). */
-.ee-hint { margin: 0.25rem 0 0.5rem; }
 .ee-ins { flex: 0 0 auto; width: 2rem; height: 2rem; border: 1px solid #c4ccd2; background: #f4f6f8; border-radius: 6px; cursor: pointer; font-size: 1.05rem; line-height: 1; }
 .ee-ins-on { background: #2c3e50; color: #fff; border-color: #2c3e50; }
 .ee-insertbar { display: flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.5rem; margin-bottom: 0.35rem; border: 1px dashed #9aa7b0; border-radius: 8px; background: #eef2f5; flex-wrap: wrap; }
@@ -1159,7 +1158,6 @@ button:not(.kbd-key):not(.kbd-tool):not(.kbd-pred-btn):not(.ep-btn) {
 .cpe-section > label { display: block; font-weight: 600; margin-bottom: 0.2rem; }
 .cpe-section .ee-row { margin-top: 0.35rem; }
 .cpe-section .ee-row > input { flex: 1 1 auto; min-width: 0; padding: 0.4rem 0.5rem; border: 1px solid #c4ccd2; border-radius: 6px; font-size: 0.95rem; }
-.cpe-note { font-style: italic; margin: 0.75rem 0; }
 #controlEditor .ee-add { margin-top: 0.45rem; background: #2c3e50; color: #fff; border: none; border-radius: 6px; padding: 0.4rem 0.7rem; font-weight: 600; cursor: pointer; }
 #controlEditor .ee-add:hover { filter: brightness(1.1); }
 #controlEditor .ee-reset { display: inline-block; margin-top: 0.5rem; background: #fff; color: #c0392b; border: 1px solid #e0a4a0; border-radius: 6px; padding: 0.45rem 0.8rem; cursor: pointer; }

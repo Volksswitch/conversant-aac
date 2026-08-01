@@ -50,6 +50,19 @@ forgetting to tag one is only ever noise, never silence.
   for other people. Changes that affect everyone, which is most of them, are shown to
   everyone exactly as before.
 
+- **Garbled characters in Settings are fixed.** Dashes, quotation marks, bullets and
+  ellipses were showing as strings like `â€”` in several places — including the
+  shortened form of your API key, which appeared as `sk-ant-â€¦4f2a` instead of
+  `sk-ant-…4f2a`. This was only ever how the text was drawn; no setting or key was
+  affected, and nothing needs to be re-entered.
+
+- **Settings is much less cluttered.** The paragraph of explanation that sat under nearly
+  every single setting has been taken out, so each tab now shows the settings themselves
+  rather than pages of text to read past. Nothing was removed except the words — every
+  setting still does exactly what it did. The explanations have moved to the user manual,
+  where there is room to say more than a cramped panel ever allowed. Descriptions of what
+  a whole tab is for are still there at the top of the tab.
+
 ## Version 0.6.0
 
 

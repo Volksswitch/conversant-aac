@@ -51,7 +51,7 @@ function textInput(value, placeholder, oninput) {
 }
 
 // A single-phrase control (Hold on / Pardon?): label + one text field.
-function singleSection(title, desc, key) {
+function singleSection(title, key) {
     const sec = document.createElement('div');
     sec.className = 'setting-group cpe-section';
     sec.appendChild(Object.assign(document.createElement('label'), { textContent: title }));
@@ -59,16 +59,14 @@ function singleSection(title, desc, key) {
     row.className = 'ee-row ee-phrase';
     row.appendChild(textInput(data[key], 'What to say', (v) => { data[key] = v; commit(false); }));
     sec.appendChild(row);
-    sec.appendChild(Object.assign(document.createElement('p'), { className: 'setting-hint', textContent: desc }));
     return sec;
 }
 
 // An ordered list of cards (openers / closers): rows with text + ↑ ↓ ✕, plus Add.
-function listSection(title, desc, key) {
+function listSection(title, key) {
     const sec = document.createElement('div');
     sec.className = 'setting-group cpe-section';
     sec.appendChild(Object.assign(document.createElement('label'), { textContent: title }));
-    sec.appendChild(Object.assign(document.createElement('p'), { className: 'setting-hint', textContent: desc }));
 
     const list = document.createElement('div');
     list.className = 'ee-list';
@@ -105,24 +103,14 @@ export function render() {
     container.innerHTML = '';
 
     container.append(
-        singleSection('“Hold on” phrase', 'Spoken when you tap Hold on — a brief beat to hold the floor while you choose.', 'holdOn'),
-        singleSection('“Ask them to repeat” phrase', 'Spoken when you tap Ask them to repeat — asks the partner to say again what they said.', 'pardon'),
-        listSection('Openers (Start conversation)',
-            'The cards shown when you tap Start conversation. Use {name} where the person’s name should go — it fills in when a Partner is selected and is left out otherwise.', 'openers'),
-        listSection('Wind-down statements (Wind down)',
-            'The cards shown when you tap Wind down — they signal you’d like to end the conversation without saying goodbye yet (“I should get going.”). Selecting one brings up the closings below.', 'windDowns'),
-        listSection('Closings (goodbyes)',
-            'The goodbyes (“Bye!”, “Take care!”) that appear after you pick a wind-down statement.', 'closings'),
-        singleSection('“One more thing” phrase',
-            'Shown beside the goodbyes when the OTHER person starts wrapping up, so you can hold them a moment instead of only being able to say goodbye. Selecting it speaks the phrase and keeps the conversation open.',
-            'declineClosing'),
+        singleSection('“Hold on” phrase', 'holdOn'),
+        singleSection('“Ask them to repeat” phrase', 'pardon'),
+        listSection('Openers (Start conversation)', 'openers'),
+        listSection('Wind-down statements (Wind down)', 'windDowns'),
+        listSection('Closings (goodbyes)', 'closings'),
+        singleSection('“One more thing” phrase', 'declineClosing'),
     );
 
-    // "Say again" — read-only note (no editable phrase).
-    const note = document.createElement('p');
-    note.className = 'setting-hint cpe-note';
-    note.textContent = '“Say again” isn’t listed here — it re-speaks your own last words exactly, so there’s nothing to edit.';
-    container.appendChild(note);
 
     const reset = mkBtn('Reset to default', 'ee-reset');
     reset.addEventListener('click', async () => {

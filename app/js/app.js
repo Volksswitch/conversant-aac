@@ -1309,10 +1309,7 @@ function renderPracticePanel() {
             renderPracticePanel();
             document.getElementById('settingsDialog').close();
         });
-        const note = document.createElement('p');
-        note.className = 'setting-hint';
-        note.textContent = 'Ends the practice conversation and returns to the normal conversation screen. The End conversation button does the same thing.';
-        panel.append(now, endBtn, note);
+        panel.append(now, endBtn);
         return;
     }
 
@@ -2571,14 +2568,10 @@ function updateFolderDisplay() {
     const deviceMode = !storage.supportsUserChosenFolder();
     const pickBtn = document.getElementById('pickFolderBtn');
     if (pickBtn) pickBtn.hidden = deviceMode;
-    const hint = document.getElementById('dataFolderHint');
-    if (hint && deviceMode) {
-        hint.textContent = 'This device keeps your data in the app’s own private storage. ' +
-            'You cannot open it as a folder, so use Backup & transfer below to keep a copy you can see and move.';
-    }
-    // The group's own label has to move with the hint: "Data Folder" names a thing
-    // that does not exist on a tablet, which is exactly the confusion the swapped
-    // hint below it is there to clear up.
+    // The group's label still has to swap: "Data Folder" names a thing that does
+    // not exist on a tablet. The explanatory hint that used to sit under it was
+    // removed with the rest of the per-control help (Ken, Aug 1 2026) and now
+    // lives in the manuals, so the label carries the distinction on its own.
     const folderLabel = document.getElementById('dataFolderLabel');
     if (folderLabel) {
         folderLabel.textContent = deviceMode ? 'Where Your Data Is Kept' : 'Data Folder';
@@ -3265,13 +3258,6 @@ function openSettings() {
     };
 
     document.getElementById('generateOpeningsBtn').onclick = generateScreenOpenings;
-    // Say where the file will actually land on THIS device — see generateScreenOpenings.
-    document.getElementById('generateOpeningsHint').innerHTML = storage.supportsUserChosenFolder()
-        ? 'Writes <strong>Screen Openings.txt</strong> to the root of your data folder. ' +
-          "Choose a data folder first (General tab) if you haven't."
-        : 'Saves <strong>Screen Openings.txt</strong> to your device. Choose ' +
-          '<strong>Save to Files</strong> when the sheet appears, then attach it to an email ' +
-          'from the Files app.';
 
     document.getElementById('testVoiceBtn').onclick = () => {
         tts.setVoice(voiceSelect.value || null);
@@ -3368,14 +3354,12 @@ function openSettings() {
     // the capture source once at startup. Say so plainly rather than leaving the
     // user to wonder why the setting appears to do nothing until next time.
     const deepgramKeyInput = document.getElementById('deepgramKeyInput');
-    const sttCostHint = document.getElementById('sttCostHint');
     const reflectSttProvider = () => {
         const provider = storage.loadSttProvider();
         const radio = document.querySelector(`input[name="sttProvider"][value="${provider}"]`);
         if (radio) radio.checked = true;
         // The key field itself is always on screen (it is shared with the voice
         // choice below); only what this costs is conditional.
-        if (sttCostHint) sttCostHint.hidden = provider !== 'deepgram';
     };
     wireKeyField(deepgramKeyInput, {
         load: () => storage.loadDeepgramKey() || '',
