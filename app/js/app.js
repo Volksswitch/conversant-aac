@@ -2460,9 +2460,9 @@ function activateSettingsTab(tab, focus) {
     handleSettingsTab(tab.dataset.tab);
 }
 
-// On the Speech & Input tab the user changes keyboard layout/position but there's
-// no text field to type into, so show the keyboard as a live preview of the
-// CHOSEN dock. Any other tab takes the preview down.
+// On the Buttons & Keyboard tab the user changes keyboard layout/position but
+// there's no text field to type into, so show the keyboard as a live preview of
+// the CHOSEN dock. Any other tab takes the preview down.
 function handleSettingsTab(tabName) {
     // About Me renders into its own tab-panel and keeps the on-screen keyboard up
     // (a preview when no field is focused; a typing keyboard once a card field is).
@@ -2470,7 +2470,7 @@ function handleSettingsTab(tabName) {
     if (tabName === 'express') { expressEditor.render(); keyboard.hideKeyboard(); return; }
     if (tabName === 'controls') { controlEditor.render(); keyboard.hideKeyboard(); return; }
     if (tabName === 'practice') { renderPracticePanel(); keyboard.hideKeyboard(); return; }
-    if (tabName === 'speech' && storage.loadKeyboardMode() === 'onscreen') {
+    if (tabName === 'input' && storage.loadKeyboardMode() === 'onscreen') {
         keyboard.previewShow(storage.loadKeyboardDock());
     } else {
         // hideKeyboard (not previewHide) so leaving any tab forcibly drops the
@@ -3361,12 +3361,14 @@ function openSettings() {
     // the capture source once at startup. Say so plainly rather than leaving the
     // user to wonder why the setting appears to do nothing until next time.
     const deepgramKeyInput = document.getElementById('deepgramKeyInput');
-    const deepgramRow = document.getElementById('deepgramRow');
+    const sttCostHint = document.getElementById('sttCostHint');
     const reflectSttProvider = () => {
         const provider = storage.loadSttProvider();
         const radio = document.querySelector(`input[name="sttProvider"][value="${provider}"]`);
         if (radio) radio.checked = true;
-        if (deepgramRow) deepgramRow.hidden = provider !== 'deepgram';
+        // The key field itself is always on screen (it is shared with the voice
+        // choice below); only what this costs is conditional.
+        if (sttCostHint) sttCostHint.hidden = provider !== 'deepgram';
     };
     wireKeyField(deepgramKeyInput, {
         load: () => storage.loadDeepgramKey() || '',
@@ -3413,7 +3415,6 @@ function openSettings() {
     // Unlike the transcription provider, this one takes effect immediately: tts.js
     // routes per utterance rather than building a source once at startup, so there
     // is nothing to reload.
-    const auraRow = document.getElementById('auraRow');
     const auraVoiceSelect = document.getElementById('auraVoiceSelect');
     const auraPartnerVoiceSelect = document.getElementById('auraPartnerVoiceSelect');
     const fillAuraSelect = (select, selected, autoLabel) => {
@@ -3433,11 +3434,23 @@ function openSettings() {
             select.appendChild(opt);
         });
     };
+    // Swap BOTH voice pickers — the user's own and the Practice partner's — to the
+    // chosen backend. The partner follows the same service rather than being a
+    // third choice: mixing a device voice against a Deepgram one is a combination
+    // nobody asked for, and it would double the pickers on screen again.
     const reflectTtsProvider = () => {
         const provider = storage.loadTtsProvider();
+        const aura = provider === 'deepgram';
         const radio = document.querySelector(`input[name="ttsProvider"][value="${provider}"]`);
         if (radio) radio.checked = true;
-        if (auraRow) auraRow.hidden = provider !== 'deepgram';
+        const show = (id, on) => {
+            const el = document.getElementById(id);
+            if (el) el.hidden = !on;
+        };
+        show('auraRow', aura);
+        show('auraPartnerRow', aura);
+        show('builtinVoiceRow', !aura);
+        show('builtinPartnerVoiceRow', !aura);
     };
     fillAuraSelect(auraVoiceSelect, storage.loadAuraVoice() || ttsDeepgram.DEFAULT_VOICE);
     fillAuraSelect(auraPartnerVoiceSelect, storage.loadAuraPartnerVoice(), 'Auto (a voice that isn\'t yours)');

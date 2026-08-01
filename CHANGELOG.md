@@ -13,18 +13,33 @@ regenerate the bundled notes in `app/js/whats-new.js`.
 
 ## Unreleased (next release)
 
+- **Settings closes with an X in its title bar.** The full-width **Close** button along the
+  bottom took a whole button's height out of every tab to hold one control. It is now a small
+  **X** at the right-hand end of the blue "Settings" bar, and the space it used to occupy goes
+  to the settings themselves — about four more lines of the panel on every tab.
+
+- **Everything about hearing and speaking is now on one Settings tab, called Speech.**
+  Voices could be set from two different tabs, and the key for the paid services could only
+  be reached through the transcription choice — so if you wanted a better voice but were
+  happy with how the app heard people, the box to put your key in was nowhere on screen.
+  **Settings → Speech** now holds the key, how the app hears the other person, your speaking
+  voice and the practice partner's voice, in that order. The two choices are independent:
+  you can hear through your browser and speak with a paid voice, or the other way round.
+  Only the voice list for the service you chose is shown. The tab that used to be called
+  "Speech & Input" is now **Buttons & Keyboard**, and holds what its name says.
+
 - **The joke voices are out of the way.** Devices — iPads especially — offer a set of
   novelty voices (Bahh, Boing, Zarvox, Trinoids) that are no use for talking to someone,
   and on an iPad they were 19 of the 68 in the list, so most of choosing a voice was
   scrolling past them. They are now hidden, with a **Show this device's joke voices**
-  checkbox under Settings → Speech & Input if you want them back. The practice partner's
+  checkbox under Settings → Speech if you want them back. The practice partner's
   "Auto" setting never picks one either — on an iPad it now chooses a real voice with a
   British accent instead of speaking to you as Zarvox.
 
 - **You can now speak with a much better voice, using a Deepgram key.** On an iPad the
   device's own voices are a dead end — there is one ordinary voice (Samantha) and a set of
   joke voices, and installing better ones does not make them available to the app. Under
-  **Settings → General → Your speaking voice** you can now switch to a Deepgram voice and
+  **Settings → Speech → Your speaking voice** you can now switch to a Deepgram voice and
   pick from sixteen, including British and Australian ones, with a **Test this voice**
   button so you can hear each one before choosing. It uses the same key as transcription,
   and the practice partner gets its own voice too. Phrases the app repeats — placeholders,
@@ -56,7 +71,7 @@ regenerate the bundled notes in `app/js/whats-new.js`.
   one — puts every button out from under its hole. It was also making the layout itself go
   wrong: zooming while you were in Settings could shrink the Express Panel and leave it
   shrunken until you restarted the app. If you want things bigger, the size settings are
-  the way: **Settings → Text Size** for each area, and **Speech & Input → Button size**.
+  the way: **Settings → Text Size** for each area, and **Buttons & Keyboard → Button size**.
 
 - **Settings profiles now have an "Update" button**, beside Load and Delete. Adjust a
   setting and one tap puts the change back into the profile you are using — previously you
@@ -145,7 +160,7 @@ regenerate the bundled notes in `app/js/whats-new.js`.
   hid from you.
 
 - **The app can now hear the other person on an iPad, using a transcription service.**
-  Settings → General has a new **Hearing the other person** choice: your browser's own
+  Settings → Speech has a new **Hearing the other person** choice: your browser's own
   (free, and what everyone has been using), or **Deepgram** — a paid service you sign up
   for yourself, with your own key, exactly like the AI key. This exists because an iPad
   simply cannot listen on its own: it does nothing in a Home Screen app, and nothing in
