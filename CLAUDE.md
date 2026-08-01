@@ -1034,6 +1034,61 @@ Ken asked for an architecture document for running Conversant AAC on an iPad —
 
 ---
 
+## Platform naming, the paid-service journey, and document structure (Ken, August 1 2026)
+
+Ken settled the vocabulary for talking about the two configurations, the shape of the product documents, and — across four corrections in one conversation — the sequencing of the paid services. The sequencing is the part with the most downstream consequence, so it is stated first.
+
+### The paid-service journey — free to trial, paid once convinced
+
+**Deepgram is an UPGRADE, not the default (Ken's correction, and the load-bearing one).** An earlier draft of this record had a Deepgram key as the normal path for nearly every user, on the strength of voice quality. Ken: *"Users will be 'trialing' the app at first and won't want to incur a second account/charge until they are convinced of the value of the app."* So the shipped defaults are right as they stand — this device's voices, this browser's own hearing — and **every document must present the free configuration as the starting point**, with the paid services as something you move to deliberately.
+
+**But the destination genuinely is paid, for the voice, on BOTH platforms (Ken).** *"PC and iPad users will likely be paying for Deepgram for the voice."* The draw is voice quality and identity — and it grows as the user set expands, because **younger voices** are not something the built-in voices offer at all. This is not an iPad workaround; it is where a satisfied user of either platform ends up. **iPad users in Home Screen mode ALSO pay for STT** — that one is platform-specific, because the probe measured that recognition delivers nothing there.
+
+**Browser STT must stay first-class on Chromium (Ken).** It is reliable there and it keeps the bill down, so the valuable steady-state Chromium configuration is **free browser hearing + a paid Deepgram voice**. Note this is exactly the pairing that was unreachable until August 1 2026, because the Deepgram key field was nested inside the *transcription* choice and vanished if you chose free hearing — fixed by hoisting the key to the top of the new Speech tab.
+
+**The three cost configurations, which the documents should state plainly:**
+
+| Configuration | Hearing | Speaking | What it costs beyond the AI |
+|---|---|---|---|
+| Chromium (Windows / Chromebook / Mac) | browser, free | device voice, free → Deepgram voice | nothing → ~3¢ per 1,000 characters spoken |
+| iPad, Safari tab ("Conversation mode") | browser, free | device voice, free → Deepgram voice | nothing → ~3¢ per 1,000 characters spoken |
+| iPad, Home Screen app ("Protected mode") | **Deepgram, required** | device voice, free → Deepgram voice | ~46¢ per hour of speech, + the voice if chosen |
+
+**The two iPad modes are a JOURNEY, not a preference — this is the synthesis the documents should carry.** A trialing iPad user starts in the **Safari tab**, precisely because it needs no second account. The **Home Screen app** is where they graduate once convinced: better use of the screen, durable storage — and by then they are likely paying for the voice anyway, so adding transcription to the same key is an increment rather than a new barrier. **The consequence is that Export/Import is not an edge case but the standard iPad graduation path**, because the two modes are separate storage silos (measured July 30 2026: persistence granted in the installed app was invisible to two later tab runs on the same origin). The guided export-then-import flow must be built and documented as the normal way to move up, not as a recovery tool.
+
+**Screen real estate pushes BOTH platforms toward the installed app (Ken, August 1 2026).** *"the vast majority of users will want a desktop app implementation so that the app best utilizes screen real-estate."* Consistent with UI Layout Rule 2 — vertical space is the precious resource, and browser chrome spends it. **Honest caveat to carry into the iPad material: the measured gain on iPad is modest** — the probe recorded a 763 px usable viewport in a tab against 788 px installed, plus a 25 px bottom safe-area inset the tab has and the installed app does not, so roughly 25–50 px, call it 3–7% of height. On Chromium the gain is larger and costs nothing, so **install is an unambiguous win there and a real trade on iPad** (screen and durability against a paid transcription requirement). Do not flatten that into "installed is better."
+
+### Naming — Chromium vs. WebKit, but only where the reader is an engineer
+
+**The engineering axis is the browser ENGINE: `Chromium` vs. `WebKit`** (capital K). Ken proposed it; it is the right axis because it is the actual causal variable and because it makes the one error this project has already made impossible to state — "install Chrome on the iPad" is a contradiction under it, since Chrome on iPad *is* WebKit (and measured *worse* than Safari: recognition delivers nothing in Chrome or Edge there). Two things device-based naming gets wrong that this gets right: the flagship Chromium device is a **Surface tablet**, not a laptop, so "laptop" was never the right word for that bucket; and **a Mac running Safari is a WebKit configuration on a laptop**, which no device-based split can express. *(Open, and worth measuring rather than asserting — the probe's 50% research-error rate applies to me too: whether Safari on macOS supports `showDirectoryPicker()`. If it does not, Mac + Safari behaves like the iPad for storage, and the Product Overview's "Mac" support claim quietly assumes Chrome or Edge.)*
+
+**Below that axis sit the two iPad modes, already named:** **Conversation mode** (Safari tab) and **Protected mode** (Home Screen app). These are a level *under* WebKit, not an alternative to it — and on iPad they matter more than the engine does, since they differ on the two things that decide everything (speech works in one, storage persists in the other). *(Minor flag, Ken's coinage so his call: "Protected mode" reads as the safe one for conversations when it is the one that cannot hear anyone without a paid key.)*
+
+**The vocabulary is TWO-LAYER, and this is a rule, not a preference (Ken): engine names belong only where the reader is an engineer.** Ken: *"terms like Chromium and WebKit make sense in an architecture document but not in a product overview or user manual. Those documents have different readers. Users won't know what those terms mean and won't want to understand them. Instead, use terms that may not be as concise but are recognizable."*
+- **Architecture Overview, CLAUDE.md, code comments** → `Chromium` / `WebKit`.
+- **Product Overview, User Manuals** → recognizable device names — **"Windows & Chromebook"** / **"iPad"** — and plain descriptions of the modes ("in the Safari browser" / "installed on your Home Screen"). Longer is fine; unexplained jargon is not. `Gecko`/Firefox is neither engine, so where the pair might read as exhaustive, write "Chromium (the supported configuration)".
+
+### Document structure
+
+**The rule underneath all of it: unify by what the product IS, split by what the reader must DO.**
+
+- **Architecture Overview — MERGE the iPad document into it.** One codebase with capability-gated seams was a deliberate decision (*"explicitly not a fork"*), and a separate iPad architecture document is a structural claim that there are two architectures; documents shape thinking, and two of them will drift into describing two systems. The real divergence is a handful of seams — `platform.js`, `namespace.js`, storage backend, STT backend, TTS backend, install/update, layout clamp bounds — which is a set of *sections*, not a document. Target shape: platform notes **inline at each seam**, plus one **Platform Configurations** section defining the vocabulary once, plus the hardware record as an appendix. **What does NOT merge: the `[MEASURED]`/`[RESEARCH]`/`[PROBE]` evidence apparatus** — that is a probe report, not architecture. Extract it to a short standing **Platform Measurements** record, which is where it belongs anyway and keeps its value when a future iPadOS needs re-testing.
+- **Product Overview — UNIFY.** It is entirely "what the product is," which is identical on both platforms; the differences are a few sentences about where data lives and what it costs. Two of them would be 95% identical, would drift, and would imply two products.
+- **User Manuals — TWO, each SELF-CONTAINED (Ken, overruling my cheaper proposal, and he is right about the readers).** I proposed one shared manual plus a short per-platform supplement to avoid duplicating the large shared content. Ken: *"humans MUCH prefer a single document rather than trying to manage two so self-contained is the way to go."* So the duplication cost is accepted deliberately — an iPad reader should never encounter a Windows instruction, and should never be asked to hold two documents open. **Standing consequence for "sync docs": a change to shared behavior must be applied to BOTH manuals in the same pass**, and a sync that touches one and not the other is incomplete.
+- **The iPad material must include a TABLE of browser-tab vs. Home-Screen-app differences AND their implications (Ken).** Implications, not just facts — what each row means for the reader's decision. It belongs in the iPad User Manual (leading the mode decision, since it is the first thing that reader must choose) and in the merged Architecture Overview's Platform Configurations section.
+
+### iPad is a SUPPORTED PLATFORM in the documents, and it carries release numbers (Ken, August 1 2026)
+
+**Every document treats iPad as first-class alongside Chromium — not as an experiment, a trial, or a hedge.** This is a change of register from the July 30 record, which called it "the iPad trial." **That word was about the ENGINEERING arrangement and it still holds** — one codebase on `main`, capability-gated seams, published to a second Pages site by `scripts/publish-ipad-trial.mjs` — but it must not leak into the product documents. A reader deciding whether an iPad will work for a non-speaking family member should not be told they are joining an experiment. So: no "experimental", no "trial", no "we are investigating whether" — state what the platform does and what it costs, in the same voice used for Windows.
+
+**ONE release number covers both platforms, which is already true and should stay that way (Ken, correcting an overstatement of mine).** There is nothing to implement: it is one codebase, so both sites report the same `APP_VERSION` *and* the same build id — `publish-ipad-trial.mjs` applies the stamp exactly as the production workflow does. **Do not introduce a separate iPad release number.** Documents should therefore quote one version for the product, not one per platform.
+
+**One consequence that needs Ken's call, flagged not acted on: the `## Held back — iPad work in progress, not announced` section of `CHANGELOG.md` is now at odds with treating iPad as supported.** It exists because iPad pushes reach Windows users and the work was not to be announced. **Decide at the next `bump Conversant`** whether to move those entries under `## Unreleased` and regenerate. Two of them (**Export/Import** and the **API-key Paste button**) were already flagged as Windows-relevant and due for announcement regardless.
+
+*(Not raised as a decision, just noted: the second Pages site is still named as a trial — `conversant-aac-ipad`, with `namespace.js` giving it an `ipad:` storage prefix. **Do not rename anything on the strength of this record.** The prefix is load-bearing — prefixing the production path would orphan every existing tester's profile, which is what the unit test guards — and a URL change carries a data-migration tail.)*
+
+---
+
 ## Further Design Thoughts (June 15 2026) — recorded, not built
 
 A batch of Ken's thoughts captured this session. **Status: recorded only — none are implemented.** Items tagged **[→ Overview To Do]** also need to land in the Architecture and/or Product Overview docs; those edits are deferred and listed in the **Overview-Document To Do List** section below (Ken: don't spend editing time on the Overview docs for a couple of thoughts — let them accumulate and batch).
