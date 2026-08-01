@@ -3,7 +3,7 @@
 This is the formal release process for Conversant AAC. It is intentionally the
 **same shape** as the process for the other Volksswitch projects (the Keyguard
 Designer `.scad` and the Keyguard Designer web app): *work locally, log each
-user-visible change to `## Unreleased` in plain language, and say "bump Conversant"
+user-visible change to `## Unreleased` in plain language, and say "bump Conversant AAC"
 to cut a release.* Only the mechanics (semver version numbers, GitHub Actions
 deploy) differ.
 
@@ -75,13 +75,27 @@ capability, the patch is promoted to a minor then; a phase bump is Ken's explici
 
 Both numbers only ever **increase.**
 
-## Releasing — trigger phrase "bump Conversant"
+## Releasing — trigger phrase "bump Conversant AAC"
 
-Ken says **"bump Conversant"** (or an obvious variant — "release Conversant"). Ken
-issues this only **after he has verified the `CHANGELOG.md` contents.** That single
-command authorizes the entire ritual below **through the push** — Claude runs it end
-to end, printing the release summary and the new version as it goes, and does **not**
-pause for a second confirmation before pushing.
+Ken says **"bump Conversant AAC"**, or any obvious variant — **"bump Conversant"** (the
+original short form), "release Conversant". Ken issues this only **after he has verified
+the `CHANGELOG.md` contents.** That single command authorizes the entire ritual below
+**through the push** — Claude runs it end to end, printing the release summary and the
+new version as it goes, and does **not** pause for a second confirmation before pushing.
+
+**Prefer the trigger to ad-hoc wording.** "Let's push the latest code" (Aug 1 2026) left
+it ambiguous whether the full ritual was wanted; the value of the phrase is that it
+carries the *order*, which is the part that is easy to get wrong.
+
+**Defaults it applies without asking**, so the no-confirmation promise is honest: the
+version is the **pre-bumped patch digit** already sitting in `APP_VERSION`, and the
+release announces **everything under `## Unreleased`**, unchanged.
+
+**The only two conditions that stop and ask** — both were live on Aug 1 2026, neither is
+normally present: (a) the cycle added a genuinely new **subsystem**, making the minor
+digit arguably due instead of the patch (propose it, with the reasoning); (b) a
+**`## Held back`** section exists in `CHANGELOG.md`, meaning something is deliberately
+unannounced and its disposition is a decision, not a default.
 
 The ritual:
 
@@ -110,13 +124,31 @@ The ritual:
 6. **Push `origin main`.** GitHub Actions redeploys `app/` to Pages within ~1 minute.
    Users get the new app on their next reload (the service worker swaps it in on one
    load and serves it on the next).
-7. **Start the next cycle — pre-bump.** Immediately bump `APP_VERSION` and
+7. **Publish the iPad site — BEFORE the pre-bump.** `node scripts/publish-ipad-trial.mjs`.
+   It resets a cached clone to `origin/main`, replaces the payload wholesale, applies
+   the same build stamp production got, pushes, and polls the live URL until it
+   actually serves the new stamp.
+
+   > **This step must come before step 8, and the ordering is not cosmetic.** The
+   > pre-bump deliberately puts local `app/` ahead of `origin/main`, and the script
+   > **refuses to run in exactly that state** — correctly, because publishing then
+   > would make the iPad the only place that build exists. Hit on Aug 1 2026 by
+   > pre-bumping first. **Never work around it with `--no-verify`:** the recovery is
+   > `git tag prebump-tmp`, `git reset --hard HEAD~1`, publish, `git cherry-pick
+   > prebump-tmp`, `git tag -d prebump-tmp`.
+
+8. **Start the next cycle — pre-bump.** Immediately bump `APP_VERSION` and
    `CACHE_VERSION` to the next **patch** (`<final>` + 1 patch), commit that locally,
    and **do not push.** The dev copy now leads public by one patch again.
+9. **Restamp any documents synced during the cycle.** `DOC-SYNC.md`'s `At commit` must
+   name a commit that exists on `origin/main`, so anything reviewed against local-only
+   commits is restamped at the release commit now. (See the ordering rule at the top of
+   `DOC-SYNC.md`: reader-facing documents are best synced *after* the push, since until
+   it lands they describe a screen no tester has.)
 
 ## Invariants — do not break these
 
-- **Never push to `main` except as step 6 of "bump Conversant".** Any push to `main`
+- **Never push to `main` except as step 6 of "bump Conversant AAC".** Any push to `main`
   deploys `app/` to users — including a docs-only push. Between releases, everything
   stays as local commits.
 - **The pre-bumped dev version stays local (unpushed) until it is released.** GitHub
@@ -125,7 +157,7 @@ The ritual:
   reused, never lowered). A lowered `CACHE_VERSION` can strand clients on a stale cache.
 - **`CHANGELOG.md` is authored as-you-go**, in target-user language; nothing is
   authored at release except the `## Unreleased` → `## Version <final>` rename.
-- **Ken verifies `CHANGELOG.md` before issuing "bump Conversant";** the command then
+- **Ken verifies `CHANGELOG.md` before issuing "bump Conversant AAC";** the command then
   runs through the push without a second confirmation.
 
 ## Rolling back a bad release
