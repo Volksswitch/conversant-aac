@@ -61,6 +61,35 @@ Two constants carry the version, and they move together:
 - **`CACHE_VERSION`** in `app/sw.js` — the service-worker cache key that makes clients
   pick up the new build.
 
+> ### ⚠ Edit these two files with Node or the editor — NEVER with PowerShell `Get-Content` / `Set-Content`
+>
+> On Windows PowerShell 5.1 that round trip reads UTF-8 as Windows-1252 and writes it
+> back, so every em dash, curly quote, bullet and box-drawing character in the file is
+> silently replaced by mojibake (`—` becomes `â€”`), and a BOM is prepended. It corrupts
+> the **whole file**, not the line you were changing.
+>
+> **This has already happened once** (found August 1 2026, repaired in `2c0d602`). Users
+> saw `Practice needs a Claude API key â€” the AI plays…` and `sk-ant-â€¦4f2a` in Settings,
+> on both platforms, for as long as it was live. `app.js` and `sw.js` were the *only* two
+> files affected in the whole repo — which is the tell, because they are exactly this
+> pair. A past bump took that path.
+>
+> **Safe:** the Edit tool, or `node -e` with `readFileSync(f,'utf8')` / `writeFileSync(f,s,'utf8')`.
+> **Unsafe:** `(Get-Content f) -replace … | Set-Content f`, and any PowerShell pipeline that
+> rewrites a whole file.
+>
+> **To check after a bump** (should print `0` and start with `imp`, not a BOM):
+>
+> ```bash
+> grep -c 'â€\|â”\|Â\|Ã' app/js/app.js app/sw.js; head -c 3 app/js/app.js | od -An -tx1
+> ```
+>
+> If it did happen, the repair is reversible and complete: map each character back to the
+> cp1252 byte it came from, then decode as UTF-8 — treating `0x80`–`0x9F` as passthrough
+> bytes, since unassigned cp1252 slots survive as C1 control characters rather than being
+> dropped. Miss that detail and closing curly quotes and box-drawing characters look
+> unrecoverable when they are not.
+
 Format is **`major.minor.patch`** (e.g. `0.5.63`):
 
 - **patch** (`o`) — the default: fixes, refinements, small self-contained additions.
@@ -114,6 +143,8 @@ The ritual:
 
    Set both `APP_VERSION` (`app/js/app.js`) and `CACHE_VERSION` (`app/sw.js`) to the
    final number. (If keeping the patch, they already read it from the pre-bump.)
+   **Node or the editor only — never PowerShell `Get-Content`/`Set-Content`; see the
+   warning under "Version numbers".**
 2. **Finalize the changelog.** Rename the topmost **`## Unreleased (next release)`**
    heading to **`## Version <final>`**, and add a fresh empty
    `## Unreleased (next release)` section above it for the next cycle.
@@ -134,7 +165,14 @@ The ritual:
    load and serves it on the next).
 7. **Start the next cycle — pre-bump.** Immediately bump `APP_VERSION` and
    `CACHE_VERSION` to the next **patch** (`<final>` + 1 patch), commit that locally,
-   and **do not push.** The dev copy now leads public by one patch again.
+   and **do not push.** The dev copy now leads public by one patch again. Same rule as
+   step 1: **Node or the editor, never PowerShell `Get-Content`/`Set-Content`.** Worth
+   running the encoding check afterwards — this is the edit that corrupted both files
+   once already, and a pre-bump is easy to do quickly and not look at:
+
+   ```bash
+   grep -c 'â€\|â”\|Â\|Ã' app/js/app.js app/sw.js
+   ```
 8. **Restamp any documents synced during the cycle.** `DOC-SYNC.md`'s `At commit` must
    name a commit that exists on `origin/main`, so anything reviewed against local-only
    commits is restamped at the release commit now. (See the ordering rule at the top of
