@@ -26,10 +26,22 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
-- **The iPad now uses the same web address as everyone else.** It was being served from a
-  separate trial address while iPad support was being worked out. That is finished, so there is
-  now one address for everyone: **volksswitch.github.io/conversant-aac**. If you had the old
-  trial address saved or on your Home Screen, remove it and add the new one.
+- **Conversant AAC has its own web address: conversant.volksswitch.org.** Everyone now uses
+  the same one — the iPad was briefly served from a separate address while iPad support was
+  being worked out, and that is finished. The old address still works and sends you to the new
+  one, but **please update any bookmark or Home Screen icon** to the new address.
+
+  The move matters for more than tidiness: a browser keeps a site's saved information separate
+  by web address, so having our own address means nothing else published under volksswitch.org
+  can reach your API key or the information the app has saved about you.
+
+  **One thing to expect the first time you open the new address:** the app will look brand new
+  — no settings, no API key, and it will ask you to choose your data folder again. Nothing has
+  been lost. Your About Me answers, the people you know, your Express Panel and your saved
+  conversations are all in your data folder, exactly where they were. Choose that folder again,
+  load your saved settings profile, and paste your API key back in. **On an iPad there is no
+  folder to choose, so export your data from the old address before switching, then import it
+  at the new one.**
 
 - **The “What’s new” summary now only tells you about changes that affect your own
   device.** A change that only shows up on an iPad is no longer described to someone on a
