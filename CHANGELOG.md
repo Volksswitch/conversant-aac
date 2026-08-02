@@ -26,6 +26,17 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- **New "Screen edge margin" setting, for keyguards in a tight tablet case.** Some
+  cases have an opening that fits so closely to the screen that a keyguard has
+  nowhere to rest around the outside. Settings → Keyguard Design now has a Screen
+  edge margin slider that moves the whole app inwards from the edges of the screen —
+  including the Express Panel and keyboard, which sit closest to the edge. Everything
+  shrinks to fit, so nothing is pushed off. It starts at zero, so nothing changes
+  until you move it. Note that it does move every button, so a keyguard cut before
+  you change it will no longer line up. This is separate from Keyboard separation,
+  which sets the gap between the keyboard and the rest of the screen and leaves the
+  keyboard where it is; the two can be used together without doubling up.
+
 - **The Settings title bar is easier to pick out.** It was the same dark colour as
   the bar at the top of the app window, so the two ran together and looked like one
   band. The Settings bar is now light grey with dark lettering.

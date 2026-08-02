@@ -2146,6 +2146,11 @@ function applyConversationDockClasses() {
 // max-growth point) are reasonable choices here, to react to.
 const GAP_MAX_REM = 1.4, MINGAP_MAX_REM = 1.4;   // slider 0–100 → 0..max rem
 const DOCKSEP_MAX_REM = 4.0;      // keyboard-separation slider 0–100 → 0..4rem
+// Screen-edge-margin slider 0–100 → 0..3rem. Smaller ceiling than the others on
+// purpose: this one is subtracted from BOTH sides of BOTH axes, so at 3rem it
+// already costs ~6rem of width and height, and it exists to clear a case lip —
+// a few millimetres of plastic — not to reframe the layout.
+const APP_MARGIN_MAX_REM = 3.0;
 const TRANSCRIPTSEP_MAX_REM = 4.0; // transcript-separation slider 0–100 → 0..4rem
 const MIN_BTN_REM = 2.0;          // smallest still-recognizable button (icon + border)
 const MIN_TRANSCRIPT_REM = 3.0;   // transcript floor (~2 lines)
@@ -2216,7 +2221,17 @@ function activeLayoutGrid() {
 function applyButtonSizing() {
     const root = document.documentElement.style;
     const rem = remPx();
-    const VW = layoutVW(), VH = layoutVH();
+
+    // Screen edge margin: how far the whole app is held off the physical screen
+    // edges so a keyguard has material to sit on inside a tight case opening
+    // (Ken, Aug 2 2026). EVERY region below is then budgeted against the REDUCED
+    // viewport — that is the load-bearing part. The dock's extent comes from these
+    // numbers, so computing it from the full viewport and merely insetting it in
+    // CSS would push it back over the margin instead of shrinking it into the
+    // space that is left.
+    const appMargin = lerp(storage.loadAppMarginPos(), 0, APP_MARGIN_MAX_REM) * rem;
+    root.setProperty('--app-margin', `${appMargin.toFixed(2)}px`);
+    const VW = layoutVW() - 2 * appMargin, VH = layoutVH() - 2 * appMargin;
 
     // Slider values → px. Effective gap = max(gap-size, min-gap) (min-gap is a
     // one-way floor; lowering it leaves gap-size put — Ken #3).
@@ -2989,11 +3004,13 @@ function openSettings() {
     const buttonGapSlider = document.getElementById('buttonGapSlider');
     const minGapSlider = document.getElementById('minGapSlider');
     const dockSepSlider = document.getElementById('dockSepSlider');
+    const appMarginSlider = document.getElementById('appMarginSlider');
     const transcriptSepSlider = document.getElementById('transcriptSepSlider');
     buttonSizeSlider.value = storage.loadButtonSizePos();
     buttonGapSlider.value = storage.loadButtonGapPos();
     minGapSlider.value = storage.loadMinGapPos();
     dockSepSlider.value = storage.loadDockSepPos();
+    appMarginSlider.value = storage.loadAppMarginPos();
     transcriptSepSlider.value = storage.loadTranscriptSepPos();
     // Text-size selects (string-valued multipliers).
     const transcriptFontSelect = document.getElementById('transcriptFontSelect');
@@ -3594,6 +3611,13 @@ function openSettings() {
             buttonGapSlider.value = String(mg);
             storage.saveButtonGapPos(mg);
         }
+        applyButtonSizing();
+    };
+    // Screen edge margin — holds the WHOLE app off the physical screen edges, the
+    // dock included, so a keyguard has material to sit on inside a tight case
+    // opening. Unlike keyboard separation this DOES move the keyguard holes.
+    appMarginSlider.oninput = () => {
+        storage.saveAppMarginPos(Number(appMarginSlider.value));
         applyButtonSizing();
     };
     // Keyboard separation — independent of the inter-button gap; shifts the rest

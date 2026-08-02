@@ -827,6 +827,7 @@ const DEFAULT_BTN_GAP_POS = 0;     // → gap 0 (flush by default)
 const DEFAULT_MIN_GAP_POS = 0;     // → min-gap 0 by default
 const DEFAULT_DOCK_SEP_POS = 0;    // → no gap between the dock (keyboard / Express Panel) and the rest of the UI
 const DEFAULT_TRANSCRIPT_SEP_POS = 0; // → no extra gap between the transcript and the command bar
+const DEFAULT_APP_MARGIN_POS = 0;  // → app fills the screen to its edges, as it always has
 
 function clampPos(v, dflt) {
     const n = Number(v);
@@ -872,6 +873,30 @@ export function loadDockSepPos() {
 export function saveDockSepPos(pos) {
     const settings = loadSettings();
     settings.dockSepPos = clampPos(pos, DEFAULT_DOCK_SEP_POS);
+    saveSettings(settings);
+}
+
+// Screen edge margin — how far the WHOLE app is held off the physical edges of the
+// screen, dock included (Ken, August 2 2026).
+//
+// WHY it exists and why it is not "keyboard separation": some tablet cases have an
+// opening that fits tightly to the active area of the screen, so a keyguard for one
+// of those has no material to sit on at the perimeter — the case lip and the
+// outermost buttons collide. This backs every control inward to make room.
+//
+// The distinction that matters: keyboard separation is an INTERNAL gap (dock ↔ main
+// content) and deliberately does NOT move the dock. This one deliberately DOES move
+// the dock — the Express Panel and keyboard sit hardest against the screen edge, so
+// a margin that spared them would not solve the problem it exists for. It therefore
+// moves every keyguard hole and is a Setup-tier change: altering it re-cuts the
+// keyguard, exactly like button size.
+export function loadAppMarginPos() {
+    const s = loadSettings();
+    return s.appMarginPos == null ? DEFAULT_APP_MARGIN_POS : clampPos(s.appMarginPos, DEFAULT_APP_MARGIN_POS);
+}
+export function saveAppMarginPos(pos) {
+    const settings = loadSettings();
+    settings.appMarginPos = clampPos(pos, DEFAULT_APP_MARGIN_POS);
     saveSettings(settings);
 }
 

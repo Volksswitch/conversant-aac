@@ -565,6 +565,14 @@
                 </div>
                 <div class="tab-panel" data-tab="keyguard">
                     <div class="setting-group">
+                        <label for="appMarginSlider">Screen edge margin</label>
+                        <div class="slider-row">
+                            <button type="button" class="slider-step" data-target="appMarginSlider" data-step="-4" aria-label="Smaller margin">&minus;</button>
+                            <input type="range" id="appMarginSlider" min="0" max="100" step="1" class="size-slider">
+                            <button type="button" class="slider-step" data-target="appMarginSlider" data-step="4" aria-label="Larger margin">+</button>
+                        </div>
+                    </div>
+                    <div class="setting-group">
                         <label for="dockSepSlider">Keyboard separation</label>
                         <div class="slider-row">
                             <button type="button" class="slider-step" data-target="dockSepSlider" data-step="-4" aria-label="Less separation">&minus;</button>

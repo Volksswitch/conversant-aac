@@ -82,6 +82,9 @@
        only pushes the MAIN content away from it, so it does NOT move the keyguard
        holes. Default 0 = flush (the prior look). JS slider sets it. */
     --dock-sep: 0px;
+    /* Screen edge margin — the whole app's inset from the physical screen edges,
+       dock included, so a keyguard clears a tight case opening. Set by the solver. */
+    --app-margin: 0px;
     /* Transcript separation (Ken, July 2026): extra gap between the transcript and
        the command bar, opened by SHORTENING the transcript vertically. The command
        bar and everything below it stay put, so the keyguard holes don't move.
@@ -254,6 +257,15 @@ main {
     display: flex;
     min-height: 0;
     width: 100%;
+    /* Screen edge margin (Ken, Aug 2 2026): hold the whole app off the physical
+       screen edges so a keyguard has material to sit on inside a tight case
+       opening. Padding on <main> insets the main area and — because the bottom
+       dock is an in-flow flex child — the bottom dock too. The SIDE dock is
+       position:fixed and escapes this, so it is inset explicitly below.
+       The layout solver already subtracts 2×--app-margin from the viewport it
+       budgets against, so the regions shrink into the margin rather than
+       overflowing it. Default 0 → identical to the old flush layout. */
+    padding: var(--app-margin);
 }
 body.conv-side-right main { flex-direction: row; }
 body.conv-side-left  main { flex-direction: row-reverse; }
@@ -294,19 +306,27 @@ body.conv-bottom     main { flex-direction: column; }
    down and its grid wouldn't line up with the keyboard under one keyguard. The
    conversation main area + the app header are confined to the main-area rect
    beside it. (BOTTOM dock keeps its in-flow strip — no header conflict there.) */
+/* The side dock is position:fixed, so <main>'s padding does not reach it — it gets
+   the screen edge margin explicitly on all three edges it touches. This one MUST
+   move with the margin: the dock is the surface sitting hardest against the screen
+   edge, so a margin that spared it would not clear the case lip it exists for. */
 body.conv-side #dockArea {
     position: fixed;
-    top: 0;
-    bottom: 0;
+    top: var(--app-margin);
+    bottom: var(--app-margin);
     width: var(--dock-w);
     z-index: 50;
 }
-body.conv-side-right #dockArea { right: 0; border-left: 1px solid #c4ccd2; }
-body.conv-side-left  #dockArea { left: 0;  border-right: 1px solid #c4ccd2; }
+body.conv-side-right #dockArea { right: var(--app-margin); border-left: 1px solid #c4ccd2; }
+body.conv-side-left  #dockArea { left: var(--app-margin);  border-right: 1px solid #c4ccd2; }
 /* Reserve the dock width PLUS the separation gap, so the main content stops
-   --dock-sep short of the fixed dock and the page background shows between them. */
-body.conv-side-right #conversationMain { padding-right: calc(var(--dock-w) + var(--dock-sep)); }
-body.conv-side-left  #conversationMain { padding-left: calc(var(--dock-w) + var(--dock-sep)); }
+   --dock-sep short of the fixed dock and the page background shows between them.
+   --app-margin is added back because this shorthand-overriding longhand would
+   otherwise drop it on this one edge, and the fixed dock has itself moved inward
+   by the margin — so the clearance measured from the screen edge is
+   margin + dock + separation. */
+body.conv-side-right #conversationMain { padding-right: calc(var(--app-margin) + var(--dock-w) + var(--dock-sep)); }
+body.conv-side-left  #conversationMain { padding-left: calc(var(--app-margin) + var(--dock-w) + var(--dock-sep)); }
 /* FIXED bottom dock height so the Express Panel and the keyboard occupy the
    identical band (one keyguard). margin-top opens the separation gap above it. */
 body.conv-bottom #dockArea { width: 100%; height: var(--dock-h); flex: 0 0 var(--dock-h); margin-top: var(--dock-sep); border-top: 1px solid #c4ccd2; }
@@ -346,13 +366,15 @@ body.conv-bottom { --dock-h: var(--conv-dock-h, 30vh); }
    Derived rather than measured on purpose: it is correct before the panel has
    rendered, while the keyboard is covering it, and while Settings is open over
    the top of it — none of which a getBoundingClientRect() could survive. */
+   The unconstrained axis is the viewport LESS twice the screen edge margin, since
+   the dock is inset by it at both ends of that axis. */
 body.conv-bottom {
-    --ep-cell-w: calc((100vw - var(--kbd-cols, 9) * var(--grid-gap)) / var(--kbd-cols, 9));
+    --ep-cell-w: calc((100vw - 2 * var(--app-margin) - var(--kbd-cols, 9) * var(--grid-gap)) / var(--kbd-cols, 9));
     --ep-cell-h: calc((var(--dock-h) - var(--safe-bottom) - var(--kbd-rows, 4) * var(--grid-gap)) / var(--kbd-rows, 4));
 }
 body.conv-side {
     --ep-cell-w: calc((var(--dock-w) - var(--kbd-cols, 5) * var(--grid-gap)) / var(--kbd-cols, 5));
-    --ep-cell-h: calc((100vh - var(--safe-bottom) - var(--kbd-rows, 7) * var(--grid-gap)) / var(--kbd-rows, 7));
+    --ep-cell-h: calc((100vh - 2 * var(--app-margin) - var(--safe-bottom) - var(--kbd-rows, 7) * var(--grid-gap)) / var(--kbd-rows, 7));
 }
 
 /* 70%, not 100%, because an Express cell is also a function of how many keys the
@@ -367,7 +389,10 @@ body {
     --ui-btn-min-h: max(var(--btn-min-dim), calc(0.7 * var(--ep-cell-h, 0px)));
 }
 
-/* Outer padding around the cluster = min-gap; regions separated by 1·gap. */
+/* Outer padding around the cluster = min-gap; regions separated by 1·gap.
+   NOTE: the inset from the physical SCREEN edge is a different control —
+   "Screen edge margin" / --app-margin — applied to #conversationMain and the dock,
+   so it moves the dock too. Keyboard separation stays purely the dock↔content gap. */
 body.conv-side #mainArea,
 body.conv-bottom #mainArea { padding: var(--gap-min); gap: var(--grid-gap); }
 
@@ -1428,7 +1453,10 @@ dialog[open] {
    fills the dock). A flat full-rect panel (no rounding/shadow), like About Me. */
 #settingsDialog {
     position: fixed;
-    inset: 0;
+    /* Inset by the screen edge margin like every other surface: one physical
+       keyguard has to overlay the conversation screen AND Settings (Rule 11), so
+       if the margin moved only the conversation screen the two would disagree. */
+    inset: var(--app-margin);
     margin: 0;
     width: auto;
     height: auto;
@@ -1439,9 +1467,9 @@ dialog[open] {
     background: #fff;
     overflow: hidden;
 }
-body.conv-side-right #settingsDialog { right: calc(var(--dock-w) + var(--dock-sep)); }
-body.conv-side-left  #settingsDialog { left: calc(var(--dock-w) + var(--dock-sep)); }
-body.conv-bottom     #settingsDialog { bottom: calc(var(--dock-h) + var(--dock-sep)); }
+body.conv-side-right #settingsDialog { right: calc(var(--app-margin) + var(--dock-w) + var(--dock-sep)); }
+body.conv-side-left  #settingsDialog { left: calc(var(--app-margin) + var(--dock-w) + var(--dock-sep)); }
+body.conv-bottom     #settingsDialog { bottom: calc(var(--app-margin) + var(--dock-h) + var(--dock-sep)); }
 body.conv-bottom .tab-panel.active {
     column-count: 3;
 }
