@@ -682,23 +682,32 @@ const STORAGE_WARMUP_MS = 6000;
 // rejects, so callers need no extra error path; a timeout is logged, because a
 // storage layer that stops answering is worth knowing about even though the app
 // survives it.
-function withTimeout(promise, ms, label) {
-    return Promise.race([
-        promise,
-        new Promise((resolve) => {
-            const check = () => {
-                // A folder-permission dialog on screen is not a hang — the storage
-                // layer is waiting on the USER, who may take as long as they like.
-                // Giving up here would abandon the folder they are in the middle of
-                // granting AND log an error for normal behaviour, which is exactly
-                // what was filling the log at every session start. Wait it out.
-                if (storage.isAwaitingPermission()) { setTimeout(check, ms); return; }
-                try { storage.logError('timeout', `${label} did not finish within ${ms}ms - continuing without it`); } catch { /* best-effort */ }
-                resolve(null);
-            };
-            setTimeout(check, ms);
-        }),
-    ]);
+async function withTimeout(promise, ms, label) {
+    let timer = null;
+    let settled = false;
+    // CANCEL the timer when the work finishes. Promise.race does not cancel the
+    // loser, so a bare setTimeout here fires — and logs — even when the promise
+    // won the race milliseconds in. That is what put a "did not finish" line in
+    // the log at every single session start while nothing was actually wrong.
+    const deadline = new Promise((resolve) => {
+        const check = () => {
+            if (settled) return;
+            // A folder-permission dialog on screen is not a hang either: the
+            // storage layer is waiting on the USER, who may take as long as they
+            // like. Giving up here would log an error for normal behaviour AND
+            // abandon the folder they are in the middle of granting. Wait it out.
+            if (storage.isAwaitingPermission()) { timer = setTimeout(check, ms); return; }
+            try { storage.logError('timeout', `${label} did not finish within ${ms}ms - continuing without it`); } catch { /* best-effort */ }
+            resolve(null);
+        };
+        timer = setTimeout(check, ms);
+    });
+    try {
+        return await Promise.race([promise, deadline]);
+    } finally {
+        settled = true;
+        if (timer !== null) clearTimeout(timer);
+    }
 }
 
 // Adopt the data folder (or, on iPad, device storage) and reconcile every

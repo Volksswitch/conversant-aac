@@ -26,15 +26,23 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
-### On a computer
+- **Buttons and dropdowns in Settings are much bigger, and now follow the size you
+  chose for your Express Panel buttons.** Some were far too small to tap reliably —
+  the Copy and Clear buttons by the error log were about a third of the width of a
+  regular button, and every dropdown was shorter than any button in the app.
+  Settings controls are now at least 70% as wide and as tall as one of your Express
+  Panel buttons, so making your Express Panel buttons bigger makes these bigger too.
+  Not 100%, because Express Panel buttons also get wider when a layout shows fewer
+  of them at once, and a Settings button does not need to be that wide.
 
-- **The app no longer records an error when it asks permission to use your data
-  folder.** Your browser asks you to confirm the folder each time you start the app,
-  and if you took more than six seconds to answer, the app decided its own storage
-  had stopped responding, noted an error, and carried on without the folder. It now
-  waits for your answer however long you take. If you have been seeing "storage
-  warm-up did not finish" in the error log at Settings → About, that is what it was,
-  and nothing was actually wrong.
+- **The app no longer records an error every time you start it.** A line reading
+  "storage warm-up did not finish within 6000ms" was being written to the error log
+  at Settings → About at the start of every session, and it turned the conversation
+  area faintly red as though something had gone wrong. Nothing had: the app was
+  finishing that step in a few thousandths of a second and then reporting a problem
+  anyway. It no longer does. The app still tells you if that step genuinely stalls,
+  and it now also waits patiently while your browser asks you to confirm your data
+  folder, instead of treating your answer as being slow.
 
 ## Version 0.6.1
 

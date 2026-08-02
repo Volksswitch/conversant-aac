@@ -333,6 +333,40 @@ body.conv-bottom #dockArea { width: 100%; height: var(--dock-h); flex: 0 0 var(-
 body.conv-side   { --dock-w: var(--conv-dock-w, 30vw); }
 body.conv-bottom { --dock-h: var(--conv-dock-h, 30vh); }
 
+/* --- The Express Panel button as the size reference for the rest of the UI ---
+   (Ken, August 2 2026: "I'd like the size of the buttons in the Express Panel to
+   drive the size of all other buttons in the UI - that's because the user has the
+   most control over an 'acceptable' button size in the Express Panel.")
+
+   A standard (single-span) Express cell, derived from exactly the vars the dock
+   grid is laid out from, so it cannot drift from what is actually on screen:
+     #expressPanel pads ½·gap all round (plus --safe-bottom at the foot), and
+     #epGrid / .ep-row separate cells by 1·gap, so along each axis the panel
+     spends (count × gap) in total and the rest is divided by count.
+   Derived rather than measured on purpose: it is correct before the panel has
+   rendered, while the keyboard is covering it, and while Settings is open over
+   the top of it — none of which a getBoundingClientRect() could survive. */
+body.conv-bottom {
+    --ep-cell-w: calc((100vw - var(--kbd-cols, 9) * var(--grid-gap)) / var(--kbd-cols, 9));
+    --ep-cell-h: calc((var(--dock-h) - var(--safe-bottom) - var(--kbd-rows, 4) * var(--grid-gap)) / var(--kbd-rows, 4));
+}
+body.conv-side {
+    --ep-cell-w: calc((var(--dock-w) - var(--kbd-cols, 5) * var(--grid-gap)) / var(--kbd-cols, 5));
+    --ep-cell-h: calc((100vh - var(--safe-bottom) - var(--kbd-rows, 7) * var(--grid-gap)) / var(--kbd-rows, 7));
+}
+
+/* 70%, not 100%, because an Express cell is also a function of how many keys the
+   chosen layout shows at once — a 3-column side layout has very wide cells that no
+   Settings button needs to match (Ken). --btn-min-dim stays the absolute floor via
+   max(): at the bottom-dock default a cell is 54px tall while the standing button
+   floor is 4rem, so 70% alone would make Settings buttons SMALLER than they are
+   today. The larger of the two always wins. The 0px fallbacks keep this valid
+   before the dock class is on <body>, where it reduces to the old behaviour. */
+body {
+    --ui-btn-min-w: max(var(--btn-min-dim), calc(0.7 * var(--ep-cell-w, 0px)));
+    --ui-btn-min-h: max(var(--btn-min-dim), calc(0.7 * var(--ep-cell-h, 0px)));
+}
+
 /* Outer padding around the cluster = min-gap; regions separated by 1·gap. */
 body.conv-side #mainArea,
 body.conv-bottom #mainArea { padding: var(--gap-min); gap: var(--grid-gap); }
@@ -1095,6 +1129,40 @@ button:not(.kbd-key):not(.kbd-tool):not(.kbd-pred-btn):not(.ep-btn) {
     min-height: var(--btn-min-dim);
 }
 .icon-btn { min-width: var(--btn-min-dim); }
+
+/* Settings controls are sized off the Express Panel button (Ken, August 2 2026).
+   Two gaps this closes, both measured rather than assumed:
+     - text buttons had NO width floor at all, so they shrank to their label —
+       "Copy" was 35px wide, which is not a tap target for anyone, let alone
+       someone with limited motor control;
+     - <select> was matched by neither of the rules above (they say `button`), so
+       every dropdown in Settings was 33px tall — the smallest control in the app.
+   The width cap is a percentage so it resolves against whatever box the control
+   is actually in: the COLUMN box under the bottom dock's 3-column panel, and the
+   content box under the side dock's single column. That keeps a wide Express cell
+   from forcing a button wider than the column holding it, with no JS and no
+   knowledge here of how many columns are in play. */
+#settingsContent button:not(.slider-step),
+#settingsContent select {
+    min-height: var(--ui-btn-min-h);
+    min-width: max(var(--btn-min-dim), min(var(--ui-btn-min-w), 45%));
+}
+
+/* The − / + slider steppers are the one exception, and it is a geometric one, not
+   a preference: they flank a slider inside a single row, so two of them at the
+   full Express-derived width would leave the slider no room to be dragged. They
+   take the height floor and a square-ish minimum instead — still a far bigger
+   target than the 2.6rem they used to be. */
+#settingsContent .slider-step {
+    min-height: var(--ui-btn-min-h);
+    min-width: var(--btn-min-dim);
+    width: var(--btn-min-dim);
+}
+
+/* Let action rows wrap rather than overflow: with a wide side dock the Settings
+   panel gets genuinely narrow, and a clipped button is an unreachable one. */
+#errorLogActions,
+#voiceListActions { flex-wrap: wrap; }
 
 /* "New 4" — regenerate a different set of four. Icon button to the right of the
    response grid, spanning its full height (2 rows for 2×2, 1 for 1×4). */
