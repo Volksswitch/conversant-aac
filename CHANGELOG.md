@@ -26,7 +26,15 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
-_Nothing yet._
+### On a computer
+
+- **The app no longer records an error when it asks permission to use your data
+  folder.** Your browser asks you to confirm the folder each time you start the app,
+  and if you took more than six seconds to answer, the app decided its own storage
+  had stopped responding, noted an error, and carried on without the folder. It now
+  waits for your answer however long you take. If you have been seeing "storage
+  warm-up did not finish" in the error log at Settings → About, that is what it was,
+  and nothing was actually wrong.
 
 ## Version 0.6.1
 
@@ -55,10 +63,9 @@ _Nothing yet._
   everyone exactly as before.
 
 - **Garbled characters in Settings are fixed.** Dashes, quotation marks, bullets and
-  ellipses were showing as strings like `â€”` in several places — including the
-  shortened form of your API key, which appeared as `sk-ant-â€¦4f2a` instead of
-  `sk-ant-…4f2a`. This was only ever how the text was drawn; no setting or key was
-  affected, and nothing needs to be re-entered.
+  ellipses were coming out as short runs of nonsense letters in several places,
+  including the shortened form of your API key. This was only ever how the text was
+  drawn; no setting or key was affected, and nothing needs to be re-entered.
 
 - **Settings is much less cluttered.** The paragraph of explanation that sat under nearly
   every single setting has been taken out, so each tab now shows the settings themselves

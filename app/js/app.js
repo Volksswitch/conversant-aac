@@ -685,10 +685,19 @@ const STORAGE_WARMUP_MS = 6000;
 function withTimeout(promise, ms, label) {
     return Promise.race([
         promise,
-        new Promise((resolve) => setTimeout(() => {
-            try { storage.logError('timeout', `${label} did not finish within ${ms}ms — continuing without it`); } catch { /* best-effort */ }
-            resolve(null);
-        }, ms)),
+        new Promise((resolve) => {
+            const check = () => {
+                // A folder-permission dialog on screen is not a hang — the storage
+                // layer is waiting on the USER, who may take as long as they like.
+                // Giving up here would abandon the folder they are in the middle of
+                // granting AND log an error for normal behaviour, which is exactly
+                // what was filling the log at every session start. Wait it out.
+                if (storage.isAwaitingPermission()) { setTimeout(check, ms); return; }
+                try { storage.logError('timeout', `${label} did not finish within ${ms}ms - continuing without it`); } catch { /* best-effort */ }
+                resolve(null);
+            };
+            setTimeout(check, ms);
+        }),
     ]);
 }
 

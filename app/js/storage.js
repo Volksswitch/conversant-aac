@@ -117,6 +117,15 @@ async function useDeviceStorage() {
     }
 }
 
+// True while the browser's folder-permission dialog is up and we are waiting for
+// the user to answer it. Callers that put a deadline on a storage call must NOT
+// count this as a hang: the app is not stuck, it is asking a question, and the
+// user is entitled to take as long as they like to answer it. FSA permission does
+// not survive a browser restart, so this prompt appears at nearly every session
+// start — without this flag a slow (i.e. normal) answer logs a false error.
+let permissionPromptOpen = false;
+export function isAwaitingPermission() { return permissionPromptOpen; }
+
 export async function restoreDataFolder() {
     // Desktop: re-acquire the folder the user picked previously. Unchanged.
     if (supportsFolderPicker()) {
@@ -126,7 +135,9 @@ export async function restoreDataFolder() {
         try {
             let perm = await stored.queryPermission({ mode: 'readwrite' });
             if (perm !== 'granted') {
-                perm = await stored.requestPermission({ mode: 'readwrite' });
+                permissionPromptOpen = true;
+                try { perm = await stored.requestPermission({ mode: 'readwrite' }); }
+                finally { permissionPromptOpen = false; }
             }
             if (perm === 'granted') {
                 setRoot(stored, BACKEND.FOLDER);
@@ -1162,6 +1173,31 @@ export function clearErrorLog() {
     localStorage.removeItem(ERROR_LOG_KEY);
 }
 
+// Typographic punctuation -> its plain-ASCII equivalent, for text bound for a log
+// (Ken, August 2 2026: "any log should be limited to ASCII"). Log lines are read in
+// text editors, pasted into bug reports and mailed around, and every one of those
+// hops is a chance to mis-decode a fancy character into mojibake; a hyphen survives
+// all of them. Applied at the choke point so no future caller has to remember.
+//
+// The map is deliberately punctuation-ONLY. Stripping non-ASCII wholesale would
+// also mangle letters, and an error message can legitimately carry a partner's
+// speech or a person's name — corrupting "José" to make a log tidier would be a
+// worse bug than the one being logged.
+const LOG_ASCII = new Map([
+    ['—', '-'], ['–', '-'], ['−', '-'],           // em/en dash, minus
+    ['‘', "'"], ['’', "'"], ['‚', "'"],           // single quotes
+    ['“', '"'], ['”', '"'], ['„', '"'],           // double quotes
+    ['…', '...'], [' ', ' '], [' ', ' '],         // ellipsis, nbsp
+    ['•', '*'], ['·', '*'], ['→', '->'],          // bullets, arrow
+    ['×', 'x'], ['✓', 'ok'], ['✗', 'x'],          // times, check, cross
+]);
+
+function asciiForLog(text) {
+    let out = '';
+    for (const ch of String(text ?? '')) out += LOG_ASCII.get(ch) ?? ch;
+    return out;
+}
+
 // Record an error. `context` is where it happened (e.g. 'generateOptions'),
 // `message` the error text, `extra` any small JSON-able detail (e.g. the partner
 // text). Best-effort and never throws — it must not itself break the flow.
@@ -1180,8 +1216,8 @@ export function logError(context, message, extra = null) {
         ts: new Date().toISOString(),
         version: appVersion,
         conversation: ensureConversationId(),   // matches the <id>.json log file
-        context: String(context || ''),
-        message: String(message || ''),
+        context: asciiForLog(context),
+        message: asciiForLog(message),
     };
     if (extra != null) entry.extra = extra;
     try {
