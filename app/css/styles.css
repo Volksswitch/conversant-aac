@@ -1467,8 +1467,18 @@ dialog::backdrop {
     align-items: center;
     justify-content: space-between;
     padding: 0.3rem 0.4rem 0.3rem 1rem;
-    background: #2c3e50;
-    color: #fff;
+    /* Light grey, NOT the app's #2c3e50 (Ken, August 2 2026: the Settings title bar
+       "is almost the same color as the app title bar so the two visually merge").
+       They were not merely similar — they were the SAME value: <meta name="theme-color">
+       is #2c3e50, and an installed app takes that for the OS/browser window title
+       bar, so the window bar and this one rendered as one continuous dark band.
+       Keep these two apart: if the theme colour is ever changed, this must not be
+       changed to match it. Text and the X flip to dark to stay legible — #2c3e50 on
+       #dfe4e8 is 8.6:1, well clear of the 4.5:1 minimum — and the bottom border
+       separates it from the #f4f5f6 tab strip below, which is a near neighbour. */
+    background: #dfe4e8;
+    color: #2c3e50;
+    border-bottom: 1px solid #c4ccd2;
     user-select: none;
     flex-shrink: 0;
 }
@@ -1494,7 +1504,7 @@ dialog::backdrop {
     border: none;
     border-radius: 4px;
     background: transparent;
-    color: #fff;
+    color: #2c3e50;   /* dark, to match the light title bar */
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -1509,7 +1519,8 @@ dialog::backdrop {
 
 #settingsHeader #closeSettingsBtn:hover,
 #settingsHeader #closeSettingsBtn:focus-visible {
-    background: rgba(255, 255, 255, 0.18);
+    /* Was a white wash for the old dark bar; on light grey that is invisible. */
+    background: rgba(0, 0, 0, 0.12);
 }
 
 #settingsLayout {

@@ -26,6 +26,10 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- **The Settings title bar is easier to pick out.** It was the same dark colour as
+  the bar at the top of the app window, so the two ran together and looked like one
+  band. The Settings bar is now light grey with dark lettering.
+
 - **Buttons and dropdowns in Settings are much bigger, and now follow the size you
   chose for your Express Panel buttons.** Some were far too small to tap reliably —
   the Copy and Clear buttons by the error log were about a third of the width of a
