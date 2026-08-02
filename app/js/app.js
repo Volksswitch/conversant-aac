@@ -2939,55 +2939,6 @@ async function buildErrorReport() {
     return out.join('\n');
 }
 
-// --- Voice-list readout (Settings → About; Ken, July 31 2026) ---
-//
-// WHY: on a tablet there is no console, so when a voice the user installed on the
-// device does not appear in the Voice picker there is no way to tell WHICH of
-// three things happened — the browser never reported it, it is there under a name
-// they did not recognize, or the list was captured before the voice was installed.
-// This shows exactly what getVoices() returned, ids and all.
-//
-// The header is part of the answer, not decoration: whether the app is running as
-// a Home Screen app or a browser tab is a genuine variable on iPadOS (the two
-// differ in other measured ways), and a pasted list that does not say which it
-// came from cannot be interpreted afterwards.
-function voiceDiagnosticLines() {
-    const voices = tts.getVoices();
-    const standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
-        || navigator.standalone === true;
-    const lines = [
-        `Conversant AAC — voices offered to the app`,
-        `Version ${APP_VERSION} · ${BUILD_ID}`,
-        `Running as: ${standalone ? 'installed app (Home Screen)' : 'browser tab'}`,
-        `User agent: ${navigator.userAgent}`,
-        `Voices reported: ${voices.length}`,
-        '',
-    ];
-    // The diagnostic lists EVERY voice, including ones the pickers hide — its job is
-    // to answer "why is this voice not in my list", which it could not do if it
-    // applied the same filter. Hidden ones are marked instead.
-    const showNovelty = storage.loadShowNoveltyVoices();
-    voices.forEach((v, i) => {
-        const tier = tts.voiceQuality(v) || '—';
-        const hidden = !showNovelty && tts.isNoveltyVoice(v) ? ' | hidden (joke voice)' : '';
-        lines.push(`${String(i + 1).padStart(3, ' ')}. ${v.name} | ${v.lang} | ${tier}${v.default ? ' | default' : ''}${hidden}`);
-        lines.push(`      ${v.voiceURI}`);
-    });
-    return lines;
-}
-
-function renderVoiceList() {
-    const view = document.getElementById('voiceListView');
-    const countEl = document.getElementById('voiceListCount');
-    if (!view) return;
-    const count = tts.getVoices().length;
-    // Voices populate asynchronously in some browsers, so "0" here means "not yet"
-    // as often as it means "none" — say so rather than implying a verdict.
-    if (countEl) countEl.textContent = count ? `(${count})` : '(none reported yet)';
-    view.value = count ? voiceDiagnosticLines().join('\n') : '';
-    view.scrollTop = 0;
-}
-
 function openSettings() {
     const dialog = document.getElementById('settingsDialog');
     const apiKeyInput = document.getElementById('apiKeyInput');
@@ -3133,25 +3084,6 @@ function openSettings() {
             setTimeout(() => { btn.textContent = orig; }, 1500);
         } catch { /* clipboard blocked/denied */ }
     };
-    // Voice-list readout (About tab). Refresh re-reads getVoices() without closing
-    // Settings, which covers a list that simply populated late; it cannot help where
-    // the browser captured the system voices at process start, hence the hint about
-    // fully closing the app.
-    renderVoiceList();
-    document.getElementById('refreshVoiceListBtn').onclick = () => {
-        renderVoiceList();
-        populateVoiceSelect();
-        populatePartnerVoiceSelect();
-    };
-    document.getElementById('copyVoiceListBtn').onclick = async () => {
-        const btn = document.getElementById('copyVoiceListBtn');
-        try {
-            await navigator.clipboard.writeText(voiceDiagnosticLines().join('\n'));
-            const orig = btn.textContent; btn.textContent = 'Copied ✓';
-            setTimeout(() => { btn.textContent = orig; }, 1500);
-        } catch { /* clipboard blocked/denied */ }
-    };
-
     document.getElementById('clearErrorLogBtn').onclick = async () => {
         if (!(await confirmDanger({
             title: 'Clear the error log?',
@@ -3523,7 +3455,6 @@ function openSettings() {
             // reopen Settings to see reads as a setting that did nothing.
             populateVoiceSelect();
             populatePartnerVoiceSelect();
-            renderVoiceList();
         };
     }
 
