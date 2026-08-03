@@ -26,6 +26,10 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+_Nothing yet._
+
+## Version 0.6.3
+
 - **My Places — tell the assistant where you are.** A new section in About Me where
   you add the places you go and anything worth knowing about each one: what you
   usually order, who you go with, the address if it's one particular branch. You
@@ -47,7 +51,7 @@ forgetting to tag one is only ever noise, never silence.
   stays chosen — so when you ask for a new set of responses, you can see they are
   still about the option you picked.
 - **The app now uses the whole screen.** A new "Use the whole screen" setting on
-  Settings → General, on to begin with, hides the browser and the taskbar so the
+  Settings → General, on to begin with, hides the bars around the app so the
   conversation gets the extra height — about a tenth more room top to bottom. Turn it
   off if you have a keyguard cut for the smaller layout, because filling the screen
   moves every button.
