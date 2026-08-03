@@ -2407,6 +2407,10 @@ function applyButtonSizing() {
     const { rows, cols } = activeLayoutGrid();
     root.setProperty('--kbd-rows', String(rows));
     root.setProperty('--kbd-cols', String(cols));
+    // Button size, gap and screen edge margin all change how wide a Settings control
+    // is and how wide a column is, so a tab that fitted in columns a moment ago may
+    // not now. This is also the resize hook, so viewport changes are covered too.
+    refreshActiveTabColumns();
 }
 
 // Apply the user-set text-size scales (Transcript / Composer / Express Panel) as
@@ -2594,6 +2598,46 @@ function initSettingsTabs() {
 
 // Select a Settings tab: show its panel, update the roving tabindex + aria state,
 // optionally move focus to it (arrow-key navigation), and run its side effects.
+// Settings tabs flow in 2–3 columns so the denser ones fit without scrolling. CSS
+// multi-column will NOT shrink an item that is too wide for a column: it paints it
+// across the gap, ON TOP of the next column's controls, and nothing about the
+// container reports it — the panel does not scroll and no width looks wrong. So the
+// only way to catch it is to compare the widest unbreakable block against the column
+// width, and drop the tab to a single column when it does not fit (Ken, August 3
+// 2026: "if controls on a Settings tab begin to overlap, you should switch to a
+// single column display").
+//
+// MEASURED, not hard-coded per tab, because whether a given tab overlaps depends on
+// values the user changes at runtime — button size, gap, screen edge margin, dock
+// side, and the viewport. The Controls tab is the one that overlaps at the default
+// bottom-dock 3-column layout today, but which tabs qualify is not a constant.
+function applyColumnFallback(panel) {
+    if (!panel) return;
+    panel.classList.remove('single-column');   // always measure in the multi-column state
+    const cs = getComputedStyle(panel);
+    const count = parseInt(cs.columnCount, 10);
+    if (!Number.isFinite(count) || count < 2) return;   // already single-column
+    const inner = panel.clientWidth
+        - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0);
+    if (inner <= 0) return;                    // not laid out (panel hidden) — nothing to judge
+    const columnWidth = (inner - (parseFloat(cs.columnGap) || 0) * (count - 1)) / count;
+    // The blocks that must not be split or overlapped: a setting group, an editor
+    // row (Controls reuses the Express rows), a Practice card. scrollWidth reports
+    // what each one actually needs, including flex children that refused to shrink.
+    let widest = 0;
+    panel.querySelectorAll('.setting-group, .ee-row, .practice-card')
+        .forEach((el) => { widest = Math.max(widest, el.scrollWidth); });
+    if (widest > columnWidth + 1) panel.classList.add('single-column');
+}
+
+// Re-judge the visible tab. Cheap, and safe to call often; no-ops while Settings is
+// closed, where the panels have no layout to measure.
+function refreshActiveTabColumns() {
+    const dlg = document.getElementById('settingsDialog');
+    if (!dlg || !dlg.open) return;
+    applyColumnFallback(document.querySelector('#settingsContent .tab-panel.active'));
+}
+
 function activateSettingsTab(tab, focus) {
     document.querySelectorAll('#settingsTabs .settings-tab').forEach(t => {
         const on = t === tab;
@@ -2605,6 +2649,9 @@ function activateSettingsTab(tab, focus) {
     document.querySelector(`.tab-panel[data-tab="${tab.dataset.tab}"]`).classList.add('active');
     if (focus) tab.focus();
     handleSettingsTab(tab.dataset.tab);
+    // After handleSettingsTab, never before: the Controls / Express / Practice tabs
+    // build their contents there, and there is nothing to measure until they have.
+    refreshActiveTabColumns();
 }
 
 // On the Buttons & Keyboard tab the user changes keyboard layout/position but
@@ -3161,6 +3208,9 @@ function openSettings() {
     // with tab switches. The keyboard then appears only when a field or a
     // layout setting is tapped.
     document.getElementById('settingsHeader')?.focus();
+    // The panel now has layout, so the default (General) tab can be judged. Every
+    // later tab switch is judged by activateSettingsTab.
+    refreshActiveTabColumns();
 
     document.getElementById('pickFolderBtn').onclick = async () => {
         try {

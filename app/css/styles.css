@@ -1745,6 +1745,21 @@ body.conv-bottom .tab-panel[data-tab="express"].active {
 body.conv-bottom .tab-panel[data-tab="practice"].active {
     column-count: auto;
 }
+/* Overlap fallback: any tab whose widest control does not FIT a column drops to a
+   single column (Ken, August 3 2026: "if controls on a Settings tab begin to
+   overlap, you should switch to a single column display").
+   The failure this prevents is specific to CSS multi-column and is why it needs a
+   rule of its own: a too-wide item is NOT shrunk and does NOT make the panel
+   scroll — it is simply painted across the gap, ON TOP of the next column's
+   controls. So it reads as a rendering bug rather than a layout that ran out of
+   room, and nothing about the container reports it. The measurement lives in
+   app.js applyColumnFallback(); this class is what it toggles.
+   Listed for both dock rules so it outranks the 3-column bottom-dock variant. */
+.tab-panel.active.single-column,
+body.conv-bottom .tab-panel.active.single-column {
+    column-count: auto;
+}
+
 .setting-group {
     break-inside: avoid;
 }
