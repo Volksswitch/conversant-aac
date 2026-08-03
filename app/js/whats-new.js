@@ -21,6 +21,9 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.6.6": [
+    "Fixed: when using Deepgram for transcription, the Listen button went dark as soon as you started speaking, even though the app was still listening. Tapping it again then looked like it did nothing, but it quietly started a new recording and threw away what the other person had said so far — so a long turn came out with only the last few words kept. The button now stays lit for as long as it is listening, and tapping it stops listening as it should."
+  ],
   "0.6.5": [
     "Suggested responses will no longer contain swearing or crude language. This is not something the app should decide for you, so a later release will let you allow it for particular people you talk to; until then it is simply off.",
     "Suggested responses are no longer written with texting shorthand. The AI was not being told that everything it writes gets spoken out loud, so it could offer something like \"I fw it\" — which looks like a normal reply on the card but is not something a speaking voice can say. Responses are now written the way they are said. How casual or slangy you sound is still up to you and comes from About Me.",

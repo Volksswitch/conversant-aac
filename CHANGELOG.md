@@ -26,7 +26,12 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
-_Nothing yet._
+- Fixed: when using Deepgram for transcription, the Listen button went dark as soon
+  as you started speaking, even though the app was still listening. Tapping it again
+  then looked like it did nothing, but it quietly started a new recording and threw
+  away what the other person had said so far — so a long turn came out with only the
+  last few words kept. The button now stays lit for as long as it is listening, and
+  tapping it stops listening as it should.
 
 ## Version 0.6.5
 

@@ -734,8 +734,34 @@ function handleSttBilled(seconds) {
     if (delta > 0) storage.addSttSeconds(delta);
 }
 
+// WHY THIS IS A WHITELIST AND NOT `status === 'listening'` (Ken, iPad, August 3 2026).
+// It used to be that one-liner, which made every status the app did not recognise mean
+// NOT LISTENING — silently, since none of the branches below match either, so nothing
+// was shown and nothing was logged. The paid backend emits 'capturing' when the voice
+// gate opens, i.e. the moment the user STARTS SPEAKING, so the indicator went dark
+// exactly when it was most true. Capture carried on underneath, which is why speech
+// still reached the transcript while the button said it was off.
+//
+// The knock-on was the damaging part: with isListening false, the next tap of the
+// Listen button took the START branch instead of the stop branch, and
+// startFreshListening() cleared the accumulated transcript. Repeated taps therefore
+// discarded the partner's earlier speech a piece at a time — Ken counted to twelve and
+// the recorded turn held only "seven, eight, nine, 10, 11, 12".
+//
+// So: only an explicit stop or error turns the indicator off. An unknown status leaves
+// the state ALONE and is logged, because a silent state change is what made this cost
+// an evening — the failure looked like a dead button rather than a status mapping.
 function handleSttStatus(status, detail) {
-    isListening = status === 'listening';
+    if (status === 'stopped' || status === 'error') isListening = false;
+    else if (status === 'listening') isListening = true;
+    // 'capturing' — the voice gate opened, i.e. someone is speaking right now. It
+    // reports activity WITHIN a listening session, so it must leave the state alone:
+    // clearing it was the bug, and setting it would be wrong in the other direction,
+    // since the gate can open on the first syllable before the socket has finished
+    // connecting and the button would then claim to be listening early — the very
+    // thing moving 'listening' to ws.onopen was meant to stop. Measured: it does.
+    else if (status === 'capturing') { /* activity, not a state change */ }
+    else storage.logError('stt-status', `unknown status "${status}"`);
     ui.setListenButtonState(isListening);
 
     if (status === 'error') {

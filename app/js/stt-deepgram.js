@@ -213,7 +213,15 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
 
     return {
         async start() {
-            if (running) return true;
+            if (running) {
+                // Already capturing. RE-REPORT rather than returning silently: if the
+                // app's view of the state has drifted out of step with ours, a silent
+                // return leaves it drifted forever, because this is the only path that
+                // could put it right. Ken hit exactly that — the button stayed dark
+                // through every further tap while capture ran underneath.
+                if (onStatus) onStatus('listening');
+                return true;
+            }
             const key = (getKey() || '').trim();
             if (!key) {
                 if (onStatus) onStatus('error', 'no-key');
