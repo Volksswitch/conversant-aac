@@ -178,7 +178,9 @@ function initSpokenHelp() {
             // statement is: that line is for speech the user cannot otherwise
             // account for, and help is something they just asked for.
             speakingHelp = true;
-            try { await tts.speak(text, { voiceURI: pickHelpVoice() }); }
+            // The SAME selection Practice Mode uses, and BOTH backends, so the rule
+            // holds whichever voice the user is on — see the note above pickPartnerVoice.
+            try { await tts.speak(text, { voiceURI: pickPartnerVoice(), auraModel: pickAuraPartnerVoice() }); }
             finally { speakingHelp = false; }
         },
         cancel: () => tts.cancel(),
@@ -193,17 +195,32 @@ function initSpokenHelp() {
     });
 }
 
-// Which voice reads the help. INTELLIGIBILITY FIRST, not distinctness (Ken, Aug 2
-// 2026): "there's only one non-silly voice available on an iPad. If they choose the
-// one non-silly voice as their own, then a tool tip would be read in what might be an
-// unintelligible voice." So this reuses pickPartnerVoice's selection — which already
-// excludes novelty voices and prefers a different voice in the SAME language — and
-// falls back to the user's own voice when it can find no usable alternative, rather
-// than reading help aloud as Zarvox. On a paid voice, tts.speak keeps using Aura,
-// which is intelligible whatever it picks.
-function pickHelpVoice() {
-    return pickPartnerVoice(null) || undefined;
-}
+// WHICH VOICE READS THE HELP — the practice partner's, on every platform and both
+// backends (Ken, Aug 2 2026: "This sounds like the right thing to do regardless of
+// platform").
+//
+// The reason it generalizes is that help and the practice partner have the SAME two
+// requirements, and they pull against each other: the voice must be audibly NOT the
+// user's — otherwise the app explaining itself sounds like the user saying it — and
+// it must be intelligible. `pickPartnerVoice` already resolves exactly that tension:
+// it excludes novelty voices, prefers a different voice in the SAME language, and
+// falls back to the user's own when no usable alternative exists. One selection,
+// both features, no third voice for the user to discover and no way to configure.
+//
+// The iPad is what made the tension visible rather than what caused it. Ken: "there's
+// only one non-silly voice available on an iPad. If they choose the one non-silly
+// voice as their own, then a tool tip would be read in what might be an unintelligible
+// voice." That is the sharpest case, not a special one — picking "any voice that is
+// not theirs" is wrong on Windows too, just less catastrophically.
+//
+// BOTH backends, which the first cut got wrong: it passed only `voiceURI`, so on a
+// paid Deepgram voice the override was ignored and help spoke in the user's OWN Aura
+// voice — intelligible, but indistinguishable from them, which is half the point lost.
+// Passing `auraModel` as well mirrors what advancePracticePartner does.
+//
+// CONSEQUENCE, so it is not a surprise: help and the practice partner sound alike, and
+// Settings → Speech → "Practice partner voice" changes both. That is the lever the
+// user has over the help voice; without the coupling there would be none at all.
 
 function applyPrivacyState() {
     storage.setConversationSaving(!conversationPrivate);
