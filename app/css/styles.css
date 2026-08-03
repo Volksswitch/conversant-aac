@@ -1183,6 +1183,60 @@ button:not(.kbd-key):not(.kbd-tool):not(.kbd-pred-btn):not(.ep-btn) {
     width: var(--btn-min-dim);
 }
 
+/* The Express Panel editor's row controls are the SAME geometric exception, found
+   the same way the steppers were — by measuring an overflow (Ken, August 3 2026:
+   "the Express Panel tab has a horizontal scroll bar"). Each editor row carries
+   eleven controls: an insert ＋, six colour swatches, and Save / ↑ / ↓ / ✕. At the
+   full Express-derived width that is 99.6px EACH — the six swatches alone wanted
+   597px of a 1118px row, and the last two tools were pushed clean off the end.
+   They take the square --btn-min-dim treatment instead, exactly like the steppers.
+
+   Worth recording because it is counter-intuitive: the visibly-wide phrase field
+   was NOT the cause and shrinking it would not have fixed this. It is `flex: 1 1
+   112px; min-width: 0`, so it already absorbs whatever is left over — at 0px wide
+   the row still overflowed. The rule of thumb: in a flex row, suspect the items
+   that CANNOT shrink, not the one that visibly grew.
+
+   Each selector is qualified with .ee-row for SPECIFICITY, not for scoping: the
+   general rule above is `#settingsContent button:not(.slider-step)`, which scores a
+   class AND a type (1,1,1), so a plain `#settingsContent .ee-swatch` (1,1,0) loses
+   to it and silently does nothing. The .slider-step exception avoids this by being
+   excluded in the :not() instead — not an option here, because the ↑ and ↓ buttons
+   carry no class of their own to exclude by. */
+#settingsContent .ee-row .ee-swatch,
+#settingsContent .ee-row .ee-ins,
+#settingsContent .ee-row .ee-tools button:not(.ee-save) {
+    min-width: var(--btn-min-dim);
+    width: var(--btn-min-dim);
+    min-height: var(--btn-min-dim);
+    height: var(--btn-min-dim);
+}
+
+/* Save is in the same cluster and needs the same floor, but keeps width:auto so its
+   text label is never clipped. It must NOT keep the Express-derived width, and the
+   reason is a subtlety worth knowing: that width is `min(--ui-btn-min-w, 45%)`, and
+   a PERCENTAGE cannot resolve while the browser is computing an intrinsic
+   (max-content) size, so it collapses to ~0 there and the button measures 56px —
+   then resolves to 99.5px at layout time. The parent .ee-tools is `flex: 0 0 auto`,
+   so it had already sized itself to the 56px measurement and Save overflowed it by
+   exactly the difference. Any fixed-size flex container holding a percentage-capped
+   child has this hazard. */
+#settingsContent .ee-row .ee-tools .ee-save {
+    min-width: var(--btn-min-dim);
+    min-height: var(--btn-min-dim);
+    height: var(--btn-min-dim);
+    width: auto;
+}
+
+/* Keep the phrase field from sprawling once the space above is freed (Ken: "the
+   phrase column is too wide and can be shortened significantly"). The entries are
+   short — "No thank you", "See you later" — so a cap costs nothing and leaves the
+   row slack instead of stretching one field across the panel. The partner/place
+   pickers are exempt: they carry full names and already declare their own width. */
+#settingsContent .ee-fields input {
+    max-width: 20rem;
+}
+
 /* Let action rows wrap rather than overflow: with a wide side dock the Settings
    panel gets genuinely narrow, and a clipped button is an unreachable one. */
 #errorLogActions { flex-wrap: wrap; }
