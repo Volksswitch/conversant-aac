@@ -26,6 +26,10 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Suggested responses will no longer contain swearing or crude language. This is not
+  something the app should decide for you, so a later release will let you allow it
+  for particular people you talk to; until then it is simply off.
+
 - Suggested responses are no longer written with texting shorthand. The AI was not
   being told that everything it writes gets spoken out loud, so it could offer
   something like "I fw it" — which looks like a normal reply on the card but is not

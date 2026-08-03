@@ -1,6 +1,34 @@
 const API_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL = 'claude-sonnet-4-6';
 
+/*
+ * NO VULGARITY — absolute for now (Ken, August 3 2026).
+ *
+ * Prompted by a live card reading "Honestly? I think it's pretty solid. I fw it."
+ * offered to a 17-year-old, with no partner selected. The speakability rule kills
+ * that particular wording, but "I fucking love it" is perfectly sayable and would
+ * still have been offered, so the register question is separate and had to be
+ * answered on its own.
+ *
+ * THE DECISION, and it is deliberately NOT a filter derived from anything: vulgarity
+ * is to be EXPLICITLY CHOSEN, and scoped to WHO THE PARTNER IS — a property of an
+ * identified person in the relationship graph, not a global switch. That is a future
+ * feature, because for a minor it also needs guardian approval and how that works is
+ * genuinely unknown. Until it exists, the answer is no.
+ *
+ * WHY IT MUST REFUSE TO INFER: the failing turn had `partner: null` and an age in the
+ * profile, and the model read those as licence rather than as constraint. Age in
+ * particular is worse than useless here — with no instruction attached, "17" is a cue
+ * for how to SOUND. So the rule names every signal that must NOT be read as
+ * permission, silence included.
+ *
+ * The asymmetry that settles it: a card can be tapped by mistake — this population
+ * taps imprecisely, which is why the double-tap safeguard exists — and an obscenity
+ * spoken in the user's OWN voice to a support worker or a stranger cannot be taken
+ * back. A blander card can.
+ */
+const NO_VULGARITY = `No vulgarity. Never offer profanity, obscenity, slurs, or crude sexual language — not in any response text, hint, or account, and not in softened, abbreviated or initialised form ("wtf", "fw", "eff", "frickin"). Where the natural phrasing would be coarse, say it plainly instead. This is absolute: do NOT treat any of the following as permission — the user's age, anything in their profile, how casual or crude the partner sounds, the informality of the setting, or the absence of an instruction to the contrary.`;
+
 let apiKey = null;
 let onUsageUpdate = null;
 let worldviewBlock = '';
@@ -259,6 +287,8 @@ User is leading: if the engine context has "user_holds_floor_to_lead": true, the
 
 EVERYTHING YOU WRITE WILL BE SPOKEN ALOUD by a speech synthesizer — it is never read on a screen by the partner. Write words exactly as they are SAID. No forms that exist only in writing: no texting abbreviations or initialisms ("fw", "idk", "tbh", "ngl", "imo", "rn", "afaik"), no "w/", "&", "@", "+", "%", no emoji, no stage directions ("*laughs*"), no formatting or quotation marks around the whole line. Spell the words out instead: "I'm into it", never "I fw it". The test is simple — if a speech synthesizer reading it letter for letter would not produce the words you intended, do not write it. This is NOT a register rule: how casual, slangy or formal the user sounds comes from their profile below, and spoken slang ("that's sick", "no worries") is perfectly fine. The rule is only that it must be SAYABLE.
 
+${NO_VULGARITY}
+
 Get to the point: NO response may begin with an empty interjection — no "Ah", "Oh", "Um", "Er", "Well", "So", "Hmm", "You know" at the start. Open with the substance. (A meaningful softener on DISPREFERRED, like "I'd love to, but…", is fine; a bare interjection is not.)
 
 - "missing_facts": lowercase snake_case keys for personal facts about the user you needed but were not given (e.g. "home_city", "fav_team", "occupation"). Use [] if none. Always phrase responses around any missing fact — never output bracketed placeholders.
@@ -314,7 +344,9 @@ Produce ONLY your next spoken line, as the partner — the exact words you would
 - Speak directly to the user in the first person. Use their name only if it is natural.
 - Output ONLY the words you speak — no quotation marks, no stage directions, no narration, no role labels.
 - React naturally to what the user just said and keep the conversation moving. If the conversation is just beginning, greet them and open the scenario.
-- Stay in character and appropriate to the register at all times.`;
+- Stay in character and appropriate to the register at all times.
+
+${NO_VULGARITY}`;
 
     const messages = conversationHistory.map(entry => ({
         role: entry.role === 'partner' ? 'assistant' : 'user',
@@ -374,6 +406,8 @@ Generate ${n} distinct STATEMENTS (or questions) the user could say NEXT to move
 Speak only to what is real: never invent specific events, outcomes, dates, numbers, or names you were not given. You MAY use standing facts from the user's profile below and the direction they typed (being user-authored, it is TRUE). When a natural statement would need a specific you don't have, keep it general rather than fabricating.
 
 Do not begin any statement with an empty interjection ("Ah", "Oh", "Well", "So", "Hmm"). Open with the substance.
+
+${NO_VULGARITY}
 
 Return ONLY a JSON array of ${n} strings, nothing else. Example: ["...", "...", "..."].
 
@@ -438,6 +472,8 @@ export async function repairSelf(lastUserUtterance, op, conversationHistory = []
 
     const systemPrompt = `You are an AAC assistant speaking AS a non-speaking user. The partner did not understand the user's last spoken turn. ${instruction}
 
+${NO_VULGARITY}
+
 Return ONLY the new utterance text, nothing else.${buildProfileBlock()}${contextLines ? '\n\nConversation so far:\n' + contextLines : ''}`;
 
     const response = await fetch(API_URL, {
@@ -481,6 +517,8 @@ export async function repairOptions(lastUserUtterance, conversationHistory = [])
     const systemPrompt = `You are an AAC assistant speaking AS a non-speaking user. The partner did not understand the user's last spoken turn, so the user may want to say it again a different way. Produce TWO alternatives to the user's last utterance, both in the user's own voice:
 - "rephrase": the same meaning, worded differently and possibly clearer. Same length or shorter.
 - "expand": the same point with a little more detail added, so it is clearer.
+
+${NO_VULGARITY}
 
 Return ONLY a JSON object, no other text: {"rephrase": "...", "expand": "..."}${buildProfileBlock()}${contextLines ? '\n\nConversation so far:\n' + contextLines : ''}`;
 

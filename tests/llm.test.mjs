@@ -135,6 +135,19 @@ test('the prompt says the responses will be SPOKEN, and bans written-only forms'
     assert.match(sys, /NOT a register rule/);
 });
 
+// Absolute for now (Ken, August 3 2026): vulgarity is to be explicitly chosen and
+// scoped to an identified partner, which is a future feature. The load-bearing half
+// is the refusal to INFER — the offending card was generated with partner: null and
+// an age in the profile, both of which the model read as licence.
+test('the prompt forbids vulgarity and refuses to infer permission from age or context', async () => {
+    mockFetch(structured);
+    await llm.generateResponses([{ role: 'partner', text: 'Tell me what you think.' }], {});
+    const sys = getFetchCalls()[0].body.system;
+    assert.match(sys, /No vulgarity/);
+    assert.match(sys, /the user's age/);          // named as NOT permission
+    assert.match(sys, /absence of an instruction/);
+});
+
 test('DATA PATH: a mocked COMPLETE result flows through the engine to a 4-card palette', async () => {
     mockFetch(structured);
     engine.reset();
