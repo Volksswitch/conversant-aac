@@ -988,6 +988,17 @@ export function saveNoSaveDefault(v) {
     saveSettings(settings);
 }
 
+// Use the whole screen (Ken, August 3 2026). Default ON — the extra height is worth
+// having on every platform, and this is Setup-tier: it moves every keyguard hole, so
+// a user who has already cut plastic turns it off rather than discovering it later.
+// `?? true` and not `!!`, so an absent key means ON rather than OFF.
+export function loadFullscreen() { return loadSettings().fullscreen ?? true; }
+export function saveFullscreen(v) {
+    const settings = loadSettings();
+    settings.fullscreen = !!v;
+    saveSettings(settings);
+}
+
 // --- "What's new" notice: the highest APP_VERSION whose post-update summary the
 // user has already seen. null until first recorded (a brand-new install, or an
 // app old enough to predate this feature) — that first run just sets a baseline

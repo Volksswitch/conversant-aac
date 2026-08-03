@@ -31,7 +31,6 @@
     "Settings panel has no entry here, or if an entry here matches no control — so a",
     "new setting cannot ship without its spoken help."
   ],
-
   "tabs": {
     "general": "Your AI key, where your information is kept, saved copies of your settings, and backing up or moving everything.",
     "aboutme": "The getting-to-know-you questions. Anything you answer here helps the AI suggest responses that sound like you.",
@@ -45,7 +44,6 @@
     "keyguard": "Spacing settings for fitting a physical keyguard, and a file listing where every button sits.",
     "about": "Which version you are running, anything that has gone wrong, what you have spent, and a way to restart the app."
   },
-
   "sections": {
     "apiKey": "Your key from Anthropic. It is what lets the app suggest responses. Everything else still works without one.",
     "dataFolder": "The folder where your answers, your people, and your saved conversations are kept.",
@@ -58,7 +56,6 @@
     "errorLog": "A record of anything that has gone wrong. It is what to send if you report a problem.",
     "apiCost": "A rough estimate of what you have spent with the AI since the date shown."
   },
-
   "radioGroups": {
     "sttProvider": "Who turns the other person's speech into words. Your browser does it free. Deepgram is paid, and works where the browser cannot.",
     "ttsProvider": "Which voice speaks for you. This device's own voices are free. A Deepgram voice is paid and usually sounds far better.",
@@ -66,7 +63,6 @@
     "keyboardDock": "Whether the Express Panel and keyboard sit along the bottom of the screen, or down one side.",
     "expressTapMode": "Whether one tap speaks an Express Panel button, or two are needed so you cannot set it off by accident."
   },
-
   "controls": {
     "apiKeyInput": "Paste your Anthropic key here. It stays on this device and is never put into a backup.",
     "pasteApiKeyBtn": "Pastes a key you have already copied, so you do not have to type it out.",
@@ -84,12 +80,10 @@
     "importDataFile": "Choose the backup file you want to load.",
     "backupFileSelect": "Choose one of the backups the app has already made for you.",
     "restoreBackupBtn": "Puts everything back from the backup you chose. This replaces what is on this device now.",
-
     "responseFontSelect": "How big the writing is on the suggested response cards.",
     "transcriptFontSelect": "How big the writing is in the conversation, where what was said is shown.",
     "composerFontSelect": "How big the writing is when you type something in your own words.",
     "expressFontSelect": "How big the writing is on the Express Panel buttons.",
-
     "deepgramKeyInput": "Paste your Deepgram key here. It stays on this device and is never put into a backup.",
     "pasteDeepgramKeyBtn": "Pastes a Deepgram key you have already copied.",
     "testDeepgramKeyBtn": "Checks your Deepgram key and tells you whether it was accepted.",
@@ -102,7 +96,6 @@
     "testPartnerVoiceBtn": "Says a few words in the practice partner's voice.",
     "auraPartnerVoiceSelect": "Choose the Deepgram voice for the person you practise with.",
     "testAuraPartnerVoiceBtn": "Says a few words in the practice partner's Deepgram voice.",
-
     "buttonSizeSlider": "How big the buttons are. Bigger ones are easier to hit, but fewer of them fit on the screen.",
     "buttonGapSlider": "The space between the buttons. On a keyguard this is the width of the bars between the holes.",
     "minGapSlider": "The smallest space allowed between buttons, however big you make them.",
@@ -110,7 +103,6 @@
     "sideDockPositionToggle": "Which side the Express Panel and keyboard sit on, the left or the right.",
     "bottomLayoutSelect": "How the Express Panel and keyboard are laid out when they sit along the bottom.",
     "sideLayoutSelect": "How the Express Panel and keyboard are laid out when they sit down one side.",
-
     "noSaveDefaultInput": "Begin every conversation without saving it. You can still change your mind for one conversation at a time.",
     "responsesPerCategoryInput": "Whether you are offered four suggested responses, or eight.",
     "choiceChipMaxInput": "How many of the other person's choices can appear as buttons on your Express Panel.",
@@ -121,17 +113,16 @@
     "subsequentDelayInput": "How long before it says another one, if you are still choosing.",
     "maxPlaceholdersInput": "How many of those holding phrases it may say in one turn. Set it to none if you would rather it stayed quiet.",
     "doubleTapMsSelect": "How quickly the two taps have to follow one another to count as a double tap.",
-
     "appMarginSlider": "Moves the whole app in from the edges of the screen, so a keyguard fits inside a tight case opening.",
     "dockSepSlider": "The gap between the keyboard area and the rest of the screen. It does not move the keyboard itself.",
     "transcriptSepSlider": "The gap between the conversation and the row of command buttons underneath it.",
     "titleBarHeightInput": "The height of the window bar above the app, so the keyguard file lines up with a screenshot.",
     "generateOpeningsBtn": "Writes a file saying exactly where every button sits, for cutting a keyguard.",
-
     "reloadAppBtn": "Fetches the newest version and starts the app again. Nothing you have saved is lost.",
     "errorLogView": "A record of anything that has gone wrong, the most recent first.",
     "copyErrorLogBtn": "Copies the errors, along with the conversations they happened in, ready to paste into a message.",
     "clearErrorLogBtn": "Empties this list. The copy kept in your data folder is left alone.",
-    "resetUsageBtn": "Sets the cost estimate back to zero and starts counting again from today."
+    "resetUsageBtn": "Sets the cost estimate back to zero and starts counting again from today.",
+    "fullscreenInput": "Let the app fill the whole screen, hiding the browser and taskbar. Turn this off if you use a keyguard cut for the smaller layout."
   }
 }

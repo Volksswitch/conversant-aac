@@ -37,6 +37,11 @@ forgetting to tag one is only ever noise, never silence.
   conversation ends** — ending a conversation doesn't move you, so several
   conversations in the same place cost one tap, not one each. Tap it again to turn
   it off, or tap a different place to switch.
+- **The app now uses the whole screen.** A new "Use the whole screen" setting on
+  Settings → General, on to begin with, hides the browser and the taskbar so the
+  conversation gets the extra height — about a tenth more room top to bottom. Turn it
+  off if you have a keyguard cut for the smaller layout, because filling the screen
+  moves every button.
 - A place can be marked **private**, which works exactly as it does for a person: the
   assistant knows about it, but won't raise it on its own. It will offer it if the
   other person asks, or if you ask for it yourself by typing what you want to say in

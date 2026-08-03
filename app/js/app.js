@@ -815,6 +815,10 @@ async function handleStart() {
     // gesture, and placeholders fire on TIMERS — so without this the app would go
     // silent exactly when it is trying to hold the floor.
     tts.unlockAudio();
+    // Same reason again, and it must stay ABOVE the first await below: a fullscreen
+    // request is only granted while user activation lasts, and the first await in an
+    // async handler ends it.
+    requestAppFullscreen();
     // Check for a newer deployed version when the session starts. If one is
     // found the worker activates and the controllerchange handler in index.html
     // reloads the page; when nothing is new this is a cheap no-op.
@@ -2598,6 +2602,44 @@ function initSettingsTabs() {
 
 // Select a Settings tab: show its panel, update the roving tabindex + aria state,
 // optionally move focus to it (arrow-key navigation), and run its side effects.
+// "Use the whole screen" (Ken, August 3 2026). ONE mechanism for every platform,
+// capability-gated rather than forked, per the standing platform rule: the standard
+// Fullscreen API with WebKit's prefixed spelling behind it. Where neither exists the
+// call is a no-op and the app looks exactly as it did before.
+//
+// WHY THE API RATHER THAN THE MANIFEST. `display: "fullscreen"` is only consulted
+// when the app is INSTALLED, is reported to fall back to standalone on desktop
+// Chromium, and does nothing at all for someone running in a browser tab — which is
+// how the iPad's Conversation mode works, and how anyone tries the app before
+// deciding to install it. The API covers every one of those cases. The manifest hint
+// is declared as well (display_override), since it costs nothing where ignored.
+//
+// The gain is vertical, which is the scarce axis (Rule 2), and it MOVES EVERY
+// KEYGUARD HOLE — measured: the dock keeps its cell sizes but translates down by the
+// full height gained, and the command bar's cells change height. That is why it is
+// a setting rather than unconditional behavior.
+function requestAppFullscreen() {
+    if (!storage.loadFullscreen()) return;
+    const el = document.documentElement;
+    const request = el.requestFullscreen || el.webkitRequestFullscreen;
+    if (!request || document.fullscreenElement || document.webkitFullscreenElement) return;
+    try {
+        // navigationUI is honoured where supported and ignored elsewhere; the
+        // prefixed WebKit form takes no options, which is harmless.
+        const r = request.call(el, { navigationUI: 'hide' });
+        if (r && typeof r.catch === 'function') r.catch(() => { /* refused — stay windowed */ });
+    } catch { /* unsupported or blocked by policy — stay windowed, never break Start */ }
+}
+
+function exitAppFullscreen() {
+    const exit = document.exitFullscreen || document.webkitExitFullscreen;
+    if (!exit || !(document.fullscreenElement || document.webkitFullscreenElement)) return;
+    try {
+        const r = exit.call(document);
+        if (r && typeof r.catch === 'function') r.catch(() => {});
+    } catch { /* already out, or refused */ }
+}
+
 // Settings tabs flow in 2–3 columns so the denser ones fit without scrolling. CSS
 // multi-column will NOT shrink an item that is too wide for a column: it paints it
 // across the gap, ON TOP of the next column's controls, and nothing about the
@@ -3190,6 +3232,17 @@ function openSettings() {
     const noSaveDefaultInput = document.getElementById('noSaveDefaultInput');
     noSaveDefaultInput.checked = storage.loadNoSaveDefault();
     noSaveDefaultInput.onchange = () => storage.saveNoSaveDefault(noSaveDefaultInput.checked);
+    // Use the whole screen. Applying it here, in the change handler, is what makes
+    // the toggle the way BACK IN too: tapping it is a user gesture, so a user who
+    // has left fullscreen (Esc, or the browser dropping it) can restore it without
+    // relaunching — Start having already been consumed.
+    const fullscreenInput = document.getElementById('fullscreenInput');
+    fullscreenInput.checked = storage.loadFullscreen();
+    fullscreenInput.onchange = () => {
+        storage.saveFullscreen(fullscreenInput.checked);
+        if (fullscreenInput.checked) requestAppFullscreen();
+        else exitAppFullscreen();
+    };
     updateFolderDisplay();
 
     // Reset to General tab (keep the roving tabindex + aria-selected in sync).
