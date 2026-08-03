@@ -26,6 +26,15 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+_Nothing yet._
+
+## Version 0.6.4
+
+- **Making a keyguard: the Title Bar Height box now looks after itself.** If the app is
+  using the whole screen there is no bar above it, so the box greys out and says so, and
+  the openings file is generated with no offset. Before, a height left in the box from
+  an earlier setup would have shifted every opening down the screen — something you
+  would only discover after the plastic was cut.
 - **"Use the whole screen" now starts switched off.** It was on when it first shipped.
   Off is a better place to start: the title bar is the easiest way to close the app and
   costs very little height, and if you want the extra room you can simply maximise the

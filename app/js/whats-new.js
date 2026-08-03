@@ -21,6 +21,10 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.6.4": [
+    "Making a keyguard: the Title Bar Height box now looks after itself. If the app is using the whole screen there is no bar above it, so the box greys out and says so, and the openings file is generated with no offset. Before, a height left in the box from an earlier setup would have shifted every opening down the screen — something you would only discover after the plastic was cut.",
+    "\"Use the whole screen\" now starts switched off. It was on when it first shipped. Off is a better place to start: the title bar is the easiest way to close the app and costs very little height, and if you want the extra room you can simply maximise the window and keep the title bar. Use the setting when you want to expand the app right out, and turn it off again to come back. If you already chose one way or the other, your choice is kept."
+  ],
   "0.6.3": [
     "My Places — tell the assistant where you are. A new section in About Me where you add the places you go and anything worth knowing about each one: what you usually order, who you go with, the address if it's one particular branch. You choose what to record — every place is different, so nothing is a fixed question.",
     "Place buttons in the Express Panel. Add a place the same way you add a person, then tap it during a conversation to say \"I'm here right now\". The assistant then suggests responses that fit where you are, and knows what you told it about the place. Unlike the partner and feeling buttons, a place stays on when a conversation ends — ending a conversation doesn't move you, so several conversations in the same place cost one tap, not one each. Tap it again to turn it off, or tap a different place to switch.",
