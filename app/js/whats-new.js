@@ -22,6 +22,7 @@ import * as storage from './storage.js';
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
   "0.6.5": [
+    "Suggested responses will no longer contain swearing or crude language. This is not something the app should decide for you, so a later release will let you allow it for particular people you talk to; until then it is simply off.",
     "Suggested responses are no longer written with texting shorthand. The AI was not being told that everything it writes gets spoken out loud, so it could offer something like \"I fw it\" — which looks like a normal reply on the card but is not something a speaking voice can say. Responses are now written the way they are said. How casual or slangy you sound is still up to you and comes from About Me.",
     "The Test button beside the Deepgram key now makes the same connection the app makes when it listens, instead of a simpler one. It could previously report that your key was working while listening itself failed, which sent you looking in the wrong place. It also now reports the microphone rate it used and, when a connection is refused, the reason the service gave.",
     "If you use Deepgram for transcription, the Listen button no longer lights up red for a moment and then goes dark when the connection cannot be made. It now lights up only once listening is really running, and when a connection is refused the reason is written to the error log (Settings → About) instead of being lost.",

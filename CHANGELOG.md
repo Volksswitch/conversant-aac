@@ -26,6 +26,10 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+_Nothing yet._
+
+## Version 0.6.5
+
 - Suggested responses will no longer contain swearing or crude language. This is not
   something the app should decide for you, so a later release will let you allow it
   for particular people you talk to; until then it is simply off.
