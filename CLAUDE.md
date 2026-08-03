@@ -1406,6 +1406,18 @@ Durations feed all three: conversation length, time-to-first-response after a pa
 
 ## Open Questions (remaining)
 
+> **SESSION HANDOFF — August 3 2026, after release 0.6.5. START HERE — this supersedes the August 1 block below as the handoff.**
+>
+> **Released:** `0.6.5` (`0a18dc2`, deployed and verified live). **Local `main` is ahead by several unpushed commits and is pre-bumped to `0.6.6`** — see `git log origin/main..main`.
+>
+> **In 0.6.6-dev, unreleased:** the iPad fullscreen gate (Rule 19's WebKit amendment); the **Listen-button `capturing` fix** (`stt-deepgram` emits `'capturing'` when the voice gate opens, and `handleSttStatus` treated every unrecognised status as *not listening* — silently); Deepgram diagnosability (status on `ws.onopen`, close code carried, and the **Test button now opens the socket the app actually opens**); and the **diagnostic trace** (`app/js/trace.js`, Settings → About, off by default).
+>
+> **WAITING ON: Ken is running [LISTEN-TEST.md](LISTEN-TEST.md)** — five scripted tests with exact wording. He will bring back `diagnostic-*.log` plus four `conversations/*.json`. Read the trace first; it records which branch each Listen tap took, what each stt status did to the listening state, and what `startFreshListening` discarded.
+>
+> **THE OPEN DECISION, and the reason for the test — Ken's call, not yet made.** Stopping and restarting Listen mid-turn **discards the partner's uncommitted speech** — from the pane, the STT buffer, and the recorded turn. This is **backend-independent** (`stt.startListening()` resets the buffer on both paths), so it is not the iPad or Deepgram issue it first looked like, and it is what truncated Ken's counting to `"seven, eight, nine, 10, 11, 12."`. Two options were put to him: **(a) finalize the pending partner turn on STOP**, so it is preserved in the pane and log and the restart has a genuinely clean slate — precedent in both `terminateConversation` and the pardon flow, and my recommendation; or **(b) treat stop/start as a PAUSE** so resumed speech appends to the same turn, which is closer to intent but changes what counts as one turn for the AI. Test 4 is the control for Test 3: if 4 keeps all six words and 3 keeps five, nothing else is implicated.
+>
+> **Also open, no longer urgent:** a transient `sw.js load failed` at startup on the iPad, seen once and not reproducible.
+
 > **SESSION HANDOFF — August 1 2026, after release 0.6.1. START HERE; the June 30 block below is superseded as a handoff, though its individual layout threads may still be live.**
 >
 > **RESOLVED Aug 2 2026:** HTTPS on the new origin is live and enforced as of 08:11 (see the SEC-1 entry). `isSecureContext`, the microphone and the service worker were all verified present in the running app. The manuals and the address are safe to hand out. **Still open, and unrelated to the app:** one of `volksswitch.org`’s two nameservers (`ns8145`) does not answer, so the domain has no nameserver redundancy — with HostGator.
