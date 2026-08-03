@@ -87,7 +87,9 @@ const HELP = {
     "copyErrorLogBtn": "Copies the errors, along with the conversations they happened in, ready to paste into a message.",
     "clearErrorLogBtn": "Empties this list. The copy kept in your data folder is left alone.",
     "resetUsageBtn": "Sets the cost estimate back to zero and starts counting again from today.",
-    "fullscreenInput": "Expands the app to fill the whole screen, hiding the title bar. Turn it off to get the title bar back, or maximise the window instead."
+    "fullscreenInput": "Expands the app to fill the whole screen, hiding the title bar. Turn it off to get the title bar back, or maximise the window instead.",
+    "traceEnabledInput": "Starts recording what the app does. Leave it off for everyday use.",
+    "saveTraceBtn": "Writes the recording to your data folder as a file you can send on."
   },
   "radioGroups": {
     "sttProvider": "Who turns the other person's speech into words. Your browser does it free. Deepgram is paid, and works where the browser cannot.",
@@ -105,6 +107,7 @@ const HELP = {
     "yourVoice": "The voice that speaks as you.",
     "practicePartnerVoice": "The voice used for the other person when you practise, so you can tell it apart from your own.",
     "appUpdates": "The app updates itself when a new version is ready. This is here for when you want it to check straight away.",
+    "diagnosticTrace": "Records what the app does during a conversation, to help track down a problem. Leave it off unless you have been asked to use it.",
     "errorLog": "A record of anything that has gone wrong. It is what to send if you report a problem.",
     "apiCost": "A rough estimate of what you have spent with the AI since the date shown."
   }

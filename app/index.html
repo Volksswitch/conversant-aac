@@ -627,6 +627,15 @@
                         <label>App updates</label>
                         <button id="reloadAppBtn" type="button">Reload the app</button>
                     </div>
+                    <div class="setting-group" data-help="diagnosticTrace">
+                        <label>Diagnostic trace</label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="traceEnabledInput">
+                            <span>Record what the app does</span>
+                        </label>
+                        <button id="saveTraceBtn" type="button">Save trace to my data folder</button>
+                        <div id="traceStatus" class="setting-status" role="status"></div>
+                    </div>
                     <div class="setting-group" data-help="errorLog">
                         <label>Error log <span id="errorLogCount" class="setting-hint"></span></label>
                         <textarea id="errorLogView" readonly rows="6" placeholder="No errors recorded." aria-label="Error log"></textarea>
