@@ -426,6 +426,11 @@ function initApp() {
     applyButtonSizing();   // compute the conversation layout (region sizes + gaps)
     // Region sizes depend on the viewport — recompute on resize/orientation.
     window.addEventListener('resize', applyButtonSizing);
+    // Entering or leaving fullscreen changes whether a title-bar offset exists at
+    // all, so the keyguard field has to follow it — including when the user leaves
+    // by Esc, which never touches the setting.
+    document.addEventListener('fullscreenchange', reflectTitleBarNeed);
+    document.addEventListener('webkitfullscreenchange', reflectTitleBarNeed);
     blockZoomGestures();
     ui.setCardsPerCategory(storage.loadResponsesPerCategory()); // 8-card mode → 8 reserved slots
     ui.clearResponseOptions(); // render the reserved empty card footprint at rest
@@ -2525,7 +2530,16 @@ async function generateScreenOpenings() {
             'Reset the zoom to 100% and try again.');
         return;
     }
-    const titleBar = Math.max(0, Math.round(Number(document.getElementById('titleBarHeightInput').value) || 0));
+    // In real fullscreen the page viewport IS the screen, so there is nothing above
+    // it and the offset is necessarily 0 (Ken asked, August 3 2026). Taken from the
+    // browser rather than the field, because the field is the trap: someone who typed
+    // 32 for a windowed setup and later turned on "Use the whole screen" would emit a
+    // file with every opening 32px low — plausible-looking, and only discovered after
+    // the plastic is cut. Read the ACTUAL state, never the setting: the request can be
+    // refused, and Esc leaves fullscreen without touching the setting.
+    const titleBar = isReallyFullscreen()
+        ? 0
+        : Math.max(0, Math.round(Number(document.getElementById('titleBarHeightInput').value) || 0));
     const dpr = window.devicePixelRatio || 1;
     const px = (n) => Math.round(n * dpr); // CSS px → device/screenshot px
 
@@ -2556,7 +2570,9 @@ async function generateScreenOpenings() {
     const expected = `Line these up over a screenshot ${shotW} × ${shotH} pixels — ` +
         `if yours is a different size, it was resized and the openings will not fit. ` +
         `(Measured ${layoutVW()} × ${layoutVH()} at ${dpr}×` +
-        `${titleBar ? `, plus ${titleBar}px for the bar above the app` : ', no bar above the app'}.)`;
+        `${titleBar ? `, plus ${titleBar}px for the bar above the app`
+            : (isReallyFullscreen() ? ', using the whole screen so there is no bar above the app'
+                                    : ', no bar above the app')}.)`;
 
     if (!canPickFolder) {
         dataTransfer.downloadText('Screen Openings.txt', text, 'text/plain');
@@ -2634,6 +2650,27 @@ function requestAppFullscreen() {
         const r = request.call(el, { navigationUI: 'hide' });
         if (r && typeof r.catch === 'function') r.catch(() => { /* refused — stay windowed */ });
     } catch { /* unsupported or blocked by policy — stay windowed, never break Start */ }
+}
+
+// Whether the page is ACTUALLY filling the screen right now — not whether the
+// setting asks for it. The two come apart in both directions: a request can be
+// refused (no user activation, or policy), and Esc leaves fullscreen without
+// changing the setting. Anything that measures the screen must use this one.
+function isReallyFullscreen() {
+    return !!(document.fullscreenElement || document.webkitFullscreenElement);
+}
+
+// The keyguard title-bar offset only means something when there is chrome above the
+// page. Report which of the two situations the user is in, and take the field out of
+// play in the one where any value but 0 would be wrong.
+function reflectTitleBarNeed() {
+    const input = document.getElementById('titleBarHeightInput');
+    const status = document.getElementById('titleBarStatus');
+    if (!input || !status) return;
+    const fs = isReallyFullscreen();
+    input.disabled = fs;
+    status.hidden = !fs;
+    if (fs) status.textContent = 'Not needed right now — the app is using the whole screen, so there is no bar above it. Openings are measured from the top of the screen.';
 }
 
 function exitAppFullscreen() {
@@ -3248,6 +3285,7 @@ function openSettings() {
         if (fullscreenInput.checked) requestAppFullscreen();
         else exitAppFullscreen();
     };
+    reflectTitleBarNeed();
     updateFolderDisplay();
 
     // Reset to General tab (keep the roving tabindex + aria-selected in sync).

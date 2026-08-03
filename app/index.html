@@ -608,6 +608,9 @@
                     <div class="setting-group">
                         <label for="titleBarHeightInput">Title Bar Height (px)</label>
                         <input type="number" id="titleBarHeightInput" min="0" step="1" value="0" inputmode="numeric">
+                        <!-- Live status, not per-control help (Rule 14 permits reporting
+                             what is currently true). Set by reflectTitleBarNeed(). -->
+                        <p class="setting-hint" id="titleBarStatus" role="status" aria-live="polite" hidden></p>
                     </div>
                     <div class="setting-group">
                         <button id="generateOpeningsBtn" type="button">Generate Screen Openings</button>
