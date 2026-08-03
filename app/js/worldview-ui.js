@@ -294,8 +294,9 @@ function renderPeople(editingId = null) {
     contentEl.append(el('h3', { class: 'wv-page-title', text: 'People in Your Life' }));
     contentEl.append(el('p', { class: 'wv-intro', text:
         'Add the people (and pets) who matter to you — name, how they relate to you, '
-        + 'and anything worth knowing. Mark someone private and the assistant will know about them '
-        + 'but won\'t bring them up unless you choose a response that does.' }));
+        + 'and anything worth knowing. Mark someone private and the assistant still knows about them, '
+        + 'but won\'t raise them on its own: it will only offer them if the person you\'re talking to asks, '
+        + 'or if you ask for it yourself in "In my own words" and tap Reframe.' }));
 
     const people = rel.listPeople();
     for (const p of people) {
@@ -496,7 +497,8 @@ function renderPlaces(editingId = null) {
         'Add the places you go, and anything worth knowing about each one. In a conversation '
         + 'you can tap a place in the Express Panel to say "I\'m here right now", and the assistant '
         + 'will suggest responses that fit where you are. Mark a place private and the assistant '
-        + 'will know about it but won\'t bring it up unless you choose a response that does.' }));
+        + 'still knows about it, but won\'t raise it on its own: it will only offer it if the person '
+        + 'you\'re talking to asks, or if you ask for it yourself in "In my own words" and tap Reframe.' }));
 
     // Shared datalist of suggested fact names for every row on the page.
     const dl = el('datalist', { id: 'wv-fact-suggestions' });
@@ -693,10 +695,13 @@ function buildCard(field) {
     else if (state === 'declined') head.append(el('span', { class: 'wv-badge wv-badge-declined', text: 'Prefer not to say' }));
     card.append(head);
 
-    // Show a private notice on fields whose value is sent to the AI for context
-    // but must not be spoken unless the user selects a response that includes it.
+    // Show a private notice on fields whose value is sent to the AI for context but
+    // which it must not raise on its own initiative. The note names what DOES bring
+    // it out (Ken, August 3 2026) — saying only "won't be volunteered" leaves the
+    // user with no way to ever use the answer they just typed in.
     if (field.defaultPrivacy === 'private') {
-        card.append(el('p', { class: 'wv-private-note', text: '🔒 AI uses this for context — only spoken if you choose a response that includes it.' }));
+        card.append(el('p', { class: 'wv-private-note', text:
+            '🔒 The AI uses this for context but won\'t raise it on its own — only if they ask, or you ask for it in "In my own words".' }));
     }
 
     if (state === 'declined') {

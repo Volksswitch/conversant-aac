@@ -194,9 +194,17 @@ export function count() {
 
 /**
  * Compact text for the generation system prompt — the relationship slice of
- * "speak AS this person." Private people are never named or described; they are
- * surfaced only as a phrase-around instruction by their relationship, mirroring
- * the worldview privacy rule.
+ * "speak AS this person." A private person IS described (v0.3.12 — withholding the
+ * value entirely made Private identical to Declined), under an instruction not to
+ * raise them on the AI's own initiative.
+ *
+ * That instruction names the two things which DO unlock one, and the naming is
+ * load-bearing (Ken, August 3 2026): the AI's only output IS the response palette,
+ * so "don't raise it unless the user picks a response that does" points at nothing —
+ * if no card ever carries the fact there is nothing for the user to pick. The two
+ * real prompts are (1) the PARTNER asks, and (2) the USER steers by typing in "In my
+ * own words" and tapping Reframe. Nothing being spoken until the user taps it is a
+ * separate, always-on guarantee about SELECTION — never a rule for authoring.
  */
 export function buildBlock() {
     ensureLoaded();
@@ -229,7 +237,7 @@ export function buildBlock() {
     }
     if (privateKnown.length) {
         lines.push(
-            'These people are known to you for context — do not bring them up unprompted; only include them if the user\'s chosen response requires it:',
+            'These people are known to you for context — do not bring them up unprompted. Never work one into a response on your own initiative. Include one ONLY when the partner has asked about them, or when the user\'s own typed guidance tells you to:',
             ...privateKnown
         );
     }

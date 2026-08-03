@@ -28,8 +28,20 @@
  * cache is promoted only when no file exists on disk yet.
  *
  * PRIVACY follows the standing three-level model, same as people: a private place is
- * sent to the AI for context but never volunteered unprompted; a place the user does
- * not want the AI to know about is simply not added.
+ * sent to the AI for context but never raised on its own initiative; a place the user
+ * does not want the AI to know about is simply not added.
+ *
+ * "Unprompted" needs a referent or the rule is unfollowable (Ken, August 3 2026).
+ * TWO things count as a prompt and both must stay named in the prompt text, because
+ * the AI's only output IS the response palette — if it never writes a card carrying
+ * the fact, the user can never choose one:
+ *   1. the PARTNER asks about it;
+ *   2. the USER steers, by typing in "In my own words" and tapping Reframe — that
+ *      steer already reaches the model as user-authored ground truth that overrides
+ *      its other cautions (llm.js steerBlock).
+ * Separately and always: nothing is spoken until the user taps it. That is the real
+ * guarantee, and it is a property of SELECTION, not of authoring — so it must never
+ * be written as a rule the model is asked to apply while writing options.
  */
 
 import { readFile, writeFile, hasDataFolder } from './storage.js';
@@ -204,8 +216,9 @@ function factLine(p) {
 /**
  * Compact text for the generation system prompt — the places slice of "speak AS
  * this person." Mirrors relationships.buildBlock: known places are listed with
- * their facts; private places are listed under a do-not-volunteer instruction (the
- * AI knows them for context but must not raise them unprompted).
+ * their facts; private places are listed under a do-not-volunteer instruction that
+ * also names the two things which DO unlock one (partner asks / user steers) — see
+ * the PRIVACY note at the top of this file for why naming them is load-bearing.
  *
  * Every place is included, as every person is. The set is small and user-curated,
  * and a place the user bothered to record is a place they talk about. If the block
@@ -228,7 +241,7 @@ export function buildBlock() {
     if (open.length) lines.push('Places I go:', ...open);
     if (privateKnown.length) {
         lines.push(
-            'These places are known to you for context — do not bring them up unprompted; only include them if the user\'s chosen response requires it:',
+            'These places are known to you for context — do not bring them up unprompted. Never work one into a response on your own initiative. Include one ONLY when the partner has asked about it, or when the user\'s own typed guidance tells you to:',
             ...privateKnown
         );
     }
@@ -249,6 +262,6 @@ export function buildHereBlock(id) {
     const facts = factLine(p);
     const lines = [`The user is at ${p.name} right now. Keep the suggested responses appropriate to being there.`];
     if (facts) lines.push(`What you know about ${p.name} — ${facts}.`);
-    if (p.private) lines.push(`Do not mention ${p.name} by name unless the user's chosen response requires it.`);
+    if (p.private) lines.push(`Do not name ${p.name} on your own initiative — only if the partner asks where the user is, or the user's own typed guidance tells you to.`);
     return lines.join(' ');
 }

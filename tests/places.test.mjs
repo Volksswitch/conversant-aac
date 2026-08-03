@@ -37,6 +37,19 @@ test('a private place IS sent for context but flagged do-not-volunteer', async (
     assert.match(block, /do not bring them up unprompted/i);
 });
 
+// "Do not raise it unprompted" is only a followable instruction if the model is told
+// what DOES count as a prompt. The rule previously ended "only include them if the
+// user's chosen response requires it", which named nothing real — at the moment the
+// model writes the options there is no chosen response (Ken, August 3 2026). Both
+// real triggers must stay named, in the block and in the here-line.
+test('the private rule names the two things that DO unlock it', async () => {
+    await places.addPlace({ name: 'The clinic', isPrivate: true });
+    const block = places.buildBlock();
+    assert.match(block, /partner has asked/i, 'the partner asking is a prompt');
+    assert.match(block, /typed guidance/i, 'the user steering via Reframe is a prompt');
+    assert.doesNotMatch(block, /chosen response requires/i, 'names a mechanism that does not exist');
+});
+
 test('blank fact rows are dropped, but a key with no value is kept', async () => {
     // A blank row is an editor artifact, not data. A key with no value is a fact the
     // user has started recording and must not be silently discarded.
@@ -75,7 +88,9 @@ test('buildHereBlock names the place and repeats its facts', () => {
 
 test('buildHereBlock on a private place carries the do-not-name restraint', async () => {
     const id = await places.addPlace({ name: 'The clinic', isPrivate: true });
-    assert.match(places.buildHereBlock(id), /Do not mention The clinic by name/i);
+    const here = places.buildHereBlock(id);
+    assert.match(here, /Do not name The clinic on your own initiative/i);
+    assert.match(here, /partner asks|typed guidance/i, 'the restraint must say what lifts it');
 });
 
 test('buildHereBlock for a deleted or unknown place is empty, not a broken sentence', async () => {

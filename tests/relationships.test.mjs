@@ -31,6 +31,17 @@ test('a private person IS sent for context but flagged do-not-volunteer', async 
     assert.match(block, /do not bring them up unprompted/i);
 });
 
+// "Unprompted" is only followable if the model is told what counts as a prompt. The
+// rule used to end "only include them if the user's chosen response requires it",
+// which names nothing that exists at authoring time (Ken, August 3 2026).
+test('the private rule names the two things that DO unlock it', async () => {
+    await rel.addPerson({ name: 'Dr. Smith', relationship: 'doctor', isPrivate: true });
+    const block = rel.buildBlock();
+    assert.match(block, /partner has asked/i, 'the partner asking is a prompt');
+    assert.match(block, /typed guidance/i, 'the user steering via Reframe is a prompt');
+    assert.doesNotMatch(block, /chosen response requires/i, 'names a mechanism that does not exist');
+});
+
 test('nicknames trigger the "address by preferred term" instruction', async () => {
     await rel.addPerson({ name: 'Mary', relationship: 'mother', nickname: 'mom' });
     const block = rel.buildBlock();

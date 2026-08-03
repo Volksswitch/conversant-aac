@@ -16,6 +16,16 @@
  *   declined    { value:null, state:"declined" }  sticky — never ask, always
  *                                                  phrase around; un-decline
  *                                                  returns it to unanswered.
+ *
+ * Privacy is independent of state, and PRIVATE is not a weaker Declined: the value
+ * IS sent to the model (v0.3.12 — withholding it made the two identical), under an
+ * instruction not to raise it on the model's own initiative. That instruction must
+ * name what DOES bring it out, or it cannot be followed (Ken, August 3 2026): the
+ * model's only output is the response palette, so "include it only if the user picks
+ * a response that does" points at nothing — if no card carries the fact there is
+ * nothing to pick. The two real prompts are (1) the PARTNER asks, and (2) the USER
+ * steers by typing in "In my own words" and tapping Reframe. That nothing is spoken
+ * until the user taps it is a separate, always-on guarantee about SELECTION.
  */
 
 import { readFile, writeFile, hasDataFolder } from './storage.js';
@@ -394,7 +404,7 @@ export function buildBlock() {
     if (privateKnown.length) {
         lines.push(
             '',
-            'These details are known to you for context — do not volunteer them spontaneously; only include them if the user selects a response that does:',
+            'These details are known to you for context — do not volunteer them spontaneously. Never work one into a response on your own initiative. Include one ONLY when the partner has asked for it, or when the user\'s own typed guidance tells you to:',
             ...privateKnown
         );
     }

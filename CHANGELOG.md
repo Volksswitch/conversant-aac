@@ -38,8 +38,10 @@ forgetting to tag one is only ever noise, never silence.
   conversations in the same place cost one tap, not one each. Tap it again to turn
   it off, or tap a different place to switch.
 - A place can be marked **private**, which works exactly as it does for a person: the
-  assistant knows about it, but never brings it up unless you pick a response that
-  does.
+  assistant knows about it, but won't raise it on its own. It will offer it if the
+  other person asks, or if you ask for it yourself by typing what you want to say in
+  "In my own words" and tapping Reframe. And as always, nothing is said aloud until
+  you tap it.
 
 ## Version 0.6.2
 

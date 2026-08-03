@@ -46,7 +46,7 @@
       "id": "A5",
       "tier": "core",
       "title": "Contact & Logistics",
-      "note": "Private by default — the assistant never volunteers these. Strict phrase-around for this build; a per-field 'may share if I pick it' toggle is a later build.",
+      "note": "Private by default — the assistant knows these but won't raise them on its own. It will offer one only if the person you're talking to asks, or if you ask for it yourself in \"In my own words\". Nothing is ever spoken until you tap it.",
       "fields": [
         { "key": "phone", "q": "What's your phone number?", "type": "text", "options": [], "fills": ["phone number"], "sensitive": true, "defaultPrivacy": "private" },
         { "key": "email", "q": "What's your email address?", "type": "text", "options": [], "fills": ["email"], "sensitive": true, "defaultPrivacy": "private" },

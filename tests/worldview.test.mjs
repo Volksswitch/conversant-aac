@@ -46,6 +46,12 @@ test('PRIVATE: the value IS sent but flagged do-not-volunteer', async () => {
     const block = wv.buildBlock();
     assert.match(block, /ZEBRAVALUE/, 'private value is still sent for context');
     assert.match(block, /do not volunteer them spontaneously/i);
+    // "Do not volunteer" is only followable if the model is told what DOES ask for it.
+    // The rule used to end "only include them if the user selects a response that
+    // does" — nothing that exists when the options are written (Ken, August 3 2026).
+    assert.match(block, /partner has asked/i, 'the partner asking is a prompt');
+    assert.match(block, /typed guidance/i, 'the user steering via Reframe is a prompt');
+    assert.doesNotMatch(block, /selects a response that does/i, 'names a mechanism that does not exist');
 });
 
 test('DECLINED: no value is sent, only a phrase-around instruction', async () => {
