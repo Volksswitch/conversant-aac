@@ -7,6 +7,10 @@
 
 **A note on the AI-generated text:** the four response options and the AI-authored partner line in Practice Mode are generated live by the model — they will not come out word-for-word as written below. The example wording in each step is there so your partner/actor knows the *intent* of the line and so you know roughly what to expect on screen; when recording, just pick whichever generated card best matches what the step calls for. Don't re-record to force an exact match.
 
+**The user in this demo is Marc.** Set the app up ahead of recording with the profile from `Other/Personas/Worldview-Test-Persona-Marc-Delgado.docx` — a fictional 17-year-old in Madison with cerebral palsy, non-speaking, direct select. This matters more than it sounds: the whole point of the profile is that the suggestions come back sounding like a specific person, and with an empty profile the model has nothing to be specific *with*, so the cards come out generic and the demo quietly argues against itself. Load his About Me answers, his people, and his places before you shoot.
+
+Marc is into gaming, Marvel, and the Packers; he keeps his replies short and snappy; he says things like *"Let's go!"*, *"That's clutch,"* and *"Nah, I'm good."* The example lines below are written in that voice, so you can tell at a glance whether the live output is actually landing on him. **Nothing in the video needs to name Marc or explain that he's fictional** — he is just the user on screen.
+
 ---
 
 ## TO CAMERA 1 — The problem (0:00–0:35)
@@ -25,6 +29,10 @@ Conversant AAC is a free, open-source app trying to close that gap using generat
 
 **Step-by-step:**
 
+0. **Before the partner speaks, tap the place button** in the Express Panel — *Pulp Comics* (the olive button). It shows as selected and stays that way.
+   - **Caption:** "Tap where you are — the app knows the place"
+   - *Five seconds, no explanation needed here; TO CAMERA 3 picks it up. It also seeds the rest of this demo: the cards below come back about comics partly because he told it where he is.*
+
 1. **Partner says:** *"Hey, how was your weekend?"*
    - **On screen:** the partner's words appear in the transcript pane as they're spoken.
    - **Caption:** "Partner speaks — the app transcribes it live"
@@ -33,20 +41,21 @@ Conversant AAC is a free, open-source app trying to close that gap using generat
    - **Caption:** "A quick placeholder fills the pause — nothing dead air, nothing typed"
 
 3. **Four response cards appear** in the fixed four-card layout — something like:
-   - *"Pretty relaxing, actually."*
-   - *"Honestly kind of rough — my sister's car broke down."*
-   - *"Pretty good. What about yours?"*
+   - *"Pretty good — hit the comic shop Saturday."*
+   - *"Kind of a wash, honestly. Too much homework."*
+   - *"Solid. We got a Mario Kart tournament going. You?"*
    - *"Sorry, could you say that again?"*
    - **Caption:** "Four options, generated for this exact moment — not canned phrases"
+   - *Worth watching for when you record: these come back about comics and gaming because that is what is in his profile. That is the point of the shot.*
 
-4. **User taps one card** (e.g. *"Pretty relaxing, actually."*).
+4. **User taps one card** (e.g. *"Pretty good — hit the comic shop Saturday."*).
    - **On screen:** the tablet speaks the chosen line aloud (real TTS audio).
    - **Caption:** "One tap — spoken aloud, in the user's voice"
 
-5. **Partner replies:** *"Nice. What did you end up doing?"*
+5. **Partner replies:** *"Nice. Find anything good?"*
    - Same beat again: transcript updates live, brief placeholder, four new cards appear.
 
-6. **User taps a card** (e.g. *"Mostly just relaxed at home."*), the device speaks it.
+6. **User taps a card** (e.g. *"New Ms. Marvel. Ramon holds them for me."*), the device speaks it.
    - **Caption (hold through the end of this demo):** "Same four positions, every single time"
 
 ---
@@ -73,14 +82,14 @@ A few more things it already does."
 
 1. **Tap the compose (pencil) icon** in the dock.
 2. **The composer opens** with the on-screen keyboard.
-3. **Type:** *"I'd rather just grab coffee first."*
+3. **Type:** *"Only if I get to pick the track."*
 4. **Tap Speak.**
 5. **On screen:** the device speaks the typed line aloud; the composer closes.
    - **Caption:** "Or type your own words — the device speaks exactly that"
 
 ### Beat C — Express Panel quick phrase (2:40–2:50)
 
-1. **Tap one of the Express Panel buttons** (a phrase the user set up ahead of time — e.g. *"Not right now"*).
+1. **Tap one of the Express Panel buttons** (a phrase the user set up ahead of time — e.g. *"Nah, I'm good."*).
 2. **On screen:** the device speaks it immediately, single tap, no confirmation screen.
    - **Caption:** "One-tap phrases the user sets up themselves"
 
@@ -101,7 +110,7 @@ A few more things it already does."
 2. **Tap a scenario** from the list (e.g. *"Ordering coffee"*).
 3. **Tap Start Listening** — this cues the AI, playing the partner's role, to speak first.
 4. **On screen:** the tablet speaks an AI-authored partner line (e.g. *"Hi there, what can I get started for you today?"*), and four response cards appear.
-5. **User taps one** (e.g. *"Just a medium coffee, please."*); the device speaks it.
+5. **User taps one** (e.g. *"Can I get a root beer?"*); the device speaks it.
    - **Caption:** "Practice Mode — the AI plays the partner, so you can rehearse first"
 
 ---
@@ -110,9 +119,11 @@ A few more things it already does."
 
 "All of that is built and working now, on a Windows tablet, a MacBook, or a Chromebook — whatever you've already got, in a regular browser.
 
-There's also a profile the user fills in themselves — interests, personality, the people in their life — so responses start sounding like them specifically, not a generic assistant. That part is real but still early, and it's going to keep getting deeper.
+There's also a profile the user fills in themselves — interests, personality, the people in their life, the places they go — so responses start sounding like them specifically, not a generic assistant. That part is real but still early, and it's going to keep getting deeper.
 
-What's still ahead: expanding that profile further, and situational awareness — the app recognizing where you are and who you're talking to, so it can offer relevant openers on its own."
+You saw a piece of that at the start: tapping where you are. The app knows what you've told it about that place, and shapes what it offers around it. No GPS, no permissions — you just tell it.
+
+What's still ahead: expanding that profile further, and having the app work out the situation for itself — recognizing where you are and who you're talking to without being told, so it can offer the right openers on its own."
 
 ---
 
