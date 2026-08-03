@@ -2643,7 +2643,27 @@ function initSettingsTabs() {
 // KEYGUARD HOLE — measured: the dock keeps its cell sizes but translates down by the
 // full height gained, and the command bar's cells change height. That is why it is
 // a setting rather than unconditional behavior.
+// NOT OFFERED ON WebKit -- measured on Ken's iPad (iPadOS 26.6, Safari 26.6,
+// August 3 2026), where it has no upside in either mode and a large downside in one:
+//
+//   Home Screen app -- NOTHING to hide. There is no title bar, only the iOS status
+//     bar, and fullscreen does not displace that, so the layout is identical whether
+//     it is on or off.
+//   Safari tab      -- actively breaks the app. Settings closes and its button goes
+//     dead (WebKit appears to refuse showModal() while the page is fullscreen), the
+//     Listen button latches on and cannot be tapped off, and Safari overlays its own
+//     persistent exit-X. The one control that could turn the setting back off is the
+//     one that stops working, so this is a trap, not an inconvenience.
+//
+// Gating the REQUEST rather than only hiding the checkbox is the load-bearing half:
+// a profile that already has the setting saved true -- Ken's iPad does, from testing
+// -- would otherwise stay broken with the off-switch hidden. This makes a stored true
+// inert everywhere it cannot work.
+//
+// Capability-shaped rather than a fork, per the standing rule: on Chromium isIOS() is
+// false and every line below runs exactly as it did.
 function requestAppFullscreen() {
+    if (platform.isIOS()) return;
     if (!storage.loadFullscreen()) return;
     const el = document.documentElement;
     const request = el.requestFullscreen || el.webkitRequestFullscreen;
@@ -3322,7 +3342,11 @@ function openSettings() {
     // the toggle the way BACK IN too: tapping it is a user gesture, so a user who
     // has left fullscreen (Esc, or the browser dropping it) can restore it without
     // relaunching — Start having already been consumed.
+    // Not offered on WebKit — no effect in a Home Screen app, and it breaks Settings
+    // and the Listen button in a Safari tab. See requestAppFullscreen, which refuses
+    // there too, so a stored `true` is inert rather than stranded behind a hidden control.
     const fullscreenInput = document.getElementById('fullscreenInput');
+    document.getElementById('fullscreenGroup').hidden = platform.isIOS();
     fullscreenInput.checked = storage.loadFullscreen();
     fullscreenInput.onchange = () => {
         storage.saveFullscreen(fullscreenInput.checked);

@@ -22,7 +22,14 @@ import * as storage from './storage.js';
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
   "0.6.5": [
-    "Turning on \"Use the whole screen\" while the Settings panel was open drew the conversation screen on top of Settings, hiding it until you closed Settings and opened it again. Settings now stays in front."
+    {
+      "for": "computer",
+      "note": "Turning on \"Use the whole screen\" while the Settings panel was open drew the conversation screen on top of Settings, hiding it until you closed Settings and opened it again. Settings now stays in front."
+    },
+    {
+      "for": "ipad",
+      "note": "\"Use the whole screen\" has been removed. It did nothing when the app was installed on the Home Screen — an iPad always shows its status bar, so there was nothing to gain — and in the Safari browser it stopped Settings from opening and left the Listen button stuck on. If you had switched it on, it no longer has any effect."
+    }
   ],
   "0.6.4": [
     "Making a keyguard: the Title Bar Height box now looks after itself. If the app is using the whole screen there is no bar above it, so the box greys out and says so, and the openings file is generated with no offset. Before, a height left in the box from an earlier setup would have shifted every opening down the screen — something you would only discover after the plastic was cut.",

@@ -26,9 +26,19 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+### On a computer
+
 - Turning on "Use the whole screen" while the Settings panel was open drew the
   conversation screen on top of Settings, hiding it until you closed Settings and
   opened it again. Settings now stays in front.
+
+### On an iPad
+
+- "Use the whole screen" has been removed. It did nothing when the app was
+  installed on the Home Screen — an iPad always shows its status bar, so there was
+  nothing to gain — and in the Safari browser it stopped Settings from opening and
+  left the Listen button stuck on. If you had switched it on, it no longer has any
+  effect.
 
 ## Version 0.6.4
 
