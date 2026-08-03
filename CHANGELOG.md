@@ -26,6 +26,15 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- **Settings can now tell you what a setting does, out loud.** There is a question
+  mark button next to the X at the top of the Settings panel. Tap it, then tap any
+  setting, its label, or a tab, and the app says what that one does. Tapping a setting
+  while help is on does not change it, so you can ask about something without altering
+  it by mistake. It answers one question at a time and then switches itself off, so
+  you are never stuck in help mode when you actually want to change a value. If you
+  have heard enough, tap anywhere to stop it — and tapping the same setting again both
+  stops it and does what that setting normally does.
+
 - **New "Screen edge margin" setting, for keyguards in a tight tablet case.** Some
   cases have an opening that fits so closely to the screen that a keyguard has
   nowhere to rest around the outside. Settings → Keyguard Design now has a Screen

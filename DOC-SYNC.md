@@ -30,6 +30,28 @@ design decisions), and `CHANGELOG.md` are all version-controlled; the `.docx` fi
 themselves are git-ignored (OneDrive), so their timestamps were never the right
 anchor.
 
+## Spoken Settings help is guarded by a TEST, not by this process (Ken, August 2 2026)
+
+Ken asked that `settings-help.json` — the words spoken when you arm the **?** in the
+Settings title bar and tap a control — *"be included in the Doc-sync process so that
+it is updated when a new control is added to Settings."*
+
+**It is enforced one better: `tests/settings-help.test.mjs` fails the build** if a
+Settings control, radio group, tab or `data-help` section has no entry, if an entry
+points at something that no longer exists, if a phrase runs past 35 words, or if the
+bundled copy has drifted from the root file. So a new setting *cannot* ship without
+its spoken help, and no one has to remember a checklist item.
+
+**What still needs a human**, and why it is listed here rather than left to the test:
+
+- The test proves an entry **exists**, never that it is **true**. Change what a
+  control does and the test stays green while the app says something wrong.
+- **Re-run `node scripts/apply-settings-help.mjs` after editing the JSON.** The test
+  catches a missed run, but only once someone runs the tests.
+- The register is the point: **15–25 words, written to be heard.** Do not paste from
+  the manuals — that prose was written to be read, and several entries there run past
+  eighty words. The 35-word cap is a backstop, not the target.
+
 ## Release first, then sync (Ken, August 1 2026)
 
 **Push the app before syncing the reader-facing documents, not after.** The August 1

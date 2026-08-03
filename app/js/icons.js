@@ -42,6 +42,10 @@ export const ICONS = {
     close: SVG('<line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>'),
     // Compose / "In my own words" — a pencil (write your own words).
     compose: SVG('<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>'),
+    // Spoken help — a question mark in a circle. Arms "tap a control to hear what it
+    // does" in Settings. Drawn as a filled glyph rather than the stroked helper: a
+    // stroked "?" at this size reads as a smudge, the same problem the gear had.
+    help: '<svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 17.2a1.3 1.3 0 1 1 0-2.6 1.3 1.3 0 0 1 0 2.6zm1.8-6.3c-.7.5-.9.8-.9 1.4v.4h-1.9v-.5c0-1.2.4-1.9 1.4-2.6.8-.6 1.1-.9 1.1-1.5 0-.7-.5-1.2-1.4-1.2-.8 0-1.4.4-1.7 1.2l-1.7-.7c.5-1.4 1.7-2.2 3.4-2.2 2 0 3.4 1.1 3.4 2.8 0 1.2-.6 1.9-1.7 2.6z"/></svg>',
     // Don't-save (privacy) — a shield with a diagonal slash: this conversation is
     // NOT written to the data folder. The .private-on selected state signals it's on.
     noSave: SVG('<path d="M12 3l7 3v5c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6z"/><line x1="4.5" y1="4" x2="19.5" y2="20"/>'),

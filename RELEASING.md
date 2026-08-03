@@ -156,6 +156,17 @@ The ritual:
 
    (Reads `APP_VERSION`; injects the notes into `app/js/whats-new.js`. Confirm it
    reports the release number you're shipping.)
+
+   **If `settings-help.json` changed this cycle, regenerate the spoken help too:**
+
+   ```
+   node scripts/apply-settings-help.mjs
+   ```
+
+   Same arrangement — a root file that is never deployed, embedded into
+   `app/js/settings-help.js`. `npm test` fails when the two have drifted, so running
+   the tests before the push catches a missed regeneration; this step is here so it
+   does not depend on that.
 4. **Add the CLAUDE.md version-table row** for `<final>` (a one-line engineering
    summary — this table is released-versions-only).
 5. **Commit** the release (`app/js/app.js`, `app/sw.js`, `CHANGELOG.md`,

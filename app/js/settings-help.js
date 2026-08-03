@@ -1,0 +1,141 @@
+// settings-help.js — the words spoken by the Settings "tap for help" mode.
+//
+// BUNDLED, NOT FETCHED. The source of truth is `settings-help.json` at the project
+// ROOT, which is never deployed (Ken, August 2 2026: "I'm not thinking that we would
+// distribute this file… The actual content would be embedded in the app or a
+// supporting file inaccessible to the user"). `scripts/apply-settings-help.mjs`
+// injects it between the markers below — the same arrangement CHANGELOG.md and
+// whats-new.js already use, so it works offline, needs no precache round-trip and
+// carries no CSP surface.
+//
+// DO NOT HAND-EDIT the marker block: edit settings-help.json and re-run the
+// generator. `tests/settings-help.test.mjs` fails if the two drift apart, so a
+// forgotten regeneration cannot ship quietly.
+
+// @@SETTINGS_HELP_START@@
+const HELP = {
+  "tabs": {
+    "general": "Your AI key, where your information is kept, saved copies of your settings, and backing up or moving everything.",
+    "aboutme": "The getting-to-know-you questions. Anything you answer here helps the AI suggest responses that sound like you.",
+    "textsize": "How big the writing is in each part of the app. Every area is set on its own.",
+    "speech": "Your key for the paid services, how the app hears the other person, and the voices used for speaking.",
+    "input": "How big the buttons are, how far apart they sit, and where the Express Panel and keyboard go.",
+    "conversation": "How the app listens, how many responses it offers you, and what it says while you are choosing.",
+    "practice": "Practise a conversation with the AI playing the other person. You do not need a microphone.",
+    "express": "Change the buttons on the Express Panel: the phrases you speak, the people you talk to, and how you are feeling.",
+    "controls": "Change the words spoken by the command buttons, and your conversation starters and goodbyes.",
+    "keyguard": "Spacing settings for fitting a physical keyguard, and a file listing where every button sits.",
+    "about": "Which version you are running, anything that has gone wrong, what you have spent, and a way to restart the app."
+  },
+  "controls": {
+    "apiKeyInput": "Paste your Anthropic key here. It stays on this device and is never put into a backup.",
+    "pasteApiKeyBtn": "Pastes a key you have already copied, so you do not have to type it out.",
+    "testApiKeyBtn": "Checks your key with Anthropic and tells you whether it was accepted. It costs nothing.",
+    "pickFolderBtn": "Choose the folder where your information is kept. Choose the same one each time you set the app up again.",
+    "makeStorageDurableBtn": "Asks the browser not to throw your information away if it starts running short of room.",
+    "settingsProfileSelect": "Choose one of your saved settings profiles, ready to load or delete.",
+    "loadSettingsProfileBtn": "Puts every setting from the chosen profile back in place. The app restarts to do it.",
+    "updateSettingsProfileBtn": "Saves your settings as they are now over the profile you are using. Do this after any change you want to keep.",
+    "deleteSettingsProfileBtn": "Removes the chosen profile. Your current settings are left exactly as they are.",
+    "settingsProfileNameInput": "A name for a new profile. Naming it after the device helps if you use more than one.",
+    "saveSettingsProfileBtn": "Saves all your settings as they are now, as a new profile under the name you typed.",
+    "exportDataBtn": "Saves everything about you into one file: your answers, your people, your buttons and your conversations.",
+    "importDataBtn": "Loads everything back from a backup file you choose. This replaces what is on this device now.",
+    "importDataFile": "Choose the backup file you want to load.",
+    "backupFileSelect": "Choose one of the backups the app has already made for you.",
+    "restoreBackupBtn": "Puts everything back from the backup you chose. This replaces what is on this device now.",
+    "responseFontSelect": "How big the writing is on the suggested response cards.",
+    "transcriptFontSelect": "How big the writing is in the conversation, where what was said is shown.",
+    "composerFontSelect": "How big the writing is when you type something in your own words.",
+    "expressFontSelect": "How big the writing is on the Express Panel buttons.",
+    "deepgramKeyInput": "Paste your Deepgram key here. It stays on this device and is never put into a backup.",
+    "pasteDeepgramKeyBtn": "Pastes a Deepgram key you have already copied.",
+    "testDeepgramKeyBtn": "Checks your Deepgram key and tells you whether it was accepted.",
+    "voiceSelect": "Choose which of this device's voices speaks as you.",
+    "showNoveltyVoicesInput": "Shows the joke voices built into this device, like the robot and cartoon ones. They are hidden to begin with.",
+    "testVoiceBtn": "Says a few words so you can hear the voice before you settle on it.",
+    "auraVoiceSelect": "Choose which Deepgram voice speaks as you.",
+    "testAuraVoiceBtn": "Says a few words in the Deepgram voice you have chosen.",
+    "partnerVoiceSelect": "Choose the voice for the person you practise with. Automatic picks one that is not yours.",
+    "testPartnerVoiceBtn": "Says a few words in the practice partner's voice.",
+    "auraPartnerVoiceSelect": "Choose the Deepgram voice for the person you practise with.",
+    "testAuraPartnerVoiceBtn": "Says a few words in the practice partner's Deepgram voice.",
+    "buttonSizeSlider": "How big the buttons are. Bigger ones are easier to hit, but fewer of them fit on the screen.",
+    "buttonGapSlider": "The space between the buttons. On a keyguard this is the width of the bars between the holes.",
+    "minGapSlider": "The smallest space allowed between buttons, however big you make them.",
+    "resetSizingBtn": "Puts button size and spacing back to how they started. Screen edge margin is left alone.",
+    "sideDockPositionToggle": "Which side the Express Panel and keyboard sit on, the left or the right.",
+    "bottomLayoutSelect": "How the Express Panel and keyboard are laid out when they sit along the bottom.",
+    "sideLayoutSelect": "How the Express Panel and keyboard are laid out when they sit down one side.",
+    "noSaveDefaultInput": "Begin every conversation without saving it. You can still change your mind for one conversation at a time.",
+    "responsesPerCategoryInput": "Whether you are offered four suggested responses, or eight.",
+    "choiceChipMaxInput": "How many of the other person's choices can appear as buttons on your Express Panel.",
+    "silenceThresholdInput": "How long the other person has to pause before the app asks the AI for suggestions.",
+    "autoRelistenInput": "Start listening again on its own after you speak, so you need not press Listen every time.",
+    "listenChimeInput": "Play a short tone when listening begins, so the other person knows the app is listening.",
+    "initialDelayInput": "How long the app waits before saying something to hold your place while you choose.",
+    "subsequentDelayInput": "How long before it says another one, if you are still choosing.",
+    "maxPlaceholdersInput": "How many of those holding phrases it may say in one turn. Set it to none if you would rather it stayed quiet.",
+    "doubleTapMsSelect": "How quickly the two taps have to follow one another to count as a double tap.",
+    "appMarginSlider": "Moves the whole app in from the edges of the screen, so a keyguard fits inside a tight case opening.",
+    "dockSepSlider": "The gap between the keyboard area and the rest of the screen. It does not move the keyboard itself.",
+    "transcriptSepSlider": "The gap between the conversation and the row of command buttons underneath it.",
+    "titleBarHeightInput": "The height of the window bar above the app, so the keyguard file lines up with a screenshot.",
+    "generateOpeningsBtn": "Writes a file saying exactly where every button sits, for cutting a keyguard.",
+    "reloadAppBtn": "Fetches the newest version and starts the app again. Nothing you have saved is lost.",
+    "errorLogView": "A record of anything that has gone wrong, the most recent first.",
+    "copyErrorLogBtn": "Copies the errors, along with the conversations they happened in, ready to paste into a message.",
+    "clearErrorLogBtn": "Empties this list. The copy kept in your data folder is left alone.",
+    "resetUsageBtn": "Sets the cost estimate back to zero and starts counting again from today."
+  },
+  "radioGroups": {
+    "sttProvider": "Who turns the other person's speech into words. Your browser does it free. Deepgram is paid, and works where the browser cannot.",
+    "ttsProvider": "Which voice speaks for you. This device's own voices are free. A Deepgram voice is paid and usually sounds far better.",
+    "keyboardMode": "Whether you type on a keyboard you plug in, or on the app's own keyboard on the screen.",
+    "keyboardDock": "Whether the Express Panel and keyboard sit along the bottom of the screen, or down one side.",
+    "expressTapMode": "Whether one tap speaks an Express Panel button, or two are needed so you cannot set it off by accident."
+  },
+  "sections": {
+    "apiKey": "Your key from Anthropic. It is what lets the app suggest responses. Everything else still works without one.",
+    "dataFolder": "The folder where your answers, your people, and your saved conversations are kept.",
+    "settingsProfiles": "A saved copy of all your settings. With one saved you can put everything back after a reset, or set up another machine quickly.",
+    "backupTransfer": "Puts everything about you into a single file, to keep somewhere safe or to move to another device.",
+    "deepgramKey": "One key for two paid extras: better hearing of the other person, and a much better speaking voice.",
+    "yourVoice": "The voice that speaks as you.",
+    "practicePartnerVoice": "The voice used for the other person when you practise, so you can tell it apart from your own.",
+    "appUpdates": "The app updates itself when a new version is ready. This is here for when you want it to check straight away.",
+    "errorLog": "A record of anything that has gone wrong. It is what to send if you report a problem.",
+    "apiCost": "A rough estimate of what you have spent with the AI since the date shown."
+  }
+};
+// @@SETTINGS_HELP_END@@
+
+/**
+ * Look up the phrase for a resolved help key ("tab:general", "control:apiKeyInput",
+ * "radio:sttProvider", "section:dataFolder"). Returns null when there is no entry,
+ * which the caller turns into the label fallback — saying nothing would read as a
+ * broken feature rather than as missing text.
+ */
+export function lookup(key) {
+    if (!key || typeof key !== 'string') return null;
+    const i = key.indexOf(':');
+    if (i < 0) return null;
+    const bucket = key.slice(0, i);
+    const name = key.slice(i + 1);
+    const map = { tab: HELP.tabs, control: HELP.controls, radio: HELP.radioGroups, section: HELP.sections }[bucket];
+    const text = map && map[name];
+    return typeof text === 'string' && text.trim() ? text : null;
+}
+
+/** Every key that has a phrase — used by the coverage test and for diagnostics. */
+export function allKeys() {
+    const out = [];
+    for (const [bucket, map] of [['tab', HELP.tabs], ['control', HELP.controls],
+                                 ['radio', HELP.radioGroups], ['section', HELP.sections]]) {
+        for (const name of Object.keys(map || {})) out.push(`${bucket}:${name}`);
+    }
+    return out;
+}
+
+/** The raw embedded object, so the test can compare it against the root JSON. */
+export function raw() { return HELP; }

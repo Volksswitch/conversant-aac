@@ -139,7 +139,13 @@
              plus its padding out of the panel, on every tab, to hold one button. -->
         <div id="settingsHeader" tabindex="-1">
             <span id="settingsTitle">Settings</span>
-            <button id="closeSettingsBtn" type="button"></button>
+            <div id="settingsHeaderActions">
+                <!-- Spoken help: arm this, then tap a control, its label, or a tab to
+                     hear what it does. Sits beside the X because the title bar already
+                     exists, so it costs no vertical space. -->
+                <button id="settingsHelpBtn" type="button" aria-pressed="false"></button>
+                <button id="closeSettingsBtn" type="button"></button>
+            </div>
         </div>
         <div id="settingsLayout">
             <nav id="settingsTabs">
@@ -157,7 +163,7 @@
             </nav>
             <div id="settingsContent">
                 <div class="tab-panel active" data-tab="general">
-                    <div class="setting-group">
+                    <div class="setting-group" data-help="apiKey">
                         <label for="apiKeyInput">API Key</label>
                         <div id="apiKeyRow">
                             <input type="text" id="apiKeyInput" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
@@ -170,7 +176,7 @@
                          August 1 2026): having voices settable from two tabs, and the
                          Deepgram key reachable only through the transcription choice,
                          was the confusion. -->
-                    <div class="setting-group">
+                    <div class="setting-group" data-help="dataFolder">
                         <!-- Retitled at runtime where there is no folder to choose
                              (see updateFolderDisplay in app.js). -->
                         <label id="dataFolderLabel">Data Folder</label>
@@ -188,7 +194,7 @@
                             <button id="makeStorageDurableBtn" type="button" hidden>Ask the browser to keep my data</button>
                         </div>
                     </div>
-                    <div class="setting-group" id="settingsProfilesGroup">
+                    <div class="setting-group" id="settingsProfilesGroup" data-help="settingsProfiles">
                         <label>Settings profiles</label>
                         <!-- Control above, its buttons on their own full-width row below —
                              the same shape as the voice Test buttons. Sharing a row with
@@ -221,7 +227,7 @@
                          the backup leaves by the share sheet instead — there, this
                          is the ONLY way to back up or move data at all. Import
                          replaces everything, so it is danger-confirmed. -->
-                    <div class="setting-group" id="backupGroup">
+                    <div class="setting-group" id="backupGroup" data-help="backupTransfer">
                         <label>Backup &amp; transfer</label>
                         <div class="profiles-row">
                             <button id="exportDataBtn" type="button">Export my data</button>
@@ -292,7 +298,7 @@
                          is the shared dependency of the two paid options below, and
                          hiding it behind one of them left the other pointing at a
                          field that wasn't on screen. -->
-                    <div class="setting-group">
+                    <div class="setting-group" data-help="deepgramKey">
                         <label for="deepgramKeyInput">Deepgram key</label>
                         <div id="deepgramKeyRow">
                             <input type="text" id="deepgramKeyInput" placeholder="Your Deepgram API key" autocomplete="off" spellcheck="false">
@@ -321,7 +327,7 @@
                          Samantha, the rest being 1980s novelty voices or
                          one-per-language minimum-quality voices, and installing
                          better ones does not make them reachable from a web app. -->
-                    <div class="setting-group">
+                    <div class="setting-group" data-help="yourVoice">
                         <label>Your speaking voice</label>
                         <div class="radio-row">
                             <label class="radio-label"><input type="radio" name="ttsProvider" value="builtin"> This device's voices (free)</label>
@@ -351,7 +357,7 @@
                             <p id="auraVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
                         </div>
                     </div>
-                    <div class="setting-group">
+                    <div class="setting-group" data-help="practicePartnerVoice">
                         <label>Practice partner voice</label>
                         <div id="builtinPartnerVoiceRow">
                             <select id="partnerVoiceSelect" aria-label="Practice partner voice"></select>
@@ -603,11 +609,11 @@
                     <h3>Conversant AAC</h3>
                     <p class="about-version">Version <span id="aboutVersion">0.2</span> — Phase 1 Proof of Concept</p>
                     <p class="about-description">Conversant AAC gives non-speaking individuals access to real-time conversation. Generative AI presents response options within seconds of a communication partner's utterance.</p>
-                    <div class="setting-group">
+                    <div class="setting-group" data-help="appUpdates">
                         <label>App updates</label>
                         <button id="reloadAppBtn" type="button">Reload the app</button>
                     </div>
-                    <div class="setting-group">
+                    <div class="setting-group" data-help="errorLog">
                         <label>Error log <span id="errorLogCount" class="setting-hint"></span></label>
                         <textarea id="errorLogView" readonly rows="6" placeholder="No errors recorded." aria-label="Error log"></textarea>
                         <div id="errorLogActions">
@@ -615,7 +621,7 @@
                             <button id="clearErrorLogBtn" type="button">Clear</button>
                         </div>
                     </div>
-                    <div class="setting-group usage-group">
+                    <div class="setting-group usage-group" data-help="apiCost">
                         <label>Estimated API Cost</label>
                         <div id="usageDisplay">
                             <span id="usageCost">$0.00</span>

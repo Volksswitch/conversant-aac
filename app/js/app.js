@@ -25,6 +25,7 @@ import * as platform from './platform.js';
 import * as sttDeepgram from './stt-deepgram.js';
 import * as ttsDeepgram from './tts-deepgram.js';
 import { confirmDanger } from './confirm-dialog.js';
+import * as helpMode from './help-mode.js';
 
 // The platform verdict on partner capture (see platform.js), or null when capture
 // is expected to work. Non-null drives the pre-start warning; it does NOT by
@@ -161,6 +162,47 @@ async function speakUserStatement(text) {
     speakingUserStatement = true;
     try { await tts.speak(text); }
     finally { speakingUserStatement = false; }
+}
+
+// Spoken help in Settings: arm the "?", then tap a control, its label, or a tab to
+// hear what it does. See help-mode.js for the interaction model and why every tap is
+// intercepted before the control sees it.
+let speakingHelp = false;
+
+function initSpokenHelp() {
+    helpMode.init({
+        dialog: document.getElementById('settingsDialog'),
+        helpBtn: document.getElementById('settingsHelpBtn'),
+        speak: async (text) => {
+            // Suppressed from the now-playing line for the same reason a user
+            // statement is: that line is for speech the user cannot otherwise
+            // account for, and help is something they just asked for.
+            speakingHelp = true;
+            try { await tts.speak(text, { voiceURI: pickHelpVoice() }); }
+            finally { speakingHelp = false; }
+        },
+        cancel: () => tts.cancel(),
+        // No entry: say the control's own label rather than nothing. Silence would
+        // read as a broken feature, and the label is usually informative on its own.
+        labelFor: (key, groupEl) => {
+            const id = key && key.startsWith('control:') ? key.slice('control:'.length) : null;
+            const own = id && document.querySelector(`#settingsContent label[for="${CSS.escape(id)}"]`);
+            const label = own || (groupEl && groupEl.querySelector('label'));
+            return label ? label.textContent.trim() : '';
+        },
+    });
+}
+
+// Which voice reads the help. INTELLIGIBILITY FIRST, not distinctness (Ken, Aug 2
+// 2026): "there's only one non-silly voice available on an iPad. If they choose the
+// one non-silly voice as their own, then a tool tip would be read in what might be an
+// unintelligible voice." So this reuses pickPartnerVoice's selection — which already
+// excludes novelty voices and prefers a different voice in the SAME language — and
+// falls back to the user's own voice when it can find no usable alternative, rather
+// than reading help aloud as Zarvox. On a paid voice, tts.speak keeps using Aura,
+// which is intelligible whatever it picks.
+function pickHelpVoice() {
+    return pickPartnerVoice(null) || undefined;
 }
 
 function applyPrivacyState() {
@@ -323,7 +365,10 @@ function initApp() {
     // SYSTEM speech (placeholders): the user's OWN statements go straight to the
     // transcript, so showing them here as tentative "pre-text" is redundant (Ken).
     tts.onSpeakingChange((speaking, text) => {
-        if (speaking && speakingUserStatement) return;
+        // Help is excluded for the same reason a user statement is: this line exists
+        // for speech the user cannot otherwise account for, and help is something
+        // they just asked for — and it plays behind an open Settings panel anyway.
+        if (speaking && (speakingUserStatement || speakingHelp)) return;
         ui.setNowPlaying(speaking ? text : null);
     });
 
@@ -378,6 +423,7 @@ function initApp() {
     keyboard.setSideDockPosition(storage.loadSideDockPosition());
     keyboard.setKeyboardDock(storage.loadKeyboardDock());
     initSettingsTabs();
+    initSpokenHelp();
     // Take the keyboard preview down when Settings is dismissed. The Close
     // button does this explicitly; this 'cancel' listener covers Escape (the
     // dialog 'close' event proved unreliable here). Settings is now a fixed

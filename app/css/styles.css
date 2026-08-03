@@ -1523,6 +1523,34 @@ dialog::backdrop {
    Settings is the keyguard's open window, so a smaller target is the same trade
    already made for the tab strip. The id qualifier is what beats the global
    `button:not(...)` rule. */
+/* The title bar's right-hand controls: spoken help, then close. */
+#settingsHeaderActions {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+}
+
+/* Spoken help ("?"). Two visible states, and both earn their keep:
+   ARMED tells the user the next tap will explain rather than act (Rule 6 — a latched
+   action shows as a selected button); SPEAKING tells them why a tap just now did
+   nothing, which is the one confusing moment in the interaction. Without the second
+   state a swallowed tap reads as the app being broken. */
+#settingsHeader #settingsHelpBtn.help-armed {
+    background: var(--slot-initiative);
+    color: #fff;
+}
+#settingsHeader #settingsHelpBtn.help-speaking {
+    background: var(--slot-initiative);
+    color: #fff;
+    animation: help-pulse 1.4s ease-in-out infinite;
+}
+@keyframes help-pulse { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.45); } }
+@media (prefers-reduced-motion: reduce) {
+    #settingsHeader #settingsHelpBtn.help-speaking { animation: none; opacity: 0.85; }
+}
+
+#settingsHeader #settingsHelpBtn,
 #settingsHeader #closeSettingsBtn {
     min-height: 2.1rem;
     min-width: 2.1rem;
@@ -1540,15 +1568,23 @@ dialog::backdrop {
     flex-shrink: 0;
 }
 
+#settingsHeader #settingsHelpBtn .icon,
 #settingsHeader #closeSettingsBtn .icon {
     width: 1.35rem;
     height: 1.35rem;
 }
 
+#settingsHeader #settingsHelpBtn:hover,
+#settingsHeader #settingsHelpBtn:focus-visible,
 #settingsHeader #closeSettingsBtn:hover,
 #settingsHeader #closeSettingsBtn:focus-visible {
     /* Was a white wash for the old dark bar; on light grey that is invisible. */
     background: rgba(0, 0, 0, 0.12);
+}
+/* ...but not while lit: the wash would fight the armed/speaking colour. */
+#settingsHeader #settingsHelpBtn.help-armed:hover,
+#settingsHeader #settingsHelpBtn.help-speaking:hover {
+    background: var(--slot-initiative);
 }
 
 #settingsLayout {
