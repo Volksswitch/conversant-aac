@@ -87,7 +87,7 @@ const HELP = {
     "copyErrorLogBtn": "Copies the errors, along with the conversations they happened in, ready to paste into a message.",
     "clearErrorLogBtn": "Empties this list. The copy kept in your data folder is left alone.",
     "resetUsageBtn": "Sets the cost estimate back to zero and starts counting again from today.",
-    "fullscreenInput": "Let the app fill the whole screen, hiding the browser and taskbar. Turn this off if you use a keyguard cut for the smaller layout."
+    "fullscreenInput": "Expands the app to fill the whole screen, hiding the title bar. Turn it off to get the title bar back, or maximise the window instead."
   },
   "radioGroups": {
     "sttProvider": "Who turns the other person's speech into words. Your browser does it free. Deepgram is paid, and works where the browser cannot.",

@@ -26,7 +26,12 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
-_Nothing yet._
+- **"Use the whole screen" now starts switched off.** It was on when it first shipped.
+  Off is a better place to start: the title bar is the easiest way to close the app and
+  costs very little height, and if you want the extra room you can simply maximise the
+  window and keep the title bar. Use the setting when you want to expand the app right
+  out, and turn it off again to come back. If you already chose one way or the other,
+  your choice is kept.
 
 ## Version 0.6.3
 

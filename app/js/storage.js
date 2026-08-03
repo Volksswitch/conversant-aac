@@ -988,11 +988,17 @@ export function saveNoSaveDefault(v) {
     saveSettings(settings);
 }
 
-// Use the whole screen (Ken, August 3 2026). Default ON — the extra height is worth
-// having on every platform, and this is Setup-tier: it moves every keyguard hole, so
-// a user who has already cut plastic turns it off rather than discovering it later.
-// `?? true` and not `!!`, so an absent key means ON rather than OFF.
-export function loadFullscreen() { return loadSettings().fullscreen ?? true; }
+// Use the whole screen. Default OFF (Ken, August 3 2026 — reversed from the ON it
+// shipped as in 0.6.3, once he had lived with it). Off is the better starting point
+// because the window title bar is the easiest way to close the app and costs almost
+// no height, and because a user who wants the space can simply MAXIMISE the window
+// and keep the title bar — which is a better deal than fullscreen for most people.
+// Starting off also teaches the control as an expand/contract toggle rather than a
+// state you arrive in and have to find your way out of.
+//
+// Plain `!!`, so an absent key is OFF. An explicit choice made in 0.6.3 is stored and
+// is respected either way; only "never touched it" changes meaning.
+export function loadFullscreen() { return !!loadSettings().fullscreen; }
 export function saveFullscreen(v) {
     const settings = loadSettings();
     settings.fullscreen = !!v;
