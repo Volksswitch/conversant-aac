@@ -56,6 +56,7 @@ const SHELL = [
   './js/transcript-log.js',
   './js/worldview.js',
   './js/relationships.js',
+  './js/places.js',
   './js/worldview-ui.js',
   './js/confirm-dialog.js',
   './js/keyboard.js',

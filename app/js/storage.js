@@ -1145,7 +1145,7 @@ export async function finalizePartnerTurn(handle, { rawTranscript, cleanedTransc
     await flushLog();
 }
 
-export async function logUserResponse({ selectedText, selectedIndex, allOptions, partner = null, feeling = null }) {
+export async function logUserResponse({ selectedText, selectedIndex, allOptions, partner = null, feeling = null, place = null }) {
     if (!conversationSaving) return; // private conversation — nothing is written
     // Start the log lazily if this user turn is the FIRST turn of the conversation
     // — an opener (Start conversation) or an Express-panel phrase takes the floor
@@ -1162,7 +1162,8 @@ export async function logUserResponse({ selectedText, selectedIndex, allOptions,
         selectedIndex,
         allOptions,
         partner,           // who the user was talking with, or null
-        feeling            // how the user felt at this turn, or null
+        feeling,           // how the user felt at this turn, or null
+        place              // where the user was at this turn, or null
     });
     await flushLog();
 }

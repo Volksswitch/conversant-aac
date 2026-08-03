@@ -8,6 +8,7 @@ import * as engine from './engine.js';
 import * as convLogic from './conversation-logic.js';
 import * as worldview from './worldview.js';
 import * as relationships from './relationships.js';
+import * as places from './places.js';
 import * as worldviewUI from './worldview-ui.js';
 import * as keyboard from './keyboard.js';
 import { SIDE_LAYOUTS, BOTTOM_LAYOUTS, LAYOUTS } from './keyboard-layouts.js';
@@ -134,12 +135,16 @@ let generationToken = 0;
 let manualListenArmed = false;
 
 // Active influencer TOGGLES from the Express Panel (Ken, June 26 2026). One
-// active Partner (who the user is talking with) and one active Feeling (current
-// mood) at a time. The Partner personalizes openers + tells the AI who the
-// partner is; the Feeling steers the tone of suggestions. Persist across an
-// exchange; cleared only by tapping the same toggle again or picking another.
+// active Partner (who the user is talking with), one active Feeling (current
+// mood) and one active Place (where the user is) at a time. The Partner
+// personalizes openers + tells the AI who the partner is; the Feeling steers the
+// tone of suggestions; the Place is Phase-2 situational awareness without GPS —
+// it tells the AI the setting, which shapes what a plausible response even is
+// (Ken, August 3 2026). Persist across an exchange; cleared only by tapping the
+// same toggle again or picking another.
 let activePartner = null;
 let activeFeeling = null;
+let activePlace = null;
 
 // Conversation privacy (Ken, July 2026): when true, the current conversation is
 // NOT written to the data folder — the user may want a conversation that can't be
@@ -491,6 +496,8 @@ function initApp() {
     // the cache; handleStart() reloads from the folder and runs the one-time
     // migration of the former worldview "People" module once both are loaded.
     relationships.load().catch(() => { /* falls back to empty graph */ });
+    // My Places (places + their facts) — its own model + file, same lifecycle.
+    places.load().catch(() => { /* falls back to no places */ });
     // Express Panel items — its own model + file. Loaded from cache now; the
     // folder copy (source of truth) is adopted in handleStart once granted.
     expressPanel.load().then(renderExpressPanel).catch(() => { /* falls back to defaults */ });
@@ -786,6 +793,9 @@ async function warmUpStorage() {
     // Same for the relationship graph.
     try { await relationships.load(); } catch { /* keep cached/empty graph */ }
     try { await relationships.syncToFolder(); } catch { /* best-effort */ }
+    // Same for My Places.
+    try { await places.load(); } catch { /* keep cached/empty places */ }
+    try { await places.syncToFolder(); } catch { /* best-effort */ }
     // Same for the Express Panel items (adopt the folder copy, else promote cache).
     try { await expressPanel.load(); } catch { /* keep cached/default items */ }
     try { await expressPanel.syncToFolder(); } catch { /* best-effort */ }
@@ -971,6 +981,7 @@ async function generateOptions(partnerText) {
     // Rebuilt each turn so questionnaire edits take effect immediately.
     llm.setWorldviewBlock(worldview.buildBlock());
     llm.setRelationshipsBlock(relationships.buildBlock());
+    llm.setPlacesBlock(places.buildBlock());
     llm.setSituationBlock(buildSituationBlock());
 
     try {
@@ -1271,9 +1282,11 @@ async function commitExchange(raw, userText, index, opts = {}) {
         // list; a free-composed utterance (index -1) was not picked from a
         // palette, so don't log the (possibly stale) last palette against it.
         allOptions: index >= 0 ? lastPalette.map(m => m.text).filter(Boolean) : [],
-        // Stamp the situation at this turn (who, how the user felt) — null when off.
+        // Stamp the situation at this turn (who, how the user felt, where they
+        // were) — each null when its toggle is off.
         partner: partnerStamp(),
         feeling: feelingStamp(),
+        place: placeStamp(),
     };
 
     if (raw && cleanup) {
@@ -1799,6 +1812,7 @@ async function handleRegenerate() {
     const prior = lastPalette.map((m) => m.text).filter(Boolean);
     llm.setWorldviewBlock(worldview.buildBlock());
     llm.setRelationshipsBlock(relationships.buildBlock());
+    llm.setPlacesBlock(places.buildBlock());
     llm.setSituationBlock(buildSituationBlock());
     const history = [...conversationHistory, { role: 'partner', text: currentPartnerText }];
 
@@ -1867,6 +1881,7 @@ async function handleChoiceChip(chip) {
     activeSteer.focusChoice = pick;   // "New N" must keep answering with this choice
     llm.setWorldviewBlock(worldview.buildBlock());
     llm.setRelationshipsBlock(relationships.buildBlock());
+    llm.setPlacesBlock(places.buildBlock());
     llm.setSituationBlock(buildSituationBlock());
 
     ui.setStatus(`Building responses around "${pick}"...`);
@@ -1904,6 +1919,7 @@ async function handleReframe() {
     placeholders.stop();
     llm.setWorldviewBlock(worldview.buildBlock());
     llm.setRelationshipsBlock(relationships.buildBlock());
+    llm.setPlacesBlock(places.buildBlock());
     llm.setSituationBlock(buildSituationBlock());
 
     // Two modes on the one button, chosen by whether a partner turn is on the floor:
@@ -1999,11 +2015,16 @@ async function handleEndConversation() {
     }
 }
 
-// Clear the active Partner / Feeling toggles and refresh the panel so their
-// selected rings drop.
+// Clear the active Partner / Feeling / Place toggles and refresh the panel so their
+// selected rings drop. Place follows the v0.5.31 rule the other two set — the next
+// conversation should not inherit this one's selections — because a STALE place is
+// worse than an absent one: "the user is at Starbucks right now" silently shapes
+// every suggestion until it is noticed. (The cost is a re-tap when several
+// conversations happen at the same place; flagged for Ken.)
 function clearInfluencers() {
     activePartner = null;
     activeFeeling = null;
+    activePlace = null;
     renderExpressPanel();
 }
 
@@ -2109,11 +2130,13 @@ function renderExpressPanel() {
         onChoiceChip: handleChoiceChip,
         activePartnerId: activePartner ? activePartner.id : null,
         activeFeelingId: activeFeeling ? activeFeeling.id : null,
+        activePlaceId: activePlace ? activePlace.id : null,
         tapMode: storage.loadExpressTapMode(),
         doubleTapMs: storage.loadDoubleTapMs(),
         onSpeak: handleSpeakExpressItem,
         onTogglePartner: handleTogglePartner,
         onToggleFeeling: handleToggleFeeling,
+        onTogglePlace: handleTogglePlace,
         onInMyOwnWords: openComposer,
     });
 }
@@ -2138,6 +2161,15 @@ function buildSituationBlock() {
     }
     if (activeFeeling && activeFeeling.text) {
         lines.push(`The user is currently feeling ${activeFeeling.text.toLowerCase()}. Let this color the tone of the suggested responses, while keeping them authentic to the user.`);
+    }
+    // WHERE the user is — the GPS-free situational-awareness signal (Ken, August 3
+    // 2026). Resolved from the places model by id so the facts are always current;
+    // an item whose place has since been deleted falls back to naming the place, so
+    // the setting is still conveyed even when the details are gone.
+    if (activePlace) {
+        const here = activePlace.placeId ? places.buildHereBlock(activePlace.placeId) : '';
+        if (here) lines.push(here);
+        else if (activePlace.name) lines.push(`The user is at ${activePlace.name} right now. Keep the suggested responses appropriate to being there.`);
     }
     return lines.join(' ');
 }
@@ -2165,6 +2197,15 @@ function feelingStamp() {
     if (!activeFeeling || !activeFeeling.text) return null;
     return { id: activeFeeling.id || null, text: activeFeeling.text };
 }
+// Where the turn happened. Keeps the stable placeId (when the Express item points at
+// a recorded place) so a reviewed conversation can join back to My Places, plus the
+// display label for the case where the place has since been deleted.
+function placeStamp() {
+    if (!activePlace) return null;
+    const label = (activePlace.name || '').trim();
+    if (!label && !activePlace.placeId) return null;
+    return { id: activePlace.placeId || null, label };
+}
 
 // Partner toggle: one active at a time. Tapping the active one turns it off;
 // tapping another switches. Re-renders the panel to reflect the selection. The
@@ -2181,6 +2222,15 @@ function handleToggleFeeling(item) {
     activeFeeling = (activeFeeling && activeFeeling.id === item.id) ? null : item;
     renderExpressPanel();
     ui.setStatus(activeFeeling ? `Feeling ${activeFeeling.text.toLowerCase()}` : 'Feeling cleared');
+}
+
+// Place toggle: one active at a time, same on/off/switch behavior. Like Partner,
+// the effect is applied at the next generation (situation block) — no round-trip is
+// fired here, so tapping where you are never costs a token or interrupts a turn.
+function handleTogglePlace(item) {
+    activePlace = (activePlace && activePlace.id === item.id) ? null : item;
+    renderExpressPanel();
+    ui.setStatus(activePlace ? `At ${activePlace.name}` : 'Place cleared');
 }
 
 // Body classes that place the dock area (Express Panel / keyboard) on the
@@ -3115,6 +3165,7 @@ function openSettings() {
             // adopt an existing on-disk copy, else promote the cache.
             try { await worldview.syncToFolder(); } catch { /* best-effort */ }
             try { await relationships.syncToFolder(); } catch { /* best-effort */ }
+            try { await places.syncToFolder(); } catch { /* best-effort */ }
             try { await expressPanel.syncToFolder(); } catch { /* best-effort */ }
             renderExpressPanel();
             try { await controlPhrases.syncToFolder(); } catch { /* best-effort */ }

@@ -26,7 +26,18 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
-_Nothing yet._
+- **My Places — tell the assistant where you are.** A new section in About Me where
+  you add the places you go and anything worth knowing about each one: what you
+  usually order, who you go with, the address if it's one particular branch. You
+  choose what to record — every place is different, so nothing is a fixed question.
+- **Place buttons in the Express Panel.** Add a place the same way you add a person,
+  then tap it during a conversation to say "I'm here right now". The assistant then
+  suggests responses that fit where you are, and knows what you told it about the
+  place. Like the partner and feeling buttons, tapping it again turns it off, and
+  ending a conversation clears it.
+- A place can be marked **private**, which works exactly as it does for a person: the
+  assistant knows about it, but never brings it up unless you pick a response that
+  does.
 
 ## Version 0.6.2
 

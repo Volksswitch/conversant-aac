@@ -12,8 +12,11 @@
  * carries their personId + name + nickname so the conversation can use their
  * preferred term of address.
  *
+ * Place items are picked from My Places (places.js) the same way, so a place button
+ * always names a place the AI has recorded facts about.
+ *
  * Inserting in place (Ken): each row has a "＋" button that opens an inline
- * Phrase / Partner / Feeling picker RIGHT THERE; choosing a type inserts the new
+ * Phrase / Partner / Feeling / Place picker RIGHT THERE; choosing a type inserts the new
  * item above that row and focuses it — no scrolling up to a toolbar and back. The
  * toolbar's add buttons append to the end (and seed an empty list).
  *
@@ -25,6 +28,7 @@
 
 import * as expressPanel from './express-panel.js';
 import * as relationships from './relationships.js';
+import * as places from './places.js';
 import * as keyboard from './keyboard.js';
 import { CATEGORIES, INFLUENCER_COLORS, FEELING_PRESETS, makeId } from './express-items.js';
 import { confirmDanger } from './confirm-dialog.js';
@@ -60,6 +64,7 @@ function mkBtn(label, cls) {
 function newItem(type) {
     if (type === 'partner') return { id: makeId(), type: 'partner', name: '', nickname: '' };
     if (type === 'feeling') return { id: makeId(), type: 'feeling', text: '' };
+    if (type === 'place') return { id: makeId(), type: 'place', name: '' };
     return { id: makeId(), type: 'phrase', text: '', cat: 'back' };
 }
 
@@ -86,6 +91,7 @@ function buildToolbar() {
     addItem('+ Phrase', 'phrase');
     addItem('+ Partner', 'partner');
     addItem('+ Feeling', 'feeling');
+    addItem('+ Place', 'place');
 
     const reset = mkBtn('Reset to default', 'ee-reset');
     reset.addEventListener('click', async () => {
@@ -161,7 +167,7 @@ function buildInsertBar(at) {
     const bar = document.createElement('div');
     bar.className = 'ee-insertbar';
     bar.appendChild(Object.assign(document.createElement('span'), { className: 'ee-insertbar-label', textContent: 'Insert here:' }));
-    [['Phrase', 'phrase'], ['Partner', 'partner'], ['Feeling', 'feeling']].forEach(([label, type]) => {
+    [['Phrase', 'phrase'], ['Partner', 'partner'], ['Feeling', 'feeling'], ['Place', 'place']].forEach(([label, type]) => {
         const b = mkBtn(label, 'ee-add');
         b.addEventListener('click', () => addAt(type, at));
         bar.appendChild(b);
@@ -234,6 +240,36 @@ function buildRow(item, i) {
         });
         fields.appendChild(sel);
         fields.appendChild(colorControl(item)); // fixed color for this type, shown
+    } else if (item.type === 'place') {
+        // Pick from My Places (places.js), exactly as a partner is picked from People
+        // I Know — so the button always names a place the AI actually has facts about.
+        // The placeId is what the situation block resolves; the name is carried for
+        // the button face so the panel still renders if the place is later removed.
+        const sel = document.createElement('select');
+        sel.className = 'ee-name-select';
+        const noneOpt = document.createElement('option');
+        noneOpt.value = ''; noneOpt.textContent = '— Choose a place —';
+        sel.appendChild(noneOpt);
+        places.listPlaces().forEach((p) => {
+            const o = document.createElement('option');
+            o.value = p.id;
+            o.textContent = p.name || '(unnamed)';
+            if (p.id === item.placeId) o.selected = true;
+            sel.appendChild(o);
+        });
+        sel.addEventListener('change', () => {
+            if (sel.value) {
+                const p = places.getPlace(sel.value);
+                item.placeId = p.id;
+                item.name = p.name;
+            } else {
+                delete item.placeId;
+                item.name = '';
+            }
+            commit(false);
+        });
+        fields.appendChild(sel);
+        fields.appendChild(colorControl(item)); // fixed color for this type, shown
     } else { // feeling
         const inp = textInput(item.text, 'Feeling (e.g. Happy)', (v) => { item.text = v; commit(false); });
         inp.setAttribute('list', 'ee-feeling-presets');
@@ -288,7 +324,7 @@ export function render() {
     if (!current.length) {
         const p = document.createElement('p');
         p.className = 'setting-hint';
-        p.textContent = 'No items yet — add a phrase, partner, or feeling above.';
+        p.textContent = 'No items yet — add a phrase, partner, feeling, or place above.';
         list.appendChild(p);
     } else {
         current.forEach((item, i) => {

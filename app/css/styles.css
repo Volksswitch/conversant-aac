@@ -1219,6 +1219,7 @@ button:not(.kbd-key):not(.kbd-tool):not(.kbd-pred-btn):not(.ep-btn) {
 .ee-badge-phrase  { background: #546E7A; }
 .ee-badge-partner { background: #5D4037; }
 .ee-badge-feeling { background: #00838F; }
+.ee-badge-place   { background: #827717; }
 .ee-fields { display: flex; flex: 1 1 auto; gap: 0.4rem; flex-wrap: wrap; min-width: 0; }
 .ee-fields input, .ee-fields select { flex: 1 1 8rem; min-width: 0; padding: 0.35rem 0.5rem; border: 1px solid #c4ccd2; border-radius: 6px; font-size: 0.95rem; }
 .ee-fields .ee-name-select { flex: 2 1 16rem; } /* the "Choose a name" dropdown — twice as wide */
@@ -2225,12 +2226,71 @@ body.conv-bottom .tab-panel[data-tab="aboutme"].active {
     margin: 0.25rem 0 0.5rem;
 }
 
-.wv-person-form .wv-person-fields {
+.wv-person-form .wv-person-fields,
+.wv-place-form .wv-person-fields {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
     margin-bottom: 0.5rem;
 }
+
+/* My Places — a place's recorded facts, read-only on the card. Key and value are
+   visually distinct so "favorite drink / mocha latte" scans as one pair. */
+.wv-fact-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    margin: 0.35rem 0 0.5rem;
+}
+
+.wv-fact {
+    display: flex;
+    gap: 0.5rem;
+    align-items: baseline;
+    line-height: 1.4;
+}
+
+.wv-fact-key {
+    flex: 0 0 auto;
+    font-weight: 600;
+    color: #555;
+}
+
+.wv-fact-key::after { content: ':'; }
+
+.wv-fact-value { color: #333; }
+
+/* Fact entry rows in the place form: what / is / remove. The two text fields share
+   the width; the remove button keeps the app-wide minimum touch dimension so it is
+   hittable with limited motor control. */
+.wv-facts {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.wv-fact-row {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+}
+
+.wv-fact-row .wv-text { flex: 1 1 8rem; min-width: 0; }
+
+.wv-fact-del {
+    flex: 0 0 auto;
+    min-width: var(--btn-min-dim);
+    min-height: var(--btn-min-dim);
+    border: 1px solid #e0a4a0;
+    background: #fff;
+    color: #c0392b;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.wv-fact-del:hover { background: #c0392b; color: #fff; }
 
 /* Shared style for checkbox rows in the People editor (Lives with me, Private) */
 .wv-person-checkbox-row {

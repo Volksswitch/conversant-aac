@@ -17,6 +17,7 @@
 
 import * as wv from './worldview.js';
 import * as rel from './relationships.js';
+import * as places from './places.js';
 import { speak } from './tts.js';
 import * as storage from './storage.js';
 import * as keyboard from './keyboard.js';
@@ -29,6 +30,8 @@ let contentEl;
 // was rather than jumping to the top (Ken, June 19 2026). Consumed (and cleared)
 // by the next non-editing renderPeople(); null means a fresh entry → top.
 let peopleReturnScroll = null;
+// Same for the Places list.
+let placesReturnScroll = null;
 
 // Move keyboard focus to the first answerable control within `scope`
 // (a chip or a text input — whichever comes first in the card).
@@ -113,6 +116,9 @@ export async function open() {
     // Relationship graph: load + reconcile so the People section is ready.
     try { await rel.load(); } catch { /* cache/empty graph */ }
     try { await rel.syncToFolder(); } catch { /* best-effort */ }
+    // My Places: same, so the Places section is ready.
+    try { await places.load(); } catch { /* cache/empty places */ }
+    try { await places.syncToFolder(); } catch { /* best-effort */ }
     renderHome();
 }
 
@@ -241,6 +247,22 @@ function renderHome() {
         el('div', { class: 'wv-chevron', text: '›' })
     ]));
 
+    // My Places — places + their arbitrary facts (places.js). Like People, this is
+    // not questionnaire Q&A (every place wants different facts), so it gets its own
+    // editor rather than a module.
+    contentEl.append(el('h3', { class: 'wv-section-title', text: 'Places' }));
+    const np = places.count();
+    const placesMeta = np
+        ? `${np} ${np === 1 ? 'place' : 'places'} added`
+        : 'Add the places you go';
+    contentEl.append(el('button', { class: 'wv-module-row', onclick: renderPlaces }, [
+        el('div', { class: 'wv-module-main' }, [
+            el('div', { class: 'wv-module-title', text: 'My Places' }),
+            el('div', { class: 'wv-module-meta', text: placesMeta })
+        ]),
+        el('div', { class: 'wv-chevron', text: '›' })
+    ]));
+
     contentEl.append(el('div', { class: 'wv-home-footer' }, [
         el('button', { class: 'wv-btn wv-btn-danger', text: 'Restart — clear all answers', onclick: onRestart })
     ]));
@@ -249,13 +271,14 @@ function renderHome() {
 async function onRestart() {
     const ok = await confirmDanger({
         title: 'Clear everything?',
-        body: 'This permanently deletes every answer and all the people you have added. This cannot be undone.',
+        body: 'This permanently deletes every answer, all the people you have added, and all the places you have added. This cannot be undone.',
         confirmLabel: 'Yes, clear it all',
         cancelLabel: 'Keep my answers'
     });
     if (!ok) return;
     await wv.resetAll();
     await rel.resetAll();
+    await places.resetAll();
     renderHome();
 }
 
@@ -444,6 +467,173 @@ function buildPersonForm(existing) {
     const actions = el('div', { class: 'wv-actions' }, [save]);
     if (existing) {
         actions.append(el('button', { class: 'wv-btn wv-btn-link', text: 'Cancel', onclick: () => renderPeople() }));
+    }
+    card.append(actions);
+    return card;
+}
+
+// --- My Places (places + arbitrary facts) -----------------------------------
+
+// Places are a name plus ARBITRARY NAMED FACTS (places.js), not questionnaire
+// answers: what is worth knowing about a coffee shop, a clinic and a cousin's house
+// have almost nothing in common, so there is no fixed field set to ask about. The
+// editor is therefore a name + as many key/value rows as the user wants.
+//
+// Suggested fact names only — offered through a datalist so they are quick to pick
+// and equally quick to ignore. Ken's own example ("Location: 123 Main Street") leads,
+// with the note that it belongs only when the place is one specific branch.
+const FACT_SUGGESTIONS = [
+    'Location', 'Address', 'What I usually order', 'Who I go with', 'How I get there',
+    'People I know there', 'What I do there', 'Best time to go', 'Parking', 'Notes'
+];
+
+function renderPlaces(editingId = null) {
+    contentEl.innerHTML = '';
+
+    contentEl.append(el('button', { class: 'wv-back', text: '‹ All topics', onclick: renderHome }));
+    contentEl.append(el('h3', { class: 'wv-page-title', text: 'My Places' }));
+    contentEl.append(el('p', { class: 'wv-intro', text:
+        'Add the places you go, and anything worth knowing about each one. In a conversation '
+        + 'you can tap a place in the Express Panel to say "I\'m here right now", and the assistant '
+        + 'will suggest responses that fit where you are. Mark a place private and the assistant '
+        + 'will know about it but won\'t bring it up unless you choose a response that does.' }));
+
+    // Shared datalist of suggested fact names for every row on the page.
+    const dl = el('datalist', { id: 'wv-fact-suggestions' });
+    for (const s of FACT_SUGGESTIONS) dl.append(el('option', { value: s }));
+    contentEl.append(dl);
+
+    for (const p of places.listPlaces()) {
+        contentEl.append(editingId === p.id ? buildPlaceForm(p) : buildPlaceCard(p));
+    }
+
+    contentEl.append(el('h3', { class: 'wv-section-title', text: 'Add a place' }));
+    contentEl.append(buildPlaceForm(null));
+
+    // Same scroll discipline as the People list: editing brings the form into view,
+    // returning from an edit restores where the list was, a fresh entry starts at top.
+    if (editingId) {
+        const form = document.getElementById('wvplaceform-' + editingId);
+        if (form) form.scrollIntoView({ block: 'center' });
+    } else if (placesReturnScroll != null) {
+        contentEl.scrollTop = placesReturnScroll;
+        placesReturnScroll = null;
+    } else {
+        contentEl.scrollTop = 0;
+    }
+}
+
+function buildPlaceCard(p) {
+    const card = el('div', { class: 'wv-card', id: 'wvplace-' + p.id });
+
+    const head = el('div', { class: 'wv-card-head' }, [
+        el('div', { class: 'wv-question', text: p.name || '(unnamed place)' })
+    ]);
+    if (p.private) head.append(el('span', { class: 'wv-badge wv-badge-private', text: '🔒 Private' }));
+    card.append(head);
+
+    if (p.facts.length) {
+        const list = el('div', { class: 'wv-fact-list' });
+        for (const f of p.facts) {
+            list.append(el('div', { class: 'wv-fact' }, [
+                el('span', { class: 'wv-fact-key', text: f.key }),
+                el('span', { class: 'wv-fact-value', text: f.value })
+            ]));
+        }
+        card.append(list);
+    }
+
+    card.append(el('div', { class: 'wv-actions' }, [
+        el('button', { class: 'wv-btn wv-btn-link', text: 'Edit',
+            onclick: () => { placesReturnScroll = contentEl.scrollTop; renderPlaces(p.id); } }),
+        el('button', { class: 'wv-btn wv-btn-link', text: 'Remove',
+            onclick: async () => {
+                const ok = await confirmDanger({
+                    title: `Remove ${p.name || 'this place'}?`,
+                    body: 'This removes the place and everything you recorded about it. This cannot be undone.',
+                    confirmLabel: 'Remove',
+                    cancelLabel: 'Cancel'
+                });
+                if (!ok) return;
+                await places.removePlace(p.id);
+                renderPlaces();
+            } })
+    ]));
+    return card;
+}
+
+// Edit form for an existing place, or the blank "add a place" form when
+// `existing` is null. Fact rows are added and removed live; the current field
+// values are read back into the draft before every rebuild so nothing typed is lost
+// when a row is added or removed mid-entry.
+function buildPlaceForm(existing) {
+    const card = el('div', { class: 'wv-card wv-place-form',
+        id: existing ? 'wvplaceform-' + existing.id : null });
+
+    const nameIn = el('input', { type: 'text', class: 'wv-text', placeholder: 'Place (e.g. Starbucks)',
+        value: existing ? existing.name : '' });
+
+    // One blank row to start, so the first fact costs no extra tap.
+    let draft = existing && existing.facts.length
+        ? existing.facts.map((f) => ({ ...f }))
+        : [{ key: '', value: '' }];
+
+    const factsWrap = el('div', { class: 'wv-facts' });
+
+    // Read what is currently typed back into the draft, so add/remove never discards it.
+    const syncDraft = () => {
+        const rows = factsWrap.querySelectorAll('.wv-fact-row');
+        draft = [...rows].map((row) => ({
+            key: row.querySelector('.wv-fact-key-input').value,
+            value: row.querySelector('.wv-fact-value-input').value
+        }));
+    };
+
+    const renderFacts = () => {
+        factsWrap.innerHTML = '';
+        draft.forEach((f, i) => {
+            const keyIn = el('input', { type: 'text', class: 'wv-text wv-fact-key-input',
+                placeholder: 'What (e.g. favorite drink)', value: f.key, list: 'wv-fact-suggestions' });
+            const valIn = el('input', { type: 'text', class: 'wv-text wv-fact-value-input',
+                placeholder: 'Is (e.g. mocha latte)', value: f.value });
+            const del = el('button', { class: 'wv-fact-del', text: '✕',
+                'aria-label': 'Remove this fact', title: 'Remove this fact',
+                onclick: () => { syncDraft(); draft.splice(i, 1); if (!draft.length) draft.push({ key: '', value: '' }); renderFacts(); } });
+            factsWrap.append(el('div', { class: 'wv-fact-row' }, [keyIn, valIn, del]));
+        });
+    };
+    renderFacts();
+
+    const addFact = el('button', { class: 'wv-btn wv-btn-link', text: '+ Add a fact',
+        onclick: () => { syncDraft(); draft.push({ key: '', value: '' }); renderFacts();
+            factsWrap.querySelector('.wv-fact-row:last-child .wv-fact-key-input')?.focus(); } });
+
+    const privId = 'wvplacepriv-' + (existing ? existing.id : 'new');
+    const privCheck = el('input', { type: 'checkbox', id: privId });
+    if (existing && existing.private) privCheck.checked = true;
+    const privRow = el('label', { class: 'wv-person-checkbox-row', for: privId }, [
+        privCheck, el('span', { text: 'Private — AI knows but won\'t bring it up unprompted' })
+    ]);
+
+    card.append(el('div', { class: 'wv-person-fields' }, [nameIn, factsWrap, addFact, privRow]));
+
+    const save = el('button', { class: 'wv-btn wv-btn-primary', text: existing ? 'Save' : 'Add place',
+        onclick: async () => {
+            syncDraft();
+            const name = nameIn.value.trim();
+            if (!name) return;   // a place with no name can't be shown or referred to
+            const facts = draft;  // places.js drops the blank rows
+            if (existing) {
+                await places.updatePlace(existing.id, { name, facts, isPrivate: privCheck.checked });
+            } else {
+                await places.addPlace({ name, facts, isPrivate: privCheck.checked });
+            }
+            renderPlaces();
+        } });
+
+    const actions = el('div', { class: 'wv-actions' }, [save]);
+    if (existing) {
+        actions.append(el('button', { class: 'wv-btn wv-btn-link', text: 'Cancel', onclick: () => renderPlaces() }));
     }
     card.append(actions);
     return card;

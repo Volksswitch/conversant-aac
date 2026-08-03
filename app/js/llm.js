@@ -5,6 +5,7 @@ let apiKey = null;
 let onUsageUpdate = null;
 let worldviewBlock = '';
 let relationshipsBlock = '';
+let placesBlock = '';
 let situationBlock = '';
 
 export function setApiKey(key) {
@@ -62,6 +63,15 @@ export function setRelationshipsBlock(text) {
     relationshipsBlock = (text || '').trim();
 }
 
+// The compact places text (places.buildBlock()). Set fresh before each generation
+// alongside the worldview and relationship blocks, so edits to My Places take effect
+// immediately. Private places are already withheld from being volunteered by
+// buildBlock. WHERE the user is right now is separate — that rides in the situation
+// block, because it changes per conversation rather than per edit.
+export function setPlacesBlock(text) {
+    placesBlock = (text || '').trim();
+}
+
 // The current SITUATION — who the user is talking with (active Partner toggle)
 // and how they're feeling (active Feeling toggle). Set fresh before each
 // generation; empty when no influencer is active. Partner gives the AI the
@@ -78,6 +88,7 @@ function buildProfileBlock() {
     const sections = [];
     if (worldviewBlock) sections.push(`\n\n${worldviewBlock}`);
     if (relationshipsBlock) sections.push(`\n\n${relationshipsBlock}`);
+    if (placesBlock) sections.push(`\n\n${placesBlock}`);
     if (situationBlock) sections.push(`\n\n${situationBlock}`);
     sections.push(`\n\nNever output placeholder text in square brackets such as [Name], [your name], or [city]. If you do not know a personal detail, phrase the response so it is not needed.`);
     return sections.join('');

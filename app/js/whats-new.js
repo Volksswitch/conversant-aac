@@ -21,6 +21,11 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.6.3": [
+    "My Places — tell the assistant where you are. A new section in About Me where you add the places you go and anything worth knowing about each one: what you usually order, who you go with, the address if it's one particular branch. You choose what to record — every place is different, so nothing is a fixed question.",
+    "Place buttons in the Express Panel. Add a place the same way you add a person, then tap it during a conversation to say \"I'm here right now\". The assistant then suggests responses that fit where you are, and knows what you told it about the place. Like the partner and feeling buttons, tapping it again turns it off, and ending a conversation clears it.",
+    "A place can be marked private, which works exactly as it does for a person: the assistant knows about it, but never brings it up unless you pick a response that does."
+  ],
   "0.6.2": [
     "The two buttons at the top of Settings are much bigger. The help and close buttons now follow the same minimum size as every other button, so it is far harder to close Settings when you meant to ask for help. This makes the bar across the top of Settings taller.",
     "Settings can now tell you what a setting does, out loud. There is a question mark button next to the X at the top of the Settings panel. Tap it, then tap any setting, its label, or a tab, and the app says what that one does. Tapping a setting while help is on does not change it, so you can ask about something without altering it by mistake. It answers one question at a time and then switches itself off, so you are never stuck in help mode when you actually want to change a value. If you have heard enough, tap anywhere to stop it — and tapping the same setting again both stops it and does what that setting normally does.",

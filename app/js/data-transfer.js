@@ -20,7 +20,7 @@
  * None of this is iPad-only: this is the mechanism the long-planned cross-device
  * transfer feature has always needed on Windows too.
  *
- * WHAT TRAVELS: the four user-owned data files, the portable settings, and the
+ * WHAT TRAVELS: the five user-owned data files, the portable settings, and the
  * conversation logs. WHAT DOES NOT: the API key and the machine-local counters —
  * storage.getPortableSettings() applies the same exclusion the named-profile
  * feature uses, so a backup file can never carry the plaintext key (SEC-6).
@@ -39,6 +39,7 @@ export const PACKAGE_VERSION = 1;
 const DATA_FILES = [
     { file: 'worldview.json',       cache: 'aac_worldview',       label: 'About Me answers' },
     { file: 'relationships.json',   cache: 'aac_relationships',   label: 'People and relationships' },
+    { file: 'places.json',          cache: 'aac_places',          label: 'My Places' },
     { file: 'control-phrases.json', cache: 'aac_control_phrases', label: 'Starters and control phrases' },
     { file: 'express-panel.json',   cache: 'aac_express_items',   label: 'Express Panel items' },
 ];
@@ -107,6 +108,8 @@ export function summarize(pkg) {
             detail = ` (${answered} answered)`;
         } else if (entry.file === 'relationships.json' && value && Array.isArray(value.people)) {
             detail = ` (${value.people.length})`;
+        } else if (entry.file === 'places.json' && value && Array.isArray(value.places)) {
+            detail = ` (${value.places.length})`;
         } else if (Array.isArray(value)) {
             detail = ` (${value.length})`;
         }

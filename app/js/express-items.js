@@ -14,11 +14,16 @@
  *                 the relationship graph (personId) or be a free-form name.
  *   - feeling : { type:'feeling', text }                a TOGGLE that sets the
  *                 user's current mood so suggestions lean that way.
+ *   - place   : { type:'place',   name, placeId? }      a TOGGLE that marks WHERE
+ *                 the user is (My Places — places.js). This is Phase-2 situational
+ *                 awareness obtained without GPS: the user taps where they are, and
+ *                 the AI is told the setting plus whatever facts are recorded about
+ *                 it ("favorite drink: mocha latte").
  *
- * Partner and Feeling are mutually-exclusive WITHIN their kind (one active
- * partner, one active feeling); tapping an active one again turns it off, and
- * tapping a different one of the same kind switches. They carry distinct colors
- * (see INFLUENCER_COLORS) so they read apart from each other and from phrases.
+ * Partner, Feeling and Place are mutually-exclusive WITHIN their kind (one active
+ * partner, one active feeling, one active place); tapping an active one again turns
+ * it off, and tapping a different one of the same kind switches. They carry distinct
+ * colors (see INFLUENCER_COLORS) so they read apart from each other and from phrases.
  *
  * This module holds only DEFAULTS + metadata; the live list lives in the
  * express-panel.js model (data folder + cache) and is edited in Settings →
@@ -39,12 +44,15 @@ export const CATEGORIES = {
   cont:   { label: 'Continuer',     color: '#546E7A', tint: '#eceff1' }, // blue-grey
 };
 
-// Distinct, saturated colors for the two influencer TYPES — different from each
+// Distinct, saturated colors for the three influencer TYPES — different from each
 // other and from every phrase category (Ken). Rendered as a solid fill so they
 // pop apart from the pastel phrase buttons; the toggled-on state is stronger still.
+// Place is olive: the palette had no yellow-green, so it cannot be confused with
+// the deep orange (pace) or cyan (feeling) it sits nearest in hue.
 export const INFLUENCER_COLORS = {
   partner: { color: '#5D4037', tint: '#efebe9' }, // brown
   feeling: { color: '#00838F', tint: '#e0f7fa' }, // cyan
+  place:   { color: '#827717', tint: '#f9fbe7' }, // olive
 };
 
 // Choice chips: the alternatives the partner just offered ("mild / moderate /

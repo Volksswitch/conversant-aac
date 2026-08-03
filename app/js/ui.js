@@ -351,9 +351,9 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
     if (!epGrid) return;
     const {
         categories = {}, influencerColors = {},
-        activePartnerId = null, activeFeelingId = null,
+        activePartnerId = null, activeFeelingId = null, activePlaceId = null,
         tapMode = 'single', doubleTapMs = 400,
-        onSpeak, onTogglePartner, onToggleFeeling, onInMyOwnWords,
+        onSpeak, onTogglePartner, onToggleFeeling, onTogglePlace, onInMyOwnWords,
         // Choice chips take the leading cells for exactly as long as the partner has
         // a closed set on the table, and only as many cells as there are choices
         // (Ken, July 2026 — no standing reservation). With none on offer the panel
@@ -398,6 +398,21 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
             b.setAttribute('aria-pressed', String(item.id === activePartnerId));
             b.innerHTML = `<span class="ep-text">${escapeHtml(label)}</span>`;
             b.addEventListener('click', () => onTogglePartner && onTogglePartner(item));
+            return b;
+        }
+        if (item.type === 'place') {
+            // Where the user is. Same toggle shape as partner — this is the GPS-free
+            // situational-awareness signal, so it reads as an influencer, not a phrase.
+            const label = item.name || 'Place';
+            const ic = influencerColors.place || {};
+            setColor(b, ic.color, ic.tint);
+            b.classList.add('ep-place');
+            if (item.id && item.id === activePlaceId) b.classList.add('ep-on');
+            b.title = `I'm at ${label}`;
+            b.setAttribute('aria-label', `I'm at ${label}${item.id === activePlaceId ? ' (on)' : ''}`);
+            b.setAttribute('aria-pressed', String(item.id === activePlaceId));
+            b.innerHTML = `<span class="ep-text">${escapeHtml(label)}</span>`;
+            b.addEventListener('click', () => onTogglePlace && onTogglePlace(item));
             return b;
         }
         if (item.type === 'feeling') {
