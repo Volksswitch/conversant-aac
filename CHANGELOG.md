@@ -26,6 +26,10 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+_Nothing yet._
+
+## Version 0.6.2
+
 - **The two buttons at the top of Settings are much bigger.** The help and close
   buttons now follow the same minimum size as every other button, so it is far harder
   to close Settings when you meant to ask for help. This makes the bar across the top
