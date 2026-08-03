@@ -673,7 +673,6 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
     cursor: pointer;
     transition: background 0.12s;
 }
-.cmd-btn:hover,
 .cmd-btn:focus-visible {
     background: var(--slot-persistent);
     color: #fff;
@@ -683,7 +682,6 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
     border-color: #e0a4a0;
     color: #c0392b;
 }
-.cmd-btn-end:hover,
 .cmd-btn-end:focus-visible {
     background: #c0392b;
     border-color: #c0392b;
@@ -766,7 +764,6 @@ body.conv-bottom .palette-grid {
     font-weight: 600;
     cursor: pointer;
 }
-.response-error-retry:hover { background: rgba(217, 130, 43, 0.15); }
 
 /* Error-log viewer (Settings → About): a read-only monospace pane with its
    actions on a row beneath. */
@@ -931,7 +928,6 @@ body.conv-bottom .palette-grid {
     cursor: pointer;
     transition: box-shadow 0.12s, transform 0.05s;
 }
-.response-card:hover,
 .response-card:focus-visible {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
     outline: none;
@@ -1056,7 +1052,6 @@ body.conv-bottom .palette-grid {
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
 }
-.ep-btn:hover,
 .ep-btn:focus-visible {
     background: #fff;
     outline: 2px solid var(--ep-color);
@@ -1076,7 +1071,6 @@ body.conv-bottom .palette-grid {
     color: #fff;
 }
 .ep-btn.ep-imow .ep-text { font-weight: 700; }
-.ep-btn.ep-imow:hover,
 .ep-btn.ep-imow:focus-visible { background: #1d2b38; color: #fff; outline-color: #1d2b38; }
 /* Choice chips — the alternatives the partner just offered, filled into the
    reserved leading cells. Solid green (echoing the CHOICE response cards they
@@ -1089,7 +1083,6 @@ body.conv-bottom .palette-grid {
     border-style: dashed;
     border-left-style: solid;
 }
-.ep-btn.ep-choice:hover,
 .ep-btn.ep-choice:focus-visible {
     background: color-mix(in srgb, var(--ep-color) 82%, #000);
     color: #fff;
@@ -1105,8 +1098,8 @@ body.conv-bottom .palette-grid {
     color: #fff;
     border-color: var(--ep-color);
 }
-.ep-btn.ep-partner:hover, .ep-btn.ep-partner:focus-visible,
-.ep-btn.ep-feeling:hover, .ep-btn.ep-feeling:focus-visible {
+.ep-btn.ep-partner:focus-visible,
+.ep-btn.ep-feeling:focus-visible {
     background: color-mix(in srgb, var(--ep-color) 82%, #000);
     color: #fff;
     outline-color: var(--ep-color);
@@ -1253,7 +1246,6 @@ button:not(.kbd-key):not(.kbd-tool):not(.kbd-pred-btn):not(.ep-btn) {
     border-radius: 8px;
     cursor: pointer;
 }
-.regenerate-btn:hover,
 .regenerate-btn:focus-visible {
     background: var(--slot-persistent);
     color: #fff;
@@ -1382,7 +1374,6 @@ button:not(.kbd-key):not(.kbd-tool):not(.kbd-pred-btn):not(.ep-btn) {
     cursor: pointer;
     transition: background 0.12s;
 }
-.persist-btn:hover,
 .persist-btn:focus-visible {
     background: var(--slot-persistent);
     color: #fff;
@@ -1407,16 +1398,10 @@ button:not(.kbd-key):not(.kbd-tool):not(.kbd-pred-btn):not(.ep-btn) {
     font-weight: 600;
     cursor: pointer;
 }
-.session-btn:hover { filter: brightness(1.1); }
 .session-btn-end {
     background: #fff;
     color: #c0392b;
     border: 2px solid #e0a4a0;
-}
-.session-btn-end:hover {
-    background: #c0392b;
-    color: #fff;
-    filter: none;
 }
 
 /* Region D — composer access. */
@@ -1450,12 +1435,10 @@ button:not(.kbd-key):not(.kbd-tool):not(.kbd-pred-btn):not(.ep-btn) {
     background: #fff;
     color: var(--header);
 }
-.composer-btn:hover { background: #eef1f4; }
 .composer-btn-primary {
     background: var(--header);
     color: #fff;
 }
-.composer-btn-primary:hover { filter: brightness(1.1); background: var(--header); }
 .composer-btn-quiet {
     flex: 0 0 auto;
     /* Solid dark border matching Reframe (.composer-btn's var(--header)) (Ken). */
@@ -3112,5 +3095,80 @@ body.conv-bottom .tab-panel[data-tab="aboutme"].active {
     background: #2c3e50;
     color: #fff;
     border-color: #2c3e50;
+}
+
+/* ---------------------------------------------------------------------------
+   HOVER ON THE CONVERSATION SURFACE IS GATED (Ken, August 3 2026)
+
+   Reported as "selecting the 4-more button causes the background color to change
+   to black and remain that way". It is not the regenerate button and it is not
+   black: --slot-persistent is #455A64 slate, and the cause is that ON A TOUCH
+   SCREEN :hover STICKS. There is no pointer to move away, so the browser leaves
+   the tapped element in its hover state until something else is tapped — the
+   button correctly inverts to slate on tap and then simply never reverts.
+
+   That makes :hover the wrong tool for the ENTIRE base conversation UI, which is
+   touch-only and keyguard-backed by design, so every one of these rules had the
+   same defect — the Command Bar, the Express Panel, the session buttons. The
+   regenerate button is just where it shows worst: a full white-to-slate inversion
+   on a control the user taps repeatedly without moving on.
+
+   `hover: hover` matches only a device with a pointer that can genuinely rest
+   over an element, so a Surface with its trackpad still gets hover feedback and a
+   bare touchscreen never gets stuck. :focus-visible stays OUTSIDE this block, so
+   keyboard users keep their focus styling on every device.
+
+   Left alone deliberately: Settings, About Me and the editors. Same defect, far
+   lower stakes — those are supporter-assisted overlays rather than the surface a
+   non-speaking user drives a live conversation from, and a stuck tint there is
+   cosmetic. Revisit if it proves distracting on the device.
+   --------------------------------------------------------------------------- */
+@media (hover: hover) {
+    .cmd-btn:hover {
+        background: var(--slot-persistent);
+        color: #fff;
+        outline: none;
+    }
+    .cmd-btn-end:hover {
+        background: #c0392b;
+        border-color: #c0392b;
+        color: #fff;
+    }
+    .persist-btn:hover {
+        background: var(--slot-persistent);
+        color: #fff;
+        outline: none;
+    }
+    .regenerate-btn:hover {
+        background: var(--slot-persistent);
+        color: #fff;
+        outline: none;
+    }
+    .response-card:hover {
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
+        outline: none;
+    }
+    .response-error-retry:hover { background: rgba(217, 130, 43, 0.15); }
+    .ep-btn:hover {
+        background: #fff;
+        outline: 2px solid var(--ep-color);
+        outline-offset: -1px;
+    }
+    .ep-btn.ep-imow:hover { background: #1d2b38; color: #fff; outline-color: #1d2b38; }
+    .ep-btn.ep-choice:hover,
+    .ep-btn.ep-partner:hover,
+    .ep-btn.ep-feeling:hover {
+        background: color-mix(in srgb, var(--ep-color) 82%, #000);
+        color: #fff;
+        outline-color: var(--ep-color);
+    }
+    .session-btn:hover { filter: brightness(1.1); }
+    .session-btn-end:hover {
+        background: #c0392b;
+        color: #fff;
+        filter: none;
+    }
+    .composer-btn:hover { background: #eef1f4; }
+    .composer-btn-primary:hover { filter: brightness(1.1); background: var(--header); }
 }
 

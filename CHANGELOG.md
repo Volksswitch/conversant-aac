@@ -37,6 +37,15 @@ forgetting to tag one is only ever noise, never silence.
   conversation ends** — ending a conversation doesn't move you, so several
   conversations in the same place cost one tap, not one each. Tap it again to turn
   it off, or tap a different place to switch.
+- **Buttons no longer stay highlighted after you tap them.** On a touchscreen a
+  button kept the dark "pointing at it" colouring after being tapped, because there
+  is no mouse to move away — most obvious on the "New 4" button, which turned dark
+  and stayed that way. Every button on the conversation screen now only highlights
+  on a device that really has a pointer.
+- **The choice you tap now stays lit up.** When the other person offers you a set of
+  options and you tap one in the Express Panel, that button now shows as chosen and
+  stays chosen — so when you ask for a new set of responses, you can see they are
+  still about the option you picked.
 - **The app now uses the whole screen.** A new "Use the whole screen" setting on
   Settings → General, on to begin with, hides the browser and the taskbar so the
   conversation gets the extra height — about a tenth more room top to bottom. Turn it

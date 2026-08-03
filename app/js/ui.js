@@ -359,7 +359,7 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         // (Ken, July 2026 — no standing reservation). With none on offer the panel
         // is byte-for-byte the phrase grid it was before the feature existed; with
         // N on offer the phrases shift N cells along and the last N drop off the end.
-        choiceChips = [], choiceColor = {}, onChoiceChip,
+        choiceChips = [], choiceColor = {}, onChoiceChip, activeChoice = null,
     } = opts;
     epGrid.innerHTML = '';
 
@@ -449,8 +449,16 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         b.className = 'ep-btn ep-choice';
         b.style.flex = `${span} 1 0`;
         setColor(b, choiceColor.color, choiceColor.tint);
+        // A tapped chip STAYS selected while its steering is in effect (Rule 6 — a
+        // latched action shows as a selected button). Without this the steering was
+        // invisible: "New N" does re-send it, but nothing on screen said so, so the
+        // cards coming back about the same alternative read as the button having
+        // done nothing.
+        const on = activeChoice != null && chip.label === activeChoice;
+        if (on) b.classList.add('ep-on');
         b.title = `Answer with "${chip.label}" — rebuilds the response cards around it`;
-        b.setAttribute('aria-label', `Answer with ${chip.label}`);
+        b.setAttribute('aria-label', `Answer with ${chip.label}${on ? ' (chosen)' : ''}`);
+        b.setAttribute('aria-pressed', String(on));
         b.innerHTML = `<span class="ep-text">${escapeHtml(chip.label)}</span>`;
         // Always single-tap: this doesn't speak, it asks the AI for responses built
         // around the chosen alternative, so a mis-tap costs a round-trip, not a

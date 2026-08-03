@@ -1883,6 +1883,7 @@ async function handleChoiceChip(chip) {
     const token = ++generationToken;
     abortPlaceholders();   // the user has acted — nothing may speak over the result
     activeSteer.focusChoice = pick;   // "New N" must keep answering with this choice
+    renderExpressPanel();             // ...and the chip shows as chosen from this moment
     llm.setWorldviewBlock(worldview.buildBlock());
     llm.setRelationshipsBlock(relationships.buildBlock());
     llm.setPlacesBlock(places.buildBlock());
@@ -2136,6 +2137,10 @@ function renderExpressPanel() {
             .map((label) => ({ label })),
         choiceColor: expressItems.CHOICE_COLOR,
         onChoiceChip: handleChoiceChip,
+        // Derived at render time from the live steering, so the selected chip is
+        // correct on every path — the chip tap, a "New N" that re-sends it, and the
+        // turn boundaries where clearTurnSteering drops it.
+        activeChoice: activeSteer.focusChoice,
         activePartnerId: activePartner ? activePartner.id : null,
         activeFeelingId: activeFeeling ? activeFeeling.id : null,
         activePlaceId: activePlace ? activePlace.id : null,
