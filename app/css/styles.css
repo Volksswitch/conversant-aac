@@ -365,7 +365,8 @@ body.conv-bottom { --dock-h: var(--conv-dock-h, 30vh); }
      spends (count × gap) in total and the rest is divided by count.
    Derived rather than measured on purpose: it is correct before the panel has
    rendered, while the keyboard is covering it, and while Settings is open over
-   the top of it — none of which a getBoundingClientRect() could survive. */
+   the top of it — none of which a getBoundingClientRect() could survive.
+
    The unconstrained axis is the viewport LESS twice the screen edge margin, since
    the dock is inset by it at both ends of that axis. */
 body.conv-bottom {
@@ -1516,18 +1517,14 @@ dialog::backdrop {
     font-weight: 600;
 }
 
-/* The X that dismisses Settings. Exempted from the global --btn-min-dim floor
-   and from .icon-btn's min-width: those exist to make the CONVERSATION surface
-   keyguard-friendly, and honoring them here would make the title bar as tall as
-   the footer this replaced — i.e. it would give back the space it just saved.
-   Settings is the keyguard's open window, so a smaller target is the same trade
-   already made for the tab strip. The id qualifier is what beats the global
-   `button:not(...)` rule. */
-/* The title bar's right-hand controls: spoken help, then close. */
+/* The title bar's right-hand controls: spoken help, then close.
+   The gap has a floor because these two are transparent at rest — with no border or
+   background there is nothing but this space telling them apart, so letting it go to
+   0 (the default --grid-gap) would butt two unmarked targets against each other. */
 #settingsHeaderActions {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
+    gap: max(var(--grid-gap), 0.4rem);
     flex-shrink: 0;
 }
 
@@ -1550,12 +1547,30 @@ dialog::backdrop {
     #settingsHeader #settingsHelpBtn.help-speaking { animation: none; opacity: 0.85; }
 }
 
+/* Sized by the same floor as every other Settings control (Ken, August 2 2026):
+   "The help and close buttons on the Settings tab should also be sensitive to the
+   minimum button height/width. Otherwise it becomes easy to hit the close button
+   when you really want to hit the help button. That will make the Settings title
+   bar taller."
+
+   This REVERSES the exemption these carried when the X replaced the footer Close
+   button. That exemption traded target size for panel height, and the trade was
+   defensible while the X was alone up here — a mis-hit had nothing to land on. Two
+   adjacent 2.1rem targets change the sum: the likely mis-hit is now Help → Close,
+   which does not merely do the wrong thing, it dismisses the panel and loses the
+   user's place. Cheap to recover from for anyone, expensive for someone with limited
+   motor control, which is the population this app is for.
+
+   SQUARE at the height floor, rather than also taking --ui-btn-min-w: they are icon
+   buttons, so square is the right shape (matching .icon-btn), and it keeps both of
+   them inside the title bar even when a wide side dock squeezes the Settings panel
+   down to a couple of hundred pixels. */
 #settingsHeader #settingsHelpBtn,
 #settingsHeader #closeSettingsBtn {
-    min-height: 2.1rem;
-    min-width: 2.1rem;
-    width: 2.1rem;
-    height: 2.1rem;
+    min-height: var(--ui-btn-min-h);
+    min-width: var(--ui-btn-min-h);
+    width: var(--ui-btn-min-h);
+    height: var(--ui-btn-min-h);
     padding: 0;
     border: none;
     border-radius: 4px;

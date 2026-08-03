@@ -26,6 +26,11 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- **The two buttons at the top of Settings are much bigger.** The help and close
+  buttons now follow the same minimum size as every other button, so it is far harder
+  to close Settings when you meant to ask for help. This makes the bar across the top
+  of Settings taller.
+
 - **Settings can now tell you what a setting does, out loud.** There is a question
   mark button next to the X at the top of the Settings panel. Tap it, then tap any
   setting, its label, or a tab, and the app says what that one does. Tapping a setting
