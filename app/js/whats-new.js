@@ -22,6 +22,7 @@ import * as storage from './storage.js';
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
   "0.6.5": [
+    "If you use Deepgram for transcription, the Listen button no longer lights up red for a moment and then goes dark when the connection cannot be made. It now lights up only once listening is really running, and when a connection is refused the reason is written to the error log (Settings → About) instead of being lost.",
     {
       "for": "computer",
       "note": "Turning on \"Use the whole screen\" while the Settings panel was open drew the conversation screen on top of Settings, hiding it until you closed Settings and opened it again. Settings now stays in front."

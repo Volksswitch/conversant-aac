@@ -26,6 +26,11 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- If you use Deepgram for transcription, the Listen button no longer lights up red
+  for a moment and then goes dark when the connection cannot be made. It now lights
+  up only once listening is really running, and when a connection is refused the
+  reason is written to the error log (Settings → About) instead of being lost.
+
 ### On a computer
 
 - Turning on "Use the whole screen" while the Settings panel was open drew the

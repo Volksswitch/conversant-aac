@@ -227,10 +227,29 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
             ws.binaryType = 'arraybuffer';
             ws.onmessage = handleMessage;
             ws.onerror = () => { if (onStatus) onStatus('error', 'network'); };
-            ws.onclose = () => {
-                if (running && onStatus) onStatus('error', 'closed');
+            ws.onclose = (e) => {
+                // CARRY THE CLOSE CODE. A rejected key, a refused subprotocol and a
+                // dropped connection all arrive here as the same event, and the bare
+                // word "closed" cannot tell them apart — which on a tablet, with no
+                // console to fall back on, is the difference between a diagnosis and
+                // a guess. testKey() above has always reported the code; this path
+                // threw it away. 1000 is a clean close; anything else is the
+                // interesting case.
+                if (running && onStatus) {
+                    const code = e && e.code ? e.code : '?';
+                    const why = e && e.reason ? `: ${e.reason}` : '';
+                    onStatus('error', `closed (code ${code}${why})`);
+                }
             };
             ws.onopen = () => {
+                // Report LISTENING here, not at the end of start(). stt.js documents
+                // this contract for the paid backend — "reports 'listening' once it is
+                // actually up, so the button does not claim to be listening before
+                // anything can be heard" — and reporting it before the handshake
+                // completed broke it: the button went red on the tap and black again
+                // when the socket failed, which reads as the button not working rather
+                // than as the connection being refused (Ken, iPad, August 3 2026).
+                if (onStatus) onStatus('listening');
                 keepAliveTimer = setInterval(() => {
                     // Only while silent — during speech the audio itself keeps the
                     // socket alive.
@@ -254,8 +273,10 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
             mute.gain.value = 0;
             processor.connect(mute).connect(audioCtx.destination);
 
+            // `running` still goes true here, so the audio graph captures and the
+            // pre-roll buffer fills while the handshake completes — only the STATUS
+            // moved to ws.onopen above.
             running = true;
-            if (onStatus) onStatus('listening');
             return true;
         },
 
