@@ -21,6 +21,9 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.6.5": [
+    "Turning on \"Use the whole screen\" while the Settings panel was open drew the conversation screen on top of Settings, hiding it until you closed Settings and opened it again. Settings now stays in front."
+  ],
   "0.6.4": [
     "Making a keyguard: the Title Bar Height box now looks after itself. If the app is using the whole screen there is no bar above it, so the box greys out and says so, and the openings file is generated with no offset. Before, a height left in the box from an earlier setup would have shifted every opening down the screen — something you would only discover after the plastic was cut.",
     "\"Use the whole screen\" now starts switched off. It was on when it first shipped. Off is a better place to start: the title bar is the easiest way to close the app and costs very little height, and if you want the extra room you can simply maximise the window and keep the title bar. Use the setting when you want to expand the app right out, and turn it off again to come back. If you already chose one way or the other, your choice is kept."

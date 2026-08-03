@@ -26,7 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
-_Nothing yet._
+- Turning on "Use the whole screen" while the Settings panel was open drew the
+  conversation screen on top of Settings, hiding it until you closed Settings and
+  opened it again. Settings now stays in front.
 
 ## Version 0.6.4
 

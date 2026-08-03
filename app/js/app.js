@@ -431,6 +431,10 @@ function initApp() {
     // by Esc, which never touches the setting.
     document.addEventListener('fullscreenchange', reflectTitleBarNeed);
     document.addEventListener('webkitfullscreenchange', reflectTitleBarNeed);
+    // And entering fullscreen from inside Settings buries the panel under the whole
+    // conversation screen until it is re-promoted — see repromoteSettingsOverFullscreen.
+    document.addEventListener('fullscreenchange', repromoteSettingsOverFullscreen);
+    document.addEventListener('webkitfullscreenchange', repromoteSettingsOverFullscreen);
     blockZoomGestures();
     ui.setCardsPerCategory(storage.loadResponsesPerCategory()); // 8-card mode → 8 reserved slots
     ui.clearResponseOptions(); // render the reserved empty card footprint at rest
@@ -2671,6 +2675,46 @@ function reflectTitleBarNeed() {
     input.disabled = fs;
     status.hidden = !fs;
     if (fs) status.textContent = 'Not needed right now — the app is using the whole screen, so there is no bar above it. Openings are measured from the top of the screen.';
+}
+
+// Toggling "Use the whole screen" from inside Settings painted the conversation
+// screen (transcript, Command Bar, Response Palette, dock) OVER the Settings panel
+// (Ken, August 3 2026). Not a z-index or a layout fault: a modal <dialog> and a
+// fullscreen element BOTH live in the TOP LAYER, which paints in the order things
+// were ADDED to it. showModal() promoted Settings; the toggle then promoted
+// document.documentElement -- the whole page -- ABOVE it.
+//
+// The reported "closing and reopening Settings resets the display" is the tell, and
+// the only thing that explains it: reopening re-adds the dialog to the top layer,
+// which puts it back on top. So do that re-promotion ourselves, in place.
+//
+// ONLY the entering direction is broken. Leaving fullscreen REMOVES documentElement
+// from the top layer, leaving the dialog alone up there, so it needs no repair --
+// hence the isReallyFullscreen() guard, which also keeps Esc from causing a pointless
+// close/reopen flicker.
+//
+// WHY IN PLACE RATHER THAN DEFERRING THE FULLSCREEN CHANGE UNTIL SETTINGS CLOSES:
+// the Keyguard Design tab reads isReallyFullscreen() to decide whether a title-bar
+// offset exists, and Generate Screen Openings measures the LIVE layout -- both from
+// inside Settings. Deferring would let someone turn fullscreen on and then generate
+// an openings file believing they were in a mode they were not actually in, which is
+// the exact trap 0.6.4 closed. The state has to be honest while the panel is open.
+//
+// Safe to close() here: there is no 'close' listener (the one listener is 'cancel',
+// which close() does not fire -- it is Escape only), and the active tab, scroll
+// position and field values all live in the DOM and survive. Focus is put back where
+// it was so that a reparented on-screen keyboard comes straight back from the
+// focusout/focusin round trip.
+function repromoteSettingsOverFullscreen() {
+    const dlg = document.getElementById('settingsDialog');
+    if (!dlg || !dlg.open || !isReallyFullscreen()) return;
+    const focused = document.activeElement;
+    dlg.close();
+    dlg.showModal();
+    const restore = (focused && focused !== document.body && dlg.contains(focused))
+        ? focused
+        : document.getElementById('settingsHeader');
+    restore?.focus();
 }
 
 function exitAppFullscreen() {
