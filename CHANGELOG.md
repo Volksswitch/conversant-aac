@@ -33,8 +33,10 @@ forgetting to tag one is only ever noise, never silence.
 - **Place buttons in the Express Panel.** Add a place the same way you add a person,
   then tap it during a conversation to say "I'm here right now". The assistant then
   suggests responses that fit where you are, and knows what you told it about the
-  place. Like the partner and feeling buttons, tapping it again turns it off, and
-  ending a conversation clears it.
+  place. Unlike the partner and feeling buttons, a place **stays on when a
+  conversation ends** — ending a conversation doesn't move you, so several
+  conversations in the same place cost one tap, not one each. Tap it again to turn
+  it off, or tap a different place to switch.
 - A place can be marked **private**, which works exactly as it does for a person: the
   assistant knows about it, but never brings it up unless you pick a response that
   does.

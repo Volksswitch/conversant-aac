@@ -2015,16 +2015,20 @@ async function handleEndConversation() {
     }
 }
 
-// Clear the active Partner / Feeling / Place toggles and refresh the panel so their
-// selected rings drop. Place follows the v0.5.31 rule the other two set — the next
-// conversation should not inherit this one's selections — because a STALE place is
-// worse than an absent one: "the user is at Starbucks right now" silently shapes
-// every suggestion until it is noticed. (The cost is a re-tap when several
-// conversations happen at the same place; flagged for Ken.)
+// Clear the active Partner / Feeling toggles and refresh the panel so their
+// selected rings drop.
+//
+// PLACE DELIBERATELY PERSISTS across End conversation (Ken, August 3 2026) — the
+// v0.5.31 rule the other two follow does NOT extend to it, because the thing that
+// rule is about does not apply. Partner and Feeling are properties OF the
+// conversation: it ends, and the next person and mood are genuinely unknown. Where
+// you are is a property of the ROOM, and ending a conversation does not move you —
+// a café visit or a clinic waiting room is several conversations in one place, and
+// clearing it would charge a re-tap for every one of them. Cleared only by tapping
+// the place again, or by tapping a different one.
 function clearInfluencers() {
     activePartner = null;
     activeFeeling = null;
-    activePlace = null;
     renderExpressPanel();
 }
 
