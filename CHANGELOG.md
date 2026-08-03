@@ -26,6 +26,12 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Suggested responses are no longer written with texting shorthand. The AI was not
+  being told that everything it writes gets spoken out loud, so it could offer
+  something like "I fw it" — which looks like a normal reply on the card but is not
+  something a speaking voice can say. Responses are now written the way they are
+  said. How casual or slangy you sound is still up to you and comes from About Me.
+
 - If you use Deepgram for transcription, the Listen button no longer lights up red
   for a moment and then goes dark when the connection cannot be made. It now lights
   up only once listening is really running, and when a connection is refused the

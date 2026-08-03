@@ -118,6 +118,23 @@ test('the prompt instructs ALWAYS returning responses (turn_status no longer gat
     assert.match(sys, /INFORMATIONAL ONLY/);
 });
 
+// Every response is spoken by TTS, never read, so a written-only form like "fw"
+// (texting shorthand for "fuck with") is unsayable however good it looks on the
+// card — Ken hit exactly that, August 3 2026. The Practice-partner prompt had
+// carried a spoken-aloud instruction all along; the prompt that voices the USER
+// did not, which is the wrong way round. Guarded because it is a single sentence
+// in a long prompt and nothing else would notice its removal.
+test('the prompt says the responses will be SPOKEN, and bans written-only forms', async () => {
+    mockFetch(structured);
+    await llm.generateResponses([{ role: 'partner', text: 'Tell me what you think.' }], {});
+    const sys = getFetchCalls()[0].body.system;
+    assert.match(sys, /SPOKEN ALOUD/);
+    assert.match(sys, /fw/);                      // the offending form is named outright
+    // It must stay a SPEAKABILITY rule, not a register rule: an adult user's level
+    // of slang is their own call and comes from the worldview profile.
+    assert.match(sys, /NOT a register rule/);
+});
+
 test('DATA PATH: a mocked COMPLETE result flows through the engine to a 4-card palette', async () => {
     mockFetch(structured);
     engine.reset();
