@@ -48,10 +48,49 @@ const KEEPALIVE_MS = 5000;
 // work to matter. Worth revisiting if the CSP lands or audio glitches appear.
 const FRAME_SAMPLES = 4096;
 
+// The query the LIVE capture socket uses. Shared with testKey below, and that
+// sharing is the point: a test that connects with different parameters can report
+// "your key is working" while the connection the app actually makes is refused —
+// which is exactly what happened on Ken's iPad (August 3 2026), where Test passed
+// and Listen closed immediately. A diagnostic that does not exercise the failing
+// path is worse than none, because it sends you looking in the wrong place.
+function listenParams(sampleRate) {
+    return new URLSearchParams({
+        model: MODEL,
+        encoding: 'linear16',
+        // Send at the capture device's own rate rather than resampling. Billing is
+        // by DURATION, not bytes, so downsampling would buy nothing but a resampler
+        // to get wrong.
+        sample_rate: String(Math.round(sampleRate)),
+        channels: '1',
+        interim_results: 'true',
+        punctuate: 'true',
+        smart_format: 'true',
+    });
+}
+
+// The rate the live path will report, read the same way it reads it. This is the
+// ONLY parameter that varies by device, so it is the one a desktop test cannot
+// stand in for — hence measuring it here rather than assuming 48000.
+function captureSampleRate() {
+    try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        const ctx = new AudioCtx();
+        const rate = ctx.sampleRate;
+        try { ctx.close(); } catch { /* older engines */ }
+        return rate;
+    } catch {
+        return 48000;   // no AudioContext: fall back so the key can still be checked
+    }
+}
+
 /*
  * Verify a key without transcribing anything (so it bills nothing): open the
  * socket and see whether the handshake is accepted. WebSockets are not subject to
  * CORS, so this works from a browser where a REST probe might not.
+ *
+ * Opens it with the FULL live parameter set, so a pass means "the connection this
+ * app will make works here", not merely "the key is valid".
  */
 export function testKey(key, timeoutMs = 8000) {
     return new Promise((resolve) => {
@@ -63,21 +102,24 @@ export function testKey(key, timeoutMs = 8000) {
             try { ws && ws.close(); } catch { /* already gone */ }
             resolve({ ok, message });
         };
+        const rate = Math.round(captureSampleRate());
         const timer = setTimeout(() => done(false, "Couldn't reach the transcription service — check your internet connection."), timeoutMs);
         try {
-            ws = new WebSocket(`${ENDPOINT}?model=${MODEL}`, ['token', key]);
+            ws = new WebSocket(`${ENDPOINT}?${listenParams(rate)}`, ['token', key]);
         } catch {
             clearTimeout(timer);
             return done(false, 'That key could not be used to open a connection.');
         }
-        ws.onopen = () => { clearTimeout(timer); done(true, '✓ Your transcription key is working'); };
+        ws.onopen = () => { clearTimeout(timer); done(true, `✓ Your transcription key is working (${rate} Hz)`); };
         // A rejected key fails the handshake, which surfaces as a close/error rather
         // than an HTTP status the browser will show us — so the message has to name
-        // the likely cause rather than quote one.
-        ws.onerror = () => { clearTimeout(timer); done(false, '✗ The key was rejected — check you copied all of it.'); };
+        // the likely cause rather than quote one. The sample rate is quoted because
+        // it is the one parameter that varies by device, so it is the first suspect
+        // when the key itself is known good.
+        ws.onerror = () => { clearTimeout(timer); done(false, `✗ The connection was refused (${rate} Hz) — the key may be wrong, or this device's audio settings may not be accepted.`); };
         ws.onclose = (e) => {
             clearTimeout(timer);
-            if (!settled) done(false, `✗ The connection was refused${e && e.code ? ` (code ${e.code})` : ''} — check the key.`);
+            if (!settled) done(false, `✗ The connection was refused${e && e.code ? ` (code ${e.code}${e.reason ? `: ${e.reason}` : ''})` : ''} at ${rate} Hz.`);
         };
     });
 }
@@ -200,18 +242,8 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
             }
             const rate = audioCtx.sampleRate;
 
-            // Send at the capture device's own rate rather than resampling. Billing
-            // is by DURATION, not bytes, so downsampling would buy nothing but a
-            // resampler to get wrong.
-            const params = new URLSearchParams({
-                model: MODEL,
-                encoding: 'linear16',
-                sample_rate: String(Math.round(rate)),
-                channels: '1',
-                interim_results: 'true',
-                punctuate: 'true',
-                smart_format: 'true',
-            });
+            // Shared with testKey, so the Test button cannot pass while this fails.
+            const params = listenParams(rate);
 
             gate = vad.createGate();
             preRollFrames = Math.max(1, Math.ceil((gate.preRollMs() / 1000) * rate / FRAME_SAMPLES));

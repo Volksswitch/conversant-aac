@@ -32,6 +32,12 @@ forgetting to tag one is only ever noise, never silence.
   something a speaking voice can say. Responses are now written the way they are
   said. How casual or slangy you sound is still up to you and comes from About Me.
 
+- The **Test** button beside the Deepgram key now makes the same connection the app
+  makes when it listens, instead of a simpler one. It could previously report that
+  your key was working while listening itself failed, which sent you looking in the
+  wrong place. It also now reports the microphone rate it used and, when a
+  connection is refused, the reason the service gave.
+
 - If you use Deepgram for transcription, the Listen button no longer lights up red
   for a moment and then goes dark when the connection cannot be made. It now lights
   up only once listening is really running, and when a connection is refused the
