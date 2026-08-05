@@ -9,7 +9,9 @@
 
 **The user in this demo is Marc.** Set the app up ahead of recording with the profile from `Other/Personas/Worldview-Test-Persona-Marc-Delgado.docx` — a fictional 17-year-old in Madison with cerebral palsy, non-speaking, direct select. This matters more than it sounds: the whole point of the profile is that the suggestions come back sounding like a specific person, and with an empty profile the model has nothing to be specific *with*, so the cards come out generic and the demo quietly argues against itself. Load his About Me answers, his people, and his places before you shoot.
 
-Marc is into gaming, Marvel, and the Packers; he keeps his replies short and snappy; he says things like *"Let's go!"*, *"That's clutch,"* and *"Nah, I'm good."* The example lines below are written in that voice, so you can tell at a glance whether the live output is actually landing on him. **Nothing in the video needs to name Marc or explain that he's fictional** — he is just the user on screen.
+**What the app actually knows about Marc, and what it doesn't.** The persona document is richer than the app can currently hold, and the difference matters when you are judging live output. **Entered and in play:** his facts (A1, A2, A4, A5), his favorites and passions (C1, C2 — gaming, Marvel, the Packers), his people, and his places. **Not entered, because there is no field for it yet:** everything in Tier B — his personality, his humor, his register — and the Tier C topic and dislike lists (C3, C4). So *"keeps his replies short and snappy"* and catchphrases like *"Let's go!"* or *"That's clutch"* are background for the actor, **not** something the app has been told. Do not judge the cards against them, and do not claim them in the video.
+
+The one place his exact turns of phrase legitimately appear is the **Express Panel**, where the user types their own phrases — which is why Beat C below uses one. The example card wording throughout is written to be plausible from what the profile *does* hold. **Nothing in the video needs to name Marc or explain that he's fictional** — he is just the user on screen.
 
 ---
 
@@ -25,37 +27,41 @@ Conversant AAC is a free, open-source app trying to close that gap using generat
 
 *Silent screen recording, real audio (partner's voice + the app's TTS). Two full exchanges, back to back, to show the loop actually looping.*
 
-**Setup:** App is open, conversation already started (or opened with a canned starter — your choice, just don't demo the starter-picking itself here). Tablet propped so the screen and the partner are both in frame, or shoot over-the-shoulder toward the screen.
+**The scene:** Marc is **at Pulp Comics on a Saturday** — his comic shop, one of the places in his profile — and the partner is **Ramon, who works the counter and keeps his pull list.** Both of those are recorded facts on that place, so the app genuinely knows them.
+
+Playing the scene where the conversation actually is, rather than tapping a place he merely visited, is the whole point of step 0: the place button is the stand-in for GPS, so it has to be answering *"where am I standing right now."* You do not need a real comic shop — the app only knows what was tapped — so a table, a counter, anywhere with a second person will read fine. Ramon's lines just need to sound like someone behind a counter who knows him.
+
+**Setup:** App is open, conversation not yet started. Tablet propped so the screen and Ramon are both in frame, or shoot over-the-shoulder toward the screen.
 
 **Step-by-step:**
 
-0. **Before the partner speaks, tap the place button** in the Express Panel — *Pulp Comics* (the olive button). It shows as selected and stays that way.
-   - **Caption:** "Tap where you are — the app knows the place"
-   - *Five seconds, no explanation needed here; TO CAMERA 3 picks it up. It also seeds the rest of this demo: the cards below come back about comics partly because he told it where he is.*
+0. **Before Ramon speaks, tap the place button** in the Express Panel — *Pulp Comics* (the olive button). It shows as selected and stays that way.
+   - **Caption:** "Tap where you are — no GPS, you just tell it"
+   - *Five seconds, no explanation needed here; TO CAMERA 3 picks it up.*
 
-1. **Partner says:** *"Hey, how was your weekend?"*
-   - **On screen:** the partner's words appear in the transcript pane as they're spoken.
+1. **Ramon says:** *"Hey! Good timing — your pull list came in this morning."*
+   - **On screen:** his words appear in the transcript pane as they're spoken.
    - **Caption:** "Partner speaks — the app transcribes it live"
 
 2. **Brief pause.** The app plays a short spoken placeholder (e.g. "Good question.") while it generates.
    - **Caption:** "A quick placeholder fills the pause — nothing dead air, nothing typed"
 
 3. **Four response cards appear** in the fixed four-card layout — something like:
-   - *"Pretty good — hit the comic shop Saturday."*
-   - *"Kind of a wash, honestly. Too much homework."*
-   - *"Solid. We got a Mario Kart tournament going. You?"*
+   - *"Nice — what came in?"*
+   - *"I can't grab them today, but hold them for me?"*
+   - *"Anything else new I should look at?"*
    - *"Sorry, could you say that again?"*
    - **Caption:** "Four options, generated for this exact moment — not canned phrases"
-   - *Worth watching for when you record: these come back about comics and gaming because that is what is in his profile. That is the point of the shot.*
+   - *Worth watching for when you record: the cards fit **standing at a counter** rather than sitting at home, because he told it where he is — and they are about comics because that is what is in his profile. Two different mechanisms, and the shot shows both.*
 
-4. **User taps one card** (e.g. *"Pretty good — hit the comic shop Saturday."*).
+4. **User taps one card** (e.g. *"Nice — what came in?"*).
    - **On screen:** the tablet speaks the chosen line aloud (real TTS audio).
    - **Caption:** "One tap — spoken aloud, in the user's voice"
 
-5. **Partner replies:** *"Nice. Find anything good?"*
+5. **Ramon replies:** *"New Ms. Marvel, and the Spider-Man variant you wanted."*
    - Same beat again: transcript updates live, brief placeholder, four new cards appear.
 
-6. **User taps a card** (e.g. *"New Ms. Marvel. Ramon holds them for me."*), the device speaks it.
+6. **User taps a card** (e.g. *"Ms. Marvel — been waiting on that one."*), the device speaks it.
    - **Caption (hold through the end of this demo):** "Same four positions, every single time"
 
 ---
@@ -119,7 +125,7 @@ A few more things it already does."
 
 "All of that is built and working now, on a Windows tablet, a MacBook, or a Chromebook — whatever you've already got, in a regular browser.
 
-There's also a profile the user fills in themselves — interests, personality, the people in their life, the places they go — so responses start sounding like them specifically, not a generic assistant. That part is real but still early, and it's going to keep getting deeper.
+There's also a profile the user fills in themselves — interests, the people in their life, the places they go — so responses start sounding like them specifically, not a generic assistant. That part is real but still early, and it's going to keep getting deeper.
 
 You saw a piece of that at the start: tapping where you are. The app knows what you've told it about that place, and shapes what it offers around it. No GPS, no permissions — you just tell it.
 
