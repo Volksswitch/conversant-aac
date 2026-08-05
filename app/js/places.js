@@ -255,13 +255,27 @@ export function buildBlock() {
  * room question, a neighbor's greeting). Facts are repeated here rather than left to
  * buildBlock so the current place's details are the ones in front of the model, not
  * one line among twenty.
+ *
+ * SETTING, NOT SUBJECT (Ken, August 5 2026). The place button is situational
+ * awareness — it stands in for the GPS we do not have — and it is NOT a way to
+ * frame what the conversation is about. Someone who wants to talk about comics
+ * says so through Reframe; they do not say it by naming a comic shop. So the
+ * block has to state both halves: where the user is, AND that the topic still
+ * comes from what the partner actually said.
+ *
+ * The facts are the half that actually leaks, and it is the same defect found in
+ * the privacy blocks on August 3: a list of details with nothing saying WHEN they
+ * are for reads as material to work in. Hence the explicit occasion clause.
  */
 export function buildHereBlock(id) {
     const p = getPlace(id);
     if (!p || !p.name) return '';
     const facts = factLine(p);
-    const lines = [`The user is at ${p.name} right now. Keep the suggested responses appropriate to being there.`];
-    if (facts) lines.push(`What you know about ${p.name} — ${facts}.`);
+    const lines = [
+        `The user is physically at ${p.name} right now. This is WHERE the conversation is happening, not what it is about.`,
+        `Use it to judge what would be a plausible and appropriate thing to say in this setting. Do NOT steer the conversation toward ${p.name} or work it into a response on your own initiative — the topic comes from what the partner actually said.`,
+    ];
+    if (facts) lines.push(`What you know about ${p.name} — ${facts}. These details are for when the place genuinely comes up: the partner raises it, or the user's own typed guidance asks for it.`);
     if (p.private) lines.push(`Do not name ${p.name} on your own initiative — only if the partner asks where the user is, or the user's own typed guidance tells you to.`);
     return lines.join(' ');
 }

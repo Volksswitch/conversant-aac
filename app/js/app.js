@@ -2228,9 +2228,14 @@ function buildSituationBlock() {
     if (practiceMode && practiceScenario) {
         lines.push(`This is a PRACTICE role-play. The situation is: ${practiceScenario.title} (${practiceScenario.register}). Keep every suggested response realistic and appropriate to THIS setting — only refer to things that would actually make sense here.`);
     }
+    // WHO the user is talking to — the stand-in for the Phase-2 face/voice
+    // recognition we do not have yet. Like the place button this is situational
+    // awareness, NOT framing: it names the person being spoken TO, and must not be
+    // read as "the user wants to talk about this person" (that is what Reframe is
+    // for). Ken, August 5 2026.
     if (activePartner) {
         const label = (activePartner.nickname || activePartner.name || '').trim();
-        if (label) lines.push(`You are currently talking with ${label}. When you address or refer to them, use "${label}".`);
+        if (label) lines.push(`You are currently talking with ${label} — ${label} is the person being spoken TO, not a topic to raise. When you address or refer to them, use "${label}".`);
     }
     if (activeFeeling && activeFeeling.text) {
         lines.push(`The user is currently feeling ${activeFeeling.text.toLowerCase()}. Let this color the tone of the suggested responses, while keeping them authentic to the user.`);

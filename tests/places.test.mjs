@@ -86,6 +86,28 @@ test('buildHereBlock names the place and repeats its facts', () => {
     })();
 });
 
+// The place button is situational awareness (a stand-in for GPS), never a way to
+// frame the topic — so the block must say so, or the model reads a comic shop as
+// "talk about comics". Ken, August 5 2026.
+test('buildHereBlock says the place is the SETTING, not the subject', async () => {
+    const id = await places.addPlace({ name: 'Pulp Comics' });
+    const here = places.buildHereBlock(id);
+    assert.match(here, /not what it is about/i, 'must deny the topic reading outright');
+    assert.match(here, /do NOT steer the conversation toward Pulp Comics/i);
+    assert.match(here, /topic comes from what the partner actually said/i,
+        'must say where the topic DOES come from, not only where it does not');
+});
+
+// Same defect as the privacy blocks (Aug 3): facts listed with no stated occasion
+// read as material to work in. Naming the occasion is what stops the drift.
+test('buildHereBlock says WHEN the place facts are for', async () => {
+    const id = await places.addPlace({ name: 'Pulp Comics', facts: [{ key: 'owner', value: 'Ramon' }] });
+    const here = places.buildHereBlock(id);
+    assert.match(here, /Ramon/);
+    assert.match(here, /partner raises it|typed guidance/i,
+        'the facts must carry the occasion that unlocks them');
+});
+
 test('buildHereBlock on a private place carries the do-not-name restraint', async () => {
     const id = await places.addPlace({ name: 'The clinic', isPrivate: true });
     const here = places.buildHereBlock(id);
