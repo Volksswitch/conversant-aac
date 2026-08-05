@@ -8,6 +8,16 @@ distinct vocabulary per test says which test it belongs to.
 
 You do not need to describe what you saw. The app writes it down.
 
+> **⚠ OUT OF DATE as written (August 5 2026). The diagnostic trace was removed from the
+> app** — there is no Settings → About → "Record what the app does" any more, so every
+> instruction below that mentions the trace (step 1 of *Before you start*, and *When you
+> are done*) has nothing to switch on and no `diagnostic-*.log` to send. **What still
+> works: the five test sequences themselves and the `conversations/*.json` files**, which
+> are written normally and were enough on their own to show Test 3's loss (the saved entry
+> kept the first checkpoint's timestamp while carrying the second checkpoint's text).
+> Rewrite this script when the Troubleshooting tab is built — see CLAUDE.md. The trace is
+> recoverable at `git show 4bab171:app/js/trace.js`.
+
 ---
 
 ## Before you start
@@ -79,6 +89,14 @@ This is the sequence that lost your counting on the iPad.
 *Answers: whether "one two three four five" survives the stop-and-start, or is
 discarded. Note in passing whether the on-screen conversation still shows it after
 step 4 and after step 5 — but do not worry about remembering; the trace records both.*
+
+> **Run August 5 2026: it was discarded, and that has since been fixed** (stop/start
+> mid-turn is now a pause — see CLAUDE.md). **From that release on, this test is a
+> regression check and its expected result is Test 4's:** one partner turn reading
+> "one two three four five six seven eight nine ten". Check it in this conversation's
+> `conversations/*.json` — a single partner exchange holding all ten numbers. Seeing only
+> "six seven eight nine ten" means the fix has regressed. (This is also pinned by
+> `tests/stt.test.mjs`, "LISTEN-TEST Test 3 == Test 4", which fails without a device.)
 
 ---
 

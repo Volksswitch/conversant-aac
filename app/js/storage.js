@@ -1005,16 +1005,6 @@ export function saveFullscreen(v) {
     saveSettings(settings);
 }
 
-// Diagnostic trace (Ken, August 3 2026) — a developer aid, off by default. Records
-// what the app DECIDED during a conversation to a file in the data folder, so a bug
-// report can carry the app's own account of events instead of a recollection of them.
-export function loadTraceEnabled() { return !!loadSettings().traceEnabled; }
-export function saveTraceEnabled(v) {
-    const settings = loadSettings();
-    settings.traceEnabled = !!v;
-    saveSettings(settings);
-}
-
 // --- "What's new" notice: the highest APP_VERSION whose post-update summary the
 // user has already seen. null until first recorded (a brand-new install, or an
 // app old enough to predate this feature) — that first run just sets a baseline

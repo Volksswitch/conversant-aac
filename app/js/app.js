@@ -27,7 +27,6 @@ import * as sttDeepgram from './stt-deepgram.js';
 import * as ttsDeepgram from './tts-deepgram.js';
 import { confirmDanger } from './confirm-dialog.js';
 import * as helpMode from './help-mode.js';
-import * as trace from './trace.js';
 
 // The platform verdict on partner capture (see platform.js), or null when capture
 // is expected to work. Non-null drives the pre-start warning; it does NOT by
@@ -454,10 +453,6 @@ function initApp() {
     keyboard.setBottomLayout(storage.loadBottomLayout());
     keyboard.setSideDockPosition(storage.loadSideDockPosition());
     keyboard.setKeyboardDock(storage.loadKeyboardDock());
-    // Honour the stored trace setting at startup, so a recording survives the reload
-    // that testing inevitably involves — otherwise it would only ever be on for the
-    // session in which the box was ticked.
-    trace.setEnabled(storage.loadTraceEnabled());
     initSettingsTabs();
     initSpokenHelp();
     // Take the keyboard preview down when Settings is dismissed. The Close
@@ -684,10 +679,6 @@ function reflectApiKeyFormat() {
 }
 
 function handleSpeechResult(liveText) {
-    // COUNTED, not logged: this fires continuously while someone speaks. The count
-    // answers "did audio reach us at all", which is the diagnostic question; the
-    // individual results would bury everything else.
-    trace.bump('speech results');
     // Live transcript while the partner is speaking — provisional, not yet
     // confirmed. Confirmation happens implicitly when the user picks a response.
     updatePartnerLive(liveText);
@@ -716,7 +707,6 @@ function handlePartnerResumed() {
 // Per the no-confirmation-gate decision (June 15 2026) generation fires here on
 // silence — there is no confirm-the-transcript step.
 async function handleSilencePeriod(text) {
-    trace.trace('silence checkpoint', { heard: text || '(empty)' });
     currentPartnerText = text;
     updatePartnerLive(text);
     // Mirror the pane in the transcript: write the partner's raw line now (Ken).
@@ -773,10 +763,6 @@ function handleSttStatus(status, detail) {
     // thing moving 'listening' to ws.onopen was meant to stop. Measured: it does.
     else if (status === 'capturing') { /* activity, not a state change */ }
     else storage.logError('stt-status', `unknown status "${status}"`);
-    // The single most useful line in the trace: what a status event did to the
-    // listening state. The bug this feature was built to catch was exactly a status
-    // silently flipping this to false.
-    trace.trace('stt status', { status, detail: detail || '', listening: `${was}->${isListening}` });
     ui.setListenButtonState(isListening);
 
     if (status === 'error') {
@@ -861,9 +847,6 @@ async function handleStart() {
     // itself is fired from an async recognizer callback where WebKit would refuse
     // to start audio (see chime.unlock).
     chime.unlock();
-    // Begin the trace at the same moment the conversation screen becomes live, so
-    // the very first tap is on the record.
-    startTrace();
     // Same reason, for the paid voice: iOS refuses to start audio outside a user
     // gesture, and placeholders fire on TIMERS — so without this the app would go
     // silent exactly when it is trying to hold the floor.
@@ -963,7 +946,6 @@ function toggleListening() {
     // WHICH BRANCH a tap takes is the whole question when the button misbehaves: the
     // symptom "tapping it does nothing" was really "it took the start branch because
     // the app thought it had stopped".
-    trace.trace('LISTEN tapped', { branch: isListening ? 'stop' : 'start', isListening });
     if (isListening) {
         // Manual stop: disarm auto-resume until the user starts again.
         manualListenArmed = false;
@@ -971,15 +953,33 @@ function toggleListening() {
     } else {
         // Manual start: arm auto-resume for the rest of this session.
         manualListenArmed = true;
-        startFreshListening();
+        // A stop/start in the MIDDLE of a partner turn is a PAUSE, not a turn
+        // boundary (Ken, August 5 2026) — the Listen button controls the microphone,
+        // and the partner still holds the floor. Resuming keeps what they have said
+        // so far; only a genuinely new turn starts fresh. Uncommitted speech is the
+        // test for "mid-turn": every floor change (response picked, pardon, end of
+        // conversation) clears the buffer, so an empty one means the last turn is
+        // closed and the two paths would be identical anyway.
+        if (heardPartnerText()) resumePartnerCapture();
+        else startFreshListening();
     }
+}
+
+// Reopen the mic on a partner turn that is still running — the counterpart to
+// startFreshListening for a stop/start that is a pause (Ken, August 5 2026).
+//
+// It deliberately does almost NOTHING beyond reopening the microphone. The offered
+// choices, the turn steering, currentPartnerText, the promoted-history index and the
+// storage-side pending transcript entry all belong to the turn that is still in
+// progress, and clearing any of them is what made a mid-turn stop/start lose the
+// partner's words. The next silence checkpoint overwrites the pending entry with the
+// combined text, which is exactly what an uninterrupted pause already does.
+function resumePartnerCapture() {
+    stt.resumeListening();
 }
 
 // Begin a new partner-capture session with a cleared transcript and options.
 function startFreshListening() {
-    // Records what is being THROWN AWAY. This is where the partner's uncommitted words
-    // are discarded, which is how a long turn came back with only its tail.
-    trace.trace('start fresh listening', { discarding: heardPartnerText() || '(nothing)' });
     currentPartnerText = '';
     setOfferedChoices([]);   // a new partner turn — last turn's choices are gone
     clearTurnSteering();
@@ -1138,7 +1138,6 @@ async function generateOptions(partnerText) {
 // A response from the palette was selected. Repair-of-self operations act on the
 // user's own last utterance; everything else is a normal SPP / opener / closer.
 async function handleResponseSelected(response, index) {
-    trace.trace('response selected', { slot: response.slot, index, text: response.text || '' });
     if (response.op) return handleRepairOfSelf(response);
 
     // Opening the conversation: after the user's opening statement is spoken, the
@@ -1318,7 +1317,6 @@ async function handleRepairOfSelf(response) {
 // completed utterance to clean and no point spending an AI call on a fragment (Ken).
 async function commitExchange(raw, userText, index, opts = {}) {
     const { cleanup = true } = opts;
-    trace.trace('commit exchange', { partner: raw || '(none)', user: userText, index });
     // The user has taken the floor, so the partner's turn — and any choices it put
     // on the table, and any steering of it — is done. Shared by every path that
     // commits a user turn (response pick, Express phrase, composer, repair-of-self).
@@ -1612,43 +1610,7 @@ function practiceResumeOrIdle() {
 // listening, invalidate in-flight generation, drop the uncommitted partner turn,
 // CLEAR the conversation window (transcript history) and ALL cards, and reset the
 // engine to STANDBY. Shared by End conversation and Start conversation.
-// Write the trace to the data folder. Named for the conversation it covers, so a
-// report can be matched to conversations/<id>.json line for line.
-async function saveTrace() {
-    const status = document.getElementById('traceStatus');
-    const say = (m) => { if (status) status.textContent = m; };
-    if (!trace.isEnabled()) return say('Turn on "Record what the app does" first, then run the test.');
-    const name = `diagnostic-${storage.getConversationId() || 'session'}.log`;
-    try {
-        await storage.writeFile(name, trace.render());
-        say(`Saved "${name}" to your data folder.`);
-    } catch (err) {
-        say(`Could not write the file: ${err.message}`);
-    }
-}
-
-// Begin a trace for a conversation, stamped with everything a reader needs before
-// the first line: which build, which platform, and which speech backends are live —
-// the questions I asked Ken by hand, repeatedly, over this session.
-function startTrace() {
-    trace.start({
-        version: `${APP_VERSION} (${BUILD_ID})`,
-        platform: platform.describe(),
-        transcription: storage.loadSttProvider() === 'deepgram' ? 'deepgram (paid)' : 'browser (free)',
-        voice: storage.loadTtsProvider() === 'deepgram' ? 'deepgram (paid)' : 'device (free)',
-        autoResume: storage.loadAutoRelisten(),
-        silencePeriod: storage.loadSilenceThreshold(),
-    });
-}
-
 async function terminateConversation() {
-    // A trace covers ONE conversation, so restart it at the boundary. The previous
-    // conversation's trace is still in memory until then; Save writes whatever the
-    // current one holds.
-    // ONE trace spans the whole SESSION, not one conversation. A test run is several
-    // conversations, and restarting here would leave only the last one in the file —
-    // so conversation boundaries are marked instead of cutting the recording.
-    trace.trace('=== conversation ended ===', {});
     placeholders.stop();
     tts.cancel();
     // A new conversation gets its own start-of-listening cue, whichever mode.
@@ -3434,21 +3396,6 @@ function openSettings() {
     // Not offered on WebKit — no effect in a Home Screen app, and it breaks Settings
     // and the Listen button in a Safari tab. See requestAppFullscreen, which refuses
     // there too, so a stored `true` is inert rather than stranded behind a hidden control.
-    // Diagnostic trace (About tab). Enabling it starts a fresh trace immediately, so
-    // the user does not have to reload before the recording is meaningful.
-    const traceEnabledInput = document.getElementById('traceEnabledInput');
-    traceEnabledInput.checked = storage.loadTraceEnabled();
-    traceEnabledInput.onchange = () => {
-        storage.saveTraceEnabled(traceEnabledInput.checked);
-        trace.setEnabled(traceEnabledInput.checked);
-        if (traceEnabledInput.checked) startTrace();
-        const st = document.getElementById('traceStatus');
-        if (st) st.textContent = traceEnabledInput.checked
-            ? 'Recording. Run the test, then tap Save.'
-            : 'Not recording.';
-    };
-    document.getElementById('saveTraceBtn').onclick = saveTrace;
-
     const fullscreenInput = document.getElementById('fullscreenInput');
     document.getElementById('fullscreenGroup').hidden = platform.isIOS();
     fullscreenInput.checked = storage.loadFullscreen();

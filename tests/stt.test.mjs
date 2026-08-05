@@ -177,6 +177,44 @@ test('resetTranscript discards the accumulated turn', () => {
     assert.equal(stt.getCurrentTranscript(), '');
 });
 
+/* Stop/start mid-turn is a PAUSE (Ken, August 5 2026). LISTEN-TEST.md Test 3 lost
+ * "one two three four five" because startListening() cleared the buffer; Test 4, the
+ * same words without the button tap, kept everything. These three pin the split that
+ * fixed it: fresh clears, resume keeps, and Test 3 now produces Test 4's transcript. */
+
+test('startListening still clears the buffer — a NEW partner turn starts empty', () => {
+    stt.startListening();
+    rec.emitFinal('one two three four five');
+    assert.equal(stt.getCurrentTranscript(), 'one two three four five');
+    stt.stopListening();
+    stt.startListening();
+    assert.equal(stt.getCurrentTranscript(), '', 'a fresh turn must not inherit the last one');
+});
+
+test('resumeListening keeps what the partner already said across a stop/start', async () => {
+    stt.startListening();
+    rec.emitFinal('one two three four five');
+    stt.stopListening();
+    await sleep(10);                      // let the fake recognizer's onend settle
+    stt.resumeListening();
+    assert.equal(stt.getCurrentTranscript(), 'one two three four five');
+});
+
+test('LISTEN-TEST Test 3 == Test 4: the checkpoint after a resume carries BOTH halves', async () => {
+    stt.startListening();
+    rec.emitFinal('one two three four five');
+    await sleep(THRESHOLD_S * 1000 + 60);
+    assert.equal(silences.at(-1), 'one two three four five', 'first checkpoint, before the stop');
+    stt.stopListening();
+    await sleep(10);
+    stt.resumeListening();                // the user taps Listen again, mid-turn
+    rec.emitFinal('six seven eight nine ten');
+    await sleep(THRESHOLD_S * 1000 + 60);
+    // One turn, both halves — this is the text that overwrites the pending transcript
+    // entry, so the earlier line is superseded by a LONGER one, never a shorter one.
+    assert.equal(silences.at(-1), 'one two three four five six seven eight nine ten');
+});
+
 test('echo filter: an interim PREFIX of what the app is saying is dropped', () => {
     stt.startListening();
     stt.noteSpokenStart('Still thinking it through.');

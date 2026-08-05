@@ -75,7 +75,6 @@ const SHELL = [
   './js/whats-new.js',
   './js/settings-help.js',
   './js/help-mode.js',
-  './js/trace.js',
   './data/placeholders.json',
   './data/words.json',
   './data/pricing.json',

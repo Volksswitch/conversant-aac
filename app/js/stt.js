@@ -389,13 +389,13 @@ function handleSourceError(detail) {
     if (onStatusChange) onStatusChange('error', detail);
 }
 
-export function startListening() {
-    if (!recognition && !externalSource) return;
-    accumulatedText = '';
-    segments = [];
-    currentInterim = '';
+// Open the microphone. Shared by startListening (a NEW partner turn) and
+// resumeListening (a turn already in progress) — the only difference between the
+// two is whether the accumulated transcript survives, so the recognizer/socket
+// handling lives here once and cannot drift between them.
+function openSource() {
     listeningIntent = true;
-    suspendedForHidden = false;   // a fresh start clears any backgrounded state
+    suspendedForHidden = false;   // a deliberate (re)start clears any backgrounded state
     if (externalSource) {
         // Async: the paid backend needs microphone permission and a socket. Its own
         // status callback reports 'listening' once it is actually up, so the button
@@ -405,6 +405,33 @@ export function startListening() {
     }
     try { recognition.start(); } catch { /* already started */ }
     if (onStatusChange) onStatusChange('listening');
+}
+
+// Begin a NEW partner turn: whatever was captured before is gone.
+export function startListening() {
+    if (!recognition && !externalSource) return;
+    resetTranscript();
+    openSource();
+}
+
+// Reopen the microphone on a turn that is STILL IN PROGRESS, keeping what the
+// partner has already said (Ken, August 5 2026).
+//
+// WHY THIS IS A SEPARATE ENTRY POINT. The buffer clear used to live inside
+// startListening(), so a stop/start of the Listen button mid-turn erased the
+// partner's uncommitted speech — the app then overwrote the already-written
+// transcript line with the shorter text, losing it twice over. Deleting the clear
+// outright was the other option, but that would make correctness depend on every
+// future caller remembering to reset; naming the two intentions instead keeps the
+// invariant visible at the call site.
+//
+// THE INVARIANT: the partner's turn ends at a FLOOR CHANGE — the user picks a
+// response, asks for a pardon, or ends the conversation — never at a microphone
+// toggle. Each of those paths already calls resetTranscript() explicitly, so they
+// are unaffected by this split.
+export function resumeListening() {
+    if (!recognition && !externalSource) return;
+    openSource();
 }
 
 export function stopListening() {
