@@ -224,9 +224,18 @@ function factLine(p) {
  * and a place the user bothered to record is a place they talk about. If the block
  * ever outgrows its budget the answer is the same RAG-lite selection planned for
  * the worldview profile, not a special case here.
+ *
+ * `excludeId` omits the place the user is standing in, because buildHereBlock is
+ * already carrying it with the correct framing and the two framings differ (Ken,
+ * August 5 2026). This list describes places the user GOES — "Pulp Comics — When:
+ * Saturdays" is useful context anywhere else, and is exactly the fact that produces
+ * "what did you find here last Saturday?" when they are standing in the shop. Saying
+ * the same place twice under two framings also doubles its salience, which pushes
+ * the model toward making it the topic. Nothing is lost: the here-block repeats the
+ * facts.
  */
-export function buildBlock() {
-    const places = listPlaces().filter((p) => p.name);
+export function buildBlock(excludeId = null) {
+    const places = listPlaces().filter((p) => p.name && p.id !== excludeId);
     if (!places.length) return '';
 
     const open = [];
@@ -272,10 +281,10 @@ export function buildHereBlock(id) {
     if (!p || !p.name) return '';
     const facts = factLine(p);
     const lines = [
-        `The user is physically at ${p.name} right now. This is WHERE the conversation is happening, not what it is about.`,
-        `Use it to judge what would be a plausible and appropriate thing to say in this setting. Do NOT steer the conversation toward ${p.name} or work it into a response on your own initiative — the topic comes from what the partner actually said.`,
+        `The user is physically at ${p.name} right now — this is WHERE the conversation is happening.`,
+        `What this place is for SHOULD inform your suggestions: what someone would plausibly say standing here, and what the partner is likely getting at. What it must not do is become the topic on its own — that comes from what the partner actually said.`,
     ];
-    if (facts) lines.push(`What you know about ${p.name} — ${facts}. These details are for when the place genuinely comes up: the partner raises it, or the user's own typed guidance asks for it.`);
+    if (facts) lines.push(`What you know about ${p.name} — ${facts}. These are for UNDERSTANDING the situation, not for saying: they let a response be specific and competent here. Do not announce them back, and never treat this place as somewhere the user visits or remembers ("what did you find here last Saturday?") — they are standing in it right now, so anything that amounts to describing being here is already obvious to everyone present.`);
     if (p.private) lines.push(`Do not name ${p.name} on your own initiative — only if the partner asks where the user is, or the user's own typed guidance tells you to.`);
     return lines.join(' ');
 }

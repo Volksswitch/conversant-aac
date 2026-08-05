@@ -1045,7 +1045,9 @@ async function generateOptions(partnerText) {
     // Rebuilt each turn so questionnaire edits take effect immediately.
     llm.setWorldviewBlock(worldview.buildBlock());
     llm.setRelationshipsBlock(relationships.buildBlock());
-    llm.setPlacesBlock(places.buildBlock());
+    // Omit the place they are standing in — buildHereBlock already carries it, with
+    // the framing that fits being present rather than the "places I go" framing.
+    llm.setPlacesBlock(places.buildBlock(activePlace && activePlace.placeId));
     llm.setSituationBlock(buildSituationBlock());
 
     try {
@@ -1876,7 +1878,9 @@ async function handleRegenerate() {
     const prior = lastPalette.map((m) => m.text).filter(Boolean);
     llm.setWorldviewBlock(worldview.buildBlock());
     llm.setRelationshipsBlock(relationships.buildBlock());
-    llm.setPlacesBlock(places.buildBlock());
+    // Omit the place they are standing in — buildHereBlock already carries it, with
+    // the framing that fits being present rather than the "places I go" framing.
+    llm.setPlacesBlock(places.buildBlock(activePlace && activePlace.placeId));
     llm.setSituationBlock(buildSituationBlock());
     const history = [...conversationHistory, { role: 'partner', text: currentPartnerText }];
 
@@ -1946,7 +1950,9 @@ async function handleChoiceChip(chip) {
     renderExpressPanel();             // ...and the chip shows as chosen from this moment
     llm.setWorldviewBlock(worldview.buildBlock());
     llm.setRelationshipsBlock(relationships.buildBlock());
-    llm.setPlacesBlock(places.buildBlock());
+    // Omit the place they are standing in — buildHereBlock already carries it, with
+    // the framing that fits being present rather than the "places I go" framing.
+    llm.setPlacesBlock(places.buildBlock(activePlace && activePlace.placeId));
     llm.setSituationBlock(buildSituationBlock());
 
     ui.setStatus(`Building responses around "${pick}"...`);
@@ -1984,7 +1990,9 @@ async function handleReframe() {
     placeholders.stop();
     llm.setWorldviewBlock(worldview.buildBlock());
     llm.setRelationshipsBlock(relationships.buildBlock());
-    llm.setPlacesBlock(places.buildBlock());
+    // Omit the place they are standing in — buildHereBlock already carries it, with
+    // the framing that fits being present rather than the "places I go" framing.
+    llm.setPlacesBlock(places.buildBlock(activePlace && activePlace.placeId));
     llm.setSituationBlock(buildSituationBlock());
 
     // Two modes on the one button, chosen by whether a partner turn is on the floor:

@@ -87,25 +87,54 @@ test('buildHereBlock names the place and repeats its facts', () => {
 });
 
 // The place button is situational awareness (a stand-in for GPS), never a way to
-// frame the topic — so the block must say so, or the model reads a comic shop as
-// "talk about comics". Ken, August 5 2026.
-test('buildHereBlock says the place is the SETTING, not the subject', async () => {
+// frame the topic. But the setting must still INFORM the suggestions — at a comic
+// shop, comics are a plausible thing to be talking about, and a block that merely
+// forbade the place would throw that away. Both halves have to be stated (Ken,
+// August 5 2026: "the purpose of the place should inform the suggestions but it
+// shouldn't become the topic of discussion").
+test('buildHereBlock says the setting INFORMS the suggestions', async () => {
     const id = await places.addPlace({ name: 'Pulp Comics' });
     const here = places.buildHereBlock(id);
-    assert.match(here, /not what it is about/i, 'must deny the topic reading outright');
-    assert.match(here, /do NOT steer the conversation toward Pulp Comics/i);
-    assert.match(here, /topic comes from what the partner actually said/i,
+    assert.match(here, /SHOULD inform your suggestions/i,
+        'the setting must be licensed to shape the options, not merely fenced off');
+    assert.match(here, /what someone would plausibly say standing here/i);
+});
+
+test('buildHereBlock still refuses the place as the subject', async () => {
+    const id = await places.addPlace({ name: 'Pulp Comics' });
+    const here = places.buildHereBlock(id);
+    assert.match(here, /must not do is become the topic on its own/i);
+    assert.match(here, /comes from what the partner actually said/i,
         'must say where the topic DOES come from, not only where it does not');
 });
 
-// Same defect as the privacy blocks (Aug 3): facts listed with no stated occasion
-// read as material to work in. Naming the occasion is what stops the drift.
-test('buildHereBlock says WHEN the place facts are for', async () => {
+// The facts are ambient knowledge, not material to work in, and a fact that is
+// true of BEING here ("When: Saturdays") is common ground everyone present can
+// see — narrating it back produces Ken's example, "what did you find here last
+// Saturday?", asked while standing in the shop.
+test('buildHereBlock says the facts are for understanding, not for saying', async () => {
     const id = await places.addPlace({ name: 'Pulp Comics', facts: [{ key: 'owner', value: 'Ramon' }] });
     const here = places.buildHereBlock(id);
-    assert.match(here, /Ramon/);
-    assert.match(here, /partner raises it|typed guidance/i,
-        'the facts must carry the occasion that unlocks them');
+    assert.match(here, /Ramon/, 'the facts themselves must still reach the model');
+    assert.match(here, /for UNDERSTANDING the situation, not for saying/i);
+    assert.match(here, /already obvious to everyone present/i,
+        'must name why describing being here is wrong, not just forbid it');
+});
+
+// Saying the same place twice under two framings both doubles its salience and
+// contradicts itself: the standing list describes places the user GOES.
+test('buildBlock omits the place the user is standing in', async () => {
+    const here = await places.addPlace({ name: 'Pulp Comics', facts: [{ key: 'owner', value: 'Ramon' }] });
+    await places.addPlace({ name: 'The YMCA' });
+    assert.match(places.buildBlock(), /Pulp Comics/, 'listed normally when the user is elsewhere');
+    const away = places.buildBlock(here);
+    assert.doesNotMatch(away, /Pulp Comics/);
+    assert.match(away, /The YMCA/, 'the other places must survive the exclusion');
+});
+
+test('excluding the only place yields an empty block, not a dangling heading', async () => {
+    const only = await places.addPlace({ name: 'Pulp Comics' });
+    assert.equal(places.buildBlock(only), '');
 });
 
 test('buildHereBlock on a private place carries the do-not-name restraint', async () => {

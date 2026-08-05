@@ -26,15 +26,16 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
-- Tapping where you are now tells the app where the conversation is happening, and
-  nothing more. It used to nudge the suggestions toward that place as a subject — tap
-  your comic shop and the options would lean toward comics, even if the other person
-  had asked about something else entirely. Now the place shapes what would be a
-  natural thing to say while you are standing there, and what the conversation is
-  *about* comes from what the other person actually said. The same goes for tapping
-  who you are talking with: it says who is being spoken to, not who you want to talk
-  about. What the app knows about a place is still used when that place genuinely
-  comes up.
+- Tapping where you are now means you are standing there, rather than nudging the
+  conversation onto that place as a subject. What the place is for still shapes the
+  suggestions — at your comic shop, comics are an obvious thing to be talking about —
+  but the app no longer steers there when the other person has asked about something
+  else. It also stops offering options that treat the place as somewhere you visit
+  and remember, like "what did you find here last Saturday?" asked while you are
+  standing in the shop. What the app knows about the place is still fully in play; it
+  is used to make the options fit where you are, instead of being read back to
+  someone who is standing there with you. The same goes for tapping who you are
+  talking with: it says who is being spoken to, not who you want to talk about.
 
 ## Version 0.6.6
 
