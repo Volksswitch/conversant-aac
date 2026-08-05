@@ -26,6 +26,16 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Tapping where you are now tells the app where the conversation is happening, and
+  nothing more. It used to nudge the suggestions toward that place as a subject — tap
+  your comic shop and the options would lean toward comics, even if the other person
+  had asked about something else entirely. Now the place shapes what would be a
+  natural thing to say while you are standing there, and what the conversation is
+  *about* comes from what the other person actually said. The same goes for tapping
+  who you are talking with: it says who is being spoken to, not who you want to talk
+  about. What the app knows about a place is still used when that place genuinely
+  comes up.
+
 ## Version 0.6.6
 
 - Stopping and restarting Listen in the middle of what someone is saying no longer
