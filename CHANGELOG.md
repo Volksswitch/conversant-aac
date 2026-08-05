@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.6.6
+
 - Stopping and restarting Listen in the middle of what someone is saying no longer
   throws away the first half of it. The Listen button controls the microphone, not
   the conversation: if you stop it while the other person is still mid-turn and start
