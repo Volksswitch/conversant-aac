@@ -21,6 +21,9 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.6.7": [
+    "Tapping where you are now means you are standing there, rather than nudging the conversation onto that place as a subject. What the place is for still shapes the suggestions — at your comic shop, comics are an obvious thing to be talking about — but the app no longer steers there when the other person has asked about something else. It also stops offering options that treat the place as somewhere you visit and remember, like \"what did you find here last Saturday?\" asked while you are standing in the shop. What the app knows about the place is still fully in play; it is used to make the options fit where you are, instead of being read back to someone who is standing there with you. The same goes for tapping who you are talking with: it says who is being spoken to, not who you want to talk about."
+  ],
   "0.6.6": [
     "Stopping and restarting Listen in the middle of what someone is saying no longer throws away the first half of it. The Listen button controls the microphone, not the conversation: if you stop it while the other person is still mid-turn and start it again, what they had already said is kept and the rest is added on, so their turn arrives whole. Their turn is finished when you reply, ask them to say it again, or end the conversation — not when you tap the button.",
     "Fixed: when using Deepgram for transcription, the Listen button went dark as soon as you started speaking, even though the app was still listening. Tapping it again then looked like it did nothing, but it quietly started a new recording and threw away what the other person had said so far — so a long turn came out with only the last few words kept. The button now stays lit for as long as it is listening, and tapping it stops listening as it should."

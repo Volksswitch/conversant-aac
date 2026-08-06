@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.6.7
+
 - Tapping where you are now means you are standing there, rather than nudging the
   conversation onto that place as a subject. What the place is for still shapes the
   suggestions — at your comic shop, comics are an obvious thing to be talking about —
