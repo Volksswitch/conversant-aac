@@ -647,6 +647,25 @@
                         </div>
                         <p id="problemReportStatus" class="setting-status" role="status"></p>
                     </div>
+                    <!-- Weekly report. The disclosure below is GENERATED from the
+                         payload's own field list and guarded by a drift test — with
+                         no raw payload view (Ken: users should be able to find out
+                         what is included, but do not need to see their own data),
+                         this text IS the disclosure, so it has to be unable to
+                         drift out of date silently. -->
+                    <div class="setting-group" data-help="weeklyReports">
+                        <label for="testerNameInput">Tester name</label>
+                        <input type="text" id="testerNameInput" placeholder="The name we gave you" autocomplete="off">
+                        <p id="testerNameStatus" class="setting-status" role="status"></p>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="weeklySendEnabledInput">
+                            Send a short report automatically about once a week
+                        </label>
+                        <label for="weeklyReportContents">What is in a weekly report</label>
+                        <textarea id="weeklyReportContents" readonly rows="10" aria-label="What is in a weekly report"></textarea>
+                        <label for="weeklySendLogView">Reports sent</label>
+                        <textarea id="weeklySendLogView" readonly rows="5" placeholder="Nothing sent yet." aria-label="Reports sent"></textarea>
+                    </div>
                     <div class="setting-group" data-help="usageSummary">
                         <label>How the app is being used</label>
                         <textarea id="usageSummaryView" readonly rows="12" placeholder="No saved conversations yet." aria-label="Usage summary"></textarea>

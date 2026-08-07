@@ -29,6 +29,7 @@ import { confirmDanger } from './confirm-dialog.js';
 import * as helpMode from './help-mode.js';
 import * as usageSummary from './usage-summary.js';
 import * as diagnostics from './diagnostics.js';
+import * as weeklySend from './weekly-send.js';
 
 // The platform verdict on partner capture (see platform.js), or null when capture
 // is expected to work. Non-null drives the pre-start warning; it does NOT by
@@ -3152,10 +3153,28 @@ async function renderSystemInfo() {
     view.scrollTop = 0;
 }
 
+function renderWeeklyReport() {
+    const contents = document.getElementById('weeklyReportContents');
+    if (contents) contents.value = weeklySend.describeReport();
+    const log = document.getElementById('weeklySendLogView');
+    if (log) { log.value = weeklySend.formatSendLog(storage.loadWeeklySendLog()); log.scrollTop = 0; }
+    const name = document.getElementById('testerNameInput');
+    if (name) name.value = storage.loadTesterName();
+    const enabled = document.getElementById('weeklySendEnabledInput');
+    if (enabled) enabled.checked = storage.loadWeeklySendEnabled();
+    const status = document.getElementById('testerNameStatus');
+    // An empty-state message, not per-control help (Rule 14): a supporter setting
+    // the device up needs to notice the blank, because a report with no name still
+    // sends and Ken has only the device id to go on.
+    if (status) status.textContent = storage.loadTesterName()
+        ? '' : 'Not set — reports will not say who they are from.';
+}
+
 function renderTroubleshooting() {
     renderErrorLog();
     renderUsageSummary();
     renderSystemInfo();
+    renderWeeklyReport();
 }
 
 // The whole report. `buildErrorReport` already withholds a private conversation's
@@ -3647,6 +3666,14 @@ function openSettings() {
     const saveReportBtn = document.getElementById('saveProblemReportBtn');
     if (saveReportBtn) saveReportBtn.onclick = () => saveProblemReport();
     copyFrom('copyProblemReportBtn', () => buildProblemReportText());
+    const testerNameInput = document.getElementById('testerNameInput');
+    if (testerNameInput) testerNameInput.oninput = () => {
+        storage.saveTesterName(testerNameInput.value);
+        const status = document.getElementById('testerNameStatus');
+        if (status) status.textContent = testerNameInput.value.trim() ? '' : 'Not set — reports will not say who they are from.';
+    };
+    const weeklyEnabledInput = document.getElementById('weeklySendEnabledInput');
+    if (weeklyEnabledInput) weeklyEnabledInput.onchange = () => storage.saveWeeklySendEnabled(weeklyEnabledInput.checked);
 
     // Settings profiles (About tab) — save the whole settings bundle to the data
     // folder under a name, and re-apply it later. Populate the picker now.
@@ -4253,3 +4280,13 @@ try {
 } catch (err) {
     reportStartupFailure('initApp', err);
 }
+
+// The weekly report (Ken, August 7 2026). Fired AFTER initApp and deliberately not
+// awaited: it reads every saved conversation off disk and then talks to the
+// network, and a diagnostic that can slow or break the app it reports on is worse
+// than no diagnostic. maybeSend never throws, and the .catch is belt-and-braces so
+// a rejection here can never reach the unhandledrejection handler above and be
+// reported to the user as a startup failure.
+setTimeout(() => {
+    weeklySend.maybeSend({ appVersion: APP_VERSION, build: BUILD_ID }).catch(() => { /* never surfaces */ });
+}, 3000);

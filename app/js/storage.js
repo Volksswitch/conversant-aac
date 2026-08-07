@@ -273,7 +273,13 @@ const SETTINGS_DIR = 'settings';
 // `deepgramKey` sits here with `apiKey` for the same reason (SEC-6): a key must
 // never be written to a data folder that may be cloud-synced, nor carried in a
 // backup file the user might send someone. Both are re-entered per device.
-const PROFILE_EXCLUDE = ['apiKey', 'deepgramKey', 'usageInputTokens', 'usageOutputTokens', 'usageSttSeconds', 'usageTtsCharacters', 'usageSince', 'lastSeenVersion', 'activeSettingsProfile'];
+// `installId`, `weeklySendLastAt` and `weeklyInfoHash` join the excluded set for
+// the same class of reason as `activeSettingsProfile`: they describe THIS
+// installation, not the person. A profile loaded onto a second device must not
+// clone the first device's identity or make it think it has already reported this
+// week. `testerName` is deliberately NOT excluded — it identifies the tester, so it
+// should follow them (Ken, August 7 2026).
+const PROFILE_EXCLUDE = ['apiKey', 'deepgramKey', 'usageInputTokens', 'usageOutputTokens', 'usageSttSeconds', 'usageTtsCharacters', 'usageSince', 'lastSeenVersion', 'activeSettingsProfile', 'installId', 'weeklySendLastAt', 'weeklyInfoHash'];
 
 // The settings bundle with both API keys replaced by a presence marker, for a
 // problem report (Ken, August 7 2026). The redaction lives HERE rather than in
@@ -1232,6 +1238,85 @@ export function setAppVersion(v) { appVersion = v || ''; }
 export function loadErrorLog() {
     try { return JSON.parse(localStorage.getItem(ERROR_LOG_KEY)) || []; }
     catch { return []; }
+}
+
+// --- Weekly report (Ken, August 7 2026) -------------------------------------
+// Bookkeeping for the automatic weekly send. The queue and the sent-log get their
+// OWN localStorage keys rather than living in the settings bundle: both grow, and
+// the settings bundle is copied wholesale into every named profile and backup.
+const WEEKLY_QUEUE_KEY = 'aac_weekly_queue';
+const WEEKLY_LOG_KEY = 'aac_weekly_log';
+const WEEKLY_LOG_MAX = 30;      // ~7 months of weekly sends
+
+// The name Ken assigns at setup, so a report can be traced to a person he can
+// contact. NOT excluded from settings profiles: it identifies the TESTER, so it
+// should follow them to a second device.
+export function loadTesterName() { return loadSettings().testerName || ''; }
+export function saveTesterName(name) {
+    const s = loadSettings();
+    s.testerName = (name || '').trim();
+    saveSettings(s);
+}
+
+// A random id for THIS installation, minted on first read. Distinguishes two
+// devices belonging to one person, and keeps weekly reports correlatable even when
+// the tester name was never filled in. Excluded from profiles — a profile loaded
+// onto a second device must not clone the first device's identity.
+export function loadInstallId() {
+    const s = loadSettings();
+    if (!s.installId) {
+        s.installId = (crypto.randomUUID ? crypto.randomUUID() : `id-${Date.now()}-${Math.random().toString(36).slice(2)}`).slice(0, 18);
+        saveSettings(s);
+    }
+    return s.installId;
+}
+
+export function loadWeeklySendEnabled() { return loadSettings().weeklySendEnabled ?? true; }
+export function saveWeeklySendEnabled(on) {
+    const s = loadSettings();
+    s.weeklySendEnabled = !!on;
+    saveSettings(s);
+}
+
+export function loadWeeklySendLastAt() { return loadSettings().weeklySendLastAt || 0; }
+export function saveWeeklySendLastAt(t) {
+    const s = loadSettings();
+    s.weeklySendLastAt = t;
+    saveSettings(s);
+}
+
+// Hash of the last system-info block sent. System info is near-static, so weekly
+// copies are noise; sending only on change also makes a change conspicuous.
+export function loadWeeklyInfoHash() { return loadSettings().weeklyInfoHash || ''; }
+export function saveWeeklyInfoHash(h) {
+    const s = loadSettings();
+    s.weeklyInfoHash = h;
+    saveSettings(s);
+}
+
+export function loadWeeklyQueue() {
+    try { return JSON.parse(localStorage.getItem(WEEKLY_QUEUE_KEY)) || []; }
+    catch { return []; }
+}
+export function saveWeeklyQueue(q) {
+    try { localStorage.setItem(WEEKLY_QUEUE_KEY, JSON.stringify(q)); }
+    catch { /* quota — the queue is best-effort by design */ }
+}
+
+// What has been sent, for the tester to read back. Dates, sizes and outcomes only
+// — never the payload, which is the point of the "you don't need to see your own
+// data" decision (Ken).
+export function loadWeeklySendLog() {
+    try { return JSON.parse(localStorage.getItem(WEEKLY_LOG_KEY)) || []; }
+    catch { return []; }
+}
+export function appendWeeklySendLog(entry) {
+    try {
+        const log = loadWeeklySendLog();
+        log.push(entry);
+        while (log.length > WEEKLY_LOG_MAX) log.shift();
+        localStorage.setItem(WEEKLY_LOG_KEY, JSON.stringify(log));
+    } catch { /* ignore */ }
 }
 
 export function clearErrorLog() {

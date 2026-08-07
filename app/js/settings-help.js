@@ -96,7 +96,11 @@ const HELP = {
     "refreshUsageSummaryBtn": "Rebuilds the summary from your saved conversations, including anything since you opened this.",
     "copyUsageSummaryBtn": "Copies the usage summary so you can paste it into a message.",
     "systemInfoView": "What the app can tell about your device, your screen, and your settings. Neither of your keys is included.",
-    "copySystemInfoBtn": "Copies the system information so you can paste it into a message."
+    "copySystemInfoBtn": "Copies the system information so you can paste it into a message.",
+    "testerNameInput": "The name we gave you when you joined. It lets us tell whose report is whose, so we can get back to you.",
+    "weeklySendEnabledInput": "Sends a short report about once a week when you open the app. Turn it off if you would rather not; nothing else changes.",
+    "weeklyReportContents": "Lists exactly what a weekly report contains. Nothing anyone said is ever in one, and neither are your keys.",
+    "weeklySendLogView": "When reports were sent and how big they were. It does not show what was in them."
   },
   "radioGroups": {
     "sttProvider": "Who turns the other person's speech into words. Your browser does it free. Deepgram is paid, and works where the browser cannot.",
@@ -118,7 +122,8 @@ const HELP = {
     "apiCost": "A rough estimate of what you have spent with the AI since the date shown.",
     "reportProblem": "Write what went wrong in your own words, then save or copy it. Everything technical is attached for you.",
     "usageSummary": "A plain summary of how much you have used the app, how often a suggestion fitted, and how long people waited.",
-    "systemInfo": "Details about your device and settings, gathered for a problem report. Your keys are never included."
+    "systemInfo": "Details about your device and settings, gathered for a problem report. Your keys are never included.",
+    "weeklyReports": "A short report sent back to us about once a week, so we can see how the app is holding up without asking you."
   }
 };
 // @@SETTINGS_HELP_END@@
