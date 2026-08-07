@@ -1,0 +1,260 @@
+# Conversant AAC — Beta Test Plan
+
+**Draft, August 7 2026.** Working draft for Ken's review. Once revised, this becomes
+`Conversant AAC Beta Test Plan.docx` in house style (Arial, Volksswitch footer, "Page m of n")
+and gets a row in DOC-SYNC.md. **Appendix B is for Ken and is not part of the tester document.**
+
+---
+
+## 1. What this is
+
+Conversant AAC is a free, open-source communication app for people who cannot speak. It listens
+to the person you are talking with, and within a few seconds it offers you several things you
+might say back. You pick one and the device speaks it in your voice.
+
+Most communication devices are built for getting a message out. Conversant AAC is built for
+something harder: **keeping a conversation going in real time.** People find silence awkward after
+about four seconds, and that is the gap this app is trying to close.
+
+You are among the first people outside the project to use it. Nothing about it is finished, and
+your experience over the next six weeks will decide what gets fixed, what gets changed, and what
+gets thrown away.
+
+## 2. What we are trying to learn
+
+Please read this section, because it explains why we ask what we ask.
+
+**Question 1 — Do you keep using it?**
+Not "do you use it every day." You will open this app when there is a conversation to have, and
+some weeks have more of those than others. What we want to know is whether, six weeks in, you
+still reach for it when a conversation comes up. If you stop, we badly want to know why. **A
+tester who quits in week two teaches us more than one who is politely enthusiastic in week six.**
+
+**Question 2 — Can you say what you actually meant?**
+When the app offers you cards, how often is one of them close enough to say out loud without
+asking for a new set or typing your own? This is the central bet of the whole product. If the
+answer is "rarely," we need to know that plainly and early.
+
+**Question 3 — Does it keep up?**
+How long is the gap between the other person finishing and you speaking? If it is still long
+enough to be uncomfortable, the app has not solved the problem it exists to solve.
+
+Everything else — buttons, colors, layout, voices — matters, but it matters in service of those
+three.
+
+## 3. What we ask of you
+
+| | |
+|---|---|
+| **How long** | Six weeks |
+| **How much** | Use it when you would naturally have a conversation. There is no daily quota. |
+| **Weekly** | A short note back — three questions, a couple of minutes (see §8) |
+| **When something goes wrong** | Tap **Report a problem**. That is the whole procedure. |
+| **At the end** | A conversation with Ken, in whatever form works for you |
+
+You may stop at any time, for any reason, and we would still like the five minutes it takes to
+tell us why.
+
+## 4. What you need
+
+- **A tablet or computer.** Either a Windows tablet or Chromebook, or an iPad. A Windows tablet
+  (a Microsoft Surface is the usual choice) is the configuration we know best.
+- **An internet connection.** The app needs it both to hear the other person and to suggest
+  responses. It will not work offline.
+- **An Anthropic account and API key.** This is what powers the response suggestions. You create
+  your own account and pay only for the conversations you actually have — typically a few cents
+  each. We will walk you through setting this up.
+- **A supporter, for setup.** Choosing a folder, pasting a key, and setting the layout are
+  fiddly one-time jobs. After that the app is yours to drive.
+
+Your User Manual covers your device specifically. Use the one for your device — they are
+self-contained, and you should never need both.
+
+## 5. Before your first real conversation
+
+### 5.1 Setup checklist (with your supporter)
+
+- [ ] Open the app and choose a **data folder**. Do this first. Everything you enter lives there.
+- [ ] Paste your **API key** and press **Test**. It should say your key is working.
+- [ ] Pick your **voice**, and listen to it. This is the voice people will hear as you.
+- [ ] Set the **button size**, the **gaps**, and where the keyboard sits.
+- [ ] Save all of that as a **named settings profile** — and **re-save it every time you change
+      something**. This is what protects your setup, and it is the one habit worth building.
+- [ ] If you are on an iPad, do an **Export** and keep the file somewhere safe.
+
+### 5.2 Tell your communication partners
+
+**Please do this. It matters more than any feature.**
+
+The app listens to the person you are talking with and sends what they say to a transcription
+service to turn it into text. Their words are written down in your conversation record. They have
+no way of knowing that unless you tell them.
+
+Say something once, at the start — *"this device listens and speaks for me"* — and that is
+usually the end of it. We will send you a small printed card for the back of the device if that
+is easier than explaining each time.
+
+### 5.3 Learn the buttons before you need them
+
+The row of buttons across the middle of the screen is the part testers most often forget. Spend
+one practice session pressing every one of them at least once, so that when you need **Ask them
+to repeat** in a real conversation, your hand already knows where it is.
+
+Open **Settings → Practice** and work through a scenario. Nobody is listening; nothing you say
+is spoken to a real person. Practice as many times as you like.
+
+## 6. Week by week
+
+This is a suggestion, not homework. If your life gives you a real conversation in week one, take
+it.
+
+| Week | What to try |
+|---|---|
+| **1** | Setup and practice. Do not have a real conversation yet. Get the buttons into your hands. |
+| **2** | **Make it yours.** Fill in About Me. Add the people you talk to, the places you go, and how you feel. Edit the Express Panel so the phrases are *your* phrases. This is not optional setup — it is what makes the suggestions sound like you. |
+| **3** | **First real conversations**, at home, with someone patient who knows what you are doing. |
+| **4** | Widen it. A different person. A different room. |
+| **5** | Take it out — a shop, an appointment, somewhere with noise and strangers. |
+| **6** | Just use it. No tasks. This is the week that tells us whether it has earned a place in your life. |
+
+Keep editing your phrases, people, and places throughout. Testers who keep tuning the app tend to
+be the ones it ends up working for, and we would like to understand why.
+
+## 7. When something goes wrong
+
+**Tap "Report a problem."** You will find it in **Settings → Troubleshooting**, and also on the
+opening screen next to the version number, in case the app is too stuck to reach Settings.
+
+Write one line about what happened in your own words — *"I pressed Listen and nothing happened"*
+is a perfect report. The app attaches everything technical by itself: what version you are on,
+what device, what settings, and what the app was doing in the seconds before.
+
+**You do not have to catch every problem.** If something felt wrong and you were mid-conversation,
+carry on. Report it afterwards if you remember.
+
+**Two things to watch for and always report:**
+
+- The conversation panel turns **faintly red**. That means the app hit an error. It is a nudge,
+  not an emergency — finish your conversation, then report it.
+- **Nothing happens when it should.** No cards, no speech, a dead button. These are the failures
+  we are worst at detecting on our own, because the app does not know it has failed. Your report
+  is the only way we find out.
+
+## 8. The weekly note
+
+Three questions, once a week. Two minutes.
+
+1. Roughly how many real conversations did you have with it this week?
+2. Was there a moment it let you down? What happened?
+3. Was there a moment it worked? What happened?
+
+Question 3 is not a courtesy. Knowing what already works tells us what not to break.
+
+## 9. Privacy — read this once
+
+**What stays on your device:** everything you enter. About Me, your people, your places, your
+phrases, and the full text of your conversations live in your data folder, on your device. They
+are not uploaded, and there is no account and no server holding your information.
+
+**What leaves your device, and why:**
+
+- **What the other person says** goes to a transcription service to be turned into text. This is
+  how every speech recognition system works, and it is why telling your partners matters.
+- **What you might say** — the conversation so far, plus what you have told the app about
+  yourself — goes to the AI so it can suggest responses. You pick what is spoken; nothing is
+  said out loud unless you choose it.
+- **During this beta only:** the app sends back **usage information and error reports** so we can
+  see how it is holding up. This is **counts and timings only** — how many conversations, how
+  long you waited, which buttons you pressed, what error occurred. **It never includes what you
+  or the other person said.** A transcript is only ever sent if you choose to attach one, and you
+  see it first.
+
+You can turn automatic reporting off in **Settings → Troubleshooting**. We would rather you left
+it on, because it means you never have to remember to send us anything — but it is your choice
+and turning it off will not affect the app.
+
+**Any single conversation can be kept out of the record entirely.** Tap **Don't save this
+conversation** before you begin, and nothing from it is written down. Use it whenever you want
+to; you do not need a reason.
+
+## 10. What we already know is wrong
+
+See the **Known Issues** document that came with your kit. It is worth five minutes before you
+start — several things that look like faults are known and already understood, and reading it
+saves you reporting them.
+
+If something is in there and it is causing you real trouble, tell us anyway. Knowing which known
+problems actually hurt is how we decide what to fix first.
+
+## 11. Getting help
+
+Contact Ken directly — you have his details in your welcome pack. **Always include your version
+number**, which is on the opening screen and in **Settings → About**.
+
+There is no wrong question and no bad report. If you are unsure whether something is a fault or
+just how the app works, that uncertainty is itself worth telling us about.
+
+---
+
+## Appendix A — Glossary
+
+| Term | What it means |
+|---|---|
+| **Response cards** | The suggestions the AI offers you. Four of them, or eight if you have chosen two per category. |
+| **Category** | The kind of reply a card is. Agreeing, declining, changing direction, or asking them to repeat. They are always in the same place so your hand can learn them. |
+| **Command Bar** | The row of buttons between your conversation and your cards. |
+| **Express Panel** | Your own phrases, and the buttons for who you are with, where you are, and how you feel. |
+| **In my own words** | Type something the AI did not suggest and have it spoken. |
+| **Reframe** | Type what you want to get across, and the AI rewrites the cards around it. |
+| **Practice** | Rehearse with the AI playing the other person. Nothing is spoken to a real person. |
+| **Data folder** | Where everything you enter is stored on your device. |
+
+---
+
+## Appendix B — For Ken, not for testers
+
+### B.1 This plan describes features that do not exist yet
+
+Everything below must ship before testers arrive, or the corresponding section needs rewriting:
+
+| § | Depends on | Status |
+|---|---|---|
+| 7 | **Report a problem** button + free-text note | Not built (build item 2) |
+| 7 | Pre-start reporting affordance | Not built — and §11's "Settings is unreachable before Start" finding makes it necessary |
+| 7, 9 | **Settings → Troubleshooting** tab | Not built (build item 1) |
+| 9 | Automatic reporting + its off switch | Not built (build item 3) |
+| 5.2 | Printed "this device listens and speaks for me" card | Not produced (SEC-7) |
+| 5.3, 6 | Controls-tour practice scenario | Not built — §5.3 currently asks testers to improvise it |
+| 10 | Known Issues doc refreshed to current version | Exists, last updated at 0.5.82 |
+
+### B.2 Decisions still needed
+
+1. **Who pays for the API key?** §4 currently says the tester does. Creating an Anthropic account
+   and entering a credit card is a real onboarding barrier, and it will cause some dropout — which
+   then **confounds the retention metric**, because you cannot tell "the app did not earn a place
+   in their life" from "they never got past the billing page." Funding test keys would remove that
+   confound. It is a cost question and yours to make.
+
+2. **One plan or two?** The manuals are deliberately two self-contained documents. This plan is
+   mostly platform-neutral, with the split confined to §4 and §5.1. One document seems right, but
+   the same reasoning that produced two manuals may apply.
+
+3. **Weekly note — how does it come back?** §8 assumes a channel that does not exist. Email is
+   fine; a form is better for collation. Note the tester's own weekly note and the app's automatic
+   report are separate things, arriving by different routes.
+
+4. **Six weeks is a guess.** It is long enough to see a week-4 retention curve, which is what
+   Question 1 needs. Shorter loses the curve.
+
+5. **The Product Overview's "Private by Design" claim now needs a beta exception** (§9). It should
+   say so plainly rather than being quietly narrowed.
+
+### B.3 How the sections map to the measures
+
+- §2 Q1 → adoption (conversations per active week, week1→week4)
+- §2 Q2 → sufficiency (share of turns spoken from a card without a regenerate)
+- §2 Q3 → time from partner pause to user turn
+- §6 week 2 → personalization depth, which segments palette abandonment (onboarding problem vs.
+  generator problem)
+- §5.3 → the never-pressed Command Bar button finding
+- §8 Q2/Q3 → the "why" that the numbers cannot supply
