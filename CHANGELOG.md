@@ -26,6 +26,21 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- New **Troubleshooting** tab in Settings. If something goes wrong, write a line
+  about it in your own words and either save it as a file or copy it — everything
+  technical is attached for you, so you never have to describe your device or dig
+  out a version number.
+- There is also a small **"Something's wrong — save a report"** link under the
+  Start button, for the case where the app is too stuck to reach Settings at all.
+- The same tab shows a plain summary of **how the app is being used** — how many
+  conversations you have had, how often one of the suggested cards fitted, and how
+  long the other person waited. It is built from your saved conversations, and it
+  contains only counts and timings, never anything anyone said.
+- Your API keys are **never** included in a report, on purpose. It says whether a
+  key is set, and nothing more.
+- The error log has moved from the About tab to Troubleshooting, alongside
+  everything else you would need when reporting a problem.
+
 - The app now offers you responses much sooner after the other person pauses. It
   used to wait two seconds of silence before asking the AI; it now waits half a
   second, and refines the suggestions each time they pause again. You can change

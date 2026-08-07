@@ -275,6 +275,22 @@ const SETTINGS_DIR = 'settings';
 // backup file the user might send someone. Both are re-entered per device.
 const PROFILE_EXCLUDE = ['apiKey', 'deepgramKey', 'usageInputTokens', 'usageOutputTokens', 'usageSttSeconds', 'usageTtsCharacters', 'usageSince', 'lastSeenVersion', 'activeSettingsProfile'];
 
+// The settings bundle with both API keys replaced by a presence marker, for a
+// problem report (Ken, August 7 2026). The redaction lives HERE rather than in
+// diagnostics.js deliberately: this module owns the keys, so the raw bundle is
+// never handed out at all and no caller can forget. A report gets pasted into
+// messages and mailed around, which is exactly the exposure SEC-6 exists for — and
+// knowing whether a key is SET is the diagnostic value, never the key itself.
+export function reportableSettings() {
+    const out = {};
+    for (const [k, v] of Object.entries(loadSettings())) {
+        out[k] = (k === 'apiKey' || k === 'deepgramKey')
+            ? (v ? '(set - not included)' : '(not set)')
+            : v;
+    }
+    return out;
+}
+
 // Which saved profile is currently in effect (machine-local; '' when none / custom
 // unsaved settings). Set when a profile is saved or loaded; cleared if that profile
 // is deleted. Lets the picker show the active profile after a reload instead of
@@ -1167,7 +1183,7 @@ export async function finalizePartnerTurn(handle, { rawTranscript, cleanedTransc
     await flushLog();
 }
 
-export async function logUserResponse({ selectedText, selectedIndex, allOptions, partner = null, feeling = null, place = null }) {
+export async function logUserResponse({ selectedText, selectedIndex, allOptions, selectedSlot = null, partner = null, feeling = null, place = null }) {
     if (!conversationSaving) return; // private conversation — nothing is written
     // Start the log lazily if this user turn is the FIRST turn of the conversation
     // — an opener (Start conversation) or an Express-panel phrase takes the floor
@@ -1183,6 +1199,7 @@ export async function logUserResponse({ selectedText, selectedIndex, allOptions,
         selectedText,
         selectedIndex,
         allOptions,
+        selectedSlot,      // the CA category chosen (PREFERRED/CHOICE/...), or null
         partner,           // who the user was talking with, or null
         feeling,           // how the user felt at this turn, or null
         place              // where the user was at this turn, or null

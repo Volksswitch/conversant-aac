@@ -25,7 +25,8 @@ const HELP = {
     "express": "Change the buttons on the Express Panel: the phrases you speak, the people you talk to, and how you are feeling.",
     "controls": "Change the words spoken by the command buttons, and your conversation starters and goodbyes.",
     "keyguard": "Spacing settings for fitting a physical keyguard, and a file listing where every button sits.",
-    "about": "Which version you are running, anything that has gone wrong, what you have spent, and a way to restart the app."
+    "about": "Which version you are running, what you have spent, and a way to restart the app.",
+    "troubleshooting": "Tell us when something goes wrong, and read back what the app has recorded about how it is working."
   },
   "controls": {
     "apiKeyInput": "Paste your Anthropic key here. It stays on this device and is never put into a backup.",
@@ -87,7 +88,15 @@ const HELP = {
     "copyErrorLogBtn": "Copies the errors, along with the conversations they happened in, ready to paste into a message.",
     "clearErrorLogBtn": "Empties this list. The copy kept in your data folder is left alone.",
     "resetUsageBtn": "Sets the cost estimate back to zero and starts counting again from today.",
-    "fullscreenInput": "Expands the app to fill the whole screen, hiding the title bar. Turn it off to get the title bar back, or maximise the window instead."
+    "fullscreenInput": "Expands the app to fill the whole screen, hiding the title bar. Turn it off to get the title bar back, or maximise the window instead.",
+    "problemNoteInput": "Describe what went wrong. One line is plenty. Say what you did and what happened instead.",
+    "saveProblemReportBtn": "Saves the whole report as a file you can send us. Use this one if you are on a tablet.",
+    "copyProblemReportBtn": "Copies the whole report so you can paste it into a message or an email.",
+    "usageSummaryView": "A summary built from your saved conversations. Nothing anyone said appears here, only counts and timings.",
+    "refreshUsageSummaryBtn": "Rebuilds the summary from your saved conversations, including anything since you opened this.",
+    "copyUsageSummaryBtn": "Copies the usage summary so you can paste it into a message.",
+    "systemInfoView": "What the app can tell about your device, your screen, and your settings. Neither of your keys is included.",
+    "copySystemInfoBtn": "Copies the system information so you can paste it into a message."
   },
   "radioGroups": {
     "sttProvider": "Who turns the other person's speech into words. Your browser does it free. Deepgram is paid, and works where the browser cannot.",
@@ -106,7 +115,10 @@ const HELP = {
     "practicePartnerVoice": "The voice used for the other person when you practise, so you can tell it apart from your own.",
     "appUpdates": "The app updates itself when a new version is ready. This is here for when you want it to check straight away.",
     "errorLog": "A record of anything that has gone wrong. It is what to send if you report a problem.",
-    "apiCost": "A rough estimate of what you have spent with the AI since the date shown."
+    "apiCost": "A rough estimate of what you have spent with the AI since the date shown.",
+    "reportProblem": "Write what went wrong in your own words, then save or copy it. Everything technical is attached for you.",
+    "usageSummary": "A plain summary of how much you have used the app, how often a suggestion fitted, and how long people waited.",
+    "systemInfo": "Details about your device and settings, gathered for a problem report. Your keys are never included."
   }
 };
 // @@SETTINGS_HELP_END@@

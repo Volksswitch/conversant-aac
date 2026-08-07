@@ -781,7 +781,17 @@ body.conv-bottom .palette-grid {
     background: #fafafa;
     color: #333;
 }
-#errorLogActions { display: flex; gap: 0.5rem; margin-top: 0.4rem; }
+#errorLogActions, #usageSummaryActions, #systemInfoActions, #problemReportActions { display: flex; gap: 0.5rem; margin-top: 0.4rem; }
+/* Monospace so the summary's aligned columns line up (Ken, Aug 7 2026). */
+#usageSummaryView, #systemInfoView { font-family: Consolas, 'Courier New', monospace; font-size: 0.85em; white-space: pre; }
+/* Deliberately quiet: the launch screen is not a support desk, and this must
+   not compete with Start. It is the only reporting route when Settings cannot
+   be reached, so it is always present rather than shown on a condition. */
+#startReportBtn.start-report {
+    display: block; margin: 0.9rem auto 0; background: none; border: none;
+    color: #666; font-size: 0.85rem; text-decoration: underline; cursor: pointer;
+    min-height: 0; padding: 0.3rem 0.6rem;
+}
 
 /* Settings-profiles controls (About tab) — a picker row + a save row. */
 .profiles-row { display: flex; gap: 0.5rem; margin-top: 0.4rem; align-items: center; flex-wrap: wrap; }
@@ -1232,7 +1242,7 @@ button:not(.kbd-key):not(.kbd-tool):not(.kbd-pred-btn):not(.ep-btn) {
 
 /* Let action rows wrap rather than overflow: with a wide side dock the Settings
    panel gets genuinely narrow, and a clipped button is an unreachable one. */
-#errorLogActions { flex-wrap: wrap; }
+#errorLogActions, #usageSummaryActions, #systemInfoActions, #problemReportActions { flex-wrap: wrap; }
 
 /* "New 4" — regenerate a different set of four. Icon button to the right of the
    response grid, spanning its full height (2 rows for 2×2, 1 for 1×4). */

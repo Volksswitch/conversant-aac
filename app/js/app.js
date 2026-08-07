@@ -27,6 +27,8 @@ import * as sttDeepgram from './stt-deepgram.js';
 import * as ttsDeepgram from './tts-deepgram.js';
 import { confirmDanger } from './confirm-dialog.js';
 import * as helpMode from './help-mode.js';
+import * as usageSummary from './usage-summary.js';
+import * as diagnostics from './diagnostics.js';
 
 // The platform verdict on partner capture (see platform.js), or null when capture
 // is expected to work. Non-null drives the pre-start warning; it does NOT by
@@ -398,6 +400,13 @@ function initApp() {
     // API-key notice (step 3 of the pre-start sequence): "Add an API key" opens
     // Settings; "Continue" proceeds into the conversation without a key.
     document.getElementById('apiKeyPromptBtn').addEventListener('click', openSettings);
+    // Reporting from the launch screen. Wired here, early in init, ON PURPOSE: the
+    // tester who most needs it is the one whose app did not finish starting, so this
+    // listener must be attached before anything that could throw. It saves straight
+    // to a file with no note, because the panel you would type a note into is
+    // exactly what may be unreachable (Ken, August 7 2026).
+    const startReportBtn = document.getElementById('startReportBtn');
+    if (startReportBtn) startReportBtn.addEventListener('click', () => saveProblemReport(true));
     document.getElementById('apiKeyContinueBtn').addEventListener('click', finishStart);
     ui.onListenClick(toggleListening);
     ui.onRegenerateClick(handleRegenerate);
@@ -1352,6 +1361,16 @@ async function commitExchange(raw, userText, index, opts = {}) {
         // list; a free-composed utterance (index -1) was not picked from a
         // palette, so don't log the (possibly stale) last palette against it.
         allOptions: index >= 0 ? lastPalette.map(m => m.text).filter(Boolean) : [],
+        // WHICH KIND of response was chosen — the CA category, not its position
+        // (Ken, August 7 2026). Position carries category on a static layout, but a
+        // position alone cannot be read back as a category later, because the
+        // palette's composition varies: four structural slots on an ordinary turn,
+        // the CHOICE family on a closed-set turn, openers/wind-downs/closings, or
+        // the three repair-of-self options. So the slot is recorded explicitly.
+        // This is what makes "is every category earning its cell?" answerable — a
+        // category never selected across a whole beta is a design finding, and
+        // heavy REPAIR use means something upstream is failing.
+        selectedSlot: index >= 0 ? (lastPalette[index] && lastPalette[index].slot) || null : null,
         // Stamp the situation at this turn (who, how the user felt, where they
         // were) — each null when its toggle is off.
         partner: partnerStamp(),
@@ -2880,6 +2899,10 @@ function handleSettingsTab(tabName) {
     if (tabName === 'express') { expressEditor.render(); keyboard.hideKeyboard(); return; }
     if (tabName === 'controls') { controlEditor.render(); keyboard.hideKeyboard(); return; }
     if (tabName === 'practice') { renderPracticePanel(); keyboard.hideKeyboard(); return; }
+    // Rendered on open rather than at Settings-open: reading every conversation log
+    // off disk is the most expensive thing in this panel, and it is pointless on the
+    // ten other tabs. Keeps the keyboard available — the note field is typed into.
+    if (tabName === 'troubleshooting') { renderTroubleshooting(); return; }
     if (tabName === 'input' && storage.loadKeyboardMode() === 'onscreen') {
         keyboard.previewShow(storage.loadKeyboardDock());
     } else {
@@ -3096,6 +3119,98 @@ function renderErrorLog() {
     }
     view.value = lines.join('\n');
     view.scrollTop = 0;   // groups are newest-first, so the most relevant is at top
+}
+
+// --- Troubleshooting tab (Ken, August 7 2026) --------------------------------
+// The aggregator is deliberately the FIRST thing built: almost every measure the
+// beta needs is already sitting in conversations/*.json — timestamps, which card
+// was picked, what else was offered — so this reads history rather than adding
+// capture. It has simply never had a reader.
+
+async function renderUsageSummary() {
+    const view = document.getElementById('usageSummaryView');
+    if (!view) return;
+    try {
+        view.value = usageSummary.formatSummary(usageSummary.summarize(await storage.listConversationLogs()));
+    } catch (e) {
+        // Never let a diagnostic throw: it runs precisely when something is already
+        // wrong, and a blank panel would hide the very thing being looked for.
+        view.value = `Could not read the saved conversations.\n${e && e.message ? e.message : e}`;
+    }
+    view.scrollTop = 0;
+}
+
+async function renderSystemInfo() {
+    const view = document.getElementById('systemInfoView');
+    if (!view) return;
+    try {
+        view.value = diagnostics.formatSystemInfo(
+            await diagnostics.collectSystemInfo({ appVersion: APP_VERSION, buildId: BUILD_ID }));
+    } catch (e) {
+        view.value = `Could not collect system information.\n${e && e.message ? e.message : e}`;
+    }
+    view.scrollTop = 0;
+}
+
+function renderTroubleshooting() {
+    renderErrorLog();
+    renderUsageSummary();
+    renderSystemInfo();
+}
+
+// The whole report. `buildErrorReport` already withholds a private conversation's
+// transcript (SEC-2) and `storage.reportableSettings` already strips both API keys
+// (SEC-6), so neither rule is re-implemented here.
+async function buildProblemReportText() {
+    const noteEl = document.getElementById('problemNoteInput');
+    let usageText = '';
+    try { usageText = usageSummary.formatSummary(usageSummary.summarize(await storage.listConversationLogs())); }
+    catch { usageText = '(unavailable)'; }
+    let errorReport = '';
+    try { errorReport = await buildErrorReport(); } catch { errorReport = '(unavailable)'; }
+    return diagnostics.buildProblemReport({
+        note: noteEl ? noteEl.value : '',
+        appVersion: APP_VERSION,
+        buildId: BUILD_ID,
+        errorReport,
+        usageText,
+    });
+}
+
+function setProblemReportStatus(msg) {
+    const el = document.getElementById('problemReportStatus');
+    if (el) el.textContent = msg || '';
+}
+
+// Save rather than copy is the route that works on a tablet: clipboard assumes
+// somewhere to paste, whereas a file goes through the share sheet as an attachment.
+async function saveProblemReport(fromStartScreen = false) {
+    // From the launch screen the status line is inside Settings, which is exactly
+    // the panel that may be unreachable — so the button reports on itself instead.
+    // Without this the tester gets no confirmation at all beyond whatever the
+    // browser's download UI happens to show, which on a tablet can be nothing.
+    const btn = fromStartScreen ? document.getElementById('startReportBtn') : null;
+    const say = (msg) => {
+        setProblemReportStatus(msg);
+        if (btn) {
+            const orig = btn.dataset.label || btn.textContent;
+            btn.dataset.label = orig;
+            btn.textContent = msg;
+            setTimeout(() => { btn.textContent = btn.dataset.label; }, 4000);
+        }
+    };
+    try {
+        const text = await buildProblemReportText();
+        dataTransfer.downloadText(diagnostics.reportFilename(), text, 'text/plain');
+        say('Report saved — please send us the file');
+    } catch (e) {
+        const msg = e && e.message ? e.message : String(e);
+        say(`Could not build the report: ${msg}`);
+        // Deliberately not logged from the start screen: the app may be mid-failure,
+        // and logError writes to disk and dispatches a UI event, either of which
+        // could throw again and swallow the message the tester needs to see.
+        if (!fromStartScreen) storage.logError('problem report', msg);
+    }
 }
 
 // Populate the Settings-profiles picker (About tab) from the data folder. Disables
@@ -3510,6 +3625,28 @@ function openSettings() {
         storage.clearErrorLog();
         renderErrorLog();
     };
+
+    // --- Troubleshooting tab (Ken, August 7 2026) ---
+    const flash = (btn, word = 'Copied ✓') => {
+        const orig = btn.textContent;
+        btn.textContent = word;
+        setTimeout(() => { btn.textContent = orig; }, 1500);
+    };
+    const copyFrom = (btnId, getText) => {
+        const btn = document.getElementById(btnId);
+        if (!btn) return;
+        btn.onclick = async () => {
+            try { await navigator.clipboard.writeText(await getText()); flash(btn); }
+            catch { flash(btn, 'Copy blocked'); }
+        };
+    };
+    copyFrom('copyUsageSummaryBtn', () => document.getElementById('usageSummaryView').value);
+    copyFrom('copySystemInfoBtn', () => document.getElementById('systemInfoView').value);
+    const refreshBtn = document.getElementById('refreshUsageSummaryBtn');
+    if (refreshBtn) refreshBtn.onclick = () => renderTroubleshooting();
+    const saveReportBtn = document.getElementById('saveProblemReportBtn');
+    if (saveReportBtn) saveReportBtn.onclick = () => saveProblemReport();
+    copyFrom('copyProblemReportBtn', () => buildProblemReportText());
 
     // Settings profiles (About tab) — save the whole settings bundle to the data
     // folder under a name, and re-apply it later. Populate the picker now.

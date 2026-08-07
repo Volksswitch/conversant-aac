@@ -71,6 +71,15 @@
                         </div>
                     </div>
                     <button id="startBtn">Start</button>
+                    <!-- The reporting route that survives a broken app (Ken, August
+                         7 2026). Settings cannot be reached from here — main is
+                         pointer-events:none before Start, and the Settings button
+                         lives inside it — so a tester who cannot get past this
+                         screen would otherwise have no way to tell us anything. It
+                         is deliberately small and quiet: this is the launch screen,
+                         not a support desk. Saves straight to a file, because a
+                         panel to type into is exactly what may be unavailable. -->
+                    <button id="startReportBtn" type="button" class="start-report">Something's wrong — save a report</button>
                 </div>
             </section>
 
@@ -159,6 +168,7 @@
                 <div class="settings-tab" data-tab="express">Express Panel</div>
                 <div class="settings-tab" data-tab="controls">Controls</div>
                 <div class="settings-tab" data-tab="keyguard">Keyguard Design</div>
+                <div class="settings-tab" data-tab="troubleshooting">Troubleshooting</div>
                 <div class="settings-tab" data-tab="about">About</div>
             </nav>
             <div id="settingsContent">
@@ -619,13 +629,31 @@
                              on desktop it is written to the chosen folder. -->
                     </div>
                 </div>
-                <div class="tab-panel" data-tab="about">
-                    <h3>Conversant AAC</h3>
-                    <p class="about-version">Version <span id="aboutVersion">0.2</span> — Phase 1 Proof of Concept</p>
-                    <p class="about-description">Conversant AAC gives non-speaking individuals access to real-time conversation. Generative AI presents response options within seconds of a communication partner's utterance.</p>
-                    <div class="setting-group" data-help="appUpdates">
-                        <label>App updates</label>
-                        <button id="reloadAppBtn" type="button">Reload the app</button>
+                <!-- Troubleshooting — where reporting a problem and reading back
+                     what the app has recorded both live (Ken, August 7 2026).
+                     NOTE: this tab must never be the ONLY route to reporting.
+                     Settings is unreachable before Start (main.disabled blocks the
+                     Command Bar that holds the Settings button) and the 0.6.5
+                     top-layer bug already made it unreachable mid-session on an
+                     iPad — so #startBlock carries a second Report button. -->
+                <div class="tab-panel" data-tab="troubleshooting">
+                    <p class="tab-intro">If something goes wrong, write a line about it here and send it back. Everything technical is attached for you.</p>
+                    <div class="setting-group" data-help="reportProblem">
+                        <label for="problemNoteInput">Report a problem</label>
+                        <textarea id="problemNoteInput" rows="3" placeholder="What happened? &quot;I pressed Listen and nothing happened&quot; is a perfect report."></textarea>
+                        <div id="problemReportActions">
+                            <button id="saveProblemReportBtn" type="button">Save to a file</button>
+                            <button id="copyProblemReportBtn" type="button">Copy</button>
+                        </div>
+                        <p id="problemReportStatus" class="setting-status" role="status"></p>
+                    </div>
+                    <div class="setting-group" data-help="usageSummary">
+                        <label>How the app is being used</label>
+                        <textarea id="usageSummaryView" readonly rows="12" placeholder="No saved conversations yet." aria-label="Usage summary"></textarea>
+                        <div id="usageSummaryActions">
+                            <button id="refreshUsageSummaryBtn" type="button">Refresh</button>
+                            <button id="copyUsageSummaryBtn" type="button">Copy</button>
+                        </div>
                     </div>
                     <div class="setting-group" data-help="errorLog">
                         <label>Error log <span id="errorLogCount" class="setting-hint"></span></label>
@@ -634,6 +662,23 @@
                             <button id="copyErrorLogBtn" type="button">Copy</button>
                             <button id="clearErrorLogBtn" type="button">Clear</button>
                         </div>
+                    </div>
+                    <div class="setting-group" data-help="systemInfo">
+                        <label>System information</label>
+                        <textarea id="systemInfoView" readonly rows="8" aria-label="System information"></textarea>
+                        <div id="systemInfoActions">
+                            <button id="copySystemInfoBtn" type="button">Copy</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-panel" data-tab="about">
+                    <h3>Conversant AAC</h3>
+                    <p class="about-version">Version <span id="aboutVersion">0.2</span> — Phase 1 Proof of Concept</p>
+                    <p class="about-description">Conversant AAC gives non-speaking individuals access to real-time conversation. Generative AI presents response options within seconds of a communication partner's utterance.</p>
+                    <div class="setting-group" data-help="appUpdates">
+                        <label>App updates</label>
+                        <button id="reloadAppBtn" type="button">Reload the app</button>
                     </div>
                     <div class="setting-group usage-group" data-help="apiCost">
                         <label>Estimated API Cost</label>
