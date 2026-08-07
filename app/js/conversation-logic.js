@@ -99,3 +99,29 @@ export function generationOutcome(snap) {
         : null;
     return { respond: true, anomaly };
 }
+
+/**
+ * After the user speaks AS THEMSELVES — an Express Panel phrase, or a composed
+ * "In my own words" statement — should the app start capturing the reply?
+ *
+ * The bug this fixes (Ken, August 7 2026): both routes ended in app.js's
+ * resumeOrIdle(), which opens the mic only when the session was already armed by a
+ * manual Listen press AND auto-resume is on. So an Express phrase used to OPEN a
+ * conversation — plausibly the first thing a user does in a session — left the app
+ * idle. The partner then answered a conversation the app was not listening to and
+ * nothing was captured, with no error anywhere: the same silent-failure class as
+ * the July 2026 stall and the August 2026 Listen bug.
+ *
+ * Selecting an OPENER has always done the right thing here (app.js: `manualListenArmed
+ * = true; startFreshListening()`), and opening a conversation with "Hi" from the
+ * Express Panel is the same act — the user has spoken to someone and a reply is
+ * coming. So the two paths are made consistent rather than a new policy invented.
+ *
+ * Mid-conversation, auto-resume keeps its meaning: a user who turned it off asked to
+ * control the mic themselves, and the Listen button is one tap away. Overriding an
+ * explicit setting is a different decision from fixing an unreachable state.
+ */
+export function captureAfterUserSpeaks({ opensConversation, armed, autoResume }) {
+    if (opensConversation) return true;   // same act as selecting an opener
+    return Boolean(armed && autoResume);
+}

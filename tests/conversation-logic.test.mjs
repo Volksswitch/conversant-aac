@@ -102,3 +102,36 @@ test('REPAIR_OF_SELF with an initially-sparse palette is exempt from the empty-p
     assert.equal(o.respond, true);
     assert.equal(o.anomaly, null, 'repair cards are filled by a follow-up prefetch');
 });
+
+// --- captureAfterUserSpeaks ---------------------------------------------------
+// Ken, August 7 2026: an Express Panel phrase (or a composed statement) that OPENS a
+// conversation used to leave the app idle, so the partner replied and nothing was
+// captured — silently. Selecting an opener never had this bug; these pin the two
+// paths together.
+
+test('REGRESSION: an Express phrase that OPENS a conversation captures, even unarmed with auto-resume off', () => {
+    assert.equal(
+        cl.captureAfterUserSpeaks({ opensConversation: true, armed: false, autoResume: false }),
+        true,
+        'this is the reported bug: the partner answers a conversation the app is not listening to');
+});
+
+test('opening a conversation captures regardless of the auto-resume setting (matches the opener path)', () => {
+    for (const autoResume of [true, false]) {
+        for (const armed of [true, false]) {
+            assert.equal(cl.captureAfterUserSpeaks({ opensConversation: true, armed, autoResume }), true);
+        }
+    }
+});
+
+test('mid-conversation, auto-resume keeps its meaning: off means idle', () => {
+    assert.equal(cl.captureAfterUserSpeaks({ opensConversation: false, armed: true, autoResume: false }), false);
+});
+
+test('mid-conversation, armed + auto-resume on captures', () => {
+    assert.equal(cl.captureAfterUserSpeaks({ opensConversation: false, armed: true, autoResume: true }), true);
+});
+
+test('mid-conversation, an unarmed session stays idle (the manual-Listen gate survives)', () => {
+    assert.equal(cl.captureAfterUserSpeaks({ opensConversation: false, armed: false, autoResume: true }), false);
+});

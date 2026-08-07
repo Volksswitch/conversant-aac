@@ -26,6 +26,12 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Starting a conversation with a phrase from the Express Panel — or by typing one
+  in "In my own words" — now turns listening on straight away, so the other
+  person's reply is picked up. Before this, if you opened a conversation that way
+  without first tapping Listen, the app stayed quiet and missed what they said
+  back. Tapping Listen yourself, and the "resume listening automatically" setting,
+  both work exactly as they did.
 - Once a week, when you open the app, it now sends us a short report so we can
   see how it is holding up without having to ask you. It contains counts and
   timings only — **never anything you or anyone else said, and never your API

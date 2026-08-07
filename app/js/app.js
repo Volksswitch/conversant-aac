@@ -2138,6 +2138,11 @@ function clearInfluencers() {
 async function speakAsUserTurn(historyText, spokenText = historyText) {
     placeholders.stop();
     generationToken++;            // invalidate any in-flight generation on the partner turn
+    // Does this statement OPEN the conversation? Captured BEFORE commitExchange
+    // appends to the history below. Deliberately not storage.getConversationId(),
+    // which stays null for the whole of a "Don't save this conversation" session and
+    // would report every turn as an opening one.
+    const opensConversation = conversationHistory.length === 0;
     // Capture the partner's speech BEFORE stopping the mic, so interrupting them
     // mid-utterance (an instant Express phrase / composed statement) still records
     // what they'd said up to the interruption (Ken).
@@ -2155,7 +2160,23 @@ async function speakAsUserTurn(historyText, spokenText = historyText) {
     ui.showEngineState(engine.getSnapshot());
     // Interruption: record the partner's raw heard text verbatim, no AI cleanup (Ken).
     await commitExchange(raw, historyText, -1, { cleanup: false });
-    resumeOrIdle();
+
+    // The user has spoken and a reply is coming, so the mic has to be open to catch
+    // it. Opening a conversation this way is the same act as selecting an opener, so
+    // it arms the session exactly as that path does — see
+    // conversation-logic.captureAfterUserSpeaks. (Ken, August 7 2026.)
+    if (opensConversation) manualListenArmed = true;
+    const capture = convLogic.captureAfterUserSpeaks({
+        opensConversation,
+        armed: manualListenArmed,
+        autoResume: storage.loadAutoRelisten(),
+    });
+    // Practice Mode has no mic — "capturing" there means cueing the AI partner, and
+    // practiceResumeOrIdle already gates that on the same setting, so route through
+    // resumeOrIdle rather than calling startFreshListening (which would open a real
+    // mic in a practice session).
+    if (capture && !practiceMode) startFreshListening();
+    else resumeOrIdle();
 }
 
 // --- "In my own words" modal (Rule 8) ---

@@ -21,6 +21,19 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.6.8": [
+    "Starting a conversation with a phrase from the Express Panel — or by typing one in \"In my own words\" — now turns listening on straight away, so the other person's reply is picked up. Before this, if you opened a conversation that way without first tapping Listen, the app stayed quiet and missed what they said back. Tapping Listen yourself, and the \"resume listening automatically\" setting, both work exactly as they did.",
+    "Once a week, when you open the app, it now sends us a short report so we can see how it is holding up without having to ask you. It contains counts and timings only — never anything you or anyone else said, and never your API keys. The Troubleshooting tab lists exactly what is in one, shows when reports were sent, and has a switch to turn them off.",
+    "A Tester name field on the same tab. It is the only thing that tells us whose report is whose, so please leave it as we set it.",
+    "New Troubleshooting tab in Settings. If something goes wrong, write a line about it in your own words and either save it as a file or copy it — everything technical is attached for you, so you never have to describe your device or dig out a version number.",
+    "There is also a small \"Something's wrong — save a report\" link under the Start button, for the case where the app is too stuck to reach Settings at all.",
+    "The same tab shows a plain summary of how the app is being used — how many conversations you have had, how often one of the suggested cards fitted, and how long the other person waited. It is built from your saved conversations, and it contains only counts and timings, never anything anyone said.",
+    "Your API keys are never included in a report, on purpose. It says whether a key is set, and nothing more.",
+    "The error log has moved from the About tab to Troubleshooting, alongside everything else you would need when reporting a problem.",
+    "The app now offers you responses much sooner after the other person pauses. It used to wait two seconds of silence before asking the AI; it now waits half a second, and refines the suggestions each time they pause again. You can change this under Settings → Conversation → Silence period.",
+    "The short phrases the app says while you are choosing (\"I'm thinking about that.\") now start two seconds after the other person stops, instead of waiting for the suggestions to arrive. Previously they could land at the same moment the cards appeared, which is too late to be of any use in holding the conversation.",
+    "Those phrases have been rewritten so they make sense after anything the other person says — a question, a comment, or a greeting. The app no longer says \"Good question.\" when no question was asked."
+  ],
   "0.6.7": [
     "Tapping where you are now means you are standing there, rather than nudging the conversation onto that place as a subject. What the place is for still shapes the suggestions — at your comic shop, comics are an obvious thing to be talking about — but the app no longer steers there when the other person has asked about something else. It also stops offering options that treat the place as somewhere you visit and remember, like \"what did you find here last Saturday?\" asked while you are standing in the shop. What the app knows about the place is still fully in play; it is used to make the options fit where you are, instead of being read back to someone who is standing there with you. The same goes for tapping who you are talking with: it says who is being spoken to, not who you want to talk about."
   ],
