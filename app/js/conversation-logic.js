@@ -6,17 +6,18 @@
  */
 import { MODE } from './engine.js';
 
-// Which partner actions get the QUESTION-flavored acknowledgment ("Good question.")
-// vs. the neutral one ("Let me see.") — only the flavor of the FIRST placeholder
-// differs; every complete turn still gets one.
-export const QUESTION_ACTIONS = new Set(['QUESTION', 'INVITATION', 'REQUEST']);
-
 // A placeholder plays on every partner turn — a social-presence signal that the user
 // heard and is formulating a reply. It fires initialDelay seconds after the PAUSE and
 // is aborted if the partner resumes (app.js handlePartnerResumed), so it doesn't need
 // a "turn complete" judgment (Ken, July 10 2026). The ONE exception is a
 // repair-initiator ("What?"/"Huh?"): that's the instant repair-of-self flow, where a
 // "let me think" beat before re-speaking the same thing reads wrong.
+//
+// Since August 7 2026 the ladder is already running by the time this is consulted
+// (placeholders.arm() starts it at the silence checkpoint), so a false here means
+// STOP rather than "don't start" — and on a slow round-trip one acknowledgment may
+// already have been spoken. Accepted: the alternative was holding every placeholder
+// behind the AI, which made the timing setting inert.
 export function shouldPlayPlaceholder(snap) {
     const c = snap.lastClassification;
     if (!c) return false;
@@ -24,11 +25,12 @@ export function shouldPlayPlaceholder(snap) {
     return true;
 }
 
-// Whether the first placeholder should use the question-flavored acknowledgment.
-export function isQuestionFlavored(snap) {
-    const c = snap.lastClassification;
-    return !!(c && QUESTION_ACTIONS.has(c.partner_action));
-}
+// `isQuestionFlavored` / `QUESTION_ACTIONS` were REMOVED August 7 2026 (Ken). They
+// existed only to choose between a question-flavored acknowledgment ("Good
+// question.") and a neutral one, which is exactly the choice that forced the
+// placeholder to wait for the classification. Every acknowledgment phrase is now
+// partner-statement independent, so there is nothing to choose. Do not reintroduce
+// a turn-type-dependent placeholder pool without re-deciding the timing model.
 
 // --- Fast-path closing detection (Ken, July 2026) ---------------------------
 //

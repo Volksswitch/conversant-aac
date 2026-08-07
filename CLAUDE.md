@@ -1492,10 +1492,41 @@ Durations feed all three: conversation length, time-to-first-response after a pa
 **Standing caution, unchanged from July 12:** with a handful of testers these numbers rank things and generate questions — they do not answer *why*. They are interview fuel, never a substitute for asking a tester why they stopped.
 
 **Two build items this raised that are NOT instrumentation:**
-- **⚠ PLACEHOLDER DEFAULTS ARE PROBABLY WRONG, in the direction Ken named — set them deliberately BEFORE testers arrive.** Ken: *"'Sooner' and 'more' may be the rule-of-thumb."* Current defaults are silence **2s**, initial placeholder **4s**, subsequent **10s**, max **2**. Since v0.5.59 the initial delay is measured from the partner's **pause**, so the first placeholder lands **4 seconds after they stop talking — precisely the awkward-silence threshold the product exists to beat**; it arrives once the silence has already become uncomfortable. And max 2 at 10s spacing means the app goes permanently quiet ~14s in, well inside a real choosing window. **Suggested: initial 2.5s, subsequent 7s, max 3.** Measuring a default we already suspect is a wasted beta.
+- **DONE (Ken, August 7 2026) — timing defaults reset, and the placeholder ladder decoupled from the AI. See "Placeholders are gated by partner silence" below.** Silence **2s → 0.5s**, initial placeholder **4s → 2s**; subsequent stays **10s** and max stays **2** (Ken addressed the first two explicitly and left these).
 - **A "controls tour" Practice scenario (Ken):** *"I find that I often forget what specific buttons mean or when they should be used."* This is the predictable cost of **Rule 12** (icon-only, no text) on the one surface where **Rule 17**'s spoken help was deliberately excluded, and a tour is the mitigation. Practice Mode is the right host, but it is a **new scenario TYPE, not a new scenario**: it has to *instruct* ("they didn't hear you — try *Ask them to repeat*") and check the right button was pressed, where existing scenarios only converse.
 
 **Gate: beta. Related items now folded into this decision:** the **"Copy System Info"** TODO (Aug 2 2026), the **Troubleshooting tab** TODO (Aug 5 2026), the **issue-reporting page** TODO, and the error-log/red-wash work (v0.5.72–0.5.75). The tester-facing plan lives in **[BETA-TEST-PLAN.md](BETA-TEST-PLAN.md)** (draft, August 7 2026) and becomes a house-style `.docx` tracked in DOC-SYNC once Ken has revised it.
+
+---
+
+## Placeholders are gated by PARTNER SILENCE, not by the AI round-trip (Ken, August 7 2026)
+
+**Ken's statement of the invariant, which is what this section exists to protect:** *"I was under the assumption that placeholders are gated by partner silence and terminated by user speech. They should have nothing to do with the AI round trip."* That was always the intent. It was not the behavior between June 28 and August 7 2026.
+
+**The defect.** `placeholders.arm()` was called at the silence checkpoint and only recorded a timestamp; `placeholders.start()` was what actually scheduled the speech, and `start()` is reached only *after* the classification returns — about four seconds. `start()` then waited `initialDelay` **minus** the elapsed time, so the first placeholder actually landed at **`max(initialDelay, round-trip)`**. With the old 4s default and a ~4s round-trip those are the same instant, which is exactly why it went unnoticed for six weeks and why the symptom Ken reported was *"it takes about 4 seconds to receive suggestions, so a placeholder firing at 4 seconds doesn't make sense."* **Lowering the default to 2s alone would have changed nothing** — `max(0, 2000 − 4000)` is zero, so it still fires the instant the AI answers.
+
+**Why the AI was in the path at all, and the fix (Ken's, and it is better than mine).** The dependency existed for one reason: the acknowledgment pool was **split into question-flavored and neutral phrases** (July 8 2026), and you cannot pick between them until the partner's action is classified. My proposed fix was "neutral by default, upgrade the flavor if the classification beats the timer" — which preserves `"Good question."` at the cost of keeping the coupling and adding a state machine. Ken's memory of the original bug (v0.3.9, June 18 2026: `"Good question."` playing when the partner **hadn't asked a question**) pointed at the real fix: **make every first-rung phrase partner-statement independent, and the choice disappears along with the gate.**
+
+**As built:**
+- `arm()` now schedules the first placeholder itself, `initialDelay` after the pause. It consults nothing.
+- `start()` is a **confirm**, not a start — normally a no-op that consumes the armed flag and lets the ladder continue to its later rungs. Its defensive start-without-arm path is retained.
+- `placeholders.json` `acknowledgment` is a **flat array** again (was `{question:[], general:[]}`). `normalizePools` still tolerates the legacy shape and takes **only `general`** from it, because the whole point is that a question-presuming phrase must never play on a turn that wasn't one.
+- **`isQuestionFlavored` and `QUESTION_ACTIONS` are REMOVED from `conversation-logic.js`.** They had exactly one consumer, and it was the coupling.
+- The **defaults**: silence **0.5s** (Ken: *"err (at first) on the side of multiple roundtrips than on a delayed first trip"*), initial placeholder **2s**.
+
+**⚠ The phrase pool was rewritten, and NOT only to drop "Good question." — the neutral pool violated a standing rule.** The July 2026 `general` set was `"Let me see." / "One moment." / "Just a second."` All three are imperative or **directed at the partner**, which is the exact class Ken rejected in June 2026 (*"anything imperative or directed at the partner — 'Let me think', 'Give me a second', 'Hold on' — reads as curt/annoyed"* through the flat built-in voices). It slipped in because it was authored for the non-question minority of turns; this change would have promoted it to **every** turn. The new set is declarative and first-person: **"I'm thinking about that." / "Thinking that over." / "I'm thinking." / "Working that out."** The `thinking` pool already complied and is unchanged.
+
+**So there are now TWO standing constraints on placeholder phrases, both load-bearing** (stated at the head of `placeholders.js` and unit-tested):
+1. **Partner-statement independent** — reads correctly after a question, a statement, an assessment, or a greeting, because nothing knows which it was. *This is what decouples the ladder from the AI; reintroducing a turn-type-dependent pool silently re-couples it.*
+2. **Declarative and first-person** — never imperative, never directed at the partner.
+
+**Accepted costs, both small and both stated once:**
+- A **repair-initiator** ("What?") is the one turn warranting no placeholder, and it is only identifiable from the classification — so on a slow round-trip one acknowledgment can precede the re-speak. `app.js` calls `stop()` as soon as it knows. A mild redundancy on one turn type, against silence for the whole round-trip on every other one.
+- **A 0.5s silence period multiplies generation calls.** Every pause fires a checkpoint, and since the July 10 2026 decision each one refines the *same* partner turn in place with latest-wins discarding superseded calls — so superseded calls are **billed and thrown away**. This costs tokens, not correctness, and Ken is funding the beta keys. Worth watching for **429s**, which the demo "no options" failure was already suspected to be.
+
+**Tests:** `tests/placeholders.test.mjs` rewritten around the new contract. The load-bearing one is **`arm() alone speaks the first placeholder — the AI is never consulted`**, which never calls `start()` at all, standing in for an AI that is slow, failed, or has no key. Plus a guard that no phrase in either pool contains "question", and that `start()` after the first has spoken does not replay the acknowledgment rung. 245/245 pass.
+
+**A greeting remains awkward for every phrase in the pool** — no floor-holder reads naturally before "Hi, how are you?" — and that is inherent, not a defect of this set. Noted July 8 2026 and still true; it becomes tunable when the placeholder editor lands.
 
 ---
 

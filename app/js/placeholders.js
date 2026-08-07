@@ -4,47 +4,69 @@ import * as storage from './storage.js';
 /* Floor-holding placeholders — role-differentiated by position (Ken, June 18
  * 2026).
  *
- * Timing model (Ken, June 28 2026): the initial-delay clock starts when the
- * partner STOPS speaking (the silence checkpoint), not when the AI's options
- * arrive. arm() is called at the checkpoint to start that clock; start() is
- * called once the classification comes back AND the partner's action warrants a
- * placeholder (a question — the gating lives in app.js). start() then plays the first
- * placeholder as soon as the armed initial delay has elapsed — which may be
- * immediately if the AI round-trip was slow, so a long generation no longer
- * leaves dead air. A quick selection cancels everything via stop(). Holding the
- * utterance until classification keeps placeholders off statements/closings.
+ * Timing model (Ken, August 7 2026): placeholders are gated by PARTNER SILENCE
+ * and terminated by USER SPEECH. They have nothing to do with the AI round-trip.
+ * arm() is called at the silence checkpoint and schedules the first placeholder
+ * initialDelay seconds later; the partner resuming aborts the ladder, a selection
+ * cancels it, and the user speaking anything stops it.
+ *
+ * That is what this always intended, but not what it did between June 28 and
+ * August 7 2026: arm() only recorded a timestamp and start() — reached only after
+ * the classification returned, about 4 seconds — was what scheduled the speech,
+ * waiting `initialDelay` MINUS the elapsed time. So the first placeholder actually
+ * landed at max(initialDelay, round-trip), and with the old 4s default those were
+ * the same moment, which hid it. The AI dependency existed for one reason: the
+ * pool was split into question-flavored and neutral phrases, and you cannot know
+ * which to use until the partner's action is classified. Making every phrase
+ * partner-statement independent removes the question, and with it the gate.
  *
  * Why role-differentiated: a small flat pool makes two sequential placeholders sound
  * stupid — "That's interesting." right after "Hmm, interesting." even when they
  * aren't the identical string (semantic clustering). The fix is structural: the
  * first and any later placeholder do DIFFERENT jobs, so a long window progresses
  * naturally instead of echoing:
- *   - acknowledgment  ("Good question.", "Let me see.")  — "I heard you, I'm on it"
- *   - thinking        ("Still thinking it through.")     — "still working on it"
+ *   - acknowledgment  ("I'm thinking about that.")    — "I heard you, I'm on it"
+ *   - thinking        ("Still thinking it through.")  — "still working on it"
  * The first placeholder is drawn from `acknowledgment`, every later one from
  * `thinking`. Combined with a CAP (Settings "Maximum placeholders per turn",
  * default 2) you hear at most one acknowledgment + one thinking placeholder — never
  * two same-category placeholders back to back. After the cap we go quiet; silence
- * after "Good question… still thinking it through" reads fine, and the user
- * still has the manual "Hold on" button.
+ * after "I'm thinking about that… still thinking it through" reads fine, and the
+ * user still has the manual "Hold on" button.
  *
- * Phrases must stay neutral/reflective, never imperative or directed at the
- * partner ("Let me think", "Give me a second", "Hold on") — flat built-in voices
- * make those read as curt. The pools live in data/placeholders.json (an
- * { acknowledgment:{question:[],general:[]}, thinking:[] } object) and will become
- * user-editable later. start()/stop() keep the signature app.js calls.
+ * Two standing constraints on the phrases themselves, both load-bearing:
+ *   1. PARTNER-STATEMENT INDEPENDENT — each must read correctly after a question,
+ *      a statement, an assessment or a greeting, because nothing knows which it
+ *      was. This is what decouples the ladder from the AI.
+ *   2. Declarative and first-person — never imperative, never directed at the
+ *      partner ("Let me think", "Give me a second", "One moment") — flat built-in
+ *      voices make those read as curt or annoyed.
+ * The pools live in data/placeholders.json (an { acknowledgment:[], thinking:[] }
+ * object) and will become user-editable later. start()/stop() keep the signature
+ * app.js calls.
  */
 
-// Inline fallback if data/placeholders.json fails to load. The acknowledgment role
-// has two sub-pools: `question` (warm, for a partner question) and `general`
-// (neutral, for a greeting / statement / assessment / closing) — because a
-// placeholder now plays after ANY partner turn (Ken, July 8 2026), and "Good
-// question." after "Hi!" would read worse than silence.
+// Inline fallback if data/placeholders.json fails to load.
+//
+// EVERY phrase must be PARTNER-STATEMENT INDEPENDENT (Ken, August 7 2026): it has
+// to read correctly after a question, a statement, an assessment or a greeting,
+// because the placeholder now fires on the timer without knowing which it was.
+// This replaced the question/neutral sub-pools added July 8 2026, whose only
+// purpose was to keep "Good question." off a turn that wasn't one — the very
+// defect that produced the original questions-only gate in June. Statement
+// independence removes the need to know the turn type at all, which is what lets
+// the ladder run off partner silence instead of the AI round-trip.
+//
+// They must also stay declarative and first-person — never imperative, never
+// directed at the partner ("Let me think", "Give me a second", "One moment") —
+// because the flat built-in voices make those read as curt or annoyed.
 const FALLBACK_POOLS = {
-    acknowledgment: {
-        question: ['Good question.', "That's a good question.", "That's a fair question."],
-        general: ['Let me see.', 'One moment.', 'Just a second.'],
-    },
+    acknowledgment: [
+        "I'm thinking about that.",
+        'Thinking that over.',
+        "I'm thinking.",
+        'Working that out.',
+    ],
     thinking: [
         'Still thinking it through.',
         "I'm working out what I want to say.",
@@ -53,14 +75,13 @@ const FALLBACK_POOLS = {
     ],
 };
 
-let pools = null;            // { acknowledgment:{question:[],general:[]}, thinking:[] }
+let pools = null;            // { acknowledgment:[], thinking:[] }
 let timer = null;
 let active = false;
 let count = 0;               // placeholders spoken this window (for role + cap)
-let lastIndex = { question: -1, general: -1, thinking: -1 };
+let lastIndex = { acknowledgment: -1, thinking: -1 };
 let armTime = 0;             // when the partner stopped (initial-delay clock origin)
 let armed = false;           // arm() was called and start() hasn't consumed it
-let questionFlavor = false;  // pick question- vs general-flavored acknowledgment
 // A gate the app sets so a placeholder never speaks OVER the user's own statement
 // (a spoken command / response / Express phrase). Pressing a speaking button must
 // abort placeholders instantly (Ken, July 2026) — this is the hard backstop even
@@ -68,29 +89,30 @@ let questionFlavor = false;  // pick question- vs general-flavored acknowledgmen
 let userSpeaking = () => false;
 export function setUserSpeakingGate(fn) { userSpeaking = typeof fn === 'function' ? fn : () => false; }
 
-// Normalize to { acknowledgment:{question:[],general:[]}, thinking:[] }. Tolerates
+// Normalize to { acknowledgment:[], thinking:[] }. Tolerates
 // two legacy shapes: a flat array (used for all pools), and an object whose
 // `acknowledgment` is a flat array (the pre-July-2026 shape — used for both
 // question and general). Empty sub-pools are filled from the others so there is
 // always something to say.
 function normalizePools(data) {
     if (Array.isArray(data) && data.length) {
-        return { acknowledgment: { question: data.slice(), general: data.slice() }, thinking: data.slice() };
+        return { acknowledgment: data.slice(), thinking: data.slice() };
     }
     if (data && typeof data === 'object') {
         const think = Array.isArray(data.thinking) ? data.thinking.slice() : [];
         const ack = data.acknowledgment;
-        let question = [];
-        let general = [];
-        if (Array.isArray(ack)) { question = ack.slice(); general = ack.slice(); }
+        let acknowledgment = [];
+        if (Array.isArray(ack)) acknowledgment = ack.slice();
         else if (ack && typeof ack === 'object') {
-            question = Array.isArray(ack.question) ? ack.question.slice() : [];
-            general = Array.isArray(ack.general) ? ack.general.slice() : [];
+            // Legacy { question:[], general:[] } shape (July 8 – August 7 2026).
+            // Take only `general`: those were the turn-type-independent ones, and
+            // the whole point of dropping the split is that "Good question." must
+            // never play on a turn that wasn't a question.
+            acknowledgment = Array.isArray(ack.general) ? ack.general.slice() : [];
         }
-        if (!question.length) question = general.length ? general.slice() : think.slice();
-        if (!general.length) general = question.length ? question.slice() : think.slice();
-        if (question.length || general.length || think.length) {
-            return { acknowledgment: { question, general }, thinking: think.length ? think : general.slice() };
+        if (!acknowledgment.length) acknowledgment = think.slice();
+        if (acknowledgment.length || think.length) {
+            return { acknowledgment, thinking: think.length ? think : acknowledgment.slice() };
         }
     }
     return null;
@@ -117,39 +139,60 @@ function pick(list, key) {
     return list[index];
 }
 
-// Called at the silence checkpoint (partner stopped). Starts the initial-delay
-// clock and resets per-window state, but speaks nothing yet — start() decides
-// whether this window warrants placeholders once the classification is known.
+// Called at the silence checkpoint (partner stopped). SCHEDULES the first
+// placeholder here, initialDelay after the pause, using the neutral acknowledgment.
+//
+// It no longer waits for the AI's classification (Ken, August 7 2026), because
+// waiting made the setting inert: start() is only reached once the round-trip
+// returns — about 4 seconds — so the old `initialDelay - elapsed` remainder was
+// already <= 0 and the first placeholder fired on arrival no matter what the user
+// had set. Lowering the default from 4s to 2s would have changed nothing. Firing
+// on the timer is the only way a 2s setting produces a 2s placeholder when the AI
+// takes 4s, which is the whole point of a floor-holder.
+//
+// Speaking without knowing the turn type is safe because every acknowledgment
+// phrase is partner-statement independent (see FALLBACK_POOLS). The one turn that
+// warrants no placeholder at all — a repair-initiator ("What?") — is only
+// identifiable from the classification, so on a slow round-trip one acknowledgment
+// can precede the re-speak; app.js stops the ladder as soon as it knows. A mild
+// redundancy on one turn type, against silence for the whole round-trip on every
+// other one.
 export function arm() {
     if (timer) { clearTimeout(timer); timer = null; }
-    active = false;
     armed = true;
     armTime = Date.now();
     count = 0;
-    lastIndex = { question: -1, general: -1, thinking: -1 };
+    lastIndex = { acknowledgment: -1, thinking: -1 };
     loadPools().catch(() => { /* fallback handled in loadPools */ });
-}
-
-// `opts.question` selects the QUESTION-flavored acknowledgment ("Good question.")
-// vs. the neutral one ("Let me see.") for the first placeholder.
-export async function start(opts = {}) {
-    if (timer) { clearTimeout(timer); timer = null; }
-    questionFlavor = !!opts.question;
     const { initialDelay, maxPlaceholders } = storage.loadPlaceholderSettings();
     // 0 = the user wants no placeholders at all (they read as artificial).
-    if (maxPlaceholders === 0) { active = false; armed = false; return; }
+    if (maxPlaceholders === 0) { active = false; return; }
     active = true;
-    count = 0;
-    lastIndex = { question: -1, general: -1, thinking: -1 };
-    loadPools().catch(() => { /* fallback handled in loadPools */ });
-    // The clock started at the partner's pause (arm()); if start() is reached
-    // without an arm (defensive), measure from now. The first placeholder waits only
-    // the remainder of initialDelay — so a slow AI round-trip that already ate
-    // the delay plays the first placeholder immediately instead of leaving silence.
+    timer = setTimeout(speakNext, Math.max(0, initialDelay * 1000));
+}
+
+// Called once the classification is back and the turn warrants placeholders.
+// Normally a NO-OP that just consumes the armed flag: arm() has already scheduled
+// (and may already have spoken) the first placeholder, and since every phrase is
+// partner-statement independent there is nothing about the turn type left to
+// decide. It stays because app.js's contract is arm-then-start-or-stop, and
+// because the defensive path below still has to work if start() is ever reached
+// without a preceding arm().
+export async function start() {
+    const { initialDelay, maxPlaceholders } = storage.loadPlaceholderSettings();
+    // 0 = the user wants no placeholders at all (they read as artificial).
+    if (maxPlaceholders === 0) { stop(); return; }
+    if (active) { armed = false; return; }   // arm() is already driving the ladder
+    // Defensive: start() without a preceding arm(). Measure the remainder from the
+    // pause if we have one, else from now.
+    if (timer) { clearTimeout(timer); timer = null; }
     const base = armed ? armTime : Date.now();
     armed = false;
-    const firstDelay = Math.max(0, initialDelay * 1000 - (Date.now() - base));
-    timer = setTimeout(speakNext, firstDelay);
+    active = true;
+    count = 0;
+    lastIndex = { acknowledgment: -1, thinking: -1 };
+    loadPools().catch(() => { /* fallback handled in loadPools */ });
+    timer = setTimeout(speakNext, Math.max(0, initialDelay * 1000 - (Date.now() - base)));
 }
 
 export function stop() {
@@ -173,20 +216,17 @@ async function speakNext() {
     // in and cancelling it. No await between here and tts.speak below, so this one
     // check holds until we actually speak.
     if (userSpeaking()) { scheduleNext(); return; }
-    // Role by position: first placeholder acknowledges (question- or general-flavored),
-    // later ones say "still thinking".
-    let phrase;
-    if (count === 0) {
-        const key = questionFlavor ? 'question' : 'general';
-        phrase = pick(pools.acknowledgment[key], key);
-    } else {
-        phrase = pick(pools.thinking, 'thinking');
-    }
+    // Role by position: the first placeholder acknowledges, later ones say
+    // "still thinking". Both pools are partner-statement independent, so neither
+    // needs to know what kind of turn this was.
+    const phrase = count === 0
+        ? pick(pools.acknowledgment, 'acknowledgment')
+        : pick(pools.thinking, 'thinking');
     count++;
     if (phrase) await tts.speak(phrase);
     if (!active) return;
     // Cap: stop after maxPlaceholders placeholders. -1 = no limit (0 = none is
-    // handled in start(), which never schedules a first placeholder).
+    // handled in arm(), which never schedules a first placeholder).
     const { maxPlaceholders } = storage.loadPlaceholderSettings();
     if (maxPlaceholders >= 1 && count >= maxPlaceholders) return;
     scheduleNext();

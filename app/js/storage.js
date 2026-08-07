@@ -656,8 +656,13 @@ export function saveVoiceURI(voiceURI) {
     saveSettings(settings);
 }
 
+// Default 0.5s (Ken, August 7 2026, was 2s): "err (at first) on the side of
+// multiple roundtrips than on a delayed first trip." Every pause of this length
+// fires a generation checkpoint, and since the July 10 2026 decision each one
+// refines the SAME partner turn in place (latest-wins discards the superseded
+// call), so a short period costs tokens rather than correctness.
 export function loadSilenceThreshold() {
-    return loadSettings().silenceThreshold ?? 2;
+    return loadSettings().silenceThreshold ?? 0.5;
 }
 
 export function saveSilenceThreshold(seconds) {
@@ -1381,7 +1386,10 @@ export function addTtsCharacters(characters) {
 export function loadPlaceholderSettings() {
     const settings = loadSettings();
     return {
-        initialDelay: settings.initialDelay ?? 4,
+        // 2s default (Ken, August 7 2026, was 4s): a set of suggestions takes about
+        // 4 seconds to arrive, so a placeholder timed to land at 4s arrives with the
+        // options rather than covering the wait for them.
+        initialDelay: settings.initialDelay ?? 2,
         subsequentDelay: settings.subsequentDelay ?? 10,
         // Cap on placeholders spoken per choosing window. Default 2 so the user
         // hears at most one "I heard you" placeholder plus one "still thinking" placeholder

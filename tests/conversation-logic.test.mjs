@@ -31,13 +31,13 @@ test('shouldPlayPlaceholder: no for a repair-initiator or a missing classificati
     assert.equal(cl.shouldPlayPlaceholder(snap({ lastClassification: null })), false);
 });
 
-test('isQuestionFlavored: true only for QUESTION/INVITATION/REQUEST', () => {
-    for (const a of ['QUESTION', 'INVITATION', 'REQUEST']) {
-        assert.equal(cl.isQuestionFlavored(snap({ lastClassification: { partner_action: a } })), true, a);
-    }
-    for (const a of ['GREETING', 'STATEMENT', 'ASSESSMENT', 'CLOSING', 'OTHER']) {
-        assert.equal(cl.isQuestionFlavored(snap({ lastClassification: { partner_action: a } })), false, a);
-    }
+// isQuestionFlavored / QUESTION_ACTIONS were removed August 7 2026 (Ken): choosing
+// between a question-flavored and a neutral acknowledgment is exactly what forced
+// the placeholder to wait for the classification. Every phrase is now partner-
+// statement independent, so nothing needs the partner's action to pick one.
+test('no placeholder helper depends on the partner action any more', () => {
+    assert.equal(cl.isQuestionFlavored, undefined);
+    assert.equal(cl.QUESTION_ACTIONS, undefined);
 });
 
 // --- looksLikeClosing (fast-path farewell detection) -------------------------

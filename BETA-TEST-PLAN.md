@@ -61,9 +61,14 @@ tell us why.
   (a Microsoft Surface is the usual choice) is the configuration we know best.
 - **An internet connection.** The app needs it both to hear the other person and to suggest
   responses. It will not work offline.
-- **An Anthropic account and API key.** This is what powers the response suggestions. You create
-  your own account and pay only for the conversations you actually have — typically a few cents
-  each. We will walk you through setting this up.
+- **An API key for the AI — we provide this, at no cost to you.** It is what powers the response
+  suggestions. Ken will send you a key to paste into Settings. You do not need an account and you
+  will not be billed.
+- **A free Deepgram account, for the voice.** Deepgram gives the app a much more natural, more
+  varied voice than the ones built into your device, and signing up gives you **$200 of free
+  credit — no credit card**. That is far more than six weeks of testing will use. On an iPad
+  running the installed app it also does the listening, which the device cannot do on its own.
+  If you somehow run through the credit, tell us and we will sort it out.
 - **A supporter, for setup.** Choosing a folder, pasting a key, and setting the layout are
   fiddly one-time jobs. After that the app is yours to drive.
 
@@ -75,8 +80,13 @@ self-contained, and you should never need both.
 ### 5.1 Setup checklist (with your supporter)
 
 - [ ] Open the app and choose a **data folder**. Do this first. Everything you enter lives there.
-- [ ] Paste your **API key** and press **Test**. It should say your key is working.
-- [ ] Pick your **voice**, and listen to it. This is the voice people will hear as you.
+- [ ] Paste the **AI key we sent you** and press **Test**. It should say your key is working.
+- [ ] Create your free **Deepgram** account, paste that key, and press its **Test**.
+- [ ] Pick your **voice**, and listen to it. This is the voice people will hear as you. Try the
+      Deepgram voices — they are the reason you set that account up.
+- [ ] On a Windows tablet or Chromebook, leave the listening set to your browser's own — it is
+      free, reliable, and does not spend your Deepgram credit. On an iPad running the installed
+      app, set listening to Deepgram; it is the only option that works there.
 - [ ] Set the **button size**, the **gaps**, and where the keyboard sits.
 - [ ] Save all of that as a **named settings profile** — and **re-save it every time you change
       something**. This is what protects your setup, and it is the one habit worth building.
@@ -229,11 +239,15 @@ Everything below must ship before testers arrive, or the corresponding section n
 
 ### B.2 Decisions still needed
 
-1. **Who pays for the API key?** §4 currently says the tester does. Creating an Anthropic account
-   and entering a credit card is a real onboarding barrier, and it will cause some dropout — which
-   then **confounds the retention metric**, because you cannot tell "the app did not earn a place
-   in their life" from "they never got past the billing page." Funding test keys would remove that
-   confound. It is a cost question and yours to make.
+1. ~~Who pays for the API key?~~ **Decided (Ken, August 7 2026): Ken funds and supplies the
+   Anthropic key; the tester signs up for Deepgram's free $200 credit on the assumption it
+   suffices, and they talk if it doesn't.** The retention-metric confound is removed. Two things
+   that follow and are not yet handled: **how keys are distributed and revoked** (a shared key
+   across testers makes per-tester spend invisible and a leak unrevokable in isolation — separate
+   keys are worth the admin), and the fact that **the Anthropic key must never reach a settings
+   profile or a backup**, which `PROFILE_EXCLUDE` already enforces, so a tester restoring a
+   profile will need to re-paste it. Worth saying in the welcome pack rather than letting them
+   discover it.
 
 2. **One plan or two?** The manuals are deliberately two self-contained documents. This plan is
    mostly platform-neutral, with the split confined to §4 and §5.1. One document seems right, but

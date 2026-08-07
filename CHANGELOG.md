@@ -26,6 +26,18 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- The app now offers you responses much sooner after the other person pauses. It
+  used to wait two seconds of silence before asking the AI; it now waits half a
+  second, and refines the suggestions each time they pause again. You can change
+  this under Settings → Conversation → Silence period.
+- The short phrases the app says while you are choosing ("I'm thinking about
+  that.") now start two seconds after the other person stops, instead of waiting
+  for the suggestions to arrive. Previously they could land at the same moment the
+  cards appeared, which is too late to be of any use in holding the conversation.
+- Those phrases have been rewritten so they make sense after anything the other
+  person says — a question, a comment, or a greeting. The app no longer says
+  "Good question." when no question was asked.
+
 ## Version 0.6.7
 
 - Tapping where you are now means you are standing there, rather than nudging the

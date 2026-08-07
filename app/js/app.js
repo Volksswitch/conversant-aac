@@ -1095,17 +1095,21 @@ async function generateOptions(partnerText) {
                 ? 'Pick one of their options, or say something else'
                 : 'Select a response');
         }
-        // Start the floor-holding placeholders (see shouldPlayPlaceholder — every
-        // turn except a repair-initiator). The first lands initialDelay after the
-        // PAUSE; the partner resuming aborts the ladder (handlePartnerResumed); a
-        // quick pick cancels it. Question-type turns get a question-flavored
-        // acknowledgment ("Good question."); everything else a neutral one.
-        // Skip if a speaking button (Say again / Hold on / Wind down) fired while
-        // this generation was in flight — the user has acted, so a placeholder must
-        // not start now (it would speak over / right after their statement). The
-        // response options above still show; only the placeholder is suppressed.
+        // The placeholder ladder is already running — arm() started it at the
+        // silence checkpoint and the first one may already have spoken (Ken,
+        // August 7 2026: placeholders are gated by partner silence, not by this
+        // round-trip). So this is now a CONFIRM-or-CANCEL, not a start:
+        //   - stop() if a speaking button (Say again / Hold on / Wind down) fired
+        //     while this generation was in flight — the user has acted, so no
+        //     further placeholder may speak over or right after their statement;
+        //   - stop() on a repair-initiator, the one turn that warrants none
+        //     (shouldPlayPlaceholder); an acknowledgment may already have slipped
+        //     out on a slow round-trip, which is the accepted cost;
+        //   - otherwise start(), which just consumes the armed flag and lets the
+        //     ladder continue to its later rungs.
+        // Either way the response options above still show.
         if (pEpoch === placeholderEpoch && convLogic.shouldPlayPlaceholder(snap)) {
-            placeholders.start({ question: convLogic.isQuestionFlavored(snap) });
+            placeholders.start();
         } else {
             placeholders.stop();
         }
