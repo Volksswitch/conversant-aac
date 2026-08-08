@@ -431,39 +431,52 @@ function refreshSoundCheckCard(item) {
 // Removing a line is permanent — a later re-read must not put it back.
 function buildHarvestSection() {
     const wrap = el('div', { class: 'sc-harvest' });
+
+    const removableRow = (label, onRemove, removeLabel) => el('div', { class: 'wv-entry' }, [
+        el('span', { class: 'sc-harvest-text', text: label }),
+        el('button', { class: 'wv-entry-remove', text: '×', title: 'Remove this',
+            'aria-label': removeLabel, onclick: onRemove }),
+    ]);
+
     const draw = () => {
         wrap.innerHTML = '';
         wrap.append(el('h3', { class: 'wv-section-title', text: 'What the app has picked up' }));
 
-        const h = voiceProfile.getHarvest();
-        const active = voiceProfile.activeExemplars();
+        const harvestResult = voiceProfile.getHarvest();
+        const exemplars = voiceProfile.activeExemplars();
+        const steers = voiceProfile.repeatedSteers();
+        const lean = harvestResult && harvestResult.lengthLean;
+        const anything = exemplars.length || steers.length || (lean && lean.lean !== 'neither');
 
-        if (!h) {
-            wrap.append(el('p', { class: 'wv-intro', text:
-                'Once you have had a few conversations, the app can read back the things you typed yourself and use them as a guide to your wording. Nothing is read until you ask.' }));
-        } else {
-            const lean = h.lengthLean;
-            wrap.append(el('p', { class: 'wv-intro', text:
-                !active.length && !lean
-                    ? 'Nothing yet. This fills up as you type your own words in conversations.'
-                    : 'Taken from your own conversations. Remove anything that does not belong.' }));
-            if (lean && lean.lean !== 'neither') {
-                wrap.append(el('p', { class: 'sc-lean', text: lean.lean === 'shorter'
-                    ? `When you are offered a choice, you usually pick the shorter wording (${lean.shorter} times out of ${lean.shorter + lean.longer}).`
-                    : `When you are offered a choice, you usually pick the fuller wording (${lean.longer} times out of ${lean.shorter + lean.longer}).` }));
-            }
-            for (const text of active) {
-                wrap.append(el('div', { class: 'wv-entry' }, [
-                    el('span', { class: 'sc-harvest-text', text: `"${text}"` }),
-                    el('button', { class: 'wv-entry-remove', text: '×',
-                        title: 'Remove this', 'aria-label': `Remove "${text}"`,
-                        onclick: () => { voiceProfile.dismissExemplar(text); draw(); } }),
-                ]));
-            }
+        wrap.append(el('p', { class: 'wv-intro', text: anything
+            ? 'Taken from your own conversations. Remove anything that does not belong — it will not come back.'
+            : 'This fills up as you use the app: the words you type yourself, and any correction you find yourself asking for more than once. Nothing is read until you ask.' }));
+
+        // Steers are recorded as they happen and do NOT depend on a harvest having
+        // been run. Rendering them inside the harvest branch hid them completely
+        // from anyone who had never pressed the button — found in testing.
+        for (const st of steers) {
+            wrap.append(removableRow(
+                `You have asked for "${st.text}" ${st.count} times`,
+                () => { voiceProfile.dismissExemplar(st.text); draw(); },
+                `Stop using "${st.text}"`));
+        }
+
+        if (lean && lean.lean !== 'neither') {
+            wrap.append(el('p', { class: 'sc-lean', text: lean.lean === 'shorter'
+                ? `When you are offered a choice, you usually pick the shorter wording (${lean.shorter} times out of ${lean.shorter + lean.longer}).`
+                : `When you are offered a choice, you usually pick the fuller wording (${lean.longer} times out of ${lean.shorter + lean.longer}).` }));
+        }
+
+        for (const text of exemplars) {
+            wrap.append(removableRow(`"${text}"`,
+                () => { voiceProfile.dismissExemplar(text); draw(); },
+                `Remove "${text}"`));
         }
 
         wrap.append(el('button', {
-            class: 'wv-btn', text: h ? 'Read my conversations again' : 'Read my conversations',
+            class: 'wv-btn',
+            text: harvestResult ? 'Read my conversations again' : 'Read my conversations',
             onclick: async (e) => {
                 e.currentTarget.disabled = true;
                 try {

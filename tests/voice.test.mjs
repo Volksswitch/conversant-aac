@@ -139,3 +139,57 @@ test('a "neither" lean says nothing rather than inventing a preference', async (
     voice.setHarvest({ exemplars: [], lengthLean: { lean: 'neither', shorter: 5, longer: 5, level: 0, total: 10 }, counts: {} });
     assert.equal(voice.buildBlock([]), '');
 });
+
+// --- Reframe steers ----------------------------------------------------------
+// The strongest signal in the file: not a preference the user reported, but one
+// they were driven to state repeatedly because the app kept getting it wrong.
+
+test('a steer typed ONCE is a one-off and never reaches the prompt', async () => {
+    await reset();
+    voice.recordSteer('keep it short');
+    assert.deepEqual(voice.repeatedSteers(), []);
+    assert.equal(voice.buildBlock([]), '');
+});
+
+test('a steer typed twice becomes a standing instruction, with its count', async () => {
+    await reset();
+    voice.recordSteer('keep it short');
+    voice.recordSteer('Keep it short.');      // same instruction, different typing
+    const rep = voice.repeatedSteers();
+    assert.equal(rep.length, 1, 'punctuation and case must not split a repeat');
+    assert.equal(rep[0].count, 2);
+    const block = voice.buildBlock([]);
+    assert.match(block, /typed the same correction more than once/);
+    assert.match(block, /asked 2 times/);
+});
+
+test('different steers are not conflated into one', async () => {
+    await reset();
+    voice.recordSteer('keep it short');
+    voice.recordSteer('keep it short');
+    voice.recordSteer('be more direct');
+    voice.recordSteer('be more direct');
+    assert.equal(voice.repeatedSteers().length, 2);
+});
+
+test('most-repeated steers lead', async () => {
+    await reset();
+    for (let i = 0; i < 5; i++) voice.recordSteer('keep it short');
+    voice.recordSteer('be warmer'); voice.recordSteer('be warmer');
+    assert.equal(voice.repeatedSteers()[0].text, 'keep it short');
+});
+
+test('a dismissed steer stops being used', async () => {
+    await reset();
+    voice.recordSteer('keep it short'); voice.recordSteer('keep it short');
+    voice.dismissExemplar('keep it short');
+    assert.deepEqual(voice.repeatedSteers(), []);
+    assert.equal(voice.buildBlock([]), '');
+});
+
+test('a blank steer is not recorded', async () => {
+    await reset();
+    voice.recordSteer('   ');
+    voice.recordSteer('');
+    assert.deepEqual(voice.repeatedSteers(0), []);
+});

@@ -22,6 +22,7 @@ import * as storage from './storage.js';
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
   "0.6.8": [
+    "If you use Reframe to correct a suggestion — \"keep it short\", \"be more direct\" — and find yourself asking for the same thing more than once, the app now takes that as a standing preference instead of making you repeat it every time. You can see what it has picked up, with how many times you asked, and remove anything you disagree with. Corrections typed in a conversation you marked \"don't save\" are not kept.",
     "How I Sound now also covers the things you say when you start a conversation, not only when you reply — opening, asking for something, and finishing up.",
     "The same section can now read back your own past conversations and pick out the sentences you typed yourself, to use as a guide to your wording. It only reads when you ask it to, it never uses the app's own phrases or the suggestions it wrote for you, and you can remove anything that does not belong — removals stick. Conversations you marked \"don't save\" are not read, because they were never written down.",
     "New How I Sound section in About Me. It shows a few ways of saying the same thing and asks which you would rather say. The app uses your answers to write suggestions in your words instead of its own. The situations are made up and nothing you pick is kept as a fact about your life — it is only about wording. You can hear any of them read aloud before choosing, and change any answer later.",

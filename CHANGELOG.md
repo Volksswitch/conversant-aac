@@ -26,6 +26,12 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- If you use **Reframe** to correct a suggestion — "keep it short", "be more
+  direct" — and find yourself asking for the same thing more than once, the app now
+  takes that as a standing preference instead of making you repeat it every time.
+  You can see what it has picked up, with how many times you asked, and remove
+  anything you disagree with. Corrections typed in a conversation you marked
+  "don't save" are not kept.
 - **How I Sound** now also covers the things you say when you start a conversation,
   not only when you reply — opening, asking for something, and finishing up.
 - The same section can now read back your own past conversations and pick out the

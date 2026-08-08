@@ -2041,6 +2041,13 @@ async function handleReframe() {
     closeComposer();
     if (!steer) return;
 
+    // A steer is the user saying the suggestion was wrong and how. Recorded so a
+    // correction they keep having to repeat can become a standing preference
+    // (Sounds Like Me, Phase 2). Gated on the per-conversation privacy choice: "Don't
+    // save this conversation" has to mean this too, or the one thing the user typed
+    // outlives the conversation they asked not to keep.
+    if (storage.isConversationSaving()) voiceProfile.recordSteer(steer);
+
     const token = ++generationToken;
     placeholders.stop();
     llm.setWorldviewBlock(worldview.buildBlock());

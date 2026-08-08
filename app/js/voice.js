@@ -56,6 +56,15 @@ function emptyProfile() {
         // re-harvest does not put them straight back — "I can see and correct what
         // it concluded" is worthless if the correction does not stick.
         dismissed: [],
+        // Every Reframe steer the user has typed: [{ text, at }].
+        //
+        // A steer is the user telling the app its suggestion was not right and how —
+        // "keep it short", "lean toward saying no". It lives HERE rather than in the
+        // conversation log because it is never spoken and never appears in the
+        // conversation pane, so recording it there would muddy the standing rule that
+        // the transcript mirrors the pane. Errors are in the log as a deliberate
+        // diagnostic exception; a steer is not a diagnostic.
+        steers: [],
     };
 }
 
@@ -70,6 +79,7 @@ function normalize(raw) {
         samples: (raw.samples && typeof raw.samples === 'object') ? raw.samples : {},
         harvest: (raw.harvest && typeof raw.harvest === 'object') ? raw.harvest : null,
         dismissed: Array.isArray(raw.dismissed) ? raw.dismissed.filter((x) => typeof x === 'string') : [],
+        steers: Array.isArray(raw.steers) ? raw.steers.filter((x) => x && typeof x.text === 'string') : [],
     };
 }
 
@@ -147,6 +157,47 @@ export function setSample(key, text) {
     const t = String(text || '').trim();
     if (t) p.samples[key] = t; else delete p.samples[key];
     return save();
+}
+
+// A steer typed once is a one-off about that particular turn; typed again, word for
+// word, it is a standing preference the app keeps failing to meet. Two is the bar
+// because typing the identical instruction twice is deliberate, and because the user
+// can see the count and remove it — a wrongly promoted preference shapes every future
+// response, so it is shown with its evidence rather than asserted.
+const STEER_REPEAT_MIN = 2;
+const MAX_STEERS = 200;
+
+function normalizeSteer(text) {
+    return String(text || '').toLowerCase().replace(/[^a-z0-9' ]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+/** Record one typed Reframe steer. Callers gate on storage.isConversationSaving(). */
+export function recordSteer(text) {
+    const t = String(text || '').trim();
+    if (!t) return current();
+    const p = current();
+    p.steers.push({ text: t, at: new Date().toISOString() });
+    if (p.steers.length > MAX_STEERS) p.steers = p.steers.slice(-MAX_STEERS);
+    return save();
+}
+
+/**
+ * Steers the user has typed more than once, most-repeated first. Anything said only
+ * once is deliberately excluded: it was about that turn, not about how they sound.
+ */
+export function repeatedSteers(min = STEER_REPEAT_MIN) {
+    const p = current();
+    const gone = new Set(p.dismissed.map((s) => s.trim().toLowerCase()));
+    const groups = new Map();
+    for (const s of p.steers) {
+        const key = normalizeSteer(s.text);
+        if (!key) continue;
+        if (!groups.has(key)) groups.set(key, { text: s.text, count: 0 });
+        groups.get(key).count++;
+    }
+    return [...groups.values()]
+        .filter((g) => g.count >= min && !gone.has(g.text.trim().toLowerCase()))
+        .sort((a, b) => b.count - a.count);
 }
 
 /** Store what the harvest concluded (voice-harvest.js does the reading). */
@@ -279,6 +330,16 @@ export function buildBlock(idiom = []) {
         lines.push('');
         lines.push(`Words and turns of phrase this user actually uses: ${idiom.slice(0, 20).map((s) => `"${s}"`).join(', ')}.`);
         lines.push('Use these ONLY to judge their vocabulary and level of formality. They are button labels, so they are short for that reason alone — do NOT treat them as evidence that this user prefers short replies. Do NOT put these exact phrases into responses; the user says those themselves.');
+    }
+
+    // Corrections the user has had to type more than once. This is the strongest
+    // signal in the file, because it is not a preference they reported — it is one
+    // they were driven to state repeatedly by the app getting it wrong.
+    const steers = repeatedSteers();
+    if (steers.length) {
+        lines.push('');
+        lines.push('When your suggestions have not been right, this user has typed the same correction more than once. Treat each as a standing instruction, not a one-off:');
+        for (const s of steers.slice(0, 6)) lines.push(`  "${s.text}" (asked ${s.count} times)`);
     }
 
     if (p.never.length) {
