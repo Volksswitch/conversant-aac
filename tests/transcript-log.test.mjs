@@ -17,7 +17,7 @@ test('first pause appends a pending partner turn (raw set, cleaned empty)', () =
     const ex = [];
     const pending = upsertPartnerInterim(ex, null, { rawTranscript: 'how was your', partner: { label: 'Mom' }, timestamp: 't1' });
     assert.equal(ex.length, 1);
-    assert.deepEqual(ex[0], { timestamp: 't1', role: 'partner', rawTranscript: 'how was your', cleanedTranscript: '', partner: { label: 'Mom' } });
+    assert.deepEqual(ex[0], { timestamp: 't1', role: 'partner', rawTranscript: 'how was your', cleanedTranscript: '', partner: { label: 'Mom' }, stt: null });
     assert.equal(pending, ex[0], 'returns the pending turn for reuse');
 });
 
@@ -50,7 +50,7 @@ test('finalize with a null handle APPENDS a finished partner turn (interruption 
     const ex = [];
     finalizePartner(ex, null, { rawTranscript: 'wait I', cleanedTranscript: 'wait I' });
     assert.equal(ex.length, 1);
-    assert.deepEqual(ex[0], { timestamp: ex[0].timestamp, role: 'partner', rawTranscript: 'wait I', cleanedTranscript: 'wait I', partner: null });
+    assert.deepEqual(ex[0], { timestamp: ex[0].timestamp, role: 'partner', rawTranscript: 'wait I', cleanedTranscript: 'wait I', partner: null, stt: null });
 });
 
 test('a resumed partner turn after finalize appends a SECOND turn (detached handle not overwritten)', () => {
@@ -67,4 +67,26 @@ test('a resumed partner turn after finalize appends a SECOND turn (detached hand
     assert.equal(ex[2], second);
     assert.equal(ex[2].rawTranscript, 'turn two');
     assert.equal(ex[2].cleanedTranscript, '', 'the in-progress second turn is untouched');
+});
+
+// --- what heard it (Ken, August 8 2026) --------------------------------------
+// Which recogniser produced a partner line is the single biggest influence on how
+// accurate it is, so a later review can tell a mishearing from a misunderstanding.
+
+test('a partner turn records which recogniser heard it, on both paths', () => {
+    const ex = [];
+    const pending = upsertPartnerInterim(ex, null, { rawTranscript: 'hello', stt: 'deepgram' });
+    assert.equal(ex[0].stt, 'deepgram');
+    finalizePartner(ex, pending, { rawTranscript: 'hello', cleanedTranscript: 'Hello.', stt: 'deepgram' });
+    assert.equal(ex[0].stt, 'deepgram', 'survives finalizing in place');
+
+    // The append path (an interruption captured before any pause was written).
+    finalizePartner(ex, null, { rawTranscript: 'and another', cleanedTranscript: 'And another.', stt: 'browser' });
+    assert.equal(ex[1].stt, 'browser');
+});
+
+test('an unknown recogniser is recorded as null rather than invented', () => {
+    const ex = [];
+    upsertPartnerInterim(ex, null, { rawTranscript: 'hello' });
+    assert.equal(ex[0].stt, null);
 });

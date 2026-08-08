@@ -764,6 +764,28 @@ function buildPersonForm(existing) {
         placeholder: 'What you call them — optional (Mom, J.J., Grandpa…)',
         value: existing ? existing.nickname : '' });
 
+    // How the voice should SAY the name, when it gets it wrong. Respelling it works
+    // (measured on the paid voice, August 8 2026): "Shiv-awn" for Siobhan.
+    //   The 🔊 is not optional decoration — you cannot tune a respelling you cannot
+    // hear, so the field and the ear have to sit together. It speaks the respelling
+    // itself, which is exactly what will be said.
+    //   Name and nickname are separate because they are separate words, and the
+    // NICKNAME is the one spoken more often: the conversation openers use it in
+    // preference to the name.
+    const sayAs = (getValue, placeholder, initial) => {
+        const inp = el('input', { type: 'text', class: 'wv-text wv-say-as',
+            placeholder, value: initial || '' });
+        const hear = el('button', { class: 'wv-btn-speak wv-say-as-hear', text: '🔊',
+            title: 'Hear it said this way', 'aria-label': 'Hear it said this way',
+            onclick: () => { const v = getValue().trim(); if (v) speak(v); } });
+        return { row: el('div', { class: 'wv-say-as-row' }, [inp, hear]), inp };
+    };
+
+    const namePron = sayAs(() => namePron.inp.value, 'How to say the name — only if the voice gets it wrong',
+        existing ? existing.pronunciation : '');
+    const nickPron = sayAs(() => nickPron.inp.value, 'How to say what you call them — only if needed',
+        existing ? existing.nicknamePronunciation : '');
+
     // Relationship — standard list + "Other…" (free text).
     const relSelect = el('select', { class: 'wv-select' });
     relSelect.append(el('option', { value: '' }, 'Relationship…'));
@@ -810,7 +832,10 @@ function buildPersonForm(existing) {
 
     const profile = buildPartnerProfileSection(existing);
 
-    card.append(el('div', { class: 'wv-person-fields' }, [nameIn, nicknameIn, relSelect, otherWrap, aboutIn, livesRow, privRow]));
+    // Each "how to say it" sits directly under the field it corrects, so there is
+    // never a question about which name it applies to.
+    card.append(el('div', { class: 'wv-person-fields' },
+        [nameIn, namePron.row, nicknameIn, nickPron.row, relSelect, otherWrap, aboutIn, livesRow, privRow]));
     card.append(profile.node);
 
     const save = el('button', { class: 'wv-btn wv-btn-primary', text: existing ? 'Save' : 'Add person',
@@ -825,6 +850,8 @@ function buildPersonForm(existing) {
                     name, relationship,
                     about: aboutIn.value.trim(),
                     nickname: nicknameIn.value.trim(),
+                    pronunciation: namePron.inp.value.trim(),
+                    nicknamePronunciation: nickPron.inp.value.trim(),
                     livesWithMe: livesCheck.checked,
                     isPrivate: privCheck.checked
                 });
@@ -836,6 +863,8 @@ function buildPersonForm(existing) {
                     name, relationship,
                     about: aboutIn.value.trim(),
                     nickname: nicknameIn.value.trim(),
+                    pronunciation: namePron.inp.value.trim(),
+                    nicknamePronunciation: nickPron.inp.value.trim(),
                     livesWithMe: livesCheck.checked,
                     isPrivate: privCheck.checked
                 });
@@ -954,6 +983,18 @@ function buildPlaceForm(existing) {
     const nameIn = el('input', { type: 'text', class: 'wv-text', placeholder: 'Place (e.g. Starbucks)',
         value: existing ? existing.name : '' });
 
+    // How to say the place, when the voice gets it wrong — same shape as a person's
+    // name, and for the same reason: place names are exactly the kind of word a
+    // synthesiser mangles (local, foreign, or a coined brand). Blank means "say it as
+    // written", and the 🔊 is what makes a respelling tunable.
+    const pronIn = el('input', { type: 'text', class: 'wv-text wv-say-as',
+        placeholder: 'How to say it — only if the voice gets it wrong',
+        value: existing ? existing.pronunciation : '' });
+    const pronHear = el('button', { class: 'wv-btn-speak wv-say-as-hear', text: '🔊',
+        title: 'Hear it said this way', 'aria-label': 'Hear it said this way',
+        onclick: () => { const v = pronIn.value.trim(); if (v) speak(v); } });
+    const pronRow = el('div', { class: 'wv-say-as-row' }, [pronIn, pronHear]);
+
     // One blank row to start, so the first fact costs no extra tap.
     let draft = existing && existing.facts.length
         ? existing.facts.map((f) => ({ ...f }))
@@ -996,7 +1037,7 @@ function buildPlaceForm(existing) {
         privCheck, el('span', { text: 'Private — AI knows but won\'t bring it up unprompted' })
     ]);
 
-    card.append(el('div', { class: 'wv-person-fields' }, [nameIn, factsWrap, addFact, privRow]));
+    card.append(el('div', { class: 'wv-person-fields' }, [nameIn, pronRow, factsWrap, addFact, privRow]));
 
     const save = el('button', { class: 'wv-btn wv-btn-primary', text: existing ? 'Save' : 'Add place',
         onclick: async () => {
@@ -1004,10 +1045,11 @@ function buildPlaceForm(existing) {
             const name = nameIn.value.trim();
             if (!name) return;   // a place with no name can't be shown or referred to
             const facts = draft;  // places.js drops the blank rows
+            const pronunciation = pronIn.value.trim();
             if (existing) {
-                await places.updatePlace(existing.id, { name, facts, isPrivate: privCheck.checked });
+                await places.updatePlace(existing.id, { name, pronunciation, facts, isPrivate: privCheck.checked });
             } else {
-                await places.addPlace({ name, facts, isPrivate: privCheck.checked });
+                await places.addPlace({ name, pronunciation, facts, isPrivate: privCheck.checked });
             }
             renderPlaces();
         } });

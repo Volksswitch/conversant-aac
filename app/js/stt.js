@@ -5,6 +5,10 @@ let recognition = null;
 // A non-browser capture backend (Deepgram), or null when using the built-in
 // recognizer. Only one is ever active.
 let externalSource = null;
+// Which one heard the partner — recorded against each turn in the conversation log,
+// so a replay or a critique knows what produced the transcript it is reading.
+let backend = 'browser';
+export function currentBackend() { return backend; }
 // Per-platform recognition tuning (see platform.js). Defaults are the desktop
 // values; init() replaces them with the platform's.
 let speechCfg = { continuous: true, restartDelayMs: 0, guardVisibility: false };
@@ -246,6 +250,7 @@ function afterIngest(heardPartner) {
  * be constructed — an app that can hear is better than one that refuses to try.
  */
 export function init({ onResult, onSilence, onStatus, onPartnerSpeech, source, getDeepgramKey, onBilled }) {
+    backend = source === 'deepgram' ? 'deepgram' : 'browser';
     onTranscript = onResult;
     onSilencePeriod = onSilence;
     onStatusChange = onStatus;

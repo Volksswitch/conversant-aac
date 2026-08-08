@@ -144,3 +144,44 @@ test('removing a person takes their profile with them', async () => {
     await rel.removePerson(id);
     assert.equal(rel.buildPartnerBlock(id), '');
 });
+
+// --- pronunciation (Ken, August 8 2026) --------------------------------------
+// A respelling for a name the voice says wrong. It reaches the synthesiser and
+// NOTHING else — above all not the model, which would write it into responses and
+// put the respelling on screen in place of the person's name.
+
+test('a name and a nickname each carry their own respelling, and both round-trip', async () => {
+    const id = await rel.addPerson({
+        name: 'Siobhan', relationship: 'friend',
+        nickname: 'J.J.',
+        pronunciation: 'Shiv-awn', nicknamePronunciation: 'Jay Jay',
+    });
+    const p = rel.getPerson(id);
+    assert.equal(p.pronunciation, 'Shiv-awn');
+    assert.equal(p.nicknamePronunciation, 'Jay Jay');
+});
+
+test('a respelling can be edited and cleared without disturbing the name', async () => {
+    const id = await rel.addPerson({ name: 'Siobhan', pronunciation: 'Shiv-awn' });
+    await rel.updatePerson(id, { pronunciation: '' });
+    assert.equal(rel.getPerson(id).pronunciation, '');
+    assert.equal(rel.getPerson(id).name, 'Siobhan', 'clearing the respelling must not touch the name');
+});
+
+test('⚠ THE RESPELLING NEVER REACHES THE MODEL', async () => {
+    await rel.addPerson({
+        name: 'Siobhan', relationship: 'friend',
+        nickname: 'J.J.', pronunciation: 'Shiv-awn', nicknamePronunciation: 'Jay Jay',
+    });
+    const block = rel.buildBlock();
+    assert.match(block, /Siobhan/, 'the real name is still sent');
+    assert.doesNotMatch(block, /Shiv-awn/, 'the respelling must not be sent — the model would write it into responses');
+    assert.doesNotMatch(block, /Jay Jay/, 'nor the nickname respelling');
+});
+
+test('a person with no respelling is unchanged in every way', async () => {
+    await rel.addPerson({ name: 'Tyler', relationship: 'friend' });
+    const p = rel.listPeople()[0];
+    assert.equal(p.pronunciation, '');
+    assert.equal(p.nicknamePronunciation, '');
+});

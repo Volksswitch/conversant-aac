@@ -2989,6 +2989,19 @@ body.conv-bottom .tab-panel[data-tab="aboutme"].active {
     color: #1565c0;
 }
 
+/* "How to say it" — a respelling for a name the voice gets wrong, with its own 🔊
+   because a respelling you cannot hear cannot be tuned. Indented and quieter than
+   the field above it, so it reads as a correction TO that field rather than as
+   another thing to fill in. */
+.wv-say-as-row {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    margin: 0.15rem 0 0.5rem 1.25rem;
+}
+.wv-say-as-row .wv-say-as { flex: 1 1 auto; min-width: 0; }
+.wv-say-as-row .wv-say-as-hear { flex: 0 0 auto; }
+
 .wv-btn-speak:disabled {
     opacity: 0.45;
     cursor: default;

@@ -158,18 +158,40 @@ function speakBuiltin(text, opts, myToken) {
  * the app's own speech, so a path that spoke without announcing itself would make
  * the app transcribe itself as the partner.
  */
+/*
+ * WHICH VOICE ACTUALLY SPOKE the last utterance — recorded against each turn in the
+ * conversation log so a replay can reproduce it (Ken, August 8 2026).
+ *
+ * ⚠ This reports what was USED, not what is SET, and the difference is the whole
+ * reason it exists: the paid voice falls back to the device voice on any failure,
+ * per utterance, while Settings goes on saying Deepgram. Reading the setting would
+ * therefore record a voice the user never heard — and would hide the one event most
+ * worth being able to see afterwards.
+ */
+let lastUsed = { provider: 'browser', voice: null };
+export function lastVoiceUsed() { return { ...lastUsed }; }
+
 export function speak(text, opts = {}) {
     const myToken = ++speakToken;
     // Announce the phrase on every start (even back-to-back placeholders) so the
     // STT echo filter always knows the current spoken text.
     speaking = true;
+    // ⚠ The DISPLAY form is what is announced, and `said` is what the voice is given.
+    // This one line is the whole display-vs-spoken split for names: everything
+    // upstream of the synthesiser — the transcript, the saved conversation file, the
+    // "now playing" line, and the echo filter, which all read the announced text —
+    // keeps the real name, and only the synthesiser sees the respelling. See
+    // pronunciation.js for why each of those must not.
     notifySpeaking(text);
+    const said = pronounce(text);
 
     if (provider !== 'deepgram' || !auraVoice) {
-        return speakBuiltin(text, opts, myToken);
+        lastUsed = { provider: 'browser', voice: opts.voiceURI || selectedVoiceURI || null };
+        return speakBuiltin(said, opts, myToken);
     }
 
-    return auraVoice.speak(text, { model: opts.auraModel || auraModel })
+    lastUsed = { provider: 'deepgram', voice: opts.auraModel || auraModel };
+    return auraVoice.speak(said, { model: opts.auraModel || auraModel })
         .then(() => {
             if (myToken === speakToken && speaking) {
                 speaking = false;
@@ -184,8 +206,26 @@ export function speak(text, opts = {}) {
             // the one outcome that is never acceptable is that the user pressed a
             // button and nothing was said.
             if (onFallback) onFallback(err && err.message ? err.message : String(err));
-            return speakBuiltin(text, opts, myToken);
+            // The device voice is what the user actually hears for this utterance, so
+            // that is what the turn must record — this is the case the field is for.
+            lastUsed = { provider: 'browser', voice: opts.voiceURI || selectedVoiceURI || null, fellBack: true };
+            return speakBuiltin(said, opts, myToken);
         });
+}
+
+/*
+ * How to say a name the voice gets wrong. Set once at startup to
+ * pronunciation.apply; a hook rather than an import so this module stays free of the
+ * data layer, and so it degrades to plain text when nothing has wired it.
+ */
+let pronouncer = null;
+export function setPronouncer(fn) {
+    pronouncer = typeof fn === 'function' ? fn : null;
+}
+function pronounce(text) {
+    if (!pronouncer || !text) return text;
+    // A pronouncer that throws must never cost the user their voice.
+    try { return pronouncer(text) || text; } catch { return text; }
 }
 
 export function cancel() {

@@ -38,6 +38,21 @@ forgetting to tag one is only ever noise, never silence.
   a button in the panel to jump to its row in the list, so you're editing the panel
   while looking at the panel. Tapping a button there sets it up rather than speaking
   it.
+- **You can tell the app how to say a word it gets wrong.** Names are the usual
+  culprit — your own, a friend's, a place you go. There is now a "how to say it" box
+  next to each Express Panel phrase, next to a person's name and what you call them,
+  and next to a place, each with its own 🔊 so you can try a spelling and hear the
+  result straight away. Spelling it the way it sounds is what works: "Shiv-awn" for
+  Siobhan. **Only the voice sees it.** The button, the person, the place and the
+  conversation transcript all keep the real spelling — so nothing on screen changes,
+  and a saved conversation still reads properly.
+- **The good voice no longer drops out for a single sentence.** If you pay for the
+  Deepgram voice, it used to fall back to your device's own voice whenever the
+  connection to the voice service had quietly closed — usually after a quiet stretch
+  in a conversation — which came out as one odd-sounding sentence and then back to
+  normal. The app now keeps that connection alive between sentences, and tries once
+  more before falling back. When it does still fall back, the conversation record
+  now shows which sentence it was.
 - **Every phrase in the Express Panel settings has a 🔊 button to hear it.** It reads
   the phrase aloud in your own voice, exactly as it will sound when you tap that
   button in a conversation — because a phrase can look right on screen and land wrong

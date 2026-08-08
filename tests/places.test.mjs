@@ -184,3 +184,26 @@ test('resetAll clears every place', async () => {
     assert.equal(places.count(), 0);
     assert.equal(places.buildBlock(), '');
 });
+
+// --- pronunciation (Ken, August 8 2026) --------------------------------------
+// Place names are exactly what a synthesiser mangles — local, foreign, or a coined
+// brand. Same rule as a person's name: speak-time only, never to the model.
+
+test('a place carries a respelling that round-trips and can be cleared', async () => {
+    const id = await places.addPlace({ name: 'Volksswitch', pronunciation: 'Folks-switch' });
+    assert.equal(places.getPlace(id).pronunciation, 'Folks-switch');
+    await places.updatePlace(id, { pronunciation: '' });
+    assert.equal(places.getPlace(id).pronunciation, '');
+    assert.equal(places.getPlace(id).name, 'Volksswitch', 'clearing it must not touch the name');
+});
+
+test('⚠ THE RESPELLING NEVER REACHES THE MODEL, in either block', async () => {
+    const id = await places.addPlace({
+        name: 'Volksswitch', pronunciation: 'Folks-switch',
+        facts: [{ key: 'Location', value: '123 Main Street' }],
+    });
+    for (const [what, block] of [['buildBlock', places.buildBlock()], ['buildHereBlock', places.buildHereBlock(id)]]) {
+        assert.match(block, /Volksswitch/, `${what} still sends the real name`);
+        assert.doesNotMatch(block, /Folks-switch/, `${what} must not send the respelling`);
+    }
+});

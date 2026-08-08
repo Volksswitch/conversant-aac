@@ -159,6 +159,11 @@ export function listPlaces() {
     return ensureLoaded().places.map((p) => ({
         id: p.id,
         name: p.name,
+        // How the NAME should be said when the voice gets it wrong — a respelling.
+        // ⚠ SPEAK-TIME ONLY, and it must never reach the LLM (see buildBlock /
+        // buildHereBlock): a model shown the respelling would write it into responses,
+        // and it would appear on screen in place of the real name.
+        pronunciation: p.pronunciation || '',
         private: !!p.private,
         facts: p.facts.map((f) => ({ ...f }))
     }));
@@ -168,12 +173,13 @@ export function getPlace(id) {
     return listPlaces().find((p) => p.id === id) || null;
 }
 
-export async function addPlace({ name = '', facts = [], isPrivate = false } = {}) {
+export async function addPlace({ name = '', pronunciation = '', facts = [], isPrivate = false } = {}) {
     const m = ensureLoaded();
     const id = newId();
     m.places.push({
         id,
         name: (name || '').trim(),
+        pronunciation: (pronunciation || '').trim(),
         private: !!isPrivate,
         facts: normalizeFacts(facts)
     });
@@ -181,11 +187,12 @@ export async function addPlace({ name = '', facts = [], isPrivate = false } = {}
     return id;
 }
 
-export async function updatePlace(id, { name, facts, isPrivate } = {}) {
+export async function updatePlace(id, { name, pronunciation, facts, isPrivate } = {}) {
     const m = ensureLoaded();
     const p = m.places.find((x) => x.id === id);
     if (!p) return;
     if (name !== undefined) p.name = (name || '').trim();
+    if (pronunciation !== undefined) p.pronunciation = (pronunciation || '').trim();
     if (facts !== undefined) p.facts = normalizeFacts(facts);
     if (isPrivate !== undefined) p.private = !!isPrivate;
     await save();

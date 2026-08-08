@@ -112,12 +112,13 @@ function buildToolbar() {
     return bar;
 }
 
-function textInput(value, placeholder, oninput) {
+function textInput(value, placeholder, oninput, cls) {
     const inp = document.createElement('input');
     inp.type = 'text';
     inp.value = value || '';
     inp.placeholder = placeholder || '';
     inp.autocomplete = 'off';
+    if (cls) inp.className = cls;
     inp.addEventListener('input', () => oninput(inp.value));
     return inp;
 }
@@ -232,6 +233,19 @@ function buildRow(item, i) {
         });
     } else if (item.type === 'phrase') {
         fields.appendChild(textInput(item.text, 'Phrase to speak', (v) => { item.text = v; commit(false); }));
+        // How to SAY it, when the button's own words are not what the voice should
+        // read out — a respelling for a name it gets wrong ("Folks-switch"), or an
+        // abbreviation that should be spoken in full. Blank means "say the label",
+        // which is what every phrase does until someone decides otherwise.
+        //   The button face and the transcript always show the LABEL; only the
+        // synthesiser sees this. Empty strings are dropped rather than stored, so a
+        // field the user typed into and then cleared leaves no trace.
+        fields.appendChild(textInput(item.speak || '', 'How to say it — only if different',
+            (v) => {
+                const t = v.trim();
+                if (t) item.speak = v; else delete item.speak;
+                commit(false);
+            }, 'ee-speakas'));
         // The category only sets the button color, and its names ("Affirm / deny"…)
         // mean nothing to the user (Ken) — so pick by COLOR, not by category name.
         fields.appendChild(colorControl(item));

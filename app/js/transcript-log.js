@@ -19,11 +19,12 @@
 // kept talking, so the previous cleaned text is stale); otherwise append a new
 // pending partner entry. Returns the pending turn object (the caller keeps it as
 // the new `pending` reference).
-export function upsertPartnerInterim(exchanges, pending, { rawTranscript, partner = null, timestamp }) {
+export function upsertPartnerInterim(exchanges, pending, { rawTranscript, partner = null, stt = null, timestamp }) {
     if (pending) {
         pending.rawTranscript = rawTranscript;
         pending.cleanedTranscript = '';          // partner continued — stale cleaned text is dropped
         if (partner) pending.partner = partner;
+        if (stt) pending.stt = stt;
         return pending;
     }
     const turn = {
@@ -32,6 +33,10 @@ export function upsertPartnerInterim(exchanges, pending, { rawTranscript, partne
         rawTranscript,
         cleanedTranscript: '',
         partner,
+        // WHICH RECOGNISER HEARD IT ('browser' | 'deepgram'). Recorded because it is
+        // the single biggest influence on how accurate this line is, so a later
+        // review of a mangled turn can tell a mishearing from a misunderstanding.
+        stt,
     };
     exchanges.push(turn);
     return turn;
@@ -43,11 +48,12 @@ export function upsertPartnerInterim(exchanges, pending, { rawTranscript, partne
 // If `handle` is set it is updated IN PLACE — preserving its position before the
 // user's turn; if `handle` is null (an interruption captured before any pause was
 // ever written) a fresh finalized partner entry is appended. Returns the entry.
-export function finalizePartner(exchanges, handle, { rawTranscript, cleanedTranscript, partner = null, timestamp }) {
+export function finalizePartner(exchanges, handle, { rawTranscript, cleanedTranscript, partner = null, stt = null, timestamp }) {
     if (handle) {
         handle.rawTranscript = rawTranscript;
         handle.cleanedTranscript = cleanedTranscript;
         if (partner) handle.partner = partner;
+        if (stt) handle.stt = stt;
         return handle;
     }
     const turn = {
@@ -56,6 +62,7 @@ export function finalizePartner(exchanges, handle, { rawTranscript, cleanedTrans
         rawTranscript,
         cleanedTranscript,
         partner,
+        stt,
     };
     exchanges.push(turn);
     return turn;

@@ -1150,12 +1150,19 @@ export async function startConversationLog() {
 // appends a pending partner entry (raw text, empty cleaned line); each later pause
 // OVERWRITES the raw line and CLEARS the cleaned line (the partner kept talking).
 // Creates the log lazily if needed. The cleaned line is filled later, by
+// WHICH RECOGNISER HEARD THE PARTNER, stamped onto every partner turn. Held here
+// rather than passed at each of the seven call sites, because it is fixed when
+// stt.init() runs and changing it needs a reload — so one place to set it is also
+// one place that cannot be forgotten.
+let sttBackend = null;
+export function setSttBackend(name) { sttBackend = name || null; }
+
 // finalizePartnerTurn, when the user responds.
 export async function logPartnerInterim({ rawTranscript, partner = null }) {
     if (!conversationSaving) return; // private conversation — nothing is written
     if (!currentLogData) await startConversationLog();
     if (!currentLogData) return;
-    pendingPartnerTurn = tlog.upsertPartnerInterim(currentLogData.exchanges, pendingPartnerTurn, { rawTranscript, partner });
+    pendingPartnerTurn = tlog.upsertPartnerInterim(currentLogData.exchanges, pendingPartnerTurn, { rawTranscript, partner, stt: sttBackend });
     await flushLog();
 }
 
@@ -1185,11 +1192,11 @@ export async function finalizePartnerTurn(handle, { rawTranscript, cleanedTransc
     // background cleanup landed — the raw partner line is already on disk, so this
     // just no-ops the cleaned-line update (the rare deferred-cleanup split).
     const exchanges = currentLogData ? currentLogData.exchanges : null;
-    tlog.finalizePartner(exchanges, handle, { rawTranscript, cleanedTranscript, partner });
+    tlog.finalizePartner(exchanges, handle, { rawTranscript, cleanedTranscript, partner, stt: sttBackend });
     await flushLog();
 }
 
-export async function logUserResponse({ selectedText, selectedIndex, allOptions, selectedSlot = null, source = null, partner = null, feeling = null, place = null }) {
+export async function logUserResponse({ selectedText, spokenText = null, ttsUsed = null, selectedIndex, allOptions, selectedSlot = null, source = null, partner = null, feeling = null, place = null }) {
     if (!conversationSaving) return; // private conversation — nothing is written
     // Start the log lazily if this user turn is the FIRST turn of the conversation
     // — an opener (Start conversation) or an Express-panel phrase takes the floor
@@ -1203,6 +1210,28 @@ export async function logUserResponse({ selectedText, selectedIndex, allOptions,
         timestamp: new Date().toISOString(),
         role: 'user',
         selectedText,
+        // WHAT THE SYNTHESISER WAS ACTUALLY GIVEN, when that differs from the words
+        // on screen (Ken, August 8 2026) — an Express phrase with its own spoken form,
+        // or a name carrying a respelling ("Shiv-awn" for Siobhan).
+        //
+        // ⚠ IT IS A SEPARATE FIELD, NEVER A REPLACEMENT, and both halves are the
+        // point. `selectedText` stays the words the user chose, so the transcript,
+        // the display and the voice harvest are unaffected. `spokenText` exists so
+        // the Phase-3 relive-and-critique feature can reproduce the conversation as
+        // it actually SOUNDED: replaying `selectedText` through today's lexicon would
+        // say it however the user has since decided names should be said, not how it
+        // came out at the time. A replay must use THIS field, not re-derive it.
+        //
+        // null when the two are the same, which is nearly every turn — storing a
+        // duplicate of every utterance would grow the file for no information.
+        spokenText,
+        // WHICH VOICE SAID IT — { provider: 'browser'|'deepgram', voice, fellBack? }.
+        // Recorded per turn rather than once per conversation because it genuinely
+        // varies within one: the paid voice drops to the device voice on any single
+        // failure and recovers on the next utterance, so a conversation-level note
+        // would record a voice the user did not hear. `fellBack` marks exactly those
+        // turns, which is also the only place that event is visible after the fact.
+        tts: ttsUsed,
         selectedIndex,
         allOptions,
         selectedSlot,      // the CA category chosen (PREFERRED/CHOICE/...), or null

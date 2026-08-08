@@ -57,6 +57,7 @@ const SHELL = [
   './js/worldview.js',
   './js/relationships.js',
   './js/places.js',
+  './js/pronunciation.js',
   './js/voice.js',
   './js/voice-harvest.js',
   './js/sound-check-items.js',

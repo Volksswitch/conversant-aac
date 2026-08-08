@@ -128,6 +128,16 @@ export function listPeople() {
             relationship: edge ? edge.type : '',
             about: (p.attrs && p.attrs.about) || '',
             livesWithMe: !!(p.attrs && p.attrs.livesWithMe),
+            // How the NAME should be said, when the voice gets it wrong — a respelling
+            // like "Shiv-awn" for Siobhan (measured to work on Aura-2, August 8 2026).
+            // ⚠ SPEAK-TIME ONLY. These must never reach the LLM (see buildBlock): a
+            // model shown "Shiv-awn" would start writing it into responses, and the
+            // respelling would appear on screen as though it were the person's name.
+            // The name and the nickname are separate because they are separate words —
+            // and the nickname is the one MORE often spoken, since the openers use it
+            // in preference to the name.
+            pronunciation: (p.attrs && p.attrs.pronunciation) || '',
+            nicknamePronunciation: (p.attrs && p.attrs.nicknamePronunciation) || '',
             private: !!p.private
         };
     });
@@ -137,12 +147,19 @@ export function getPerson(id) {
     return listPeople().find((p) => p.id === id) || null;
 }
 
-export async function addPerson({ name, relationship = '', about = '', nickname = '', livesWithMe = false, isPrivate = false } = {}) {
+export async function addPerson({ name, relationship = '', about = '', nickname = '',
+                                  pronunciation = '', nicknamePronunciation = '',
+                                  livesWithMe = false, isPrivate = false } = {}) {
     const g = ensureLoaded();
     const id = newId();
     g.people.push({
         id, name: (name || '').trim(), private: !!isPrivate,
-        attrs: { about: (about || '').trim(), nickname: (nickname || '').trim(), livesWithMe: !!livesWithMe }
+        attrs: {
+            about: (about || '').trim(), nickname: (nickname || '').trim(),
+            pronunciation: (pronunciation || '').trim(),
+            nicknamePronunciation: (nicknamePronunciation || '').trim(),
+            livesWithMe: !!livesWithMe
+        }
     });
     if ((relationship || '').trim()) {
         g.edges.push({ from: ME, to: id, type: relationship.trim(), attrs: {} });
@@ -151,13 +168,17 @@ export async function addPerson({ name, relationship = '', about = '', nickname 
     return id;
 }
 
-export async function updatePerson(id, { name, relationship, about, nickname, livesWithMe, isPrivate } = {}) {
+export async function updatePerson(id, { name, relationship, about, nickname,
+                                         pronunciation, nicknamePronunciation,
+                                         livesWithMe, isPrivate } = {}) {
     const g = ensureLoaded();
     const p = g.people.find((x) => x.id === id);
     if (!p) return;
     if (name !== undefined) p.name = (name || '').trim();
     if (about !== undefined) { p.attrs = p.attrs || {}; p.attrs.about = (about || '').trim(); }
     if (nickname !== undefined) { p.attrs = p.attrs || {}; p.attrs.nickname = (nickname || '').trim(); }
+    if (pronunciation !== undefined) { p.attrs = p.attrs || {}; p.attrs.pronunciation = (pronunciation || '').trim(); }
+    if (nicknamePronunciation !== undefined) { p.attrs = p.attrs || {}; p.attrs.nicknamePronunciation = (nicknamePronunciation || '').trim(); }
     if (livesWithMe !== undefined) { p.attrs = p.attrs || {}; p.attrs.livesWithMe = !!livesWithMe; }
     if (isPrivate !== undefined) p.private = !!isPrivate;
     if (relationship !== undefined) {

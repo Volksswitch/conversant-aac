@@ -14,6 +14,7 @@ import * as keyboard from './keyboard.js';
 import { SIDE_LAYOUTS, BOTTOM_LAYOUTS, LAYOUTS } from './keyboard-layouts.js';
 import * as viewport from './viewport.js';
 import * as expressItems from './express-items.js';
+import * as pronunciation from './pronunciation.js';
 import * as expressPanel from './express-panel.js';
 // Named voiceProfile, not voice: app.js already uses `voice` as the loop variable
 // for a SpeechSynthesisVoice in the two TTS pickers, and a module shadowed inside
@@ -362,6 +363,9 @@ function initApp() {
     // all, Start included (Ken, July 30 2026).
     if (speechSupport.apiPresent || usingPaidStt) {
         stt.setSilenceThreshold(storage.loadSilenceThreshold());
+        // Stamp every partner turn with what heard it. Set beside init because that
+        // is what fixes the choice; changing it needs a reload, so this cannot drift.
+        storage.setSttBackend(usingPaidStt ? 'deepgram' : 'browser');
         stt.init({
             onResult: handleSpeechResult,
             onSilence: handleSilencePeriod,
@@ -498,6 +502,12 @@ function initApp() {
         const savedURI = storage.loadVoiceURI();
         if (savedURI) tts.setVoice(savedURI);
     });
+
+    // Names the voice gets wrong. Wired once: pronunciation.apply reads the current
+    // people and places on every utterance, so an edit takes effect immediately and
+    // there is no cache to go stale. The respelling reaches the synthesiser and
+    // nothing else — see pronunciation.js.
+    tts.setPronouncer(pronunciation.apply);
 
     applyTtsProvider();
     // A downgrade to the device's own voice is not silent: the user still hears
@@ -1337,7 +1347,7 @@ async function handleRepairOfSelf(response) {
         storage.finalizePartnerTurn(h, { rawTranscript: raw, cleanedTranscript: raw });
     }
     conversationHistory.push({ role: 'user', text });
-    storage.logUserResponse({ selectedText: text, selectedIndex: -1, allOptions: [], source });
+    storage.logUserResponse({ selectedText: text, spokenText: spokenFormFor(text), ttsUsed: tts.lastVoiceUsed(), selectedIndex: -1, allOptions: [], source });
     ui.renderConversation(conversationHistory);
     ui.setLiveTranscript('');
     resumeOrIdle();
@@ -1355,8 +1365,23 @@ async function handleRepairOfSelf(response) {
 // text. Set FALSE for the interruption case — when the user cuts the partner off
 // with an instant statement, we just record what we heard verbatim; there's no
 // completed utterance to clean and no point spending an AI call on a fragment (Ken).
+/**
+ * What the synthesiser was actually handed, when that differs from the words shown.
+ * Two layers can move it: an Express phrase carrying its own spoken form, and a name
+ * carrying a respelling. Returns null when they are the same, which is nearly every
+ * turn — see storage.logUserResponse for why the log stores it separately.
+ *
+ * Recomputed here rather than reported back from tts because it is deterministic
+ * given the same lexicon, and this runs microseconds after the speech, so the two
+ * cannot disagree.
+ */
+function spokenFormFor(displayText, spokenOverride) {
+    const said = pronunciation.apply(spokenOverride || displayText);
+    return said && said !== displayText ? said : null;
+}
+
 async function commitExchange(raw, userText, index, opts = {}) {
-    const { cleanup = true } = opts;
+    const { cleanup = true, spokenText = null } = opts;
     // The user has taken the floor, so the partner's turn — and any choices it put
     // on the table, and any steering of it — is done. Shared by every path that
     // commits a user turn (response pick, Express phrase, composer, repair-of-self).
@@ -1381,6 +1406,8 @@ async function commitExchange(raw, userText, index, opts = {}) {
 
     const userLog = {
         selectedText: userText,
+        spokenText: spokenFormFor(userText, spokenText),
+        ttsUsed: tts.lastVoiceUsed(),
         selectedIndex: index,
         // Only a palette selection (index >= 0) has a meaningful "all options"
         // list; a free-composed utterance (index -1) was not picked from a
@@ -1863,7 +1890,7 @@ function logSpokenUserTurn(text) {
     ui.renderConversation(conversationHistory);
     // 'control' -- these are OUR phrases (Hold on / Ask them to repeat / the user's
     // own last words re-spoken), never the user's own composition.
-    storage.logUserResponse({ selectedText: text, selectedIndex: -1, allOptions: [], source: 'control' });
+    storage.logUserResponse({ selectedText: text, spokenText: spokenFormFor(text), ttsUsed: tts.lastVoiceUsed(), selectedIndex: -1, allOptions: [], source: 'control' });
 }
 
 // Say again — re-speak the user's last utterance verbatim. Instant, no LLM.
@@ -2225,7 +2252,7 @@ async function speakAsUserTurn(historyText, spokenText = historyText, source = '
     engine.selectResponse({ text: historyText });
     ui.showEngineState(engine.getSnapshot());
     // Interruption: record the partner's raw heard text verbatim, no AI cleanup (Ken).
-    await commitExchange(raw, historyText, -1, { cleanup: false });
+    await commitExchange(raw, historyText, -1, { cleanup: false, spokenText });
 
     // The user has spoken and a reply is coming, so the mic has to be open to catch
     // it. Opening a conversation this way is the same act as selecting an opener, so
