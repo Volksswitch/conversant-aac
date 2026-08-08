@@ -38,6 +38,10 @@ forgetting to tag one is only ever noise, never silence.
   a button in the panel to jump to its row in the list, so you're editing the panel
   while looking at the panel. Tapping a button there sets it up rather than speaking
   it.
+- **Every phrase in the Express Panel settings has a 🔊 button to hear it.** It reads
+  the phrase aloud in your own voice, exactly as it will sound when you tap that
+  button in a conversation — because a phrase can look right on screen and land wrong
+  when it's spoken. The same idea as "Speak my answer" in About Me.
 - **The app no longer answers general-knowledge questions for you.** If someone asks
   you something like a date, a figure, a definition or how something works, the app
   used to hand over the answer out of its own knowledge — which quietly turned you

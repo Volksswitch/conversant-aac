@@ -30,6 +30,7 @@ import * as expressPanel from './express-panel.js';
 import * as relationships from './relationships.js';
 import * as places from './places.js';
 import * as keyboard from './keyboard.js';
+import * as tts from './tts.js';
 import { CATEGORIES, INFLUENCER_COLORS, FEELING_PRESETS, makeId, isEmptyItem } from './express-items.js';
 import { confirmDanger } from './confirm-dialog.js';
 
@@ -305,6 +306,27 @@ function buildRow(item, i) {
     // Reorder + delete.
     const tools = document.createElement('div');
     tools.className = 'ee-tools';
+    // Hear the phrase, in the user's own voice, before committing to it. The reason
+    // is the one already recorded for Sound Check's per-candidate speaker: this
+    // user's whole output channel is a synthesizer, so reading a phrase on screen is
+    // not the same test as hearing it — a phrase can look right and land wrong, and
+    // the voice mispronounces things the eye cannot predict.
+    //   PHRASES ONLY: partner, feeling and place buttons are TOGGLES whose labels are
+    // never spoken aloud, so a speaker on those rows would offer to play something
+    // the app will never say.
+    //   Deliberately not disabled when the field is empty: text commits on input
+    // WITHOUT re-rendering (so the field keeps focus while typing), so a disabled
+    // state set at build time would still say "empty" after the user had typed. It
+    // no-ops instead, and reads the live value rather than a stale copy.
+    const hear = mkBtn('🔊', 'ee-hear');
+    hear.title = 'Hear this phrase';
+    hear.setAttribute('aria-label', 'Hear this phrase');
+    hear.hidden = item.type !== 'phrase';
+    hear.addEventListener('click', () => {
+        // `speak` is the spoken form where the display text differs from it.
+        const text = (item.speak || item.text || '').trim();
+        if (text) tts.speak(text);
+    });
     // Save this item and take the on-screen keyboard down so the panel/list is
     // visible again (Ken, July 2026). Edits already auto-commit on input; this is
     // the explicit "I'm done with this item" that dismisses the keyboard — the
@@ -324,7 +346,7 @@ function buildRow(item, i) {
         current.splice(i, 1);
         commit(true);
     });
-    tools.append(save, up, down, del);
+    tools.append(hear, save, up, down, del);
     row.appendChild(tools);
 
     return row;
