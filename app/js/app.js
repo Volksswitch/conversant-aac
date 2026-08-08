@@ -1215,7 +1215,16 @@ async function handleResponseSelected(response, index) {
         ui.setStatus('Go ahead — say what you wanted to say');
     } else if (wasOpener) {
         manualListenArmed = true;   // starting a conversation arms auto-resume
-        startFreshListening();      // begin capturing the partner now
+        // Practice Mode has NO mic: "capturing" there means cueing the AI partner, and
+        // practiceResumeOrIdle already gates that on the user's own auto-resume setting
+        // — which is the point of Practice Mode, since it rehearses their real rhythm.
+        // Without this guard startFreshListening() opened a REAL microphone in a
+        // practice session. The asymmetry with the live path, which captures whatever
+        // auto-resume says, is deliberate: losing a real partner's words is
+        // irreversible, while an uncued practice partner simply waits for a tap.
+        // (Ken, August 7 2026.)
+        if (practiceMode) practiceResumeOrIdle();
+        else startFreshListening();   // begin capturing the partner now
     } else if (wasWindDown || wasClosing) {
         // After a wind-down statement, offer the goodbyes so the user can sign off
         // without waiting for the partner to reply; after a goodbye, re-offer them
@@ -1231,7 +1240,13 @@ async function handleResponseSelected(response, index) {
 // still captured. The mic-resume mirrors startFreshListening but WITHOUT clearing
 // the palette (we want the closings to stay visible).
 function offerClosings() {
-    if (manualListenArmed && storage.loadAutoRelisten()) {
+    // Same practice guard as the opener path above: this opened a REAL microphone in a
+    // practice session. It deliberately does NOT cue the AI partner instead — that
+    // would generate a reply immediately and its palette would replace the closings we
+    // are about to show, whereas a live mic just waits. So in practice the goodbyes are
+    // shown and the user taps Start Listening when ready, matching the decline-a-closing
+    // rule already in force. (Ken, August 7 2026.)
+    if (!practiceMode && manualListenArmed && storage.loadAutoRelisten()) {
         currentPartnerText = '';
         generationToken++;
         ui.setLiveTranscript('');
