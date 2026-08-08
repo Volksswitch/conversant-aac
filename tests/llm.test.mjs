@@ -15,6 +15,19 @@ import * as engine from '../app/js/engine.js';
 beforeEach(() => llm.setApiKey('test-key'));
 afterEach(() => restoreFetch());
 
+/*
+ * What the model actually SEES as its system prompt, regardless of how the request
+ * carries it. `system` is a plain string on most calls, but generateResponses sends
+ * an array of two text blocks so a cache breakpoint can sit between them (see the
+ * caching note in llm.js) — and the API concatenates them. Asserting through this
+ * helper keeps every prompt-content test about the CONTENT rather than the
+ * transport, so adding or moving a cache breakpoint can't fail eighteen tests that
+ * have nothing to do with caching.
+ */
+const sysText = (call) => Array.isArray(call.body.system)
+    ? call.body.system.map(b => b.text).join('')
+    : call.body.system;
+
 const structured = JSON.stringify({
     partner_action: 'QUESTION',
     turn_status: 'COMPLETE',
@@ -78,7 +91,7 @@ test('throws on an HTTP error, surfacing the status', async () => {
 test('Reframe steer text is injected into the system prompt as user-authored ground truth', async () => {
     mockFetch(structured);
     await llm.generateResponses([{ role: 'partner', text: 'How are you?' }], {}, { steer: 'I actually won my chess game last night' });
-    const sys = getFetchCalls()[0].body.system;
+    const sys = sysText(getFetchCalls()[0]);
     assert.match(sys, /I actually won my chess game last night/);
     assert.match(sys, /TRUE/); // framed as ground truth that overrides the keep-it-general caution
 });
@@ -86,7 +99,7 @@ test('Reframe steer text is injected into the system prompt as user-authored gro
 test('regenerate "avoid" list is injected so the model takes a different angle', async () => {
     mockFetch(structured);
     await llm.generateResponses([{ role: 'partner', text: 'How are you?' }], {}, { avoid: ['Pretty good, thanks.'] });
-    const sys = getFetchCalls()[0].body.system;
+    const sys = sysText(getFetchCalls()[0]);
     assert.match(sys, /Pretty good, thanks\./);
 });
 
@@ -95,7 +108,7 @@ test('perCategory:2 requests 8 responses and a larger token budget', async () =>
     await llm.generateResponses([{ role: 'partner', text: 'How are you?' }], {}, { perCategory: 2 });
     const body = getFetchCalls()[0].body;
     assert.equal(body.max_tokens, 1000);
-    assert.match(body.system, /8 responses total/);
+    assert.match(sysText(getFetchCalls()[0]), /8 responses total/);
 });
 
 test('conversation history maps partner→user and user→assistant roles', async () => {
@@ -113,7 +126,7 @@ test('conversation history maps partner→user and user→assistant roles', asyn
 test('the prompt instructs ALWAYS returning responses (turn_status no longer gates)', async () => {
     mockFetch(structured);
     await llm.generateResponses([{ role: 'partner', text: 'So the other day I was walking and' }], {});
-    const sys = getFetchCalls()[0].body.system;
+    const sys = sysText(getFetchCalls()[0]);
     assert.match(sys, /ALWAYS return all four/);
     assert.match(sys, /INFORMATIONAL ONLY/);
 });
@@ -127,7 +140,7 @@ test('the prompt instructs ALWAYS returning responses (turn_status no longer gat
 test('the prompt says the responses will be SPOKEN, and bans written-only forms', async () => {
     mockFetch(structured);
     await llm.generateResponses([{ role: 'partner', text: 'Tell me what you think.' }], {});
-    const sys = getFetchCalls()[0].body.system;
+    const sys = sysText(getFetchCalls()[0]);
     assert.match(sys, /SPOKEN ALOUD/);
     assert.match(sys, /fw/);                      // the offending form is named outright
     // It must stay a SPEAKABILITY rule, not a register rule: an adult user's level
@@ -142,7 +155,7 @@ test('the prompt says the responses will be SPOKEN, and bans written-only forms'
 test('the prompt forbids vulgarity and refuses to infer permission from age or context', async () => {
     mockFetch(structured);
     await llm.generateResponses([{ role: 'partner', text: 'Tell me what you think.' }], {});
-    const sys = getFetchCalls()[0].body.system;
+    const sys = sysText(getFetchCalls()[0]);
     assert.match(sys, /No vulgarity/);
     assert.match(sys, /the user's age/);          // named as NOT permission
     assert.match(sys, /absence of an instruction/);
@@ -196,13 +209,13 @@ test('repairSelf(expand) instructs the model to expand and returns the new utter
     mockFetch('I went to the market to buy some fruit.');
     const out = await llm.repairSelf('I went to the market.', 'expand', []);
     assert.equal(out, 'I went to the market to buy some fruit.');
-    assert.match(getFetchCalls()[0].body.system, /Expand and clarify/);
+    assert.match(sysText(getFetchCalls()[0]), /Expand and clarify/);
 });
 
 test('repairSelf(rephrase) instructs the model to rephrase', async () => {
     mockFetch('I was at the market.');
     await llm.repairSelf('I went to the market.', 'rephrase', []);
-    assert.match(getFetchCalls()[0].body.system, /Rephrase/);
+    assert.match(sysText(getFetchCalls()[0]), /Rephrase/);
 });
 
 // --- Closed-set (alternative-question) turns ----------------------------------
@@ -241,14 +254,14 @@ test('offered_options is [] when the model omits it (ordinary turn)', async () =
 test('the prompt tells the model the palette ceiling and the closed-set rule', async () => {
     mockFetch(structured);
     await llm.generateResponses([{ role: 'partner', text: 'Hi' }], {}, { perCategory: 1 });
-    const oneUp = getFetchCalls()[0].body.system;
+    const oneUp = sysText(getFetchCalls()[0]);
     assert.match(oneUp, /offered_options/);
     assert.match(oneUp, /at most 4 responses total/, '1-per-category → a 4-card ceiling');
 
     restoreFetch();
     mockFetch(structured);
     await llm.generateResponses([{ role: 'partner', text: 'Hi' }], {}, { perCategory: 2 });
-    const twoUp = getFetchCalls()[0].body.system;
+    const twoUp = sysText(getFetchCalls()[0]);
     assert.match(twoUp, /at most 8 responses total/, '2-per-category → an 8-card ceiling');
 });
 
@@ -260,7 +273,7 @@ test('focusChoice tells the model the choice is settled and to use the four slot
     mockFetch(structured);
     await llm.generateResponses(
         [{ role: 'partner', text: 'Mild, moderate, or severe?' }], {}, { focusChoice: 'moderate' });
-    const sys = getFetchCalls()[0].body.system;
+    const sys = sysText(getFetchCalls()[0]);
     assert.match(sys, /ALREADY CHOSEN/, 'the override must be stated unambiguously');
     assert.match(sys, /"moderate"/, 'the picked alternative reaches the prompt');
     assert.match(sys, /closed-set rule does NOT apply/,
@@ -270,7 +283,7 @@ test('focusChoice tells the model the choice is settled and to use the four slot
 test('no focusChoice block on an ordinary generation', async () => {
     mockFetch(structured);
     await llm.generateResponses([{ role: 'partner', text: 'How are you?' }], {});
-    assert.doesNotMatch(getFetchCalls()[0].body.system, /ALREADY CHOSEN/);
+    assert.doesNotMatch(sysText(getFetchCalls()[0]), /ALREADY CHOSEN/);
 });
 
 test('a focused regeneration refreshes the palette without touching the stack', async () => {
@@ -295,7 +308,7 @@ test('a focused regeneration refreshes the palette without touching the stack', 
 test('the closed-set rule tells the model to fill every spare cell', async () => {
     mockFetch(structured);
     await llm.generateResponses([{ role: 'partner', text: 'Tea or coffee?' }], {}, { perCategory: 1 });
-    const sys = getFetchCalls()[0].body.system;
+    const sys = sysText(getFetchCalls()[0]);
     assert.match(sys, /FILL EVERY ONE/, 'two alternatives must not leave two dead cells');
     for (const slot of ['CHOICE_OTHER', 'CHOICE_ASK', 'CHOICE_REPAIR']) {
         assert.ok(sys.includes(slot), `${slot} must be offered as a filler`);
@@ -313,7 +326,7 @@ test('a regenerate carrying focusChoice still suppresses the closed-set shape', 
     await llm.generateResponses(
         [{ role: 'partner', text: 'Coffee, tea, or milk?' }], {},
         { avoid: ['Milk, please.'], focusChoice: 'milk', perCategory: 1 });
-    const sys = getFetchCalls()[0].body.system;
+    const sys = sysText(getFetchCalls()[0]);
     assert.match(sys, /ALREADY CHOSEN/, 'the choice must survive into the regenerate');
     assert.match(sys, /"milk"/);
     assert.match(sys, /Milk, please\./, 'and the avoid list still asks for different wording');
@@ -324,7 +337,7 @@ test('a regenerate can carry the composer steer and the avoid list together', as
     await llm.generateResponses(
         [{ role: 'partner', text: 'How was the trip?' }], {},
         { avoid: ['It was good.'], steer: 'keep it short' });
-    const sys = getFetchCalls()[0].body.system;
+    const sys = sysText(getFetchCalls()[0]);
     assert.match(sys, /keep it short/, 'typed guidance must survive a New-N press');
     assert.match(sys, /It was good\./);
 });
@@ -334,7 +347,7 @@ test('focusChoice and a typed steer can both apply to one regeneration', async (
     await llm.generateResponses(
         [{ role: 'partner', text: 'Coffee, tea, or milk?' }], {},
         { focusChoice: 'milk', steer: 'mention I am lactose intolerant' });
-    const sys = getFetchCalls()[0].body.system;
+    const sys = sysText(getFetchCalls()[0]);
     assert.match(sys, /"milk"/);
     assert.match(sys, /lactose intolerant/);
 });
@@ -345,7 +358,7 @@ test('the partner\'s alternatives outrank the fillers when cells are tight', asy
     // choices for a filler is the same defect the CHOICE palette exists to fix.
     mockFetch(structured);
     await llm.generateResponses([{ role: 'partner', text: 'Coffee, tea, milk, or juice?' }], {}, { perCategory: 1 });
-    const sys = getFetchCalls()[0].body.system;
+    const sys = sysText(getFetchCalls()[0]);
     assert.match(sys, /ALWAYS TAKE PRECEDENCE/);
     assert.match(sys, /Never drop, merge, or omit one of them/);
     assert.match(sys, /return those alternatives ALONE and no fillers/);
@@ -362,7 +375,7 @@ test('the partner\'s alternatives outrank the fillers when cells are tight', asy
 test('the offered-set rule covers a list in a statement, not just alternative questions', async () => {
     mockFetch(structured);
     await llm.generateResponses([{ role: 'partner', text: 'Anything jump out at you?' }], {});
-    const sys = getFetchCalls()[0].body.system;
+    const sys = sysText(getFetchCalls()[0]);
     assert.match(sys, /a list offered in a STATEMENT/, 'the common everyday form must be covered');
     assert.match(sys, /muffins, croissants/, 'the worked example is present');
     assert.match(sys, /does NOT have to be exhaustive/,
@@ -373,7 +386,7 @@ test('the offered-set rule still excludes a narrative list', async () => {
     // The widening must not turn "I picked up milk, eggs, and bread" into a menu.
     mockFetch(structured);
     await llm.generateResponses([{ role: 'partner', text: 'How was your day?' }], {});
-    const sys = getFetchCalls()[0].body.system;
+    const sys = sysText(getFetchCalls()[0]);
     assert.match(sys, /OFFERING them for the user to choose from — not merely mentioning/);
     assert.match(sys, /milk, eggs, and bread/, 'the counter-example is present');
     assert.match(sys, /NEVER invent an option the partner did not say/);
@@ -382,7 +395,7 @@ test('the offered-set rule still excludes a narrative list', async () => {
 test('a vague item in the list is not dressed up as a definite choice', async () => {
     mockFetch(structured);
     await llm.generateResponses([{ role: 'partner', text: 'Anything jump out?' }], {});
-    const sys = getFetchCalls()[0].body.system;
+    const sys = sysText(getFetchCalls()[0]);
     assert.match(sys, /do not pretend it is a definite choice/);
     assert.match(sys, /What kind of pastries do you have\?/, 'vague items become a question, not a fake pick');
 });
@@ -394,8 +407,111 @@ test('a trailing question is a signal for an offered set, not a requirement', as
     // would drop that whole class.
     mockFetch(structured);
     await llm.generateResponses([{ role: 'partner', text: 'I could do Tuesday or Friday.' }], {});
-    const sys = getFetchCalls()[0].body.system;
+    const sys = sysText(getFetchCalls()[0]);
     assert.match(sys, /STRONG SIGNAL/);
     assert.match(sys, /but it is NOT required/);
     assert.match(sys, /a plain declarative offer counts too/);
+});
+
+/* --- Prompt caching (Ken, August 8 2026) ------------------------------------
+ *
+ * These guard a property that FAILS SILENTLY. If per-turn content drifts back
+ * into the cached block, the app keeps working perfectly and simply stops
+ * caching — no error, no warning, just a bill that quietly triples. Nothing in
+ * the request or the response says "your prefix moved", so the only way to
+ * notice is to assert the split here.
+ */
+
+const cachedBlock = (call) => call.body.system[0];
+const turnBlock = (call) => call.body.system[1];
+
+test('the generation request carries a cache breakpoint on the stable block only', async () => {
+    mockFetch(structured);
+    await llm.generateResponses([{ role: 'partner', text: 'How are you?' }]);
+    const sys = getFetchCalls()[0].body.system;
+    assert.ok(Array.isArray(sys), 'system must be an array of blocks to carry a breakpoint');
+    assert.equal(sys.length, 2);
+    assert.deepEqual(sys[0].cache_control, { type: 'ephemeral' });
+    assert.equal(sys[1].cache_control, undefined, 'the volatile tail must not be cached');
+    assert.ok(sys.every(b => b.type === 'text' && b.text.length > 0), 'no empty blocks (the API rejects them)');
+});
+
+test('NOTHING that changes within a partner turn is inside the cached block', async () => {
+    llm.setSituationBlock('SENTINEL_SITUATION');
+    mockFetch(structured);
+    await llm.generateResponses(
+        [{ role: 'partner', text: 'How are you?' }],
+        { phase: 'BODY', last_user_utterance: 'SENTINEL_CONTEXT' },
+        { steer: 'SENTINEL_STEER', avoid: ['SENTINEL_AVOID'], focusChoice: 'SENTINEL_FOCUS' },
+    );
+    const call = getFetchCalls()[0];
+    for (const s of ['SENTINEL_CONTEXT', 'SENTINEL_STEER', 'SENTINEL_AVOID', 'SENTINEL_FOCUS', 'SENTINEL_SITUATION']) {
+        assert.ok(!cachedBlock(call).text.includes(s), `${s} leaked into the cached prefix — caching is now dead`);
+        assert.ok(turnBlock(call).text.includes(s), `${s} must still reach the model, in the tail`);
+    }
+    llm.setSituationBlock('');
+});
+
+test('the cached block is byte-identical across calls that differ only per-turn', async () => {
+    mockFetch(structured);
+    const history = [{ role: 'partner', text: 'How are you?' }];
+    await llm.generateResponses(history, { phase: 'BODY' });
+    await llm.generateResponses(history, { phase: 'CLOSING' }, { avoid: ['Pretty good, thanks.'], steer: 'keep it short' });
+    const [a, b] = getFetchCalls();
+    assert.equal(cachedBlock(a).text, cachedBlock(b).text, 'a cache hit requires an identical prefix');
+    assert.notEqual(turnBlock(a).text, turnBlock(b).text, 'the tail is where the per-turn difference belongs');
+});
+
+test('the profile IS cached, and editing it honestly invalidates the prefix', async () => {
+    mockFetch(structured);
+    llm.setWorldviewBlock('About me: I live in Denver.');
+    await llm.generateResponses([{ role: 'partner', text: 'Hi' }]);
+    llm.setWorldviewBlock('About me: I live in Boulder.');
+    await llm.generateResponses([{ role: 'partner', text: 'Hi' }]);
+    const [a, b] = getFetchCalls();
+    assert.match(cachedBlock(a).text, /Denver/, 'the profile belongs in the cached block — it is stable per conversation');
+    assert.notEqual(cachedBlock(a).text, cachedBlock(b).text, 'an About Me edit must change the prefix, not be silently stale');
+    llm.setWorldviewBlock('');
+});
+
+test('the uncached calls still receive the situation block', async () => {
+    llm.setSituationBlock('SENTINEL_SITUATION');
+    mockFetch('reworded');
+    await llm.repairSelf('I said something', 'rephrase');
+    assert.match(sysText(getFetchCalls()[0]), /SENTINEL_SITUATION/);
+
+    mockFetch(JSON.stringify({ rephrase: 'a', expand: 'b' }));
+    await llm.repairOptions('I said something');
+    assert.match(sysText(getFetchCalls()[0]), /SENTINEL_SITUATION/);
+
+    mockFetch(JSON.stringify(['One.', 'Two.', 'Three.', 'Four.']));
+    await llm.generateStatements('talk about the trip');
+    assert.match(sysText(getFetchCalls()[0]), /SENTINEL_SITUATION/);
+    llm.setSituationBlock('');
+});
+
+test('usage reports the three input buckets separately, not one merged number', async () => {
+    const seen = [];
+    llm.onUsage((u) => seen.push(u));
+    mockFetch({
+        content: [{ text: structured }],
+        usage: { input_tokens: 12, output_tokens: 34, cache_creation_input_tokens: 3400, cache_read_input_tokens: 0 },
+    });
+    await llm.generateResponses([{ role: 'partner', text: 'Hi' }]);
+    assert.deepEqual(seen[0], { input: 12, output: 34, cacheWrite: 3400, cacheRead: 0 });
+
+    // A cache HIT: input_tokens is only the uncached remainder, so pricing that
+    // field alone would under-report this call by 3,400 tokens.
+    mockFetch({
+        content: [{ text: structured }],
+        usage: { input_tokens: 12, output_tokens: 34, cache_read_input_tokens: 3400 },
+    });
+    await llm.generateResponses([{ role: 'partner', text: 'Hi' }]);
+    assert.deepEqual(seen[1], { input: 12, output: 34, cacheWrite: 0, cacheRead: 3400 });
+
+    // An uncached call reports zeros rather than undefined, so the counter can add.
+    mockFetch(structured);
+    await llm.cleanupTranscript('hello there', []);
+    assert.deepEqual(seen[2], { input: 1, output: 1, cacheWrite: 0, cacheRead: 0 });
+    llm.onUsage(null);
 });

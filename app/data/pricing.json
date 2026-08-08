@@ -2,6 +2,9 @@
   "model": "claude-sonnet-4-6",
   "inputCostPerMillionTokens": 3,
   "outputCostPerMillionTokens": 15,
+  "_cacheNote": "Prompt-cache multipliers on the input rate: a write costs 1.25x (5-minute TTL), a read 0.1x. Only the response-generation call is cached.",
+  "cacheWriteMultiplier": 1.25,
+  "cacheReadMultiplier": 0.1,
   "deepgramSttCostPerHour": 0.46,
   "deepgramTtsCostPer1kChars": 0.03,
   "lastVerified": "2026-07-31"

@@ -507,7 +507,7 @@ function initApp() {
         storage.logError('voice', `Paid voice unavailable, used this device's voice instead: ${reason}`);
     });
 
-    llm.onUsage((input, output) => storage.addUsageTokens(input, output));
+    llm.onUsage((usage) => storage.addUsageTokens(usage));
 
     // Load the worldview registry + profile so generation can inject the
     // profile block even before the user opens "About Me". The data folder
@@ -3170,7 +3170,10 @@ async function loadPricing() {
         const resp = await fetch('data/pricing.json');
         pricingData = await resp.json();
     } catch {
-        pricingData = { inputCostPerMillionTokens: 3, outputCostPerMillionTokens: 15 };
+        pricingData = {
+            inputCostPerMillionTokens: 3, outputCostPerMillionTokens: 15,
+            cacheWriteMultiplier: 1.25, cacheReadMultiplier: 0.1,
+        };
     }
     return pricingData;
 }
@@ -3184,7 +3187,14 @@ async function updateUsageDisplay() {
     // the platform (iPad) where both paid services are the normal configuration.
     const sttSeconds = storage.loadSttSeconds();
     const ttsCharacters = storage.loadTtsCharacters();
-    const cost = (usage.inputTokens * pricing.inputCostPerMillionTokens / 1_000_000)
+    // Prompt-cached input is billed at three different rates, so the three buckets
+    // are priced separately. Getting this wrong is not cosmetic: the API reports
+    // input_tokens as the UNCACHED REMAINDER, so pricing that one number alone
+    // would under-report the bill by the hit rate (~90% on the generation call).
+    const inputRate = pricing.inputCostPerMillionTokens / 1_000_000;
+    const cost = (usage.inputTokens * inputRate)
+               + (usage.cacheWriteTokens * inputRate * (pricing.cacheWriteMultiplier ?? 1.25))
+               + (usage.cacheReadTokens * inputRate * (pricing.cacheReadMultiplier ?? 0.1))
                + (usage.outputTokens * pricing.outputCostPerMillionTokens / 1_000_000)
                + (sttSeconds / 3600) * (pricing.deepgramSttCostPerHour ?? 0)
                + (ttsCharacters / 1000) * (pricing.deepgramTtsCostPer1kChars ?? 0);
@@ -3195,6 +3205,15 @@ async function updateUsageDisplay() {
     const extras = [];
     if (sttSeconds > 0) extras.push(`${Math.round(sttSeconds / 60)} min heard`);
     if (ttsCharacters > 0) extras.push(`${ttsCharacters.toLocaleString()} characters spoken`);
+    // Prompt-cache hit rate — the share of all prompt tokens served from cache. This
+    // is the number to WATCH (Ken, August 8 2026): a figure that drops means
+    // something is invalidating the prefix, which shows up as spend before it shows
+    // up as anything else. Shown only once there is cache activity, so a user who
+    // has never had a conversation sees exactly what they saw before.
+    const promptTokens = usage.inputTokens + usage.cacheWriteTokens + usage.cacheReadTokens;
+    if (promptTokens > 0 && (usage.cacheReadTokens > 0 || usage.cacheWriteTokens > 0)) {
+        extras.push(`${Math.round(usage.cacheReadTokens / promptTokens * 100)}% of prompt cached`);
+    }
     document.getElementById('usageSince').textContent =
         `since ${sinceDate}` + (extras.length ? ` · ${extras.join(' · ')}` : '');
 }

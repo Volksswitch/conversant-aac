@@ -120,27 +120,63 @@ export function setSituationBlock(text) {
     situationBlock = (text || '').trim();
 }
 
-// Builds the personalization + placeholder-safety block appended to the
-// response-generation system prompt. Even with no profile set, the
-// no-brackets instruction prevents the model from emitting "[Name]" blanks.
+/*
+ * Builds the personalization + placeholder-safety block appended to a generation
+ * system prompt. Even with no profile set, the no-brackets instruction prevents the
+ * model from emitting "[Name]" blanks.
+ *
+ * THE SITUATION BLOCK IS DELIBERATELY NOT IN HERE — it is returned separately by
+ * buildSituationBlock(), and the split exists for PROMPT CACHING (see the cache
+ * note above generateResponses). Everything in this function changes only when the
+ * user edits About Me / People / Places, i.e. never during a conversation, so it
+ * can live inside the cached prefix. The situation block changes when a Partner,
+ * Feeling or Place toggle is tapped — Feeling can be tapped mid-conversation — and
+ * a cache prefix is invalidated by any byte that changes inside it, so leaving it
+ * here would throw away a ~3,400-token cache entry to save re-sending ~50 tokens.
+ *
+ * Callers that are NOT cached must append buildSituationBlock() themselves, or the
+ * model silently loses the partner/feeling/place context.
+ */
 function buildProfileBlock() {
     const sections = [];
     if (voiceBlock) sections.push(`\n\n${voiceBlock}`);   // first — see setVoiceBlock
     if (worldviewBlock) sections.push(`\n\n${worldviewBlock}`);
     if (relationshipsBlock) sections.push(`\n\n${relationshipsBlock}`);
     if (placesBlock) sections.push(`\n\n${placesBlock}`);
-    if (situationBlock) sections.push(`\n\n${situationBlock}`);
     sections.push(`\n\nNever output placeholder text in square brackets such as [Name], [your name], or [city]. If you do not know a personal detail, phrase the response so it is not needed.`);
     return sections.join('');
+}
+
+// Who the user is talking with / how they feel / where they are — the volatile half
+// of the old combined profile block. Kept out of the cached prefix; see above.
+function buildSituationBlock() {
+    return situationBlock ? `\n\n${situationBlock}` : '';
 }
 
 export function onUsage(callback) {
     onUsageUpdate = callback;
 }
 
+/*
+ * Report token usage to the cost counter.
+ *
+ * ⚠ WITH PROMPT CACHING, `input_tokens` IS THE UNCACHED REMAINDER ONLY — it is not
+ * the size of the prompt. The prompt is input_tokens + cacheWrite + cacheRead, and
+ * the three are billed at DIFFERENT rates (full / 1.25x / 0.1x). Passing only
+ * input_tokens once caching is on would silently under-report the bill by roughly
+ * the cache hit rate, which for this app's hot path is ~90%. A cost display that
+ * lies low is worse than none in a product whose whole funding model is "you pay
+ * for what you use", so the three are counted separately all the way through to
+ * pricing.json.
+ */
 function trackUsage(data) {
     if (!data.usage || !onUsageUpdate) return;
-    onUsageUpdate(data.usage.input_tokens, data.usage.output_tokens);
+    onUsageUpdate({
+        input: data.usage.input_tokens ?? 0,
+        output: data.usage.output_tokens ?? 0,
+        cacheWrite: data.usage.cache_creation_input_tokens ?? 0,
+        cacheRead: data.usage.cache_read_input_tokens ?? 0,
+    });
 }
 
 export async function cleanupTranscript(rawText, conversationHistory) {
@@ -241,7 +277,39 @@ export async function generateResponses(conversationHistory, context = {}, opts 
         ? `\n\nTHE USER HAS ALREADY CHOSEN. Of the alternatives the partner offered, the user wants to answer with "${pick}". The choice is settled, so the closed-set rule does NOT apply to this response: return "offered_options": [] and use the normal four structural slots. EVERY response must answer with "${pick}" — do not offer the other alternatives again, and do not hedge about which one they picked. PREFERRED states it plainly; DISPREFERRED says it with a softening or a caveat (still "${pick}", just more reluctantly or with a qualification); INITIATIVE says it and adds something — a detail, a consequence, or a question back; REPAIR stays a clarification on the partner's turn. Vary the wording so the four are genuinely different ways of saying it, not one sentence reworded.`
         : '';
 
-    const systemPrompt = `You are an AAC (Augmentative and Alternative Communication) assistant. A non-speaking user is in a live conversation. You speak AS the user, in their voice — not as a helpful assistant. Their communication partner just spoke. First classify what the partner is doing, then generate a palette of structurally distinct responses the user might want to say.
+    /*
+     * PROMPT CACHING (Ken, August 8 2026) — this is the ONLY cached call, and the
+     * prompt is split into two system blocks because of it.
+     *
+     * Caching is a strict PREFIX match: one changed byte invalidates everything
+     * after it. Before this change the per-turn engine context was interpolated in
+     * the MIDDLE of the system prompt, between the fixed instructions and the
+     * profile — so nothing was cacheable even though ~3,400 tokens of the prompt
+     * are byte-identical on every call. Order is now stability-descending:
+     *
+     *   [ fixed instructions + perCat + profile ]  <- cache breakpoint
+     *   [ situation + engine context + avoid/steer/focus ]
+     *
+     * WHY ONLY THIS CALL. Caching bills 1.25x to write and 0.1x to read, so an
+     * entry needs two reads to pay for itself. This is the only call that fires
+     * repeatedly against the same prefix — every silence checkpoint re-generates
+     * for the same partner turn, and the 0.5s silence period (Aug 7 2026) makes
+     * that several calls per turn plus a regenerate. The other five calls fire once
+     * or rarely per conversation and have small prompts; caching them would write
+     * entries nobody reads. They also do not share a prefix with this one (each
+     * opens with different instructions), so a shared profile block buys nothing —
+     * a common SUFFIX is not a common prefix.
+     *
+     * WHAT INVALIDATES IT, deliberately: editing About Me / People / Places, and
+     * changing the cards-per-category setting. All are rare and none happen during
+     * a conversation. The 5-minute TTL refreshes on every read, so a conversation
+     * pays one write and reads for the rest of its length; the next conversation
+     * pays another write.
+     *
+     * Cache mechanics are Anthropic-specific — this is one more item for the
+     * multi-vendor adapter list in CLAUDE.md when a second provider lands.
+     */
+    const cachedPrompt = `You are an AAC (Augmentative and Alternative Communication) assistant. A non-speaking user is in a live conversation. You speak AS the user, in their voice — not as a helpful assistant. Their communication partner just spoke. First classify what the partner is doing, then generate a palette of structurally distinct responses the user might want to say.
 
 Return ONLY a JSON object, no other text, with exactly this shape:
 {
@@ -305,8 +373,21 @@ Get to the point: NO response may begin with an empty interjection — no "Ah", 
 
 - "missing_facts": lowercase snake_case keys for personal facts about the user you needed but were not given (e.g. "home_city", "fav_team", "occupation"). Use [] if none. Always phrase responses around any missing fact — never output bracketed placeholders.
 
+${perCatBlock}${buildProfileBlock()}`;
+
+    // Everything that can differ between two calls about the SAME partner turn.
+    // Sits after the cache breakpoint, so a Feeling tap, a "New N" regenerate, or
+    // the next silence checkpoint re-bills only these few hundred tokens.
+    const turnPrompt = `${buildSituationBlock()}
+
 Conversation context (engine state — use it, do not echo it):
-${JSON.stringify(context)}${buildProfileBlock()}${avoidBlock}${steerBlock}${perCatBlock}${focusBlock}`;
+${JSON.stringify(context)}${avoidBlock}${steerBlock}${focusBlock}`;
+
+    // Two blocks, breakpoint on the first. An empty text block is rejected by the
+    // API, so the tail is only appended when it has content (it always does — the
+    // engine-context line is unconditional — but the guard costs nothing).
+    const system = [{ type: 'text', text: cachedPrompt, cache_control: { type: 'ephemeral' } }];
+    if (turnPrompt.trim()) system.push({ type: 'text', text: turnPrompt });
 
     const messages = conversationHistory.map(entry => ({
         role: entry.role === 'partner' ? 'user' : 'assistant',
@@ -324,7 +405,7 @@ ${JSON.stringify(context)}${buildProfileBlock()}${avoidBlock}${steerBlock}${perC
         body: JSON.stringify({
             model: MODEL,
             max_tokens: perCat === 2 ? 1000 : 700,
-            system: systemPrompt,
+            system,
             messages
         })
     });
@@ -424,7 +505,7 @@ ${NO_VULGARITY}
 Return ONLY a JSON array of ${n} strings, nothing else. Example: ["...", "...", "..."].
 
 Conversation context (engine state — use it, do not echo it):
-${JSON.stringify(context)}${buildProfileBlock()}${contextLines ? '\n\nConversation so far:\n' + contextLines : ''}`;
+${JSON.stringify(context)}${buildProfileBlock()}${buildSituationBlock()}${contextLines ? '\n\nConversation so far:\n' + contextLines : ''}`;
 
     const response = await fetch(API_URL, {
         method: 'POST',
@@ -486,7 +567,7 @@ export async function repairSelf(lastUserUtterance, op, conversationHistory = []
 
 ${NO_VULGARITY}
 
-Return ONLY the new utterance text, nothing else.${buildProfileBlock()}${contextLines ? '\n\nConversation so far:\n' + contextLines : ''}`;
+Return ONLY the new utterance text, nothing else.${buildProfileBlock()}${buildSituationBlock()}${contextLines ? '\n\nConversation so far:\n' + contextLines : ''}`;
 
     const response = await fetch(API_URL, {
         method: 'POST',
@@ -532,7 +613,7 @@ export async function repairOptions(lastUserUtterance, conversationHistory = [])
 
 ${NO_VULGARITY}
 
-Return ONLY a JSON object, no other text: {"rephrase": "...", "expand": "..."}${buildProfileBlock()}${contextLines ? '\n\nConversation so far:\n' + contextLines : ''}`;
+Return ONLY a JSON object, no other text: {"rephrase": "...", "expand": "..."}${buildProfileBlock()}${buildSituationBlock()}${contextLines ? '\n\nConversation so far:\n' + contextLines : ''}`;
 
     const response = await fetch(API_URL, {
         method: 'POST',

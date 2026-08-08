@@ -279,7 +279,7 @@ const SETTINGS_DIR = 'settings';
 // clone the first device's identity or make it think it has already reported this
 // week. `testerName` is deliberately NOT excluded — it identifies the tester, so it
 // should follow them (Ken, August 7 2026).
-const PROFILE_EXCLUDE = ['apiKey', 'deepgramKey', 'usageInputTokens', 'usageOutputTokens', 'usageSttSeconds', 'usageTtsCharacters', 'usageSince', 'lastSeenVersion', 'activeSettingsProfile', 'installId', 'weeklySendLastAt', 'weeklyInfoHash'];
+const PROFILE_EXCLUDE = ['apiKey', 'deepgramKey', 'usageInputTokens', 'usageOutputTokens', 'usageCacheWriteTokens', 'usageCacheReadTokens', 'usageSttSeconds', 'usageTtsCharacters', 'usageSince', 'lastSeenVersion', 'activeSettingsProfile', 'installId', 'weeklySendLastAt', 'weeklyInfoHash'];
 
 // The settings bundle with both API keys replaced by a presence marker, for a
 // problem report (Ken, August 7 2026). The redaction lives HERE rather than in
@@ -1434,20 +1434,35 @@ async function appendErrorFile(entry) {
 
 // --- Usage tracking ---
 
+/*
+ * Input tokens are counted in THREE buckets because prompt caching bills them at
+ * three different rates: fresh input at full price, a cache write at 1.25x, and a
+ * cache read at 0.1x. Summing them into one number would misprice the bill by
+ * whatever the hit rate happens to be. cacheWrite/cacheRead are 0 for every call
+ * that isn't cached (only generateResponses is), and stay 0 for a profile saved
+ * before caching shipped — so an old settings blob reads back as it always did.
+ */
 export function loadUsage() {
     const settings = loadSettings();
     return {
         inputTokens: settings.usageInputTokens ?? 0,
         outputTokens: settings.usageOutputTokens ?? 0,
+        cacheWriteTokens: settings.usageCacheWriteTokens ?? 0,
+        cacheReadTokens: settings.usageCacheReadTokens ?? 0,
         since: settings.usageSince ?? new Date().toISOString()
     };
 }
 
-export function addUsageTokens(inputTokens, outputTokens) {
+// Takes an object rather than positional args: the number of token buckets has now
+// changed twice, and a caller that passes three of four positionally is a silent
+// mispricing rather than an error.
+export function addUsageTokens({ input = 0, output = 0, cacheWrite = 0, cacheRead = 0 } = {}) {
     const settings = loadSettings();
     if (!settings.usageSince) settings.usageSince = new Date().toISOString();
-    settings.usageInputTokens = (settings.usageInputTokens ?? 0) + inputTokens;
-    settings.usageOutputTokens = (settings.usageOutputTokens ?? 0) + outputTokens;
+    settings.usageInputTokens = (settings.usageInputTokens ?? 0) + input;
+    settings.usageOutputTokens = (settings.usageOutputTokens ?? 0) + output;
+    settings.usageCacheWriteTokens = (settings.usageCacheWriteTokens ?? 0) + cacheWrite;
+    settings.usageCacheReadTokens = (settings.usageCacheReadTokens ?? 0) + cacheRead;
     saveSettings(settings);
 }
 
@@ -1455,6 +1470,8 @@ export function resetUsage() {
     const settings = loadSettings();
     settings.usageInputTokens = 0;
     settings.usageOutputTokens = 0;
+    settings.usageCacheWriteTokens = 0;
+    settings.usageCacheReadTokens = 0;
     settings.usageSince = new Date().toISOString();
     settings.usageSttSeconds = 0;
     settings.usageTtsCharacters = 0;
