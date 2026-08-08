@@ -484,6 +484,46 @@ function humorRule(answers) {
     return 'How this person does humor. ' + parts.join(' ');
 }
 
+/*
+ * B5 beliefs — the strictest block in the file, and the only one whose failure mode
+ * is a card the user would be ashamed of rather than merely an awkward one.
+ *
+ * WHY THE PRIVATE-FACT TREATMENT IS NOT ENOUGH. `defaultPrivacy: private` sends the
+ * value with "do not volunteer it", which handles disclosure and nothing else. For
+ * faith and politics the disclosure risk is the SMALLER one. The larger is a card
+ * that takes a POSITION — arguing a side, agreeing with a claim, conceding a point —
+ * spoken in the user's own voice to someone who will remember it. That happens
+ * whether or not the belief is ever named, and it happens most easily when the model
+ * knows nothing and fills the gap with the average view.
+ *
+ * So knowing is better than not knowing, and the rule below is what makes knowing
+ * safe: the facts are here to stop the model guessing wrong, never to be used.
+ */
+function beliefRule(answers) {
+    const get = (kind) => (answers.find((b) => b.kind === kind) || {}).value || '';
+    const facts = [];
+    const faith = get('faith');
+    const tradition = get('faith_tradition');
+    const politics = get('politics');
+    const lean = get('politics_lean');
+
+    if (faith) facts.push(`Faith or spirituality: ${faith}${tradition ? ` (${tradition})` : ''}.`);
+    else if (tradition) facts.push(`Faith tradition: ${tradition}.`);
+    if (politics) facts.push(`Strong social or political views: ${politics}${lean ? ` (${lean})` : ''}.`);
+    else if (lean) facts.push(`Where they lean politically: ${lean}.`);
+    if (!facts.length) return '';
+
+    return 'The most sensitive things in this profile, and the rules on them are absolute. '
+        + facts.join(' ')
+        + ' NEVER raise faith, politics or a social issue on your own initiative — not as a topic, '
+        + 'not as an aside, not as an example, however naturally it would fit. NEVER write a response '
+        + 'that argues a side, agrees with a claim, or concedes a point on any of these, and never '
+        + 'let a response imply a view the user has not stated. When the PARTNER raises one, the '
+        + 'options must let the user say as much or as little as they choose, and one of them must '
+        + 'always be a way to not engage at all. What is written above is here so that you do not '
+        + 'guess wrong about this person — it is not material to use.';
+}
+
 export function buildBlock() {
     ensureLoaded();
     const facts = [];
@@ -505,6 +545,18 @@ export function buildBlock() {
     // it might do are opposite — sprinkle sarcasm through every card, or ignore it.
     // Collected here and emitted as one governed instruction below.
     const humor = [];
+    // B5 beliefs. These need a combination nothing else in this block has: they must
+    // SHAPE responses (like a trait) while never being VOLUNTEERED (like a private
+    // fact). The plain private-fact treatment gets only the second half, and for
+    // faith and politics the first half is where the real damage lives — a card that
+    // takes a position the user does not hold, spoken in their voice.
+    const beliefs = [];
+    const outlook = [];
+    // B6, keyed by relationship category rather than by named person. Covers the
+    // partner nobody has written a per-person profile for, strangers included.
+    const groups = [];
+    const conflict = [];
+    const understand = [];
     // Tier B (personality + values) answers are Likert, and emitting them as one
     // "- Label: Very much like me" line each would be twenty lines of noise: the
     // model would have to infer what a scale point means, and the low-signal bulk
@@ -529,6 +581,11 @@ export function buildBlock() {
                 if (f.directive === 'seek') { seek.push(v); continue; }
                 if (f.directive === 'expert') { expert.push(v); continue; }
                 if (f.directive === 'humor') { humor.push({ aspect: f.humorAspect, value: v }); continue; }
+                if (f.directive === 'belief') { beliefs.push({ kind: f.belief, value: v }); continue; }
+                if (f.directive === 'outlook') { outlook.push(v); continue; }
+                if (f.directive === 'register_group') { groups.push({ group: f.group, value: v }); continue; }
+                if (f.directive === 'conflict') { conflict.push(v); continue; }
+                if (f.directive === 'understand') { understand.push(v); continue; }
                 if (f.trait) {
                     const clause = traitClause(f, v);
                     if (clause) traits.push(clause);
@@ -544,7 +601,9 @@ export function buildBlock() {
     }
 
     if (!facts.length && !privateKnown.length && !phraseAround.size && !seek.length
-        && !avoid.length && !traits.length && !expert.length && !humor.length) return '';
+        && !avoid.length && !traits.length && !expert.length && !humor.length
+        && !beliefs.length && !outlook.length && !groups.length && !conflict.length
+        && !understand.length) return '';
 
     const lines = ['You are speaking AS this person, in the first person. What you know about them:'];
     if (facts.length) lines.push('', ...facts);
@@ -606,6 +665,51 @@ export function buildBlock() {
     }
     if (humor.length) {
         const rule = humorRule(humor);
+        if (rule) lines.push('', rule);
+    }
+    if (outlook.length) {
+        // A disposition, not a sensitive belief — kept out of the beliefs block on
+        // purpose, or "optimist" would inherit the never-raise rules that faith and
+        // politics need and stop being usable at all.
+        lines.push('',
+            `Their general outlook on things: ${outlook.join('; ')}. Let it colour how they react — `
+            + 'what they expect, how they read a situation — without ever stating it.');
+    }
+    if (conflict.length) {
+        lines.push('',
+            `When there is tension or disagreement, this person tends to: ${conflict.join('; ')}. `
+            + 'Shape the DISPREFERRED option around that, so declining or disagreeing sounds like '
+            + 'them rather than like a generic hedge. Never state it.');
+    }
+    if (groups.length) {
+        // Per-CATEGORY defaults. The per-person profile on the relationship graph is
+        // the more specific instrument and must win where it exists; without this,
+        // an unidentified partner — or any of the many people who will never get a
+        // written profile — gets nothing at all.
+        const shifts = groups
+            .filter((g) => g.value !== 'About the same')
+            .map((g) => `with ${g.group}, ${g.value.toLowerCase()}`);
+        if (shifts.length) {
+            lines.push('',
+                'How this person shifts depending on who they are with: ' + shifts.join('; ') + '. '
+                + 'Apply the line that matches who they are speaking to now, when you have been told '
+                + 'who that is. This governs WORDING only — how formal, how open, how guarded — never '
+                + 'what is talked about, and none of it is ever stated. Anything recorded about a '
+                + 'specific named person overrides this; these are the defaults for everyone else.');
+        }
+    }
+    if (understand.length) {
+        // The one entry here the user may well WANT said — so it takes the opposite
+        // shape to the never-raise rules: do not introduce it, but make sure they can
+        // reach it when the partner opens the door.
+        lines.push('',
+            `Something this person wants people to understand about them: "${understand.join('" "')}". `
+            + 'Use it to judge how they want to come across. Do NOT raise it yourself and never quote '
+            + 'it back — but when the partner touches on it, make sure one of the options lets the '
+            + 'user say it in their own words.');
+    }
+    if (beliefs.length) {
+        const rule = beliefRule(beliefs);
         if (rule) lines.push('', rule);
     }
     if (seek.length) {

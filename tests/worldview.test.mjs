@@ -257,6 +257,128 @@ test('every humor answer buildBlock recognises is still authored in the registry
     }
 });
 
+// --- B5 beliefs (August 8 2026) ----------------------------------------------
+/*
+ * The strictest block in the file. The private-fact treatment handles disclosure
+ * and nothing else, and for faith and politics disclosure is the SMALLER risk —
+ * the larger is a card that takes a position, spoken in the user's voice, which
+ * happens whether or not the belief is ever named. Knowing is safer than guessing,
+ * so the values are sent; the rule is what makes sending them safe.
+ */
+test('beliefs are sent as context but barred from ever being raised or argued', async () => {
+    await wv.setField('b5_faith', "Yes — it's important to me");
+    await wv.setField('b5_faith_tradition', 'Quaker');
+    const block = wv.buildBlock();
+    assert.match(block, /Faith or spirituality: Yes[^.]*\(Quaker\)/);
+    assert.match(block, /NEVER raise faith, politics or a social issue on your own initiative/);
+    assert.match(block, /argues a side, agrees with a claim, or concedes a point/);
+    assert.match(block, /not material to use/);
+});
+
+// A partner CAN raise these, and the app controls only its own output — so the
+// answer is an escape route, the same shape as the topics_avoid rule.
+test('when the partner raises a belief topic, not engaging must be an option', async () => {
+    await wv.setField('b5_politics', 'Yes, strong ones');
+    const block = wv.buildBlock();
+    assert.match(block, /as much or as little as they choose/);
+    assert.match(block, /a way to not engage at all/);
+});
+
+test('a belief field never appears as an ordinary fact line', async () => {
+    await wv.setField('b5_politics', 'Some');
+    await wv.setField('b5_politics_lean', 'left of centre');
+    const block = wv.buildBlock();
+    assert.doesNotMatch(block, /- [^\n]*political/i);
+    assert.match(block, /Strong social or political views: Some \(left of centre\)/);
+});
+
+// Outlook is a disposition, not a conviction. Lumping it in with faith and politics
+// would saddle "optimist" with the never-raise rules and make it unusable.
+test('outlook is kept out of the beliefs block and stays usable', async () => {
+    await wv.setField('b5_outlook', 'Skeptic — I expect the catch');
+    const block = wv.buildBlock();
+    assert.match(block, /general outlook on things: Skeptic/);
+    assert.doesNotMatch(block, /NEVER raise faith/);
+});
+
+// --- B6 register by relationship category ------------------------------------
+/*
+ * NOT a duplicate of the per-partner profile, which is per NAMED person on the
+ * graph. This is per CATEGORY, so it covers the partner nobody has written a
+ * profile for — strangers included, who by definition are never in the graph.
+ */
+test('group shifts are emitted as wording defaults that per-person data overrides', async () => {
+    await wv.setField('b6_strangers', 'More guarded');
+    await wv.setField('b6_friends', 'More open and relaxed');
+    const block = wv.buildBlock();
+    assert.match(block, /with strangers and new people, more guarded/);
+    assert.match(block, /with close friends, more open and relaxed/);
+    assert.match(block, /governs WORDING only/);
+    assert.match(block, /specific named person overrides this/);
+});
+
+// "About the same" is the neutral answer and must cost nothing — the same
+// property the Likert middle and the per-partner register both rely on.
+test('"About the same" contributes no clause, and all-neutral emits nothing', async () => {
+    await wv.setField('b6_family', 'About the same');
+    await wv.setField('b6_kids', 'About the same');
+    assert.doesNotMatch(wv.buildBlock(), /How this person shifts/);
+
+    await wv.setField('b6_authority', 'More formal');
+    const block = wv.buildBlock();
+    assert.match(block, /with someone in authority, more formal/);
+    assert.doesNotMatch(block, /with family/, 'a neutral group must not be listed');
+});
+
+// --- B7 conflict style and the "one thing" -----------------------------------
+test('conflict style is aimed at the DISPREFERRED option', async () => {
+    await wv.setField('b7_conflict', 'I use humor to take the heat out of it');
+    const block = wv.buildBlock();
+    assert.match(block, /tension or disagreement/);
+    assert.match(block, /Shape the DISPREFERRED option around that/);
+    assert.match(block, /Never state it/);
+});
+
+// The one entry the user may well WANT said, so it takes the opposite shape to the
+// never-raise rules: do not introduce it, but let them reach it when asked.
+test('the "one thing" is not raised but is reachable when the partner opens the door', async () => {
+    await wv.setField('b7_understand', 'I am slower to answer, not slower to think');
+    const block = wv.buildBlock();
+    assert.match(block, /Do NOT raise it yourself and never quote/);
+    assert.match(block, /when the partner touches on it, make sure one of the options/);
+});
+
+// The registry drift tripwire, extended to the new directives. buildBlock routes on
+// these strings; a field authored without one silently becomes a plain fact line —
+// which for a B5 field would mean a private belief listed as an ordinary fact.
+test('every Tier B directive field is wired to a directive buildBlock knows', async () => {
+    const reg = JSON.parse(
+        await readFile(new URL('../app/data/worldview-questions.json', import.meta.url), 'utf8')
+    );
+    const known = {
+        B5: ['belief', 'outlook'],
+        B6: ['register_group'],
+        B7: ['conflict', 'understand'],
+    };
+    for (const [id, allowed] of Object.entries(known)) {
+        const mod = reg.modules.find(m => m.id === id);
+        assert.ok(mod, `module ${id} must exist — the number is the question bank's`);
+        for (const f of mod.fields) {
+            assert.ok(allowed.includes(f.directive),
+                `${f.key}: directive "${f.directive}" is not one buildBlock handles`);
+        }
+    }
+    // Faith and politics must stay private by default, as the June privacy model set.
+    for (const key of ['b5_faith', 'b5_faith_tradition', 'b5_politics', 'b5_politics_lean']) {
+        const f = reg.modules.flatMap(m => m.fields).find(x => x.key === key);
+        assert.equal(f.defaultPrivacy, 'private', `${key} must default to private`);
+        assert.equal(f.sensitive, true, `${key} must be marked sensitive`);
+    }
+    // B6 recognises its four shift values by string.
+    const shifts = new Set(reg.modules.find(m => m.id === 'B6').fields.flatMap(f => f.options));
+    assert.ok(shifts.has('About the same'), 'the neutral value buildBlock filters on must exist');
+});
+
 // --- Tier B: personality + values (Phase 4) ---------------------------------
 
 test('a trait answer at either end becomes a description, not a scale point', async () => {

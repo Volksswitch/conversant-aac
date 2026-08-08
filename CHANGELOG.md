@@ -48,6 +48,16 @@ forgetting to tag one is only ever noise, never silence.
   stays straight. Even when you say yes, only one of the four suggestions on a turn
   is ever the light one, so there is always a plain way to say the same thing — and
   never on a serious, upsetting or medical turn.
+- **Three more About Me sections finish the personal half of the questionnaire.**
+  **"Beliefs & Convictions"** — faith, outlook, and whether you hold strong social
+  or political views. The app never raises any of it, never argues a side, and never
+  agrees with a claim on your behalf; when someone else brings it up, one of your
+  suggestions is always a way not to get into it. **"How I Am With Different People"**
+  — whether you're more formal, more open or more guarded with family, close friends,
+  strangers, children and people in authority. Suggestions shift to match whoever
+  you're talking to, and anything you've recorded about a particular person still
+  wins. **"How I Handle Things"** — what you do when there's tension, and one thing
+  you'd want people to understand about you.
 - **Sound Check has three new questions about taking the edge off** — how you'd
   answer when you don't know something, when you knock something over, and when
   someone has kept you waiting. Picking the lighter reply teaches the app your

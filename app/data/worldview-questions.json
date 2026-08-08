@@ -967,6 +967,221 @@
           "defaultPrivacy": "shareable"
         }
       ]
+    },
+    {
+      "id": "B5",
+      "tier": "abstract",
+      "title": "Beliefs & Convictions",
+      "note": "The most personal part of the questionnaire, and the most optional. Nothing here is ever raised by the app on its own - it is only used so that a suggestion never puts a view in your mouth that isn't yours.",
+      "fields": [
+        {
+          "key": "b5_faith",
+          "q": "Is faith or spirituality part of your life?",
+          "type": "choice",
+          "options": [
+            "Yes — it's important to me",
+            "Somewhat",
+            "Not really"
+          ],
+          "fills": [
+            "my faith"
+          ],
+          "sensitive": true,
+          "defaultPrivacy": "private",
+          "directive": "belief",
+          "belief": "faith"
+        },
+        {
+          "key": "b5_faith_tradition",
+          "q": "Which tradition, if you'd like to note it? (Optional.)",
+          "type": "text",
+          "fills": [
+            "my faith tradition"
+          ],
+          "sensitive": true,
+          "defaultPrivacy": "private",
+          "directive": "belief",
+          "belief": "faith_tradition"
+        },
+        {
+          "key": "b5_politics",
+          "q": "Do you hold strong views on social or political issues?",
+          "type": "choice",
+          "options": [
+            "Yes, strong ones",
+            "Some",
+            "Not really"
+          ],
+          "fills": [
+            "my views on social and political issues"
+          ],
+          "sensitive": true,
+          "defaultPrivacy": "private",
+          "directive": "belief",
+          "belief": "politics"
+        },
+        {
+          "key": "b5_politics_lean",
+          "q": "Want to note where you lean? (Optional — it is never brought up unless you choose it.)",
+          "type": "text",
+          "fills": [
+            "where I lean politically"
+          ],
+          "sensitive": true,
+          "defaultPrivacy": "private",
+          "directive": "belief",
+          "belief": "politics_lean"
+        },
+        {
+          "key": "b5_outlook",
+          "q": "Generally, are you more…",
+          "type": "choice",
+          "options": [
+            "Optimist — glass half full",
+            "Realist",
+            "Skeptic — I expect the catch"
+          ],
+          "fills": [
+            "my general outlook"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable",
+          "directive": "outlook"
+        }
+      ]
+    },
+    {
+      "id": "B6",
+      "tier": "abstract",
+      "title": "How I Am With Different People",
+      "note": "Most people talk differently to a close friend than to a doctor. These answers are a starting point for anyone the app doesn't know about yet; anything you record about a particular person wins over them.",
+      "fields": [
+        {
+          "key": "b6_family",
+          "q": "With family, I'm usually…",
+          "type": "choice",
+          "options": [
+            "More formal",
+            "About the same",
+            "More open and relaxed",
+            "More guarded"
+          ],
+          "fills": [
+            "how I am with family"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable",
+          "directive": "register_group",
+          "group": "family"
+        },
+        {
+          "key": "b6_friends",
+          "q": "With close friends, I'm usually…",
+          "type": "choice",
+          "options": [
+            "More formal",
+            "About the same",
+            "More open and relaxed",
+            "More guarded"
+          ],
+          "fills": [
+            "how I am with close friends"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable",
+          "directive": "register_group",
+          "group": "close friends"
+        },
+        {
+          "key": "b6_strangers",
+          "q": "With strangers or people I've just met, I'm usually…",
+          "type": "choice",
+          "options": [
+            "More formal",
+            "About the same",
+            "More open and relaxed",
+            "More guarded"
+          ],
+          "fills": [
+            "how I am with strangers and new people"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable",
+          "directive": "register_group",
+          "group": "strangers and new people"
+        },
+        {
+          "key": "b6_kids",
+          "q": "With children, I'm usually…",
+          "type": "choice",
+          "options": [
+            "More formal",
+            "About the same",
+            "More open and relaxed",
+            "More guarded"
+          ],
+          "fills": [
+            "how I am with children"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable",
+          "directive": "register_group",
+          "group": "children"
+        },
+        {
+          "key": "b6_authority",
+          "q": "With someone in authority — a doctor, a boss — I'm usually…",
+          "type": "choice",
+          "options": [
+            "More formal",
+            "About the same",
+            "More open and relaxed",
+            "More guarded"
+          ],
+          "fills": [
+            "how I am with someone in authority"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable",
+          "directive": "register_group",
+          "group": "someone in authority"
+        }
+      ]
+    },
+    {
+      "id": "B7",
+      "tier": "abstract",
+      "title": "How I Handle Things",
+      "fields": [
+        {
+          "key": "b7_conflict",
+          "q": "When there's tension, do you usually engage it, smooth it over, use humor, or step back?",
+          "type": "choice",
+          "options": [
+            "I engage it head on",
+            "I try to smooth it over",
+            "I use humor to take the heat out of it",
+            "I step back from it"
+          ],
+          "fills": [
+            "how I handle tension"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable",
+          "directive": "conflict"
+        },
+        {
+          "key": "b7_understand",
+          "q": "What's one thing you'd want people to understand about you?",
+          "type": "text",
+          "fills": [
+            "what I want people to understand about me"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable",
+          "directive": "understand"
+        }
+      ]
     }
   ]
 }
