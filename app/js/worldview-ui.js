@@ -19,7 +19,7 @@ import * as wv from './worldview.js';
 import * as rel from './relationships.js';
 import * as places from './places.js';
 import * as voiceProfile from './voice.js';
-import { SOUND_CHECK_ITEMS, VERDICT } from './sound-check-items.js';
+import { SOUND_CHECK_ITEMS, VERDICT, questionFor } from './sound-check-items.js';
 import { speak } from './tts.js';
 import * as storage from './storage.js';
 import * as keyboard from './keyboard.js';
@@ -311,7 +311,8 @@ async function onRestart() {
 // --- How I Sound (voice) -----------------------------------------------------
 //
 // THE FRAMING COPY IS LOAD-BEARING, not decoration. The user is shown three ways of
-// saying the same made-up thing and asked which they would rather say. If they read
+// saying the same made-up thing and asked which sounds most like something they
+// would say. If they read
 // the candidates as being ABOUT THEM — "but my weekend wasn't quiet, so not that
 // one" — they answer on truth instead of on wording, and the answers describe their
 // life rather than their voice. Two things prevent that: this intro, and the
@@ -330,7 +331,7 @@ function renderSoundCheck() {
     contentEl.append(el('p', { class: 'wv-intro', text:
         'The app writes suggestions for you. These questions are how it learns to write them in your words instead of its own.' }));
     contentEl.append(el('p', { class: 'wv-intro', text:
-        'Each one shows a few ways of saying the same thing. They all mean the same — only the wording is different. Pick the one you would rather say.' }));
+        'Each one shows a few ways of saying the same thing. They all mean the same — only the wording is different. Pick whichever sounds most like something you would say.' }));
     contentEl.append(el('p', { class: 'wv-intro sc-disclaimer', text:
         'None of this is about you. The situations are made up, nobody is asking what you actually did, and nothing you pick is kept as a fact about your life. There are no right answers, and you can change any of them later.' }));
 
@@ -351,12 +352,12 @@ function buildSoundCheckCard(item) {
     ]);
     if (saved) {
         const label = saved.verdict === VERDICT.CHOSE ? '✓ Answered'
-            : saved.verdict === VERDICT.ALL_FINE ? 'No preference' : 'None of these';
+            : saved.verdict === VERDICT.ALL_FINE ? 'All sound like me' : 'None of these';
         head.append(el('span', { class: 'wv-badge wv-badge-answered', text: label }));
     }
     card.append(head);
 
-    card.append(el('p', { class: 'sc-partner', text: `They said: "${item.partner}"` }));
+    if (item.partner) card.append(el('p', { class: 'sc-partner', text: `They said: "${item.partner}"` }));
 
     if (saved) {
         // Answered: show what they picked and let them redo it. Re-answering simply
@@ -370,7 +371,7 @@ function buildSoundCheckCard(item) {
         return card;
     }
 
-    card.append(el('p', { class: 'sc-question', text: 'Which would you rather say?' }));
+    card.append(el('p', { class: 'sc-question', text: questionFor(item) }));
 
     for (const text of item.candidates) {
         card.append(el('div', { class: 'sc-choice-row' }, [
@@ -389,7 +390,7 @@ function buildSoundCheckCard(item) {
         // preference, recorded as such rather than as a spurious first-place vote;
         // "I wouldn't say any of these" is a negative constraint arriving unprompted,
         // and is at least as informative.
-        el('button', { class: 'wv-btn', text: "They're all fine",
+        el('button', { class: 'wv-btn', text: 'They all sound like me',
             onclick: () => { voiceProfile.recordAnswer(item.id, VERDICT.ALL_FINE); refreshSoundCheckCard(item); } }),
         el('button', { class: 'wv-btn', text: "I wouldn't say any of these",
             onclick: () => { voiceProfile.recordAnswer(item.id, VERDICT.NONE); refreshSoundCheckCard(item); } }),

@@ -1,10 +1,20 @@
 /* Sound Check — the forced-choice item bank (Sounds Like Me, Phase 1).
  * Ken, August 7 2026.
  *
- * Twelve items. Each shows a made-up thing a partner said and three ways of replying
- * that MEAN THE SAME and differ only in wording. The user picks one; the sentence
- * they pick becomes an exemplar in the voice block, which is what teaches the model
- * to write in their words rather than its own.
+ * Twelve items. Each shows three ways of saying the same thing that differ only in
+ * wording. The user picks one; the sentence they pick becomes an exemplar in the
+ * voice block, which is what teaches the model to write in their words rather than
+ * its own.
+ *
+ * ── A GAP TO FILL: every item here is RESPONSIVE ──
+ *
+ * All twelve give a partner turn and ask how the user would reply, so the bank
+ * measures only their responding voice. The app also generates a great deal of
+ * INITIATING text — conversation starters, the INITIATIVE slot, wind-downs, and the
+ * statements the floor-aware Reframe produces — and none of that is governed by
+ * anything the user has told us. Items with no `partner` field ("Suppose you want to
+ * ask someone for help") are the fix, and `questionFor` already asks them the right
+ * question. Noted August 7 2026; not yet authored.
  *
  * ── THE FOUR AUTHORING RULES. Break any one and the instrument stops measuring. ──
  *
@@ -180,6 +190,23 @@ export const SOUND_CHECK_ITEMS = [
         ],
     },
 ];
+
+/**
+ * The question asked above the candidates. It FOLLOWS THE ITEM rather than being one
+ * fixed string, because responding and initiating are different tasks and the stem
+ * should say which is being asked (Ken, August 7 2026).
+ *
+ * Every item in the bank today carries a partner turn, so every item today gets the
+ * "in response" form — which is the accurate one, and reinforces that the sentence
+ * above is what they are replying to. An item WITHOUT a partner turn ("Suppose you
+ * want to ask someone for help") is a different question, and this is what stops it
+ * silently inheriting the wrong stem.
+ */
+export function questionFor(item) {
+    return item && item.partner
+        ? 'Which of these sounds most like something you would say in response?'
+        : 'Which of these sounds most like something you would say?';
+}
 
 export const VERDICT = { CHOSE: 'chose', ALL_FINE: 'all-fine', NONE: 'none' };
 

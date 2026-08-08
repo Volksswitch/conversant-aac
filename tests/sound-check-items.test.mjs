@@ -6,7 +6,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { SOUND_CHECK_ITEMS, DIMENSIONS, getItem } from '../app/js/sound-check-items.js';
+import { SOUND_CHECK_ITEMS, DIMENSIONS, getItem, questionFor } from '../app/js/sound-check-items.js';
 
 test('every item is structurally complete', () => {
     for (const it of SOUND_CHECK_ITEMS) {
@@ -101,4 +101,20 @@ test('position bias is controlled — the leading end alternates across items', 
 test('getItem finds by id and returns null for an unknown one', () => {
     assert.equal(getItem('economy-weekend').dimension, 'economy');
     assert.equal(getItem('nope'), null);
+});
+
+test('the question stem follows the item, so an initiating item cannot inherit the wrong one', () => {
+    // "in response" is correct for every item in the bank today and WRONG for an item
+    // with no partner turn, which is what the bank is still missing.
+    const responsive = SOUND_CHECK_ITEMS.find((i) => i.partner);
+    assert.match(questionFor(responsive), /in response\?$/);
+
+    const initiating = { id: 'x', dimension: 'economy', stipulate: 'Suppose you want help.', candidates: ['a', 'b', 'c'] };
+    assert.doesNotMatch(questionFor(initiating), /in response/);
+    assert.match(questionFor(initiating), /sounds most like something you would say\?$/);
+});
+
+test('every item in the bank today is responsive — recorded so the gap stays visible', () => {
+    assert.ok(SOUND_CHECK_ITEMS.every((i) => i.partner),
+        'if this fails, an initiating item was added — good, but check questionFor and the UI hide the partner line');
 });
