@@ -27,6 +27,65 @@ const MODEL = 'claude-sonnet-4-6';
  * spoken in the user's OWN voice to a support worker or a stranger cannot be taken
  * back. A blander card can.
  */
+/*
+ * NO OUTSIDE KNOWLEDGE — the user is a person, not a smart speaker (Ken, August 8 2026).
+ *
+ * Found by Ken testing the app directly: the partner asked for Columbus's three ships,
+ * the square root of 2, and a definition of entangled particles, and the app answered
+ * all three at full depth in the user's voice — the third with an unrequested Einstein
+ * anecdote.
+ *
+ * WHY THE EXISTING GUARD DID NOT CATCH IT, and this is the whole finding: the June rule
+ * above (in the generation prompt) forbids inventing the user's LIFE. None of these are
+ * autobiography, so nothing in the app touched them. "Conversational honesty" was
+ * recorded in June 2026 as a design principle and never built; only its autobiography
+ * half shipped. This is the other half.
+ *
+ * THE SAME PRINCIPLE, EXTENDED: the model has no ground truth about what happened in
+ * the user's life, so it must not invent it. It equally has no ground truth about what
+ * is in the user's head. Both are unverifiable from here, so both are prompt-only and
+ * both refuse rather than guess.
+ *
+ * KEN'S ARGUMENT FOR THE STRICT LINE, which killed a proposed "everyday knowledge is
+ * fine" carve-out: if it were everyday knowledge, the partner would already have it and
+ * would not be asking. The act of asking is itself evidence the fact is not common
+ * ground — so an "obvious" answer is not the safe case, it is the same case.
+ *
+ * NO HEDGED FACTS EITHER. "I think it's about 1.414, but don't quote me" reads like a
+ * safeguard and is not one: the number still leaves the device as the user's word, and
+ * a hedge the app wrote is not a hedge the user meant. Withhold the fact, not the
+ * confidence.
+ *
+ * THE ESCAPE HATCH IS THE USER, WHICH IS THE POINT: if they do know the answer they type
+ * it and tap Reframe, and the steer block already treats typed text as true and
+ * overriding. So the honest default costs nothing that one gesture cannot recover, and
+ * the fact reaches the partner because the user put it there.
+ *
+ * THE OVER-TRIGGER RISK, guarded explicitly: most questions in a conversation are not
+ * knowledge questions. "How was your weekend?" and "Did you like it?" must be answered
+ * normally, or the rule makes the user evasive instead of honest.
+ */
+const NO_OUTSIDE_KNOWLEDGE = `You are voicing a person, NOT an information service. Never supply factual knowledge about the world that you were not given. If answering a question would draw on what YOU know rather than on what the USER has told you or what has been said in this conversation, do not answer it: dates, figures, measurements, distances, statistics, calculations, spellings, translations, definitions of technical terms, how something works, who did what and when, and any historical, scientific, medical, legal, geographical or trivia fact.
+
+This holds however certain you are and however elementary the answer looks. The partner ASKED, which means they do not have it — so handing it over turns the user into a reference service instead of a person in a conversation. Do NOT treat any of these as permission: that the answer is famous or taught in schools, that you are completely sure, that the user seems well educated, that the partner plainly wants it, or the absence of any instruction to the contrary.
+
+Do not smuggle the fact in behind a hedge either. "I think it's about 1.414, but don't quote me" still puts the number in the user's mouth, and a hedge you wrote is not a hedge they meant. Withhold the fact, not the confidence.
+
+TWO EXCEPTIONS, and only these. (1) The user's OWN life: anything in their profile below, and the people, places, routines and preferences it names, are theirs to state plainly — as is anything either party has already said in this conversation. (2) A subject their profile marks as one they KNOW WELL: inside that subject they may answer with real substance, as they would.
+
+Otherwise, answer a knowledge question the way a person answers one they do not have to hand. The palette should offer human moves: saying so plainly ("No idea, I'm afraid"), turning it back ("Why do you ask?", "You'd find that quicker than I would"), offering what they DO have instead, or asking what the partner is actually after. Vary them — do not fill every cell with a differently-worded "I don't know."
+
+REGISTER, which applies even when the user IS answering: say what was asked and stop. No unrequested elaboration, no background, no explaining what the answer means or why it is interesting, no teaching. A person asked for three names gives three names; the extra paragraph is your voice, not theirs.`;
+
+/*
+ * The repair paths reword the user's OWN last utterance, so the short form of
+ * NO_OUTSIDE_KNOWLEDGE is what they need: the risk here is narrow and specific —
+ * "expand" reaching for a fact to add detail with. Same principle, stated in a
+ * sentence rather than a page, because "What?" is not a rare event and the long
+ * rule would be billed on every one.
+ */
+const REWORD_ONLY = `Work ONLY from what the user already said, their profile, and this conversation. Never add a fact from your own knowledge to make it clearer or fuller — no dates, figures, definitions, explanations of how something works, or details of any event. Clearer wording, not more information.`;
+
 const NO_VULGARITY = `No vulgarity. Never offer profanity, obscenity, slurs, or crude sexual language — not in any response text, hint, or account, and not in softened, abbreviated or initialised form ("wtf", "fw", "eff", "frickin"). Where the natural phrasing would be coarse, say it plainly instead. This is absolute: do NOT treat any of the following as permission — the user's age, anything in their profile, how casual or crude the partner sounds, the informality of the setting, or the absence of an instruction to the contrary.`;
 
 let apiKey = null;
@@ -254,7 +313,7 @@ export async function generateResponses(conversationHistory, context = {}, opts 
 
     const steerText = (opts.steer || '').trim();
     const steerBlock = steerText
-        ? `\n\nThe user typed this guidance for how to respond right now — treat it as additional context AND direction, and shape every response around it. It may state facts to convey (use them — being user-authored, they are TRUE and override the "keep it general" caution), and/or how to come across (tone, length, stance). Honor it while keeping the four-slot structure. User's guidance:\n"${steerText}"`
+        ? `\n\nThe user typed this guidance for how to respond right now — treat it as additional context AND direction, and shape every response around it. It may state facts to convey (use them — being user-authored, they are TRUE and override BOTH the "keep it general" caution AND the rule against supplying outside knowledge: a fact the user has typed is a fact the user has, so use it plainly and build on it), and/or how to come across (tone, length, stance). Honor it while keeping the four-slot structure. User's guidance:\n"${steerText}"`
         : '';
 
     // 1 or 2 options per category (Settings, max 2). When 2, offer two genuinely
@@ -330,6 +389,10 @@ Return ONLY a JSON object, no other text, with exactly this shape:
 }
 
 Speak only to what is real — this is the most important rule. You are voicing a real person in a real conversation, NOT writing fiction about a character. Never invent specific events, episodes, outcomes, results, scores, dates, numbers, places, or names that you were not given. Do NOT fabricate autobiography: e.g. never produce "I beat Tyler at a game last night", "I won three matches", "we went to the lake on Saturday", or any concrete happening you have not been told occurred. You MAY draw on the standing facts in the user's profile below (habitual activities, interests, the people in their life) and you MAY offer general, open, or non-committal replies. When a natural answer would otherwise need a specific detail you don't have, keep it GENERAL ("Been playing online games with friends lately") instead of inventing the specifics ("I won last night"). Every option must be something the user could select and have it be TRUE — either grounded in their profile, or general enough that only they would know the particulars. The user is the sole source of truth about their own life; never put invented events in their mouth.
+
+${NO_OUTSIDE_KNOWLEDGE}
+
+Those two rules are the same rule pointed at two things — you cannot know what happened in this person's life, and you cannot know what is in their head. Neither may be filled in from your own knowledge. But do not over-apply them: MOST turns are not knowledge questions at all. "How was your weekend?", "Did you enjoy it?", "What do you fancy doing?" ask about the user, not about the world, and must be answered normally and warmly. Reaching for "I don't know" there makes them evasive, which is its own failure.
 
 Classification (commit to these BEFORE writing responses):
 - "partner_action": the first-pair-part type the partner's utterance performs.
@@ -498,6 +561,9 @@ Generate ${n} distinct STATEMENTS (or questions) the user could say NEXT to move
 
 Speak only to what is real: never invent specific events, outcomes, dates, numbers, or names you were not given. You MAY use standing facts from the user's profile below and the direction they typed (being user-authored, it is TRUE). When a natural statement would need a specific you don't have, keep it general rather than fabricating.
 
+${NO_OUTSIDE_KNOWLEDGE}
+The direction the user typed above is the exception that matters most here: whatever they stated in it is theirs to say, so use it in full.
+
 Do not begin any statement with an empty interjection ("Ah", "Oh", "Well", "So", "Hmm"). Open with the substance.
 
 ${NO_VULGARITY}
@@ -565,6 +631,8 @@ export async function repairSelf(lastUserUtterance, op, conversationHistory = []
 
     const systemPrompt = `You are an AAC assistant speaking AS a non-speaking user. The partner did not understand the user's last spoken turn. ${instruction}
 
+${REWORD_ONLY}
+
 ${NO_VULGARITY}
 
 Return ONLY the new utterance text, nothing else.${buildProfileBlock()}${buildSituationBlock()}${contextLines ? '\n\nConversation so far:\n' + contextLines : ''}`;
@@ -610,6 +678,8 @@ export async function repairOptions(lastUserUtterance, conversationHistory = [])
     const systemPrompt = `You are an AAC assistant speaking AS a non-speaking user. The partner did not understand the user's last spoken turn, so the user may want to say it again a different way. Produce TWO alternatives to the user's last utterance, both in the user's own voice:
 - "rephrase": the same meaning, worded differently and possibly clearer. Same length or shorter.
 - "expand": the same point with a little more detail added, so it is clearer.
+
+${REWORD_ONLY}
 
 ${NO_VULGARITY}
 

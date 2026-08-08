@@ -26,6 +26,22 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- **The app no longer answers general-knowledge questions for you.** If someone asks
+  you something like a date, a figure, a definition or how something works, the app
+  used to hand over the answer out of its own knowledge — which quietly turned you
+  into a search engine other people could look things up in, and put words in your
+  mouth that you might not actually have known. It now offers what a person offers:
+  saying you don't know, turning the question back, or giving what you do have. If
+  you *do* know the answer, type it into "In my own words" and tap **Reframe** —
+  what you type is always treated as true, and the suggestions are built around it.
+- **You can tell the app which subjects you genuinely know well.** About Me →
+  Passions & Hobbies has a new question: "What do you know a lot about?" Anything
+  you list there, the app will answer on properly and in detail, because you have
+  said it is yours. Everything outside your list stays off limits.
+- **Answers are shorter and less lecture-like.** Even when the app does answer, it
+  now says the thing you were asked and stops, instead of adding background you
+  didn't ask for.
+
 - **Conversations now cost noticeably less to run.** The app sends the AI a large
   set of standing instructions plus everything it knows about you on every single
   suggestion — and until now it paid full price for all of it, every time. It now

@@ -408,6 +408,18 @@
           ],
           "sensitive": false,
           "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "expertise",
+          "q": "What do you know a lot about? Subjects you could answer real questions on, off the top of your head.",
+          "type": "multi",
+          "fills": [
+            "subject I know well",
+            "area I know a lot about"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable",
+          "directive": "expert"
         }
       ]
     },

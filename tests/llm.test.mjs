@@ -161,6 +161,71 @@ test('the prompt forbids vulgarity and refuses to infer permission from age or c
     assert.match(sys, /absence of an instruction/);
 });
 
+/*
+ * The user is a person, not a smart speaker (Ken, August 8 2026). Found live: the
+ * partner asked for Columbus's three ships, the square root of 2, and a definition
+ * of entangled particles, and the app answered all three at full depth in the user's
+ * voice. The June anti-fabrication rule did not catch it because none of those are
+ * autobiography.
+ *
+ * Two halves are load-bearing and each has its own assertion below. (1) The refusal
+ * to infer permission — "it's obvious" and "I'm certain" are exactly the cases the
+ * rule must survive, since Ken's argument is that the partner ASKING is evidence the
+ * fact is not common ground. (2) No hedged facts, which is the tempting middle road
+ * and is not a safeguard: the number still leaves the device as the user's word.
+ */
+test('the prompt refuses to supply outside knowledge, and will not infer permission', async () => {
+    mockFetch(structured);
+    await llm.generateResponses([{ role: 'partner', text: "What's the square root of 2?" }], {});
+    const sys = sysText(getFetchCalls()[0]);
+    assert.match(sys, /NOT an information service/);
+    assert.match(sys, /never supply factual knowledge about the world/i);
+    assert.match(sys, /however elementary/);          // "it's obvious" is not licence
+    assert.match(sys, /however certain you are/);     // nor is being sure
+    assert.match(sys, /absence of any instruction/);
+    assert.match(sys, /behind a hedge/);              // a hedged fact is still the fact
+});
+
+// The over-trigger risk is the real one, and it is the same shape as the
+// narrative-list guard on offered_options: a rule aimed at reference questions that
+// bleeds into ordinary talk makes the user evasive, which is its own failure.
+test('the prompt guards against over-applying it to ordinary conversation', async () => {
+    mockFetch(structured);
+    await llm.generateResponses([{ role: 'partner', text: 'How was your weekend?' }], {});
+    const sys = sysText(getFetchCalls()[0]);
+    assert.match(sys, /MOST turns are not knowledge questions/);
+    assert.match(sys, /How was your weekend\?/);
+    assert.match(sys, /evasive/);
+});
+
+// The escape hatch is the whole reason the strict default is affordable: a fact the
+// user typed is a fact the user has. If Reframe did not override the rule, a user
+// who knows the answer would be refused their own knowledge.
+test('typed guidance overrides the outside-knowledge rule, not just the general one', async () => {
+    mockFetch(structured);
+    await llm.generateResponses(
+        [{ role: 'partner', text: 'How far away is the moon?' }],
+        {},
+        { steer: "it's about 240 thousand miles" }
+    );
+    const sys = sysText(getFetchCalls()[0]);
+    assert.match(sys, /override BOTH/);
+    assert.match(sys, /rule against supplying outside knowledge/);
+});
+
+// The repair paths reword the user's own words; "expand" is the one that would reach
+// for a fact to add detail with. They get the short form, so assert they get it at all.
+test('both repair paths forbid adding facts while rewording', async () => {
+    mockFetch('{"rephrase": "Said another way.", "expand": "Said with a bit more."}');
+    await llm.repairOptions('I went out earlier.', []);
+    assert.match(sysText(getFetchCalls()[0]), /Clearer wording, not more information/);
+
+    restoreFetch();
+    mockFetch('Said another way.');
+    await llm.repairSelf('I went out earlier.', 'expand', []);
+    assert.match(sysText(getFetchCalls()[0]), /Clearer wording, not more information/);
+});
+
 test('DATA PATH: a mocked COMPLETE result flows through the engine to a 4-card palette', async () => {
     mockFetch(structured);
     engine.reset();

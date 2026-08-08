@@ -114,6 +114,38 @@ test('directive fields alone still produce a block (they are not facts)', async 
     assert.notEqual(wv.buildBlock(), '', 'a profile of only directives must not come out empty');
 });
 
+// --- the expertise exception (August 8 2026) ---------------------------------
+// The prompt otherwise refuses to answer any question needing world knowledge,
+// because the model cannot know what is in this person's head. Naming a subject
+// here is the user saying that it IS — the one exception they can grant themselves.
+
+test('an expertise answer lifts the knowledge rule, and says it does', async () => {
+    await wv.setField('expertise', ['astronomy', 'model trains']);
+    const block = wv.buildBlock();
+    assert.match(block, /knows the following subjects WELL[^\n]*astronomy, model trains/);
+    assert.match(block, /rule against supplying outside knowledge is lifted/);
+    assert.doesNotMatch(block, /- [^\n]*[Ss]ubject I know well/, 'must not also appear as a fact line');
+});
+
+// It widens what may be put in the user's mouth, so it must widen no further than
+// the subjects they named — an adjacent-sounding topic is still outside.
+test('the expertise exception is scoped to the named subjects and forbids lecturing', async () => {
+    await wv.setField('expertise', ['astronomy']);
+    const block = wv.buildBlock();
+    assert.match(block, /does not\s+extend to neighbouring or merely related subjects/);
+    // Live check on the first cut came back with a paragraph and the Einstein
+    // anecdote — declared expertise licenses substance, never a lecture.
+    assert.match(block, /a sentence or two/);
+    assert.match(block, /No lead-ins, no history of the idea, no famous quotes/);
+});
+
+// An empty answer must leave the rule fully in force — the same neutral-produces-
+// nothing property the trait and per-partner blocks rely on.
+test('no expertise answer means no lifting text at all', async () => {
+    await wv.setField('fav_color', 'green');
+    assert.doesNotMatch(wv.buildBlock(), /is lifted/);
+});
+
 // --- Tier B: personality + values (Phase 4) ---------------------------------
 
 test('a trait answer at either end becomes a description, not a scale point', async () => {

@@ -400,6 +400,11 @@ export function buildBlock() {
     // `directive` in the registry is emitted as a rule instead. (August 7 2026.)
     const seek = [];
     const avoid = [];
+    // The one exception to the no-outside-knowledge rule that the user can grant
+    // themselves (Ken, August 8 2026). The prompt otherwise refuses to answer any
+    // question needing world knowledge, because the model cannot know what is in
+    // this person's head. Naming a subject here is the user saying it IS.
+    const expert = [];
     // Tier B (personality + values) answers are Likert, and emitting them as one
     // "- Label: Very much like me" line each would be twenty lines of noise: the
     // model would have to infer what a scale point means, and the low-signal bulk
@@ -422,6 +427,7 @@ export function buildBlock() {
                 if (!v) continue;
                 if (f.directive === 'avoid') { avoid.push(v); continue; }
                 if (f.directive === 'seek') { seek.push(v); continue; }
+                if (f.directive === 'expert') { expert.push(v); continue; }
                 if (f.trait) {
                     const clause = traitClause(f, v);
                     if (clause) traits.push(clause);
@@ -436,7 +442,7 @@ export function buildBlock() {
         }
     }
 
-    if (!facts.length && !privateKnown.length && !phraseAround.size && !seek.length && !avoid.length && !traits.length) return '';
+    if (!facts.length && !privateKnown.length && !phraseAround.size && !seek.length && !avoid.length && !traits.length && !expert.length) return '';
 
     const lines = ['You are speaking AS this person, in the first person. What you know about them:'];
     if (facts.length) lines.push('', ...facts);
@@ -477,6 +483,23 @@ export function buildBlock() {
             + '. Never raise any of it on your own initiative. If the partner brings it up, do not '
             + 'volunteer detail, and make sure one of the responses you offer lets the user move the '
             + 'conversation on. If the user steers you to it themselves, follow them.'
+        );
+    }
+    if (expert.length) {
+        // Scoped hard, for the reason the rule exists at all: this widens what may be
+        // put in the user's mouth, so it must widen no further than the subjects they
+        // actually named. "Knows about astronomy" is not licence on the Napoleonic
+        // wars, and an adjacent-sounding topic is still outside.
+        lines.push(
+            '',
+            'This person knows the following subjects WELL, and says so themselves: ' + expert.join(', ')
+            + '. Within these subjects ONLY, the rule against supplying outside knowledge is lifted — '
+            + 'answer with real substance, the way someone who knows the subject would. This does not '
+            + 'extend to neighbouring or merely related subjects. Nor does it license lecturing: these '
+            + 'are still SPOKEN conversational turns, so keep every one to a sentence or two, answer '
+            + 'what was actually asked, and stop. No lead-ins, no history of the idea, no famous quotes '
+            + 'or anecdotes, no "and what is fascinating is…". Knowing a subject well makes someone '
+            + 'CONCISE about it, not lengthy.'
         );
     }
     if (seek.length) {
