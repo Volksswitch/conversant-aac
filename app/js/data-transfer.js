@@ -42,6 +42,7 @@ const DATA_FILES = [
     { file: 'places.json',          cache: 'aac_places',          label: 'My Places' },
     { file: 'control-phrases.json', cache: 'aac_control_phrases', label: 'Starters and control phrases' },
     { file: 'express-panel.json',   cache: 'aac_express_items',   label: 'Express Panel items' },
+    { file: 'voice.json',           cache: 'aac_voice',           label: 'How I sound' },
 ];
 
 function readCache(key) {
@@ -110,6 +111,8 @@ export function summarize(pkg) {
             detail = ` (${value.people.length})`;
         } else if (entry.file === 'places.json' && value && Array.isArray(value.places)) {
             detail = ` (${value.places.length})`;
+        } else if (entry.file === 'voice.json' && value && value.soundCheck) {
+            detail = ` (${Object.keys(value.soundCheck).length} answered)`;
         } else if (Array.isArray(value)) {
             detail = ` (${value.length})`;
         }

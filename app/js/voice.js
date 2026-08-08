@@ -1,0 +1,220 @@
+/* Voice — how this user SOUNDS, as distinct from what they can truthfully say
+ * (Sounds Like Me, Phase 0 + Phase 1; Ken, August 7 2026)
+ *
+ * The fifth user-owned file, following the same shape as worldview / relationships /
+ * express-panel / places:
+ *   - <data folder>/voice.json        portable source of truth (FSA/OPFS)
+ *   - localStorage 'aac_voice'        same-machine write-through cache
+ * Reconciliation is the v0.2.25 rule: a file in the connected folder wins; the cache
+ * is promoted to a new file only when none exists on disk yet.
+ *
+ * WHY THIS EXISTS. The generation prompt has told the model "You speak AS the user,
+ * in their voice" since v0.3.0 with nothing behind it. Given no stylistic information
+ * a model does not produce neutral English — it produces its OWN register, which is
+ * verbose, formal, explicit and assistant-shaped. So the app was not neutral on the
+ * question of who this person is; it was answering it wrongly, the same way, on every
+ * card of every palette.
+ *
+ * WHAT GOES IN THE BLOCK: EXEMPLARS, NOT ADJECTIVES. Few-shot examples steer style
+ * far better than descriptions do — measured at up to 23.5x the style-matching
+ * accuracy of no examples, with the prompting strategy mattering more than the size
+ * of the model (Jemama & Naous 2025). Descriptions are additionally the worst thing
+ * to ask this user for, because people cannot accurately describe their own style:
+ * the features that most mark an individual are produced below conscious awareness
+ * (Tausczik & Pennebaker 2010), and style is highly observable and highly evaluative,
+ * the quadrant where the self is least accurate (Vazire 2010). So the user is never
+ * asked to characterize themselves; they are asked which of several replies they
+ * would rather say, and the sentences they pick ARE the examples.
+ */
+
+import { readFile, writeFile, hasDataFolder } from './storage.js';
+
+const FILE = 'voice.json';
+const CACHE_KEY = 'aac_voice';
+
+let profile = null;
+
+function emptyProfile() {
+    return {
+        version: 1,
+        updated: new Date().toISOString(),
+        // Sound Check: itemId -> { verdict, choice }. `choice` is the exemplar the
+        // user endorsed; null when they answered with one of the two escapes.
+        soundCheck: {},
+        // "What you never say" — negative constraints. Cheap for a user to state,
+        // easy for a model to obey, and unusually high-value: getting this wrong is
+        // conspicuous in a way that getting warmth slightly wrong is not.
+        never: [],
+        // Optional authored samples (Phase 1, deliberately NOT load-bearing — a
+        // sample depends on the slowest feature in the app and is shortened by the
+        // effort of producing it).
+        samples: {},
+    };
+}
+
+function normalize(raw) {
+    const base = emptyProfile();
+    if (!raw || typeof raw !== 'object') return base;
+    return {
+        ...base,
+        ...raw,
+        soundCheck: (raw.soundCheck && typeof raw.soundCheck === 'object') ? raw.soundCheck : {},
+        never: Array.isArray(raw.never) ? raw.never.filter((s) => typeof s === 'string' && s.trim()) : [],
+        samples: (raw.samples && typeof raw.samples === 'object') ? raw.samples : {},
+    };
+}
+
+function readCache() {
+    try { return JSON.parse(localStorage.getItem(CACHE_KEY)); } catch { return null; }
+}
+function writeCache(p) {
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify(p)); } catch { /* quota — disk is truth */ }
+}
+function writeDisk(p) {
+    writeFile(FILE, JSON.stringify(p, null, 2)).catch(() => { /* best-effort */ });
+}
+
+/** Load: data folder (source of truth) → cache → empty. */
+export async function load() {
+    let loaded = null;
+    const raw = await readFile(FILE);
+    if (raw) { try { loaded = JSON.parse(raw); } catch { loaded = null; } }
+    if (!loaded) loaded = readCache();
+    profile = normalize(loaded);
+    writeCache(profile);
+    return profile;
+}
+
+function current() {
+    if (!profile) profile = normalize(readCache());
+    return profile;
+}
+
+function save() {
+    profile.updated = new Date().toISOString();
+    writeCache(profile);
+    writeDisk(profile);
+    return profile;
+}
+
+/**
+ * Record one Sound Check answer. `choice` is the exemplar text the user endorsed, or
+ * null for the two escapes — "They're all fine" (a weak or absent preference,
+ * recorded as what it is rather than as a spurious first-place vote) and "I wouldn't
+ * say any of these" (the genuinely different state, and at least as informative,
+ * because it is a negative constraint arriving unprompted).
+ */
+export function recordAnswer(itemId, verdict, choice = null) {
+    const p = current();
+    p.soundCheck[itemId] = { verdict, choice: choice || null, at: new Date().toISOString() };
+    return save();
+}
+
+export function getAnswer(itemId) {
+    return current().soundCheck[itemId] || null;
+}
+
+export function clearAnswer(itemId) {
+    const p = current();
+    delete p.soundCheck[itemId];
+    return save();
+}
+
+/** How many Sound Check items have been answered — drives the module's progress. */
+export function answeredCount() {
+    return Object.keys(current().soundCheck).length;
+}
+
+export function getNever() { return current().never.slice(); }
+export function setNever(list) {
+    const p = current();
+    p.never = (Array.isArray(list) ? list : []).map((s) => String(s).trim()).filter(Boolean);
+    return save();
+}
+
+export function getSample(key) { return current().samples[key] || ''; }
+export function setSample(key, text) {
+    const p = current();
+    const t = String(text || '').trim();
+    if (t) p.samples[key] = t; else delete p.samples[key];
+    return save();
+}
+
+export async function resetAll() {
+    profile = emptyProfile();
+    writeCache(profile);
+    await writeFile(FILE, JSON.stringify(profile, null, 2)).catch(() => {});
+    return profile;
+}
+
+/** Reconcile once a data folder becomes available — v0.2.25 file-in-folder-wins. */
+export async function syncToFolder() {
+    if (!hasDataFolder()) return 'noop';
+    const raw = await readFile(FILE);
+    let disk = null;
+    if (raw) { try { disk = JSON.parse(raw); } catch { disk = null; } }
+    if (disk) {
+        profile = normalize(disk);
+        writeCache(profile);
+        return 'adopted';
+    }
+    profile = current();
+    await writeFile(FILE, JSON.stringify(profile, null, 2));
+    return 'wrote';
+}
+
+/**
+ * The voice block for the system prompt.
+ *
+ * `idiom` is the user's OWN Express Panel phrases (provenance-filtered — see
+ * express-items.js). Two cautions are wired into the wording itself rather than left
+ * to whoever calls this:
+ *
+ *   1. Express phrases are evidence of VOCABULARY and IDIOM, never of LENGTH. Button
+ *      labels are short by construction, so a model shown a list of them will
+ *      conclude the user is terse — a bias that came from the widget, not the person.
+ *      The block says so explicitly.
+ *   2. The model must never PRODUCE the user's catchphrases (Sounds Like Me 4.1).
+ *      Given a list of them, models over-apply: they sprinkle the marker where a real
+ *      speaker would not, and idiolect used slightly wrong reads as impersonation,
+ *      which is worse than idiolect absent. Those phrases live as Express Panel
+ *      buttons the user taps deliberately; the model is told to recognize the
+ *      register, not to reproduce the phrases.
+ *
+ * Returns '' when there is nothing to say, so the prompt gains no empty heading.
+ */
+export function buildBlock(idiom = []) {
+    const p = current();
+    const lines = [];
+
+    const chosen = Object.values(p.soundCheck)
+        .map((a) => a && a.choice)
+        .filter(Boolean);
+
+    if (chosen.length) {
+        lines.push('Examples of how this user prefers to reply. They were shown several ways of saying the same thing and picked these:');
+        for (const t of chosen.slice(0, 12)) lines.push(`  "${t}"`);
+        lines.push('Match the length, directness, and level of formality of those examples. They are the single most important guide to wording that you have.');
+    }
+
+    const samples = Object.entries(p.samples).filter(([, v]) => v && v.trim());
+    if (samples.length) {
+        lines.push('');
+        lines.push('Things this user has written, in their own words:');
+        for (const [key, text] of samples) lines.push(`  (${key}) ${text}`);
+    }
+
+    if (idiom.length) {
+        lines.push('');
+        lines.push(`Words and turns of phrase this user actually uses: ${idiom.slice(0, 20).map((s) => `"${s}"`).join(', ')}.`);
+        lines.push('Use these ONLY to judge their vocabulary and level of formality. They are button labels, so they are short for that reason alone — do NOT treat them as evidence that this user prefers short replies. Do NOT put these exact phrases into responses; the user says those themselves.');
+    }
+
+    if (p.never.length) {
+        lines.push('');
+        lines.push(`This user never says: ${p.never.join('; ')}. Respect this without exception.`);
+    }
+
+    if (!lines.length) return '';
+    return `HOW THIS USER SOUNDS — this governs the WORDING of every response you write.\n${lines.join('\n')}`;
+}

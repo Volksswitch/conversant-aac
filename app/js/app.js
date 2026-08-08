@@ -15,6 +15,10 @@ import { SIDE_LAYOUTS, BOTTOM_LAYOUTS, LAYOUTS } from './keyboard-layouts.js';
 import * as viewport from './viewport.js';
 import * as expressItems from './express-items.js';
 import * as expressPanel from './express-panel.js';
+// Named voiceProfile, not voice: app.js already uses `voice` as the loop variable
+// for a SpeechSynthesisVoice in the two TTS pickers, and a module shadowed inside
+// those callbacks would fail silently rather than loudly.
+import * as voiceProfile from './voice.js';
 import * as expressEditor from './express-editor.js';
 import * as controlPhrases from './control-phrases.js';
 import * as controlEditor from './control-phrases-editor.js';
@@ -517,6 +521,7 @@ function initApp() {
     relationships.load().catch(() => { /* falls back to empty graph */ });
     // My Places (places + their facts) — its own model + file, same lifecycle.
     places.load().catch(() => { /* falls back to no places */ });
+    voiceProfile.load().catch(() => { /* falls back to no voice data */ });
     // Express Panel items — its own model + file. Loaded from cache now; the
     // folder copy (source of truth) is adopted in handleStart once granted.
     expressPanel.load().then(renderExpressPanel).catch(() => { /* falls back to defaults */ });
@@ -842,6 +847,8 @@ async function warmUpStorage() {
     // Same for My Places.
     try { await places.load(); } catch { /* keep cached/empty places */ }
     try { await places.syncToFolder(); } catch { /* best-effort */ }
+    try { await voiceProfile.load(); } catch { /* keep cached/empty voice data */ }
+    try { await voiceProfile.syncToFolder(); } catch { /* best-effort */ }
     // Same for the Express Panel items (adopt the folder copy, else promote cache).
     try { await expressPanel.load(); } catch { /* keep cached/default items */ }
     try { await expressPanel.syncToFolder(); } catch { /* best-effort */ }
@@ -1059,6 +1066,7 @@ async function generateOptions(partnerText) {
     // the framing that fits being present rather than the "places I go" framing.
     llm.setPlacesBlock(places.buildBlock(activePlace && activePlace.placeId));
     llm.setSituationBlock(buildSituationBlock());
+    llm.setVoiceBlock(voiceBlockText());
 
     try {
         const requestContext = engine.buildRequestContext();
@@ -1921,6 +1929,7 @@ async function handleRegenerate() {
     // the framing that fits being present rather than the "places I go" framing.
     llm.setPlacesBlock(places.buildBlock(activePlace && activePlace.placeId));
     llm.setSituationBlock(buildSituationBlock());
+    llm.setVoiceBlock(voiceBlockText());
     const history = [...conversationHistory, { role: 'partner', text: currentPartnerText }];
 
     try {
@@ -1993,6 +2002,7 @@ async function handleChoiceChip(chip) {
     // the framing that fits being present rather than the "places I go" framing.
     llm.setPlacesBlock(places.buildBlock(activePlace && activePlace.placeId));
     llm.setSituationBlock(buildSituationBlock());
+    llm.setVoiceBlock(voiceBlockText());
 
     ui.setStatus(`Building responses around "${pick}"...`);
     const history = [...conversationHistory, { role: 'partner', text: currentPartnerText }];
@@ -2033,6 +2043,7 @@ async function handleReframe() {
     // the framing that fits being present rather than the "places I go" framing.
     llm.setPlacesBlock(places.buildBlock(activePlace && activePlace.placeId));
     llm.setSituationBlock(buildSituationBlock());
+    llm.setVoiceBlock(voiceBlockText());
 
     // Two modes on the one button, chosen by whether a partner turn is on the floor:
     //  • Partner turn active → rework the SUGGESTED RESPONSES around the steer (a
@@ -2286,6 +2297,22 @@ function renderExpressPanel() {
 // who the user is talking with (Partner) and how they feel (Feeling). Empty when
 // neither is active. The relationships block + nickname rule handle a Partner who
 // is also a known person; this just adds "you're talking with them right now".
+/**
+ * How the user SOUNDS, for the system prompt (Sounds Like Me, Phase 0).
+ *
+ * Composed here rather than inside voice.js because half of it comes from the
+ * Express Panel, and ONLY the items the user actually wrote may be used: seeding it
+ * from our shipped defaults would tell the model that this person's characteristic
+ * vocabulary is "Yes", "No" and "Thank you". That is what the provenance field on
+ * each item is for — see express-items.js.
+ */
+function voiceBlockText() {
+    const idiom = expressPanel.userAuthoredItems()
+        .filter((it) => it.type === 'phrase' && it.text)
+        .map((it) => it.text);
+    return voiceProfile.buildBlock(idiom);
+}
+
 function buildSituationBlock() {
     const lines = [];
     // Practice Mode: the response-generation call goes through the normal path and
@@ -3622,6 +3649,7 @@ function openSettings() {
             try { await worldview.syncToFolder(); } catch { /* best-effort */ }
             try { await relationships.syncToFolder(); } catch { /* best-effort */ }
             try { await places.syncToFolder(); } catch { /* best-effort */ }
+            try { await voiceProfile.syncToFolder(); } catch { /* best-effort */ }
             try { await expressPanel.syncToFolder(); } catch { /* best-effort */ }
             renderExpressPanel();
             try { await controlPhrases.syncToFolder(); } catch { /* best-effort */ }

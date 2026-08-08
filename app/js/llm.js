@@ -31,6 +31,7 @@ const NO_VULGARITY = `No vulgarity. Never offer profanity, obscenity, slurs, or 
 
 let apiKey = null;
 let onUsageUpdate = null;
+let voiceBlock = '';
 let worldviewBlock = '';
 let relationshipsBlock = '';
 let placesBlock = '';
@@ -100,6 +101,16 @@ export function setPlacesBlock(text) {
     placesBlock = (text || '').trim();
 }
 
+// HOW THE USER SOUNDS (voice.buildBlock()). Set fresh before each generation like
+// the others. This one is placed FIRST in the assembled block, and the placement is
+// not incidental: the other sections are FACTS, which are situational — most of them
+// are irrelevant to most turns — whereas register is a global constraint on every
+// card in every palette. Appending it as one more paragraph at the bottom of a
+// growing pile is where instruction-following degrades.
+export function setVoiceBlock(text) {
+    voiceBlock = (text || '').trim();
+}
+
 // The current SITUATION — who the user is talking with (active Partner toggle)
 // and how they're feeling (active Feeling toggle). Set fresh before each
 // generation; empty when no influencer is active. Partner gives the AI the
@@ -114,6 +125,7 @@ export function setSituationBlock(text) {
 // no-brackets instruction prevents the model from emitting "[Name]" blanks.
 function buildProfileBlock() {
     const sections = [];
+    if (voiceBlock) sections.push(`\n\n${voiceBlock}`);   // first — see setVoiceBlock
     if (worldviewBlock) sections.push(`\n\n${worldviewBlock}`);
     if (relationshipsBlock) sections.push(`\n\n${relationshipsBlock}`);
     if (placesBlock) sections.push(`\n\n${placesBlock}`);
