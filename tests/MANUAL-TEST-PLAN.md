@@ -271,6 +271,144 @@ wording — recognition and AI cleanup are non-deterministic.)
 
 ---
 
+## 13. About Me — the worldview profile and the voice layer
+
+The automated suite already covers the mechanics here: field states, decline/undo,
+the privacy levels, trait aggregation, the per-partner profile, and every block's
+prompt text. **Do not re-do those by hand.** What is left is the part a stub cannot
+answer — *does a filled profile actually make the suggestions sound like this
+person?* — plus how the filling-in feels on the tablet.
+
+### 13.0 Filling in the data (read this first — it saves the most time)
+
+**Use a persona rather than inventing answers.** Ten are in `Other/Personas/`.
+Inventing as you go produces a bland profile, and a bland profile is exactly the
+condition under which the feature looks like it does nothing. **Marc Delgado** is
+the one the demo script uses.
+
+Each persona now ends with a section called **App-Ready Answers (Tier B)** — two
+tables giving the exact field key and the exact answer to tap for all 20
+personality and values questions. Work from those tables, not the prose above them;
+the prose is the human-readable version and does not map one-to-one onto the
+options on screen.
+
+**Order to enter it in.** Roughly 20 minutes for a full persona.
+
+1. **Settings → General → Choose Folder** *first.* Everything below is written to
+   that folder as you go, and answers entered with no folder live only in this
+   browser.
+2. **About Me → Topics** — work down the list. A1/A2/A4 come straight from the
+   persona's Tier A tables; C1/C2 from Tier C.
+3. **A5 Contact & Logistics** — enter at least the phone number. It is marked
+   private by default, and 13.4 checks that private behaves differently from
+   declined.
+4. **Decline one question deliberately** (any field → *Prefer not to say*). Note
+   which one; 13.4 needs it.
+5. **What I'm Like** and **What Matters to Me** — 10 questions each, straight from
+   the App-Ready tables.
+6. **People** — add two or three, and give at least one a filled-in
+   **"How I talk with them"** (it is collapsed; tap the summary line to open it).
+7. **My Places** — add one with two or three facts.
+8. **How I Sound** — answer at least six items. There are 17.
+
+**Things that will look wrong and are not.**
+
+- **"Somewhat like me" is the app's way of saying *no strong feeling*, and it
+  contributes nothing to the suggestions.** That is deliberate — it is what keeps a
+  half-answered profile from pulling the wording around. If a persona's App-Ready
+  table says "Somewhat like me", tapping it and skipping the question have the same
+  effect on output. It still counts as answered on the progress bar.
+- **B2 and B3 are missing from the topic list, and that is correct.** The Tier B
+  numbering comes from the question bank and the personas: B2 (humor) and B7
+  (emotional landscape) are not built, B5 (beliefs) is deferred, and B3/B6/B8 moved
+  elsewhere — B3 and B6 into "How I talk with them", B8 into How I Sound and the
+  Express Panel.
+- **A persona is richer than the app can hold.** Catchphrases ("Let's go!") are
+  Express Panel buttons by design and the AI never produces them, so do not expect
+  to see them in cards.
+- **Nothing in About Me is a topic.** Personality, values, relationship goals and
+  places all steer *wording only*. A card that announces "I'm a really sociable
+  person" or raises your relationship goal is a **bug** — see 13.5.
+
+### 13.1 Does a filled profile change the output? (the headline test)
+
+- [ ] **13.1 Empty vs. filled, same partner turn.** Before entering anything, run
+  three or four exchanges (Practice Mode → *Catching up with a friend* is fine) and
+  screenshot the cards. Now fill the persona in and run the **same scenario** again.
+  **Expect:** the second set is recognizably more specific — it reaches for their
+  interests, and the wording is shorter or fuller in line with how they answered.
+  **This is the whole bet of the voice layer.** If you cannot tell the two runs
+  apart, say so plainly; that is the most important result this plan can produce,
+  and it is worth more than every other box in this section.
+
+- [ ] **13.2 Does it sound like *them*?** With the profile loaded, hold a few
+  exchanges and read the cards as if you were the persona. **Expect:** you would be
+  willing to say most of them. Note any card that is clearly someone else talking —
+  wrong register, wrong level of detail, wrong enthusiasm.
+
+### 13.3 Per-partner register
+
+- [ ] **13.3 Same words, different person.** Give one person a **relaxed / playful**
+  register and another **careful / serious**. Tap the first in the Express Panel and
+  run a scenario; tap the second and run the same one. **Expect:** the cards move
+  audibly between the two. **If they do not, that is a real finding** — the register
+  is reaching the model (verified), so a non-effect means the model is ignoring it
+  and the wording of the block needs strengthening.
+- [ ] **13.3b Their own openers.** Give a person one distinctive conversation
+  starter. Tap them, then **Start conversation**. **Expect:** their starter is on the
+  first page, your usual ones after it. Untap them and check it withdraws.
+  *Pick a starter that could not be one of the defaults — the defaults substitute the
+  person's name, so "Hi <name>, got a minute?" will look like it worked either way.*
+
+### 13.4 Privacy on the device
+
+- [ ] **13.4a Private ≠ declined.** Have the partner **ask for the phone number**
+  from 13.0 step 3. **Expect:** a card offers it. Then have them ask about the
+  question you **declined**. **Expect:** the app phrases around it and never states
+  or guesses the value.
+- [ ] **13.4b Private is not volunteered.** Across a normal conversation, the phone
+  number should never appear in a card unless the partner asked or you steered to it
+  with **Reframe**.
+- [ ] **13.4c Private person.** Mark a person private. **Expect:** they are never
+  named on the app's own initiative.
+
+### 13.5 The guards (report any breach immediately)
+
+- [ ] **13.5 Nothing from About Me becomes a topic.** Over a dozen or so exchanges,
+  watch for a card that: describes the user's own character; states a personality or
+  values answer back; raises a **standing relationship goal** (a card *about* repairing
+  the relationship rather than one worded warmly); or treats a place's recorded facts
+  as a subject ("what did you find here last Saturday?" while standing in the shop).
+  **Expect:** none of these. Each is guarded in the prompt, and a breach means the
+  guard is not holding — worth a bug report with the conversation file attached.
+
+### 13.6 How it feels to use (judgment, not pass/fail)
+
+- [ ] **13.6a Is Tier B too tiring?** 20 questions of five options each. Note where
+  you would have given up, and whether the two modules should be shorter.
+- [ ] **13.6b Is "How I talk with them" discoverable?** It is collapsed by default
+  inside the person form. Would a supporter find it without being told?
+- [ ] **13.6c Caricature check.** The app turns Tier B into a single sentence of up
+  to 20 descriptions, which you cannot see from the UI — so judge it from the
+  output. Answer most of Tier B **strongly** (avoid the middle), then hold a
+  conversation. **Expect:** the cards reflect the person's outlook without becoming a
+  parody of it — a persona marked strongly playful should sound cheerful, not
+  relentlessly jokey. If it tips into caricature, that is a signal the description is
+  carrying too much weight and should be capped.
+- [ ] **13.6d Sound Check wording.** Answer several items. **Expect:** the question
+  reads naturally and the four candidates feel genuinely different from one another.
+  Note any item where you would have picked "They all sound like me" only because
+  none of them did.
+
+### 13.7 Persistence
+
+- [ ] **13.7 Survives a restart.** With everything entered, close and relaunch.
+  **Expect:** every count is unchanged. Then copy the data folder to another machine,
+  point the app at it, and confirm the profile, people, places and How I Sound
+  answers all come across.
+
+---
+
 ## Known / not-yet-built (don't file as bugs)
 
 - **Single-instance guard** (two tabs/windows) — designed, not built; opening two
