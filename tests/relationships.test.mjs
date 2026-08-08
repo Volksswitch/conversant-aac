@@ -58,3 +58,89 @@ test('CRUD: add, update, remove reflect in count and listing', async () => {
     await rel.removePerson(id);
     assert.equal(rel.count(), 0);
 });
+
+// --- per-partner profile (Phase 3, the me->person edge's attrs) --------------
+
+test('an untouched person contributes no partner block', async () => {
+    const id = await rel.addPerson({ name: 'Mary', relationship: 'mother' });
+    assert.equal(rel.buildPartnerBlock(id), '',
+        'a person nobody has edited must exert zero influence and cost zero tokens');
+});
+
+test('neutral register dimensions are not stored and emit nothing', async () => {
+    const id = await rel.addPerson({ name: 'Mary', relationship: 'mother' });
+    await rel.setPartnerProfile(id, { register: { formality: 'relaxed', length: '', warmth: undefined } });
+    assert.deepEqual(rel.getPartnerProfile(id).register, { formality: 'relaxed' },
+        'only the dimensions the user actually set are stored');
+});
+
+test('register, goal and note reach the partner block, stated assertively', async () => {
+    const id = await rel.addPerson({ name: 'Mary', nickname: 'Mum', relationship: 'mother' });
+    await rel.setPartnerProfile(id, {
+        register: { formality: 'relaxed', warmth: 'warmer' },
+        goal: { id: 'connect' },
+        note: 'She worries, so I keep it light.'
+    });
+    const block = rel.buildPartnerBlock(id);
+    assert.match(block, /Mum/);
+    assert.match(block, /more relaxed and informal/);
+    assert.match(block, /warmer and more openly affectionate/);
+    assert.match(block, /Stay connected and catch up/);
+    assert.match(block, /She worries, so I keep it light\./);
+    // "Take them at their word" (Ken): the user's own note outranks our menu.
+    assert.match(block, /overrides the general guidance/i);
+});
+
+// The August 5 2026 lesson, applied to a second kind of context: a fact with no
+// stated purpose reads to a model as material to work into the conversation. A
+// standing goal is the dangerous case -- "repair things between us" must steer
+// wording, never become the subject.
+test('the partner block says it shapes wording and is not a topic', async () => {
+    const id = await rel.addPerson({ name: 'Mary', relationship: 'mother' });
+    await rel.setPartnerProfile(id, { goal: { id: 'repair' } });
+    const block = rel.buildPartnerBlock(id);
+    assert.match(block, /topic to raise/i, 'the purpose is stated before the content');
+    assert.match(block, /never mention it/i, 'and again on the goal itself');
+});
+
+test('a free-text goal is carried as written', async () => {
+    const id = await rel.addPerson({ name: 'Mary', relationship: 'mother' });
+    await rel.setPartnerProfile(id, { goal: { id: '', text: 'Stop arguing about the car' } });
+    assert.match(rel.buildPartnerBlock(id), /Stop arguing about the car/);
+});
+
+// The profile lives on the edge, and updatePerson used to DELETE the edge when the
+// relationship was cleared -- which would have destroyed the profile silently while
+// the user believed they had only blanked a dropdown.
+test('clearing the relationship keeps a profile that lives on the edge', async () => {
+    const id = await rel.addPerson({ name: 'Mary', relationship: 'mother' });
+    await rel.setPartnerProfile(id, { note: 'keep it light' });
+    await rel.updatePerson(id, { relationship: '' });
+    assert.equal(rel.getPartnerProfile(id).note, 'keep it light');
+    assert.equal(rel.getPerson(id).relationship, '', 'and the relationship really is cleared');
+});
+
+test('clearing the relationship still drops an edge carrying nothing', async () => {
+    const id = await rel.addPerson({ name: 'Bob', relationship: 'friend' });
+    await rel.updatePerson(id, { relationship: '' });
+    assert.equal(rel.getPerson(id).relationship, '');
+});
+
+test('a person with no relationship type can still be given a profile', async () => {
+    const id = await rel.addPerson({ name: 'Sam' });   // no relationship -> no edge yet
+    await rel.setPartnerProfile(id, { note: 'we go way back' });
+    assert.equal(rel.getPartnerProfile(id).note, 'we go way back');
+});
+
+test('per-person phrases round-trip and blanks are dropped', async () => {
+    const id = await rel.addPerson({ name: 'Mary', relationship: 'mother' });
+    await rel.setPartnerProfile(id, { openers: ['Hi Mum, got a minute?', '  ', ''] });
+    assert.deepEqual(rel.partnerPhrases(id).openers, ['Hi Mum, got a minute?']);
+});
+
+test('removing a person takes their profile with them', async () => {
+    const id = await rel.addPerson({ name: 'Mary', relationship: 'mother' });
+    await rel.setPartnerProfile(id, { note: 'keep it light' });
+    await rel.removePerson(id);
+    assert.equal(rel.buildPartnerBlock(id), '');
+});

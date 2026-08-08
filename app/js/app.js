@@ -1815,10 +1815,31 @@ function applyControlPhrases() {
     // reaches the palette; setConversationPhrases ignores a fully-empty list and
     // keeps the defaults.
     const clean = (a) => (a || []).map((s) => s.trim()).filter(Boolean);
+
+    // The active partner's own phrases go FIRST, then the global list (Ken, August
+    // 7 2026: add rather than replace). So adding one starter for one person costs
+    // nothing and loses nothing — page 1 of the palette is theirs, and paging
+    // reaches the global set, since static palettes have paginated since v0.5.93.
+    // Deduped case-insensitively so a phrase in both lists does not show twice.
+    const mine = (activePartner && activePartner.personId)
+        ? relationships.partnerPhrases(activePartner.personId)
+        : { openers: [], windDowns: [], closings: [] };
+    const merge = (theirs, global) => {
+        const out = [];
+        const seen = new Set();
+        for (const s of [...clean(theirs), ...clean(global)]) {
+            const k = s.toLowerCase();
+            if (seen.has(k)) continue;
+            seen.add(k);
+            out.push(s);
+        }
+        return out;
+    };
+
     engine.setConversationPhrases({
-        openers: clean(p.openers),
-        windDowns: clean(p.windDowns),
-        closings: clean(p.closings),
+        openers: merge(mine.openers, p.openers),
+        windDowns: merge(mine.windDowns, p.windDowns),
+        closings: merge(mine.closings, p.closings),
     });
 }
 
@@ -2166,6 +2187,9 @@ function clearInfluencers() {
     activePartner = null;
     activeFeeling = null;
     renderExpressPanel();
+    // Drop the cleared partner's own starters and closings back out of the engine,
+    // or the next conversation opens with the last person's phrases still on page 1.
+    applyControlPhrases();
 }
 
 // The user is TAKING THE FLOOR with their own words — shared by the composer's
@@ -2344,6 +2368,14 @@ function buildSituationBlock() {
     if (activePartner) {
         const label = (activePartner.nickname || activePartner.name || '').trim();
         if (label) lines.push(`You are currently talking with ${label} — ${label} is the person being spoken TO, not a topic to raise. When you address or refer to them, use "${label}".`);
+        // How the user speaks WITH this particular person (Phase 3). Only for a
+        // partner who is a real node in the graph — a free-typed Express Panel
+        // partner has no edge to carry a profile — and only when they have one, so
+        // an unedited person adds nothing.
+        if (activePartner.personId) {
+            const how = relationships.buildPartnerBlock(activePartner.personId, label);
+            if (how) lines.push(how);
+        }
     }
     if (activeFeeling && activeFeeling.text) {
         lines.push(`The user is currently feeling ${activeFeeling.text.toLowerCase()}. Let this color the tone of the suggested responses, while keeping them authentic to the user.`);
@@ -2400,6 +2432,10 @@ function placeStamp() {
 function handleTogglePartner(item) {
     activePartner = (activePartner && activePartner.id === item.id) ? null : item;
     renderExpressPanel();
+    // Re-merge their own starters and closings into the engine's static palettes.
+    // Switching partner has to re-run this in both directions — selecting one adds
+    // their phrases, clearing one has to take them back out again.
+    applyControlPhrases();
     ui.setStatus(activePartner ? `Talking with ${activePartner.nickname || activePartner.name}` : 'Partner cleared');
 }
 

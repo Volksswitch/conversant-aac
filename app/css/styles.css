@@ -2310,6 +2310,58 @@ body.conv-bottom .tab-panel[data-tab="aboutme"].active {
     margin-bottom: 0.5rem;
 }
 
+/* "How I talk with them" — the per-partner profile (Phase 3). Collapsed by
+   default so the person form stays short; everything inside defaults to neutral,
+   so a person whose section was never opened is unaffected. */
+.wv-partner-profile {
+    border-top: 1px solid var(--border, #d7dde3);
+    margin: 0.5rem 0;
+    padding-top: 0.5rem;
+}
+
+.wv-partner-profile > summary {
+    cursor: pointer;
+    font-weight: 600;
+    padding: 0.35rem 0;
+    min-height: var(--btn-min-dim);
+    display: flex;
+    align-items: center;
+}
+
+.wv-partner-profile > *:not(summary) {
+    margin-top: 0.5rem;
+}
+
+/* One row per register dimension: a fixed-width label so the selects line up in
+   a column and the five read as one scale rather than five unrelated controls. */
+.wv-dim-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.wv-dim-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.wv-dim-label {
+    flex: 0 0 7.5rem;
+}
+
+.wv-dim-select {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* One phrase per line. Fixed rows rather than auto-growing: Rule 11 prefers a
+   deterministic size, and these are usually one or two lines. */
+.wv-phrase-lines {
+    resize: vertical;
+    font-family: inherit;
+}
+
 /* My Places — a place's recorded facts, read-only on the card. Key and value are
    visually distinct so "favorite drink / mocha latte" scans as one pair. */
 .wv-fact-list {

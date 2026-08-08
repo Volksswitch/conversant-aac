@@ -23,6 +23,7 @@
  */
 
 import { readFile, writeFile, hasDataFolder } from './storage.js';
+import { registerClauses, goalText } from './partner-profile.js';
 
 const FILE = 'relationships.json';
 const CACHE_KEY = 'aac_relationships';
@@ -164,6 +165,12 @@ export async function updatePerson(id, { name, relationship, about, nickname, li
         const t = (relationship || '').trim();
         if (edge) {
             if (t) edge.type = t;
+            // Clearing the relationship must NOT drop the edge when it carries a
+            // profile — "how I talk with this person" lives in its attrs, and
+            // deleting the edge would silently destroy it while the user thinks
+            // they only blanked a dropdown. Empty the type instead; an edge with
+            // no type reads exactly like no edge everywhere else.
+            else if (Object.keys(edge.attrs || {}).length) edge.type = '';
             else g.edges = g.edges.filter((e) => e !== edge);
         } else if (t) {
             g.edges.push({ from: ME, to: id, type: t, attrs: {} });
@@ -188,6 +195,90 @@ export async function resetAll() {
 
 export function count() {
     return ensureLoaded().people.length;
+}
+
+// --- per-partner profile (the me->person edge's attrs) ----------------------
+//
+// "How I talk with this person": register, a standing relationship goal, a free
+// note, and this person's own conversation starters and closings. All of it lives
+// on the me->person EDGE rather than the person node, because every one of these is
+// a property of the RELATIONSHIP, not of them — how the user speaks to their
+// brother is not a fact about the brother (Ken, August 5 2026).
+//
+// Four features were queued for this same edge; three are built here. The fourth,
+// per-partner permission for coarse language, is deliberately NOT — it is blocked
+// on the guardian-approval question, and until that is settled the prompt's blanket
+// no-vulgarity rule stands (Ken, August 3 2026). The seam is this same object.
+
+const PROFILE_KEYS = ['register', 'goal', 'note', 'openers', 'windDowns', 'closings'];
+
+/**
+ * The me->person edge, created on demand. A person can exist with no relationship
+ * type set, in which case there is no edge yet — but they can still have a profile,
+ * so writing one has to be able to make the edge.
+ */
+function ensureMeEdge(personId) {
+    const g = ensureLoaded();
+    let edge = meEdge(personId);
+    if (!edge) {
+        edge = { from: ME, to: personId, type: '', attrs: {} };
+        g.edges.push(edge);
+    }
+    if (!edge.attrs) edge.attrs = {};
+    return edge;
+}
+
+/** Everything on the edge, with empty defaults so callers need no guards. */
+export function getPartnerProfile(personId) {
+    const edge = meEdge(personId);
+    const a = (edge && edge.attrs) || {};
+    return {
+        register: { ...(a.register || {}) },
+        goal: a.goal ? { ...a.goal } : null,
+        note: a.note || '',
+        openers: Array.isArray(a.openers) ? a.openers.slice() : [],
+        windDowns: Array.isArray(a.windDowns) ? a.windDowns.slice() : [],
+        closings: Array.isArray(a.closings) ? a.closings.slice() : []
+    };
+}
+
+/** Patch the edge's attrs; only the keys present are touched. */
+export async function setPartnerProfile(personId, patch = {}) {
+    const g = ensureLoaded();
+    if (!g.people.some((p) => p.id === personId)) return;
+    const edge = ensureMeEdge(personId);
+    for (const key of PROFILE_KEYS) {
+        if (patch[key] === undefined) continue;
+        const v = patch[key];
+        if (key === 'register') {
+            // Drop neutral dimensions rather than storing them as empty strings, so
+            // the stored shape says only what the user actually set.
+            const reg = {};
+            for (const [k, val] of Object.entries(v || {})) if (val) reg[k] = val;
+            edge.attrs.register = reg;
+        } else if (key === 'goal') {
+            edge.attrs.goal = v && (v.id || v.text) ? { ...v } : null;
+        } else if (key === 'note') {
+            edge.attrs.note = (v || '').trim();
+        } else {
+            edge.attrs[key] = (Array.isArray(v) ? v : [])
+                .map((s) => (s || '').trim())
+                .filter(Boolean);
+        }
+    }
+    await save();
+}
+
+/**
+ * This person's own conversation phrases. These ADD to the global lists rather
+ * than replacing them, and theirs come FIRST (Ken, August 7 2026) — so adding a
+ * single starter for one person costs nothing and loses nothing: page 1 of the
+ * palette shows theirs, and paging reaches the global set. Replacing would mean
+ * authoring a full set per person or silently narrowing the palette.
+ */
+export function partnerPhrases(personId) {
+    const p = getPartnerProfile(personId);
+    return { openers: p.openers, windDowns: p.windDowns, closings: p.closings };
 }
 
 // --- LLM profile block ------------------------------------------------------
@@ -241,5 +332,55 @@ export function buildBlock() {
             ...privateKnown
         );
     }
+    return lines.join('\n');
+}
+
+/**
+ * How the user talks with the person they are speaking to RIGHT NOW — emitted only
+ * for the active partner, so it stays small and specific where buildBlock() above
+ * is the standing list of everyone.
+ *
+ * Stated ASSERTIVELY, on Ken's decision (August 7 2026) to "take them at their
+ * word" for a specific, well-known person. These are not hedged as self-reports;
+ * hedging invites the model to discount them, and the user knows how they speak to
+ * their own mother better than any inference we could make.
+ *
+ * THE GUARD IS THE LOAD-BEARING PART, and it is the August 5 2026 lesson applied
+ * to a second kind of context. The place block had to be told that where you are is
+ * the SETTING, not the subject, because a list of facts with no stated purpose
+ * reads to a model as material to work in. A standing relationship goal is far more
+ * dangerous that way: "Repair things between us" is a reason to choose warmer
+ * wording, and would be a catastrophe read as an instruction to raise the subject
+ * of repairing the relationship. So the purpose is stated before the content, and
+ * again after it.
+ */
+export function buildPartnerBlock(personId, label = '') {
+    ensureLoaded();
+    const person = getPerson(personId);
+    if (!person) return '';
+    const name = (label || person.nickname || person.name || '').trim();
+    if (!name) return '';
+
+    const profile = getPartnerProfile(personId);
+    const clauses = registerClauses(profile.register);
+    const goal = goalText(profile.goal);
+    const note = (profile.note || '').trim();
+    if (!clauses.length && !goal && !note) return '';
+
+    const lines = [`How this user speaks WITH ${name}. This shapes the WORDING of your suggestions only — none of it is a topic to raise.`];
+
+    if (clauses.length) {
+        lines.push(`Talking with ${name}, this user is ${clauses.join('; ')}. Match that, relative to how you would otherwise write for them.`);
+    }
+    if (goal) {
+        lines.push(`Over time, what this user wants from their relationship with ${name} is: ${goal}. Let that steer which of several possible responses feels right — never mention it, and never suggest a response that is ABOUT it unless the partner raises it first.`);
+    }
+    if (note) {
+        // The user's own words about the relationship, so they outrank the menu
+        // above — the menu is five dimensions we chose, this is whatever they
+        // actually wanted to say.
+        lines.push(`In the user's own words about talking with ${name}: "${note}" Treat this as authoritative — it is the user's own description and it overrides the general guidance above where they conflict.`);
+    }
+
     return lines.join('\n');
 }

@@ -26,6 +26,18 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- **You can now tell the app how you talk with each particular person.** Open
+  someone in About Me → People and tap "How I talk with them": whether you are
+  more relaxed or more careful with them than you usually are, shorter or fuller,
+  warmer or more matter-of-fact, more direct or more hedged, more playful or more
+  serious. You can also say what you want out of the relationship, and add
+  anything else in your own words. When you tap that person in the Express Panel,
+  your suggestions are worded the way you actually speak to them. None of it is
+  ever raised as a subject — it only changes how things are put.
+- **A person can have their own conversation starters, wind-downs and goodbyes.**
+  When they are the person you are talking with, theirs come up first and your
+  usual ones follow, so adding one for somebody takes nothing away anywhere else.
+
 - If you use **Reframe** to correct a suggestion — "keep it short", "be more
   direct" — and find yourself asking for the same thing more than once, the app now
   takes that as a standing preference instead of making you repeat it every time.

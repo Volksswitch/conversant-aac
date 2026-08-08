@@ -60,6 +60,7 @@ const SHELL = [
   './js/voice.js',
   './js/voice-harvest.js',
   './js/sound-check-items.js',
+  './js/partner-profile.js',
   './js/worldview-ui.js',
   './js/confirm-dialog.js',
   './js/keyboard.js',

@@ -20,6 +20,7 @@ import * as rel from './relationships.js';
 import * as places from './places.js';
 import * as voiceProfile from './voice.js';
 import { SOUND_CHECK_ITEMS, VERDICT, questionFor } from './sound-check-items.js';
+import { REGISTER_DIMENSIONS, RELATIONSHIP_GOALS } from './partner-profile.js';
 import * as voiceHarvest from './voice-harvest.js';
 import * as controlPhrases from './control-phrases.js';
 import * as expressPanel from './express-panel.js';
@@ -641,6 +642,115 @@ const REL_GROUPS = [
 const REL_KNOWN = new Set(REL_GROUPS.flatMap((g) => g.items.map((s) => s.toLowerCase())));
 const OTHER = '__other__';
 
+/**
+ * "How I talk with them" — the per-partner profile (Phase 3), collapsed by default.
+ *
+ * Collapsed because it is optional depth on a form that already has seven fields:
+ * someone adding a person should not have to scroll past register dimensions to
+ * reach Save. Everything in here defaults to neutral/empty, so a person whose
+ * section is never opened behaves exactly as before.
+ *
+ * Returns { node, read } — `read` is called by the form's Save so the profile is
+ * written in the same action, including for a person who does not exist yet.
+ */
+function buildPartnerProfileSection(existing) {
+    const saved = existing ? rel.getPartnerProfile(existing.id) : null;
+
+    // Register: one select per dimension, each relative to the user's own baseline.
+    // "Same as usual" is the default and emits nothing at all downstream.
+    const dimSelects = new Map();
+    const dimRows = REGISTER_DIMENSIONS.map((dim) => {
+        const sel = el('select', { class: 'wv-select wv-dim-select' });
+        sel.append(el('option', { value: '' }, 'Same as usual'));
+        sel.append(el('option', { value: dim.low.value }, dim.low.label));
+        sel.append(el('option', { value: dim.high.value }, dim.high.label));
+        if (saved && saved.register && saved.register[dim.key]) sel.value = saved.register[dim.key];
+        dimSelects.set(dim.key, sel);
+        return el('label', { class: 'wv-dim-row' }, [
+            el('span', { class: 'wv-dim-label', text: dim.label }), sel
+        ]);
+    });
+
+    // Standing relationship goal — what they want from the relationship over time,
+    // not from one conversation. Curated menu plus free text (Ken, June 15 2026):
+    // fast to pick, which matters for this user, but still their own words if none
+    // of the twelve fit.
+    const goalSelect = el('select', { class: 'wv-select' });
+    goalSelect.append(el('option', { value: '' }, 'No particular goal'));
+    for (const g of RELATIONSHIP_GOALS) goalSelect.append(el('option', { value: g.id }, g.text));
+    goalSelect.append(el('option', { value: OTHER }, 'Something else…'));
+    const goalOther = el('input', { type: 'text', class: 'wv-text', placeholder: 'What you want from this relationship' });
+    const goalOtherWrap = el('div', { class: 'wv-rel-other' }, [goalOther]);
+    const syncGoal = () => { goalOtherWrap.style.display = goalSelect.value === OTHER ? '' : 'none'; };
+    goalSelect.addEventListener('change', syncGoal);
+    if (saved && saved.goal) {
+        if (saved.goal.id && RELATIONSHIP_GOALS.some((g) => g.id === saved.goal.id)) {
+            goalSelect.value = saved.goal.id;
+        } else if (saved.goal.text) {
+            goalSelect.value = OTHER;
+            goalOther.value = saved.goal.text;
+        }
+    }
+    syncGoal();
+
+    const noteIn = el('input', { type: 'text', class: 'wv-text',
+        placeholder: 'Anything else about how you talk with them (optional)',
+        value: saved ? saved.note : '' });
+
+    // Their own starters and closings. One per line rather than a full list editor:
+    // these ADD to the global lists and are usually one or two phrases, so the
+    // weight of an add/reorder/delete editor is not earned here. The global lists
+    // keep theirs on Settings -> Controls.
+    const linesOf = (arr) => (arr || []).join('\n');
+    const openersIn = el('textarea', { class: 'wv-text wv-phrase-lines', rows: '2',
+        placeholder: 'Conversation starters for them — one per line' });
+    openersIn.value = saved ? linesOf(saved.openers) : '';
+    const windIn = el('textarea', { class: 'wv-text wv-phrase-lines', rows: '2',
+        placeholder: 'Ways to wind down with them — one per line' });
+    windIn.value = saved ? linesOf(saved.windDowns) : '';
+    const closeIn = el('textarea', { class: 'wv-text wv-phrase-lines', rows: '2',
+        placeholder: 'Goodbyes for them — one per line' });
+    closeIn.value = saved ? linesOf(saved.closings) : '';
+
+    const splitLines = (v) => v.split('\n').map((s) => s.trim()).filter(Boolean);
+
+    const node = el('details', { class: 'wv-partner-profile' }, [
+        el('summary', { text: 'How I talk with them' }),
+        el('div', { class: 'wv-dim-grid' }, dimRows),
+        goalSelect, goalOtherWrap, noteIn,
+        openersIn, windIn, closeIn
+    ]);
+
+    // Open it on edit when there is something in it, so a saved profile is not
+    // invisible behind a closed triangle.
+    if (saved && (Object.keys(saved.register).length || saved.goal || saved.note ||
+        saved.openers.length || saved.windDowns.length || saved.closings.length)) {
+        node.open = true;
+    }
+
+    const read = () => {
+        const register = {};
+        for (const [key, sel] of dimSelects) if (sel.value) register[key] = sel.value;
+        const goalId = goalSelect.value;
+        let goal = null;
+        if (goalId === OTHER) {
+            const t = goalOther.value.trim();
+            if (t) goal = { id: '', text: t };
+        } else if (goalId) {
+            goal = { id: goalId };
+        }
+        return {
+            register, goal,
+            note: noteIn.value.trim(),
+            openers: splitLines(openersIn.value),
+            windDowns: splitLines(windIn.value),
+            closings: splitLines(closeIn.value)
+        };
+    };
+
+    return { node, read };
+}
+
 // Edit form for an existing person, or the blank "add someone" form when
 // `existing` is null.
 function buildPersonForm(existing) {
@@ -698,15 +808,20 @@ function buildPersonForm(existing) {
         privCheck, el('span', { text: 'Private — AI knows but won\'t bring them up unprompted' })
     ]);
 
+    const profile = buildPartnerProfileSection(existing);
+
     card.append(el('div', { class: 'wv-person-fields' }, [nameIn, nicknameIn, relSelect, otherWrap, aboutIn, livesRow, privRow]));
+    card.append(profile.node);
 
     const save = el('button', { class: 'wv-btn wv-btn-primary', text: existing ? 'Save' : 'Add person',
         onclick: async () => {
             const name = nameIn.value.trim();
             const relationship = getRelationship();
             if (!name && !relationship) return;   // nothing to save
+            let id;
             if (existing) {
-                await rel.updatePerson(existing.id, {
+                id = existing.id;
+                await rel.updatePerson(id, {
                     name, relationship,
                     about: aboutIn.value.trim(),
                     nickname: nicknameIn.value.trim(),
@@ -714,7 +829,10 @@ function buildPersonForm(existing) {
                     isPrivate: privCheck.checked
                 });
             } else {
-                await rel.addPerson({
+                // A new person has no id until they exist, so the profile is written
+                // second — the section is read from the DOM either way, so nothing
+                // typed into it is lost by the ordering.
+                id = await rel.addPerson({
                     name, relationship,
                     about: aboutIn.value.trim(),
                     nickname: nicknameIn.value.trim(),
@@ -722,6 +840,7 @@ function buildPersonForm(existing) {
                     isPrivate: privCheck.checked
                 });
             }
+            await rel.setPartnerProfile(id, profile.read());
             renderPeople();
         } });
 
