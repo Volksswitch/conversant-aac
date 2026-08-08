@@ -167,10 +167,10 @@ The ritual:
    `app/js/settings-help.js`. `npm test` fails when the two have drifted, so running
    the tests before the push catches a missed regeneration; this step is here so it
    does not depend on that.
-4. **Add the CLAUDE.md version-table row** for `<final>` (a one-line engineering
+4. **Add the VERSION-HISTORY.md version-table row** for `<final>` (a one-line engineering
    summary — this table is released-versions-only).
 5. **Commit** the release (`app/js/app.js`, `app/sw.js`, `CHANGELOG.md`,
-   `app/js/whats-new.js`, `CLAUDE.md`).
+   `app/js/whats-new.js`, `VERSION-HISTORY.md`).
 6. **Push `origin main`.** GitHub Actions redeploys `app/` to Pages within ~1 minute.
    Users get the new app on their next reload (the service worker swaps it in on one
    load and serves it on the next).
