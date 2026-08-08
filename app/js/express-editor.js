@@ -30,7 +30,7 @@ import * as expressPanel from './express-panel.js';
 import * as relationships from './relationships.js';
 import * as places from './places.js';
 import * as keyboard from './keyboard.js';
-import { CATEGORIES, INFLUENCER_COLORS, FEELING_PRESETS, makeId } from './express-items.js';
+import { CATEGORIES, INFLUENCER_COLORS, FEELING_PRESETS, makeId, isEmptyItem } from './express-items.js';
 import { confirmDanger } from './confirm-dialog.js';
 
 let container = null;
@@ -179,6 +179,17 @@ function buildInsertBar(at) {
     return bar;
 }
 
+// Turn an undefined slot into a real item of `type`, IN PLACE — the position is
+// what the user chose by tapping that cell, so it must not move. A fresh id (rather
+// than the placeholder's) so provenance stamps it as the user's addition.
+function defineAt(i, type) {
+    const item = newItem(type);
+    current[i] = item;
+    pickerForId = null;
+    pendingFocusId = item.id;
+    commit(true);
+}
+
 function buildRow(item, i) {
     const row = document.createElement('div');
     row.className = `ee-row ee-${item.type}`;
@@ -205,7 +216,20 @@ function buildRow(item, i) {
     const fields = document.createElement('div');
     fields.className = 'ee-fields';
 
-    if (item.type === 'phrase') {
+    if (isEmptyItem(item)) {
+        // An undefined slot: it exists only to hold this position in the grid, so
+        // the row asks the one question left — what goes here. Choosing a type
+        // replaces it where it stands.
+        const label = document.createElement('span');
+        label.className = 'ee-empty-label';
+        label.textContent = 'Not set yet —';
+        fields.appendChild(label);
+        [['Phrase', 'phrase'], ['Partner', 'partner'], ['Feeling', 'feeling'], ['Place', 'place']].forEach(([text, type]) => {
+            const b = mkBtn(text, 'ee-add');
+            b.addEventListener('click', () => defineAt(i, type));
+            fields.appendChild(b);
+        });
+    } else if (item.type === 'phrase') {
         fields.appendChild(textInput(item.text, 'Phrase to speak', (v) => { item.text = v; commit(false); }));
         // The category only sets the button color, and its names ("Affirm / deny"…)
         // mean nothing to the user (Ken) — so pick by COLOR, not by category name.
@@ -289,6 +313,7 @@ function buildRow(item, i) {
     const save = mkBtn('Save', 'ee-save');
     save.title = 'Save this item and hide the on-screen keyboard';
     save.addEventListener('click', () => { commit(false); keyboard.hideKeyboard(); });
+    save.hidden = isEmptyItem(item);   // nothing typed, nothing to save
     const up = mkBtn('↑'); up.disabled = i === 0;
     up.addEventListener('click', () => { [current[i - 1], current[i]] = [current[i], current[i - 1]]; commit(true); });
     const down = mkBtn('↓'); down.disabled = i === current.length - 1;
@@ -336,11 +361,36 @@ export function render() {
 
     // Focus + reveal a just-added row so the user can type in place.
     if (pendingFocusId) {
-        const row = list.querySelector(`.ee-row[data-id="${pendingFocusId}"]`);
+        const id = pendingFocusId;
         pendingFocusId = null;
-        if (row) {
-            row.scrollIntoView({ block: 'nearest' });
-            (row.querySelector('.ee-fields input') || row.querySelector('.ee-fields select'))?.focus();
-        }
+        revealRow(id);
     }
+}
+
+// Scroll a row into view and put the cursor in its first field. An undefined slot
+// has no field — only the four type buttons — so focus the first of those instead,
+// which is the question that row is actually asking.
+function revealRow(id) {
+    if (!container || !id) return null;
+    const row = container.querySelector(`.ee-row[data-id="${CSS.escape(String(id))}"]`);
+    if (!row) return null;
+    row.scrollIntoView({ block: 'nearest' });
+    const field = row.querySelector('.ee-fields input, .ee-fields select, .ee-fields button');
+    if (field) field.focus();
+    return row;
+}
+
+/**
+ * Bring the editor row for `id` into view and focus it — how a tap on a panel cell
+ * lands the user on that cell's row. Renders first when the editor has not been
+ * built yet (it is built lazily on the tab switch), and marks the row so the user
+ * can see which of thirty-odd rows the tap chose; a scroll alone is easy to miss.
+ */
+export function focusItem(id) {
+    if (!container || !id) return;
+    if (!container.querySelector(`.ee-row[data-id="${CSS.escape(String(id))}"]`)) render();
+    const row = revealRow(id);
+    if (!row) return;
+    container.querySelectorAll('.ee-row-picked').forEach((r) => r.classList.remove('ee-row-picked'));
+    row.classList.add('ee-row-picked');
 }

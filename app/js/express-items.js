@@ -19,6 +19,18 @@
  *                 awareness obtained without GPS: the user taps where they are, and
  *                 the AI is told the setting plus whatever facts are recorded about
  *                 it ("favorite drink: mocha latte").
+ *   - empty   : { type:'empty' }                        a cell the user has NOT yet
+ *                 defined. It holds a POSITION and nothing else: it renders as an
+ *                 outlined, text-less button and carries no words, so it is never
+ *                 spoken and is never evidence of the user's voice.
+ *
+ * WHY 'empty' HAS TO EXIST (Ken, August 8 2026). The list is dense — position N in
+ * the list is cell N of the grid — so a cell PAST the end of the list cannot be
+ * addressed at all. Without a placeholder, "put a button in this particular cell"
+ * could only ever mean "append to the end", which is the very thing tapping a cell
+ * exists to avoid: the user picks the position by tapping it, instead of typing into
+ * a list and then reordering rows until it lands there. An empty item is how the
+ * gap between the last defined item and the tapped cell is held open.
  *
  * Partner, Feeling and Place are mutually-exclusive WITHIN their kind (one active
  * partner, one active feeling, one active place); tapping an active one again turns
@@ -97,6 +109,22 @@ export function isUserAuthored(item) {
   return !!item && item.origin !== ORIGIN.DEFAULT;
 }
 
+// --- undefined cells ---------------------------------------------------------
+
+/** An undefined cell: holds a grid position, carries nothing else. */
+export function newEmptyItem() {
+  // origin DEFAULT deliberately: an empty slot contains no words, so crediting it
+  // to the user would inflate "items added or edited" (the personalization-depth
+  // measure) with cells that say nothing about them. It becomes theirs when they
+  // choose a type for it — that replacement is stamped ADDED in the normal way.
+  return { id: makeId(), type: 'empty', origin: ORIGIN.DEFAULT };
+}
+
+/** Is this a cell the user has not defined yet? */
+export function isEmptyItem(item) {
+  return !!item && item.type === 'empty';
+}
+
 // The provided STARTING LAYOUT (Ken: "a starting layout should be provided").
 //
 // HALF-POPULATED BY DESIGN (Ken, August 7 2026). An empty grid means blank holes on
@@ -161,6 +189,9 @@ function signature(item) {
 export function ensureOrigin(items) {
   return (items || []).map((it) => {
     if (!it || it.origin) return it;
+    // An undefined cell has no words at all, so the text test below would read its
+    // empty string as "not one of ours" and credit it to the user.
+    if (it.type === 'empty') return { ...it, origin: ORIGIN.DEFAULT };
     const text = it.text || it.name || '';
     const ours = it.type !== 'partner' && it.type !== 'place' && SHIPPED_DEFAULT_TEXTS.has(text);
     return { ...it, origin: ours ? ORIGIN.DEFAULT : ORIGIN.EDITED };

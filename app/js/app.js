@@ -483,6 +483,7 @@ function initApp() {
             if (key !== null && key !== (storage.loadApiKey() || '')) { llm.setApiKey(key); storage.saveApiKey(key); }
         }
         keyboard.hideKeyboard();
+        hostExpressPanel(false);   // Escape must return the panel to the dock too
     });
     // Release number with the build appended (Ken, July 30 2026) — "0.5.99 ·
     // 9e73383". A bug report needs the exact code, not just the version: several
@@ -1518,6 +1519,7 @@ function renderPracticePanel() {
         const endBtn = mkButton('End practice', 'practice-end', async () => {
             await endPractice();
             renderPracticePanel();
+            hostExpressPanel(false);   // the panel must not close inside the dialog
             document.getElementById('settingsDialog').close();
         });
         panel.append(now, endBtn);
@@ -1579,6 +1581,7 @@ async function startPractice(scenario) {
     practiceMode = true;
     practiceScenario = scenario;
     keyboard.hideKeyboard();
+    hostExpressPanel(false);       // the panel must not close inside the dialog
     document.getElementById('settingsDialog').close();
     await terminateConversation(); // fresh conversation state + log (keeps practiceMode)
     isListening = false;
@@ -2295,6 +2298,79 @@ function expressLayoutRows() {
     return (LAYOUTS[id] && LAYOUTS[id].rows) || [];
 }
 
+// Is a conversation under way? The gate on defining an Express cell by tapping it
+// (below). Ken's rule is deliberately about the CONVERSATION, not the moment: a
+// control that works at some instants within a conversation and not others is less
+// predictable than one simply unavailable for the duration, and predictability is
+// worth more than reach for this population. So this asks "has a conversation been
+// opened and not yet ended", by any of the routes that open one — Start
+// conversation (a static palette is showing), Start Listening, a partner turn in
+// flight, a committed turn, or a practice session. terminateConversation() clears
+// every one of them, which is what makes the answer go back to false.
+function conversationInProgress() {
+    return practiceMode
+        || isListening
+        || conversationHistory.length > 0
+        || !!currentPartnerText
+        || lastPalette.length > 0
+        || !!currentStatic.kind;
+}
+
+// True while the panel is hosted inside the open Settings dialog (Express tab).
+let expressPanelInSettings = false;
+
+// Move the panel into, or back out of, the open Settings dialog. On the Express
+// tab the user is looking straight at the panel they are editing, so it must be
+// tappable; everywhere else it goes back to the dock.
+function hostExpressPanel(inSettings) {
+    expressPanelInSettings = !!inSettings;
+    ui.setExpressPanelHost(inSettings ? document.getElementById('settingsDialog') : null);
+}
+
+/**
+ * The user tapped an undefined cell: open the editor on THAT cell.
+ *
+ * Ken's reason for tap-to-define is that it makes position and content one
+ * operation instead of two — the button is created where it will live, rather than
+ * typed into a list and then walked up the order with the ↑ button. So the index of
+ * the tapped cell is the whole point, and holding it open is what the 'empty' item
+ * type exists for (see express-items.js): every cell before the tapped one gets an
+ * empty placeholder, so the new button lands in the cell that was actually tapped.
+ */
+function handleDefineCell(index) {
+    // NOT during a conversation (Ken). A filled cell SPEAKS on tap and an undefined
+    // one would open a full-screen editor — very different consequences for adjacent
+    // holes in a keyguard, and this population taps imprecisely. Between
+    // conversations there is no bad outcome; mid-conversation there is, and nobody
+    // composes their button set mid-exchange. Silent: a stray tap on a blank cell
+    // does nothing today, and that is exactly what it should keep doing.
+    if (!expressPanelInSettings && conversationInProgress()) return;
+
+    const items = expressPanel.getItems();
+    while (items.length <= index) items.push(expressItems.newEmptyItem());
+    const id = items[index].id;
+    expressPanel.setItems(items);
+    renderExpressPanel();
+
+    const dialog = document.getElementById('settingsDialog');
+    if (!dialog.open) openSettings();
+    const tab = document.querySelector('#settingsTabs .settings-tab[data-tab="express"]');
+    if (tab) activateSettingsTab(tab, false);   // renders the editor and hosts the panel
+    expressEditor.focusItem(id);
+}
+
+// A tap on a DEFINED button while the panel is live in Settings edits it rather
+// than acting on it. Speaking from the Settings panel would be audible to anyone in
+// the room and is not a conversational turn; toggling a partner or place from an
+// editing surface would change conversation state the user cannot see. Editing is
+// what they are there for, and it is the half of "edit in place" that makes the
+// panel a view of itself. Returns true when it handled the tap.
+function editedInSettings(item) {
+    if (!expressPanelInSettings) return false;
+    expressEditor.focusItem(item && item.id);
+    return true;
+}
+
 function renderExpressPanel() {
     applyButtonSizing();   // the active layout may have changed → refresh --kbd-rows/--kbd-cols
     // The user-editable, ordered typed-item list (phrase / partner / feeling).
@@ -2327,6 +2403,11 @@ function renderExpressPanel() {
         onToggleFeeling: handleToggleFeeling,
         onTogglePlace: handleTogglePlace,
         onInMyOwnWords: openComposer,
+        // Always wired: whether the tap is allowed is decided inside the handler,
+        // because it depends on conversation state that changes without the panel
+        // being re-rendered — and because the cell must look and measure the same
+        // either way (Rule 1).
+        onDefineCell: handleDefineCell,
     });
 }
 
@@ -2430,6 +2511,7 @@ function placeStamp() {
 // effect is applied at conversation open (personalized openers) and each turn
 // (situation block) — no immediate generation needed here.
 function handleTogglePartner(item) {
+    if (editedInSettings(item)) return;
     activePartner = (activePartner && activePartner.id === item.id) ? null : item;
     renderExpressPanel();
     // Re-merge their own starters and closings into the engine's static palettes.
@@ -2441,6 +2523,7 @@ function handleTogglePartner(item) {
 
 // Feeling toggle: one active at a time, same on/off/switch behavior.
 function handleToggleFeeling(item) {
+    if (editedInSettings(item)) return;
     activeFeeling = (activeFeeling && activeFeeling.id === item.id) ? null : item;
     renderExpressPanel();
     ui.setStatus(activeFeeling ? `Feeling ${activeFeeling.text.toLowerCase()}` : 'Feeling cleared');
@@ -2450,6 +2533,7 @@ function handleToggleFeeling(item) {
 // the effect is applied at the next generation (situation block) — no round-trip is
 // fired here, so tapping where you are never costs a token or interrupts a turn.
 function handleTogglePlace(item) {
+    if (editedInSettings(item)) return;
     activePlace = (activePlace && activePlace.id === item.id) ? null : item;
     renderExpressPanel();
     ui.setStatus(activePlace ? `At ${activePlace.name}` : 'Place cleared');
@@ -2664,6 +2748,7 @@ function initSliderSteppers() {
 // committed to history (Ken — "anything spoken is part of the conversation").
 // Routed through the shared speak-as-a-turn path.
 async function handleSpeakExpressItem(phrase) {
+    if (editedInSettings(phrase)) return;
     await speakAsUserTurn(phrase.text, phrase.speak || phrase.text, 'express');
 }
 
@@ -3008,7 +3093,15 @@ function activateSettingsTab(tab, focus) {
 function handleSettingsTab(tabName) {
     // About Me renders into its own tab-panel and keeps the on-screen keyboard up
     // (a preview when no field is focused; a typing keyboard once a card field is).
+    // Every tab but Express puts the panel back in the dock. Done first so no path
+    // can leave it hosted in a dialog that is about to show something else.
+    hostExpressPanel(tabName === 'express');
     if (tabName === 'aboutme') { worldviewUI.open(); return; }
+    // The panel is now live beside the editor, so the editor is a view of the panel
+    // as it will actually appear, edited in place. The keyboard shares the same dock
+    // band, so it covers the panel once a field is focused and the two swap — which
+    // is tolerable on a Settings surface in a way it would not be during a
+    // conversation. In physical-keyboard mode there is no conflict at all.
     if (tabName === 'express') { expressEditor.render(); keyboard.hideKeyboard(); return; }
     if (tabName === 'controls') { controlEditor.render(); keyboard.hideKeyboard(); return; }
     if (tabName === 'practice') { renderPracticePanel(); keyboard.hideKeyboard(); return; }
@@ -3697,6 +3790,10 @@ function openSettings() {
     updateFolderDisplay();
 
     // Reset to General tab (keep the roving tabindex + aria-selected in sync).
+    // This bypasses handleSettingsTab, so put the panel back in the dock explicitly
+    // — otherwise a close path that missed it would strand the panel in a hidden
+    // dialog and the dock would open empty.
+    hostExpressPanel(false);
     document.querySelectorAll('#settingsTabs .settings-tab').forEach(t => {
         const on = t.dataset.tab === 'general';
         t.classList.toggle('active', on);
@@ -4367,6 +4464,10 @@ function openSettings() {
         // The keyboard is now kept up when focus moves to in-dialog controls, so
         // take it down explicitly on close (covers both real-typing and preview).
         keyboard.hideKeyboard();
+        // Same reason, and the same reparenting: the panel is hosted INSIDE this
+        // dialog on the Express tab, so closing without putting it back would take
+        // the dock with it and leave an empty band.
+        hostExpressPanel(false);
         dialog.close();
     };
 }

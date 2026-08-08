@@ -102,3 +102,18 @@ test('a blank Express cell holds the same box as a button (keyguard alignment)',
             `.ep-cell-blank must declare ${prop} to match .ep-btn's box, or blank cells misalign the keyguard`);
     }
 });
+
+test('an undefined Express cell changes only colour, never its box', () => {
+    // Same keyguard hazard from the other direction. An undefined cell inherits
+    // .ep-btn's box by BEING an .ep-btn, so the rule may restyle it but must never
+    // touch a property that changes its measured size -- most temptingly the 5px
+    // left bar, which has to stay 5px wide and merely lose its colour.
+    const css = readFileSync(new URL('../app/css/styles.css', import.meta.url), 'utf8');
+    const at = css.indexOf('.ep-btn.ep-undefined {');
+    assert.ok(at >= 0, '.ep-btn.ep-undefined rule is missing entirely');
+    const block = css.slice(at, css.indexOf('}', at));
+    for (const prop of ['padding', 'border-width', 'border-left-width', 'border:', 'border-left:', 'min-width', 'min-height', 'font-size']) {
+        assert.ok(!block.includes(prop),
+            `.ep-btn.ep-undefined must not set ${prop} -- it would resize the cell and move every keyguard hole after it`);
+    }
+});

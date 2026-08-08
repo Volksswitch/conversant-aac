@@ -452,6 +452,33 @@ body.conv-bottom #expressPanel,
 body.conv-side   #expressPanel {
     padding-bottom: calc(var(--grid-gap) / 2 + var(--safe-bottom));
 }
+/* The panel while it is hosted INSIDE the open Settings dialog (Express tab), so
+   the user can tap the cells they are editing — see ui.setExpressPanelHost. It
+   leaves the flex flow of #dockArea, so it is pinned back onto the identical rect
+   from the identical variables (#dockArea above): the panel must not move by a
+   pixel when Settings opens, or one keyguard could not overlay both (Rule 11).
+   #dockArea stays where it is and shows through as the empty dock band. */
+#expressPanel.ep-in-settings {
+    position: fixed;
+    z-index: 50;
+    width: auto;                 /* left/right (or width, side) place it instead */
+    background: #e9edf0;         /* #dockArea's background travels with it */
+}
+body.conv-bottom #expressPanel.ep-in-settings {
+    left: var(--app-margin);
+    right: var(--app-margin);
+    bottom: var(--app-margin);
+    height: var(--dock-h);
+    border-top: 1px solid #c4ccd2;
+}
+body.conv-side #expressPanel.ep-in-settings {
+    top: var(--app-margin);
+    bottom: var(--app-margin);
+    width: var(--dock-w);
+}
+body.conv-side-right #expressPanel.ep-in-settings { right: var(--app-margin); border-left: 1px solid #c4ccd2; }
+body.conv-side-left  #expressPanel.ep-in-settings { left: var(--app-margin);  border-right: 1px solid #c4ccd2; }
+
 #epGrid {
     flex: 1 1 auto;
     display: flex;
@@ -1124,6 +1151,22 @@ body.conv-bottom .palette-grid {
     font-weight: 800;
 }
 
+/* An UNDEFINED cell — a position the user has not filled yet (Ken, August 8 2026).
+   The outline is present so the cell reads as a button that exists and can be
+   tapped; the fill is TRANSPARENT (the dock shows through) so it also reads as not
+   yet defined. Only colour and border STYLE change — every box dimension is
+   inherited from .ep-btn above, because a different box would move the keyguard
+   holes for every cell after it. */
+.ep-btn.ep-undefined {
+    --ep-color: #b9c4ca;
+    background: transparent;
+    /* The 5px left bar is what carries a defined button's colour, so an undefined
+       cell must not paint one — but it must still OCCUPY the 5px, hence a
+       transparent border rather than a narrower one. */
+    border-left-color: transparent;
+    box-shadow: none;
+}
+
 /* Inert grid spacer (matches a blank/pred or leftover key cell). */
 /* A blank cell must hold EXACTLY the footprint of an .ep-btn, or the keyguard holes
    stop lining up (Rule 1 — the hard requirement, not the motor-planning one).
@@ -1290,6 +1333,15 @@ button:not(.kbd-key):not(.kbd-tool):not(.kbd-pred-btn):not(.ep-btn) {
 .ee-badge-partner { background: #5D4037; }
 .ee-badge-feeling { background: #00838F; }
 .ee-badge-place   { background: #827717; }
+/* An undefined slot — a position with nothing in it yet. Grey and dashed so the
+   list reads at a glance as "these cells are still yours to fill", matching how the
+   same slot looks in the panel itself. */
+.ee-badge-empty   { background: #b9c4ca; }
+.ee-row.ee-empty { border-style: dashed; background: #fbfcfd; }
+.ee-empty-label { flex: 0 0 auto; align-self: center; color: #78909c; font-size: 0.9rem; }
+/* The row a panel tap just chose. Thirty-odd rows look alike, so a scroll alone is
+   easy to miss — this says which one the tap landed on. */
+.ee-row.ee-row-picked { border-color: #2c7a3f; box-shadow: 0 0 0 2px rgba(44, 122, 63, 0.25); }
 .ee-fields { display: flex; flex: 1 1 auto; gap: 0.4rem; flex-wrap: wrap; min-width: 0; }
 .ee-fields input, .ee-fields select { flex: 1 1 8rem; min-width: 0; padding: 0.35rem 0.5rem; border: 1px solid #c4ccd2; border-radius: 6px; font-size: 0.95rem; }
 .ee-fields .ee-name-select { flex: 2 1 16rem; } /* the "Choose a name" dropdown — twice as wide */

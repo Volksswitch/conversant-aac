@@ -26,6 +26,18 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- **Empty Express Panel buttons now show, and you can tap one to fill it in.** The
+  panel arrives half filled on purpose, and until now the cells you hadn't used yet
+  were simply nothing. Each one is now drawn as an empty outlined button, and tapping
+  it takes you straight to Settings → Express Panel with that exact button ready to
+  set up — so you choose where a button goes by tapping the spot you want it in,
+  instead of adding it to the end of a list and moving it up. Everything stays
+  exactly where it was on screen, so a keyguard still fits. Tapping an empty button
+  does nothing while you're in a conversation.
+- **The Express Panel works while the Express Panel settings are open.** You can tap
+  a button in the panel to jump to its row in the list, so you're editing the panel
+  while looking at the panel. Tapping a button there sets it up rather than speaking
+  it.
 - **The app no longer answers general-knowledge questions for you.** If someone asks
   you something like a date, a figure, a definition or how something works, the app
   used to hand over the answer out of its own knowledge — which quietly turned you

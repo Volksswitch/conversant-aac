@@ -2,7 +2,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DEFAULT_ITEMS, CATEGORIES, ensureIds, makeId,
-         ORIGIN, isUserAuthored, ensureOrigin, markEdits } from '../app/js/express-items.js';
+         ORIGIN, isUserAuthored, ensureOrigin, markEdits,
+         newEmptyItem, isEmptyItem } from '../app/js/express-items.js';
 
 test('every default item has a stable id, a type, and a known category/color', () => {
     for (const it of DEFAULT_ITEMS) {
@@ -106,4 +107,46 @@ test('REORDERING is not an edit — position is not authorship', () => {
     const prev = DEFAULT_ITEMS.map((x) => ({ ...x }));
     const out = markEdits([...prev].reverse(), prev);
     assert.ok(out.every((x) => x.origin === ORIGIN.DEFAULT), 'moving our phrases does not make them theirs');
+});
+
+// --- undefined cells (Ken, August 8 2026) ------------------------------------
+// An empty item holds a grid POSITION and carries no words. Both halves matter:
+// without it a cell past the end of the list cannot be addressed at all, and if it
+// counted as the user's it would inflate every measure of what they have written.
+
+test('an empty slot is identifiable and carries no words', () => {
+    const it = newEmptyItem();
+    assert.ok(it.id);
+    assert.equal(it.type, 'empty');
+    assert.ok(isEmptyItem(it));
+    assert.equal(it.text, undefined);
+    assert.equal(it.name, undefined);
+});
+
+test('an empty slot is NOT counted as the user\'s — it says nothing about them', () => {
+    assert.equal(isUserAuthored(newEmptyItem()), false);
+    // ...and survives a save, which re-stamps provenance by diffing.
+    const prev = [{ id: 'd0', type: 'phrase', text: 'Yes', cat: 'affirm', origin: ORIGIN.DEFAULT }];
+    const out = markEdits([...prev, newEmptyItem()], prev);
+    assert.equal(isUserAuthored(out[1]), false, 'padding cells are not authorship');
+});
+
+test('MIGRATION: an empty slot with no origin field is not credited to the user', () => {
+    // The text test would read its missing text as "not one of ours" and hand it over.
+    const [it] = ensureOrigin([{ id: 'e1', type: 'empty' }]);
+    assert.equal(it.origin, ORIGIN.DEFAULT);
+    assert.equal(isUserAuthored(it), false);
+});
+
+test('DEFINING an empty slot in place makes it the user\'s, at the same position', () => {
+    // What the editor does when the user picks a type for a tapped cell: replace the
+    // placeholder where it stands. The position is the whole point of tap-to-define.
+    const prev = [{ id: 'd0', type: 'phrase', text: 'Yes', cat: 'affirm', origin: ORIGIN.DEFAULT },
+                  { id: 'e1', type: 'empty', origin: ORIGIN.DEFAULT },
+                  { id: 'e2', type: 'empty', origin: ORIGIN.DEFAULT }];
+    const next = prev.map((x, i) => (i === 1 ? { id: makeId(), type: 'phrase', text: 'Righto', cat: 'social' } : { ...x }));
+    const out = markEdits(next, prev);
+    assert.equal(out[1].text, 'Righto', 'landed in the tapped cell, not appended');
+    assert.ok(isUserAuthored(out[1]));
+    assert.ok(isEmptyItem(out[2]), 'the slot after it is still open');
 });

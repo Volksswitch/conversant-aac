@@ -342,6 +342,33 @@ export function showResponseError(message, onRetry) {
 // Speaking / opening the modal is the caller's job, so this stays presentational.
 const epGrid = document.getElementById('epGrid');
 
+// --- Making the panel live over the Settings dialog --------------------------
+//
+// Settings opens with showModal(), which makes everything OUTSIDE the dialog
+// inert. The panel is already VISIBLE beside Settings (the dialog is deliberately
+// inset to clear the dock), it is simply untappable — so on the Express tab, where
+// the user is looking straight at the panel they are editing, it has to be
+// reachable (Ken, August 8 2026).
+//
+// The fix is the one the keyboard already uses (keyboard.js previewShow): move the
+// element INTO the open dialog so it shares the modal's top layer. #dockArea is not
+// movable — it is an in-flow flex child in the bottom dock — so #expressPanel moves
+// instead and .ep-in-settings pins it to exactly the rect #dockArea occupied, off
+// the same CSS variables, so nothing shifts by a pixel.
+const expressPanel = document.getElementById('expressPanel');
+const dockArea = document.getElementById('dockArea');
+
+/**
+ * Host the Express Panel inside `dialog` (live) or back in the dock (`null`).
+ * Idempotent — safe to call on every tab switch.
+ */
+export function setExpressPanelHost(dialog) {
+    if (!expressPanel || !dockArea) return;
+    const host = (dialog && dialog.open) ? dialog : dockArea;
+    expressPanel.classList.toggle('ep-in-settings', host !== dockArea);
+    if (expressPanel.parentNode !== host) host.appendChild(expressPanel);
+}
+
 // Render the editable, ordered typed-item list (phrase / partner / feeling) into
 // the grid cells of the paired keyboard layout, in order. The space cell becomes
 // "In my own words". Phrase buttons speak (single/double tap); partner and
@@ -360,6 +387,11 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         // is byte-for-byte the phrase grid it was before the feature existed; with
         // N on offer the phrases shift N cells along and the last N drop off the end.
         choiceChips = [], choiceColor = {}, onChoiceChip, activeChoice = null,
+        // A cell the user has not defined yet is RENDERED — an outlined, text-less
+        // button — rather than left as an inert spacer, because an undefined cell
+        // that cannot be tapped is a position the user can never claim (Ken, August
+        // 8 2026). Called with the item-list index the cell occupies.
+        onDefineCell,
     } = opts;
     epGrid.innerHTML = '';
 
@@ -467,6 +499,26 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         return b;
     };
 
+    // An UNDEFINED cell: the outline of a button with nothing in it. Kept as an
+    // .ep-btn (with a modifier) rather than a bespoke element so its box — padding
+    // and both border widths — is identical to a defined button's; a narrower box
+    // would shift every cell after it and the keyguard holes would stop lining up
+    // (Rule 1, the hard requirement). Same reason .ep-cell-blank matches the box.
+    const buildUndefinedCell = (index, span) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'ep-btn ep-undefined';
+        b.style.flex = `${span} 1 0`;
+        b.title = 'Empty — tap to put a button here';
+        b.setAttribute('aria-label', 'Empty button slot — tap to add a button here');
+        // Whether a tap is ALLOWED is decided by the handler, not here: it depends on
+        // whether a conversation is under way, which changes without the panel being
+        // re-rendered. Deciding at tap time keeps the gate current and — just as
+        // important — keeps the cell looking and measuring the same either way.
+        b.addEventListener('click', () => onDefineCell && onDefineCell(index));
+        return b;
+    };
+
     let pi = 0;              // index into the ordered item list
     let ci = 0;              // index into the offered chips (they take the lead cells)
     (layoutRows || []).forEach((row) => {
@@ -498,9 +550,13 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
                 rowEl.appendChild(buildChoiceCell(choiceChips[ci++], span));
                 return;
             }
-            // char or non-space action cell → next item, or blank if exhausted.
-            const item = items[pi++];
-            if (!item) { rowEl.appendChild(blank(span)); return; }
+            // char or non-space action cell → the next item. Two cases render as an
+            // undefined cell: an explicit 'empty' item (a position the user opened up
+            // but has not filled), and anything past the end of the list (the panel
+            // ships half-populated, so most cells start here).
+            const index = pi++;
+            const item = items[index];
+            if (!item || item.type === 'empty') { rowEl.appendChild(buildUndefinedCell(index, span)); return; }
             rowEl.appendChild(buildItemBtn(item, span));
         });
         epGrid.appendChild(rowEl);
