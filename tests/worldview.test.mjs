@@ -8,6 +8,7 @@
 import { resetLocalStorage, mockFetchFromDisk } from './env.mjs';
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import * as wv from '../app/js/worldview.js';
 
 let shareableKey;   // a field whose default privacy is not 'private'
@@ -144,6 +145,116 @@ test('the expertise exception is scoped to the named subjects and forbids lectur
 test('no expertise answer means no lifting text at all', async () => {
     await wv.setField('fav_color', 'green');
     assert.doesNotMatch(wv.buildBlock(), /is lifted/);
+});
+
+// --- B2: humor (August 8 2026) -----------------------------------------------
+// Prompted by the smart-speaker fix: a real person asked something they can't
+// answer is more likely to be wry than flat, and nothing in the app knew whether
+// that suited them. Humor is a directive, never a fact line — "sarcastic" listed
+// as a fact leaves the model to guess, and its two guesses are opposite.
+
+test('humor becomes an instruction, not another listed fact', async () => {
+    await wv.setField('b2_style', ['Sarcastic']);
+    await wv.setField('b2_cheeky', 'Yes, whenever it fits');
+    const block = wv.buildBlock();
+    assert.match(block, /How this person does humor/);
+    assert.match(block, /Their sense of humor: Sarcastic/);
+    assert.doesNotMatch(block, /- [^\n]*sense of humor/i, 'must not also appear as a fact line');
+});
+
+// The hard limit. A joke in the user's own voice cannot be taken back, and a card
+// can be tapped by mistake — so a straight option must always survive.
+test('licensed humor is capped at one option and barred from serious turns', async () => {
+    await wv.setField('b2_style', ['Dry or deadpan']);
+    await wv.setField('b2_cheeky', 'Yes, whenever it fits');
+    const block = wv.buildBlock();
+    assert.match(block, /at most ONE response on any turn may be the playful one/);
+    assert.match(block, /never go light on a turn that is serious, upsetting or medical/);
+    assert.match(block, /never state or describe any of this/);
+    // The case that prompted the module.
+    assert.match(block, /cannot answer something, a light brush-off/);
+});
+
+test('declining joking suggestions produces a prohibition, and nothing else', async () => {
+    await wv.setField('b2_style', ['Sarcastic']);
+    await wv.setField('b2_teasing', 'I enjoy it');
+    await wv.setField('b2_cheeky', 'No — keep my suggestions straight');
+    const block = wv.buildBlock();
+    assert.match(block, /does not want joking or cheeky suggestions/);
+    // A decline must override the rest. Leaving "sarcastic, enjoys teasing" in the
+    // prompt beside a prohibition is an invitation to split the difference.
+    assert.doesNotMatch(block, /Sarcastic/);
+    assert.doesNotMatch(block, /enjoy back-and-forth teasing/);
+    assert.doesNotMatch(block, /light brush-off/);
+});
+
+// Someone who ticks only "I'm not much of a joker" and never reaches the permission
+// question has answered it in substance. Defaulting that to licensed would offer
+// jokes to the one person who told us they do not make them.
+test('"not much of a joker" alone reads as a decline', async () => {
+    await wv.setField('b2_style', ["I'm not much of a joker"]);
+    assert.match(wv.buildBlock(), /does not want joking or cheeky suggestions/);
+});
+
+// Silence is not permission — the standing shape of every consent-ish field here.
+test('a humor style with no permission answer does not license a joke', async () => {
+    await wv.setField('b2_style', ['Witty — I like clever wordplay']);
+    const block = wv.buildBlock();
+    assert.match(block, /NOT said whether they want joking suggestions, so do not\s+offer one/);
+    assert.doesNotMatch(block, /light brush-off/);
+});
+
+test('the close-only answers scope humor and teasing to close partners', async () => {
+    await wv.setField('b2_teasing', "Only with people I'm close to");
+    await wv.setField('b2_cheeky', "Only with people I'm close to");
+    const block = wv.buildBlock();
+    assert.match(block, /never with a stranger, and never in a formal setting/);
+    assert.match(block, /With anyone else, keep every option straight/);
+});
+
+// A stated "no" must beat inferred style evidence. Found live: with wry Sound Check
+// selections in the prompt, the model went light anyway and the refusal was simply
+// lost. The model will not rank two kinds of instruction on its own, so say which
+// wins — a refusal that quietly loses to an example is worse than never asking.
+test('a decline explicitly overrides the Sound Check style examples', async () => {
+    await wv.setField('b2_cheeky', 'No — keep my suggestions straight');
+    assert.match(wv.buildBlock(), /OVERRIDES the style examples/);
+});
+
+test('no humor answers means no humor text at all', async () => {
+    await wv.setField('fav_color', 'green');
+    assert.doesNotMatch(wv.buildBlock(), /How this person does humor/);
+});
+
+/*
+ * The drift tripwire, and it matters more here than for the Likert scale. A trait
+ * string that stops matching loses an answer; HUMOR_DECLINE failing to match does
+ * not lose "no thanks" — it turns it into permission. buildBlock recognises these
+ * by value, so the registry must keep authoring them verbatim.
+ */
+test('every humor answer buildBlock recognises is still authored in the registry', async () => {
+    const reg = JSON.parse(
+        await readFile(new URL('../app/data/worldview-questions.json', import.meta.url), 'utf8')
+    );
+    const b2 = reg.modules.find(m => m.id === 'B2');
+    assert.ok(b2, 'module B2 must exist, and must be B2 — the number is the question bank\'s');
+    const opts = new Set(b2.fields.flatMap(f => f.options || []));
+    for (const s of [
+        'No — keep my suggestions straight',
+        "I'm not much of a joker",
+        "Only with people I'm close to",
+        'Not really my thing',
+        'Yes, whenever it fits',
+        'I enjoy it',
+    ]) {
+        assert.ok(opts.has(s), `buildBlock matches on "${s}" but no B2 option offers it`);
+    }
+    // Every field must route through the directive, or it silently becomes a fact line.
+    for (const f of b2.fields) {
+        assert.equal(f.directive, 'humor', `${f.key} must carry directive: "humor"`);
+        assert.ok(['style', 'teasing', 'permission'].includes(f.humorAspect),
+            `${f.key} needs a humorAspect buildBlock knows`);
+    }
 });
 
 // --- Tier B: personality + values (Phase 4) ---------------------------------

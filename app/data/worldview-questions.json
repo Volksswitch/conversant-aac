@@ -688,6 +688,69 @@
       ]
     },
     {
+      "id": "B2",
+      "tier": "abstract",
+      "title": "Humor & Playfulness",
+      "note": "How you like to joke, and whether the app should ever offer you a lighter response. Every question is optional, and none of it is a topic the app will bring up — it only changes how things are worded.",
+      "fields": [
+        {
+          "key": "b2_style",
+          "q": "How would you describe your sense of humor?",
+          "type": "multi",
+          "options": [
+            "Dry or deadpan",
+            "Silly and goofy",
+            "Witty — I like clever wordplay",
+            "Sarcastic",
+            "Gentle and wholesome",
+            "Dark humor",
+            "I'm not much of a joker"
+          ],
+          "fills": [
+            "my sense of humor"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable",
+          "directive": "humor",
+          "humorAspect": "style"
+        },
+        {
+          "key": "b2_teasing",
+          "q": "Is back-and-forth teasing fun for you, or not your thing?",
+          "type": "choice",
+          "options": [
+            "I enjoy it",
+            "Only with people I'm close to",
+            "Not really my thing"
+          ],
+          "fills": [
+            "how I feel about teasing"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable",
+          "directive": "humor",
+          "humorAspect": "teasing"
+        },
+        {
+          "key": "b2_cheeky",
+          "q": "Is it okay for the app to offer you a cheeky or joking response when one fits?",
+          "type": "choice",
+          "options": [
+            "Yes, whenever it fits",
+            "Only with people I'm close to",
+            "No — keep my suggestions straight"
+          ],
+          "fills": [
+            "whether I want joking suggestions"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable",
+          "directive": "humor",
+          "humorAspect": "permission"
+        }
+      ]
+    },
+    {
       "id": "B4",
       "tier": "abstract",
       "title": "What Matters to Me",

@@ -71,6 +71,14 @@ export const DIMENSIONS = {
     // which the project already leans on for the DISPREFERRED slot's hedge+account
     // rule and in the Reframe redirect taxonomy.
     directness: 'How directly they ask for something, versus hedging the imposition.',
+    // Added August 8 2026, and it exists because a DESCRIPTION of humor was measured
+    // not to be enough. Module B2 asks what someone's sense of humor is and whether
+    // they want lighter suggestions; that reliably decides WHETHER to go light, and
+    // reliably fails to produce anything actually funny — a model told "witty and
+    // sarcastic" writes "my history knowledge is patchy". Few-shot beats description
+    // for style by a wide margin (Sounds Like Me §10), so the key has to be shown,
+    // not named. These items are where it gets shown.
+    levity: 'Whether an awkward moment is met flatly or brushed off with a remark.',
 };
 
 export const SOUND_CHECK_ITEMS = [
@@ -242,6 +250,39 @@ export const SOUND_CHECK_ITEMS = [
             "Right, I'd better go.",
             'I should get going.',
             'I should get going - this has been lovely.',
+        ],
+    },
+    // The three levity items. All hold the CONTENT fixed at "I do not have this" or
+    // "that went wrong" and vary only how lightly it is met, so a choice here is
+    // about manner and nothing else. `leads` alternates across them.
+    {
+        id: 'levity-dontknow', dimension: 'levity', leads: 'flat',
+        stipulate: 'Suppose you genuinely do not know the answer.',
+        partner: 'Do you happen to know what year that happened?',
+        candidates: [
+            "No, I don't know that one.",
+            "No idea, I'm afraid.",
+            'Not a clue. That one left my head a long time ago.',
+        ],
+    },
+    {
+        id: 'levity-mishap', dimension: 'levity', leads: 'light',
+        stipulate: 'Suppose you have just knocked something over, and no harm is done.',
+        partner: 'Oh — are you all right?',
+        candidates: [
+            'Well, that went beautifully.',
+            "Fine, thanks. Not my finest moment.",
+            "Fine, thanks. Sorry about that.",
+        ],
+    },
+    {
+        id: 'levity-late', dimension: 'levity', leads: 'flat',
+        stipulate: 'Suppose you have been kept waiting a while and you do not really mind.',
+        partner: "Sorry, I've kept you waiting ages.",
+        candidates: [
+            "It's fine, honestly.",
+            "It's fine - I had nowhere better to be.",
+            "It's fine. I was starting to plan my escape, mind you.",
         ],
     },
 ];

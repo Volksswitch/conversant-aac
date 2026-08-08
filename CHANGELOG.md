@@ -41,6 +41,19 @@ forgetting to tag one is only ever noise, never silence.
 - **Answers are shorter and less lecture-like.** Even when the app does answer, it
   now says the thing you were asked and stops, instead of adding background you
   didn't ask for.
+- **New About Me section: "Humor & Playfulness".** Three questions — what your
+  sense of humor is like, whether you enjoy back-and-forth teasing, and whether the
+  app should ever offer you a cheeky or joking response. Nobody gets a joking
+  suggestion unless they have asked for one, and if you say no, every suggestion
+  stays straight. Even when you say yes, only one of the four suggestions on a turn
+  is ever the light one, so there is always a plain way to say the same thing — and
+  never on a serious, upsetting or medical turn.
+- **Sound Check has three new questions about taking the edge off** — how you'd
+  answer when you don't know something, when you knock something over, and when
+  someone has kept you waiting. Picking the lighter reply teaches the app your
+  particular way of brushing something off, which is the difference between a
+  suggestion that sounds like you and one that just sounds polite. It won't repeat
+  the exact line you picked; it writes a fresh one in the same spirit.
 
 - **Conversations now cost noticeably less to run.** The app sends the AI a large
   set of standing instructions plus everything it knows about you on every single

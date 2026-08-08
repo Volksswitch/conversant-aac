@@ -9,6 +9,7 @@ import assert from 'node:assert/strict';
 import './env.mjs';
 
 const voice = await import('../app/js/voice.js');
+const { VERDICT } = await import('../app/js/sound-check-items.js');
 
 function reset() {
     localStorage.removeItem('aac_voice');
@@ -192,4 +193,37 @@ test('a blank steer is not recorded', async () => {
     voice.recordSteer('   ');
     voice.recordSteer('');
     assert.deepEqual(voice.repeatedSteers(0), []);
+});
+
+/*
+ * Levity exemplars are listed SEPARATELY from the rest, because the two need
+ * opposite instructions (August 8 2026). A bland exemplar reused verbatim is fine —
+ * the user picked it because it is what they would say, and nobody notices "Good,
+ * thanks." twice. A distinctive brush-off reused is a verbal tic, and the same joke
+ * on every unanswerable question stops sounding like a person by the third outing.
+ */
+test('a levity choice is listed apart from the bland ones, and forbidden as a script', async () => {
+    voice.recordAnswer('economy-weekend', VERDICT.CHOSE, 'Good, thanks.');
+    voice.recordAnswer('levity-dontknow', VERDICT.CHOSE, 'Not a clue. That one left my head a long time ago.');
+    const block = voice.buildBlock();
+
+    // The bland one keeps the original framing; the levity one gets its own.
+    assert.match(block, /Examples of how this user prefers to reply/);
+    assert.match(block, /This is how they take the edge off/);
+    assert.match(block, /NEVER reply with one of them/);
+    assert.match(block, /verbal tic/);
+
+    // And they must not be mixed: the levity line belongs under the second heading.
+    const split = block.indexOf('This is how they take the edge off');
+    assert.ok(block.indexOf('Good, thanks.') < split, 'bland exemplar stays in the first list');
+    assert.ok(block.indexOf('left my head a long time ago') > split, 'levity exemplar moves to the second');
+});
+
+// Selections are behavior, and behavior is the stronger evidence — but an explicit
+// refusal elsewhere in the profile still wins. Stated here so the two blocks agree.
+test('choosing the lighter option counts as permission, and says what overrides it', async () => {
+    voice.recordAnswer('levity-late', VERDICT.CHOSE, "It's fine. I was starting to plan my escape, mind you.");
+    const block = voice.buildBlock();
+    assert.match(block, /IS this user telling you a lighter reply suits them/);
+    assert.match(block, /do not want joking suggestions, which overrides this outright/);
 });

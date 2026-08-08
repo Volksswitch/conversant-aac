@@ -28,6 +28,10 @@
  */
 
 import { readFile, writeFile, hasDataFolder } from './storage.js';
+// For the item's dimension only, so buildBlock can tell a bland exemplar (safe to
+// reuse verbatim) from a levity one (never reuse). sound-check-items.js imports
+// nothing, so there is no cycle.
+import { getItem } from './sound-check-items.js';
 
 const FILE = 'voice.json';
 const CACHE_KEY = 'aac_voice';
@@ -276,9 +280,31 @@ export function buildBlock(idiom = []) {
     const p = current();
     const lines = [];
 
-    const chosen = Object.values(p.soundCheck)
-        .map((a) => a && a.choice)
-        .filter(Boolean);
+    /*
+     * The bank's items split into two kinds and they need OPPOSITE instructions —
+     * a distinction that did not exist until the levity items were added on
+     * August 8 2026, and that a live check made unavoidable.
+     *
+     * Most items are deliberately bland ("Good, thanks.", "That's fine, no rush."),
+     * and the model reusing one verbatim is not a defect: the user picked it because
+     * it is what they would say, and nobody notices someone saying "Good, thanks."
+     * twice. A LEVITY item is the opposite — its whole value is that it is
+     * distinctive, and a distinctive line reused becomes a verbal tic. The same
+     * brush-off on every unanswerable question is the placeholder-predictability
+     * failure ("predictable fillers become a joke to partners over time") arriving
+     * through the voice layer.
+     *
+     * So they are listed separately and told apart, rather than one blanket plea not
+     * to copy anything — which the model followed about two times in three.
+     */
+    const answered = Object.entries(p.soundCheck)
+        .filter(([, a]) => a && a.choice);
+    const chosen = answered
+        .filter(([id]) => (getItem(id) || {}).dimension !== 'levity')
+        .map(([, a]) => a.choice);
+    const chosenLevity = answered
+        .filter(([id]) => (getItem(id) || {}).dimension === 'levity')
+        .map(([, a]) => a.choice);
 
     if (chosen.length) {
         lines.push('Examples of how this user prefers to reply. They were shown several ways of saying the same thing and picked these:');
@@ -291,6 +317,21 @@ export function buildBlock(idiom = []) {
         // specifics out for the same reason (see sound-check-items.js), but a prompt
         // must not depend on content it does not control.
         lines.push('Treat those examples as evidence of WORDING ONLY. They were chosen from a fixed list of made-up replies, so nothing they mention is a fact about this user and none of it may appear in a response.');
+        // Found August 8 2026, the first time the bank carried a DISTINCTIVE example
+        // (the levity items): the model returned the chosen sentence back verbatim as
+        // a response. It went unnoticed while every example was bland — "Good,
+        // thanks." reused is invisible — but a memorable line reused is not, and it
+        // would come out on every similar turn, which is the placeholder-predictability
+        // failure ("the same joke twice is not a joke") arriving through the voice
+        // layer. The rule above forbids reusing their CONTENT; this forbids reusing
+        // the SENTENCE, which is a different thing and was never stated.
+    }
+
+    if (chosenLevity.length) {
+        lines.push('');
+        lines.push('Offered a flat reply and a lighter one for an awkward moment — not knowing something, a small mishap, being kept waiting — this user picked the lighter one. This is how they take the edge off:');
+        for (const t of chosenLevity.slice(0, 6)) lines.push(`  "${t}"`);
+        lines.push('These show you their KEY, not their script. NEVER reply with one of them, or a lightly reworded copy — write a fresh line in the same spirit each time. A memorable phrase reused is a verbal tic, and it stops sounding like a person by about the third outing. Choosing the lighter option here IS this user telling you a lighter reply suits them, so one light response is welcome — UNLESS this profile says elsewhere that they do not want joking suggestions, which overrides this outright and leaves you taking only the length and directness from these.');
     }
 
     const samples = Object.entries(p.samples).filter(([, v]) => v && v.trim());

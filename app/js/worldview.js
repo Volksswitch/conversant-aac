@@ -389,6 +389,101 @@ function traitClause(field, value) {
     return '';   // the middle of the scale, or an unrecognised value
 }
 
+/*
+ * B2 humor: the answers that must be recognised by VALUE, and so carry the same
+ * hazard as the Likert scale above — these strings must match the `options` in
+ * worldview-questions.json exactly, and a test asserts it. A silent mismatch here
+ * is worse than the trait one: `HUMOR_DECLINE` failing to match would not merely
+ * lose an answer, it would turn "no joking suggestions, please" into permission.
+ *
+ * The scoped answer is deliberately the SAME string on both questions, so one
+ * constant covers teasing and permission alike.
+ */
+const HUMOR_DECLINE = 'No — keep my suggestions straight';
+const HUMOR_NOT_A_JOKER = "I'm not much of a joker";
+const HUMOR_CLOSE_ONLY = "Only with people I'm close to";
+const HUMOR_TEASE_NO = 'Not really my thing';
+
+/*
+ * Build the humor instruction, or '' for nothing to say. Structured as one function
+ * because the pieces interact: a decline overrides everything, and "not much of a
+ * joker" with no explicit permission has to be read as a decline rather than as a
+ * style to imitate.
+ */
+function humorRule(answers) {
+    const get = (aspect) => (answers.find((h) => h.aspect === aspect) || {}).value || '';
+    const style = get('style');
+    const teasing = get('teasing');
+    const permission = get('permission');
+
+    // Two routes to "no", and the second matters: someone who ticks only "I'm not
+    // much of a joker" and never reaches the permission question has answered it in
+    // substance. Defaulting that to licensed would offer jokes to the one person who
+    // told us they do not make them.
+    const declined = permission === HUMOR_DECLINE
+        || (!permission && style === HUMOR_NOT_A_JOKER);
+    if (declined) {
+        // The override clause is load-bearing and was added after a live check caught
+        // the failure: with wry style examples in the prompt from Sound Check, the
+        // model went light ANYWAY and ignored the decline. Style evidence and a
+        // stated preference are different kinds of instruction, and the model will
+        // not rank them on its own — so say which wins. A refusal that quietly loses
+        // to an example is worse than never having asked.
+        return 'This person does not want joking or cheeky suggestions. Keep every '
+            + 'response straight and sincere — no wisecracks, no playful deflections, no '
+            + 'teasing, not even as one option among several, and not on a turn where a '
+            + 'joke would seem to fit. This OVERRIDES the style examples you have been '
+            + 'given: if one of them sounds wry or joking, take only its length and '
+            + 'directness and drop the humor entirely.';
+    }
+    // Silence is not permission. With a style but no answer on the cheeky question we
+    // know their taste and not whether they want it used, so say the taste and stop.
+    const licensed = permission === 'Yes, whenever it fits' || permission === HUMOR_CLOSE_ONLY;
+
+    const parts = [];
+    if (style) parts.push(`Their sense of humor: ${style}.`);
+    if (teasing === 'I enjoy it') {
+        parts.push('They enjoy back-and-forth teasing.');
+    } else if (teasing === HUMOR_CLOSE_ONLY) {
+        parts.push('They enjoy back-and-forth teasing, but only with people they are '
+            + 'close to — never with a stranger, and never in a formal setting.');
+    } else if (teasing === HUMOR_TEASE_NO) {
+        parts.push('Teasing is not their thing: never offer a response that teases the partner.');
+    }
+    if (!parts.length && !licensed) return '';
+
+    // The permission clause and the licence to act on it are ONE unit and must not
+    // come apart: a first cut appended the hard-limits paragraph unconditionally, so
+    // an unlicensed profile said "do not offer one" and then, four lines later,
+    // "a light brush-off is a good use of that one option." A test caught it.
+    if (!licensed) {
+        parts.push('They have NOT said whether they want joking suggestions, so do not '
+            + 'offer one. Use the above only to judge their general tone; never write a '
+            + 'joke, a wisecrack or a playful deflection into any response.');
+        return 'How this person does humor. ' + parts.join(' ');
+    }
+
+    parts.push(permission === HUMOR_CLOSE_ONLY
+        ? 'They are happy to be offered a joking or cheeky response, but only with '
+          + 'people they are close to. With anyone else, keep every option straight.'
+        : 'They are happy to be offered a joking or cheeky response when one fits.');
+
+    // The guard is two-sided, like the trait and place blocks, and for a sharper
+    // reason: the failure here is not an awkward sentence but a joke landing in the
+    // user's own voice at the wrong moment, which cannot be taken back. So the ONE
+    // slot cap is a hard limit, not a preference — the user must always keep a plain
+    // way to say the same thing, since a card can be tapped by mistake.
+    parts.push('Use this ONLY to decide whether a LIGHTER response belongs among the '
+        + 'options, and what key it should be in. Hard limits: at most ONE response on '
+        + 'any turn may be the playful one, so there is always a straight way to say the '
+        + 'same thing; never state or describe any of this; and never go light on a turn '
+        + 'that is serious, upsetting or medical, or where the partner sounds distressed. '
+        + 'Where the user genuinely cannot answer something, a light brush-off is a good '
+        + 'use of that one option.');
+
+    return 'How this person does humor. ' + parts.join(' ');
+}
+
 export function buildBlock() {
     ensureLoaded();
     const facts = [];
@@ -405,6 +500,11 @@ export function buildBlock() {
     // question needing world knowledge, because the model cannot know what is in
     // this person's head. Naming a subject here is the user saying it IS.
     const expert = [];
+    // Humor (B2) is the clearest case of the directive rule: "sarcastic" listed as a
+    // fact tells the model nothing about what to DO with it, and the two wrong things
+    // it might do are opposite — sprinkle sarcasm through every card, or ignore it.
+    // Collected here and emitted as one governed instruction below.
+    const humor = [];
     // Tier B (personality + values) answers are Likert, and emitting them as one
     // "- Label: Very much like me" line each would be twenty lines of noise: the
     // model would have to infer what a scale point means, and the low-signal bulk
@@ -428,6 +528,7 @@ export function buildBlock() {
                 if (f.directive === 'avoid') { avoid.push(v); continue; }
                 if (f.directive === 'seek') { seek.push(v); continue; }
                 if (f.directive === 'expert') { expert.push(v); continue; }
+                if (f.directive === 'humor') { humor.push({ aspect: f.humorAspect, value: v }); continue; }
                 if (f.trait) {
                     const clause = traitClause(f, v);
                     if (clause) traits.push(clause);
@@ -442,7 +543,8 @@ export function buildBlock() {
         }
     }
 
-    if (!facts.length && !privateKnown.length && !phraseAround.size && !seek.length && !avoid.length && !traits.length && !expert.length) return '';
+    if (!facts.length && !privateKnown.length && !phraseAround.size && !seek.length
+        && !avoid.length && !traits.length && !expert.length && !humor.length) return '';
 
     const lines = ['You are speaking AS this person, in the first person. What you know about them:'];
     if (facts.length) lines.push('', ...facts);
@@ -501,6 +603,10 @@ export function buildBlock() {
             + 'or anecdotes, no "and what is fascinating is…". Knowing a subject well makes someone '
             + 'CONCISE about it, not lengthy.'
         );
+    }
+    if (humor.length) {
+        const rule = humorRule(humor);
+        if (rule) lines.push('', rule);
     }
     if (seek.length) {
         lines.push(

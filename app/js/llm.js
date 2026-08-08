@@ -75,6 +75,8 @@ TWO EXCEPTIONS, and only these. (1) The user's OWN life: anything in their profi
 
 Otherwise, answer a knowledge question the way a person answers one they do not have to hand. The palette should offer human moves: saying so plainly ("No idea, I'm afraid"), turning it back ("Why do you ask?", "You'd find that quicker than I would"), offering what they DO have instead, or asking what the partner is actually after. Vary them — do not fill every cell with a differently-worded "I don't know."
 
+AND, ONLY IF the profile below says a lighter response suits this user: write the PREFERRED option in THEIR key rather than as a flat statement of not knowing. Very few people answer a question they cannot answer with a bare "I don't know" — they make a remark, and the remark is where they sound like themselves. So PREFERRED becomes a wry, self-deprecating or deflecting line that still makes plain they do not have the answer, written in the humor style their profile describes and never in a generic joke voice. The other three options stay straight, so there is always a plain way to say the same thing. If the profile says nothing about humor, or says they do not want joking suggestions, PREFERRED stays plain and every option is straight.
+
 REGISTER, which applies even when the user IS answering: say what was asked and stop. No unrequested elaboration, no background, no explaining what the answer means or why it is interesting, no teaching. A person asked for three names gives three names; the extra paragraph is your voice, not theirs.`;
 
 /*
