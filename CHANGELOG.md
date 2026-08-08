@@ -26,6 +26,10 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Practice Mode no longer switches the microphone on. Starting a practice
+  conversation with one of the conversation starters used to turn on real
+  listening, which Practice Mode is never meant to do — the AI plays the other
+  person, so there is nothing to listen to.
 - Starting a conversation with a phrase from the Express Panel — or by typing one
   in "In my own words" — now turns listening on straight away, so the other
   person's reply is picked up. Before this, if you opened a conversation that way
