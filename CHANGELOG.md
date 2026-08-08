@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.7.0
+
 - **Empty Express Panel buttons now show, and you can tap one to fill it in.** The
   panel arrives half filled on purpose, and until now the cells you hadn't used yet
   were simply nothing. Each one is now drawn as an empty outlined button, and tapping

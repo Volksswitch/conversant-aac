@@ -21,7 +21,7 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
-  "0.6.8": [
+  "0.7.0": [
     "Empty Express Panel buttons now show, and you can tap one to fill it in. The panel arrives half filled on purpose, and until now the cells you hadn't used yet were simply nothing. Each one is now drawn as an empty outlined button, and tapping it takes you straight to Settings → Express Panel with that exact button ready to set up — so you choose where a button goes by tapping the spot you want it in, instead of adding it to the end of a list and moving it up. Everything stays exactly where it was on screen, so a keyguard still fits. Tapping an empty button does nothing while you're in a conversation.",
     "The Express Panel works while the Express Panel settings are open. You can tap a button in the panel to jump to its row in the list, so you're editing the panel while looking at the panel. Tapping a button there sets it up rather than speaking it.",
     "You can tell the app how to say a word it gets wrong. Names are the usual culprit — your own, a friend's, a place you go. There is now a \"how to say it\" box next to each Express Panel phrase, next to a person's name and what you call them, and next to a place, each with its own 🔊 so you can try a spelling and hear the result straight away. Spelling it the way it sounds is what works: \"Shiv-awn\" for Siobhan. Only the voice sees it. The button, the person, the place and the conversation transcript all keep the real spelling — so nothing on screen changes, and a saved conversation still reads properly.",
