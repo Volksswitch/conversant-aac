@@ -676,13 +676,13 @@
       ]
     },
     {
-      "id": "B2",
+      "id": "B4",
       "tier": "abstract",
       "title": "What Matters to Me",
       "note": "Each of these describes someone. Say how much they sound like you. There are no right answers — they only help the app sound like you when something matters.",
       "fields": [
         {
-          "key": "b2_selfdir",
+          "key": "b4_selfdir",
           "q": "Thinking up new ideas and being creative is important to them. They like to do things their own way.",
           "type": "choice",
           "options": [
@@ -703,7 +703,7 @@
           "defaultPrivacy": "shareable"
         },
         {
-          "key": "b2_stim",
+          "key": "b4_stim",
           "q": "They look for adventure and like to take risks. They want an exciting life.",
           "type": "choice",
           "options": [
@@ -724,7 +724,7 @@
           "defaultPrivacy": "shareable"
         },
         {
-          "key": "b2_hedon",
+          "key": "b4_hedon",
           "q": "Having a good time matters to them. They like to treat themselves.",
           "type": "choice",
           "options": [
@@ -745,7 +745,7 @@
           "defaultPrivacy": "shareable"
         },
         {
-          "key": "b2_achieve",
+          "key": "b4_achieve",
           "q": "Being very successful is important to them. They want people to recognize what they achieve.",
           "type": "choice",
           "options": [
@@ -766,7 +766,7 @@
           "defaultPrivacy": "shareable"
         },
         {
-          "key": "b2_power",
+          "key": "b4_power",
           "q": "It is important to them to be in charge and to have a say over what others do.",
           "type": "choice",
           "options": [
@@ -787,7 +787,7 @@
           "defaultPrivacy": "shareable"
         },
         {
-          "key": "b2_secure",
+          "key": "b4_secure",
           "q": "Living somewhere safe matters a great deal to them. They avoid anything risky.",
           "type": "choice",
           "options": [
@@ -808,7 +808,7 @@
           "defaultPrivacy": "shareable"
         },
         {
-          "key": "b2_conform",
+          "key": "b4_conform",
           "q": "They believe people should follow the rules and do what is expected of them.",
           "type": "choice",
           "options": [
@@ -829,7 +829,7 @@
           "defaultPrivacy": "shareable"
         },
         {
-          "key": "b2_trad",
+          "key": "b4_trad",
           "q": "Tradition matters to them. They keep to the customs they were brought up with.",
           "type": "choice",
           "options": [
@@ -850,7 +850,7 @@
           "defaultPrivacy": "shareable"
         },
         {
-          "key": "b2_benev",
+          "key": "b4_benev",
           "q": "It matters enormously to them to help the people close to them and look after them.",
           "type": "choice",
           "options": [
@@ -871,7 +871,7 @@
           "defaultPrivacy": "shareable"
         },
         {
-          "key": "b2_univ",
+          "key": "b4_univ",
           "q": "They think everyone in the world should be treated equally, and they care about the natural world.",
           "type": "choice",
           "options": [

@@ -144,7 +144,7 @@ test('trait descriptions are aggregated into one statement, not one line each', 
     await wv.loadRegistry();
     await wv.setField('b1_extra_1', 'Very much like me');
     await wv.setField('b1_consc_1', 'Very much like me');
-    await wv.setField('b2_benev', 'Mostly like me');
+    await wv.setField('b4_benev', 'Mostly like me');
     const block = wv.buildBlock();
     const hits = block.split('\n').filter((l) => /describes themselves/.test(l));
     assert.equal(hits.length, 1, 'exactly one aggregated line');
@@ -155,7 +155,7 @@ test('trait descriptions are aggregated into one statement, not one line each', 
 // themselves, so this guard is stronger than the one on ordinary facts.
 test('the trait block forbids stating or quoting it back', async () => {
     await wv.loadRegistry();
-    await wv.setField('b2_power', 'Not like me at all');
+    await wv.setField('b4_power', 'Not like me at all');
     const block = wv.buildBlock();
     assert.match(block, /not a fact about their life and not a topic/i);
     assert.match(block, /never have them describe their own character/i);
