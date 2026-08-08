@@ -3210,9 +3210,16 @@ async function updateUsageDisplay() {
     // something is invalidating the prefix, which shows up as spend before it shows
     // up as anything else. Shown only once there is cache activity, so a user who
     // has never had a conversation sees exactly what they saw before.
+    //
+    // ⚠ THE WORDING IS DELIBERATE AND IS NOT "cached". The first cut read "% of
+    // prompt cached", which is two pieces of jargon on a surface a non-technical
+    // user reads — written the same day Ken said this vocabulary was over his head.
+    // "Reused rather than re-sent" says the whole mechanism in words that need no
+    // glossary, and it is what the cost document quotes. Do not "tidy" it back
+    // toward the technical term.
     const promptTokens = usage.inputTokens + usage.cacheWriteTokens + usage.cacheReadTokens;
     if (promptTokens > 0 && (usage.cacheReadTokens > 0 || usage.cacheWriteTokens > 0)) {
-        extras.push(`${Math.round(usage.cacheReadTokens / promptTokens * 100)}% of prompt cached`);
+        extras.push(`${Math.round(usage.cacheReadTokens / promptTokens * 100)}% reused rather than re-sent`);
     }
     document.getElementById('usageSince').textContent =
         `since ${sinceDate}` + (extras.length ? ` · ${extras.join(' · ')}` : '');

@@ -32,8 +32,8 @@ forgetting to tag one is only ever noise, never silence.
   sends that part once and refers back to it for the rest of the conversation,
   which cuts the bill for a typical conversation by around a third to a half.
   Nothing about the suggestions themselves changes. Settings → About shows how much
-  is being saved, as the share of each request served from the AI's memory of the
-  last one; it climbs as a conversation goes on and resets when you start a new one.
+  is being saved, as the share of each request that did not have to be sent again;
+  it climbs as a conversation goes on and resets when you start a new one.
 - **The running cost on Settings → About is more accurate.** It now prices the
   discounted part of each request at the lower rate it is actually billed at, so
   the figure matches your Anthropic bill instead of estimating high.
