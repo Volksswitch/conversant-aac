@@ -15,6 +15,18 @@
 
 **What good looks like:** state the substance plainly, flag a genuine risk once with its reasoning, give a recommendation when there is one, and then proceed. Disagreement itself is welcome and useful — Ken relies on it. It is the *framing* that must never become adversarial. Warmth is not required; neutrality is. If a sentence would sting to read a second time, rewrite it.
 
+## PLAIN LANGUAGE — write so Ken can read it, or say nothing (Ken, August 8 2026)
+
+Ken: *"I assume that terms like 'walking the object' are understood by programmers in this domain. I'm not one so I mostly ignore what you write. I'd like you to write in plain terms or don't bother to say anything."*
+
+**The damage is not that jargon annoys him — it is that he stops reading.** He is the one who makes the decisions here, so a paragraph he skips is a decision made without the information in it. Writing something technically accurate that goes unread is worse than writing nothing, because it leaves both sides believing it was communicated.
+
+**Where this applies: everything Ken reads** — chat replies, every generated document, commit messages, and this file. **Code comments are the one exception**; their reader is the next developer, so they can be as technical as they need to be. That split is also the trap: it is easy to write a careful plain-language *document* and then narrate the work in developer shorthand in the same breath. That is exactly what happened the day this rule was written — a document about avoiding jargon, explained to Ken in jargon.
+
+**The test before sending: would someone who has never written code follow this sentence?** Ken spent three decades as a systems engineer, so systems, trade-offs, and architecture are all fair game. What he does not have is *programming* vocabulary. "It was looking in the wrong place" is fine. "It was walking the wrong object" is not. Neither are: object, instance, array, string, parse, callback, hook, seam, invariant, refactor, regex, DOM, or a bare file or function name used as though it were a thing he knows.
+
+**"Or don't bother to say anything" is a real instruction, not exasperation.** If a detail cannot be put plainly and he does not need it to decide anything, leave it out. Length is not thoroughness. What he needs from a report is: what now works, what it cost or saved, what is still broken, and anything waiting on his call — not the route taken to get there.
+
 ## Product Name
 The product is named **Conversant AAC** (decided June 18 2026). The name captures the product's core mission: transforming communication into conversation. "Conversant" carries both meanings simultaneously — fluent in conversation, and *in* conversation. The project/working directory continues to be called "AI-driven AAC" for continuity; the product-facing name in the app and documents is Conversant AAC. The product is free and open source.
 
