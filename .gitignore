@@ -52,3 +52,13 @@ Doc Backups/
 .anthropic-key
 .anthropic-key.*
 tests/.anthropic-key*
+
+# Same again for the Deepgram key used by scripts/deepgram-pronunciation-probe.mjs.
+# The wildcards are deliberately loose: this repo is committed with `git add -A`, so
+# a key file whose name is slightly off from the one expected would otherwise be
+# swept in, and a leaked key cannot be un-leaked by a later commit.
+.deepgram-key
+.deepgram-key.*
+*deepgram*key*
+*dg-key*
+deepgram-probe-audio/
