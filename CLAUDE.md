@@ -29,6 +29,19 @@ Published author: "Revolutionizing Augmentative and Alternative Communication wi
 
 **Verify UI details against source before writing about them.** When producing any document (manual, overview, spec, etc.) that describes specific UI elements — button labels, icons, layout positions, control names — read the relevant source files (`index.html`, `ui.js`, `styles.css`, etc.) first. Do not infer or assume UI details from convention or common patterns. Invented UI details (e.g., assuming a gear icon exists for Settings when the button has no icon) are silent errors that reach users. If source files are not read first, the document must not assert specific UI details — hedge or omit them instead.
 
+**Keep this file to what changes a FUTURE decision — it is loaded in full at the start of every session (Ken, August 7 2026).** CLAUDE.md is not a log. Every line costs context in every future session, permanently, and the cost is paid before any work starts. It reached 681 KB before the August 7 consolidation — a fifth of it a release-by-release table that nothing consulted to make a decision.
+
+**An entry keeps three things:** the **decision**; the **reasoning that constrains future work** — why the alternative was rejected, what breaks if it is reversed; and the **failure mode to avoid**, including a mistake whose lesson transfers ("when geometry is wrong but the screen looks right, suspect the measurement basis"). **That reasoning is the point of this file and must not be trimmed** — it is what stops settled decisions being re-litigated, and Ken re-reads it. Pruning is aimed at narrative, never at *why*.
+
+**What belongs somewhere else:**
+- what shipped in a release → `CHANGELOG.md` (user-facing) and [VERSION-HISTORY.md](VERSION-HISTORY.md) (engineering)
+- what was built and verified in a pass → the commit message, and [BUILD-HISTORY.md](BUILD-HISTORY.md) if it needs a durable home
+- what the code does → the code, with a comment pointing here for the why
+- a bug fixed on the way to the right answer, whose lesson does not generalize → the commit message
+
+**The test:** *would someone making a decision six months from now be worse off without this sentence?* If it only records that something happened, it belongs in git.
+
+**Supersede rather than append.** When a decision is reversed, rewrite the entry and say what it replaces — do not leave both and make the reader work out which is current. Some sections had accumulated three layers of superseded design because each pass added a note instead of editing the one below it; the placeholder ladder was rebuilt twice before anyone noticed the file still described the first version as current.
 ---
 
 ## Project Vision
