@@ -86,3 +86,19 @@ test('the tokens the layout is built on are still defined', () => {
             `no "${mode}" rule sets --ep-cell-* — Express-derived button sizing has silently collapsed to its floor`);
     }
 });
+
+test('a blank Express cell holds the same box as a button (keyguard alignment)', () => {
+    // Under box-sizing: border-box a flex item's basis:0 is floored at its own
+    // padding + border, so a blank cell WITHOUT them resolves narrower than the
+    // button beside it and every cell after it shifts along -- measured 129px vs
+    // 146px before this was fixed. Matching `flex` alone is not enough, which is
+    // exactly why this reads the box properties rather than trusting the flex value.
+    const css = readFileSync(new URL('../app/css/styles.css', import.meta.url), 'utf8');
+    const at = css.indexOf('.ep-cell-blank {');
+    assert.ok(at >= 0, '.ep-cell-blank rule is missing entirely');
+    const block = css.slice(at, css.indexOf('}', at));
+    for (const prop of ['padding:', 'border:', 'border-left:']) {
+        assert.ok(block.includes(prop),
+            `.ep-cell-blank must declare ${prop} to match .ep-btn's box, or blank cells misalign the keyguard`);
+    }
+});

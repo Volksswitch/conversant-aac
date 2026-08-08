@@ -26,6 +26,10 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- The Express Panel now starts half full instead of completely full. The
+  everyday words are still there — Yes, No, Okay, Please, Thank you, Sorry, Hi,
+  Bye, Wait, Help — and the rest of the buttons are blank, waiting for your own
+  words. Nothing is removed from a panel you have already set up.
 - Practice Mode no longer switches the microphone on. Starting a practice
   conversation with one of the conversation starters used to turn on real
   listening, which Practice Mode is never meant to do — the AI plays the other

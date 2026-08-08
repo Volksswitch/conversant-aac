@@ -73,23 +73,116 @@ export const FEELING_PRESETS = [
 const PH = (text, cat = 'cont', speak) => (speak ? { type: 'phrase', text, cat, speak } : { type: 'phrase', text, cat });
 const FE = (text) => ({ type: 'feeling', text });
 
+// --- provenance (Ken, August 7 2026) -----------------------------------------
+// Whose words are in a cell. Load-bearing for three separate things, which is why
+// one small field earns its place:
+//   1. VOICE SIGNAL. The "sounds like me" voice block is seeded from Express
+//      phrases, and seeding it from OUR defaults would tell the model this user's
+//      characteristic vocabulary is "Yes", "No" and "Thank you". Only user-touched
+//      items are evidence of anything.
+//   2. CATCHPHRASE REDACTION. A user's own phrases are stripped from harvested
+//      writing samples before those reach the model (the model must never produce
+//      idiolect — Sounds Like Me 5.1). Redacting against the shipped defaults
+//      instead would strip "Yes" and "Thank you" out of every sample.
+//   3. PERSONALIZATION DEPTH. "Express items added or edited" is a measure the
+//      beta instrumentation decision explicitly asked for, and plausibly a LEADING
+//      indicator: a tester who edits their phrases in week 1 is invested before any
+//      conversation metric can show it.
+// 'added' and 'edited' are kept apart because they cost nothing to distinguish;
+// every current consumer only asks the coarser question isUserAuthored().
+export const ORIGIN = { DEFAULT: 'default', ADDED: 'added', EDITED: 'edited' };
+
+/** Did the USER put these words here? The question all three consumers actually ask. */
+export function isUserAuthored(item) {
+  return !!item && item.origin !== ORIGIN.DEFAULT;
+}
+
 // The provided STARTING LAYOUT (Ken: "a starting layout should be provided").
+//
+// HALF-POPULATED BY DESIGN (Ken, August 7 2026). An empty grid means blank holes on
+// day one, the feature is never discovered, and the app reads as broken; a full grid
+// of our phrases is complete, and so invites nothing. Half is a task framed as begun
+// rather than not-yet-started, which is completed more often (Nunes & Dreze 2006,
+// the endowed progress effect). The remaining cells render blank — the renderer
+// already leaves leftover cells empty — and those blanks are the invitation.
+//
+// WHAT STAYS is conversational plumbing: immediately useful, and it makes no claim
+// about the user, because nobody's identity is in "Yes". WHAT LEFT ("Yes please",
+// "Maybe", "That's funny", "See you later", "I agree", "Got it", "One moment", …)
+// is the set that LOOKS like voice while being ours — exactly the cells worth
+// handing over.
+//
 // Feelings lead so the influencer concept is visible, then the common phrases.
 // Partners start empty — they are personal; the user adds their own people in the
-// editor (free-form or picked from People I Know). Sized to fill a typical layout.
+// editor (free-form or picked from People I Know).
 // Stable ids ('d0', 'd1', …) so getItems() returns the SAME id every call —
 // the toggle state (active partner/feeling) is tracked by id, so an unstable id
 // would break the toggled-on highlight.
 export const DEFAULT_ITEMS = [
   FE('Happy'), FE('Sad'), FE('Stressed'), FE('Curious'), FE('Tired'), FE('Excited'),
-  PH('Yes', 'affirm'), PH('No', 'affirm'), PH('Yes please', 'affirm'), PH('No thank you', 'affirm'),
-  PH('Maybe', 'affirm'), PH("I don't know", 'affirm'), PH("I'm not sure", 'affirm'), PH('I think so', 'affirm'),
-  PH('Okay', 'cont'), PH('Got it', 'cont'), PH("That's funny", 'cont'), PH('I agree', 'affirm'),
-  PH('Please', 'social'), PH('Thank you', 'social'), PH("You're welcome", 'social'), PH('Sorry', 'social'),
-  PH('Excuse me', 'social'), PH('Hi', 'social'), PH('Bye', 'social'), PH('See you later', 'social'),
-  PH('Wait', 'pace'), PH('One moment', 'pace'), PH('Go on', 'pace'), PH('Not now', 'pace'),
-  PH('Say that again', 'repair'), PH('Help', 'need'),
-].map((it, i) => ({ id: 'd' + i, ...it }));
+  PH('Yes', 'affirm'), PH('No', 'affirm'),
+  PH('Okay', 'cont'),
+  PH('Please', 'social'), PH('Thank you', 'social'), PH('Sorry', 'social'),
+  PH('Hi', 'social'), PH('Bye', 'social'),
+  PH('Wait', 'pace'),
+  PH('Help', 'need'),
+].map((it, i) => ({ id: 'd' + i, ...it, origin: ORIGIN.DEFAULT }));
+
+// Every phrase/feeling we have EVER shipped as a default. Used only to classify a
+// legacy item that predates the origin field: without it, the sixteen defaults
+// retired above would migrate as user-authored and be credited to the user as
+// voice — the precise error provenance exists to prevent.
+const SHIPPED_DEFAULT_TEXTS = new Set([
+  'Happy', 'Sad', 'Stressed', 'Curious', 'Tired', 'Excited',
+  'Yes', 'No', 'Yes please', 'No thank you', 'Maybe', "I don't know", "I'm not sure",
+  'I think so', 'Okay', 'Got it', "That's funny", 'I agree', 'Please', 'Thank you',
+  "You're welcome", 'Sorry', 'Excuse me', 'Hi', 'Bye', 'See you later', 'Wait',
+  'One moment', 'Go on', 'Not now', 'Say that again', 'Help',
+]);
+
+// The user-authored content of an item, for change detection. Excludes id and
+// origin; a recolor (cat) counts as a touch, because the user chose it.
+function signature(item) {
+  if (!item) return '';
+  const { id, origin, ...rest } = item;
+  return JSON.stringify(Object.keys(rest).sort().map((k) => [k, rest[k]]));
+}
+
+/**
+ * Stamp origin on items that lack it — i.e. a file written before August 7 2026.
+ * A phrase/feeling we have ever shipped is assumed to be ours; anything else was
+ * put there by the user. Added and edited cannot be told apart retroactively, so
+ * legacy user items are recorded as 'edited'.
+ *
+ * The one misclassification this can make is a user who typed a phrase character-
+ * identical to one of our defaults, which is harmless: those are all plumbing words
+ * carrying no voice signal either way.
+ */
+export function ensureOrigin(items) {
+  return (items || []).map((it) => {
+    if (!it || it.origin) return it;
+    const text = it.text || it.name || '';
+    const ours = it.type !== 'partner' && it.type !== 'place' && SHIPPED_DEFAULT_TEXTS.has(text);
+    return { ...it, origin: ours ? ORIGIN.DEFAULT : ORIGIN.EDITED };
+  });
+}
+
+/**
+ * Re-stamp origin after an edit, by diffing against the list as it was. Done here,
+ * by comparison, rather than at each editor call site — the editor has several
+ * paths that create or change an item (add, insert-before, recolor, per-row Save,
+ * reorder) and any one of them could be missed.
+ */
+export function markEdits(next, prev) {
+  const before = new Map((prev || []).map((it) => [it.id, it]));
+  return (next || []).map((it) => {
+    if (!it) return it;
+    const was = before.get(it.id);
+    if (!was) return { ...it, origin: it.origin === ORIGIN.DEFAULT ? ORIGIN.DEFAULT : ORIGIN.ADDED };
+    if (signature(it) !== signature(was)) return { ...it, origin: ORIGIN.EDITED };
+    return { ...it, origin: was.origin || it.origin };
+  });
+}
 
 // Assign a stable id to any item missing one (defaults + freshly-added items).
 let _n = 0;

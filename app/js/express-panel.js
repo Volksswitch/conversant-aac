@@ -14,7 +14,7 @@
  */
 
 import { readFile, writeFile, hasDataFolder } from './storage.js';
-import { DEFAULT_ITEMS, ensureIds } from './express-items.js';
+import { DEFAULT_ITEMS, ensureIds, ensureOrigin, markEdits, isUserAuthored } from './express-items.js';
 
 const FILE = 'express-panel.json';
 const CACHE_KEY = 'aac_express_items';
@@ -49,23 +49,32 @@ export async function load() {
     const raw = await readFile(FILE);
     if (raw) { try { loaded = parseItems(JSON.parse(raw)); } catch { loaded = null; } }
     if (!loaded) loaded = readCache();
-    items = ensureIds(loaded && loaded.length ? loaded : DEFAULT_ITEMS);
+    items = normalize(loaded && loaded.length ? loaded : DEFAULT_ITEMS);
     writeCache(items);
     return items;
+}
+
+// Ids first (markEdits diffs by id), then provenance for anything written before
+// the origin field existed.
+function normalize(list) {
+    return ensureOrigin(ensureIds(list));
 }
 
 /** Synchronous read for the renderer/editor (returns copies). */
 export function getItems() {
     if (!items) {
         const c = readCache();
-        items = ensureIds(c && c.length ? c : DEFAULT_ITEMS);
+        items = normalize(c && c.length ? c : DEFAULT_ITEMS);
     }
     return items.map((x) => ({ ...x }));
 }
 
 /** Persist an edited list (cache immediately, disk in the background). */
 export function setItems(list) {
-    items = ensureIds(Array.isArray(list) ? list : []);
+    const prev = items || getItems();
+    // Re-stamp provenance by diffing against the list as it was, so no editor path
+    // has to remember to do it — see express-items.markEdits.
+    items = markEdits(normalize(Array.isArray(list) ? list : []), prev);
     writeCache(items);
     writeDisk(items);
     return items;
@@ -73,10 +82,19 @@ export function setItems(list) {
 
 /** Restore the provided starting layout. */
 export function resetItems() {
-    items = ensureIds(DEFAULT_ITEMS);
+    items = normalize(DEFAULT_ITEMS);
     writeCache(items);
     writeDisk(items);
     return items;
+}
+
+/**
+ * The items whose words are the USER's — the only ones that are evidence of how
+ * they talk. Feeds the voice block (Sounds Like Me Phase 0), the catchphrase
+ * redaction list, and the personalization-depth measure.
+ */
+export function userAuthoredItems() {
+    return getItems().filter(isUserAuthored);
 }
 
 /**
@@ -90,7 +108,7 @@ export async function syncToFolder() {
     let disk = null;
     if (raw) { try { disk = parseItems(JSON.parse(raw)); } catch { disk = null; } }
     if (disk) {
-        items = ensureIds(disk);
+        items = normalize(disk);
         writeCache(items);
         return 'adopted';
     }

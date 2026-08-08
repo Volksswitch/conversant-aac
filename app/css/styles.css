@@ -1125,7 +1125,21 @@ body.conv-bottom .palette-grid {
 }
 
 /* Inert grid spacer (matches a blank/pred or leftover key cell). */
-.ep-cell-blank { min-width: 0; }
+/* A blank cell must hold EXACTLY the footprint of an .ep-btn, or the keyguard holes
+   stop lining up (Rule 1 — the hard requirement, not the motor-planning one).
+   Matching `flex` is NOT enough and that was the bug: under box-sizing: border-box a
+   flex item's `flex-basis: 0` is floored at its own padding + border, so a bare div
+   resolves NARROWER than a button beside it (measured 129px vs 146px) and every cell
+   after it shifts along. Latent since the panel was built — with a full default set
+   there was only one blank cell and it was invisible; shipping the panel
+   half-populated (Aug 7 2026) put sixteen of them in the grid. So the box is matched
+   here, not just the flex value. Keep these three in step with .ep-btn. */
+.ep-cell-blank {
+    min-width: 0;
+    padding: 0.2rem 0.4rem;
+    border: 1px solid transparent;
+    border-left: 5px solid transparent;
+}
 
 /* Icon-only control buttons (Rule 4). The glyph inherits the button's text
    color (currentColor) and scales with the proportional font (sized in em). */
