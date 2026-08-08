@@ -371,6 +371,24 @@ function labelFor(key) {
  *   Declined    — user chose "Prefer not to say"; NO value sent; phrase-around
  *                 only. For information the user does not want the AI to know.
  */
+/**
+ * The Likert scale shared by every Tier B trait item. Answers at the two ends
+ * contribute a description; the middle contributes NOTHING, so a user who is
+ * genuinely in the middle on something costs no tokens and exerts no pull.
+ *
+ * These strings must match the `options` authored in worldview-questions.json
+ * exactly — a test asserts that, because a silent mismatch would make every trait
+ * answer neutral and the whole module would quietly stop working.
+ */
+const TRAIT_HIGH = new Set(['Very much like me', 'Mostly like me']);
+const TRAIT_LOW = new Set(['Not much like me', 'Not like me at all']);
+
+function traitClause(field, value) {
+    if (TRAIT_HIGH.has(value)) return field.trait.high || '';
+    if (TRAIT_LOW.has(value)) return field.trait.low || '';
+    return '';   // the middle of the scale, or an unrecognised value
+}
+
 export function buildBlock() {
     ensureLoaded();
     const facts = [];
@@ -382,6 +400,14 @@ export function buildBlock() {
     // `directive` in the registry is emitted as a rule instead. (August 7 2026.)
     const seek = [];
     const avoid = [];
+    // Tier B (personality + values) answers are Likert, and emitting them as one
+    // "- Label: Very much like me" line each would be twenty lines of noise: the
+    // model would have to infer what a scale point means, and the low-signal bulk
+    // is exactly what the second edition of the voice plan criticised about trait
+    // scores. They are aggregated into a single sentence of plain descriptions
+    // instead, and a NEUTRAL answer contributes nothing at all -- the same rule as
+    // the per-partner register, and what keeps a half-answered module cheap.
+    const traits = [];
 
     if (registry) {
         for (const mod of registry.modules) {
@@ -396,6 +422,11 @@ export function buildBlock() {
                 if (!v) continue;
                 if (f.directive === 'avoid') { avoid.push(v); continue; }
                 if (f.directive === 'seek') { seek.push(v); continue; }
+                if (f.trait) {
+                    const clause = traitClause(f, v);
+                    if (clause) traits.push(clause);
+                    continue;   // never also emitted as a raw "Label: scale point"
+                }
                 if (effectivePrivacy(f.key) === 'private') {
                     privateKnown.push(`- ${labelFor(f.key)}: ${v}`);
                 } else {
@@ -405,10 +436,27 @@ export function buildBlock() {
         }
     }
 
-    if (!facts.length && !privateKnown.length && !phraseAround.size && !seek.length && !avoid.length) return '';
+    if (!facts.length && !privateKnown.length && !phraseAround.size && !seek.length && !avoid.length && !traits.length) return '';
 
     const lines = ['You are speaking AS this person, in the first person. What you know about them:'];
     if (facts.length) lines.push('', ...facts);
+    if (traits.length) {
+        // The guard matters more here than anywhere else in this block. Every other
+        // entry is a FACT the user could plausibly state out loud; a personality
+        // description is not something anyone says about themselves, and "sociable
+        // and comfortable around people" worked into a response as "I'm a really
+        // sociable person!" would be both false-sounding and faintly absurd. So the
+        // purpose is stated before the content and the prohibition after it — the
+        // same two-sided guard the place block and the per-partner goal carry.
+        lines.push(
+            '',
+            'How this person describes themselves: ' + traits.join('; ') + '.',
+            'Use this ONLY to judge attitude and outlook — how they would react, what '
+            + 'they would care about, which of several possible responses fits them. It is '
+            + 'not a fact about their life and not a topic. Never state it, never quote it '
+            + 'back, and never have them describe their own character.'
+        );
+    }
     if (privateKnown.length) {
         lines.push(
             '',

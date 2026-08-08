@@ -26,6 +26,13 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- **Two new sections in About Me: "What I'm Like" and "What Matters to Me".** Ten
+  short questions each. The first is about your personality, the second describes
+  people and asks how much each one sounds like you. Every question is optional and
+  none of it is ever brought up in conversation — it only helps the app judge how
+  you would react and which of several suggestions actually fits you. Answering in
+  the middle counts as no answer, so you can skip anything you do not feel strongly
+  about.
 - **You can now tell the app how you talk with each particular person.** Open
   someone in About Me → People and tap "How I talk with them": whether you are
   more relaxed or more careful with them than you usually are, shorter or fuller,

@@ -456,6 +456,442 @@
           "defaultPrivacy": "shareable"
         }
       ]
+    },
+    {
+      "id": "B1",
+      "tier": "abstract",
+      "title": "What I’m Like",
+      "note": "A few questions about your personality. Every one is optional, and they only change HOW the app words things — never what it talks about.",
+      "fields": [
+        {
+          "key": "b1_extra_1",
+          "q": "I enjoy being around people and talking with them.",
+          "type": "choice",
+          "options": [
+            "Very much like me",
+            "Mostly like me",
+            "Somewhat like me",
+            "Not much like me",
+            "Not like me at all"
+          ],
+          "trait": {
+            "high": "sociable, and comfortable around people",
+            "low": "happier with quiet and their own company"
+          },
+          "fills": [
+            "how outgoing I am"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "b1_extra_2",
+          "q": "I usually speak up rather than hold back.",
+          "type": "choice",
+          "options": [
+            "Very much like me",
+            "Mostly like me",
+            "Somewhat like me",
+            "Not much like me",
+            "Not like me at all"
+          ],
+          "trait": {
+            "high": "ready to speak up",
+            "low": "inclined to hold back rather than speak up"
+          },
+          "fills": [
+            "how readily I speak up"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "b1_agree_1",
+          "q": "I go out of my way to be kind to people.",
+          "type": "choice",
+          "options": [
+            "Very much like me",
+            "Mostly like me",
+            "Somewhat like me",
+            "Not much like me",
+            "Not like me at all"
+          ],
+          "trait": {
+            "high": "warm and considerate towards people",
+            "low": "not especially concerned with accommodating others"
+          },
+          "fills": [
+            "how considerate I am"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "b1_agree_2",
+          "q": "I would rather keep the peace than win an argument.",
+          "type": "choice",
+          "options": [
+            "Very much like me",
+            "Mostly like me",
+            "Somewhat like me",
+            "Not much like me",
+            "Not like me at all"
+          ],
+          "trait": {
+            "high": "someone who keeps the peace rather than pressing a point",
+            "low": "willing to have the argument rather than smooth it over"
+          },
+          "fills": [
+            "how I handle disagreement"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "b1_consc_1",
+          "q": "I like to plan things out rather than take them as they come.",
+          "type": "choice",
+          "options": [
+            "Very much like me",
+            "Mostly like me",
+            "Somewhat like me",
+            "Not much like me",
+            "Not like me at all"
+          ],
+          "trait": {
+            "high": "someone who likes a plan",
+            "low": "relaxed about planning, taking things as they come"
+          },
+          "fills": [
+            "how much I plan"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "b1_consc_2",
+          "q": "I finish what I start.",
+          "type": "choice",
+          "options": [
+            "Very much like me",
+            "Mostly like me",
+            "Somewhat like me",
+            "Not much like me",
+            "Not like me at all"
+          ],
+          "trait": {
+            "high": "someone who sees things through",
+            "low": "someone who starts more than they finish"
+          },
+          "fills": [
+            "how I follow through"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "b1_calm_1",
+          "q": "I stay calm when things go wrong.",
+          "type": "choice",
+          "options": [
+            "Very much like me",
+            "Mostly like me",
+            "Somewhat like me",
+            "Not much like me",
+            "Not like me at all"
+          ],
+          "trait": {
+            "high": "steady when things go wrong",
+            "low": "someone who feels it keenly when things go wrong"
+          },
+          "fills": [
+            "how I handle things going wrong"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "b1_calm_2",
+          "q": "I worry about things.",
+          "type": "choice",
+          "options": [
+            "Very much like me",
+            "Mostly like me",
+            "Somewhat like me",
+            "Not much like me",
+            "Not like me at all"
+          ],
+          "trait": {
+            "high": "someone who worries and thinks ahead about what could go wrong",
+            "low": "not much of a worrier"
+          },
+          "fills": [
+            "how much I worry"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "b1_open_1",
+          "q": "I like trying new things.",
+          "type": "choice",
+          "options": [
+            "Very much like me",
+            "Mostly like me",
+            "Somewhat like me",
+            "Not much like me",
+            "Not like me at all"
+          ],
+          "trait": {
+            "high": "curious and up for new things",
+            "low": "someone who prefers the familiar"
+          },
+          "fills": [
+            "how I feel about new things"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "b1_open_2",
+          "q": "I enjoy ideas and turning things over in my mind.",
+          "type": "choice",
+          "options": [
+            "Very much like me",
+            "Mostly like me",
+            "Somewhat like me",
+            "Not much like me",
+            "Not like me at all"
+          ],
+          "trait": {
+            "high": "someone who enjoys ideas and thinking things through",
+            "low": "practical rather than theoretical"
+          },
+          "fills": [
+            "how much I enjoy ideas"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        }
+      ]
+    },
+    {
+      "id": "B2",
+      "tier": "abstract",
+      "title": "What Matters to Me",
+      "note": "Each of these describes someone. Say how much they sound like you. There are no right answers — they only help the app sound like you when something matters.",
+      "fields": [
+        {
+          "key": "b2_selfdir",
+          "q": "Thinking up new ideas and being creative is important to them. They like to do things their own way.",
+          "type": "choice",
+          "options": [
+            "Very much like me",
+            "Mostly like me",
+            "Somewhat like me",
+            "Not much like me",
+            "Not like me at all"
+          ],
+          "trait": {
+            "high": "someone who values independence and doing things their own way",
+            "low": "content to follow a path someone else has set"
+          },
+          "fills": [
+            "how much independence matters to me"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "b2_stim",
+          "q": "They look for adventure and like to take risks. They want an exciting life.",
+          "type": "choice",
+          "options": [
+            "Very much like me",
+            "Mostly like me",
+            "Somewhat like me",
+            "Not much like me",
+            "Not like me at all"
+          ],
+          "trait": {
+            "high": "someone who wants excitement and is willing to take a risk",
+            "low": "someone who would rather life stayed steady"
+          },
+          "fills": [
+            "how much excitement matters to me"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "b2_hedon",
+          "q": "Having a good time matters to them. They like to treat themselves.",
+          "type": "choice",
+          "options": [
+            "Very much like me",
+            "Mostly like me",
+            "Somewhat like me",
+            "Not much like me",
+            "Not like me at all"
+          ],
+          "trait": {
+            "high": "someone who values enjoying themselves",
+            "low": "not much interested in indulgence"
+          },
+          "fills": [
+            "how much enjoying myself matters to me"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "b2_achieve",
+          "q": "Being very successful is important to them. They want people to recognize what they achieve.",
+          "type": "choice",
+          "options": [
+            "Very much like me",
+            "Mostly like me",
+            "Somewhat like me",
+            "Not much like me",
+            "Not like me at all"
+          ],
+          "trait": {
+            "high": "driven to achieve, and glad to be recognized for it",
+            "low": "not much moved by success or recognition"
+          },
+          "fills": [
+            "how much achievement matters to me"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "b2_power",
+          "q": "It is important to them to be in charge and to have a say over what others do.",
+          "type": "choice",
+          "options": [
+            "Very much like me",
+            "Mostly like me",
+            "Somewhat like me",
+            "Not much like me",
+            "Not like me at all"
+          ],
+          "trait": {
+            "high": "someone who wants a say and is comfortable taking charge",
+            "low": "someone with no interest in being in charge"
+          },
+          "fills": [
+            "how much being in charge matters to me"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "b2_secure",
+          "q": "Living somewhere safe matters a great deal to them. They avoid anything risky.",
+          "type": "choice",
+          "options": [
+            "Very much like me",
+            "Mostly like me",
+            "Somewhat like me",
+            "Not much like me",
+            "Not like me at all"
+          ],
+          "trait": {
+            "high": "someone who puts safety and security first",
+            "low": "not especially cautious"
+          },
+          "fills": [
+            "how much safety matters to me"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "b2_conform",
+          "q": "They believe people should follow the rules and do what is expected of them.",
+          "type": "choice",
+          "options": [
+            "Very much like me",
+            "Mostly like me",
+            "Somewhat like me",
+            "Not much like me",
+            "Not like me at all"
+          ],
+          "trait": {
+            "high": "someone who believes in doing the proper thing",
+            "low": "unbothered by whether something is the done thing"
+          },
+          "fills": [
+            "how much the rules matter to me"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "b2_trad",
+          "q": "Tradition matters to them. They keep to the customs they were brought up with.",
+          "type": "choice",
+          "options": [
+            "Very much like me",
+            "Mostly like me",
+            "Somewhat like me",
+            "Not much like me",
+            "Not like me at all"
+          ],
+          "trait": {
+            "high": "someone who values tradition and the customs they were raised with",
+            "low": "not attached to tradition"
+          },
+          "fills": [
+            "how much tradition matters to me"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "b2_benev",
+          "q": "It matters enormously to them to help the people close to them and look after them.",
+          "type": "choice",
+          "options": [
+            "Very much like me",
+            "Mostly like me",
+            "Somewhat like me",
+            "Not much like me",
+            "Not like me at all"
+          ],
+          "trait": {
+            "high": "someone who puts the people close to them first",
+            "low": "not especially focused on looking after others"
+          },
+          "fills": [
+            "how much looking after my people matters to me"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "b2_univ",
+          "q": "They think everyone in the world should be treated equally, and they care about the natural world.",
+          "type": "choice",
+          "options": [
+            "Very much like me",
+            "Mostly like me",
+            "Somewhat like me",
+            "Not much like me",
+            "Not like me at all"
+          ],
+          "trait": {
+            "high": "someone who cares about fairness for everyone, and about the natural world",
+            "low": "more focused on their own circle than on the wider world"
+          },
+          "fills": [
+            "how much fairness and nature matter to me"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        }
+      ]
     }
   ]
 }

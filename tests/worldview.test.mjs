@@ -113,3 +113,84 @@ test('directive fields alone still produce a block (they are not facts)', async 
     await wv.setField('topics_avoid', ['my health']);
     assert.notEqual(wv.buildBlock(), '', 'a profile of only directives must not come out empty');
 });
+
+// --- Tier B: personality + values (Phase 4) ---------------------------------
+
+test('a trait answer at either end becomes a description, not a scale point', async () => {
+    await wv.loadRegistry();
+    await wv.setField('b1_extra_1', 'Very much like me');
+    const block = wv.buildBlock();
+    assert.match(block, /How this person describes themselves/);
+    assert.match(block, /sociable, and comfortable around people/);
+    assert.doesNotMatch(block, /Very much like me/,
+        'the raw scale point must never reach the prompt');
+});
+
+test('the low end of the scale gives the low description', async () => {
+    await wv.loadRegistry();
+    await wv.setField('b1_extra_1', 'Not like me at all');
+    assert.match(wv.buildBlock(), /happier with quiet and their own company/);
+});
+
+// Neutral producing nothing is what keeps a half-answered module cheap, and is
+// the same rule the per-partner register follows.
+test('the middle of the scale contributes nothing', async () => {
+    await wv.loadRegistry();
+    await wv.setField('b1_extra_1', 'Somewhat like me');
+    assert.doesNotMatch(wv.buildBlock(), /How this person describes themselves/);
+});
+
+test('trait descriptions are aggregated into one statement, not one line each', async () => {
+    await wv.loadRegistry();
+    await wv.setField('b1_extra_1', 'Very much like me');
+    await wv.setField('b1_consc_1', 'Very much like me');
+    await wv.setField('b2_benev', 'Mostly like me');
+    const block = wv.buildBlock();
+    const hits = block.split('\n').filter((l) => /describes themselves/.test(l));
+    assert.equal(hits.length, 1, 'exactly one aggregated line');
+    assert.match(block, /sociable.*someone who likes a plan.*puts the people close to them first/s);
+});
+
+// A personality description is not something anyone says out loud about
+// themselves, so this guard is stronger than the one on ordinary facts.
+test('the trait block forbids stating or quoting it back', async () => {
+    await wv.loadRegistry();
+    await wv.setField('b2_power', 'Not like me at all');
+    const block = wv.buildBlock();
+    assert.match(block, /not a fact about their life and not a topic/i);
+    assert.match(block, /never have them describe their own character/i);
+});
+
+// If the registry's option strings ever drift from the scale worldview.js
+// recognises, EVERY trait answer silently becomes neutral and the whole module
+// stops working with no error anywhere. Same class of failure as the settings-help
+// drift guard.
+test('every trait field uses the canonical Likert scale', async () => {
+    const reg = await wv.loadRegistry();
+    const CANON = ['Very much like me', 'Mostly like me', 'Somewhat like me', 'Not much like me', 'Not like me at all'];
+    let checked = 0;
+    for (const mod of reg.modules) {
+        for (const f of mod.fields) {
+            if (!f.trait) continue;
+            checked++;
+            assert.deepEqual(f.options, CANON, `${f.key} has drifted from the canonical scale`);
+            assert.ok(f.trait.high && f.trait.low, `${f.key} needs both a high and a low description`);
+        }
+    }
+    assert.ok(checked >= 20, `expected the Tier B bank, found ${checked} trait fields`);
+});
+
+// The descriptions are joined into "How this person describes themselves: A; B."
+// so a capitalised or full-stopped clause would read wrongly mid-sentence.
+test('trait descriptions are fragments that survive being joined', async () => {
+    const reg = await wv.loadRegistry();
+    for (const mod of reg.modules) {
+        for (const f of mod.fields) {
+            if (!f.trait) continue;
+            for (const end of ['high', 'low']) {
+                assert.doesNotMatch(f.trait[end], /^[A-Z]/, `${f.key}.${end} should not be capitalised`);
+                assert.doesNotMatch(f.trait[end], /\.$/, `${f.key}.${end} should not end with a full stop`);
+            }
+        }
+    }
+});
