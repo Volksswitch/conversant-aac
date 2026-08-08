@@ -3196,3 +3196,67 @@ body.conv-bottom .tab-panel[data-tab="aboutme"].active {
     .composer-btn-primary:hover { filter: brightness(1.1); background: var(--header); }
 }
 
+
+/* --- How I Sound (Sound Check) ------------------------------------------------
+   Forced-choice voice elicitation in About Me. The candidates are full sentences,
+   not chips, so they get their own full-width targets rather than reusing .wv-chip,
+   which is sized for one- or two-word answers. */
+
+/* The made-up situation. Deliberately quiet and set apart from the candidates: it
+   settles what is TRUE so the user answers on wording, and it must not read as
+   another thing to choose. */
+.sc-stipulate {
+    font-style: italic;
+    color: #5f6c72;
+    font-size: 0.95em;
+}
+.sc-disclaimer { color: #5f6c72; }
+
+.sc-partner {
+    font-family: Georgia, 'Times New Roman', serif;   /* echoes the partner's voice in the transcript */
+    margin: 0.5rem 0 0.25rem;
+}
+.sc-question { font-weight: 600; margin: 0.5rem 0 0.5rem; }
+
+.sc-choice-row {
+    display: flex;
+    align-items: stretch;
+    gap: 0.4rem;
+    margin-bottom: 0.4rem;
+}
+/* The candidate itself: a large, full-width target, left-aligned and wrapping,
+   because these are sentences to be read rather than labels to be scanned. */
+.sc-choice {
+    flex: 1 1 auto;
+    min-height: var(--btn-min-dim);
+    text-align: left;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid #b0bec5;
+    border-left: 5px solid var(--slot-preferred, #2E7D32);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--ink);
+    font-size: 1.02em;
+    line-height: 1.35;
+    cursor: pointer;
+    white-space: normal;
+}
+.sc-speak { flex: 0 0 auto; align-self: center; }
+
+/* The two escapes are deliberately quieter than the candidates: they are valid
+   answers, not the expected ones, and they must not compete for the first tap. */
+.sc-escapes { flex-wrap: wrap; gap: 0.4rem; }
+
+.sc-chosen {
+    background: #f1f8e9;
+    border-left: 4px solid var(--slot-preferred, #2E7D32);
+    border-radius: 6px;
+    padding: 0.5rem 0.7rem;
+    margin: 0.4rem 0;
+}
+
+.sc-never .wv-text { flex: 1 1 auto; }
+
+@media (hover: hover) {
+    .sc-choice:hover { background: #f1f8e9; }
+}

@@ -11,12 +11,79 @@
       "tier": "core",
       "title": "About You",
       "fields": [
-        { "key": "name_preferred", "q": "What name would you like to go by?", "type": "text", "options": [], "fills": ["name", "your name", "first name"], "sensitive": false, "defaultPrivacy": "shareable" },
-        { "key": "name_full", "q": "What's your full name?", "type": "text", "options": [], "fills": ["full name"], "sensitive": false, "defaultPrivacy": "shareable" },
-        { "key": "nickname", "q": "Any nickname you like to be called?", "type": "text", "options": [], "fills": ["nickname"], "sensitive": false, "defaultPrivacy": "shareable" },
-        { "key": "pronouns", "q": "What pronouns do you use?", "type": "choice", "options": ["she/her", "he/him", "they/them"], "fills": ["pronouns"], "sensitive": false, "defaultPrivacy": "shareable" },
-        { "key": "age_birthyear", "q": "How old are you, or what year were you born?", "type": "number", "options": [], "fills": ["age", "birth year"], "sensitive": true, "defaultPrivacy": "shareable" },
-        { "key": "languages", "q": "What languages do you speak or understand?", "type": "multi", "options": [], "fills": ["language"], "sensitive": false, "defaultPrivacy": "shareable" }
+        {
+          "key": "name_preferred",
+          "q": "What name would you like to go by?",
+          "type": "text",
+          "options": [],
+          "fills": [
+            "name",
+            "your name",
+            "first name"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "name_full",
+          "q": "What's your full name?",
+          "type": "text",
+          "options": [],
+          "fills": [
+            "full name"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "nickname",
+          "q": "Any nickname you like to be called?",
+          "type": "text",
+          "options": [],
+          "fills": [
+            "nickname"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "pronouns",
+          "q": "What pronouns do you use?",
+          "type": "choice",
+          "options": [
+            "she/her",
+            "he/him",
+            "they/them"
+          ],
+          "fills": [
+            "pronouns"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "age_birthyear",
+          "q": "How old are you, or what year were you born?",
+          "type": "number",
+          "options": [],
+          "fills": [
+            "age",
+            "birth year"
+          ],
+          "sensitive": true,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "languages",
+          "q": "What languages do you speak or understand?",
+          "type": "multi",
+          "options": [],
+          "fills": [
+            "language"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        }
       ]
     },
     {
@@ -24,10 +91,58 @@
       "tier": "core",
       "title": "Where You Are",
       "fields": [
-        { "key": "home_city", "q": "What city or town do you live in?", "type": "text", "options": [], "fills": ["city", "town"], "sensitive": true, "defaultPrivacy": "shareable" },
-        { "key": "home_region", "q": "What state or province, and country?", "type": "text", "options": [], "fills": ["state", "province", "country"], "sensitive": false, "defaultPrivacy": "shareable" },
-        { "key": "hometown", "q": "Where did you grow up?", "type": "text", "options": [], "fills": ["hometown"], "sensitive": false, "defaultPrivacy": "shareable" },
-        { "key": "living_situation", "q": "Who do you live with — family, on your own, a group home, a dorm?", "type": "choice", "options": ["With family", "On my own", "A group home", "A dorm"], "fills": ["living situation"], "sensitive": true, "defaultPrivacy": "shareable" }
+        {
+          "key": "home_city",
+          "q": "What city or town do you live in?",
+          "type": "text",
+          "options": [],
+          "fills": [
+            "city",
+            "town"
+          ],
+          "sensitive": true,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "home_region",
+          "q": "What state or province, and country?",
+          "type": "text",
+          "options": [],
+          "fills": [
+            "state",
+            "province",
+            "country"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "hometown",
+          "q": "Where did you grow up?",
+          "type": "text",
+          "options": [],
+          "fills": [
+            "hometown"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "living_situation",
+          "q": "Who do you live with — family, on your own, a group home, a dorm?",
+          "type": "choice",
+          "options": [
+            "With family",
+            "On my own",
+            "A group home",
+            "A dorm"
+          ],
+          "fills": [
+            "living situation"
+          ],
+          "sensitive": true,
+          "defaultPrivacy": "shareable"
+        }
       ]
     },
     {
@@ -35,11 +150,69 @@
       "tier": "core",
       "title": "Daily Life",
       "fields": [
-        { "key": "occupation", "q": "Do you work, go to school, or spend your days another way?", "type": "choice", "options": ["I work", "I go to school", "Both", "Something else"], "fills": ["job", "occupation"], "sensitive": false, "defaultPrivacy": "shareable" },
-        { "key": "work_school", "q": "Where — the name of the company, school, or program?", "type": "text", "options": [], "fills": ["school", "company"], "sensitive": false, "defaultPrivacy": "shareable" },
-        { "key": "grade_role", "q": "What grade or year, or what's your role there?", "type": "text", "options": [], "fills": ["grade", "role"], "sensitive": false, "defaultPrivacy": "shareable" },
-        { "key": "typical_week", "q": "What does a typical week look like for you?", "type": "text", "options": [], "fills": ["activity"], "sensitive": false, "defaultPrivacy": "shareable" },
-        { "key": "regular_places", "q": "Where do you go regularly? (gym, church, club, a favorite café)", "type": "multi", "options": [], "fills": ["place"], "sensitive": false, "defaultPrivacy": "shareable" }
+        {
+          "key": "occupation",
+          "q": "Do you work, go to school, or spend your days another way?",
+          "type": "choice",
+          "options": [
+            "I work",
+            "I go to school",
+            "Both",
+            "Something else"
+          ],
+          "fills": [
+            "job",
+            "occupation"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "work_school",
+          "q": "Where — the name of the company, school, or program?",
+          "type": "text",
+          "options": [],
+          "fills": [
+            "school",
+            "company"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "grade_role",
+          "q": "What grade or year, or what's your role there?",
+          "type": "text",
+          "options": [],
+          "fills": [
+            "grade",
+            "role"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "typical_week",
+          "q": "What does a typical week look like for you?",
+          "type": "text",
+          "options": [],
+          "fills": [
+            "activity"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "regular_places",
+          "q": "Where do you go regularly? (gym, church, club, a favorite café)",
+          "type": "multi",
+          "options": [],
+          "fills": [
+            "place"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        }
       ]
     },
     {
@@ -48,9 +221,39 @@
       "title": "Contact & Logistics",
       "note": "Private by default — the assistant knows these but won't raise them on its own. It will offer one only if the person you're talking to asks, or if you ask for it yourself in \"In my own words\". Nothing is ever spoken until you tap it.",
       "fields": [
-        { "key": "phone", "q": "What's your phone number?", "type": "text", "options": [], "fills": ["phone number"], "sensitive": true, "defaultPrivacy": "private" },
-        { "key": "email", "q": "What's your email address?", "type": "text", "options": [], "fills": ["email"], "sensitive": true, "defaultPrivacy": "private" },
-        { "key": "home_address", "q": "What's your home address?", "type": "text", "options": [], "fills": ["address"], "sensitive": true, "defaultPrivacy": "private" }
+        {
+          "key": "phone",
+          "q": "What's your phone number?",
+          "type": "text",
+          "options": [],
+          "fills": [
+            "phone number"
+          ],
+          "sensitive": true,
+          "defaultPrivacy": "private"
+        },
+        {
+          "key": "email",
+          "q": "What's your email address?",
+          "type": "text",
+          "options": [],
+          "fills": [
+            "email"
+          ],
+          "sensitive": true,
+          "defaultPrivacy": "private"
+        },
+        {
+          "key": "home_address",
+          "q": "What's your home address?",
+          "type": "text",
+          "options": [],
+          "fills": [
+            "address"
+          ],
+          "sensitive": true,
+          "defaultPrivacy": "private"
+        }
       ]
     },
     {
@@ -58,16 +261,120 @@
       "tier": "interests",
       "title": "Favorites",
       "fields": [
-        { "key": "fav_foods", "q": "What are your favorite foods?", "type": "multi", "options": [], "fills": ["favorite food"], "sensitive": false, "defaultPrivacy": "shareable" },
-        { "key": "fav_drinks", "q": "Favorite drinks?", "type": "multi", "options": [], "fills": ["favorite drink"], "sensitive": false, "defaultPrivacy": "shareable" },
-        { "key": "fav_team", "q": "Do you follow any sports teams?", "type": "multi", "options": [], "fills": ["team"], "sensitive": false, "defaultPrivacy": "shareable" },
-        { "key": "fav_sport", "q": "Sports you like to play or watch?", "type": "multi", "options": [], "fills": ["sport"], "sensitive": false, "defaultPrivacy": "shareable" },
-        { "key": "fav_music", "q": "Favorite music — artists, bands, or genres?", "type": "multi", "options": [], "fills": ["artist", "band", "genre"], "sensitive": false, "defaultPrivacy": "shareable" },
-        { "key": "fav_screen", "q": "Favorite shows or movies?", "type": "multi", "options": [], "fills": ["show", "movie"], "sensitive": false, "defaultPrivacy": "shareable" },
-        { "key": "fav_reading", "q": "Favorite books, authors, or things you read?", "type": "multi", "options": [], "fills": ["book", "author"], "sensitive": false, "defaultPrivacy": "shareable" },
-        { "key": "fav_games", "q": "Video games, board games, or other games you enjoy?", "type": "multi", "options": [], "fills": ["game"], "sensitive": false, "defaultPrivacy": "shareable" },
-        { "key": "fav_places", "q": "Favorite places — to visit, or that mean a lot to you?", "type": "multi", "options": [], "fills": ["place"], "sensitive": false, "defaultPrivacy": "shareable" },
-        { "key": "fav_color", "q": "Favorite color?", "type": "text", "options": [], "fills": ["color"], "sensitive": false, "defaultPrivacy": "shareable" }
+        {
+          "key": "fav_foods",
+          "q": "What are your favorite foods?",
+          "type": "multi",
+          "options": [],
+          "fills": [
+            "favorite food"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "fav_drinks",
+          "q": "Favorite drinks?",
+          "type": "multi",
+          "options": [],
+          "fills": [
+            "favorite drink"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "fav_team",
+          "q": "Do you follow any sports teams?",
+          "type": "multi",
+          "options": [],
+          "fills": [
+            "team"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "fav_sport",
+          "q": "Sports you like to play or watch?",
+          "type": "multi",
+          "options": [],
+          "fills": [
+            "sport"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "fav_music",
+          "q": "Favorite music — artists, bands, or genres?",
+          "type": "multi",
+          "options": [],
+          "fills": [
+            "artist",
+            "band",
+            "genre"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "fav_screen",
+          "q": "Favorite shows or movies?",
+          "type": "multi",
+          "options": [],
+          "fills": [
+            "show",
+            "movie"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "fav_reading",
+          "q": "Favorite books, authors, or things you read?",
+          "type": "multi",
+          "options": [],
+          "fills": [
+            "book",
+            "author"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "fav_games",
+          "q": "Video games, board games, or other games you enjoy?",
+          "type": "multi",
+          "options": [],
+          "fills": [
+            "game"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "fav_places",
+          "q": "Favorite places — to visit, or that mean a lot to you?",
+          "type": "multi",
+          "options": [],
+          "fills": [
+            "place"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        },
+        {
+          "key": "fav_color",
+          "q": "Favorite color?",
+          "type": "text",
+          "options": [],
+          "fills": [
+            "color"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        }
       ]
     },
     {
@@ -79,8 +386,72 @@
           "key": "passions",
           "q": "What do you love doing? What are you really into?",
           "type": "multi",
-          "options": ["Sports — playing or watching", "Music", "Gaming", "Art, making, or crafts", "Reading", "Cooking or food", "Animals", "Tech & computers", "The outdoors / nature", "Movies & TV", "Collecting something", "Faith or community", "Volunteering / helping"],
-          "fills": ["hobby", "interest", "passion"],
+          "options": [
+            "Sports — playing or watching",
+            "Music",
+            "Gaming",
+            "Art, making, or crafts",
+            "Reading",
+            "Cooking or food",
+            "Animals",
+            "Tech & computers",
+            "The outdoors / nature",
+            "Movies & TV",
+            "Collecting something",
+            "Faith or community",
+            "Volunteering / helping"
+          ],
+          "fills": [
+            "hobby",
+            "interest",
+            "passion"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable"
+        }
+      ]
+    },
+    {
+      "id": "C3",
+      "title": "Topics I Seek and Avoid",
+      "fields": [
+        {
+          "key": "topics_welcome",
+          "q": "What do you always enjoy talking about?",
+          "type": "multi",
+          "fills": [
+            "favorite topic",
+            "topic I enjoy"
+          ],
+          "sensitive": false,
+          "defaultPrivacy": "shareable",
+          "directive": "seek"
+        },
+        {
+          "key": "topics_avoid",
+          "q": "What would you rather not be asked about?",
+          "type": "multi",
+          "fills": [
+            "topic to avoid"
+          ],
+          "sensitive": true,
+          "defaultPrivacy": "shareable",
+          "directive": "avoid"
+        }
+      ]
+    },
+    {
+      "id": "C4",
+      "title": "Dislikes & Pet Peeves",
+      "fields": [
+        {
+          "key": "dislikes",
+          "q": "What do you dislike, or find annoying?",
+          "type": "multi",
+          "fills": [
+            "dislike",
+            "pet peeve"
+          ],
           "sensitive": false,
           "defaultPrivacy": "shareable"
         }

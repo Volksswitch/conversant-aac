@@ -81,3 +81,35 @@ test('gaps: recordGaps logs only genuine open gaps; answering clears them', asyn
     assert.ok(gaps.includes('fav_food'), 'the real gap is recorded');
     assert.ok(!gaps.includes(shareableKey), 'an answered field is not an open gap');
 });
+
+// --- directive fields (August 7 2026) ----------------------------------------
+// Some answers are instructions, not facts. "Topics I would rather not be asked
+// about" listed as `- Topic to avoid: X` is only information, and leaves the model
+// to infer what to do with it. That is too thin for what the persona audit called
+// the single highest-value missing field.
+
+test('a directive field becomes a RULE, not another listed fact', async () => {
+    await wv.setField('topics_avoid', ['what happened to me']);
+    const block = wv.buildBlock();
+    assert.match(block, /Never raise any of it on your own initiative/);
+    assert.doesNotMatch(block, /- [^\n]*Topic to avoid/i, 'must not also appear as a fact line');
+});
+
+test('the avoid rule is not an absolute ban — the user may still raise it themselves', async () => {
+    await wv.setField('topics_avoid', ['my health']);
+    const block = wv.buildBlock();
+    // A card that refused to discuss the user's own life would be its own failure.
+    assert.match(block, /If the user steers you to it themselves, follow them/);
+    // And the partner may raise it regardless — the app controls only its own output.
+    assert.match(block, /lets the user move the conversation on/);
+});
+
+test('a seek field is offered as INITIATIVE ground', async () => {
+    await wv.setField('topics_welcome', ['films', 'music']);
+    assert.match(wv.buildBlock(), /always enjoys talking about: films, music/);
+});
+
+test('directive fields alone still produce a block (they are not facts)', async () => {
+    await wv.setField('topics_avoid', ['my health']);
+    assert.notEqual(wv.buildBlock(), '', 'a profile of only directives must not come out empty');
+});

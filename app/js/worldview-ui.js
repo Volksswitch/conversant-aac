@@ -18,6 +18,8 @@
 import * as wv from './worldview.js';
 import * as rel from './relationships.js';
 import * as places from './places.js';
+import * as voiceProfile from './voice.js';
+import { SOUND_CHECK_ITEMS, VERDICT } from './sound-check-items.js';
 import { speak } from './tts.js';
 import * as storage from './storage.js';
 import * as keyboard from './keyboard.js';
@@ -119,6 +121,9 @@ export async function open() {
     // My Places: same, so the Places section is ready.
     try { await places.load(); } catch { /* cache/empty places */ }
     try { await places.syncToFolder(); } catch { /* best-effort */ }
+    // How I Sound: same, so the section's answered count is right on first render.
+    try { await voiceProfile.load(); } catch { /* cache/empty voice data */ }
+    try { await voiceProfile.syncToFolder(); } catch { /* best-effort */ }
     renderHome();
 }
 
@@ -263,6 +268,26 @@ function renderHome() {
         el('div', { class: 'wv-chevron', text: '›' })
     ]));
 
+    // How I Sound — the voice layer. Not questionnaire Q&A either: the user is not
+    // reporting facts about themselves, they are picking between wordings, and the
+    // sentence they pick is the answer (Sounds Like Me, Phase 1).
+    contentEl.append(el('h3', { class: 'wv-section-title', text: 'How I sound' }));
+    const answered = voiceProfile.answeredCount();
+    const soundMeta = answered
+        ? `${answered} of ${SOUND_CHECK_ITEMS.length} answered`
+        : 'Help the app write suggestions in your words';
+    contentEl.append(el('button', { class: 'wv-module-row', onclick: () => renderSoundCheck() }, [
+        el('div', { class: 'wv-module-main' }, [
+            el('div', { class: 'wv-module-title', text: 'How I Sound' }),
+            el('div', { class: 'wv-module-meta', text: soundMeta }),
+            el('div', { class: 'wv-progress' }, [
+                el('div', { class: 'wv-progress-fill',
+                    style: `width:${Math.round((answered / SOUND_CHECK_ITEMS.length) * 100)}%` })
+            ])
+        ]),
+        el('div', { class: 'wv-chevron', text: '›' })
+    ]));
+
     contentEl.append(el('div', { class: 'wv-home-footer' }, [
         el('button', { class: 'wv-btn wv-btn-danger', text: 'Restart — clear all answers', onclick: onRestart })
     ]));
@@ -271,7 +296,7 @@ function renderHome() {
 async function onRestart() {
     const ok = await confirmDanger({
         title: 'Clear everything?',
-        body: 'This permanently deletes every answer, all the people you have added, and all the places you have added. This cannot be undone.',
+        body: 'This permanently deletes every answer, all the people you have added, all the places you have added, and everything the app has learned about how you sound. This cannot be undone.',
         confirmLabel: 'Yes, clear it all',
         cancelLabel: 'Keep my answers'
     });
@@ -279,7 +304,151 @@ async function onRestart() {
     await wv.resetAll();
     await rel.resetAll();
     await places.resetAll();
+    await voiceProfile.resetAll();
     renderHome();
+}
+
+// --- How I Sound (voice) -----------------------------------------------------
+//
+// THE FRAMING COPY IS LOAD-BEARING, not decoration. The user is shown three ways of
+// saying the same made-up thing and asked which they would rather say. If they read
+// the candidates as being ABOUT THEM — "but my weekend wasn't quiet, so not that
+// one" — they answer on truth instead of on wording, and the answers describe their
+// life rather than their voice. Two things prevent that: this intro, and the
+// per-item `stipulate` line that settles what is true BEFORE the candidates are
+// read. Stipulating removes the reading; a warning would only ask the user to
+// suppress it. (Ken, August 7 2026.)
+
+function renderSoundCheck() {
+    showDockKeyboard();
+    contentEl.scrollTop = 0;
+    contentEl.innerHTML = '';
+
+    contentEl.append(el('button', { class: 'wv-back', text: '‹ All topics', onclick: renderHome }));
+    contentEl.append(el('h3', { class: 'wv-page-title', text: 'How I Sound' }));
+
+    contentEl.append(el('p', { class: 'wv-intro', text:
+        'The app writes suggestions for you. These questions are how it learns to write them in your words instead of its own.' }));
+    contentEl.append(el('p', { class: 'wv-intro', text:
+        'Each one shows a few ways of saying the same thing. They all mean the same — only the wording is different. Pick the one you would rather say.' }));
+    contentEl.append(el('p', { class: 'wv-intro sc-disclaimer', text:
+        'None of this is about you. The situations are made up, nobody is asking what you actually did, and nothing you pick is kept as a fact about your life. There are no right answers, and you can change any of them later.' }));
+
+    for (const item of SOUND_CHECK_ITEMS) contentEl.append(buildSoundCheckCard(item));
+
+    contentEl.append(el('h3', { class: 'wv-section-title', text: 'Things I never say' }));
+    contentEl.append(el('p', { class: 'wv-intro', text:
+        'Anything here is off limits for the app when it suggests responses — a word you dislike, swearing, saying sorry too much. Leave it empty if nothing comes to mind.' }));
+    contentEl.append(buildNeverList());
+}
+
+function buildSoundCheckCard(item) {
+    const saved = voiceProfile.getAnswer(item.id);
+    const card = el('div', { class: 'wv-card sc-card', id: 'sc-' + item.id });
+
+    const head = el('div', { class: 'wv-card-head' }, [
+        el('div', { class: 'sc-stipulate', text: item.stipulate }),
+    ]);
+    if (saved) {
+        const label = saved.verdict === VERDICT.CHOSE ? '✓ Answered'
+            : saved.verdict === VERDICT.ALL_FINE ? 'No preference' : 'None of these';
+        head.append(el('span', { class: 'wv-badge wv-badge-answered', text: label }));
+    }
+    card.append(head);
+
+    card.append(el('p', { class: 'sc-partner', text: `They said: "${item.partner}"` }));
+
+    if (saved) {
+        // Answered: show what they picked and let them redo it. Re-answering simply
+        // overwrites, so there is no destructive step and no confirmation needed.
+        card.append(el('p', { class: 'sc-chosen', text:
+            saved.choice ? `You would say: "${saved.choice}"` : '(no preference recorded)' }));
+        card.append(el('div', { class: 'wv-actions' }, [
+            el('button', { class: 'wv-btn wv-btn-link', text: 'Change my answer',
+                onclick: () => { voiceProfile.clearAnswer(item.id); refreshSoundCheckCard(item); } })
+        ]));
+        return card;
+    }
+
+    card.append(el('p', { class: 'sc-question', text: 'Which would you rather say?' }));
+
+    for (const text of item.candidates) {
+        card.append(el('div', { class: 'sc-choice-row' }, [
+            el('button', { class: 'sc-choice', text,
+                onclick: () => { voiceProfile.recordAnswer(item.id, VERDICT.CHOSE, text); refreshSoundCheckCard(item); } }),
+            // Hearing a candidate spoken is how you judge whether you would say it —
+            // this user's whole output channel is a synthesizer, so reading it on
+            // screen is not the same test. Same idea as "Speak my answer" elsewhere.
+            el('button', { class: 'wv-btn-speak sc-speak', text: '🔊', title: 'Hear this',
+                onclick: () => speak(text) }),
+        ]));
+    }
+
+    card.append(el('div', { class: 'wv-actions sc-escapes' }, [
+        // The two escapes are NOT one option. "They're all fine" is a weak or absent
+        // preference, recorded as such rather than as a spurious first-place vote;
+        // "I wouldn't say any of these" is a negative constraint arriving unprompted,
+        // and is at least as informative.
+        el('button', { class: 'wv-btn', text: "They're all fine",
+            onclick: () => { voiceProfile.recordAnswer(item.id, VERDICT.ALL_FINE); refreshSoundCheckCard(item); } }),
+        el('button', { class: 'wv-btn', text: "I wouldn't say any of these",
+            onclick: () => { voiceProfile.recordAnswer(item.id, VERDICT.NONE); refreshSoundCheckCard(item); } }),
+    ]));
+
+    return card;
+}
+
+// Replace one card in place. Re-rendering the whole page would lose the user's scroll
+// position, which on a twelve-item list means hunting for where they were after every
+// single tap.
+function refreshSoundCheckCard(item) {
+    const old = document.getElementById('sc-' + item.id);
+    if (!old) return renderSoundCheck();
+    old.replaceWith(buildSoundCheckCard(item));
+}
+
+function buildNeverList() {
+    const wrap = el('div', { class: 'wv-entry-list sc-never' });
+    // A local DRAFT, because voiceProfile.setNever() drops blanks — which is right
+    // for the stored rule ("" is not something you never say) and fatal for an
+    // editor, since a freshly added row would be filtered away before it could be
+    // typed into. The draft holds the transient blank; only non-blanks are persisted.
+    let draft = voiceProfile.getNever();
+    const persist = () => voiceProfile.setNever(draft);
+
+    const draw = () => {
+        wrap.innerHTML = '';
+        draft.forEach((value, i) => {
+            wrap.append(el('div', { class: 'wv-entry' }, [
+                el('input', {
+                    class: 'wv-text', type: 'text', value,
+                    'aria-label': 'Something I never say',
+                    placeholder: 'e.g. swearing',
+                    oninput: (e) => { draft[i] = e.target.value; },
+                    onchange: persist,
+                    onblur: persist,
+                }),
+                el('button', {
+                    class: 'wv-entry-remove', text: '×', title: 'Remove',
+                    'aria-label': `Remove "${value || 'this entry'}"`,
+                    onclick: () => { draft.splice(i, 1); persist(); draw(); },
+                }),
+            ]));
+        });
+        const add = el('button', {
+            class: 'wv-entry-add', text: '+ Add something',
+            onclick: () => { draft = [...draft, '']; draw(); focusLastNeverInput(wrap); },
+        });
+        wrap.append(add);
+    };
+    draw();
+    return wrap;
+}
+
+function focusLastNeverInput(wrap) {
+    const inputs = wrap.querySelectorAll('input');
+    const last = inputs[inputs.length - 1];
+    if (last) last.focus();   // focusin brings up the on-screen keyboard if enabled
 }
 
 // --- People (relationship graph) --------------------------------------------

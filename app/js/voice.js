@@ -195,6 +195,13 @@ export function buildBlock(idiom = []) {
         lines.push('Examples of how this user prefers to reply. They were shown several ways of saying the same thing and picked these:');
         for (const t of chosen.slice(0, 12)) lines.push(`  "${t}"`);
         lines.push('Match the length, directness, and level of formality of those examples. They are the single most important guide to wording that you have.');
+        // The exemplars are STYLE, not autobiography. They were picked off a fixed
+        // list of hypothetical replies, so anything they appear to mention is a
+        // property of the question bank, not of this user — and the anti-fabrication
+        // rule is the project's oldest guardrail. The item bank is authored to keep
+        // specifics out for the same reason (see sound-check-items.js), but a prompt
+        // must not depend on content it does not control.
+        lines.push('Treat those examples as evidence of WORDING ONLY. They were chosen from a fixed list of made-up replies, so nothing they mention is a fact about this user and none of it may appear in a response.');
     }
 
     const samples = Object.entries(p.samples).filter(([, v]) => v && v.trim());

@@ -376,6 +376,12 @@ export function buildBlock() {
     const facts = [];
     const privateKnown = [];   // sent to AI, but must not be volunteered
     const phraseAround = new Set();   // declined — AI gets no value at all
+    // Some answers are not facts to know, they are INSTRUCTIONS to follow. "Topics I
+    // would rather not be asked about" listed as `- Topic to avoid: X` is merely
+    // information, and leaves the model to infer what to do with it. A field carrying
+    // `directive` in the registry is emitted as a rule instead. (August 7 2026.)
+    const seek = [];
+    const avoid = [];
 
     if (registry) {
         for (const mod of registry.modules) {
@@ -388,6 +394,8 @@ export function buildBlock() {
                 if (state !== 'answered') continue;
                 const v = formatValue(getField(f.key));
                 if (!v) continue;
+                if (f.directive === 'avoid') { avoid.push(v); continue; }
+                if (f.directive === 'seek') { seek.push(v); continue; }
                 if (effectivePrivacy(f.key) === 'private') {
                     privateKnown.push(`- ${labelFor(f.key)}: ${v}`);
                 } else {
@@ -397,7 +405,7 @@ export function buildBlock() {
         }
     }
 
-    if (!facts.length && !privateKnown.length && !phraseAround.size) return '';
+    if (!facts.length && !privateKnown.length && !phraseAround.size && !seek.length && !avoid.length) return '';
 
     const lines = ['You are speaking AS this person, in the first person. What you know about them:'];
     if (facts.length) lines.push('', ...facts);
@@ -406,6 +414,28 @@ export function buildBlock() {
             '',
             'These details are known to you for context — do not volunteer them spontaneously. Never work one into a response on your own initiative. Include one ONLY when the partner has asked for it, or when the user\'s own typed guidance tells you to:',
             ...privateKnown
+        );
+    }
+    if (avoid.length) {
+        // Stated as a rule about the ASSISTANT's own suggestions, because that is the
+        // only thing it controls — it cannot stop a partner asking. Deliberately not
+        // an absolute ban on the subject: the user may well want to raise it
+        // themselves, and a card that refuses to discuss their own life would be its
+        // own kind of failure. Same shape as the private-fact rule: never on your own
+        // initiative.
+        lines.push(
+            '',
+            'This person would rather not be asked about the following: ' + avoid.join(', ')
+            + '. Never raise any of it on your own initiative. If the partner brings it up, do not '
+            + 'volunteer detail, and make sure one of the responses you offer lets the user move the '
+            + 'conversation on. If the user steers you to it themselves, follow them.'
+        );
+    }
+    if (seek.length) {
+        lines.push(
+            '',
+            'This person always enjoys talking about: ' + seek.join(', ')
+            + '. These are good ground for an INITIATIVE response when the conversation is open.'
         );
     }
     if (phraseAround.size) {

@@ -22,6 +22,9 @@ import * as storage from './storage.js';
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
   "0.6.8": [
+    "New How I Sound section in About Me. It shows a few ways of saying the same thing and asks which you would rather say. The app uses your answers to write suggestions in your words instead of its own. The situations are made up and nothing you pick is kept as a fact about your life — it is only about wording. You can hear any of them read aloud before choosing, and change any answer later.",
+    "The same section has a Things I never say list. Anything you put there is off limits for the app when it suggests responses.",
+    "Two new About Me topics: Topics I Seek and Avoid and Dislikes & Pet Peeves. Anything you list under \"what would you rather not be asked about\" is something the app will never bring up on its own, and if the other person raises it you will always be offered a way to move the conversation on.",
     "The Express Panel now starts half full instead of completely full. The everyday words are still there — Yes, No, Okay, Please, Thank you, Sorry, Hi, Bye, Wait, Help — and the rest of the buttons are blank, waiting for your own words. Nothing is removed from a panel you have already set up.",
     "Practice Mode no longer switches the microphone on. Starting a practice conversation with one of the conversation starters used to turn on real listening, which Practice Mode is never meant to do — the AI plays the other person, so there is nothing to listen to.",
     "Starting a conversation with a phrase from the Express Panel — or by typing one in \"In my own words\" — now turns listening on straight away, so the other person's reply is picked up. Before this, if you opened a conversation that way without first tapping Listen, the app stayed quiet and missed what they said back. Tapping Listen yourself, and the \"resume listening automatically\" setting, both work exactly as they did.",
