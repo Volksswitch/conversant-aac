@@ -50,7 +50,7 @@ const RELEASE_NOTES = {
     "Once a week, when you open the app, it now sends us a short report so we can see how it is holding up without having to ask you. It contains counts and timings only — never anything you or anyone else said, and never your API keys. The Troubleshooting tab lists exactly what is in one, shows when reports were sent, and has a switch to turn them off.",
     "A Tester name field on the same tab. It is the only thing that tells us whose report is whose, so please leave it as we set it.",
     "New Troubleshooting tab in Settings. If something goes wrong, write a line about it in your own words and either save it as a file or copy it — everything technical is attached for you, so you never have to describe your device or dig out a version number.",
-    "There is also a small \"Something's wrong — save a report\" link under the Start button, for the case where the app is too stuck to reach Settings at all.",
+    "There is also a small \"If something is wrong — save a report\" link under the Start button, for the case where the app is too stuck to reach Settings at all.",
     "The same tab shows a plain summary of how the app is being used — how many conversations you have had, how often one of the suggested cards fitted, and how long the other person waited. It is built from your saved conversations, and it contains only counts and timings, never anything anyone said.",
     "Your API keys are never included in a report, on purpose. It says whether a key is set, and nothing more.",
     "The error log has moved from the About tab to Troubleshooting, alongside everything else you would need when reporting a problem.",

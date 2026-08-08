@@ -177,7 +177,7 @@ forgetting to tag one is only ever noise, never silence.
   about it in your own words and either save it as a file or copy it — everything
   technical is attached for you, so you never have to describe your device or dig
   out a version number.
-- There is also a small **"Something's wrong — save a report"** link under the
+- There is also a small **"If something is wrong — save a report"** link under the
   Start button, for the case where the app is too stuck to reach Settings at all.
 - The same tab shows a plain summary of **how the app is being used** — how many
   conversations you have had, how often one of the suggested cards fitted, and how
