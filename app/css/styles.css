@@ -1158,12 +1158,20 @@ body.conv-bottom .palette-grid {
    inherited from .ep-btn above, because a different box would move the keyguard
    holes for every cell after it. */
 .ep-btn.ep-undefined {
-    --ep-color: #b9c4ca;
+    /* Dark enough to see (Ken, August 8 2026). The first cut was #b9c4ca, which
+       measures 1.5:1 against the #e9edf0 dock — well under the 3:1 that a UI
+       element's boundary needs to be made out. This is 3.7:1. */
+    --ep-color: #607d8b;
     background: transparent;
-    /* The 5px left bar is what carries a defined button's colour, so an undefined
-       cell must not paint one — but it must still OCCUPY the 5px, hence a
-       transparent border rather than a narrower one. */
-    border-left-color: transparent;
+    /* The left edge is 5px on every cell because that is where a DEFINED button
+       carries its colour bar. Leaving it unpainted (the first cut) left the frame
+       open on one side, and with the default gap of 0 the cells touch — so the only
+       line visible there belonged to the neighbouring cell, and the empty one looked
+       as though it started 5px to the right of where it does. It is painted now, so
+       the frame closes, but in a quieter grey than the outline: at full strength a
+       heavy bar on every unused cell reads as a category colour, which is the one
+       thing an undefined cell must not look like. */
+    border-left-color: #aebbc3;
     box-shadow: none;
 }
 
