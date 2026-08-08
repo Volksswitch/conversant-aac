@@ -26,6 +26,14 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- **How I Sound** now also covers the things you say when you start a conversation,
+  not only when you reply — opening, asking for something, and finishing up.
+- The same section can now read back your own past conversations and pick out the
+  sentences you typed yourself, to use as a guide to your wording. It only reads
+  when you ask it to, it never uses the app's own phrases or the suggestions it
+  wrote for you, and you can remove anything that does not belong — removals stick.
+  Conversations you marked "don't save" are not read, because they were never
+  written down.
 - New **How I Sound** section in About Me. It shows a few ways of saying the same
   thing and asks which you would rather say. The app uses your answers to write
   suggestions in your words instead of its own. The situations are made up and

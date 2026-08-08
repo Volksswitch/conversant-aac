@@ -1336,7 +1336,7 @@ async function handleRepairOfSelf(response) {
         storage.finalizePartnerTurn(h, { rawTranscript: raw, cleanedTranscript: raw });
     }
     conversationHistory.push({ role: 'user', text });
-    storage.logUserResponse({ selectedText: text, selectedIndex: -1, allOptions: [] });
+    storage.logUserResponse({ selectedText: text, selectedIndex: -1, allOptions: [], source });
     ui.renderConversation(conversationHistory);
     ui.setLiveTranscript('');
     resumeOrIdle();
@@ -1395,6 +1395,10 @@ async function commitExchange(raw, userText, index, opts = {}) {
         // category never selected across a whole beta is a design finding, and
         // heavy REPAIR use means something upstream is failing.
         selectedSlot: index >= 0 ? (lastPalette[index] && lastPalette[index].slot) || null : null,
+        // 'card' when the user tapped one of the AI's suggestions. index < 0 reaches
+        // here from repair-of-self and other non-palette commits, which are our words
+        // rather than theirs — see the source field in storage.logUserResponse.
+        source: index >= 0 ? 'card' : 'control',
         // Stamp the situation at this turn (who, how the user felt, where they
         // were) — each null when its toggle is off.
         partner: partnerStamp(),
@@ -1833,7 +1837,9 @@ function logSpokenUserTurn(text) {
     flushLivePartnerToHistory();
     conversationHistory.push({ role: 'user', text });
     ui.renderConversation(conversationHistory);
-    storage.logUserResponse({ selectedText: text, selectedIndex: -1, allOptions: [] });
+    // 'control' -- these are OUR phrases (Hold on / Ask them to repeat / the user's
+    // own last words re-spoken), never the user's own composition.
+    storage.logUserResponse({ selectedText: text, selectedIndex: -1, allOptions: [], source: 'control' });
 }
 
 // Say again — re-speak the user's last utterance verbatim. Instant, no LLM.
@@ -2161,7 +2167,7 @@ function clearInfluencers() {
 // recording, commits the exchange to history, and resumes listening iff
 // auto-resume is armed. `historyText` is what's logged/displayed; `spokenText`
 // is what TTS says (an Express Panel phrase may carry a distinct pronunciation form).
-async function speakAsUserTurn(historyText, spokenText = historyText) {
+async function speakAsUserTurn(historyText, spokenText = historyText, source = 'composed') {
     placeholders.stop();
     generationToken++;            // invalidate any in-flight generation on the partner turn
     // Does this statement OPEN the conversation? Captured BEFORE commitExchange
@@ -2615,7 +2621,7 @@ function initSliderSteppers() {
 // committed to history (Ken — "anything spoken is part of the conversation").
 // Routed through the shared speak-as-a-turn path.
 async function handleSpeakExpressItem(phrase) {
-    await speakAsUserTurn(phrase.text, phrase.speak || phrase.text);
+    await speakAsUserTurn(phrase.text, phrase.speak || phrase.text, 'express');
 }
 
 // --- Settings dialog ---

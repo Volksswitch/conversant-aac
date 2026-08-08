@@ -98,3 +98,44 @@ test('clearing an answer removes its exemplar from the prompt', async () => {
     voice.clearAnswer('x');
     assert.equal(voice.buildBlock([]), '');
 });
+
+// --- Phase 2: harvested prose vs Sound Check exemplars -----------------------
+// Two exemplar sources in one block, needing OPPOSITE instructions. Getting this
+// backwards is silent and lands on the anti-fabrication rule either way.
+
+test('harvested prose is labelled as the user own past words, not as fabrications', async () => {
+    await reset();
+    voice.setHarvest({ exemplars: ['I have been looking forward to this all week.'], lengthLean: null, counts: {} });
+    const block = voice.buildBlock([]);
+    assert.match(block, /actually written themselves, in real conversations/);
+    // The Sound Check line ("nothing they mention is a fact") would be FALSE here —
+    // these are the user's real words about real things.
+    assert.doesNotMatch(block, /fixed list of made-up replies/);
+    // But a past utterance is not a current fact either.
+    assert.match(block, /not current facts/);
+});
+
+test('a dismissed sentence leaves the prompt and does not come back on a re-harvest', async () => {
+    await reset();
+    voice.setHarvest({ exemplars: ['Keep this one in.', 'Take this one out.'], lengthLean: null, counts: {} });
+    voice.dismissExemplar('Take this one out.');
+    assert.deepEqual(voice.activeExemplars(), ['Keep this one in.']);
+    assert.doesNotMatch(voice.buildBlock([]), /Take this one out/);
+    // Re-running the harvest finds it again; the correction must still hold.
+    voice.setHarvest({ exemplars: ['Keep this one in.', 'Take this one out.'], lengthLean: null, counts: {} });
+    assert.deepEqual(voice.activeExemplars(), ['Keep this one in.']);
+});
+
+test('a measured length lean is stated with its evidence', async () => {
+    await reset();
+    voice.setHarvest({ exemplars: [], lengthLean: { lean: 'shorter', shorter: 9, longer: 2, level: 1, total: 12 }, counts: {} });
+    const block = voice.buildBlock([]);
+    assert.match(block, /picks the shorter one far more often/);
+    assert.match(block, /9 of 11 decided/, 'the count is shown, not just the verdict');
+});
+
+test('a "neither" lean says nothing rather than inventing a preference', async () => {
+    await reset();
+    voice.setHarvest({ exemplars: [], lengthLean: { lean: 'neither', shorter: 5, longer: 5, level: 0, total: 10 }, counts: {} });
+    assert.equal(voice.buildBlock([]), '');
+});

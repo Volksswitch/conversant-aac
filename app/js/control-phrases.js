@@ -181,6 +181,24 @@ export function getPhrases() {
 }
 
 /** Persist an edited set (cache immediately, disk in the background). */
+/**
+ * Every phrase the APP speaks on the user's behalf, flattened.
+ *
+ * Used by the voice harvest to tell OUR words apart from the user's own in
+ * conversation logs written before the `source` field existed. Harvesting
+ * "Let me think about that." as an example of how this person talks would be
+ * teaching the model our own words back to itself.
+ */
+export function allPhrases() {
+    const p = getPhrases();
+    const out = [];
+    for (const v of Object.values(p)) {
+        if (typeof v === 'string') out.push(v);
+        else if (Array.isArray(v)) for (const x of v) if (typeof x === 'string') out.push(x);
+    }
+    return out.filter(Boolean);
+}
+
 export function setPhrases(next) {
     // Carry the seeded watermark forward — the editor doesn't send it, and losing
     // it would make a deleted default reappear on the next load (mergeNewDefaults).

@@ -1189,7 +1189,7 @@ export async function finalizePartnerTurn(handle, { rawTranscript, cleanedTransc
     await flushLog();
 }
 
-export async function logUserResponse({ selectedText, selectedIndex, allOptions, selectedSlot = null, partner = null, feeling = null, place = null }) {
+export async function logUserResponse({ selectedText, selectedIndex, allOptions, selectedSlot = null, source = null, partner = null, feeling = null, place = null }) {
     if (!conversationSaving) return; // private conversation — nothing is written
     // Start the log lazily if this user turn is the FIRST turn of the conversation
     // — an opener (Start conversation) or an Express-panel phrase takes the floor
@@ -1206,6 +1206,16 @@ export async function logUserResponse({ selectedText, selectedIndex, allOptions,
         selectedIndex,
         allOptions,
         selectedSlot,      // the CA category chosen (PREFERRED/CHOICE/...), or null
+        // WHERE THE WORDS CAME FROM (August 7 2026). Everything non-card used to be
+        // logged identically as selectedIndex:-1 with no options, so a composed
+        // sentence, an Express button label and one of OUR control phrases were
+        // indistinguishable on disk. The voice harvest must tell them apart: the
+        // first is the user's own prose and the most valuable thing in the log; the
+        // second is idiom but never evidence of length; and the third is not the
+        // user's voice at all -- harvesting "Let me think about that." as how this
+        // person talks would be teaching the model our words back to itself.
+        // 'card' | 'composed' | 'express' | 'control' | null (pre-Aug-2026 logs)
+        source,
         partner,           // who the user was talking with, or null
         feeling,           // how the user felt at this turn, or null
         place              // where the user was at this turn, or null

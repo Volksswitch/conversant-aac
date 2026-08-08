@@ -20,6 +20,9 @@ import * as rel from './relationships.js';
 import * as places from './places.js';
 import * as voiceProfile from './voice.js';
 import { SOUND_CHECK_ITEMS, VERDICT, questionFor } from './sound-check-items.js';
+import * as voiceHarvest from './voice-harvest.js';
+import * as controlPhrases from './control-phrases.js';
+import * as expressPanel from './express-panel.js';
 import { speak } from './tts.js';
 import * as storage from './storage.js';
 import * as keyboard from './keyboard.js';
@@ -335,7 +338,21 @@ function renderSoundCheck() {
     contentEl.append(el('p', { class: 'wv-intro sc-disclaimer', text:
         'None of this is about you. The situations are made up, nobody is asking what you actually did, and nothing you pick is kept as a fact about your life. There are no right answers, and you can change any of them later.' }));
 
-    for (const item of SOUND_CHECK_ITEMS) contentEl.append(buildSoundCheckCard(item));
+    // The bank has two kinds: replying to something, and starting something. Mark
+    // where it changes, or the switch is silent and the first initiating item reads
+    // as an item that forgot its partner turn.
+    let seenInitiating = false;
+    for (const item of SOUND_CHECK_ITEMS) {
+        if (!item.partner && !seenInitiating) {
+            seenInitiating = true;
+            contentEl.append(el('h3', { class: 'wv-section-title', text: 'When you start things off' }));
+            contentEl.append(el('p', { class: 'wv-intro', text:
+                'These ones are not replies — nobody has said anything yet. They are for when you open a conversation, ask for something, or bring it to an end.' }));
+        }
+        contentEl.append(buildSoundCheckCard(item));
+    }
+
+    contentEl.append(buildHarvestSection());
 
     contentEl.append(el('h3', { class: 'wv-section-title', text: 'Things I never say' }));
     contentEl.append(el('p', { class: 'wv-intro', text:
@@ -406,6 +423,66 @@ function refreshSoundCheckCard(item) {
     const old = document.getElementById('sc-' + item.id);
     if (!old) return renderSoundCheck();
     old.replaceWith(buildSoundCheckCard(item));
+}
+
+// What reading the user's own past conversations concluded (Phase 2). Shown, and
+// correctable: "here is what I think you sound like" cannot be a black box, least of
+// all for people who have spent their lives having others speak on their behalf.
+// Removing a line is permanent — a later re-read must not put it back.
+function buildHarvestSection() {
+    const wrap = el('div', { class: 'sc-harvest' });
+    const draw = () => {
+        wrap.innerHTML = '';
+        wrap.append(el('h3', { class: 'wv-section-title', text: 'What the app has picked up' }));
+
+        const h = voiceProfile.getHarvest();
+        const active = voiceProfile.activeExemplars();
+
+        if (!h) {
+            wrap.append(el('p', { class: 'wv-intro', text:
+                'Once you have had a few conversations, the app can read back the things you typed yourself and use them as a guide to your wording. Nothing is read until you ask.' }));
+        } else {
+            const lean = h.lengthLean;
+            wrap.append(el('p', { class: 'wv-intro', text:
+                !active.length && !lean
+                    ? 'Nothing yet. This fills up as you type your own words in conversations.'
+                    : 'Taken from your own conversations. Remove anything that does not belong.' }));
+            if (lean && lean.lean !== 'neither') {
+                wrap.append(el('p', { class: 'sc-lean', text: lean.lean === 'shorter'
+                    ? `When you are offered a choice, you usually pick the shorter wording (${lean.shorter} times out of ${lean.shorter + lean.longer}).`
+                    : `When you are offered a choice, you usually pick the fuller wording (${lean.longer} times out of ${lean.shorter + lean.longer}).` }));
+            }
+            for (const text of active) {
+                wrap.append(el('div', { class: 'wv-entry' }, [
+                    el('span', { class: 'sc-harvest-text', text: `"${text}"` }),
+                    el('button', { class: 'wv-entry-remove', text: '×',
+                        title: 'Remove this', 'aria-label': `Remove "${text}"`,
+                        onclick: () => { voiceProfile.dismissExemplar(text); draw(); } }),
+                ]));
+            }
+        }
+
+        wrap.append(el('button', {
+            class: 'wv-btn', text: h ? 'Read my conversations again' : 'Read my conversations',
+            onclick: async (e) => {
+                e.currentTarget.disabled = true;
+                try {
+                    const logs = await storage.listConversationLogs();
+                    voiceProfile.setHarvest(voiceHarvest.harvest(logs, {
+                        // Needed to classify turns written before the source field
+                        // existed: our own control phrases and the user's Express
+                        // labels must not be mistaken for prose they composed.
+                        controlPhrases: controlPhrases.allPhrases(),
+                        expressPhrases: expressPanel.getItems()
+                            .filter((i) => i.type === 'phrase' && i.text).map((i) => i.text),
+                    }));
+                } catch { /* no folder, or nothing readable */ }
+                draw();
+            },
+        }));
+    };
+    draw();
+    return wrap;
 }
 
 function buildNeverList() {

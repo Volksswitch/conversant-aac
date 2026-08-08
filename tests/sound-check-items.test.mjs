@@ -12,7 +12,8 @@ test('every item is structurally complete', () => {
     for (const it of SOUND_CHECK_ITEMS) {
         assert.ok(it.id, 'has an id');
         assert.ok(DIMENSIONS[it.dimension], `${it.id}: known dimension "${it.dimension}"`);
-        assert.ok(it.partner && it.partner.trim(), `${it.id}: has a partner turn`);
+        // `partner` is OPTIONAL: an initiating item has nobody speaking first.
+        if ('partner' in it) assert.ok(it.partner.trim(), `${it.id}: partner turn is not blank`);
         assert.ok(it.stipulate && /^Suppose /.test(it.stipulate), `${it.id}: stipulates its content`);
         assert.equal(it.candidates.length, 3, `${it.id}: exactly three candidates`);
         for (const c of it.candidates) assert.ok(c && c.trim(), `${it.id}: no empty candidate`);
@@ -114,7 +115,14 @@ test('the question stem follows the item, so an initiating item cannot inherit t
     assert.match(questionFor(initiating), /sounds most like something you would say\?$/);
 });
 
-test('every item in the bank today is responsive — recorded so the gap stays visible', () => {
-    assert.ok(SOUND_CHECK_ITEMS.every((i) => i.partner),
-        'if this fails, an initiating item was added — good, but check questionFor and the UI hide the partner line');
+test('the bank probes BOTH responding and initiating voice', () => {
+    // Until August 7 2026 every item was responsive, so the app's conversation
+    // starters, INITIATIVE cards, wind-downs and Reframe statements were written
+    // with nothing from the user to go on.
+    const responsive = SOUND_CHECK_ITEMS.filter((i) => i.partner);
+    const initiating = SOUND_CHECK_ITEMS.filter((i) => !i.partner);
+    assert.ok(responsive.length >= 8, 'responding is still the bulk of it');
+    assert.ok(initiating.length >= 3, `initiating voice is unmeasured (${initiating.length} items)`);
+    // An initiating item must not carry a partner line by accident.
+    for (const it of initiating) assert.equal(it.partner, undefined, `${it.id}`);
 });

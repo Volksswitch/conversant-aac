@@ -49,6 +49,13 @@ function emptyProfile() {
         // sample depends on the slowest feature in the app and is shortened by the
         // effort of producing it).
         samples: {},
+        // Phase 2: what reading the user's own past conversations concluded.
+        // { exemplars: [], lengthLean: {...}|null, counts: {}, at: ISO }
+        harvest: null,
+        // Harvested sentences the user has explicitly removed. Kept so a later
+        // re-harvest does not put them straight back — "I can see and correct what
+        // it concluded" is worthless if the correction does not stick.
+        dismissed: [],
     };
 }
 
@@ -61,6 +68,8 @@ function normalize(raw) {
         soundCheck: (raw.soundCheck && typeof raw.soundCheck === 'object') ? raw.soundCheck : {},
         never: Array.isArray(raw.never) ? raw.never.filter((s) => typeof s === 'string' && s.trim()) : [],
         samples: (raw.samples && typeof raw.samples === 'object') ? raw.samples : {},
+        harvest: (raw.harvest && typeof raw.harvest === 'object') ? raw.harvest : null,
+        dismissed: Array.isArray(raw.dismissed) ? raw.dismissed.filter((x) => typeof x === 'string') : [],
     };
 }
 
@@ -140,6 +149,35 @@ export function setSample(key, text) {
     return save();
 }
 
+/** Store what the harvest concluded (voice-harvest.js does the reading). */
+export function setHarvest(result) {
+    const p = current();
+    p.harvest = result ? { ...result, at: new Date().toISOString() } : null;
+    return save();
+}
+
+export function getHarvest() { return current().harvest; }
+
+/**
+ * The harvested sentences that are actually in play — everything found, minus what
+ * the user has removed. "Here is what I think you sound like" cannot be a black box,
+ * least of all for people who have spent their lives having others speak for them.
+ */
+export function activeExemplars() {
+    const p = current();
+    const found = (p.harvest && Array.isArray(p.harvest.exemplars)) ? p.harvest.exemplars : [];
+    const gone = new Set(p.dismissed.map((s) => s.trim().toLowerCase()));
+    return found.filter((t) => !gone.has(String(t).trim().toLowerCase()));
+}
+
+/** Remove a harvested sentence, permanently — a re-harvest must not resurrect it. */
+export function dismissExemplar(text) {
+    const p = current();
+    const t = String(text || '').trim();
+    if (t && !p.dismissed.includes(t)) p.dismissed.push(t);
+    return save();
+}
+
 export async function resetAll() {
     profile = emptyProfile();
     writeCache(profile);
@@ -209,6 +247,32 @@ export function buildBlock(idiom = []) {
         lines.push('');
         lines.push('Things this user has written, in their own words:');
         for (const [key, text] of samples) lines.push(`  (${key}) ${text}`);
+    }
+
+    // PHASE 2 — sentences the user actually composed in past conversations. These
+    // are the strongest exemplars there are, and they take the OPPOSITE instruction
+    // to the Sound Check ones above. Those were picked off a list WE made up, so
+    // nothing in them is a fact. These are the user's real words about real things,
+    // so calling them fabrications would be false. But they are PAST utterances, and
+    // treating a month-old sentence as currently true is the anti-fabrication failure
+    // from the other direction — hence "not current facts" rather than "not facts".
+    const harvested = activeExemplars();
+    if (harvested.length) {
+        lines.push('');
+        lines.push('Sentences this user has actually written themselves, in real conversations. This is the best evidence you have of how they put things:');
+        for (const t of harvested.slice(0, 12)) lines.push(`  "${t}"`);
+        lines.push('Follow their phrasing, rhythm and level of detail. They are things this person said in the PAST, not current facts — do not assume any of it is still true, and do not repeat their content.');
+    }
+
+    // Measured from real selections, and stated as the measurement it is. This is the
+    // one dimension computable locally without a model call: word count is word
+    // count. The others are deliberately not guessed at.
+    const lean = p.harvest && p.harvest.lengthLean;
+    if (lean && lean.lean && lean.lean !== 'neither') {
+        lines.push('');
+        lines.push(lean.lean === 'shorter'
+            ? `Offered a choice of wordings in real conversations, this user picks the shorter one far more often than the longer (${lean.shorter} of ${lean.shorter + lean.longer} decided). Keep responses brief unless there is a clear reason not to.`
+            : `Offered a choice of wordings in real conversations, this user picks the fuller one far more often than the shorter (${lean.longer} of ${lean.shorter + lean.longer} decided). Do not clip responses down to the minimum.`);
     }
 
     if (idiom.length) {

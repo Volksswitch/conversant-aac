@@ -3260,3 +3260,18 @@ body.conv-bottom .tab-panel[data-tab="aboutme"].active {
 @media (hover: hover) {
     .sc-choice:hover { background: #f1f8e9; }
 }
+
+/* What the harvest concluded — shown so the user can correct it. */
+.sc-harvest { margin-top: 0.5rem; }
+.sc-harvest-text {
+    flex: 1 1 auto;
+    font-style: italic;
+    padding-right: 0.5rem;
+}
+.sc-lean {
+    background: #eef4f8;
+    border-left: 4px solid var(--slot-initiative, #1565C0);
+    border-radius: 6px;
+    padding: 0.5rem 0.7rem;
+    margin: 0.4rem 0 0.6rem;
+}

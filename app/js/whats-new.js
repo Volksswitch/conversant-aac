@@ -22,6 +22,8 @@ import * as storage from './storage.js';
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
   "0.6.8": [
+    "How I Sound now also covers the things you say when you start a conversation, not only when you reply — opening, asking for something, and finishing up.",
+    "The same section can now read back your own past conversations and pick out the sentences you typed yourself, to use as a guide to your wording. It only reads when you ask it to, it never uses the app's own phrases or the suggestions it wrote for you, and you can remove anything that does not belong — removals stick. Conversations you marked \"don't save\" are not read, because they were never written down.",
     "New How I Sound section in About Me. It shows a few ways of saying the same thing and asks which you would rather say. The app uses your answers to write suggestions in your words instead of its own. The situations are made up and nothing you pick is kept as a fact about your life — it is only about wording. You can hear any of them read aloud before choosing, and change any answer later.",
     "The same section has a Things I never say list. Anything you put there is off limits for the app when it suggests responses.",
     "Two new About Me topics: Topics I Seek and Avoid and Dislikes & Pet Peeves. Anything you list under \"what would you rather not be asked about\" is something the app will never bring up on its own, and if the other person raises it you will always be offered a way to move the conversation on.",

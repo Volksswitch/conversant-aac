@@ -66,6 +66,11 @@ export const DIMENSIONS = {
     affect:    'Whether feeling is named outright or left implied.',
     floor:     'Whether a reply hands the conversation back or lets it rest.',
     warmth:    'Whether warmth is marked in words or left to be understood.',
+    // Only appears in INITIATING items: you cannot vary the imposition of a request
+    // you are not making. The classic negative-politeness axis (Brown & Levinson),
+    // which the project already leans on for the DISPREFERRED slot's hedge+account
+    // rule and in the Reframe redirect taxonomy.
+    directness: 'How directly they ask for something, versus hedging the imposition.',
 };
 
 export const SOUND_CHECK_ITEMS = [
@@ -187,6 +192,56 @@ export const SOUND_CHECK_ITEMS = [
             'It was really good to talk to you. Take care.',
             'Good to talk to you. Bye.',
             'Okay, bye.',
+        ],
+    },
+
+    // -- INITIATING ITEMS (no `partner` -- nobody has spoken) ------------------
+    // These close the gap noted at the top. `questionFor` drops "in response" for
+    // them, and the renderer omits the partner line. Placed at the END as a coherent
+    // group so anyone part-way through the responsive set keeps their place.
+    {
+        id: 'initiate-opener', dimension: 'economy', leads: 'short',
+        stipulate: 'Suppose you want to start a conversation with someone you know.',
+        candidates: [
+            'Hi.',
+            'Hi, how are you?',
+            'Hi - good to see you. How have you been?',
+        ],
+    },
+    {
+        id: 'initiate-help', dimension: 'directness', leads: 'direct',
+        stipulate: 'Suppose you need someone to help you with something.',
+        candidates: [
+            'Can you help me?',
+            'Would you mind helping me?',
+            "I don't suppose you could help me?",
+        ],
+    },
+    {
+        id: 'initiate-slow-down', dimension: 'directness', leads: 'indirect',
+        stipulate: 'Suppose you want the other person to slow down.',
+        candidates: [
+            'Would you mind slowing down a little?',
+            'Could you slow down a bit?',
+            'Slow down a bit, please.',
+        ],
+    },
+    {
+        id: 'initiate-disagree', dimension: 'affect', leads: 'hedged',
+        stipulate: 'Suppose you do not agree with what is being suggested.',
+        candidates: [
+            "I'm not sure about that.",
+            "I'm not convinced, to be honest.",
+            "I don't think so, no.",
+        ],
+    },
+    {
+        id: 'initiate-leaving', dimension: 'warmth', leads: 'plain',
+        stipulate: 'Suppose you need to bring the conversation to an end.',
+        candidates: [
+            "Right, I'd better go.",
+            'I should get going.',
+            'I should get going - this has been lovely.',
         ],
     },
 ];
