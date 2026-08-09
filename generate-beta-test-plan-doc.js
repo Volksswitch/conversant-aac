@@ -1,4 +1,16 @@
-/* Generates "Conversant AAC Beta Test Plan.docx" from BETA-TEST-PLAN.md.
+/* Generates "Conversant AAC Beta Test Plan.docx".
+ *
+ * ⚠ THE FIRST LINE OF THIS COMMENT USED TO SAY "from BETA-TEST-PLAN.md" AND THAT IS
+ * NOT WHAT HAPPENS. Nothing here reads that file — every paragraph below is a second,
+ * hand-authored copy of it. So editing the markdown and then running this does NOT
+ * carry the edit across: it rewrites the .docx from the older text here, silently
+ * reverting it, with no error and a document that looks freshly built. That nearly
+ * dropped the "reports are not anonymous" disclosure from §9 on Aug 8 2026, which is
+ * the one paragraph in the document a tester is entitled to.
+ * ⚠ EDIT BOTH FILES IN THE SAME PASS. If they ever disagree, diff them — the .docx is
+ * what a tester reads and the markdown is what Ken reads, so neither is automatically
+ * the newer one. (Making this generator parse the markdown would be the real fix, but
+ * Appendix B and the callout boxes mean it is a rewrite, not a tidy-up.)
  *
  * TESTER-FACING. Two deliberate differences from the other generators in this
  * folder, both because of who reads it:
@@ -285,7 +297,9 @@ bulletBold("What the other person says ", "goes to a transcription service to be
 bulletBold("What you might say ", "— the conversation so far, plus what you have told the app about yourself — goes to the AI so it can suggest responses. You pick what is spoken; nothing is said out loud unless you choose it."),
 bulletBold("During this beta only: ", "the app sends back usage information and error reports so we can see how it is holding up. This is counts and timings only — how many conversations, how long you waited, which buttons you pressed, what error occurred. It never includes what you or the other person said. A transcript is only ever sent if you choose to attach one, and you see it first."),
 emptyPara(),
-para("You can turn automatic reporting off in Settings under Troubleshooting. We would rather you left it on, because it means you never have to remember to send us anything — but it is your choice and turning it off will not affect the app."),
+boldPara("These reports are not anonymous, and you should know that before you agree to them. ", "Each one carries the tester name we gave you at setup, so we can tell whose report is whose and follow up with the right person. We already know who you are — you volunteered — so the name tells us nothing new. But it does mean the reports are a record with your name on it, held by us, and that is worth saying out loud rather than leaving you to work out. They also carry a code identifying the device, so reports from your tablet stay separate from reports from anything else you use."),
+para("You can read exactly what a report contains at any time in Settings under Troubleshooting, under “What is in a weekly report”, along with a list of every report already sent."),
+para("You can turn automatic reporting off in the same place. We would rather you left it on, because it means you never have to remember to send us anything — but it is your choice and turning it off will not affect the app."),
 calloutBox([
     { label: "Any single conversation can be kept out of the record entirely. ", text: "Tap Don't save this conversation before you begin, and nothing from it is written down. Use it whenever you want to; you do not need a reason." },
 ], "E2EFDA", "548235"),
