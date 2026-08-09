@@ -26,6 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Automatic weekly reports are now switched on. About once a week, when you open the app, it sends back a short summary of how it has been going — how many conversations, how long things took, and any errors it recorded. It never includes anything you or the other person said. Put the name you were given in Settings → Troubleshooting so we know whose report it is; the same place shows exactly what a report contains, lists everything already sent, and has the switch to turn it off.
+- Fixed: a problem report was leaving out whether the app can use this device's speech recognition — the first thing worth knowing when the app cannot hear anyone.
+
 ## Version 0.7.0
 
 - **Empty Express Panel buttons now show, and you can tap one to fill it in.** The
