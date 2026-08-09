@@ -82,8 +82,23 @@ function doPost(e) {
   }
 }
 
-// A GET is handy for confirming the deployment is live from a browser.
-function doGet() { return _out('Conversant AAC report endpoint is running.'); }
+/* ⚠ BUMP THIS WHENEVER THIS FILE CHANGES, and the reason is worth reading once.
+ * Editing and saving in the Apps Script editor changes NOTHING at the /exec URL, and
+ * "Deploy > New deployment" quietly creates a SECOND web app at a DIFFERENT URL while
+ * the original keeps serving the old code. Both mistakes look completely successful:
+ * the URL answers, the secret is accepted, reports keep arriving. On Aug 8 2026 that
+ * cost a probe row to notice, and only because the change happened to alter something
+ * visible in the Sheet -- a change to SECRET would have been invisible and total,
+ * silently rejecting every report until someone noticed weeks of empty rows.
+ * Visiting the /exec URL in a browser now prints this, so a redeploy is confirmable in
+ * two seconds with nothing written. The correct redeploy is:
+ *   Deploy > Manage deployments > pencil > Version: New version > Deploy   (same URL) */
+var SCRIPT_VERSION = '2026-08-08b';
+
+// A GET is handy for confirming the deployment is live, and WHICH CODE is live.
+function doGet() {
+  return _out('Conversant AAC report endpoint is running. Script version: ' + SCRIPT_VERSION);
+}
 
 function _out(msg) {
   return ContentService.createTextOutput(msg).setMimeType(ContentService.MimeType.TEXT);
