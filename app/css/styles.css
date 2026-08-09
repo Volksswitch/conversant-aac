@@ -2397,14 +2397,53 @@ body.conv-bottom .tab-panel[data-tab="aboutme"].active {
     padding-top: 0.5rem;
 }
 
+/* ⚠ `display: flex` on a <summary> REMOVES the browser's disclosure triangle
+   (any display other than list-item does). This one had been flex since it was
+   written, so it rendered as bold text with nothing to say it opened, and its whole
+   contents — the per-person starters included — read as absent rather than closed.
+   The marker below is ours for exactly that reason; do not go back to relying on
+   the UA's, and if this ever stops being flex, remove the marker rather than having
+   two. It is also tinted and boxed so it reads as a control, not a heading. */
 .wv-partner-profile > summary {
     cursor: pointer;
-    font-weight: 600;
-    padding: 0.35rem 0;
+    padding: 0.4rem 0.6rem;
     min-height: var(--btn-min-dim);
     display: flex;
     align-items: center;
+    gap: 0.6rem;
+    background: #eceff1;
+    border: 1px solid var(--border, #d7dde3);
+    border-radius: 8px;
 }
+.wv-partner-profile > summary:hover { background: #e2e7ea; }
+/* Hides the marker in Safari, which draws its own even when display is not
+   list-item — belt and braces against two triangles. */
+.wv-partner-profile > summary::-webkit-details-marker { display: none; }
+
+.wv-disclosure-mark {
+    flex: 0 0 auto;
+    /* Defensive, not required today: as a flex item this <span> is already
+       blockified, so the rotation below applies. It is stated anyway so the marker
+       does not silently stop rotating if the summary ever stops being a flex
+       container — transform is ignored on a non-replaced inline element. */
+    display: inline-block;
+    font-size: 1.2rem;
+    line-height: 1;
+    color: #546E7A;
+    transition: transform 0.12s ease;
+}
+.wv-partner-profile[open] > summary .wv-disclosure-mark { transform: rotate(90deg); }
+
+.wv-disclosure-lines { display: flex; flex-direction: column; min-width: 0; }
+.wv-disclosure-title { font-weight: 600; }
+.wv-disclosure-sub {
+    font-size: 0.85em;
+    color: #555;              /* matches the other secondary text in About Me */
+    font-weight: 400;
+}
+/* Once it is open the invitation has been accepted, so the second line stops
+   earning its space and would only push the fields further down. */
+.wv-partner-profile[open] > summary .wv-disclosure-sub { display: none; }
 
 .wv-partner-profile > *:not(summary) {
     margin-top: 0.5rem;

@@ -714,8 +714,23 @@ function buildPartnerProfileSection(existing) {
 
     const splitLines = (v) => v.split('\n').map((s) => s.trim()).filter(Boolean);
 
+    // The summary has to LOOK like something that opens. It did not: `display: flex`
+    // on a <summary> removes the browser's own disclosure triangle, so this was bold
+    // text with no affordance of any kind, and everything inside it — including the
+    // per-person conversation starters — was invisible to anyone who did not already
+    // know it was there (Ken went looking for them and could not find them, August 9
+    // 2026). So the marker is now an element we draw ourselves rather than the one
+    // the UA drops, and the second line names what is inside, because "How I talk
+    // with them" does not read as the place starters and goodbyes would live.
     const node = el('details', { class: 'wv-partner-profile' }, [
-        el('summary', { text: 'How I talk with them' }),
+        el('summary', { class: 'wv-disclosure' }, [
+            el('span', { class: 'wv-disclosure-mark', 'aria-hidden': 'true', text: '›' }),
+            el('span', { class: 'wv-disclosure-lines' }, [
+                el('span', { class: 'wv-disclosure-title', text: 'How I talk with them' }),
+                el('span', { class: 'wv-disclosure-sub',
+                    text: 'Tap to open — how you sound with them, and their own starters and goodbyes' }),
+            ]),
+        ]),
         el('div', { class: 'wv-dim-grid' }, dimRows),
         goalSelect, goalOtherWrap, noteIn,
         openersIn, windIn, closeIn
