@@ -26,7 +26,12 @@
  * conversation text, that is a bug in weekly-send.js, not a change of policy.
  */
 
-var SECRET = 'REPLACE-ME';          // must match SHARED_SECRET in weekly-send.js
+// ⚠ Must match SHARED_SECRET in app/js/weekly-send.js. The live value is kept here
+// rather than left as a placeholder because a redeploy from this file with the wrong
+// value fails SILENTLY at the app — the server answers "bad secret", the app cannot
+// read the answer, and reports simply stop arriving. Nothing is exposed by it being
+// here: the same value ships inside the app, readable by anyone who opens the site.
+var SECRET = 'u_mlqOZgElbxCB7732CAwSzC';
 var SHEET_NAME = 'reports';
 var ALERT_EMAIL = '';               // set to get mailed when a report shows errors
 var ALERT_ERROR_THRESHOLD = 5;      // errors in one report before mailing

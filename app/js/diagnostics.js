@@ -55,7 +55,14 @@ export async function collectSystemInfo({ appVersion = '?', buildId = '?' } = {}
         when: new Date().toISOString(),
         platform: {}, display: {}, speech: {}, storage: {}, settings: {},
     };
-    try { info.platform = platform.describe(); } catch { info.platform = { error: 'unavailable' }; }
+    // ⚠ describe() returns a STRING, so it must go UNDER a key, never become the
+    // block itself. Assigning it directly cost three facts at once and reported none
+    // of them: block() walked the string with Object.entries and printed it one
+    // character per line, and the next assignment threw (a module is strict mode, so
+    // adding a property to a string primitive is a TypeError) — taking the whole try
+    // block with it, including info.speech.recognition, the one field a "it can't
+    // hear me" report turns on.
+    try { info.platform = { summary: platform.describe() }; } catch { info.platform = { error: 'unavailable' }; }
     try {
         info.platform.standalone = platform.isStandalone();
         info.platform.iosShell = platform.iosBrowserShell();

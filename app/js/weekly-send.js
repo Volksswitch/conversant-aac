@@ -35,16 +35,22 @@ import * as storage from './storage.js';
 import * as diagnostics from './diagnostics.js';
 import { summarize } from './usage-summary.js';
 
-// ⚠ PLACEHOLDER. Empty means the sender is INERT: payloads are still built and
-// queued (so the whole pipeline is exercisable and nothing is lost), but nothing
-// leaves the device. Paste the Apps Script web-app URL here to arm it, and add the
-// same origin to the CSP `connect-src` when SEC-3 lands or sends fail silently.
-export const ENDPOINT = '';
-// Shared secret, checked by the Apps Script side so a stranger who finds the URL
-// cannot fill the Sheet with junk. Not a security boundary for the DATA — the
-// payload carries a tester's name, so the Sheet holds personal information and is
-// confidential regardless.
-export const SHARED_SECRET = 'REPLACE-ME';
+// The Apps Script web app that receives reports (scripts/weekly-report-endpoint.gs).
+// ⚠ An empty string makes the sender INERT — payloads still build, queue and log, but
+// nothing leaves the device — so blanking this is the way to disarm every copy at the
+// next release. ⚠ Add this origin to the CSP `connect-src` when SEC-3 lands, or sends
+// will start failing silently.
+export const ENDPOINT = 'https://script.google.com/macros/s/AKfycbx1Y_slFybVpzX3V2YobzgfVFEvoaWUj21zswIodfyuTlsAUHIv25YkPGepYHnCRBqqLA/exec';
+// ⚠ THIS IS NOT A SECRET AND MUST NEVER BE TREATED AS ONE. It ships in the app, so
+// anyone who opens the site can read both it and the address above. All it buys is
+// that filling the Sheet with junk takes deliberate effort rather than a stray POST
+// to a discovered URL; if that ever happens, change it here AND in the Apps Script,
+// redeploy both, and the old value stops working. It protects nothing already in the
+// Sheet — the payload carries a tester's name, so the Sheet is confidential
+// regardless. Must match SECRET in scripts/weekly-report-endpoint.gs, and a mismatch
+// is SILENT at the app: the server answers "bad secret" and the app cannot read the
+// answer, so the only symptom is reports quietly not arriving.
+export const SHARED_SECRET = 'u_mlqOZgElbxCB7732CAwSzC';
 
 const INTERVAL_DAYS = 7;
 const QUEUE_MAX = 8;          // a tester offline for two months must not grow it forever
