@@ -145,7 +145,7 @@ it.
 
 | Week | What to try |
 |---|---|
-| **1** | Setup and practice. Do not have a real conversation yet. Just get comfortable pressing the buttons and seeing what happens. |
+| **1** | Setup and practice. Do not have a real conversation yet. Explore the user interface. Press the buttons and see what happens. |
 | **2** | **Make it yours.** Fill in About Me. Add the people you talk to, the places you go, and how you feel. Edit the Express Panel so the phrases are *your* phrases. This is not optional setup — it is what makes the suggestions sound like you. |
 | **3** | **First real conversations**, at home, with someone patient who knows what you are doing. |
 | **4** | Widen it. A different person. A different location. |
