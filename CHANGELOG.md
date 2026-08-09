@@ -28,6 +28,7 @@ forgetting to tag one is only ever noise, never silence.
 
 - Automatic weekly reports are now switched on. About once a week, when you open the app, it sends back a short summary of how it has been going — how many conversations, how long things took, and any errors it recorded. It never includes anything you or the other person said. Put the name you were given in Settings → Troubleshooting so we know whose report it is; the same place shows exactly what a report contains, lists everything already sent, and has the switch to turn it off.
 - Fixed: a problem report was leaving out whether the app can use this device's speech recognition — the first thing worth knowing when the app cannot hear anyone.
+- The first time you open the app after this update, it sends a report straight away rather than waiting for the week to come round, so you and we can both see that reporting is working before you rely on it.
 
 ## Version 0.7.0
 

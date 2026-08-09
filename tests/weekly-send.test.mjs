@@ -39,6 +39,39 @@ test('schedule: the off switch always wins, including at first launch', () => {
     assert.equal(shouldSend({ enabled: false, lastAt: now - 400 * DAY, now }), false);
 });
 
+/* The scenario this clause was built for, kept as a named test because it is the one
+ * that actually happened: 0.7.0 shipped with no address, ran the routine on every
+ * launch, and marked each week done anyway. A tester updating to an armed build is
+ * therefore mid-week with a "done" marker, and without the endpoint check would wait
+ * up to seven more days for a first report — the window in which nobody can tell
+ * setup from breakage. */
+test('schedule: arming the endpoint sends on the next launch, mid-week', () => {
+    const now = Date.now();
+    const URL = 'https://script.google.com/macros/s/AAA/exec';
+
+    // An unarmed 0.7.0 launch three days ago recorded the date and no address.
+    assert.equal(shouldSend({ enabled: true, lastAt: now - 3 * DAY, now, endpoint: URL, lastEndpoint: null }), true);
+    // Same, for a build that recorded the empty address explicitly.
+    assert.equal(shouldSend({ enabled: true, lastAt: now - 3 * DAY, now, endpoint: URL, lastEndpoint: '' }), true);
+    // Once recorded, the address stops forcing it and the weekly rhythm resumes.
+    assert.equal(shouldSend({ enabled: true, lastAt: now - 3 * DAY, now, endpoint: URL, lastEndpoint: URL }), false);
+    assert.equal(shouldSend({ enabled: true, lastAt: now - 8 * DAY, now, endpoint: URL, lastEndpoint: URL }), true);
+    // Moving to a different address is the same event and sends again.
+    assert.equal(shouldSend({ enabled: true, lastAt: now - 1 * DAY, now, endpoint: 'https://elsewhere/exec', lastEndpoint: URL }), true);
+});
+
+test('schedule: an unarmed build never forces a send, and the off switch still wins', () => {
+    const now = Date.now();
+    // No address to send to: forcing one would rebuild a payload on every launch.
+    assert.equal(shouldSend({ enabled: true, lastAt: now - 3 * DAY, now, endpoint: '', lastEndpoint: null }), false);
+    // Disarming after being armed likewise does not force anything.
+    assert.equal(shouldSend({ enabled: true, lastAt: now - 3 * DAY, now, endpoint: '', lastEndpoint: 'https://x/exec' }), false);
+    // A changed address must never override the tester's decision to switch it off.
+    assert.equal(shouldSend({ enabled: false, lastAt: now - 3 * DAY, now, endpoint: 'https://x/exec', lastEndpoint: null }), false);
+    // The weekly rhythm is unaffected when the caller passes no endpoint at all.
+    assert.equal(shouldSend({ enabled: true, lastAt: now - 8 * DAY, now }), true);
+});
+
 test('queue: bounded, dropping the OLDEST week', () => {
     let q = [];
     for (let i = 1; i <= 11; i++) q = enqueue(q, { week: i }, 8);

@@ -96,10 +96,24 @@ export function describeReport() {
 
 /* ── Pure decisions (unit-tested) ─────────────────────────────────────────── */
 
-// First launch (lastAt 0) sends immediately — see the header. Disabled always wins.
-export function shouldSend({ enabled, lastAt, now, intervalDays = INTERVAL_DAYS }) {
+/* First launch (lastAt 0) sends immediately — see the header. Disabled always wins.
+ *
+ * A CHANGED ADDRESS ALSO SENDS, and that clause is doing more than it looks. The week
+ * is marked done on ENQUEUE, so a build that could not send anything still marked it —
+ * which is exactly what 0.7.0 did, shipping with no address while running this routine
+ * on every launch. Without this, every existing tester would update, type their name,
+ * and then see nothing for up to a week, with no way for them or for us to tell setup
+ * from breakage. Sending on the change makes the very first launch after an update
+ * prove the whole path, which is the only moment anyone is watching.
+ *
+ * `lastEndpoint` is null when never recorded and '' when recorded by an unarmed build;
+ * both differ from a real address, so both trigger. A build with no address never
+ * forces a send — there is nowhere for it to go, and forcing one would rebuild a
+ * payload on every single launch. */
+export function shouldSend({ enabled, lastAt, now, intervalDays = INTERVAL_DAYS, endpoint = '', lastEndpoint = null }) {
     if (!enabled) return false;
     if (!lastAt) return true;
+    if (endpoint && endpoint !== lastEndpoint) return true;
     return (now - lastAt) >= intervalDays * 86400000;
 }
 
@@ -216,7 +230,13 @@ export async function flush() {
  * break the app it is reporting on is worse than no diagnostic. */
 export async function maybeSend({ appVersion, build, now = Date.now() } = {}) {
     try {
-        if (!shouldSend({ enabled: storage.loadWeeklySendEnabled(), lastAt: storage.loadWeeklySendLastAt(), now })) {
+        if (!shouldSend({
+            enabled: storage.loadWeeklySendEnabled(),
+            lastAt: storage.loadWeeklySendLastAt(),
+            now,
+            endpoint: ENDPOINT,
+            lastEndpoint: storage.loadWeeklyEndpoint(),
+        })) {
             // Still flush anything stranded from a previous week.
             return await flush();
         }
@@ -226,6 +246,11 @@ export async function maybeSend({ appVersion, build, now = Date.now() } = {}) {
         // here, and re-marking on every launch while offline would build one payload
         // per launch instead of one per week.
         storage.saveWeeklySendLastAt(now);
+        // Recorded beside the date, and for the same reason: together they mean "a
+        // report was prepared, on this date, for this address". Recording it here
+        // rather than after a successful post is deliberate — delivery is unknowable
+        // (the response is opaque), so a send-time record would never be written.
+        storage.saveWeeklyEndpoint(ENDPOINT);
         return await flush();
     } catch {
         return { sent: 0, queued: 0 };

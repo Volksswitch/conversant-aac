@@ -279,7 +279,7 @@ const SETTINGS_DIR = 'settings';
 // clone the first device's identity or make it think it has already reported this
 // week. `testerName` is deliberately NOT excluded — it identifies the tester, so it
 // should follow them (Ken, August 7 2026).
-const PROFILE_EXCLUDE = ['apiKey', 'deepgramKey', 'usageInputTokens', 'usageOutputTokens', 'usageCacheWriteTokens', 'usageCacheReadTokens', 'usageSttSeconds', 'usageTtsCharacters', 'usageSince', 'lastSeenVersion', 'activeSettingsProfile', 'installId', 'weeklySendLastAt', 'weeklyInfoHash'];
+const PROFILE_EXCLUDE = ['apiKey', 'deepgramKey', 'usageInputTokens', 'usageOutputTokens', 'usageCacheWriteTokens', 'usageCacheReadTokens', 'usageSttSeconds', 'usageTtsCharacters', 'usageSince', 'lastSeenVersion', 'activeSettingsProfile', 'installId', 'weeklySendLastAt', 'weeklyInfoHash', 'weeklyEndpoint'];
 
 // The settings bundle with both API keys replaced by a presence marker, for a
 // problem report (Ken, August 7 2026). The redaction lives HERE rather than in
@@ -1321,6 +1321,23 @@ export function loadWeeklySendLastAt() { return loadSettings().weeklySendLastAt 
 export function saveWeeklySendLastAt(t) {
     const s = loadSettings();
     s.weeklySendLastAt = t;
+    saveSettings(s);
+}
+
+// The address the last report was built for. A changed address means the week we
+// marked as "done" was marked against somewhere else — including the case that put
+// this here: 0.7.0 shipped with no address at all, and still marked every launch
+// done, so without this every existing tester would go up to a week after updating
+// before their first report appeared, with nothing visible to either side in the
+// meantime. Empty string is a real value here, not "unset": it is what an unarmed
+// build records, and it is what makes arming register as a change.
+export function loadWeeklyEndpoint() {
+    const s = loadSettings();
+    return typeof s.weeklyEndpoint === 'string' ? s.weeklyEndpoint : null;   // null = never recorded
+}
+export function saveWeeklyEndpoint(url) {
+    const s = loadSettings();
+    s.weeklyEndpoint = url || '';
     saveSettings(s);
 }
 
