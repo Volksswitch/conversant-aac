@@ -222,10 +222,10 @@ para("You may stop at any time, for any reason, and we would still like the five
 
 // ===== 4 =====
 heading1("4.  What You Need"),
-bulletBold("A tablet or computer.  ", "Either a Windows tablet or Chromebook, or an iPad. A Windows tablet (a Microsoft Surface is the usual choice) is the configuration we know best."),
+bulletBold("A tablet or computer.  ", "A Windows tablet, a Chromebook, a MacBook, or an iPad. On a computer, use Chrome or Edge. A Windows tablet (a Microsoft Surface is the usual choice) is the configuration we know best."),
 bulletBold("An internet connection.  ", "The app needs it both to hear the other person and to suggest responses. It will not work offline."),
-bulletBold("An API key for the AI — we provide this, at no cost to you.  ", "It is what powers the response suggestions. Ken will send you a key to paste into Settings. You do not need an account and you will not be billed."),
-bulletBold("A free Deepgram account, for the voice.  ", "Deepgram gives the app a much more natural, more varied voice than the ones built into your device, and signing up gives you $200 of free credit — no credit card. That is far more than six weeks of testing will use. On an iPad running the installed app it also does the listening, which the device cannot do on its own. If you somehow run through the credit, tell us and we will sort it out."),
+bulletBold("An API key for the AI — we provide this, at no cost to you.  ", "It is what powers the response suggestions. Ken will send you a key to paste into Settings. (The app calls it the “API key”, which is what the AI companies call it too.) You do not need an account of your own and you will not be billed."),
+bulletBold("A free Deepgram account, for the voice.  ", "Deepgram gives the app a much more natural, more varied voice than the ones built into your device, and signing up gives you $200 of free credit — no credit card. That is far more than six weeks of testing will use. On an iPad set up as a Home Screen app it also does the listening, which the device cannot do on its own. If you somehow run through the credit, tell us and we will sort it out."),
 bulletBold("A supporter, for setup.  ", "Choosing a folder, pasting a key, and setting the layout are fiddly one-time jobs. After that the app is yours to drive."),
 emptyPara(),
 para("Your User Manual covers your device specifically. Use the one for your device — they are self-contained, and you should never need both."),
@@ -233,22 +233,23 @@ para("Your User Manual covers your device specifically. Use the one for your dev
 // ===== 5 =====
 heading1("5.  Before Your First Real Conversation"),
 
-heading2("5.1  Setup Checklist (With Your Supporter)"),
-numbered("Open the app and choose a data folder. Do this first. Everything you enter lives there.", "steps"),
-numbered("Paste the AI key we sent you and press Test. It should say your key is working.", "steps"),
-numbered("Create your free Deepgram account, paste that key, and press its Test.", "steps"),
-numbered("Pick your voice, and listen to it. This is the voice people will hear as you. Try the Deepgram voices — they are the reason you set that account up.", "steps"),
-numbered("On a Windows tablet or Chromebook, leave the listening set to your browser's own — it is free, reliable, and does not spend your Deepgram credit. On an iPad running the installed app, set listening to Deepgram; it is the only option that works there.", "steps"),
-numbered("Set the button size, the gaps, and where the keyboard sits.", "steps"),
-numbered("Enter the tester ID we gave you in Settings under Troubleshooting, in the box marked “Tester name”. It saves as you type — there is no Save button. This is the only thing that tells us whose reports are whose; without it they arrive anonymous and we cannot come back to you about anything in them.", "steps"),
-numbered("Save all of that as a named settings profile — and re-save it every time you change something. This is what protects your setup, and it is the one habit worth building.", "steps"),
+heading2("5.1  Setup (With Your Supporter)"),
+boldPara("Your User Manual is where setup is explained properly", " — section 3, Getting Started, for opening the app and entering your API key; section 5.2 for where your data is kept; section 6.3, Speech, for your voice and the listening; and section 6.4 for button size and the keyboard. Work through it there. This is only a tick-list, plus the two things that are different because you are a beta tester."),
+numbered("Everything in the manual's section 3 and section 5.2 — open the app, set up where your data is kept, and paste your API key (section 3.2). We send you that key: you do not need an Anthropic account of your own and you will not be billed.", "steps"),
+numbered("Create your free Deepgram account and paste that key too (section 6.3). This is what gives you the good voice. On an iPad set up as a Home Screen app it also has to do the listening — that is the one configuration where it is required. Everywhere else, leave the listening on your browser's own: it is free, reliable, and spends no Deepgram credit.", "steps"),
+numbered("Pick your voice and listen to it (section 6.3). This is the voice people will hear as you.", "steps"),
+numbered("Set the button size, the gaps, and where the keyboard sits (section 6.4).", "steps"),
+numbered("Enter the tester ID we gave you — Settings, then Troubleshooting, in the box marked “Tester name”. This one is beta-only and is not in the manual. It saves as you type. It is the only thing that tells us whose reports are whose; without it they arrive anonymous and we cannot come back to you about anything in them.", "steps"),
+numbered("Save all of that as a named settings profile, and re-save it every time you change something. This is what protects your setup, and it is the one habit worth building.", "steps"),
 numbered("If you are on an iPad, do an Export and keep the file somewhere safe.", "steps"),
+emptyPara(),
+para("If you'd benefit from having a keyguard, contact Ken and he'll print one for you."),
 
 heading2("5.2  Tell Your Communication Partners"),
 calloutBox([
     { label: "Please do this. ", text: "It matters more than any feature." },
     { label: "", text: "The app listens to the person you are talking with and sends what they say to a transcription service to turn it into text. Their words are written down in your conversation record. They have no way of knowing that unless you tell them." },
-    { label: "", text: "Say something once, at the start — “this device listens and speaks for me” — and that is usually the end of it. We will send you a small printed card for the back of the device if that is easier than explaining each time." },
+    { label: "", text: "Say something once, at the start, and that is usually the end of it. The app will say it for you: your Express Panel has an amber Notice button reading “This device listens and speaks for me” — tap it when you sit down with someone new. We will also send you a small printed card for the back of the device if that is easier than saying it each time." },
 ]),
 emptyPara(),
 
@@ -293,7 +294,7 @@ para("Question 3 is not a courtesy. Knowing what already works tells us what not
 
 // ===== 9 =====
 heading1("9.  Privacy — Read This Once"),
-boldPara("What stays on your device: ", "everything you enter. About Me, your people, your places, your phrases, and the full text of your conversations live in your data folder, on your device. They are not uploaded, and there is no account and no server holding your information."),
+boldPara("What stays on your device: ", "everything you enter. About Me, your people, your places, your phrases, and the full text of your conversations are stored on your device — in the data folder you chose, or, on an iPad, in the app's own private storage. They are not uploaded, and there is no account and no server holding your information."),
 para("What leaves your device, and why:"),
 bulletBold("What the other person says ", "goes to a transcription service to be turned into text. This is how every speech recognition system works, and it is why telling your partners matters."),
 bulletBold("What you might say ", "— the conversation so far, plus what you have told the app about yourself — goes to the AI so it can suggest responses. You pick what is spoken; nothing is said out loud unless you choose it."),
@@ -301,7 +302,9 @@ bulletBold("During this beta only: ", "the app sends back usage information and 
 emptyPara(),
 boldPara("These reports are not anonymous, and you should know that before you agree to them. ", "Each one carries the tester name we gave you at setup, so we can tell whose report is whose and follow up with the right person. We already know who you are — you volunteered — so the name tells us nothing new. But it does mean the reports are a record with your name on it, held by us, and that is worth saying out loud rather than leaving you to work out. They also carry a code identifying the device, so reports from your tablet stay separate from reports from anything else you use."),
 para("You can read exactly what a report contains at any time in Settings under Troubleshooting, under “What is in a weekly report”, along with a list of every report already sent."),
-para("You can turn automatic reporting off in the same place. We would rather you left it on, because it means you never have to remember to send us anything — but it is your choice and turning it off will not affect the app."),
+boldPara("Error reports travel the same way. ", "They are part of the weekly report, so you do not have to do anything to send us the errors the app noticed by itself. That is separate from Report a problem (section 7), which only goes when you tap it — because that one is your description of what happened, and it may carry a transcript you have chosen to attach."),
+para("You can turn automatic reporting off in the same place. We would rather you left it on, because it means you never have to remember to send us anything — but it is your choice and turning it off will not affect the app. If you do turn it off, nothing is lost: Settings, then Troubleshooting, still has Save to a file and Copy for both the problem report and the error log, and you can send either to Ken whenever you like."),
+boldPara("This arrangement ends with the beta. ", "In the public release, sending anything back will be off unless the person using the app deliberately turns it on."),
 calloutBox([
     { label: "Any single conversation can be kept out of the record entirely. ", text: "Tap Don't save this conversation before you begin, and nothing from it is written down. Use it whenever you want to; you do not need a reason." },
 ], "E2EFDA", "548235"),
@@ -329,7 +332,7 @@ table([2900, 6460],
         ["In my own words", "Type something the AI did not suggest and have it spoken."],
         ["Reframe", "Type what you want to get across, and the AI rewrites the cards around it."],
         ["Practice", "Rehearse with the AI playing the other person. Nothing is spoken to a real person."],
-        ["Data folder", "Where everything you enter is stored on your device."],
+        ["Your data", "Everything you enter — About Me, your people, places, phrases and conversations. On a Windows tablet, Chromebook or MacBook it goes in a data folder you choose yourself, which you can open, copy and back up like any other folder. On an iPad the app keeps it in its own private storage, which you cannot browse; Export is how you get a copy out of it, and it is why iPad testers are asked to export."],
     ]),
 
         ]

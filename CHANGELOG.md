@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- New Express Panel button: **"This device listens and speaks for me."** It is there so you can tell someone what the device is doing with one tap, instead of having to explain it. It is amber — a new **Notice** colour for anything you say *about* the device rather than as part of the conversation — and you can reword it, recolour it or remove it like any other phrase. It appears on a panel you have not edited yet; if you have already made the panel your own, add it yourself if you want it.
+- The version number is back on the opening screen, under Start. If you are ever asked which version you have, it is there without opening Settings — which matters most when the app is too stuck to open Settings at all.
 - Automatic weekly reports are now switched on. About once a week, when you open the app, it sends back a short summary of how it has been going — how many conversations, how long things took, and any errors it recorded. It never includes anything you or the other person said. Put the name you were given in Settings → Troubleshooting so we know whose report it is; the same place shows exactly what a report contains, lists everything already sent, and has the switch to turn it off.
 - Fixed: a problem report was leaving out whether the app can use this device's speech recognition — the first thing worth knowing when the app cannot hear anyone.
 - The first time you open the app after this update, it sends a report straight away rather than waiting for the week to come round, so you and we can both see that reporting is working before you rely on it.

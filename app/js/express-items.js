@@ -54,6 +54,14 @@ export const CATEGORIES = {
   repair: { label: 'Repair',        color: '#6A1B9A', tint: '#f3e5f5' }, // purple
   need:   { label: 'Needs',         color: '#AD1457', tint: '#fce4ec' }, // magenta
   cont:   { label: 'Continuer',     color: '#546E7A', tint: '#eceff1' }, // blue-grey
+  // NOTICE (Ken, August 9 2026) — a phrase spoken ABOUT the device rather than as
+  // part of the conversation: "this device listens and speaks for me". It is the
+  // partner-awareness disclosure (SEC-7) made one tap instead of a sentence the
+  // user has to compose, and it earns its own color because it is a different KIND
+  // of utterance from everything else on the panel — the user steps out of the
+  // conversation to say it. Amber: the only unused hue among the phrase tints, and
+  // the conventional color for "take note".
+  notice: { label: 'Notice',        color: '#F9A825', tint: '#fff8e1' }, // amber
 };
 
 // Distinct, saturated colors for the three influencer TYPES — different from each
@@ -154,6 +162,10 @@ export const DEFAULT_ITEMS = [
   PH('Hi', 'social'), PH('Bye', 'social'),
   PH('Wait', 'pace'),
   PH('Help', 'need'),
+  // The partner-awareness disclosure, shipped as a default because the Beta Test
+  // Plan asks every tester to say it and nobody should have to type it. Last, so
+  // adding it moves none of the plumbing cells above.
+  PH('This device listens and speaks for me', 'notice'),
 ].map((it, i) => ({ id: 'd' + i, ...it, origin: ORIGIN.DEFAULT }));
 
 // Every phrase/feeling we have EVER shipped as a default. Used only to classify a
@@ -166,6 +178,7 @@ const SHIPPED_DEFAULT_TEXTS = new Set([
   'I think so', 'Okay', 'Got it', "That's funny", 'I agree', 'Please', 'Thank you',
   "You're welcome", 'Sorry', 'Excuse me', 'Hi', 'Bye', 'See you later', 'Wait',
   'One moment', 'Go on', 'Not now', 'Say that again', 'Help',
+  'This device listens and speaks for me',
 ]);
 
 // The user-authored content of an item, for change detection. Excludes id and

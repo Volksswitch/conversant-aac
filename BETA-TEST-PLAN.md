@@ -1,8 +1,13 @@
 # Conversant AAC — Beta Test Plan
 
-**Draft, August 7 2026.** Working draft for Ken's review. Once revised, this becomes
-`Conversant AAC Beta Test Plan.docx` in house style (Arial, Volksswitch footer, "Page m of n")
-and gets a row in DOC-SYNC.md. **Appendix B is for Ken and is not part of the tester document.**
+**Draft, August 7 2026. Revised August 9 2026 after Ken's review.**
+
+⚠ **This prose exists in three places and none of them generates the others:** this file,
+`generate-beta-test-plan-doc.js`, and `Conversant AAC Beta Test Plan.docx` — which Ken edits
+directly, so the .docx can be *ahead* of both. **Every change must be made in all three in the
+same pass, and the .docx must be backed up before it is regenerated**, or a hand edit is silently
+overwritten (that is how the MacBook line and the keyguard sentence came to exist only in the
+.docx). **Appendix B is for Ken and is deliberately dropped from the .docx.**
 
 ---
 
@@ -57,18 +62,20 @@ tell us why.
 
 ## 4. What you need
 
-- **A tablet or computer.** Either a Windows tablet or Chromebook, or an iPad. A Windows tablet
-  (a Microsoft Surface is the usual choice) is the configuration we know best.
+- **A tablet or computer.** A Windows tablet, a Chromebook, a MacBook, or an iPad. On a computer,
+  use Chrome or Edge. A Windows tablet (a Microsoft Surface is the usual choice) is the
+  configuration we know best.
 - **An internet connection.** The app needs it both to hear the other person and to suggest
   responses. It will not work offline.
 - **An API key for the AI — we provide this, at no cost to you.** It is what powers the response
-  suggestions. Ken will send you a key to paste into Settings. You do not need an account and you
-  will not be billed.
+  suggestions. Ken will send you a key to paste into Settings. (The app calls it the *API key*,
+  which is what the AI companies call it too.) You do not need an account and you will not be
+  billed.
 - **A free Deepgram account, for the voice.** Deepgram gives the app a much more natural, more
   varied voice than the ones built into your device, and signing up gives you **$200 of free
-  credit — no credit card**. That is far more than six weeks of testing will use. On an iPad
-  running the installed app it also does the listening, which the device cannot do on its own.
-  If you somehow run through the credit, tell us and we will sort it out.
+  credit — no credit card**. That is far more than six weeks of testing will use. On an iPad set
+  up as a Home Screen app it also does the listening, which the device cannot do on its own. If
+  you somehow run through the credit, tell us and we will sort it out.
 - **A supporter, for setup.** Choosing a folder, pasting a key, and setting the layout are
   fiddly one-time jobs. After that the app is yours to drive.
 
@@ -77,24 +84,31 @@ self-contained, and you should never need both.
 
 ## 5. Before your first real conversation
 
-### 5.1 Setup checklist (with your supporter)
+### 5.1 Setup (with your supporter)
 
-- [ ] Open the app and choose a **data folder**. Do this first. Everything you enter lives there.
-- [ ] Paste the **AI key we sent you** and press **Test**. It should say your key is working.
-- [ ] Create your free **Deepgram** account, paste that key, and press its **Test**.
-- [ ] Pick your **voice**, and listen to it. This is the voice people will hear as you. Try the
-      Deepgram voices — they are the reason you set that account up.
-- [ ] On a Windows tablet or Chromebook, leave the listening set to your browser's own — it is
-      free, reliable, and does not spend your Deepgram credit. On an iPad running the installed
-      app, set listening to Deepgram; it is the only option that works there.
-- [ ] Set the **button size**, the **gaps**, and where the keyboard sits.
-- [ ] Enter the **tester ID we gave you** in **Settings → Troubleshooting**, in the box marked
-      *Tester name*. It saves as you type — there is no Save button. This is the only thing that
-      tells us whose reports are whose; without it they arrive anonymous and we cannot come back
-      to you about anything in them.
-- [ ] Save all of that as a **named settings profile** — and **re-save it every time you change
+**Your User Manual is where setup is explained properly** — §3 *Getting Started* for opening the
+app and entering your API key, §5.2 for where your data is kept, §6.3 *Speech* for your voice and
+the listening, and §6.4 for button size and the keyboard. Work through it there. This is only a
+tick-list, plus the two things that are different because you are a beta tester.
+
+- [ ] Everything in the manual's **§3** and **§5.2** — open the app, set up where your data is
+      kept, and paste your **API key** (§3.2). **We send you that key**: you do not need an
+      Anthropic account of your own and you will not be billed.
+- [ ] Create your free **Deepgram** account and paste that key too (**§6.3**). This is what gives
+      you the good voice. On an iPad set up as a **Home Screen app** it also has to do the
+      listening — that is the one configuration where it is required. Everywhere else, leave the
+      listening on your browser's own: it is free, reliable, and spends no Deepgram credit.
+- [ ] Pick your **voice** and listen to it (**§6.3**). This is the voice people will hear as you.
+- [ ] Set the **button size**, the **gaps**, and where the keyboard sits (**§6.4**).
+- [ ] **Enter the tester ID we gave you** — **Settings → Troubleshooting**, in the box marked
+      *Tester name*. This one is beta-only and is not in the manual. It saves as you type. It is
+      the only thing that tells us whose reports are whose; without it they arrive anonymous and
+      we cannot come back to you about anything in them.
+- [ ] Save all of that as a **named settings profile**, and **re-save it every time you change
       something**. This is what protects your setup, and it is the one habit worth building.
 - [ ] If you are on an iPad, do an **Export** and keep the file somewhere safe.
+
+If you'd benefit from having a keyguard, contact Ken and he'll print one for you.
 
 ### 5.2 Tell your communication partners
 
@@ -104,9 +118,10 @@ The app listens to the person you are talking with and sends what they say to a 
 service to turn it into text. Their words are written down in your conversation record. They have
 no way of knowing that unless you tell them.
 
-Say something once, at the start — *"this device listens and speaks for me"* — and that is
-usually the end of it. We will send you a small printed card for the back of the device if that
-is easier than explaining each time.
+Say something once, at the start, and that is usually the end of it. **The app will say it for
+you:** your Express Panel has an amber **Notice** button reading *"This device listens and speaks
+for me"* — tap it when you sit down with someone new. We will also send you a small printed card
+for the back of the device if that is easier than saying it each time.
 
 ### 5.3 Learn the buttons before you need them
 
@@ -171,8 +186,8 @@ Question 3 is not a courtesy. Knowing what already works tells us what not to br
 ## 9. Privacy — read this once
 
 **What stays on your device:** everything you enter. About Me, your people, your places, your
-phrases, and the full text of your conversations live in your data folder, on your device. They
-are not uploaded, and there is no account and no server holding your information.
+phrases, and the full text of your conversations are stored on your device — in the data folder
+you chose, or, on an iPad, in the app's own private storage. They are not uploaded, and there is no account and no server holding your information.
 
 **What leaves your device, and why:**
 
@@ -197,9 +212,19 @@ the device, so reports from your tablet stay separate from reports from anything
 You can read exactly what a report contains at any time in **Settings → Troubleshooting**, under
 *What is in a weekly report*, along with a list of every report already sent.
 
+**Error reports travel the same way.** They are part of the weekly report, so you do not have to
+do anything to send us the errors the app noticed by itself. That is separate from **Report a
+problem** (§7), which only goes when you tap it — because that one is *your* description of what
+happened, and it may carry a transcript you have chosen to attach.
+
 You can turn automatic reporting off in the same place. We would rather you left it on, because it
 means you never have to remember to send us anything — but it is your choice and turning it off
-will not affect the app.
+will not affect the app. **If you do turn it off**, nothing is lost: **Settings → Troubleshooting**
+still has **Save to a file** and **Copy** for both the problem report and the error log, and you
+can send either to Ken whenever you like.
+
+**This arrangement ends with the beta.** In the public release, sending anything back will be off
+unless the person using the app deliberately turns it on.
 
 **Any single conversation can be kept out of the record entirely.** Tap **Don't save this
 conversation** before you begin, and nothing from it is written down. Use it whenever you want
@@ -235,7 +260,7 @@ just how the app works, that uncertainty is itself worth telling us about.
 | **In my own words** | Type something the AI did not suggest and have it spoken. |
 | **Reframe** | Type what you want to get across, and the AI rewrites the cards around it. |
 | **Practice** | Rehearse with the AI playing the other person. Nothing is spoken to a real person. |
-| **Data folder** | Where everything you enter is stored on your device. |
+| **Your data** | Everything you enter — About Me, your people, places, phrases and conversations. On a Windows tablet, Chromebook or MacBook it goes in a **data folder** you choose yourself, which you can open, copy and back up like any other folder. On an iPad the app keeps it in its own private storage, which you cannot browse; **Export** is how you get a copy out of it, and it is why iPad testers are asked to export. |
 
 ---
 
@@ -247,13 +272,15 @@ Everything below must ship before testers arrive, or the corresponding section n
 
 | § | Depends on | Status |
 |---|---|---|
-| 7 | **Report a problem** button + free-text note | Not built (build item 2) |
-| 7 | Pre-start reporting affordance | Not built — and §11's "Settings is unreachable before Start" finding makes it necessary |
-| 7, 9 | **Settings → Troubleshooting** tab | Not built (build item 1) |
-| 9 | Automatic reporting + its off switch | Not built (build item 3) |
-| 5.2 | Printed "this device listens and speaks for me" card | Not produced (SEC-7) |
+| 7 | **Report a problem** button + free-text note | **Built** |
+| 7 | Pre-start reporting affordance | **Built** |
+| 7, 9 | **Settings → Troubleshooting** tab | **Built** |
+| 9 | Automatic reporting + its off switch | **Built**, proven end to end against the live endpoint |
+| 7, 11 | Version number on the opening screen | **Built Aug 9 2026** — both sections claimed it and it was not there |
+| 5.2 | Express Panel **Notice** button, "This device listens and speaks for me" | **Built Aug 9 2026** — new amber *Notice* phrase category. ⚠ It is a new **default**, and Express items have no new-defaults merge, so it appears for a tester setting up fresh and NOT in an existing panel (Ken's own). See B.2.6. |
+| 5.2 | Printed card | Not produced (SEC-7) |
 | 5.3, 6 | Controls-tour practice scenario | Not built — §5.3 currently asks testers to improvise it |
-| 10 | Known Issues doc refreshed to current version | Exists, last updated at 0.5.82 |
+| 10 | Known Issues doc refreshed to current version | Exists, last updated at 0.5.82. Where it should live is B.2.7. |
 
 ### B.2 Decisions still needed
 
@@ -271,15 +298,56 @@ Everything below must ship before testers arrive, or the corresponding section n
    mostly platform-neutral, with the split confined to §4 and §5.1. One document seems right, but
    the same reasoning that produced two manuals may apply.
 
-3. **Weekly note — how does it come back?** §8 assumes a channel that does not exist. Email is
-   fine; a form is better for collation. Note the tester's own weekly note and the app's automatic
-   report are separate things, arriving by different routes.
+3. **Weekly note — OPEN, and Ken has challenged whether it is worth asking at all (Aug 9 2026).**
+   His three objections, all sound: there is no interface for it (a pop-up? a keyboard? nothing is
+   built); it is effortful for exactly the population least able to afford effort; it asks people
+   to recall several days back; and **question 1 arrives automatically in the weekly report
+   anyway.** Answering the last first — yes, conversations-per-week is counted for us, so Q1 is
+   pure duplication and should go regardless of what happens to the rest.
+   **Recommendation: drop Q1, keep Q2 and Q3, and stop calling it weekly.** They are the only
+   thing the numbers cannot supply — a falling card-selection rate says *something* changed and
+   never says whether the tester minded. Make it **one box, always there, filled in when there is
+   something to say**: the *Report a problem* box on the Troubleshooting tab already is that box,
+   already has the on-screen keyboard in scope, and already rides the weekly send. A second
+   prompt beside it — *"Anything that worked well, or badly, this week?"* — costs almost nothing
+   to build and nothing at all to skip.
+   **Deliberately not recommended: a pop-up.** A prompt that interrupts is the one thing this
+   population cannot dismiss cheaply, and a tester who resents it will stop reading it rather than
+   answer it.
+   If the questions survive in any form, the remaining question is the channel back — email is
+   fine, a form collates better, and the app's own box is better than both because it is where
+   the tester already is.
 
 4. **Six weeks is a guess.** It is long enough to see a week-4 retention curve, which is what
    Question 1 needs. Shorter loses the curve.
 
-5. **The Product Overview's "Private by Design" claim now needs a beta exception** (§9). It should
-   say so plainly rather than being quietly narrowed.
+5. ~~**The Product Overview's "Private by Design" claim now needs a beta exception** (§9).~~
+   **Done Aug 8 2026** — added as a stated exception rather than by softening the opening claim.
+
+6. **Express Panel has no new-defaults merge, and the Notice button is the first time it has
+   cost anything (Aug 9 2026).** CLAUDE.md's standing reconciliation policy — a new *default*
+   appends to an existing user's list via a `seeded` watermark, so a release cannot hide new
+   functionality behind "file in folder wins" — was built for control-phrases and **never applied
+   to Express items**. So the Notice button reaches a fresh setup and not an existing one.
+   For a beta that has not started this is nearly free: testers set up from scratch, and Ken can
+   add the phrase himself in a few taps. **Decide whether to build the watermark now or leave it**
+   — the argument for now is that the panel is the set most likely to gain defaults later; the
+   argument against is that appending to a grid whose positions the user has arranged is more
+   disruptive here than in a flat phrase list, and it is worth designing rather than dropping in.
+
+7. **Where does Known Issues live? (Ken asked, Aug 9 2026.)** The document exists —
+   `Conversant AAC Known Issues.docx` — but was last reviewed at 0.5.82 and is currently a file
+   in the kit, which means it is out of date the moment a release ships.
+   **Recommendation: a simple web page at `conversant.volksswitch.org`, plus a button on the
+   Troubleshooting tab that opens it.** The page is the honest home — one copy, always current,
+   nothing to redistribute, and Ken can edit it without a release. The button is what makes it
+   findable at the moment it is wanted, which is the moment something looks broken.
+   **The cost to accept: it needs the internet.** That is not much of a cost here, because the app
+   does not work without the internet anyway, so a tester who cannot reach the page also cannot
+   have hit most of the issues on it.
+   **Not recommended: a pop-up carrying the text inside the app.** It would have to ship with the
+   release, so it goes stale exactly like the file, and it spends panel space on prose — the thing
+   UI Layout Rule 14 was written to stop.
 
 ### B.3 How the sections map to the measures
 

@@ -71,6 +71,14 @@
                         </div>
                     </div>
                     <button id="startBtn">Start</button>
+                    <!-- Version, back on the opening screen (Ken, August 9 2026).
+                         The support instructions tell testers to quote their
+                         version, and Settings is UNREACHABLE from here (main is
+                         pointer-events:none before Start), so About cannot be the
+                         only place it appears. Sits beside the report route for the
+                         same reason: both are what you need when the app is too
+                         broken to drive. -->
+                    <p id="startVersion" class="start-version"></p>
                     <!-- The reporting route that survives a broken app (Ken, August
                          7 2026). Settings cannot be reached from here — main is
                          pointer-events:none before Start, and the Settings button

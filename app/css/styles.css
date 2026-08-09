@@ -814,6 +814,13 @@ body.conv-bottom .palette-grid {
 /* Deliberately quiet: the launch screen is not a support desk, and this must
    not compete with Start. It is the only reporting route when Settings cannot
    be reached, so it is always present rather than shown on a condition. */
+/* Version on the opening screen. Quiet — it is a fact you look up, not something
+   the user is being asked to read every launch. */
+.start-version {
+    margin: 0.9rem 0 0; text-align: center; color: #666; font-size: 0.85rem;
+}
+.start-version + #startReportBtn.start-report { margin-top: 0.3rem; }
+
 #startReportBtn.start-report {
     display: block; margin: 0.9rem auto 0; background: none; border: none;
     color: #666; font-size: 0.85rem; text-decoration: underline; cursor: pointer;

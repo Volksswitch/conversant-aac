@@ -494,12 +494,13 @@ function initApp() {
     });
     // Release number with the build appended (Ken, July 30 2026) — "0.5.99 ·
     // 9e73383". A bug report needs the exact code, not just the version: several
-    // deploys share one version during a dev cycle. This is the only place it is
-    // shown; the temporary copy under the Start button was removed once the iPad
-    // Home Screen app was confirmed to get that far. The startup-failure card
-    // repeats it, since that is shown when Settings cannot be reached.
+    // deploys share one version during a dev cycle. Shown in three places, each
+    // reachable when the others are not: Settings → About, the startup-failure
+    // card, and the opening screen (Settings cannot be reached before Start).
     const versionEl = document.getElementById('aboutVersion');
     if (versionEl) versionEl.textContent = `${APP_VERSION} · ${BUILD_ID}`;
+    const startVersionEl = document.getElementById('startVersion');
+    if (startVersionEl) startVersionEl.textContent = `Version ${APP_VERSION} · ${BUILD_ID}`;
 
     tts.onVoicesReady(() => {
         const savedURI = storage.loadVoiceURI();
