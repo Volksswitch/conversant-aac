@@ -7,10 +7,18 @@
  * reverting it, with no error and a document that looks freshly built. That nearly
  * dropped the "reports are not anonymous" disclosure from §9 on Aug 8 2026, which is
  * the one paragraph in the document a tester is entitled to.
- * ⚠ EDIT BOTH FILES IN THE SAME PASS. If they ever disagree, diff them — the .docx is
- * what a tester reads and the markdown is what Ken reads, so neither is automatically
- * the newer one. (Making this generator parse the markdown would be the real fix, but
- * Appendix B and the callout boxes mean it is a rewrite, not a tidy-up.)
+ * ⚠ THE PROSE LIVES IN THREE PLACES, NOT TWO: this file, BETA-TEST-PLAN.md, and the
+ * .docx itself — WHICH KEN EDITS BY HAND, so the .docx is routinely the NEWEST of the
+ * three. EDIT ALL THREE IN THE SAME PASS.
+ * ⚠ BEFORE RUNNING THIS: back the .docx up, then DIFF the backup against what this
+ * generator produces, paragraph by paragraph — do not grep for the edits you happen to
+ * know about. On Aug 9 2026 that mistake cost eight of Ken's hand edits: two had been
+ * mentioned to me and were preserved, and the other six ("a different location", the
+ * shortened §9 heading, the reworded week-1 and glossary rows, and two sentences in §4)
+ * were silently overwritten, because I checked only for the ones I had been told about.
+ * A rebuilt document looks freshly correct whether or not it dropped anything.
+ * (Making this generator parse the markdown would be the real fix, but Appendix B and
+ * the callout boxes mean it is a rewrite, not a tidy-up.)
  *
  * TESTER-FACING. Two deliberate differences from the other generators in this
  * folder, both because of who reads it:
@@ -222,13 +230,12 @@ para("You may stop at any time, for any reason, and we would still like the five
 
 // ===== 4 =====
 heading1("4.  What You Need"),
-bulletBold("A tablet or computer.  ", "A Windows tablet, a Chromebook, a MacBook, or an iPad. On a computer, use Chrome or Edge. A Windows tablet (a Microsoft Surface is the usual choice) is the configuration we know best."),
-bulletBold("An internet connection.  ", "The app needs it both to hear the other person and to suggest responses. It will not work offline."),
+bulletBold("A tablet or computer.  ", "Either a Windows tablet, a MacBook, a Chromebook, or an iPad. On a computer, use Chrome or Edge. A Windows tablet (a Microsoft Surface is the usual choice) is the configuration we know best and it has the highest likelihood, going forward, of supporting more complex features."),
+bulletBold("An internet connection.  ", "The app needs it both to hear the other person and to suggest responses. It will not work offline...  It will “work” to a degree but not in the way you probably care about."),
 bulletBold("An API key for the AI — we provide this, at no cost to you.  ", "It is what powers the response suggestions. Ken will send you a key to paste into Settings. (The app calls it the “API key”, which is what the AI companies call it too.) You do not need an account of your own and you will not be billed."),
 bulletBold("A free Deepgram account, for the voice.  ", "Deepgram gives the app a much more natural, more varied voice than the ones built into your device, and signing up gives you $200 of free credit — no credit card. That is far more than six weeks of testing will use. On an iPad set up as a Home Screen app it also does the listening, which the device cannot do on its own. If you somehow run through the credit, tell us and we will sort it out."),
 bulletBold("A supporter, for setup.  ", "Choosing a folder, pasting a key, and setting the layout are fiddly one-time jobs. After that the app is yours to drive."),
-emptyPara(),
-para("Your User Manual covers your device specifically. Use the one for your device — they are self-contained, and you should never need both."),
+bulletBold("The User Manual that covers your device specifically.", ""),
 
 // ===== 5 =====
 heading1("5.  Before Your First Real Conversation"),
@@ -243,7 +250,7 @@ numbered("Enter the tester ID we gave you — Settings, then Troubleshooting, in
 numbered("Save all of that as a named settings profile, and re-save it every time you change something. This is what protects your setup, and it is the one habit worth building.", "steps"),
 numbered("If you are on an iPad, do an Export and keep the file somewhere safe.", "steps"),
 emptyPara(),
-para("If you'd benefit from having a keyguard, contact Ken and he'll print one for you."),
+para("If you’d benefit from having a keyguard, contact Ken and he’ll print one for you."),
 
 heading2("5.2  Tell Your Communication Partners"),
 calloutBox([
@@ -263,10 +270,10 @@ para("This is a suggestion, not homework. If your life gives you a real conversa
 table([1200, 8160],
     ["Week", "What to try"],
     [
-        ["1", "Setup and practice. Do not have a real conversation yet. Get the buttons into your hands."],
+        ["1", "Setup and practice. Do not have a real conversation yet. Just get comfortable pressing the buttons and seeing what happens."],
         ["2", "Make it yours. Fill in About Me. Add the people you talk to, the places you go, and how you feel. Edit the Express Panel so the phrases are your phrases. This is not optional setup — it is what makes the suggestions sound like you."],
         ["3", "First real conversations, at home, with someone patient who knows what you are doing."],
-        ["4", "Widen it. A different person. A different room."],
+        ["4", "Widen it. A different person. A different location."],
         ["5", "Take it out — a shop, an appointment, somewhere with noise and strangers."],
         ["6", "Just use it. No tasks. This is the week that tells us whether it has earned a place in your life."],
     ]),
@@ -293,7 +300,7 @@ emptyPara(),
 para("Question 3 is not a courtesy. Knowing what already works tells us what not to break."),
 
 // ===== 9 =====
-heading1("9.  Privacy — Read This Once"),
+heading1("9.  Privacy"),
 boldPara("What stays on your device: ", "everything you enter. About Me, your people, your places, your phrases, and the full text of your conversations are stored on your device — in the data folder you chose, or, on an iPad, in the app's own private storage. They are not uploaded, and there is no account and no server holding your information."),
 para("What leaves your device, and why:"),
 bulletBold("What the other person says ", "goes to a transcription service to be turned into text. This is how every speech recognition system works, and it is why telling your partners matters."),
@@ -327,11 +334,11 @@ table([2900, 6460],
     [
         ["Response cards", "The suggestions the AI offers you. Four of them, or eight if you have chosen two per category."],
         ["Category", "The kind of reply a card is. Agreeing, declining, changing direction, or asking them to repeat. They are always in the same place so your hand can learn them."],
-        ["Command Bar", "The row of buttons between your conversation and your cards."],
+        ["Command Bar", "The horizontal row of buttons between your conversation and your cards."],
         ["Express Panel", "Your own phrases, and the buttons for who you are with, where you are, and how you feel."],
         ["In my own words", "Type something the AI did not suggest and have it spoken."],
         ["Reframe", "Type what you want to get across, and the AI rewrites the cards around it."],
-        ["Practice", "Rehearse with the AI playing the other person. Nothing is spoken to a real person."],
+        ["Practice", "Rehearse at your own pace with the AI playing the other person in the conversation. Nothing is spoken to a real person."],
         ["Your data", "Everything you enter — About Me, your people, places, phrases and conversations. On a Windows tablet, Chromebook or MacBook it goes in a data folder you choose yourself, which you can open, copy and back up like any other folder. On an iPad the app keeps it in its own private storage, which you cannot browse; Export is how you get a copy out of it, and it is why iPad testers are asked to export."],
     ]),
 

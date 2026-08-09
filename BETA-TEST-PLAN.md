@@ -3,11 +3,17 @@
 **Draft, August 7 2026. Revised August 9 2026 after Ken's review.**
 
 ⚠ **This prose exists in three places and none of them generates the others:** this file,
-`generate-beta-test-plan-doc.js`, and `Conversant AAC Beta Test Plan.docx` — which Ken edits
-directly, so the .docx can be *ahead* of both. **Every change must be made in all three in the
-same pass, and the .docx must be backed up before it is regenerated**, or a hand edit is silently
-overwritten (that is how the MacBook line and the keyguard sentence came to exist only in the
-.docx). **Appendix B is for Ken and is deliberately dropped from the .docx.**
+`generate-beta-test-plan-doc.js`, and `Conversant AAC Beta Test Plan.docx` — **which Ken edits by
+hand, so the .docx is routinely the newest of the three.** Every change must be made in all three
+in the same pass.
+
+⚠ **Before regenerating the .docx: back it up, then DIFF the backup against the rebuilt file,
+paragraph by paragraph. Do not grep for the edits you happen to know about.** On August 9 2026
+that mistake cost eight of Ken's hand edits — the two he had mentioned survived and the other six
+were silently overwritten, because only the mentioned ones were checked for. A rebuilt document
+looks freshly correct whether or not it dropped anything.
+
+**Appendix B is for Ken and is deliberately dropped from the .docx.**
 
 ---
 
@@ -62,11 +68,13 @@ tell us why.
 
 ## 4. What you need
 
-- **A tablet or computer.** A Windows tablet, a Chromebook, a MacBook, or an iPad. On a computer,
-  use Chrome or Edge. A Windows tablet (a Microsoft Surface is the usual choice) is the
-  configuration we know best.
+- **A tablet or computer.** Either a Windows tablet, a MacBook, a Chromebook, or an iPad. On a
+  computer, use Chrome or Edge. A Windows tablet (a Microsoft Surface is the usual choice) is the
+  configuration we know best and it has the highest likelihood, going forward, of supporting more
+  complex features.
 - **An internet connection.** The app needs it both to hear the other person and to suggest
-  responses. It will not work offline.
+  responses. It will not work offline...  It will "work" to a degree but not in the way you
+  probably care about.
 - **An API key for the AI — we provide this, at no cost to you.** It is what powers the response
   suggestions. Ken will send you a key to paste into Settings. (The app calls it the *API key*,
   which is what the AI companies call it too.) You do not need an account and you will not be
@@ -78,9 +86,7 @@ tell us why.
   you somehow run through the credit, tell us and we will sort it out.
 - **A supporter, for setup.** Choosing a folder, pasting a key, and setting the layout are
   fiddly one-time jobs. After that the app is yours to drive.
-
-Your User Manual covers your device specifically. Use the one for your device — they are
-self-contained, and you should never need both.
+- **The User Manual that covers your device specifically.**
 
 ## 5. Before your first real conversation
 
@@ -139,10 +145,10 @@ it.
 
 | Week | What to try |
 |---|---|
-| **1** | Setup and practice. Do not have a real conversation yet. Get the buttons into your hands. |
+| **1** | Setup and practice. Do not have a real conversation yet. Just get comfortable pressing the buttons and seeing what happens. |
 | **2** | **Make it yours.** Fill in About Me. Add the people you talk to, the places you go, and how you feel. Edit the Express Panel so the phrases are *your* phrases. This is not optional setup — it is what makes the suggestions sound like you. |
 | **3** | **First real conversations**, at home, with someone patient who knows what you are doing. |
-| **4** | Widen it. A different person. A different room. |
+| **4** | Widen it. A different person. A different location. |
 | **5** | Take it out — a shop, an appointment, somewhere with noise and strangers. |
 | **6** | Just use it. No tasks. This is the week that tells us whether it has earned a place in your life. |
 
@@ -183,7 +189,7 @@ minded. Only you can answer that, which is why we still ask.
 
 Question 3 is not a courtesy. Knowing what already works tells us what not to break.
 
-## 9. Privacy — read this once
+## 9. Privacy
 
 **What stays on your device:** everything you enter. About Me, your people, your places, your
 phrases, and the full text of your conversations are stored on your device — in the data folder
@@ -255,11 +261,11 @@ just how the app works, that uncertainty is itself worth telling us about.
 |---|---|
 | **Response cards** | The suggestions the AI offers you. Four of them, or eight if you have chosen two per category. |
 | **Category** | The kind of reply a card is. Agreeing, declining, changing direction, or asking them to repeat. They are always in the same place so your hand can learn them. |
-| **Command Bar** | The row of buttons between your conversation and your cards. |
+| **Command Bar** | The horizontal row of buttons between your conversation and your cards. |
 | **Express Panel** | Your own phrases, and the buttons for who you are with, where you are, and how you feel. |
 | **In my own words** | Type something the AI did not suggest and have it spoken. |
 | **Reframe** | Type what you want to get across, and the AI rewrites the cards around it. |
-| **Practice** | Rehearse with the AI playing the other person. Nothing is spoken to a real person. |
+| **Practice** | Rehearse at your own pace with the AI playing the other person in the conversation. Nothing is spoken to a real person. |
 | **Your data** | Everything you enter — About Me, your people, places, phrases and conversations. On a Windows tablet, Chromebook or MacBook it goes in a **data folder** you choose yourself, which you can open, copy and back up like any other folder. On an iPad the app keeps it in its own private storage, which you cannot browse; **Export** is how you get a copy out of it, and it is why iPad testers are asked to export. |
 
 ---
