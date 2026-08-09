@@ -240,6 +240,7 @@ numbered("Create your free Deepgram account, paste that key, and press its Test.
 numbered("Pick your voice, and listen to it. This is the voice people will hear as you. Try the Deepgram voices — they are the reason you set that account up.", "steps"),
 numbered("On a Windows tablet or Chromebook, leave the listening set to your browser's own — it is free, reliable, and does not spend your Deepgram credit. On an iPad running the installed app, set listening to Deepgram; it is the only option that works there.", "steps"),
 numbered("Set the button size, the gaps, and where the keyboard sits.", "steps"),
+numbered("Enter the tester ID we gave you in Settings under Troubleshooting, in the box marked “Tester name”. It saves as you type — there is no Save button. This is the only thing that tells us whose reports are whose; without it they arrive anonymous and we cannot come back to you about anything in them.", "steps"),
 numbered("Save all of that as a named settings profile — and re-save it every time you change something. This is what protects your setup, and it is the one habit worth building.", "steps"),
 numbered("If you are on an iPad, do an Export and keep the file somewhere safe.", "steps"),
 
@@ -283,6 +284,7 @@ bulletBold("Nothing happens when it should. ", "No cards, no speech, a dead butt
 // ===== 8 =====
 heading1("8.  The Weekly Note"),
 para("Three questions, once a week. Two minutes."),
+para("This is not the same thing as the report the app sends by itself. That one is counts and timings — it can tell us that you waited eleven seconds, and it can never tell us why, or whether you minded. Only you can answer that, which is why we still ask."),
 numbered("Roughly how many real conversations did you have with it this week?"),
 numbered("Was there a moment it let you down? What happened?"),
 numbered("Was there a moment it worked? What happened?"),

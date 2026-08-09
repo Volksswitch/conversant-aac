@@ -88,6 +88,10 @@ self-contained, and you should never need both.
       free, reliable, and does not spend your Deepgram credit. On an iPad running the installed
       app, set listening to Deepgram; it is the only option that works there.
 - [ ] Set the **button size**, the **gaps**, and where the keyboard sits.
+- [ ] Enter the **tester ID we gave you** in **Settings → Troubleshooting**, in the box marked
+      *Tester name*. It saves as you type — there is no Save button. This is the only thing that
+      tells us whose reports are whose; without it they arrive anonymous and we cannot come back
+      to you about anything in them.
 - [ ] Save all of that as a **named settings profile** — and **re-save it every time you change
       something**. This is what protects your setup, and it is the one habit worth building.
 - [ ] If you are on an iPad, do an **Export** and keep the file somewhere safe.
@@ -153,6 +157,10 @@ carry on. Report it afterwards if you remember.
 ## 8. The weekly note
 
 Three questions, once a week. Two minutes.
+
+This is not the same thing as the report the app sends by itself. That one is counts and timings
+— it can tell us that you waited eleven seconds, and it can never tell us why, or whether you
+minded. Only you can answer that, which is why we still ask.
 
 1. Roughly how many real conversations did you have with it this week?
 2. Was there a moment it let you down? What happened?
