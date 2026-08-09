@@ -59,7 +59,6 @@ three.
 |---|---|
 | **How long** | Six weeks |
 | **How much** | Use it when you would naturally have a conversation. There is no daily quota. |
-| **Weekly** | A short note back — three questions, a couple of minutes (see §8) |
 | **When something goes wrong** | Tap **Report a problem**. That is the whole procedure. |
 | **At the end** | A conversation with Ken, in whatever form works for you |
 
@@ -167,6 +166,10 @@ what device, what settings, and what the app was doing in the seconds before.
 **You do not have to catch every problem.** If something felt wrong and you were mid-conversation,
 carry on. Report it afterwards if you remember.
 
+**The same box is the place for anything else you want to tell us**, good or bad — a moment it
+let you down, or a moment it worked. We can count how often you used it and how long you waited;
+we cannot tell from any of that whether you minded, or what it felt like. Only you can say that.
+
 **Two things to watch for and always report:**
 
 - The conversation panel turns **faintly red**. That means the app hit an error. It is a nudge,
@@ -175,21 +178,7 @@ carry on. Report it afterwards if you remember.
   we are worst at detecting on our own, because the app does not know it has failed. Your report
   is the only way we find out.
 
-## 8. The weekly note
-
-Three questions, once a week. Two minutes.
-
-This is not the same thing as the report the app sends by itself. That one is counts and timings
-— it can tell us that you waited eleven seconds, and it can never tell us why, or whether you
-minded. Only you can answer that, which is why we still ask.
-
-1. Roughly how many real conversations did you have with it this week?
-2. Was there a moment it let you down? What happened?
-3. Was there a moment it worked? What happened?
-
-Question 3 is not a courtesy. Knowing what already works tells us what not to break.
-
-## 9. Privacy
+## 8. Privacy
 
 **What stays on your device:** everything you enter. About Me, your people, your places, your
 phrases, and the full text of your conversations are stored on your device — in the data folder
@@ -236,16 +225,20 @@ unless the person using the app deliberately turns it on.
 conversation** before you begin, and nothing from it is written down. Use it whenever you want
 to; you do not need a reason.
 
-## 10. What we already know is wrong
+## 9. What we already know is wrong
 
-See the **Known Issues** document that came with your kit. It is worth five minutes before you
-start — several things that look like faults are known and already understood, and reading it
-saves you reporting them.
+We keep a **Known Issues** page, always up to date:
+
+**https://volksswitch.org/index.php/conversant-aac-known-issues/**
+
+It is worth five minutes before you start — several things that look like faults are known and
+already understood, and reading it saves you reporting them. There is a button to open it in
+**Settings → Troubleshooting**, so you can reach it from the app when something looks wrong.
 
 If something is in there and it is causing you real trouble, tell us anyway. Knowing which known
 problems actually hurt is how we decide what to fix first.
 
-## 11. Getting help
+## 10. Getting help
 
 Contact Ken directly — you have his details in your welcome pack. **Always include your version
 number**, which is on the opening screen and in **Settings → About**.
@@ -304,25 +297,18 @@ Everything below must ship before testers arrive, or the corresponding section n
    mostly platform-neutral, with the split confined to §4 and §5.1. One document seems right, but
    the same reasoning that produced two manuals may apply.
 
-3. **Weekly note — OPEN, and Ken has challenged whether it is worth asking at all (Aug 9 2026).**
-   His three objections, all sound: there is no interface for it (a pop-up? a keyboard? nothing is
-   built); it is effortful for exactly the population least able to afford effort; it asks people
-   to recall several days back; and **question 1 arrives automatically in the weekly report
-   anyway.** Answering the last first — yes, conversations-per-week is counted for us, so Q1 is
-   pure duplication and should go regardless of what happens to the rest.
-   **Recommendation: drop Q1, keep Q2 and Q3, and stop calling it weekly.** They are the only
-   thing the numbers cannot supply — a falling card-selection rate says *something* changed and
-   never says whether the tester minded. Make it **one box, always there, filled in when there is
-   something to say**: the *Report a problem* box on the Troubleshooting tab already is that box,
-   already has the on-screen keyboard in scope, and already rides the weekly send. A second
-   prompt beside it — *"Anything that worked well, or badly, this week?"* — costs almost nothing
-   to build and nothing at all to skip.
-   **Deliberately not recommended: a pop-up.** A prompt that interrupts is the one thing this
-   population cannot dismiss cheaply, and a tester who resents it will stop reading it rather than
-   answer it.
-   If the questions survive in any form, the remaining question is the channel back — email is
-   fine, a form collates better, and the app's own box is better than both because it is where
-   the tester already is.
+3. ~~**Weekly note — how does it come back?**~~ **DECIDED (Ken, Aug 9 2026): get rid of it.**
+   §8 is deleted, along with the *Weekly* row in §3. His objections were the deciding ones — there
+   was no interface for it, it asked the population least able to afford effort to recall several
+   days back, and **question 1 was already arriving in the weekly report automatically.**
+   **What replaced it, and why something had to:** the numbers say what happened and never say
+   whether the tester minded, so the "why" still needs a route. §7 now says the *Report a problem*
+   box takes anything else they want to tell us, good or bad. It costs nothing to build (that box
+   exists, has the keyboard in scope, and already rides the weekly send) and nothing at all to
+   skip — which is the difference between it and a weekly obligation. **Strike that paragraph if
+   it reads as the weekly note in disguise.**
+   *(A pop-up prompt was considered and rejected: an interruption is the one thing this population
+   cannot dismiss cheaply, and a tester who resents it stops reading it rather than answering.)*
 
 4. **Six weeks is a guess.** It is long enough to see a week-4 retention curve, which is what
    Question 1 needs. Shorter loses the curve.
@@ -341,19 +327,13 @@ Everything below must ship before testers arrive, or the corresponding section n
    argument against is that appending to a grid whose positions the user has arranged is more
    disruptive here than in a flat phrase list, and it is worth designing rather than dropping in.
 
-7. **Where does Known Issues live? (Ken asked, Aug 9 2026.)** The document exists —
-   `Conversant AAC Known Issues.docx` — but was last reviewed at 0.5.82 and is currently a file
-   in the kit, which means it is out of date the moment a release ships.
-   **Recommendation: a simple web page at `conversant.volksswitch.org`, plus a button on the
-   Troubleshooting tab that opens it.** The page is the honest home — one copy, always current,
-   nothing to redistribute, and Ken can edit it without a release. The button is what makes it
-   findable at the moment it is wanted, which is the moment something looks broken.
-   **The cost to accept: it needs the internet.** That is not much of a cost here, because the app
-   does not work without the internet anyway, so a tester who cannot reach the page also cannot
-   have hit most of the issues on it.
-   **Not recommended: a pop-up carrying the text inside the app.** It would have to ship with the
-   release, so it goes stale exactly like the file, and it spends panel space on prose — the thing
-   UI Layout Rule 14 was written to stop.
+7. ~~**Where does Known Issues live?**~~ **DECIDED (Ken, Aug 9 2026): a web page.**
+   `https://volksswitch.org/index.php/conversant-aac-known-issues/` — named in §9, and opened by
+   a button on the Troubleshooting tab so it is reachable at the moment something looks wrong.
+   One copy, always current, editable without a release, and nothing to redistribute.
+   **`Conversant AAC Known Issues.docx` is now the SECOND copy of that content and will drift.**
+   Decide whether it is retired, or kept as the source the page is written from. Its DOC-SYNC row
+   still describes it as a kit document.
 
 ### B.3 How the sections map to the measures
 
@@ -363,4 +343,5 @@ Everything below must ship before testers arrive, or the corresponding section n
 - §6 week 2 → personalization depth, which segments palette abandonment (onboarding problem vs.
   generator problem)
 - §5.3 → the never-pressed Command Bar button finding
-- §8 Q2/Q3 → the "why" that the numbers cannot supply
+- §7's "anything else you want to tell us" → the "why" that the numbers cannot supply
+  (was §8 Q2/Q3, deleted Aug 9 2026)

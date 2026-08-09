@@ -221,7 +221,6 @@ table([2600, 6760],
     [
         ["How long", "Six weeks"],
         ["How much", "Use it when you would naturally have a conversation. There is no daily quota."],
-        ["Weekly", "A short note back — three questions, a couple of minutes (see section 8)"],
         ["When something goes wrong", "Tap Report a problem. That is the whole procedure."],
         ["At the end", "A conversation with Ken, in whatever form works for you"],
     ]),
@@ -285,22 +284,13 @@ heading1("7.  When Something Goes Wrong"),
 boldPara("Tap “Report a problem.” ", "You will find it in Settings under Troubleshooting, and also on the opening screen next to the version number, in case the app is too stuck to reach Settings."),
 para("Write one line about what happened in your own words — “I pressed Listen and nothing happened” is a perfect report. The app attaches everything technical by itself: what version you are on, what device, what settings, and what the app was doing in the seconds before."),
 boldPara("You do not have to catch every problem. ", "If something felt wrong and you were mid-conversation, carry on. Report it afterwards if you remember."),
+boldPara("The same box is the place for anything else you want to tell us", ", good or bad — a moment it let you down, or a moment it worked. We can count how often you used it and how long you waited; we cannot tell from any of that whether you minded, or what it felt like. Only you can say that."),
 para("Two things to watch for and always report:"),
 bulletBold("The conversation panel turns faintly red. ", "That means the app hit an error. It is a nudge, not an emergency — finish your conversation, then report it."),
 bulletBold("Nothing happens when it should. ", "No cards, no speech, a dead button. These are the failures we are worst at detecting on our own, because the app does not know it has failed. Your report is the only way we find out."),
 
 // ===== 8 =====
-heading1("8.  The Weekly Note"),
-para("Three questions, once a week. Two minutes."),
-para("This is not the same thing as the report the app sends by itself. That one is counts and timings — it can tell us that you waited eleven seconds, and it can never tell us why, or whether you minded. Only you can answer that, which is why we still ask."),
-numbered("Roughly how many real conversations did you have with it this week?"),
-numbered("Was there a moment it let you down? What happened?"),
-numbered("Was there a moment it worked? What happened?"),
-emptyPara(),
-para("Question 3 is not a courtesy. Knowing what already works tells us what not to break."),
-
-// ===== 9 =====
-heading1("9.  Privacy"),
+heading1("8.  Privacy"),
 boldPara("What stays on your device: ", "everything you enter. About Me, your people, your places, your phrases, and the full text of your conversations are stored on your device — in the data folder you chose, or, on an iPad, in the app's own private storage. They are not uploaded, and there is no account and no server holding your information."),
 para("What leaves your device, and why:"),
 bulletBold("What the other person says ", "goes to a transcription service to be turned into text. This is how every speech recognition system works, and it is why telling your partners matters."),
@@ -317,13 +307,15 @@ calloutBox([
 ], "E2EFDA", "548235"),
 emptyPara(),
 
-// ===== 10 =====
-heading1("10.  What We Already Know Is Wrong"),
-para("See the Known Issues document that came with your kit. It is worth five minutes before you start — several things that look like faults are known and already understood, and reading it saves you reporting them."),
+// ===== 9 =====
+heading1("9.  What We Already Know Is Wrong"),
+para("We keep a Known Issues page, always up to date:"),
+para("https://volksswitch.org/index.php/conversant-aac-known-issues/", { run: { bold: true } }),
+para("It is worth five minutes before you start — several things that look like faults are known and already understood, and reading it saves you reporting them. There is a button to open it in Settings, under Troubleshooting, so you can reach it from the app when something looks wrong."),
 para("If something is in there and it is causing you real trouble, tell us anyway. Knowing which known problems actually hurt is how we decide what to fix first."),
 
-// ===== 11 =====
-heading1("11.  Getting Help"),
+// ===== 10 =====
+heading1("10.  Getting Help"),
 para("Contact Ken directly — you have his details in your welcome pack. Always include your version number, which is on the opening screen and in Settings under About."),
 para("There is no wrong question and no bad report. If you are unsure whether something is a fault or just how the app works, that uncertainty is itself worth telling us about."),
 

@@ -647,6 +647,18 @@
                      iPad — so #startBlock carries a second Report button. -->
                 <div class="tab-panel" data-tab="troubleshooting">
                     <p class="tab-intro">If something goes wrong, write a line about it here and send it back. Everything technical is attached for you.</p>
+                    <!-- Known Issues (Ken, August 9 2026). A web page, NOT a copy
+                         carried in the app: a list that ships with a release is out
+                         of date the day the next one goes out, and Ken can edit a
+                         page without a release. First on the tab because it belongs
+                         BEFORE the report — several things that look like faults are
+                         already known, and reading it saves the tester the trouble.
+                         Needs the internet, which costs nothing here: the app does
+                         not work without it either. -->
+                    <div class="setting-group" data-help="knownIssues">
+                        <label>Known issues</label>
+                        <button id="knownIssuesBtn" type="button">Open the known-issues page</button>
+                    </div>
                     <div class="setting-group" data-help="reportProblem">
                         <label for="problemNoteInput">Report a problem</label>
                         <textarea id="problemNoteInput" rows="3" placeholder="What happened? &quot;I pressed Listen and nothing happened&quot; is a perfect report."></textarea>

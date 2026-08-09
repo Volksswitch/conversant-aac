@@ -85,6 +85,11 @@ const APP_VERSION = '0.7.1';
 const BUILD_STAMP = '@@BUILD@@';
 const BUILD_ID = BUILD_STAMP.startsWith('@@') ? 'dev' : BUILD_STAMP;
 
+// The known-issues list lives on the web, not in the app (Ken, August 9 2026), so
+// it stays current between releases and can be corrected without one. Named here
+// and in the Beta Test Plan; if it ever moves, both change.
+const KNOWN_ISSUES_URL = 'https://volksswitch.org/index.php/conversant-aac-known-issues/';
+
 const conversationHistory = [];
 let isListening = false;
 let lastPalette = [];
@@ -3934,6 +3939,13 @@ function openSettings() {
             try { await navigator.clipboard.writeText(await getText()); flash(btn); }
             catch { flash(btn, 'Copy blocked'); }
         };
+    };
+    // Known issues — a page, not a bundled copy (Ken, August 9 2026). Opened in a
+    // new tab so the app is never navigated away from: on an installed app that
+    // hands off to the browser and leaves the conversation screen exactly as it was.
+    const knownIssuesBtn = document.getElementById('knownIssuesBtn');
+    if (knownIssuesBtn) knownIssuesBtn.onclick = () => {
+        window.open(KNOWN_ISSUES_URL, '_blank', 'noopener');
     };
     copyFrom('copyUsageSummaryBtn', () => document.getElementById('usageSummaryView').value);
     copyFrom('copySystemInfoBtn', () => document.getElementById('systemInfoView').value);

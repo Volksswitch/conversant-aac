@@ -97,6 +97,7 @@ const HELP = {
     "copyUsageSummaryBtn": "Copies the usage summary so you can paste it into a message.",
     "systemInfoView": "What the app can tell about your device, your screen, and your settings. Neither of your keys is included.",
     "copySystemInfoBtn": "Copies the system information so you can paste it into a message.",
+    "knownIssuesBtn": "Opens the known-issues page in your browser. It needs an internet connection.",
     "testerNameInput": "The name we gave you when you joined. It lets us tell whose report is whose, so we can get back to you.",
     "weeklySendEnabledInput": "Sends a short report about once a week when you open the app. Turn it off if you would rather not; nothing else changes.",
     "weeklyReportContents": "Lists exactly what a weekly report contains. Nothing anyone said is ever in one, and neither are your keys.",
@@ -123,7 +124,8 @@ const HELP = {
     "reportProblem": "Write what went wrong in your own words, then save or copy it. Everything technical is attached for you.",
     "usageSummary": "A plain summary of how much you have used the app, how often a suggestion fitted, and how long people waited.",
     "systemInfo": "Details about your device and settings, gathered for a problem report. Your keys are never included.",
-    "weeklyReports": "A short report sent back to us about once a week, so we can see how the app is holding up without asking you."
+    "weeklyReports": "A short report sent back to us about once a week, so we can see how the app is holding up without asking you.",
+    "knownIssues": "Problems we already know about, kept on a web page so it stays up to date. Worth checking before you report one."
   }
 };
 // @@SETTINGS_HELP_END@@
