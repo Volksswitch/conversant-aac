@@ -68,7 +68,7 @@ function doPost(e) {
       errors.length,
       _errorContexts(errors),
       p.systemInfo ? 'changed' : '',    // system info is sent only when it changes
-      JSON.stringify(p)                 // the raw payload, so nothing is lost
+      _raw(p)                           // the report as received, so nothing is lost
     ]);
 
     if (ALERT_EMAIL && errors.length >= ALERT_ERROR_THRESHOLD) {
@@ -102,6 +102,16 @@ function _sheet() {
     sheet.setFrozenRows(1);
   }
   return sheet;
+}
+
+// The whole report minus the secret. Keeping the secret out matters because this
+// column is the one a human copies from — into a bug report, a message, a paste to
+// someone helping. The secret already ships inside the app so nothing here is newly
+// exposed, but there is no reason to carry it into every place a row gets pasted.
+function _raw(p) {
+  var copy = {};
+  for (var k in p) if (k !== 'secret') copy[k] = p[k];
+  return JSON.stringify(copy);
 }
 
 function _slots(counts) {

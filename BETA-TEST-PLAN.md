@@ -179,9 +179,19 @@ are not uploaded, and there is no account and no server holding your information
   or the other person said.** A transcript is only ever sent if you choose to attach one, and you
   see it first.
 
-You can turn automatic reporting off in **Settings → Troubleshooting**. We would rather you left
-it on, because it means you never have to remember to send us anything — but it is your choice
-and turning it off will not affect the app.
+**These reports are not anonymous, and you should know that before you agree to them.** Each one
+carries the tester name we gave you at setup, so we can tell whose report is whose and follow up
+with the right person. We already know who you are — you volunteered — so the name tells us
+nothing new. But it does mean the reports are a record with your name on it, held by us, and that
+is worth saying out loud rather than leaving you to work out. They also carry a code identifying
+the device, so reports from your tablet stay separate from reports from anything else you use.
+
+You can read exactly what a report contains at any time in **Settings → Troubleshooting**, under
+*What is in a weekly report*, along with a list of every report already sent.
+
+You can turn automatic reporting off in the same place. We would rather you left it on, because it
+means you never have to remember to send us anything — but it is your choice and turning it off
+will not affect the app.
 
 **Any single conversation can be kept out of the record entirely.** Tap **Don't save this
 conversation** before you begin, and nothing from it is written down. Use it whenever you want
