@@ -457,7 +457,10 @@ function initApp() {
     ui.setCardsPerCategory(storage.loadResponsesPerCategory()); // 8-card mode → 8 reserved slots
     ui.clearResponseOptions(); // render the reserved empty card footprint at rest
     renderExpressPanel();
-    expressEditor.init(document.getElementById('expressEditor'), { onChange: renderExpressPanel });
+    expressEditor.init(document.getElementById('expressEditor'), {
+        onChange: renderExpressPanel,
+        onPick: renderExpressPanel,   // the mark lives on the panel, so a pick redraws it
+    });
     controlEditor.init(document.getElementById('controlEditor'), { onChange: applyControlPhrases });
     // About Me is an ordinary Settings tab — it renders into its tab-panel and is
     // dismissed by the shared Settings Close button (no overlay of its own).
@@ -2352,6 +2355,12 @@ let expressPanelInSettings = false;
 function hostExpressPanel(inSettings) {
     expressPanelInSettings = !!inSettings;
     ui.setExpressPanelHost(inSettings ? document.getElementById('settingsDialog') : null);
+    // The single choke point for "the panel is no longer being edited": every path
+    // that leaves the Express tab or closes Settings comes through here with false,
+    // which is exactly the two clearing conditions Ken asked for. Clearing at the
+    // individual close sites would have meant finding all six of them, and missing
+    // one would strand a highlight on a cell nobody is editing.
+    if (!inSettings) expressEditor.clearPicked();
 }
 
 /**
@@ -2435,6 +2444,9 @@ function renderExpressPanel() {
         // being re-rendered — and because the cell must look and measure the same
         // either way (Rule 1).
         onDefineCell: handleDefineCell,
+        // Only meaningful while the panel is hosted in Settings; elsewhere the editor
+        // has cleared it, so this is null and no cell is marked.
+        pickedId: expressEditor.getPickedId(),
     });
 }
 

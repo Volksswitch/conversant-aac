@@ -219,7 +219,7 @@ function ingest(transcript, isFinal) {
     return true;
 }
 
-function afterIngest(heardPartner) {
+function afterIngest(heardPartner, sawFinal) {
     // Only renew the partner's turn (reset the silence checkpoint) when genuine
     // partner content was heard AND the app isn't currently speaking. Pure echo
     // leaves the checkpoint alone (content filter), and any audio captured while we
@@ -230,7 +230,7 @@ function afterIngest(heardPartner) {
         // the partner is talking again. If the partner resumes after a pause that
         // already fired a checkpoint, the app cancels the pending placeholder so it
         // doesn't speak over the partner (Ken, July 2026).
-        resetSilenceTimer();
+        resetSilenceTimer(sawFinal);
         if (onPartnerActivity) onPartnerActivity();
     }
     if (onTranscript) onTranscript(joinParts([accumulatedText, currentInterim]));
@@ -259,7 +259,7 @@ export function init({ onResult, onSilence, onStatus, onPartnerSpeech, source, g
     if (source === 'deepgram') {
         externalSource = deepgram.createSource({
             getKey: getDeepgramKey || (() => ''),
-            onText: (text, isFinal) => { afterIngest(ingest(text, isFinal)); },
+            onText: (text, isFinal) => { afterIngest(ingest(text, isFinal), !!isFinal); },
             onStatus: (status, detail) => {
                 if (status === 'error') handleSourceError(detail);
                 else if (onStatusChange) onStatusChange(status);
@@ -282,10 +282,12 @@ export function init({ onResult, onSilence, onStatus, onPartnerSpeech, source, g
 
     recognition.onresult = (event) => {
         let heardPartner = false;   // any non-echo content this event?
+        let sawFinal = false;       // did the recognizer settle a segment? (the 0s trigger)
         for (let i = event.resultIndex; i < event.results.length; i++) {
             if (ingest(event.results[i][0].transcript, event.results[i].isFinal)) heardPartner = true;
+            if (event.results[i].isFinal) sawFinal = true;
         }
-        afterIngest(heardPartner);
+        afterIngest(heardPartner, sawFinal);
     };
 
     recognition.onend = () => {
@@ -360,8 +362,33 @@ export function init({ onResult, onSilence, onStatus, onPartnerSpeech, source, g
     };
 }
 
-function resetSilenceTimer() {
+/*
+ * "0 seconds" does NOT mean a zero-length timer, and the difference matters.
+ *
+ * This timer is restarted by every result the recognizer delivers — INTERIM ones
+ * included, and those arrive mid-phrase, several a second. A zero-length timer would
+ * therefore fire in the gap between two interim results, while the partner is still
+ * mid-sentence, and would do it over and over: a generation call per fragment, all
+ * but the last discarded by latest-wins. That is the opposite of what the setting is
+ * asking for.
+ *
+ * What it asks for is: go the moment the recognizer itself reports that they have
+ * stopped — which is exactly what a FINAL result is. So at 0 the checkpoint is driven
+ * by the recognizer's own endpoint detection rather than by a clock, which is the
+ * fastest honest answer available (Ken, August 9 2026).
+ *
+ * The fallback is not optional. A backend that is stingy with finals would otherwise
+ * never fire a checkpoint at all — a silent dead end, the failure class this app has
+ * been bitten by more than once. So an interim still arms a timer, just a short one.
+ */
+const ZERO_FALLBACK_MS = 1500;
+
+function resetSilenceTimer(sawFinal) {
     clearSilenceTimer();
+    if (silenceThreshold === 0) {
+        silenceTimer = setTimeout(fireSilenceCheckpoint, sawFinal ? 0 : ZERO_FALLBACK_MS);
+        return;
+    }
     silenceTimer = setTimeout(fireSilenceCheckpoint, silenceThreshold);
 }
 

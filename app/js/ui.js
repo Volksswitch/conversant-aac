@@ -392,6 +392,10 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         // that cannot be tapped is a position the user can never claim (Ken, August
         // 8 2026). Called with the item-list index the cell occupies.
         onDefineCell,
+        // The cell being edited on the Settings Express tab, marked so the user can
+        // see which button their tap chose. Stays until they tap another, change tab
+        // or close Settings — never a transient flash (Ken, August 9 2026).
+        pickedId = null,
     } = opts;
     epGrid.innerHTML = '';
 
@@ -556,8 +560,19 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
             // ships half-populated, so most cells start here).
             const index = pi++;
             const item = items[index];
-            if (!item || item.type === 'empty') { rowEl.appendChild(buildUndefinedCell(index, span)); return; }
-            rowEl.appendChild(buildItemBtn(item, span));
+            const cellEl = (!item || item.type === 'empty')
+                ? buildUndefinedCell(index, span)
+                : buildItemBtn(item, span);
+            // Marked here rather than inside the two builders, so an undefined cell
+            // and a defined one cannot drift apart — a cell tapped while empty keeps
+            // its mark through the moment it becomes a phrase.
+            if (pickedId && item && item.id === pickedId) {
+                cellEl.classList.add('ep-picked');
+                // The ring is the whole signal for a sighted user; say it too, or a
+                // screen-reader user has no way to tell which cell the editor is on.
+                cellEl.setAttribute('aria-label', `${cellEl.getAttribute('aria-label') || ''} (being edited)`.trim());
+            }
+            rowEl.appendChild(cellEl);
         });
         epGrid.appendChild(rowEl);
     });

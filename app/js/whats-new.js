@@ -21,6 +21,14 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.7.1": [
+    "Automatic weekly reports are now switched on. About once a week, when you open the app, it sends back a short summary of how it has been going — how many conversations, how long things took, and any errors it recorded. It never includes anything you or the other person said. Put the name you were given in Settings → Troubleshooting so we know whose report it is; the same place shows exactly what a report contains, lists everything already sent, and has the switch to turn it off.",
+    "Fixed: a problem report was leaving out whether the app can use this device's speech recognition — the first thing worth knowing when the app cannot hear anyone.",
+    "The first time you open the app after this update, it sends a report straight away rather than waiting for the week to come round, so you and we can both see that reporting is working before you rely on it.",
+    "Fixed: with a screen edge margin set, the keyboard did not move in with everything else, so its keys no longer lined up with the Express Panel buttons behind them — and a keyguard cut for one would not fit the other. The keyboard now sits inside the margin like the rest of the app.",
+    "When you tap a button in the Express Panel to set it up, that button now stays highlighted while you work on it, so you can see which one you picked. The highlight moves when you tap a different button, and clears when you leave the Express Panel settings or close Settings.",
+    "Settings → Speech now offers a silence period of 0 seconds: instead of waiting a set time, the app asks for suggestions the moment it hears the other person stop. It is the quickest setting available, and it will ask more often during a long turn, which costs a little more."
+  ],
   "0.7.0": [
     "Empty Express Panel buttons now show, and you can tap one to fill it in. The panel arrives half filled on purpose, and until now the cells you hadn't used yet were simply nothing. Each one is now drawn as an empty outlined button, and tapping it takes you straight to Settings → Express Panel with that exact button ready to set up — so you choose where a button goes by tapping the spot you want it in, instead of adding it to the end of a list and moving it up. Everything stays exactly where it was on screen, so a keyguard still fits. Tapping an empty button does nothing while you're in a conversation.",
     "The Express Panel works while the Express Panel settings are open. You can tap a button in the panel to jump to its row in the list, so you're editing the panel while looking at the panel. Tapping a button there sets it up rather than speaking it.",

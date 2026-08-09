@@ -292,3 +292,41 @@ test('the default is still the browser recognizer', () => {
     stt.init({ onResult() {}, onSilence() {}, onStatus() {}, onPartnerSpeech() {} });
     assert.equal(recognitions.length, before + 1);
 });
+
+/* ── "0 seconds" — the recognizer's own endpoint, not a zero-length timer ──
+ *
+ * Ken, August 9 2026. The silence timer is restarted by EVERY result, interim ones
+ * included, so a literal zero would fire in the gap between two interim results
+ * while the partner is still mid-sentence. At 0 the checkpoint is driven by a FINAL
+ * result — the recognizer reporting an endpoint — with a short fallback so a backend
+ * that is stingy with finals cannot leave the turn hanging silently.
+ */
+test('0 seconds: an interim alone does NOT fire a checkpoint straight away', async () => {
+    stt.setSilenceThreshold(0);
+    stt.startListening();
+    rec.emitInterim('I was thinking we could');
+    await sleep(80);   // far longer than a zero-length timer would have needed
+    assert.equal(silences.length, 0,
+        'a zero timer would have fired here, mid-sentence, on a partial phrase');
+    // The fallback timer this interim armed outlives the test otherwise, and the
+    // onSilence closure would deliver its checkpoint into a LATER test's array.
+    stt.stopListening();
+});
+
+test('0 seconds: a final result fires the checkpoint immediately', async () => {
+    stt.setSilenceThreshold(0);
+    stt.startListening();
+    rec.emitFinal('How was your weekend?');
+    await sleep(20);   // no threshold to wait out — the endpoint IS the trigger
+    assert.deepEqual(silences, ['How was your weekend?']);
+});
+
+test('0 seconds: an interim that is never finalised still fires, via the fallback', async () => {
+    // The liveness guarantee. Without it a backend that never sends a final would
+    // leave the partner's turn open for ever, with nothing on screen saying so.
+    stt.setSilenceThreshold(0);
+    stt.startListening();
+    rec.emitInterim('I think so');
+    await sleep(1700);   // ZERO_FALLBACK_MS is 1500
+    assert.deepEqual(silences, ['I think so']);
+});

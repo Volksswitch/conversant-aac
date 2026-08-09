@@ -42,10 +42,29 @@ let current = [];
 // user can type immediately without hunting for the new row.
 let pickerForId = null;
 let pendingFocusId = null;
+// The cell the user last tapped in the panel. It STAYS marked — in the editor row
+// and on the panel button itself — until they tap a different cell, switch tabs or
+// close Settings (Ken, August 9 2026). A highlight that cleared itself would leave
+// the user editing a row with nothing on screen tying it to the button they touched,
+// which on a grid of thirty-odd near-identical cells is the whole question.
+let pickedId = null;
+let onPickCb = null;
 
 export function init(el, opts = {}) {
     container = el;
     onChangeCb = opts.onChange || null;
+    onPickCb = opts.onPick || null;
+}
+
+/** The cell currently being edited, for the panel to mark. */
+export function getPickedId() { return pickedId; }
+
+/** Drop the mark — on a tab switch or when Settings closes. */
+export function clearPicked() {
+    if (!pickedId) return;
+    pickedId = null;
+    if (container) container.querySelectorAll('.ee-row-picked').forEach((r) => r.classList.remove('ee-row-picked'));
+    if (onPickCb) onPickCb();
 }
 
 function commit(rerender) {
@@ -395,6 +414,11 @@ export function render() {
     }
     container.appendChild(list);
 
+    // A removed row takes the mark with it, so the panel does not keep highlighting
+    // a cell whose item no longer exists.
+    if (pickedId && !current.some((it) => it.id === pickedId)) pickedId = null;
+    markPickedRow();
+
     // Focus + reveal a just-added row so the user can type in place.
     if (pendingFocusId) {
         const id = pendingFocusId;
@@ -424,9 +448,24 @@ function revealRow(id) {
  */
 export function focusItem(id) {
     if (!container || !id) return;
+    pickedId = id;
     if (!container.querySelector(`.ee-row[data-id="${CSS.escape(String(id))}"]`)) render();
     const row = revealRow(id);
+    // Tell the panel first either way: a row that has scrolled out of the editor's
+    // list is still a cell the user can see, and the mark on the BUTTON is the half
+    // that answers "which one am I editing?".
+    if (onPickCb) onPickCb();
     if (!row) return;
+    markPickedRow();
+}
+
+// Re-applied after every render, not only on the tap: the editor rebuilds its whole
+// list on any edit, so a class set once would vanish the moment the user typed a
+// character into the row it was marking.
+function markPickedRow() {
+    if (!container) return;
     container.querySelectorAll('.ee-row-picked').forEach((r) => r.classList.remove('ee-row-picked'));
-    row.classList.add('ee-row-picked');
+    if (!pickedId) return;
+    const row = container.querySelector(`.ee-row[data-id="${CSS.escape(String(pickedId))}"]`);
+    if (row) row.classList.add('ee-row-picked');
 }

@@ -29,6 +29,9 @@ forgetting to tag one is only ever noise, never silence.
 - Automatic weekly reports are now switched on. About once a week, when you open the app, it sends back a short summary of how it has been going — how many conversations, how long things took, and any errors it recorded. It never includes anything you or the other person said. Put the name you were given in Settings → Troubleshooting so we know whose report it is; the same place shows exactly what a report contains, lists everything already sent, and has the switch to turn it off.
 - Fixed: a problem report was leaving out whether the app can use this device's speech recognition — the first thing worth knowing when the app cannot hear anyone.
 - The first time you open the app after this update, it sends a report straight away rather than waiting for the week to come round, so you and we can both see that reporting is working before you rely on it.
+- Fixed: with a screen edge margin set, the keyboard did not move in with everything else, so its keys no longer lined up with the Express Panel buttons behind them — and a keyguard cut for one would not fit the other. The keyboard now sits inside the margin like the rest of the app.
+- When you tap a button in the Express Panel to set it up, that button now stays highlighted while you work on it, so you can see which one you picked. The highlight moves when you tap a different button, and clears when you leave the Express Panel settings or close Settings.
+- Settings → Speech now offers a silence period of **0 seconds**: instead of waiting a set time, the app asks for suggestions the moment it hears the other person stop. It is the quickest setting available, and it will ask more often during a long turn, which costs a little more.
 
 ## Version 0.7.0
 
