@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.7.1
+
 - **Settings → Troubleshooting** now has a button that opens the known-issues page. It is a web page rather than a list built into the app, so it stays up to date between releases — worth a look before you report something, in case it is already on it.
 - New Express Panel button: **"This device listens and speaks for me."** It is there so you can tell someone what the device is doing with one tap, instead of having to explain it. It is amber — a new **Notice** colour for anything you say *about* the device rather than as part of the conversation — and you can reword it, recolour it or remove it like any other phrase. It appears on a panel you have not edited yet; if you have already made the panel your own, add it yourself if you want it.
 - The version number is back on the opening screen, under Start. If you are ever asked which version you have, it is there without opening Settings — which matters most when the app is too stuck to open Settings at all.
