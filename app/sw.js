@@ -80,6 +80,7 @@ const SHELL = [
   './js/whats-new.js',
   './js/settings-help.js',
   './js/help-mode.js',
+  './js/sections.js',
   './js/usage-summary.js',
   './js/diagnostics.js',
   './js/weekly-send.js',

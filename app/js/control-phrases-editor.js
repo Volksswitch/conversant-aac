@@ -15,6 +15,7 @@
 
 import * as model from './control-phrases.js';
 import { confirmDanger } from './confirm-dialog.js';
+import { makeCollapsible } from './sections.js';
 
 let container = null;
 let onChangeCb = null;
@@ -54,6 +55,15 @@ function textInput(value, placeholder, oninput) {
 function singleSection(title, key) {
     const sec = document.createElement('div');
     sec.className = 'setting-group cpe-section';
+    // These headings are collapsible sections like every other Settings section, so the
+    // spoken "?" has to reach them. They are built here rather than in index.html, so
+    // the key is stamped here too — keyed by the phrase list it edits, and matched to a
+    // "sections" entry in settings-help.json (tests/settings-help.test.mjs scans this
+    // file for exactly these strings, so a new section cannot ship without its words).
+    //   The fields inside carry no ids, so there is no control phrase for the group to
+    // borrow: without this it would resolve to nothing and the heading would stay
+    // silent.
+    sec.dataset.help = key;
     sec.appendChild(Object.assign(document.createElement('label'), { textContent: title }));
     const row = document.createElement('div');
     row.className = 'ee-row ee-phrase';
@@ -66,6 +76,15 @@ function singleSection(title, key) {
 function listSection(title, key) {
     const sec = document.createElement('div');
     sec.className = 'setting-group cpe-section';
+    // These headings are collapsible sections like every other Settings section, so the
+    // spoken "?" has to reach them. They are built here rather than in index.html, so
+    // the key is stamped here too — keyed by the phrase list it edits, and matched to a
+    // "sections" entry in settings-help.json (tests/settings-help.test.mjs scans this
+    // file for exactly these strings, so a new section cannot ship without its words).
+    //   The fields inside carry no ids, so there is no control phrase for the group to
+    // borrow: without this it would resolve to nothing and the heading would stay
+    // silent.
+    sec.dataset.help = key;
     sec.appendChild(Object.assign(document.createElement('label'), { textContent: title }));
 
     const list = document.createElement('div');
@@ -126,6 +145,14 @@ export function render() {
         render();
     });
     container.appendChild(reset);
+
+    // Each section here is exactly "a collection of controls with a single heading", so
+    // it collapses like every other Settings section (Ken, August 11 2026). Done after
+    // the whole tab is built, and the open/closed state survives a rebuild — this
+    // editor re-renders itself on add / reorder / delete, and slamming every section
+    // shut on the user mid-edit would be worse than not collapsing at all. Reset sits
+    // outside the sections, so it stays reachable with everything closed.
+    makeCollapsible(container, 'controls');
 
     // Focus a just-added list row so the user can type immediately.
     if (pendingFocus) {

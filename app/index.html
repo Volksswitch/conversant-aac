@@ -270,6 +270,10 @@
                          preference that every user has an opinion about, keyguard or
                          not (Ken, August 3 2026). -->
                     <div class="setting-group" id="fullscreenGroup">
+                        <!-- Section heading. Every control sits in a section (Ken,
+                             August 11 2026), so a lone checkbox gets a heading naming
+                             the topic rather than repeating the checkbox's own words. -->
+                        <label>Full screen</label>
                         <label class="checkbox-label">
                             <input type="checkbox" id="fullscreenInput">
                             <span>Use the whole screen</span>
@@ -408,31 +412,37 @@
                     </div>
                 </div>
                 <div class="tab-panel" data-tab="input">
-                    <div class="setting-group">
-                        <label for="buttonSizeSlider">Button size</label>
-                        <div class="slider-row">
-                            <button type="button" class="slider-step" data-target="buttonSizeSlider" data-step="-4" aria-label="Smaller">&minus;</button>
-                            <input type="range" id="buttonSizeSlider" min="0" max="100" step="1" class="size-slider">
-                            <button type="button" class="slider-step" data-target="buttonSizeSlider" data-step="4" aria-label="Larger">+</button>
+                    <!-- A section holding three sub-sections AND a loose control. The
+                         Reset button is deliberately NOT a sub-section of its own (Ken,
+                         August 11 2026): sitting at the same indent as the three
+                         sliders is what says it acts on all of them, where a heading
+                         would have made it look like a fourth setting beside them. -->
+                    <div class="setting-group" data-help="buttonSizing">
+                        <label>Button sizes and gaps</label>
+                        <div class="setting-group">
+                            <label for="buttonSizeSlider">Button size</label>
+                            <div class="slider-row">
+                                <button type="button" class="slider-step" data-target="buttonSizeSlider" data-step="-4" aria-label="Smaller">&minus;</button>
+                                <input type="range" id="buttonSizeSlider" min="0" max="100" step="1" class="size-slider">
+                                <button type="button" class="slider-step" data-target="buttonSizeSlider" data-step="4" aria-label="Larger">+</button>
+                            </div>
                         </div>
-                    </div>
-                    <div class="setting-group">
-                        <label for="buttonGapSlider">Button spacing</label>
-                        <div class="slider-row">
-                            <button type="button" class="slider-step" data-target="buttonGapSlider" data-step="-4" aria-label="Tighter">&minus;</button>
-                            <input type="range" id="buttonGapSlider" min="0" max="100" step="1" class="size-slider">
-                            <button type="button" class="slider-step" data-target="buttonGapSlider" data-step="4" aria-label="Wider">+</button>
+                        <div class="setting-group">
+                            <label for="buttonGapSlider">Button spacing</label>
+                            <div class="slider-row">
+                                <button type="button" class="slider-step" data-target="buttonGapSlider" data-step="-4" aria-label="Tighter">&minus;</button>
+                                <input type="range" id="buttonGapSlider" min="0" max="100" step="1" class="size-slider">
+                                <button type="button" class="slider-step" data-target="buttonGapSlider" data-step="4" aria-label="Wider">+</button>
+                            </div>
                         </div>
-                    </div>
-                    <div class="setting-group">
-                        <label for="minGapSlider">Minimum spacing</label>
-                        <div class="slider-row">
-                            <button type="button" class="slider-step" data-target="minGapSlider" data-step="-4" aria-label="Less minimum spacing">&minus;</button>
-                            <input type="range" id="minGapSlider" min="0" max="100" step="1" class="size-slider">
-                            <button type="button" class="slider-step" data-target="minGapSlider" data-step="4" aria-label="More minimum spacing">+</button>
+                        <div class="setting-group">
+                            <label for="minGapSlider">Minimum spacing</label>
+                            <div class="slider-row">
+                                <button type="button" class="slider-step" data-target="minGapSlider" data-step="-4" aria-label="Less minimum spacing">&minus;</button>
+                                <input type="range" id="minGapSlider" min="0" max="100" step="1" class="size-slider">
+                                <button type="button" class="slider-step" data-target="minGapSlider" data-step="4" aria-label="More minimum spacing">+</button>
+                            </div>
                         </div>
-                    </div>
-                    <div class="setting-group">
                         <button id="resetSizingBtn" type="button" class="reset-sizing-btn">Reset buttons and gaps to default</button>
                     </div>
                     <div class="setting-group">
@@ -483,6 +493,7 @@
                 </div>
                 <div class="tab-panel" data-tab="conversation">
                     <div class="setting-group">
+                        <label>Saving conversations</label>
                         <label class="checkbox-label">
                             <input type="checkbox" id="noSaveDefaultInput">
                             <!-- Deliberately says nothing about WHERE conversations
@@ -520,13 +531,14 @@
                             <option value="3">3.0 seconds</option>
                         </select>
                     </div>
-                    <div class="setting-group">
+                    <!-- One section rather than two singletons: both are about what
+                         happens when listening starts, so they belong together. -->
+                    <div class="setting-group" data-help="listening">
+                        <label>Listening</label>
                         <label class="checkbox-label">
                             <input type="checkbox" id="autoRelistenInput">
                             Resume listening automatically after speaking a response
                         </label>
-                    </div>
-                    <div class="setting-group">
                         <label class="checkbox-label">
                             <input type="checkbox" id="listenChimeInput">
                             Play a chime when listening starts
@@ -588,15 +600,15 @@
                     </div>
                 </div>
                 <div class="tab-panel" data-tab="practice">
-                    <p class="setting-hint">In <strong>Practice Mode</strong> the AI plays the other person, so you can rehearse a conversation without a microphone and without spending anyone's patience. Pick something to practice below; the conversation screen works exactly as it normally does, except <strong>Start Listening</strong> cues the other person to speak instead of opening the mic. Give them their own voice under <strong>Speech</strong>.</p>
+                    <p class="tab-intro">In <strong>Practice Mode</strong> the AI plays the other person, so you can rehearse a conversation without a microphone and without spending anyone's patience. Pick something to practice below; the conversation screen works exactly as it normally does, except <strong>Start Listening</strong> cues the other person to speak instead of opening the mic. Give them their own voice under <strong>Speech</strong>.</p>
                     <div id="practicePanel"></div>
                 </div>
                 <div class="tab-panel" data-tab="express">
-                    <p class="setting-hint">Edit the <strong>Express Panel</strong>. Each item is a <strong>Phrase</strong> (speaks when tapped), a <strong>Partner</strong> (who you're talking with — personalizes openers and tells the AI who's there), or a <strong>Feeling</strong> (sets the mood of the suggestions). Order here = position in the panel; use ↑ ↓ to arrange and ✕ to remove.</p>
+                    <p class="tab-intro">Edit the <strong>Express Panel</strong> shown beside this tab. Each button is a <strong>Phrase</strong> (speaks when tapped), a <strong>Partner</strong> (who you're talking with — personalizes openers and tells the AI who's there), a <strong>Feeling</strong> (sets the mood of the suggestions), or a <strong>Place</strong> (where you are).</p>
                     <div id="expressEditor"></div>
                 </div>
                 <div class="tab-panel" data-tab="controls">
-                    <p class="setting-hint">Set the exact words spoken by the persistent control buttons, and the cards shown by <strong>Start conversation</strong> and <strong>Wind down</strong> — so each sounds like something you would say.</p>
+                    <p class="tab-intro">Set the exact words spoken by the persistent control buttons, and the cards shown by <strong>Start conversation</strong> and <strong>Wind down</strong> — so each sounds like something you would say.</p>
                     <div id="controlEditor"></div>
                 </div>
                 <div class="tab-panel" data-tab="keyguard">
@@ -624,14 +636,18 @@
                             <button type="button" class="slider-step" data-target="transcriptSepSlider" data-step="4" aria-label="More separation">+</button>
                         </div>
                     </div>
-                    <div class="setting-group">
-                        <label for="titleBarHeightInput">Title Bar Height (px)</label>
-                        <input type="number" id="titleBarHeightInput" min="0" step="1" value="0" inputmode="numeric">
-                        <!-- Live status, not per-control help (Rule 14 permits reporting
-                             what is currently true). Set by reflectTitleBarNeed(). -->
-                        <p class="setting-hint" id="titleBarStatus" role="status" aria-live="polite" hidden></p>
-                    </div>
-                    <div class="setting-group">
+                    <!-- Same shape as "Button sizes and gaps": Generate is a loose
+                         control inside the section, not a sub-section, because it acts
+                         on the settings above it rather than being another of them. -->
+                    <div class="setting-group" data-help="screenOpenings">
+                        <label>Screen openings</label>
+                        <div class="setting-group">
+                            <label for="titleBarHeightInput">Title Bar Height (px)</label>
+                            <input type="number" id="titleBarHeightInput" min="0" step="1" value="0" inputmode="numeric">
+                            <!-- Live status, not per-control help (Rule 14 permits reporting
+                                 what is currently true). Set by reflectTitleBarNeed(). -->
+                            <p class="setting-hint" id="titleBarStatus" role="status" aria-live="polite" hidden></p>
+                        </div>
                         <button id="generateOpeningsBtn" type="button">Generate Screen Openings</button>
                         <!-- Wording is set at runtime by app.js: on a tablet the file is
                              downloaded (the data folder there is private to the browser),
@@ -675,6 +691,10 @@
                          this text IS the disclosure, so it has to be unable to
                          drift out of date silently. -->
                     <div class="setting-group" data-help="weeklyReports">
+                        <!-- Section heading in its own right: this group holds four
+                             controls, so the first control's label ("Tester name")
+                             would name the section after one part of it. -->
+                        <label>Weekly reports</label>
                         <label for="testerNameInput">Tester name</label>
                         <input type="text" id="testerNameInput" placeholder="The name we gave you" autocomplete="off">
                         <p id="testerNameStatus" class="setting-status" role="status"></p>
@@ -696,7 +716,11 @@
                         </div>
                     </div>
                     <div class="setting-group" data-help="errorLog">
-                        <label>Error log <span id="errorLogCount" class="setting-hint"></span></label>
+                        <!-- The count sits OUTSIDE the heading: the heading's text
+                             becomes the section title, so anything nested in it would
+                             be lifted out of the panel it belongs to. -->
+                        <label>Error log</label>
+                        <p id="errorLogCount" class="setting-hint"></p>
                         <textarea id="errorLogView" readonly rows="6" placeholder="No errors recorded." aria-label="Error log"></textarea>
                         <div id="errorLogActions">
                             <button id="copyErrorLogBtn" type="button">Copy</button>

@@ -35,6 +35,7 @@ import * as helpMode from './help-mode.js';
 import * as usageSummary from './usage-summary.js';
 import * as diagnostics from './diagnostics.js';
 import * as weeklySend from './weekly-send.js';
+import { makeCollapsible } from './sections.js';
 
 // The platform verdict on partner capture (see platform.js), or null when capture
 // is expected to work. Non-null drives the pre-start warning; it does NOT by
@@ -413,7 +414,10 @@ function initApp() {
     document.getElementById('startBtn').addEventListener('click', handleStart);
     // API-key notice (step 3 of the pre-start sequence): "Add an API key" opens
     // Settings; "Continue" proceeds into the conversation without a key.
-    document.getElementById('apiKeyPromptBtn').addEventListener('click', openSettings);
+    document.getElementById('apiKeyPromptBtn').addEventListener('click', () => {
+        openSettings();
+        revealSetting('apiKeyInput');   // the button promises the field, not the tab
+    });
     // Reporting from the launch screen. Wired here, early in init, ON PURPOSE: the
     // tester who most needs it is the one whose app did not finish starting, so this
     // listener must be attached before anything that could throw. It saves straight
@@ -465,6 +469,7 @@ function initApp() {
     expressEditor.init(document.getElementById('expressEditor'), {
         onChange: renderExpressPanel,
         onPick: renderExpressPanel,   // the mark lives on the panel, so a pick redraws it
+        cellCount: expressCellCount,  // the ceiling on how many buttons can exist
     });
     controlEditor.init(document.getElementById('controlEditor'), { onChange: applyControlPhrases });
     // About Me is an ordinary Settings tab — it renders into its tab-panel and is
@@ -2670,6 +2675,21 @@ function blockZoomGestures() {
 
 // Count rows + widest total span of the active dock layout (kept for any
 // consumers that still key off the grid shape).
+// How many Express Panel cells the chosen layout offers an ITEM. The item list maps
+// onto these one-for-one, so it is the ceiling on how many buttons can exist — an item
+// past the last cell has no button to tap and is unreachable. Mirrors the cell kinds
+// ui.renderExpressPanel skips: 'space' is "In my own words", 'blank' and 'pred' are
+// spacers.
+function expressCellCount() {
+    let n = 0;
+    for (const row of expressLayoutRows()) {
+        for (const cell of row || []) {
+            if (cell.kind !== 'space' && cell.kind !== 'blank' && cell.kind !== 'pred') n++;
+        }
+    }
+    return n;
+}
+
 function activeLayoutGrid() {
     const rows = expressLayoutRows();
     const r = rows.length || 1;
@@ -2754,10 +2774,6 @@ function applyButtonSizing() {
     const { rows, cols } = activeLayoutGrid();
     root.setProperty('--kbd-rows', String(rows));
     root.setProperty('--kbd-cols', String(cols));
-    // Button size, gap and screen edge margin all change how wide a Settings control
-    // is and how wide a column is, so a tab that fitted in columns a moment ago may
-    // not now. This is also the resize hook, so viewport changes are covered too.
-    refreshActiveTabColumns();
 }
 
 // Apply the user-set text-size scales (Transcript / Composer / Express Panel) as
@@ -3076,44 +3092,22 @@ function exitAppFullscreen() {
     } catch { /* already out, or refused */ }
 }
 
-// Settings tabs flow in 2–3 columns so the denser ones fit without scrolling. CSS
-// multi-column will NOT shrink an item that is too wide for a column: it paints it
-// across the gap, ON TOP of the next column's controls, and nothing about the
-// container reports it — the panel does not scroll and no width looks wrong. So the
-// only way to catch it is to compare the widest unbreakable block against the column
-// width, and drop the tab to a single column when it does not fit (Ken, August 3
-// 2026: "if controls on a Settings tab begin to overlap, you should switch to a
-// single column display").
+// --- Collapsible setting sections ------------------------------------------------
 //
-// MEASURED, not hard-coded per tab, because whether a given tab overlaps depends on
-// values the user changes at runtime — button size, gap, screen edge margin, dock
-// side, and the viewport. The Controls tab is the one that overlaps at the default
-// bottom-dock 3-column layout today, but which tabs qualify is not a constant.
-function applyColumnFallback(panel) {
-    if (!panel) return;
-    panel.classList.remove('single-column');   // always measure in the multi-column state
-    const cs = getComputedStyle(panel);
-    const count = parseInt(cs.columnCount, 10);
-    if (!Number.isFinite(count) || count < 2) return;   // already single-column
-    const inner = panel.clientWidth
-        - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0);
-    if (inner <= 0) return;                    // not laid out (panel hidden) — nothing to judge
-    const columnWidth = (inner - (parseFloat(cs.columnGap) || 0) * (count - 1)) / count;
-    // The blocks that must not be split or overlapped: a setting group, an editor
-    // row (Controls reuses the Express rows), a Practice card. scrollWidth reports
-    // what each one actually needs, including flex children that refused to shrink.
-    let widest = 0;
-    panel.querySelectorAll('.setting-group, .ee-row, .practice-card')
-        .forEach((el) => { widest = Math.max(widest, el.scrollWidth); });
-    if (widest > columnWidth + 1) panel.classList.add('single-column');
-}
-
-// Re-judge the visible tab. Cheap, and safe to call often; no-ops while Settings is
-// closed, where the panels have no layout to measure.
-function refreshActiveTabColumns() {
-    const dlg = document.getElementById('settingsDialog');
-    if (!dlg || !dlg.open) return;
-    applyColumnFallback(document.querySelector('#settingsContent .tab-panel.active'));
+// Settings tabs are ONE column (Ken, August 11 2026: "the two-column, reflow, layouts
+// don't work well"). Columns existed to fit the denser tabs without scrolling, which
+// this audience needs; sections buy that height back a better way — a tab opens as a
+// short list of headings, all of them closed.
+//
+// EVERY control is inside a section (Ken, August 11 2026: "if no other section makes
+// sense then create one just for that control"). A group that used to be a lone
+// self-labelling checkbox or button now carries a heading of its own in index.html, so
+// there is no such thing as a control sitting loose between sections.
+//
+// The wrapping itself lives in sections.js, shared with the Controls editor, which
+// builds its sections at runtime rather than declaring them in index.html.
+function makeGroupsCollapsible(panel) {
+    if (panel) makeCollapsible(panel, panel.dataset.tab);
 }
 
 function activateSettingsTab(tab, focus) {
@@ -3124,12 +3118,14 @@ function activateSettingsTab(tab, focus) {
         t.setAttribute('aria-selected', String(on));
     });
     document.querySelectorAll('#settingsContent .tab-panel').forEach(p => p.classList.remove('active'));
-    document.querySelector(`.tab-panel[data-tab="${tab.dataset.tab}"]`).classList.add('active');
+    const panel = document.querySelector(`.tab-panel[data-tab="${tab.dataset.tab}"]`);
+    panel.classList.add('active');
     if (focus) tab.focus();
     handleSettingsTab(tab.dataset.tab);
     // After handleSettingsTab, never before: the Controls / Express / Practice tabs
-    // build their contents there, and there is nothing to measure until they have.
-    refreshActiveTabColumns();
+    // build their contents there. Idempotent, so a re-visited tab keeps whatever the
+    // user had opened.
+    makeGroupsCollapsible(panel);
 }
 
 // On the Buttons & Keyboard tab the user changes keyboard layout/position but
@@ -3854,9 +3850,9 @@ function openSettings() {
     // with tab switches. The keyboard then appears only when a field or a
     // layout setting is tapped.
     document.getElementById('settingsHeader')?.focus();
-    // The panel now has layout, so the default (General) tab can be judged. Every
-    // later tab switch is judged by activateSettingsTab.
-    refreshActiveTabColumns();
+    // The default (General) tab is shown without going through activateSettingsTab,
+    // so its sections are built here. Every other tab is built when first visited.
+    makeGroupsCollapsible(document.querySelector('.tab-panel[data-tab="general"]'));
 
     document.getElementById('pickFolderBtn').onclick = async () => {
         try {

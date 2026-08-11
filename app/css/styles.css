@@ -1294,24 +1294,22 @@ button:not(.kbd-key):not(.kbd-tool):not(.kbd-pred-btn):not(.ep-btn) {
    excluded in the :not() instead — not an option here, because the ↑ and ↓ buttons
    carry no class of their own to exclude by. */
 #settingsContent .ee-row .ee-swatch,
-#settingsContent .ee-row .ee-ins,
-#settingsContent .ee-row .ee-tools button:not(.ee-save) {
+#controlEditor .ee-row .ee-tools button {
     min-width: var(--btn-min-dim);
     width: var(--btn-min-dim);
     min-height: var(--btn-min-dim);
     height: var(--btn-min-dim);
 }
 
-/* Save is in the same cluster and needs the same floor, but keeps width:auto so its
-   text label is never clipped. It must NOT keep the Express-derived width, and the
-   reason is a subtlety worth knowing: that width is `min(--ui-btn-min-w, 45%)`, and
-   a PERCENTAGE cannot resolve while the browser is computing an intrinsic
-   (max-content) size, so it collapses to ~0 there and the button measures 56px —
-   then resolves to 99.5px at layout time. The parent .ee-tools is `flex: 0 0 auto`,
-   so it had already sized itself to the 56px measurement and Save overflowed it by
-   exactly the difference. Any fixed-size flex container holding a percentage-capped
-   child has this hazard. */
-#settingsContent .ee-row .ee-tools .ee-save {
+/* The Express card's actions carry TEXT, so they take the height floor and size their
+   own width. They must NOT keep the Express-derived width, and the reason is a
+   subtlety worth knowing: that width is `min(--ui-btn-min-w, 45%)`, and a PERCENTAGE
+   cannot resolve while the browser is computing an intrinsic (max-content) size, so it
+   collapses to ~0 there and the button measures 56px — then resolves to 99.5px at
+   layout time. Any fixed-size flex container holding a percentage-capped child has
+   this hazard, which is why .ee-tools is allowed to wrap rather than being sized
+   once. */
+#expressEditor .ee-row .ee-tools button {
     min-width: var(--btn-min-dim);
     min-height: var(--btn-min-dim);
     height: var(--btn-min-dim);
@@ -1351,13 +1349,28 @@ button:not(.kbd-key):not(.kbd-tool):not(.kbd-pred-btn):not(.ep-btn) {
 
 /* --- Express Panel editor (Settings → Express Panel): an ordered list of typed items. --- */
 #expressEditor { display: flex; flex-direction: column; gap: 0.5rem; }
-.ee-toolbar { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
-.ee-toolbar .ee-add { background: #2c3e50; color: #fff; border: none; border-radius: 6px; padding: 0.4rem 0.7rem; font-weight: 600; cursor: pointer; }
-.ee-toolbar .ee-add:hover { filter: brightness(1.1); }
-.ee-toolbar .ee-reset { margin-left: auto; background: #fff; color: #c0392b; border: 1px solid #e0a4a0; border-radius: 6px; padding: 0.4rem 0.7rem; cursor: pointer; }
-.ee-toolbar .ee-reset:hover { background: #c0392b; color: #fff; }
+/* The invitation shown until a button is tapped, and the whole-panel Reset that has
+   nowhere else to live once the tab shows one button at a time. */
+.ee-prompt { display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+.ee-prompt .ee-reset { background: #fff; color: #c0392b; border: 1px solid #e0a4a0; border-radius: 6px; padding: 0.4rem 0.7rem; cursor: pointer; }
+.ee-prompt .ee-reset:hover { background: #c0392b; color: #fff; }
+
+/* ⚠ .ee-row AND .ee-tools ARE SHARED WITH THE CONTROLS EDITOR (control-phrases-editor
+   .js), which still builds a horizontal row of one text field plus ↑ ↓ ✕. So the base
+   rules below stay as they were, and the Express card's column layout is scoped to
+   #expressEditor. Changing the base rules is what would silently restack the Controls
+   tab. */
 .ee-list { display: flex; flex-direction: column; gap: 0.35rem; }
 .ee-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem; border: 1px solid #d6dde2; border-radius: 8px; background: #fff; }
+
+/* ⚠ THE EXPRESS CARD IS A COLUMN, NOT A ROW, AND THAT IS THE FIX. As a single row the
+   fields, seven colour swatches and six tools could not all fit a narrow side dock,
+   and CSS does not shrink what cannot shrink — it overlapped instead, which is what
+   Ken photographed. Stacked, each part gets the full width and wraps within it, so the
+   card gets taller as the tab narrows and never wider. */
+#expressEditor .ee-row { flex-direction: column; align-items: stretch; padding: 0.5rem; }
+.ee-card-head { display: flex; align-items: center; gap: 0.5rem; }
+.ee-card-pos { font-size: 0.85rem; color: #555; }
 .ee-badge { flex: 0 0 auto; font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #fff; border-radius: 4px; padding: 0.25rem 0.4rem; min-width: 4.2rem; text-align: center; }
 .ee-badge-phrase  { background: #546E7A; }
 .ee-badge-partner { background: #5D4037; }
@@ -1377,26 +1390,39 @@ button:not(.kbd-key):not(.kbd-tool):not(.kbd-pred-btn):not(.ep-btn) {
 .ee-fields .ee-name-select { flex: 2 1 16rem; } /* the "Choose a name" dropdown — twice as wide */
 .ee-tools { flex: 0 0 auto; display: flex; gap: 0.25rem; }
 .ee-tools button { width: 2rem; height: 2rem; border: 1px solid #c4ccd2; background: #f4f6f8; border-radius: 6px; cursor: pointer; font-size: 1rem; line-height: 1; }
+/* The Express card's actions WRAP, which the old fixed row of icon tools did not —
+   that is what overflowed on a narrow tab. Text labels because this is a
+   supporter-assisted Settings overlay, which Rule 12's scope note exempts from
+   icon-only. */
+#expressEditor .ee-tools { flex-wrap: wrap; gap: 0.35rem; }
+#expressEditor .ee-tools button { width: auto; padding: 0 0.7rem; font-size: 0.95rem; }
 .ee-tools button:disabled { opacity: 0.35; cursor: default; }
 .ee-tools .ee-del { color: #c0392b; border-color: #e0a4a0; }
 /* "Hear this phrase" — the same blue as About Me's "Speak my answer" and Sound
    Check's per-candidate speaker, so one look means one thing across every editor. */
 .ee-tools .ee-hear { background: #e3f2fd; border-color: #90caf9; color: #1565c0; }
-/* "Save" is a text button, not a 2rem icon: give it its own width + primary color. */
-.ee-tools .ee-save { width: auto; padding: 0 0.7rem; background: #2c7a3f; color: #fff; border: none; font-weight: 600; }
-.ee-tools .ee-save:hover { filter: brightness(1.1); }
+/* Done closes the card, so it reads as the primary way out — and sits last, away from
+   Delete, which is the one button here that cannot be undone. */
+.ee-tools .ee-done { background: #2c7a3f; color: #fff; border: none; font-weight: 600; }
+.ee-tools .ee-done:hover { filter: brightness(1.1); }
+.ee-tools .ee-add { background: #2c3e50; color: #fff; border: none; font-weight: 600; }
+.ee-tools .ee-add:disabled { background: #8b97a1; }
 /* Button-color picker — pick by color, not by (meaningless) category name. */
 .ee-swatches { flex: 0 0 auto; display: flex; gap: 0.3rem; align-items: center; flex-wrap: wrap; }
+/* ⚠ `flex-wrap: wrap` ABOVE DOES NOTHING ON ITS OWN, and this is the trap: as a
+   `flex: 0 0 auto` item the row sizes to max-content, so there is never a shortage for
+   it to wrap out of — it just sticks out of the card. On the Express card it takes a
+   full line of its own, which gives it a real width to wrap inside. Measured at a
+   420px editor: seven swatches at the larger button sizes overflowed by 5px before
+   this and by nothing after. */
+#expressEditor .ee-swatches { flex: 1 1 100%; }
 .ee-swatch { width: 1.7rem; height: 1.7rem; padding: 0; border-radius: 5px; border: 2px solid rgba(0, 0, 0, 0.25); cursor: pointer; }
 .ee-swatch-on { outline: 3px solid #2c3e50; outline-offset: 1px; border-color: #fff; }
 .ee-swatch-static { cursor: default; }
-/* Per-row insert button + inline type picker (insert a new item in place). */
-.ee-ins { flex: 0 0 auto; width: 2rem; height: 2rem; border: 1px solid #c4ccd2; background: #f4f6f8; border-radius: 6px; cursor: pointer; font-size: 1.05rem; line-height: 1; }
-.ee-ins-on { background: #2c3e50; color: #fff; border-color: #2c3e50; }
-.ee-insertbar { display: flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.5rem; margin-bottom: 0.35rem; border: 1px dashed #9aa7b0; border-radius: 8px; background: #eef2f5; flex-wrap: wrap; }
-.ee-insertbar-label { font-size: 0.85rem; color: #555; }
-.ee-insertbar .ee-add { background: #2c3e50; color: #fff; border: none; border-radius: 6px; padding: 0.35rem 0.7rem; font-weight: 600; cursor: pointer; }
-.ee-insertbar-cancel { margin-left: auto; width: 1.9rem; height: 1.9rem; border: 1px solid #c4ccd2; background: #fff; border-radius: 6px; color: #c0392b; cursor: pointer; }
+/* The four type buttons an undefined slot offers ("Not set yet — Phrase / Partner /
+   Feeling / Place"). They sit in .ee-fields, so they wrap with everything else. */
+.ee-fields .ee-add { background: #2c3e50; color: #fff; border: none; border-radius: 6px; padding: 0.4rem 0.7rem; font-weight: 600; cursor: pointer; }
+.ee-fields .ee-add:hover { filter: brightness(1.1); }
 
 /* Control-phrases editor (Settings → Controls). Reuses .ee-row/.ee-list/.ee-tools;
    adds section grouping and grows the bare text input (it isn't wrapped in
@@ -1618,12 +1644,6 @@ dialog[open] {
 body.conv-side-right #settingsDialog { right: calc(var(--app-margin) + var(--dock-w) + var(--dock-sep)); }
 body.conv-side-left  #settingsDialog { left: calc(var(--app-margin) + var(--dock-w) + var(--dock-sep)); }
 body.conv-bottom     #settingsDialog { bottom: calc(var(--app-margin) + var(--dock-h) + var(--dock-sep)); }
-body.conv-bottom .tab-panel.active {
-    column-count: 3;
-}
-body.conv-bottom .tab-panel[data-tab="about"].active {
-    column-count: 2;
-}
 /* Tighten group spacing in the shorter bottom-dock panel so the densest tab
    (Conversation) fits without scrolling. */
 body.conv-bottom .setting-group {
@@ -1796,74 +1816,77 @@ dialog::backdrop {
     display: none;
 }
 
-/* Two-column layout so the denser tabs fit WITHOUT scrolling (scrolling is
-   problematic for this audience — Ken). Each setting-group stays intact across
-   the column break. The About tab is prose, so it stays single-column.
-   Surface padding = the universal gap, but with a small minimum so the controls
-   never sit flush against the panel edge at the default (zero) gap (Ken, June 29
-   2026 — "a couple of millimeters of padding"). The Express Panel and About Me
-   tabs are excluded (Express needs the full width for its rows; About Me is its
-   own full-screen overlay). */
+/* ONE COLUMN, always (Ken, August 11 2026: "the two-column, reflow, layouts don't
+   work well"). Multi-column was there to fit the denser tabs without scrolling,
+   which matters for this audience — but it bought that at the price of controls
+   reflowing between columns as the panel resized, and of a failure mode all its
+   own (an item too wide for its column is not shrunk, it is painted ON TOP of the
+   next column's controls, with nothing reporting it). Collapsible sections buy the
+   same height back without either cost: see makeGroupsCollapsible() in app.js.
+   Surface padding = the universal gap, with a small minimum so controls never sit
+   flush against the panel edge at the default (zero) gap (Ken, June 29 2026). */
 .tab-panel.active {
     display: block;
-    column-count: 2;
-    column-gap: 1.75rem;
     padding: max(var(--grid-gap), 0.6rem);
 }
-/* About is prose — take it out of multi-column entirely (column-count:1 still
-   creates a multicol context that mis-sizes height; `auto` is plain block). The
-   taller panel fits it without scrolling. */
-.tab-panel[data-tab="about"].active {
-    column-count: auto;
-}
-/* The Express Panel editor is a vertical list of rows that needs the full width
+/* The Express Panel editor rows manage their own spacing and need the full width
    (so each row's fields — incl. the wider "Choose a name" dropdown — fit on one
-   line). Keep it single-column, not flowed into the dense multi-column layout. */
-.tab-panel[data-tab="express"].active,
-body.conv-bottom .tab-panel[data-tab="express"].active {
-    column-count: auto;
-    padding: 0;   /* the editor rows manage their own spacing and need full width */
-}
-/* Practice is a list of choosable cards, so it is single-column for the same
-   reason (Ken, July 31 2026). In two columns Safari was slicing a scenario card
-   across the column break — its heading at the foot of one column and its
-   description at the head of the next, the same card appearing to be two.
-   Fixed by taking the panel out of multi-column rather than by asking the
-   fragmenter not to split the card: Chrome never splits a flex item, so the
-   defect could not be reproduced or a break hint verified on this machine, and
-   an unverifiable hint is not a fix. One column also gives the cards their full
-   width, which makes them better targets — the same reasoning as Express above. */
-.tab-panel[data-tab="practice"].active,
-body.conv-bottom .tab-panel[data-tab="practice"].active {
-    column-count: auto;
-}
-/* Overlap fallback: any tab whose widest control does not FIT a column drops to a
-   single column (Ken, August 3 2026: "if controls on a Settings tab begin to
-   overlap, you should switch to a single column display").
-   The failure this prevents is specific to CSS multi-column and is why it needs a
-   rule of its own: a too-wide item is NOT shrunk and does NOT make the panel
-   scroll — it is simply painted across the gap, ON TOP of the next column's
-   controls. So it reads as a rendering bug rather than a layout that ran out of
-   room, and nothing about the container reports it. The measurement lives in
-   app.js applyColumnFallback(); this class is what it toggles.
-   Listed for both dock rules so it outranks the 3-column bottom-dock variant. */
-.tab-panel.active.single-column,
-body.conv-bottom .tab-panel.active.single-column {
-    column-count: auto;
+   line). */
+.tab-panel[data-tab="express"].active {
+    padding: 0;
 }
 
-.setting-group {
-    break-inside: avoid;
+/* --- Collapsible setting sections ------------------------------------------
+   Every group that has a heading becomes a disclosure, matching "How I talk with
+   them" in About Me. The topmost section on a tab is open, the rest are closed;
+   opening one leaves the others alone, and what the user opened is remembered for
+   as long as the app stays loaded (the DOM itself holds it — a reload is a new
+   session and starts from the defaults again).
+   Groups that are a single self-labelling control (a lone checkbox or button)
+   have no heading to tap, so they stay inline. */
+.setting-group > details > summary {
+    cursor: pointer;
+    padding: 0.4rem 0.6rem;
+    min-height: var(--btn-min-dim);
+    /* ⚠ Any display other than list-item removes the UA's disclosure triangle, which
+       is why the marker below is one we draw. Do not add the UA's back. */
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: #eceff1;
+    border: 1px solid var(--border, #d7dde3);
+    border-radius: 8px;
 }
-/* Belt to the braces above: if any of these ever flow in columns again, they must
-   still never be sliced in half. `-webkit-column-break-inside` is the legacy alias
-   WebKit honours; harmless where the standard property is supported. .ee-row is
-   here because the Controls tab reuses those rows and IS multi-column. */
-.practice-card,
-.ee-row {
-    break-inside: avoid;
-    -webkit-column-break-inside: avoid;
+.setting-group > details > summary::-webkit-details-marker { display: none; }
+.setting-group > details > summary .wv-disclosure-title {
+    /* The heading is the group's own <label>, moved here verbatim, so it must not
+       keep the block layout dialog labels get. */
+    display: inline;
+    margin: 0;
+    font-weight: 600;
 }
+.setting-group > details[open] > summary .wv-disclosure-mark { transform: rotate(90deg); }
+
+/* Indented under its heading, with a rule down the left, so the title reads as
+   ENCLOSING what is inside it rather than merely sitting above it (Ken, August 11
+   2026). The indent starts under the arrow, so the rule and the arrow line up. */
+.setting-group > details > .sg-body {
+    margin-left: 0.75rem;
+    padding: 0.5rem 0.1rem 0.3rem 0.85rem;
+    border-left: 2px solid var(--border, #d7dde3);
+}
+
+/* Sub-sections: a .setting-group inside another. Same anatomy one level down, with a
+   lighter heading so the nesting is legible at a glance, and spacing between siblings
+   so two closed sub-sections do not read as one control. A LOOSE control alongside
+   them — "Reset buttons and gaps to default" — sits at the same indent on purpose:
+   that is what says it applies to all of them. */
+.setting-group .setting-group { margin: 0.35rem 0; }
+.setting-group .setting-group > details > summary {
+    background: #f4f6f7;
+    font-size: 0.95em;
+}
+.setting-group .setting-group > details > summary:hover { background: #eceff1; }
 
 /* Settings form elements */
 
@@ -2118,6 +2141,22 @@ dialog select {
     line-height: 1.4;
 }
 
+/* The paragraph at the top of a tab that says what the tab is for. It is PROSE to be
+   read, not a status line, and it was wearing .setting-hint — 0.8rem of #777, which is
+   4.5:1 against white and small with it. Ken, August 11 2026: "It's hard to read."
+   Bigger and darker; the size increase is the smaller half of the fix.
+   Padded horizontally because the Express Panel tab sets the panel's own padding to
+   zero (its editor rows need the full width), which would otherwise leave this text
+   flush against the panel edge. */
+.tab-intro {
+    font-size: 1.05rem;
+    color: #333;
+    line-height: 1.5;
+    margin: 0 0 0.8rem;
+    padding: 0 0.2rem;
+}
+.tab-panel[data-tab="express"] .tab-intro { padding: 0.5rem 0.6rem 0; }
+
 /* Binary slider (Left / Right) for the side-dock position. */
 .slider-row {
     display: flex;
@@ -2317,9 +2356,7 @@ label.radio-label input[type="radio"] {
    button dismisses it. The panel fills the settings content area and lets its
    inner #worldviewContent be the single scroll container (so the existing
    scroll-to-top / scroll-into-view logic in worldview-ui.js keeps working). */
-.tab-panel[data-tab="aboutme"].active,
-body.conv-bottom .tab-panel[data-tab="aboutme"].active {
-    column-count: auto;   /* single-column, full width — like the Express Panel tab */
+.tab-panel[data-tab="aboutme"].active {
     padding: 0;           /* #worldviewContent manages its own surface padding */
     height: 100%;         /* fill the content area so the inner div scrolls */
 }
@@ -2434,23 +2471,18 @@ body.conv-bottom .tab-panel[data-tab="aboutme"].active {
        does not silently stop rotating if the summary ever stops being a flex
        container — transform is ignored on a non-replaced inline element. */
     display: inline-block;
-    font-size: 1.2rem;
+    /* Sized to be seen across the room and hit without aiming (Ken, August 11 2026):
+       at 1.2rem it read as punctuation rather than as the control it is. */
+    font-size: 1.9rem;
+    width: 1.1rem;            /* fixed, so the titles line up open or closed */
+    text-align: center;
     line-height: 1;
     color: #546E7A;
     transition: transform 0.12s ease;
 }
 .wv-partner-profile[open] > summary .wv-disclosure-mark { transform: rotate(90deg); }
 
-.wv-disclosure-lines { display: flex; flex-direction: column; min-width: 0; }
-.wv-disclosure-title { font-weight: 600; }
-.wv-disclosure-sub {
-    font-size: 0.85em;
-    color: #555;              /* matches the other secondary text in About Me */
-    font-weight: 400;
-}
-/* Once it is open the invitation has been accepted, so the second line stops
-   earning its space and would only push the fields further down. */
-.wv-partner-profile[open] > summary .wv-disclosure-sub { display: none; }
+.wv-disclosure-title { font-weight: 600; min-width: 0; }
 
 .wv-partner-profile > *:not(summary) {
     margin-top: 0.5rem;

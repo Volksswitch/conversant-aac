@@ -43,8 +43,21 @@ function tabNames() {
     return [...html.matchAll(/class="settings-tab[^"]*"\s+data-tab="([^"]+)"/g)].map(m => m[1]);
 }
 
+// ⚠ NOT EVERY SECTION IS DECLARED IN index.html. The Controls editor builds its six
+// sections at runtime and stamps their keys with `sec.dataset.help = key`, so a scan of
+// the markup alone misses them — which is exactly how all six shipped silent: their
+// headings resolved to no phrase and the "?" said nothing on that whole tab.
 function sectionKeys() {
-    return [...settingsMarkup().matchAll(/data-help="([^"]+)"/g)].map(m => m[1]);
+    const fromHtml = [...settingsMarkup().matchAll(/data-help="([^"]+)"/g)].map(m => m[1]);
+    return [...fromHtml, ...runtimeSectionKeys()];
+}
+
+// The Controls editor's keys, read from its source the same way the markup is read.
+// It passes the phrase-list key straight through as the help key, so the section
+// names ARE the arguments of its two section builders.
+function runtimeSectionKeys() {
+    const src = readFileSync(join(root, 'app', 'js', 'control-phrases-editor.js'), 'utf8');
+    return [...src.matchAll(/(?:single|list)Section\([^,]+,\s*'([^']+)'\)/g)].map(m => m[1]);
 }
 
 test('every Settings control has spoken help', () => {
@@ -61,6 +74,95 @@ test('every radio group, tab and section has spoken help', () => {
 
     const missingSections = sectionKeys().filter(s => !lookup(`section:${s}`));
     assert.deepEqual(missingSections, [], `data-help groups with no entry: ${missingSections.join(', ')}`);
+});
+
+// Every setting group with a heading is a collapsible section (makeGroupsCollapsible
+// in app.js), and its heading is what the user taps to ask what the section is for.
+// resolveTap answers that from the group's data-help, or — when the group holds one
+// idea, a slider with its steppers or a single radio group — from its controls,
+// because the control's own phrase already says it.
+//
+// THE FAILURE THIS CATCHES IS SILENT: add a second, unrelated control to a group
+// without giving the group a data-help, and its header simply stops speaking. Nothing
+// errors; the "?" appears not to work on that one section.
+// Groups NEST — a section can hold sub-sections — so this walks div depth to find each
+// group's true extent and then subtracts its sub-sections. Splitting on the opening tag
+// was enough while they were flat and is actively wrong now: it would attribute a loose
+// control that follows a sub-section (the Reset button) to that sub-section instead of
+// to its parent.
+function settingGroups() {
+    const markup = settingsMarkup();
+    const OPEN_GROUP = /<div class="setting-group\b/g;
+    const starts = [...markup.matchAll(OPEN_GROUP)].map(m => m.index);
+
+    // Where the <div> opened at `start` closes, by counting divs.
+    const extentOf = (start) => {
+        let depth = 0;
+        const tag = /<(\/?)div\b/g;
+        tag.lastIndex = start;
+        let m;
+        while ((m = tag.exec(markup))) {
+            depth += m[1] ? -1 : 1;
+            if (depth === 0) return m.index;
+        }
+        return markup.length;
+    };
+
+    return starts.map((start) => {
+        const end = extentOf(start);
+        const head = markup.slice(start, markup.indexOf('>', start));
+        const full = markup.slice(start, end);
+        // This group's own markup: everything inside it that is not inside a sub-section.
+        const subs = starts.filter(s => s > start && s < end)
+            .filter(s => !starts.some(o => o > start && o < s && extentOf(o) > s));   // direct children only
+        let own = '';
+        let cursor = start;
+        for (const s of subs) { own += markup.slice(cursor, s); cursor = extentOf(s); }
+        own += markup.slice(cursor, end);
+
+        // The HEADING is read from the group's own markup — a sub-section's label must
+        // not be mistaken for its parent's. The KEYS are read from the whole extent,
+        // sub-sections included, because that is what resolveTap sees: it collects
+        // every control under the .setting-group it landed in. So a section holding
+        // sub-sections has many keys, does not resolve, and needs its own data-help.
+        const headingM = /<label(?![^>]*class="(?:checkbox|radio)-label")[^>]*>([^<]*)</.exec(own);
+        const keys = new Set();
+        for (const m of full.matchAll(/<(input|select|textarea|button)\b([^>]*)>/g)) {
+            const attrs = m[2];
+            if (/class="[^"]*slider-step/.test(attrs)) continue;   // means its slider
+            if (/type="radio"/.test(attrs)) {
+                const n = /\bname="([^"]+)"/.exec(attrs);
+                keys.add(n ? `radio:${n[1]}` : '?');
+            } else {
+                const id = /\bid="([^"]+)"/.exec(attrs);
+                keys.add(id ? `control:${id[1]}` : '?');
+            }
+        }
+        const dataHelp = /data-help="([^"]+)"/.exec(head);
+        return { name: headingM ? headingM[1].trim() : '(no heading)', hasHeading: !!headingM,
+                 hasSubSections: subs.length > 0,
+                 dataHelp: dataHelp ? dataHelp[1] : null, keys: [...keys] };
+    });
+}
+
+test('every setting group has a heading, so no control sits outside a section', () => {
+    // Ken, August 11 2026: "all controls should be included in a section. If no other
+    // section makes sense then create one just for that control." A group with no
+    // heading is not collapsible, so its controls would sit loose between the sections
+    // — and it would have nothing for the "?" to speak either.
+    const headless = settingGroups().filter(g => !g.hasHeading)
+        .map(g => g.keys.join(', ') || '(no controls)');
+    assert.deepEqual(headless, [],
+        `setting groups with no heading label: ${headless.join(' | ')}`);
+});
+
+test('every collapsible section heading resolves to a spoken phrase', () => {
+    const silent = settingGroups()
+        .filter(g => g.hasHeading && !g.dataHelp)
+        .filter(g => !(g.keys.length === 1 && lookup(g.keys[0])))
+        .map(g => `${g.name} (controls: ${g.keys.join(', ') || 'none'})`);
+    assert.deepEqual(silent, [],
+        `section headings that would say nothing — give the group a data-help entry: ${silent.join(' | ')}`);
 });
 
 test('no orphan entries — every phrase points at something that exists', () => {

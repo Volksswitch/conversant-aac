@@ -88,6 +88,7 @@ const IGNORED = '.slider-step';
  *   3. a <label for=...>         → that control  (Ken: tapping a label is tapping its control)
  *   4. an actual control         → control:<id>  /  radio:<name>
  *   5. a group heading with no control of its own → section:<data-help>
+ *   6. …failing that, the group's controls if they all mean the same thing
  */
 export function resolveTap(target, doc = document) {
     if (!target || !target.closest) return { isHelpButton: false, key: null, groupEl: null, isRange: false };
@@ -119,6 +120,27 @@ export function resolveTap(target, doc = document) {
     // fall back to the group's entry so tapping "Settings profiles" explains the group
     // rather than whichever control happens to sit first inside it.
     if (!key && groupEl && groupEl.dataset.help) key = `section:${groupEl.dataset.help}`;
+    // Still nothing, which is now the common case: every heading is a collapsible
+    // section's <summary>, and a section holding one idea — a slider with its steppers,
+    // a select, one radio group — has no data-help of its own because the control's own
+    // phrase already says what the section is for. Use it when the group speaks with one
+    // voice; where the controls disagree, the group needs a data-help entry and gets
+    // nothing until it has one (rather than an arbitrary one of them).
+    if (!key && groupEl) {
+        const keys = new Set();
+        let unnameable = false;
+        for (const c of groupEl.querySelectorAll('input, select, textarea, button')) {
+            if (c.matches(IGNORED)) continue;                    // a stepper means its slider
+            if (c.type === 'radio') keys.add(`radio:${c.name}`);
+            else if (c.id) keys.add(`control:${c.id}`);
+            // A control with no id cannot be looked up, so the group cannot borrow its
+            // phrase — it needs a data-help of its own. Must NOT become a key: an
+            // editor builds its fields without ids, so a whole group of them once
+            // agreed on the same meaningless key and "resolved" to nothing.
+            else unnameable = true;
+        }
+        if (!unnameable && keys.size === 1) key = [...keys][0];
+    }
 
     return {
         isHelpButton: false,

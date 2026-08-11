@@ -719,17 +719,16 @@ function buildPartnerProfileSection(existing) {
     // text with no affordance of any kind, and everything inside it — including the
     // per-person conversation starters — was invisible to anyone who did not already
     // know it was there (Ken went looking for them and could not find them, August 9
-    // 2026). So the marker is now an element we draw ourselves rather than the one
-    // the UA drops, and the second line names what is inside, because "How I talk
-    // with them" does not read as the place starters and goodbyes would live.
+    // 2026). So the marker is here an element we draw ourselves rather than the one
+    // the UA drops.
+    //
+    // NO SECOND LINE explaining what is inside (Ken, August 11 2026): that is
+    // per-control help text on screen, which Rule 14 sends to the manuals, and the
+    // spoken "?" is what says what a section is for.
     const node = el('details', { class: 'wv-partner-profile' }, [
         el('summary', { class: 'wv-disclosure' }, [
             el('span', { class: 'wv-disclosure-mark', 'aria-hidden': 'true', text: '›' }),
-            el('span', { class: 'wv-disclosure-lines' }, [
-                el('span', { class: 'wv-disclosure-title', text: 'How I talk with them' }),
-                el('span', { class: 'wv-disclosure-sub',
-                    text: 'Tap to open — how you sound with them, and their own starters and goodbyes' }),
-            ]),
+            el('span', { class: 'wv-disclosure-title', text: 'How I talk with them' }),
         ]),
         el('div', { class: 'wv-dim-grid' }, dimRows),
         goalSelect, goalOtherWrap, noteIn,

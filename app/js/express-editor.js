@@ -15,10 +15,24 @@
  * Place items are picked from My Places (places.js) the same way, so a place button
  * always names a place the AI has recorded facts about.
  *
- * Inserting in place (Ken): each row has a "＋" button that opens an inline
- * Phrase / Partner / Feeling / Place picker RIGHT THERE; choosing a type inserts the new
- * item above that row and focuses it — no scrolling up to a toolbar and back. The
- * toolbar's add buttons append to the end (and seed an empty list).
+ * ONE BUTTON AT A TIME — the panel itself is the list (Ken, August 11 2026). The tab
+ * used to show every item as a row: thirty-odd rows of input + respelling + seven
+ * colour swatches + six tools, which "is too cumbersome and it doesn't behave well if
+ * the tab width is too small" — on a narrow side dock the swatches and the tools
+ * overlapped outright.
+ *
+ * The fix uses what is already on screen. The Express Panel is live beside Settings on
+ * this tab, and tapping a button there already selects it, so the tab does not need to
+ * re-list what the panel is showing. It shows an invitation until a button is tapped,
+ * then that one button's properties and the actions that apply to it: add before, add
+ * after, move up, move down, delete, done.
+ *
+ * ⚠ WHAT THIS GIVES UP, which Ken named when he asked for it: there is no way to keep
+ * buttons "in waiting" — configured but not on the panel — because an item with no cell
+ * has nothing to tap. Items past the last cell are therefore unreachable, so adding to
+ * a full panel warns that the last button will be deleted (see insertAt) rather than
+ * quietly pushing it out of reach, and the invitation offers to clear any that an older
+ * layout left behind.
  *
  * Editing rules: structural changes (add / delete / reorder / pick a person)
  * re-render the editor; plain text edits commit WITHOUT re-rendering so the field
@@ -31,16 +45,18 @@ import * as relationships from './relationships.js';
 import * as places from './places.js';
 import * as keyboard from './keyboard.js';
 import * as tts from './tts.js';
-import { CATEGORIES, INFLUENCER_COLORS, FEELING_PRESETS, makeId, isEmptyItem } from './express-items.js';
+import { CATEGORIES, INFLUENCER_COLORS, FEELING_PRESETS, makeId, isEmptyItem, newEmptyItem } from './express-items.js';
 import { confirmDanger } from './confirm-dialog.js';
 
 let container = null;
 let onChangeCb = null;
 let current = [];
-// The id of the row whose inline insert picker is open (null = none). And the id
-// of a just-added row to focus + scroll into view after the next render, so the
-// user can type immediately without hunting for the new row.
-let pickerForId = null;
+// How many cells the chosen layout offers. The list is mapped onto them one-for-one,
+// so this is the hard ceiling on how many buttons can exist at all. Supplied by
+// app.js because it depends on the dock and layout the user has chosen.
+let cellCountFn = () => 0;
+// A just-selected item to focus after the next render, so the user can type without
+// hunting for the field.
 let pendingFocusId = null;
 // The cell the user last tapped in the panel. It STAYS marked — in the editor row
 // and on the panel button itself — until they tap a different cell, switch tabs or
@@ -54,6 +70,7 @@ export function init(el, opts = {}) {
     container = el;
     onChangeCb = opts.onChange || null;
     onPickCb = opts.onPick || null;
+    if (typeof opts.cellCount === 'function') cellCountFn = opts.cellCount;
 }
 
 /** The cell currently being edited, for the panel to mark. */
@@ -88,30 +105,98 @@ function newItem(type) {
     return { id: makeId(), type: 'phrase', text: '', cat: 'back' };
 }
 
-// Insert a new item of `type` at `at` (or append when `at` is null/-1), then
-// focus it after the re-render.
-function addAt(type, at) {
-    const item = newItem(type);
-    if (Number.isInteger(at) && at >= 0) current.splice(at, 0, item);
-    else current.push(item);
-    pickerForId = null;
-    pendingFocusId = item.id;
-    commit(true);
+function labelOf(item) {
+    if (!item) return '';
+    return (item.text || item.nickname || item.name || '').trim();
 }
 
-function buildToolbar() {
-    const bar = document.createElement('div');
-    bar.className = 'ee-toolbar';
+// Is every cell taken by a real button?
+//
+// Inserting pushes every later button along by one, and the list maps onto the
+// layout's cells one-for-one, so when the panel is full the button on the end is pushed
+// OFF it — and off the end is not "in reserve", it is invisible and unreachable, with
+// no cell to tap and no row to find it in now that the panel is the list.
+//
+// Two shapes have somewhere for the shift to go, and the panel draws them identically
+// as an empty outline: the list is shorter than the layout, so the cells past its end
+// are undefined; or the list fills the layout but its last item is an undefined slot.
+function panelIsFull() {
+    const cap = cellCountFn() || 0;
+    if (!cap) return false;                      // layout unknown — do not stand in the way
+    if (current.length < cap) return false;
+    return !isEmptyItem(current[current.length - 1]);
+}
 
-    const addItem = (label, type) => {
-        const b = mkBtn(label, 'ee-add');
-        b.addEventListener('click', () => addAt(type, null)); // append at end + focus
-        bar.appendChild(b);
-    };
-    addItem('+ Phrase', 'phrase');
-    addItem('+ Partner', 'partner');
-    addItem('+ Feeling', 'feeling');
-    addItem('+ Place', 'place');
+// Insert an UNDEFINED slot at `at` and select it, so the next thing the user sees is
+// the one question that matters — what goes here. Same shape as tapping a blank cell.
+//
+// ⚠ ON A FULL PANEL THIS DELETES THE LAST BUTTON, so it says so first and names it
+// (Ken, August 11 2026, changing the earlier rule that greyed Add out instead): the
+// buttons stay live and the cost is stated at the moment it is about to be paid, rather
+// than the user being left to work out why two controls are dead.
+async function insertAt(at) {
+    if (panelIsFull()) {
+        const last = current[current.length - 1];
+        const name = labelOf(last);
+        const ok = await confirmDanger({
+            title: 'Make room for a new button?',
+            body: `The panel is full, so everything after the new button shifts along one place and the last one drops off the end. ${name ? `"${name}" will be deleted.` : 'The last button will be deleted.'}`,
+            confirmLabel: 'Add it',
+            cancelLabel: 'Cancel',
+        });
+        if (!ok) return;
+        // Removed BEFORE the insert, not trimmed after: "add after the last button"
+        // puts the new slot at the very end, and trimming afterwards would throw away
+        // the new slot instead of the button we just warned about.
+        current.pop();
+        if (at > current.length) at = current.length;
+    }
+    const item = newEmptyItem();
+    current.splice(at, 0, item);
+    // A trailing undefined slot absorbs the shift, so nothing is pushed off the end.
+    const cap = cellCountFn() || 0;
+    while (cap && current.length > cap && isEmptyItem(current[current.length - 1])) current.pop();
+    pickedId = item.id;
+    pendingFocusId = item.id;
+    commit(true);
+    if (onPickCb) onPickCb();
+}
+
+// The invitation, shown until a button is tapped. Ken's wording: "tap a button to edit
+// or move that button".
+function buildPrompt() {
+    const wrap = document.createElement('div');
+    wrap.className = 'ee-prompt';
+
+    const p = document.createElement('p');
+    p.className = 'setting-hint';
+    p.textContent = 'Tap a button in the Express Panel to edit or move it. Tap an empty one to add a button there.';
+    wrap.appendChild(p);
+
+    // Buttons an older layout left beyond the last cell. They cannot be tapped, so
+    // this is the only place they can be dealt with at all.
+    const cap = cellCountFn() || 0;
+    const extra = cap ? current.length - cap : 0;
+    if (extra > 0) {
+        const note = document.createElement('p');
+        note.className = 'setting-hint';
+        note.textContent = `${extra} button${extra === 1 ? '' : 's'} won't fit on the panel with this layout, so ${extra === 1 ? 'it is' : 'they are'} not shown and cannot be tapped.`;
+        wrap.appendChild(note);
+
+        const trim = mkBtn(`Remove the ${extra} that won't fit`, 'ee-reset');
+        trim.addEventListener('click', async () => {
+            const ok = await confirmDanger({
+                title: 'Remove the buttons that do not fit?',
+                body: `This deletes the ${extra} button${extra === 1 ? '' : 's'} past the end of the panel. There is no other way to reach ${extra === 1 ? 'it' : 'them'}, but ${extra === 1 ? 'it is' : 'they are'} gone for good.`,
+                confirmLabel: 'Remove them',
+                cancelLabel: 'Leave them',
+            });
+            if (!ok) return;
+            current.length = cap;
+            commit(true);
+        });
+        wrap.appendChild(trim);
+    }
 
     const reset = mkBtn('Reset to default', 'ee-reset');
     reset.addEventListener('click', async () => {
@@ -122,13 +207,14 @@ function buildToolbar() {
             cancelLabel: 'Keep mine',
         });
         if (!ok) return;
-        pickerForId = null;
         expressPanel.resetItems();
+        pickedId = null;
         if (onChangeCb) onChangeCb();
+        if (onPickCb) onPickCb();
         render();
     });
-    bar.appendChild(reset);
-    return bar;
+    wrap.appendChild(reset);
+    return wrap;
 }
 
 function textInput(value, placeholder, oninput, cls) {
@@ -182,56 +268,38 @@ function colorControl(item) {
     return wrap;
 }
 
-// Inline insert picker shown directly above a row when its ＋ is tapped: choose a
-// type and the new item is inserted right there (index `at`), then focused.
-function buildInsertBar(at) {
-    const bar = document.createElement('div');
-    bar.className = 'ee-insertbar';
-    bar.appendChild(Object.assign(document.createElement('span'), { className: 'ee-insertbar-label', textContent: 'Insert here:' }));
-    [['Phrase', 'phrase'], ['Partner', 'partner'], ['Feeling', 'feeling'], ['Place', 'place']].forEach(([label, type]) => {
-        const b = mkBtn(label, 'ee-add');
-        b.addEventListener('click', () => addAt(type, at));
-        bar.appendChild(b);
-    });
-    const cancel = mkBtn('✕', 'ee-insertbar-cancel');
-    cancel.title = 'Cancel';
-    cancel.addEventListener('click', () => { pickerForId = null; render(); });
-    bar.appendChild(cancel);
-    return bar;
-}
-
 // Turn an undefined slot into a real item of `type`, IN PLACE — the position is
 // what the user chose by tapping that cell, so it must not move. A fresh id (rather
 // than the placeholder's) so provenance stamps it as the user's addition.
 function defineAt(i, type) {
     const item = newItem(type);
     current[i] = item;
-    pickerForId = null;
+    pickedId = item.id;
     pendingFocusId = item.id;
     commit(true);
+    if (onPickCb) onPickCb();
 }
 
+// The one selected button: what it is, what it says, and what can be done to it.
 function buildRow(item, i) {
     const row = document.createElement('div');
-    row.className = `ee-row ee-${item.type}`;
+    row.className = `ee-row ee-card ee-${item.type}`;
     row.dataset.id = item.id;
 
-    // Insert button: open the inline type picker above this row (tap again closes).
-    const ins = mkBtn('＋', 'ee-ins');
-    if (item.id === pickerForId) ins.classList.add('ee-ins-on');
-    ins.title = 'Insert a new item above this row';
-    ins.setAttribute('aria-label', 'Insert a new item above this row');
-    ins.addEventListener('click', () => {
-        pickerForId = (pickerForId === item.id) ? null : item.id;
-        render();
-    });
-    row.appendChild(ins);
-
-    // Type badge.
+    // Which button this is. A live fact, not per-control help (Rule 14): on a grid of
+    // thirty-odd near-identical cells, "which one am I editing?" is the question, and
+    // the mark on the panel button is only half the answer.
+    const head = document.createElement('div');
+    head.className = 'ee-card-head';
     const badge = document.createElement('span');
     badge.className = `ee-badge ee-badge-${item.type}`;
-    badge.textContent = item.type;
-    row.appendChild(badge);
+    badge.textContent = isEmptyItem(item) ? 'empty' : item.type;
+    head.appendChild(badge);
+    const pos = document.createElement('span');
+    pos.className = 'ee-card-pos';
+    pos.textContent = `Button ${i + 1}`;
+    head.appendChild(pos);
+    row.appendChild(head);
 
     // Type-specific fields.
     const fields = document.createElement('div');
@@ -336,7 +404,14 @@ function buildRow(item, i) {
     }
     row.appendChild(fields);
 
-    // Reorder + delete.
+    // The actions that apply to this button (Ken's list): add before, add after, move
+    // up, move down, delete, done — plus Hear, which a phrase has always had.
+    //
+    // TEXT LABELS, NOT ICONS, and that is deliberate: Rule 12's icon-only rule governs
+    // the keyguard-backed conversation surface, and its scope note keeps text buttons
+    // on the supporter-assisted Settings overlays for readability. Text also WRAPS,
+    // which the old fixed row of icon tools did not — that is what broke on a narrow
+    // side dock.
     const tools = document.createElement('div');
     tools.className = 'ee-tools';
     // Hear the phrase, in the user's own voice, before committing to it. The reason
@@ -360,66 +435,86 @@ function buildRow(item, i) {
         const text = (item.speak || item.text || '').trim();
         if (text) tts.speak(text);
     });
-    // Save this item and take the on-screen keyboard down so the panel/list is
-    // visible again (Ken, July 2026). Edits already auto-commit on input; this is
-    // the explicit "I'm done with this item" that dismisses the keyboard — the
-    // Hide button having been removed, this is how an on-screen-keyboard user gets
-    // the keyboard out of the way. No-op on the keyboard in physical mode.
-    const save = mkBtn('Save', 'ee-save');
-    save.title = 'Save this item and hide the on-screen keyboard';
-    save.addEventListener('click', () => { commit(false); keyboard.hideKeyboard(); });
-    save.hidden = isEmptyItem(item);   // nothing typed, nothing to save
-    const up = mkBtn('↑'); up.disabled = i === 0;
-    up.addEventListener('click', () => { [current[i - 1], current[i]] = [current[i], current[i - 1]]; commit(true); });
-    const down = mkBtn('↓'); down.disabled = i === current.length - 1;
-    down.addEventListener('click', () => { [current[i + 1], current[i]] = [current[i], current[i + 1]]; commit(true); });
-    const del = mkBtn('✕', 'ee-del');
-    del.addEventListener('click', () => {
-        if (current[i].id === pickerForId) pickerForId = null;
-        current.splice(i, 1);
-        commit(true);
-    });
-    tools.append(hear, save, up, down, del);
-    row.appendChild(tools);
+    // Always live. On a full panel they warn and name the button that will be deleted
+    // (see insertAt) rather than greying out — the user finds out what it costs at the
+    // moment they ask for it, and can still go ahead.
+    const addBefore = mkBtn('Add before', 'ee-add');
+    addBefore.addEventListener('click', () => insertAt(i));
+    const addAfter = mkBtn('Add after', 'ee-add');
+    addAfter.addEventListener('click', () => insertAt(i + 1));
 
+    const up = mkBtn('Move up');
+    up.disabled = i === 0;
+    up.addEventListener('click', () => { [current[i - 1], current[i]] = [current[i], current[i - 1]]; commit(true); });
+    const down = mkBtn('Move down');
+    down.disabled = i === current.length - 1;
+    down.addEventListener('click', () => { [current[i + 1], current[i]] = [current[i], current[i + 1]]; commit(true); });
+
+    // Confirmed, unlike the old ✕: deleting does not merely lose one phrase, it pulls
+    // every button after it up a cell, so the positions the user has learned all move.
+    //
+    // OFF for an undefined slot (Ken, August 11 2026): "an empty button should grey out
+    // the Delete button since it's already deleted". Nothing to lose there, so the
+    // button would only offer to shuffle the panel for no gain.
+    //   The way to be rid of an empty slot is therefore Move down until it reaches the
+    // end, where it is indistinguishable from the cells past the end of the list — the
+    // panel draws both as an empty outline.
+    const del = mkBtn('Delete', 'ee-del');
+    del.disabled = isEmptyItem(item);
+    del.addEventListener('click', async () => {
+        const label = (item.text || item.nickname || item.name || '').trim();
+        const ok = await confirmDanger({
+            title: 'Delete this button?',
+            body: `${label ? `"${label}" is removed` : 'This button is removed'} and every button after it moves up one place.`,
+            confirmLabel: 'Delete it',
+            cancelLabel: 'Keep it',
+        });
+        if (!ok) return;
+        const at = current.findIndex((it) => it.id === item.id);   // may have moved while the card was open
+        if (at < 0) return;
+        current.splice(at, 1);
+        pickedId = null;
+        commit(true);
+        if (onPickCb) onPickCb();
+    });
+
+    // Finished with this button: back to the invitation, and the on-screen keyboard
+    // comes down so the panel is visible again. Edits have already been saved on every
+    // keystroke, so this is "I'm done", not "save" — which is why the old Save button
+    // is gone rather than sitting beside it.
+    const done = mkBtn('Done', 'ee-done');
+    done.addEventListener('click', () => {
+        commit(false);
+        keyboard.hideKeyboard();
+        clearPicked();
+        render();
+    });
+
+    tools.append(hear, addBefore, addAfter, up, down, del, done);
+    row.appendChild(tools);
     return row;
 }
 
 export function render() {
     if (!container) return;
     current = expressPanel.getItems();
-    if (pickerForId && !current.some((it) => it.id === pickerForId)) pickerForId = null;
+    // A button deleted from under the selection takes the mark with it, so the panel
+    // does not keep highlighting a cell whose item no longer exists.
+    if (pickedId && !current.some((it) => it.id === pickedId)) pickedId = null;
     container.innerHTML = '';
-    container.appendChild(buildToolbar());
 
-
-    // datalist of suggested feelings (shared by all feeling rows).
+    // datalist of suggested feelings, used by a feeling card.
     const dl = document.createElement('datalist');
     dl.id = 'ee-feeling-presets';
     FEELING_PRESETS.forEach((f) => { const o = document.createElement('option'); o.value = f; dl.appendChild(o); });
     container.appendChild(dl);
 
-    const list = document.createElement('div');
-    list.className = 'ee-list';
-    if (!current.length) {
-        const p = document.createElement('p');
-        p.className = 'setting-hint';
-        p.textContent = 'No items yet — add a phrase, partner, feeling, or place above.';
-        list.appendChild(p);
-    } else {
-        current.forEach((item, i) => {
-            if (item.id === pickerForId) list.appendChild(buildInsertBar(i)); // picker above the row
-            list.appendChild(buildRow(item, i));
-        });
-    }
-    container.appendChild(list);
+    const i = pickedId ? current.findIndex((it) => it.id === pickedId) : -1;
+    container.appendChild(i >= 0 ? buildRow(current[i], i) : buildPrompt());
 
-    // A removed row takes the mark with it, so the panel does not keep highlighting
-    // a cell whose item no longer exists.
-    if (pickedId && !current.some((it) => it.id === pickedId)) pickedId = null;
     markPickedRow();
 
-    // Focus + reveal a just-added row so the user can type in place.
+    // Focus + reveal a just-selected card so the user can type in place.
     if (pendingFocusId) {
         const id = pendingFocusId;
         pendingFocusId = null;
@@ -441,22 +536,17 @@ function revealRow(id) {
 }
 
 /**
- * Bring the editor row for `id` into view and focus it — how a tap on a panel cell
- * lands the user on that cell's row. Renders first when the editor has not been
- * built yet (it is built lazily on the tab switch), and marks the row so the user
- * can see which of thirty-odd rows the tap chose; a scroll alone is easy to miss.
+ * Show `id`'s card — how a tap on a panel cell lands the user on that button. The
+ * selection IS what the tab shows now, so this always re-renders; the panel is told
+ * too, so the tapped button stays marked and the user can see which of thirty-odd
+ * cells their tap chose.
  */
 export function focusItem(id) {
     if (!container || !id) return;
     pickedId = id;
-    if (!container.querySelector(`.ee-row[data-id="${CSS.escape(String(id))}"]`)) render();
-    const row = revealRow(id);
-    // Tell the panel first either way: a row that has scrolled out of the editor's
-    // list is still a cell the user can see, and the mark on the BUTTON is the half
-    // that answers "which one am I editing?".
+    pendingFocusId = id;
+    render();
     if (onPickCb) onPickCb();
-    if (!row) return;
-    markPickedRow();
 }
 
 // Re-applied after every render, not only on the tap: the editor rebuilds its whole
