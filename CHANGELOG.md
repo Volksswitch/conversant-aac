@@ -26,13 +26,15 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.7.2
+
 - **Settings is one column now, and each heading opens and closes.** The old two- and
   three-column tabs shuffled the controls around as things resized, which made them
   hard to learn. Every tab is now a single list of headings — tap the heading, or its
-  arrow, to open that group, and tap again to close it. The top group on each tab
-  arrives closed, so a tab fits on the screen without scrolling and you can see
-  everything on it at once. Opening one leaves the others as they are, and the app
-  remembers what you had open until you close the app altogether.
+  arrow, to open that group, and tap again to close it. Every group arrives closed, so
+  a tab fits on the screen without scrolling and you can see everything on it at once.
+  Opening one leaves the others as they are, and the app remembers what you had open
+  until you close the app altogether.
 - What is inside a section is now indented under its heading, so you can see at a
   glance which settings the heading covers.
 - The paragraph at the top of a Settings tab that says what the tab is for is now
