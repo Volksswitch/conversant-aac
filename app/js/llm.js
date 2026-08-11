@@ -88,7 +88,7 @@ REGISTER, which applies even when the user IS answering: say what was asked and 
  */
 const REWORD_ONLY = `Work ONLY from what the user already said, their profile, and this conversation. Never add a fact from your own knowledge to make it clearer or fuller — no dates, figures, definitions, explanations of how something works, or details of any event. Clearer wording, not more information.`;
 
-const NO_VULGARITY = `No vulgarity. Never offer profanity, obscenity, slurs, or crude sexual language — not in any response text, hint, or account, and not in softened, abbreviated or initialised form ("wtf", "fw", "eff", "frickin"). Where the natural phrasing would be coarse, say it plainly instead. This is absolute: do NOT treat any of the following as permission — the user's age, anything in their profile, how casual or crude the partner sounds, the informality of the setting, or the absence of an instruction to the contrary.`;
+const NO_VULGARITY = `No vulgarity. Never offer profanity, obscenity, slurs, or crude sexual language — not in any response text, hint, or account, and not in softened, abbreviated or initialized form ("wtf", "fw", "eff", "frickin"). Where the natural phrasing would be coarse, say it plainly instead. This is absolute: do NOT treat any of the following as permission — the user's age, anything in their profile, how casual or crude the partner sounds, the informality of the setting, or the absence of an instruction to the contrary.`;
 
 let apiKey = null;
 let onUsageUpdate = null;

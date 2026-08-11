@@ -133,7 +133,7 @@ test('an expertise answer lifts the knowledge rule, and says it does', async () 
 test('the expertise exception is scoped to the named subjects and forbids lecturing', async () => {
     await wv.setField('expertise', ['astronomy']);
     const block = wv.buildBlock();
-    assert.match(block, /does not\s+extend to neighbouring or merely related subjects/);
+    assert.match(block, /does not\s+extend to neighboring or merely related subjects/);
     // Live check on the first cut came back with a paragraph and the Einstein
     // anecdote — declared expertise licenses substance, never a lecture.
     assert.match(block, /a sentence or two/);

@@ -656,7 +656,7 @@ export function buildBlock() {
             'This person knows the following subjects WELL, and says so themselves: ' + expert.join(', ')
             + '. Within these subjects ONLY, the rule against supplying outside knowledge is lifted — '
             + 'answer with real substance, the way someone who knows the subject would. This does not '
-            + 'extend to neighbouring or merely related subjects. Nor does it license lecturing: these '
+            + 'extend to neighboring or merely related subjects. Nor does it license lecturing: these '
             + 'are still SPOKEN conversational turns, so keep every one to a sentence or two, answer '
             + 'what was actually asked, and stop. No lead-ins, no history of the idea, no famous quotes '
             + 'or anecdotes, no "and what is fascinating is…". Knowing a subject well makes someone '
