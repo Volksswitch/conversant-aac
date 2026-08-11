@@ -1,3 +1,4 @@
+const { docPath } = require('./doc-paths');   // resolves figures + output, whatever the CWD
 const fs = require('fs');
 const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
         Header, Footer, AlignmentType, LevelFormat,
@@ -374,6 +375,6 @@ const doc = new Document({
 });
 
 Packer.toBuffer(doc).then(buf => {
-    fs.writeFileSync('Response-Generation-Latency-Experiment.docx', buf);
+    fs.writeFileSync(docPath('Response-Generation-Latency-Experiment.docx'), buf);
     console.log('Wrote Response-Generation-Latency-Experiment.docx');
 });

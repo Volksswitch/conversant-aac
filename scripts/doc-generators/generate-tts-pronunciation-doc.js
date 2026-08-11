@@ -1,3 +1,4 @@
+const { docPath } = require('./doc-paths');   // resolves figures + output, whatever the CWD
 const fs = require('fs');
 const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
         Header, Footer, AlignmentType, LevelFormat,
@@ -266,7 +267,7 @@ const doc = new Document({
 });
 
 Packer.toBuffer(doc).then(buffer => {
-    const out = 'Shaping-Speech-Through-Text.docx';
+    const out = docPath('Shaping-Speech-Through-Text.docx');
     fs.writeFileSync(out, buffer);
     console.log('Wrote ' + out + ' (' + buffer.length + ' bytes)');
 });

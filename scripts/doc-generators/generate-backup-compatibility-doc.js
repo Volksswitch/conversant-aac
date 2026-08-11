@@ -14,6 +14,7 @@
  * Regenerate:  node generate-backup-compatibility-doc.js
  */
 
+const { docPath } = require('./doc-paths');   // resolves figures + output, whatever the CWD
 const fs = require('fs');
 const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
         Header, Footer, AlignmentType, LevelFormat,
@@ -195,6 +196,6 @@ para("When an import finishes, the app reloads itself and your restored setup is
 });
 
 Packer.toBuffer(doc).then(buf => {
-    fs.writeFileSync('Conversant AAC Backup Compatibility.docx', buf);
+    fs.writeFileSync(docPath('Conversant AAC Backup Compatibility.docx'), buf);
     console.log('Wrote Conversant AAC Backup Compatibility.docx (' + buf.length + ' bytes)');
 });

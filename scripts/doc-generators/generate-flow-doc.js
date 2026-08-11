@@ -1,5 +1,6 @@
 // Standalone memo describing the revised partner-speech capture flow.
 // Styled to match the Architecture Overview (Arial, blue headings, centered footer).
+const { docPath } = require('./doc-paths');   // resolves figures + output, whatever the CWD
 const fs = require('fs');
 const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
         Header, Footer, AlignmentType, LevelFormat,
@@ -161,6 +162,6 @@ const doc = new Document({
 });
 
 Packer.toBuffer(doc).then(buffer => {
-    fs.writeFileSync("Continuous-Partner-Capture.docx", buffer);
+    fs.writeFileSync(docPath("Continuous-Partner-Capture.docx"), buffer);
     console.log("Continuous-Partner-Capture.docx generated.");
 });

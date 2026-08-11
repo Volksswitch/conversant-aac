@@ -3,6 +3,7 @@
 // experts (must show the engine takes the core CA concepts seriously).
 // Styled to match the other design docs (Arial, blue headings, centered footer
 // with "Page m of n"). American English spelling throughout.
+const { docPath } = require('./doc-paths');   // resolves figures + output, whatever the CWD
 const fs = require('fs');
 const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
         Header, Footer, AlignmentType, LevelFormat, ImageRun,
@@ -414,6 +415,6 @@ const doc = new Document({
 });
 
 Packer.toBuffer(doc).then(buffer => {
-    fs.writeFileSync("Conversation-Engine-Overview.docx", buffer);
+    fs.writeFileSync(docPath("Conversation-Engine-Overview.docx"), buffer);
     console.log("Conversation-Engine-Overview.docx generated.");
 });

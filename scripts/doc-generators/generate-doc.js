@@ -1,3 +1,4 @@
+const { docPath } = require('./doc-paths');   // resolves figures + output, whatever the CWD
 const fs = require('fs');
 const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
         Header, Footer, AlignmentType, LevelFormat, ExternalHyperlink,
@@ -928,6 +929,6 @@ const doc = new Document({
 });
 
 Packer.toBuffer(doc).then(buffer => {
-    fs.writeFileSync("Conversant AAC Architecture Overview.docx", buffer);
+    fs.writeFileSync(docPath("Conversant AAC Architecture Overview.docx"), buffer);
     console.log("Document generated successfully with embedded diagrams.");
 });

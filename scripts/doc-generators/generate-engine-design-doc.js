@@ -8,6 +8,7 @@
 // (empty in the old file) are filled with the actual system-prompt obligations,
 // and the standard footer (absent before) is added. Figures engine-fig1..6.png
 // are produced by capture-engine-diagrams.js from Engine-Diagrams.html.
+const { docPath } = require('./doc-paths');   // resolves figures + output, whatever the CWD
 const fs = require('fs');
 const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
         Header, Footer, AlignmentType, LevelFormat, ImageRun,
@@ -329,6 +330,6 @@ const doc = new Document({
 });
 
 Packer.toBuffer(doc).then(buffer => {
-    fs.writeFileSync("Conversation-Engine-Design.docx", buffer);
+    fs.writeFileSync(docPath("Conversation-Engine-Design.docx"), buffer);
     console.log("Conversation-Engine-Design.docx generated.");
 });

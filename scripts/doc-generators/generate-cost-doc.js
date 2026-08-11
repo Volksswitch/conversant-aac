@@ -1,4 +1,4 @@
-/* Generates "Conversant AAC Keeping Costs Down.docx".
+/* Generates docPath("Conversant AAC Keeping Costs Down.docx").
  *
  * WHO THIS IS FOR (Ken, August 8 2026): "your explanation of the changes you made
  * to the prompt design is mostly over my head. It would be useful to have a user
@@ -17,6 +17,7 @@
  *
  * Run: node generate-cost-doc.js
  */
+const { docPath } = require('./doc-paths');   // resolves figures + output, whatever the CWD
 const fs = require('fs');
 const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
         Header, Footer, AlignmentType, LevelFormat,

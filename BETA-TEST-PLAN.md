@@ -3,7 +3,7 @@
 **Draft, August 7 2026. Revised August 9 2026 after Ken's review.**
 
 ⚠ **This prose exists in three places and none of them generates the others:** this file,
-`generate-beta-test-plan-doc.js`, and `Conversant AAC Beta Test Plan.docx` — **which Ken edits by
+`scripts/doc-generators/generate-beta-test-plan-doc.js`, and `Conversant AAC Beta Test Plan.docx` — **which Ken edits by
 hand, so the .docx is routinely the newest of the three.** Every change must be made in all three
 in the same pass.
 

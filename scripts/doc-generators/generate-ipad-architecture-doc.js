@@ -1,6 +1,7 @@
-// Generates "Conversant AAC iPad Architecture.docx" — the build-ready specification
+// Generates docPath("Conversant AAC iPad Architecture.docx") — the build-ready specification
 // for running Conversant AAC on iPadOS (July 29 2026).
 // Run: node generate-ipad-architecture-doc.js
+const { docPath } = require('./doc-paths');   // resolves figures + output, whatever the CWD
 const fs = require('fs');
 const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
         Header, Footer, AlignmentType, LevelFormat,

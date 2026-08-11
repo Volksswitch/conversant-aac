@@ -1,7 +1,8 @@
-// Generates "Conversant AAC Strategic Assessment.docx" — Claude's independent review
+// Generates docPath("Conversant AAC Strategic Assessment.docx") — Claude's independent review
 // (July 18 2026) answering Ken's four questions: importance of the problem, effectiveness
 // of the approach, gaps/misprioritizations, and the alpha/beta test plan.
 // Run: node generate-strategic-assessment-doc.js
+const { docPath } = require('./doc-paths');   // resolves figures + output, whatever the CWD
 const fs = require('fs');
 const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
         Header, Footer, AlignmentType, LevelFormat,

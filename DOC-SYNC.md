@@ -6,8 +6,9 @@ unambiguous starting point.
 
 ## What's tracked
 
-Every document in the **project root** whose name begins with **"Conversant AAC"**
-(Ken, July 8 2026) — excluding `.bak` backups. These are the living product
+Every document in **`Documents/`** whose name begins with **"Conversant AAC"** (Ken,
+July 8 2026; the documents moved out of the project root on August 11 2026) —
+excluding `.bak` backups. These are the living product
 documents; the `Other/` folder (research, article drafts, archived versions) is not
 tracked.
 
@@ -76,7 +77,7 @@ must not have.
 docs", "sync docs Product Overview", "sync docs the two overviews and the user manual".
 
 **To bring a document current** ("sync docs: Product Overview"):
-0. **Back up first (MANDATORY):** copy the `.docx` to `Doc Backups/<name> <YYYY-MM-DD_HHMMSS>.docx`
+0. **Back up first (MANDATORY):** copy the `.docx` to `Documents/Doc Backups/<name> <YYYY-MM-DD_HHMMSS>.docx`
    before touching it. Never edit a product document without a fresh backup in the
    same pass.
 1. `git log <that doc's At-commit>..HEAD` — the exact commits since its last review.

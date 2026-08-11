@@ -3,6 +3,7 @@
 // Styled to match the other design docs (Arial, blue headings, centered footer
 // with "Page m of n"). American English spelling throughout.
 'use strict';
+const { docPath } = require('./doc-paths');   // resolves figures + output, whatever the CWD
 const fs = require('fs');
 const { Document, Packer, Paragraph, TextRun,
         Header, Footer, AlignmentType, LevelFormat,
@@ -337,6 +338,6 @@ const doc = new Document({
 });
 
 Packer.toBuffer(doc).then(buffer => {
-    fs.writeFileSync("Conversant AAC Product Overview.docx", buffer);
+    fs.writeFileSync(docPath("Conversant AAC Product Overview.docx"), buffer);
     console.log("Conversant AAC Product Overview.docx generated.");
 });

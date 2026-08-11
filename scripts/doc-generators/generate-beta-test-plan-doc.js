@@ -1,4 +1,4 @@
-/* Generates "Conversant AAC Beta Test Plan.docx".
+/* Generates docPath("Conversant AAC Beta Test Plan.docx").
  *
  * ⚠ THE FIRST LINE OF THIS COMMENT USED TO SAY "from BETA-TEST-PLAN.md" AND THAT IS
  * NOT WHAT HAPPENS. Nothing here reads that file — every paragraph below is a second,
@@ -29,6 +29,7 @@
  *
  * Run: node generate-beta-test-plan-doc.js
  */
+const { docPath } = require('./doc-paths');   // resolves figures + output, whatever the CWD
 const fs = require('fs');
 const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
         Header, Footer, AlignmentType, LevelFormat,
