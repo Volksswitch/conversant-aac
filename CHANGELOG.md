@@ -38,7 +38,7 @@ forgetting to tag one is only ever noise, never silence.
 - What is inside a section is now indented under its heading, so you can see at a
   glance which settings the heading covers.
 - The paragraph at the top of a Settings tab that says what the tab is for is now
-  bigger and darker. It was set in the same small grey type as the little status notes,
+  bigger and darker. It was set in the same small gray type as the little status notes,
   which made it hard to read.
 - The **Controls** tab is organized into sections too — "Hold on", "Ask them to
   repeat", the conversation starters, the wind-down statements, the goodbyes and "one
@@ -51,14 +51,14 @@ forgetting to tag one is only ever noise, never silence.
   under **Screen openings**.
 - **The Express Panel settings tab now works one button at a time.** It used to list
   every button as a row, which was a lot to wade through and which broke outright when
-  the tab was narrow — the colours and the little arrows ended up on top of each other.
+  the tab was narrow — the colors and the little arrows ended up on top of each other.
   Now the tab says "tap a button in the Express Panel to edit or move it", and when you
-  tap one you get just that button: what it says, how it sounds, its colour, and
+  tap one you get just that button: what it says, how it sounds, its color, and
   buttons to **add before**, **add after**, **move up**, **move down**, **delete** and
   **done**. Tapping an empty slot still adds a button there. Everything stacks and
   wraps, so it stays usable however narrow the tab gets.
 - Deleting a button now asks first, because it also pulls every button after it up one
-  place. **Delete** is greyed out on an empty button, which has nothing to delete — to
+  place. **Delete** is grayed out on an empty button, which has nothing to delete — to
   be rid of an empty one, use **Move down** until it reaches the end of the panel.
 - **Add before** and **add after** push everything after the new button along one
   place, so when the panel is full the button on the end drops off it — and there would
@@ -79,7 +79,7 @@ forgetting to tag one is only ever noise, never silence.
 ## Version 0.7.1
 
 - **Settings → Troubleshooting** now has a button that opens the known-issues page. It is a web page rather than a list built into the app, so it stays up to date between releases — worth a look before you report something, in case it is already on it.
-- New Express Panel button: **"This device listens and speaks for me."** It is there so you can tell someone what the device is doing with one tap, instead of having to explain it. It is amber — a new **Notice** colour for anything you say *about* the device rather than as part of the conversation — and you can reword it, recolour it or remove it like any other phrase. It appears on a panel you have not edited yet; if you have already made the panel your own, add it yourself if you want it.
+- New Express Panel button: **"This device listens and speaks for me."** It is there so you can tell someone what the device is doing with one tap, instead of having to explain it. It is amber — a new **Notice** color for anything you say *about* the device rather than as part of the conversation — and you can reword it, recolor it or remove it like any other phrase. It appears on a panel you have not edited yet; if you have already made the panel your own, add it yourself if you want it.
 - The version number is back on the opening screen, under Start. If you are ever asked which version you have, it is there without opening Settings — which matters most when the app is too stuck to open Settings at all.
 - Automatic weekly reports are now switched on. About once a week, when you open the app, it sends back a short summary of how it has been going — how many conversations, how long things took, and any errors it recorded. It never includes anything you or the other person said. Put the name you were given in Settings → Troubleshooting so we know whose report it is; the same place shows exactly what a report contains, lists everything already sent, and has the switch to turn it off.
 - Fixed: a problem report was leaving out whether the app can use this device's speech recognition — the first thing worth knowing when the app cannot hear anyone.
@@ -333,13 +333,13 @@ forgetting to tag one is only ever noise, never silence.
 ## Version 0.6.4
 
 - **Making a keyguard: the Title Bar Height box now looks after itself.** If the app is
-  using the whole screen there is no bar above it, so the box greys out and says so, and
+  using the whole screen there is no bar above it, so the box grays out and says so, and
   the openings file is generated with no offset. Before, a height left in the box from
   an earlier setup would have shifted every opening down the screen — something you
   would only discover after the plastic was cut.
 - **"Use the whole screen" now starts switched off.** It was on when it first shipped.
   Off is a better place to start: the title bar is the easiest way to close the app and
-  costs very little height, and if you want the extra room you can simply maximise the
+  costs very little height, and if you want the extra room you can simply maximize the
   window and keep the title bar. Use the setting when you want to expand the app right
   out, and turn it off again to come back. If you already chose one way or the other,
   your choice is kept.
@@ -358,7 +358,7 @@ forgetting to tag one is only ever noise, never silence.
   conversations in the same place cost one tap, not one each. Tap it again to turn
   it off, or tap a different place to switch.
 - **Buttons no longer stay highlighted after you tap them.** On a touchscreen a
-  button kept the dark "pointing at it" colouring after being tapped, because there
+  button kept the dark "pointing at it" coloring after being tapped, because there
   is no mouse to move away — most obvious on the "New 4" button, which turned dark
   and stayed that way. Every button on the conversation screen now only highlights
   on a device that really has a pointer.
@@ -404,9 +404,9 @@ forgetting to tag one is only ever noise, never silence.
   which sets the gap between the keyboard and the rest of the screen and leaves the
   keyboard where it is; the two can be used together without doubling up.
 
-- **The Settings title bar is easier to pick out.** It was the same dark colour as
+- **The Settings title bar is easier to pick out.** It was the same dark color as
   the bar at the top of the app window, so the two ran together and looked like one
-  band. The Settings bar is now light grey with dark lettering.
+  band. The Settings bar is now light gray with dark lettering.
 
 - **Buttons and dropdowns in Settings are much bigger, and now follow the size you
   chose for your Express Panel buttons.** Some were far too small to tap reliably —
@@ -538,7 +538,7 @@ forgetting to tag one is only ever noise, never silence.
 
 - **The practice partner's voice now has a Test button**, like your own voice above it. It
   works for **Auto** as well, and tells you which voice Auto picked — so you can hear whether
-  the other person will sound different enough from you before you start practising, rather
+  the other person will sound different enough from you before you start practicing, rather
   than finding out mid-conversation. Both Test buttons are now full width, matching the
   setting above them, so they are easier to hit.
 
@@ -627,7 +627,7 @@ forgetting to tag one is only ever noise, never silence.
   Settings → Controls, and it stays put when you press "New 4" for different goodbyes.
 - **Better at noticing when someone is wrapping up.** People rarely end a conversation by saying
   "goodbye" — they start with "Well…", "Anyway…", "I should let you go", "It was good seeing you",
-  or "Have a good one". The app now recognises these as the beginning of a goodbye, while still
+  or "Have a good one". The app now recognizes these as the beginning of a goodbye, while still
   leaving well alone when the same words simply introduce a new topic ("Anyway, what did you think
   of the film?").
 - **You can see what your partner is saying as they say it.** While they were speaking, their
@@ -1096,4 +1096,4 @@ forgetting to tag one is only ever noise, never silence.
 
 ### Improvements
 
-- **Placeholders no longer talk over a returning partner.** If the other person pauses and then keeps speaking, any "still thinking" placeholder that was about to play is now cancelled so it doesn't speak over them.
+- **Placeholders no longer talk over a returning partner.** If the other person pauses and then keeps speaking, any "still thinking" placeholder that was about to play is now canceled so it doesn't speak over them.

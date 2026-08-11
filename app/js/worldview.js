@@ -672,7 +672,7 @@ export function buildBlock() {
         // purpose, or "optimist" would inherit the never-raise rules that faith and
         // politics need and stop being usable at all.
         lines.push('',
-            `Their general outlook on things: ${outlook.join('; ')}. Let it colour how they react — `
+            `Their general outlook on things: ${outlook.join('; ')}. Let it color how they react — `
             + 'what they expect, how they read a situation — without ever stating it.');
     }
     if (conflict.length) {
