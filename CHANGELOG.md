@@ -26,6 +26,13 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Fixed: in Settings, a phrase button in the Express Panel now opens its edit card
+  on a single tap, even when you have chosen double tap. The double tap is there so
+  a stray touch cannot say something out loud, and nothing is spoken in Settings.
+  Your choice is unchanged on the conversation screen.
+- Fixed: "Add an API key to Settings" on the opening screen now takes you to the API
+  Key box with its section already open, instead of leaving you on a list of headings.
+
 ## Version 0.7.2
 
 - **Settings is one column now, and each heading opens and closes.** The old two- and

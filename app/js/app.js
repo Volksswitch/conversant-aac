@@ -2351,6 +2351,13 @@ function expressLayoutRows() {
 function conversationInProgress() {
     return practiceMode
         || isListening
+        // The user's statement is still being SPOKEN. Its turn reaches the history
+        // only after the speech finishes, so an opening Express phrase left a window —
+        // about as long as the utterance — where a conversation had visibly begun and
+        // every term below was still false. Tapping a blank cell in that window opened
+        // the editor over a conversation in progress. (Found in verification,
+        // August 15 2026.)
+        || speakingUserStatement
         || conversationHistory.length > 0
         || !!currentPartnerText
         || lastPalette.length > 0
@@ -2372,6 +2379,12 @@ function hostExpressPanel(inSettings) {
     // individual close sites would have meant finding all six of them, and missing
     // one would strand a highlight on a cell nobody is editing.
     if (!inSettings) expressEditor.clearPicked();
+    // Re-render even when there was no pick to clear: the cells' tap behaviour
+    // differs between the two hosts (a tap here edits, in the dock it speaks), and
+    // that is decided when the handler is bound. Without this the panel keeps the
+    // handlers it was last drawn with, so a double-tap user arriving on the Express
+    // tab still has to double-tap to select a phrase.
+    renderExpressPanel();
 }
 
 /**
@@ -2443,7 +2456,15 @@ function renderExpressPanel() {
         activePartnerId: activePartner ? activePartner.id : null,
         activeFeelingId: activeFeeling ? activeFeeling.id : null,
         activePlaceId: activePlace ? activePlace.id : null,
-        tapMode: storage.loadExpressTapMode(),
+        // The double-tap safeguard guards SPEAKING: it exists so a stray touch cannot
+        // say something aloud that cannot be taken back. In Settings a tap does not
+        // speak — it selects the button for editing — so the safeguard is protecting
+        // against nothing there while blocking the one thing the user came to do.
+        // Found in the field (an SLP on a MacBook, August 15 2026): phrase buttons
+        // appeared dead in Settings while feeling buttons worked, because the feeling
+        // / partner / place toggles have always been single-tap and only phrases honor
+        // this setting. The user's own choice is untouched on the conversation screen.
+        tapMode: expressPanelInSettings ? 'single' : storage.loadExpressTapMode(),
         doubleTapMs: storage.loadDoubleTapMs(),
         onSpeak: handleSpeakExpressItem,
         onTogglePartner: handleTogglePartner,
@@ -3126,6 +3147,42 @@ function activateSettingsTab(tab, focus) {
     // build their contents there. Idempotent, so a re-visited tab keeps whatever the
     // user had opened.
     makeGroupsCollapsible(panel);
+}
+
+/**
+ * Take the user to one specific control in Settings, with its section open.
+ *
+ * Every section starts CLOSED (Rule 18), so a jump that only switches tabs promises
+ * a control and delivers a list of headings. That is exactly what the pre-start
+ * "Add an API key" button did — it named the field and landed the user on the
+ * General tab with the API Key section shut. Any future jump into Settings carries
+ * the same obligation, which is why this is one function rather than a line at each
+ * call site.
+ *
+ * Opens EVERY section above the control, not just the one holding it: a sub-section
+ * opened inside a shut parent is no use.
+ *
+ * Deliberately does NOT focus the control — focusing a text field raises the
+ * on-screen keyboard over the panel the user was sent here to read, which is why
+ * openSettings parks focus on the header in the first place.
+ *
+ * @param {string} id  the control's element id
+ */
+function revealSetting(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    // The control may be on a tab that isn't showing. Switching tabs also BUILDS that
+    // tab's sections (they are made collapsible on first visit), so this has to come
+    // before anything that looks for a <details> around the control.
+    const panel = el.closest('.tab-panel');
+    if (panel && !panel.classList.contains('active')) {
+        const tab = document.querySelector(`#settingsTabs .settings-tab[data-tab="${panel.dataset.tab}"]`);
+        if (tab) activateSettingsTab(tab, false);
+    }
+
+    for (let d = el.closest('details'); d; d = d.parentElement?.closest('details')) d.open = true;
+    el.scrollIntoView({ block: 'center' });
 }
 
 // On the Buttons & Keyboard tab the user changes keyboard layout/position but
