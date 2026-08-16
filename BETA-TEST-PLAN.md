@@ -130,12 +130,15 @@ for the back of the device if that is easier than saying it each time.
 
 ### 5.3 Learn the buttons before you need them
 
-The row of buttons across the middle of the screen is the part testers most often forget. Spend
-one practice session pressing every one of them at least once, so that when you need **Ask them
-to repeat** in a real conversation, your hand already knows where it is.
+The row of buttons across the middle of the screen is the part testers most often forget. There
+is now a tour that walks you through them: **Settings → Practice → “A tour of the buttons”**. It
+names each one, tells you what it is for, and waits while you press it. Press the wrong one and
+it tells you what the right one looks like and where it sits. **Do it first** — it needs no API
+key, so it works before anything else is set up, and it takes a few minutes.
 
-Open **Settings → Practice** and work through a scenario. Nobody is listening; nothing you say
-is spoken to a real person. Practice as many times as you like.
+Then work through one of the **conversation scenarios** on the same tab, which do need the key.
+Nobody is listening; nothing you say is spoken to a real person. Practice as many times as you
+like.
 
 ## 6. Week by week
 
@@ -277,8 +280,8 @@ Everything below must ship before testers arrive, or the corresponding section n
 | 9 | Automatic reporting + its off switch | **Built**, proven end to end against the live endpoint |
 | 7, 11 | Version number on the opening screen | **Built Aug 9 2026** — both sections claimed it and it was not there |
 | 5.2 | Express Panel **Notice** button, "This device listens and speaks for me" | **Built Aug 9 2026** — new amber *Notice* phrase category. ⚠ It is a new **default**, and Express items have no new-defaults merge, so it appears for a tester setting up fresh and NOT in an existing panel (Ken's own). See B.2.6. |
-| 5.2 | Printed card | Not produced (SEC-7) |
-| 5.3, 6 | Controls-tour practice scenario | Not built — §5.3 currently asks testers to improvise it |
+| 5.2 | Printed card | **Made Aug 15 2026** — `Documents/Conversant AAC Partner Card.docx`, eight to a Letter sheet. Still to be printed and sent. |
+| 5.3, 6 | Controls-tour practice scenario | **Built Aug 15 2026** — Settings → Practice → “A tour of the buttons”, and it needs no API key, so it is the one thing a tester can do on day one before setup |
 | 10 | Known Issues doc refreshed to current version | Exists, last updated at 0.5.82. Where it should live is B.2.7. |
 
 ### B.2 Decisions still needed

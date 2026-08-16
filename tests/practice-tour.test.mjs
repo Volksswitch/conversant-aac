@@ -73,13 +73,27 @@ test('finishing on a non-session-ending step announces immediately', () => {
     assert.equal(finishedBySessionEnd(t), false);
 });
 
-test('every step has an id, a target and something to say', () => {
+test('every step has an id, a target, something to say and where to find it', () => {
     for (const s of TOUR_STEPS) {
         assert.ok(s.id, 'step needs an id');
         assert.ok(s.target, `${s.id} needs a target`);
         assert.ok(s.say && s.say.length > 20, `${s.id} needs an instruction`);
+        // The `where` is said to someone who has just pressed the wrong thing, so a
+        // step without one answers a mis-tap with silence — which tells them they
+        // were wrong and not how to be right (Ken, August 15 2026).
+        assert.ok(s.where && s.where.length > 20, `${s.id} needs a description of the button`);
     }
     assert.ok(TOUR_DONE.length > 20);
+});
+
+test('each button is described by more than its position', () => {
+    // A position alone ("fourth from the left") is useless to someone who has
+    // miscounted, which is the likely reason they pressed the wrong one. Every
+    // description names the icon as well, so it can be checked against the screen.
+    for (const s of TOUR_STEPS) {
+        assert.match(s.where, /shows|cards are|dark button/i,
+            `${s.id} describes a position but not what the button looks like`);
+    }
 });
 
 test('step ids are unique', () => {

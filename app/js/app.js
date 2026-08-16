@@ -1730,8 +1730,9 @@ let tourFinishPending = false;
  */
 function handleTourPress(e) {
     if (!tour || !practiceMode) return;
+    const step = practiceTour.currentStep(tour);
     const result = practiceTour.pressed(tour, e.target);
-    if (result === 'ignored') return;
+    if (result === 'ignored') { hintWhere(step, e.target); return; }
     if (result === 'finished') {
         const viaSessionEnd = practiceTour.finishedBySessionEnd(tour);
         tour = null;
@@ -1742,6 +1743,33 @@ function handleTourPress(e) {
     // Let the pressed control finish what it is doing — several of them repaint the
     // palette or open the composer — before the next instruction talks over it.
     setTimeout(speakTourStep, 700);
+}
+
+// When the wrong control is pressed, say where the right one is (Ken, August 15
+// 2026) — its icon, its place in the row, and its color where a color actually
+// distinguishes it. Describing the button is what "no scolding" should have meant:
+// silence tells someone they were wrong without helping them be right, and on a row
+// of nine unlabelled icons that is the whole difficulty.
+let lastHintAt = 0;
+
+function hintWhere(step, target) {
+    if (!step || !step.where) return;
+    // Only when the press landed on something PRESSABLE. A tap on the transcript, a
+    // heading, or a stray bit of background is not a wrong answer and must not be
+    // answered as though it were.
+    if (!target || typeof target.closest !== 'function') return;
+    if (!target.closest('button, .response-card, .ep-btn')) return;
+    // Rapid repeat taps are one gesture, not several questions; without this the
+    // hint restarts on each one and the user never hears the end of it.
+    const now = Date.now();
+    if (now - lastHintAt < 2500) return;
+    lastHintAt = now;
+    // The instruction STAYS on screen and the hint is added to it — the user still
+    // needs to know what they are being asked to do, not only where the button is.
+    ui.setCoachLine(`${step.say}\n${step.where}`);
+    // Only the new information is spoken. Repeating the whole instruction on every
+    // mis-tap would be slower to sit through each time it happened.
+    tts.speak(step.where, { voiceURI: pickPartnerVoice(), auraModel: pickAuraPartnerVoice() });
 }
 
 function announceTourFinished() {

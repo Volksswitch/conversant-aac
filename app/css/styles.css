@@ -640,6 +640,10 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
     border-left: 4px solid var(--slot-dispreferred, #F9A825);
     border-radius: 6px;
     font-family: system-ui, -apple-system, sans-serif;
+    /* The "where is it" hint is added to the instruction on a second line. The line
+       is written with textContent, so without this the newline collapses and the two
+       sentences run together. */
+    white-space: pre-line;
 }
 .turn-coach[hidden] { display: none; }
 /* The in-progress partner turn (live STT) — provisional, with a subtle state

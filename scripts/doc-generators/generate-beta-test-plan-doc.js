@@ -261,8 +261,8 @@ calloutBox([
 emptyPara(),
 
 heading2("5.3  Learn the Buttons Before You Need Them"),
-para("The row of buttons across the middle of the screen is the part testers most often forget. Spend one practice session pressing every one of them at least once, so that when you need Ask them to repeat in a real conversation, your hand already knows where it is."),
-para("Open Settings and then Practice, and work through a scenario. Nobody is listening; nothing you say is spoken to a real person. Practice as many times as you like."),
+para("The row of buttons across the middle of the screen is the part testers most often forget. There is now a tour that walks you through them: Settings, then Practice, then “A tour of the buttons”. It names each one, tells you what it is for, and waits while you press it. Press the wrong one and it tells you what the right one looks like and where it sits. Do it first — it needs no API key, so it works before anything else is set up, and it takes a few minutes."),
+para("Then work through one of the conversation scenarios on the same tab, which do need the key. Nobody is listening; nothing you say is spoken to a real person. Practice as many times as you like."),
 
 // ===== 6 =====
 heading1("6.  Week by Week"),

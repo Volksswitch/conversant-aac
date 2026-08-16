@@ -43,10 +43,27 @@
  * work and quietly no-ops in the middle.
  */
 
-/** Every step: what the coach says, and what the user must press to move on. */
+/*
+ * ⚠ EVERY `where` DESCRIBES A REAL BUTTON AND WILL GO STALE SILENTLY. It is said only
+ * to someone who has just pressed the wrong thing — the worst possible moment to be
+ * told to look for an icon that is not there — and nothing about the app breaks when
+ * one of these stops being true. Each was written from the source and measured in the
+ * running app (August 15 2026): the icons come from icons.js, and the left-to-right
+ * positions were read off the rendered Command Bar rather than assumed from the
+ * markup. If a control's icon changes, or one is added to or removed from that row,
+ * EVERY position after it shifts and these sentences must be rewritten.
+ *
+ * Deliberately no colors except where a color is genuinely distinguishing: the
+ * Command Bar buttons are uniform, so "the red one" would be useless — except for
+ * Listen, which turns red once it is capturing, and the compose button, which is the
+ * dark one. Naming a color that is not there is worse than naming no color.
+ */
+
+/** Every step: what the coach says, where to find it, and what advances it. */
 export const TOUR_STEPS = [
     {
         id: 'listen',
+        where: "The one I mean shows a microphone, and it is the first button on the left of that middle row. It turns red once it is listening.",
         target: '#listenBtn',
         say: "Let's walk through the buttons in the middle row. This first one turns "
            + "listening on, so the app can hear the person you are with. You tap it "
@@ -54,66 +71,77 @@ export const TOUR_STEPS = [
     },
     {
         id: 'initiate',
+        where: "The one I mean shows a speech bubble with a plus sign in it. It is second from the left in the middle row.",
         target: '#initiateBtn',
         say: "Good. The next one starts a conversation and offers you some ways to "
            + "open it, so you never have to think of the first line yourself. Tap it.",
     },
     {
         id: 'pick-card',
+        where: "The cards are the row of large boxes above your phrases. Any one of them will do.",
         target: '#responseOptions .response-card',
         say: "Those are response cards. Tapping one speaks it in your voice — that is "
            + "how you say almost everything. Tap whichever one you like.",
     },
     {
         id: 'say-again',
+        where: "The one I mean shows a circular arrow. It is fourth from the left in the middle row.",
         target: '#sayAgainBtn',
         say: "You just said that out loud. If they did not catch it, Repeat what I "
            + "said says your last words again, without you choosing anything. Tap it.",
     },
     {
         id: 'hold-on',
+        where: "The one I mean shows two upright bars, like the pause button on a music player. It is fifth from the left.",
         target: '#holdOnBtn',
         say: "Hold on buys you a moment. It tells them you are still thinking, so the "
            + "silence does not do it for you. Tap it.",
     },
     {
         id: 'pardon',
+        where: "The one I mean shows a speech bubble with a question mark in it. It is sixth from the left.",
         target: '#pardonBtn',
         say: "That one was about you. This next one is about them: Ask them to repeat, "
            + "for when you did not catch what they said, or the app heard it wrong. Tap it.",
     },
     {
         id: 'regenerate',
+        where: "The one I mean shows two crossing arrows, and it sits on its own beside the cards rather than in the middle row.",
         target: '#regenerateBtn',
         say: "When none of the cards is quite right, this button gives you a different "
            + "set. Tap it and watch the cards change.",
     },
     {
         id: 'compose',
+        where: "The one I mean is the dark button with a pencil on it, down among your phrases.",
         target: '.ep-imow',
         say: "And when nothing offered is what you mean, you can write your own. The "
            + "pencil button in your phrase panel opens a place to type. Tap it.",
     },
     {
         id: 'cancel-compose',
+        where: "The one I mean shows an X, beside the box you type into.",
         target: '#cancelComposerBtn',
         say: "This is where you type, and the keyboard covers your phrases while it is "
            + "open. Cancel closes it without saying anything. Tap Cancel.",
     },
     {
         id: 'wind-down',
+        where: "The one I mean shows an arrow pointing down onto a line. It is seventh from the left in the middle row.",
         target: '#windDownBtn',
         say: "Wind down is how you signal you would like to finish, without saying "
            + "goodbye yet. It offers things like \"I should get going.\" Tap it.",
     },
     {
         id: 'privacy',
+        where: "The one I mean shows a shield with a line struck through it. It is second from the right, just before Settings.",
         target: '#privacyBtn',
         say: "This one keeps a conversation out of your saved record — for when it is "
            + "nobody else's business. Tap it once to turn it on.",
     },
     {
         id: 'end',
+        where: "The one I mean shows a circle with an X in it. It is third from the left in the middle row.",
         target: '#endConversationBtn',
         // ⚠ THIS STEP TEARS DOWN THE THING ANNOUNCING IT. Pressing End conversation
         // ends the practice session, which clears the tour, wipes the coach line and
