@@ -674,6 +674,6 @@ para("Claims marked [SOURCE] were read from the Conversant AAC codebase at versi
 });
 
 Packer.toBuffer(doc).then((buffer) => {
-    fs.writeFileSync("Conversant AAC iPad Architecture.docx", buffer);
+    fs.writeFileSync(docPath("Conversant AAC iPad Architecture.docx"), buffer);
     console.log("Wrote: Conversant AAC iPad Architecture.docx");
 });

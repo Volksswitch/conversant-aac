@@ -228,6 +228,6 @@ const doc = new Document({
 });
 
 Packer.toBuffer(doc).then(buf => {
-    fs.writeFileSync("Conversant AAC Strategic Assessment.docx", buf);
+    fs.writeFileSync(docPath("Conversant AAC Strategic Assessment.docx"), buf);
     console.log("Wrote Conversant AAC Strategic Assessment.docx (" + buf.length + " bytes)");
 });

@@ -340,6 +340,6 @@ table([2900, 6460],
 });
 
 Packer.toBuffer(doc).then(buffer => {
-    fs.writeFileSync("Conversant AAC Beta Test Plan.docx", buffer);
+    fs.writeFileSync(docPath("Conversant AAC Beta Test Plan.docx"), buffer);
     console.log("Wrote Conversant AAC Beta Test Plan.docx");
 });
