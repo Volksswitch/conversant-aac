@@ -1418,7 +1418,22 @@ button:not(.kbd-key):not(.kbd-tool):not(.kbd-pred-btn):not(.ep-btn) {
 #expressEditor .ee-swatches { flex: 1 1 100%; }
 .ee-swatch { width: 1.7rem; height: 1.7rem; padding: 0; border-radius: 5px; border: 2px solid rgba(0, 0, 0, 0.25); cursor: pointer; }
 .ee-swatch-on { outline: 3px solid #2c3e50; outline-offset: 1px; border-color: #fff; }
+/* The color on a Partner / Feeling / Place card is a SAMPLE, not a control — those
+   types have one fixed color each. It used to be drawn at the full touch-target size
+   with the same border and radius as the seven tappable swatches on a phrase card,
+   so it looked exactly like a color button, invited a tap, and did nothing. Reported
+   from the field (Ken, August 15 2026, watching an SLP work on the mood buttons).
+   `cursor: default` was the only thing separating them, and a cursor cannot be seen
+   on a touch screen.
+     Sized well BELOW --btn-min-dim precisely because it is not a target: on a surface
+   where every control is at least that big, something visibly smaller reads as a
+   label. Placed after the sizing rule above, which it ties with on specificity. */
 .ee-swatch-static { cursor: default; }
+#settingsContent .ee-row .ee-swatch-static {
+    width: 1.1rem; height: 1.1rem;
+    min-width: 1.1rem; min-height: 1.1rem;
+    border-width: 1px;
+}
 /* The four type buttons an undefined slot offers ("Not set yet — Phrase / Partner /
    Feeling / Place"). They sit in .ee-fields, so they wrap with everything else. */
 .ee-fields .ee-add { background: #2c3e50; color: #fff; border: none; border-radius: 6px; padding: 0.4rem 0.7rem; font-weight: 600; cursor: pointer; }

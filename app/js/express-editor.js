@@ -225,6 +225,19 @@ function textInput(value, placeholder, oninput, cls) {
     inp.autocomplete = 'off';
     if (cls) inp.className = cls;
     inp.addEventListener('input', () => oninput(inp.value));
+    // Enter means "done with this box" — drop the cursor so the keyboard goes away
+    // and the Express Panel is visible again. The text is already saved (it commits
+    // on every keystroke), so this changes nothing but what you can SEE: the panel
+    // and the keyboard share the dock, so while a field holds focus the panel the
+    // user is editing is behind the keyboard, and Add before / Move up cannot be
+    // judged without it. Works for both keyboards — the on-screen one dispatches
+    // this same keydown from its Enter key. (Ken, August 15 2026.)
+    inp.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        inp.blur();
+        keyboard.hideKeyboard();
+    });
     return inp;
 }
 
@@ -522,16 +535,29 @@ export function render() {
     }
 }
 
-// Scroll a row into view and put the cursor in its first field. An undefined slot
-// has no field — only the four type buttons — so focus the first of those instead,
-// which is the question that row is actually asking.
+/**
+ * Scroll a selected row into view — WITHOUT putting the cursor in its text box.
+ *
+ * ⚠ IT USED TO FOCUS THE FIRST FIELD, AND THAT MADE THE EDITOR HARD TO USE (Ken,
+ * August 15 2026, watching an SLP): selecting a button raised the on-screen keyboard
+ * instantly, and the keyboard occupies the SAME dock band as the Express Panel — so
+ * the panel the user is editing disappeared the moment they picked a button on it.
+ * Add before / Add after / Move up / Move down are all judged against the panel, so
+ * they became guesswork. Typing is one tap away; seeing the panel was not.
+ *
+ * An undefined slot is the one exception, and it costs nothing: its row has no text
+ * box, only the four type buttons asking what goes here, and focusing a button
+ * raises no keyboard. The selector is those buttons SPECIFICALLY (`.ee-fields
+ * .ee-add`) rather than "the first thing that is not an input" — on a defined
+ * phrase that would have landed on the first color swatch, which wears a focus ring
+ * and would read as the color having been chosen.
+ */
 function revealRow(id) {
     if (!container || !id) return null;
     const row = container.querySelector(`.ee-row[data-id="${CSS.escape(String(id))}"]`);
     if (!row) return null;
     row.scrollIntoView({ block: 'nearest' });
-    const field = row.querySelector('.ee-fields input, .ee-fields select, .ee-fields button');
-    if (field) field.focus();
+    row.querySelector('.ee-fields .ee-add')?.focus();
     return row;
 }
 

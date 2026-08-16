@@ -26,6 +26,16 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Editing an Express Panel button no longer hides the panel. Picking a button used to
+  put the cursor straight into its text box, which brought the on-screen keyboard up
+  over the panel — so you could not see the button you were about to move or add
+  next to. The cursor now stays out of the box until you tap it, and pressing Enter
+  when you have finished typing puts the keyboard away and brings the panel back.
+- The fixed color shown on a Partner, Feeling or Place button is now drawn smaller, as
+  a sample rather than a button. It looked exactly like the color choices on a phrase
+  button, so it invited a tap that could do nothing — those three types have one color
+  each and it cannot be changed.
+
 ## Version 0.7.3
 
 - Fixed: in Settings, a phrase button in the Express Panel now opens its edit card
