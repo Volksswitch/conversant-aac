@@ -14,6 +14,10 @@
  *   and that is the intended way to notice.
  * - Because the response is unreadable by the client, returning an error code is
  *   pointless for the app. It is still returned for a human testing the URL by hand.
+ * - TWO TABS. `reports` is one row per report received: the audit trail, and where the
+ *   raw payload is kept. `weeks` is one row per tester per week, upserted rather than
+ *   appended, and is the table to read and chart - a cumulative summary cannot show a
+ *   tester tailing off, and that is the headline question.
  *
  * ⚠ THE SHEET HOLDS PERSONAL DATA. A report carries the tester name assigned at
  * setup, and a first name plus "uses AAC" is identifying in a cohort of five. Keep
@@ -33,6 +37,7 @@
 // here: the same value ships inside the app, readable by anyone who opens the site.
 var SECRET = 'u_mlqOZgElbxCB7732CAwSzC';
 var SHEET_NAME = 'reports';
+var WEEKS_SHEET_NAME = 'weeks';   // one row per tester per week - the retention curve
 var ALERT_EMAIL = '';               // set to get mailed when a report shows errors
 var ALERT_ERROR_THRESHOLD = 5;      // errors in one report before mailing
 
@@ -42,13 +47,15 @@ function doPost(e) {
     var p = JSON.parse(e.postData.contents);
     if (p.secret !== SECRET) return _out('bad secret');
 
-    var sheet = _sheet();
     var usage = p.usage || {};
     var errors = p.errors || [];
+    var events = (p.events && p.events.totals) || {};
+    var timings = (p.events && p.events.timings) || {};
+    var depth = p.personalization || {};
 
-    sheet.appendRow([
+    _sheet().appendRow([
       new Date(),                       // received (server clock)
-      p.sentAt || '',                   // sent (device clock — they can differ)
+      p.sentAt || '',                   // sent (device clock - they can differ)
       p.testerName || '(not set)',
       p.installId || '',
       p.appVersion || '',
@@ -61,24 +68,98 @@ function doPost(e) {
       usage.userTurns || 0,
       usage.fromCard || 0,
       usage.fromCardPercent == null ? '' : usage.fromCardPercent,
-      usage.respondMsMedian == null ? '' : Math.round(usage.respondMsMedian / 100) / 10,
+      usage.respondMsMedian == null ? '' : _s(usage.respondMsMedian),
       usage.respondOver4s || 0,
+      // How long the cards were up before the user acted - read plus select, and the
+      // only part of the wait above that is the person rather than the machine.
+      usage.decideMsMedian == null ? '' : _s(usage.decideMsMedian),
+      usage.cardsPerPaletteMedian == null ? '' : usage.cardsPerPaletteMedian,
+      usage.optionWordsMedian == null ? '' : usage.optionWordsMedian,
       usage.emptyConversations || 0,
-      _slots(usage.slotCounts),
+      _pairs(usage.slotCounts),
+      _pairs(usage.sourceCounts),
+      // The partner-side proxy: someone who came back is the nearest thing the app
+      // can say to "they would do it again". Not the same as asking them.
+      (usage.partners || []).length,
+      usage.returningPartners || 0,
+      usage.voiceFellBack || 0,
+      // Suggestions shown and then not taken - the case the saved conversations
+      // cannot show at all.
+      events.palette_shown || 0,
+      events.palette_abandoned || 0,
+      events.regenerate || 0,
+      // Opened the app and never started a conversation: the clearest early-quit
+      // signal there is, and it needs both numbers to be read.
+      events.app_opened || 0,
+      events.conversation_started || 0,
+      events.generation_superseded || 0,
+      events.rate_limited || 0,
+      _med(timings, 'generation.ms'),
+      _med(timings, 'checkpoint.sinceMs'),
+      _med(timings, 'stt_gap.ms'),
+      depth.worldviewPercent == null ? '' : depth.worldviewPercent,
+      depth.expressEdited == null ? '' : depth.expressEdited,
+      depth.people == null ? '' : depth.people,
       errors.length,
       _errorContexts(errors),
-      p.systemInfo ? 'changed' : '',    // system info is sent only when it changes
+      p.systemInfo ? 'included' : '',
       _raw(p)                           // the report as received, so nothing is lost
     ]);
 
+    _writeWeeks(p);
+
     if (ALERT_EMAIL && errors.length >= ALERT_ERROR_THRESHOLD) {
       MailApp.sendEmail(ALERT_EMAIL,
-        'Conversant AAC — ' + (p.testerName || 'a tester') + ' reported ' + errors.length + ' errors',
+        'Conversant AAC - ' + (p.testerName || 'a tester') + ' reported ' + errors.length + ' errors',
         _errorContexts(errors) + '\n\nSee the reports Sheet for the full payload.');
     }
     return _out('ok');
   } catch (err) {
     return _out('error: ' + err);
+  }
+}
+
+/* THE RETENTION CURVE, one row per tester per week - the table to actually read.
+ *
+ * (!) ROWS ARE UPSERTED, NOT APPENDED, and that is the whole design. Every report
+ * carries the tester's WHOLE history rebucketed, so appending would write week 1
+ * again every week and the sheet would fill with stale duplicates of the same weeks.
+ * Replacing in place means the newest report always wins, which is what you want: a
+ * week is only complete once it is over, and the report that arrives after it ends is
+ * the one telling the truth about it.
+ *
+ * Keyed on install rather than tester name, because the name can be typed late or
+ * corrected, and a changed name must not silently start a second curve.
+ */
+function _writeWeeks(p) {
+  var weeks = p.weeks || [];
+  if (!weeks.length) return;
+  var sheet = _weeksSheet();
+  var install = p.installId || p.testerName || '?';
+  var existing = {};
+  var last = sheet.getLastRow();
+  if (last > 1) {
+    var keys = sheet.getRange(2, 1, last - 1, 2).getValues();
+    for (var i = 0; i < keys.length; i++) existing[keys[i][0] + '|' + keys[i][1]] = i + 2;
+  }
+  for (var w = 0; w < weeks.length; w++) {
+    var k = weeks[w];
+    var row = [
+      install,
+      k.week,
+      p.testerName || '(not set)',
+      k.start ? new Date(k.start) : '',
+      k.activeDays || 0,
+      k.conversations || 0,
+      k.practice || 0,
+      k.userTurns || 0,
+      k.partnerTurns || 0,
+      k.fromCard || 0,
+      k.fromCardPercent == null ? '' : k.fromCardPercent
+    ];
+    var at = existing[install + '|' + k.week];
+    if (at) sheet.getRange(at, 1, 1, row.length).setValues([row]);
+    else sheet.appendRow(row);
   }
 }
 
@@ -93,7 +174,7 @@ function doPost(e) {
  * Visiting the /exec URL in a browser now prints this, so a redeploy is confirmable in
  * two seconds with nothing written. The correct redeploy is:
  *   Deploy > Manage deployments > pencil > Version: New version > Deploy   (same URL) */
-var SCRIPT_VERSION = '2026-08-08b';
+var SCRIPT_VERSION = '2026-08-16a';
 
 // A GET is handy for confirming the deployment is live, and WHICH CODE is live.
 function doGet() {
@@ -112,8 +193,27 @@ function _sheet() {
     sheet.appendRow(['received', 'sent', 'tester', 'install', 'version', 'build',
       'days covered', 'conversations', 'practice', 'active days', 'days since use',
       'user turns', 'from card', 'from card %', 'median wait (s)', 'waits over 4s',
-      'empty conversations', 'categories chosen', 'errors', 'error kinds',
-      'system info', 'raw']);
+      'median decide (s)', 'cards shown', 'words per card',
+      'empty conversations', 'categories chosen', 'sources',
+      'people named', 'returning people', 'voice fallbacks',
+      'palettes shown', 'palettes abandoned', 'regenerates',
+      'app opens', 'conversations started', 'superseded', 'rate limited',
+      'median generation (s)', 'median gap between checkpoints (s)', 'median stt gap (s)',
+      'About Me %', 'express edited', 'people recorded',
+      'errors', 'error kinds', 'system info', 'raw']);
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+function _weeksSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(WEEKS_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(WEEKS_SHEET_NAME);
+    sheet.appendRow(['install', 'week', 'tester', 'week starting', 'days used',
+      'conversations', 'practice', 'things said', 'partner turns',
+      'from card', 'from card %']);
     sheet.setFrozenRows(1);
   }
   return sheet;
@@ -129,7 +229,16 @@ function _raw(p) {
   return JSON.stringify(copy);
 }
 
-function _slots(counts) {
+// Milliseconds to one decimal place of a second, which is the resolution anyone
+// reading these actually uses.
+function _s(ms) { return Math.round(ms / 100) / 10; }
+
+function _med(timings, name) {
+  var t = timings && timings[name];
+  return t && t.median != null ? _s(t.median) : '';
+}
+
+function _pairs(counts) {
   if (!counts) return '';
   return Object.keys(counts).map(function (k) { return k + ':' + counts[k]; }).join(' ');
 }
