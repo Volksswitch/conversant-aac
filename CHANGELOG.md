@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.7.3
+
 - Fixed: in Settings, a phrase button in the Express Panel now opens its edit card
   on a single tap, even when you have chosen double tap. The double tap is there so
   a stray touch cannot say something out loud, and nothing is spoken in Settings.

@@ -21,6 +21,11 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.7.3": [
+    "Fixed: in Settings, a phrase button in the Express Panel now opens its edit card on a single tap, even when you have chosen double tap. The double tap is there so a stray touch cannot say something out loud, and nothing is spoken in Settings. Your choice is unchanged on the conversation screen.",
+    "Fixed: \"Add an API key to Settings\" on the opening screen now takes you to the API Key box with its section already open, instead of leaving you on a list of headings.",
+    "Express Panel buttons are now set up in Settings only. Tapping an empty slot on the conversation screen used to open the editor; it no longer does anything, so a mistaken tap while you are talking to someone can't put an editing screen in front of you. Open Settings → Express Panel and tap the empty slot there instead — it works exactly as before, and the panel beside it is the one you are editing."
+  ],
   "0.7.2": [
     "Settings is one column now, and each heading opens and closes. The old two- and three-column tabs shuffled the controls around as things resized, which made them hard to learn. Every tab is now a single list of headings — tap the heading, or its arrow, to open that group, and tap again to close it. Every group arrives closed, so a tab fits on the screen without scrolling and you can see everything on it at once. Opening one leaves the others as they are, and the app remembers what you had open until you close the app altogether.",
     "What is inside a section is now indented under its heading, so you can see at a glance which settings the heading covers.",
