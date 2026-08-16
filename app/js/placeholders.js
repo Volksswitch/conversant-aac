@@ -89,6 +89,14 @@ let armed = false;           // arm() was called and start() hasn't consumed it
 let userSpeaking = () => false;
 export function setUserSpeakingGate(fn) { userSpeaking = typeof fn === 'function' ? fn : () => false; }
 
+// Told when a placeholder is actually about to be spoken, with its position in the
+// ladder. Reporting only — the app uses it to count how often the floor-holding
+// phrases are heard, which is otherwise invisible and is the number behind "do
+// partners tire of them". Deliberately a notification and not a gate: nothing it
+// does may change whether the phrase is said.
+let onSpoken = () => {};
+export function setOnSpoken(fn) { onSpoken = typeof fn === 'function' ? fn : () => {}; }
+
 // Normalize to { acknowledgment:[], thinking:[] }. Tolerates
 // two legacy shapes: a flat array (used for all pools), and an object whose
 // `acknowledgment` is a flat array (the pre-July-2026 shape — used for both
@@ -223,7 +231,10 @@ async function speakNext() {
         ? pick(pools.acknowledgment, 'acknowledgment')
         : pick(pools.thinking, 'thinking');
     count++;
-    if (phrase) await tts.speak(phrase);
+    if (phrase) {
+        try { onSpoken({ n: count }); } catch { /* reporting must never stop the phrase */ }
+        await tts.speak(phrase);
+    }
     if (!active) return;
     // Cap: stop after maxPlaceholders placeholders. -1 = no limit (0 = none is
     // handled in arm(), which never schedules a first placeholder).

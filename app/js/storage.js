@@ -1196,7 +1196,7 @@ export async function finalizePartnerTurn(handle, { rawTranscript, cleanedTransc
     await flushLog();
 }
 
-export async function logUserResponse({ selectedText, spokenText = null, ttsUsed = null, selectedIndex, allOptions, selectedSlot = null, source = null, partner = null, feeling = null, place = null }) {
+export async function logUserResponse({ selectedText, spokenText = null, ttsUsed = null, selectedIndex, allOptions, selectedSlot = null, source = null, decideMs = null, partner = null, feeling = null, place = null }) {
     if (!conversationSaving) return; // private conversation — nothing is written
     // Start the log lazily if this user turn is the FIRST turn of the conversation
     // — an opener (Start conversation) or an Express-panel phrase takes the floor
@@ -1245,6 +1245,30 @@ export async function logUserResponse({ selectedText, spokenText = null, ttsUsed
         // person talks would be teaching the model our words back to itself.
         // 'card' | 'composed' | 'express' | 'control' | null (pre-Aug-2026 logs)
         source,
+        // HOW LONG THE CARDS WERE ON SCREEN BEFORE THE USER ACTED (August 16 2026).
+        // null on every turn that did not come from a card.
+        //
+        // ⚠ THIS IS THE READING-LOAD MEASURE, and it exists because the wait figure
+        // alone could never be one. That figure runs from the partner stopping to the
+        // user speaking and contains four things at once — the recognizer, the AI, the
+        // reading, and the choosing — so a slow model and a heavy reading task are
+        // indistinguishable in it, and they call for opposite fixes. Everything before
+        // the cards appear is the machine; everything after it is the person. Paired
+        // with allOptions, which gives the card count and how much text was on them,
+        // it answers the question that matters: not whether four seconds was exceeded
+        // but what makes it be exceeded.
+        //
+        // ⚠ IT IS READ **PLUS SELECT**, NOT READING ALONE (Ken, August 16 2026), and
+        // the clock stops at the user's FIRST action of any kind — tapping a card,
+        // tapping an Express button, opening "In my own words", pressing a Command Bar
+        // button, or asking for different options. Naming it as reading would be a
+        // quiet overstatement: it also holds deciding and the physical act of
+        // reaching, and for this population the last of those is not small. It is
+        // still the right measure, because those together are what the partner waits
+        // through — and stopping it at any action is what keeps it honest, since a
+        // clock that only stopped on a card tap would never see the turns where the
+        // reading was so heavy that the user gave up and typed instead.
+        decideMs,
         partner,           // who the user was talking with, or null
         feeling,           // how the user felt at this turn, or null
         place              // where the user was at this turn, or null
@@ -1476,6 +1500,61 @@ async function appendErrorFile(entry) {
         await writable.write(line);
         await writable.close();
     } catch { /* best effort — don't interrupt the app */ }
+}
+
+// --- Metrics log (August 16 2026) -------------------------------------------
+// One JSON line per event in `metrics.log`, the permanent detailed record for
+// offline analysis. The weekly report carries only the rolled-up tally; this file is
+// what you read when a tally raises a question the tally cannot answer.
+//
+// ⚠ BUFFERED, unlike errors.log, and the reason is frequency. An error is rare, so a
+// file open per error costs nothing. Events fire many times a minute during a live
+// conversation, and opening a writable handle inside the speech path would be a real
+// cost on a tablet. Lines accumulate and go out together.
+//
+// It carries no words: metrics.js drops anything that is not a count, a duration or a
+// small category before it reaches here. That is enforced there rather than here so
+// that the ring buffer and the weekly report get the same guarantee from one place.
+const METRICS_FLUSH_LINES = 40;
+const METRICS_FLUSH_MS = 10000;
+let metricsBuffer = [];
+let metricsTimer = null;
+let metricsWriting = false;
+
+export function appendMetricsFile(entry) {
+    if (!dirHandle) return;
+    try {
+        metricsBuffer.push(JSON.stringify(entry));
+    } catch { return; /* unserializable — drop it rather than break the caller */ }
+    if (metricsBuffer.length >= METRICS_FLUSH_LINES) { flushMetricsFile(); return; }
+    if (metricsTimer) return;
+    try { metricsTimer = setTimeout(flushMetricsFile, METRICS_FLUSH_MS); }
+    catch { flushMetricsFile(); }
+}
+
+export async function flushMetricsFile() {
+    if (metricsTimer) { try { clearTimeout(metricsTimer); } catch { /* ignore */ } metricsTimer = null; }
+    if (!dirHandle || !metricsBuffer.length) return;
+    // A second flush arriving mid-write would seek to a stale length and overwrite
+    // what the first one is still putting down, so the lines are taken and the write
+    // is serialized. On failure they go BACK on the front of the buffer: a flush that
+    // failed because the folder handle went stale should not lose the events.
+    if (metricsWriting) return;
+    metricsWriting = true;
+    const lines = metricsBuffer;
+    metricsBuffer = [];
+    try {
+        const fh = await dirHandle.getFileHandle('metrics.log', { create: true });
+        const writable = await fh.createWritable({ keepExistingData: true });
+        const file = await fh.getFile();
+        await writable.seek(file.size);   // append
+        await writable.write(lines.join('\n') + '\n');
+        await writable.close();
+    } catch {
+        metricsBuffer = lines.concat(metricsBuffer);
+    } finally {
+        metricsWriting = false;
+    }
 }
 
 // --- Usage tracking ---

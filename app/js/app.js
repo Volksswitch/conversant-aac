@@ -36,6 +36,7 @@ import * as helpMode from './help-mode.js';
 import * as usageSummary from './usage-summary.js';
 import * as diagnostics from './diagnostics.js';
 import * as weeklySend from './weekly-send.js';
+import * as metrics from './metrics.js';
 import { makeCollapsible } from './sections.js';
 
 // The platform verdict on partner capture (see platform.js), or null when capture
@@ -322,6 +323,23 @@ function initApp() {
     // Stamp the error log with this build's version (Ken, July 2026).
     storage.setAppVersion(APP_VERSION);
 
+    // Counting rides on the SAME switch as the weekly report, so a tester who turns
+    // reporting off is not still having their taps written to disk. Set before the
+    // first event below, or that one event escapes the setting.
+    metrics.setEnabled(storage.loadWeeklySendEnabled());
+    // THE APP WAS OPENED. Paired with start_pressed and conversation_started, this is
+    // the clearest early-quit signal there is: a tester who opens the app and never
+    // starts a conversation is drifting away while still nominally taking part, and
+    // today looks identical to one who has stopped opening it altogether.
+    metrics.event(metrics.EV.APP_OPENED);
+    // The tally is held in memory and written on a debounce, so a page going away
+    // between writes would lose the last couple of seconds. Both events fire on a
+    // tablet where the app is backgrounded rather than closed.
+    window.addEventListener('pagehide', () => metrics.flush());
+    window.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') metrics.flush();
+    });
+
     // Any logged error (thrown API/parse failure OR a silent no-responses path)
     // trips a faint-red wash on the transcript — a non-verbal heads-up that a
     // hiccup occurred and behavior may deviate; cleared on the next working
@@ -394,6 +412,12 @@ function initApp() {
     // (a spoken button). If a stray scheduled placeholder fires while the user's TTS
     // is playing, placeholders defers instead of barging in (Ken, July 2026).
     placeholders.setUserSpeakingGate(() => speakingUserStatement);
+
+    // Count the floor-holding phrases as they are actually spoken. Nothing else can:
+    // they are scheduled on timers, aborted by the partner resuming, and capped by a
+    // setting, so how many a partner really hears per turn is not derivable from the
+    // settings or from the saved conversation.
+    placeholders.setOnSpoken(({ n }) => metrics.event(metrics.EV.PLACEHOLDER_SPOKEN, { n }));
 
     // Tell the STT layer what the app is speaking so it can discard its own TTS
     // echo (placeholder ladder, prompts) instead of mistaking it for the partner and
@@ -728,7 +752,12 @@ function reflectApiKeyFormat() {
     showApiKeyStatus('warn', msg);
 }
 
+let lastSpeechResultAt = 0;
+
 function handleSpeechResult(liveText) {
+    const now = Date.now();
+    if (lastSpeechResultAt) metrics.sttGap(now - lastSpeechResultAt);
+    lastSpeechResultAt = now;
     // Live transcript while the partner is speaking — provisional, not yet
     // confirmed. Confirmation happens implicitly when the user picks a response.
     updatePartnerLive(liveText);
@@ -757,6 +786,8 @@ function handlePartnerResumed() {
 // Per the no-confirmation-gate decision (June 15 2026) generation fires here on
 // silence — there is no confirm-the-transcript step.
 async function handleSilencePeriod(text) {
+    metrics.checkpoint();
+    lastSpeechResultAt = 0;   // the gap that ends at a checkpoint is the silence itself
     currentPartnerText = text;
     updatePartnerLive(text);
     // Mirror the pane in the transcript: write the partner's raw line now (Ken).
@@ -895,6 +926,7 @@ async function warmUpStorage() {
 }
 
 async function handleStart() {
+    metrics.event(metrics.EV.START_PRESSED);
     // Bring the audio context up NOW, while a real tap is in hand. The chime
     // itself is fired from an async recognizer callback where WebKit would refuse
     // to start audio (see chime.unlock).
@@ -998,6 +1030,7 @@ function toggleListening() {
     // WHICH BRANCH a tap takes is the whole question when the button misbehaves: the
     // symptom "tapping it does nothing" was really "it took the start branch because
     // the app thought it had stopped".
+    metrics.event(metrics.EV.LISTEN, { auto: false, status: isListening ? 'stop' : 'start' });
     if (isListening) {
         // Manual stop: disarm auto-resume until the user starts again.
         manualListenArmed = false;
@@ -1032,6 +1065,12 @@ function resumePartnerCapture() {
 
 // Begin a new partner-capture session with a cleared transcript and options.
 function startFreshListening() {
+    // A new partner turn. Anything still on offer was never taken — which is the
+    // measure the saved conversations can never show — and the checkpoint count for
+    // the turn just ended is closed off.
+    metrics.paletteAbandoned('new turn');
+    metrics.turnBoundary();
+    metrics.conversationStarted({ practice: practiceMode });
     currentPartnerText = '';
     setOfferedChoices([]);   // a new partner turn — last turn's choices are gone
     clearTurnSteering();
@@ -1048,6 +1087,14 @@ function startFreshListening() {
     stt.startListening();
 }
 
+
+// Is this the AI refusing because too many requests arrived at once? Matched on the
+// status number in the message, which is how llm.js reports it ("API error 429: ...").
+// 529 is Anthropic's overloaded, which is the same situation from the other side.
+function isRateLimit(err) {
+    const m = (err && err.message) || '';
+    return /(429|529)/.test(m);
+}
 
 async function generateOptions(partnerText) {
     const token = ++generationToken;
@@ -1103,10 +1150,19 @@ async function generateOptions(partnerText) {
     llm.setSituationBlock(buildSituationBlock());
     llm.setVoiceBlock(voiceBlockText());
 
+    const startedAt = Date.now();
     try {
         const requestContext = engine.buildRequestContext();
         const result = await llm.generateResponses(history, requestContext, { perCategory: storage.loadResponsesPerCategory() });
-        if (token !== generationToken) return; // a newer silence period superseded this
+        if (token !== generationToken) {
+            // Superseded by a later pause. Since July 10 2026 every pause regenerates
+            // for the same partner turn and the newest wins, so this work was BILLED
+            // AND DISCARDED — which is the entire cost of a short silence setting, and
+            // the only number that says whether shortening it was a good trade.
+            metrics.event(metrics.EV.GENERATION_SUPERSEDED, { ms: Date.now() - startedAt });
+            return;
+        }
+        metrics.event(metrics.EV.GENERATION, { ms: Date.now() - startedAt });
 
         // Engine ingests the classification and updates mode / stack / palette.
         const snap = engine.ingestClassification(result, partnerText);
@@ -1131,7 +1187,7 @@ async function generateOptions(partnerText) {
                 'Say goodbye — or hold them a moment', { pin: declineClosingCard() });
         } else {
             currentStatic = { kind: null, full: [] };  // AI responses — New N regenerates, not pages
-            ui.showResponses(snap.palette, handleResponseSelected);
+            showPalette(snap.palette);
         }
         ui.setTranscriptState('ready');
         // A closed set on the table → offer the alternatives as Express Panel chips
@@ -1177,6 +1233,12 @@ async function generateOptions(partnerText) {
         }
     } catch (err) {
         if (token !== generationToken) return;
+        // A rate-limit refusal is separated from every other failure because it is not
+        // a product fault at all: it is several testers sharing one key, and the fix is
+        // separate keys rather than anything in the app. Counted apart so a run of them
+        // cannot be read as the app breaking.
+        metrics.event(isRateLimit(err) ? metrics.EV.RATE_LIMITED : metrics.EV.GENERATION_FAILED,
+            { ms: Date.now() - startedAt });
         storage.logError('generateOptions', err.message, { partner: (partnerText || '').slice(0, 200) });
         placeholders.stop();
         // The AI is unreachable, so it can neither suggest responses NOR tidy the
@@ -1208,6 +1270,12 @@ async function handleResponseSelected(response, index) {
     const wasClosing = response.slot === 'CLOSING';
     const wasDecline = response.slot === engine.SLOT.CLOSING_DECLINE;
 
+    // Stop the deliberation clock before anything else happens in here — speaking
+    // takes a second or more, so a reading time taken after it would be wrong by the
+    // length of the sentence.
+    const decideMs = noteUserAction('card');
+    metrics.paletteTaken({ slot: response.slot || null, index, decideMs });
+
     placeholders.stop();
     generationToken++; // invalidate any in-flight generation
     // Capture the partner's speech BEFORE stopping the mic — if they were still
@@ -1236,7 +1304,7 @@ async function handleResponseSelected(response, index) {
     // the statement isn't shown as pre-text — it appears once it has been said.
     engine.selectResponse(response);
     ui.showEngineState(engine.getSnapshot());
-    await commitExchange(raw, response.text, index);
+    await commitExchange(raw, response.text, index, { decideMs });
 
     if (wasDecline) {
         // The user held the partner back, so the conversation is open again: leave
@@ -1321,6 +1389,11 @@ async function prefetchRepairOptions(token) {
     if (token !== generationToken) return;
     if (engine.getMode() !== engine.MODE.REPAIR_OF_SELF) return;
     const snap = engine.setRepairOptions(opts);
+    // Deliberately NOT showPalette: these cards are already on screen and the user is
+    // already reading them — two of the three simply gain real wording in place of
+    // their hint. Restarting the deliberation clock here would report the reading as
+    // shorter than it was, and counting it as a fresh offer would inflate the
+    // denominator abandonment is measured against.
     ui.showResponses(snap.palette, handleResponseSelected);
 }
 
@@ -1405,7 +1478,7 @@ function spokenFormFor(displayText, spokenOverride) {
 }
 
 async function commitExchange(raw, userText, index, opts = {}) {
-    const { cleanup = true, spokenText = null } = opts;
+    const { cleanup = true, spokenText = null, decideMs = null } = opts;
     // The user has taken the floor, so the partner's turn — and any choices it put
     // on the table, and any steering of it — is done. Shared by every path that
     // commits a user turn (response pick, Express phrase, composer, repair-of-self).
@@ -1451,6 +1524,9 @@ async function commitExchange(raw, userText, index, opts = {}) {
         // here from repair-of-self and other non-palette commits, which are our words
         // rather than theirs — see the source field in storage.logUserResponse.
         source: index >= 0 ? 'card' : 'control',
+        // How long the cards were up before the user acted — see the field note in
+        // storage.logUserResponse. null when no cards were showing.
+        decideMs,
         // Stamp the situation at this turn (who, how the user felt, where they
         // were) — each null when its toggle is off.
         partner: partnerStamp(),
@@ -1498,6 +1574,7 @@ async function commitExchange(raw, userText, index, opts = {}) {
 function resumeOrIdle() {
     if (practiceMode) return practiceResumeOrIdle();
     if (manualListenArmed && storage.loadAutoRelisten()) {
+        metrics.event(metrics.EV.LISTEN, { auto: true, status: 'start' });
         startFreshListening();
     } else {
         ui.setTranscriptState('idle');
@@ -1832,6 +1909,8 @@ async function terminateConversation() {
     // (handleEndConversation) and nowhere else.
     // A new conversation gets its own start-of-listening cue, whichever mode.
     chime.resetConversation();
+    // Raises "it ended" only if one had actually begun — see conversationBoundary.
+    metrics.conversationBoundary({ turns: conversationHistory.length, practice: practiceMode });
     manualListenArmed = false;
     stt.stopListening();
     // Capture the partner's pending (uncommitted) turn BEFORE we discard the STT
@@ -1913,6 +1992,63 @@ function pageWindow(list, offset, cap) {
     return out;
 }
 
+/* ── The deliberation clock (Ken, August 16 2026) ────────────────────────────
+ *
+ * From the moment the cards appear to the moment the user does ANYTHING. That span
+ * is the only part of the partner's wait that belongs to the person rather than the
+ * machine, and it is what makes reading load measurable at all — the existing wait
+ * figure runs from the partner stopping and has the recognizer and the AI mixed into
+ * it, so a slow model and a heavy reading task look identical in it.
+ *
+ * ⚠ THE CLOCK STOPS ON THE FIRST ACTION OF ANY KIND, not on a card tap (Ken). Tapping
+ * an Express button, opening "In my own words", pressing a Command Bar button and
+ * asking for different options all end the deliberation just as a card tap does. A
+ * clock that only stopped on a card tap would systematically miss the turns where the
+ * reading was heaviest — the ones where the user gave up and typed instead — and so
+ * would report reading load as easier than it is, in exactly the cases that matter.
+ *
+ * One-shot per palette: only the FIRST action counts, so a user who taps a card and
+ * then presses something else does not record two spans for one reading.
+ */
+let cardsShownAt = 0;
+let decideTaken = false;
+
+// Cards became visible. `kind` is 'ai' for generated suggestions, or the static set's
+// name (opener / windDown / closing) — worth separating, because reading four
+// generated sentences is a different task from reading four of your own goodbyes.
+function noteCardsShown(cards, kind) {
+    const list = cards || [];
+    cardsShownAt = Date.now();
+    decideTaken = false;
+    let words = 0;
+    for (const c of list) {
+        if (c && typeof c.text === 'string') words += (c.text.trim().match(/\S+/g) || []).length;
+    }
+    metrics.paletteShown({ kind, cards: list.length, words });
+}
+
+// Stop the clock and report it, once. Returns the span in milliseconds, or null when
+// no cards were showing or the span has already been taken for this palette.
+function noteUserAction(kind) {
+    if (!cardsShownAt || decideTaken) return null;
+    decideTaken = true;
+    const ms = Date.now() - cardsShownAt;
+    // A span over ten minutes is someone who walked away and came back, not a
+    // reading time; recording it would wreck the median it feeds.
+    if (ms < 0 || ms > 10 * 60 * 1000) return null;
+    metrics.event(metrics.EV.DECIDE, { kind, ms });
+    return ms;
+}
+
+// Show generated cards. Every path that puts AI suggestions in the response
+// footprint goes through here so the clock and the offer count cannot drift apart —
+// there are six such paths, and instrumenting them one at a time is how one gets
+// missed.
+function showPalette(cards, kind = 'ai') {
+    ui.showResponses(cards, handleResponseSelected);
+    noteCardsShown(cards, kind);
+}
+
 // Render a predefined static palette (opener/windDown/closing), optionally
 // advancing to the next page first (the Wind down re-press / New N "dip").
 // `pin` holds entries that must ALWAYS be on screen: they take the last cells and
@@ -1925,10 +2061,8 @@ function renderStaticPalette(kind, full, statusMsg, { advance = false, pin = [] 
         staticOffsets[kind] = (staticOffsets[kind] + window) % full.length;
     }
     currentStatic = { kind, full: full || [], pin };
-    ui.showResponses(
-        [...pageWindow(currentStatic.full, staticOffsets[kind], window), ...pin],
-        handleResponseSelected,
-    );
+    const cards = [...pageWindow(currentStatic.full, staticOffsets[kind], window), ...pin];
+    showPalette(cards, kind);
     if (statusMsg) ui.setStatus(statusMsg);
 }
 
@@ -1954,17 +2088,19 @@ function resetStaticPaging() {
 // "New N" button doesn't try to page an LLM result.
 function showConversationPalette(palette, statusMsg) {
     currentStatic = { kind: null, full: [] };
-    ui.showResponses((palette || []).slice(0, conversationPaletteCap()), handleResponseSelected);
+    showPalette((palette || []).slice(0, conversationPaletteCap()));
     if (statusMsg) ui.setStatus(statusMsg);
 }
 
 // Start conversation — terminate the current one (clear window + cards), then
 // open a fresh conversation in INITIATING mode with the openers.
 async function handleInitiate() {
+    metrics.event(metrics.EV.COMMAND_BAR, { button: 'start conversation' });
     await terminateConversation();
     // If a Partner is active, personalize the openers with their name ("Hi Tim,
     // have you got a minute?" instead of "Hey, got a minute?").
     const partnerName = activePartner ? (activePartner.nickname || activePartner.name) : '';
+    metrics.conversationStarted({ practice: practiceMode });
     const snap = engine.initiate({ partnerName });
     ui.showEngineState(snap);
     renderStaticPalette('opener', snap.palette, 'Pick an opener');
@@ -2029,6 +2165,8 @@ function logSpokenUserTurn(text) {
 
 // Say again — re-speak the user's last utterance verbatim. Instant, no LLM.
 async function handleSayAgain() {
+    noteUserAction('command');
+    metrics.event(metrics.EV.COMMAND_BAR, { button: 'say again' });
     const text = engine.getLastUserUtterance();
     if (!text) { ui.setStatus('Nothing to repeat yet'); return; }
     // Abort placeholders instantly AND stop an in-flight generation from restarting
@@ -2042,6 +2180,8 @@ async function handleSayAgain() {
 
 // Hold on — manually fire a floor-holding statement. Instant.
 async function handleHoldOn() {
+    noteUserAction('command');
+    metrics.event(metrics.EV.COMMAND_BAR, { button: 'hold on' });
     abortPlaceholders();   // instant abort + no in-flight generation restart (options kept)
     // User-editable (Settings → Controls). The default is softened from "Hold on,
     // let me think." — imperative phrasing reads as curt through the flat built-in
@@ -2068,6 +2208,9 @@ async function handleHoldOn() {
 // v0.5.87 "appends to it" behavior, which mis-merged two partner statements and put
 // the re-speak before the pardon). The AI still sees everything as ordered turns.
 async function handlePardon() {
+    noteUserAction('command');
+    metrics.event(metrics.EV.COMMAND_BAR, { button: 'ask them to repeat' });
+    metrics.paletteAbandoned('pardon');
     placeholders.stop();
     generationToken++;            // invalidate any in-flight generation on the garbled capture
     const snap = engine.pardon(); // push REPAIR* (dedups); floor → partner
@@ -2099,6 +2242,8 @@ async function handlePardon() {
 // we deliberately do NOT re-ingest the classification (that would push a
 // duplicate FPP). Whole-palette regenerate (not per-response) — see CLAUDE.md to-do.
 async function handleRegenerate() {
+    noteUserAction('regenerate');
+    metrics.event(metrics.EV.REGENERATE, { kind: currentStatic.kind || 'ai' });
     // If a predefined static palette is showing (openers / wind-downs / closings),
     // "New N" dips to the next page of that set rather than calling the AI (Ken,
     // July 2026). Only pages when more cards are defined than fit; otherwise no-op.
@@ -2137,7 +2282,7 @@ async function handleRegenerate() {
         const snap = engine.refreshPalette(result.responses);
         ui.showEngineState(snap);
         lastPalette = snap.palette;
-        ui.showResponses(snap.palette, handleResponseSelected);
+        showPalette(snap.palette);
         ui.setStatus(activeSteer.focusChoice
             ? `More ways to say "${activeSteer.focusChoice}"`
             : 'Select a response');
@@ -2180,6 +2325,8 @@ function setOfferedChoices(options) {
 // stack, mode and floor untouched, so no duplicate FPP), with the picked
 // alternative as the steer. The chips stay up: a second thought is one tap away.
 async function handleChoiceChip(chip) {
+    noteUserAction('choice chip');
+    metrics.event(metrics.EV.CHOICE_CHIP);
     const pick = chip && chip.label;
     if (!pick || !currentPartnerText) return;
 
@@ -2207,7 +2354,7 @@ async function handleChoiceChip(chip) {
         ui.showEngineState(snap);
         lastPalette = snap.palette;
         currentStatic = { kind: null, full: [] };  // AI responses — New N regenerates, not pages
-        ui.showResponses(snap.palette, handleResponseSelected);
+        showPalette(snap.palette);
         ui.setStatus(`Ways to say "${pick}" — or tap another choice`);
     } catch (err) {
         if (token !== generationToken) return;
@@ -2218,6 +2365,8 @@ async function handleChoiceChip(chip) {
 }
 
 async function handleReframe() {
+    noteUserAction('reframe');
+    metrics.event(metrics.EV.REFRAME);
     keyboard.acceptPendingGhost(); // fold a showing word-prediction ghost into the text first
     const steer = ui.getComposerText();
     // Clicking any of the three buttons dismisses the modal (Ken). Capture the
@@ -2262,7 +2411,7 @@ async function handleReframe() {
             const snap = engine.refreshPalette(result.responses);
             ui.showEngineState(snap);
             lastPalette = snap.palette;
-            ui.showResponses(snap.palette, handleResponseSelected);
+            showPalette(snap.palette);
             ui.setStatus('Select a response');
         } catch (err) {
             if (token !== generationToken) return;
@@ -2295,6 +2444,8 @@ async function handleReframe() {
 // reciprocate, pressing Wind down again dips to the next page of wind-downs (Ken,
 // July 2026) — the first press of a conversation shows page 0, each re-press advances.
 function handleWindDown() {
+    noteUserAction('command');
+    metrics.event(metrics.EV.COMMAND_BAR, { button: 'wind down' });
     placeholders.stop();
     // Invalidate any in-flight generation so it can't overwrite the wind-downs with
     // response options — or restart a placeholder — after the user chose to wind down.
@@ -2371,6 +2522,13 @@ function clearInfluencers() {
 // auto-resume is armed. `historyText` is what's logged/displayed; `spokenText`
 // is what TTS says (an Express Panel phrase may carry a distinct pronunciation form).
 async function speakAsUserTurn(historyText, spokenText = historyText, source = 'composed') {
+    // Saying it their own way ends the deliberation just as a card tap does, and this
+    // is the case worth catching: cards were on offer and the user went elsewhere.
+    // Recorded as abandonment WITH its reading time, which is the pair that separates
+    // "the suggestions missed" from "they had their own thing to say".
+    noteUserAction(source === 'express' ? 'express' : 'composer');
+    metrics.paletteAbandoned(source === 'express' ? 'express phrase' : 'own words');
+    metrics.event(source === 'express' ? metrics.EV.EXPRESS_PHRASE : metrics.EV.COMPOSER_SPOKEN);
     placeholders.stop();
     generationToken++;            // invalidate any in-flight generation on the partner turn
     // Does this statement OPEN the conversation? Captured BEFORE commitExchange
@@ -2400,7 +2558,10 @@ async function speakAsUserTurn(historyText, spokenText = historyText, source = '
     // it. Opening a conversation this way is the same act as selecting an opener, so
     // it arms the session exactly as that path does — see
     // conversation-logic.captureAfterUserSpeaks. (Ken, August 7 2026.)
-    if (opensConversation) manualListenArmed = true;
+    if (opensConversation) {
+        manualListenArmed = true;
+        metrics.conversationStarted({ practice: practiceMode });
+    }
     const capture = convLogic.captureAfterUserSpeaks({
         opensConversation,
         armed: manualListenArmed,
@@ -2419,6 +2580,11 @@ async function speakAsUserTurn(historyText, spokenText = historyText, source = '
 // Open the modal: show the input box overlay over the reserved response
 // footprint (base UI not blurred) and bring up the keyboard in the dock region.
 function openComposer() {
+    // Opening the box stops the clock even if nothing is ever said from it — the user
+    // has finished reading and decided against the cards at this moment, not at the
+    // moment they finish typing, which can be a minute later.
+    noteUserAction('composer');
+    metrics.event(metrics.EV.COMPOSER_OPENED);
     ui.clearComposer();
     ui.showComposerOverlay();
     // Summon the keyboard explicitly rather than relying on the textarea's
@@ -2451,6 +2617,9 @@ async function handleSpeakComposed() {
 
 // Cancel: discard the box and dismiss the modal (no speech).
 function handleCancelComposed() {
+    // Opened and then thought better of it. Worth its own count: a composer opened
+    // and abandoned is a user who could not say what they meant either way.
+    metrics.event(metrics.EV.COMPOSER_CANCELLED);
     ui.clearComposer();
     closeComposer();
 }
@@ -3571,11 +3740,20 @@ function renderErrorLog() {
 // was picked, what else was offered — so this reads history rather than adding
 // capture. It has simply never had a reader.
 
+async function buildUsageText() {
+    const summary = usageSummary.summarize(await storage.listConversationLogs());
+    const personalization = usageSummary.summarizePersonalization({
+        ...diagnostics.collectPersonalization(),
+        settingsProfiles: await diagnostics.countSettingsProfiles(),
+    });
+    return usageSummary.formatSummary(summary, personalization);
+}
+
 async function renderUsageSummary() {
     const view = document.getElementById('usageSummaryView');
     if (!view) return;
     try {
-        view.value = usageSummary.formatSummary(usageSummary.summarize(await storage.listConversationLogs()));
+        view.value = await buildUsageText();
     } catch (e) {
         // Never let a diagnostic throw: it runs precisely when something is already
         // wrong, and a blank panel would hide the very thing being looked for.
@@ -3626,7 +3804,7 @@ function renderTroubleshooting() {
 async function buildProblemReportText() {
     const noteEl = document.getElementById('problemNoteInput');
     let usageText = '';
-    try { usageText = usageSummary.formatSummary(usageSummary.summarize(await storage.listConversationLogs())); }
+    try { usageText = await buildUsageText(); }
     catch { usageText = '(unavailable)'; }
     let errorReport = '';
     try { errorReport = await buildErrorReport(); } catch { errorReport = '(unavailable)'; }
@@ -3636,6 +3814,7 @@ async function buildProblemReportText() {
         buildId: BUILD_ID,
         errorReport,
         usageText,
+        recentEvents: metrics.formatRecent(),
     });
 }
 
@@ -4128,7 +4307,14 @@ function openSettings() {
         if (status) status.textContent = testerNameInput.value.trim() ? '' : 'Not set — reports will not say who they are from.';
     };
     const weeklyEnabledInput = document.getElementById('weeklySendEnabledInput');
-    if (weeklyEnabledInput) weeklyEnabledInput.onchange = () => storage.saveWeeklySendEnabled(weeklyEnabledInput.checked);
+    if (weeklyEnabledInput) weeklyEnabledInput.onchange = () => {
+        storage.saveWeeklySendEnabled(weeklyEnabledInput.checked);
+        // The same switch governs COUNTING, not just sending. A tester who turns
+        // reporting off and still has every tap written to metrics.log has been
+        // misled about what the switch does, and it is the one switch in the app
+        // whose whole purpose is to be believed.
+        metrics.setEnabled(weeklyEnabledInput.checked);
+    };
 
     // Settings profiles (About tab) — save the whole settings bundle to the data
     // folder under a name, and re-apply it later. Populate the picker now.
@@ -4747,5 +4933,8 @@ try {
 // a rejection here can never reach the unhandledrejection handler above and be
 // reported to the user as a startup failure.
 setTimeout(() => {
+    // Write the tally out first, so the report cannot miss the session that is
+    // sending it — the debounce would otherwise still be pending.
+    metrics.flush();
     weeklySend.maybeSend({ appVersion: APP_VERSION, build: BUILD_ID }).catch(() => { /* never surfaces */ });
 }, 3000);

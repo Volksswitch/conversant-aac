@@ -33,7 +33,8 @@
  */
 import * as storage from './storage.js';
 import * as diagnostics from './diagnostics.js';
-import { summarize } from './usage-summary.js';
+import * as metrics from './metrics.js';
+import { summarize, summarizePersonalization } from './usage-summary.js';
 
 // The Apps Script web app that receives reports (scripts/weekly-report-endpoint.gs).
 // ⚠ An empty string makes the sender INERT — payloads still build, queue and log, but
@@ -73,8 +74,11 @@ export const PAYLOAD_FIELDS = {
     sentAt: 'When the report was sent',
     coversDays: 'How many days the report covers',
     usage: 'Counts and timings: how many conversations, how often a suggestion fitted, how long people waited',
+    weeks: 'The same counts broken down by week, so we can see how things change',
+    events: 'Counts of what was tapped and how long things took. No words, ever.',
+    personalization: 'How much you have filled in and made your own — counts only, never the content',
     errors: 'Which errors happened and when — never what was being said at the time',
-    systemInfo: 'Your screen, browser and settings. Sent only when something changes.',
+    systemInfo: 'Your screen, browser and settings',
 };
 
 export function describeReport() {
@@ -146,7 +150,8 @@ export function hashOf(obj) {
 }
 
 // Keys must match PAYLOAD_FIELDS exactly — asserted by the drift test.
-export function assemblePayload({ testerName, installId, appVersion, build, now, coversDays, usage, errors, systemInfo }) {
+export function assemblePayload({ testerName, installId, appVersion, build, now, coversDays,
+                                  usage, weeks, events, personalization, errors, systemInfo }) {
     return {
         testerName: testerName || '',
         installId: installId || '',
@@ -155,6 +160,12 @@ export function assemblePayload({ testerName, installId, appVersion, build, now,
         sentAt: new Date(now || Date.now()).toISOString(),
         coversDays: coversDays ?? null,
         usage: usage || null,
+        // Sent as its own field rather than left inside `usage` because it is the one
+        // thing a cumulative summary can never show, and because it is what gets read
+        // first at the other end: a missing week is what quietly stopping looks like.
+        weeks: weeks || [],
+        events: events || null,
+        personalization: personalization || null,
         errors: errors || [],
         systemInfo: systemInfo || null,   // null when unchanged since the last send
     };
@@ -165,6 +176,19 @@ export function assemblePayload({ testerName, installId, appVersion, build, now,
 async function gatherPayload({ appVersion, build, now }) {
     let usage = null;
     try { usage = summarize(await storage.listConversationLogs()); } catch { /* leave null */ }
+    // The weekly buckets ride separately, and `usage.weeks` is dropped from the
+    // cumulative block so the same rows are not sent twice in one payload.
+    const weeks = (usage && usage.weeks) || [];
+    if (usage) delete usage.weeks;
+    let events = null;
+    try { events = metrics.snapshot(); } catch { /* leave null */ }
+    let personalization = null;
+    try {
+        personalization = summarizePersonalization({
+            ...diagnostics.collectPersonalization(),
+            settingsProfiles: await diagnostics.countSettingsProfiles(),
+        });
+    } catch { /* leave null */ }
     const errors = redactErrors(storage.loadErrorLog());
     let systemInfo = null;
     try {
@@ -181,7 +205,7 @@ async function gatherPayload({ appVersion, build, now }) {
         installId: storage.loadInstallId(),
         appVersion, build, now,
         coversDays: lastAt ? Math.round((now - lastAt) / 86400000) : null,
-        usage, errors, systemInfo,
+        usage, weeks, events, personalization, errors, systemInfo,
     });
 }
 

@@ -26,6 +26,18 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- **Settings → Troubleshooting now shows a week-by-week breakdown**, so you can see how
+  things are going over time rather than only a running total since you started. It also
+  now shows how long you spent choosing between the suggestions, whether your paid voice
+  ever dropped back to this device's voice for a sentence, which people you have talked
+  with more than once, and how much of the app you have filled in and made your own.
+- **The weekly report carries those same counts.** As before, it never carries anything
+  you or anyone else said, and never your keys. Settings → Troubleshooting lists exactly
+  what is in it, and the switch that turns the report off now also stops the counting.
+- **Problem reports now include what you did in the minutes beforehand** — which buttons,
+  in what order, and how long things took. No words are recorded, only counts and
+  timings, and it is there so that "it stopped working" is something we can follow.
+
 ## Version 0.7.5
 
 - New in Settings → Practice: **A tour of the buttons**. It walks you through the row
