@@ -21,6 +21,9 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.7.5": [
+    "New in Settings → Practice: A tour of the buttons. It walks you through the row of buttons across the middle of the screen one at a time, telling you what each one is for and waiting while you press it — Listen, Start conversation, Repeat what I said, Hold on, Ask them to repeat, New 4, In my own words, Wind down, Don't save this conversation, and End conversation. It talks, so you can listen rather than read, and it waits as long as you like. Press the wrong thing and it tells you what the right button looks like and where it sits, then goes on waiting. It needs no API key, so it is something you can do on your first day, before anything else is set up."
+  ],
   "0.7.4": [
     "Editing an Express Panel button no longer hides the panel. Picking a button used to put the cursor straight into its text box, which brought the on-screen keyboard up over the panel — so you could not see the button you were about to move or add next to. The cursor now stays out of the box until you tap it, and pressing Enter when you have finished typing puts the keyboard away and brings the panel back.",
     "The fixed color shown on a Partner, Feeling or Place button is now drawn smaller, as a sample rather than a button. It looked exactly like the color choices on a phrase button, so it invited a tap that could do nothing — those three types have one color each and it cannot be changed."
