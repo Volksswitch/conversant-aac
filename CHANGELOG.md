@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.7.4
+
 - Editing an Express Panel button no longer hides the panel. Picking a button used to
   put the cursor straight into its text box, which brought the on-screen keyboard up
   over the panel — so you could not see the button you were about to move or add
