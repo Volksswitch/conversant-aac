@@ -22,7 +22,26 @@
 //                    goal, and their tone. Drives llm.generatePartnerUtterance.
 //   register      — the interactional norm set (§8: scenarios set register explicitly).
 
+import { TOUR_STEPS } from './practice-tour.js';
+
 export const SCENARIOS = [
+    // The controls tour. FIRST in the list on purpose: it is the one to do before any
+    // of the others, because the rest assume you know which button is which.
+    //
+    // ⚠ IT IS A DIFFERENT KIND OF ENTRY — it carries `steps` and NO partnerPersona,
+    // because nothing here is generated. Code that runs a scenario must branch on
+    // which of the two it has; anything that assumes `partnerPersona` exists will
+    // fail on this one. See practice-tour.js for why the tour is scripted and why it
+    // must keep working with no API key.
+    {
+        id: 'controls-tour',
+        category: 'Getting started',
+        title: 'A tour of the buttons',
+        description: 'Learn what each button does, one at a time. No API key needed.',
+        opensWith: 'partner',
+        steps: TOUR_STEPS,
+        register: 'guided walkthrough',
+    },
     {
         id: 'coffee-order',
         category: 'Practical',

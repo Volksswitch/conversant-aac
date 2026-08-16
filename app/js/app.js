@@ -26,6 +26,7 @@ import * as controlEditor from './control-phrases-editor.js';
 import * as whatsNew from './whats-new.js';
 import * as chime from './chime.js';
 import * as practiceScenarios from './practice-scenarios.js';
+import * as practiceTour from './practice-tour.js';
 import * as dataTransfer from './data-transfer.js';
 import * as platform from './platform.js';
 import * as sttDeepgram from './stt-deepgram.js';
@@ -98,6 +99,10 @@ let lastPalette = [];
 // the listen/response/teardown paths fork to the practice equivalents below.
 let practiceMode = false;
 let practiceScenario = null;
+// The controls tour's position, when the chosen "scenario" is the tour (it carries
+// `steps` instead of a partnerPersona). Null in every other practice session and in
+// every real conversation.
+let tour = null;
 // Raw, combined speech-to-text for the partner's current (uncommitted) turn.
 // Grows across silence periods until the user picks a response.
 let currentPartnerText = '';
@@ -463,6 +468,11 @@ function initApp() {
     document.addEventListener('fullscreenchange', repromoteSettingsOverFullscreen);
     document.addEventListener('webkitfullscreenchange', repromoteSettingsOverFullscreen);
     blockZoomGestures();
+    // The controls tour watches for the press it just asked for. Capture phase, and
+    // on document so it sees the Command Bar, the response cards and the Express
+    // Panel alike — see handleTourPress for why it must not intercept. Inert unless
+    // a tour is running.
+    document.addEventListener('click', handleTourPress, true);
     ui.setCardsPerCategory(storage.loadResponsesPerCategory()); // 8-card mode → 8 reserved slots
     ui.clearResponseOptions(); // render the reserved empty card footprint at rest
     renderExpressPanel();
@@ -1567,26 +1577,34 @@ function renderPracticePanel() {
         return;
     }
 
+    // ⚠ THE KEY GATE IS PER-SCENARIO, NOT PER-TAB, AND THAT IS THE WHOLE POINT OF THE
+    // TOUR. A conversational scenario needs the AI for both the partner and the
+    // response suggestions; the controls tour is scripted and needs neither. Gating
+    // the tab would have hidden the tour from exactly the person it is for — someone
+    // on their first day whose key is not working yet, looking at a screen of
+    // unlabelled icons. So the notice still appears, and the tour is offered under it.
     const hasKey = !!(storage.loadApiKey() || '').trim();
     if (!hasKey) {
         const msg = document.createElement('p');
         msg.className = 'practice-note';
-        msg.textContent = 'Practice needs a Claude API key — the AI plays the other person and suggests your responses. Add one on the General tab, then come back.';
+        msg.textContent = 'Practicing a conversation needs a Claude API key — the AI plays the other person and suggests your responses. Add one on the General tab, then come back. The tour of the buttons below works without one.';
         const goBtn = mkButton('Go to the General tab', 'practice-add-key', () => {
             activateSettingsTab(document.querySelector('#settingsTabs .settings-tab[data-tab="general"]'), true);
         });
         panel.append(msg, goBtn);
-        return;
     }
 
     const title = document.createElement('h3');
     title.className = 'practice-title';
-    title.textContent = 'Choose something to practice';
+    title.textContent = hasKey ? 'Choose something to practice' : 'What you can do without a key';
     panel.appendChild(title);
 
     const list = document.createElement('div');
     list.className = 'practice-list';
-    for (const scenario of practiceScenarios.SCENARIOS) {
+    const offered = hasKey
+        ? practiceScenarios.SCENARIOS
+        : practiceScenarios.SCENARIOS.filter((s) => Array.isArray(s.steps) && s.steps.length);
+    for (const scenario of offered) {
         const card = document.createElement('button');
         card.type = 'button';
         card.className = 'practice-card';
@@ -1621,6 +1639,9 @@ function mkButton(label, cls, onClick) {
 async function startPractice(scenario) {
     practiceMode = true;
     practiceScenario = scenario;
+    // A scenario carrying `steps` is the controls tour, not a conversation — see
+    // practice-tour.js. Set before terminateConversation, which clears the tour.
+    const isTour = Array.isArray(scenario.steps) && scenario.steps.length > 0;
     keyboard.hideKeyboard();
     hostExpressPanel(false);       // the panel must not close inside the dialog
     document.getElementById('settingsDialog').close();
@@ -1630,6 +1651,11 @@ async function startPractice(scenario) {
     ui.setListenButtonState(false);
     applyListenAvailability();   // practice needs no mic — re-enable Listen if capture is unavailable
     ui.setStatus(`Practice: ${scenario.title}. Tap Start Listening to hear the other person.`);
+    // Set here, after the teardown above, so choosing a conversational scenario also
+    // clears a tour left running from a previous one.
+    tour = isTour ? practiceTour.createTour(scenario.steps) : null;
+    ui.setCoachLine(null);
+    if (isTour) speakTourStep();
 }
 
 // Abort practice and return to the standard conversation screen. Shared by the
@@ -1669,8 +1695,68 @@ async function advancePracticePartner() {
     await handleSilencePeriod(line);
 }
 
+// --- The controls tour (practice-tour.js) ---
+
+// Say the current step and show it, then wait for the user to press the control it
+// names. Nothing here is timed: the tour advances on a press and on nothing else, so
+// a user who stops to think, or to try the button twice, is never left behind.
+async function speakTourStep() {
+    const step = practiceTour.currentStep(tour);
+    if (!step) return;
+    ui.setCoachLine(step.say);
+    // The practice partner's voice, for the same reason spoken help uses it: it must
+    // be audibly NOT the user's own, or the app explaining itself sounds like the
+    // user saying it. One selection, already solved, nothing extra to configure.
+    await tts.speak(step.say, { voiceURI: pickPartnerVoice(), auraModel: pickAuraPartnerVoice() });
+}
+
+// Set when the tour's last step was one that ends the session, so the closing
+// message can be said AFTER the teardown instead of being wiped by it.
+let tourFinishPending = false;
+
+/**
+ * A press landed somewhere while the tour is running.
+ *
+ * ⚠ OBSERVES, NEVER INTERCEPTS — no preventDefault and no stopPropagation. The whole
+ * point is to learn what a button does, so the button must actually do it; a tour
+ * that swallowed the press would be teaching a mime of the app.
+ * ⚠ RUNS ON THE CAPTURE PHASE, which looks wrong for an observer and is not. The last
+ * step is End conversation, whose handler clears the tour — on the bubble phase the
+ * tour would already be gone by the time this ran, and the final step would never be
+ * credited. Capture sees every press regardless of what the handler then does to the
+ * state this depends on.
+ * A press on anything else is ignored in silence: on this surface a stray tap is
+ * ordinary, and a tour that scolded or restarted would be worse than one that waits.
+ */
+function handleTourPress(e) {
+    if (!tour || !practiceMode) return;
+    const result = practiceTour.pressed(tour, e.target);
+    if (result === 'ignored') return;
+    if (result === 'finished') {
+        const viaSessionEnd = practiceTour.finishedBySessionEnd(tour);
+        tour = null;
+        if (viaSessionEnd) tourFinishPending = true;   // announced by the teardown
+        else announceTourFinished();
+        return;
+    }
+    // Let the pressed control finish what it is doing — several of them repaint the
+    // palette or open the composer — before the next instruction talks over it.
+    setTimeout(speakTourStep, 700);
+}
+
+function announceTourFinished() {
+    tourFinishPending = false;
+    ui.setCoachLine(practiceTour.TOUR_DONE);
+    tts.speak(practiceTour.TOUR_DONE,
+        { voiceURI: pickPartnerVoice(), auraModel: pickAuraPartnerVoice() });
+}
+
 // "Start Listening" in practice: cue the partner (or pause if already in a turn).
 function togglePracticeCue() {
+    // In the tour, Listen is simply the first step's target: it has already been
+    // observed by handleTourPress, and there is no AI partner to cue. Returning here
+    // is what keeps the tour free of generation calls (and so free of an API key).
+    if (tour) return;
     if (isListening) {
         // Pause: stop the current partner turn and disarm auto-resume (mirrors a
         // manual Stop). The user taps again to continue.
@@ -1710,6 +1796,12 @@ function practiceResumeOrIdle() {
 async function terminateConversation() {
     placeholders.stop();
     tts.cancel();
+    // ⚠ THE TOUR IS DELIBERATELY NOT CLEARED HERE, and the first cut got this wrong.
+    // This function is not "the conversation ended" — it is "wipe the conversation
+    // state", and START conversation calls it too, which is step two of the tour. So
+    // clearing here killed the tour on its own second instruction, leaving a blank
+    // coach line and no error. The tour ends where the SESSION ends
+    // (handleEndConversation) and nowhere else.
     // A new conversation gets its own start-of-listening cue, whichever mode.
     chime.resetConversation();
     manualListenArmed = false;
@@ -2198,6 +2290,10 @@ async function handleEndConversation() {
     // to real-conversation behavior.
     practiceMode = false;
     practiceScenario = null;
+    // The session is over, so the tour is too — this is the ONLY place it is cleared
+    // (see the note in terminateConversation for why it cannot be done there).
+    tour = null;
+    ui.setCoachLine(null);
     applyListenAvailability();   // back to a real conversation — Listen follows capture again
     await terminateConversation();
     // Ending a conversation clears the situation influencers — the next person /
@@ -2211,6 +2307,10 @@ async function handleEndConversation() {
         // back to the standard conversation screen (Ken, July 2026) — the mic-backed
         // conversation is ready to go, no start screen in between.
         ui.setStatus('Practice ended — back to a normal conversation');
+        // The tour's last step IS this button, so its closing message can only be
+        // said now: everything above has just cancelled speech and cleared the coach
+        // line, which would have destroyed it had it been said at press time.
+        if (tourFinishPending) announceTourFinished();
     } else {
         ui.setStatus('Conversation ended — tap Start conversation or Listen to begin again');
     }

@@ -35,6 +35,13 @@
                 <div id="transcript" class="transcript-log" aria-live="polite">
                     <div id="transcriptLog"></div>
                     <div id="liveTurn" class="turn turn-partner turn-live" hidden></div>
+                    <!-- The controls tour's instruction. Bottom-pinned inside the
+                         transcript like the live turn, and like it NOT part of the
+                         conversation history: the tour speaks to the user about the
+                         app, which is not something either party said, and it must
+                         never reach the saved record or the AI. Sits inside the
+                         scrolling log, so it moves nothing (Rule 1). -->
+                    <div id="coachLine" class="turn turn-coach" hidden></div>
                     <p id="nowPlaying" class="now-playing" hidden><span class="np-icon">♪</span> <span id="nowPlayingText"></span></p>
                 </div>
                 <!-- Pre-start block: overlays the transcript space (empty before the

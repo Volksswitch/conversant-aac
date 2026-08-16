@@ -7,6 +7,7 @@ const listenBtn = document.getElementById('listenBtn');
 const transcriptBox = document.getElementById('transcript');     // fixed-height scroller
 const transcriptLog = document.getElementById('transcriptLog');  // committed turns
 const liveTurn = document.getElementById('liveTurn');            // in-progress partner turn
+const coachLine = document.getElementById('coachLine');          // controls-tour instruction
 const modeChip = document.getElementById('modeChip');
 const nowPlaying = document.getElementById('nowPlaying');
 const nowPlayingText = document.getElementById('nowPlayingText');
@@ -62,6 +63,21 @@ export function setLiveTranscript(text) {
     if (!liveTurn) return;
     if (text) { liveTurn.textContent = text; liveTurn.hidden = false; }
     else { liveTurn.textContent = ''; liveTurn.hidden = true; }
+    scrollLogToBottom();
+}
+
+/**
+ * The controls tour's current instruction. Empty text hides it.
+ *
+ * Kept OUT of the conversation history on purpose — the tour is the app talking
+ * about itself, which neither party said. Putting it in history would write it to
+ * the saved conversation file and, in any scenario that reaches the AI, hand it to
+ * the model as though the partner had spoken it.
+ */
+export function setCoachLine(text) {
+    if (!coachLine) return;
+    if (text) { coachLine.textContent = text; coachLine.hidden = false; }
+    else { coachLine.textContent = ''; coachLine.hidden = true; }
     scrollLogToBottom();
 }
 

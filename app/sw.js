@@ -51,6 +51,7 @@ const SHELL = [
   './js/placeholders.js',
   './js/chime.js',
   './js/practice-scenarios.js',
+  './js/practice-tour.js',
   './js/engine.js',
   './js/conversation-logic.js',
   './js/transcript-log.js',

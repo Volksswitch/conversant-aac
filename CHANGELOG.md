@@ -26,6 +26,15 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- New in Settings → Practice: **A tour of the buttons**. It walks you through the row
+  of buttons across the middle of the screen one at a time, telling you what each one
+  is for and waiting while you press it — Listen, Start conversation, Repeat what I
+  said, Hold on, Ask them to repeat, New 4, In my own words, Wind down, Don't save
+  this conversation, and End conversation. It talks, so you can listen rather than
+  read, and it waits as long as you like. Press the wrong thing and nothing bad
+  happens; it just waits for the right one. **It needs no API key**, so you can learn
+  the buttons on your first day before anything else is set up.
+
 ## Version 0.7.4
 
 - Editing an Express Panel button no longer hides the panel. Picking a button used to

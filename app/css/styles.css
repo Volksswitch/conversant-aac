@@ -625,6 +625,23 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
     text-align: right;
     border-bottom-right-radius: 2px;
 }
+/* The controls tour's instruction. Deliberately NOT a chat bubble: it is the app
+   talking about itself, not a turn either party took, and if it looked like a
+   partner turn the user would reasonably try to answer it. So it spans the full
+   width rather than hugging a side, and takes the amber Notice colour already used
+   in the app for "this is a notice, not speech". */
+.turn-coach {
+    width: auto;
+    max-width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+    background: #fff8e1;
+    color: #5d4200;
+    border-left: 4px solid var(--slot-dispreferred, #F9A825);
+    border-radius: 6px;
+    font-family: system-ui, -apple-system, sans-serif;
+}
+.turn-coach[hidden] { display: none; }
 /* The in-progress partner turn (live STT) — provisional, with a subtle state
    accent (UNCONFIRMED → GENERATING). */
 .turn-live {
