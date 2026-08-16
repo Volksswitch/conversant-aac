@@ -2339,30 +2339,12 @@ function expressLayoutRows() {
     return (LAYOUTS[id] && LAYOUTS[id].rows) || [];
 }
 
-// Is a conversation under way? The gate on defining an Express cell by tapping it
-// (below). Ken's rule is deliberately about the CONVERSATION, not the moment: a
-// control that works at some instants within a conversation and not others is less
-// predictable than one simply unavailable for the duration, and predictability is
-// worth more than reach for this population. So this asks "has a conversation been
-// opened and not yet ended", by any of the routes that open one — Start
-// conversation (a static palette is showing), Start Listening, a partner turn in
-// flight, a committed turn, or a practice session. terminateConversation() clears
-// every one of them, which is what makes the answer go back to false.
-function conversationInProgress() {
-    return practiceMode
-        || isListening
-        // The user's statement is still being SPOKEN. Its turn reaches the history
-        // only after the speech finishes, so an opening Express phrase left a window —
-        // about as long as the utterance — where a conversation had visibly begun and
-        // every term below was still false. Tapping a blank cell in that window opened
-        // the editor over a conversation in progress. (Found in verification,
-        // August 15 2026.)
-        || speakingUserStatement
-        || conversationHistory.length > 0
-        || !!currentPartnerText
-        || lastPalette.length > 0
-        || !!currentStatic.kind;
-}
+// (conversationInProgress() lived here. It gated tap-to-define on whether a
+// conversation was under way — the August 7 2026 rule — and became dead when Ken
+// moved editing into Settings entirely on August 15 2026. Recover it from git if a
+// future feature needs "is a conversation open"; it read practiceMode || isListening
+// || a user statement mid-speech || a committed turn || a partner turn in flight ||
+// a live or static palette, all of which terminateConversation() clears.)
 
 // True while the panel is hosted inside the open Settings dialog (Express tab).
 let expressPanelInSettings = false;
@@ -2388,7 +2370,7 @@ function hostExpressPanel(inSettings) {
 }
 
 /**
- * The user tapped an undefined cell: open the editor on THAT cell.
+ * The user tapped an undefined cell IN SETTINGS: open the editor on THAT cell.
  *
  * Ken's reason for tap-to-define is that it makes position and content one
  * operation instead of two — the button is created where it will live, rather than
@@ -2396,15 +2378,20 @@ function hostExpressPanel(inSettings) {
  * the tapped cell is the whole point, and holding it open is what the 'empty' item
  * type exists for (see express-items.js): every cell before the tapped one gets an
  * empty placeholder, so the new button lands in the cell that was actually tapped.
+ *
+ * ONLY IN SETTINGS (Ken, August 15 2026). This SUPERSEDES the August 7 2026 rule,
+ * which allowed it from the dock between conversations and blocked it only while a
+ * conversation was under way. The conversation screen is the surface a non-speaking
+ * user drives a live conversation from, a filled cell SPEAKS on tap, and this
+ * population taps imprecisely — so a neighbouring cell that instead throws open a
+ * full-screen editor is the wrong thing to have there at all, not merely at the
+ * wrong moment. "You edit your buttons in Settings" is also a simpler thing to learn
+ * than a rule about when the same tap does something different.
  */
 function handleDefineCell(index) {
-    // NOT during a conversation (Ken). A filled cell SPEAKS on tap and an undefined
-    // one would open a full-screen editor — very different consequences for adjacent
-    // holes in a keyguard, and this population taps imprecisely. Between
-    // conversations there is no bad outcome; mid-conversation there is, and nobody
-    // composes their button set mid-exchange. Silent: a stray tap on a blank cell
-    // does nothing today, and that is exactly what it should keep doing.
-    if (!expressPanelInSettings && conversationInProgress()) return;
+    // Belt and braces: outside Settings the cell is rendered with no handler at all,
+    // so this cannot normally be reached.
+    if (!expressPanelInSettings) return;
 
     const items = expressPanel.getItems();
     while (items.length <= index) items.push(expressItems.newEmptyItem());
@@ -2471,11 +2458,10 @@ function renderExpressPanel() {
         onToggleFeeling: handleToggleFeeling,
         onTogglePlace: handleTogglePlace,
         onInMyOwnWords: openComposer,
-        // Always wired: whether the tap is allowed is decided inside the handler,
-        // because it depends on conversation state that changes without the panel
-        // being re-rendered — and because the cell must look and measure the same
-        // either way (Rule 1).
-        onDefineCell: handleDefineCell,
+        // Wired only in Settings, which is the only place buttons are edited (Ken).
+        // Safe to decide at render time now that hostExpressPanel always re-renders:
+        // the panel cannot change host without this being re-evaluated.
+        onDefineCell: expressPanelInSettings ? handleDefineCell : null,
         // Only meaningful while the panel is hosted in Settings; elsewhere the editor
         // has cleared it, so this is null and no cell is marked.
         pickedId: expressEditor.getPickedId(),

@@ -513,13 +513,16 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         b.type = 'button';
         b.className = 'ep-btn ep-undefined';
         b.style.flex = `${span} 1 0`;
-        b.title = 'Empty — tap to put a button here';
-        b.setAttribute('aria-label', 'Empty button slot — tap to add a button here');
-        // Whether a tap is ALLOWED is decided by the handler, not here: it depends on
-        // whether a conversation is under way, which changes without the panel being
-        // re-rendered. Deciding at tap time keeps the gate current and — just as
-        // important — keeps the cell looking and measuring the same either way.
-        b.addEventListener('click', () => onDefineCell && onDefineCell(index));
+        // Buttons are defined in Settings and nowhere else (Ken, August 15 2026), so
+        // outside Settings there is no handler and the cell must not offer one — a
+        // label promising something that will not happen is worse than a plain empty
+        // slot. The cell looks and MEASURES the same either way: only the words and
+        // the handler differ, never the box (Rule 1).
+        b.title = onDefineCell ? 'Empty — tap to put a button here' : 'Empty button slot';
+        b.setAttribute('aria-label', onDefineCell
+            ? 'Empty button slot — tap to add a button here'
+            : 'Empty button slot');
+        if (onDefineCell) b.addEventListener('click', () => onDefineCell(index));
         return b;
     };
 

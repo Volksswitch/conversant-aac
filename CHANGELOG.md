@@ -32,6 +32,11 @@ forgetting to tag one is only ever noise, never silence.
   Your choice is unchanged on the conversation screen.
 - Fixed: "Add an API key to Settings" on the opening screen now takes you to the API
   Key box with its section already open, instead of leaving you on a list of headings.
+- Express Panel buttons are now set up in Settings only. Tapping an empty slot on the
+  conversation screen used to open the editor; it no longer does anything, so a
+  mistaken tap while you are talking to someone can't put an editing screen in front
+  of you. Open Settings → Express Panel and tap the empty slot there instead — it
+  works exactly as before, and the panel beside it is the one you are editing.
 
 ## Version 0.7.2
 
