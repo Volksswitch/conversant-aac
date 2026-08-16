@@ -21,6 +21,11 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.7.6": [
+    "Settings → Troubleshooting now shows a week-by-week breakdown, so you can see how things are going over time rather than only a running total since you started. It also now shows how long you spent choosing between the suggestions, whether your paid voice ever dropped back to this device's voice for a sentence, which people you have talked with more than once, and how much of the app you have filled in and made your own.",
+    "The weekly report carries those same counts. As before, it never carries anything you or anyone else said, and never your keys. Settings → Troubleshooting lists exactly what is in it, and the switch that turns the report off now also stops the counting.",
+    "Problem reports now include what you did in the minutes beforehand — which buttons, in what order, and how long things took. No words are recorded, only counts and timings, and it is there so that \"it stopped working\" is something we can follow."
+  ],
   "0.7.5": [
     "New in Settings → Practice: A tour of the buttons. It walks you through the row of buttons across the middle of the screen one at a time, telling you what each one is for and waiting while you press it — Listen, Start conversation, Repeat what I said, Hold on, Ask them to repeat, New 4, In my own words, Wind down, Don't save this conversation, and End conversation. It talks, so you can listen rather than read, and it waits as long as you like. Press the wrong thing and it tells you what the right button looks like and where it sits, then goes on waiting. It needs no API key, so it is something you can do on your first day, before anything else is set up."
   ],

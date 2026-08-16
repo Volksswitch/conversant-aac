@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.7.6
+
 - **Settings → Troubleshooting now shows a week-by-week breakdown**, so you can see how
   things are going over time rather than only a running total since you started. It also
   now shows how long you spent choosing between the suggestions, whether your paid voice
