@@ -1183,6 +1183,50 @@ Product-document currency is tracked by [`DOC-SYNC.md`](DOC-SYNC.md) (any root d
 
 **History note:** the first catch-up of the three beta-facing docs (July 8 2026) was done *before* this backup rule existed, so those three were edited in place without a pre-edit snapshot; OneDrive version history (and `Other/Previous Doc Version/` for the two overviews) is the recovery path for their pre-edit state. Every sync from now on backs up first.
 
+## A document generator is a revert button, and it cannot tell you so (August 17 2026)
+
+**Found by sweeping all 19 generators against their documents: SIX had drifted, because
+every "sync docs" pass edits the `.docx` directly and nobody folded the changes back.**
+Running the Architecture Overview's generator would have discarded 184 paragraphs;
+running the Product Overview's would have discarded four months, including a section
+written that morning. **There is no error, no warning, and no way to notice afterwards**
+— the script does exactly what it was written to do.
+
+**BUILT: an overwrite guard in [`doc-paths.js`](scripts/doc-generators/doc-paths.js),
+which every generator already requires.** A document may only be overwritten if it is
+byte-identical to what the generator produced last time; `doc-manifest.json` records that
+hash per document. Different hash, or no entry at all, and the write is refused with
+instructions. `FORCE_DOC_WRITE=1` means "I have read the differences and I am discarding
+them on purpose."
+- **⚠ NOT an mtime rule, and this is the part worth remembering: a date comparison
+  INVERTS ITSELF the moment you edit the generator.** Touching the script makes it newer
+  than its document and re-arms the very overwrite it was meant to prevent. The question
+  is about content, so the test has to be about content.
+- **`OUTPATH` stands the guard down**, because that is the check-before-you-fold workflow
+  (generate to a scratch file, diff, patch, repeat). A guard that blocks the diagnosis is
+  a guard that gets bypassed.
+
+**WHICH TECHNIQUE TO FOLD WITH depends on what the document carries, and getting this
+wrong destroys the thing you are trying to save.** The Product Overview was rebuilt
+wholesale from its document — exact, and safe only because it is text and one plain
+table. **Do NOT do that to a document with figures, page breaks, shaded tables or bold
+lead-in runs** (the Architecture Overview and both engine documents): a rebuild emits
+plain paragraphs and silently drops every one of them. Those get **string patching**
+instead — replace the generator's own literals — which leaves the structures untouched.
+
+**STILL STALE, deliberately: the Architecture Overview (70 differences), the Conversation
+Engine Design (28) and the Conversation Engine Overview (22).** They are guarded, so they
+can no longer do harm, and folding them is a dedicated pass rather than a drive-by.
+
+**Two smaller faults the sweep turned up, both invisible until something looked:** the
+Keeping Costs Down generator wrote a **bare filename**, so it had been depositing its
+document in `scripts/doc-generators/` rather than `Documents/` — the file everyone reads
+was not the file it wrote; and the two engine generators still wrote **pre-rename
+filenames**, so running one would have created a stale duplicate beside the real
+document rather than updating it. The retired iPad Architecture generator now **refuses
+to run**, since the guard protects files that exist and that one would have resurrected a
+document the project decided not to have.
+
 ## Development phases (Ken, July 8 2026) — to-do organizing convention
 
 Ken introduced a three-stage rollout vocabulary for organizing the to-do list by *when* work must be done:

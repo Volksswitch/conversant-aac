@@ -139,7 +139,7 @@ const doc = new Document({
 
             // ===== 2. WHY NO SINGLE DISCIPLINE OWNS IT =====
             heading1("2.  Why No Single Discipline Owns This Question"),
-            para("Conversation Analysis — the discipline already grounding the rest of the Conversation Engine (sequence stack, adjacency pairs, repair, the five modes) — studies how talk is structured turn by turn: who speaks next, how a sequence opens and closes, how misunderstandings get repaired. It is very good at describing how a redirect gets accomplished inside an unfolding exchange, but it does not offer a catalogue of what a speaker might want to redirect toward. That catalogue lives one level down, inside the turn itself — in the content, tone, and stance the speaker chooses — which is the territory of a different, complementary set of fields: the sociology of interaction (Goffman), functional linguistics (Halliday; Martin and White), and pragmatics (Grice; Brown and Levinson)."),
+            para("Conversation Analysis — the discipline already grounding the rest of the Conversation Engine (sequence stack, adjacency pairs, repair, the five modes) — studies how talk is structured turn by turn: who speaks next, how a sequence opens and closes, how misunderstandings get repaired. It is very good at describing how a redirect gets accomplished inside an unfolding exchange, but it does not offer a catalog of what a speaker might want to redirect toward. That catalog lives one level down, inside the turn itself — in the content, tone, and stance the speaker chooses — which is the territory of a different, complementary set of fields: the sociology of interaction (Goffman), functional linguistics (Halliday; Martin and White), and pragmatics (Grice; Brown and Levinson)."),
             para("Put simply: CA explains how a turn is built and how one turn connects to the next. The frameworks below explain what a speaker is doing to the content of a single turn — steering its topic, its register, its force, its truthfulness — which is precisely what the Reframe feature lets the user do to an AI-generated turn before it is spoken."),
             emptyPara(),
 
@@ -167,7 +167,7 @@ const doc = new Document({
             emptyPara(),
 
             heading2("3.3  Martin and White — Appraisal Theory"),
-            para("Appraisal Theory (Martin and White, The Language of Evaluation, 2005) is a detailed extension of SFL's interpersonal metafunction, built specifically to catalogue how speakers express attitude and adjust its strength. It has three systems, and each maps cleanly onto a kind of redirect a user might want:"),
+            para("Appraisal Theory (Martin and White, The Language of Evaluation, 2005) is a detailed extension of SFL's interpersonal metafunction, built specifically to catalog how speakers express attitude and adjust its strength. It has three systems, and each maps cleanly onto a kind of redirect a user might want:"),
             bulletBold("Attitude — ", "the speaker's affect (feelings), judgment (of people's behavior — competence, propriety), and appreciation (of things and situations). This is the vocabulary behind \"I'm frustrated about this\" or \"I want to come across as capable here.\""),
             bulletBold("Engagement — ", "how the speaker positions their own view relative to other possible viewpoints — asserting flatly versus acknowledging there could be another way to see it. This is the vocabulary behind \"soften it\" or \"leave room for their side.\""),
             bulletBold("Graduation — ", "turning the volume up or down on force (how strongly something is stated) and focus (how sharply a category boundary is drawn). This is the vocabulary behind \"keep it short\" and \"be more direct\" — a single dial rather than a list of discrete choices."),
@@ -185,7 +185,7 @@ const doc = new Document({
 
             // ===== 4. TAXONOMY =====
             heading1("4.  A Grounded Taxonomy of Redirect Types"),
-            para("Combining the four frameworks produces a short, bounded list of redirect categories — not an exhaustive catalogue of every sentence a user might type into the Reframe box, but the recurring dimensions those sentences move along. The rightmost column notes whether the app already has a hook for that category, or whether it is still open ground."),
+            para("Combining the four frameworks produces a short, bounded list of redirect categories — not an exhaustive catalog of every sentence a user might type into the Reframe box, but the recurring dimensions those sentences move along. The rightmost column notes whether the app already has a hook for that category, or whether it is still open ground."),
             emptyPara(),
             simpleTable(
                 ["Redirect category", "Academic grounding", "Example user intent", "Existing system hook"],
@@ -238,7 +238,7 @@ const doc = new Document({
             emptyPara(),
 
             heading2("7.2  Canary and Stafford — Relational Maintenance Theory"),
-            para("Daniel Canary and Laura Stafford's Relational Maintenance Theory (Canary & Stafford, 1992) catalogues the strategies people actually use to sustain an ongoing relationship, independent of any single conversation: positivity (being upbeat and pleasant), openness (self-disclosure, direct discussion of the relationship), assurances (expressing commitment and continuity), shared tasks (doing routine things together), and involvement with each other's social networks. Because these strategies describe maintaining a relationship that already exists, they only make sense where a relationship already exists — which makes them a ready-made, curated source list for the standing relationship goal layer of the three-layer Goals model, which is defined the same way: durable, tied to one specific person, and independent of any single conversation."),
+            para("Daniel Canary and Laura Stafford's Relational Maintenance Theory (Canary & Stafford, 1992) catalogs the strategies people actually use to sustain an ongoing relationship, independent of any single conversation: positivity (being upbeat and pleasant), openness (self-disclosure, direct discussion of the relationship), assurances (expressing commitment and continuity), shared tasks (doing routine things together), and involvement with each other's social networks. Because these strategies describe maintaining a relationship that already exists, they only make sense where a relationship already exists — which makes them a ready-made, curated source list for the standing relationship goal layer of the three-layer Goals model, which is defined the same way: durable, tied to one specific person, and independent of any single conversation."),
             emptyPara(),
 
             heading2("7.3  How This Maps Onto the Three-Layer Goals Model Already Recorded"),

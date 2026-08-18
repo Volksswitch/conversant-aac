@@ -53,6 +53,24 @@ its spoken help, and no one has to remember a checklist item.
   the manuals — that prose was written to be read, and several entries there run past
   eighty words. The 35-word cap is a backstop, not the target.
 
+## Generators cannot be run casually (August 17 2026)
+
+Most of these documents are produced by a script in `scripts/doc-generators/`, and a sync
+pass edits the `.docx` directly. Those two facts together mean **running a generator can
+silently revert a document** — a sweep on August 17 2026 found six that would have.
+
+- **Every document is now hash-guarded.** A generator refuses to overwrite unless the
+  document is byte-identical to what it last produced (`doc-manifest.json`). Fold the
+  document's edits into the generator, then run it. Details and the override are in the
+  header of `doc-paths.js`.
+- **Check without touching**: `OUTPATH=<scratch>.docx` redirects the write so you can diff
+  first. This is the first step of any fold, and the guard stands aside for it.
+- **After editing a `.docx` in a sync pass, fold it back in the same pass**, or the next
+  person meets a refusal and has to reconstruct what you did.
+- **Currently stale, guarded, and awaiting a dedicated pass:** Architecture Overview,
+  Conversation Engine Design, Conversation Engine Overview. Their documents are correct;
+  their generators are behind.
+
 ## Release first, then sync (Ken, August 1 2026)
 
 **Push the app before syncing the reader-facing documents, not after.** The August 1

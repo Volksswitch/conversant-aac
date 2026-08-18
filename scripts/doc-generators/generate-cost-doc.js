@@ -238,7 +238,7 @@ table([2400, 1500, 5460],
     ["Setting", "Where", "What it does to the cost"],
     [
         ["Suggestions per category", "Conversation", "\"1 (four cards)\" asks the AI to write four suggestions; \"2 (eight cards)\" asks for eight. Eight gives you more choice and costs roughly twice as much to write."],
-        ["Silence period", "Conversation", "How long a pause has to be before the app starts preparing suggestions. At 0.5 seconds it prepares often, sometimes more than once while the other person is still talking, so suggestions are ready the instant they finish. Longer settings, up to 3.0 seconds, prepare less often and cost less, but you wait a little longer."],
+        ["Silence period", "Conversation", "How long a pause has to be before the app starts preparing suggestions. At 0.5 seconds it prepares often, sometimes more than once while the other person is still talking, so suggestions are ready the instant they finish. Longer settings, up to 3.0 seconds, prepare less often and cost less, but you wait a little longer. The shortest setting, 0 seconds, does not count off a time at all — it prepares suggestions as soon as the speech recognition reports the other person has stopped, so it is the setting that asks the AI most often."],
         ["Transcription", "Speech", "\"This browser's own (free)\" costs nothing. \"Deepgram transcription (paid)\" is billed by the minute. On a Windows computer or Chromebook the free option works well; on an iPad installed to the Home Screen the paid one is currently the only option that hears anything."],
         ["Your speaking voice", "Speech", "\"This device's voices (free)\" costs nothing. \"Deepgram voice (paid)\" is billed by the character and sounds considerably better."],
     ]),
@@ -290,7 +290,7 @@ function jargonHits() {
     return JARGON.filter(w => new RegExp(`\\b${w}s?\\b`, 'i').test(blob));
 }
 
-const OUT = "Conversant AAC Keeping Costs Down.docx";
+const OUT = docPath("Conversant AAC Keeping Costs Down.docx");
 Packer.toBuffer(doc).then(buf => {
     fs.writeFileSync(OUT, buf);
     console.log(`Wrote ${OUT} (${(buf.length / 1024).toFixed(1)} KB)`);

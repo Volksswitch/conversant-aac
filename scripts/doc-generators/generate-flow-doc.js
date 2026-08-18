@@ -28,6 +28,13 @@ function boldPara(label, text, after = 140) {
         children: [new TextRun({ text: label, bold: true }), new TextRun(text)]
     });
 }
+function boldBullet(label, text) {
+    return new Paragraph({
+        numbering: { reference: "bullets", level: 0 },
+        spacing: { before: 0, after: 100 },
+        children: [new TextRun({ text: label, bold: true }), new TextRun(text)]
+    });
+}
 function bullet(text) {
     return new Paragraph({
         numbering: { reference: "bullets", level: 0 },
@@ -116,7 +123,7 @@ const doc = new Document({
             emptyPara(),
 
             heading2("The Revised Model"),
-            para("The silence period is no longer a stop — it is a checkpoint. In Settings it is now labeled the “Optional Responses silence period.” When the partner goes quiet for that period, the system takes the speech collected so far and sends it to the AI for response options, and speaks a placeholder to hold the conversational floor — but it keeps recording. Recording stops only when the user chooses a response."),
+            para("The silence period is no longer a stop — it is a checkpoint. In Settings it is now labeled “Silence period.” When the partner goes quiet for that period, the system takes the speech collected so far and sends it to the AI for response options, and speaks a placeholder to hold the conversational floor — but it keeps recording. Recording stops only when the user chooses a response."),
             para("If the partner resumes talking, the new speech is appended to what was already captured. After the next silence period, the combined speech is sent to the AI for a fresh, more complete set of options, and another placeholder is spoken. This repeats for as long as the partner keeps going — every pause yields an updated set of options built on everything said so far. The user may select a response at any moment; doing so stops recording, speaks the response, and stores the exchange."),
             emptyPara(),
 
@@ -130,38 +137,48 @@ const doc = new Document({
 
             heading2("Two Supporting Guarantees"),
             boldPara("Latest set of options wins. ", "Because each checkpoint starts its own request to the AI, an earlier request may still be in flight when a later one fires. The system tags each request and discards any result that a newer checkpoint has superseded, so the options on screen never flicker backward to a less complete answer."),
-            boldPara("“Please repeat what you said.” ", "A persistent response option, always visible regardless of what else is on screen. Selecting it speaks the phrase to the partner, discards everything collected for the current exchange, and keeps listening for the partner’s restatement. Nothing is stored. It is the user’s escape hatch when the captured speech is garbled or they simply did not follow."),
+            boldPara("Ask them to repeat. ", "A persistent command, always available. Selecting it speaks a phrase asking the partner to repeat themselves — the phrase itself is user-editable in Settings — and keeps everything already captured for the current exchange rather than discarding it. The partner’s next words are recorded as a fresh, separate turn immediately following the request, instead of being merged into what came before. Earlier versions of this control discarded the captured speech outright; that was reversed once it became clear the user should never lose speech they had already heard confirmed on screen."),
             emptyPara(),
 
             heading2("Why Cleanup Happens Only at the End"),
-            para("Throughout the exchange, options are generated directly from the raw speech-to-text — there is no transcript-cleanup step at each checkpoint. The single cleanup pass runs only after the user has selected and the response has been spoken, so it never delays the user’s words; its only job is to improve the text carried into the context of future turns. The persistent “Please repeat what you said.” control is what makes this safe: when a capture is too garbled to work with, the user disposes of it outright rather than relying on automated cleanup. If raw-text quality proves to be a problem in practice, per-checkpoint cleanup can be reintroduced."),
+            para("Throughout the exchange, options are generated directly from the raw speech-to-text — there is no transcript-cleanup step at each checkpoint. The single cleanup pass runs only after the user has selected and the response has been spoken, so it never delays the user’s words; its only job is to improve the text carried into the context of future turns and into the saved record. The raw, uncleaned line is itself written to the saved transcript as soon as the partner pauses — so the record always mirrors what is on screen, even if the app is closed mid-conversation — and the cleaned version overwrites it in place once the background pass finishes. The persistent “Ask them to repeat” control is what makes working from raw text safe: when a capture is too garbled to work with, the user can ask the partner to say it again without losing what was already captured. If raw-text quality proves to be a problem in practice, per-checkpoint cleanup can be reintroduced."),
+            emptyPara(),
+
+            heading2("Robustness Additions Since This Design"),
+            para("Three behaviors were added after this design was first implemented, closing gaps that only showed up in live use. All three are part of “the shipped capture pipeline” this document describes."),
+            boldBullet("The app’s own speech is filtered out of what it hears. ", "Placeholders and spoken responses play with the microphone still on (so the partner can talk over them), so the speech-to-text stream is checked against what the app itself just said and that content is excised — including a partial, mis-heard, or slightly delayed echo of it — before it can be mistaken for something the partner said. Without this, the app’s own placeholder could restart the silence timer, trigger a fresh checkpoint, or bleed a few words into the partner’s transcript."),
+            boldBullet("A placeholder is canceled if the partner starts talking again first. ", "If the partner resumes speaking before a scheduled placeholder plays, the placeholder is dropped rather than talking over them. (Known limitation: if the partner starts talking while a placeholder is already mid-playback, the app cannot yet tell the partner’s voice apart from its own audio, so the interruption isn’t caught until the placeholder finishes. Reliably solving this is deferred to a later phase, when the app can recognize the communication partner’s voice specifically.)"),
+            boldBullet("Interrupting the partner still captures what they had said. ", "If the user cuts in with an immediate statement — an Express Panel phrase, for example — before the partner has paused, the partner’s speech up to that moment is captured and recorded rather than lost, interleaved before the interrupting statement. No AI cleanup runs on that fragment, since it is not a completed utterance; it is recorded as heard."),
+            boldBullet("The start of listening plays an audible chime, since the app cannot count on the partner watching the screen. ", "Added later (v0.5.96) as a partner-facing recording indicator: a short two-note tone plays each time the microphone starts capturing, alongside the Listen button turning a pulsing red, so a communication partner who is facing the user rather than the tablet still gets a cue that the device is now listening. The chime is user-toggleable (default on). With “resume listening automatically” on, listening restarts after every exchange, so the chime plays only once at the start of the conversation rather than on every automatic re-listen (v0.5.98) — the disclosure has already been made, and listening is effectively continuous for the rest of the conversation. With auto-resume off, each manual Start Listening is a separate, deliberate listening episode and still chimes every time."),
+            boldBullet("Stopping and restarting listening mid-turn is a pause, not a turn boundary. ", "The Listen button controls the microphone; it does not end the partner’s turn. Restarting while they still hold the floor keeps what they have said and appends the rest, so a mic toggle and an uninterrupted pause produce the same captured turn. Previously the restart cleared the accumulated text and then overwrote the already-written transcript line with the shorter remainder — a double loss, and a silent one. A partner turn now ends only at a floor change: the user selects a response, asks them to repeat, or ends the conversation. Added August 2026."),
             emptyPara(),
 
             heading2("Settings Summary"),
             simpleTable(
                 ["Setting", "Meaning under the revised flow"],
                 [
-                    ["Optional Responses silence period", "How long the partner can pause before the speech collected so far is sent for response options. Recording continues; the combined speech is re-sent after each subsequent pause. (Formerly “Silence Threshold,” which stopped recording.)"],
-                    ["Placeholder timing", "Governs the filler spoken to hold the floor while options are generated. A placeholder fires at each silence checkpoint."]
+    ["Silence period", "How long the partner can pause before the speech collected so far is sent for response options. Recording continues; the combined speech is re-sent after each subsequent pause. (Originally labeled “Silence Threshold,” then “Optional Responses silence period”; renamed “Silence period” for clarity.) The default is 0.5 seconds; the range is 0 to 3.0 seconds, where 0 fires on the recognizer’s own end-of-speech signal rather than on a timer."],
+                    ["Initial / Subsequent placeholder delay, Maximum placeholders per turn", "Govern the placeholder spoken to hold the floor while options are generated. A placeholder no longer fires at every checkpoint: it plays only once the partner’s turn is classified complete (not while they are still mid-utterance, and not when they are asking the user to repeat themselves), the first one lands after the initial delay, later ones re-fill after the subsequent delay, and “Maximum placeholders per turn” caps how many can play in a row (0 = none)."],
+                    ["Listening chime", "Whether a short tone plays each time listening starts (default on) and, with auto-resume on, whether it plays only once per conversation rather than on every automatic re-listen (v0.5.96, refined v0.5.98)."],
                 ],
                 [3400, 5960]
             ),
             emptyPara(),
 
             heading2("Relationship to the Conversation-Analysis Design Layer"),
-            para("This is a pragmatic Phase 1 realization of the end-of-utterance problem framed in the Conversation Engine design. Rather than classify each pause as complete, incomplete, or continuing and act differently for each, Phase 1 treats every pause as provisional: it offers options on what has been heard so far, but never commits, and simply regenerates as the utterance grows. The three-way end-of-utterance classifier and the escalating filler ladder described in that design refine this behavior in later phases without changing the basic guarantee — that the partner is never cut off and the user is never blocked from responding."),
+            para("This is a pragmatic Phase 1 realization of the end-of-utterance problem framed in the Conversation Engine design. Rather than classify each pause as complete, incomplete, or continuing and act differently for each, Phase 1 treats every pause as provisional: it offers options on what has been heard so far, but never commits, and simply regenerates as the utterance grows. The Conversation Engine later built exactly the three-way classifier described here and, for a time, gated generation on it — suppressing options while a turn looked incomplete. That gate caused silent stalls when the classifier misjudged a short or disfluent turn as unfinished, and was removed in July 2026 in favor of this design’s original guarantee: every pause generates and shows options, refined turn by turn, and the partner’s turn is treated as complete only when the user responds or ends the conversation — never by the system’s guess."),
 
             new Paragraph({
                 border: { top: { style: BorderStyle.SINGLE, size: 4, space: 8, color: "CCCCCC" } },
                 spacing: { before: 480, after: 0 },
                 alignment: AlignmentType.CENTER,
-                children: [new TextRun({ text: "Implemented June 2026. See the Architecture Overview, Section 9, for placement within the Phase 1 implementation.", italics: true, color: "808080", size: 18 })]
+                children: [new TextRun({ text: "Implemented June 2026; the checkpoint-and-regenerate model, and the guarantee that the partner is never cut off and the user is never blocked from responding, remain unchanged as of July 2026. See the Architecture Overview, Section 9, for placement within the Phase 1 implementation.", italics: true, color: "808080", size: 18 })]
             }),
         ]
     }]
 });
 
 Packer.toBuffer(doc).then(buffer => {
-    fs.writeFileSync(docPath("Continuous-Partner-Capture.docx"), buffer);
+    fs.writeFileSync(docPath("Conversant AAC Continuous Partner Capture.docx"), buffer);
     console.log("Continuous-Partner-Capture.docx generated.");
 });

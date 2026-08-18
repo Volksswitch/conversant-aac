@@ -1,3 +1,32 @@
+/* ⚠ THIS GENERATOR IS RETIRED — DO NOT RUN IT. (August 17 2026)
+ *
+ * "Conversant AAC iPad Architecture.docx" was deliberately RETIRED on August 1 2026:
+ * a separate iPad architecture document is a structural claim that there are two
+ * architectures, when there is one codebase with capability-gated seams, and two
+ * documents would drift into describing two systems. Its content was merged into the
+ * Architecture Overview (the platform seams) and the Platform Measurements record (the
+ * probe evidence). DOC-SYNC records it as retired.
+ *
+ * So running this script would not update anything — it would RESURRECT a document the
+ * project decided not to have, in a folder where every "Conversant AAC *" file is
+ * treated as a living document. The overwrite guard in doc-paths.js cannot stop that,
+ * because the guard protects files that EXIST; this one writes a name nothing tracks.
+ * Hence the hard stop below rather than a comment.
+ *
+ * It is kept, rather than deleted, because it is the only assembled record of how the
+ * iPad work was reasoned about before the merge. To read it, generate somewhere else:
+ *   ALLOW_RETIRED_IPAD_DOC=1 OUTPATH=/tmp/ipad.docx node -e "..."  (see doc-paths.js)
+ */
+if (process.env.ALLOW_RETIRED_IPAD_DOC !== '1') {
+    console.error('');
+    console.error('This generator is retired. Its document was merged into the Architecture');
+    console.error('Overview and the Platform Measurements record on August 1 2026, so running');
+    console.error('it would recreate a document the project decided not to have.');
+    console.error('See the header of this file.');
+    console.error('');
+    process.exit(1);
+}
+
 // Generates docPath("Conversant AAC iPad Architecture.docx") — the build-ready specification
 // for running Conversant AAC on iPadOS (July 29 2026).
 // Run: node generate-ipad-architecture-doc.js
