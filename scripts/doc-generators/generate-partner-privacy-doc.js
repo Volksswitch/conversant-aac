@@ -232,7 +232,7 @@ const doc = new Document({
             // ===== 7 =====
             heading1("7. What We Decided Against"),
             heading2("7.1 Muting the microphone while the app speaks"),
-            para("The app's own speech is picked up by its own microphone, and the fix that suggests itself is to close the microphone while it talks. It was rejected: a partner who cuts in mid-sentence would then not be heard at all, and being interrupted is a normal part of conversation rather than an error. The app filters out its own voice by recognizing what it just said instead. The cost is that a bystander speaking at that moment is also captured, which is one of the reasons the next section matters."),
+            para("The app's own speech is picked up by its own microphone, and the fix that suggests itself is to close the microphone while it talks. It was rejected: a partner who cuts in mid-sentence would then not be heard at all, and being interrupted is a normal part of conversation rather than an error. The app filters out its own voice by recognizing what it just said instead. The cost is that a bystander speaking at that moment is also captured, which is one of the reasons section 9 matters."),
             heading2("7.2 Flashing the rear camera light at the partner"),
             para("The rear camera light is the one signal that physically points at the partner, and slowly flashing it would be the strongest continuous indicator available. It is deferred rather than rejected. Controlling that light from a web page is essentially an Android-only capability and almost certainly unavailable on the Surface tablets in use; it would add a camera permission prompt on top of the microphone one, and hold the camera open all session at a cost in battery and heat. If it is ever built it is an optional extra, off by default, and only after being tried on real hardware."),
             heading2("7.3 Claiming any legal position"),
@@ -241,14 +241,44 @@ const doc = new Document({
             para("The beta sends usage and error information without asking each time, which is a deliberate and disclosed arrangement. It has one absolute exception: no speech, ever, on any automatic path. The line is drawn there rather than at some threshold of sensitivity, because a threshold means judging the content of somebody else's words, which is precisely what we have no standing to do."),
 
             // ===== 8 =====
-            heading1("8. Bystanders, and More Than One Partner"),
+            heading1("8. A General Orientation to Recording Law"),
+            para("Section 7.3 says the product makes no legal claim, and that stands. This section is the other half of it: a rough map of the territory, so that the decisions above can be read against something rather than against nothing. It is background, not advice."),
+            lead("Three caveats, and they are not boilerplate. ", "None of this is legal advice and none of it has been checked by a lawyer. Recording law changes, and several of the rules below turn on court decisions rather than on the wording of a statute, so two people can read the same state's law differently and both be reasonable. And it varies by where the user is standing at the time, not by where they live or where we are — a user who travels crosses between regimes without noticing."),
+            heading2("8.1 The distinction almost everything turns on"),
+            para("In the United States, the federal wiretap statute and most state laws permit a recording made by somebody who is part of the conversation. That is usually called one-party consent, and it is the ordinary case: the user is a participant, so their own device recording their own conversation is the situation the law already contemplates."),
+            para("A minority of states instead require every participant to agree. The states usually named in that group are California, Connecticut, Delaware, Florida, Illinois, Maryland, Massachusetts, Michigan, Montana, Nevada, New Hampshire, Oregon, Pennsylvania and Washington — though the exact membership is genuinely disputed, several of those states treat a face-to-face conversation differently from a phone call, and the count moves as courts rule. Treat that list as a signal to ask a lawyer, never as an answer."),
+            lead("What follows for this product is that the user is on the ordinary side of the line in most of the country, and on the stricter side in a handful of populous states. ", "Which means the safe design is the one that satisfies both, and that is what has been built."),
+            heading2("8.2 Why notice does more legal work than it looks like"),
+            para("In the stricter states, agreement generally does not have to be a signature or a spoken yes. Being told plainly that recording is happening, and then carrying on talking, is widely treated as agreeing by conduct. That is why the chime, the card and the Notice button are not merely courtesies: they are the mechanism by which a partner can be said to have known and continued anyway."),
+            para("Two conditions come with it, and both are already the design. The notice has to come before or at the start, not afterwards — a disclosure made once the conversation is over is not agreement to anything. And it has to actually reach them, which is the geometry problem in section 4 restated as a legal point rather than an ethical one."),
+            heading2("8.3 Four generalizations that bear directly on decisions we have taken"),
+            simpleTable(
+                ["Generalization", "What it means here"],
+                [
+                    ["Most laws protect a conversation the parties reasonably expected to be private", "A clinic room or a kitchen sits squarely inside that. A shop counter or a crowded waiting room sits much further outside it. The same app is doing different things in the two places"],
+                    ["The laws generally cover the CONTENTS of a communication, not just an audio file", "Do not assume that discarding the audio and keeping only the text puts the product outside them. It is a real reduction in what is held and worth saying, but it is not an exemption"],
+                    ["Participant recording protects the user only for conversations they are part of", "A bystander at the next table is not talking to the user, so nothing about the user being a participant helps there. This is the strongest reason section 9 is not just tidiness"],
+                    ["Sending the words to a company to be transcribed is a separate question from recording them", "In the United States it is mostly folded into the same analysis. In Europe it is its own question, with the transcription and AI companies as processors handling somebody else's words"],
+                ], W2),
+            heading2("8.4 Outside the United States, in one paragraph each"),
+            para("In the United Kingdom and the European Union, a private individual recording their own conversations for their own purposes is generally treated as a personal or household activity and falls outside the main data-protection regime — an exemption that has been read narrowly where recording spills over onto other people or into public space. The direction of travel is that a purely personal communication aid is fine and something that systematically captures the public is not."),
+            para("In Canada, the criminal code takes the one-party position: a participant may record. In Australia the rules are set state by state and several states require every party to a private conversation to agree, so it resembles the American patchwork more than a single national rule."),
+            heading2("8.5 Two things people expect to apply here, which do not"),
+            para("Medical privacy law in the United States binds hospitals, clinics and their staff. It does not restrict a patient recording their own appointment. What can restrict it is the facility's own policy, which is a different thing from law and is often stricter — the same is true of schools and workplaces. So a partner objecting on those grounds may be right about their employer's rules and wrong about the law, and the honest answer is that the user should respect the objection either way."),
+            para("There is a plausible argument that a device somebody uses in order to speak at all is different in kind from surveillance, and that a communication aid should not be judged as a recorder. It is an argument, not a settled rule anywhere we are aware of, and nothing in this product should be built on the assumption that it would succeed."),
+            heading2("8.6 Where all of this lands"),
+            para("The generalizations converge on the same posture from several directions: the user is a participant, the partner is told before anything is captured, the audio is not kept, the text stays on the user's own device, and the user can decline to keep a conversation at all. That is the design already in section 5, and it was arrived at on ethical grounds rather than legal ones — which is the good news, because it means the law is not being relied on to excuse anything."),
+            lead("The one place the reasoning genuinely runs out is bystanders. ", "Every protection above rests on the user being a participant and the partner having been told. A stranger at the next table is neither, and no amount of disclosure to the person in front of the user reaches them."),
+
+            // ===== 9 =====
+            heading1("9. Bystanders, and More Than One Partner"),
             para("Everything above assumes one partner speaking to the device. Two situations break that assumption and neither is solved."),
             lead("Bystanders. ", "The microphone hears whoever is nearby. In a waiting room or a shop, people who are not part of the conversation are transcribed into the record alongside the person the user is actually talking to. They have been told nothing, and there is no card on the back of the device pointed at them."),
             lead("More than one partner. ", "The app assumes a single partner. Several people in a conversation — knowing who said what, and who a reply is aimed at — is a future capability, and the privacy question arrives with it: several people, none of them told, all in one record."),
             para("Both have the same eventual answer, and it is already on the roadmap for a different reason. Recognizing the partner's voice — planned as part of situational awareness — lets the app keep what the recognized partner says and drop everything else. That was conceived as the robust fix for the app hearing its own voice; it is at least as valuable as a privacy measure, because it turns “we record the room” into “we record the person you are talking to.” Worth remembering when it is prioritized: it pays for itself twice."),
 
-            // ===== 9 =====
-            heading1("9. The Other Sense: Data About People"),
+            // ===== 10 =====
+            heading1("10. The Other Sense: Data About People"),
             para("The app also holds a record of the people the user talks with — who they are, how they are related, and increasingly how the user speaks with each of them. That is information about a third party too, and it is governed by a different set of rules."),
             simpleTable(
                 ["Rule", "What it means in practice"],
@@ -261,15 +291,15 @@ const doc = new Document({
                     ["Partner answers stay with the user", "Unless the user chooses to share them back. A mother answering about her son is answering about their relationship, and it is not ours to circulate"],
                 ], W2),
 
-            // ===== 10 =====
-            heading1("10. The Beta's Exception, and When It Ends"),
+            // ===== 11 =====
+            heading1("11. The Beta's Exception, and When It Ends"),
             para("The product's promise is that nothing leaves the device except what has to — the partner's words to be transcribed, and the conversation to the AI for suggestions. During the beta there is a third thing: usage and error information sent back automatically about once a week."),
             para("It carries counts and timings only and never speech, so no partner's words are in it. But it is still an exception to a promise the documents make in plain terms, and it has to be stated as one in the Product Overview and in tester onboarding rather than buried. Testers are told, in the plan they agree to, exactly what is in a report, and the app itself lists everything it has ever sent."),
             lead("This arrangement ends with the beta, and that is a scheduled change rather than a preference. ", "Automatic sending is on by default now because participants are told it is part of taking part, and because opt-in would lose exactly the tester who quits in week two — the one most worth hearing from. Neither reason survives contact with somebody who simply downloaded the app. A public release that still defaults to sending would break a promise made in writing."),
 
-            // ===== 11 =====
-            heading1("11. What Remains Open"),
-            numBold("The legal question. ", "Whether, and where, any of this needs the partner's agreement rather than merely their awareness. Referred to counsel; nothing in the product waits on it, but the wording of the card and the manuals would change if the answer were surprising.", "open"),
+            // ===== 12 =====
+            heading1("12. What Remains Open"),
+            numBold("The legal question. ", "Whether, and where, any of this needs the partner's agreement rather than merely their awareness. Section 8 is an orientation, not an answer; the answer needs a lawyer. Nothing in the product waits on it — the design was reached on other grounds and happens to sit on the safe side of every regime described there — but the wording of the card and the manuals would change if the answer were surprising, and a user who travels crosses between regimes without being told.", "open"),
             numBold("The web address on the card. ", "The card points a curious partner at the app's website. There is nothing there written for them — a short page addressed to the person being recorded, rather than to the person buying the device, is the missing piece.", "open"),
             numBold("The diagnostic rebuild. ", "Needed before the beta widens, on the three conditions in section 6.", "open"),
             numBold("The camera light. ", "Only worth revisiting after somebody has tried it on the actual hardware.", "open"),
@@ -278,8 +308,8 @@ const doc = new Document({
             numBold("Flagging a card that carries a private detail. ", "The app knows which private facts it handed the AI, so it could mark any suggestion containing one before the user taps it. That would make an accidental disclosure visible at the moment it matters.", "open"),
             numBold("One residual in the automatic reports. ", "Error descriptions are the app's own wording, but a failure to make sense of an AI response could in principle quote part of it, and that response is about the conversation. Descriptions are capped short. If that is ever judged too loose, the fallback is to send only what kind of error occurred and how often, and take the wording from a report the user chose to send.", "open"),
 
-            // ===== 12 =====
-            heading1("12. The One-Paragraph Version"),
+            // ===== 13 =====
+            heading1("13. The One-Paragraph Version"),
             para("The communication partner is the only person in this system who did not choose to be in it. We cannot ask their permission through a device they are not holding, so we do the next thing: we make it quick and easy for the user to tell them, through a chime they can hear, a card they can read, and a button that says it out loud in one tap. We keep their words as text on the user's device and nowhere else, we never send those words to ourselves automatically, and we honor the user's decision that a particular conversation should not be kept — everywhere, including the places nobody looks. We claim no legal position, and we make no promise we have not checked against what the app actually does."),
         ]
     }]
