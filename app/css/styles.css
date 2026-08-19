@@ -1051,6 +1051,23 @@ body.conv-bottom .palette-grid {
     align-items: initial;
 }
 
+/* TEMPORARY (Ken, August 19 2026) — the AI's own short label for the response,
+   shown under the full wording so its usefulness can be judged in real use.
+   Smaller and unbolded so it reads as secondary and the response stays the thing
+   the eye lands on. `flex: 0 0 auto` so it never competes with the response text
+   for the card's height. */
+.response-hint {
+    flex: 0 0 auto;
+    font-size: calc(clamp(0.75rem, 1.35vh, 1rem) * var(--response-font-scale, 1));
+    font-weight: 400;
+    line-height: 1.2;
+    color: #5a6169;
+    overflow: hidden;
+}
+.response-card-half .response-hint {
+    font-size: calc(clamp(0.68rem, 1.1vh, 0.85rem) * var(--response-font-scale, 1));
+}
+
 /* Round-trip card mid-generation: dim slightly so the wait reads as in-progress. */
 .response-card.working {
     opacity: 0.55;

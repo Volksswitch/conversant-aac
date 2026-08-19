@@ -26,6 +26,12 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- **Each suggestion card now also shows a short summary of itself**, in smaller gray text
+  under the full wording — a few words naming what the response does, so you can tell the
+  four cards apart at a glance without reading all of them. The AI has always worked this
+  out; it just was not shown until now. This is here so we can judge whether it helps;
+  say so either way.
+
 ## Version 0.7.6
 
 - **Settings → Troubleshooting now shows a week-by-week breakdown**, so you can see how

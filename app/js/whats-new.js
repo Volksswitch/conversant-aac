@@ -21,6 +21,9 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.7.7": [
+    "Each suggestion card now also shows a short summary of itself, in smaller gray text under the full wording — a few words naming what the response does, so you can tell the four cards apart at a glance without reading all of them. The AI has always worked this out; it just was not shown until now. This is here so we can judge whether it helps; say so either way."
+  ],
   "0.7.6": [
     "Settings → Troubleshooting now shows a week-by-week breakdown, so you can see how things are going over time rather than only a running total since you started. It also now shows how long you spent choosing between the suggestions, whether your paid voice ever dropped back to this device's voice for a sentence, which people you have talked with more than once, and how much of the app you have filled in and made your own.",
     "The weekly report carries those same counts. As before, it never carries anything you or anyone else said, and never your keys. Settings → Troubleshooting lists exactly what is in it, and the switch that turns the report off now also stops the counting.",

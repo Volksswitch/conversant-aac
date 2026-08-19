@@ -230,7 +230,17 @@ function buildResponseCard(response, index, onSelect, half) {
     card.className = `response-card ${meta.cls}${half ? ' response-card-half' : ''}`;
     // Category isn't shown visually, so name it in the accessible label only.
     card.setAttribute('aria-label', `${meta.badge}: ${text}`);
-    card.innerHTML = `<span class="response-text">${escapeHtml(text)}</span>`;
+    // TEMPORARY (Ken, August 19 2026) — the model has always returned a short
+    // glanceable label ("hint") alongside each response and the card has never shown
+    // it, so nobody could judge whether it is any good. Show it, unconditionally, so
+    // the team can see it in real use; whether it stays, and what controls it, is a
+    // later decision. Suppressed when it would merely repeat the card's own text (a
+    // round-trip repair card has no text yet and is already SHOWING its hint), and
+    // hidden from screen readers, where it is pure duplication of the label above.
+    const hint = (response.hint || '').trim();
+    const showHint = hint && hint.toLowerCase() !== text.trim().toLowerCase();
+    card.innerHTML = `<span class="response-text">${escapeHtml(text)}</span>`
+        + (showHint ? `<span class="response-hint" aria-hidden="true">${escapeHtml(hint)}</span>` : '');
     card.addEventListener('click', () => {
         if (roundtrip) card.classList.add('working');
         onSelect(response, index);
