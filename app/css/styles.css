@@ -842,6 +842,11 @@ body.conv-bottom .palette-grid {
 }
 .start-version + #startReportBtn.start-report { margin-top: 0.3rem; }
 
+/* An author `display` beats the browser's own [hidden] rule, so hiding this from
+   script would silently do nothing without this line. It is hidden while the
+   "What's new" notice is up, so the notice gets the whole transcript region. */
+#startReportBtn.start-report[hidden] { display: none; }
+
 #startReportBtn.start-report {
     display: block; margin: 0.9rem auto 0; background: none; border: none;
     color: #666; font-size: 0.85rem; text-decoration: underline; cursor: pointer;

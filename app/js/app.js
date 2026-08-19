@@ -974,6 +974,15 @@ async function handleStart() {
         // the transcript's location is known; the panel fills that region (a
         // keyguard opening — Spatial Stability). "Close" advances to step 3.
         document.getElementById('startBtn').hidden = true;   // panel carries its own "Close"
+        // The notice fills the transcript region, so nothing else may stand in it
+        // (Ken, August 19 2026). The version line and the report link are siblings
+        // inside the same block, and the notice is a flex item sharing the height
+        // with them — so every line they occupy is a line of release notes the user
+        // has to scroll to reach. Neither is needed on this screen: they exist for a
+        // tester whose app is too broken to drive, and reaching this notice means it
+        // started, pressed Start, and rendered. Restored on dismiss, because the
+        // API-key notice that may follow shows in this same block.
+        setStartScreenFooter(false);
         whatsNew.renderPanel(APP_VERSION, whatsNewNotes, afterWhatsNew);
     } else {
         afterWhatsNew();
@@ -993,7 +1002,18 @@ async function handleStart() {
 // status line, still disables the control where there is no recognizer at all, and
 // is still reported by platform.describe() in a bug report.
 function afterWhatsNew() {
+    setStartScreenFooter(true);
     afterListeningNotice();
+}
+
+// The version line and the "save a report" link at the foot of the pre-start block.
+// Hidden only while the "What's new" notice is up, so it gets the whole transcript
+// region; see the call site for why they are safe to drop for that one screen.
+function setStartScreenFooter(show) {
+    for (const id of ['startVersion', 'startReportBtn']) {
+        const el = document.getElementById(id);
+        if (el) el.hidden = !show;
+    }
 }
 
 // Step 4 — the API-key notice, shown only when no key is set (informational: the
