@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.7.9
+
 - Settings is easier to move around in. Settings that belong together now share a
   single expanding section instead of each having one of their own -- the three
   placeholder timings are one "Placeholders" section, the silence period has joined
