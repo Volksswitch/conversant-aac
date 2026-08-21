@@ -411,7 +411,16 @@ function initApp() {
     // Hard backstop: a placeholder must never speak over the user's own statement
     // (a spoken button). If a stray scheduled placeholder fires while the user's TTS
     // is playing, placeholders defers instead of barging in (Ken, July 2026).
-    placeholders.setUserSpeakingGate(() => speakingUserStatement);
+    //
+    // ⚠ AND NEVER WHILE THE USER IS TYPING IN "In my own words" (Ken, August 20 2026;
+    // the hole found August 21 2026). Opening the box silences the ladder that is
+    // already running, but it CANNOT silence one armed afterwards — and one is armed
+    // afterwards whenever the partner speaks again while the user is still typing,
+    // because arming happens at the pause in their speech, before any of this. The
+    // old code had the same hole for the same reason: it cancelled the request, and
+    // arming does not depend on the request. So the gate carries it instead, which
+    // holds however late the ladder starts.
+    placeholders.setUserSpeakingGate(() => speakingUserStatement || composerOpen);
 
     // Count the floor-holding phrases as they are actually spoken. Nothing else can:
     // they are scheduled on timers, aborted by the partner resuming, and capped by a
@@ -1095,6 +1104,7 @@ function startFreshListening() {
     currentPartnerText = '';
     setOfferedChoices([]);   // a new partner turn — last turn's choices are gone
     clearTurnSteering();
+    dropHeldForComposer();
     pendingPartnerHistoryIdx = -1;   // fresh partner turn — not yet promoted to history
     generationToken++;
     ui.setLiveTranscript('');
@@ -1224,6 +1234,25 @@ async function generateOptions(partnerText) {
             // Partner-initiated close — pin the decline so they can be held a moment.
             renderStaticPalette('closing', snap.palette,
                 'Say goodbye — or hold them a moment', { pin: declineClosingCard() });
+        } else if (composerOpen) {
+            // ⚠ THE USER IS IN "In my own words", so these cards must not be rendered
+            // under the composer — but they must not be thrown away either (Ken,
+            // August 21 2026): "the reprompt results should be preserved and displayed
+            // when the user selects in my own words and cancels from the compose
+            // window. They should be discarded if the user speaks something from
+            // within the compose window."
+            //
+            // Until now this could not arise, because opening the composer abandoned
+            // the request outright. That solved the two real problems — a new set
+            // landing under the box, and a placeholder speaking mid-sentence — by
+            // throwing away work that was already paid for and, on a cancel, leaving
+            // the user staring at cards older than what the partner had said.
+            //
+            // The engine has ALREADY ingested this classification above, so the
+            // conversation state is current either way; only the rendering waits.
+            currentStatic = { kind: null, full: [] };
+            heldForComposer = { palette: snap.palette, at: Date.now() };
+            metrics.event(metrics.EV.PALETTE_HELD, { kind: 'ai' });
         } else {
             currentStatic = { kind: null, full: [] };  // AI responses — New N regenerates, not pages
             showPalette(snap.palette);
@@ -1231,9 +1260,11 @@ async function generateOptions(partnerText) {
         ui.setTranscriptState('ready');
         // A closed set on the table → offer the alternatives as Express Panel chips
         // too, so the user can escalate from a one-tap answer to the full four-way
-        // treatment of one of them.
+        // treatment of one of them. Deferred with the cards when the composer is open,
+        // so the panel and the palette never describe different versions of the turn.
         const offered = (snap.lastClassification && snap.lastClassification.offered_options) || [];
-        setOfferedChoices(offered);
+        if (heldForComposer) heldForComposer.offered = offered;
+        else setOfferedChoices(offered);
         // Leave the closing branch's own message alone — it set a more specific one
         // above and this line used to overwrite it.
         if (snap.mode === engine.MODE.REPAIR_OF_SELF) {
@@ -1528,6 +1559,7 @@ async function commitExchange(raw, userText, index, opts = {}) {
     // commits a user turn (response pick, Express phrase, composer, repair-of-self).
     setOfferedChoices([]);
     clearTurnSteering();
+    dropHeldForComposer();
     // Snapshot the history BEFORE this exchange — that's the context the cleanup
     // pass should see (it shouldn't include the turn it's cleaning).
     const cleanupContext = [...conversationHistory];
@@ -1975,6 +2007,7 @@ async function terminateConversation() {
     currentPartnerText = '';
     setOfferedChoices([]);
     clearTurnSteering();
+    dropHeldForComposer();
     lastPalette = [];
     resetStaticPaging();                 // opener/wind-down/closing paging starts fresh
     conversationHistory.length = 0;     // clear the conversation window
@@ -2025,6 +2058,27 @@ function conversationPaletteCap() {
 // the whole conversation and wraps; it's reset when a conversation starts/ends.
 const staticOffsets = { opener: 0, windDown: 0, closing: 0 };
 let currentStatic = { kind: null, full: [] };  // static palette currently shown (for New N)
+// "In my own words" is open, so a reprompt that finishes must wait rather than render
+// under the box; and what it produced, kept for the cancel path (Ken, August 21 2026).
+let composerOpen = false;
+let heldForComposer = null;   // { palette, offered, at }
+
+function dropHeldForComposer() { heldForComposer = null; }
+
+/* Put up the cards a reprompt produced while the user was composing. Only the CANCEL
+ * path calls this: speaking from the box ends the turn, and Reframe replaces the set
+ * with something the user explicitly asked for. */
+function showHeldForComposer() {
+    if (!heldForComposer) return false;
+    const { palette, offered, at } = heldForComposer;
+    metrics.event(metrics.EV.PALETTE_TAKEN, { kind: 'ai', heldMs: Date.now() - at });
+    heldForComposer = null;
+    currentStatic = { kind: null, full: [] };
+    showPalette(palette);
+    setOfferedChoices(offered || []);
+    ui.setStatus('Select a response');
+    return true;
+}
 let windDownShown = false;                       // has Wind down been shown this conversation?
 
 // A window of `cap` cards starting at `offset`, wrapping so the footprint stays
@@ -2420,7 +2474,32 @@ async function handleReframe() {
     // steer first, then close.
     ui.clearComposer();
     closeComposer();
-    if (!steer) return;
+    // Reframe with an empty box is a cancel in all but name, so it behaves like one.
+    if (!steer) { showHeldForComposer(); return; }
+
+    /* ⚠ THE RACE, and it is decided by INTENT rather than by which answer arrives
+     * last (Ken raised it, August 21 2026): the partner spoke again while the user was
+     * typing, so a reprompt is in flight or already held, and now the user asks for a
+     * reframe. Two answers are coming for the same turn.
+     *
+     * THE REFRAME WINS, always, and the reprompt is dropped. Three reasons:
+     *   1. The user ASKED for it. A reframe is an explicit instruction about what they
+     *      want to get across; a reprompt is the app refreshing on its own. Every other
+     *      place in this app already resolves that the same way - a card tap, an
+     *      Express phrase and opening the composer all supersede work in flight.
+     *   2. NOTHING IS LOST BY DROPPING IT. Both are built from the same conversation
+     *      history and the same `currentPartnerText`; the reframe adds the steer on
+     *      top. So the reframe's context is a superset, never a different view - and
+     *      if a newer checkpoint landed in between, the reframe is built on the newer
+     *      text as well.
+     *   3. ⚠ IF ARRIVAL ORDER DECIDED IT, a slow reframe could be silently overwritten
+     *      by an automatic refresh landing after it. To the user that looks exactly
+     *      like Reframe not working, and they would have no way to tell why. Deciding
+     *      by intent makes the outcome the same however the timing falls.
+     *
+     * The in-flight case is already handled by the token bump below; this drops one
+     * that had finished and was waiting for the cancel path. */
+    dropHeldForComposer();
 
     // A steer is the user saying the suggestion was wrong and how. Recorded so a
     // correction they keep having to repeat can become a standing preference
@@ -2634,12 +2713,18 @@ function openComposer() {
     // moment they finish typing, which can be a minute later.
     noteUserAction('composer');
     metrics.event(metrics.EV.COMPOSER_OPENED);
-    // Going to your own words ENDS the deliberation, so any refresh still in
-    // flight is abandoned rather than allowed to land under the composer (Ken,
-    // August 20 2026). A card tap and an Express phrase already did this on their
-    // way to speaking; this route did not, so new options could arrive — and a
-    // placeholder could start speaking — while the user was mid-sentence.
-    generationToken++;
+    // ⚠ THE REQUEST IS NO LONGER ABANDONED HERE (Ken, August 21 2026). It used to be
+    // (`generationToken++`), which fixed the two things that actually go wrong — a
+    // new set landing under the box, and a placeholder speaking while the user is
+    // mid-sentence — by throwing the work away. On a cancel that left them looking
+    // at cards older than what the partner had by then said, with the better set
+    // paid for and gone.
+    //
+    // So the two problems are now solved directly: the render WAITS (composerOpen,
+    // read in generateOptions), and the placeholder ladder is silenced through its
+    // own mechanism rather than as a side effect of cancelling the generation.
+    composerOpen = true;
+    abortPlaceholders();
     ui.setPaletteBusy(false);
     ui.clearComposer();
     ui.showComposerOverlay();
@@ -2657,6 +2742,7 @@ function openComposer() {
 // alone won't reliably hide it, because Speak/Reframe/Cancel are "keep-open"
 // controls (so their tap doesn't trip the focusout-hide before the handler runs).
 function closeComposer() {
+    composerOpen = false;
     ui.hideComposerOverlay();
     keyboard.hideKeyboard();
 }
@@ -2668,6 +2754,9 @@ async function handleSpeakComposed() {
     if (!text) { closeComposer(); return; }
     ui.clearComposer();
     closeComposer();
+    // Speaking ends the turn, so anything a reprompt produced while they typed is
+    // about to be irrelevant (Ken).
+    dropHeldForComposer();
     await speakAsUserTurn(text);
 }
 
@@ -2678,6 +2767,9 @@ function handleCancelComposed() {
     metrics.event(metrics.EV.COMPOSER_CANCELLED);
     ui.clearComposer();
     closeComposer();
+    // Nothing was said and the partner's turn is still live, so if the partner spoke
+    // again while they were typing, those are the cards that belong on screen now.
+    showHeldForComposer();
 }
 
 // --- Express Panel (base UI quick-speak + influencers, Rule 9) ---

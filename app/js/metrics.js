@@ -58,6 +58,12 @@ export const EV = {
     PALETTE_SHOWN: 'palette_shown',         // { kind, cards, words }
     PALETTE_REFRESHED: 'palette_refreshed',
     PALETTE_ABANDONED: 'palette_abandoned', // { kind, cards }
+    // A reprompt finished while the user was in "In my own words", so its cards
+    // were kept back rather than rendered under the composer, and shown only if
+    // they cancelled (Ken, August 21 2026). A run of these with no cancel after
+    // them means the work is being paid for and thrown away.
+    PALETTE_HELD: 'palette_held',           // { kind }
+    PALETTE_TAKEN: 'palette_taken',         // { kind, heldMs }
     CARD_SELECTED: 'card_selected',         // { slot, index, decideMs }
     // How long the cards were up before the user did ANYTHING — read plus select
     // (Ken, August 16 2026). Tagged with what the action was, so "they read for six
