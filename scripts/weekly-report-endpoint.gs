@@ -80,9 +80,7 @@ function doPost(e) {
       if (ALERT_EMAIL) {
         MailApp.sendEmail(ALERT_EMAIL,
           'Conversant AAC - problem report from ' + (p.testerName || 'a tester'),
-          (p.note || '(no note)') + '
-
-See the problems tab for the full report.');
+          (p.note || '(no note)') + '\n\nSee the problems tab for the full report.');
       }
       return _out('ok');
     }
