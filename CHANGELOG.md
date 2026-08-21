@@ -26,16 +26,15 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
-- **The suggestions no longer disappear while you are choosing.** When the other
-  person paused again, the app used to clear the cards straight away, leave the
-  space empty for as long as the AI took, and then put a different set in their
-  place -- so the answer you were reaching for could vanish twice over. Now the
-  cards you are reading stay put. A newer set waits, the **New** button lights up
-  to tell you one is ready, and tapping it shows the newer suggestions straight
-  away without asking the AI again. If you never tap it, nothing moves. Goodbyes
-  and a request to repeat still come through immediately, because those are not a
-  better version of the same suggestions -- they are a different kind of answer
-  altogether.
+- **The suggestions no longer vanish while the other person is still talking.** When
+  they paused again, the app used to take the cards away and leave the space empty
+  for the several seconds it took to think of better ones -- so the answer you were
+  reaching for disappeared, and there was nothing on screen to say why. The cards you
+  are reading now stay where they are for the whole of that wait, and take on the
+  faint "working on it" look that was always meant to appear there. A new set arrives
+  only when it is ready, and replaces the old one in one go. You can still tap a card,
+  an Express Panel phrase or **In my own words** at any point while it is thinking --
+  and if you do, the new suggestions are abandoned rather than landing on top of you.
 
 - Reporting a problem now takes one tap. Settings -> Troubleshooting -> Report a
   problem has a new **Send** button that sends the report straight back to us, so

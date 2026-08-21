@@ -58,13 +58,6 @@ export const EV = {
     PALETTE_SHOWN: 'palette_shown',         // { kind, cards, words }
     PALETTE_REFRESHED: 'palette_refreshed',
     PALETTE_ABANDONED: 'palette_abandoned', // { kind, cards }
-    // A newer set of suggestions was ready and was DELIBERATELY NOT shown,
-    // because cards were already up and unanswered (Ken, August 21 2026). This
-    // is the measure of the fix: held should be common and PALETTE_REFRESHED
-    // should become rare, and a run of holds with no palette_taken after them
-    // means the way to take them is not being found.
-    PALETTE_HELD: 'palette_held',           // { kind }
-    PALETTE_TAKEN: 'palette_taken',         // { kind, heldMs }
     CARD_SELECTED: 'card_selected',         // { slot, index, decideMs }
     // How long the cards were up before the user did ANYTHING — read plus select
     // (Ken, August 16 2026). Tagged with what the action was, so "they read for six

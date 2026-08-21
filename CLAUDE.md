@@ -1381,75 +1381,79 @@ Rules that keep it correct: the merge runs only on **load/adopt**, never in `set
 
 ---
 
-## Newer suggestions WAIT; they never swap under the user's hand (Ken, August 21 2026), BUILT
+## WHEN THE RESPONSE CARDS CHANGE — the whole rule (Ken, August 21 2026)
 
-The UI design has said since June 2026 that **palette updates queue until a
-selection boundary — options never change under a user mid-selection**, and called
-it mandatory. **It was never built.** This builds it, so it is an unimplemented rule
-being implemented rather than a reversal of continuous partner capture, which is
-still right: a later pause genuinely knows more. What was wrong was delivering that
-knowledge on top of somebody's hand.
+**THE RULE, in Ken's words: "In no case should the response options be cleared until
+something is spoken or the set there is replaced — but in all cases, not until they
+are replaced with a new set."** So there is never a moment where a conversation is in
+progress and the user has nothing in front of them. A set is superseded, never
+emptied and refilled.
 
-**⚠ IT WAS TWO DEFECTS, AND THE ONE NOBODY HAD NOTICED WAS THE BIGGER HALF.**
-`generateOptions` called `ui.clearResponseOptions()` **unconditionally at the top**,
-so the cards were **wiped the instant the partner paused** and the palette sat EMPTY
-for the whole round trip — a measured 5.6s typical and 8.4s worst. So the tester's
-"the choices kept disappearing when I went to pick one" was literal and doubled:
-gone at the start, different at the end. The replacement at the end was the half
-that had been diagnosed; the blanking was found only by reading the function.
-**General lesson: when a complaint names a symptom exactly, read the whole path
-before deciding which line causes it.**
+**FIVE THINGS REPLACE THE SET, and nothing else may:**
+1. **A reprompt** — the partner resumed and paused again, so the app asks the AI
+   again with more of what they said. App-initiated.
+2. **New N** — the user finds the offered set insufficient and asks for different
+   options for the *same* partner turn. Costs a round trip. **⚠ THIS IS ITS ONLY
+   MEANING; see the conflation warning below.**
+3. **Reframe**, from the compose window.
+4. **A choice chip**, focusing the four cards on one alternative the partner offered.
+5. **A change of KIND** — the partner starts closing (goodbyes) or asks the user to
+   repeat (the repair options). Not a better version of the same offer; a different
+   offer.
 
-**What the measurements were** (one report, twenty minutes, `evaluate reports`):
-32 sets of suggestions offered, **15 (47%) replaced before she touched anything**, a
-set surviving a typical 11s against her own **7.8s** of reading and choosing, and a
-final conversation of five sets with **nothing chosen at all** before she wrote in.
-She was already running a **1.5s silence period against the shipped default of
-0.5s**, so every other tester is exposed to this harder than she was.
+**The cards return to the empty reserved outlines only when something has been
+SPOKEN** (a card, an Express phrase, a composed statement, the pardon phrase, the
+decline-the-closing phrase) **or the conversation ends.** Audited August 21 2026:
+every remaining clear site is one of those, plus start-up and a cards-per-category
+settings change.
 
-**As built:** the first set of a turn shows at once (nothing to disturb). A later set
-for the same turn is **held**; the regenerate button lights, and pressing it shows
-the held set **instantly and with no API call** — better than what the button used
-to do there, which was pay for another round trip.
+**WHAT THE USER MAY DO WHILE A REPROMPT IS RUNNING — all three already worked and
+must keep working:** tap a card from the set on screen (speaks it, abandons the
+reprompt); tap an Express phrase (same); open "In my own words" (speaks nothing,
+also abandons the reprompt — `openComposer` bumps the generation token, added August
+20 2026 so a new set could not land under the composer and a placeholder could not
+start talking mid-sentence).
 
-**⚠ THREE THINGS MUST STILL LAND IMMEDIATELY, and holding one would be worse than
-the defect being fixed.** (1) **A change of mode** — goodbyes must not wait behind
-cards answering a question the partner has finished with, and a partner's "What?"
-must not hang behind cards that cannot answer it. (2) **Anything the user asked
-for** — Reframe, a choice chip, regenerate — which are selection boundaries by
-definition and never reach the decision. (3) **An empty screen.**
+**RELATIONSHIP TO CONTINUOUS LISTENING, which is what makes this matter:** the mic
+stays open for the whole exchange and **every pause of the silence period is a
+checkpoint that reprompts.** So reprompts are not occasional. Measured on one real
+tester's twenty minutes: **32 sets offered, 15 of them (47%) replaced before she
+touched anything.** Cards being replaced mid-read is therefore the NORMAL case, not
+an edge case, which is why the no-gap rule is load-bearing rather than tidy.
 
-**The decision lives in `conversation-logic.shouldHoldPalette` and NOT in app.js**,
-so it is unit-tested — the same reason the July 2026 stall logic was extracted
-there. `paletteIsLive()` reuses `cardsShownAt`/`decideTaken`, the state the
-reading-time measurement already keeps, rather than a second notion of "engaged"
-that could disagree with it. **`showPalette` owns the hold state** (clears the held
-set, records the mode) because every route to the screen goes through it, and a
-missed caller would leave the button lit over a set that can never be taken.
+**⚠ THE BUG THIS FIXED, AND IT WAS TWO BUGS WEARING ONE COAT.** `generateOptions`
+called `ui.clearResponseOptions()` unconditionally at the top, so on every reprompt
+the suggestions vanished for the whole round trip — 5.6s typically, 8.4s worst
+measured — leaving the reserved outlines. **And clearing also strips
+`palette-refreshing`**, which is the "a reprompt is running" look (`setPaletteBusy`:
+stripe sweeping, cards breathing) that had been switched ON thirty lines earlier. So
+the indicator was cancelled by the same call, every time. **It therefore worked when
+the user pressed New N (that path never clears) and was DEAD on every reprompt the
+app started by itself — the case it exists for.** Removing the clear both closes the
+gap and lets the existing indicator run for the first time on that path. Verified in
+Practice Mode: cards persist through the round trip with zero empty cells, the
+provisional look stays on throughout, and the new set replaces the old only when it
+lands.
 
-**The cost, accepted:** a user who ignores the lit button answers a slightly older
-version of what was said. The transcript keeps updating, so it is visible, and it is
-a far smaller failure than being unable to answer at all.
+**⚠ DO NOT CONFLATE THE REPROMPT WITH "New N" (Ken, August 21 2026, correcting a
+build that did).** A first attempt held the newer set back and lit the New N button
+to offer it. Ken: *"the 4-new button is an on-demand request for additional response
+options when the initially offered set aren't sufficient. This behavior is unrelated
+to continuous recording of the conversation partner."* He is right, and the damage is
+concrete rather than aesthetic: a user who has read the set, decided none of them
+fit, and pressed New N would have been handed **the answers to a different question**
+instead of the alternatives they asked for — and the button would have meant two
+things depending on invisible state, which for this population is worse than a
+button that means one thing imperfectly. **The two are separate mechanisms with
+separate triggers and must stay separate.** Reverted in full.
 
-**Measure whether it worked with `palette_held` / `palette_taken`.** Held should
-become common and **`palette_refreshed` should become rare**; a run of holds with no
-takes after them means the lit button is not being found, which is the one way this
-fails quietly.
-
-**Verified end to end in Practice Mode**, which runs the whole pipeline with no
-microphone and is the only way to exercise this in a preview: cards stayed put
-during generation, the newer set was held with the button lit, and tapping it
-swapped them in with **zero extra API calls** (`palette_taken heldMs=1882`). Button
-geometry is **identical** lit and unlit (measured 1149/288/131/216 in all states),
-so no keyguard hole moves — Rule 1.
-
-**⚠ A TEST HARNESS CAN MANUFACTURE ITS OWN GREEN, and this one did twice.** A first
-run reported the cards correctly unchanged — because nothing new had arrived at all
-(the second Listen press *stops* in practice mode rather than cueing another turn),
-so it was measuring nothing and looked like a pass. A second reported every card as
-"[object Object]" because the stub used the legacy `options:` key rather than
-`responses:`. **The metrics trace is what settled both** — no `palette_held` line
-meant the branch was never reached. Check the trace, not the screen.
+**Still open, raised by Ken and NOT built: what should happen when the user opens "In
+my own words" and then CANCELS?** Today the reprompt was abandoned at open, so they
+come back to the older cards and the newer set is gone. Nothing was spoken and the
+partner's turn is still live, so the better set arguably should be there. Two ways:
+let the reprompt finish and hold its result for the cancel path (no extra round
+trip, but needs the placeholder suppression kept); or re-ask on cancel (a round trip,
+simpler). Ken's instinct was that it "probably should" land on cancel.
 
 ---
 
