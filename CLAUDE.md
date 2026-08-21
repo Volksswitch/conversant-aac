@@ -1469,6 +1469,61 @@ overwritten by an automatic refresh** — indistinguishable, to the user, from R
 not working. Deciding by intent makes the outcome the same however the timing falls.
 Reframe with an empty box is treated as a cancel, so the held set shows.
 
+## EVERY TIMER STARTS FROM THE APP'S IDEA OF THE PAUSE, WHICH IS ALREADY LATE (Ken, August 21 2026)
+
+**State it this way and nothing downstream is confusing.** The chain, in order:
+
+1. The partner stops talking.
+2. **Their last words are still in flight.** The recognizer delivers text after the
+   fact, by a lag that varies with the service and the connection, and **the browser
+   recognizer exposes no audio timing at all** — so the app cannot know when the room
+   actually went quiet.
+3. The last delivery lands. **This is where the silence countdown starts**
+   (`resetSilenceTimer` fires from `onresult`, not from acoustic silence).
+4. The countdown reaches the silence period → the app calls this a **pause**, and
+   **everything else hangs off that one moment**: the AI is asked for suggestions,
+   and the placeholder ladder is armed.
+5. First holding phrase at pause + initial delay (default 2s). Suggestions at pause +
+   generation time (measured 4.2–8.4s in the field).
+
+**⚠ SO EVERY SETTING IS RELATIVE TO A MOMENT THAT IS ALREADY LATE, and the settings
+understate the real wait.** The gap the partner actually experiences before the app
+says anything is **lag + silence period + initial delay**. A 0.5s silence period does
+not mean the app reacts half a second after they stop; it means half a second after
+their words arrive. **The lag is the one term no setting can change.**
+
+**Two consequences worth keeping.** (a) Reading the CA literature straight onto the
+silence period **overstates** how trigger-happy it is — the effective acoustic pause is
+longer than the number. (b) A complaint that the holding phrases are late has two
+adjustable terms (silence period, initial delay) and one that is not.
+
+**WHAT THE TRACE RECORDS, so it is not misread:** a checkpoint carries a wall-clock
+time and `sinceMs`, which is **the gap since the PREVIOUS checkpoint in that turn —
+not the length of the pause.** Nothing in the app measures pause length. `stt_gap`
+records the interval between recognizer deliveries, which is the quantity that
+actually causes a checkpoint, and is kept as a distribution only.
+
+## The saved transcript does NOT preserve the pause structure (found August 21 2026)
+
+Ken asked whether the transcript records partial partner speech, so a reader can see
+when the partner paused, continued, and when reprompts fired. **It does not, and this
+is a real diagnostic gap.**
+
+`upsertPartnerInterim` **OVERWRITES** the pending partner turn's `rawTranscript` at
+each later pause and keeps the FIRST pause's timestamp. So a turn that grew across
+four pauses is saved as one line: the final text, stamped at the first pause. The
+intermediate states, the number of pauses and their times are all gone.
+
+**The two records are therefore complementary and neither is sufficient alone:**
+- the **event trace** has the pause and reprompt structure, in counts and times, with
+  **no words** (deliberate, August 5 2026);
+- the **conversation file** has the words, with **no pause structure**.
+
+So *"the partner paused here, the app said this, then this text appeared"* cannot be
+reconstructed from either. **If that question keeps coming up, the cheap fix is to
+append rather than overwrite** — keep each interim as its own timestamped revision on
+the turn — which costs a little file size and answers it directly. Not built.
+
 ## PLACEHOLDERS ARE PART OF THIS SAME FLOW (Ken, August 21 2026)
 
 They are what the partner hears while all of the above is happening, so they are not
