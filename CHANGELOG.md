@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.7.11
+
 - The weekly report now sends only the errors since the last one, instead of
   everything it had ever recorded. It was re-sending the whole list each time, so
   a week with one new problem was reported as several. Your own error list in
