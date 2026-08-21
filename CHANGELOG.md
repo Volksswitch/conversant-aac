@@ -26,6 +26,18 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- The weekly report now sends only the errors since the last one, instead of
+  everything it had ever recorded. It was re-sending the whole list each time, so
+  a week with one new problem was reported as several. Your own error list in
+  Settings is unchanged and still holds everything.
+
+- A problem report no longer says "no errors recorded" when there were errors. The
+  app keeps two copies of what went wrong -- one in the browser, one alongside your
+  saved conversations -- and the browser's copy is lost whenever browser storage is
+  cleared. The report used to read only that copy, so it could come out empty, and
+  worse, arrive with none of the conversations attached. It now falls back to the
+  saved conversations, and says that it did.
+
 ## Version 0.7.10
 
 - **The suggestions no longer vanish while the other person is still talking.** When

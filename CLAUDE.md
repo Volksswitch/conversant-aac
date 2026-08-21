@@ -1508,6 +1508,63 @@ others happen to be downstream of it.
 
 ---
 
+## Error reporting — audited against expectation and three faults fixed (Ken, August 21 2026)
+
+Ken asked for the error path to be checked against what the documents promise. Three
+of six expectations held; three did not, and all three are now fixed.
+
+**⚠ AN ERROR LIVES IN TWO STORES AND THEY DRIFT APART. THIS IS THE ROOT OF TWO OF THE
+THREE.** `logError` writes to a **browser-held ring buffer** (`aac_error_log`, 200
+entries) *and* into the **conversation's own file on disk** — plus `errors.log` and
+the console. The browser copy is **origin-scoped and impermanent**; the disk copy
+travels with the data folder. **The August 1 2026 web-address move emptied the first
+for every tester at once while the second survived**, which is why a real report
+arrived saying *"Errors recorded 7"* in the usage summary and *"(no errors recorded)"*
+three lines below it, from the same app, in the same file.
+
+**FIXED 1 — the weekly report re-sent the entire ring buffer every time.** Nothing
+cleared it after a send, so week 2 reported three errors when **one** was new
+(measured, not inferred). Consequences beyond noise: the Sheet's error column climbs
+on its own, **a tester whose problems have STOPPED still looks like they are
+accumulating**, and an alert threshold fires once and then every week after. Now a
+`weeklyErrorMark` records the newest error already sent and only later ones go.
+- **The mark is a TIMESTAMP, not a count** — the ring buffer drops its oldest at 200,
+  so an index would slide underneath itself and silently re-send.
+- **Advanced on ENQUEUE, not on delivery**, matching `weeklySendLastAt` and for the
+  same reason: the queue owns delivery, and re-marking each launch while offline
+  would send the same errors repeatedly.
+- **An entry with no timestamp counts as NEW.** The failure directions are unequal —
+  a duplicate is noise, a dropped error loses the only record it happened.
+- **It is a mark, not a purge:** the full list stays on the device, because that is
+  what a problem report reads and what the tester sees in Settings.
+
+**FIXED 2 — a problem report now falls back to the conversations on disk** when the
+browser list is empty, and says that it did. **The contradiction was never the real
+damage: transcripts hang off that list**, so an empty list attached NO transcript —
+losing the one thing that could explain the complaint, exactly when it was needed.
+
+**FIXED 3 — the privacy wording was overstated in three documents.** Both manuals
+said a private conversation *"leaves no record behind"* and the Beta Test Plan said
+*"nothing from it is written down"*. **Not quite true:** the speech is stripped
+(verified), but an error entry naming the context and the conversation id is still
+written. Ken's call was to correct the wording rather than the behaviour — knowing an
+error happened is worth keeping and carries no content. All three now say that a
+technical error is still noted and never what was being said.
+
+**VERIFIED AS PROMISED, and worth keeping stated:** an error carrying partner speech
+keeps it in an ordinary conversation and has it stripped in a private one (tested
+with real speech in the payload); **no speech reaches the weekly report under any
+setting**, because `redactErrors` rebuilds each entry from four fields rather than
+filtering one out — the safer construction; the red wash fires on every logged error.
+
+**THE TRANSFERABLE LESSON: when the same fact is written to two stores with different
+lifetimes, every reader must say WHICH ONE it read, and the shorter-lived one must
+never be the sole source for anything else that hangs off it.** Here the transcripts
+hung off the impermanent copy, so losing it lost them too — a failure two steps away
+from the thing that was actually lost.
+
+---
+
 ## Reading tester reports — trigger phrase "evaluate reports" (Ken, August 21 2026), BUILT
 
 `scripts/evaluate-reports.mjs` reads the problem reports testers send and says what

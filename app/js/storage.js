@@ -279,7 +279,7 @@ const SETTINGS_DIR = 'settings';
 // clone the first device's identity or make it think it has already reported this
 // week. `testerName` is deliberately NOT excluded — it identifies the tester, so it
 // should follow them (Ken, August 7 2026).
-const PROFILE_EXCLUDE = ['apiKey', 'deepgramKey', 'usageInputTokens', 'usageOutputTokens', 'usageCacheWriteTokens', 'usageCacheReadTokens', 'usageSttSeconds', 'usageTtsCharacters', 'usageSince', 'lastSeenVersion', 'activeSettingsProfile', 'installId', 'weeklySendLastAt', 'weeklyInfoHash', 'weeklyEndpoint'];
+const PROFILE_EXCLUDE = ['apiKey', 'deepgramKey', 'usageInputTokens', 'usageOutputTokens', 'usageCacheWriteTokens', 'usageCacheReadTokens', 'usageSttSeconds', 'usageTtsCharacters', 'usageSince', 'lastSeenVersion', 'activeSettingsProfile', 'installId', 'weeklySendLastAt', 'weeklyInfoHash', 'weeklyEndpoint', 'weeklyErrorMark'];
 
 // The settings bundle with both API keys replaced by a presence marker, for a
 // problem report (Ken, August 7 2026). The redaction lives HERE rather than in
@@ -1395,6 +1395,25 @@ export function saveWeeklyEndpoint(url) {
 
 // Hash of the last system-info block sent. System info is near-static, so weekly
 // copies are noise; sending only on change also makes a change conspicuous.
+/* The timestamp of the newest error already sent in a weekly report.
+ *
+ * ⚠ WITHOUT THIS THE WEEKLY REPORT RE-SENDS THE WHOLE RING BUFFER EVERY TIME, which
+ * is what it did until August 21 2026. Measured: a week that produced ONE new error
+ * reported THREE, because the previous week's two were still in the log and nothing
+ * cleared them. The Sheet's error count then climbs on its own, a tester whose
+ * problems have stopped still looks like they are accumulating, and an alert
+ * threshold fires once and then every week afterwards.
+ *
+ * ⚠ IT IS A MARK, NOT A PURGE. The full log stays on the device, because that is what
+ * a problem report reads and what the tester sees in Settings. Only what LEAVES is
+ * narrowed. */
+export function loadWeeklyErrorMark() { return loadSettings().weeklyErrorMark || ''; }
+export function saveWeeklyErrorMark(ts) {
+    const s = loadSettings();
+    s.weeklyErrorMark = ts || '';
+    saveSettings(s);
+}
+
 export function loadWeeklyInfoHash() { return loadSettings().weeklyInfoHash || ''; }
 export function saveWeeklyInfoHash(h) {
     const s = loadSettings();

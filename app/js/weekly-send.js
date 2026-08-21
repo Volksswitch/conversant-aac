@@ -77,7 +77,7 @@ export const PAYLOAD_FIELDS = {
     weeks: 'The same counts broken down by week, so we can see how things change',
     events: 'Counts of what was tapped and how long things took. No words, ever.',
     personalization: 'How much you have filled in and made your own — counts only, never the content',
-    errors: 'Which errors happened and when — never what was being said at the time',
+    errors: 'Which errors happened since the last report, and when — never what was being said at the time',
     systemInfo: 'Your screen, browser and settings',
 };
 
@@ -131,6 +131,32 @@ export function enqueue(queue, payload, max = QUEUE_MAX) {
 
 // Strip `extra` outright — see privacy rule 2. Keeping a subset would mean every
 // future caller of logError has to think about it; dropping the field means none do.
+/* The errors a report should carry: those recorded since the last one went.
+ *
+ * ⚠ THE MARK IS A TIMESTAMP, NOT A COUNT, because the ring buffer drops its oldest
+ * entries at 200 — an index would slide underneath itself and silently re-send.
+ *
+ * An entry with no timestamp is treated as NEW. It should not happen (logError always
+ * stamps one), and the failure directions are not equal: sending a duplicate is noise,
+ * while dropping a real error loses the only record that it happened.
+ */
+export function errorsSince(entries, mark) {
+    if (!Array.isArray(entries)) return [];
+    if (!mark) return entries;
+    return entries.filter(e => !(e && e.ts) || e.ts > mark);
+}
+
+/* The newest timestamp in a set, for marking what has just been sent. Returns the
+ * previous mark when there is nothing newer, so an empty week cannot move it
+ * backwards. */
+export function newestErrorTs(entries, fallback = '') {
+    let out = fallback;
+    for (const e of entries || []) {
+        if (e && typeof e.ts === 'string' && e.ts > out) out = e.ts;
+    }
+    return out;
+}
+
 export function redactErrors(entries, { maxMessage = MAX_MESSAGE, max = MAX_ERRORS } = {}) {
     if (!Array.isArray(entries)) return [];
     return entries.slice(-max).map(e => ({
@@ -189,7 +215,14 @@ async function gatherPayload({ appVersion, build, now }) {
             settingsProfiles: await diagnostics.countSettingsProfiles(),
         });
     } catch { /* leave null */ }
-    const errors = redactErrors(storage.loadErrorLog());
+    // Only what has happened since the last report. The mark is advanced when the
+    // payload is ENQUEUED rather than when it is delivered, for the same reason the
+    // week itself is: the queue owns delivery from here, and re-marking on every
+    // launch while offline would send the same errors again and again.
+    const allErrors = storage.loadErrorLog();
+    const fresh = errorsSince(allErrors, storage.loadWeeklyErrorMark());
+    const errors = redactErrors(fresh);
+    storage.saveWeeklyErrorMark(newestErrorTs(fresh, storage.loadWeeklyErrorMark()));
     let systemInfo = null;
     try {
         const info = await diagnostics.collectSystemInfo({ appVersion, buildId: build });

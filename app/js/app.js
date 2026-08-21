@@ -4265,8 +4265,42 @@ function transcriptLine(ex) {
 // (read back from the data folder, or the live in-memory turns for the current
 // conversation) followed by that conversation's errors. This is what Copy puts on
 // the clipboard so a report carries the conversation, not just the error (Ken).
+/* Errors recorded in the saved conversations on disk, grouped like the in-app log.
+ *
+ * ⚠ THE TWO STORES DRIFT APART, AND THE REPORT USED TO BELIEVE ONLY ONE OF THEM. An
+ * error is written to BOTH the browser's own list and the conversation's file, but
+ * the browser's list is origin-scoped and is lost whenever browser storage is —
+ * which the August 1 2026 web-address change did to every tester at once. A real
+ * report then arrived saying "Errors recorded 7" in the usage summary and
+ * "(no errors recorded)" three lines below it, from the same app, in the same file.
+ *
+ * The damage is not the contradiction, it is that transcripts hang off this list:
+ * an empty list attaches NO transcript, so the one thing that could explain the
+ * complaint is missing exactly when the tester needed it most. Falling back to disk
+ * recovers both, because that is where the errors and the transcripts already are.
+ */
+async function errorsFromDisk() {
+    const groups = new Map();
+    let logs = [];
+    try { logs = await storage.listConversationLogs(); } catch { return []; }
+    for (const { id, data } of logs) {
+        const errs = ((data && data.exchanges) || []).filter(e => e && e.role === 'error');
+        if (!errs.length) continue;
+        groups.set(id, errs.map(e => ({
+            ts: e.ts || e.time || '?', version: e.version, context: e.context, message: e.message, extra: e.extra,
+        })));
+    }
+    return [...groups.keys()].sort().reverse().map(id => [id, groups.get(id)]);
+}
+
 async function buildErrorReport() {
-    const groups = groupErrorsByConversation();
+    let groups = groupErrorsByConversation();
+    // Nothing in the browser's list is not the same as nothing having gone wrong.
+    let fromDisk = false;
+    if (!groups.length) {
+        groups = await errorsFromDisk();
+        fromDisk = groups.length > 0;
+    }
     const out = [
         'Conversant AAC — error report',
         `App version: ${APP_VERSION}`,
@@ -4274,6 +4308,12 @@ async function buildErrorReport() {
         '',
     ];
     if (!groups.length) { out.push('(no errors recorded)'); return out.join('\n'); }
+    if (fromDisk) {
+        // Say where these came from. The in-app error list being empty while the
+        // saved conversations are not is itself worth knowing when reading a report.
+        out.push('(read from the saved conversations - the in-app error list was empty,',
+                 ' which usually means browser storage was cleared or the app changed address)', '');
+    }
 
     for (const [id, errs] of groups) {
         out.push(`════════ Conversation ${id} ════════`);

@@ -18,7 +18,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
     shouldSend, enqueue, redactErrors, assemblePayload, describeReport,
-    hashOf, formatSendLog, PAYLOAD_FIELDS,
+    hashOf, formatSendLog, PAYLOAD_FIELDS, errorsSince, newestErrorTs,
 } from '../app/js/weekly-send.js';
 
 const DAY = 86400000;
@@ -170,4 +170,53 @@ test('the sent log reads newest-first and never shows content', () => {
     assert.match(lines[1], /sent/);
     assert.match(text, /2\.0 KB/);
     assert.equal(formatSendLog([]), 'Nothing sent yet.');
+});
+
+/* ── A weekly report carries only what is NEW (Ken, August 21 2026) ──────────
+ *
+ * Until this, the report re-sent the whole ring buffer every week, because
+ * nothing cleared it. Measured before the fix: a week with ONE new error
+ * reported THREE. The Sheet's error count then climbs on its own, and an alert
+ * threshold fires once and every week after.
+ */
+test('errorsSince: with no mark, everything is new', () => {
+    const es = [{ ts: '2026-08-01T00:00:00Z' }, { ts: '2026-08-02T00:00:00Z' }];
+    assert.equal(errorsSince(es, '').length, 2);
+});
+
+test('errorsSince: only entries after the mark', () => {
+    const es = [
+        { ts: '2026-08-01T00:00:00Z', context: 'a' },
+        { ts: '2026-08-02T00:00:00Z', context: 'b' },
+        { ts: '2026-08-03T00:00:00Z', context: 'c' },
+    ];
+    assert.deepEqual(errorsSince(es, '2026-08-02T00:00:00Z').map(e => e.context), ['c']);
+});
+
+test('errorsSince: a quiet week sends nothing', () => {
+    const es = [{ ts: '2026-08-01T00:00:00Z' }];
+    assert.deepEqual(errorsSince(es, '2026-08-01T00:00:00Z'), []);
+});
+
+test('errorsSince: an entry with no timestamp is treated as new', () => {
+    // It should never happen, but the failure directions are not equal: a duplicate
+    // is noise, a dropped error loses the only record that it happened.
+    const es = [{ context: 'no-stamp' }, { ts: '2026-08-01T00:00:00Z' }];
+    assert.deepEqual(errorsSince(es, '2026-08-05T00:00:00Z').map(e => e.context), ['no-stamp']);
+});
+
+test('newestErrorTs: takes the latest, and never moves the mark backwards', () => {
+    const es = [{ ts: '2026-08-01T00:00:00Z' }, { ts: '2026-08-03T00:00:00Z' }];
+    assert.equal(newestErrorTs(es, ''), '2026-08-03T00:00:00Z');
+    // An empty week must leave the mark where it was, or the next report re-sends.
+    assert.equal(newestErrorTs([], '2026-08-03T00:00:00Z'), '2026-08-03T00:00:00Z');
+    assert.equal(newestErrorTs([{ ts: '2026-07-01T00:00:00Z' }], '2026-08-03T00:00:00Z'),
+        '2026-08-03T00:00:00Z');
+});
+
+test('the disclosure still says what is actually sent', () => {
+    // The words are the only disclosure there is, so they must not drift from the
+    // behaviour: the report carries errors SINCE THE LAST ONE, not all of them.
+    assert.match(PAYLOAD_FIELDS.errors, /since the last report/i);
+    assert.match(describeReport(), /No transcripts, ever/i);
 });
