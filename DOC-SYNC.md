@@ -153,6 +153,25 @@ moved.
 identical cards handed to a communication partner - the date would print on the card
 itself, where it has no reader.
 
+## Page headers are uniform: "Conversant AAC - <Document Name>" (Ken, August 21 2026)
+
+Swept alongside the byline work, because a title page that names the product and a page
+header that names something else is the same defect twice. Every document now carries the
+same right-aligned 9pt grey italic line on every page.
+
+Three were **wrong**, not merely missing: Continuous Partner Capture and Keyboard Layout
+Options still said **"AI-Driven AAC"**, the working name dropped when the product was named
+in June 2026; and iPad Platform Measurements was headed **"iPad Architecture"** - the name
+of the document it was split out of and which is retired, so every page pointed at
+something that no longer exists. Seven more had **no header at all** (Configuration Model,
+Practice Mode, Security Issues, UI-Design, Worldview Implementation Plan, and both User
+Manuals, whose two sections each needed one).
+
+**Two residuals, not fixed here because they are footers, not headers:** Configuration
+Model and UI-Design have **no footer at all**, so they carry neither the
+"Volksswitch.org | Month | For internal use" line nor the "Page m of n" numbering the
+June 15 2026 convention requires. They are the only two documents missing it.
+
 ## Documents
 
 | Document | Status | Last reviewed | At commit | Outstanding / notes |
