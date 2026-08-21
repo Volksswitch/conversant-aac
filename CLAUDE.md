@@ -1188,6 +1188,10 @@ Product-document currency is tracked by [`DOC-SYNC.md`](DOC-SYNC.md) (any root d
 3. Apply the edits; verify (paragraph/content scans; render in Word if a toolchain is available).
    **Update the title page’s "Last updated" line to today’s date.** MANDATORY on every sync, and add the line
    directly beneath the byline if the document does not have one yet (Ken, August 20 2026).
+   **All 23 prose documents carry the line as of August 21 2026**, worded `Last updated
+   August 20, 2026` with no colon. The **Partner Card is the one exclusion** - it is a
+   print-and-cut sheet handed to a communication partner, so a date line would print on
+   the card itself, where it has no reader.
    The byline carries the CREATION date and never changes, so by itself it tells a reader
    nothing about whether the material is current — which is the only question they actually
    have. Documents acquire the line as they are synced, so one that has not been synced yet
