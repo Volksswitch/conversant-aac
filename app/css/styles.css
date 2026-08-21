@@ -1443,12 +1443,22 @@ button:not(.kbd-key):not(.kbd-tool):not(.kbd-pred-btn):not(.ep-btn) {
     color: var(--slot-persistent);
     border-radius: 8px;
     cursor: pointer;
+    /* Feedback matches the response cards beside it (Ken, August 20 2026) — see
+       the note on :focus-visible below. */
+    transition: box-shadow 0.12s, transform 0.05s;
 }
+/* Was a full inversion to slate, which read as the button turning black and
+   staying that way. It sits among the response cards and is pressed in the same
+   breath as them, so it now gives the same feedback they do: a shadow to show it
+   is under the pointer, and a 1px nudge on press. Hover lives in the
+   @media (hover: hover) block at the foot of this file (Rule 20 — a hover style
+   sticks on a touch screen, which is how the black background was reported in the
+   first place). */
 .regenerate-btn:focus-visible {
-    background: var(--slot-persistent);
-    color: #fff;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
     outline: none;
 }
+.regenerate-btn:active { transform: translateY(1px); }
 
 /* --- Express Panel editor (Settings → Express Panel): an ordered list of typed items. --- */
 #expressEditor { display: flex; flex-direction: column; gap: 0.5rem; }
@@ -3509,9 +3519,11 @@ label.radio-label input[type="radio"] {
         color: #fff;
         outline: none;
     }
+    /* Matches .response-card:hover directly below — same shadow, no fill change
+       (Ken, August 20 2026). The other slate-inverting controls above are the
+       Command Bar's, which are a separate surface and are left as they are. */
     .regenerate-btn:hover {
-        background: var(--slot-persistent);
-        color: #fff;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
         outline: none;
     }
     .response-card:hover {

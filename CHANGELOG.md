@@ -28,6 +28,7 @@ forgetting to tag one is only ever noise, never silence.
 
 - The response options now show when the app is asking the AI for a new set. A marker travels along the top of the response area and the cards fade gently in and out, so a fresh set arriving is never a surprise. Before, the options could change while you were still reading them, with nothing to warn you.
 - You no longer have to wait for that new set. Choosing one of the options already on screen, tapping an Express Panel phrase, or going to "In my own words" now cancels the request and takes your turn. Your choice wins; the new options are dropped rather than appearing on top of you. Going to "In my own words" in particular used to let a fresh set of options — and sometimes a spoken filler — arrive while you were still typing.
+- The "New 4" button now behaves like the response cards next to it: a soft shadow when the pointer is over it, and a small nudge when pressed. It no longer turns dark, which could look like it had stayed switched on after you pressed it.
 
 ## Version 0.7.7
 
