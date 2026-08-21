@@ -1447,13 +1447,64 @@ things depending on invisible state, which for this population is worse than a
 button that means one thing imperfectly. **The two are separate mechanisms with
 separate triggers and must stay separate.** Reverted in full.
 
-**Still open, raised by Ken and NOT built: what should happen when the user opens "In
-my own words" and then CANCELS?** Today the reprompt was abandoned at open, so they
-come back to the older cards and the newer set is gone. Nothing was spoken and the
-partner's turn is still live, so the better set arguably should be there. Two ways:
-let the reprompt finish and hold its result for the cancel path (no extra round
-trip, but needs the placeholder suppression kept); or re-ask on cancel (a round trip,
-simpler). Ken's instinct was that it "probably should" land on cancel.
+**"In my own words" — the reprompt is KEPT and shown on CANCEL, discarded on SPEAK
+(Ken, August 21 2026).** Opening the box used to abandon the request outright
+(`generationToken++`). That fixed the two things that genuinely go wrong — a new set
+landing under the box, and a placeholder speaking mid-sentence — **by throwing away
+work already paid for**, and on a cancel it left the user looking at cards older than
+what the partner had by then said. Now the RENDER waits (`composerOpen`, read in
+`generateOptions`) and the two real problems are each solved by their own mechanism.
+The engine has already ingested the classification by then, so conversation state is
+current either way; only the display is deferred.
+
+**⚠ THE REFRAME RACE IS DECIDED BY INTENT, NEVER BY WHICH ANSWER ARRIVES LAST (Ken
+raised it; resolved August 21 2026).** The partner spoke again while the user was
+typing, so a reprompt is in flight or already held, and the user now taps Reframe.
+**The reframe wins and the reprompt is dropped.** (1) The user ASKED for it, and
+every other path in the app already resolves this the same way. (2) **Nothing is
+lost** — both are built from the same history and the same `currentPartnerText`, with
+the steer added on top, so the reframe's context is a superset rather than a
+different view. (3) **If arrival order decided it, a slow reframe could be silently
+overwritten by an automatic refresh** — indistinguishable, to the user, from Reframe
+not working. Deciding by intent makes the outcome the same however the timing falls.
+Reframe with an empty box is treated as a cancel, so the held set shows.
+
+## PLACEHOLDERS ARE PART OF THIS SAME FLOW (Ken, August 21 2026)
+
+They are what the partner hears while all of the above is happening, so they are not
+a separate subject and must be documented beside it.
+
+**They are armed by the PARTNER'S SILENCE, never by the AI round trip** (August 7
+2026 — the entry above on `arm()` has the reasoning and must not be undone). First
+phrase 2s after the pause, later ones every 10s, at most 2 per turn; all three are
+Settings → Conversation → **Placeholders** (Initial delay / Subsequent delay /
+Maximum per turn, where **0 means none** and "No limit" exists). So they speak even
+when the AI is slow, failing, or absent.
+
+**FOUR THINGS SILENCE THEM, and each exists for its own reason:**
+1. **The user speaking.** Never over the user's own statement (July 2026).
+2. **The user acting at all** — a card, an Express phrase, Say again / Hold on /
+   Wind down abort the ladder, because the floor has been taken.
+3. **The partner resuming** (`handlePartnerResumed`) aborts and resets it, so nothing
+   is spoken over them; the next pause re-arms from the fuller utterance.
+4. **A repair-initiator turn** ("What?") — the one turn that warrants none.
+
+**⚠ A FIFTH WAS MISSING AND IS NOW ADDED: while "In my own words" is open.** Ken
+asked for this on August 20 2026 and it was implemented by cancelling the generation,
+which does not achieve it: **arming happens at the partner's pause, before and
+independently of the request**, so opening the box silences the ladder already
+running and CANNOT silence one armed afterwards — and one is armed whenever the
+partner speaks again while the user is still typing. Measured August 21 2026: a
+placeholder spoke 3s into a composing session. **The old code had exactly the same
+hole for exactly the same reason.** It is now carried by the existing
+`setUserSpeakingGate`, which holds however late the ladder starts. Verified: zero
+placeholders across seven seconds spanning a whole new partner turn with the box open.
+
+**THE GENERAL LESSON, and it is why this is worth the words: cancelling a REQUEST is
+not the same as silencing a BEHAVIOR that the request does not drive.** Placeholders,
+arming, and the palette render are three separate mechanisms hung off one partner
+pause; suppressing one of them by killing the request only appears to work while the
+others happen to be downstream of it.
 
 ---
 
