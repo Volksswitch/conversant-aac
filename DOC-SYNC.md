@@ -123,25 +123,28 @@ Overview, User Manual** — caught up and then re-synced for the **0.5.78** rele
 catch-up pass). The Architecture Overview has an image residual noted in its row
 (Figures 6 & 7).
 
-## Every document carries a "Last updated" line on its title page (August 21 2026)
+## The title page carries the date the document was last brought current (Ken, August 21 2026)
 
-The rule already existed — a sync updates the title page's **Last updated** line, and
-adds it beneath the byline where a document does not have one yet — but only two
-documents had actually acquired one, because a document only gets the line when it is
-next synced. All 23 prose documents now carry it.
+Ken: put the modification date **next to or in place of the creation date**, not on a
+line of its own. So it sits on the byline itself — *Kenneth R. Hackbarth | Volksswitch.org
+| June 2026 | Last updated August 20, 2026* - and where the byline's own date is already
+the same day, "Last updated" simply replaces it rather than printing the date twice.
 
-**The date on each line is that document's `Last reviewed` date from the table below,
-not the date of this sweep.** Stamping today's date on all of them would have claimed
-every document was brought current today, which is exactly the false signal this
-tracker exists to avoid. Nothing was reviewed for content in this pass, so no row's
-`Last reviewed` or `At commit` moved.
+The rule had existed for a while, but a document only picks the line up when it is next
+synced, so only two had one. All 23 prose documents now carry it. Five have no byline at
+all (Continuous Partner Capture, Keeping Costs Down, Keyboard Layout Options, Conversation
+Engine Overview, Practice Mode); those get a small grey line under the subtitle, since
+there is nothing for the date to sit beside.
+
+**The date on each is that document's `Last reviewed` date from the table below, not the
+date of this sweep.** Stamping today on all of them would have claimed every document was
+brought current today, which is exactly the false signal this tracker exists to avoid.
+Nothing was reviewed for content in this pass, so no row's `Last reviewed` or `At commit`
+moved.
 
 **The Partner Card is deliberately excluded.** It is a print-and-cut sheet of eight
-identical cards handed to a communication partner — the date would print on the card
+identical cards handed to a communication partner - the date would print on the card
 itself, where it has no reader.
-
-**Wording is uniform: `Last updated August 20, 2026`, no colon**, matching the
-Architecture Overview. The Practice Scenarios line was normalized to drop its colon.
 
 ## Documents
 
