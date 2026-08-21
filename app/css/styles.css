@@ -719,21 +719,27 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
     border-radius: 8px;
     font-size: 1rem;
     cursor: pointer;
-    transition: background 0.12s;
+    /* `background` stays in the list so the latched fills below (listening,
+       private-on) still ease in; the other two match the response cards. */
+    transition: background 0.12s, box-shadow 0.12s, transform 0.05s;
 }
+/* Shadow-and-nudge rather than a fill, matching the response cards (Ken, August
+   20 2026). A FILL NOW MEANS EXACTLY ONE THING ON THIS BAR: the control is ON —
+   #listenBtn.listening and #privacyBtn.private-on below are both filled, which is
+   Rule 6. Inverting on hover or focus made an ordinary button look latched, so
+   this removes a genuine ambiguity rather than only matching a style. */
 .cmd-btn:focus-visible {
-    background: var(--slot-persistent);
-    color: #fff;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
     outline: none;
 }
+.cmd-btn:active { transform: translateY(1px); }
 .cmd-btn-end {
     border-color: #e0a4a0;
     color: #c0392b;
 }
 .cmd-btn-end:focus-visible {
-    background: #c0392b;
-    border-color: #c0392b;
-    color: #fff;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
+    outline: none;
 }
 
 /* Recording indicator (Ken, July 18 2026) — the Listen button turns red and the
@@ -1635,13 +1641,14 @@ button:not(.kbd-key):not(.kbd-tool):not(.kbd-pred-btn):not(.ep-btn) {
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.12s;
+    transition: background 0.12s, box-shadow 0.12s, transform 0.05s;
 }
+/* Same treatment as .cmd-btn above — shadow and nudge, never a fill. */
 .persist-btn:focus-visible {
-    background: var(--slot-persistent);
-    color: #fff;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
     outline: none;
 }
+.persist-btn:active { transform: translateY(1px); }
 
 /* Session-level controls — start / end the conversation. Separated from the CA
    overrides so the four overrides keep their stable identity. */
@@ -3504,19 +3511,13 @@ label.radio-label input[type="radio"] {
    cosmetic. Revisit if it proves distracting on the device.
    --------------------------------------------------------------------------- */
 @media (hover: hover) {
-    .cmd-btn:hover {
-        background: var(--slot-persistent);
-        color: #fff;
-        outline: none;
-    }
-    .cmd-btn-end:hover {
-        background: #c0392b;
-        border-color: #c0392b;
-        color: #fff;
-    }
+    /* The Command Bar and the persistent overrides take the same shadow as the
+       response cards (Ken, August 20 2026) — no fill, so a filled button on this
+       bar always means "this control is on". */
+    .cmd-btn:hover,
+    .cmd-btn-end:hover,
     .persist-btn:hover {
-        background: var(--slot-persistent);
-        color: #fff;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
         outline: none;
     }
     /* Matches .response-card:hover directly below — same shadow, no fill change
