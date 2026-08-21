@@ -26,6 +26,12 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Settings is easier to move around in. Settings that belong together now share a
+  single expanding section instead of each having one of their own -- the three
+  placeholder timings are one "Placeholders" section, the silence period has joined
+  the two listening settings, the four text sizes are one section, and the keyboard
+  and Express Panel choices are one. Nothing changed about what any setting does.
+
 - You can now choose what a response card shows. Each suggestion comes with the
   full wording the app will speak and a short version of it, and Settings ->
   Conversation -> "What a response card shows" lets you pick between the full

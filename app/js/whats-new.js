@@ -21,6 +21,10 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.7.9": [
+    "Settings is easier to move around in. Settings that belong together now share a single expanding section instead of each having one of their own -- the three placeholder timings are one \"Placeholders\" section, the silence period has joined the two listening settings, the four text sizes are one section, and the keyboard and Express Panel choices are one. Nothing changed about what any setting does.",
+    "You can now choose what a response card shows. Each suggestion comes with the full wording the app will speak and a short version of it, and Settings -> Conversation -> \"What a response card shows\" lets you pick between the full response, the short version, both with the full response larger, or both with the short version larger. Cards that have no separate short version, such as the conversation starters and goodbyes, always show their words."
+  ],
   "0.7.8": [
     "The response options now show when the app is asking the AI for a new set. A marker travels along the top of the response area and the cards fade gently in and out, so a fresh set arriving is never a surprise. Before, the options could change while you were still reading them, with nothing to warn you.",
     "You no longer have to wait for that new set. Choosing one of the options already on screen, tapping an Express Panel phrase, or going to \"In my own words\" now cancels the request and takes your turn. Your choice wins; the new options are dropped rather than appearing on top of you. Going to \"In my own words\" in particular used to let a fresh set of options — and sometimes a spoken filler — arrive while you were still typing.",

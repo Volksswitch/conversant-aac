@@ -2082,6 +2082,15 @@ dialog::backdrop {
     border-left: 2px solid var(--border, #d7dde3);
 }
 
+/* A control (or a radio group, or a slider with its steppers) INSIDE a section that
+   holds several of them. Deliberately not a .setting-group, which would make it a
+   sub-section — the very one-heading-per-setting shape that grouping removes (Ken,
+   August 21 2026). It is a plain block; all it needs is air between siblings so two
+   stacked label+control pairs do not read as one. Hidden siblings contribute nothing,
+   so the dock's which-side / layout rows can be shown and hidden freely. */
+.setting-item + .setting-item,
+.setting-item + .checkbox-label { margin-top: 0.9rem; }
+
 /* Sub-sections: a .setting-group inside another. Same anatomy one level down, with a
    lighter heading so the nesting is legible at a glance, and spacing between siblings
    so two closed sub-sections do not read as one control. A LOOSE control alongside

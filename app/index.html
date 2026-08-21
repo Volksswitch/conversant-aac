@@ -291,41 +291,49 @@
                     <div id="worldviewContent"></div>
                 </div>
                 <div class="tab-panel" data-tab="textsize">
-                    <div class="setting-group">
-                        <label for="responseFontSelect">Response card text size</label>
-                        <select id="responseFontSelect" class="font-size-select">
+                    <!-- ONE section, not four (Ken, August 21 2026). Four headings each
+                         hiding a single dropdown is the shape this tab used to have, and
+                         it made the reader open four sections to set four values that are
+                         only ever chosen against one another. Tightly related settings
+                         belong in one expanding section. -->
+                    <div class="setting-group" data-help="textSize">
+                        <label>Text size</label>
+                        <div class="setting-item">
+                            <label for="responseFontSelect">Response cards</label>
+                            <select id="responseFontSelect" class="font-size-select">
                             <option value="0.85">Smaller</option>
                             <option value="1" selected>Default</option>
                             <option value="1.2">Larger</option>
                             <option value="1.45">Largest</option>
-                        </select>
-                    </div>
-                    <div class="setting-group">
-                        <label for="transcriptFontSelect">Transcript text size</label>
-                        <select id="transcriptFontSelect" class="font-size-select">
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label for="transcriptFontSelect">Conversation</label>
+                            <select id="transcriptFontSelect" class="font-size-select">
                             <option value="0.85">Smaller</option>
                             <option value="1" selected>Default</option>
                             <option value="1.2">Larger</option>
                             <option value="1.45">Largest</option>
-                        </select>
-                    </div>
-                    <div class="setting-group">
-                        <label for="composerFontSelect">“In my own words” text size</label>
-                        <select id="composerFontSelect" class="font-size-select">
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label for="composerFontSelect">“In my own words”</label>
+                            <select id="composerFontSelect" class="font-size-select">
                             <option value="0.85">Smaller</option>
                             <option value="1" selected>Default</option>
                             <option value="1.2">Larger</option>
                             <option value="1.45">Largest</option>
-                        </select>
-                    </div>
-                    <div class="setting-group">
-                        <label for="expressFontSelect">Express Panel text size</label>
-                        <select id="expressFontSelect" class="font-size-select">
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label for="expressFontSelect">Express Panel</label>
+                            <select id="expressFontSelect" class="font-size-select">
                             <option value="0.85">Smaller</option>
                             <option value="1" selected>Default</option>
                             <option value="1.2">Larger</option>
                             <option value="1.45">Largest</option>
-                        </select>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <!-- Speech: everything about how the app HEARS and SPEAKS, in one
@@ -452,53 +460,70 @@
                         </div>
                         <button id="resetSizingBtn" type="button" class="reset-sizing-btn">Reset buttons and gaps to default</button>
                     </div>
-                    <div class="setting-group">
-                        <label>Keyboard for typing</label>
-                        <div class="radio-row">
-                            <label class="radio-label">
-                                <input type="radio" name="keyboardMode" value="physical" checked>
-                                My physical keyboard
-                            </label>
-                            <label class="radio-label">
-                                <input type="radio" name="keyboardMode" value="onscreen">
-                                On-screen keyboard (app's own)
-                            </label>
+                    <!-- Keyboard choice, where the dock sits, which side, and which
+                         layout are ONE decision made in four parts (Ken, August 21 2026),
+                         so they are one section. As four they also produced two sections
+                         with the identical title "Express Panel & keyboard layout", only
+                         one of which was ever visible.
+                         The inner divs are .setting-item, NOT .setting-group: a
+                         .setting-group here would become a sub-section, which is the
+                         single-setting-per-heading shape being removed. Their ids stay —
+                         updateKeyboardPositionGroups() shows only the ones the chosen
+                         dock uses. -->
+                    <div class="setting-group" data-help="expressKeyboard">
+                        <label>Express Panel &amp; keyboard</label>
+                        <div class="setting-item">
+                            <label>Keyboard for typing</label>
+                            <div class="radio-row">
+                                <label class="radio-label">
+                                    <input type="radio" name="keyboardMode" value="physical" checked>
+                                    My physical keyboard
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="keyboardMode" value="onscreen">
+                                    On-screen keyboard (app's own)
+                                </label>
+                            </div>
                         </div>
-                    </div>
-                    <div class="setting-group" id="keyboardPositionGroup">
-                        <label>Express Panel &amp; keyboard position</label>
-                        <div class="radio-row">
-                            <label class="radio-label">
-                                <input type="radio" name="keyboardDock" value="bottom" checked>
-                                Bottom of the screen
-                            </label>
-                            <label class="radio-label">
-                                <input type="radio" name="keyboardDock" value="side">
-                                Side of the screen
-                            </label>
+                        <div class="setting-item">
+                            <label>Where it sits</label>
+                            <div class="radio-row">
+                                <label class="radio-label">
+                                    <input type="radio" name="keyboardDock" value="bottom" checked>
+                                    Bottom of the screen
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="keyboardDock" value="side">
+                                    Side of the screen
+                                </label>
+                            </div>
                         </div>
-                    </div>
-                    <div class="setting-group" id="sidePositionGroup">
-                        <label for="sideDockPositionToggle">Which side</label>
-                        <div class="slider-row">
-                            <span class="slider-end">Left</span>
-                            <label class="switch">
-                                <input type="checkbox" id="sideDockPositionToggle">
-                                <span class="switch-track"></span>
-                            </label>
-                            <span class="slider-end">Right</span>
+                        <div class="setting-item" id="sidePositionGroup">
+                            <label for="sideDockPositionToggle">Which side</label>
+                            <div class="slider-row">
+                                <span class="slider-end">Left</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="sideDockPositionToggle">
+                                    <span class="switch-track"></span>
+                                </label>
+                                <span class="slider-end">Right</span>
+                            </div>
                         </div>
-                    </div>
-                    <div class="setting-group" id="bottomLayoutGroup">
-                        <label for="bottomLayoutSelect">Express Panel &amp; keyboard layout</label>
-                        <select id="bottomLayoutSelect"></select>
-                    </div>
-                    <div class="setting-group" id="sideLayoutGroup">
-                        <label for="sideLayoutSelect">Express Panel &amp; keyboard layout</label>
-                        <select id="sideLayoutSelect"></select>
+                        <div class="setting-item" id="bottomLayoutGroup">
+                            <label for="bottomLayoutSelect">Layout</label>
+                            <select id="bottomLayoutSelect"></select>
+                        </div>
+                        <div class="setting-item" id="sideLayoutGroup">
+                            <label for="sideLayoutSelect">Layout</label>
+                            <select id="sideLayoutSelect"></select>
+                        </div>
                     </div>
                 </div>
                 <div class="tab-panel" data-tab="conversation">
+                    <!-- Grouped by the DECISION being made, not one heading per control
+                         (Ken, August 21 2026). The three placeholder timings were the
+                         clearest case: three sections holding one dropdown each, for three
+                         numbers nobody would ever set apart from one another. -->
                     <div class="setting-group">
                         <label>Saving conversations</label>
                         <label class="checkbox-label">
@@ -510,47 +535,53 @@
                             Do not save my conversations
                         </label>
                     </div>
-                    <div class="setting-group">
-                        <label for="responsesPerCategoryInput">Suggestions per category</label>
-                        <select id="responsesPerCategoryInput">
-                            <option value="1" selected>1 (four cards)</option>
-                            <option value="2">2 (eight cards)</option>
-                        </select>
+                    <!-- What the app offers you, and how it shows it. -->
+                    <div class="setting-group" data-help="suggestions">
+                        <label>Response suggestions</label>
+                        <div class="setting-item">
+                            <label for="responsesPerCategoryInput">Suggestions per category</label>
+                            <select id="responsesPerCategoryInput">
+                                <option value="1" selected>1 (four cards)</option>
+                                <option value="2">2 (eight cards)</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label for="cardTextModeInput">What a response card shows</label>
+                            <select id="cardTextModeInput">
+                                <option value="full">The full response</option>
+                                <option value="condensed">The short version</option>
+                                <option value="both-full" selected>Both &mdash; full response larger</option>
+                                <option value="both-condensed">Both &mdash; short version larger</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label for="choiceChipMaxInput">Most choice buttons in the Express Panel</label>
+                            <select id="choiceChipMaxInput">
+                                <option value="0">0 (off)</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4" selected>4</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="setting-group">
-                        <label for="cardTextModeInput">What a response card shows</label>
-                        <select id="cardTextModeInput">
-                            <option value="full">The full response</option>
-                            <option value="condensed">The short version</option>
-                            <option value="both-full" selected>Both &mdash; full response larger</option>
-                            <option value="both-condensed">Both &mdash; short version larger</option>
-                        </select>
-                    </div>
-                    <div class="setting-group">
-                        <label for="choiceChipMaxInput">Most choice buttons in the Express Panel</label>
-                        <select id="choiceChipMaxInput">
-                            <option value="0">0 (off)</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4" selected>4</option>
-                        </select>
-                    </div>
-                    <div class="setting-group">
-                        <label for="silenceThresholdInput">Silence period</label>
-                        <select id="silenceThresholdInput">
-                            <option value="0">0 seconds</option>
-                            <option value="0.5" selected>0.5 seconds</option>
-                            <option value="1">1.0 seconds</option>
-                            <option value="1.5">1.5 seconds</option>
-                            <option value="2">2.0 seconds</option>
-                            <option value="2.5">2.5 seconds</option>
-                            <option value="3">3.0 seconds</option>
-                        </select>
-                    </div>
-                    <!-- One section rather than two singletons: both are about what
-                         happens when listening starts, so they belong together. -->
+                    <!-- Everything about the microphone: how long a pause counts as the
+                         other person finishing, whether it picks itself back up, and
+                         whether it says so out loud. The silence period used to sit on
+                         its own, several settings away from the other two. -->
                     <div class="setting-group" data-help="listening">
                         <label>Listening</label>
+                        <div class="setting-item">
+                            <label for="silenceThresholdInput">Silence period</label>
+                            <select id="silenceThresholdInput">
+                                <option value="0">0 seconds</option>
+                                <option value="0.5" selected>0.5 seconds</option>
+                                <option value="1">1.0 seconds</option>
+                                <option value="1.5">1.5 seconds</option>
+                                <option value="2">2.0 seconds</option>
+                                <option value="2.5">2.5 seconds</option>
+                                <option value="3">3.0 seconds</option>
+                            </select>
+                        </div>
                         <label class="checkbox-label">
                             <input type="checkbox" id="autoRelistenInput">
                             Resume listening automatically after speaking a response
@@ -560,59 +591,70 @@
                             Play a chime when listening starts
                         </label>
                     </div>
-                    <div class="setting-group">
-                        <label for="initialDelayInput">Initial placeholder delay</label>
-                        <select id="initialDelayInput">
-                            <option value="2" selected>2 seconds</option>
-                            <option value="3">3 seconds</option>
-                            <option value="4">4 seconds</option>
-                            <option value="5">5 seconds</option>
-                            <option value="6">6 seconds</option>
-                        </select>
-                    </div>
-                    <div class="setting-group">
-                        <label for="subsequentDelayInput">Subsequent placeholder delay</label>
-                        <select id="subsequentDelayInput">
-                            <option value="6">6 seconds</option>
-                            <option value="8">8 seconds</option>
-                            <option value="10" selected>10 seconds</option>
-                            <option value="12">12 seconds</option>
-                            <option value="15">15 seconds</option>
-                        </select>
-                    </div>
-                    <div class="setting-group">
-                        <label for="maxPlaceholdersInput">Maximum placeholders per turn</label>
-                        <select id="maxPlaceholdersInput">
-                            <option value="0">0 (none)</option>
-                            <option value="1">1</option>
-                            <option value="2" selected>2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="-1">No limit</option>
-                        </select>
-                    </div>
-                    <div class="setting-group">
-                        <label>Speaking an Express Panel phrase</label>
-                        <div class="radio-row">
-                            <label class="radio-label">
-                                <input type="radio" name="expressTapMode" value="single" checked>
-                                Single tap speaks it
-                            </label>
-                            <label class="radio-label">
-                                <input type="radio" name="expressTapMode" value="double">
-                                Require a double tap (guards against accidental taps)
-                            </label>
+                    <!-- The three timings that govern the holding phrases. Ken's own
+                         example of the shape to avoid: three expanding sections, one
+                         dropdown apiece. -->
+                    <div class="setting-group" data-help="placeholders">
+                        <label>Placeholders</label>
+                        <div class="setting-item">
+                            <label for="initialDelayInput">Initial delay</label>
+                            <select id="initialDelayInput">
+                                <option value="2" selected>2 seconds</option>
+                                <option value="3">3 seconds</option>
+                                <option value="4">4 seconds</option>
+                                <option value="5">5 seconds</option>
+                                <option value="6">6 seconds</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label for="subsequentDelayInput">Subsequent delay</label>
+                            <select id="subsequentDelayInput">
+                                <option value="6">6 seconds</option>
+                                <option value="8">8 seconds</option>
+                                <option value="10" selected>10 seconds</option>
+                                <option value="12">12 seconds</option>
+                                <option value="15">15 seconds</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label for="maxPlaceholdersInput">Maximum per turn</label>
+                            <select id="maxPlaceholdersInput">
+                                <option value="0">0 (none)</option>
+                                <option value="1">1</option>
+                                <option value="2" selected>2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="-1">No limit</option>
+                            </select>
                         </div>
                     </div>
-                    <div class="setting-group">
-                        <label for="doubleTapMsSelect">Double-tap interval</label>
-                        <select id="doubleTapMsSelect">
-                            <option value="300">0.3 seconds</option>
-                            <option value="400" selected>0.4 seconds</option>
-                            <option value="600">0.6 seconds</option>
-                            <option value="800">0.8 seconds</option>
-                            <option value="1000">1 second</option>
-                        </select>
+                    <!-- The interval is meaningless unless a double tap is required, so
+                         the two belong together. -->
+                    <div class="setting-group" data-help="tapToSpeak">
+                        <label>Tapping to speak</label>
+                        <div class="setting-item">
+                            <label>Speaking an Express Panel phrase</label>
+                            <div class="radio-row">
+                                <label class="radio-label">
+                                    <input type="radio" name="expressTapMode" value="single" checked>
+                                    Single tap speaks it
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="expressTapMode" value="double">
+                                    Require a double tap (guards against accidental taps)
+                                </label>
+                            </div>
+                        </div>
+                        <div class="setting-item">
+                            <label for="doubleTapMsSelect">Double-tap interval</label>
+                            <select id="doubleTapMsSelect">
+                                <option value="300">0.3 seconds</option>
+                                <option value="400" selected>0.4 seconds</option>
+                                <option value="600">0.6 seconds</option>
+                                <option value="800">0.8 seconds</option>
+                                <option value="1000">1 second</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div class="tab-panel" data-tab="practice">
@@ -628,28 +670,34 @@
                     <div id="controlEditor"></div>
                 </div>
                 <div class="tab-panel" data-tab="keyguard">
-                    <div class="setting-group">
-                        <label for="appMarginSlider">Screen edge margin</label>
-                        <div class="slider-row">
-                            <button type="button" class="slider-step" data-target="appMarginSlider" data-step="-4" aria-label="Smaller margin">&minus;</button>
-                            <input type="range" id="appMarginSlider" min="0" max="100" step="1" class="size-slider">
-                            <button type="button" class="slider-step" data-target="appMarginSlider" data-step="4" aria-label="Larger margin">+</button>
+                    <!-- The three spacing sliders are one decision — how much air sits
+                         around each part of the app — so they are one section rather than
+                         three headings each hiding a single slider (Ken, August 21 2026). -->
+                    <div class="setting-group" data-help="keyguardSpacing">
+                        <label>Spacing</label>
+                        <div class="setting-item">
+                            <label for="appMarginSlider">Screen edge margin</label>
+                            <div class="slider-row">
+                                <button type="button" class="slider-step" data-target="appMarginSlider" data-step="-4" aria-label="Smaller margin">&minus;</button>
+                                <input type="range" id="appMarginSlider" min="0" max="100" step="1" class="size-slider">
+                                <button type="button" class="slider-step" data-target="appMarginSlider" data-step="4" aria-label="Larger margin">+</button>
+                            </div>
                         </div>
-                    </div>
-                    <div class="setting-group">
-                        <label for="dockSepSlider">Keyboard separation</label>
-                        <div class="slider-row">
-                            <button type="button" class="slider-step" data-target="dockSepSlider" data-step="-4" aria-label="Less separation">&minus;</button>
-                            <input type="range" id="dockSepSlider" min="0" max="100" step="1" class="size-slider">
-                            <button type="button" class="slider-step" data-target="dockSepSlider" data-step="4" aria-label="More separation">+</button>
+                        <div class="setting-item">
+                            <label for="dockSepSlider">Keyboard separation</label>
+                            <div class="slider-row">
+                                <button type="button" class="slider-step" data-target="dockSepSlider" data-step="-4" aria-label="Less separation">&minus;</button>
+                                <input type="range" id="dockSepSlider" min="0" max="100" step="1" class="size-slider">
+                                <button type="button" class="slider-step" data-target="dockSepSlider" data-step="4" aria-label="More separation">+</button>
+                            </div>
                         </div>
-                    </div>
-                    <div class="setting-group">
-                        <label for="transcriptSepSlider">Transcript separation</label>
-                        <div class="slider-row">
-                            <button type="button" class="slider-step" data-target="transcriptSepSlider" data-step="-4" aria-label="Less separation">&minus;</button>
-                            <input type="range" id="transcriptSepSlider" min="0" max="100" step="1" class="size-slider">
-                            <button type="button" class="slider-step" data-target="transcriptSepSlider" data-step="4" aria-label="More separation">+</button>
+                        <div class="setting-item">
+                            <label for="transcriptSepSlider">Transcript separation</label>
+                            <div class="slider-row">
+                                <button type="button" class="slider-step" data-target="transcriptSepSlider" data-step="-4" aria-label="Less separation">&minus;</button>
+                                <input type="range" id="transcriptSepSlider" min="0" max="100" step="1" class="size-slider">
+                                <button type="button" class="slider-step" data-target="transcriptSepSlider" data-step="4" aria-label="More separation">+</button>
+                            </div>
                         </div>
                     </div>
                     <!-- Same shape as "Button sizes and gaps": Generate is a loose
