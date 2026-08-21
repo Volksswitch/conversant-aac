@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.7.8
+
 - The response options now show when the app is asking the AI for a new set. A marker travels along the top of the response area and the cards fade gently in and out, so a fresh set arriving is never a surprise. Before, the options could change while you were still reading them, with nothing to warn you.
 - You no longer have to wait for that new set. Choosing one of the options already on screen, tapping an Express Panel phrase, or going to "In my own words" now cancels the request and takes your turn. Your choice wins; the new options are dropped rather than appearing on top of you. Going to "In my own words" in particular used to let a fresh set of options — and sometimes a spoken filler — arrive while you were still typing.
 - The buttons along the Command Bar — Listen, Start and End conversation, Repeat what I said, Hold on, Ask them to repeat, Wind down, Don't save and Settings — and the "New 4" button now all behave like the response cards: a soft shadow when the pointer is over them, and a small nudge when pressed. None of them turns dark any more, which could look like a button had stayed switched on after you pressed it. A filled button on that bar now means one thing only: that control is currently on — the microphone is live, or this conversation is not being saved.
