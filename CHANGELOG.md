@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.7.10
+
 - **The suggestions no longer vanish while the other person is still talking.** When
   they paused again, the app used to take the cards away and leave the space empty
   for the several seconds it took to think of better ones -- so the answer you were
