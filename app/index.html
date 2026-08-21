@@ -743,9 +743,22 @@
                         <label for="problemNoteInput">Report a problem</label>
                         <textarea id="problemNoteInput" rows="3" placeholder="What happened? &quot;I pressed Listen and nothing happened&quot; is a perfect report."></textarea>
                         <div id="problemReportActions">
+                            <!-- Send is first because it is the route that asks least
+                                 of the tester (Ken, August 21 2026): saving a file
+                                 leaves them to find it and decide what to do with it,
+                                 and Copy assumes somewhere to paste. Save and Copy
+                                 stay for anyone offline, opted out, or who would
+                                 rather see it leave by their own hand. -->
+                            <button id="sendProblemReportBtn" type="button">Send</button>
                             <button id="saveProblemReportBtn" type="button">Save to a file</button>
                             <button id="copyProblemReportBtn" type="button">Copy</button>
                         </div>
+                        <!-- Shown only once Send has been tapped. The report carries
+                             transcripts of any conversation that hit an error, so the
+                             standing rule is that the tester sees the exact text and
+                             confirms before it leaves the device. This is the seeing
+                             half; the confirmation card is the other. -->
+                        <textarea id="problemReportPreview" readonly rows="8" hidden aria-label="The report that will be sent"></textarea>
                         <p id="problemReportStatus" class="setting-status" role="status"></p>
                     </div>
                     <!-- Weekly report. The disclosure below is GENERATED from the

@@ -3893,6 +3893,72 @@ async function saveProblemReport(fromStartScreen = false) {
     }
 }
 
+/* Send the problem report back over the same path the weekly report uses (Ken,
+ * August 21 2026). Ken's objection to Save-to-a-file was tester workload: it leaves
+ * them to find the file and decide what to do with it, and Copy assumes somewhere to
+ * paste. Both are real work at the worst possible moment.
+ *
+ * ⚠ TWO STEPS, AND NEITHER IS OPTIONAL. The report carries the transcripts of any
+ * conversation that hit an error, which is the one thing the app never sends
+ * automatically — so the tester must SEE the exact text and then CONFIRM. The preview
+ * is the seeing; the red card is the confirming. Anything that reduces this to one
+ * tap has broken the rule, not streamlined it.
+ *
+ * The report is built ONCE and the same string is previewed, confirmed and sent, so
+ * what leaves the device is character-for-character what was on screen. Rebuilding it
+ * after the confirmation would let it drift between the two.
+ */
+async function sendProblemReport() {
+    const preview = document.getElementById('problemReportPreview');
+    let text;
+    try {
+        text = await buildProblemReportText();
+    } catch (e) {
+        const msg = e && e.message ? e.message : String(e);
+        setProblemReportStatus(`Could not build the report: ${msg}`);
+        storage.logError('problem report', msg);
+        return;
+    }
+    if (preview) {
+        preview.value = text;
+        preview.hidden = false;
+        preview.scrollTop = 0;
+    }
+    setProblemReportStatus('Read it through, then confirm to send.');
+    if (!(await confirmDanger({
+        title: 'Send this report?',
+        body: 'It goes to the Conversant AAC team. Above the button you can read exactly '
+            + 'what will be sent: your note, your settings, your device, and the errors the '
+            + 'app recorded — including what was said in any conversation those errors '
+            + 'happened in. Conversations you marked “Don’t save” are not in it.',
+        confirmLabel: 'Send it',
+        cancelLabel: 'Not yet'
+    }))) {
+        setProblemReportStatus('Not sent. Nothing has left this device.');
+        return;
+    }
+    try {
+        const res = await weeklySend.sendProblemReport({
+            note: document.getElementById('problemNoteInput')?.value || '',
+            report: text,
+            appVersion: APP_VERSION,
+            build: BUILD_ID,
+        });
+        // "Sent" means the request left the device, never that it arrived: the
+        // response is opaque by design (see post() in weekly-send.js). Anything that
+        // could not go is queued and tried again the next time the app opens, which
+        // is what makes writing a report with no signal worth doing.
+        if (res && res.sent) setProblemReportStatus('Sent. Thank you — that is the whole procedure.');
+        else if (res && res.queued) setProblemReportStatus('Saved to send later — it will go the next time you open the app with a connection.');
+        else setProblemReportStatus('Could not send it. Use Save to a file and send that to Ken instead.');
+        renderWeeklyReport();
+    } catch (e) {
+        const msg = e && e.message ? e.message : String(e);
+        setProblemReportStatus('Could not send it. Use Save to a file and send that to Ken instead.');
+        storage.logError('problem report send', msg);
+    }
+}
+
 // Populate the Settings-profiles picker (About tab) from the data folder. Disables
 // the picker's Load/Delete when there are none, and shows a hint when no folder is
 // granted (profiles live in the folder).
@@ -3928,7 +3994,7 @@ async function importPackageText(text, sourceLabel) {
               `\n\nImporting REPLACES what is on this device — your current About Me answers, people, Express Panel, starters and settings will be overwritten. Your API key is left alone. The app will reload afterwards.`,
         confirmLabel: 'Replace my data',
     }))) {
-        setBackupStatus('Import cancelled — nothing was changed.');
+        setBackupStatus('Import canceled — nothing was changed.');
         return;
     }
     setBackupStatus('Importing…');
@@ -4338,6 +4404,8 @@ function openSettings() {
     copyFrom('copySystemInfoBtn', () => document.getElementById('systemInfoView').value);
     const refreshBtn = document.getElementById('refreshUsageSummaryBtn');
     if (refreshBtn) refreshBtn.onclick = () => renderTroubleshooting();
+    const sendReportBtn = document.getElementById('sendProblemReportBtn');
+    if (sendReportBtn) sendReportBtn.onclick = () => sendProblemReport();
     const saveReportBtn = document.getElementById('saveProblemReportBtn');
     if (saveReportBtn) saveReportBtn.onclick = () => saveProblemReport();
     copyFrom('copyProblemReportBtn', () => buildProblemReportText());

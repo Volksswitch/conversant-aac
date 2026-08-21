@@ -38,6 +38,7 @@
 var SECRET = 'u_mlqOZgElbxCB7732CAwSzC';
 var SHEET_NAME = 'reports';
 var WEEKS_SHEET_NAME = 'weeks';   // one row per tester per week - the retention curve
+var PROBLEMS_SHEET_NAME = 'problems';  // one row per 'Report a problem' the tester sent
 var ALERT_EMAIL = '';               // set to get mailed when a report shows errors
 var ALERT_ERROR_THRESHOLD = 5;      // errors in one report before mailing
 
@@ -46,6 +47,35 @@ function doPost(e) {
     if (!e || !e.postData || !e.postData.contents) return _out('no body');
     var p = JSON.parse(e.postData.contents);
     if (p.secret !== SECRET) return _out('bad secret');
+
+    // A problem report is a different animal: one tester, one moment, their own
+    // words, and the full diagnostic text. It gets its own tab rather than being
+    // squeezed into the weekly columns, which describe a period rather than an
+    // event. ⚠ UNLIKE EVERY OTHER PAYLOAD, THIS ONE CAN CONTAIN CONVERSATION TEXT —
+    // the report embeds transcripts of the conversations an error happened in. That
+    // is permitted only because the tester read it and pressed Send; it must never
+    // be produced by anything automatic. Treat this tab as the most sensitive thing
+    // in the Sheet.
+    if (p.kind === 'problem') {
+      _problemSheet().appendRow([
+        new Date(),
+        p.sentAt || '',
+        p.testerName || '(not set)',
+        p.installId || '',
+        p.appVersion || '',
+        p.build || '',
+        p.note || '',
+        p.report || ''
+      ]);
+      if (ALERT_EMAIL) {
+        MailApp.sendEmail(ALERT_EMAIL,
+          'Conversant AAC - problem report from ' + (p.testerName || 'a tester'),
+          (p.note || '(no note)') + '
+
+See the problems tab for the full report.');
+      }
+      return _out('ok');
+    }
 
     var usage = p.usage || {};
     var errors = p.errors || [];
@@ -183,6 +213,18 @@ function doGet() {
 
 function _out(msg) {
   return ContentService.createTextOutput(msg).setMimeType(ContentService.MimeType.TEXT);
+}
+
+function _problemSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(PROBLEMS_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(PROBLEMS_SHEET_NAME);
+    sheet.appendRow(['received', 'sent', 'tester', 'install', 'version', 'build',
+      'what happened (their words)', 'full report']);
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
 }
 
 function _sheet() {

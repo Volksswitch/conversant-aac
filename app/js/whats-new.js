@@ -21,6 +21,9 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.7.10": [
+    "Reporting a problem now takes one tap. Settings -> Troubleshooting -> Report a problem has a new Send button that sends the report straight back to us, so you no longer have to save a file, find it, and work out what to do with it. Before anything leaves your device the app shows you the exact text it will send and asks you to confirm it -- and that text includes what was said in any conversation an error happened in, which is why it asks. Conversations you marked \"Don't save\" are never in it, and neither are your keys. If you have no signal the report waits and goes the next time you open the app. Save to a file and Copy are both still there."
+  ],
   "0.7.9": [
     "Settings is easier to move around in. Settings that belong together now share a single expanding section instead of each having one of their own -- the three placeholder timings are one \"Placeholders\" section, the silence period has joined the two listening settings, the four text sizes are one section, and the keyboard and Express Panel choices are one. Nothing changed about what any setting does.",
     "You can now choose what a response card shows. Each suggestion comes with the full wording the app will speak and a short version of it, and Settings -> Conversation -> \"What a response card shows\" lets you pick between the full response, the short version, both with the full response larger, or both with the short version larger. Cards that have no separate short version, such as the conversation starters and goodbyes, always show their words."

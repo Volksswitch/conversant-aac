@@ -26,6 +26,16 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Reporting a problem now takes one tap. Settings -> Troubleshooting -> Report a
+  problem has a new **Send** button that sends the report straight back to us, so
+  you no longer have to save a file, find it, and work out what to do with it.
+  Before anything leaves your device the app shows you the exact text it will send
+  and asks you to confirm it -- and that text includes what was said in any
+  conversation an error happened in, which is why it asks. Conversations you marked
+  "Don't save" are never in it, and neither are your keys. If you have no signal the
+  report waits and goes the next time you open the app. Save to a file and Copy are
+  both still there.
+
 ## Version 0.7.9
 
 - Settings is easier to move around in. Settings that belong together now share a

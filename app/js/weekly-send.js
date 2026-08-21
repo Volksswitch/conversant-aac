@@ -289,3 +289,50 @@ export function formatSendLog(entries) {
         return `${when}   ${String(kb).padStart(9)}   ${e.outcome || '?'}`;
     }).join('\n');
 }
+
+/* ── Sending a problem report on demand (Ken, August 21 2026) ────────────────
+ *
+ * Ken's objection to the Save-to-a-file route was about tester workload: saving a
+ * file leaves the tester to find it and decide what to do with it, and Copy assumes
+ * somewhere to paste. Both are real work at the worst possible moment. This reuses
+ * the weekly path end to end — same address, same shared secret, same queue, same
+ * log — so a report survives being written while offline and goes out on the next
+ * launch, exactly as a weekly report does.
+ *
+ * ⚠ THIS PAYLOAD IS THE ONE EXCEPTION TO "NEVER SEND WHAT WAS SAID". The report text
+ * carries transcripts of the conversations that hit errors (buildErrorReport puts
+ * them there, withholding any conversation the user marked private). That is allowed
+ * ONLY because it is the standing carve-out for a report the tester deliberately
+ * sends after seeing it — never as part of anything automatic. So:
+ *   - nothing here is ever called from maybeSend or from any timer;
+ *   - the caller MUST show the tester the exact text and take a confirmation first.
+ * If either of those ever stops being true, this stops being permissible.
+ *
+ * Save to a file and Copy stay exactly as they were: this is a third route, not a
+ * replacement, and it is the only one that needs the network.
+ *
+ * ⚠ DELIBERATELY NOT GATED ON `loadWeeklySendEnabled`. That switch governs what the
+ * app does BY ITSELF — the automatic weekly report and the counting behind it — and a
+ * tester who turns it off has asked not to be reported on in the background, not to be
+ * prevented from telling us something. Refusing to send a report they wrote, read and
+ * confirmed would be answering a question they did not ask, and the failure would look
+ * like the button being broken. The Beta Test Plan says so in section 8.
+ */
+export async function sendProblemReport({ note = '', report = '', appVersion = '', build = '', now = Date.now() } = {}) {
+    const payload = {
+        // `kind` is what lets the receiver tell this from a weekly report. The
+        // currently-deployed script does not read it, and that is deliberately safe:
+        // its catch-all raw column keeps the whole payload, so a report arrives intact
+        // even before the Apps Script is redeployed with a problems tab. It lands in
+        // the wrong place, not in no place.
+        kind: 'problem',
+        testerName: storage.loadTesterName(),
+        installId: storage.loadInstallId(),
+        appVersion, build,
+        sentAt: new Date(now).toISOString(),
+        note: String(note || '').trim(),
+        report: String(report || ''),
+    };
+    storage.saveWeeklyQueue(enqueue(storage.loadWeeklyQueue(), payload));
+    return await flush();
+}
