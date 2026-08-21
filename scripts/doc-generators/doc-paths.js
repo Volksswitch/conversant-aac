@@ -73,11 +73,24 @@ const previous = fs.writeFileSync.bind(fs);
 fs.writeFileSync = function guardedWriteFileSync(target, data, ...rest) {
     const p = String(target);
     const name = path.basename(p);
-    // OUTPATH means the caller has redirected the write to a scratch file (the
-    // check-without-touching workflow in the header). Nothing is being overwritten,
-    // so the guard must stand aside — otherwise it blocks the one thing you have to
-    // do BEFORE folding a stale generator back, which is see what it produces.
+    // OUTPATH is the check-without-touching workflow from the header: generate to a
+    // scratch file and diff it against the document.
+    //
+    // ⚠ IT NOW PERFORMS THE REDIRECT ITSELF, AND THAT IS A BUG FIX, NOT A CONVENIENCE
+    // (August 20 2026). It used to only stand the guard DOWN, leaving the caller to
+    // redirect separately by reassigning fs.writeFileSync. So `OUTPATH=… node gen.js`
+    // — which reads exactly like "write it over there" — disarmed the safety check and
+    // then wrote straight over the real document. That is precisely the accident the
+    // guard exists to prevent, and the guard was the thing that opened the door: it
+    // happened here on August 20 2026 to the Architecture Overview, discarding months
+    // of hand edits plus that morning's sync (recovered from the pre-edit backup).
+    //
+    // An environment variable named OUTPATH must send the output to OUTPATH. Anything
+    // else is a trap baited with its own name.
     const redirected = !!process.env.OUTPATH;
+    if (redirected) {
+        return previous(process.env.OUTPATH, data, ...rest);
+    }
     const guarded = !redirected
                     && path.dirname(path.resolve(p)) === path.resolve(DOCS)
                     && name.toLowerCase().endsWith('.docx');

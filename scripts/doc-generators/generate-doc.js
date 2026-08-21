@@ -1,3 +1,53 @@
+/* ⚠ THIS GENERATOR IS RETIRED — the .docx is the source of truth. (August 20 2026)
+ *
+ * "Conversant AAC Architecture Overview.docx" has been maintained by hand since roughly
+ * June 2026, because that is how the "sync docs" pass works: read the change window,
+ * patch the document. This script was never folded back, so it now holds a genuinely
+ * OLD EDITION of the document — measured on August 20 2026 against the live file:
+ *
+ *     641 paragraphs in the document, 518 here
+ *     219 paragraphs differ in WORDING (not formatting — substantive rewrites)
+ *      25 paragraphs exist only in the document
+ *      10 tables and 9 figures in the document; this builds 7 and 5
+ *
+ * The differences are not cosmetic. This file still says response options are "three by
+ * default" (they are a four-slot palette), that storage is the File System Access API
+ * everywhere (WebKit uses OPFS), that TTS is the browser engine only (Deepgram Aura
+ * ships), and that the engine's target behavior is automatic end-of-utterance detection
+ * — a design REVERSED in July 2026.
+ *
+ * WHY RETIRED RATHER THAN RECONCILED. Folding ~244 paragraphs plus three tables back in
+ * would buy exactly one capability: rebuilding the whole document from source. Nobody
+ * has used it in months, every actual edit goes to the .docx, and on August 20 2026 the
+ * attempt to merely INSPECT this generator's output destroyed the live document —
+ * months of hand edits plus that morning's sync — because OUTPATH stood the overwrite
+ * guard down without redirecting the write. (That trap is fixed in doc-paths.js; the
+ * document was recovered from its pre-edit backup.) A second source of truth that is
+ * always stale and occasionally destructive is worse than no second source. Same call
+ * Ken made for the Known Issues page: one copy.
+ *
+ * WHAT THIS DOES NOT RETIRE: the figures. "Architecture Diagrams.html" and
+ * capture-diagrams.js still produce the diagram PNGs; a refreshed figure goes into the
+ * .docx directly. Retiring the assembler does not retire the artwork.
+ *
+ * Kept, not deleted, because it is the only assembled record of the document's original
+ * structure. To read what it produces, send it somewhere harmless:
+ *
+ *     ALLOW_RETIRED_ARCH_DOC=1 OUTPATH=/tmp/arch.docx node generate-doc.js
+ */
+if (process.env.ALLOW_RETIRED_ARCH_DOC !== '1') {
+    console.error('');
+    console.error('This generator is retired. "Conversant AAC Architecture Overview.docx"');
+    console.error('is maintained directly, and this script holds an old edition of it —');
+    console.error('219 paragraphs differ, and it still describes design that was reversed');
+    console.error('in July 2026. Running it would replace the document with that edition.');
+    console.error('');
+    console.error('Edit the .docx. To read what this produces:');
+    console.error('  ALLOW_RETIRED_ARCH_DOC=1 OUTPATH=/tmp/arch.docx node generate-doc.js');
+    console.error('');
+    process.exit(1);
+}
+
 const { docPath } = require('./doc-paths');   // resolves figures + output, whatever the CWD
 const fs = require('fs');
 const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,

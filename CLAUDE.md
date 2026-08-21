@@ -1217,9 +1217,40 @@ lead-in runs** (the Architecture Overview and both engine documents): a rebuild 
 plain paragraphs and silently drops every one of them. Those get **string patching**
 instead — replace the generator's own literals — which leaves the structures untouched.
 
-**STILL STALE, deliberately: the Architecture Overview (70 differences), the Conversation
-Engine Design (28) and the Conversation Engine Overview (22).** They are guarded, so they
-can no longer do harm, and folding them is a dedicated pass rather than a drive-by.
+**STILL STALE, deliberately: the Conversation Engine Design (28 differences) and the
+Conversation Engine Overview (22).** They are guarded, so they can no longer do harm, and
+folding them is a dedicated pass rather than a drive-by.
+
+**The Architecture Overview generator is RETIRED instead (August 20 2026) — it refuses to
+run, and the `.docx` is the source of truth.** Measured against the live document that day:
+**219 paragraphs differed in wording**, 25 existed only in the document, and the generator
+built 7 tables and 5 figures against the document's 10 and 9. Not cosmetic drift — it still
+described three response options, File System Access storage everywhere, browser-only TTS,
+and the automatic end-of-utterance detection **reversed in July 2026**. Reconciling ~244
+paragraphs would have bought exactly one capability, rebuilding from source, which nobody
+had used in months. **The deciding argument is that a second source of truth which is always
+stale and occasionally destructive is worse than no second source** — the same call Ken made
+for the Known Issues page. The diagram pipeline is NOT retired: `Architecture Diagrams.html`
+and `capture-diagrams.js` still produce the figure PNGs, which go into the `.docx` directly.
+
+**⚠ AND THE ACCIDENT THAT FORCED THE DECISION, because the guard itself opened the door:
+`OUTPATH` stood the overwrite guard DOWN without redirecting the write.** The documented
+check-without-touching command redirects by reassigning `fs.writeFileSync` in a `node -e`
+wrapper, and `OUTPATH` was only the flag that let the guard stand aside. So
+`OUTPATH=/tmp/x.docx node generate-doc.js` — which reads exactly like *write it over there* —
+disarmed the safety check and then wrote **straight over the live document**, discarding
+months of hand edits plus that morning's sync. **Fixed in `doc-paths.js`: OUTPATH now performs
+the redirect itself**, verified by re-running the exact command that caused the damage and
+confirming the live file was untouched. *An environment variable named OUTPATH must send the
+output to OUTPATH; anything else is a trap baited with its own name.*
+
+**Two recovery lessons worth more than the fix.** (1) **The pre-edit backup is what made this
+survivable**, and it was survivable only because the sync had been done by a re-runnable
+script — restoring the backup and re-running it reproduced the lost work exactly. Had the
+sync been done by hand, the backup would have restored the document to *before* the sync and
+the day's work would have been gone. (2) **The backup was taken before editing and never
+after**, so at the moment of the accident there was no snapshot of the finished state. Take
+one at the END of a sync too.
 
 **Two smaller faults the sweep turned up, both invisible until something looked:** the
 Keeping Costs Down generator wrote a **bare filename**, so it had been depositing its
