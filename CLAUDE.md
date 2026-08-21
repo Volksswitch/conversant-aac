@@ -1541,28 +1541,8 @@ untouched and the history is purely additive**; a test asserts that.
   and when, the trace says when the app spoke and when it re-asked. Together they
   answer the question neither could alone.
 
-**⚠ AND THE STANDING "NEEDS A GRANTED FOLDER" CAVEAT IS RETIRED — it was never true
-(Ken, August 21 2026).** Every conversation-logging change here had been signed off
-with *"the on-disk write needs a granted data folder, which the preview cannot
-produce."* Ken asked why a temporary folder could not simply be made. **The folder
-was never the obstacle:** the File System Access API only hands one to the browser
-through a native dialog no automation can click. But that is not the only root
-`storage.js` accepts — **with no folder picker present it adopts the browser's own
-private filesystem, which needs no gesture at all**, and that is the iPad path
-through exactly the same code.
-
-So `tests/storage-transcript.test.mjs` now drives the **real** storage layer against
-a directory that behaves like the browser's, and asserts **the bytes that were
-written** rather than a helper's return value: the pending turn tracked across
-separate calls, the flush producing valid JSON, a later turn appending rather than
-overwriting, an error interleaved in time order, the revision history surviving the
-round trip — and **"Don't save this conversation" proven against the FILE**, which is
-the promise both manuals make and the only proof that carries.
-
-**The transferable lesson: a caveat repeated often enough stops being examined.**
-That one had been copied into sign-off after sign-off for months, and it took someone
-asking "why not?" to notice it named the wrong obstacle. **When a limitation is
-stated the same way twice, check it is still — or was ever — true.**
+*Verified end to end against the real storage layer — see the data-folder note under
+the test-tier item below, which also retires the caveat this used to carry.*
 
 ## PLACEHOLDERS ARE PART OF THIS SAME FLOW (Ken, August 21 2026)
 
@@ -1995,6 +1975,33 @@ Durations feed all three: conversation length, time-to-first-response after a pa
   - **Why this becomes a real question:** once the **PRE-BETA "Settings persistence — data folder + per-device profiles"** work lands (see that section), settings live in the folder like everything else, copying the folder carries them, and Export/Import's *transfer* job on Windows largely dissolves. **That is the moment to decide** — deciding now would be deciding against a premise that is about to change.
   - **What would still argue for keeping it on Windows** (weigh these, don't assume they win): a user who never granted a data folder (everything is `localStorage`-only for them); a **single file** you can email for support or park on a different machine/drive, versus talking someone through copying a folder tree; and protection against **in-app** destruction (a Restart, a reset, a bad import) that a folder copy only protects against if the user remembered to make one. Note the July-31 change moved backups *into* the data folder on Windows, so as built it now guards in-app mistakes but **not** loss of the folder itself — the user must still copy the file out.
   - **Options when it's decided:** keep as-is · keep Export/Import but drop the *settings* payload on Windows once the folder carries them (would make an exported package non-portable across the two platforms — probably wrong) · make the whole feature iPad-only (where it is not optional: OPFS is invisible, a Safari tab is refused persistent storage, and the two iPad modes are separate storage silos) · retire it on Windows entirely. **Do not narrow it before the settings-persistence work ships**, or a Windows user loses the only settings-transfer path they have.
+- **A DATA FOLDER IS NOT A BLOCKER FOR TESTING STORAGE — the caveat that said so was
+  wrong for months (Ken, August 21 2026).** Every conversation-logging change here had
+  been signed off with *"the on-disk write needs a granted data folder, which the
+  preview cannot produce."* Ken asked why a temporary folder could not simply be made.
+  **The folder was never the obstacle.** The File System Access API hands a folder to
+  the browser only through a native dialog no automation can click, so making one on
+  disk does not help — but that is not the only root `storage.js` accepts.
+  **With no folder picker present it adopts the browser's own private filesystem
+  (`navigator.storage.getDirectory()`), which needs no gesture at all** — the iPad path,
+  through exactly the same code.
+  - **So the write path is testable in Node**, and `tests/storage-transcript.test.mjs` does
+    it: shim `localStorage`, a `window` **without** `showDirectoryPicker`, and a `navigator`
+    whose `storage.getDirectory()` returns a directory object behaving like the
+    browser's, then call `restoreDataFolder()` and drive the real functions.
+  - **⚠ Two shims that are easy to get wrong:** `navigator` is a getter-only global in
+    Node 21+, so it must be `Object.defineProperty`-ed rather than assigned; and
+    `window` must exist but must NOT have `showDirectoryPicker`, because its presence is
+    precisely what routes the code down the picker path instead.
+  - **Assert the BYTES, not the return value.** The point of reaching this layer is the
+    parts a pure test cannot see: a pending turn tracked across separate calls, a flush
+    producing valid JSON, and **"Don't save this conversation" proven by an unchanged
+    file** — which is the promise both manuals make and the only proof that carries.
+  - **⚠ THE LESSON THAT GENERALIZES: a caveat repeated often enough stops being
+    examined.** That one was copied into sign-off after sign-off and named the wrong
+    obstacle the whole time. **When a limitation is stated the same way twice, check it
+    is still — or was ever — true.**
+
 - **TO DO — revisit a Playwright/Puppeteer UI-E2E test tier (Ken, July 10 2026; go/no-go deferred).** A zero-dependency `node --test` harness now covers the deterministic logic (`tests/`, ~95 tests, three tiers — Tier 1 pure logic incl. `engine`/`stt`/`conversation-logic`/`worldview`/`relationships`/`control-phrases`/`placeholders`/`whats-new`/`prediction`/`keyboard-layouts`/`express-items`; Tier 2 `llm` parsing + llm→engine path, fetch mocked; Tier 3 live-API scenarios reading a gitignored `.anthropic-key`). The browser/hardware layer is covered by the manual procedure `tests/MANUAL-TEST-PLAN.md` + seed fixtures `tests/fixtures/` (a "Repeatable setup" section resets to a known baseline: fixture data folder + fixed partner script). **The open question:** build a headless-browser E2E tier (Playwright — or the already-present Puppeteer dep) that drives the *real* app with a **fake `SpeechRecognition` + stubbed `fetch`** injected, to convert the DOM-flow manual cases (user-started flow through the UI, Express Panel, composer/keyboard, Settings) into repeatable automated tests — shrinking the manual surface to only the genuinely physical cases (real mic acoustics, the echo loop, TTS timing, keyguard fit, FSA folder writes, the auto-update deploy). Medium build; decide go/no-go later. This session also extracted the conversation-loop decision logic + the silent-dead-end tripwires out of `app.js` into `app/js/conversation-logic.js` so they're unit-tested (100% coverage), and added the tripwires that log any "complete turn but no options" / "non-COMPLETE while user leading" outcome (red-wash + errors.log) so the July-2026 stall class can never be silent again. **[relates to [[test-harness]] in machine memory]**
 - **TO DO — decide the disposition of the "amber box" (`showResponseError`) before public release (Ken, July 8 2026; not built).** On a *thrown* generation error (`generateOptions`/`regenerate`/`reframe` — API/parse failure), the Response Palette is currently replaced by a worded box — the literal error string (e.g. "Couldn't get responses: 429 Too Many Requests") + a manual **"Try again"** button (`ui.showResponseError`, [ui.js](app/js/ui.js), rendered into `#responseOptions`; styles `.response-error*`). This conflicts with Ken's "no error messages in the UI — they mean nothing to the user and just confuse" stance. It was **left in place for now** (v0.5.74's faint-red transcript wash is the new non-verbal heads-up for *all* logged errors, thrown and silent). **Decide before public release:** most likely **remove `showResponseError` entirely** and rely on the transcript wash + **silent automatic retry-with-backoff** for the dominant transient API 429/529 case (recorded as the likely real fix for the demo "no options" failure), leaving the response cards simply empty until a retry succeeds. Note: the transcript wash already covers the *silent* no-usable-responses paths (empty/malformed `responses[]`, INCOMPLETE classification, superseded generation token) that never throw and never showed the box anyway — so removing the box loses no coverage. Ken has **never actually seen the box** because generation hasn't thrown in his testing. Touches `ui.js` (drop `showResponseError` + `.response-error*` CSS), `app.js` (the four `showResponseError` call sites → wash-only + optional retry).
 - **TO DO (documentation, both manuals) — explain the browser's save prompt on Export, and that nothing leaves the device (Ken, August 1 2026).** Exporting from a Safari tab on the iPad raises Safari's own download confirmation — *"Do you want to download 'conversant-backup-….json' on 'volksswitch.github.io'?"* — which reads as though the data is being stored at, or sent to, that site. **It is not.** [`downloadText`](app/js/data-transfer.js:137) builds the file in memory from local storage, wraps it in a `Blob`, and hands a **`blob:` URL** to the browser; there is no network request at any point in an export, and the same file would be produced with the iPad in airplane mode. **Two things collide here and NEITHER is ours to reword** — the dialog names the origin of the *page that initiated* the save (the page's identity, not the file's source), and the browser calls every file handoff a **"download"** because that is its only mechanism for getting a file out of a page. So our **Export** button and Safari's "download" describe the same act from opposite directions, and no web API reaches the dialog's text.
