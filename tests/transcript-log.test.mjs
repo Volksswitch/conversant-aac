@@ -17,7 +17,9 @@ test('first pause appends a pending partner turn (raw set, cleaned empty)', () =
     const ex = [];
     const pending = upsertPartnerInterim(ex, null, { rawTranscript: 'how was your', partner: { label: 'Mom' }, timestamp: 't1' });
     assert.equal(ex.length, 1);
-    assert.deepEqual(ex[0], { timestamp: 't1', role: 'partner', rawTranscript: 'how was your', cleanedTranscript: '', partner: { label: 'Mom' }, stt: null });
+    // The turn carries its own revision history as well as its current text, so a
+    // reader can see when the partner paused and what had been heard by then.
+    assert.deepEqual(ex[0], { timestamp: 't1', role: 'partner', rawTranscript: 'how was your', cleanedTranscript: '', partner: { label: 'Mom' }, stt: null, revisions: [{ at: 't1', text: 'how was your' }] });
     assert.equal(pending, ex[0], 'returns the pending turn for reuse');
 });
 
@@ -89,4 +91,86 @@ test('an unknown recogniser is recorded as null rather than invented', () => {
     const ex = [];
     upsertPartnerInterim(ex, null, { rawTranscript: 'hello' });
     assert.equal(ex[0].stt, null);
+});
+
+/* ── A partner turn keeps its own history (Ken, August 21 2026) ──────────────
+ *
+ * Ken: "Do we record partial partner speech explicitly in the preserved
+ * conversation transcript so that we can recognize when a partner paused and when
+ * they continued speaking and when reprompts fired?" We did not. The raw line was
+ * overwritten at each pause and the first pause's timestamp kept, so a turn that
+ * grew across four pauses was one line with one time.
+ *
+ * ⚠ The event trace has that structure but carries NO WORDS by design, and the
+ * transcript had the words but no structure — so between them they still could not
+ * show a partner pausing, continuing, and a reprompt firing. That is exactly the
+ * shape of the open question about the app's holding phrases appearing as partner
+ * speech, which is why this is worth its file size.
+ */
+test('revisions: the first pause is revision one', () => {
+    const ex = [];
+    const t = upsertPartnerInterim(ex, null, { rawTranscript: 'how are you', timestamp: '2026-08-21T10:00:00Z' });
+    assert.equal(t.revisions.length, 1);
+    assert.deepEqual(t.revisions[0], { at: '2026-08-21T10:00:00Z', text: 'how are you' });
+});
+
+test('revisions: every later pause is appended, not overwritten', () => {
+    const ex = [];
+    let t = upsertPartnerInterim(ex, null, { rawTranscript: 'how are you', timestamp: '2026-08-21T10:00:00Z' });
+    t = upsertPartnerInterim(ex, t, { rawTranscript: 'how are you feeling', timestamp: '2026-08-21T10:00:03Z' });
+    t = upsertPartnerInterim(ex, t, { rawTranscript: 'how are you feeling today', timestamp: '2026-08-21T10:00:07Z' });
+    assert.equal(ex.length, 1, 'still one partner turn');
+    assert.equal(t.rawTranscript, 'how are you feeling today', 'the current text is unchanged in meaning');
+    assert.deepEqual(t.revisions.map(r => r.at),
+        ['2026-08-21T10:00:00Z', '2026-08-21T10:00:03Z', '2026-08-21T10:00:07Z']);
+    assert.deepEqual(t.revisions.map(r => r.text),
+        ['how are you', 'how are you feeling', 'how are you feeling today']);
+});
+
+test('revisions: a pause that heard nothing new is not recorded', () => {
+    const ex = [];
+    let t = upsertPartnerInterim(ex, null, { rawTranscript: 'hello', timestamp: '2026-08-21T10:00:00Z' });
+    t = upsertPartnerInterim(ex, t, { rawTranscript: 'hello', timestamp: '2026-08-21T10:00:02Z' });
+    assert.equal(t.revisions.length, 1);
+});
+
+test('revisions: finalizing records the last state when it differs', () => {
+    // The finalize path can carry text no pause ever saw — an interruption, or End
+    // conversation flushing what was heard since the last pause.
+    const ex = [];
+    const t = upsertPartnerInterim(ex, null, { rawTranscript: 'i was going to', timestamp: '2026-08-21T10:00:00Z' });
+    finalizePartner(ex, t, {
+        rawTranscript: 'i was going to say something else',
+        cleanedTranscript: 'I was going to say something else.',
+        timestamp: '2026-08-21T10:00:09Z',
+    });
+    assert.equal(t.revisions.length, 2);
+    assert.equal(t.revisions[1].text, 'i was going to say something else');
+    assert.equal(t.cleanedTranscript, 'I was going to say something else.');
+});
+
+test('revisions: the FIRST is kept when a pathological turn is trimmed', () => {
+    // ⚠ The first revision is what the app acted on when it first asked the AI, so
+    // it is the last one that should be lost.
+    const ex = [];
+    let t = upsertPartnerInterim(ex, null, { rawTranscript: 'w0', timestamp: '2026-08-21T10:00:00Z' });
+    for (let i = 1; i < 40; i++) {
+        t = upsertPartnerInterim(ex, t, { rawTranscript: 'w' + i, timestamp: '2026-08-21T10:00:' + String(i).padStart(2, '0') + 'Z' });
+    }
+    assert.equal(t.revisions.length, 20);
+    assert.equal(t.revisions[0].text, 'w0', 'the first survives');
+    assert.equal(t.revisions[t.revisions.length - 1].text, 'w39', 'and so does the newest');
+});
+
+test('revisions: existing readers are unaffected', () => {
+    // rawTranscript / cleanedTranscript keep their meaning, so nothing that reads a
+    // transcript today has to know about revisions at all.
+    const ex = [];
+    let t = upsertPartnerInterim(ex, null, { rawTranscript: 'a', timestamp: '2026-08-21T10:00:00Z' });
+    t = upsertPartnerInterim(ex, t, { rawTranscript: 'a b', timestamp: '2026-08-21T10:00:01Z' });
+    finalizePartner(ex, t, { rawTranscript: 'a b', cleanedTranscript: 'A b.', timestamp: '2026-08-21T10:00:02Z' });
+    assert.equal(ex.length, 1);
+    assert.equal(ex[0].role, 'partner');
+    assert.equal(ex[0].rawTranscript, 'a b');
+    assert.equal(ex[0].cleanedTranscript, 'A b.');
 });

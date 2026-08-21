@@ -1190,7 +1190,10 @@ export async function logPartnerInterim({ rawTranscript, partner = null }) {
     if (!conversationSaving) return; // private conversation — nothing is written
     if (!currentLogData) await startConversationLog();
     if (!currentLogData) return;
-    pendingPartnerTurn = tlog.upsertPartnerInterim(currentLogData.exchanges, pendingPartnerTurn, { rawTranscript, partner, stt: sttBackend });
+    // The timestamp is passed explicitly so each revision is stamped with the pause
+    // it belongs to, rather than whenever the write happens to land.
+    pendingPartnerTurn = tlog.upsertPartnerInterim(currentLogData.exchanges, pendingPartnerTurn,
+        { rawTranscript, partner, stt: sttBackend, timestamp: new Date().toISOString() });
     await flushLog();
 }
 

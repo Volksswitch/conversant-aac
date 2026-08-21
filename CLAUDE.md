@@ -1519,10 +1519,31 @@ intermediate states, the number of pauses and their times are all gone.
   **no words** (deliberate, August 5 2026);
 - the **conversation file** has the words, with **no pause structure**.
 
-So *"the partner paused here, the app said this, then this text appeared"* cannot be
-reconstructed from either. **If that question keeps coming up, the cheap fix is to
-append rather than overwrite** — keep each interim as its own timestamped revision on
-the turn — which costs a little file size and answers it directly. Not built.
+So *"the partner paused here, the app said this, then this text appeared"* could not
+be reconstructed from either.
+
+**BUILT the same day (Ken: *"Implement the cheap fix. I have a feeling that we haven't
+seen the last of these issues. This is one of the most complex parts of the
+product."*).** A partner turn now carries a **`revisions`** array — one timestamped
+entry per pause, holding what had been heard by then. `rawTranscript` and
+`cleanedTranscript` keep their meaning exactly, so **every existing reader is
+untouched and the history is purely additive**; a test asserts that.
+
+- **A pause that heard nothing new is not recorded**, so a turn's revision count is
+  the number of times the partner actually added something.
+- **The finalize path records the last state too**, because it can carry text no
+  pause ever saw — an interruption, or End conversation flushing what was heard
+  since the last pause.
+- **⚠ TRIMMING AT THE 20 CAP DROPS THE SECOND ENTRY, NEVER THE FIRST.** The first is
+  what the app acted on when it asked the AI the first time, so it is the most
+  informative single entry and the last that should be lost.
+- **Correlate with the trace by wall clock**: the revisions say what had been heard
+  and when, the trace says when the app spoke and when it re-asked. Together they
+  answer the question neither could alone.
+
+*Verified through the shipped module with a three-pause turn; the on-disk write goes
+through the same flush every other conversation-log feature uses and needs a granted
+folder, which is the standing boundary here.*
 
 ## PLACEHOLDERS ARE PART OF THIS SAME FLOW (Ken, August 21 2026)
 
