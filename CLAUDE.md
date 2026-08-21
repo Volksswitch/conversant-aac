@@ -1541,9 +1541,28 @@ untouched and the history is purely additive**; a test asserts that.
   and when, the trace says when the app spoke and when it re-asked. Together they
   answer the question neither could alone.
 
-*Verified through the shipped module with a three-pause turn; the on-disk write goes
-through the same flush every other conversation-log feature uses and needs a granted
-folder, which is the standing boundary here.*
+**⚠ AND THE STANDING "NEEDS A GRANTED FOLDER" CAVEAT IS RETIRED — it was never true
+(Ken, August 21 2026).** Every conversation-logging change here had been signed off
+with *"the on-disk write needs a granted data folder, which the preview cannot
+produce."* Ken asked why a temporary folder could not simply be made. **The folder
+was never the obstacle:** the File System Access API only hands one to the browser
+through a native dialog no automation can click. But that is not the only root
+`storage.js` accepts — **with no folder picker present it adopts the browser's own
+private filesystem, which needs no gesture at all**, and that is the iPad path
+through exactly the same code.
+
+So `tests/storage-transcript.test.mjs` now drives the **real** storage layer against
+a directory that behaves like the browser's, and asserts **the bytes that were
+written** rather than a helper's return value: the pending turn tracked across
+separate calls, the flush producing valid JSON, a later turn appending rather than
+overwriting, an error interleaved in time order, the revision history surviving the
+round trip — and **"Don't save this conversation" proven against the FILE**, which is
+the promise both manuals make and the only proof that carries.
+
+**The transferable lesson: a caveat repeated often enough stops being examined.**
+That one had been copied into sign-off after sign-off for months, and it took someone
+asking "why not?" to notice it named the wrong obstacle. **When a limitation is
+stated the same way twice, check it is still — or was ever — true.**
 
 ## PLACEHOLDERS ARE PART OF THIS SAME FLOW (Ken, August 21 2026)
 
