@@ -1118,6 +1118,7 @@ function isRateLimit(err) {
 
 async function generateOptions(partnerText) {
     const token = ++generationToken;
+    ui.setPaletteBusy(true);   // the cards showing may be replaced — say so (Ken)
     const pEpoch = placeholderEpoch;   // if a speaking button fires mid-generation, don't restart placeholders
 
     // FAST PATH — winding down + a plain farewell reply: re-offer the goodbyes
@@ -1297,7 +1298,11 @@ async function handleResponseSelected(response, index) {
     metrics.paletteTaken({ slot: response.slot || null, index, decideMs });
 
     placeholders.stop();
+    // The user has decided, so their choice beats any refresh still in flight:
+    // abandon it and drop the "cards may change" cue now rather than when the
+    // palette is cleared several awaits later (Ken, August 20 2026).
     generationToken++; // invalidate any in-flight generation
+    ui.setPaletteBusy(false);
     // Capture the partner's speech BEFORE stopping the mic — if they were still
     // talking (resumed after the options appeared), grab what they'd said, not just
     // the last checkpoint's text.
@@ -1398,6 +1403,7 @@ function offerClosings() {
 async function prefetchRepairOptions(token) {
     const last = engine.getLastUserUtterance();
     if (!last) return;
+    ui.setPaletteBusy(true);   // rephrase/expand still show hints; their wording is coming
     let opts;
     try {
         opts = await llm.repairOptions(last, conversationHistory);
@@ -1767,6 +1773,7 @@ async function endPractice() {
 async function advancePracticePartner() {
     if (!practiceMode) return;
     const token = ++generationToken;   // aborts if the user ends/pauses mid-generation
+    ui.setPaletteBusy(true);   // the cards showing may be replaced — say so (Ken)
     isListening = true;
     ui.setListenButtonState(true);     // red pulse + chime (rehearse the "listening" feel)
     ui.setStatus('The other person is speaking…');
@@ -2276,6 +2283,7 @@ async function handleRegenerate() {
     if (!currentPartnerText || !lastPalette.length) return;
     const token = ++generationToken;
     placeholders.stop();
+    ui.setPaletteBusy(true);   // the cards showing may be replaced — say so (Ken)
     ui.setStatus('Getting different options...');
 
     const prior = lastPalette.map((m) => m.text).filter(Boolean);
@@ -2351,6 +2359,7 @@ async function handleChoiceChip(chip) {
     if (!pick || !currentPartnerText) return;
 
     const token = ++generationToken;
+    ui.setPaletteBusy(true);   // the cards showing may be replaced — say so (Ken)
     abortPlaceholders();   // the user has acted — nothing may speak over the result
     activeSteer.focusChoice = pick;   // "New N" must keep answering with this choice
     renderExpressPanel();             // ...and the chip shows as chosen from this moment
@@ -2404,6 +2413,7 @@ async function handleReframe() {
 
     const token = ++generationToken;
     placeholders.stop();
+    ui.setPaletteBusy(true);   // the cards showing may be replaced — say so (Ken)
     llm.setWorldviewBlock(worldview.buildBlock());
     llm.setRelationshipsBlock(relationships.buildBlock());
     // Omit the place they are standing in — buildHereBlock already carries it, with
@@ -2551,6 +2561,7 @@ async function speakAsUserTurn(historyText, spokenText = historyText, source = '
     metrics.event(source === 'express' ? metrics.EV.EXPRESS_PHRASE : metrics.EV.COMPOSER_SPOKEN);
     placeholders.stop();
     generationToken++;            // invalidate any in-flight generation on the partner turn
+    ui.setPaletteBusy(false);     // ...and stop saying the cards may change (Ken)
     // Does this statement OPEN the conversation? Captured BEFORE commitExchange
     // appends to the history below. Deliberately not storage.getConversationId(),
     // which stays null for the whole of a "Don't save this conversation" session and
@@ -2605,6 +2616,13 @@ function openComposer() {
     // moment they finish typing, which can be a minute later.
     noteUserAction('composer');
     metrics.event(metrics.EV.COMPOSER_OPENED);
+    // Going to your own words ENDS the deliberation, so any refresh still in
+    // flight is abandoned rather than allowed to land under the composer (Ken,
+    // August 20 2026). A card tap and an Express phrase already did this on their
+    // way to speaking; this route did not, so new options could arrive — and a
+    // placeholder could start speaking — while the user was mid-sentence.
+    generationToken++;
+    ui.setPaletteBusy(false);
     ui.clearComposer();
     ui.showComposerOverlay();
     // Summon the keyboard explicitly rather than relying on the textarea's

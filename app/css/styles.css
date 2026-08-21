@@ -777,6 +777,10 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
     display: grid;
     gap: var(--grid-gap);    /* rail width between response cards */
     align-items: stretch;
+    /* Anchors the "a request is out" stripe (.palette-refreshing::before). The
+       stripe is absolutely positioned, so it is out of the grid flow and does not
+       become a cell — the four card positions are untouched. */
+    position: relative;
 }
 body.conv-side .palette-grid {
     grid-template-columns: repeat(2, 1fr);   /* 2×2 */
@@ -981,6 +985,15 @@ body.conv-bottom .palette-grid {
     .response-card { transition: none; }
     /* Keep the recording indicator visible, just steady (no pulse). */
     #listenBtn.listening { animation: none; }
+    /* Same for the round-trip cue: hold it still rather than drop it. The fact
+       that a request is out still has to reach the user — it is what tells them
+       the cards may change — so the stripe spans the region and the cards sit at
+       a steady dim instead of breathing. */
+    .palette-refreshing::before { animation: none; width: 100%; opacity: 0.55; }
+    .palette-refreshing .response-card:not(.response-card-empty) {
+        animation: none;
+        opacity: 0.85;
+    }
 }
 
 /* The response card (§4). Slot color: tinted fill, hued left border + badge. */
@@ -1077,6 +1090,53 @@ body.conv-bottom .palette-grid {
 .response-card.working {
     opacity: 0.55;
     cursor: default;
+}
+
+/* --- A round trip is in flight (Ken, August 20 2026) -------------------------
+   The cards showing may be replaced at any moment — by the partner carrying on
+   and pausing again, or by New N / Reframe / a choice chip. Until now that swap
+   happened with no warning, so the options could change under someone halfway
+   through reading them. Two cues: a stripe travelling along the top of the region
+   ("a request has gone out") and the cards breathing gently ("these are
+   provisional").
+
+   THREE CONSTRAINTS, each load-bearing:
+   1. NOTHING MOVES. The stripe is absolutely positioned and the cards change only
+      opacity, so a physical keyguard's holes still line up (Rule 1).
+   2. The cards stay READABLE AND TAPPABLE. Selecting one is precisely how the user
+      aborts the refresh, so this must never behave like .working above, which dims
+      to 0.55 and takes the pointer away. The pulse bottoms out at 0.8.
+   3. NO HUE CHANGES. Slot color carries the category (triple coding), so the cue
+      is opacity only, and the stripe uses the neutral persistent slate rather than
+      a category color that would read as one. */
+.palette-refreshing::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 30%;
+    height: 4px;
+    border-radius: 4px;
+    background: var(--slot-persistent);
+    animation: palette-refresh-sweep 1.3s ease-in-out infinite;
+    pointer-events: none;   /* never intercepts a tap meant for a card */
+    z-index: 2;
+}
+
+@keyframes palette-refresh-sweep {
+    from { transform: translateX(-10%); }
+    to   { transform: translateX(343%); }   /* 100/30 - 10% ⇒ ends flush at the right */
+}
+
+/* Empty reserved cells are excluded: at rest there is no text to mark as
+   provisional, so the stripe alone carries "working on it". */
+.palette-refreshing .response-card:not(.response-card-empty) {
+    animation: palette-refresh-breathe 1.6s ease-in-out infinite alternate;
+}
+
+@keyframes palette-refresh-breathe {
+    from { opacity: 1; }
+    to   { opacity: 0.8; }
 }
 
 /* Per-slot color application (border accent, badge, latency dot color). */

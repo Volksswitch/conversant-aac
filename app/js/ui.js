@@ -263,11 +263,31 @@ function buildEmptyCell(slotCls, split = false) {
     return cell;
 }
 
+// A round trip is in flight, so the cards on screen may be replaced at any moment
+// (Ken, August 20 2026). Before this the swap happened with no warning at all: the
+// partner carried on talking, a fresh request went out, and the options changed
+// under a user who was halfway through reading them. Every round trip shows it —
+// the automatic refresh AND the ones the user asks for (New N, Reframe, a choice
+// chip) — because the fact the user needs is the same either way.
+//
+// LOOK-ONLY, and that is the constraint that shapes it: nothing moves (Rule 1 —
+// a keyguard's holes must still line up) and every card stays selectable, because
+// selecting one is exactly how the user aborts the refresh.
+//
+// Deliberately NOT cleared here by a matching setPaletteBusy(false) at each call
+// site. It is cleared by whatever renders next — showResponses, clearResponseOptions
+// or showResponseError below — which every completion, failure and abort path
+// already goes through. A superseded request that returns and bails out leaves it
+// ON, which is right: a newer request is still running.
+export function setPaletteBusy(on) {
+    responseOptions.classList.toggle('palette-refreshing', !!on);
+}
+
 export function showResponses(palette, onSelect) {
     // A real palette rendering means a working cycle completed — clear any
     // sticky error wash on the transcript (sticky-until-next-success).
     setTranscriptError(false);
-    responseOptions.classList.remove('is-empty');
+    responseOptions.classList.remove('is-empty', 'palette-refreshing');
     responseOptions.innerHTML = '';
     // Brief crossfade of contents on each render (geometry never moves, §5).
     responseOptions.classList.remove('palette-enter');
@@ -325,7 +345,7 @@ export function showResponses(palette, onSelect) {
 export function clearResponseOptions() {
     // Keep the reserved footprint: 4 empty slot-colored cells (not a placeholder
     // line), so the region's size is held even with no options / no conversation.
-    responseOptions.classList.remove('is-empty', 'palette-enter', 'has-error');
+    responseOptions.classList.remove('is-empty', 'palette-enter', 'has-error', 'palette-refreshing');
     responseOptions.innerHTML = '';
     const split = cardsPerCategory === 2;
     for (let i = 0; i < RESERVED_SLOTS; i++) responseOptions.appendChild(buildEmptyCell(SLOT_ORDER[i], split));
@@ -336,7 +356,7 @@ export function clearResponseOptions() {
 // which reads as "no response options for no reason". This surfaces the reason and
 // a Try again action right where the options would have been.
 export function showResponseError(message, onRetry) {
-    responseOptions.classList.remove('is-empty', 'palette-enter');
+    responseOptions.classList.remove('is-empty', 'palette-enter', 'palette-refreshing');
     responseOptions.classList.add('has-error');
     responseOptions.innerHTML = '';
     const box = document.createElement('div');
