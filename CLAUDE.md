@@ -1191,9 +1191,10 @@ Product-document currency is tracked by [`DOC-SYNC.md`](DOC-SYNC.md) (any root d
    **It goes ON THE BYLINE, next to the creation date - not on a line of its own (Ken,
    August 21 2026)**: *Kenneth R. Hackbarth | Volksswitch.org | June 2026 | Last updated
    August 20, 2026*. Where the byline's own date is already that same day, "Last updated"
-   **replaces** it rather than printing the date twice. A document with no byline at all
-   gets a small grey line under the subtitle instead, since there is nothing to sit beside.
-   All 23 prose documents carry it as of August 21 2026. The **Partner Card is the one
+   **replaces** it rather than printing the date twice. **Every document has a byline** as
+   of August 21 2026 - the five that lacked one were given one rather than left with a date
+   floating alone, taking the creation month from the page footer, which has always carried
+   it. All 23 prose documents carry the date. The **Partner Card is the one
    exclusion** - it is a print-and-cut sheet handed to a communication partner, so a date
    would print on the card itself, where it has no reader.
    The byline carries the CREATION date and never changes, so by itself it tells a reader

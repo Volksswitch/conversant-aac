@@ -131,10 +131,17 @@ line of its own. So it sits on the byline itself — *Kenneth R. Hackbarth | Vol
 the same day, "Last updated" simply replaces it rather than printing the date twice.
 
 The rule had existed for a while, but a document only picks the line up when it is next
-synced, so only two had one. All 23 prose documents now carry it. Five have no byline at
-all (Continuous Partner Capture, Keeping Costs Down, Keyboard Layout Options, Conversation
-Engine Overview, Practice Mode); those get a small grey line under the subtitle, since
-there is nothing for the date to sit beside.
+synced, so only two had one. All 23 prose documents now carry it.
+
+**Five documents had no byline at all** - Continuous Partner Capture, Conversation Engine
+Overview, Keyboard Layout Options, Keeping Costs Down and Practice Mode. Rather than give
+those a date floating on its own, Ken had them given a proper byline (August 21 2026), so
+every document's title page now names an author and a date in the same place. **The
+creation month came from each document's own page footer**, which has always carried it -
+so the byline states what the document already said about itself, rather than a date
+guessed from a file timestamp. Keeping Costs Down is bylined *Conversant AAC* rather than
+Ken, matching Backup Compatibility: both are written for the person using the app, not
+about the project.
 
 **The date on each is that document's `Last reviewed` date from the table below, not the
 date of this sweep.** Stamping today on all of them would have claimed every document was
