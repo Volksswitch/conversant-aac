@@ -1178,6 +1178,12 @@ Product-document currency is tracked by [`DOC-SYNC.md`](DOC-SYNC.md) (any root d
 1. Read `X`'s last-reviewed commit from DOC-SYNC.md, then `git log <that commit>..HEAD` plus the CLAUDE.md / CHANGELOG entries added since — that's the change window.
 2. Filter to what's relevant to `X`'s scope. **Verify any UI detail against source before asserting it** (standing working guideline) — e.g. confirm a button's label/icon in `ui.js`/`index.html`.
 3. Apply the edits; verify (paragraph/content scans; render in Word if a toolchain is available).
+   **Update the title page’s "Last updated" line to today’s date.** MANDATORY on every sync, and add the line
+   directly beneath the byline if the document does not have one yet (Ken, August 20 2026).
+   The byline carries the CREATION date and never changes, so by itself it tells a reader
+   nothing about whether the material is current — which is the only question they actually
+   have. Documents acquire the line as they are synced, so one that has not been synced yet
+   simply does not have it.
 4. **Stamp `X`'s row in DOC-SYNC.md:** Status `✓ current`, Last reviewed = today, At commit = current `HEAD`, Notes = what changed + any residual. Commit DOC-SYNC.md (the `.docx` itself stays on OneDrive, git-ignored).
 
 **Tooling note (this dev box):** docx edits are made with `python-docx` **or `lxml` — NEVER `xml.etree`** (no pandoc / LibreOffice); backups are a file copy; images/figures cannot be regenerated here, so flag figure changes as a residual in the doc's DOC-SYNC row.
