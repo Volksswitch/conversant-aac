@@ -1537,6 +1537,36 @@ button:not(.kbd-key):not(.kbd-tool):not(.kbd-pred-btn):not(.ep-btn) {
 }
 .regenerate-btn:active { transform: translateY(1px); }
 
+/* "A newer set is ready" - the regenerate button's waiting state (Ken, August 21
+   2026). Suggestions generated while the user is still reading are held rather
+   than swapped in under their hand, and this is how they are told.
+
+   ⚠ NOTHING HERE MAY OCCUPY SPACE. No badge, no outline growth, no size change:
+   the button is a keyguard target like every other, so the cue is fill, border and
+   a slow pulse only (Rule 1). Border width is unchanged at 2px for the same reason.
+
+   ⚠ AND IT MUST NOT BORROW A SLOT COLOUR. Green, amber, blue and purple each mean
+   a response category, so this uses the neutral persistent slate the button already
+   wears - filled instead of outlined, which is the same "this one is live" idiom
+   the latched controls use. */
+.regenerate-btn.has-newer {
+    background: var(--slot-persistent);
+    border-color: var(--slot-persistent);
+    color: #fff;
+    animation: regenerate-waiting 2s ease-in-out infinite alternate;
+}
+
+@keyframes regenerate-waiting {
+    from { box-shadow: 0 0 0 0 rgba(69, 90, 100, 0.0); }
+    to   { box-shadow: 0 0 0 4px rgba(69, 90, 100, 0.22); }
+}
+
+/* Someone who has asked for less motion still needs the state, just not the pulse -
+   the fill carries it on its own. */
+@media (prefers-reduced-motion: reduce) {
+    .regenerate-btn.has-newer { animation: none; }
+}
+
 /* --- Express Panel editor (Settings → Express Panel): an ordered list of typed items. --- */
 #expressEditor { display: flex; flex-direction: column; gap: 0.5rem; }
 /* The invitation shown until a button is tapped, and the whole-panel Reset that has

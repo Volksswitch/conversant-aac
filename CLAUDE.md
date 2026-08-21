@@ -1381,6 +1381,78 @@ Rules that keep it correct: the merge runs only on **load/adopt**, never in `set
 
 ---
 
+## Newer suggestions WAIT; they never swap under the user's hand (Ken, August 21 2026), BUILT
+
+The UI design has said since June 2026 that **palette updates queue until a
+selection boundary — options never change under a user mid-selection**, and called
+it mandatory. **It was never built.** This builds it, so it is an unimplemented rule
+being implemented rather than a reversal of continuous partner capture, which is
+still right: a later pause genuinely knows more. What was wrong was delivering that
+knowledge on top of somebody's hand.
+
+**⚠ IT WAS TWO DEFECTS, AND THE ONE NOBODY HAD NOTICED WAS THE BIGGER HALF.**
+`generateOptions` called `ui.clearResponseOptions()` **unconditionally at the top**,
+so the cards were **wiped the instant the partner paused** and the palette sat EMPTY
+for the whole round trip — a measured 5.6s typical and 8.4s worst. So the tester's
+"the choices kept disappearing when I went to pick one" was literal and doubled:
+gone at the start, different at the end. The replacement at the end was the half
+that had been diagnosed; the blanking was found only by reading the function.
+**General lesson: when a complaint names a symptom exactly, read the whole path
+before deciding which line causes it.**
+
+**What the measurements were** (one report, twenty minutes, `evaluate reports`):
+32 sets of suggestions offered, **15 (47%) replaced before she touched anything**, a
+set surviving a typical 11s against her own **7.8s** of reading and choosing, and a
+final conversation of five sets with **nothing chosen at all** before she wrote in.
+She was already running a **1.5s silence period against the shipped default of
+0.5s**, so every other tester is exposed to this harder than she was.
+
+**As built:** the first set of a turn shows at once (nothing to disturb). A later set
+for the same turn is **held**; the regenerate button lights, and pressing it shows
+the held set **instantly and with no API call** — better than what the button used
+to do there, which was pay for another round trip.
+
+**⚠ THREE THINGS MUST STILL LAND IMMEDIATELY, and holding one would be worse than
+the defect being fixed.** (1) **A change of mode** — goodbyes must not wait behind
+cards answering a question the partner has finished with, and a partner's "What?"
+must not hang behind cards that cannot answer it. (2) **Anything the user asked
+for** — Reframe, a choice chip, regenerate — which are selection boundaries by
+definition and never reach the decision. (3) **An empty screen.**
+
+**The decision lives in `conversation-logic.shouldHoldPalette` and NOT in app.js**,
+so it is unit-tested — the same reason the July 2026 stall logic was extracted
+there. `paletteIsLive()` reuses `cardsShownAt`/`decideTaken`, the state the
+reading-time measurement already keeps, rather than a second notion of "engaged"
+that could disagree with it. **`showPalette` owns the hold state** (clears the held
+set, records the mode) because every route to the screen goes through it, and a
+missed caller would leave the button lit over a set that can never be taken.
+
+**The cost, accepted:** a user who ignores the lit button answers a slightly older
+version of what was said. The transcript keeps updating, so it is visible, and it is
+a far smaller failure than being unable to answer at all.
+
+**Measure whether it worked with `palette_held` / `palette_taken`.** Held should
+become common and **`palette_refreshed` should become rare**; a run of holds with no
+takes after them means the lit button is not being found, which is the one way this
+fails quietly.
+
+**Verified end to end in Practice Mode**, which runs the whole pipeline with no
+microphone and is the only way to exercise this in a preview: cards stayed put
+during generation, the newer set was held with the button lit, and tapping it
+swapped them in with **zero extra API calls** (`palette_taken heldMs=1882`). Button
+geometry is **identical** lit and unlit (measured 1149/288/131/216 in all states),
+so no keyguard hole moves — Rule 1.
+
+**⚠ A TEST HARNESS CAN MANUFACTURE ITS OWN GREEN, and this one did twice.** A first
+run reported the cards correctly unchanged — because nothing new had arrived at all
+(the second Listen press *stops* in practice mode rather than cueing another turn),
+so it was measuring nothing and looked like a pass. A second reported every card as
+"[object Object]" because the stub used the legacy `options:` key rather than
+`responses:`. **The metrics trace is what settled both** — no `palette_held` line
+meant the branch was never reached. Check the trace, not the screen.
+
+---
+
 ## Reading tester reports — trigger phrase "evaluate reports" (Ken, August 21 2026), BUILT
 
 `scripts/evaluate-reports.mjs` reads the problem reports testers send and says what

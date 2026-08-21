@@ -855,12 +855,52 @@ export function onRegenerateClick(handler) {
 
 // Update the regenerate button's accessible name / tooltip to match how many
 // cards are actually shown — "New 4" with 1 per category, "New 8" with 2 (Ken).
+let lastRegenerateCount = 4;
 export function setRegenerateLabel(count) {
     const btn = document.getElementById('regenerateBtn');
     if (!btn) return;
+    lastRegenerateCount = count;
+    // Do not stamp over the waiting label - that state is live and says something
+    // different about what the button will do.
+    if (btn.classList.contains('has-newer')) return;
     const label = `New ${count} — different options`;
     btn.setAttribute('aria-label', label);
     btn.title = label;
+}
+
+/* Light the regenerate button to say a newer set of suggestions is ready and
+ * waiting (Ken, August 21 2026).
+ *
+ * ⚠ IT IS THE ONLY SIGNAL, so it has to be seen. The status line has been visually
+ * hidden since v0.5.2, and the conversation surface has no room for a message and
+ * no tooltip a direct-select user could ever summon.
+ *
+ * ⚠ GEOMETRY MUST NOT MOVE (Rule 1). This changes fill, border and a soft pulse and
+ * nothing that occupies space - no badge, no size change, no added element - so
+ * every keyguard hole still lines up over the same target. It is the same
+ * pressed/selected idiom Rule 6 uses for a latched control, which is what this is:
+ * a button with something pending behind it.
+ *
+ * The accessible name changes with it, because "New 4 - different options" would be
+ * a lie about what pressing it now does: it costs nothing and shows a set that has
+ * already arrived.
+ */
+export function setSuggestionsWaiting(on) {
+    const btn = document.getElementById('regenerateBtn');
+    if (!btn) return;
+    btn.classList.toggle('has-newer', !!on);
+    if (on) {
+        const label = 'Newer suggestions are ready - tap to see them';
+        btn.setAttribute('aria-label', label);
+        btn.title = label;
+        // Announced, not merely styled: colour alone is never the carrier of meaning
+        // in this app (triple coding), and a screen-reader user gets nothing from a
+        // border change.
+        btn.setAttribute('aria-live', 'polite');
+    } else {
+        btn.removeAttribute('aria-live');
+        setRegenerateLabel(lastRegenerateCount);
+    }
 }
 
 export function onSettingsClick(handler) {

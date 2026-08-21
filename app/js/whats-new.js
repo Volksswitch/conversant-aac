@@ -22,6 +22,7 @@ import * as storage from './storage.js';
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
   "0.7.10": [
+    "The suggestions no longer disappear while you are choosing. When the other person paused again, the app used to clear the cards straight away, leave the space empty for as long as the AI took, and then put a different set in their place -- so the answer you were reaching for could vanish twice over. Now the cards you are reading stay put. A newer set waits, the New button lights up to tell you one is ready, and tapping it shows the newer suggestions straight away without asking the AI again. If you never tap it, nothing moves. Goodbyes and a request to repeat still come through immediately, because those are not a better version of the same suggestions -- they are a different kind of answer altogether.",
     "Reporting a problem now takes one tap. Settings -> Troubleshooting -> Report a problem has a new Send button that sends the report straight back to us, so you no longer have to save a file, find it, and work out what to do with it. Before anything leaves your device the app shows you the exact text it will send and asks you to confirm it -- and that text includes what was said in any conversation an error happened in, which is why it asks. Conversations you marked \"Don't save\" are never in it, and neither are your keys. If you have no signal the report waits and goes the next time you open the app. Save to a file and Copy are both still there."
   ],
   "0.7.9": [

@@ -1095,6 +1095,7 @@ function startFreshListening() {
     currentPartnerText = '';
     setOfferedChoices([]);   // a new partner turn — last turn's choices are gone
     clearTurnSteering();
+    clearHeldPalette();       // a set held for the previous turn can never be right for this one
     pendingPartnerHistoryIdx = -1;   // fresh partner turn — not yet promoted to history
     generationToken++;
     ui.setLiveTranscript('');
@@ -1152,7 +1153,14 @@ async function generateOptions(partnerText) {
 
     ui.setStatus('Generating response options...');
     ui.setTranscriptState('generating');
-    ui.clearResponseOptions();
+    // ⚠ ONLY WHEN THERE IS NOTHING TO LOSE. This used to clear unconditionally, so
+    // the cards vanished the instant the partner paused and the palette sat EMPTY
+    // for the whole round-trip - a typical 5.6s and up to 8.4s in the field. That
+    // is the larger half of "the choices kept disappearing when I went to pick one"
+    // (Ken, August 21 2026): not merely replaced at the end, but gone from the
+    // start. The cards now stay put and setPaletteBusy's stripe says a request is
+    // out, which is the whole job that clearing was doing badly.
+    if (!paletteIsLive()) ui.clearResponseOptions();
     // The partner has said more, so this is a fresh offer: any steering of the
     // shorter turn is dropped rather than silently shaping the new palette.
     clearTurnSteering();
@@ -1205,11 +1213,22 @@ async function generateOptions(partnerText) {
         // palette (New N dips further); otherwise the normal response cards.
         if (snap.mode === engine.MODE.PRE_CLOSING_CLOSING) {
             // Partner-initiated close — pin the decline so they can be held a moment.
+            // A change of mode always lands: goodbyes must not wait behind cards that
+            // answer something the partner has finished with.
             renderStaticPalette('closing', snap.palette,
                 'Say goodbye — or hold them a moment', { pin: declineClosingCard() });
         } else {
             currentStatic = { kind: null, full: [] };  // AI responses — New N regenerates, not pages
-            showPalette(snap.palette);
+            // Held rather than shown when the user is still reading the last set.
+            // The offered choices go with it: putting the partner's alternatives on
+            // the Express Panel while the cards behind them still answer the older
+            // turn would split the screen across two versions of what was said.
+            if (offerOrHoldPalette(snap, (snap.lastClassification && snap.lastClassification.offered_options) || [])) {
+                ui.setTranscriptState('ready');
+                if (pEpoch === placeholderEpoch && convLogic.shouldPlayPlaceholder(snap)) placeholders.start();
+                else placeholders.stop();
+                return;
+            }
         }
         ui.setTranscriptState('ready');
         // A closed set on the table → offer the alternatives as Express Panel chips
@@ -1511,6 +1530,7 @@ async function commitExchange(raw, userText, index, opts = {}) {
     // commits a user turn (response pick, Express phrase, composer, repair-of-self).
     setOfferedChoices([]);
     clearTurnSteering();
+    clearHeldPalette();
     // Snapshot the history BEFORE this exchange — that's the context the cleanup
     // pass should see (it shouldn't include the turn it's cleaning).
     const cleanupContext = [...conversationHistory];
@@ -1958,6 +1978,7 @@ async function terminateConversation() {
     currentPartnerText = '';
     setOfferedChoices([]);
     clearTurnSteering();
+    clearHeldPalette();
     lastPalette = [];
     resetStaticPaging();                 // opener/wind-down/closing paging starts fresh
     conversationHistory.length = 0;     // clear the conversation window
@@ -2072,9 +2093,116 @@ function noteUserAction(kind) {
 // footprint goes through here so the clock and the offer count cannot drift apart —
 // there are six such paths, and instrumenting them one at a time is how one gets
 // missed.
+/* ── Newer suggestions wait their turn (Ken, August 21 2026) ─────────────────
+ *
+ * THE DEFECT THIS FIXES, measured from a real tester's report: over twenty minutes
+ * she was offered 32 sets of suggestions and 15 of them (47%) were replaced before
+ * she touched anything. A set survived a typical 11 seconds against her own 7.8
+ * seconds of reading and choosing, and her last conversation ended with five sets
+ * offered, nothing chosen, and a message to us. Her words: "the choices kept
+ * disappearing when I went to pick one."
+ *
+ * The cause was the continuous-capture design working exactly as written. Every
+ * pause in the partner's speech asks the AI again and the answer replaced the cards
+ * on screen, immediately and unconditionally. That is genuinely better information
+ * — the partner has said more — arriving at the worst possible moment.
+ *
+ * ⚠ THIS IS NOT A NEW DECISION. The UI design has said since June 2026 that palette
+ * updates queue until a selection boundary, that options never change under a user
+ * mid-selection, and that it is mandatory rather than a preference. It was never
+ * built. So this is an unimplemented rule being implemented, which is why it does
+ * not need re-arguing against the continuous-capture design.
+ *
+ * WHAT NOW HAPPENS. The first set of a turn appears at once — there is nothing on
+ * screen to disturb. A LATER set for the same turn is held, and the regenerate
+ * button lights to say something newer is ready; pressing it takes the held set
+ * instantly and for free, instead of asking the AI for another one. So the cards
+ * change only when the user asks, which is the invariant.
+ *
+ * ⚠ THREE THINGS MUST STILL LAND IMMEDIATELY, and getting this wrong is worse than
+ * the original defect:
+ *   1. A CHANGE OF MODE. If the partner has begun closing, or asked the user to
+ *      repeat, the cards on screen are the wrong KIND — holding would leave the
+ *      user answering a question nobody asked, or leave a "What?" hanging.
+ *   2. ANYTHING THE USER ASKED FOR — Reframe, a choice chip, regenerate itself.
+ *      Those are selection boundaries by definition; they do not come through here.
+ *   3. AN EMPTY SCREEN. Nothing to disturb, so nothing to hold.
+ *
+ * THE COST, accepted deliberately: a user who ignores the lit button answers a
+ * slightly older version of what the partner said. That is visible to them — the
+ * transcript keeps updating — and it is a far smaller failure than being unable to
+ * answer at all, which is what the measurements show was happening.
+ */
+
+// The newest set that arrived while cards were already up and unanswered. Only ever
+// one: latest-wins, exactly as the generation itself is latest-wins.
+let heldPalette = null;      // { snap, offered, at }
+// The engine mode the cards CURRENTLY ON SCREEN were rendered for. A newer set in a
+// different mode is a different kind of palette and must not be held.
+let shownMode = null;
+
+function clearHeldPalette() {
+    heldPalette = null;
+    ui.setSuggestionsWaiting(false);
+}
+
+/* Show a freshly generated set, or hold it if it would replace cards the user has
+ * not answered yet. Returns true when it was held. */
+function offerOrHoldPalette(snap, offered) {
+    // The decision itself lives in conversation-logic.js so it is unit-tested; this
+    // function is only the plumbing around it.
+    const canHold = convLogic.shouldHoldPalette({
+        paletteLive: paletteIsLive(), shownMode, nextMode: snap.mode,
+    });
+    if (canHold) {
+        heldPalette = { snap, offered, at: Date.now() };
+        metrics.event(metrics.EV.PALETTE_HELD, { kind: 'ai' });
+        ui.setSuggestionsWaiting(true);
+        // The cards on screen stay exactly as they are, so the reading clock is NOT
+        // restarted and this does not count as a fresh offer — it never reached the
+        // user. Counting it would inflate the denominator that abandonment and
+        // reading time are measured against, and understate both.
+        ui.setPaletteBusy(false);
+        return true;
+    }
+    showPalette(snap.palette);   // clears the hold and records the mode
+    return false;
+}
+
+/* Put the held set up. Called from the regenerate button, which is where a user
+ * goes when the cards in front of them are not the ones they want. */
+function takeHeldPalette() {
+    if (!heldPalette) return false;
+    const { snap, offered, at } = heldPalette;
+    metrics.event(metrics.EV.PALETTE_TAKEN, { kind: 'ai', heldMs: Date.now() - at });
+    clearHeldPalette();
+    ui.showEngineState(snap);
+    lastPalette = snap.palette;
+    currentStatic = { kind: null, full: [] };
+    showPalette(snap.palette);
+    setOfferedChoices(offered || []);
+    ui.setStatus('Select a response');
+    return true;
+}
+
+/* Whether response cards are up and still unanswered. `decideTaken` is set the
+ * moment the user does anything with them, so it is the same notion of "engaged"
+ * the reading-time measurement already uses rather than a second one that could
+ * disagree with it. */
+function paletteIsLive() {
+    return !!cardsShownAt && !decideTaken && lastPalette.length > 0;
+}
+
 function showPalette(cards, kind = 'ai') {
     ui.showResponses(cards, handleResponseSelected);
     noteCardsShown(cards, kind);
+    // Anything that was waiting behind these cards is stale now. Done here rather
+    // than at each caller because every route to the screen goes through this one
+    // function, and a missed caller would leave the button lit over a set that can
+    // never be taken.
+    heldPalette = null;
+    ui.setSuggestionsWaiting(false);
+    shownMode = engine.getMode();
 }
 
 // Render a predefined static palette (opener/windDown/closing), optionally
@@ -2248,6 +2376,7 @@ async function handlePardon() {
     currentPartnerText = kept;
     ui.showEngineState(snap);
     updatePartnerLive(kept);
+    clearHeldPalette();   // the capture is being thrown away; so is anything queued behind it
     ui.clearResponseOptions();
     const text = controlPhrases.getPhrases().pardon; // user-editable (Settings → Controls)
     ui.setStatus('Speaking...');
@@ -2281,6 +2410,9 @@ async function handleRegenerate() {
             { advance: true, pin: currentStatic.pin || [] });
         return;
     }
+    // A newer set is already waiting, so take that rather than asking for another.
+    // It is instant and costs nothing, and it is what the lit button was offering.
+    if (takeHeldPalette()) return;
     if (!currentPartnerText || !lastPalette.length) return;
     const token = ++generationToken;
     placeholders.stop();
