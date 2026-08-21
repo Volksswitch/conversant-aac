@@ -1,10 +1,20 @@
 /**
  * Conversant AAC — weekly report receiver (Google Apps Script).
  *
- * NOT part of the app and never deployed with it. Paste into a Google Apps Script
- * project bound to a Sheet, set SECRET, then Deploy > New deployment > Web app,
- * "Execute as: Me", "Who has access: Anyone". Copy the /exec URL into ENDPOINT in
- * app/js/weekly-send.js, and set the same SECRET in SHARED_SECRET there.
+ * NOT part of the app and never deployed with it.
+ *
+ * FIRST TIME. Paste into a Google Apps Script project bound to a Sheet, set SECRET,
+ * then Deploy > New deployment > Web app, "Execute as: Me", "Who has access:
+ * Anyone". Copy the /exec URL into ENDPOINT in app/js/weekly-send.js, and set the
+ * same SECRET in SHARED_SECRET there.
+ *
+ * ⚠ EVERY TIME AFTER THAT, USE Deploy > MANAGE deployments > pencil > Version: New
+ * version > Deploy. NOT "New deployment". A new deployment mints a NEW /exec URL,
+ * and the app has the old one compiled into it — so reports keep arriving at the
+ * OLD version of this script, which still accepts them and writes them to the
+ * `reports` tab. Nothing errors, nothing is lost, and the change you just made
+ * appears to have done nothing at all. Editing the existing deployment keeps the
+ * URL, which is what makes the app pick the change up.
  *
  * WHY THIS SHAPE
  * - Apps Script cannot answer a CORS preflight, so the app posts with
