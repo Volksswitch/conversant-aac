@@ -120,6 +120,7 @@
     "sideLayoutSelect": "How the Express Panel and keyboard are laid out when they sit down one side.",
     "noSaveDefaultInput": "Begin every conversation without saving it. You can still change your mind for one conversation at a time.",
     "responsesPerCategoryInput": "Whether you are offered four suggested responses, or eight.",
+    "cardTextModeInput": "Chooses whether each card shows the full response, a short version of it, or both together.",
     "choiceChipMaxInput": "How many of the other person's choices can appear as buttons on your Express Panel.",
     "silenceThresholdInput": "How long the other person has to pause before the app asks the AI for suggestions. Zero means as soon as it hears them stop.",
     "autoRelistenInput": "Start listening again on its own after you speak, so you need not press Listen every time.",

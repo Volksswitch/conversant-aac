@@ -215,6 +215,23 @@ const CATEGORY_SLOTS = ['PREFERRED', 'DISPREFERRED', 'INITIATIVE', 'REPAIR'];
 let cardsPerCategory = 1;
 export function setCardsPerCategory(n) { cardsPerCategory = Number(n) === 2 ? 2 : 1; }
 
+// Which of the two forms of a suggestion the cards show (Settings -> Conversation).
+// Applied as a class on the palette container so the CHOICE IS PURE CSS: every card
+// is built the same way and carries both forms, so changing the setting mid-turn
+// re-styles the cards already on screen instead of needing a fresh generation.
+// Only what is VISIBLE changes -- the accessible name always carries the full
+// wording, because that is what will actually be spoken.
+const CARD_TEXT_CLASSES = {
+    'full':           'cards-full',
+    'condensed':      'cards-condensed',
+    'both-full':      'cards-both-full',
+    'both-condensed': 'cards-both-condensed',
+};
+export function setCardTextMode(mode) {
+    const cls = CARD_TEXT_CLASSES[mode] || CARD_TEXT_CLASSES['both-full'];
+    Object.values(CARD_TEXT_CLASSES).forEach(c => responseOptions.classList.toggle(c, c === cls));
+}
+
 // A card shows ONLY the RESPONSE TEXT, large and easy to read (Ken): the slot
 // color + fixed position carry the category, so the category pill is gone, and
 // every card is spoken instantly, so the latency dot is gone too. `half` shrinks
@@ -230,15 +247,23 @@ function buildResponseCard(response, index, onSelect, half) {
     card.className = `response-card ${meta.cls}${half ? ' response-card-half' : ''}`;
     // Category isn't shown visually, so name it in the accessible label only.
     card.setAttribute('aria-label', `${meta.badge}: ${text}`);
-    // TEMPORARY (Ken, August 19 2026) — the model has always returned a short
-    // glanceable label ("hint") alongside each response and the card has never shown
-    // it, so nobody could judge whether it is any good. Show it, unconditionally, so
-    // the team can see it in real use; whether it stays, and what controls it, is a
-    // later decision. Suppressed when it would merely repeat the card's own text (a
-    // round-trip repair card has no text yet and is already SHOWING its hint), and
-    // hidden from screen readers, where it is pure duplication of the label above.
+    // The model returns a short glanceable label ("hint") alongside the full wording.
+    // BOTH are always put in the card and the setting decides which are visible
+    // (see setCardTextMode) -- so the user's choice costs no round trip and cannot
+    // leave a card showing something the model was never asked for.
+    //
+    // `has-hint` is the load-bearing part: it marks the cards that HAVE two distinct
+    // forms, and it is the only thing the "short label only" rule may hide the full
+    // wording on. A suggestion whose label is its own wording -- an opener, a
+    // wind-down, a goodbye, a repair card with no text yet -- carries no hint span,
+    // so it keeps showing its words in every mode. A blank card is a response the
+    // user cannot make, which is a worse failure than a card that is too wordy.
+    //
+    // The hint is hidden from screen readers throughout: the card's accessible name
+    // already carries the full wording, so reading the label too is duplication.
     const hint = (response.hint || '').trim();
     const showHint = hint && hint.toLowerCase() !== text.trim().toLowerCase();
+    if (showHint) card.classList.add('has-hint');
     card.innerHTML = `<span class="response-text">${escapeHtml(text)}</span>`
         + (showHint ? `<span class="response-hint" aria-hidden="true">${escapeHtml(hint)}</span>` : '');
     card.addEventListener('click', () => {

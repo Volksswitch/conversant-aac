@@ -498,6 +498,7 @@ function initApp() {
     // a tour is running.
     document.addEventListener('click', handleTourPress, true);
     ui.setCardsPerCategory(storage.loadResponsesPerCategory()); // 8-card mode → 8 reserved slots
+    ui.setCardTextMode(storage.loadCardTextMode());   // full / short / both, per the user's choice
     ui.clearResponseOptions(); // render the reserved empty card footprint at rest
     renderExpressPanel();
     expressEditor.init(document.getElementById('expressEditor'), {
@@ -4139,6 +4140,7 @@ function openSettings() {
     const subsequentDelayInput = document.getElementById('subsequentDelayInput');
     const maxPlaceholdersInput = document.getElementById('maxPlaceholdersInput');
     const responsesPerCategoryInput = document.getElementById('responsesPerCategoryInput');
+    const cardTextModeInput = document.getElementById('cardTextModeInput');
     const choiceChipMaxInput = document.getElementById('choiceChipMaxInput');
 
     showRedactedKey(apiKeyInput, storage.loadApiKey());
@@ -4148,6 +4150,7 @@ function openSettings() {
     autoRelistenInput.checked = storage.loadAutoRelisten();
     listenChimeInput.checked = storage.loadListenChime();
     responsesPerCategoryInput.value = storage.loadResponsesPerCategory();
+    cardTextModeInput.value = storage.loadCardTextMode();
     choiceChipMaxInput.value = storage.loadChoiceChipMax();
     const keyboardMode = storage.loadKeyboardMode();
     const keyboardRadio = document.querySelector(`input[name="keyboardMode"][value="${keyboardMode}"]`);
@@ -4747,6 +4750,13 @@ function openSettings() {
         ui.setRegenerateLabel((n === 2 ? 2 : 1) * 4); // "New 4" ↔ "New 8"
         ui.setCardsPerCategory(n);
         ui.clearResponseOptions(); // re-render the reserved footprint (4 vs 8 slots)
+    };
+    cardTextModeInput.onchange = () => {
+        storage.saveCardTextMode(cardTextModeInput.value);
+        // Purely a re-style of the cards already on screen -- no regeneration, so a
+        // user can flip through the four modes mid-conversation and see the real
+        // suggestions in each without spending a round trip or losing the palette.
+        ui.setCardTextMode(cardTextModeInput.value);
     };
     choiceChipMaxInput.onchange = () => {
         storage.saveChoiceChipMax(choiceChipMaxInput.value);

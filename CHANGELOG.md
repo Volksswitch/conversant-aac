@@ -26,6 +26,13 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- You can now choose what a response card shows. Each suggestion comes with the
+  full wording the app will speak and a short version of it, and Settings ->
+  Conversation -> "What a response card shows" lets you pick between the full
+  response, the short version, both with the full response larger, or both with
+  the short version larger. Cards that have no separate short version, such as
+  the conversation starters and goodbyes, always show their words.
+
 ## Version 0.7.8
 
 - The response options now show when the app is asking the AI for a new set. A marker travels along the top of the response area and the cards fade gently in and out, so a fresh set arriving is never a surprise. Before, the options could change while you were still reading them, with nothing to warn you.

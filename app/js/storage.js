@@ -798,6 +798,34 @@ export function saveResponsesPerCategory(n) {
     saveSettings(settings);
 }
 
+// --- What a response card shows ---
+// The AI returns two forms of every suggestion: the FULL wording it will speak,
+// and a short CONDENSED label. Which of them the card shows is the user's call,
+// because the trade is theirs to make: the full wording is what actually gets
+// said (no surprises), the condensed label is far faster to read, and reading
+// speed is the whole reason this product exists.
+//
+//   'full'            full wording only
+//   'condensed'       short label only
+//   'both-full'       both, full wording the prominent one (default)
+//   'both-condensed'  both, short label the prominent one
+//
+// SAFETY RULE, enforced in ui.js and not here: a card must never come up blank.
+// Where a suggestion has no distinct short label -- the openers, wind-downs and
+// goodbyes are their own labels -- the full wording is shown whatever this says.
+const CARD_TEXT_MODES = ['full', 'condensed', 'both-full', 'both-condensed'];
+
+export function loadCardTextMode() {
+    const v = loadSettings().cardTextMode;
+    return CARD_TEXT_MODES.includes(v) ? v : 'both-full';
+}
+
+export function saveCardTextMode(mode) {
+    const settings = loadSettings();
+    settings.cardTextMode = CARD_TEXT_MODES.includes(mode) ? mode : 'both-full';
+    saveSettings(settings);
+}
+
 // --- Choice chips (Express Panel) ---
 // The MOST chips to show at once when the partner offers a set of choices. They
 // take cells only while a set is on offer and only as many as there are choices
