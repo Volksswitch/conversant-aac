@@ -1,0 +1,140 @@
+CONVERSANT AAC — PROBLEM REPORT
+Generated: 2026-08-20T10:15:00.000Z
+Version: 0.7.8 (build abc1234)
+
+WHAT HAPPENED (in the tester's words)
+  The cards changed while I was reaching for one.
+
+════════ USAGE SUMMARY ════════
+HOW MUCH IT IS BEING USED
+  Conversations           12  (2 of them practice)
+  Days used               4 over 30 days
+  First / last            7/20/2026  ..  8/20/2026
+  Days since last use     1
+  Per week (days used)    21.0
+  Typical length          10 turns, 5 min
+
+WEEK BY WEEK
+    Week  Days  Conversations  Things said  From a card
+       1     2             10          120          70%
+       2     0              0            0            —
+       3     1              1           15          60%
+       4     1              1           10          50%
+
+HOW OFTEN A SUGGESTION FITTED
+  Things you said         145
+  Chosen from a card      100  (69%)
+  Typed or a fixed phrase 45
+  Where the words came from:
+    (not recorded)       130
+    card                 12
+    control              3
+  Which kind of reply:
+    INITIATIVE           6  (40%)
+    PREFERRED            5  (33%)
+    REPAIR               4  (27%)
+
+HOW LONG THE OTHER PERSON WAITED
+  Typical wait            0.3s
+  Waits over 4 seconds    20 of 140
+  Reading and choosing    6.0s typical, over 10 turns
+  What there was to read  4 cards, about 20 words each
+  By what heard them:
+    (not recorded)       120 turns, typical wait 0.3s
+    browser              20 turns, typical wait 18.0s
+
+WHO, WHERE AND HOW YOU FELT
+  People named            2, of whom 1 in more than one conversation
+  Turns with a place      3  (1 place(s))
+  Turns with a feeling    40  (3 feeling(s))
+
+HOW MUCH YOU HAVE MADE IT YOURS
+  About Me answered       20 of 68  (29%)
+  People / places         2 / 1
+  Express buttons yours   3 of 34
+  Sound Check answered    0
+  Saved settings profiles 1
+
+PROBLEMS
+  Errors recorded         3, in 1 conversation(s)
+    generateOptions      3
+
+════════ ERRORS AND TRANSCRIPTS ════════
+Conversant AAC — error report
+App version: 0.7.8
+Generated: 2026-08-20T10:15:00.000Z
+
+(no errors recorded)
+
+════════ WHAT HAPPENED JUST BEFORE (no words) ════════
+10:00:00.000  conversation_started  practice=false
+10:00:05.000  checkpoint  n=1
+10:00:07.000  placeholder_spoken  n=1
+10:00:12.000  generation  ms=6500
+10:00:12.001  palette_shown  kind=ai cards=4 words=40
+10:00:17.000  checkpoint  n=2 sinceMs=12000
+10:00:22.000  generation  ms=5000
+10:00:22.001  palette_refreshed  kind=ai cards=4 words=38
+10:00:26.000  checkpoint  n=3 sinceMs=1900
+10:00:27.500  checkpoint  n=4 sinceMs=1500
+10:00:29.000  checkpoint  n=5 sinceMs=1500
+10:00:30.000  generation_superseded  ms=5500
+10:00:31.000  generation_superseded  ms=5200
+10:00:32.000  generation_superseded  ms=6000
+10:00:33.000  generation  ms=6100
+10:00:33.001  palette_refreshed  kind=ai cards=4 words=42
+10:00:37.000  decide  kind=card ms=4000
+10:00:37.001  card_selected  index=1 slot=PREFERRED decideMs=4000
+10:00:50.000  checkpoint  n=6 sinceMs=13000
+10:00:56.000  generation  ms=6000
+10:00:56.001  palette_shown  kind=ai cards=4 words=44
+10:01:03.000  generation  ms=5900
+10:01:03.001  palette_refreshed  kind=ai cards=4 words=39
+10:01:10.000  generation  ms=6200
+10:01:10.001  palette_refreshed  kind=ai cards=4 words=41
+10:01:18.000  generation  ms=6300
+10:01:18.001  palette_refreshed  kind=ai cards=4 words=43
+
+════════ SYSTEM INFORMATION ════════
+APP
+  version: 0.7.8
+  build: abc1234
+  url: https://conversant.volksswitch.org/
+  generated: 2026-08-20T10:15:00.000Z
+
+PLATFORM
+  summary: desktop · browser tab · listening available
+  standalone: false
+  iosShell: null
+
+DISPLAY
+  layoutViewport:
+    w: 900
+    h: 700
+  screen:
+    w: 1440
+    h: 960
+  devicePixelRatio: 2
+  orientation: landscape-primary
+
+SPEECH
+  recognition:
+    apiPresent: true
+    usable: true
+    reason: null
+  sttProvider: builtin
+  ttsProvider: builtin
+  voiceCount: 22
+
+STORAGE
+  backend: data folder
+  folder: true
+  persisted: false
+
+SETTINGS
+  lastSeenVersion: 0.7.8
+  apiKey: (set - not included)
+  silenceThreshold: 1.5
+  autoRelisten: true
+
+(No API keys are included in this report.)

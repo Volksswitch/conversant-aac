@@ -1381,6 +1381,59 @@ Rules that keep it correct: the merge runs only on **load/adopt**, never in `set
 
 ---
 
+## Reading tester reports — trigger phrase "evaluate reports" (Ken, August 21 2026), BUILT
+
+`scripts/evaluate-reports.mjs` reads the problem reports testers send and says what
+is in them. With no arguments it looks in `Reports/`, the Desktop and Downloads (on
+both the local profile and OneDrive) for `conversant-problem-report-*.txt`; a path
+or folder can be passed instead, and `--out <file>` writes rather than prints.
+Analysis is in three pure pieces under `scripts/report-eval/` with 20 tests.
+
+**It reports TWO kinds of thing, and separating them is the whole idea.** What the
+app did *to the tester*, and **which figures in the report not to believe**. The
+second exists because reading one real report on August 21 2026 turned up **five
+statistics that were wrong or unreadable**, and a wrong number is worse than a
+missing one — a missing number prompts a question and a wrong one does not.
+
+**⚠ THE FIVE, ALL STILL PRESENT IN THE SHIPPED SUMMARY — the tool flags them, it
+does not fix them.** Fixing them is separate work and has not been done.
+1. **"Per week" is an extrapolation from days used**, so 5 days across 44 reads as
+   *29.4 per week*. It is the figure that answers beta Question 1 (retention) and it
+   flatters exactly the tester who is drifting away.
+2. **"Typical wait" is contaminated by pre-July-2026 logs**, where both halves of an
+   exchange were written at the same moment, so the gap is an artifact. One real
+   report showed **0.2s** against **22.0s** on the turns measured properly. This
+   answers Question 3 — *does it keep up* — and it reads low.
+3. **"Chosen from a card" and "where the words came from" count different
+   populations** (172 vs 17 in one report) and are printed four lines apart.
+4. **The "which kind of reply" percentages are of the turns that carry a slot**,
+   printed under a heading of every turn — 41% meant 7 of 17, under a total of 249.
+5. **The errors section can say "(no errors recorded)" while the summary says 7.**
+   They read different stores: the summary reads the saved conversations on disk,
+   the errors section a copy the browser holds. **The consequence is the serious
+   one — no transcripts are attached**, which is the only material that could settle
+   a complaint about what was said.
+
+**⚠ AND THE STRUCTURAL LIMIT, which the tool prints last on every report and must
+never stop printing: the trace carries no words.** That was the right call (August 5
+2026), and it means the commonest class of complaint — a mishearing, a wrong
+suggestion, the app writing down its own speech — **cannot be confirmed or ruled out
+from a report at all.** So a check that finds nothing is rendered as *"not visible
+here"*, never as *"no problem"*: the echo check does exactly this, and on the real
+report it correctly reported **absent** rather than inventing a plausible story
+around the tester's own words. **When a report cannot answer the question, the next
+move is to ask the tester for one saved conversation file.**
+
+**What it found on the first real report, which is why it exists:** 32 sets of
+suggestions in 20 minutes, **15 of them (47%) replaced before the tester touched
+anything**, a set lasting a typical 11s against a 7.8s read-and-choose time, and a
+final stretch of five sets with nothing chosen at all — immediately before she wrote
+in. That is her complaint, quantified, and it traces to **a decision already written
+down and never built**: the UI design says palette updates queue until a selection
+boundary, and the refresh is in fact immediate and unconditional. Not fixed.
+
+---
+
 ## Usage Instrumentation / Metrics (design recorded July 12 2026; NOT built) — BETA-gated
 
 **Origin (Ken, July 12 2026).** A developer of a similar (now-shut-down) AI-AAC product told Ken: *"the biggest lesson we learned was that there is no substitute for user feedback… the only real way to measure success is people consistently using the feature, something we (unfortunately) never really achieved."* Ken's response: build **instrumentation** into the product so that, **on request**, beta testers can report usage numbers (and durations) of the app's features. Agreed as a design item; write-up below.
