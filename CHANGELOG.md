@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.7.12
+
 - Five numbers on the Troubleshooting tab were wrong or hard to read, and are
   fixed. "Per week" was scaling a few days of use up to a whole week, so light
   use could read as heavy use; it is gone, and the week-by-week table below it
