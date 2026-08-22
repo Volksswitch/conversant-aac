@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.7.13
+
 - When the other person offers you a choice of answers, those choices now
   appear at the bottom of the Express Panel instead of at the top. Before, they
   pushed every one of your buttons along a place or two for the rest of that

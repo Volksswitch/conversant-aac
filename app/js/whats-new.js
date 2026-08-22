@@ -21,6 +21,9 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.7.13": [
+    "When the other person offers you a choice of answers, those choices now appear at the bottom of the Express Panel instead of at the top. Before, they pushed every one of your buttons along a place or two for the rest of that turn, so “Yes” was not where you left it and the last few buttons dropped off the panel. Now nothing moves — the choices simply appear in the last few spaces, and whatever was there comes back when the turn ends."
+  ],
   "0.7.12": [
     "Five numbers on the Troubleshooting tab were wrong or hard to read, and are fixed. \"Per week\" was scaling a few days of use up to a whole week, so light use could read as heavy use; it is gone, and the week-by-week table below it already showed the honest version. The typical wait now skips conversations saved before the app could time a wait at all, which were pulling it down to well under a second; it says how many it skipped. The two lists showing where your words came from and which kind of reply you chose now say how many turns they cover, so they no longer look like they contradict the total above them. And the error line now says the count is everything since you began, which is a different figure from the one in a weekly report."
   ],
