@@ -28,7 +28,7 @@ const fs = require('fs');
 const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
         Header, Footer, AlignmentType, LevelFormat,
         HeadingLevel, BorderStyle, WidthType, ShadingType,
-        PageNumber } = require('docx');
+        PageNumber, ImageRun } = require('docx');
 
 const PAGE_W = 12240;
 const MARGIN = 1440;
@@ -71,6 +71,20 @@ function numBold(label, text, ref) {
     });
 }
 function emptyPara() { return new Paragraph({ children: [] }); }
+
+// Figures are produced by capture-express-panel-figures.js from
+// "Express Panel Figures.html" (re-run it after editing that file). Scaled to the
+// 6.5in text column: 820 css px wide becomes 624 px, a factor of 0.761.
+function figure(file, w, h, caption) {
+    const k = 624 / w;
+    return [
+        new Paragraph({ spacing: { before: 120, after: 60 }, alignment: AlignmentType.CENTER,
+            children: [new ImageRun({ type: 'png', data: fs.readFileSync(file),
+                transformation: { width: Math.round(w * k), height: Math.round(h * k) } })] }),
+        new Paragraph({ spacing: { before: 0, after: 200 }, alignment: AlignmentType.CENTER,
+            children: [new TextRun({ text: caption, italics: true, size: 18, color: '666666' })] }),
+    ];
+}
 
 function simpleTable(headers, rows, widths) {
     const headerCell = (text, w) => new TableCell({
@@ -159,15 +173,25 @@ const doc = new Document({
             new Paragraph({ spacing: { before: 0, after: 60 },
                 children: [new TextRun({ text: "Express Panel Design", bold: true, size: 32, color: "444444" })] }),
             new Paragraph({ spacing: { before: 0, after: 80 },
-                children: [new TextRun({ text: "How the panel changes with who the user is talking to and where they are — and why it has no folders", italics: true, size: 24, color: "555555" })] }),
+                children: [new TextRun({ text: "How the panel changes with the partner and the place — and why it has no folders", italics: true, size: 24, color: "555555" })] }),
             new Paragraph({ spacing: { before: 0, after: 320 },
-                children: [new TextRun({ text: "Kenneth R. Hackbarth  |  Volksswitch.org  |  August 2026", size: 20, color: "808080" })] }),
+                children: [new TextRun({ text: "Kenneth R. Hackbarth  |  Volksswitch.org  |  August 2026  |  Last updated August 22, 2026", size: 20, color: "808080" })] }),
 
             // ===== 1 =====
             heading1("1. What This Is For"),
-            para("Two questions arrived on the same day, and they turn out to be the same question. The first was ours: the panel of quick phrases should be able to change depending on who the user is talking to and where they are. The second came from outside: should the panel have pages or folders, so that some buttons open other buttons instead of speaking?"),
-            para("Both are answers to one complaint, and it is a real complaint that will be heard from every tester eventually — there are more things I want to say than there are buttons to say them with. The difference is where the work lands. Folders ask the user to build a filing system, remember it, and spend taps walking through it. Context asks the app to use what it already knows about the situation and put the right words on the panel before the user reaches for them."),
-            para("This document takes a position on the second question, sets out the design for the first, and records what follows from both. It is a design, not a description: none of it is built yet."),
+            para("Two questions arrived on the same day, and they turn out to be the same question. The first was ours: the panel of quick phrases should be able to change depending on who the user is talking to and where they are. The second came from a speech and language therapist: should the panel have pages or folders, so that some buttons open other buttons instead of speaking?"),
+            para("Both are answers to one complaint — there are more things to say than there are buttons to say them with. The difference is where the work lands. Folders ask the user to build a filing system, remember it, and spend taps walking through it. Context asks the app to use what it already knows about the situation and put the right words on the panel before the user reaches for them."),
+            para("This document takes a position on the second question, sets out the design for the first, and records what follows from both. It is a design, not a description: apart from one fix released on August 22 2026, none of it is built."),
+            heading2("1.1 Words used here"),
+            simpleTable(
+                ["Term", "Means"],
+                [
+                    ["User", "The person using the app — the one who cannot speak"],
+                    ["Partner", "The person on the other side of this conversation. Always that, never anybody else"],
+                    ["People I Know", "The list of people the app holds. Some of them will be partners; some are only ever subjects of conversation"],
+                    ["Button position", "One button-shaped space in the panel grid. How many there are, and how big, comes from the keyboard layout the user has chosen"],
+                    ["Band", "A group of button positions that share a rule about when their contents change. Bands are a way of grouping positions, not a change to the grid"],
+                ], W2),
 
             // ===== 2 =====
             heading1("2. What the Panel Is, and What It Is Not"),
@@ -181,126 +205,143 @@ const doc = new Document({
                 ], W3),
             emptyPara(),
             lead("The panel is the fast lane, not the vocabulary. ",
-                "In a traditional AAC app the grid of buttons is the whole communication channel, so it has to hold everything a person might ever say, and folders are the only way to fit that on a screen. Here the grid is one of three routes and the narrowest of them. It exists for the handful of things that must be instant: yes, no, wait, help, thank you, the greeting for the person in front of you. Breadth is the response cards' job."),
+                "In a traditional AAC app the grid of buttons is the whole communication channel, so it has to hold everything a person might ever say, and folders are the only way to fit that on a screen. Here the grid is one of three routes and the narrowest of them. It exists for the handful of things that must be instant: yes, no, wait, help, thank you, the thing this user always asks for here. Breadth is the response cards' job."),
             para("That distinction is the reason the answer below comes out the way it does. If the panel is ever carrying enough vocabulary to need a filing system, something upstream has failed — either the response cards are not good enough, or the app is being used as a small traditional AAC device rather than as a conversation tool."),
 
             // ===== 3 =====
             heading1("3. Pages and Folders"),
             heading2("3.1 The decision"),
             lead("No folders, no pages, and no button whose job is to reveal other buttons. ",
-                "Ken's instinct on being asked was that it sounded like a traditional AAC app and that the Express Panel is not trying to be one. That is right, but the phrasing gives away more ground than it needs to, because it reads as a matter of taste. It is not: folders conflict with three of this product's stated rules at once, and they land hardest on exactly the users the product is for."),
+                "The first reaction on being asked was that it sounded like a traditional AAC app and that the Express Panel is not trying to be one. That is right, but as phrased it reads as a matter of taste, and the next person to ask will simply disagree about taste. The grounds below are not taste."),
             heading2("3.2 Why not"),
-            numBold("It puts a decision in front of the fastest thing in the app. ", "The panel's entire value is that a phrase is one tap away with nothing to think about. A folder makes the common case two taps, and the first of them is a choice: which folder is it in? For a user with limited motor control, a tap is not free — it costs effort and carries a real chance of hitting the wrong cell.", "why"),
-            numBold("It breaks spatial stability at its weakest point. ", "The rule is that geometry never moves, and that what sits behind a given hole should stay put wherever it reasonably can. A folder is a machine for making the same hole mean different things at different times, with no signal on the plastic and none on the screen unless cells are spent on one.", "why"),
-            numBold("It creates a mode, and modes strand people. ", "A panel that can be on page two can be left on page two. The user reaches for the button that has been in the same place for six months, and it is not there — mid-conversation, with somebody waiting. Every other part of this app has been designed to avoid exactly that, which is why editing is barred during a conversation and why the response cards are never emptied without being replaced.", "why"),
-            numBold("A mis-hit on a folder button is a different kind of accident. ", "A stray tap on a phrase says one wrong word, which is recoverable and often not even noticed. A stray tap on a folder replaces the whole panel. This is the same reasoning that keeps the tap-to-define behavior out of conversations: a cell whose consequence is structural does not belong next to cells whose consequence is a word.", "why"),
+            numBold("It puts a decision in front of the fastest thing in the app. ", "The panel's entire value is that a phrase is one tap away with nothing to think about. A folder makes the common case two taps, and the first of them is a choice: which folder is it in? For a user with limited motor control, a tap is not free — it costs effort and carries a real chance of hitting the wrong button.", "why"),
+            numBold("It creates a mode, and modes strand people. ", "A panel that can be on page two can be left on page two. The user reaches for the button that has been in the same place for six months, and it is not there — mid-conversation, with somebody waiting. Note the qualifier, because it matters: this is an objection to a page that STAYS. A page that returns to the base panel by itself after one tap does not have this problem, which is exactly where section 3.4 ends up.", "why"),
+            numBold("Nothing on the device says which page is showing. ", "The user has to look and read to find out, which is the cost the panel exists to avoid. Putting an indicator on screen, or a way back, spends button positions that could have held words.", "why"),
+            numBold("A mis-hit on a folder button is a different kind of accident. ", "A stray tap on a phrase says one wrong word, which is recoverable and often not even noticed. A stray tap on a folder replaces the whole panel. This is the same reasoning that keeps the tap-to-define behavior out of conversations: a button whose consequence is structural does not belong next to buttons whose consequence is a word.", "why"),
             numBold("It gets much worse under scanning and eye gaze. ", "Direct select is today's access method, not the last one. Under scanning, every level of hierarchy multiplies the time to reach a phrase. Traditional AAC accepts that cost because it has no alternative; designing it in now means paying it hardest in the access methods we have not built yet.", "why"),
-            numBold("Somebody has to build and maintain the filing system. ", "Editing the panel is already the least popular part of setting the app up. Folders add categories, names, and the question of where a phrase belongs — work that grows with the vocabulary and never finishes.", "why"),
+            numBold("Somebody has to build and maintain the filing system, and the partner-and-place work multiplies it. ", "This is the strongest of the objections. Editing the panel is already the least popular part of setting the app up. Folders add categories, names, and the question of where a phrase belongs. Then the design in section 5 arrives, and every folder is potentially a different folder for a different partner or place — so the filing system is not merely larger, there is a new one per situation, and the work already done may have to be redone.", "why"),
             numBold("The two mistakes are not equally reversible. ", "Refusing folders and being wrong costs a later feature. Shipping folders and being wrong costs taking something away from people who have already built their vocabulary inside it. When one direction is recoverable and the other is not, start with the recoverable one.", "why"),
-            heading2("3.3 What the request is actually asking for"),
-            para("Turning down the mechanism must not turn down the need, and there are two needs inside this one request. Separating them is what makes the answer constructive rather than a refusal."),
-            simpleTable(
-                ["The underlying need", "What it really is", "Our answer"],
-                [
-                    ["I have more phrases than cells", "An overflow problem, and the person asking said so — they suggested folders could hold the overflow", "Context bands (section 5) plus an honest overflow rule (section 9). The right words are already on the panel, so there is nothing to page to"],
-                    ["I need a set I rarely use but must reach deliberately", "Not a folder. A named set the user summons, like an emergency card or a specific order at a specific counter", "A summoned overlay (section 3.4), if it is ever needed at all"],
-                ], W3),
             emptyPara(),
-            para("Almost every instance of the request is the first row. It is worth asking which one is meant before answering, because the answers are different and only one of them is a refusal."),
+            lead("One ground that was claimed and is WRONG, recorded so it is not repeated: that folders break the keyguard. ",
+                "They do not. A keyguard is a sheet of plastic with holes in it — a physical barrier, carrying no labels of its own — so as long as the grid keeps its shape it goes on working whatever the buttons underneath say. Paging changes what is behind the holes, not where the holes are. The objection is about the user knowing which page they are on and paying taps to get there, and it has to be argued on those grounds alone."),
+            heading2("3.3 What the request is actually asking for"),
+            para("The complaint behind it is not that a user's own phrases will not fit. It comes from experience with traditional AAC users in a largely transactional world. The partner asks what the user would like to eat, and the user needs access to every sweet or fruit or pudding they might name — which can be twenty items. The traditional device answers with a Food button that opens a page of twenty."),
+            lead("The Conversant answer to that exchange is a different move: ask. ",
+                "“What have you got?” hands the enumeration back to the partner, who lists what is actually available, and the app already turns a list the partner offers into buttons. Nobody had to author twenty foods, nothing goes stale when the menu changes, and the user is never offered something that is not there. The list arrives from the room rather than from a filing cabinet."),
+            lead("The gap is the other direction, and it is real. ",
+                "When the USER opens — “I need something to eat” — the partner's natural reply is “what would you like?”, and the user is back to needing the words. The answer is the same asking move one turn later: “what have you got?”, or better, a card that names the user's own preferences in the order they prefer them — “Have you got crackers, or a banana?” The About Me profile holds those preferences, so the response cards can carry them and the regenerate button can page through more. What none of that matches is the immediacy of a page of twenty for a user who already knows exactly which one they want. That residual is genuine, and it is an argument for making composition faster rather than for adding navigation to the panel."),
+            simpleTable(
+                ["What is wanted", "What it really is", "The answer"],
+                [
+                    ["Twenty foods when I am asked what I want", "A category the partner can already enumerate", "Ask them; their list becomes buttons (section 6)"],
+                    ["Twenty foods when I raise it myself", "The same, one turn later, plus a preference list the app already holds", "Cards built from the user's own preferences, in preference order. Residual: less immediate than a page"],
+                    ["More phrases than positions", "An overflow problem", "The Filtered band, plus an honest cap (section 9)"],
+                    ["A set I rarely use but must reach deliberately", "Not a folder. A named set that is summoned and leaves again", "Section 3.4, if it is ever needed at all"],
+                ], W3),
             heading2("3.4 The one concession, if we ever need it"),
-            para("There is a shape that gives the second need what it wants without any of the costs above, and the app already uses it for something else. The rule for infrequent functions is that they become overlays rather than permanent fixtures, and the rule for an overlay is that it lines up with the same holes as the screen underneath, which is how one physical keyguard works for both. That is exactly what the on-screen keyboard does."),
-            lead("So the concession would be an overlay, not a folder. ",
-                "One deliberate action brings up a full-screen set of phrases on the same grid; anything dismisses it; it never appears on its own, and no cell of the base panel changes its meaning. It is reached the way Settings is reached, not the way a folder is reached. This is not proposed for building — it is recorded so that if the need turns out to be real, we build the version that costs nothing rather than the version that costs the panel."),
+            para("There is a shape that serves the last row of that table without any of the costs above, and the app already uses it for something else. The rule for infrequent functions is that they become overlays rather than permanent fixtures, and the rule for an overlay is that it lines up with the same grid as the screen underneath, so one keyguard works for both. That is exactly what the on-screen keyboard does."),
+            lead("So the concession would be a summoned overlay, not a folder. ",
+                "One deliberate action brings up a full-screen set of phrases on the same grid; it leaves after one selection or on any dismissal; it never appears on its own, and no position in the base panel changes its meaning. Being an overlay in the ordinary sense of the word, it can be built once and staged rather than assembled each time it is shown. It is reached the way Settings is reached, not the way a folder is reached. This is not proposed for building — it is recorded so that if the need turns out to be real, we build the version that costs nothing rather than the version that costs the panel."),
             heading2("3.5 What would change the decision"),
-            para("Stated in advance, so it is evidence that reopens this and not enthusiasm. If testers with a full panel and their context bands in use are still routinely reaching for the composer to say things they say often, the panel is genuinely too small and the question is open again. If instead they are using a handful of cells and leaving the rest, then the shortage was never real."),
+            para("Stated in advance, so it is evidence that reopens this and not enthusiasm. If testers with a full panel and their Filtered band in use are still routinely reaching for the composer to say things they say often, the panel is genuinely too small and the question is open again. If instead they are using a handful of positions and leaving the rest, then the shortage was never real."),
 
             // ===== 4 =====
             heading1("4. The Better Answer: Context Instead of Navigation"),
-            para("The app already changes what is on the panel without anybody navigating anywhere. When the other person offers a choice — mild, moderate, or severe — those alternatives appear as buttons and then go away when the turn ends. Nobody had to file them, find them, or go back afterwards."),
+            para("The app already changes what is on the panel without anybody navigating anywhere. When the partner offers a choice — mild, moderate, or severe — those alternatives appear as buttons and then go away when the turn ends. Nobody had to file them, find them, or go back afterwards."),
             lead("That is the good version of a folder, and the difference is the trigger. ",
                 "A folder is a place the user has to go. Context is a fact the app already has. Both put different words behind the same holes; only one of them asks the user to remember where anything is, to spend a tap, or to find their way back."),
-            para("The app is about to know a great deal more about the situation. Today the user taps who they are with and where they are, mainly so the AI can suggest better replies. Later the same facts will arrive on their own from voice and face recognition, from location, and from what the calendar says should be happening. Once those facts exist, using them to put the right phrases on the panel costs the user nothing at all — and unlike a filing system, the work goes down over time rather than up."),
-            para("One more thing follows from this, and it matters for how the two are explained together. A folder is the user's taxonomy: they build it, they maintain it, and they are the only one who understands it. Context is shared: the same signal that changes the panel also tells the AI who is being spoken to and what the setting is, so one act of setup improves both routes at once."),
+            para("The app is about to know a great deal more about the situation. Today the user taps who the partner is and where they are, mainly so the AI can suggest better replies. Later the same facts will arrive on their own from voice and face recognition, from location, and from what the calendar says should be happening. Once those facts exist, using them to put the right phrases on the panel costs the user nothing at all — and unlike a filing system, the work goes down over time rather than up."),
+            para("One more thing follows, and it matters for how the two are explained together. A folder is the user's own taxonomy: they build it, maintain it, and are the only one who understands it. Context is shared — the same signal that changes the panel also tells the AI who the partner is and what the setting is, so one act of setup improves both routes at once."),
 
             // ===== 5 =====
             heading1("5. The Design"),
             heading2("5.1 Three bands"),
-            para("The grid does not change. Same number of cells, same sizes, same positions, so a keyguard cut today still fits. What changes is that the cells are grouped into three bands with different rules."),
+            para("The grid does not change. Same number of button positions, same sizes, same places, so a keyguard cut today still fits. What changes is that the positions are grouped into three bands with different rules."),
+            ...figure('ep-fig1.png', 820, 395, "Figure 1 — The three bands. Illustrative, at a 9x4 layout; the real grid comes from the keyboard layout the user has chosen."),
             simpleTable(
                 ["Band", "What is in it", "Does it change?"],
                 [
-                    ["Controls", "The partner, place and feeling toggles, and In my own words", "Never"],
-                    ["Always", "The plumbing: yes, no, please, thank you, wait, help, the device notice", "Never"],
-                    ["Context", "The phrases that suit this person, this place, or both", "Only this band, and only on a deliberate act"],
+                    ["Always", "The words that must never move: yes, no, please, thank you, wait, help, the device notice", "Never"],
+                    ["Filtered", "Phrases filtered by the partner and the place currently selected", "Only this band, and only when a selection changes"],
+                    ["Context", "The buttons that never speak: partner, place, feeling, and the partner's offered choices", "Only while a choice is on the table"],
                 ], W3),
             emptyPara(),
-            lead("The controls band is fixed for a reason that is not aesthetic. ",
-                "The toggles that set the partner and the place are themselves buttons on this panel. If they could be swapped away by a context, the user could choose a context that hides the only way out of it. Any design where selecting a place can remove the place buttons is a trap, and it is an easy one to build by accident."),
-            para("The always band is the answer to the worst thing a swapping panel can do. Wherever the user is and whoever they are with, yes is in the same hole. Those are the words that get used dozens of times a day and are the most costly to hunt for."),
-            heading2("5.2 Layering, not replacement"),
-            para("The obvious way to build this is a whole panel per situation: one for Mum, one for the clinic, one for Mum at the clinic. It should not be built that way. Whole panels make the cost of every new situation the whole panel, and they make the number of situations multiply — every person against every place."),
-            para("Instead the context band is filled by stacking. The default fills it. If the place is known, that place's phrases go on top. If the person is known, theirs go on top of that. A set defined for a particular person in a particular place, if one exists at all, goes on last. Cell by cell, the most specific definition wins."),
-            simpleTable(
-                ["Situation", "What fills the context band"],
-                [
-                    ["Nothing set", "The default phrases. This is what a new user sees, and it is what the panel does today"],
-                    ["Place only", "Default, with the place's phrases over the top"],
-                    ["Person only", "Default, with the person's phrases over the top"],
-                    ["Both", "Default, then the place, then the person, then a combined set if one has been made"],
-                ], W2),
+            lead("The dividing line is speaking against influencing, and it is what makes the whole thing learnable. ",
+                "A button in the Context band never says anything out loud — it tells the app who the partner is, where the user is, how they feel, or which alternative to focus on. Every other button on the panel speaks. That single sentence explains the layout to a supporter, and it is a safety property as well: a mis-hit in the Context band can never say something that cannot be taken back. It also explains something already true in the code that nobody had reasoned out — the offered choices ignore the double-tap safeguard, because that safeguard exists to guard speaking."),
+            para("Feeling sits in the Context band because it never speaks, but it does not filter the Filtered band. Only the partner and the place do that."),
+            lead("Whether the Always band earns its space is an open question, and the bands are switchable. ",
+                "It may turn out that the positions it holds are worth more to the Filtered band. Turning a band off does NOT re-cut the keyguard — bands are a way of grouping positions, not a change to the grid, so the buttons stay exactly where and what size they were; only how many positions each band is allotted changes. That makes this an ordinary setting rather than a Setup-tier one."),
+            heading2("5.2 The partner's offered choices go at the FRONT of the Context band"),
+            para("When the partner offers a menu, those alternatives appear as buttons and leave again when the turn ends. They belong in the Context band by the test above: tapping one does not speak, it re-asks the AI about that alternative."),
+            ...figure('ep-fig2.png', 820, 296, "Figure 2 — A three-way choice arriving. Nothing that speaks has moved."),
+            bullet("They take the FRONT of the band, not the end, and in solid color rather than a tint. The point is prominence: this is where the conversation is right now, and these buttons are both immediate and temporary. Everything else in that band is a standing selection that is not going anywhere."),
+            bullet("Nothing is reserved for them. At rest those positions hold the partner and place toggles as usual; the choices cover them for one turn. The toggles should therefore be ordered so that the ones a user might want mid-conversation — feeling, most likely — sit last and stay uncovered."),
+            bullet("The band cannot be narrower than four positions, because four is the most alternatives that will ever be shown. Below that, a four-way menu would have to drop one of the partner's own alternatives, and the standing rule is that those outrank anything the app added."),
             emptyPara(),
-            para("Three things follow from stacking, and they are the whole argument for it."),
-            bullet("Combinations mostly do not need to be made. The pharmacist you happen to know needs no set of their own: the pharmacy supplies the transactional phrases, the person supplies the personal ones, and the two compose. A combined set becomes a rare deliberate exception rather than the unit of work."),
-            bullet("No cell can go blank. If a person's set defines three of the six context cells, the other three keep what was underneath. This is not tidiness — a blank button is something the user cannot say, which is the same reason a response card is never allowed to come up empty."),
-            bullet("Both kinds of nothing behave the same on the panel. Whether a dimension is unset because it does not matter or because the user has not got round to it, the panel falls back to the default and works. The difference still matters to the AI and to the setup screens, but never to the person reaching for a button."),
-            heading2("5.3 The partner's own options are the top layer, not a fourth band"),
-            para("When the other person offers a menu — mild, moderate, or severe — those alternatives already appear as buttons on the panel and leave again when the turn ends. They are not a separate region and should not become one. They are simply the most specific layer of the same stack: what the partner said a moment ago is more specific than what is usually said with this person, in this place, or in general. One mechanism, five layers, and only the last of them transient."),
-            para("They were deliberately given no standing reservation — cells set aside and sitting blank when no menu is on the table are cells wasted for the whole of the rest of the day. Nothing here changes that. At rest the band holds the context phrases; the alternatives lie on top of them for one turn."),
-            para("Three things follow, and the first is a correction to how the app behaves today rather than a new requirement."),
-            bullet("Today the alternatives claim the leading cells of the WHOLE panel and push everything along, so a three-way menu moves every phrase on the panel three places and drops the last few off the end. For that turn, everything the user has learned about where things are is void. Confined to the band, everything outside it stays exactly where it is — including yes, no, and help. This was fixed on its own account and ahead of the rest, on August 22 2026 (section 11), because it was a fault in what people were already using."),
-            bullet("The band cannot be smaller than the most alternatives we will ever show, which is four. Below that, a four-way menu would have to drop one of the partner's own alternatives, and the standing rule is that the partner's alternatives outrank anything the app added. So four cells is a floor on the band, not a target."),
-            bullet("There is a conflict with standing roles that needs settling in front of a real panel. If the alternatives claim the front of the band they displace the first roles — the opener and the usual subject — which are the most learned cells in it. Claiming from the far end instead would put the transient thing over the least established roles. Neither can be argued to a conclusion from a chair."),
-            heading2("5.4 Standing roles, which is what makes swapping survivable"),
-            para("This is the part that decides whether the feature works or gets switched off. Each cell in the context band should carry a standing role, not just a phrase: the first is always the opener for this person or place, the second is always their usual subject, and so on. The words change; the kind of thing at that position does not."),
-            para("It is the same principle already settled for the response cards, where position tells you what kind of reply it is and never how good it is. Without it, a swapping band is a band whose meaning cannot be learned, and a keyguard user is left reading every cell every time — which is precisely the cost the panel exists to avoid. With it, the user is not learning that a particular hole says one particular sentence; they are learning that it is the thing they usually open with here."),
+            lead("This corrected a fault that was already shipped, and it was released on August 22 2026 ahead of everything else here. ",
+                "The choices used to take the leading positions of the WHOLE panel and push every phrase along, so a three-way menu moved every button two or three places for the duration of the turn and dropped the last few off the end. Confining them to one band fixes it. Measured in the running app: with three alternatives showing, no button position changed its size, shape or place."),
+            heading2("5.3 Filtering, not replacement"),
+            para("The obvious way to build the Filtered band is a whole set per situation: one for Mum, one for the surgery, one for Mum at the surgery. It should not be built that way. Whole sets make the cost of every new situation the whole band, and they make the number of situations multiply — every partner against every place."),
+            para("Instead each position is filled on its own. The app asks who has defined this position and takes the most specific answer available: the partner and place together if such a set exists, then the partner, then the place, then the phrases that apply when nothing is selected."),
+            ...figure('ep-fig3.png', 820, 455, "Figure 3 — Filling the band position by position. Nothing is drawn on top of anything; the app simply takes the most specific phrase defined for each position."),
+            para("Three things follow, and they are the whole argument for it."),
+            bullet("Combinations mostly do not need to be made. The pharmacist the user happens to know needs no set of their own: the pharmacy supplies the transactional phrases, the partner supplies the personal ones, and the two compose. A combined set becomes a rare deliberate exception rather than the unit of work."),
+            bullet("No button can go blank. If a partner's set defines three of six positions, the other three keep what was underneath. This is not tidiness — a blank button is something the user cannot say, which is the same reason a response card is never allowed to come up empty."),
+            bullet("Both kinds of nothing behave the same on the panel. Whether the partner is unset because it does not matter or because the user has not got round to it, the panel falls back and works. The difference matters only to the setup screens, which should prompt somebody who has never made a set and leave alone somebody who deliberately works without one. It makes no difference at all to the AI, which knows nothing about the partner either way."),
+            heading2("5.4 Roles, which is what makes filtering survivable"),
+            para("This is the part that decides whether the band works or gets switched off. Each position in the Filtered band should carry a standing role: the words change with the partner, the kind of thing at that position does not."),
+            ...figure('ep-fig4.png', 820, 372, "Figure 4 — The same six roles, filled three different ways."),
+            para("It is the same principle already settled for the response cards, where position tells you what kind of reply it is and never how good it is. Without it, a filtered band is a band whose meaning cannot be learned, and a keyguard user is left reading every button every time — which is precisely the cost the panel exists to avoid."),
+            bullet("Roles matter most at setup. Instead of typing phrases into a list and dragging rows until they land where the user wants them, the editor asks what this user usually asks for with this partner, and the answer lands in the right position by construction. Position and content stop being two separate operations."),
+            bullet("Greetings and goodbyes are deliberately not roles here. Openers and closings already vary by partner and appear in the response palette, so repeating them on the panel would be two places to maintain and two places to disagree."),
+            bullet("One role per position. A phrase may be used in more than one position, but a position that meant two things would defeat the point."),
+            bullet("This is the part of the design most likely to prove over-engineered, and it should be prototyped before it is committed to."),
             heading2("5.5 Where the bands sit"),
-            para("The context band should be one contiguous block, and the natural place is the row or rows furthest from the plumbing. It has to be described in terms that survive the user changing their keyboard layout — the last row of whatever grid is in use, rather than a fixed list of cell numbers. Section 10 explains why that distinction is load-bearing."),
+            para("The Filtered band should be one contiguous block, and each band has to be described in terms that survive the user changing their keyboard layout — a number of rows of whatever grid is in use, rather than a fixed list of positions. Section 10 explains why that distinction is load-bearing. Which band sits where is not settled: the Context band wants prominence because it is where the offered choices appear, while the Always band wants the easiest reach because it is used most.")
+,
 
             // ===== 6 =====
-            heading1("6. How It Behaves"),
+            heading1("6. Two Kinds of Choice, and How Each Is Answered"),
+            para("The partner can put options on the table in two quite different ways, and they need different machinery. Writing both down here because the operational steps differ and neither is obvious from the other."),
             simpleTable(
-                ["When", "What happens"],
+                ["", "A short list of named options", "A range"],
                 [
-                    ["Before a conversation", "The panel shows whatever the current situation resolves to. Tapping a person or a place swaps the context band at once — the user did it on purpose and is watching the screen"],
-                    ["During a conversation", "A deliberate tap still swaps it. Nothing else does. In particular, a person or place worked out automatically must not rearrange the panel while a conversation is running"],
-                    ["Choice chips arrive", "They take the front of the context band rather than the front of the whole panel, so the plumbing never disappears while a menu is on the table"],
-                    ["The user wants out", "A way to show the default panel regardless of the situation, and get back again"],
-                    ["Anything swaps", "The panel says what it now is — the person and the place, briefly and visibly"],
-                ], W2),
+                    ["What it sounds like", "“Mild, moderate, or severe?”  “Tea, coffee, or juice?”  “Poor, fair, good, or excellent?”", "“On a scale of one to ten.”  “How many would you like?”"],
+                    ["How many", "Two to four, almost always. Longer lists are rare because the partner has to hold them in their own head while saying them", "Any size. The user does not have to remember a hundred values — they understand the shape of the scale and their place in it"],
+                    ["What the app does", "Each option becomes a button at the front of the Context band, and a card that answers with it appears in the response palette", "The composer opens on its number page. The user builds the number, sees it as they build it, and presses Enter to speak it"],
+                    ["Where the user looks", "The conversation screen — cards and buttons", "The keyboard, which covers the panel while it is up"],
+                    ["Still to build", "Nothing. This is shipped", "Recognizing that a range was offered, and opening the composer on its number page"],
+                ], W3),
             emptyPara(),
-            lead("The escape route is not optional. ",
-                "When the situation is wrong — recognized wrongly, or simply left over from earlier — the user needs a phrase that lives in the default set, and they need it without first correcting the machine. Saying what the panel has become matters for the same reason: the user is usually looking at the other person, not at the screen."),
+            lead("The display for a range already exists. ",
+                "“In my own words” has a text box and a Speak button, and the keyboard has a number page — so this is not a new interface, it is the existing composer opened in the right place. What is new is noticing that a range was offered, which is a small addition alongside the detection of named options that is already there."),
+            para("Two small exceptions worth knowing. A scale whose points are words rather than numbers is a short list, not a range, and is already handled as one. And people do answer with halves — seven and a half out of ten — which the number page can produce but a set of buttons cannot."),
+
             // ===== 7 =====
             heading1("7. Setting It Up"),
-            para("The panel is already edited by tapping a button in the live panel while Settings is open, which is the right shape and should carry over unchanged: the user picks the position by tapping it, rather than typing into a list and then shuffling rows until it lands where they wanted. Three things have to be added."),
-            numBold("The scope being edited is stated, unmistakably. ", "Tapping a cell in the always band edits it for every situation; tapping one in the context band edits it for the person or place currently showing. Somebody who believes they are editing their clinic phrases and is in fact editing everybody's has been misled — and the opposite mistake is worse, because it is silent: they add a phrase, then wonder for weeks why it is missing everywhere else.", "principles"),
-            numBold("A new set starts as a copy. ", "Make a set for this person, starting from what is on screen now, offered at the moment the user thinks of it. With stacking the copy is small — only the context band — which is precisely why stacking makes setup workable where whole panels would not.", "principles"),
+            para("The panel is already edited by tapping a button in the live panel while Settings is open, which is the right shape and should carry over unchanged. Three things have to be added."),
+            numBold("The scope being edited is stated, unmistakably. ", "Tapping a button in the Always band edits it for every situation; tapping one in the Filtered band edits it for the partner and place currently selected. Somebody who believes they are editing their surgery phrases and is in fact editing everybody's has been misled — and the opposite mistake is worse, because it is silent: they add a phrase, then wonder for weeks why it is missing everywhere else.", "principles"),
+            numBold("A new set starts as a copy. ", "Make a set for this partner, starting from what is on screen now, offered at the moment the user thinks of it. With filtering the copy is small — only the Filtered band — which is precisely why filtering makes setup workable where whole sets would not.", "principles"),
             numBold("Nothing is required. ", "A user who never makes a single set has the panel they have today, working exactly as it does today. That is the out-of-the-box requirement, and it is met by making the unset situation the ordinary one rather than a special case.", "principles"),
 
             // ===== 8 =====
             heading1("8. When the App Works It Out for Itself"),
-            para("Voice and face recognition, location, and calendar expectations will eventually supply the person and the place without anybody tapping anything. Designing for that now costs almost nothing and prevents a rebuild, because the rules it needs are rules rather than machinery."),
+            para("Voice and face recognition, location, and calendar expectations will eventually supply the partner and the place without anybody tapping anything. Designing for that now costs almost nothing and prevents a rebuild, because what it needs are rules rather than machinery."),
             numBold("Recognition proposes; it does not command. ", "An automatic result sets the situation the same way a tap does, but the user's tap always wins and is always available.", "principles"),
-            numBold("The buttons that are already there are the correction. ", "A recognized person lights up their own button on the panel. A wrong guess is corrected with the tap the user already knows. No new gesture, no new screen, and the existing partner button becomes what it was always described as — the place where recognition gets confirmed.", "principles"),
-            numBold("The panel needs a higher bar than the AI does. ", "Getting the situation slightly wrong makes a suggested reply slightly off. Getting the panel wrong moves buttons under somebody's fingers. Same signal, two different levels of confidence required before acting on it.", "principles"),
-            numBold("It must not chase a flickering answer. ", "Two people in the room, the partner stepping away, a face half in frame — recognition will change its mind. The panel must be slow to follow it, and must never follow it in the middle of a conversation.", "principles"),
+            numBold("The buttons that are already there are the correction. ", "A recognized partner lights up their own button in the Context band. A wrong guess is corrected with the tap the user already knows — no new gesture, no new screen. The partner button becomes what it was always described as: the place where recognition gets confirmed.", "principles"),
+            numBold("The panel needs a higher bar than the AI does. ", "Getting the situation slightly wrong makes a suggested reply slightly off. Getting the panel wrong changes what is under somebody's fingers. Same signal, two different levels of confidence before acting on it.", "principles"),
+            numBold("It must not chase a flickering answer, and clearing must stick. ", "Recognition will change its mind — two people in the room, the partner stepping away, a face half in frame. The panel must be slow to follow, must never follow it mid-conversation, and when the user deliberately clears a selection it must stay cleared for a while rather than being re-recognized on the spot.", "principles"),
+            emptyPara(),
+            lead("How long a selection lasts, today. ",
+                "The partner and the feeling are cleared when the conversation ends. The place is not, and that is deliberate: a partner is a property of the conversation, but where you are is a property of the room, and ending a conversation does not move you. A cafe visit or a waiting room is several conversations in one place. The cost is that a place left selected after the user has moved goes on filtering the panel — which is visible, because the button stays lit, and is cleared by tapping it again.")
+,
 
             // ===== 9 =====
             heading1("9. Overflow, Honestly"),
-            para("A busy place will have more candidate phrases than the context band has cells. That is certain, and it is the situation that produced the folders question in the first place, so it needs a stated answer rather than a mechanism that hides it."),
+            para("A busy place will have more candidate phrases than the Filtered band has positions. That is certain, and it is the situation that produced the folders question in the first place, so it needs a stated answer rather than a mechanism that hides it."),
             lead("The rule: the band holds what it holds. ",
-                "The user orders the phrases, the band shows as many as it has cells for, and the editor says plainly that the rest are not reachable. This is the same answer already given for the panel as a whole, where an item past the last cell is unreachable rather than stored for later, and it has the same virtue: the user is told the truth at the moment they can do something about it."),
-            para("Paging within the band is the tempting alternative and it is the wrong one for the same reason folders are — a page turn puts a different word behind the same hole with nothing on the plastic to say so. The honest cap is better than a hidden shelf."),
+                "The user orders the phrases, the band shows as many as it has positions for, and the editor says plainly that the rest are not reachable. This is the same answer already given for the panel as a whole, where an item past the last position is unreachable rather than stored for later, and it has the same virtue: the user is told the truth at the moment they can do something about it."),
+            para("Paging within the band is the tempting alternative, and it is the wrong one for the same reasons as folders — a page turn puts a different word behind the same hole with nothing to say so. The honest cap is better than a hidden shelf."),
 
             // ===== 10 =====
             heading1("10. What Else This Touches"),
@@ -308,34 +349,37 @@ const doc = new Document({
             simpleTable(
                 ["Area", "What happens", "What is needed"],
                 [
-                    ["Keyboard layout changes", "The panel maps onto the cells of whichever keyboard layout the user has chosen, and they can change it. A set remembered by cell number scatters when the grid changes shape", "Describe the band by rows relative to the current layout, and decide what happens to a set made under a different one"],
-                    ["Choice chips", "They used to take the leading cells of the whole panel and push everything along, so the plumbing was what got displaced. Fixed August 22 2026", "Done ahead of the band work — they now take the last cells, so nothing moves. When the band exists they move again, to sit at its far end as its top and only transient layer (§5.3)"],
-                    ["Deleting a person or a place", "Their phrases go with them, silently", "Nothing may remove a person or place as a side effect of something else, and a deliberate deletion has to say what else is being deleted. This has already gone wrong once, when clearing a relationship type destroyed the record it was attached to"],
-                    ["Sounds like me", "The user's own phrases are evidence of how they talk, and they are also the list of phrases the AI must never produce unprompted. Both are built from the panel", "Read every set, not just the one showing. A phrase used only with one person is exactly the kind of thing that must not come out of the machine on its own"],
-                    ["Practice Mode", "A rehearsal scenario has a person and a setting by definition", "Set the situation from the scenario, or the user rehearses with the wrong buttons"],
+                    ["Keyboard layout changes", "The panel maps onto the positions of whichever keyboard layout the user has chosen, and they can change it. A set remembered by position number scatters when the grid changes shape", "Describe each band by rows relative to the current layout, and decide what happens to a set made under a different one"],
+                    ["Button colors", "Phrase colors today are chosen per phrase by the user and mean nothing shared, while taking seven swatches per row in the editor", "Decide whether to drop them in favor of a color per band, and a color per role inside the Filtered band. That would give color a meaning it does not currently carry and take a large piece of clutter out of setup. See section 12"],
+                    ["Deleting a partner or a place", "Their phrases go with them, silently", "Nothing may remove a partner or place as a side effect of something else, and a deliberate deletion has to say what else is going. This has already gone wrong once, when clearing a relationship type destroyed the record it was attached to"],
+                    ["Sounds like me", "The user's own phrases are evidence of how they talk, and are also the list of phrases the AI must never produce unprompted. Both are built from the panel", "Read every set, not just the one showing. A phrase used only with one partner is exactly the kind of thing that must not come out of the machine on its own"],
+                    ["Practice Mode", "A rehearsal scenario has a partner and a setting by definition", "Set the situation from the scenario, or the user rehearses with the wrong buttons"],
                     ["Backup and transfer", "The panel is one file today", "More than one set has to survive export, import, and a folder copied between machines, and an old backup has to load without its sets"],
-                    ["Measurement", "Nothing currently records which band a spoken phrase came from", "Record the band and the situation. It is a few characters a turn and it is the only way to learn whether scoped phrases get used or whether people fall back to the default every time"],
+                    ["Measurement", "Nothing currently records which band a spoken phrase came from", "Record the band and the situation. It is a few characters a turn, and it is the only way to learn whether filtered phrases get used or whether people fall back to the general set every time"],
                 ], W3),
 
             // ===== 11 =====
             heading1("11. Build Order"),
-            numBold("Confine the partner's offered alternatives — DONE, August 22 2026. ", "This was a fault in what was shipped rather than a piece of the design, and it depended on none of the rest, so it was fixed on its own. The alternatives used to claim the leading cells of the whole panel and push everything along, so a three-way menu moved every phrase three places and dropped the last few off the end — for one turn, nothing was where the user had learned it. They now appear at the bottom, in Ken's words, so that they push nobody around and at most cover the last few buttons until the turn ends. Measured in the running app: with three alternatives showing, not one cell changed position, size or shape, and exactly three changed what they held. They flow around the compose key the same way the phrases do, since a three-way set cannot be contiguous at the end of every layout and treating that key as an obstacle is what keeps everything else still.", "build"),
-            numBold("Bands, stacking, and the escape route. ", "The context band still driven only by the taps that exist today. This is the entire feature for a manual user, it is testable immediately, and it can ship before any set has been made because the unset case is the ordinary one.", "build"),
-            numBold("Sets for people and places, with copy-to-start. ", "The editing surface and the scope indicator, plus the rules about deletion.", "build"),
-            numBold("Combined sets. ", "Only if real use shows that stacking a person over a place is not enough. It may never be needed.", "build"),
-            numBold("Recognition. ", "Wired into the same proposal channel with the confidence and boundary rules from section 8. Nothing about the panel changes when this lands, which is the point of doing the first three in this order.", "build"),
+            numBold("Confine the partner's offered choices — DONE, released August 22 2026. ", "A fault in what was already shipped rather than a piece of this design, and it depended on none of the rest. The choices used to claim the leading positions of the whole panel and push every phrase along, so a three-way menu moved every button three places and dropped the last few off the end. They now appear at the end of the panel; when the Context band exists they move again, to the front of it. Measured in the running app: no position changed size, shape or place.", "build"),
+            numBold("A prototype of the bands, before anything is committed to. ", "Roles in particular need to be seen and tapped rather than argued about, and a throwaway page showing a filtered band with real phrases in it will settle in an afternoon what a document cannot settle at all.", "build"),
+            numBold("Bands, filtering, and the escape. ", "The Filtered band still driven only by the taps that exist today. This is the entire feature for a manual user, it is testable immediately, and it can ship before any set has been made because the unset case is the ordinary one.", "build"),
+            numBold("Sets for partners and places, with copy-to-start. ", "The editing surface and the scope indicator, plus the rules about deletion.", "build"),
+            numBold("Ranges. ", "Noticing that a scale was offered, and opening the composer on its number page.", "build"),
+            numBold("Combined sets. ", "Only if real use shows that filtering by partner over place is not enough. It may never be needed.", "build"),
+            numBold("Recognition. ", "Wired into the same proposal channel with the confidence and boundary rules from section 8. Nothing about the panel changes when this lands, which is the point of doing the rest in this order.", "build"),
 
             // ===== 12 =====
             heading1("12. What Remains Open"),
-            numBold("How big the context band should be. ", "There is a floor — four cells, so a four-way menu never costs the partner one of their own alternatives (§5.3). Above that it is a judgment call: too small and the feature is a novelty, too large and the plumbing gets squeezed. Wants a real panel in front of a real tester rather than a number chosen here.", "open"),
-            numBold("Whether the standing roles are named or merely conventional. ", "Naming them makes setup clearer and makes copying between sets easier; it also makes the editor more elaborate, and an unnamed convention may be enough.", "open"),
-            numBold("The third dimension. ", "What the calendar knows is neither a person nor a place — it is an activity. Two dimensions are enough to build, but the way a situation is described should be able to take a third without being redone.", "open"),
-            numBold("Whether a place should ever suggest phrases on its own. ", "The app knows facts about a place. Turning those into suggested buttons would save setup and would also put words the user never chose onto the surface reserved for words the user did choose. The presumption is against it.", "open"),
-            numBold("Whether the panel and the AI should ever disagree. ", "One signal drives both, which is right. But a user might want to tell the AI they are at the clinic without their buttons changing. If that turns out to be a real want, it is a second control, and second controls are expensive here.", "open"),
+            numBold("Whether roles survive contact with a real panel. ", "They are the most valuable idea here and the most likely to be over-engineering. Prototype first.", "open"),
+            numBold("Whether phrase colors should become band and role colors. ", "Today's colors are picked per phrase by the user and carry no shared meaning, and the swatches are a large part of what makes the editor cluttered. Replacing them with a color per band, and per role inside the Filtered band, would make color say something true. What is lost is a user who had been using color privately, and the fact that the same phrase would then look different in different bands.", "open"),
+            numBold("How big each band should be, and which sits where. ", "The Context band has a floor of four positions. The Always band's size is an empirical question, and the best evidence will be what users add to the shipped set and what they never once tap. Band order is unsettled: the Context band wants prominence, the Always band wants reach.", "open"),
+            numBold("The third dimension. ", "What the calendar knows is neither a partner nor a place — it is an activity. Two dimensions are enough to build, but the way a situation is described should be able to take a third without being redone.", "open"),
+            numBold("Whether a place should ever suggest phrases on its own. ", "The app knows facts about a place. Turning those into buttons would save setup and would also put words the user never chose onto the surface reserved for words the user did choose. The presumption is against it.", "open"),
+            numBold("The residual on user-initiated requests. ", "Section 3.3 leaves one case genuinely less well served than a traditional Food page. Watch for it in real use; the fix is faster composition, not navigation.", "open"),
 
             // ===== 13 =====
             heading1("13. The One-Paragraph Version"),
-            para("The Express Panel is the fast lane, not the vocabulary — breadth is what the suggested response cards are for — so it does not need folders, and folders would cost it the three things it is good at: one tap, no thinking, and the same word in the same place every time. The real complaint underneath the folders question is that there are more things to say than there are buttons, and the better answer is to let the app use what it already knows. The grid never changes shape. Most of it never changes at all. One contiguous band of it fills with phrases that suit the person in front of the user and the place they are in, stacked so that the general case fills the gaps in the specific one, so no button is ever blank and no combination has to be built by hand. Each cell in that band keeps a standing role, so what moves is the wording and not the meaning. Today the user tells the app who and where by tapping; tomorrow the app will often know, and when it does it proposes rather than decides, never rearranges anything mid-conversation, and always leaves the user a tap back to the panel they know."),
+            para("The Express Panel is the fast lane, not the vocabulary — breadth is what the suggested response cards are for — so it does not need folders, and folders would cost it the three things it is good at: one tap, no thinking, and the same word in the same place every time. The real complaint underneath the folders question is that there are more things to say than there are buttons, and the better answer is to let the app use what it already knows. The grid never changes shape. One band of it never changes at all. One band holds the buttons that never speak — the partner, the place, the feeling, and the choices the partner has just offered. The band between them fills with phrases that suit the partner and the place, position by position, so that the general phrase shows through wherever nothing more specific has been written and no button is ever blank. Each of those positions keeps a standing role, so what changes is the wording and not the meaning. Today the user says who and where by tapping; tomorrow the app will often know, and when it does it proposes rather than decides, never rearranges anything mid-conversation, and always leaves the user a tap back to the panel they know."),
         ]
     }]
 });
