@@ -2000,11 +2000,20 @@ lie on top. Three consequences, and the first is a **defect in shipped behavior*
   the six feelings, so a three-way menu **shifts every phrase on the panel three places
   and drops the last few off the end** (currently including the device-disclosure
   button). For that turn everything the user has learned about where things are is void.
-  Confined to the band, everything outside it - yes, no, help - stays put. **FIX THIS ON
-  ITS OWN, AHEAD OF THE BAND WORK - it is severable and small** (take the chips from the
-  tail of the item list rather than the head), and filing a shipped fault as a
-  consequence of an unbuilt feature is how it stays shipped. **Nobody has reported it**,
-  which most likely means no tester has yet had a closed-set turn with a full panel.
+  Confined to the band, everything outside it - yes, no, help - stays put. **FIXED ON ITS
+  OWN, AHEAD OF THE BAND WORK, August 22 2026** - it was severable and small, and filing
+  a shipped fault as a consequence of an unbuilt feature is how it stays shipped. **Ken's
+  own framing is the one to keep, because it names the property rather than the code:
+  transient buttons APPEAR AND DISAPPEAR FROM THE BOTTOM, so they push nobody around and
+  at most cover the last few buttons temporarily.** `chipStartIndex` in
+  [express-items.js](app/js/express-items.js) puts them at the last cells; the renderer
+  now walks item cells by a FIXED ORDINAL, so an item's cell can no longer depend on how
+  many chips are showing. **Measured in the running app with three alternatives: zero
+  changes to any cell's position, size or shape, and exactly three cells changed what
+  they held.** They flow AROUND the compose key like any phrase - a three-way set cannot
+  be contiguous at the end of every layout, and treating that key as an obstacle is what
+  keeps everything else still. When the context band exists they move again, to its far
+  end, and nothing else about them changes.
 - **This puts a FLOOR of four cells on the context band**, because the chip ceiling is
   four and a smaller band would have to drop one of the partner's own alternatives -
   against the standing rule that the partner's alternatives outrank anything we added.

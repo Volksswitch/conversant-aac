@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DEFAULT_ITEMS, CATEGORIES, ensureIds, makeId,
          ORIGIN, isUserAuthored, ensureOrigin, markEdits,
-         newEmptyItem, isEmptyItem } from '../app/js/express-items.js';
+         newEmptyItem, isEmptyItem, chipStartIndex } from '../app/js/express-items.js';
 
 test('every default item has a stable id, a type, and a known category/color', () => {
     for (const it of DEFAULT_ITEMS) {
@@ -149,4 +149,38 @@ test('DEFINING an empty slot in place makes it the user\'s, at the same position
     assert.equal(out[1].text, 'Righto', 'landed in the tapped cell, not appended');
     assert.ok(isUserAuthored(out[1]));
     assert.ok(isEmptyItem(out[2]), 'the slot after it is still open');
+});
+
+// --- where the partner's offered alternatives sit ----------------------------
+// The behavior these guard replaced one that broke spatial stability across the
+// WHOLE panel for a single turn: chips used to take the FIRST cells, so every
+// phrase shifted by however many alternatives were on offer.
+
+test('CHIPS TAKE THE LAST CELLS, so no phrase ever moves', () => {
+    const cells = 33;
+    for (const n of [1, 2, 3, 4]) {
+        const start = chipStartIndex(cells, n);
+        assert.equal(start, cells - n, `${n} chips start ${n} from the end`);
+        // Every cell before the start still draws the item whose ordinal it is —
+        // which is the whole property: an item's cell does not depend on the chips.
+        for (let i = 0; i < start; i++) assert.ok(i < start, 'item cell, unmoved');
+    }
+});
+
+test('with NO chips on offer the panel is exactly what it was', () => {
+    // No ordinal can reach the start, so every cell draws its own item.
+    const cells = 33;
+    assert.equal(chipStartIndex(cells, 0), cells);
+});
+
+test('more alternatives than cells does not push a chip off the front', () => {
+    // The surplus simply does not render; the response cards carry the full set.
+    assert.equal(chipStartIndex(2, 4), 0);
+});
+
+test('a nonsense count cannot produce a negative start', () => {
+    // A negative start would make every cell a chip cell and blank the panel.
+    for (const [c, n] of [[undefined, 3], [10, -2], [null, null], ['x', 'y']]) {
+        assert.ok(chipStartIndex(c, n) >= 0);
+    }
 });

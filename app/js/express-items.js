@@ -236,3 +236,24 @@ export function makeId() {
 export function ensureIds(items) {
   return (items || []).map((it) => (it && it.id ? it : { ...it, id: makeId() }));
 }
+
+// --- where the transient choice chips sit (Ken, August 22 2026) ---------------
+/**
+ * The cell ordinal at which the partner's offered alternatives begin.
+ *
+ * They take the LAST cells of the panel, not the first. Claiming the leading cells
+ * — which is what shipped until August 22 2026 — pushed every phrase along by the
+ * number of alternatives on offer, so for the duration of one turn every button sat
+ * a cell or three from where the user had learned it and the same number dropped off
+ * the end. Claiming the last cells moves nothing: each phrase keeps its position, and
+ * at most the final few are covered until the turn ends.
+ *
+ * More alternatives than cells is not a failure worth guarding against here — the
+ * app caps how many chips it offers, and the response cards carry the full set
+ * regardless — so the surplus simply does not render.
+ */
+export function chipStartIndex(itemCells, chipCount) {
+  const cells = Math.max(0, Number(itemCells) || 0);
+  const chips = Math.max(0, Number(chipCount) || 0);
+  return Math.max(0, cells - chips);
+}

@@ -2869,8 +2869,10 @@ function renderExpressPanel() {
     ui.renderExpressPanel(expressLayoutRows(), expressPanel.getItems(), {
         categories: expressItems.CATEGORIES,
         influencerColors: expressItems.INFLUENCER_COLORS,
-        // Choice chips fill the reserved leading cells while the partner has a
-        // closed set on the table; they sit blank the rest of the time.
+        // The alternatives the partner just offered. They take the LAST cells of the
+        // panel while the closed set is on the table (Ken, August 22 2026) — see
+        // chipStartIndex. Nothing is reserved for them: at rest those cells hold
+        // whatever they normally hold, and the chips cover them for one turn.
         // Gated on the partner's turn still being open: a chip steers a response TO
         // that turn, so once it's consumed the chips must not linger. Belt and
         // braces with the explicit clears at each turn boundary — any path that

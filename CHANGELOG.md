@@ -26,6 +26,13 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- When the other person offers you a choice of answers, those choices now
+  appear at the bottom of the Express Panel instead of at the top. Before, they
+  pushed every one of your buttons along a place or two for the rest of that
+  turn, so “Yes” was not where you left it and the last few buttons dropped off
+  the panel. Now nothing moves — the choices simply appear in the last few
+  spaces, and whatever was there comes back when the turn ends.
+
 ## Version 0.7.12
 
 - Five numbers on the Troubleshooting tab were wrong or hard to read, and are

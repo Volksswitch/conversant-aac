@@ -1,4 +1,5 @@
 import { setIconButton } from './icons.js';
+import { chipStartIndex } from './express-items.js';
 import * as chime from './chime.js';
 
 const responseOptions = document.getElementById('responseOptions');
@@ -597,8 +598,19 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         return b;
     };
 
-    let pi = 0;              // index into the ordered item list
-    let ci = 0;              // index into the offered chips (they take the lead cells)
+    // WHERE THE TRANSIENT CHIPS GO: THE END OF THE PANEL, NOT THE FRONT (Ken, August
+    // 22 2026). They used to claim the LEADING cells, which pushed every phrase along
+    // by however many alternatives the partner had offered — so for the duration of
+    // that turn, every button on the panel sat one, two or three cells away from where
+    // the user had learned it, and the same number fell off the end. That is spatial
+    // stability broken across the WHOLE panel to make room for something that lasts one
+    // turn. Taking the last cells instead means nothing moves: every phrase keeps its
+    // position and at most the final few are temporarily covered.
+    const itemCells = (layoutRows || []).reduce((n, row) => n + (row || []).filter(
+        (c) => c.kind !== 'space' && c.kind !== 'blank' && c.kind !== 'pred').length, 0);
+    const chipStart = chipStartIndex(itemCells, choiceChips.length);
+
+    let pi = 0;              // index into the ordered item list AND the cell ordinal
     (layoutRows || []).forEach((row) => {
         const rowEl = document.createElement('div');
         rowEl.className = 'ep-row';
@@ -622,17 +634,19 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
                 rowEl.appendChild(blank(span));
                 return;
             }
-            // Chips claim the leading cells while a choice is on offer, pushing the
-            // phrases along; the ones that fall off the end are simply not rendered.
-            if (ci < choiceChips.length) {
-                rowEl.appendChild(buildChoiceCell(choiceChips[ci++], span));
+            // char or non-space action cell. Its ordinal is fixed by the layout, so an
+            // item's cell never depends on how many chips are showing.
+            const index = pi++;
+            // The last cells belong to the partner's offered alternatives while any are
+            // on the table. The items they cover are not re-homed — they are simply not
+            // drawn for this turn, and come back untouched when it ends.
+            if (index >= chipStart) {
+                rowEl.appendChild(buildChoiceCell(choiceChips[index - chipStart], span));
                 return;
             }
-            // char or non-space action cell → the next item. Two cases render as an
-            // undefined cell: an explicit 'empty' item (a position the user opened up
-            // but has not filled), and anything past the end of the list (the panel
-            // ships half-populated, so most cells start here).
-            const index = pi++;
+            // Two cases render as an undefined cell: an explicit 'empty' item (a
+            // position the user opened up but has not filled), and anything past the end
+            // of the list (the panel ships half-populated, so most cells start here).
             const item = items[index];
             const cellEl = (!item || item.type === 'empty')
                 ? buildUndefinedCell(index, span)
