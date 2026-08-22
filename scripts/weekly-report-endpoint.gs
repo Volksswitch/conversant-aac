@@ -54,14 +54,19 @@ var PROBLEMS_SHEET_NAME = 'problems';  // one row per 'Report a problem' the tes
  * is as soon as one lands - which is what this does, and it is the only part of the
  * loop that does not wait for somebody to go and look.
  *
- * (!) FILL THIS IN AND REDEPLOY, or the alerting silently does nothing. Empty is not
- * a safe default here, it is an off switch that looks like a setting.
+ * (!) BLANKING THIS IS THE OFF SWITCH, and it is silent - an empty address disables
+ * every alert below with no error and no trace, so it reads as a setting that was
+ * never filled in rather than one that was turned off. Change it here and redeploy;
+ * editing and saving in the Apps Script editor alone changes nothing at the live URL.
+ *
+ * It also covers PROBLEM reports, which mail on arrival regardless of the threshold -
+ * those are a tester deliberately writing to us, so there is no volume to filter.
  *
  * The threshold is 1 rather than 5 deliberately. Five was a volume filter written
  * when nobody was reading the Sheet; with a handful of testers the interesting event
  * is a KIND of error appearing for the first time, and that arrives as a one. The
  * cost of being wrong is an email. */
-var ALERT_EMAIL = '';               // <- Ken's address goes here
+var ALERT_EMAIL = 'ken@volksswitch.org';
 var ALERT_ERROR_THRESHOLD = 1;
 
 function doPost(e) {
