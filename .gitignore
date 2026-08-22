@@ -62,3 +62,14 @@ tests/.anthropic-key*
 *deepgram*key*
 *dg-key*
 deepgram-probe-audio/
+
+# Exported beta reports and anything saved out of the Sheet.
+#
+# (!) THESE CARRY PERSONAL DATA AND THE REPO IS PUBLIC. A reports export names every
+# tester; a problems export additionally carries the full text of what they sent,
+# which is the ONE payload allowed to contain transcripts of real conversations -
+# their communication partners' words included, and those people never agreed to
+# anything. Committing one would publish all of it, permanently, in the history.
+# The folder is where the reading tool looks first, so the ignore has to be here
+# rather than left to habit.
+Reports/
