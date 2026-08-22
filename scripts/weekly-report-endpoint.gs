@@ -241,7 +241,7 @@ function _writeWeeks(p) {
  * Visiting the /exec URL in a browser now prints this, so a redeploy is confirmable in
  * two seconds with nothing written. The correct redeploy is:
  *   Deploy > Manage deployments > pencil > Version: New version > Deploy   (same URL) */
-var SCRIPT_VERSION = '2026-08-21a';
+var SCRIPT_VERSION = '2026-08-22a';
 
 // A GET is handy for confirming the deployment is live, and WHICH CODE is live.
 function doGet() {
@@ -252,29 +252,60 @@ function _out(msg) {
   return ContentService.createTextOutput(msg).setMimeType(ContentService.MimeType.TEXT);
 }
 
-function _problemSheet() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(PROBLEMS_SHEET_NAME);
-  if (!sheet) {
-    sheet = ss.insertSheet(PROBLEMS_SHEET_NAME);
-    sheet.appendRow(['received', 'sent', 'tester', 'install', 'version', 'build',
-      'what happened (their words)', 'full report']);
-    sheet.setFrozenRows(1);
+/* MAKE A TAB FIT ITS HEADER, every time, before anything is written to it.
+ *
+ * (!) THIS EXISTS BECAUSE THE ABSENCE OF IT LOST REPORTS SILENTLY FOR SIX DAYS
+ * (found August 22 2026). A tab created by Apps Script is 26 columns wide. The
+ * reports row grew past that on August 16, and Google REFUSES a row wider than the
+ * sheet - so appendRow threw on every report from then on. Every layer downstream of
+ * that throw is designed to be quiet: doPost catches it and returns a message, the
+ * app posts with no-cors so it cannot read the message, and the app marks the week
+ * done on ENQUEUE rather than on delivery. Nothing errored, nothing retried, nothing
+ * was flagged. The Sheet simply stopped gaining rows, which is indistinguishable from
+ * testers going quiet - the exact thing the Sheet exists to detect.
+ *
+ * It also repairs the OTHER half of the same problem: a header row is written only
+ * when a tab is first created, so renaming a column in this file used to change
+ * nothing on a Sheet that already existed, and the row on screen drifted further from
+ * the data underneath it with every column added. Comparing and rewriting costs one
+ * read per report at a handful of reports a week, which is nothing against a column
+ * whose name quietly stops describing what is in it.
+ *
+ * Widening is safe and never destructive: columns are added to the RIGHT of what is
+ * there, and existing values keep their positions. */
+function _fit(sheet, header) {
+  var have = sheet.getMaxColumns();
+  if (have < header.length) sheet.insertColumnsAfter(have, header.length - have);
+  var current = sheet.getRange(1, 1, 1, header.length).getValues()[0];
+  for (var i = 0; i < header.length; i++) {
+    if (String(current[i]) !== header[i]) {
+      sheet.getRange(1, 1, 1, header.length).setValues([header]);
+      sheet.setFrozenRows(1);
+      break;
+    }
   }
   return sheet;
 }
+var PROBLEM_HEADER = ['received', 'sent', 'tester', 'install', 'version', 'build',
+      'what happened (their words)', 'full report'];
 
-/* (!) THE HEADER ROW IS ONLY EVER WRITTEN WHEN THE TAB IS FIRST CREATED, so renaming
- * a column here does nothing to a Sheet that already exists - the data keeps landing
- * in the right place under the old name. Retype the cell by hand when one changes.
- * Column 39 became "new errors since last report" on August 21 2026, because in
- * 0.7.11 it stopped meaning "every error ever" and nothing said so. */
-function _sheet() {
+function _problemSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEET_NAME);
-  if (!sheet) {
-    sheet = ss.insertSheet(SHEET_NAME);
-    sheet.appendRow(['received', 'sent', 'tester', 'install', 'version', 'build',
+  var sheet = ss.getSheetByName(PROBLEMS_SHEET_NAME) || ss.insertSheet(PROBLEMS_SHEET_NAME);
+  return _fit(sheet, PROBLEM_HEADER);
+}
+
+/* THE HEADER IS ONE LIST, read both when the tab is created and every time one is
+ * written to - see _fit, which widens a tab that has been outgrown and rewrites the
+ * header row when it no longer matches. Renaming a column here therefore reaches a
+ * Sheet that already exists, which it did not until August 22 2026.
+ *
+ * (!) THE ROW APPENDED IN doPost MUST BE EXACTLY AS LONG AS THIS LIST. A shorter or
+ * longer row throws, doPost catches the throw, the app cannot read the reply, and the
+ * Sheet simply stops gaining rows - which looks exactly like testers going quiet. Add
+ * a value and a name together, always, and only ever at the END: an insertion in the
+ * middle shifts every column after it away from the data already sitting under it. */
+var REPORT_HEADER = ['received', 'sent', 'tester', 'install', 'version', 'build',
       'days covered', 'conversations', 'practice', 'active days', 'days since use',
       'user turns', 'from card', 'from card %', 'median wait (s)', 'waits over 4s',
       'median decide (s)', 'cards shown', 'words per card',
@@ -284,23 +315,22 @@ function _sheet() {
       'app opens', 'conversations started', 'superseded', 'rate limited',
       'median generation (s)', 'median gap between checkpoints (s)', 'median stt gap (s)',
       'About Me %', 'express edited', 'people recorded',
-      'new errors since last report', 'error kinds', 'system info', 'raw']);
-    sheet.setFrozenRows(1);
-  }
-  return sheet;
+      'new errors since last report', 'error kinds', 'system info', 'raw'];
+
+function _sheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME) || ss.insertSheet(SHEET_NAME);
+  return _fit(sheet, REPORT_HEADER);
 }
+
+var WEEKS_HEADER = ['install', 'week', 'tester', 'week starting', 'days used',
+      'conversations', 'practice', 'things said', 'partner turns',
+      'from card', 'from card %'];
 
 function _weeksSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(WEEKS_SHEET_NAME);
-  if (!sheet) {
-    sheet = ss.insertSheet(WEEKS_SHEET_NAME);
-    sheet.appendRow(['install', 'week', 'tester', 'week starting', 'days used',
-      'conversations', 'practice', 'things said', 'partner turns',
-      'from card', 'from card %']);
-    sheet.setFrozenRows(1);
-  }
-  return sheet;
+  var sheet = ss.getSheetByName(WEEKS_SHEET_NAME) || ss.insertSheet(WEEKS_SHEET_NAME);
+  return _fit(sheet, WEEKS_HEADER);
 }
 
 // The whole report minus the secret. Keeping the secret out matters because this
