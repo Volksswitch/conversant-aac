@@ -1988,6 +1988,27 @@ and a **standing role per context cell** so the wording changes and the meaning 
 - the same principle as position-carries-category on the response cards, and the thing
 that makes a swapping band learnable at all. Nothing is built.
 
+**⚠ THE CHOICE CHIPS ARE THE TOP LAYER OF THAT STACK, NOT A FOURTH BAND (Ken caught
+that the first draft never said so, August 22 2026).** What the partner offered a moment
+ago is simply *more specific* than what is usually said with this person or in this
+place, so it is the same most-specific-wins resolution with one extra, transient layer -
+one mechanism rather than two. **This does NOT reopen the July 27 2026 decision that
+chips get no standing reservation**, which was about cells sitting blank at rest; under
+this design they never are, because at rest the band holds context phrases and the chips
+lie on top. Three consequences, and the first is a **defect in shipped behavior**:
+- **Today chips claim the leading cells of the WHOLE panel**, and the leading cells are
+  the six feelings, so a three-way menu **shifts every phrase on the panel three places
+  and drops the last few off the end** (currently including the device-disclosure
+  button). For that turn everything the user has learned about where things are is void.
+  Confined to the band, everything outside it - yes, no, help - stays put.
+- **This puts a FLOOR of four cells on the context band**, because the chip ceiling is
+  four and a smaller band would have to drop one of the partner's own alternatives -
+  against the standing rule that the partner's alternatives outrank anything we added.
+  That is the first hard number anyone has for the band's size.
+- **Open, and not settleable from a chair:** chips claiming the FRONT of the band
+  displace the first standing roles, which are the most learned cells in it. Claiming
+  from the far end would put the transient thing over the least established roles.
+
 ---
 
 ## Open Questions (remaining)
