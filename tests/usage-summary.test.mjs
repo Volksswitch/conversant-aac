@@ -281,3 +281,73 @@ test('formatSummary prints the curve, and holds up with nothing extra to show', 
     const withDepth = formatSummary(s, summarizePersonalization({ worldviewAnswered: 1, worldviewTotal: 4 }));
     assert.match(withDepth, /MADE IT YOURS/);
 });
+
+/* ── The five untrustworthy figures (Ken, August 21 2026) ─────────────────────
+ *
+ * Reading one real tester's report turned up five numbers that were wrong or
+ * unreadable, four of them the same defect wearing different clothes: a figure
+ * computed over a smaller slice of history than the heading above it, with nothing
+ * on the page saying so. These lock the fixes in. Left unguarded they would rot
+ * silently, because every one of them fails by reading plausibly.
+ */
+
+test('the extrapolated "per week" line is gone from the page', () => {
+    // It scaled a few days of use up to a whole week and flattered the tester who was
+    // drifting away, on the first question the beta exists to answer.
+    const s = summarize([conv('a', [partner('2026-08-01T10:00:00Z'), user('2026-08-01T10:00:03Z')])]);
+    const text = formatSummary(s);
+    assert.ok(!/Per week/.test(text), 'the extrapolation must not be printed');
+    assert.match(text, /WEEK BY WEEK/, 'the honest version of the same thing stays');
+});
+
+test('a wait recorded as near-zero is discarded, not averaged in', () => {
+    const s = summarize([conv('a', [
+        // Written before July 2026: both halves saved at the same moment, so the
+        // interval between them is an artifact rather than a wait.
+        partner('2026-06-01T10:00:00Z'), user('2026-06-01T10:00:00.050Z'),
+        partner('2026-06-01T10:01:00Z'), user('2026-06-01T10:01:00.100Z'),
+        // Recorded properly.
+        partner('2026-08-01T10:00:00Z'), user('2026-08-01T10:00:22Z'),
+    ])]);
+    assert.equal(s.respondSamples, 1, 'only the honest one is measured');
+    assert.equal(s.respondMsMedian, 22000);
+    assert.equal(s.respondDiscarded, 2);
+    // A large discard count is itself the finding, so it has to reach the page.
+    assert.match(formatSummary(s), /Older records skipped\s+2/);
+});
+
+test('the wait excludes by time, never by where the reply came from', () => {
+    // The other person waits whether the reply was chosen, typed, or tapped - and
+    // typing is the slowest of the three. Narrowing to card turns would silently
+    // change the number from "how long did they wait" to "how long did we take".
+    const s = summarize([conv('a', [
+        partner('2026-08-01T10:00:00Z'),
+        user('2026-08-01T10:00:30Z', { selectedIndex: -1, source: 'composed' }),
+    ])]);
+    assert.equal(s.respondSamples, 1, 'a composed reply is still a wait');
+    assert.equal(s.respondMsMedian, 30000);
+});
+
+test('the two splits print the number of turns they actually cover', () => {
+    const s = summarize([conv('a', [
+        user('2026-08-01T10:00:00Z', { selectedIndex: 0, source: 'card', selectedSlot: 'PREFERRED' }),
+        user('2026-08-01T10:01:00Z', { selectedIndex: -1, source: 'composed' }),
+        user('2026-08-01T10:02:00Z'),        // older log: neither source nor slot
+        user('2026-08-01T10:03:00Z'),        // older log
+    ])]);
+    assert.equal(s.userTurns, 4);
+    assert.equal(s.sourcesRecorded, 2);
+    assert.equal(s.slotsRecorded, 1);
+    const text = formatSummary(s);
+    // Printed bare, these read as contradicting the total above them. One real
+    // report showed 172 against 17 with nothing to say which was wrong. Neither was.
+    assert.match(text, /Where the words came from \(of 2 recent turns\)/);
+    assert.match(text, /Which kind of reply \(of 1 recent turns\)/);
+});
+
+test('the error count says which period it covers', () => {
+    // The weekly report carries a DIFFERENT error count - only those since the last
+    // report - and the two get read as the same number.
+    const s = summarize([conv('a', [partner('2026-08-01T10:00:00Z'), err('2026-08-01T10:00:01Z', 'generate')])]);
+    assert.match(formatSummary(s), /Errors since you began\s+1/);
+});

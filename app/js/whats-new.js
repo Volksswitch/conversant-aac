@@ -21,6 +21,9 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.7.12": [
+    "Five numbers on the Troubleshooting tab were wrong or hard to read, and are fixed. \"Per week\" was scaling a few days of use up to a whole week, so light use could read as heavy use; it is gone, and the week-by-week table below it already showed the honest version. The typical wait now skips conversations saved before the app could time a wait at all, which were pulling it down to well under a second; it says how many it skipped. The two lists showing where your words came from and which kind of reply you chose now say how many turns they cover, so they no longer look like they contradict the total above them. And the error line now says the count is everything since you began, which is a different figure from the one in a weekly report."
+  ],
   "0.7.11": [
     "The weekly report now sends only the errors since the last one, instead of everything it had ever recorded. It was re-sending the whole list each time, so a week with one new problem was reported as several. Your own error list in Settings is unchanged and still holds everything.",
     "A problem report no longer says \"no errors recorded\" when there were errors. The app keeps two copies of what went wrong -- one in the browser, one alongside your saved conversations -- and the browser's copy is lost whenever browser storage is cleared. The report used to read only that copy, so it could come out empty, and worse, arrive with none of the conversations attached. It now falls back to the saved conversations, and says that it did."

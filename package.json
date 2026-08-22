@@ -3,7 +3,8 @@
     "test": "node --test \"tests/**/*.test.mjs\"",
     "test:live": "node --test tests/live.test.mjs",
     "test:watch": "node --test --watch \"tests/**/*.test.mjs\"",
-    "evaluate-reports": "node scripts/evaluate-reports.mjs"
+    "evaluate-reports": "node scripts/evaluate-reports.mjs",
+    "evaluate-beta": "node scripts/evaluate-beta.mjs"
   },
   "devDependencies": {
     "puppeteer": "^25.1.0"

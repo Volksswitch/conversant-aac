@@ -44,6 +44,28 @@ const isError = (ex) => ex && ex.role === 'error';
 const DAY = 86400000;
 const WEEK = 7 * DAY;
 
+/* ⚠ THE WAIT FIGURE HAS A FLOOR, AND IT IS A HISTORY FIX RATHER THAN A TASTE ONE.
+ * Before July 2026 both halves of an exchange were written to the file at the same
+ * moment, so the interval between them is an artifact of when the record was saved
+ * and not a wait anybody experienced. Those land at or near zero and drag the median
+ * down hard - measured on one real tester's report, 0.2s against 22.0s on the turns
+ * recorded properly - on the single question the beta exists to answer, in the
+ * flattering direction.
+ *
+ * The floor is justified by what the app can physically do: a reply cannot arrive
+ * before the partner's pause has been noticed (half a second at the shortest setting)
+ * and the fastest possible reply is a phrase already on screen being tapped. Nothing
+ * real lands under half a second. Anything that does is a record written after the
+ * fact.
+ *
+ * ⚠ IT EXCLUDES BY TIME, NOT BY WHERE THE REPLY CAME FROM, and that distinction was
+ * nearly got wrong. Restricting the median to replies taken from a suggestion would
+ * have removed the artifacts too - but it would have quietly changed what the number
+ * MEANS, from "how long did the other person wait" to "how long did the machine take".
+ * The other person waits whether the reply was chosen, typed, or tapped from a fixed
+ * phrase, and typing is the slowest of the three. Never narrow this to card turns. */
+const MIN_PLAUSIBLE_WAIT_MS = 500;
+
 function ms(ts) {
     const t = Date.parse(ts || '');
     return Number.isFinite(t) ? t : null;
@@ -104,12 +126,12 @@ export function summarize(logs) {
         medianTurnsPerConversation: null, medianDurationMs: null,
         fromCard: 0, composed: 0, fromCardPercent: null,
         slotCounts: {}, slotsRecorded: 0,
-        respondMsMedian: null, respondSamples: 0, respondOver4s: 0,
+        respondMsMedian: null, respondSamples: 0, respondOver4s: 0, respondDiscarded: 0,
         errors: 0, errorContexts: {}, conversationsWithErrors: 0,
         emptyConversations: 0,
         // --- added August 16 2026: all of it from what was already on disk ---
         weeks: [],                       // the retention curve (see the header note)
-        sourceCounts: {},                // card / composed / express / control
+        sourceCounts: {}, sourcesRecorded: 0,   // card / composed / express / control
         partners: [],                    // one row per named partner, practice excluded
         returningPartners: 0,
         influencers: { turnsWithPartner: 0, turnsWithFeeling: 0, turnsWithPlace: 0,
@@ -210,6 +232,7 @@ export function summarize(logs) {
                 // user's own prose, tapping an Express button is their idiom, and one
                 // of OUR control phrases is not their voice at all.
                 bump(out.sourceCounts, e.source || '(not recorded)');
+                if (e.source) out.sourcesRecorded++;
                 const uw = words(e.selectedText);
                 if (uw) userWords.push(uw);
                 if (e.feeling && (e.feeling.text || e.feeling.id)) {
@@ -261,7 +284,14 @@ export function summarize(logs) {
                     const gap = t - lastPartnerAt;
                     // Over ten minutes is someone walking away mid-conversation,
                     // not a response time; it would wreck the median's meaning.
-                    if (gap <= 10 * 60 * 1000) {
+                    // Under the floor is a record artifact, not a wait - see the note
+                    // on MIN_PLAUSIBLE_WAIT_MS. Counted rather than silently dropped,
+                    // because a large count is itself the finding: it says this
+                    // tester's history spans the change and the older part cannot be
+                    // read alongside the newer.
+                    if (gap < MIN_PLAUSIBLE_WAIT_MS) {
+                        out.respondDiscarded++;
+                    } else if (gap <= 10 * 60 * 1000) {
                         respondGaps.push(gap);
                         if (gap > 4000) out.respondOver4s++;
                         // Attributed to the recognizer that heard the turn being
@@ -286,9 +316,13 @@ export function summarize(logs) {
     out.lastUsed = newest;
     if (newest !== null) out.daysSinceLastUse = Math.floor((Date.now() - newest) / DAY);
     if (oldest !== null && newest !== null) out.spanDays = Math.floor((newest - oldest) / DAY) + 1;
-    // Per ACTIVE week, not per calendar week (CLAUDE.md): this population opens an
-    // AAC tool when a communication opportunity arises, so dividing by elapsed time
-    // would read as failure for a tool they use happily but not daily.
+    // ⚠ COMPUTED BUT NO LONGER PRINTED, and do not put it back on the page.
+    // It scales the days actually used up to a whole week, so five days of light use
+    // reads as 29 conversations a week. That flatters exactly the tester who is
+    // drifting away, on the first question the beta is trying to answer. The week by
+    // week table below is the honest version of the same thing and is already there,
+    // which makes this line both wrong and redundant. It stays computed only because
+    // a test uses it to demonstrate what a cumulative figure hides.
     if (out.activeDays) out.conversationsPerActiveWeek = out.conversations / (out.activeDays / 7);
     out.medianTurnsPerConversation = median(turnsPer);
     out.medianDurationMs = median(durations);
@@ -470,7 +504,6 @@ export function formatSummary(s, personalization = null) {
     L.push(`  Days used               ${s.activeDays}` + (s.spanDays ? ` over ${s.spanDays} days` : ''));
     L.push(`  First / last            ${dateOnly(s.firstUsed)}  ..  ${dateOnly(s.lastUsed)}`);
     if (s.daysSinceLastUse !== null) L.push(`  Days since last use     ${s.daysSinceLastUse}`);
-    if (s.conversationsPerActiveWeek !== null) L.push(`  Per week (days used)    ${s.conversationsPerActiveWeek.toFixed(1)}`);
     L.push(`  Typical length          ${s.medianTurnsPerConversation ?? '—'} turns, ${mins(s.medianDurationMs)}`);
     if (s.emptyConversations) L.push(`  Started but nothing said ${s.emptyConversations}`);
     L.push('');
@@ -492,12 +525,17 @@ export function formatSummary(s, personalization = null) {
     L.push(`  Things you said         ${s.userTurns}`);
     L.push(`  Chosen from a card      ${s.fromCard}  (${pct(s.fromCardPercent)})`);
     L.push(`  Typed or a fixed phrase ${s.composed}`);
-    if (Object.keys(s.sourceCounts).length) {
-        L.push('  Where the words came from:');
+    if (s.sourcesRecorded) {
+        // ⚠ NAMING THE BASE IS THE WHOLE FIX. Where a reply came from has only been
+        // recorded since August, so this list covers a fraction of the turns counted
+        // three lines above it. Printed bare, the two read as a contradiction - one
+        // real report showed 172 against 17 - and the reader has no way to tell which
+        // is wrong. Neither is: they count different periods.
+        L.push(`  Where the words came from (of ${s.sourcesRecorded} recent turns):`);
         for (const [src, n] of topEntries(s.sourceCounts)) L.push(`    ${String(src).padEnd(20)} ${n}`);
     }
     if (s.slotsRecorded) {
-        L.push('  Which kind of reply:');
+        L.push(`  Which kind of reply (of ${s.slotsRecorded} recent turns):`);
         for (const [slot, n] of topEntries(s.slotCounts)) {
             L.push(`    ${slot.padEnd(20)} ${n}  (${Math.round((n / s.slotsRecorded) * 100)}%)`);
         }
@@ -508,6 +546,10 @@ export function formatSummary(s, personalization = null) {
     if (s.respondSamples) {
         L.push(`  Typical wait            ${secs(s.respondMsMedian)}`);
         L.push(`  Waits over 4 seconds    ${s.respondOver4s} of ${s.respondSamples}`);
+        // Shown only when it happens, and worth showing then: it means this history
+        // spans the change in how conversations are saved, so the older part of it
+        // cannot be read alongside the newer.
+        if (s.respondDiscarded) L.push(`  Older records skipped   ${s.respondDiscarded} (saved before waits could be timed)`);
     } else {
         L.push('  Not enough data yet.');
     }
@@ -556,7 +598,11 @@ export function formatSummary(s, personalization = null) {
 
     L.push('PROBLEMS');
     if (s.errors) {
-        L.push(`  Errors recorded         ${s.errors}, in ${s.conversationsWithErrors} conversation(s)`);
+        // ⚠ THIS IS EVERY ERROR EVER, counted from the saved conversations. The
+        // weekly report carries a DIFFERENT error count - only those since the last
+        // report went - and the two are routinely read as though they were the same
+        // number. Saying the period out loud is what keeps them apart.
+        L.push(`  Errors since you began  ${s.errors}, in ${s.conversationsWithErrors} conversation(s)`);
         for (const [ctx, n] of topEntries(s.errorContexts)) L.push(`    ${ctx.padEnd(20)} ${n}`);
     } else {
         L.push('  None recorded.');

@@ -49,8 +49,20 @@ var SECRET = 'u_mlqOZgElbxCB7732CAwSzC';
 var SHEET_NAME = 'reports';
 var WEEKS_SHEET_NAME = 'weeks';   // one row per tester per week - the retention curve
 var PROBLEMS_SHEET_NAME = 'problems';  // one row per 'Report a problem' the tester sent
-var ALERT_EMAIL = '';               // set to get mailed when a report shows errors
-var ALERT_ERROR_THRESHOLD = 5;      // errors in one report before mailing
+/* MAIL ON TROUBLE. Ken, August 21 2026: "I need to hear about errors shortly after
+ * they are reported." Reports arrive when a tester opens the app, so "shortly after"
+ * is as soon as one lands - which is what this does, and it is the only part of the
+ * loop that does not wait for somebody to go and look.
+ *
+ * (!) FILL THIS IN AND REDEPLOY, or the alerting silently does nothing. Empty is not
+ * a safe default here, it is an off switch that looks like a setting.
+ *
+ * The threshold is 1 rather than 5 deliberately. Five was a volume filter written
+ * when nobody was reading the Sheet; with a handful of testers the interesting event
+ * is a KIND of error appearing for the first time, and that arrives as a one. The
+ * cost of being wrong is an email. */
+var ALERT_EMAIL = '';               // <- Ken's address goes here
+var ALERT_ERROR_THRESHOLD = 1;
 
 function doPost(e) {
   try {
@@ -148,8 +160,20 @@ function doPost(e) {
 
     if (ALERT_EMAIL && errors.length >= ALERT_ERROR_THRESHOLD) {
       MailApp.sendEmail(ALERT_EMAIL,
-        'Conversant AAC - ' + (p.testerName || 'a tester') + ' reported ' + errors.length + ' errors',
-        _errorContexts(errors) + '\n\nSee the reports Sheet for the full payload.');
+        // The subject carries the two things worth knowing without opening anything:
+        // who, and what kind. Since 0.7.11 these are only the errors NEW since that
+        // tester's last report, so a repeat means it is still happening rather than
+        // that the same backlog arrived again.
+        'Conversant AAC - ' + (p.testerName || 'a tester') + ': ' + _errorContexts(errors),
+        [_errorContexts(errors),
+         'Tester: ' + (p.testerName || '(not set)') + '   device ' + (p.installId || '?'),
+         'Version: ' + (p.appVersion || '?') + ' (build ' + (p.build || '?') + ')',
+         'Covering the last ' + (p.coversDays == null ? '?' : p.coversDays) + ' day(s).',
+         '',
+         'These are new since that tester last reported.',
+         'Nothing about what anybody said is in here or in the Sheet.',
+         'Run "evaluate beta" on an export of the reports tab to see them in context.'
+        ].join('\n'));
     }
     return _out('ok');
   } catch (err) {
@@ -212,7 +236,7 @@ function _writeWeeks(p) {
  * Visiting the /exec URL in a browser now prints this, so a redeploy is confirmable in
  * two seconds with nothing written. The correct redeploy is:
  *   Deploy > Manage deployments > pencil > Version: New version > Deploy   (same URL) */
-var SCRIPT_VERSION = '2026-08-16a';
+var SCRIPT_VERSION = '2026-08-21a';
 
 // A GET is handy for confirming the deployment is live, and WHICH CODE is live.
 function doGet() {
@@ -235,6 +259,11 @@ function _problemSheet() {
   return sheet;
 }
 
+/* (!) THE HEADER ROW IS ONLY EVER WRITTEN WHEN THE TAB IS FIRST CREATED, so renaming
+ * a column here does nothing to a Sheet that already exists - the data keeps landing
+ * in the right place under the old name. Retype the cell by hand when one changes.
+ * Column 39 became "new errors since last report" on August 21 2026, because in
+ * 0.7.11 it stopped meaning "every error ever" and nothing said so. */
 function _sheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(SHEET_NAME);
@@ -250,7 +279,7 @@ function _sheet() {
       'app opens', 'conversations started', 'superseded', 'rate limited',
       'median generation (s)', 'median gap between checkpoints (s)', 'median stt gap (s)',
       'About Me %', 'express edited', 'people recorded',
-      'errors', 'error kinds', 'system info', 'raw']);
+      'new errors since last report', 'error kinds', 'system info', 'raw']);
     sheet.setFrozenRows(1);
   }
   return sheet;
