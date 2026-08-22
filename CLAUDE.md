@@ -1919,6 +1919,77 @@ Reading one real tester's report turned up five statistics that were wrong or un
 
 ---
 
+## The Express Panel has NO folders or pages (DECIDED Ken, August 22 2026)
+
+Asked by an outside reviewer whether a panel button could reveal *other* buttons -
+pages, folders, or a place to keep the overflow. **The answer is no: no folders, no
+pages, no button whose job is to display more buttons.** Ken's own framing was that it
+sounded like a traditional AAC app and the Express Panel is not trying to be one. That
+is right, and it needs its legs put under it, because as stated it reads as taste and
+the next person to ask will simply disagree about taste.
+
+**THE FRAME THAT SETTLES IT, and the one to reach for when this comes up again - it
+will, at every demo: the panel is the FAST LANE, not the vocabulary.** In a traditional
+AAC app the grid *is* the communication channel, so it must hold everything a person
+might ever say and folders are the only way to fit that on a screen. Here the grid is
+the narrowest of three routes - suggested response cards carry breadth, "In my own
+words" carries precision, and the panel carries the handful of things that must be
+instant. **If the panel is ever carrying enough vocabulary to need a filing system,
+something upstream has failed** - either the response cards are not good enough, or the
+app is being used as a small traditional AAC device rather than as a conversation tool.
+
+**Seven grounds, and the middle two were not obvious until this was thought through:**
+a folder puts a *decision* in front of the fastest path in the app (two taps, the first
+being "which folder?", and a tap is not free for this population); it is a machine for
+making the same hole mean different things with nothing on the plastic to say which,
+which is spatial stability broken exactly where it is meant to hold; **it creates a
+MODE, and a panel that can be left on page two strands the user mid-conversation
+reaching for a button that has been in the same place for six months**; **a stray tap
+on a phrase says one wrong word, a stray tap on a folder replaces the whole panel** -
+a structural consequence sitting among word-sized ones, the same hazard that already
+bars tap-to-define during a conversation; hierarchy multiplies selection time under
+**scanning and eye gaze**, so we would be designing in a cost paid hardest by access
+methods not yet built; the filing system is unbounded setup work on the least popular
+part of setup; and **the two mistakes are not equally reversible** - refusing folders
+and being wrong costs a later feature, shipping them and being wrong means taking away
+something people have already built their vocabulary inside.
+
+**DO NOT ANSWER WITH THE REFUSAL. The app already has the good version of folders, and
+the difference is the TRIGGER.** When the partner offers a menu, those alternatives
+appear as buttons and then leave - nobody filed them, found them, or navigated back. A
+folder is a place the user has to go; context is a fact the app already has. Same
+cells, same benefit, no navigation, no mode, no memory burden - and the setup work
+*shrinks* as recognition improves rather than growing.
+
+**⚠ TWO NEEDS HIDE IN THE ONE REQUEST, and only one of them is being refused.** Ask
+which is meant before answering. *"More phrases than cells"* is the overflow problem
+and is answered by the context bands plus an honest cap (extras are unreachable and the
+editor says so - the same answer already given for the panel as a whole). *"A rarely
+used set I must reach deliberately"* - an emergency card, one counter's usual order -
+is **not a folder**, and if it ever proves real the shape is a **summoned full-screen
+overlay on the same grid**, exactly as the on-screen keyboard already works, so one
+keyguard still fits and **no cell of the base panel changes meaning**. Recorded as the
+concession we would make; deliberately not proposed for building.
+
+**WHAT WOULD REOPEN THIS, stated in advance so it is evidence rather than enthusiasm:**
+testers who have a full panel *and* their context bands in use, still routinely going to
+the composer for things they say often. If instead they use a handful of cells and leave
+the rest, the shortage was never real.
+
+**The full write-up, including the partner/place design that replaces folders, is
+[Conversant AAC Express Panel Design.docx](Documents/) (generator
+`scripts/doc-generators/generate-express-panel-design-doc.js`).** Its load-bearing
+design decisions, so they are not re-derived: **three bands** (controls / always /
+context) with only the last changing, and the **controls band fixed because the partner
+and place toggles are themselves panel buttons - a context that could swap them away is
+a trap the user cannot get out of**; **layering rather than a whole panel per
+situation**, so combinations mostly need no authoring and **no cell can ever go blank**;
+and a **standing role per context cell** so the wording changes and the meaning does not
+- the same principle as position-carries-category on the response cards, and the thing
+that makes a swapping band learnable at all. Nothing is built.
+
+---
+
 ## Open Questions (remaining)
 
 > **SESSION HANDOFF — August 3 2026, after release 0.6.5. START HERE — this supersedes the August 1 block below as the handoff.**
@@ -2078,7 +2149,7 @@ Reading one real tester's report turned up five statistics that were wrong or un
 - **TO DO — explore a "phrase expansion" (abbreviation) feature (Ken, June 29 2026; not built):** let the user type a short abbreviation that auto-expands to a longer phrase on a word boundary — e.g. **"btw" → "by the way"**, "omw" → "on my way", "ty" → "thank you". This is a **fully local, deterministic, user-configurable** map (no AI, no network — like the rest of the local prediction tier) — distinct from both (a) the inline word *prediction*/completion (v0.5.42, which completes a prefix to a single real word) and (b) the LLM-driven "AI-assisted composition" (few words → a full sentence in the user's voice). **Two behaviors per entry, because some abbreviations expand and others should just be *spoken* differently (Ken, June 29 2026):** (i) **text expansion** — replace the typed abbreviation in the box with the full phrase ("btw" → "by the way"), which changes both what's displayed and what's spoken; (ii) **spoken-form override** — the displayed text stays the abbreviation but TTS says it differently, e.g. **"lol" should be spoken as the initialism "L-O-L"** (spelled out), not read as the word "lol" or expanded to "laughing out loud". Behavior (ii) is exactly the **[[display-text-vs-spoken-text]] / pronunciation-lexicon** TODO (display form ≠ spoken form, applied as a TTS-time substitution) — so the abbreviation feature and the pronunciation lexicon likely share one user-owned map/editor: each entry has a display form + an optional expansion (rewrites the box) and/or an optional spoken form (overrides TTS), with "spell it out letter-by-letter" as a built-in spoken mode for initialisms. **Natural seam:** the same word-boundary handling in `keyboard.js` where a separator is typed — when the just-typed "word" exactly matches an abbreviation in the map, replace it with the expansion before inserting the separator (mirrors how `acceptGhost()` already rewrites the word at the boundary). **Design questions to settle:** (1) it should be a **user-editable set** (joins placeholders / Express items / openers-closers as a configurable, data-folder-portable list with its own editor); (2) case handling (match case-insensitively? preserve/capitalize the expansion to match?); (3) whether an expansion can itself be a multi-word phrase with punctuation; (4) interaction with the inline ghost (an abbreviation like "btw" shouldn't also show a misleading word-completion ghost — probably suppress the ghost when the prefix matches a known abbreviation, or show the expansion AS the ghost); (5) ship a small starter set of common abbreviations as the default. Likely a small, high-value patch once the editor pattern is reused. **[relates to [[inline word prediction]] and the AI-assisted-composition build-order item]**
 - **DONE (v0.5.42) — word prediction returns as an INLINE GHOST, not buttons (Ken, June 29 2026).** Resolved the "where do prediction buttons live" problem by NOT using buttons: the completion shows **inline in the text box** (bold, tinted, tunable color) and is accepted by typing **any word-separator** (space/comma/period/…), so it costs zero grid space, needs no keyguard alignment, and has no moving tap target. Built in `keyboard.js` (non-interactive mirror overlay `#predGhost`) — see the v0.5.42 row. The old `.kbd-preds` button overlay stays hidden/unused (infra preserved). *Remaining/optional:* prediction for physical-keyboard typists (the ghost is currently on-screen-keyboard only); showing >1 candidate (inline is single-suggestion by nature).
 - **FUTURE — non-English language support (Ken, June 27 2026; not built).** Conversant AAC will support languages other than English in a future version. No architecture audit is needed before then — the modular design means adding language support is mostly content/configuration work, not structural change. Known touchpoints to revisit when this feature is scoped: (1) **STT** — `SpeechRecognition.lang` needs to become a user-settable language preference (`stt.js`; currently defaults to the browser's language); (2) **TTS** — voice selection already exposes language-tagged voices via `speechSynthesis.getVoices()`; the picker just needs language grouping; (3) **LLM prompt** — `llm.js` `buildProfileBlock()` needs a language instruction ("respond in Spanish") when a non-English language is configured — a prompt addition, not a structural change; (4) **Hardcoded content** — `placeholders.json`, Express Panel defaults (`express-items.js`), openers/closers (`engine.js`), and worldview question text (`worldview-questions.json`) would each need per-language versions; the files/seams exist; (5) **Word prediction** — `data/words.json` is English-only; non-English languages need their own frequency lists (`prediction.js` is otherwise language-agnostic); (6) **Keyboard layouts** — the layout data structure already supports arbitrary key arrangements; non-Latin scripts need new layout data, not code changes; (7) **UI chrome** — all button labels, settings names, and hint text are hardcoded English strings; full UI i18n would require extracting these to a localization file (a UI pass, not an architecture change). *No audit required now; revisit this list when the feature is formally scoped.*
-- **⚠ PRIORITY RAISED, and the SHAPE IS NOW DECIDED — PER-PERSON and PER-PLACE Express Panel definitions (Ken, August 15 2026, after walking an SLP through the app). Still not built.** Two things changed on that call.
+- **⚠ PRIORITY RAISED, and the SHAPE IS NOW DECIDED — PER-PERSON and PER-PLACE Express Panel definitions (Ken, August 15 2026, after walking an SLP through the app). Still not built.** **⚠ READ "The Express Panel has NO folders or pages" ABOVE FIRST - it carries the three-band / layering / standing-role design this entry predates, and the whole-panel-per-situation shape recorded below is superseded by layering.** Two things changed on that call.
   - **It is a WHOLE-PANEL definition selected by a (partner, place) PAIR, not scoped items sprinkled through one list** — panels exist for **partner**, for **place**, and for **partner+place together**. This settles the "whole panel or part of it?" question below in favor of the whole panel, and the question is answered rather than merely deferred, so do not re-open it from the argument recorded there.
   - **`partner = unknown` and `place = unknown` IS THE DEFAULT PANEL, and that is what makes the design coherent rather than a special case.** Today's single panel is simply the (unknown, unknown) definition, so there is no "global panel plus overrides" — one uniform lookup, most specific pair first, falling back through partner-only and place-only to (unknown, unknown). Nothing has to be migrated: the existing panel already *is* the default entry. It also means a user who never defines a second panel sees exactly what they see now.
   - **A NEW DEFINITION MUST BE ABLE TO START AS A COPY OF AN EXISTING ONE (Ken).** Without it, whole-panel definitions are unusable in practice — the panel is 33 cells, most of them the same plumbing (Yes / No / Thank you / Hi / Bye) in every context, and re-entering that per panel is the very "non-trivial exercise" the tap-to-define work exists to reduce. **This is the price of choosing whole panels over scoped items** (scoped items got the shared plumbing for free), so copy is a *dependency* of the decision above, not a convenience to add later.
