@@ -107,7 +107,22 @@ const BRITISH_WORDS = [
 //                sense is "dialog". It is absent from the list above on purpose.
 //   Centre    -- correct inside a proper noun. "CALL Centre, University of Edinburgh"
 //                is a cited institution; Americanizing it makes the citation false.
-const PROPER_NOUNS = [/CALL Centre/g];
+const PROPER_NOUNS = [
+    /CALL Centre/g,
+    // ⚠ A DETECTOR BUG, NOT A SPELLING (found August 23 2026). "programme" -> "program"
+    // is a real pair, but the -ing and -ed forms DOUBLE THE M IN AMERICAN ENGLISH TOO:
+    // programming and programmed are correct here. The stem-plus-suffix rule below
+    // generates "programm" + "ing" and matches them, so they are excused by name. The
+    // same trap waits for any entry whose American form doubles a consonant.
+    /\bprogramm(?:ing|ed|er|ers)\b/gi,
+    // ⚠ ONE PERSONA IS IRISH ON PURPOSE — Dublin, a GAA club, the seafront at Clontarf —
+    // and Americanizing his world would make the test persona false in the same way
+    // Americanizing a cited institution would. These are HIS words, listed exactly, so a
+    // "colour" appearing anywhere in that file still fails. If the cast is ever made
+    // uniformly American these three lines go with it.
+    /the shopping centre/g,
+    /on the telly/g,
+];
 
 // ⚠ THE INFLECTION THAT NEEDS ITS OWN ALTERNATIVE: a stem ending in -e DROPS it before
 // -ing and -ed, so "practise" + "ing" is "practising", not "practiseing". Matching the
@@ -194,6 +209,57 @@ test('the app\'s on-screen text is in American English', () => {
     }
     assert.deepEqual(hits, [],
         `\nBritish spellings in text the user sees. Code comments are exempt; these are strings.\n${hits.join('\n')}\n`);
+});
+
+// ⚠ THE SCOPE ABOVE WAS TOO NARROW AND IT SHOWED (Ken, August 23 2026, finding
+// "colour" eight times in a prototype and a figure source written an hour earlier).
+// The scan covered the app and the changelog, so every OTHER thing a person reads —
+// the documents' own source, the images inside them, and a prototype about to be
+// emailed to a team of therapists — had nothing checking it at all. The rule was never
+// unclear; it was unenforced everywhere except the app.
+//
+// SAME SPLIT AS ABOVE: text a reader sees, never developer comments. For the .js
+// generators the prose lives in string literals, which is what stringLiterals() pulls.
+// For the .html sources the prose is the markup, so comments, <style> and <script> are
+// stripped first — a CSS variable named --blue-grey must not fail the build.
+
+/** Visible prose from an HTML file: no comments, no stylesheet, no script. */
+function visibleHtml(src) {
+    return htmlText(src
+        .replace(/<!--[\s\S]*?-->/g, ' ')
+        .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+        .replace(/<script[\s\S]*?<\/script>/gi, ' '));
+}
+
+function scanDir(dir, rel) {
+    let hits = [];
+    let names;
+    try { names = readdirSync(dir); } catch { return hits; }
+    for (const f of names) {
+        const src = () => readFileSync(join(dir, f), 'utf8');
+        if (f.endsWith('.js') || f.endsWith('.mjs')) {
+            hits = hits.concat(findBritish(stringLiterals(src()), `${rel}/${f}`));
+        } else if (f.endsWith('.html')) {
+            hits = hits.concat(findBritish(visibleHtml(src()), `${rel}/${f}`));
+        }
+    }
+    return hits;
+}
+
+test('the documents\' own source is in American English', () => {
+    // These generators ARE the documents: their string literals become the prose, and
+    // the .html beside them is captured to the images embedded in them. Nothing else
+    // checks either, and the .docx themselves cannot be checked (git-ignored).
+    const hits = scanDir(join(root, 'scripts', 'doc-generators'), 'scripts/doc-generators');
+    assert.deepEqual(hits, [],
+        `\nBritish spellings in document source. Comments are exempt; these are strings and markup.\n${hits.join('\n')}\n`);
+});
+
+test('the prototypes are in American English', () => {
+    // A prototype is shown to people outside the project, which makes it MORE exposed
+    // than the app, not less.
+    const hits = scanDir(join(root, 'prototypes'), 'prototypes');
+    assert.deepEqual(hits, [], `\n${hits.join('\n')}\n`);
 });
 
 // --- the detector itself -------------------------------------------------------------

@@ -26,8 +26,9 @@
     --always:#e8eaf6; --always-ink:#283593;
     --flex:#e8f5e9;   --flex-ink:#1B5E20;
     --ctx:#efebe9;    --ctx-ink:#4E342E;
-    --place:#f9fbe7;  --place-ink:#5d5d10;
-    --feel:#e0f7fa;   --feel-ink:#006064;
+    --partner-bar:#5D4037;   /* the KIND of Context button, said with a bar */
+    --place-bar:#827717;
+    --feel-bar:#00838F;
     --imow:#455A64;
     --choice:#2E7D32;
     --gap:5px;
@@ -49,13 +50,22 @@
        display:flex;align-items:center;justify-content:center;text-align:center;
        min-height:var(--cell-h,46px);transition:background .12s,box-shadow .12s;overflow:hidden}
   .btn:active{transform:translateY(1px)}
+  /* ONE BACKGROUND PER BAND (Ken, August 23 2026). The band is what the color
+     says; within the Context band the KIND of button is said by a colored bar down
+     its left edge, not by a different fill - so partner, place and feeling read as
+     one family and stop being mistaken for offered choices. */
   .b-always{background:var(--always);color:var(--always-ink)}
   .b-flex{background:var(--flex);color:var(--flex-ink)}
-  .b-ctx{background:var(--ctx);color:var(--ctx-ink)}
-  .b-place{background:var(--place);color:var(--place-ink)}
-  .b-feel{background:var(--feel);color:var(--feel-ink)}
+  .b-ctx,.b-place,.b-feel{background:var(--ctx);color:var(--ctx-ink)}
+  .b-ctx{border-left:5px solid var(--partner-bar)}
+  .b-place{border-left:5px solid var(--place-bar)}
+  .b-feel{border-left:5px solid var(--feel-bar)}
   .b-imow{background:var(--imow);color:#fff}
-  .b-choice{background:var(--choice);color:#fff;border-color:#1B5E20;font-weight:bold}
+  /* The two exceptions, and they are exceptions on purpose: what the partner has
+     just put on the table is immediate and temporary, so it breaks the band's
+     color deliberately. The two kinds share the fill and differ by border. */
+  .b-choice{background:var(--choice);color:#fff;border:2px solid #1B5E20;font-weight:bold}
+  .b-range{background:var(--choice);color:#fff;border:2px dashed #C8E6C9;font-weight:bold}
   .b-empty{background:#fff;border-style:dashed;border-color:#ccc;color:#ccc;cursor:default}
   .b-gap{background:none;border:none;cursor:default;pointer-events:none}
   .on{box-shadow:inset 0 0 0 3px currentColor}
@@ -86,17 +96,47 @@
   .k-f{background:var(--flex);color:var(--flex-ink)}
   .k-c{background:var(--ctx);color:var(--ctx-ink)}
   .warn{color:#B71C1C;font-size:12px;margin-top:6px}
+  .brief{background:#fff;border:1px solid #d8d8d8;border-left:5px solid #1F4E79;border-radius:8px;
+         padding:14px 18px;margin:0 0 16px;max-width:1010px}
+  .brief h2{font-size:15px;color:#1F4E79;margin:0 0 8px}
+  .brief p{margin:0 0 9px;font-size:13.5px;max-width:none}
+  .brief ol{margin:0 0 9px;padding-left:22px;font-size:13.5px}
+  .brief li{margin-bottom:4px}
+  .brief .small{color:#666;font-size:12.5px;margin-bottom:0}
   label.chk{display:block;font-size:12.5px;color:#444;margin-top:6px;cursor:pointer}
 </style>
 </head>
 <body>
 
-<h1>Express Panel bands &mdash; prototype</h1>
-<p class="lede">Throwaway. Nothing here is the app, but the grid is: all 21 keyboard layouts are the real ones, so the
-number of buttons and where &ldquo;In my own words&rdquo; sits are whatever that layout actually gives you. Pick a
-partner and a place and watch the Flex band refill. The two questions this exists to answer are <b>how many rows each
-band should get</b> and <b>whether a band that reorders itself between situations is tolerable</b> &mdash; the figure
-under the panel measures the second one.</p>
+<h1>Express Panel bands &mdash; a sketch to react to</h1>
+
+<div class="brief">
+<h2>What this is, and what we are asking you</h2>
+<p><b>This is not the app.</b> It is a rough working model of one idea, put on screen so it can be tapped and argued
+with instead of described. The phrases in it are invented. Nothing you do here is saved, and nothing is spoken aloud.</p>
+<p><b>The idea.</b> Conversant AAC has a panel of quick phrases that speak the moment they are tapped. Today every
+button on it is fixed. We are considering splitting it into three <i>bands</i>:</p>
+<ol>
+  <li><b>Always</b> &mdash; yes, no, please, help. Never changes, so it can be found without looking.</li>
+  <li><b>Context</b> &mdash; buttons that <b>never speak</b>. They tell the app who the person is talking to, where they
+      are, and how they feel. This is also where the options a partner has just offered appear.</li>
+  <li><b>Flex</b> &mdash; phrases that suit the person in front of them and the place they are in. The only band whose
+      words change.</li>
+</ol>
+<p><b>Worth trying, in this order:</b> pick a <i>Partner</i> and a <i>Place</i> on the right and watch the bottom band
+refill. Then set &ldquo;the partner puts something on the table&rdquo; to <i>three choices</i>. Then change the keyboard
+layout, and the sizes of the bands.</p>
+<p><b>What would help us most.</b> Is a band whose words change between conversations something a client could learn, or
+would it undo the muscle memory that makes a panel fast? How many buttons does the <i>Always</i> band really need? And
+is the color doing enough work to tell the three bands apart at a glance?</p>
+<p class="small">Everything below the fold is instrumentation for us &mdash; the counts of what moved and the warnings
+about sizes. Ignore it or poke at it as you like.</p>
+</div>
+
+<p class="lede">The grid is real: all 21 of the app's keyboard layouts are here, so the number of buttons and where
+&ldquo;In my own words&rdquo; sits are whatever that layout actually gives you. The two questions this exists to settle
+are <b>how many buttons each band should get</b> and <b>whether a band that reorders itself between situations is
+tolerable</b> &mdash; the figure under the panel measures the second one.</p>
 
 <div class="wrap">
 <div class="stage">
@@ -134,6 +174,10 @@ under the panel measures the second one.</p>
     <p style="font-size:12.5px;margin:0 0 6px"><span class="k k-a">Always</span> never changes.</p>
     <p style="font-size:12.5px;margin:0 0 6px"><span class="k k-c">Context</span> never speaks. Offered choices take its front.</p>
     <p style="font-size:12.5px;margin:0 0 6px"><span class="k k-f">Flex</span> the partner's phrases, then the place's, then the general set. Takes whatever is left over.</p>
+    <p class="note"><b>One background color per band.</b> Inside the Context band the kind of button &mdash; partner,
+    place, feeling &mdash; is said by the colored bar down its left edge, not by a different fill.</p>
+    <p class="note"><b>Two deliberate exceptions:</b> what the partner has just put on the table breaks the band's color,
+    because it is immediate and temporary. Offered choices have a solid border; the number button has a dashed one.</p>
     <p class="note"><b>In my own words</b> is the layout's space key and belongs to no band, so it can never be
     pushed off &mdash; exactly as in the app.</p>
     <p class="note"><b>Band shape.</b> <i>rows</i> gives straight edges but a row is 2 buttons on one layout and 13
@@ -316,7 +360,7 @@ function render() {
         silent = true;
         if (!it) { b = el('button', 'btn b-empty', ''); }
         else {
-          const cls = { choice: 'b-choice', range: 'b-choice', partner: 'b-ctx',
+          const cls = { choice: 'b-choice', range: 'b-range', partner: 'b-ctx',
                         place: 'b-place', feeling: 'b-feel' }[it.kind];
           b = el('button', 'btn ' + cls, it.text);
           if ((it.kind === 'partner' && it.text === partner)
