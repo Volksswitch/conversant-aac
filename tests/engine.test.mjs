@@ -409,3 +409,33 @@ test('CLOSING_DECLINE is not one of the four structural slots', () => {
     const structural = ['PREFERRED', 'DISPREFERRED', 'INITIATIVE', 'REPAIR'];
     assert.ok(!structural.includes(engine.SLOT.CLOSING_DECLINE));
 });
+
+// --- the classification whitelist (Ken found this in the field, August 23 2026) ---
+// The engine rebuilds lastClassification field by field, so anything the model
+// returns and the parser reads is silently DROPPED unless it is named there. That is
+// how 0.7.14's number button reached testers doing nothing: it parsed correctly, and
+// it rendered correctly when handed a value, and the field never survived the middle.
+
+test('EVERY classification field the parser produces survives the engine', () => {
+    engine.reset();
+    engine.partnerSpeaking('how many would you like?');
+    const snap = engine.ingestClassification({
+        classification: {
+            partner_action: 'QUESTION', turn_status: 'COMPLETE', is_repair_initiator: false,
+            offered_options: [], offered_range: { min: 1, max: null },
+        },
+        responses: [{ slot: 'PREFERRED', text: 'Just one, thanks.', hint: 'just one' }],
+    }, 'how many would you like?');
+    assert.deepEqual(snap.lastClassification.offered_range, { min: 1, max: null },
+        'the range reached the snapshot the renderer reads');
+});
+
+test('an ordinary turn carries no range', () => {
+    engine.reset();
+    engine.partnerSpeaking('how are you?');
+    const snap = engine.ingestClassification({
+        classification: { partner_action: 'QUESTION', offered_options: [] },
+        responses: [{ slot: 'PREFERRED', text: 'Fine', hint: 'fine' }],
+    }, 'how are you?');
+    assert.equal(snap.lastClassification.offered_range, null);
+});

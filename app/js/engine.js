@@ -167,7 +167,7 @@ const state = {
     lastPartnerUtterance: { text: '', confidence: null },
     mode: MODE.LISTENING,
     floor: FLOOR.OPEN,            // whose turn it is — see FLOOR
-    lastClassification: null,     // {partner_action, turn_status, is_repair_initiator} — inspectable
+    lastClassification: null,     // {partner_action, turn_status, is_repair_initiator, offered_options, offered_range} — inspectable
     palette: [],                  // current response descriptors
 };
 
@@ -249,6 +249,13 @@ export function ingestClassification(result, partnerText) {
         // turn. The palette already carries them as CHOICE responses; keeping the
         // raw list on the state lets other surfaces offer them too.
         offered_options: Array.isArray(c.offered_options) ? c.offered_options : [],
+        // A number the partner asked for instead of a choice between named things.
+        // ⚠ THIS LIST IS A WHITELIST, AND THAT IS A TRAP: a classification field the
+        // model returns and the parser reads is DROPPED HERE unless it is named, with
+        // no error anywhere. offered_range shipped in 0.7.14 parsed correctly, rendered
+        // correctly when handed a value directly, and did nothing in the real app for
+        // exactly this reason. Add every new field here in the same change.
+        offered_range: c.offered_range || null,
     };
     state.lastPartnerUtterance = {
         text: partnerText,

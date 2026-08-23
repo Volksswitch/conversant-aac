@@ -26,6 +26,10 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- The number button announced last time did not actually appear. It does now.
+  When the other person asks for a rating or a count, a small numbered button
+  shows up with your buttons and opens the number keys.
+
 ## Version 0.7.14
 
 - When the other person asks for a number rather than a choice — “on a scale of
