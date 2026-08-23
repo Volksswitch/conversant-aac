@@ -1920,6 +1920,34 @@ Reading one real tester's report turned up five statistics that were wrong or un
 
 ---
 
+## ⚠ THE ENGINE'S CLASSIFICATION IS A WHITELIST, AND IT DROPS NEW FIELDS SILENTLY (Ken found it in the field, August 23 2026)
+
+`engine.ingestClassification` **rebuilds `state.lastClassification` field by field**
+rather than passing the model's object through. So a classification field the prompt
+asks for, the parser reads, and the renderer is ready to draw is **thrown away in the
+middle, with no error and nothing to notice.** That is how the number button shipped
+in **0.7.14 announced in the release notes and doing nothing at all** - Ken tried the
+exact scenario from the note and there was no button.
+
+**ADD EVERY NEW CLASSIFICATION FIELD TO THAT LIST IN THE SAME CHANGE.** A test now
+asserts `offered_range` survives, and fails when the line is removed; extend it rather
+than trusting the next person to remember.
+
+**⚠ THE VERIFICATION LESSON IS THE BIGGER HALF, AND IT GENERALIZES: I VERIFIED BOTH
+ENDS AND NOT THE MIDDLE.** The parser was tested by handing it JSON; the renderer was
+tested by handing it a chip; the live model was later shown to classify all four cases
+correctly, **including Ken's exact words** - so three of the four links were right and
+the feature was still dead. **Testing the ends of a chain is what makes the middle look
+proven when it has never run.** When a feature spans layers, one test must cross all of
+them, or a browser check must exercise the real path.
+
+**Related shape, worth recognizing:** the same silent-drop hazard exists anywhere a
+layer copies a known set of fields out of a richer object - the settings bundle, the
+weekly-report payload, the conversation record. Each of those is guarded; this one was
+not.
+
+---
+
 ## The Express Panel has NO folders or pages (DECIDED Ken, August 22 2026)
 
 Asked by an outside reviewer whether a panel button could reveal *other* buttons -
