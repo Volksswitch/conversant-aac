@@ -10,8 +10,12 @@
   argument: how many rows each band should get, and whether a band that reorders
   itself between situations is tolerable to look at and tap.
 
-  The phrase lists below are made up but realistic. Edit them freely - that is the
-  point of a prototype.
+  THE GRID IS THE APP'S REAL GRID. All 21 keyboard layouts are embedded below,
+  geometry only, generated from app/js/keyboard-layouts.js. A file:// page cannot
+  import a module, which is why they are embedded rather than imported - run
+  `node prototypes/refresh-layouts.mjs` after changing the real layouts.
+
+  The phrase lists are made up but realistic. Edit them freely - that is the point.
 -->
 <html lang="en">
 <head>
@@ -33,16 +37,17 @@
   h1{font-size:20px;margin:0 0 2px;color:#1F4E79}
   .lede{color:#666;margin:0 0 14px;font-size:13.5px;max-width:900px}
   .wrap{display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap}
-  .stage{flex:1 1 620px;min-width:520px}
-  .side{width:330px;flex:0 0 330px}
+  .stage{flex:1 1 640px;min-width:540px}
+  .side{width:340px;flex:0 0 340px}
 
   /* --- the panel ------------------------------------------------------- */
   #panel{background:#eceff1;padding:var(--gap);border-radius:8px;display:flex;flex-direction:column;gap:var(--gap)}
+  #panel.dock-side{max-width:420px}
   .row{display:flex;gap:var(--gap)}
   .btn{flex:1 1 0;border:1px solid rgba(0,0,0,.18);border-radius:5px;background:#fff;
        font:inherit;font-size:12px;line-height:1.15;padding:6px 4px;cursor:pointer;
        display:flex;align-items:center;justify-content:center;text-align:center;
-       min-height:var(--cell-h,46px);transition:background .12s,box-shadow .12s}
+       min-height:var(--cell-h,46px);transition:background .12s,box-shadow .12s;overflow:hidden}
   .btn:active{transform:translateY(1px)}
   .b-always{background:var(--always);color:var(--always-ink)}
   .b-flex{background:var(--flex);color:var(--flex-ink)}
@@ -52,6 +57,7 @@
   .b-imow{background:var(--imow);color:#fff}
   .b-choice{background:var(--choice);color:#fff;border-color:#1B5E20;font-weight:bold}
   .b-empty{background:#fff;border-style:dashed;border-color:#ccc;color:#ccc;cursor:default}
+  .b-gap{background:none;border:none;cursor:default;pointer-events:none}
   .on{box-shadow:inset 0 0 0 3px currentColor}
   .moved{animation:flash 1.1s ease-out}
   @keyframes flash{0%{background:#FFF176}100%{}}
@@ -64,11 +70,12 @@
   .pick{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
   .pick button{font:inherit;font-size:12.5px;padding:5px 9px;border:1px solid #bbb;border-radius:14px;background:#fff;cursor:pointer}
   .pick button.sel{background:#1F4E79;border-color:#1F4E79;color:#fff}
+  select{font:inherit;font-size:13px;padding:5px 7px;border:1px solid #bbb;border-radius:5px;width:100%;margin-bottom:8px}
   .lbl{font-size:11.5px;color:#777;margin:0 0 3px}
   .rowc{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:13px}
   .rowc span.n{width:26px;text-align:center;font-weight:bold}
   .rowc button{width:28px;height:26px;font:inherit;border:1px solid #bbb;background:#fff;border-radius:4px;cursor:pointer}
-  .rowc label{width:66px;color:#444}
+  .rowc label{width:60px;color:#444}
   .note{font-size:12px;color:#666;margin:8px 0 0}
   #said{font-size:13px;min-height:2.6em;background:#fff;border:1px solid #ddd;border-left:4px solid var(--flex-ink);
         border-radius:5px;padding:8px 10px;margin-top:10px;color:#333}
@@ -85,10 +92,11 @@
 <body>
 
 <h1>Express Panel bands &mdash; prototype</h1>
-<p class="lede">Throwaway. Nothing here is the app. Pick a partner and a place and watch the middle band refill;
-change the band sizes and see what fits. The two questions this exists to answer are <b>how many rows each band
-should get</b> and <b>whether a band that reorders itself between situations is tolerable</b> &mdash; the churn
-figure under the panel measures the second one.</p>
+<p class="lede">Throwaway. Nothing here is the app, but the grid is: all 21 keyboard layouts are the real ones, so the
+number of buttons and where &ldquo;In my own words&rdquo; sits are whatever that layout actually gives you. Pick a
+partner and a place and watch the Flex band refill. The two questions this exists to answer are <b>how many rows each
+band should get</b> and <b>whether a band that reorders itself between situations is tolerable</b> &mdash; the figure
+under the panel measures the second one.</p>
 
 <div class="wrap">
 <div class="stage">
@@ -110,6 +118,8 @@ figure under the panel measures the second one.</p>
   <div class="card">
     <h2>Layout</h2>
     <p class="lbl">Dock</p><div class="pick" id="pickDock"></div>
+    <p class="lbl">Keyboard layout (the panel shares its grid)</p>
+    <select id="pickLayout"></select>
     <div class="rowc"><label>Always</label><button data-band="always" data-d="-1">&minus;</button><span class="n" id="nAlways"></span><button data-band="always" data-d="1">+</button><span style="color:#888;font-size:12px" id="cAlways"></span></div>
     <div class="rowc"><label>Flex</label><button data-band="flex" data-d="-1">&minus;</button><span class="n" id="nFlex"></span><button data-band="flex" data-d="1">+</button><span style="color:#888;font-size:12px" id="cFlex"></span></div>
     <div class="rowc"><label>Context</label><button data-band="ctx" data-d="-1">&minus;</button><span class="n" id="nCtx"></span><button data-band="ctx" data-d="1">+</button><span style="color:#888;font-size:12px" id="cCtx"></span></div>
@@ -121,18 +131,23 @@ figure under the panel measures the second one.</p>
   <div class="card">
     <h2>Bands</h2>
     <p style="font-size:12.5px;margin:0 0 6px"><span class="k k-a">Always</span> never changes.</p>
-    <p style="font-size:12.5px;margin:0 0 6px"><span class="k k-f">Flex</span> partner's phrases, then the place's, then the general set.</p>
-    <p style="font-size:12.5px;margin:0"><span class="k k-c">Context</span> never speaks. Offered choices take its front.</p>
-    <p class="note">Everything is ordered most-likely-first, so what falls off the end is the least likely general phrase.</p>
+    <p style="font-size:12.5px;margin:0 0 6px"><span class="k k-f">Flex</span> the partner's phrases, then the place's, then the general set.</p>
+    <p style="font-size:12.5px;margin:0 0 6px"><span class="k k-c">Context</span> never speaks. Offered choices take its front.</p>
+    <p class="note"><b>In my own words</b> is the layout's space key and belongs to no band, so it can never be
+    pushed off &mdash; exactly as in the app.</p>
   </div>
 </div>
 </div>
 
 <script>
+/* LAYOUTS-START */
+const LAYOUTS = {"S1":{"name":"Side Layout 1","dock":"side","rows":[[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"space","span":3},{"kind":"cell","span":1}]]},"S2":{"name":"Side Layout 2","dock":"side","rows":[[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"space","span":4}]]},"S3":{"name":"Side Layout 3","dock":"side","rows":[[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"space","span":4},{"kind":"cell","span":1}]]},"S4":{"name":"Side Layout 4","dock":"side","rows":[[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"space","span":4},{"kind":"cell","span":1}]]},"S5":{"name":"Side Layout 5","dock":"side","rows":[[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"space","span":2},{"kind":"cell","span":1},{"kind":"gap","span":1}]]},"S6":{"name":"Side Layout 6","dock":"side","rows":[[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"space","span":1},{"kind":"cell","span":1}]]},"S7":{"name":"Side Layout 7","dock":"side","rows":[[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"space","span":3},{"kind":"cell","span":1}]]},"S8":{"name":"Side Layout 8","dock":"side","rows":[[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":2},{"kind":"cell","span":2}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":2}],[{"kind":"space","span":5}]]},"S9":{"name":"Side Layout 9","dock":"side","rows":[[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":2},{"kind":"space","span":2},{"kind":"cell","span":1}]]},"S10":{"name":"Side Layout 10","dock":"side","rows":[[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"space","span":4},{"kind":"cell","span":1}]]},"B1":{"name":"Bottom Layout 1","dock":"bottom","rows":[[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"space","span":4},{"kind":"cell","span":1},{"kind":"cell","span":1}]]},"B2":{"name":"Bottom Layout 2","dock":"bottom","rows":[[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"space","span":8},{"kind":"cell","span":1}]]},"B3":{"name":"Bottom Layout 3","dock":"bottom","rows":[[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"space","span":7},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}]]},"B4":{"name":"Bottom Layout 4","dock":"bottom","rows":[[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"space","span":3},{"kind":"cell","span":1}]]},"B5":{"name":"Bottom Layout 5","dock":"bottom","rows":[[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"space","span":2},{"kind":"cell","span":1},{"kind":"gap","span":1},{"kind":"gap","span":1}]]},"B6":{"name":"Bottom Layout 6","dock":"bottom","rows":[[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"space","span":3},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}]]},"B7":{"name":"Bottom Layout 7","dock":"bottom","rows":[[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"space","span":8}]]},"B8":{"name":"Bottom Layout 8","dock":"bottom","rows":[[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"gap","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"gap","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"gap","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"gap","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"space","span":4},{"kind":"gap","span":1},{"kind":"space","span":4}]]},"B9":{"name":"Bottom Layout 9","dock":"bottom","rows":[[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"space","span":8},{"kind":"cell","span":1}]]},"B10":{"name":"Bottom Layout 10","dock":"bottom","rows":[[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"space","span":4},{"kind":"cell","span":1},{"kind":"cell","span":1}]]},"B11":{"name":"Bottom Layout 11 (QWERTY)","dock":"bottom","rows":[[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":2}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":2}],[{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"cell","span":1},{"kind":"space","span":2},{"kind":"cell","span":1},{"kind":"cell","span":1}]]}};
+/* LAYOUTS-END */
+
 // ---------------------------------------------------------------- content
 // Ordered most-likely-first, which is the only ordering promise the design makes.
 const ALWAYS = ['Yes','No','Okay','Please','Thank you','Sorry','Hi','Bye','Wait','Help','Stop',
-                "I don't know",'Not now','Say that again','More','Careful',
+                "I don't know",'Not now','Say that again','More','Careful','Later',
                 'This device listens and speaks for me'];
 
 const GENERAL = ['Could you help me?','What’s new?','I’m fine','I need a minute','Go on','That’s good',
@@ -158,19 +173,20 @@ const TURNS = {
 };
 
 // ---------------------------------------------------------------- state
-const DOCKS = { 'bottom (9 x 4)': { cols: 9, rows: 4, cell: 46 },
-                'side (3 x 11)':  { cols: 3, rows: 11, cell: 40 } };
-let dock = 'bottom (9 x 4)';
+let dock = 'bottom';
+let layoutId = 'B1';
 let bands = { always: 2, flex: 1, ctx: 1 };
 let partner = null, place = null, feeling = null, turn = 'nothing';
-let previous = new Map();      // position -> label, from the last render
+let previous = new Map();
 let everMoved = new Set();
 
-// ---------------------------------------------------------------- helpers
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls;
                                  if (text != null) e.textContent = text; return e; };
-const cols = () => DOCKS[dock].cols;
-const rows = () => DOCKS[dock].rows;
+const layout = () => LAYOUTS[layoutId];
+const idsFor = (d) => Object.keys(LAYOUTS).filter(k => LAYOUTS[k].dock === d);
+
+/** Button positions in one row - the space key and the spacers are not positions. */
+const positionsIn = (row) => row.filter(c => c.kind === 'cell').length;
 
 /** The Flex band, filled partner-first then place then general, cut to what fits. */
 function flexPhrases(n) {
@@ -191,89 +207,109 @@ function contextButtons(n) {
   for (const p of Object.keys(PARTNERS)) out.push({ kind: 'partner', text: p });
   for (const p of Object.keys(PLACES)) out.push({ kind: 'place', text: p });
   for (const f of FEELINGS) out.push({ kind: 'feeling', text: f });
-  out.push({ kind: 'imow', text: 'In my own words' });
-  return out.slice(0, n);
+  return n === undefined ? out : out.slice(0, n);
 }
 
 function say(what, how) {
   document.getElementById('said').innerHTML =
     how === 'silent' ? '<b>' + what + '</b> &mdash; nothing spoken. This band never speaks.'
+    : how === 'imow' ? '<b>In my own words</b> &mdash; opens the keyboard. Not part of any band, so it is always here.'
                      : 'Spoken: &ldquo;<b>' + what + '</b>&rdquo;';
 }
 
 // ---------------------------------------------------------------- render
 function render() {
+  const L = layout(), rows = L.rows;
   const panel = document.getElementById('panel');
-  const C = cols(), R = rows();
-  document.documentElement.style.setProperty('--cell-h', DOCKS[dock].cell + 'px');
+  panel.className = 'dock-' + L.dock;
+  document.documentElement.style.setProperty('--cell-h', L.dock === 'side' ? '42px' : '46px');
 
-  const alwaysN = bands.always * C, flexN = bands.flex * C, ctxN = bands.ctx * C;
+  // Bands are allotted by ROW, and a row holds however many button positions the
+  // layout leaves it once the space key and any spacers are taken out.
+  const bandOf = (r) => r < bands.always ? 'always'
+                      : r < bands.always + bands.flex ? 'flex'
+                      : r < bands.always + bands.flex + bands.ctx ? 'ctx' : null;
+  const count = (band) => rows.reduce((n, row, r) => n + (bandOf(r) === band ? positionsIn(row) : 0), 0);
+  const alwaysN = count('always'), flexN = count('flex'), ctxN = count('ctx');
+
   const flex = flexPhrases(flexN);
   const ctx = contextButtons(ctxN);
-
-  const cells = [];
-  for (let i = 0; i < alwaysN; i++) cells.push({ band: 'always', text: ALWAYS[i] });
-  for (let i = 0; i < flexN; i++)   cells.push({ band: 'flex', text: flex[i] && flex[i].text, src: flex[i] && flex[i].source });
-  for (let i = 0; i < ctxN; i++)    cells.push({ band: 'ctx', item: ctx[i] });
+  const seen = { always: 0, flex: 0, ctx: 0 };
 
   const now = new Map();
   panel.innerHTML = '';
   let moved = 0, movedFlex = 0, movedSpeaking = 0;
+  let idx = 0;
 
-  for (let r = 0; r < bands.always + bands.flex + bands.ctx; r++) {
+  rows.forEach((row, r) => {
     const rowEl = el('div', 'row');
-    for (let c = 0; c < C; c++) {
-      const idx = r * C + c;
-      const cell = cells[idx];
-      if (!cell) { rowEl.appendChild(el('div', 'btn b-empty', '')); continue; }
-      let b, label, silent = false;
-
-      if (cell.band === 'always') {
-        label = cell.text || '';
-        b = el('button', 'btn b-always', label);
-      } else if (cell.band === 'flex') {
-        label = cell.text || '';
-        b = el('button', 'btn b-flex', label);
-        if (!label) b.className = 'btn b-empty';
-      } else {
-        const it = cell.item;
-        label = it ? it.text : '';
-        if (!it) { rowEl.appendChild(el('div', 'btn b-empty', '')); now.set(idx, ''); continue; }
-        silent = true;
-        const cls = { choice: 'b-choice', range: 'b-choice', partner: 'b-ctx',
-                      place: 'b-place', feeling: 'b-feel', imow: 'b-imow' }[it.kind];
-        b = el('button', 'btn ' + cls, it.kind === 'range' ? it.text : label);
-        if ((it.kind === 'partner' && it.text === partner)
-         || (it.kind === 'place'   && it.text === place)
-         || (it.kind === 'feeling' && it.text === feeling)) b.classList.add('on');
-        b.onclick = () => {
-          if (it.kind === 'partner') partner = (partner === it.text) ? null : it.text;
-          else if (it.kind === 'place') place = (place === it.text) ? null : it.text;
-          else if (it.kind === 'feeling') feeling = (feeling === it.text) ? null : it.text;
-          say(it.text, 'silent');
-          if (it.kind !== 'imow') render();
-          syncPickers();
-        };
+    const band = bandOf(r);
+    row.forEach((cell) => {
+      const grow = 'flex:' + cell.span + ' 1 0';
+      if (cell.kind === 'space') {
+        const b = el('button', 'btn b-imow', 'In my own words');
+        b.style.cssText = grow;
+        b.onclick = () => say('', 'imow');
+        rowEl.appendChild(b);
+        return;
       }
+      if (cell.kind === 'gap') {
+        const g = el('div', 'btn b-gap', '');
+        g.style.cssText = grow;
+        rowEl.appendChild(g);
+        return;
+      }
+      const here = idx++;
+      let b, label = '', silent = false;
 
-      if (!silent && label) b.onclick = () => say(label, 'spoken');
-      now.set(idx, label);
+      if (band === 'always') {
+        label = ALWAYS[seen.always++] || '';
+        b = el('button', label ? 'btn b-always' : 'btn b-empty', label);
+      } else if (band === 'flex') {
+        const f = flex[seen.flex++];
+        label = f ? f.text : '';
+        b = el('button', label ? 'btn b-flex' : 'btn b-empty', label);
+      } else if (band === 'ctx') {
+        const it = ctx[seen.ctx++];
+        label = it ? it.text : '';
+        silent = true;
+        if (!it) { b = el('button', 'btn b-empty', ''); }
+        else {
+          const cls = { choice: 'b-choice', range: 'b-choice', partner: 'b-ctx',
+                        place: 'b-place', feeling: 'b-feel' }[it.kind];
+          b = el('button', 'btn ' + cls, it.text);
+          if ((it.kind === 'partner' && it.text === partner)
+           || (it.kind === 'place'   && it.text === place)
+           || (it.kind === 'feeling' && it.text === feeling)) b.classList.add('on');
+          b.onclick = () => {
+            if (it.kind === 'partner') partner = (partner === it.text) ? null : it.text;
+            else if (it.kind === 'place') place = (place === it.text) ? null : it.text;
+            else if (it.kind === 'feeling') feeling = (feeling === it.text) ? null : it.text;
+            say(it.text, 'silent');
+            render(); syncPickers();
+          };
+        }
+      } else {
+        // A row past the last band. Nothing has claimed it.
+        b = el('button', 'btn b-empty', '');
+      }
+      b.style.cssText = grow;
+      if (!silent && label && band) b.onclick = () => say(label, 'spoken');
+      now.set(here, label);
 
-      const was = previous.get(idx);
+      const was = previous.get(here);
       if (was !== undefined && was !== label) {
         moved++;
-        if (cell.band === 'flex') movedFlex++;
-        // The measure that matters. A Context-band button changing is not a cost:
-        // it never speaks, so nothing the user has learned to SAY has moved.
-        if (!silent) movedSpeaking++;
-        everMoved.add(idx);
+        if (band === 'flex') movedFlex++;
+        if (!silent) movedSpeaking++;      // the only churn that costs anything
+        everMoved.add(here);
         if (document.getElementById('markMoved').checked) b.classList.add('moved');
       }
-      if (document.getElementById('keepDots').checked && everMoved.has(idx)) b.classList.add('dot');
+      if (document.getElementById('keepDots').checked && everMoved.has(here)) b.classList.add('dot');
       rowEl.appendChild(b);
-    }
+    });
     panel.appendChild(rowEl);
-  }
+  });
 
   const first = previous.size === 0;
   previous = now;
@@ -283,29 +319,33 @@ function render() {
     : '<b>' + movedSpeaking + '</b> of the ' + (alwaysN + flexN) + ' buttons that SPEAK changed &mdash; ' +
       (movedSpeaking === movedFlex
         ? 'all of them in the Flex band, which is where change is allowed.'
-        : '<b style="color:#B71C1C">' + (movedSpeaking - movedFlex) + ' of them outside the Flex band, which should never happen.</b>') +
-      ' <span style="color:#888">(' + (moved - movedSpeaking) + ' non-speaking buttons in the Context band also changed, which costs nothing.)</span>';
+        : '<b style="color:#B71C1C">' + (movedSpeaking - movedFlex) + ' outside the Flex band, which should never happen.</b>') +
+      ' <span style="color:#888">(' + (moved - movedSpeaking) + ' non-speaking Context buttons also changed, which costs nothing.)</span>';
 
-  const used = flex.length, byP = flex.filter(f => f.source === 'partner').length,
-        byL = flex.filter(f => f.source === 'place').length, byG = flex.filter(f => f.source === 'general').length;
+  const byP = flex.filter(f => f.source === 'partner').length,
+        byL = flex.filter(f => f.source === 'place').length,
+        byG = flex.filter(f => f.source === 'general').length;
   const wanted = (PARTNERS[partner] || []).length + (PLACES[place] || []).length;
   document.getElementById('fill').innerHTML =
-    'Flex band holds ' + flexN + ': <b>' + byP + '</b> from ' + (partner || 'no partner') +
+    L.name + ' &mdash; ' + rows.length + ' rows, ' + (alwaysN + flexN + ctxN) + ' button positions in bands. ' +
+    'Flex holds ' + flexN + ': <b>' + byP + '</b> from ' + (partner || 'no partner') +
     ', <b>' + byL + '</b> from ' + (place || 'no place') + ', <b>' + byG + '</b> general.' +
     (wanted > flexN ? ' <span style="color:#B71C1C">' + (wanted - flexN) +
       ' of your own phrases did not fit and cannot be reached.</span>' : '');
 
   const total = bands.always + bands.flex + bands.ctx;
   const notes = [];
-  if (total > R) notes.push('That is ' + total + ' rows in a ' + R + '-row dock. The extra rows would not exist.');
-  if (total < R) notes.push((R - total) + ' row(s) of this dock belong to no band.');
-  if (ctxN < 4) notes.push('The Context band has ' + ctxN + ' positions. Fewer than 4 means a four-way menu loses one of the partner’s own choices — on a 3-wide dock it needs two rows.');
-  const over = contextButtons(999).length - ctxN;
-  if (over > 0) notes.push(over + ' Context button(s) do not fit, including possibly "In my own words".');
+  if (total > rows.length) notes.push('That is ' + total + ' rows in a ' + rows.length + '-row layout; the extra rows do not exist.');
+  if (total < rows.length) notes.push((rows.length - total) + ' row(s) belong to no band.');
+  if (ctxN < 4) notes.push('The Context band has ' + ctxN + ' positions. Fewer than 4 means a four-way menu loses one of the partner’s own choices.');
+  const over = contextButtons().length - ctxN;
+  if (over > 0) notes.push(over + ' Context button(s) do not fit.');
   document.getElementById('sizeWarn').textContent = notes.join(' ');
+
   for (const [k, n] of Object.entries(bands)) {
-    document.getElementById('n' + k[0].toUpperCase() + k.slice(1)).textContent = n;
-    document.getElementById('c' + k[0].toUpperCase() + k.slice(1)).textContent = (n * C) + ' buttons';
+    const K = k[0].toUpperCase() + k.slice(1);
+    document.getElementById('n' + K).textContent = n;
+    document.getElementById('c' + K).textContent = count(k) + ' buttons';
   }
 }
 
@@ -323,8 +363,34 @@ function syncPickers() {
   picker('pickPartner', [null, ...Object.keys(PARTNERS)], partner, v => partner = v);
   picker('pickPlace', [null, ...Object.keys(PLACES)], place, v => place = v);
   picker('pickTurn', Object.keys(TURNS), turn, v => turn = v);
-  picker('pickDock', Object.keys(DOCKS), dock, v => { dock = v; previous = new Map(); everMoved.clear(); });
+  picker('pickDock', ['bottom', 'side'], dock, v => {
+    dock = v; layoutId = idsFor(v)[0]; fitBands(); previous = new Map(); everMoved.clear();
+  });
+  const sel = document.getElementById('pickLayout');
+  sel.innerHTML = '';
+  for (const id of idsFor(dock)) {
+    const o = el('option', '', LAYOUTS[id].name + '  (' + LAYOUTS[id].rows.length + ' rows)');
+    o.value = id;
+    if (id === layoutId) o.selected = true;
+    sel.appendChild(o);
+  }
 }
+// Fit the bands to whichever layout was picked, so it opens sensible rather than
+// mostly empty. Flex and Context get a row each and Always absorbs the rest, which
+// is a default and not a recommendation - the whole point is to fiddle with it.
+// ⚠ It also shows the problem: the real layouts run from 3 rows to 11, so a band
+// size in ROWS does not travel between them. Whether band sizes are per-layout, or
+// a share of the rows, or something else, is a question this raises and does not
+// answer.
+function fitBands() {
+  const n = layout().rows.length;
+  bands.flex = 1;
+  bands.ctx = Math.min(1, Math.max(0, n - 1));
+  bands.always = Math.max(0, n - bands.flex - bands.ctx);
+}
+document.getElementById('pickLayout').onchange = (e) => {
+  layoutId = e.target.value; fitBands(); previous = new Map(); everMoved.clear(); render();
+};
 document.querySelectorAll('.rowc button').forEach(b => {
   b.onclick = () => {
     const k = b.dataset.band, d = +b.dataset.d;
@@ -336,6 +402,7 @@ document.querySelectorAll('.rowc button').forEach(b => {
 document.getElementById('markMoved').onchange = render;
 document.getElementById('keepDots').onchange = render;
 
+fitBands();
 syncPickers();
 render();
 </script>
