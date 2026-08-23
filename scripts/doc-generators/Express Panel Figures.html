@@ -38,24 +38,25 @@
  <div class="b always">Help</div><div class="b always">Stop</div><div class="b always">More</div>
  <div class="b always">I don't know</div><div class="b always">Not now</div><div class="b always">Say again</div>
  <div class="b always">This device listens<br>and speaks for me</div><div class="b always">&nbsp;</div><div class="b always">&nbsp;</div>
+ <div class="b ctx">Mom</div><div class="b ctx">Dr Ruiz</div><div class="b ctx">Marcus</div>
+ <div class="b place">Home</div><div class="b place">The diner</div><div class="b place">The clinic</div>
+ <div class="b feel">Tired</div><div class="b feel">Happy</div><div class="b feel">Sore</div>
  <div class="b flex">Can you pass<br>me that?</div><div class="b flex">How's your<br>shoulder?</div><div class="b flex">I'm okay,<br>honestly</div>
- <div class="b flex">I need a hand</div><div class="b flex">Then what?</div><div class="b flex">You're the best</div>
- <div class="b flex">&nbsp;</div><div class="b flex">&nbsp;</div><div class="b flex">&nbsp;</div>
- <div class="b ctx">Mom</div><div class="b ctx">Dr Ruiz</div><div class="b place">Home</div>
- <div class="b place">The diner</div><div class="b imow span4">In my own words</div>
- <div class="b feel">Tired</div>
+ <div class="b flex">I need a hand</div><div class="b imow span4">In my own words</div>
+ <div class="b flex">You're the best</div>
 </div>
 <p class="key">
- <span class="tag t-a">Always band</span> the words that stay in the same place forever. Never changes.<br>
- <span class="tag t-flex">Flex band</span> phrases filtered by the partner and place selected below. The only band whose contents change.<br>
- <span class="tag t-c">Context band</span> the buttons that <b>never speak</b>. They tell the app who the partner is, where the user is, how they feel.
+ <span class="tag t-a">Always band</span> the words that stay in the same place forever. First, so nothing can shift them.<br>
+ <span class="tag t-c">Context band</span> the buttons that <b>never speak</b>: who the partner is, where the user is, how they feel. Resizing it leaves the Always band untouched.<br>
+ <span class="tag t-flex">Flex band</span> phrases suited to the partner and place selected above. Takes whatever is left, and flows around the compose key.
 </p>
 <p class="cap"><b>The dividing line that makes this learnable:</b> a button in the Context band never says anything out loud.
-Everywhere else, a button speaks. Feeling does not filter the middle band; only partner and place do.</p>
+Everywhere else, a button speaks. Feeling does not fill the Flex band; only the partner and the place do.
+<b>The order is by which band must not move</b>, not by importance.</p>
 </div>
 
 <div class="fig" id="f2">
-<h3>Choice buttons arrive &mdash; at the front of the Context band</h3>
+<h3>What the partner offers arrives at the front of the Context band</h3>
 <div class="row">
  <div>
  <div class="panel" style="grid-template-columns:repeat(3,1fr);width:300px">
@@ -68,12 +69,13 @@ Everywhere else, a button speaks. Feeling does not filter the middle band; only 
  <div>
  <div class="panel" style="grid-template-columns:repeat(3,1fr);width:300px">
   <div class="b always">Yes</div><div class="b always">No</div><div class="b always">Okay</div>
-  <div class="b flex">Can you pass<br>me that?</div><div class="b flex">How's your<br>shoulder?</div><div class="b flex">You're the best</div>
   <div class="b chip">mild</div><div class="b chip">moderate</div><div class="b chip">severe</div>
+  <div class="b flex">Can you pass<br>me that?</div><div class="b flex">How's your<br>shoulder?</div><div class="b flex">You're the best</div>
  </div>
  <p class="cap"><b>"Is it mild, moderate or severe?"</b> The choices take the front of the Context band, in solid color
- &mdash; immediate and temporary, and this is where the conversation is right now. Nothing that speaks has moved.
- Mom, Home and Tired come back when the turn ends.</p>
+ &mdash; immediate and temporary, and this is where the conversation is right now. Nothing that speaks has moved:
+ Mom, Home and Tired are covered for the turn and come back when it ends. A question asking for a number puts one
+ button in the same place, in the same way.</p>
  </div>
 </div>
 </div>
@@ -126,12 +128,12 @@ what is being edited &mdash; the part that must never be ambiguous.</p>
   <div class="b always">Please</div><div class="b always">Thank you</div><div class="b always">Sorry</div>
   <div class="b always">Hi</div><div class="b always">Bye</div><div class="b always">Wait</div>
   <div class="b always">Help</div><div class="b always">Stop</div><div class="b always">I don't know</div>
+  <div class="b ctx">Mom</div><div class="b ctx">Dr Ruiz</div><div class="b place">Home</div>
+  <div class="b place">The diner</div><div class="b feel">Tired</div><div class="b feel">Sore</div>
   <div class="b flex">Can you pass<br>me that?</div>
   <div class="b flex" style="outline:3px solid #1B5E20;outline-offset:1px">How's your<br>shoulder?</div>
   <div class="b flex">You're the best</div>
-  <div class="b flex">What's for<br>dinner?</div><div class="b flex">I need a hand</div><div class="b flex">Could you<br>help me?</div>
-  <div class="b ctx">Mom</div><div class="b ctx">Dr Ruiz</div><div class="b place">Home</div>
-  <div class="b place">The diner</div><div class="b feel">Tired</div><div class="b imow">In my own<br>words</div>
+  <div class="b flex">What's for<br>dinner?</div><div class="b flex">I need a hand</div><div class="b imow">In my own<br>words</div>
  </div>
  <div style="display:flex;gap:8px;margin-top:9px;font-size:12px;align-items:center">
   <span style="color:#666">Selected:</span>
