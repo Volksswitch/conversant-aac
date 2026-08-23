@@ -21,6 +21,9 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.7.15": [
+    "The number button announced last time did not actually appear. It does now. When the other person asks for a rating or a count, a small numbered button shows up with your buttons and opens the number keys."
+  ],
   "0.7.14": [
     "When the other person asks for a number rather than a choice — “on a scale of one to ten”, “how many would you like?” — a small numbered button now appears beside your buttons. Tapping it opens “In my own words” with the number keys already showing, so you can type the number, see it as you build it, and press Enter to say it. Your suggested replies still appear as usual; the number keys are there for when you want to be exact."
   ],
