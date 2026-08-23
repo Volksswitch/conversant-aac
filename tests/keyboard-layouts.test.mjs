@@ -4,7 +4,7 @@
  * BOTH the letters page and the symbols page, so buildSymbolsPage() must produce a
  * page geometrically congruent with the letters layout it was built from — same
  * rows, same per-cell spans, non-letter cells (space/shift/backspace/enter/blank/
- * pred) left exactly in place; only letter cells become symbols and the 123 key
+ * blank) left exactly in place; only letter cells become symbols and the 123 key
  * becomes ABC.
  */
 import { test } from 'node:test';
@@ -35,7 +35,7 @@ test('buildSymbolsPage is geometrically congruent with every letters layout', ()
                 } else if (cell.kind === 'action' && cell.action === 'page') {
                     assert.equal(out.label, 'ABC', `${id} r${r}c${c}: 123 becomes ABC`);
                 } else {
-                    // space / shift / backspace / enter / blank / pred are untouched.
+                    // space / shift / backspace / enter / blank are untouched.
                     assert.deepEqual(out, cell, `${id} r${r}c${c}: non-letter cell unchanged`);
                 }
             });
@@ -50,5 +50,20 @@ test('the Settings menu lists split cleanly into side and bottom layouts', () =>
     // Every menu entry names a real layout.
     for (const l of [...SIDE_LAYOUTS, ...BOTTOM_LAYOUTS]) {
         assert.equal(l.name, LAYOUTS[l.id].name);
+    }
+});
+
+// No layout may carry a word-prediction cell (Ken, August 23 2026). Prediction is an
+// inline ghost inside the compose box; it has never been a key on the panel or the
+// keyboard, and the cell type that advertised it was defined and never used. Nothing
+// downstream handles that kind any more, so a layout that reintroduced one would draw
+// it as a live button.
+test('no layout contains a prediction cell', () => {
+    for (const [id, def] of Object.entries(LAYOUTS)) {
+        for (const row of def.rows) {
+            for (const cell of row) {
+                assert.notEqual(cell.kind, 'pred', `${id} (${def.name}) has a prediction cell`);
+            }
+        }
     }
 });

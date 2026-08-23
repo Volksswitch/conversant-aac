@@ -406,7 +406,7 @@ export function showResponseError(message, onRetry) {
 // SELECTED KEYBOARD LAYOUT cell-for-cell (so one static keyguard overlays both):
 // each key cell becomes a category-colored phrase button (phrases drawn in order
 // from the pool); the keyboard's SPACE cell becomes the "In my own words" button
-// (distinct color, same span); blank/pred cells and any leftover cells stay
+// (distinct color, same span); blank cells and any leftover cells stay
 // blank. (The persistent overrides that used to sit above the grid have moved to
 // the Command Bar — Ken, June 29 2026 — so the panel is just the phrase grid.)
 // Activation: single-tap, or a confirming double-tap (first tap arms, second
@@ -618,7 +618,7 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
     // turn. Taking the last cells instead means nothing moves: every phrase keeps its
     // position and at most the final few are temporarily covered.
     const itemCells = (layoutRows || []).reduce((n, row) => n + (row || []).filter(
-        (c) => c.kind !== 'space' && c.kind !== 'blank' && c.kind !== 'pred').length, 0);
+        (c) => c.kind !== 'space' && c.kind !== 'blank').length, 0);
     const chipStart = chipStartIndex(itemCells, choiceChips.length);
 
     let pi = 0;              // index into the ordered item list AND the cell ordinal
@@ -641,7 +641,7 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
                 rowEl.appendChild(b);
                 return;
             }
-            if (cell.kind === 'blank' || cell.kind === 'pred') {
+            if (cell.kind === 'blank') {
                 rowEl.appendChild(blank(span));
                 return;
             }

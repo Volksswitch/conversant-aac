@@ -3180,13 +3180,12 @@ function blockZoomGestures() {
 // How many Express Panel cells the chosen layout offers an ITEM. The item list maps
 // onto these one-for-one, so it is the ceiling on how many buttons can exist — an item
 // past the last cell has no button to tap and is unreachable. Mirrors the cell kinds
-// ui.renderExpressPanel skips: 'space' is "In my own words", 'blank' and 'pred' are
-// spacers.
+// ui.renderExpressPanel skips: 'space' is "In my own words", 'blank' is a spacer.
 function expressCellCount() {
     let n = 0;
     for (const row of expressLayoutRows()) {
         for (const cell of row || []) {
-            if (cell.kind !== 'space' && cell.kind !== 'blank' && cell.kind !== 'pred') n++;
+            if (cell.kind !== 'space' && cell.kind !== 'blank') n++;
         }
     }
     return n;

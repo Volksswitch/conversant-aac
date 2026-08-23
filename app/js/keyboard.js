@@ -543,7 +543,7 @@ function renderRows() {
         rowEl.className = 'kbd-row';
         for (const cell of row) {
             const span = cell.span || 1;
-            if (cell.kind === 'blank' || cell.kind === 'pred') {
+            if (cell.kind === 'blank') {
                 // Inert filler / future prediction slot — no key, just holds space.
                 const filler = document.createElement('div');
                 filler.className = 'kbd-key kbd-' + cell.kind;

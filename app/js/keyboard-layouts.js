@@ -11,7 +11,6 @@
  *   { kind:'space', action:'space' } — space
  *   { kind:'action', action, label } — 'shift' | 'backspace' | 'enter' | 'page'
  *   { kind:'blank' }                 — inert spacer (grid filler / split gap)
- *   { kind:'pred' }                  — inert word-prediction slot (future)
  *
  * Span lets one cell occupy the width of several (e.g. a 3-wide space). Rows in
  * a layout all sum to the same total, so flex preserves the intended geometry.
@@ -25,7 +24,6 @@ const BK = (span = 1) => ({ kind: 'action', action: 'backspace', label: '⌫', s
 const EN = (span = 1) => ({ kind: 'action', action: 'enter', label: '↵', span });
 const PG = (label = '123', span = 1) => ({ kind: 'action', action: 'page', label, span });
 const BL = (span = 1) => ({ kind: 'blank', label: '', span });
-const PR = (span = 1) => ({ kind: 'pred', label: '', span });
 const r  = (str) => str.split(' ').filter(Boolean).map((c) => C(c)); // a row of chars
 
 // --- side-dock layouts (S1–S10) --------------------------------------------
