@@ -122,8 +122,8 @@ under the panel measures the second one.</p>
     <select id="pickLayout"></select>
     <p class="lbl">Band shape</p><div class="pick" id="pickShape"></div>
     <div class="rowc"><label>Always</label><button data-band="always" data-d="-1">&minus;</button><span class="n" id="nAlways"></span><button data-band="always" data-d="1">+</button><span style="color:#888;font-size:12px" id="cAlways"></span></div>
-    <div class="rowc"><label>Flex</label><button data-band="flex" data-d="-1">&minus;</button><span class="n" id="nFlex"></span><button data-band="flex" data-d="1">+</button><span style="color:#888;font-size:12px" id="cFlex"></span></div>
     <div class="rowc"><label>Context</label><button data-band="ctx" data-d="-1">&minus;</button><span class="n" id="nCtx"></span><button data-band="ctx" data-d="1">+</button><span style="color:#888;font-size:12px" id="cCtx"></span></div>
+    <div class="rowc"><label>Flex</label><button data-band="flex" data-d="-1">&minus;</button><span class="n" id="nFlex">&mdash;</span><button data-band="flex" data-d="1">+</button><span style="color:#888;font-size:12px" id="cFlex"></span></div>
     <div id="sizeWarn" class="warn"></div>
     <label class="chk"><input type="checkbox" id="markMoved" checked> Flash the buttons that changed</label>
     <label class="chk"><input type="checkbox" id="keepDots"> Leave a dot on every button that has ever changed</label>
@@ -132,8 +132,8 @@ under the panel measures the second one.</p>
   <div class="card">
     <h2>Bands</h2>
     <p style="font-size:12.5px;margin:0 0 6px"><span class="k k-a">Always</span> never changes.</p>
-    <p style="font-size:12.5px;margin:0 0 6px"><span class="k k-f">Flex</span> the partner's phrases, then the place's, then the general set.</p>
     <p style="font-size:12.5px;margin:0 0 6px"><span class="k k-c">Context</span> never speaks. Offered choices take its front.</p>
+    <p style="font-size:12.5px;margin:0 0 6px"><span class="k k-f">Flex</span> the partner's phrases, then the place's, then the general set. Takes whatever is left over.</p>
     <p class="note"><b>In my own words</b> is the layout's space key and belongs to no band, so it can never be
     pushed off &mdash; exactly as in the app.</p>
     <p class="note"><b>Band shape.</b> <i>rows</i> gives straight edges but a row is 2 buttons on one layout and 13
@@ -179,9 +179,20 @@ const TURNS = {
 // ---------------------------------------------------------------- state
 let dock = 'bottom';
 let layoutId = 'B1';
-let bands = { always: 2, flex: 1, ctx: 1 };     // in ROWS, for shape 'rows'
-let counts = { flex: 8, ctx: 6 };              // in POSITIONS, for shape 'counts'
-                                               // (Always takes whatever is left)
+// BAND ORDER: Always, then Context, then Flex (Ken, August 23 2026). It is an
+// ordering by WHICH BAND MUST NOT MOVE, not by importance.
+//   - Always is first, so nothing above it can shift it. Its whole value is that a
+//     fallback phrase sits in the same place every single time.
+//   - Context is next, so growing or shrinking it leaves Always untouched.
+//   - Flex takes whatever is left, absorbing every change the other two make. It is
+//     also the band that tolerates movement best, since its contents change with the
+//     partner and the place anyway.
+// A third payoff nobody planned: the compose key is in the LAST ROW of all 21
+// layouts, so putting Flex last makes the band that tolerates a ragged edge the one
+// that has to flow around it. Context, which has a floor of four and transient
+// buttons at its front, would have had to wrap it under any other order.
+let bands = { always: 2, ctx: 1 };              // in ROWS for 'rows'   (Flex: the rest)
+let counts = { always: 16, ctx: 6 };            // in POSITIONS for 'counts' (Flex: rest)
 let shape = 'rows';
 let partner = null, place = null, feeling = null, turn = 'nothing';
 let previous = new Map();
@@ -247,18 +258,12 @@ function render() {
   const total = rows.reduce((n, row) => n + positionsIn(row), 0);
   let bandOfPosition;
   if (shape === 'rows') {
-    const bandOfRow = (r) => r < bands.always ? 'always'
-                           : r < bands.always + bands.flex ? 'flex'
-                           : r < bands.always + bands.flex + bands.ctx ? 'ctx' : null;
-    const startOfRow = [];
-    let acc = 0;
-    rows.forEach((row, r) => { startOfRow[r] = acc; acc += positionsIn(row); });
-    bandOfPosition = (r) => bandOfRow(r);
+    bandOfPosition = (r) => r < bands.always ? 'always'
+                          : r < bands.always + bands.ctx ? 'ctx' : 'flex';
   } else {
-    const ctxN_ = Math.min(counts.ctx, total);
-    const flexN_ = Math.min(counts.flex, total - ctxN_);
-    const alwaysEnd = total - ctxN_ - flexN_;
-    bandOfPosition = (r, i) => i < alwaysEnd ? 'always' : i < alwaysEnd + flexN_ ? 'flex' : 'ctx';
+    const alwaysN_ = Math.min(counts.always, total);
+    const ctxN_ = Math.min(counts.ctx, total - alwaysN_);
+    bandOfPosition = (r, i) => i < alwaysN_ ? 'always' : i < alwaysN_ + ctxN_ ? 'ctx' : 'flex';
   }
   const tally = { always: 0, flex: 0, ctx: 0 };
   { let i = 0;
@@ -369,28 +374,25 @@ function render() {
     (wanted > flexN ? ' <span style="color:#B71C1C">' + (wanted - flexN) +
       ' of your own phrases did not fit and cannot be reached.</span>' : '');
 
-  const rowsUsed = bands.always + bands.flex + bands.ctx;
   const notes = [];
-  if (shape === 'rows' && rowsUsed > rows.length) notes.push('That is ' + rowsUsed + ' rows in a ' + rows.length + '-row layout; the extra rows do not exist.');
-  if (shape === 'rows' && rowsUsed < rows.length) notes.push((rows.length - rowsUsed) + ' row(s) belong to no band.');
+  if (flexN === 0) notes.push('Always and Context have taken everything; the Flex band has nowhere to go.');
   if (ctxN < 4) notes.push('The Context band has ' + ctxN + ' positions. Fewer than 4 means a four-way menu loses one of the partner’s own choices.');
   const over = contextButtons().length - ctxN;
   if (over > 0) notes.push(over + ' Context button(s) do not fit.');
   document.getElementById('sizeWarn').textContent = notes.join(' ');
 
-  const shown = { always: alwaysN, flex: flexN, ctx: ctxN };
-  for (const k of ['always', 'flex', 'ctx']) {
+  const shown = { always: alwaysN, ctx: ctxN, flex: flexN };
+  for (const k of ['always', 'ctx', 'flex']) {
     const K = k[0].toUpperCase() + k.slice(1);
+    // Flex is the remainder: reported, never set.
     document.getElementById('n' + K).textContent =
-      shape === 'rows' ? bands[k] : (k === 'always' ? '—' : counts[k]);
+      k === 'flex' ? '—' : (shape === 'rows' ? bands[k] : counts[k]);
     document.getElementById('c' + K).textContent = shown[k] + ' buttons';
-    // In counts mode Always is whatever is left, so it has nothing to set.
     document.querySelectorAll('[data-band="' + k + '"]').forEach((b) => {
-      b.disabled = (shape === 'counts' && k === 'always');
+      b.disabled = (k === 'flex');
       b.style.opacity = b.disabled ? .35 : 1;
     });
   }
-  document.querySelector('.rowc label').textContent = shape === 'rows' ? 'Always' : 'Always';
 }
 
 // ---------------------------------------------------------------- chrome
@@ -429,9 +431,8 @@ function syncPickers() {
 // answer.
 function fitBands() {
   const n = layout().rows.length;
-  bands.flex = 1;
-  bands.ctx = Math.min(1, Math.max(0, n - 1));
-  bands.always = Math.max(0, n - bands.flex - bands.ctx);
+  bands.ctx = 1;
+  bands.always = Math.max(0, n - 2);   // Flex gets the rest: at least one row
 }
 document.getElementById('pickLayout').onchange = (e) => {
   layoutId = e.target.value; fitBands(); previous = new Map(); everMoved.clear(); render();
@@ -439,8 +440,9 @@ document.getElementById('pickLayout').onchange = (e) => {
 document.querySelectorAll('.rowc button').forEach(b => {
   b.onclick = () => {
     const k = b.dataset.band, d = +b.dataset.d;
-    if (shape === 'rows') bands[k] = Math.max(k === 'always' ? 0 : 1, bands[k] + d);
-    else if (k !== 'always') counts[k] = Math.max(0, counts[k] + d);
+    if (k === 'flex') return;                        // the remainder; nothing to set
+    if (shape === 'rows') bands[k] = Math.max(0, bands[k] + d);
+    else counts[k] = Math.max(0, counts[k] + d);
     previous = new Map();
     render();
   };
