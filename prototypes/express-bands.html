@@ -57,9 +57,42 @@
   .b-always{background:var(--always);color:var(--always-ink)}
   .b-flex{background:var(--flex);color:var(--flex-ink)}
   .b-ctx,.b-place,.b-feel{background:var(--ctx);color:var(--ctx-ink)}
-  .b-ctx{border-left:5px solid var(--partner-bar)}
-  .b-place{border-left:5px solid var(--place-bar)}
-  .b-feel{border-left:5px solid var(--feel-bar)}
+
+  /* FOUR CANDIDATE WAYS to say which KIND of Context button this is, switchable so
+     they can be judged rather than argued about. In every one of them the band's
+     background is the same, and the type colour is present - the question is what
+     ELSE carries the distinction. Note what is NOT available: box-shadow rings mean
+     SELECTED in the real app, and a dashed border means "the partner just put this
+     on the table", so neither may be borrowed here. */
+
+  /* 1. Colour of the bar alone. Today's scheme, and the one Ken judged too weak:
+        brown and olive are near neighbours at 5px. */
+  .sch-color .b-ctx  {border-left:5px solid var(--partner-bar)}
+  .sch-color .b-place{border-left:5px solid var(--place-bar)}
+  .sch-color .b-feel {border-left:5px solid var(--feel-bar)}
+
+  /* 2. Thickness. Cheap, but a COMPARATIVE cue - you need two side by side to know
+        which is which - and it implies a ranking that does not exist. */
+  .sch-thick .b-ctx  {border-left:9px solid var(--partner-bar)}
+  .sch-thick .b-place{border-left:5px solid var(--place-bar)}
+  .sch-thick .b-feel {border-left:2px solid var(--feel-bar)}
+
+  /* 3. Which side the bar is on. An ABSOLUTE cue: no comparison needed, and it still
+        reads in grayscale. Place along the bottom is a mnemonic - the ground. */
+  .sch-side .b-ctx  {border-left:5px solid var(--partner-bar)}
+  .sch-side .b-place{border-bottom:5px solid var(--place-bar)}
+  .sch-side .b-feel {border-top:5px solid var(--feel-bar)}
+
+  /* 4. A shape before the label, plus the bar. Strongest of the four and the most in
+        keeping with the app, which already marks the selected state with a check
+        rather than with colour alone. Geometric shapes render in every font and
+        survive grayscale entirely. */
+  .sch-shape .b-ctx  {border-left:5px solid var(--partner-bar)}
+  .sch-shape .b-place{border-left:5px solid var(--place-bar)}
+  .sch-shape .b-feel {border-left:5px solid var(--feel-bar)}
+  .sch-shape .b-ctx::before  {content:'\25CF\2009';color:var(--partner-bar);font-size:.9em}
+  .sch-shape .b-place::before{content:'\25B2\2009';color:var(--place-bar);font-size:.9em}
+  .sch-shape .b-feel::before {content:'\25C6\2009';color:var(--feel-bar);font-size:.9em}
   .b-imow{background:var(--imow);color:#fff}
   /* The two exceptions, and they are exceptions on purpose: what the partner has
      just put on the table is immediate and temporary, so it breaks the band's
@@ -96,6 +129,12 @@
   .k-f{background:var(--flex);color:var(--flex-ink)}
   .k-c{background:var(--ctx);color:var(--ctx-ink)}
   .warn{color:#B71C1C;font-size:12px;margin-top:6px}
+  /* The four candidates shown at once, because a scheme you have to switch to is a
+     scheme you are comparing against memory rather than against the other three. */
+  .cmp{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .cmp .who{width:52px;font-size:11px;color:#666;text-align:right;flex:none}
+  .cmp .set{display:flex;gap:5px;flex:1}
+  .cmp .btn{min-height:34px;font-size:11.5px}
   .brief{background:#fff;border:1px solid #d8d8d8;border-left:5px solid #1F4E79;border-radius:8px;
          padding:14px 18px;margin:0 0 16px;max-width:1010px}
   .brief h2{font-size:15px;color:#1F4E79;margin:0 0 8px}
@@ -161,6 +200,8 @@ tolerable</b> &mdash; the figure under the panel measures the second one.</p>
     <p class="lbl">Keyboard layout (the panel shares its grid)</p>
     <select id="pickLayout"></select>
     <p class="lbl">Band shape</p><div class="pick" id="pickShape"></div>
+    <p class="lbl">Telling the Context types apart</p><div class="pick" id="pickMark"></div>
+    <div id="markCompare" style="margin-top:8px"></div>
     <div class="rowc"><label>Always</label><button data-band="always" data-d="-1">&minus;</button><span class="n" id="nAlways"></span><button data-band="always" data-d="1">+</button><span style="color:#888;font-size:12px" id="cAlways"></span></div>
     <div class="rowc"><label>Context</label><button data-band="ctx" data-d="-1">&minus;</button><span class="n" id="nCtx"></span><button data-band="ctx" data-d="1">+</button><span style="color:#888;font-size:12px" id="cCtx"></span></div>
     <div class="rowc"><label>Flex</label><button data-band="flex" data-d="-1">&minus;</button><span class="n" id="nFlex">&mdash;</span><button data-band="flex" data-d="1">+</button><span style="color:#888;font-size:12px" id="cFlex"></span></div>
@@ -175,7 +216,9 @@ tolerable</b> &mdash; the figure under the panel measures the second one.</p>
     <p style="font-size:12.5px;margin:0 0 6px"><span class="k k-c">Context</span> never speaks. Offered choices take its front.</p>
     <p style="font-size:12.5px;margin:0 0 6px"><span class="k k-f">Flex</span> the partner's phrases, then the place's, then the general set. Takes whatever is left over.</p>
     <p class="note"><b>One background color per band.</b> Inside the Context band the kind of button &mdash; partner,
-    place, feeling &mdash; is said by the colored bar down its left edge, not by a different fill.</p>
+    place, feeling &mdash; is said by a mark rather than by a different fill. Four candidates are switchable on the
+    left: the bar's <i>color</i> alone, its <i>thickness</i>, which <i>side</i> it sits on, or a <i>shape</i> before
+    the label &mdash; circle for a person, triangle for a place, diamond for a feeling.</p>
     <p class="note"><b>Two deliberate exceptions:</b> what the partner has just put on the table breaks the band's color,
     because it is immediate and temporary. Offered choices have a solid border; the number button has a dashed one.</p>
     <p class="note"><b>In my own words</b> is the layout's space key and belongs to no band, so it can never be
@@ -238,6 +281,7 @@ let layoutId = 'B1';
 let bands = { always: 2, ctx: 1 };              // in ROWS for 'rows'   (Flex: the rest)
 let counts = { always: 16, ctx: 6 };            // in POSITIONS for 'counts' (Flex: rest)
 let shape = 'rows';
+let mark = 'shape';    // color | thick | side | shape
 let partner = null, place = null, feeling = null, turn = 'nothing';
 let previous = new Map();
 let everMoved = new Set();
@@ -286,7 +330,7 @@ function say(what, how) {
 function render() {
   const L = layout(), rows = L.rows;
   const panel = document.getElementById('panel');
-  panel.className = 'dock-' + L.dock;
+  panel.className = 'dock-' + L.dock + ' sch-' + mark;
   document.documentElement.style.setProperty('--cell-h', L.dock === 'side' ? '42px' : '46px');
 
   // TWO WAYS OF CUTTING THE PANEL INTO BANDS, so they can be compared rather than
@@ -424,6 +468,7 @@ function render() {
   const over = contextButtons().length - ctxN;
   if (over > 0) notes.push(over + ' Context button(s) do not fit.');
   document.getElementById('sizeWarn').textContent = notes.join(' ');
+  renderCompare();
 
   const shown = { always: alwaysN, ctx: ctxN, flex: flexN };
   for (const k of ['always', 'ctx', 'flex']) {
@@ -454,6 +499,7 @@ function syncPickers() {
   picker('pickPlace', [null, ...Object.keys(PLACES)], place, v => place = v);
   picker('pickTurn', Object.keys(TURNS), turn, v => turn = v);
   picker('pickShape', ['rows', 'counts'], shape, v => { shape = v; previous = new Map(); });
+  picker('pickMark', ['color', 'thick', 'side', 'shape'], mark, v => { mark = v; });
   picker('pickDock', ['bottom', 'side'], dock, v => {
     dock = v; layoutId = idsFor(v)[0]; fitBands(); previous = new Map(); everMoved.clear();
   });
@@ -491,6 +537,24 @@ document.querySelectorAll('.rowc button').forEach(b => {
     render();
   };
 });
+// Draw the four candidates together, each labelled, so they are compared with each
+// other rather than with what you remember of the last one.
+function renderCompare() {
+  const box = document.getElementById('markCompare');
+  box.innerHTML = '';
+  for (const m of ['color', 'thick', 'side', 'shape']) {
+    const row = el('div', 'cmp');
+    const who = el('div', 'who', m + (m === mark ? ' \u25C0' : ''));
+    if (m === mark) who.style.fontWeight = 'bold';
+    row.appendChild(who);
+    const set = el('div', 'set sch-' + m);
+    for (const [cls, label] of [['b-ctx', 'Mom'], ['b-place', 'Home'], ['b-feel', 'Tired']]) {
+      set.appendChild(el('div', 'btn ' + cls, label));
+    }
+    row.appendChild(set);
+    box.appendChild(row);
+  }
+}
 document.getElementById('markMoved').onchange = render;
 document.getElementById('keepDots').onchange = render;
 
