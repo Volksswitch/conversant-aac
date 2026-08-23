@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.7.16
+
 - If you use the split keyboard layout (Bottom Layout 8), your Express Panel
   was showing two identical “In my own words” buttons — one for each of that
   layout’s two space keys. There is now one, and the space it was taking is a
