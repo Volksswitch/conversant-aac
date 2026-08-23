@@ -120,6 +120,7 @@ under the panel measures the second one.</p>
     <p class="lbl">Dock</p><div class="pick" id="pickDock"></div>
     <p class="lbl">Keyboard layout (the panel shares its grid)</p>
     <select id="pickLayout"></select>
+    <p class="lbl">Band shape</p><div class="pick" id="pickShape"></div>
     <div class="rowc"><label>Always</label><button data-band="always" data-d="-1">&minus;</button><span class="n" id="nAlways"></span><button data-band="always" data-d="1">+</button><span style="color:#888;font-size:12px" id="cAlways"></span></div>
     <div class="rowc"><label>Flex</label><button data-band="flex" data-d="-1">&minus;</button><span class="n" id="nFlex"></span><button data-band="flex" data-d="1">+</button><span style="color:#888;font-size:12px" id="cFlex"></span></div>
     <div class="rowc"><label>Context</label><button data-band="ctx" data-d="-1">&minus;</button><span class="n" id="nCtx"></span><button data-band="ctx" data-d="1">+</button><span style="color:#888;font-size:12px" id="cCtx"></span></div>
@@ -135,6 +136,9 @@ under the panel measures the second one.</p>
     <p style="font-size:12.5px;margin:0 0 6px"><span class="k k-c">Context</span> never speaks. Offered choices take its front.</p>
     <p class="note"><b>In my own words</b> is the layout's space key and belongs to no band, so it can never be
     pushed off &mdash; exactly as in the app.</p>
+    <p class="note"><b>Band shape.</b> <i>rows</i> gives straight edges but a row is 2 buttons on one layout and 13
+    on another, so the size you want is often not expressible. <i>counts</i> asks for a number of buttons taken in
+    reading order &mdash; still contiguous, but a band can start part-way along a row. Always takes the remainder.</p>
   </div>
 </div>
 </div>
@@ -175,7 +179,10 @@ const TURNS = {
 // ---------------------------------------------------------------- state
 let dock = 'bottom';
 let layoutId = 'B1';
-let bands = { always: 2, flex: 1, ctx: 1 };
+let bands = { always: 2, flex: 1, ctx: 1 };     // in ROWS, for shape 'rows'
+let counts = { flex: 8, ctx: 6 };              // in POSITIONS, for shape 'counts'
+                                               // (Always takes whatever is left)
+let shape = 'rows';
 let partner = null, place = null, feeling = null, turn = 'nothing';
 let previous = new Map();
 let everMoved = new Set();
@@ -227,13 +234,37 @@ function render() {
   panel.className = 'dock-' + L.dock;
   document.documentElement.style.setProperty('--cell-h', L.dock === 'side' ? '42px' : '46px');
 
-  // Bands are allotted by ROW, and a row holds however many button positions the
-  // layout leaves it once the space key and any spacers are taken out.
-  const bandOf = (r) => r < bands.always ? 'always'
-                      : r < bands.always + bands.flex ? 'flex'
-                      : r < bands.always + bands.flex + bands.ctx ? 'ctx' : null;
-  const count = (band) => rows.reduce((n, row, r) => n + (bandOf(r) === band ? positionsIn(row) : 0), 0);
-  const alwaysN = count('always'), flexN = count('flex'), ctxN = count('ctx');
+  // TWO WAYS OF CUTTING THE PANEL INTO BANDS, so they can be compared rather than
+  // argued about (Ken, August 23 2026).
+  //
+  //   'rows'   - a band is whole rows. Tidy, and the edges are straight. But a row is
+  //              2 positions on one layout and 13 on another, so the same setting
+  //              means wildly different things and the size you want is often simply
+  //              not expressible.
+  //   'counts' - a band is a number of positions, taken in reading order. Contiguous
+  //              but not rectangular: a band can start or end part-way along a row.
+  //              Says the same thing on every layout, and Always takes the remainder.
+  const total = rows.reduce((n, row) => n + positionsIn(row), 0);
+  let bandOfPosition;
+  if (shape === 'rows') {
+    const bandOfRow = (r) => r < bands.always ? 'always'
+                           : r < bands.always + bands.flex ? 'flex'
+                           : r < bands.always + bands.flex + bands.ctx ? 'ctx' : null;
+    const startOfRow = [];
+    let acc = 0;
+    rows.forEach((row, r) => { startOfRow[r] = acc; acc += positionsIn(row); });
+    bandOfPosition = (r) => bandOfRow(r);
+  } else {
+    const ctxN_ = Math.min(counts.ctx, total);
+    const flexN_ = Math.min(counts.flex, total - ctxN_);
+    const alwaysEnd = total - ctxN_ - flexN_;
+    bandOfPosition = (r, i) => i < alwaysEnd ? 'always' : i < alwaysEnd + flexN_ ? 'flex' : 'ctx';
+  }
+  const tally = { always: 0, flex: 0, ctx: 0 };
+  { let i = 0;
+    rows.forEach((row, r) => { for (let k = 0; k < positionsIn(row); k++) {
+      const b = bandOfPosition(r, i++); if (b) tally[b]++; } }); }
+  const alwaysN = tally.always, flexN = tally.flex, ctxN = tally.ctx;
 
   const flex = flexPhrases(flexN);
   const ctx = contextButtons(ctxN);
@@ -244,10 +275,11 @@ function render() {
   let moved = 0, movedFlex = 0, movedSpeaking = 0;
   let idx = 0;
 
+  let posSeen = 0;
   rows.forEach((row, r) => {
     const rowEl = el('div', 'row');
-    const band = bandOf(r);
     row.forEach((cell) => {
+      const band = cell.role === 'position' ? bandOfPosition(r, posSeen) : null;
       const grow = 'flex:' + cell.span + ' 1 0';
       if (cell.role === 'compose') {
         const b = el('button', 'btn b-imow', 'In my own words');
@@ -263,6 +295,7 @@ function render() {
         return;
       }
       const here = idx++;
+      posSeen++;
       let b, label = '', silent = false;
 
       if (band === 'always') {
@@ -336,20 +369,28 @@ function render() {
     (wanted > flexN ? ' <span style="color:#B71C1C">' + (wanted - flexN) +
       ' of your own phrases did not fit and cannot be reached.</span>' : '');
 
-  const total = bands.always + bands.flex + bands.ctx;
+  const rowsUsed = bands.always + bands.flex + bands.ctx;
   const notes = [];
-  if (total > rows.length) notes.push('That is ' + total + ' rows in a ' + rows.length + '-row layout; the extra rows do not exist.');
-  if (total < rows.length) notes.push((rows.length - total) + ' row(s) belong to no band.');
+  if (shape === 'rows' && rowsUsed > rows.length) notes.push('That is ' + rowsUsed + ' rows in a ' + rows.length + '-row layout; the extra rows do not exist.');
+  if (shape === 'rows' && rowsUsed < rows.length) notes.push((rows.length - rowsUsed) + ' row(s) belong to no band.');
   if (ctxN < 4) notes.push('The Context band has ' + ctxN + ' positions. Fewer than 4 means a four-way menu loses one of the partner’s own choices.');
   const over = contextButtons().length - ctxN;
   if (over > 0) notes.push(over + ' Context button(s) do not fit.');
   document.getElementById('sizeWarn').textContent = notes.join(' ');
 
-  for (const [k, n] of Object.entries(bands)) {
+  const shown = { always: alwaysN, flex: flexN, ctx: ctxN };
+  for (const k of ['always', 'flex', 'ctx']) {
     const K = k[0].toUpperCase() + k.slice(1);
-    document.getElementById('n' + K).textContent = n;
-    document.getElementById('c' + K).textContent = count(k) + ' buttons';
+    document.getElementById('n' + K).textContent =
+      shape === 'rows' ? bands[k] : (k === 'always' ? '—' : counts[k]);
+    document.getElementById('c' + K).textContent = shown[k] + ' buttons';
+    // In counts mode Always is whatever is left, so it has nothing to set.
+    document.querySelectorAll('[data-band="' + k + '"]').forEach((b) => {
+      b.disabled = (shape === 'counts' && k === 'always');
+      b.style.opacity = b.disabled ? .35 : 1;
+    });
   }
+  document.querySelector('.rowc label').textContent = shape === 'rows' ? 'Always' : 'Always';
 }
 
 // ---------------------------------------------------------------- chrome
@@ -366,6 +407,7 @@ function syncPickers() {
   picker('pickPartner', [null, ...Object.keys(PARTNERS)], partner, v => partner = v);
   picker('pickPlace', [null, ...Object.keys(PLACES)], place, v => place = v);
   picker('pickTurn', Object.keys(TURNS), turn, v => turn = v);
+  picker('pickShape', ['rows', 'counts'], shape, v => { shape = v; previous = new Map(); });
   picker('pickDock', ['bottom', 'side'], dock, v => {
     dock = v; layoutId = idsFor(v)[0]; fitBands(); previous = new Map(); everMoved.clear();
   });
@@ -397,7 +439,8 @@ document.getElementById('pickLayout').onchange = (e) => {
 document.querySelectorAll('.rowc button').forEach(b => {
   b.onclick = () => {
     const k = b.dataset.band, d = +b.dataset.d;
-    bands[k] = Math.max(k === 'always' ? 0 : 1, bands[k] + d);
+    if (shape === 'rows') bands[k] = Math.max(k === 'always' ? 0 : 1, bands[k] + d);
+    else if (k !== 'always') counts[k] = Math.max(0, counts[k] + d);
     previous = new Map();
     render();
   };
