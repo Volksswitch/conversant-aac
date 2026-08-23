@@ -76,6 +76,31 @@ const BRITISH = [
     ['spelt', 'spelled'], ['amongst', 'among'],
 ];
 
+// BRITISH VOCABULARY, which is a different failure from British SPELLING and was
+// missed for months because the words above are all misspellings (Ken, August 22 2026:
+// "Mum" and "the surgery" had both reached a design document). A correctly spelled word
+// can still be the wrong word.
+//
+// ⚠ THIS LIST IS SHORT ON PURPOSE, AND CANNOT BE MADE LONG. Most British vocabulary is
+// also perfectly good American vocabulary with a different meaning, so a keen list
+// produces false failures instead of catching anything: SURGERY is an operation,
+// TABLETS are iPads, a TORCH burns, a BOOT is footwear, PANTS are trousers, a FLAT is
+// level, a LIFT is a ride, a CHEMIST does chemistry, a BISCUIT comes with gravy. Every
+// one of those is a real word here. Only words that are wrong in EVERY American reading
+// belong below — which means the test catches "Mum" and can never catch "the surgery".
+// That half is a job for a person reading the sentence, which is why the rule in
+// CLAUDE.md carries the judgment and this list only carries the easy cases.
+const BRITISH_WORDS = [
+    ['mum', 'mom'], ['mummy', 'mommy'], ['lorry', 'truck'], ['petrol', 'gas'],
+    ['nappy', 'diaper'], ['pram', 'stroller'], ['pushchair', 'stroller'],
+    ['fortnight', 'two weeks'], ['maths', 'math'], ['aeroplane', 'airplane'],
+    ['motorway', 'highway'], ['car park', 'parking lot'], ['postcode', 'zip code'],
+    ['dustbin', 'trash can'], ['aubergine', 'eggplant'], ['courgette', 'zucchini'],
+    ['anticlockwise', 'counterclockwise'], ['telly', 'TV'], ['bloke', 'guy'],
+    ['chuffed', 'pleased'], ['knackered', 'exhausted'], ['whinge', 'complain'],
+    ['nought', 'zero'], ['jumble sale', 'rummage sale'], ['holidaymaker', 'vacationer'],
+];
+
 // ⚠ WORDS THAT LOOK BRITISH AND ARE NOT. Both of these were "corrected" on the first
 // manual pass before someone read the sentence:
 //   dialogue  -- meaning a conversation, this IS American English; only the UI-box
@@ -88,8 +113,9 @@ const PROPER_NOUNS = [/CALL Centre/g];
 // -ing and -ed, so "practise" + "ing" is "practising", not "practiseing". Matching the
 // bare stem plus a suffix misses exactly that form -- and "practising" was one of the
 // two words the first hand sweep let through, for the same reason.
-const AMERICAN = new Map(BRITISH);
-const alternatives = BRITISH.flatMap(([brit]) =>
+const ALL = BRITISH.concat(BRITISH_WORDS);
+const AMERICAN = new Map(ALL);
+const alternatives = ALL.flatMap(([brit]) =>
     brit.endsWith('e') ? [`${brit}(?:s|d)?`, `${brit.slice(0, -1)}(?:ing|ed|es)`]
                        : [`${brit}(?:s|es|d|ed|ing|ful|ly)?`]);
 const rx = new RegExp(`\\b(?:${alternatives.join('|')})\\b`, 'gi');
@@ -97,7 +123,7 @@ const rx = new RegExp(`\\b(?:${alternatives.join('|')})\\b`, 'gi');
 /** The American form of a matched word, keeping whatever ending it was found with. */
 function americanFor(word) {
     const w = word.toLowerCase();
-    for (const [brit, amer] of BRITISH) {
+    for (const [brit, amer] of ALL) {
         if (w === brit) return amer;
         if (w.startsWith(brit)) return amer + w.slice(brit.length);          // colour + s
         const dropped = brit.slice(0, -1);

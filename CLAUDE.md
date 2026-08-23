@@ -186,6 +186,7 @@ Ken collected Conversation Analysis (CA) literature and had it synthesized into 
 - **Scope is everything a user reads or hears, not just the `.docx`.** That means every generated document, `CHANGELOG.md` (which becomes the in-app "What's new" notes), `settings-help.json` (which the app **speaks aloud**), and any on-screen string in `app/`. **Code comments are out of scope** — same split as the plain-language rule: their reader is the next developer.
 - **⚠ THIS RULE WAS NOT HOLDING, which is why it is now stated with its failure mode.** Ken asked for it to be noted on August 11 2026; it had been recorded since June 14 2026 and was being broken in **eight documents plus the spoken help and the release notes** — including "colour" in text written into both User Manuals *that same day*, and "practise" in four spoken-help entries the app reads out. The lesson is not that the rule was unclear: it is that **nothing checks it**, and British spellings arrive unnoticed one word at a time.
 - **ENFORCED BY `tests/american-spelling.test.mjs`** over everything in git that a user reads or hears: `CHANGELOG.md`, `settings-help.json`, `app/index.html` and the **string literals** in `app/js/*.js` (literals, not whole files, so a comment saying "blue-grey" cannot fail the build). It caught three more the moment it was written — "initialised" and "neighbouring" in prompt text, "Cancelled." in an error the user can read in Troubleshooting. **The `.docx` are NOT covered** — they are git-ignored, so a test cannot depend on them; sweep those by hand during "sync docs".
+- **⚠ IT IS NOT ONLY SPELLING — BRITISH VOCABULARY COUNTS, AND IT WENT UNNOTICED FOR MONTHS (Ken, August 22 2026, finding “Mum” and “the surgery” in a design document).** Every entry in the original list is a MISSPELLING, so a correctly spelled wrong word sailed past both the test and the eye. **The near-misses make this mostly unautomatable and the reason is worth stating: most British vocabulary is also good American vocabulary with a different meaning** — *surgery* is an operation, *tablets* are iPads, a *torch* burns, a *boot* is footwear, a *flat* is level, a *lift* is a ride, a *chemist* does chemistry. So `tests/american-spelling.test.mjs` gained a **short** `BRITISH_WORDS` list of words wrong in EVERY American reading (mum, lorry, petrol, fortnight, maths, car park, postcode, anticlockwise, …) and **can never catch “the surgery”**. That half is a person reading the sentence. **When writing examples, use American settings and names**: Mom not Mum, the clinic or the doctor's office not the surgery, store clerk not shop staff, pills not tablets, diner not cafe.
 - **The word list is EXPLICIT, never a pattern, and that is not laziness.** `\w+ise` would condemn *advertise, exercise, surprise, compromise, supervise, promise, devise*, which are -ise on both sides of the Atlantic; a doubled-consonant rule would condemn *controlled* and *compelled*, which double in American English too. Each entry is a word we mean. **A stem ending in -e needs its own alternative**, because it drops that -e before -ing: "practise" + "ing" is *practising*, which a stem-plus-suffix match misses — one of the two words the hand sweep let through.
 - **Sweep for it whenever documents are touched** — a "sync docs" pass is the natural moment. Search stems, not whole words: `grey` misses *greyed* and *greying*, `colour` misses *recolour*. The forms that actually turned up here were colour/colours/recolour, grey/greyed, favourite, judgement, maximise, cancelled, practise/practising, recognises, catalogue and behavioural.
 - **Two things a naive find-and-replace gets WRONG, both hit on the first pass:** "**dialogue**" meaning a conversation is *already* correct American English (only the UI-box sense is "dialog"), and "**CALL Centre, University of Edinburgh**" is a cited institution's name — Americanizing a proper noun makes the citation false. Read the sentence before changing the word.
@@ -1976,17 +1977,46 @@ testers who have a full panel *and* their context bands in use, still routinely 
 the composer for things they say often. If instead they use a handful of cells and leave
 the rest, the shortage was never real.
 
-**The full write-up, including the partner/place design that replaces folders, is
+**⚠ ONE OF THE SEVEN GROUNDS WAS WRONG AND IS RETRACTED, NOT DELETED (Ken, August 22
+2026): folders do NOT break the keyguard.** It is a sheet of plastic with holes and no
+labels of its own, so paging changes what is behind a hole and never where the hole is.
+What survives of that point is only that nothing tells the user which page is showing.
+*Left in the document as a retraction because a deleted argument gets re-derived.*
+
+**THE DESIGN THAT REPLACES FOLDERS — settled with Ken August 22 2026, nothing built.**
+Three bands: **Always** (never changes), **Flex** (Ken's name; phrases that suit the
+partner and place), **Context** (the buttons that **NEVER SPEAK** — partner, place,
+feeling, the partner's offered choices, and the number button).
+- **The speaking/influencing split is the organizing rule and it is Ken's**, better than
+  the one it replaced: it explains the layout in a sentence, and **a mis-hit in the
+  Context band can never say something irreversible.** It also explains something already
+  true in the code that nobody had reasoned out — choice buttons ignore the double-tap
+  safeguard, because that safeguard guards *speaking*.
+- **Choices take the FRONT of the Context band, in solid color** (Ken: prominence —
+  “this is where the conversation is RIGHT NOW”). Floor of four positions on that band.
+- **⚠ ROLES ARE DEAD. Ken killed them and was right.** The idea was a fixed role per
+  position (greeting / their subject / …) so meaning stayed put while wording changed.
+  It asks the user to think in categories somebody else invented, and it **restricts**
+  them — a partner with four things to say and no fourth-role phrase gets a hole. **The
+  replacement: the user orders each list by how likely they are to want it, and the band
+  fills partner-first, then place, then the general set.** The only promise is *the most
+  likely thing is first*, which the user controls directly. Cost accepted: positions
+  shift between situations (the weaker stability requirement; the grid never moves).
+- **Turning a band off does NOT re-cut the keyguard** — bands group positions, they do
+  not change the grid. My error, corrected by Ken.
+- **A recognized partner ARRIVES as a temporary button**, lit, the way an offered choice
+  does — because most recognized partners will have no permanent button and there is no
+  general set to fall back on. **Context-band overflow is worse than Flex-band overflow**
+  for that reason, and it is the one place the summoned overlay earns its keep.
+- **The transactional gap is USER-INITIATED requests** (“I need something to eat”), not
+  the partner-initiated case, which “what have you got?” already answers. The reply is
+  the same asking move one turn later, plus a card naming the user's own preferences
+  **in preference order** — which the profile may not currently store.
+
+**The full write-up, with four figures, is
 [Conversant AAC Express Panel Design.docx](Documents/) (generator
-`scripts/doc-generators/generate-express-panel-design-doc.js`).** Its load-bearing
-design decisions, so they are not re-derived: **three bands** (controls / always /
-context) with only the last changing, and the **controls band fixed because the partner
-and place toggles are themselves panel buttons - a context that could swap them away is
-a trap the user cannot get out of**; **layering rather than a whole panel per
-situation**, so combinations mostly need no authoring and **no cell can ever go blank**;
-and a **standing role per context cell** so the wording changes and the meaning does not
-- the same principle as position-carries-category on the response cards, and the thing
-that makes a swapping band learnable at all. Nothing is built.
+`scripts/doc-generators/generate-express-panel-design-doc.js`, figures from
+`Express Panel Figures.html` via `capture-express-panel-figures.js`).**  Nothing here is built.
 
 **⚠ THE CHOICE CHIPS ARE THE TOP LAYER OF THAT STACK, NOT A FOURTH BAND (Ken caught
 that the first draft never said so, August 22 2026).** What the partner offered a moment
