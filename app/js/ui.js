@@ -562,6 +562,17 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         // invisible: "New N" does re-send it, but nothing on screen said so, so the
         // cards coming back about the same alternative read as the button having
         // done nothing.
+        // The number-pad button is the same shape and the same non-speaking promise,
+        // but it opens the composer's number page rather than steering the cards, so
+        // it is never "chosen" and says what it does instead.
+        if (chip.range) {
+            b.classList.add('ep-choice-range');
+            b.title = 'Answer with a number';
+            b.setAttribute('aria-label', `Answer with a number${chip.label ? ' (' + chip.label + ')' : ''}`);
+            b.innerHTML = `<span class="ep-text">${escapeHtml(chip.label || '123')}</span>`;
+            b.addEventListener('click', () => onChoiceChip && onChoiceChip(chip));
+            return b;
+        }
         const on = activeChoice != null && chip.label === activeChoice;
         if (on) b.classList.add('ep-on');
         b.title = `Answer with "${chip.label}" — rebuilds the response cards around it`;

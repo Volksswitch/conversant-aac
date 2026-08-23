@@ -26,6 +26,13 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- When the other person asks for a number rather than a choice — “on a scale of
+  one to ten”, “how many would you like?” — a small numbered button now appears
+  beside your buttons. Tapping it opens “In my own words” with the number keys
+  already showing, so you can type the number, see it as you build it, and press
+  Enter to say it. Your suggested replies still appear as usual; the number keys
+  are there for when you want to be exact.
+
 ## Version 0.7.13
 
 - When the other person offers you a choice of answers, those choices now

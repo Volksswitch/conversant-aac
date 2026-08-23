@@ -112,6 +112,13 @@ let currentPartnerText = '';
 // Panel's reserved choice cells so the user can ask for the full four-response
 // treatment of one of them; [] whenever no closed set is open.
 let offeredChoices = [];
+// A number the partner asked for ("on a scale of one to ten", "how many?"), rather
+// than a choice between named things. Never set at the same time as offeredChoices —
+// a scale of ten is not ten buttons, it is the number pad (Ken, August 22 2026).
+let offeredRange = null;
+// True while the composer is open to answer a number question, which is the only
+// state in which Enter speaks instead of inserting a line break.
+let composerForNumber = false;
 // How the user has steered THIS partner turn: a tapped choice chip and/or the
 // text they typed into Reframe. "New N" must re-apply it (Ken, July 27 2026 —
 // pressing it after choosing "milk" was throwing the choice away and coming back
@@ -1103,6 +1110,7 @@ function startFreshListening() {
     metrics.conversationStarted({ practice: practiceMode });
     currentPartnerText = '';
     setOfferedChoices([]);   // a new partner turn — last turn's choices are gone
+    setOfferedRange(null);
     clearTurnSteering();
     dropHeldForComposer();
     pendingPartnerHistoryIdx = -1;   // fresh partner turn — not yet promoted to history
@@ -1263,8 +1271,9 @@ async function generateOptions(partnerText) {
         // treatment of one of them. Deferred with the cards when the composer is open,
         // so the panel and the palette never describe different versions of the turn.
         const offered = (snap.lastClassification && snap.lastClassification.offered_options) || [];
-        if (heldForComposer) heldForComposer.offered = offered;
-        else setOfferedChoices(offered);
+        const range = (snap.lastClassification && snap.lastClassification.offered_range) || null;
+        if (heldForComposer) { heldForComposer.offered = offered; heldForComposer.range = range; }
+        else { setOfferedChoices(offered); setOfferedRange(range); }
         // Leave the closing branch's own message alone — it set a more specific one
         // above and this line used to overwrite it.
         if (snap.mode === engine.MODE.REPAIR_OF_SELF) {
@@ -1558,6 +1567,7 @@ async function commitExchange(raw, userText, index, opts = {}) {
     // on the table, and any steering of it — is done. Shared by every path that
     // commits a user turn (response pick, Express phrase, composer, repair-of-self).
     setOfferedChoices([]);
+    setOfferedRange(null);
     clearTurnSteering();
     dropHeldForComposer();
     // Snapshot the history BEFORE this exchange — that's the context the cleanup
@@ -2006,6 +2016,7 @@ async function terminateConversation() {
     generationToken++;                 // invalidate any in-flight generation
     currentPartnerText = '';
     setOfferedChoices([]);
+    setOfferedRange(null);
     clearTurnSteering();
     dropHeldForComposer();
     lastPalette = [];
@@ -2070,12 +2081,13 @@ function dropHeldForComposer() { heldForComposer = null; }
  * with something the user explicitly asked for. */
 function showHeldForComposer() {
     if (!heldForComposer) return false;
-    const { palette, offered, at } = heldForComposer;
+    const { palette, offered, range, at } = heldForComposer;
     metrics.event(metrics.EV.PALETTE_TAKEN, { kind: 'ai', heldMs: Date.now() - at });
     heldForComposer = null;
     currentStatic = { kind: null, full: [] };
     showPalette(palette);
     setOfferedChoices(offered || []);
+    setOfferedRange(range || null);
     ui.setStatus('Select a response');
     return true;
 }
@@ -2419,6 +2431,32 @@ function setOfferedChoices(options) {
     renderExpressPanel();
 }
 
+// Set (or clear) the number the partner asked for. Same no-op-when-unchanged shape as
+// the choices above, since it also re-renders the whole panel.
+function setOfferedRange(range) {
+    const same = (!range && !offeredRange)
+        || (range && offeredRange && range.min === offeredRange.min && range.max === offeredRange.max);
+    if (same) return;
+    offeredRange = range || null;
+    renderExpressPanel();
+}
+
+/** What the number button says. "1-10" when both ends are known, "123" otherwise. */
+function rangeLabel(range) {
+    if (!range) return '';
+    if (range.min !== null && range.max !== null) return `${range.min}-${range.max}`;
+    return '123';
+}
+
+// The user tapped the number button: open "In my own words" with the keyboard already
+// on its number page. Deliberately NOT automatic on the partner's question — the
+// keyboard covers the panel, and most people answer a scale in words. The button is
+// there for the user who wants to be exact.
+function handleRangeChip() {
+    composerForNumber = true;
+    openComposer({ page: 'symbols' });
+}
+
 // The user tapped a choice chip: they've decided on one of the partner's
 // alternatives and want the responses built around it. This is a guided
 // regenerate — the SAME seam Reframe uses (refreshPalette leaves the sequence
@@ -2707,7 +2745,7 @@ async function speakAsUserTurn(historyText, spokenText = historyText, source = '
 
 // Open the modal: show the input box overlay over the reserved response
 // footprint (base UI not blurred) and bring up the keyboard in the dock region.
-function openComposer() {
+function openComposer(opts = {}) {
     // Opening the box stops the clock even if nothing is ever said from it — the user
     // has finished reading and decided against the cards at this moment, not at the
     // moment they finish typing, which can be a minute later.
@@ -2733,8 +2771,12 @@ function openComposer() {
     // phrase auto-resumes listening, or when the field already holds focus), so
     // the composer could open with no keyboard. showFor() is a no-op in physical
     // mode. (Ken, July 2026.)
-    keyboard.showFor(document.getElementById('composerInput'));
-    ui.setStatus('Type your own words');
+    keyboard.showFor(document.getElementById('composerInput'), { page: opts.page });
+    // Answering a number question: Enter speaks it, because a line break inside a
+    // one-line answer means nothing and the Enter key is right beside the digits.
+    // Scoped to this one surface and cleared in closeComposer.
+    keyboard.setEnterAction(composerForNumber ? handleSpeakComposed : null);
+    ui.setStatus(composerForNumber ? 'Type the number, then Enter' : 'Type your own words');
 }
 
 // Close the modal (Speak / Reframe / Cancel all do this): dismiss the input box
@@ -2743,6 +2785,8 @@ function openComposer() {
 // controls (so their tap doesn't trip the focusout-hide before the handler runs).
 function closeComposer() {
     composerOpen = false;
+    composerForNumber = false;
+    keyboard.setEnterAction(null);   // never leave Enter claimed past this surface
     ui.hideComposerOverlay();
     keyboard.hideKeyboard();
 }
@@ -2878,11 +2922,15 @@ function renderExpressPanel() {
         // braces with the explicit clears at each turn boundary — any path that
         // ends a turn without clearing still can't leave a dead chip on screen.
         // Capped so a long list can't push most of the phrase panel off the end.
-        choiceChips: (currentPartnerText ? offeredChoices : [])
-            .slice(0, storage.loadChoiceChipMax())
-            .map((label) => ({ label })),
+        choiceChips: (currentPartnerText
+            ? offeredChoices.slice(0, storage.loadChoiceChipMax()).map((label) => ({ label }))
+                // The number button rides the same mechanism and the same promise —
+                // it does not speak. Only ever one, and never alongside choices,
+                // because the model is told to set one or the other, not both.
+                .concat(offeredRange ? [{ label: rangeLabel(offeredRange), range: true }] : [])
+            : []),
         choiceColor: expressItems.CHOICE_COLOR,
-        onChoiceChip: handleChoiceChip,
+        onChoiceChip: (chip) => (chip && chip.range ? handleRangeChip() : handleChoiceChip(chip)),
         // Derived at render time from the live steering, so the selected chip is
         // correct on every path — the chip tap, a "New N" that re-sends it, and the
         // turn boundaries where clearTurnSteering drops it.

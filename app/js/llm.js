@@ -378,6 +378,7 @@ Return ONLY a JSON object, no other text, with exactly this shape:
   "turn_status": "COMPLETE|INCOMPLETE|CONTINUING",
   "is_repair_initiator": false,
   "offered_options": [],
+  "offered_range": null,
   "responses": [
     // for a CLOSED-SET turn (offered_options non-empty) the responses are instead:
     //   {"slot": "CHOICE|CHOICE_OTHER|CHOICE_ASK|CHOICE_REPAIR", "text": "...", "hint": "..."}
@@ -407,6 +408,10 @@ Classification (commit to these BEFORE writing responses):
   (b) a list offered in a STATEMENT — "We've got muffins, croissants, and a few different pastries today — anything jump out at you?", "I could do Tuesday, Wednesday, or Friday.", "There's soup, salad, or a sandwich if you're hungry." The list does NOT have to be exhaustive. A question after the list ("anything jump out at you?") is a STRONG SIGNAL that the options are being offered, but it is NOT required — a plain declarative offer counts too, as the last two examples show, and those are common in casual planning. If the partner named things the user could pick, list them.
   The test is whether the partner is OFFERING them for the user to choose from — not merely mentioning them. A narrative list is NOT an offer: "I picked up milk, eggs, and bread on the way home" puts nothing on the table, so use []. An open question with no named options ("how have you been feeling?", "what do you fancy?") is [] too. NEVER invent an option the partner did not say.
   If one item is vague or open-ended ("a few different pastries", "some other bits"), do not pretend it is a definite choice — either make its card ask about it naturally ("What kind of pastries do you have?") or leave it out. And since a list like this is usually not the whole menu, keep a CHOICE_OTHER card for what the user actually wants whenever a cell is free.
+
+- "offered_range": set ONLY when the partner has asked for a NUMBER rather than a choice between named things - a scale ("on a scale of one to ten", "how would you rate it out of five") or a count ("how many would you like?", "how many sugars?"). Return {"min": 1, "max": 10} for a scale, or {"min": null, "max": null} for an open count with no stated top. Use null when no number is being asked for.
+  A SCALE IS NOT A CLOSED SET. Do not put its values in "offered_options" - ten buttons reading 1 to 10 is not something a person can scan mid-conversation, and the app has a number pad for this. Keep "offered_options" [] whenever "offered_range" is set. A scale whose points are WORDS ("poor, fair, good, excellent") is the opposite case: that IS a closed set, it goes in "offered_options", and "offered_range" stays null.
+  Still return the normal four responses. Most people answer a scale in words ("pretty bad today", "about the same as last time"), and the number pad is there for the user who wants to be exact.
 
 CLOSED-SET TURNS override the slot structure. When "offered_options" is NOT empty, the four structural slots are the wrong shape for this turn: the user needs to be able to pick ANY of the offered alternatives, not four variations on one of them. Returning four takes on a single option is a FAILURE — it silently strips away the choices the partner actually offered. So when "offered_options" is not empty, do NOT use PREFERRED/DISPREFERRED/INITIATIVE/REPAIR at all. Instead return at most ${paletteCap} responses total, in this order:
 
@@ -731,6 +736,30 @@ function parseRepairOptions(text) {
 // Robustly parse the structured generation output. Tolerates a bare array or a
 // legacy {options:[...]} object (older builds / best-effort) by mapping it onto
 // the slot palette, plus stray prose around the JSON object.
+/**
+ * A number the partner asked for. Returns { min, max } with either end null when the
+ * partner did not state one ("how many?" has no top), or null when this is not a number
+ * question at all.
+ *
+ * Deliberately tolerant of a string, or of the ends arriving the wrong way round: the
+ * only consumer opens a number pad, so a slightly wrong range costs a label and nothing
+ * else, where refusing the whole thing costs the feature.
+ */
+function parseRange(value) {
+    if (!value || typeof value !== 'object') return null;
+    // ⚠ Number(null) is 0, not NaN — so a missing end has to be rejected BEFORE the
+    // conversion, or "how many?" (no stated top) comes back as a range of 1 to 0.
+    const num = (v) => {
+        if (v === null || v === undefined || v === '') return null;
+        const n = Number(v);
+        return Number.isFinite(n) ? n : null;
+    };
+    let min = num(value.min);
+    let max = num(value.max);
+    if (min !== null && max !== null && min > max) [min, max] = [max, min];
+    return { min, max };
+}
+
 function parseGeneration(text) {
     let parsed = null;
     try {
@@ -761,6 +790,11 @@ function parseGeneration(text) {
             // The closed set of alternatives the partner offered ("mild, moderate,
             // severe"), [] for an ordinary turn. Drives the CHOICE palette.
             offered_options: arr(parsed.offered_options).map((o) => String(o).trim()).filter(Boolean),
+            // A number the partner asked for rather than a choice between named things
+            // ("on a scale of one to ten", "how many?"). Never both this and
+            // offered_options: a scale of ten is not a set of buttons a person can scan
+            // mid-conversation, so it routes to the number pad instead. null otherwise.
+            offered_range: parseRange(parsed.offered_range),
         };
         // Preferred shape: typed responses.
         if (Array.isArray(parsed.responses)) {

@@ -580,3 +580,39 @@ test('usage reports the three input buckets separately, not one merged number', 
     assert.deepEqual(seen[2], { input: 1, output: 1, cacheWrite: 0, cacheRead: 0 });
     llm.onUsage(null);
 });
+
+// --- a number the partner asked for (Ken, August 22 2026) --------------------
+// A scale is NOT a closed set: ten buttons reading 1 to 10 is not something anyone
+// can scan mid-conversation, so it routes to the number pad instead. The prompt has
+// to say so, or the model will helpfully enumerate it into offered_options.
+
+test('the prompt separates a numeric range from a closed set', async () => {
+    mockFetch(structured);
+    await llm.generateResponses([{ role: 'partner', text: 'On a scale of one to ten, how bad is it?' }]);
+    const sys = sysText(getFetchCalls()[0]);
+    assert.match(sys, /"offered_range"/, 'the field is in the schema');
+    assert.match(sys, /A SCALE IS NOT A CLOSED SET/, 'and the model is told not to enumerate it');
+    assert.match(sys, /poor, fair, good, excellent/, 'with the word-scale counter-example, which IS a closed set');
+});
+
+test('a range is parsed, and the ends are tolerated in either order', async () => {
+    mockFetch(JSON.stringify({
+        partner_action: 'QUESTION', offered_options: [],
+        offered_range: { min: '10', max: '1' },
+        responses: [{ slot: 'PREFERRED', text: 'Pretty bad', hint: 'bad' }],
+    }));
+    const out = await llm.generateResponses([{ role: 'partner', text: 'one to ten?' }]);
+    assert.deepEqual(out.classification.offered_range, { min: 1, max: 10 });
+});
+
+test('an open count has no top, and an ordinary turn has no range at all', async () => {
+    mockFetch(JSON.stringify({ offered_range: { min: 1, max: null }, responses: [] }));
+    const open = await llm.generateResponses([{ role: 'partner', text: 'how many?' }]);
+    assert.deepEqual(open.classification.offered_range, { min: 1, max: null });
+
+    restoreFetch();
+    mockFetch(structured);
+    const plain = await llm.generateResponses([{ role: 'partner', text: 'How are you?' }]);
+    assert.equal(plain.classification.offered_range, null,
+        'an ordinary turn must not acquire a number pad button');
+});

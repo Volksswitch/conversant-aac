@@ -159,7 +159,19 @@ function backspace() {
     f.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
+// What Enter does, when a caller has claimed it. Set for the duration of one
+// keyboard-backed surface and cleared when it closes — the number-pad answer to a
+// scale question is the first and only user, where Enter speaking the number is the
+// whole point and a line break in a one-line answer is meaningless (Ken, August 22
+// 2026). A general answer to the TODO below still has to be worked out; this is
+// deliberately one hook rather than that answer.
+let enterOverride = null;
+export function setEnterAction(fn) {
+    enterOverride = typeof fn === 'function' ? fn : null;
+}
+
 function enter() {
+    if (enterOverride) { enterOverride(); return; }
     // TODO (Ken, June 2026 — to discuss/revisit): Enter may need to behave
     // differently per context (newline vs. save vs. speak), and the keyboard
     // likely needs a formal "close/done" key rather than relying on Enter or a
@@ -814,9 +826,20 @@ export function hideKeyboard() {
 // keyboard-backed surface (the "In my own words" composer) call this so the
 // keyboard shows deterministically. No-op in physical mode. show() is idempotent,
 // so a real focusin firing too just re-renders harmlessly. (Ken, July 2026.)
-export function showFor(field) {
+export function showFor(field, opts = {}) {
     if (mode !== 'onscreen' || !field) return;
+    // Open on a chosen page. The symbols page is GENERATED from the active letters
+    // layout and shares its geometry exactly, so starting there moves no key and no
+    // keyguard hole (see the note above the symbols-page builder). Used when the
+    // partner has asked for a number, so the digits are already under the user's
+    // hand instead of one more tap away.
+    if (opts.page === 'symbols' || opts.page === 'letters') page = opts.page;
     show(field);
+}
+
+/** Which page the keyboard is showing. Physical mode never has one. */
+export function currentPage() {
+    return mode === 'onscreen' ? page : null;
 }
 
 export function getMode() {
