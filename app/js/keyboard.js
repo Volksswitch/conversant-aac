@@ -45,8 +45,6 @@ let lastPointerDownEl = null;
 let mode = 'physical';          // 'physical' | 'onscreen'
 let rootEl = null;              // the keyboard panel
 let activeField = null;         // the input/textarea currently being typed into
-let predWrap = null;            // the word-prediction button container (display dropped)
-const PRED_COUNT = 3;           // number of prediction slots
 
 // --- Inline word-prediction ghost (Ken, June 29 2026) -----------------------
 // A non-interactive overlay mirrors the active field's text so the single best
@@ -298,11 +296,11 @@ function handleKey(keyEl) {
     // insert the separator. (Ken, July 2026.)
     if (action === 'space') {
         learnCurrentWord(); clearGhost();
-        insert(' '); consumeShift(); updatePredictions(); return;
+        insert(' '); consumeShift(); updateGhost(); return;
     }
     if (action === 'enter') {
         learnCurrentWord(); clearGhost();
-        enter(); updatePredictions(); return;
+        enter(); updateGhost(); return;
     }
 
     const ch = keyEl.dataset.char;
@@ -314,7 +312,7 @@ function handleKey(keyEl) {
     const upper = shiftState !== 'off';
     insert(upper && /[a-z]/i.test(ch) ? ch.toUpperCase() : ch);
     consumeShift();
-    updatePredictions();
+    updateGhost();
 }
 
 // --- word prediction (local; see prediction.js) ----------------------------
@@ -332,45 +330,6 @@ function currentWordPrefix() {
 function learnCurrentWord() {
     const w = currentWordPrefix();
     if (w) prediction.learn(w);
-}
-
-// Fill the toolbar's prediction buttons from the current prefix; hide the spare
-// slots. Called after every text change.
-function updatePredictions() {
-    if (!predWrap) return;
-    const prefix = currentWordPrefix();
-    const preds = prefix ? prediction.predict(prefix, PRED_COUNT) : [];
-    let any = false;
-    predWrap.querySelectorAll('.kbd-pred-btn').forEach((b, i) => {
-        const w = preds[i];
-        if (w) { b.textContent = w; b.dataset.word = w; b.hidden = false; any = true; }
-        else { b.textContent = ''; delete b.dataset.word; b.hidden = true; }
-    });
-    // Show the prediction overlay only when there's something to predict; when
-    // empty it's display:none so taps fall through to Cut/Copy/Paste/Hide.
-    predWrap.classList.toggle('kbd-preds-active', any);
-    // Drive the inline ghost too (the surfaced form of prediction).
-    updateGhost();
-}
-
-// Replace the partial word at the caret with the chosen prediction + a space,
-// matching the typed prefix's capitalization, then learn it.
-function applyPrediction(word) {
-    const f = activeField;
-    if (!f) return;
-    const caret = f.selectionStart ?? f.value.length;
-    const before = f.value.slice(0, caret);
-    const m = before.match(/[A-Za-z']+$/);
-    const start = m ? caret - m[0].length : caret;
-    let out = word;
-    if (m && m[0][0] === m[0][0].toUpperCase()) out = word.charAt(0).toUpperCase() + word.slice(1);
-    f.value = f.value.slice(0, start) + out + ' ' + f.value.slice(caret);
-    const pos = start + out.length + 1;
-    f.setSelectionRange(pos, pos);
-    f.dispatchEvent(new Event('input', { bubbles: true }));
-    prediction.learn(word);
-    updatePredictions();
-    if (f.tagName === 'INPUT') requestAnimationFrame(() => { if (f.isConnected) f.scrollLeft = f.scrollWidth; });
 }
 
 // --- inline ghost prediction ------------------------------------------------
@@ -494,8 +453,6 @@ function build() {
     rootEl.addEventListener('pointerdown', (e) => {
         const tool = e.target.closest('.kbd-tool');
         if (tool) { e.preventDefault(); handleTool(tool.dataset.tool); return; }
-        const pred = e.target.closest('.kbd-pred-btn');
-        if (pred) { e.preventDefault(); if (pred.dataset.word) applyPrediction(pred.dataset.word); return; }
         const keyEl = e.target.closest('.kbd-key');
         if (!keyEl) return;
         e.preventDefault();
@@ -508,24 +465,11 @@ function build() {
     // overlays both. (Paste of a long `sk-ant-…` key is handled by the Paste
     // button beside the API-key field in Settings.)
     //
-    // Word-prediction buttons (local, no AI — see prediction.js). DISPLAY is
-    // dropped for now (Ken, June 28 2026): we still BUILD the overlay and keep
-    // updatePredictions/learning running (infrastructure intact), but CSS hides
-    // it (.kbd-preds { display:none }) while button-size questions that will
-    // shape how prediction re-enters the UI are resolved. It now sits directly on
-    // the keyboard root (the old toolbar that hosted it is gone).
-    predWrap = document.createElement('div');
-    predWrap.className = 'kbd-preds';
-    for (let i = 0; i < PRED_COUNT; i++) {
-        const pb = document.createElement('button');
-        pb.type = 'button';
-        pb.className = 'kbd-pred-btn';
-        pb.tabIndex = -1;   // pointer target only (see the key buttons above)
-        pb.hidden = true;
-        predWrap.appendChild(pb);
-    }
-    rootEl.appendChild(predWrap);
-
+    // The prediction BUTTON OVERLAY that used to sit here is gone too (Ken, August 23
+    // 2026). It was built, filled and hidden by CSS from June 2026 onward, and the
+    // inline ghost replaced it in v0.5.42 - so it had been dead for two months while
+    // still costing a container, three buttons and an update pass on every keystroke.
+    // Prediction itself is untouched: it IS the ghost, and it lives in the compose box.
     renderRows();
     document.body.appendChild(rootEl);
 }
@@ -659,7 +603,7 @@ function show(field) {
     if (ghostField && ghostField !== field) ghostField.removeEventListener('scroll', repositionGhost);
     field.addEventListener('scroll', repositionGhost);
     ghostField = field;
-    updatePredictions(); // seed predictions for any text already in the field
+    updateGhost(); // seed predictions for any text already in the field
     // Keep the focused field clear of the keyboard. The content area reserves
     // viewport-relative padding (CSS) so the field can scroll above a
     // bottom dock; centring it lands it in the visible band above the keys.
@@ -680,7 +624,7 @@ function hide() {
     shiftState = 'off';
     page = 'letters';
     renderRows();
-    updatePredictions(); // clears the prediction buttons (no active field)
+    updateGhost(); // clears the prediction buttons (no active field)
     if (rootEl) rootEl.classList.add('hidden');
     document.body.classList.remove('kbd-open', 'kbd-dock-side', 'kbd-dock-bottom', 'kbd-side-left', 'kbd-side-right');
 }
@@ -715,7 +659,7 @@ export function init() {
         if (field && field === activeField) {
             e.preventDefault();   // keep focus + don't move the caret to the tap
             acceptGhost();
-            updatePredictions();
+            updateGhost();
         }
     });
 

@@ -9,7 +9,8 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { LAYOUTS, buildSymbolsPage, SIDE_LAYOUTS, BOTTOM_LAYOUTS } from '../app/js/keyboard-layouts.js';
+import { LAYOUTS, buildSymbolsPage, SIDE_LAYOUTS, BOTTOM_LAYOUTS,
+         panelRoles, panelPositionCount } from '../app/js/keyboard-layouts.js';
 
 test('every layout has a name, a dock, and rows', () => {
     for (const [id, layout] of Object.entries(LAYOUTS)) {
@@ -66,4 +67,32 @@ test('no layout contains a prediction cell', () => {
             }
         }
     }
+});
+
+// The panel's reading of a layout, which is not the keyboard's reading of it.
+test('exactly one compose button per layout, however many space keys it has', () => {
+    for (const [id, def] of Object.entries(LAYOUTS)) {
+        const roles = panelRoles(def.rows).flat();
+        const compose = roles.filter((c) => c.role === 'compose').length;
+        const spaces = def.rows.flat().filter((c) => c.kind === 'space').length;
+        assert.equal(compose, 1, `${id} (${def.name}) draws ${compose} compose buttons`);
+        if (spaces > 1) {
+            // Bottom Layout 8 is the split keyboard: one space key per thumb. The
+            // second is a panel position, not a second "In my own words".
+            assert.equal(roles.filter((c) => c.role === 'position').length,
+                panelPositionCount(def.rows));
+        }
+    }
+});
+
+test('the split keyboard gains a position rather than a duplicate button', () => {
+    // Every other layout offers 32; B8 offers 33 because its second space key is a
+    // place a phrase can go. Before August 23 2026 it was a second compose button.
+    assert.equal(panelPositionCount(LAYOUTS.B8.rows), 33);
+    assert.equal(panelPositionCount(LAYOUTS.B1.rows), 32);
+});
+
+test('a layout with no space key still has no compose button, and does not crash', () => {
+    const roles = panelRoles([[{ kind: 'char', span: 1 }, { kind: 'blank', span: 1 }]]);
+    assert.deepEqual(roles[0].map((c) => c.role), ['position', 'gap']);
 });

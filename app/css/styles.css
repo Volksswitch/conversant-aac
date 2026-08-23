@@ -1413,13 +1413,13 @@ body.conv-bottom .palette-grid {
    response cards, "New 4", composer, Express Panel, and the Settings / About Me
    controls. They are all at least --btn-min-dim tall (the critical tap
    dimension); icon-only buttons are also at least that wide (square-ish targets).
-   EXCEPTION: the on-screen-keyboard keys (.kbd-key / .kbd-tool / .kbd-pred-btn)
+   EXCEPTION: the on-screen-keyboard keys (.kbd-key / .kbd-tool)
    AND the Express Panel buttons (.ep-btn) are sized BY the dock band — which is
    itself derived from --btn-min-dim — so a hard min there would overflow the
    fixed dock and push buttons off the panel; they scale through the dock instead.
    (The Express Panel maps 1:1 onto the keyboard, so its buttons must fit exactly
    like the keys and never fall off — Ken, June 29 2026.) */
-button:not(.kbd-key):not(.kbd-tool):not(.kbd-pred-btn):not(.ep-btn) {
+button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
     min-height: var(--btn-min-dim);
 }
 .icon-btn { min-width: var(--btn-min-dim); }
@@ -3426,47 +3426,6 @@ label.radio-label input[type="radio"] {
    its #epControls row — one keyguard still overlays both. (Re-adding a control
    row would need a matching reserved row on the Express Panel for alignment.) */
 
-/* Word-prediction buttons (local prediction — prediction.js). Content buttons
-   (predicted word as text), exempt from the icon-only rule.
-   DISPLAY DROPPED for now (Ken, June 28 2026): the prediction INFRASTRUCTURE is
-   kept (prediction.js, updatePredictions, and learning on space/enter all keep
-   running), but the buttons are NOT shown while several button-size questions —
-   which will shape how prediction is brought back into the UI — are worked out.
-   The base overlay styling below is retained so re-enabling is cheap: remove the
-   `display: none` and restore the active/inactive toggle:
-       .kbd-preds.kbd-preds-active { pointer-events: auto; }
-       .kbd-preds:not(.kbd-preds-active) { display: none; }
-   NOTE: the old Cut/Copy/Paste toolbar that anchored this overlay is gone, so it
-   now sits directly on the keyboard root (#appKeyboard, position:fixed). When
-   prediction display is re-introduced it will need its own placement/anchor. */
-.kbd-preds {
-    position: absolute;
-    inset: 0;
-    gap: 0.4rem;
-    min-width: 0;
-    background: #e9edf0;
-    pointer-events: none;
-    display: none;                 /* prediction display dropped for now (Ken) */
-}
-.kbd-pred-btn {
-    flex: 1 1 0;
-    min-width: 0;
-    min-height: var(--btn-min-dim);
-    border: 1px solid #ffe082;
-    border-radius: 8px;
-    background: #fff8e1;
-    color: var(--ink);
-    font-size: 1rem;
-    font-family: inherit;
-    font-weight: 600;
-    cursor: pointer;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.kbd-pred-btn[hidden] { display: none; }
-.kbd-pred-btn:active { background: #ffe082; transform: translateY(1px); }
-
 /* Inline word-prediction ghost overlay (keyboard.js renderGhost). A
    non-interactive mirror of the active field: the typed text is transparent (it
    only reserves the right width) and the predicted SUFFIX is drawn bold + tinted
@@ -3541,12 +3500,6 @@ label.radio-label input[type="radio"] {
     border-color: transparent;
     background: transparent;
     box-shadow: none;
-    cursor: default;
-}
-
-.kbd-pred {
-    background: #fff8e1;
-    border-color: #ffe082;
     cursor: default;
 }
 

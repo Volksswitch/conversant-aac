@@ -11,7 +11,7 @@ import * as relationships from './relationships.js';
 import * as places from './places.js';
 import * as worldviewUI from './worldview-ui.js';
 import * as keyboard from './keyboard.js';
-import { SIDE_LAYOUTS, BOTTOM_LAYOUTS, LAYOUTS } from './keyboard-layouts.js';
+import { SIDE_LAYOUTS, BOTTOM_LAYOUTS, LAYOUTS, panelPositionCount } from './keyboard-layouts.js';
 import * as viewport from './viewport.js';
 import * as expressItems from './express-items.js';
 import * as pronunciation from './pronunciation.js';
@@ -3180,15 +3180,10 @@ function blockZoomGestures() {
 // How many Express Panel cells the chosen layout offers an ITEM. The item list maps
 // onto these one-for-one, so it is the ceiling on how many buttons can exist — an item
 // past the last cell has no button to tap and is unreachable. Mirrors the cell kinds
-// ui.renderExpressPanel skips: 'space' is "In my own words", 'blank' is a spacer.
+// How many panel buttons the active layout has room for. Asks keyboard-layouts, which
+// is the one place that decides which cell is "In my own words" and which are spacers.
 function expressCellCount() {
-    let n = 0;
-    for (const row of expressLayoutRows()) {
-        for (const cell of row || []) {
-            if (cell.kind !== 'space' && cell.kind !== 'blank') n++;
-        }
-    }
-    return n;
+    return panelPositionCount(expressLayoutRows());
 }
 
 function activeLayoutGrid() {

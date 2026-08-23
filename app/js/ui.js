@@ -1,5 +1,6 @@
 import { setIconButton } from './icons.js';
 import { chipStartIndex } from './express-items.js';
+import { panelRoles } from './keyboard-layouts.js';
 import * as chime from './chime.js';
 
 const responseOptions = document.getElementById('responseOptions');
@@ -617,17 +618,20 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
     // stability broken across the WHOLE panel to make room for something that lasts one
     // turn. Taking the last cells instead means nothing moves: every phrase keeps its
     // position and at most the final few are temporarily covered.
-    const itemCells = (layoutRows || []).reduce((n, row) => n + (row || []).filter(
-        (c) => c.kind !== 'space' && c.kind !== 'blank').length, 0);
+    // What each cell of the layout is FOR on the panel — see panelRoles. Asking one
+    // place means the count below and the loop underneath cannot disagree about which
+    // cell is the compose key, which is how one layout ended up with two of them.
+    const roles = panelRoles(layoutRows);
+    const itemCells = roles.reduce((n, row) => n + row.filter((c) => c.role === 'position').length, 0);
     const chipStart = chipStartIndex(itemCells, choiceChips.length);
 
     let pi = 0;              // index into the ordered item list AND the cell ordinal
-    (layoutRows || []).forEach((row) => {
+    roles.forEach((row) => {
         const rowEl = document.createElement('div');
         rowEl.className = 'ep-row';
         (row || []).forEach((cell) => {
             const span = cell.span || 1;
-            if (cell.kind === 'space') {
+            if (cell.role === 'compose') {
                 // The space counterpart: "In my own words" (distinct color, single
                 // tap). It is a CONSTANT control (not a user-editable phrase), so per
                 // the icon-only rule it shows a compose (pencil) icon + tooltip, not
@@ -641,12 +645,12 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
                 rowEl.appendChild(b);
                 return;
             }
-            if (cell.kind === 'blank') {
+            if (cell.role === 'gap') {
                 rowEl.appendChild(blank(span));
                 return;
             }
-            // char or non-space action cell. Its ordinal is fixed by the layout, so an
-            // item's cell never depends on how many chips are showing.
+            // A panel position. Its ordinal is fixed by the layout, so an item's cell
+            // never depends on how many chips are showing.
             const index = pi++;
             // The last cells belong to the partner's offered alternatives while any are
             // on the table. The items they cover are not re-homed — they are simply not

@@ -203,3 +203,35 @@ export function buildSymbolsPage(letterRows) {
 // Ordered lists for the Settings select menus.
 export const SIDE_LAYOUTS = Object.keys(S).map((id) => ({ id, name: S[id].name }));
 export const BOTTOM_LAYOUTS = Object.keys(B).map((id) => ({ id, name: B[id].name }));
+
+/**
+ * How the Express Panel reads a keyboard layout, in one place because three callers
+ * used to decide it separately and drifted (Ken, August 23 2026).
+ *
+ * Returns the same shape as `rows`, each cell annotated with the role it plays ON THE
+ * PANEL — which is not the role it plays on the keyboard:
+ *
+ *   'compose'  — "In my own words". The layout's space key.
+ *   'gap'      — an inert spacer, holding the grid's shape. Never a button.
+ *   'position' — a place a panel button can go.
+ *
+ * ⚠ ONLY THE FIRST SPACE KEY BECOMES COMPOSE. Bottom Layout 8 is a split keyboard with
+ * one space key per thumb, and every consumer used to turn each of them into a compose
+ * button — so that layout drew TWO identical "In my own words" buttons, wasting a
+ * position and reading as a bug. A second space key is a perfectly good panel position;
+ * on the keyboard itself both remain real space keys, which is untouched by this.
+ */
+export function panelRoles(rows) {
+    let composeTaken = false;
+    return (rows || []).map((row) => (row || []).map((cell) => {
+        const span = cell.span || 1;
+        if (cell.kind === 'space' && !composeTaken) { composeTaken = true; return { role: 'compose', span }; }
+        if (cell.kind === 'blank') return { role: 'gap', span };
+        return { role: 'position', span };
+    }));
+}
+
+/** How many panel buttons a layout has room for. */
+export function panelPositionCount(rows) {
+    return panelRoles(rows).reduce((n, row) => n + row.filter((c) => c.role === 'position').length, 0);
+}
