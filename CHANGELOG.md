@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.7.14
+
 - When the other person asks for a number rather than a choice — “on a scale of
   one to ten”, “how many would you like?” — a small numbered button now appears
   beside your buttons. Tapping it opens “In my own words” with the number keys

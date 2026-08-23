@@ -21,6 +21,9 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.7.14": [
+    "When the other person asks for a number rather than a choice — “on a scale of one to ten”, “how many would you like?” — a small numbered button now appears beside your buttons. Tapping it opens “In my own words” with the number keys already showing, so you can type the number, see it as you build it, and press Enter to say it. Your suggested replies still appear as usual; the number keys are there for when you want to be exact."
+  ],
   "0.7.13": [
     "When the other person offers you a choice of answers, those choices now appear at the bottom of the Express Panel instead of at the top. Before, they pushed every one of your buttons along a place or two for the rest of that turn, so “Yes” was not where you left it and the last few buttons dropped off the panel. Now nothing moves — the choices simply appear in the last few spaces, and whatever was there comes back when the turn ends."
   ],
