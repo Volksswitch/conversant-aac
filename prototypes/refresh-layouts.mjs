@@ -12,20 +12,19 @@
  * Run: node prototypes/refresh-layouts.mjs
  */
 import { readFileSync, writeFileSync } from 'fs';
-import { LAYOUTS } from '../app/js/keyboard-layouts.js';
+import { LAYOUTS, panelRoles } from '../app/js/keyboard-layouts.js';
 
 const out = {};
 for (const [id, def] of Object.entries(LAYOUTS)) {
     out[id] = {
         name: def.name,
         dock: def.dock,
-        rows: def.rows.map((row) => row.map((cell) => ({
-            // 'space' becomes In my own words; blank/pred are inert spacers; everything
-            // else is a position a panel button can occupy.
-            kind: cell.kind === 'space' ? 'space'
-                : (cell.kind === 'blank' || cell.kind === 'pred') ? 'gap' : 'cell',
-            span: cell.span || 1,
-        }))),
+        // ⚠ The roles come from the APP's own panelRoles(), not from a rule restated
+        // here. The prototype exists to show what the panel does, so a second opinion
+        // about which cell is "In my own words" would make it lie - which it briefly
+        // did, drawing two compose buttons on the split keyboard exactly as the app
+        // used to.
+        rows: panelRoles(def.rows),
     };
 }
 
@@ -41,8 +40,8 @@ const n = Object.keys(out).length;
 console.log(`embedded ${n} layouts (${Object.values(out).filter(l => l.dock === 'side').length} side, ` +
             `${Object.values(out).filter(l => l.dock === 'bottom').length} bottom)`);
 for (const [id, l] of Object.entries(out)) {
-    const cells = l.rows.flat().filter(c => c.kind === 'cell').length;
-    const space = l.rows.flat().some(c => c.kind === 'space');
+    const cells = l.rows.flat().filter(c => c.role === 'position').length;
+    const space = l.rows.flat().some(c => c.role === 'compose');
     console.log(`  ${id.padEnd(4)} ${l.name.padEnd(28)} ${l.rows.length} rows, ${cells} button positions` +
                 (space ? '' : '  [NO SPACE CELL]'));
 }
