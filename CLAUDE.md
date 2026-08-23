@@ -41,6 +41,14 @@ Published author: "Revolutionizing Augmentative and Alternative Communication wi
 
 **Verify UI details against source before writing about them.** When producing any document (manual, overview, spec, etc.) that describes specific UI elements — button labels, icons, layout positions, control names — read the relevant source files (`index.html`, `ui.js`, `styles.css`, etc.) first. Do not infer or assume UI details from convention or common patterns. Invented UI details (e.g., assuming a gear icon exists for Settings when the button has no icon) are silent errors that reach users. If source files are not read first, the document must not assert specific UI details — hedge or omit them instead.
 
+**A CHANGE THAT CROSSES LAYERS GETS ONE CHECK THAT CROSSES ALL OF THEM (standing rule, Ken, August 23 2026).** Testing each layer separately does not add up to testing the feature, and **the failure is invisible in exactly the way that matters: every test passes, the coverage looks complete, and the feature is dead.** That is not hypothetical here — the number-pad button shipped in **0.7.14 announced in the release notes and doing nothing at all**, because the parser was tested by handing it JSON, the renderer was tested by handing it a button, the live model turned out to classify every case correctly, and the field was silently dropped in the one link between them that nothing had run (see the classification-whitelist entry).
+
+- **The tell, and it is worth applying while writing the tests rather than afterwards: if every check you wrote FABRICATES the input to the layer under test, you have not tested the path.** Somewhere, one check must take the output of the previous layer as its input, all the way through.
+- **What counts:** a unit test that drives the real chain end to end (parse a real model response → feed it to the engine → read the snapshot the renderer uses), a browser check that exercises the actual user path, or a live-API run. **Three tests that each cover one link do not count**, however thorough each is.
+- **It is usually cheap**, because the layers are all in one process. The 0.7.15 test is ten lines and would have caught it.
+- **Where a layer genuinely cannot be driven, say so in the report.** `app.js` is not testable — that is why the conversation-loop decisions were extracted into their own module — so the honest form is to exercise everything reachable, cover the rest in the browser, and **name the link that was never run** rather than describing the feature as verified.
+- **This is a rule about REPORTING as much as testing.** “Verified” must mean the path ran, not that its pieces did. When it did not, the sentence to write is *which* part was exercised.
+
 **Keep this file to what changes a FUTURE decision — it is loaded in full at the start of every session (Ken, August 7 2026).** CLAUDE.md is not a log. Every line costs context in every future session, permanently, and the cost is paid before any work starts. It reached 681 KB before the August 7 consolidation — a fifth of it a release-by-release table that nothing consulted to make a decision.
 
 **An entry keeps three things:** the **decision**; the **reasoning that constrains future work** — why the alternative was rejected, what breaks if it is reversed; and the **failure mode to avoid**, including a mistake whose lesson transfers ("when geometry is wrong but the screen looks right, suspect the measurement basis"). **That reasoning is the point of this file and must not be trimmed** — it is what stops settled decisions being re-litigated, and Ken re-reads it. Pruning is aimed at narrative, never at *why*.
@@ -1933,13 +1941,12 @@ exact scenario from the note and there was no button.
 asserts `offered_range` survives, and fails when the line is removed; extend it rather
 than trusting the next person to remember.
 
-**⚠ THE VERIFICATION LESSON IS THE BIGGER HALF, AND IT GENERALIZES: I VERIFIED BOTH
-ENDS AND NOT THE MIDDLE.** The parser was tested by handing it JSON; the renderer was
-tested by handing it a chip; the live model was later shown to classify all four cases
-correctly, **including Ken's exact words** - so three of the four links were right and
-the feature was still dead. **Testing the ends of a chain is what makes the middle look
-proven when it has never run.** When a feature spans layers, one test must cross all of
-them, or a browser check must exercise the real path.
+**⚠ THE VERIFICATION LESSON IS THE BIGGER HALF, AND IT IS NOW A STANDING RULE** - see
+*A change that crosses layers gets one check that crosses all of them*, under Working
+Guidelines. Both ends were verified and the middle was not: the parser was tested by
+handing it JSON, the renderer by handing it a chip, and the live model was later shown
+to classify all four cases correctly, **including Ken's exact words**. Three of the four
+links were right and the feature was still dead.
 
 **Related shape, worth recognizing:** the same silent-drop hazard exists anywhere a
 layer copies a known set of fields out of a richer object - the settings bundle, the

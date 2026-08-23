@@ -20,6 +20,27 @@ node --test --experimental-test-coverage tests/engine.test.mjs tests/stt.test.mj
   tests/placeholders.test.mjs
 ```
 
+## One check has to cross every layer the change touches
+
+Tests here are organized by module, which makes it easy to write a thorough test for
+each layer of a feature and never test the feature. **That failure is invisible in the
+worst way: every test passes, coverage looks complete, and the thing does not work.**
+
+It happened in 0.7.14. The number-pad button was announced in the release notes and did
+nothing at all: the parser was tested by handing it JSON, the renderer was tested by
+handing it a button, the live model classified every case correctly, and the field was
+dropped in the one link between them that nothing had run.
+
+**The tell, worth applying while writing the tests rather than after:** if every check
+you wrote *fabricates* the input to the layer under test, you have not tested the path.
+One check must take the previous layer's real output as its input, the whole way
+through. `engine.test.mjs` → *"EVERY classification field the parser produces survives
+the engine"* is the shape; it is ten lines.
+
+Where a layer cannot be driven from here at all — `app.js` is not testable, which is
+why the conversation-loop decisions live in `conversation-logic.js` — cover it in the
+browser and **say which link was never run** rather than calling the feature verified.
+
 ## Not automated — the on-device layer
 
 Real hardware/browser behavior (mic, spoken audio + timing, the echo loop, touch,
