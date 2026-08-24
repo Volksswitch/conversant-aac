@@ -487,7 +487,7 @@ function buildHarvestSection() {
                         // existed: our own control phrases and the user's Express
                         // labels must not be mistaken for prose they composed.
                         controlPhrases: controlPhrases.allPhrases(),
-                        expressPhrases: expressPanel.getItems()
+                        expressPhrases: expressPanel.allItems()
                             .filter((i) => i.type === 'phrase' && i.text).map((i) => i.text),
                     }));
                 } catch { /* no folder, or nothing readable */ }

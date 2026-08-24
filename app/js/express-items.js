@@ -168,6 +168,46 @@ export const DEFAULT_ITEMS = [
   PH('This device listens and speaks for me', 'notice'),
 ].map((it, i) => ({ id: 'd' + i, ...it, origin: ORIGIN.DEFAULT }));
 
+
+// --- BAND DEFAULTS (August 23 2026) ------------------------------------------
+// TEMPORARY, and deliberately so. The speech and language therapists are authoring
+// the set that ships to testers, and it replaces this one before the beta opens.
+// Until then this is a FULL set rather than a minimal one, so the Always band's
+// "Reset" button gives Ken something complete to test against and the panel is not
+// half empty while the bands are being tried out.
+//
+// The words are the fuller Express Panel set this project proposed and then trimmed:
+// every phrase we have ever shipped as a default, minus the feelings (which are
+// Context buttons now, because they influence and never speak). Grouped by job, in
+// the order somebody reaches for them, with the disclosure last so that adding it
+// moves none of the plumbing above it.
+export const ALWAYS_DEFAULTS = [
+  PH('Yes', 'affirm'), PH('No', 'affirm'),
+  PH('Yes please', 'affirm'), PH('No thank you', 'affirm'),
+  PH('Maybe', 'hedge'), PH("I don't know", 'hedge'),
+  PH("I'm not sure", 'hedge'), PH('I think so', 'hedge'),
+  PH('Okay', 'cont'), PH('Got it', 'cont'),
+  PH('I agree', 'cont'), PH('Go on', 'cont'),
+  PH("That's funny", 'social'),
+  PH('Please', 'social'), PH('Thank you', 'social'),
+  PH("You're welcome", 'social'), PH('Sorry', 'social'),
+  PH('Excuse me', 'social'), PH('Hi', 'social'),
+  PH('Bye', 'social'), PH('See you later', 'social'),
+  PH('Wait', 'pace'), PH('One moment', 'pace'),
+  PH('Not now', 'pace'), PH('Say that again', 'pace'),
+  PH('Help', 'need'),
+  PH('This device listens and speaks for me', 'notice'),
+].map((it, i) => ({ id: 'a' + i, ...it, origin: ORIGIN.DEFAULT }));
+
+// The Context band's starting contents. Feelings only: a new user has no people and
+// no places yet, and inventing either would be putting words in their mouth. The
+// therapists are choosing the feelings too - guessing the "right" six is exactly the
+// part Ken expects to be hardest, which is why he expects feelings to be the least
+// used thing on the panel.
+export const CONTEXT_DEFAULTS = [
+  FE('Happy'), FE('Sad'), FE('Stressed'), FE('Curious'), FE('Tired'), FE('Excited'),
+].map((it, i) => ({ id: 'c' + i, ...it, origin: ORIGIN.DEFAULT }));
+
 // Every phrase/feeling we have EVER shipped as a default. Used only to classify a
 // legacy item that predates the origin field: without it, the sixteen defaults
 // retired above would migrate as user-authored and be credited to the user as

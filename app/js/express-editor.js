@@ -1,76 +1,58 @@
-/* Express Panel editor (Settings → Express Panel) — June 26 2026
+/* Settings → Express Panel — the band editor (rewritten August 23 2026)
  *
- * Edits the single ORDERED, TYPED item list backing the Express Panel (Ken's
- * chosen model: one list, each item tagged phrase / partner / feeling; the item's
- * position = its slot in the panel grid, so reordering re-maps the layout). A
- * starting layout is provided (express-items.DEFAULT_ITEMS) and "Reset to default"
- * restores it. The list persists via the express-panel.js model (data folder +
- * cache), so customizations follow the user across devices.
+ * Three lists, one per band, in the order the user works through them: the Always
+ * phrases, the Flex phrases for a chosen partner and place, then the Context buttons.
+ * The live panel sits beside this tab and stays in step with every change; tapping a
+ * button there selects its row here, which is how a phrase is edited in the position
+ * the user actually wants it rather than typed into a list and then shuffled until it
+ * lands there.
  *
- * Partner items may be picked from People I Know (the relationship graph) or typed
- * free-form (Ken: partners "may be" known people but need not be). A picked person
- * carries their personId + name + nickname so the conversation can use their
- * preferred term of address.
+ * ⚠ THIS IS A LIST AGAIN, AND THAT IS NOT A REGRESSION. August 2026 replaced the list
+ * with an editor for one selected button, because every row carried seven color
+ * swatches and six tools and at a narrow width the swatches painted over the tools.
+ * Both causes are gone: color now comes from the BAND, so the swatches are deleted
+ * outright, and the tools have left the rows for one fixed toolbar. A button that
+ * stays put is far easier to hit than one that travels up and down with the item it
+ * acts on — which is Ken's observation and the reason the toolbar is where it is.
  *
- * Place items are picked from My Places (places.js) the same way, so a place button
- * always names a place the AI has recorded facts about.
- *
- * ONE BUTTON AT A TIME — the panel itself is the list (Ken, August 11 2026). The tab
- * used to show every item as a row: thirty-odd rows of input + respelling + seven
- * colour swatches + six tools, which "is too cumbersome and it doesn't behave well if
- * the tab width is too small" — on a narrow side dock the swatches and the tools
- * overlapped outright.
- *
- * The fix uses what is already on screen. The Express Panel is live beside Settings on
- * this tab, and tapping a button there already selects it, so the tab does not need to
- * re-list what the panel is showing. It shows an invitation until a button is tapped,
- * then that one button's properties and the actions that apply to it: add before, add
- * after, move up, move down, delete, done.
- *
- * ⚠ WHAT THIS GIVES UP, which Ken named when he asked for it: there is no way to keep
- * buttons "in waiting" — configured but not on the panel — because an item with no cell
- * has nothing to tap. Items past the last cell are therefore unreachable, so adding to
- * a full panel warns that the last button will be deleted (see insertAt) rather than
- * quietly pushing it out of reach, and the invitation offers to clear any that an older
- * layout left behind.
- *
- * Editing rules: structural changes (add / delete / reorder / pick a person)
- * re-render the editor; plain text edits commit WITHOUT re-rendering so the field
- * keeps focus while typing. Every change persists and calls onChange so the live
- * panel updates immediately.
+ * ⚠ THE SITUATION BEING EDITED MUST NEVER BE AMBIGUOUS. Two selection lists name the
+ * partner and the place, each offering "Anyone" and "Anyplace", and together they read
+ * as a sentence. Somebody who believes they are editing their clinic phrases and is in
+ * fact editing everybody's has been misled — and the opposite mistake is worse,
+ * because it is silent: they add a phrase, then wonder for weeks why it is missing
+ * everywhere else.
  */
 
 import * as expressPanel from './express-panel.js';
 import * as relationships from './relationships.js';
 import * as places from './places.js';
-import * as keyboard from './keyboard.js';
-import * as tts from './tts.js';
-import { CATEGORIES, INFLUENCER_COLORS, FEELING_PRESETS, makeId, isEmptyItem, newEmptyItem } from './express-items.js';
+import { FEELING_PRESETS, makeId } from './express-items.js';
+import {
+    ANYONE, ANYPLACE, flexKey, parseFlexKey, composePanel, CONTEXT_ORDER,
+} from './express-bands.js';
 import { confirmDanger } from './confirm-dialog.js';
+import * as tts from './tts.js';
 
 let container = null;
 let onChangeCb = null;
-let current = [];
-// How many cells the chosen layout offers. The list is mapped onto them one-for-one,
-// so this is the hard ceiling on how many buttons can exist at all. Supplied by
-// app.js because it depends on the dock and layout the user has chosen.
-let cellCountFn = () => 0;
-// A just-selected item to focus after the next render, so the user can type without
-// hunting for the field.
-let pendingFocusId = null;
-// The cell the user last tapped in the panel. It STAYS marked — in the editor row
-// and on the panel button itself — until they tap a different cell, switch tabs or
-// close Settings (Ken, August 9 2026). A highlight that cleared itself would leave
-// the user editing a row with nothing on screen tying it to the button they touched,
-// which on a grid of thirty-odd near-identical cells is the whole question.
-let pickedId = null;
 let onPickCb = null;
+let layoutRowsFn = () => [];
+
+// The row the user last tapped — in the panel or in a list. It STAYS marked until
+// they tap a different one, switch tabs or close Settings (Ken, August 9 2026).
+let pickedId = null;
+// Which situation the Flex section is editing. Held here rather than in the model so
+// that leaving the tab and coming back does not silently move the user somewhere else.
+let flexPartner = ANYONE;
+let flexPlace = ANYPLACE;
+// Which section is open. Position-keyed, so an add or a reorder cannot slam them shut.
+const openSections = { always: true, flex: false, context: false };
 
 export function init(el, opts = {}) {
     container = el;
     onChangeCb = opts.onChange || null;
     onPickCb = opts.onPick || null;
-    if (typeof opts.cellCount === 'function') cellCountFn = opts.cellCount;
+    if (typeof opts.layoutRows === 'function') layoutRowsFn = opts.layoutRows;
 }
 
 /** The cell currently being edited, for the panel to mark. */
@@ -84,504 +66,461 @@ export function clearPicked() {
     if (onPickCb) onPickCb();
 }
 
-function commit(rerender) {
-    expressPanel.setItems(current);
+/** A tap on a DEFINED panel button: select its row and open the section holding it. */
+export function focusItem(id) {
+    if (!id) return;
+    pickedId = id;
+    const m = expressPanel.getModel();
+    if (m.always.some((x) => x.id === id)) openSections.always = true;
+    else if (m.context.some((x) => x.id === id)) openSections.context = true;
+    else {
+        for (const [key, list] of Object.entries(m.flex)) {
+            if (list.some((x) => x.id === id)) {
+                const { partnerId, placeId } = parseFlexKey(key);
+                flexPartner = partnerId; flexPlace = placeId; openSections.flex = true;
+                break;
+            }
+        }
+    }
+    render();
+    const row = container && container.querySelector('.ee-row-picked');
+    if (row) row.scrollIntoView({ block: 'nearest' });
+}
+
+/** A tap on an UNDEFINED panel cell: add an entry to the band that owns that cell. */
+export function addToBand(band) {
+    const key = band === 'context' ? 'context' : band === 'flex' ? 'flex' : 'always';
+    openSections[key] = true;
+    if (key === 'context') addContext('feeling');
+    else if (key === 'flex') addPhrase('flex');
+    else addPhrase('always');
+}
+
+// ---------------------------------------------------------------- model helpers
+
+function bandList(band) {
+    const m = expressPanel.getModel();
+    if (band === 'always') return m.always;
+    if (band === 'context') return m.context;
+    return m.flex[flexKey(flexPartner, flexPlace)] || [];
+}
+
+function saveBand(band, list) {
+    if (band === 'flex') expressPanel.setFlexList(flexPartner, flexPlace, list);
+    else expressPanel.setBand(band, list);
     if (onChangeCb) onChangeCb();
-    if (rerender) render();
 }
 
-function mkBtn(label, cls) {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.textContent = label;
-    if (cls) b.className = cls;
-    return b;
+function addPhrase(band) {
+    const list = bandList(band).slice();
+    const item = { id: makeId(), type: 'phrase', text: '' };
+    const at = list.findIndex((x) => x.id === pickedId);
+    if (at >= 0) list.splice(at + 1, 0, item); else list.push(item);
+    pickedId = item.id;
+    saveBand(band, list);
+    render();
+    const inp = container && container.querySelector('.ee-row-picked input');
+    if (inp) inp.focus();
 }
 
-function newItem(type) {
-    if (type === 'partner') return { id: makeId(), type: 'partner', name: '', nickname: '' };
-    if (type === 'feeling') return { id: makeId(), type: 'feeling', text: '' };
-    if (type === 'place') return { id: makeId(), type: 'place', name: '' };
-    return { id: makeId(), type: 'phrase', text: '', cat: 'back' };
+function addContext(type) {
+    const list = bandList('context').slice();
+    const item = type === 'partner' ? { id: makeId(), type: 'partner', name: '', nickname: '' }
+        : type === 'place' ? { id: makeId(), type: 'place', name: '' }
+            : { id: makeId(), type: 'feeling', text: '' };
+    list.push(item);
+    pickedId = item.id;
+    saveBand('context', list);   // setBand re-sorts into partners, places, feelings
+    render();
+}
+
+function move(band, dir) {
+    const list = bandList(band).slice();
+    const i = list.findIndex((x) => x.id === pickedId);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= list.length) return;
+    // Within the Context band the three kinds are kept in their runs, so a move that
+    // would jump a boundary is refused rather than silently re-sorted back.
+    if (band === 'context' && list[i].type !== list[j].type) return;
+    [list[i], list[j]] = [list[j], list[i]];
+    saveBand(band, list);
+    render();
+}
+
+async function removePicked(band) {
+    const list = bandList(band).slice();
+    const i = list.findIndex((x) => x.id === pickedId);
+    if (i < 0) return;
+    const label = labelOf(list[i]) || 'this button';
+    // Deleting does not merely lose a phrase - it pulls every button after it up a
+    // cell, so the positions the user has learned all move. Squarely the "significant
+    // work" bar (standing rule, Ken, June 15 2026).
+    if (!(await confirmDanger({
+        title: 'Delete this button?',
+        body: `"${label}" will be removed, and every button after it moves up one place.`,
+        confirmLabel: 'Delete it',
+    }))) return;
+    list.splice(i, 1);
+    pickedId = null;
+    saveBand(band, list);
+    render();
 }
 
 function labelOf(item) {
     if (!item) return '';
-    return (item.text || item.nickname || item.name || '').trim();
+    return String(item.text || item.nickname || item.name || '').trim();
 }
 
-// Is every cell taken by a real button?
-//
-// Inserting pushes every later button along by one, and the list maps onto the
-// layout's cells one-for-one, so when the panel is full the button on the end is pushed
-// OFF it — and off the end is not "in reserve", it is invisible and unreachable, with
-// no cell to tap and no row to find it in now that the panel is the list.
-//
-// Two shapes have somewhere for the shift to go, and the panel draws them identically
-// as an empty outline: the list is shorter than the layout, so the cells past its end
-// are undefined; or the list fills the layout but its last item is an undefined slot.
-function panelIsFull() {
-    const cap = cellCountFn() || 0;
-    if (!cap) return false;                      // layout unknown — do not stand in the way
-    if (current.length < cap) return false;
-    return !isEmptyItem(current[current.length - 1]);
+// ---------------------------------------------------------------- small builders
+
+function el(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
 }
 
-// Insert an UNDEFINED slot at `at` and select it, so the next thing the user sees is
-// the one question that matters — what goes here. Same shape as tapping a blank cell.
-//
-// ⚠ ON A FULL PANEL THIS DELETES THE LAST BUTTON, so it says so first and names it
-// (Ken, August 11 2026, changing the earlier rule that greyed Add out instead): the
-// buttons stay live and the cost is stated at the moment it is about to be paid, rather
-// than the user being left to work out why two controls are dead.
-async function insertAt(at) {
-    if (panelIsFull()) {
-        const last = current[current.length - 1];
-        const name = labelOf(last);
-        const ok = await confirmDanger({
-            title: 'Make room for a new button?',
-            body: `The panel is full, so everything after the new button shifts along one place and the last one drops off the end. ${name ? `"${name}" will be deleted.` : 'The last button will be deleted.'}`,
-            confirmLabel: 'Add it',
-            cancelLabel: 'Cancel',
-        });
-        if (!ok) return;
-        // Removed BEFORE the insert, not trimmed after: "add after the last button"
-        // puts the new slot at the very end, and trimming afterwards would throw away
-        // the new slot instead of the button we just warned about.
-        current.pop();
-        if (at > current.length) at = current.length;
-    }
-    const item = newEmptyItem();
-    current.splice(at, 0, item);
-    // A trailing undefined slot absorbs the shift, so nothing is pushed off the end.
-    const cap = cellCountFn() || 0;
-    while (cap && current.length > cap && isEmptyItem(current[current.length - 1])) current.pop();
-    pickedId = item.id;
-    pendingFocusId = item.id;
-    commit(true);
-    if (onPickCb) onPickCb();
+function mkBtn(label, cls, onClick, title) {
+    const b = el('button', cls, label);
+    b.type = 'button';
+    if (title) { b.title = title; b.setAttribute('aria-label', title); }
+    if (onClick) b.addEventListener('click', onClick);
+    return b;
 }
 
-// The invitation, shown until a button is tapped. Ken's wording: "tap a button to edit
-// or move that button".
-function buildPrompt() {
-    const wrap = document.createElement('div');
-    wrap.className = 'ee-prompt';
+function textInput(value, placeholder, oninput) {
+    const i = document.createElement('input');
+    i.type = 'text';
+    i.value = value || '';
+    i.placeholder = placeholder || '';
+    i.className = 'ee-input';
+    // Committed on every keystroke WITHOUT a re-render, so the field keeps focus and
+    // the panel beside the tab updates as the user types.
+    i.addEventListener('input', () => oninput(i.value));
+    return i;
+}
 
-    const p = document.createElement('p');
-    p.className = 'setting-hint';
-    p.textContent = 'Tap a button in the Express Panel to edit or move it. Tap an empty one to add a button there.';
-    wrap.appendChild(p);
-
-    // Buttons an older layout left beyond the last cell. They cannot be tapped, so
-    // this is the only place they can be dealt with at all.
-    const cap = cellCountFn() || 0;
-    const extra = cap ? current.length - cap : 0;
-    if (extra > 0) {
-        const note = document.createElement('p');
-        note.className = 'setting-hint';
-        note.textContent = `${extra} button${extra === 1 ? '' : 's'} won't fit on the panel with this layout, so ${extra === 1 ? 'it is' : 'they are'} not shown and cannot be tapped.`;
-        wrap.appendChild(note);
-
-        const trim = mkBtn(`Remove the ${extra} that won't fit`, 'ee-reset');
-        trim.addEventListener('click', async () => {
-            const ok = await confirmDanger({
-                title: 'Remove the buttons that do not fit?',
-                body: `This deletes the ${extra} button${extra === 1 ? '' : 's'} past the end of the panel. There is no other way to reach ${extra === 1 ? 'it' : 'them'}, but ${extra === 1 ? 'it is' : 'they are'} gone for good.`,
-                confirmLabel: 'Remove them',
-                cancelLabel: 'Leave them',
-            });
-            if (!ok) return;
-            current.length = cap;
-            commit(true);
-        });
-        wrap.appendChild(trim);
-    }
-
-    const reset = mkBtn('Reset to default', 'ee-reset');
-    reset.addEventListener('click', async () => {
-        const ok = await confirmDanger({
-            title: 'Reset the Express Panel?',
-            body: 'This replaces your edited list with the default starting layout. Your customizations will be lost.',
-            confirmLabel: 'Reset to default',
-            cancelLabel: 'Keep mine',
-        });
-        if (!ok) return;
-        expressPanel.resetItems();
-        pickedId = null;
-        if (onChangeCb) onChangeCb();
-        if (onPickCb) onPickCb();
+/**
+ * One list row. Deliberately thin: the words, how they should be SAID, and a speaker.
+ * Everything else is on the one toolbar above the list.
+ */
+function phraseRow(band, item) {
+    const row = el('div', 'ee-row');
+    if (item.id === pickedId) row.classList.add('ee-row-picked');
+    row.addEventListener('pointerdown', () => {
+        if (pickedId === item.id) return;
+        pickedId = item.id;
         render();
+        if (onPickCb) onPickCb();
     });
-    wrap.appendChild(reset);
-    return wrap;
-}
 
-function textInput(value, placeholder, oninput, cls) {
-    const inp = document.createElement('input');
-    inp.type = 'text';
-    inp.value = value || '';
-    inp.placeholder = placeholder || '';
-    inp.autocomplete = 'off';
-    if (cls) inp.className = cls;
-    inp.addEventListener('input', () => oninput(inp.value));
-    // Enter means "done with this box" — drop the cursor so the keyboard goes away
-    // and the Express Panel is visible again. The text is already saved (it commits
-    // on every keystroke), so this changes nothing but what you can SEE: the panel
-    // and the keyboard share the dock, so while a field holds focus the panel the
-    // user is editing is behind the keyboard, and Add before / Move up cannot be
-    // judged without it. Works for both keyboards — the on-screen one dispatches
-    // this same keydown from its Enter key. (Ken, August 15 2026.)
-    inp.addEventListener('keydown', (e) => {
-        if (e.key !== 'Enter') return;
-        e.preventDefault();
-        inp.blur();
-        keyboard.hideKeyboard();
-    });
-    return inp;
-}
-
-// Color control. A phrase's color is the only effect of its "category", so the
-// user picks the BUTTON COLOR directly (the category names are hidden — they mean
-// nothing to the user). Partner and Feeling have one fixed color per type, shown
-// as a single, non-editable swatch so the available color is still visible.
-function colorControl(item) {
-    const wrap = document.createElement('div');
-    wrap.className = 'ee-swatches';
-    if (item.type === 'phrase') {
-        Object.keys(CATEGORIES).forEach((key, idx) => {
-            const b = document.createElement('button');
-            b.type = 'button';
-            b.className = 'ee-swatch' + (item.cat === key ? ' ee-swatch-on' : '');
-            b.style.background = CATEGORIES[key].color;
-            b.title = 'Button color';
-            b.setAttribute('aria-label', `Button color ${idx + 1}`);
-            b.setAttribute('aria-pressed', String(item.cat === key));
-            b.addEventListener('click', () => {
-                item.cat = key;
-                wrap.querySelectorAll('.ee-swatch').forEach((s) => {
-                    s.classList.remove('ee-swatch-on');
-                    s.setAttribute('aria-pressed', 'false');
-                });
-                b.classList.add('ee-swatch-on');
-                b.setAttribute('aria-pressed', 'true');
-                commit(false); // save + live-update the panel; no editor re-render
-            });
-            wrap.appendChild(b);
-        });
-    } else {
-        const c = INFLUENCER_COLORS[item.type] || {};
-        const sw = document.createElement('span');
-        sw.className = 'ee-swatch ee-swatch-static';
-        sw.style.background = c.color || '#888';
-        sw.title = `Button color (fixed for ${item.type})`;
-        sw.setAttribute('aria-label', 'Button color (fixed)');
-        wrap.appendChild(sw);
-    }
-    return wrap;
-}
-
-// Turn an undefined slot into a real item of `type`, IN PLACE — the position is
-// what the user chose by tapping that cell, so it must not move. A fresh id (rather
-// than the placeholder's) so provenance stamps it as the user's addition.
-function defineAt(i, type) {
-    const item = newItem(type);
-    current[i] = item;
-    pickedId = item.id;
-    pendingFocusId = item.id;
-    commit(true);
-    if (onPickCb) onPickCb();
-}
-
-// The one selected button: what it is, what it says, and what can be done to it.
-function buildRow(item, i) {
-    const row = document.createElement('div');
-    row.className = `ee-row ee-card ee-${item.type}`;
-    row.dataset.id = item.id;
-
-    // Which button this is. A live fact, not per-control help (Rule 14): on a grid of
-    // thirty-odd near-identical cells, "which one am I editing?" is the question, and
-    // the mark on the panel button is only half the answer.
-    const head = document.createElement('div');
-    head.className = 'ee-card-head';
-    const badge = document.createElement('span');
-    badge.className = `ee-badge ee-badge-${item.type}`;
-    badge.textContent = isEmptyItem(item) ? 'empty' : item.type;
-    head.appendChild(badge);
-    const pos = document.createElement('span');
-    pos.className = 'ee-card-pos';
-    pos.textContent = `Button ${i + 1}`;
-    head.appendChild(pos);
-    row.appendChild(head);
-
-    // Type-specific fields.
-    const fields = document.createElement('div');
-    fields.className = 'ee-fields';
-
-    if (isEmptyItem(item)) {
-        // An undefined slot: it exists only to hold this position in the grid, so
-        // the row asks the one question left — what goes here. Choosing a type
-        // replaces it where it stands.
-        const label = document.createElement('span');
-        label.className = 'ee-empty-label';
-        label.textContent = 'Not set yet —';
-        fields.appendChild(label);
-        [['Phrase', 'phrase'], ['Partner', 'partner'], ['Feeling', 'feeling'], ['Place', 'place']].forEach(([text, type]) => {
-            const b = mkBtn(text, 'ee-add');
-            b.addEventListener('click', () => defineAt(i, type));
-            fields.appendChild(b);
-        });
-    } else if (item.type === 'phrase') {
-        fields.appendChild(textInput(item.text, 'Phrase to speak', (v) => { item.text = v; commit(false); }));
-        // How to SAY it, when the button's own words are not what the voice should
-        // read out — a respelling for a name it gets wrong ("Folks-switch"), or an
-        // abbreviation that should be spoken in full. Blank means "say the label",
-        // which is what every phrase does until someone decides otherwise.
-        //   The button face and the transcript always show the LABEL; only the
-        // synthesiser sees this. Empty strings are dropped rather than stored, so a
-        // field the user typed into and then cleared leaves no trace.
-        fields.appendChild(textInput(item.speak || '', 'How to say it — only if different',
-            (v) => {
-                const t = v.trim();
-                if (t) item.speak = v; else delete item.speak;
-                commit(false);
-            }, 'ee-speakas'));
-        // The category only sets the button color, and its names ("Affirm / deny"…)
-        // mean nothing to the user (Ken) — so pick by COLOR, not by category name.
-        fields.appendChild(colorControl(item));
-    } else if (item.type === 'partner') {
-        // Pick from People I Know. The button in the panel shows their nickname if
-        // set, their name if not. Name and nickname come entirely from the selection.
-        const sel = document.createElement('select');
-        sel.className = 'ee-name-select';
-        const customOpt = document.createElement('option');
-        customOpt.value = ''; customOpt.textContent = '— Choose a person —';
-        sel.appendChild(customOpt);
-        relationships.listPeople().forEach((p) => {
-            const o = document.createElement('option');
-            o.value = p.id;
-            o.textContent = p.name + (p.nickname ? ` (${p.nickname})` : '');
-            if (p.id === item.personId) o.selected = true;
-            sel.appendChild(o);
-        });
-        sel.addEventListener('change', () => {
-            if (sel.value) {
-                const p = relationships.getPerson(sel.value);
-                item.personId = p.id;
-                item.name = p.name;
-                item.nickname = p.nickname || '';
-            } else {
-                delete item.personId;
-                item.name = '';
-                item.nickname = '';
-            }
-            commit(false);
-        });
-        fields.appendChild(sel);
-        fields.appendChild(colorControl(item)); // fixed color for this type, shown
-    } else if (item.type === 'place') {
-        // Pick from My Places (places.js), exactly as a partner is picked from People
-        // I Know — so the button always names a place the AI actually has facts about.
-        // The placeId is what the situation block resolves; the name is carried for
-        // the button face so the panel still renders if the place is later removed.
-        const sel = document.createElement('select');
-        sel.className = 'ee-name-select';
-        const noneOpt = document.createElement('option');
-        noneOpt.value = ''; noneOpt.textContent = '— Choose a place —';
-        sel.appendChild(noneOpt);
-        places.listPlaces().forEach((p) => {
-            const o = document.createElement('option');
-            o.value = p.id;
-            o.textContent = p.name || '(unnamed)';
-            if (p.id === item.placeId) o.selected = true;
-            sel.appendChild(o);
-        });
-        sel.addEventListener('change', () => {
-            if (sel.value) {
-                const p = places.getPlace(sel.value);
-                item.placeId = p.id;
-                item.name = p.name;
-            } else {
-                delete item.placeId;
-                item.name = '';
-            }
-            commit(false);
-        });
-        fields.appendChild(sel);
-        fields.appendChild(colorControl(item)); // fixed color for this type, shown
-    } else { // feeling
-        const inp = textInput(item.text, 'Feeling (e.g. Happy)', (v) => { item.text = v; commit(false); });
-        inp.setAttribute('list', 'ee-feeling-presets');
-        fields.appendChild(inp);
-        fields.appendChild(colorControl(item)); // fixed color for this type, shown
-    }
-    row.appendChild(fields);
-
-    // The actions that apply to this button (Ken's list): add before, add after, move
-    // up, move down, delete, done — plus Hear, which a phrase has always had.
-    //
-    // TEXT LABELS, NOT ICONS, and that is deliberate: Rule 12's icon-only rule governs
-    // the keyguard-backed conversation surface, and its scope note keeps text buttons
-    // on the supporter-assisted Settings overlays for readability. Text also WRAPS,
-    // which the old fixed row of icon tools did not — that is what broke on a narrow
-    // side dock.
-    const tools = document.createElement('div');
-    tools.className = 'ee-tools';
-    // Hear the phrase, in the user's own voice, before committing to it. The reason
-    // is the one already recorded for Sound Check's per-candidate speaker: this
-    // user's whole output channel is a synthesizer, so reading a phrase on screen is
-    // not the same test as hearing it — a phrase can look right and land wrong, and
-    // the voice mispronounces things the eye cannot predict.
-    //   PHRASES ONLY: partner, feeling and place buttons are TOGGLES whose labels are
-    // never spoken aloud, so a speaker on those rows would offer to play something
-    // the app will never say.
-    //   Deliberately not disabled when the field is empty: text commits on input
-    // WITHOUT re-rendering (so the field keeps focus while typing), so a disabled
-    // state set at build time would still say "empty" after the user had typed. It
-    // no-ops instead, and reads the live value rather than a stale copy.
-    const hear = mkBtn('🔊', 'ee-hear');
-    hear.title = 'Hear this phrase';
-    hear.setAttribute('aria-label', 'Hear this phrase');
-    hear.hidden = item.type !== 'phrase';
-    hear.addEventListener('click', () => {
-        // `speak` is the spoken form where the display text differs from it.
-        const text = (item.speak || item.text || '').trim();
-        if (text) tts.speak(text);
-    });
-    // Always live. On a full panel they warn and name the button that will be deleted
-    // (see insertAt) rather than greying out — the user finds out what it costs at the
-    // moment they ask for it, and can still go ahead.
-    const addBefore = mkBtn('Add before', 'ee-add');
-    addBefore.addEventListener('click', () => insertAt(i));
-    const addAfter = mkBtn('Add after', 'ee-add');
-    addAfter.addEventListener('click', () => insertAt(i + 1));
-
-    const up = mkBtn('Move up');
-    up.disabled = i === 0;
-    up.addEventListener('click', () => { [current[i - 1], current[i]] = [current[i], current[i - 1]]; commit(true); });
-    const down = mkBtn('Move down');
-    down.disabled = i === current.length - 1;
-    down.addEventListener('click', () => { [current[i + 1], current[i]] = [current[i], current[i + 1]]; commit(true); });
-
-    // Confirmed, unlike the old ✕: deleting does not merely lose one phrase, it pulls
-    // every button after it up a cell, so the positions the user has learned all move.
-    //
-    // OFF for an undefined slot (Ken, August 11 2026): "an empty button should grey out
-    // the Delete button since it's already deleted". Nothing to lose there, so the
-    // button would only offer to shuffle the panel for no gain.
-    //   The way to be rid of an empty slot is therefore Move down until it reaches the
-    // end, where it is indistinguishable from the cells past the end of the list — the
-    // panel draws both as an empty outline.
-    const del = mkBtn('Delete', 'ee-del');
-    del.disabled = isEmptyItem(item);
-    del.addEventListener('click', async () => {
-        const label = (item.text || item.nickname || item.name || '').trim();
-        const ok = await confirmDanger({
-            title: 'Delete this button?',
-            body: `${label ? `"${label}" is removed` : 'This button is removed'} and every button after it moves up one place.`,
-            confirmLabel: 'Delete it',
-            cancelLabel: 'Keep it',
-        });
-        if (!ok) return;
-        const at = current.findIndex((it) => it.id === item.id);   // may have moved while the card was open
+    row.appendChild(textInput(item.text, 'What the button says', (v) => {
+        const list = bandList(band).slice();
+        const at = list.findIndex((x) => x.id === item.id);
         if (at < 0) return;
-        current.splice(at, 1);
-        pickedId = null;
-        commit(true);
-        if (onPickCb) onPickCb();
-    });
+        list[at] = { ...list[at], text: v };
+        saveBand(band, list);
+    }));
 
-    // Finished with this button: back to the invitation, and the on-screen keyboard
-    // comes down so the panel is visible again. Edits have already been saved on every
-    // keystroke, so this is "I'm done", not "save" — which is why the old Save button
-    // is gone rather than sitting beside it.
-    const done = mkBtn('Done', 'ee-done');
-    done.addEventListener('click', () => {
-        commit(false);
-        keyboard.hideKeyboard();
-        clearPicked();
-        render();
-    });
+    // How it should be SAID. The app has been able to use this for months and there
+    // has never been anywhere to type it. It needs the speaker beside it to be usable
+    // at all - a respelling nobody can hear is a guess.
+    row.appendChild(textInput(item.speak, 'How to say it (optional)', (v) => {
+        const list = bandList(band).slice();
+        const at = list.findIndex((x) => x.id === item.id);
+        if (at < 0) return;
+        const next = { ...list[at] };
+        if (v.trim()) next.speak = v; else delete next.speak;
+        list[at] = next;
+        saveBand(band, list);
+    }));
 
-    tools.append(hear, addBefore, addAfter, up, down, del, done);
-    row.appendChild(tools);
+    // Reads the LIVE value rather than one captured at build time, so it speaks what
+    // is in the field now and not what was there when the row was drawn.
+    row.appendChild(mkBtn('🔊', 'ee-hear', () => {
+        const inputs = row.querySelectorAll('input');
+        const said = (inputs[1] && inputs[1].value.trim()) || (inputs[0] && inputs[0].value.trim());
+        if (said) tts.speak(said);
+    }, 'Hear this phrase'));
     return row;
 }
+
+function contextRow(item) {
+    const row = el('div', 'ee-row');
+    if (item.id === pickedId) row.classList.add('ee-row-picked');
+    row.addEventListener('pointerdown', () => {
+        if (pickedId === item.id) return;
+        pickedId = item.id;
+        render();
+        if (onPickCb) onPickCb();
+    });
+    row.appendChild(el('span', 'ee-kind', item.type === 'partner' ? 'Partner'
+        : item.type === 'place' ? 'Place' : 'Feeling'));
+
+    const save = (patch) => {
+        const list = bandList('context').slice();
+        const at = list.findIndex((x) => x.id === item.id);
+        if (at < 0) return;
+        list[at] = { ...list[at], ...patch };
+        saveBand('context', list);
+    };
+
+    if (item.type === 'partner') {
+        row.appendChild(pickerFor(relationships.listPeople().map((p) => ({ id: p.id, name: p.name })),
+            item.personId, item.name, (id, name) => save({ personId: id, name })));
+        row.appendChild(textInput(item.nickname, 'What you call them (optional)', (v) => save({ nickname: v })));
+    } else if (item.type === 'place') {
+        row.appendChild(pickerFor(places.listPlaces().map((p) => ({ id: p.id, name: p.name })),
+            item.placeId, item.name, (id, name) => save({ placeId: id, name })));
+    } else {
+        const i = textInput(item.text, 'A feeling', (v) => save({ text: v }));
+        i.setAttribute('list', 'ee-feeling-presets');
+        row.appendChild(i);
+    }
+    return row;
+}
+
+/** A select over the people or places the user has entered, plus a free-text name. */
+function pickerFor(options, currentId, currentName, onPick) {
+    const sel = document.createElement('select');
+    sel.className = 'ee-name-select';
+    const none = document.createElement('option');
+    none.value = '';
+    none.textContent = '— choose —';
+    sel.appendChild(none);
+    for (const o of options) {
+        const op = document.createElement('option');
+        op.value = o.id;
+        op.textContent = o.name;
+        if (o.id === currentId || (!currentId && o.name === currentName)) op.selected = true;
+        sel.appendChild(op);
+    }
+    sel.addEventListener('change', () => {
+        const hit = options.find((o) => o.id === sel.value);
+        onPick(hit ? hit.id : null, hit ? hit.name : '');
+    });
+    return sel;
+}
+
+// ---------------------------------------------------------------- sections
+
+function section(key, title, build) {
+    const wrap = el('div', 'setting-group ee-section');
+    const det = document.createElement('details');
+    det.open = !!openSections[key];
+    det.addEventListener('toggle', () => { openSections[key] = det.open; });
+    const sum = document.createElement('summary');
+    // A SPAN, never a label: a click whose target is a <label> inside a <summary>
+    // does not toggle the details, so the title would look dead while the arrow
+    // worked (found the hard way in August 2026).
+    sum.appendChild(el('span', 'setting-title', title));
+    det.appendChild(sum);
+    const body = el('div', 'ee-section-body');
+    build(body);
+    det.appendChild(body);
+    wrap.appendChild(det);
+    return wrap;
+}
+
+/** The one toolbar. Fixed above the list, so it never travels with the item. */
+function toolbar(band, extra) {
+    const bar = el('div', 'ee-toolbar');
+    bar.appendChild(mkBtn('▲', 'ee-tool', () => move(band, -1), 'Move the selected button up'));
+    bar.appendChild(mkBtn('▼', 'ee-tool', () => move(band, 1), 'Move the selected button down'));
+    bar.appendChild(mkBtn('✕', 'ee-tool', () => removePicked(band), 'Delete the selected button'));
+    (extra || []).forEach((b) => bar.appendChild(b));
+    return bar;
+}
+
+/**
+ * The line that says where the panel runs out. Everything below it is stored and
+ * reachable later - a smaller Context band or a different layout brings it back - but
+ * is not showing now. The user finds this out at the moment they add the phrase,
+ * which is not the same moment as noticing it later while changing the layout.
+ */
+function cutLine(hidden, what) {
+    if (hidden <= 0) return null;
+    return el('p', 'ee-cut', `${hidden} ${what}${hidden === 1 ? ' below this point is' : 's below this point are'} not showing — the panel has run out of room.`);
+}
+
+function alwaysSection(composed) {
+    return section('always', 'Always — the words that never move', (body) => {
+        body.appendChild(toolbar('always', [
+            mkBtn('Add a phrase', 'ee-add', () => addPhrase('always')),
+            mkBtn('Reset to the app’s phrases', 'ee-reset', resetAlways),
+        ]));
+        const list = el('div', 'ee-list');
+        const items = bandList('always');
+        items.forEach((it, i) => {
+            if (i === composed.counts.always) {
+                const cut = cutLine(items.length - composed.counts.always, 'phrase');
+                if (cut) list.appendChild(cut);
+            }
+            list.appendChild(phraseRow('always', it));
+        });
+        if (!items.length) list.appendChild(el('p', 'ee-empty', 'No phrases yet.'));
+        body.appendChild(list);
+    });
+}
+
+function flexSection(composed) {
+    return section('flex', 'Flex — phrases that suit who you are with and where you are', (body) => {
+        const pickRow = el('div', 'ee-scope');
+        pickRow.appendChild(el('span', 'ee-scope-lead', 'Editing the Flex band for'));
+
+        const people = relationships.listPeople();
+        const spots = places.listPlaces();
+        pickRow.appendChild(scopeSelect(
+            [{ id: ANYONE, name: 'Anyone' }, ...people.map((p) => ({ id: p.id, name: p.name }))],
+            flexPartner, (v) => { flexPartner = v; render(); }));
+        pickRow.appendChild(el('span', 'ee-scope-lead', 'at'));
+        pickRow.appendChild(scopeSelect(
+            [{ id: ANYPLACE, name: 'Anyplace' }, ...spots.map((p) => ({ id: p.id, name: p.name }))],
+            flexPlace, (v) => { flexPlace = v; render(); }));
+        body.appendChild(pickRow);
+
+        // What has already been made. Without it there is no screen anywhere that says
+        // which situations exist, and after a month there may be fifteen.
+        const made = expressPanel.flexSituations();
+        if (made.length) {
+            const box = el('div', 'ee-situations');
+            box.appendChild(el('span', 'ee-scope-lead', 'Already set up:'));
+            made.map((key) => ({ key, ...parseFlexKey(key) }))
+                .sort((a, b) => nameOf(a).localeCompare(nameOf(b)))
+                .forEach(({ key, partnerId, placeId }) => {
+                    const b = mkBtn(situationName(partnerId, placeId), 'ee-situation', () => {
+                        flexPartner = partnerId; flexPlace = placeId; render();
+                    });
+                    if (partnerId === flexPartner && placeId === flexPlace) b.classList.add('ee-situation-on');
+                    box.appendChild(b);
+                });
+            body.appendChild(box);
+        }
+
+        body.appendChild(toolbar('flex', [
+            mkBtn('Add a phrase', 'ee-add', () => addPhrase('flex')),
+            mkBtn('Delete this situation', 'ee-reset', deleteSituation),
+        ]));
+        const list = el('div', 'ee-list');
+        const items = bandList('flex');
+        items.forEach((it) => list.appendChild(phraseRow('flex', it)));
+        if (!items.length) {
+            list.appendChild(el('p', 'ee-empty',
+                'No phrases for this situation yet. Whatever you do not fill is taken from the more general lists.'));
+        }
+        body.appendChild(list);
+        const spare = composed.counts.flex;
+        body.appendChild(el('p', 'ee-note',
+            `The Flex band has ${spare} button${spare === 1 ? '' : 's'} right now. Phrases are filled in from the most specific list to the least: this partner in this place, then this partner anywhere, then anyone in this place, then Anyone at Anyplace.`));
+    });
+}
+
+function nameOf({ partnerId, placeId }) { return situationName(partnerId, placeId); }
+
+function situationName(partnerId, placeId) {
+    const person = relationships.listPeople().find((p) => p.id === partnerId);
+    const spot = places.listPlaces().find((p) => p.id === placeId);
+    const who = partnerId === ANYONE ? 'Anyone' : (person ? person.name : 'Someone');
+    const where = placeId === ANYPLACE ? 'Anyplace' : (spot ? spot.name : 'somewhere');
+    return `${who} at ${where}`;
+}
+
+function contextSection(composed) {
+    return section('context', 'Context — the buttons that never speak', (body) => {
+        body.appendChild(el('p', 'ee-note',
+            'Partners, places and feelings, always in that order. This is also where the choices the other person offers appear, at the far end, for one exchange.'));
+        body.appendChild(toolbar('context', [
+            mkBtn('Add a partner', 'ee-add', () => addContext('partner')),
+            mkBtn('Add a place', 'ee-add', () => addContext('place')),
+            mkBtn('Add a feeling', 'ee-add', () => addContext('feeling')),
+        ]));
+        const list = el('div', 'ee-list');
+        const items = bandList('context');
+        items.forEach((it, i) => {
+            if (i === composed.counts.context) {
+                const cut = cutLine(items.length - composed.counts.context, 'button');
+                if (cut) list.appendChild(cut);
+            }
+            list.appendChild(contextRow(it));
+        });
+        if (!items.length) list.appendChild(el('p', 'ee-empty', 'No context buttons yet.'));
+        body.appendChild(list);
+    });
+}
+
+// ---------------------------------------------------------------- destructive paths
+
+/**
+ * ⚠ THE WARNING SAYS "THE APP'S SET", NOT "WHAT YOU HAD BEFORE" (Ken, August 23 2026).
+ * Reset restores what the app SHIPS, which is not the same thing as undoing this
+ * session's edits — somebody who reads it as an undo would tap it expecting to get
+ * back a phrase they deleted an hour ago and instead lose every phrase they have ever
+ * written. Saying which set is coming back is the whole job of the message.
+ */
+async function resetAlways() {
+    const mine = bandList('always').length;
+    if (!(await confirmDanger({
+        title: 'Replace the Always phrases?',
+        body: `All ${mine} phrase${mine === 1 ? '' : 's'} in the Always band will be replaced with the set the app comes with. This is not an undo: it does not restore what you had before you started editing, and any phrase you have written yourself will be gone.`,
+        confirmLabel: 'Replace them',
+    }))) return;
+    expressPanel.resetBand('always');
+    pickedId = null;
+    if (onChangeCb) onChangeCb();
+    render();
+}
+
+async function deleteSituation() {
+    const key = flexKey(flexPartner, flexPlace);
+    const list = bandList('flex');
+    if (!list.length) return;
+    if (!(await confirmDanger({
+        title: 'Delete this situation?',
+        body: `The ${list.length} phrase${list.length === 1 ? '' : 's'} you have written for ${situationName(flexPartner, flexPlace)} will be removed.`,
+        confirmLabel: 'Delete them',
+    }))) return;
+    expressPanel.removeFlexList(key);
+    pickedId = null;
+    if (onChangeCb) onChangeCb();
+    render();
+}
+
+function scopeSelect(options, current, onPick) {
+    const sel = document.createElement('select');
+    sel.className = 'ee-scope-select';
+    for (const o of options) {
+        const op = document.createElement('option');
+        op.value = o.id;
+        op.textContent = o.name;
+        if (o.id === current) op.selected = true;
+        sel.appendChild(op);
+    }
+    sel.addEventListener('change', () => onPick(sel.value));
+    return sel;
+}
+
+// ---------------------------------------------------------------- render
 
 export function render() {
     if (!container) return;
-    current = expressPanel.getItems();
-    // A button deleted from under the selection takes the mark with it, so the panel
-    // does not keep highlighting a cell whose item no longer exists.
-    if (pickedId && !current.some((it) => it.id === pickedId)) pickedId = null;
     container.innerHTML = '';
+    const composed = composePanel(layoutRowsFn(), expressPanel.getModel(),
+        { partnerId: null, placeId: null });
 
-    // datalist of suggested feelings, used by a feeling card.
-    const dl = document.createElement('datalist');
-    dl.id = 'ee-feeling-presets';
-    FEELING_PRESETS.forEach((f) => { const o = document.createElement('option'); o.value = f; dl.appendChild(o); });
-    container.appendChild(dl);
-
-    const i = pickedId ? current.findIndex((it) => it.id === pickedId) : -1;
-    container.appendChild(i >= 0 ? buildRow(current[i], i) : buildPrompt());
-
-    markPickedRow();
-
-    // Focus + reveal a just-selected card so the user can type in place.
-    if (pendingFocusId) {
-        const id = pendingFocusId;
-        pendingFocusId = null;
-        revealRow(id);
+    if (!container.querySelector('#ee-feeling-presets')) {
+        const dl = document.createElement('datalist');
+        dl.id = 'ee-feeling-presets';
+        FEELING_PRESETS.forEach((f) => {
+            const o = document.createElement('option');
+            o.value = f;
+            dl.appendChild(o);
+        });
+        container.appendChild(dl);
     }
+
+    container.appendChild(alwaysSection(composed));
+    container.appendChild(flexSection(composed));
+    container.appendChild(contextSection(composed));
 }
 
-/**
- * Scroll a selected row into view — WITHOUT putting the cursor in its text box.
- *
- * ⚠ IT USED TO FOCUS THE FIRST FIELD, AND THAT MADE THE EDITOR HARD TO USE (Ken,
- * August 15 2026, watching an SLP): selecting a button raised the on-screen keyboard
- * instantly, and the keyboard occupies the SAME dock band as the Express Panel — so
- * the panel the user is editing disappeared the moment they picked a button on it.
- * Add before / Add after / Move up / Move down are all judged against the panel, so
- * they became guesswork. Typing is one tap away; seeing the panel was not.
- *
- * An undefined slot is the one exception, and it costs nothing: its row has no text
- * box, only the four type buttons asking what goes here, and focusing a button
- * raises no keyboard. The selector is those buttons SPECIFICALLY (`.ee-fields
- * .ee-add`) rather than "the first thing that is not an input" — on a defined
- * phrase that would have landed on the first color swatch, which wears a focus ring
- * and would read as the color having been chosen.
- */
-function revealRow(id) {
-    if (!container || !id) return null;
-    const row = container.querySelector(`.ee-row[data-id="${CSS.escape(String(id))}"]`);
-    if (!row) return null;
-    row.scrollIntoView({ block: 'nearest' });
-    row.querySelector('.ee-fields .ee-add')?.focus();
-    return row;
-}
-
-/**
- * Show `id`'s card — how a tap on a panel cell lands the user on that button. The
- * selection IS what the tab shows now, so this always re-renders; the panel is told
- * too, so the tapped button stays marked and the user can see which of thirty-odd
- * cells their tap chose.
- */
-export function focusItem(id) {
-    if (!container || !id) return;
-    pickedId = id;
-    pendingFocusId = id;
-    render();
-    if (onPickCb) onPickCb();
-}
-
-// Re-applied after every render, not only on the tap: the editor rebuilds its whole
-// list on any edit, so a class set once would vanish the moment the user typed a
-// character into the row it was marking.
-function markPickedRow() {
-    if (!container) return;
-    container.querySelectorAll('.ee-row-picked').forEach((r) => r.classList.remove('ee-row-picked'));
-    if (!pickedId) return;
-    const row = container.querySelector(`.ee-row[data-id="${CSS.escape(String(pickedId))}"]`);
-    if (row) row.classList.add('ee-row-picked');
-}
+export { CONTEXT_ORDER };

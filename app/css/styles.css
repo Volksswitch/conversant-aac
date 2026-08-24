@@ -1265,6 +1265,72 @@ body.conv-bottom .palette-grid {
     align-items: center;
     justify-content: center;
 }
+/* --- BANDS (August 23 2026) -------------------------------------------------
+   One background color per band, and the band is what the color says. Placed
+   immediately after the .ep-btn base so that everything with a meaning of its own -
+   the compose key, an offered choice, a selected influencer, an armed button - still
+   wins over it. Bands group POSITIONS; they change nothing about the grid, so none
+   of this moves a keyguard hole. */
+.ep-btn.ep-band-always  { --band-color: #283593; --band-tint: #e8eaf6; }
+.ep-btn.ep-band-context { --band-color: #4E342E; --band-tint: #efebe9; }
+.ep-btn.ep-band-flex    { --band-color: #1B5E20; --band-tint: #e8f5e9; }
+.ep-btn.ep-band-always,
+.ep-btn.ep-band-context,
+.ep-btn.ep-band-flex {
+    background: var(--band-tint);
+    border-color: var(--band-color);
+}
+
+/* Inside the Context band the KIND of button - partner, place, feeling - is said by
+   a mark rather than by a different fill, because three different fills there made
+   the feeling buttons look like the alternatives a partner had just offered. Which
+   mark is a SETTING: there is no best answer, and only the person looking at the
+   panel every day can settle it. The default is the shape. */
+
+/* color: the left bar keeps the kind's own hue. The weakest of the four - brown and
+   olive are near neighbors at five pixels - and kept because it is the cheapest. */
+.ep-mark-color .ep-btn.ep-band-context { border-left-color: var(--ep-color); }
+
+/* thick: the bar's width says the kind. Comparative, so a button on its own tells
+   you nothing; it reads well down a column and poorly in isolation. */
+.ep-mark-thick .ep-btn.ep-band-context { border-left-color: var(--band-color); }
+.ep-mark-thick .ep-btn.ep-partner      { border-left-width: 10px; }
+.ep-mark-thick .ep-btn.ep-place        { border-left-width: 6px; }
+.ep-mark-thick .ep-btn.ep-feeling      { border-left-width: 2px; }
+
+/* side: which edge the bar sits on. The border WIDTHS are swapped rather than the
+   colors, so the box stays exactly the same size on every kind - a wider edge on one
+   would shift the text and break the "geometry is identical" requirement. */
+.ep-mark-side .ep-btn.ep-band-context { border-left-color: var(--band-color); }
+.ep-mark-side .ep-btn.ep-place {
+    border-left-width: 1px;
+    border-right-width: 5px;
+}
+.ep-mark-side .ep-btn.ep-feeling {
+    border-left-width: 1px;
+    border-top-width: 4px;
+}
+
+/* shape: a small mark before the label. The strongest of the four and the most in
+   keeping with the app, which already marks a selected state with a check rather
+   than with color alone. Its cost is a little width, which matters most on a
+   three-column side dock. */
+.ep-mark-shape .ep-btn.ep-band-context { border-left-color: var(--band-color); }
+.ep-mark-shape .ep-btn.ep-partner .ep-text::before { content: '\25CF\2009'; }
+.ep-mark-shape .ep-btn.ep-place   .ep-text::before { content: '\25B2\2009'; }
+.ep-mark-shape .ep-btn.ep-feeling .ep-text::before { content: '\25C6\2009'; }
+
+/* An undefined position still reads as part of its band, which is what makes the
+   Context band's floor of four tolerable: four reserved outlines rather than four
+   holes. Color only - never a box property, or the cell would measure differently
+   from a defined one and every cell after it would shift (see tests/styles). */
+.ep-btn.ep-undefined.ep-band-always,
+.ep-btn.ep-undefined.ep-band-context,
+.ep-btn.ep-undefined.ep-band-flex {
+    background: transparent;
+    border-color: color-mix(in srgb, var(--band-color) 30%, transparent);
+}
+
 /* Word-wrap the phrase onto multiple lines (less need for ellipsis); clamp to
    3 lines with an ellipsis fallback only for the very longest. */
 .ep-text {
@@ -1336,6 +1402,32 @@ body.conv-bottom .palette-grid {
 .ep-btn.ep-on .ep-text::after {
     content: ' ✓';
     font-weight: 800;
+}
+
+/* ⚠ INSIDE THE CONTEXT BAND THE SOLID INFLUENCER FILL IS REPLACED BY THE BAND'S OWN
+   BACKGROUND (August 23 2026). Three different fills there made the feeling buttons
+   look like the alternatives a partner had just offered, which is the one thing on
+   the panel that must be unmistakable. So the KIND is said by a mark instead (see
+   .ep-mark-* above) and the fill says which BAND. Placed after the toggle rules
+   because those set the fill explicitly and would otherwise win.
+
+   The toggled-ON state keeps a solid fill, because "this is switched on" has to stay
+   unmistakable (Rule 6) - it just uses the band's color rather than the kind's. */
+.ep-btn.ep-band-context.ep-partner,
+.ep-btn.ep-band-context.ep-place,
+.ep-btn.ep-band-context.ep-feeling {
+    background: var(--band-tint);
+    color: var(--ink);
+    border-color: var(--band-color);
+}
+.ep-btn.ep-band-context.ep-on {
+    background: var(--band-color);
+    color: #fff;
+}
+.ep-btn.ep-band-context:focus-visible {
+    background: #fff;
+    color: var(--ink);
+    outline-color: var(--band-color);
 }
 
 /* An UNDEFINED cell — a position the user has not filled yet (Ken, August 8 2026).
@@ -3666,4 +3758,73 @@ label.radio-label input[type="radio"] {
     border-radius: 6px;
     padding: 0.5rem 0.7rem;
     margin: 0.4rem 0 0.6rem;
+}
+
+/* --- THE BAND EDITOR (August 23 2026) ---------------------------------------
+   Three collapsible sections, one per band, each with ONE fixed toolbar above its
+   list. The tools left the rows deliberately: a button that stays put is far easier
+   to hit than one that travels up and down with the item it acts on (Ken). The rows
+   are back to being rows because the two things that made them overflow are gone -
+   the color swatches (color comes from the band now) and the per-row tools. */
+#expressEditor .ee-section { margin-bottom: 0.6rem; }
+#expressEditor .ee-section-body { padding: 0.4rem 0 0.2rem; }
+#expressEditor .ee-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    align-items: center;
+    padding: 0.35rem 0;
+    margin-bottom: 0.4rem;
+    border-bottom: 1px solid #e3e9ed;
+    position: sticky;
+    top: 0;
+    background: var(--panel-bg, #fff);
+    z-index: 1;
+}
+#expressEditor .ee-toolbar button {
+    min-height: var(--btn-min-dim);
+}
+#expressEditor .ee-toolbar .ee-tool {
+    min-width: var(--btn-min-dim);
+    width: var(--btn-min-dim);
+}
+/* A row is a row again: the words, how to say them, and a speaker. */
+#expressEditor .ee-row { flex-direction: row; align-items: center; padding: 0.35rem; }
+#expressEditor .ee-input { flex: 1 1 8rem; min-width: 0; font: inherit; padding: 0.35rem 0.45rem; border: 1px solid #bbc7cd; border-radius: 6px; }
+#expressEditor .ee-kind { flex: 0 0 auto; font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #4E342E; min-width: 4.2rem; }
+#expressEditor .ee-note { font-size: 0.85rem; color: #55606a; margin: 0.2rem 0 0.5rem; }
+
+/* Which situation is being edited. Two selects that read as a sentence, sized to be
+   read: somebody who believes they are editing their clinic phrases and is in fact
+   editing everybody's has been misled, and the silent version of that mistake costs
+   weeks. */
+#expressEditor .ee-scope {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    background: #fff8e1;
+    border-left: 4px solid #F9A825;
+    border-radius: 6px;
+    font-weight: 700;
+}
+#expressEditor .ee-scope-lead { flex: 0 0 auto; }
+#expressEditor .ee-scope-select { flex: 1 1 7rem; min-width: 6rem; min-height: var(--btn-min-dim); font: inherit; }
+#expressEditor .ee-situations { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; margin-bottom: 0.5rem; }
+#expressEditor .ee-situation { min-height: var(--btn-min-dim); }
+#expressEditor .ee-situation-on { background: #2c7a3f; color: #fff; border-color: #2c7a3f; }
+
+/* Where the panel runs out. Everything below is stored and comes back if the bands
+   are resized or the layout changes - it is simply not showing now, and the user is
+   told at the moment they add the phrase rather than weeks later. */
+#expressEditor .ee-cut {
+    margin: 0.5rem 0;
+    padding: 0.3rem 0.45rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #8a5300;
+    background: #fff3e0;
+    border-top: 2px dashed #e0a44a;
 }

@@ -469,7 +469,16 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         // see which button their tap chose. Stays until they tap another, change tab
         // or close Settings — never a transient flash (Ken, August 9 2026).
         pickedId = null,
+        // Which band each cell belongs to, in reading order (express-bands.composePanel).
+        // The renderer needs this ONLY to pick a background: bands change what goes in
+        // a cell, never where the cells are, so nothing about placement consults it.
+        bands = [],
+        // How the three kinds of Context button are told apart inside their shared
+        // background: 'color' | 'thick' | 'side' | 'shape'. A setting, not a decision.
+        contextMark = 'shape',
     } = opts;
+    epGrid.classList.remove('ep-mark-color', 'ep-mark-thick', 'ep-mark-side', 'ep-mark-shape');
+    epGrid.classList.add('ep-mark-' + (['color', 'thick', 'side', 'shape'].includes(contextMark) ? contextMark : 'shape'));
     epGrid.innerHTML = '';
 
     let armedBtn = null;
@@ -536,9 +545,11 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
             b.addEventListener('click', () => onToggleFeeling && onToggleFeeling(item));
             return b;
         }
-        // phrase
-        const cat = categories[item.cat] || {};
-        setColor(b, cat.color, cat.tint);
+        // phrase. Its color comes from the BAND it is in (set by the caller on the
+        // cell below), not from a per-phrase swatch: one background per band is what
+        // makes the three readable at a glance, and it is why the swatches left the
+        // editor. `categories` is still accepted so nothing that passes it breaks.
+        void categories;
         b.title = item.text;
         b.setAttribute('aria-label', item.text);
         b.innerHTML = `<span class="ep-text">${escapeHtml(item.text)}</span>`;
@@ -666,6 +677,12 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
             const cellEl = (!item || item.type === 'empty')
                 ? buildUndefinedCell(index, span)
                 : buildItemBtn(item, span);
+            // ONE BACKGROUND COLOR PER BAND, and the band is what the color says. It
+            // goes on every cell including the undefined ones, so a reserved Context
+            // position reads as part of its band rather than as a hole in the panel -
+            // which is the whole reason the floor of four is tolerable.
+            const band = bands[index];
+            if (band) cellEl.classList.add('ep-band-' + band);
             // Marked here rather than inside the two builders, so an undefined cell
             // and a defined one cannot drift apart — a cell tapped while empty keeps
             // its mark through the moment it becomes a phrase.

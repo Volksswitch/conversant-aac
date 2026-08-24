@@ -177,7 +177,7 @@
                 <div class="settings-tab" data-tab="aboutme">About Me</div>
                 <div class="settings-tab" data-tab="textsize">Text Size</div>
                 <div class="settings-tab" data-tab="speech">Speech</div>
-                <div class="settings-tab" data-tab="input">Buttons &amp; Keyboard</div>
+                <div class="settings-tab" data-tab="input">Button Sizes</div>
                 <div class="settings-tab" data-tab="conversation">Conversation</div>
                 <div class="settings-tab" data-tab="practice">Practice</div>
                 <div class="settings-tab" data-tab="express">Express Panel</div>
@@ -470,54 +470,6 @@
                          single-setting-per-heading shape being removed. Their ids stay —
                          updateKeyboardPositionGroups() shows only the ones the chosen
                          dock uses. -->
-                    <div class="setting-group" data-help="expressKeyboard">
-                        <label>Express Panel &amp; keyboard</label>
-                        <div class="setting-item">
-                            <label>Keyboard for typing</label>
-                            <div class="radio-row">
-                                <label class="radio-label">
-                                    <input type="radio" name="keyboardMode" value="physical" checked>
-                                    My physical keyboard
-                                </label>
-                                <label class="radio-label">
-                                    <input type="radio" name="keyboardMode" value="onscreen">
-                                    On-screen keyboard (app's own)
-                                </label>
-                            </div>
-                        </div>
-                        <div class="setting-item">
-                            <label>Where it sits</label>
-                            <div class="radio-row">
-                                <label class="radio-label">
-                                    <input type="radio" name="keyboardDock" value="bottom" checked>
-                                    Bottom of the screen
-                                </label>
-                                <label class="radio-label">
-                                    <input type="radio" name="keyboardDock" value="side">
-                                    Side of the screen
-                                </label>
-                            </div>
-                        </div>
-                        <div class="setting-item" id="sidePositionGroup">
-                            <label for="sideDockPositionToggle">Which side</label>
-                            <div class="slider-row">
-                                <span class="slider-end">Left</span>
-                                <label class="switch">
-                                    <input type="checkbox" id="sideDockPositionToggle">
-                                    <span class="switch-track"></span>
-                                </label>
-                                <span class="slider-end">Right</span>
-                            </div>
-                        </div>
-                        <div class="setting-item" id="bottomLayoutGroup">
-                            <label for="bottomLayoutSelect">Layout</label>
-                            <select id="bottomLayoutSelect"></select>
-                        </div>
-                        <div class="setting-item" id="sideLayoutGroup">
-                            <label for="sideLayoutSelect">Layout</label>
-                            <select id="sideLayoutSelect"></select>
-                        </div>
-                    </div>
                 </div>
                 <div class="tab-panel" data-tab="conversation">
                     <!-- Grouped by the DECISION being made, not one heading per control
@@ -662,8 +614,98 @@
                     <div id="practicePanel"></div>
                 </div>
                 <div class="tab-panel" data-tab="express">
-                    <p class="tab-intro">Edit the <strong>Express Panel</strong> shown beside this tab. Each button is a <strong>Phrase</strong> (speaks when tapped), a <strong>Partner</strong> (who you're talking with — personalizes openers and tells the AI who's there), a <strong>Feeling</strong> (sets the mood of the suggestions), or a <strong>Place</strong> (where you are).</p>
+                    <p class="tab-intro">Set up the <strong>Express Panel</strong> shown beside this tab. It has three bands: <strong>Always</strong>, the words that never move; <strong>Context</strong>, the buttons that never speak but tell the app who you are with, where you are and how you feel; and <strong>Flex</strong>, phrases that suit the partner and place you have selected. Tap a button in the panel to edit it where it sits.</p>
+                    <div class="setting-group" data-help="expressKeyboard">
+                        <label>Express Panel &amp; keyboard</label>
+                        <div class="setting-item">
+                            <label>Keyboard for typing</label>
+                            <div class="radio-row">
+                                <label class="radio-label">
+                                    <input type="radio" name="keyboardMode" value="physical" checked>
+                                    My physical keyboard
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="keyboardMode" value="onscreen">
+                                    On-screen keyboard (app's own)
+                                </label>
+                            </div>
+                        </div>
+                        <div class="setting-item">
+                            <label>Where it sits</label>
+                            <div class="radio-row">
+                                <label class="radio-label">
+                                    <input type="radio" name="keyboardDock" value="bottom" checked>
+                                    Bottom of the screen
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="keyboardDock" value="side">
+                                    Side of the screen
+                                </label>
+                            </div>
+                        </div>
+                        <div class="setting-item" id="sidePositionGroup">
+                            <label for="sideDockPositionToggle">Which side</label>
+                            <div class="slider-row">
+                                <span class="slider-end">Left</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="sideDockPositionToggle">
+                                    <span class="switch-track"></span>
+                                </label>
+                                <span class="slider-end">Right</span>
+                            </div>
+                        </div>
+                        <div class="setting-item" id="bottomLayoutGroup">
+                            <label for="bottomLayoutSelect">Layout</label>
+                            <select id="bottomLayoutSelect"></select>
+                        </div>
+                        <div class="setting-item" id="sideLayoutGroup">
+                            <label for="sideLayoutSelect">Layout</label>
+                            <select id="sideLayoutSelect"></select>
+                        </div>
+                    </div>
                     <div id="expressEditor"></div>
+                    <!-- The look and the sizes come LAST on purpose (Ken, August 23
+                         2026): these controls mean very little against an empty panel
+                         and a great deal once there are real phrases to watch move.
+                         None of them changes the grid, so none of them moves a
+                         keyguard hole - bands group positions, they do not re-cut
+                         anything. -->
+                    <div class="setting-group" data-help="bandSizes">
+                        <label>Band sizes and look</label>
+                        <div class="setting-item">
+                            <label for="bandContextInput">Context band</label>
+                            <div class="slider-row">
+                                <button type="button" class="slider-step" data-target="bandContextInput" data-step="-1" aria-label="Fewer context buttons">&minus;</button>
+                                <input type="number" id="bandContextInput" min="4" max="60" step="1">
+                                <button type="button" class="slider-step" data-target="bandContextInput" data-step="1" aria-label="More context buttons">+</button>
+                            </div>
+                        </div>
+                        <div class="setting-item">
+                            <label for="bandFlexInput">Flex band</label>
+                            <div class="slider-row">
+                                <button type="button" class="slider-step" data-target="bandFlexInput" data-step="-1" aria-label="Fewer flex buttons">&minus;</button>
+                                <input type="number" id="bandFlexInput" min="0" max="60" step="1">
+                                <button type="button" class="slider-step" data-target="bandFlexInput" data-step="1" aria-label="More flex buttons">+</button>
+                            </div>
+                        </div>
+                        <div class="setting-item">
+                            <label for="bandShapeSelect">Measured in</label>
+                            <select id="bandShapeSelect">
+                                <option value="counts">Buttons</option>
+                                <option value="rows">Whole rows</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label for="contextMarkSelect">Telling context buttons apart</label>
+                            <select id="contextMarkSelect">
+                                <option value="shape">A shape before the label</option>
+                                <option value="color">The bar's color</option>
+                                <option value="thick">The bar's thickness</option>
+                                <option value="side">Which side the bar is on</option>
+                            </select>
+                        </div>
+                        <p class="setting-status" id="bandSizeStatus"></p>
+                    </div>
                 </div>
                 <div class="tab-panel" data-tab="controls">
                     <p class="tab-intro">Set the exact words spoken by the persistent control buttons, and the cards shown by <strong>Start conversation</strong> and <strong>Wind down</strong> — so each sounds like something you would say.</p>

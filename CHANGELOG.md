@@ -26,6 +26,27 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- **The Express Panel is now in three bands.** The top band holds the words that never
+  move — yes, no, please, help — so they are always in the same place. Below it sit the
+  buttons that never say anything out loud: who you are talking to, where you are, how
+  you feel, and the choices the other person has just offered. The rest of the panel
+  fills with phrases that suit the partner and place you have selected.
+- **Your panel has been replaced with a new starting set.** This is a one-time change
+  that comes with the new bands. Anything you set up from now on is yours and will not
+  be touched again.
+- **You can write phrases for a particular person, a particular place, or both.** On the
+  Express Panel tab, pick who and where, then list the phrases you would want. They fill
+  the bottom band whenever that person or place is selected, most likely first, and
+  anything you have not filled comes from your general list.
+- **Every phrase can now say how it should be pronounced.** There is a second box beside
+  the words, and a speaker button so you can hear it before you settle on a spelling.
+  Useful for names the voice gets wrong.
+- **Choosing your keyboard layout has moved to the Express Panel tab**, next to the band
+  sizes, so you can try a different grid and see what it does to your phrases without
+  changing tabs. The other tab is now called Button Sizes.
+- **Buttons no longer have a color each.** The color says which band a button is in,
+  which is what makes the three bands readable at a glance.
+
 - The button for answering with a number now always reads **123**. It used to read
   something like "1-10" when the other person named both ends of the scale, which
   suggested it would offer ten buttons to choose from. It does not, and never did —

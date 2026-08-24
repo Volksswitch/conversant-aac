@@ -11,11 +11,12 @@ import * as relationships from './relationships.js';
 import * as places from './places.js';
 import * as worldviewUI from './worldview-ui.js';
 import * as keyboard from './keyboard.js';
-import { SIDE_LAYOUTS, BOTTOM_LAYOUTS, LAYOUTS, panelPositionCount } from './keyboard-layouts.js';
+import { SIDE_LAYOUTS, BOTTOM_LAYOUTS, LAYOUTS } from './keyboard-layouts.js';
 import * as viewport from './viewport.js';
 import * as expressItems from './express-items.js';
 import * as pronunciation from './pronunciation.js';
 import * as expressPanel from './express-panel.js';
+import * as expressBands from './express-bands.js';
 // Named voiceProfile, not voice: app.js already uses `voice` as the loop variable
 // for a SpeechSynthesisVoice in the two TTS pickers, and a module shadowed inside
 // those callbacks would fail silently rather than loudly.
@@ -520,7 +521,9 @@ function initApp() {
     expressEditor.init(document.getElementById('expressEditor'), {
         onChange: renderExpressPanel,
         onPick: renderExpressPanel,   // the mark lives on the panel, so a pick redraws it
-        cellCount: expressCellCount,  // the ceiling on how many buttons can exist
+        // The editor needs the live grid to say where the panel runs out, which is
+        // what the cut line in each list reports.
+        layoutRows: expressLayoutRows,
     });
     controlEditor.init(document.getElementById('controlEditor'), { onChange: applyControlPhrases });
     // About Me is an ordinary Settings tab — it renders into its tab-panel and is
@@ -2878,17 +2881,17 @@ function handleDefineCell(index) {
     // so this cannot normally be reached.
     if (!expressPanelInSettings) return;
 
-    const items = expressPanel.getItems();
-    while (items.length <= index) items.push(expressItems.newEmptyItem());
-    const id = items[index].id;
-    expressPanel.setItems(items);
-    renderExpressPanel();
+    // Which band owns this cell decides what defining it means, so the editor opens
+    // on the right list rather than always on the phrases.
+    const composed = composedPanel();
+    const band = composed.bands[index];
+    if (!band) return;
 
     const dialog = document.getElementById('settingsDialog');
     if (!dialog.open) openSettings();
     const tab = document.querySelector('#settingsTabs .settings-tab[data-tab="express"]');
     if (tab) activateSettingsTab(tab, false);   // renders the editor and hosts the panel
-    expressEditor.focusItem(id);
+    expressEditor.addToBand(band);
 }
 
 // A tap on a DEFINED button while the panel is live in Settings edits it rather
@@ -2903,10 +2906,69 @@ function editedInSettings(item) {
     return true;
 }
 
+/**
+ * Lay the user's three bands out over the cells of the chosen keyboard layout.
+ *
+ * The renderer still receives ONE ordered list — bands change what goes in a cell,
+ * never where the cells are — plus a parallel list saying which band each cell is in,
+ * which is all it needs to pick the background. The grid is untouched, so a keyguard
+ * cut for this layout still fits whatever the band sizes are.
+ */
+function composedPanel() {
+    return expressBands.composePanel(expressLayoutRows(), expressPanel.getModel(), {
+        partnerId: activePartner ? (activePartner.personId || activePartner.id) : null,
+        placeId: activePlace ? (activePlace.placeId || activePlace.id) : null,
+    });
+}
+
+function rowsMode() {
+    return expressPanel.getModel().sizes.shape === expressBands.SHAPE.ROWS;
+}
+
+/**
+ * Put the band numbers back on screen and say what they came out as. The number the
+ * user types is a request; what the panel can actually give them depends on the grid,
+ * so the status line reports the answer rather than leaving them to count buttons.
+ */
+function reflectBandSizes() {
+    const sizes = expressPanel.getModel().sizes;
+    const rows = rowsMode();
+    const ctxIn = document.getElementById('bandContextInput');
+    const flexIn = document.getElementById('bandFlexInput');
+    const shapeSel = document.getElementById('bandShapeSelect');
+    const markSel = document.getElementById('contextMarkSelect');
+    if (!ctxIn || !flexIn || !shapeSel || !markSel) return;
+    ctxIn.value = rows ? sizes.contextRows : sizes.context;
+    ctxIn.min = rows ? 1 : expressBands.CONTEXT_FLOOR;
+    flexIn.value = rows ? sizes.flexRows : sizes.flex;
+    shapeSel.value = sizes.shape;
+    markSel.value = storage.loadContextMark();
+    const composed = composedPanel();
+    const unit = rows ? 'rows' : 'buttons';
+    const bits = [
+        `Always ${composed.counts.always}, Context ${composed.counts.context}, Flex ${composed.counts.flex} buttons (set in ${unit}).`,
+    ];
+    if (composed.unreachable.always) {
+        bits.push(`${composed.unreachable.always} Always phrase(s) have nowhere to go and are not showing.`);
+    }
+    if (composed.unreachable.context) {
+        bits.push(`${composed.unreachable.context} Context button(s) do not fit.`);
+    }
+    if (composed.fromAlwaysSurplus) {
+        bits.push(`${composed.fromAlwaysSurplus} Always phrase(s) are filling spare room at the end of the Flex band.`);
+    }
+    const status = document.getElementById('bandSizeStatus');
+    if (status) status.textContent = bits.join(' ');
+}
+
 function renderExpressPanel() {
     applyButtonSizing();   // the active layout may have changed → refresh --kbd-rows/--kbd-cols
-    // The user-editable, ordered typed-item list (phrase / partner / feeling).
-    ui.renderExpressPanel(expressLayoutRows(), expressPanel.getItems(), {
+    const composed = composedPanel();
+    ui.renderExpressPanel(expressLayoutRows(), composed.items, {
+        // One background color per band, so which band a button is in is readable at a
+        // glance without reading the button (Ken, August 22 2026). This replaces the
+        // per-phrase color the user used to pick: color now carries a meaning.
+        bands: composed.bands,
         categories: expressItems.CATEGORIES,
         influencerColors: expressItems.INFLUENCER_COLORS,
         // The alternatives the partner just offered. They take the LAST cells of the
@@ -2956,6 +3018,10 @@ function renderExpressPanel() {
         // Only meaningful while the panel is hosted in Settings; elsewhere the editor
         // has cleared it, so this is null and no cell is marked.
         pickedId: expressEditor.getPickedId(),
+        // How the three kinds of Context button are told apart inside their shared
+        // background. Four candidates ship as a setting because there is no best
+        // answer - only the person looking at the panel every day can settle it.
+        contextMark: storage.loadContextMark(),
     });
 }
 
@@ -3171,16 +3237,10 @@ function blockZoomGestures() {
     }, { passive: false });
 }
 
-// Count rows + widest total span of the active dock layout (kept for any
-// consumers that still key off the grid shape).
-// How many Express Panel cells the chosen layout offers an ITEM. The item list maps
-// onto these one-for-one, so it is the ceiling on how many buttons can exist — an item
-// past the last cell has no button to tap and is unreachable. Mirrors the cell kinds
-// How many panel buttons the active layout has room for. Asks keyboard-layouts, which
-// is the one place that decides which cell is "In my own words" and which are spacers.
-function expressCellCount() {
-    return panelPositionCount(expressLayoutRows());
-}
+// How many panel buttons the active layout has room for is now asked of
+// express-bands.positionPlan, which needs it for the band arithmetic anyway. The old
+// expressCellCount() wrapper had no callers left once the editor stopped mapping one
+// flat list onto the cells, so it is gone rather than left to rot.
 
 function activeLayoutGrid() {
     const rows = expressLayoutRows();
@@ -4431,6 +4491,7 @@ function openSettings() {
     const tapRadio = document.querySelector(`input[name="expressTapMode"][value="${tapMode}"]`);
     if (tapRadio) tapRadio.checked = true;
     doubleTapMsSelect.value = storage.loadDoubleTapMs();
+    reflectBandSizes();
     // Button sizing sliders (unitless 0–100).
     const buttonSizeSlider = document.getElementById('buttonSizeSlider');
     const buttonGapSlider = document.getElementById('buttonGapSlider');
@@ -5093,6 +5154,34 @@ function openSettings() {
     });
     doubleTapMsSelect.onchange = () => {
         storage.saveDoubleTapMs(Number(doubleTapMsSelect.value));
+        renderExpressPanel();
+    };
+
+    // --- Express Panel bands. The user sets Context and Flex; Always takes the
+    // remainder, which is what makes an untouched panel almost exactly the panel that
+    // shipped before bands existed. Sizes live in the panel MODEL rather than in
+    // settings, because they travel with the phrases they lay out.
+    const bandContextInput = document.getElementById('bandContextInput');
+    const bandFlexInput = document.getElementById('bandFlexInput');
+    const bandShapeSelect = document.getElementById('bandShapeSelect');
+    const contextMarkSelect = document.getElementById('contextMarkSelect');
+    const commitBands = (patch) => {
+        const m = expressPanel.getModel();
+        m.sizes = { ...m.sizes, ...patch };
+        expressPanel.setModel(m);
+        renderExpressPanel();
+        reflectBandSizes();
+        expressEditor.render();   // the cut lines move when the band sizes do
+    };
+    bandContextInput.onchange = () => commitBands(rowsMode()
+        ? { contextRows: Number(bandContextInput.value) }
+        : { context: Number(bandContextInput.value) });
+    bandFlexInput.onchange = () => commitBands(rowsMode()
+        ? { flexRows: Number(bandFlexInput.value) }
+        : { flex: Number(bandFlexInput.value) });
+    bandShapeSelect.onchange = () => commitBands({ shape: bandShapeSelect.value });
+    contextMarkSelect.onchange = () => {
+        storage.saveContextMark(contextMarkSelect.value);
         renderExpressPanel();
     };
 

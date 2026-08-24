@@ -129,7 +129,7 @@ export function collectPersonalization() {
     try { out.people = relationships.count(); } catch { /* ignore */ }
     try { out.places = places.count(); } catch { /* ignore */ }
     try {
-        const items = expressPanel.getItems() || [];
+        const items = expressPanel.allItems() || [];
         // An undefined cell is not a phrase, so it counts towards neither figure —
         // otherwise a panel padded out to reach cell twelve would look half filled in.
         const real = items.filter(i => !expressItems.isEmptyItem(i));

@@ -104,7 +104,11 @@ const HELP = {
     "testerNameInput": "The name we gave you when you joined. It lets us tell whose report is whose, so we can get back to you.",
     "weeklySendEnabledInput": "Sends a short report about once a week when you open the app. Turn it off if you would rather not; nothing else changes.",
     "weeklyReportContents": "Lists exactly what a weekly report contains. Nothing anyone said is ever in one, and neither are your keys.",
-    "weeklySendLogView": "When reports were sent and how big they were. It does not show what was in them."
+    "weeklySendLogView": "When reports were sent and how big they were. It does not show what was in them.",
+    "bandContextInput": "How many buttons are set aside for partners, places and feelings. Never fewer than four, so a menu always fits.",
+    "bandFlexInput": "How many buttons change with who you are talking to and where you are. Start at none if you are unsure.",
+    "bandShapeSelect": "Whether a band is measured in whole rows, which keeps a straight edge, or in buttons, which gives the exact size.",
+    "contextMarkSelect": "What tells a partner button from a place or a feeling: a shape, the bar color, its thickness, or which side it is on."
   },
   "radioGroups": {
     "sttProvider": "Who turns the other person's speech into words. Your browser does it free. Deepgram is paid, and works where the browser cannot.",
@@ -143,7 +147,8 @@ const HELP = {
     "suggestions": "How many response suggestions you are offered, and how much of each one is shown on its card.",
     "placeholders": "The short phrases the app says to hold your place while you choose, and how often it says them.",
     "tapToSpeak": "Whether one tap or two speaks an Express Panel button, and how quickly the two taps must follow one another.",
-    "keyguardSpacing": "How much space sits around the edges of the app and between its parts. Changing these moves the holes in a keyguard."
+    "keyguardSpacing": "How much space sits around the edges of the app and between its parts. Changing these moves the holes in a keyguard.",
+    "bandSizes": "How the panel is divided into bands, and how the buttons that never speak are told apart from each other."
   }
 };
 // @@SETTINGS_HELP_END@@

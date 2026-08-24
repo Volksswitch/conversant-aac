@@ -860,6 +860,27 @@ export function saveExpressTapMode(mode) {
     saveSettings(settings);
 }
 
+// How the three kinds of Context button are told apart inside the band's shared
+// background: 'color' (the left bar's hue alone), 'thick' (its width), 'side'
+// (which edge it sits on) or 'shape' (a small mark before the label).
+//
+// A SETTING RATHER THAN A DECISION (Ken, August 23 2026). There is no best answer -
+// only the person looking at the panel every day can settle it - and the same reason
+// applies to the band shape below. What the therapists are choosing is the DEFAULT.
+// 'shape' is that default: the bar's hue alone proved too weak (brown and olive are
+// near neighbors at five pixels), thickness is a comparative cue so a button on its
+// own says nothing, and a mark is what the app already uses to show a selected state.
+export function loadContextMark() {
+    const v = loadSettings().contextMark;
+    return ['color', 'thick', 'side', 'shape'].includes(v) ? v : 'shape';
+}
+
+export function saveContextMark(mark) {
+    const settings = loadSettings();
+    settings.contextMark = ['color', 'thick', 'side', 'shape'].includes(mark) ? mark : 'shape';
+    saveSettings(settings);
+}
+
 // The double-tap interval (ms) — how long the first tap stays "armed" waiting
 // for the confirming second tap. Tunable to the user's motor control.
 export function loadDoubleTapMs() {

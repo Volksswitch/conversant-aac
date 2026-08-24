@@ -70,6 +70,7 @@ const SHELL = [
   './js/viewport.js',
   './js/express-items.js',
   './js/express-panel.js',
+  './js/express-bands.js',
   './js/data-transfer.js',
   './js/tts-deepgram.js',
   './js/platform.js',
