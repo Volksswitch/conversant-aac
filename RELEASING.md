@@ -41,6 +41,35 @@ There is one branch: `main`. There is no separate `dev` or release branch.
   tooling, refactors with no visible effect); when in doubt, ask Ken. If a change is
   later backed out, delete its bullet in the same commit. **Ken's own edits to
   `CHANGELOG.md` are authoritative** — preserve his wording; make only surgical edits.
+- **⚠ A BUG THAT ONLY EVER EXISTED INSIDE THIS CYCLE IS NOT A FIX, AND MUST NOT BE
+  ANNOUNCED AS ONE (Ken, August 24 2026).** A release cycle that runs for days will fix
+  things that were broken *during* it. The people upgrading never had those versions, so
+  to them a "Fixed:" bullet describes a problem they never had, in a feature they are
+  meeting for the first time — which is worse than saying nothing, because it makes the
+  new thing sound unreliable before they have touched it.
+
+  **The test is one question: could somebody running the LAST PUBLIC RELEASE have hit
+  this?** Not "was it a real bug" — it was — and not "was it hard to find". Only whether
+  a user could have seen it.
+
+  - **Yes → announce it.** A fix to something that shipped is a fix, however late in the
+    cycle it was found. The number button reading `1-10` shipped in 0.7.14, so correcting
+    it to `123` was announced in 0.8.0.
+  - **No → say nothing, or fold it into the description of the feature.** Ken's example:
+    *"Fixed: asking for two rows of Context gave you one."* There was no Context band in
+    the previous release, so there was nothing to fix from the user's point of view. Two
+    such bullets were removed from the 0.8.0 notes when this rule was written.
+
+  **The near-miss to watch for is the reframe, not the deletion.** A caveat about how the
+  new thing behaves is often worth keeping — it just must not be worded as a repair.
+  *"They used to sit empty, which looked like something you had forgotten"* became
+  *"Four buttons are always kept for the choices the other person offers"*: same fact,
+  and it no longer describes a past the reader never lived through. Watch for "used to",
+  "before this", "no longer" and "Fixed:" attached to anything the cycle itself created.
+
+  **This is a judgment made when the bullet is WRITTEN, not at release.** The changelog
+  is authored as-you-go, so the moment to ask is while the fix is fresh and you still
+  know whether the thing it repaired had ever shipped.
 - **Scope a note to one platform when the other cannot see it (Ken, Aug 1 2026).** A
   `###` subheading under the version scopes the bullets beneath it — `### On an iPad`,
   `### On a computer`, `### Everyone` — and the app shows each user only what applies

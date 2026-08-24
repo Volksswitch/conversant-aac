@@ -48,30 +48,21 @@ forgetting to tag one is only ever noise, never silence.
   changing tabs. The other tab is now called Button Sizes.
 - **The Express Panel stays visible while you set it up.** Putting the cursor in a
   phrase box brings the keyboard up over the panel, as it must; tapping anywhere else
-  on the tab now puts the panel straight back. Before this, the keyboard stayed up
-  until you found the small Hide icon, which made the panel impossible to work on.
+  on the tab now puts the panel straight back. Previously the keyboard stayed up until
+  you found the small Hide icon on its toolbar.
 - **Opening the layout section shows the keyboard instead**, so you can see the key
   positions and the letter and number pages while you choose a grid. Opening any other
   section closes it again and brings the panel back.
-- **The four buttons kept for the other person's choices now say so.** They used to sit
-  empty, which looked like something you had forgotten to fill in. They read "Choice
-  button #1" and so on in muted text until a choice arrives. You can still tap one to
-  put a partner, place or feeling there - the choices only borrow it for one exchange.
-- **On some layouts the Context band takes two rows whether you ask for one or not.**
-  There must always be room for four of the other person's choices, and on a layout
-  whose bottom row is only two buttons wide, one row cannot hold them. The band takes
-  the whole row above rather than half of it, so the bands still line up in straight
-  rows. It can look sparse if you have not filled it, and that is the price of the
-  choices always fitting.
-- **Fixed: asking for two rows of Context gave you one.** Two of the side layouts end
-  in a row that holds only the "In my own words" key. That row was being counted as one
-  of the rows you asked for, even though it has no buttons in it, so a two-row band came
-  out one row short. Rows are now counted the way you see them: rows of buttons.
-- **Fixed: on some layouts the Context band came out empty.** Two of the side layouts
-  end in a row that holds only the "In my own words" key, so setting the Context band to
-  one row left it with nowhere to put anything and none of your partners, places or
-  feelings appeared. The band now always keeps at least four buttons, taken from the
-  Always band above it rather than from the Flex band below.
+- **Four buttons are always kept for the choices the other person offers**, so a set of
+  choices can never push one of your own buttons off the panel. Until a choice arrives
+  they read "Choice button #1" and so on in muted text, so you can see the space is
+  spoken for. You can still tap one to put a partner, place or feeling there - the
+  choices only borrow it for one exchange.
+- **On some layouts the Context band takes two rows even if you ask for one.** Room for
+  four choices has to come from somewhere, and on a layout whose bottom row is only two
+  buttons wide, one row cannot hold them. The band takes the whole row above rather than
+  half of it, so the bands still line up in straight rows. It can look sparse if you
+  have not filled it, and that is the price of the choices always fitting.
 - **The "In my own words" icon now grows with its button.** On a layout where that key
   fills a whole row it was a tiny mark on a large dark bar, so the button looked blank.
 - **Only one Settings section is open at a time now.** Opening one closes the others on
