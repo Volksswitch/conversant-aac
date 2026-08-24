@@ -3860,7 +3860,7 @@ label.radio-label input[type="radio"] {
        17px after the "fix". --ep-cell-h is a real length, derived in CSS from the same
        numbers the dock grid lays out from, so it is the right thing to size against. */
     width: auto;
-    height: clamp(1.5em, calc(var(--ep-cell-h, 2rem) * 0.5), 3.2rem);
+    height: clamp(1.5em, calc(var(--ep-cell-h, 2rem) * 0.34), 2rem);
     aspect-ratio: 1;
 }
 

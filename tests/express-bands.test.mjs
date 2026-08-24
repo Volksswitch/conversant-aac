@@ -287,3 +287,17 @@ test('a Context band smaller than four reserves what it has, without inventing c
     }, {});
     assert.ok(c.choiceSlots.length <= c.counts.context);
 });
+
+// ⚠ NOT ABOUT BANDS, BUT IT BIT HERE: sections.js remembers open state by POSITION
+// within a NAMED SCOPE, so two containers sharing a scope name silently share their
+// sections' open state. The Express tab and the band editor both used "express", so
+// the tab's second section and the editor's second section were the same key - and
+// re-rendering the editor (which changing the unit of measure does) handed one's state
+// to the other. The guard is that the two names differ.
+test('the band editor registers its sections under its own scope name', async () => {
+    const src = await import('node:fs').then((fs) => fs.promises.readFile('app/js/express-editor.js', 'utf8'));
+    const call = src.match(/makeCollapsible\(container,\s*'([^']+)'\)/);
+    assert.ok(call, 'the editor still hands its sections to sections.js');
+    assert.notEqual(call[1], 'express',
+        'must not collide with the Express tab panel, whose scope is its data-tab name');
+});

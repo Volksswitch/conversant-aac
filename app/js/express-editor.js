@@ -433,7 +433,7 @@ function situationName(partnerId, placeId) {
 }
 
 function contextSection(composed) {
-    return section('context', 'Context — the buttons that never speak', (body) => {
+    return section('context', 'Context — describing the conversation context', (body) => {
         body.appendChild(el('p', 'ee-note',
             'Partners, places and feelings, always in that order. This is also where the choices the other person offers appear, at the far end, for one exchange.'));
         body.appendChild(toolbar('context', [
@@ -528,7 +528,14 @@ export function render() {
     container.appendChild(alwaysSection(composed));
     container.appendChild(flexSection(composed));
     container.appendChild(contextSection(composed));
-    makeCollapsible(container, 'express');
+    // ⚠ A SCOPE NAME OF ITS OWN, NOT THE TAB'S. sections.js remembers which sections
+    // are open by POSITION within a named scope, and the Express tab registers its own
+    // sections under the tab name - so with both called "express", the tab's second
+    // section (Band sizes) and the editor's second section (Flex) shared the key
+    // "express#1". Changing the unit of measure re-renders the editor, which then read
+    // Band sizes' open state as Flex's: Band sizes closed and Flex opened, apparently
+    // at random. Two containers, two scopes.
+    makeCollapsible(container, 'expressBands');
 
     if (openAfterRender) {
         const det = container.querySelector(`.setting-group[data-band="${openAfterRender}"] details`);
