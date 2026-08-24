@@ -209,9 +209,29 @@ test('a one-row band landing on a row with no positions is still given four', ()
 
 test('the rescued cells come from Always, never from Flex', () => {
     const s8 = [5, 5, 5, 5, 5, 3, 4, 0].map((n) => Array.from({ length: n }, () => 'x'));
-    // Flex takes the empty last row here, so Context is the 4-wide row above it.
     const plan = bands.bandPlan(s8, { shape: 'rows', contextRows: 1, flexRows: 1 });
-    assert.equal(plan.flexN, 0, 'the empty row gives Flex nothing, and nothing is taken back for it');
-    assert.equal(plan.contextN, 4);
-    assert.equal(plan.alwaysN, 28);
+    // Seven rows hold buttons. Flex takes the last of them (4 wide), Context the one
+    // above (3 wide) - which is under the floor, so it borrows one cell from Always.
+    assert.equal(plan.flexN, 4, 'Flex gets a row of BUTTONS, not the compose-only row');
+    assert.equal(plan.contextN, 4, 'grown to the floor');
+    assert.equal(plan.alwaysN, 24, 'and the cell came from here, never from Flex');
+});
+
+// ⚠ KEN'S SECOND REPORT ON THE SAME LAYOUT: he asked for TWO rows of Context and got
+// one row of buttons plus the compose-only row, so four buttons appeared and two were
+// reported as not fitting. A row with no button positions is not a row the user can
+// see, so it must not be counted as one - they are counting rows of BUTTONS.
+test('a row with no buttons is not counted as one of the rows asked for', () => {
+    const s8 = [5, 5, 5, 5, 5, 3, 4, 0].map((n) => Array.from({ length: n }, () => 'x'));
+    const one = bands.bandPlan(s8, { shape: 'rows', contextRows: 1, flexRows: 0 });
+    assert.equal(one.contextN, 4, 'one row = the 4-wide row, not the empty one');
+
+    const two = bands.bandPlan(s8, { shape: 'rows', contextRows: 2, flexRows: 0 });
+    assert.equal(two.contextN, 7, 'two rows = 4 + 3, which is what Ken expected to see');
+    assert.equal(two.alwaysN, 25, 'and Always is pushed up by exactly that much');
+    assert.equal(two.flexN, 0);
+
+    // The compose-only row belongs to no band, because it has nothing to give one.
+    assert.equal(two.bands.length, 32);
+    assert.equal(two.bands.filter(Boolean).length, 32);
 });

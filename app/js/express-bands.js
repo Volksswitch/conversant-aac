@@ -90,14 +90,28 @@ export function bandPlan(layoutRows, sizes = {}) {
     let ctxN;
     let flexN;
     if (shape === SHAPE.ROWS) {
-        const nRows = perRow.length;
+        // ⚠ A ROW WITH NO BUTTON POSITIONS IS NOT A ROW FOR THIS PURPOSE (Ken, August 23
+        // 2026). Side Layouts 2 and 8 end in a row holding ONLY the compose key, and
+        // counting it meant a two-row Context band spent one of its rows on nothing:
+        // Ken asked for two rows, watched one row appear, and was told two buttons did
+        // not fit. The user is counting rows of BUTTONS, because that is what a row of
+        // the panel looks like, so the arithmetic has to count the same thing.
+        const filled = perRow.map((count, r) => ({ count, r })).filter((x) => x.count > 0);
+        const nRows = filled.length;
         const ctxRows = clamp(sizes.contextRows ?? 1, 0, nRows);
         const flexRows = clamp(sizes.flexRows ?? 0, 0, nRows - ctxRows);
         const alwaysRows = nRows - ctxRows - flexRows;
+        // Which band each row belongs to, keyed by its place among the rows that
+        // actually hold buttons. An empty row is skipped rather than banded: it has no
+        // positions to give anyone, so it can neither be claimed nor spent.
+        const bandOfRow = new Map();
+        filled.forEach((x, k) => {
+            bandOfRow.set(x.r, k < alwaysRows ? BAND.ALWAYS
+                : k < alwaysRows + ctxRows ? BAND.CONTEXT : BAND.FLEX);
+        });
         let i = 0;
         perRow.forEach((count, r) => {
-            const band = r < alwaysRows ? BAND.ALWAYS
-                : r < alwaysRows + ctxRows ? BAND.CONTEXT : BAND.FLEX;
+            const band = bandOfRow.get(r);
             for (let k = 0; k < count; k++) bands[i++] = band;
         });
         ctxN = bands.filter((b) => b === BAND.CONTEXT).length;

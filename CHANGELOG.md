@@ -51,6 +51,10 @@ forgetting to tag one is only ever noise, never silence.
 - **Opening the layout section shows the keyboard instead**, so you can see the key
   positions and the letter and number pages while you choose a grid. Opening any other
   section closes it again and brings the panel back.
+- **Fixed: asking for two rows of Context gave you one.** Two of the side layouts end
+  in a row that holds only the "In my own words" key. That row was being counted as one
+  of the rows you asked for, even though it has no buttons in it, so a two-row band came
+  out one row short. Rows are now counted the way you see them: rows of buttons.
 - **Fixed: on some layouts the Context band came out empty.** Two of the side layouts
   end in a row that holds only the "In my own words" key, so setting the Context band to
   one row left it with nowhere to put anything and none of your partners, places or
