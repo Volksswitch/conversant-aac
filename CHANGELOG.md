@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.8.0
+
 - **The Express Panel is now in three bands.** The top band holds the words that never
   move — yes, no, please, help — so they are always in the same place. Below it sit the
   buttons that never say anything out loud: who you are talking to, where you are, how
@@ -79,7 +81,6 @@ forgetting to tag one is only ever noise, never silence.
   covered it and appeared to belong to the setting above.
 - **Buttons no longer have a color each.** The color says which band a button is in,
   which is what makes the three bands readable at a glance.
-
 - The button for answering with a number now always reads **123**. It used to read
   something like "1-10" when the other person named both ends of the scale, which
   suggested it would offer ten buttons to choose from. It does not, and never did —

@@ -74,7 +74,7 @@ function applyListenAvailability() {
 // Point-release version shown in Settings → About. Bump alongside the
 // sw.js CACHE_VERSION on every release so beta testers can report exactly
 // which build they're on.
-const APP_VERSION = '0.7.17';
+const APP_VERSION = '0.8.0';
 
 // The exact commit this build came from. Rewritten by the deploy workflow (it
 // substitutes the placeholder below); a copy served from the working tree keeps

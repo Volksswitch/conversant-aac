@@ -21,7 +21,7 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
-  "0.7.17": [
+  "0.8.0": [
     "The Express Panel is now in three bands. The top band holds the words that never move — yes, no, please, help — so they are always in the same place. Below it sit the buttons that never say anything out loud: who you are talking to, where you are, how you feel, and the choices the other person has just offered. The rest of the panel fills with phrases that suit the partner and place you have selected.",
     "Your panel has been replaced with a new starting set. This is a one-time change that comes with the new bands. Anything you set up from now on is yours and will not be touched again.",
     "You can write phrases for a particular person, a particular place, or both. On the Express Panel tab, pick who and where, then list the phrases you would want. They fill the bottom band whenever that person or place is selected, most likely first, and anything you have not filled comes from your general list.",
