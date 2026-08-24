@@ -134,8 +134,9 @@ which is the right thing to lose.</p>
 <div class="fig" id="f4">
 <h3>Setting it up: the panel is the editor</h3>
 <p class="cap" style="margin:0 0 10px">The live panel sits beside Settings and is tappable there. Tapping a button
-selects it for editing. The bands are tinted so it is obvious which one a button belongs to, and the line above says
-what is being edited &mdash; the part that must never be ambiguous.</p>
+selects its row in the list below. The bands are tinted so it is obvious which one a button belongs to, and the two
+dropdowns above say which situation is being edited &mdash; the part that must never be ambiguous. Each row carries the
+words, how they should be said, and a speaker to hear it before settling on a spelling.</p>
 <div style="border:1px solid #bbb;border-radius:6px;padding:10px;width:760px">
  <div style="font-size:12px;background:#fff8e1;border-left:4px solid #F9A825;padding:7px 10px;margin-bottom:9px">
   <b>Editing the Flex band for</b>
@@ -156,14 +157,25 @@ what is being edited &mdash; the part that must never be ambiguous.</p>
   <div class="b flex">You're the best</div>
   <div class="b flex">What's for<br>dinner?</div><div class="b flex">I need a hand</div><div class="b imow">In my own<br>words</div>
  </div>
- <div style="display:flex;gap:8px;margin-top:9px;font-size:12px;align-items:center">
-  <span style="color:#666">Selected:</span>
-  <input value="How's your shoulder?" style="flex:1;font:inherit;padding:5px 7px;border:1px solid #bbb;border-radius:4px" readonly>
+ <!-- ONE FIXED TOOLBAR ABOVE A LIST, not a set of tools per row: a button that stays
+      put is far easier to hit than one that travels with the item it acts on. -->
+ <div style="display:flex;gap:6px;margin-top:9px;font-size:12px;align-items:center;
+             border-bottom:1px solid #e3e9ed;padding-bottom:7px">
+  <span style="border:1px solid #999;border-radius:4px;padding:4px 10px;background:#fff">&#9650;</span>
+  <span style="border:1px solid #999;border-radius:4px;padding:4px 10px;background:#fff">&#9660;</span>
+  <span style="border:1px solid #999;border-radius:4px;padding:4px 10px;background:#fff">&#10005;</span>
+  <span style="border:1px solid #999;border-radius:4px;padding:4px 10px;background:#fff">Add a phrase</span>
+  <span style="border:1px solid #999;border-radius:4px;padding:4px 10px;background:#fff">Delete this situation</span>
+ </div>
+ <div style="display:flex;gap:8px;margin-top:7px;font-size:12px;align-items:center">
+  <input value="How's your shoulder?" style="flex:2;font:inherit;padding:5px 7px;border:2px solid #2c7a3f;border-radius:4px" readonly>
+  <input value="how to say it" style="flex:1;font:inherit;padding:5px 7px;border:1px solid #bbb;border-radius:4px;color:#999" readonly>
   <span style="border:1px solid #999;border-radius:4px;padding:4px 9px;background:#fff">&#128266;</span>
-  <span style="border:1px solid #999;border-radius:4px;padding:4px 9px;background:#fff">&#9650;</span>
-  <span style="border:1px solid #999;border-radius:4px;padding:4px 9px;background:#fff">&#9660;</span>
-  <span style="border:1px solid #999;border-radius:4px;padding:4px 9px;background:#fff">Delete</span>
-  <span style="border:1px solid #999;border-radius:4px;padding:4px 9px;background:#fff">Done</span>
+ </div>
+ <div style="display:flex;gap:8px;margin-top:5px;font-size:12px;align-items:center">
+  <input value="Can you pass me that?" style="flex:2;font:inherit;padding:5px 7px;border:1px solid #bbb;border-radius:4px" readonly>
+  <input value="" style="flex:1;font:inherit;padding:5px 7px;border:1px solid #bbb;border-radius:4px" readonly>
+  <span style="border:1px solid #999;border-radius:4px;padding:4px 9px;background:#fff">&#128266;</span>
  </div>
 </div>
 <p class="cap"><b>Up and down move a phrase within its own list</b>, which is what decides how likely it is and therefore
