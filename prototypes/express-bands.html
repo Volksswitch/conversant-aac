@@ -103,7 +103,8 @@
      just put on the table is immediate and temporary, so it breaks the band's
      color deliberately. The two kinds share the fill and differ by border. */
   .b-choice{background:var(--choice);color:#fff;border:2px solid #1B5E20;font-weight:bold}
-  .b-range{background:var(--choice);color:#fff;border:2px dashed #C8E6C9;font-weight:bold}
+  /* Identical to a choice on purpose: same kind of thing, same single exchange. */
+  .b-range{background:var(--choice);color:#fff;border:2px solid #1B5E20;font-weight:bold}
   .b-empty{background:#fff;border-style:dashed;border-color:#ccc;color:#ccc;cursor:default}
   .b-gap{background:none;border:none;cursor:default;pointer-events:none}
   .on{box-shadow:inset 0 0 0 3px currentColor}
@@ -214,9 +215,9 @@ tolerable</b> &mdash; the figure under the panel measures the second one.</p>
     <p class="lbl">Keyboard layout (the panel shares its grid)</p>
     <select id="pickLayout"></select>
 
-    <div class="rowc"><label>Always</label><button data-band="always" data-d="-1">&minus;</button><span class="n" id="nAlways"></span><button data-band="always" data-d="1">+</button><span style="color:#888;font-size:12px" id="cAlways"></span></div>
+    <div class="rowc"><label>Always</label><button data-band="always" data-d="-1">&minus;</button><span class="n" id="nAlways">&mdash;</span><button data-band="always" data-d="1">+</button><span style="color:#888;font-size:12px" id="cAlways"></span></div>
     <div class="rowc"><label>Context</label><button data-band="ctx" data-d="-1">&minus;</button><span class="n" id="nCtx"></span><button data-band="ctx" data-d="1">+</button><span style="color:#888;font-size:12px" id="cCtx"></span></div>
-    <div class="rowc"><label>Flex</label><button data-band="flex" data-d="-1">&minus;</button><span class="n" id="nFlex">&mdash;</span><button data-band="flex" data-d="1">+</button><span style="color:#888;font-size:12px" id="cFlex"></span></div>
+    <div class="rowc"><label>Flex</label><button data-band="flex" data-d="-1">&minus;</button><span class="n" id="nFlex"></span><button data-band="flex" data-d="1">+</button><span style="color:#888;font-size:12px" id="cFlex"></span></div>
     <div id="sizeWarn" class="warn"></div>
   </div>
 
@@ -278,7 +279,7 @@ const TURNS = {
   'nothing': null,
   'three choices': { choices: ['mild','moderate','severe'] },
   'four choices':  { choices: ['soup','salad','sandwich','nothing'] },
-  'a number':      { range: '1-10' },
+  'a number':      { range: '123' },
 };
 
 // ---------------------------------------------------------------- state
@@ -296,8 +297,13 @@ let layoutId = 'B1';
 // layouts, so putting Flex last makes the band that tolerates a ragged edge the one
 // that has to flow around it. Context, which has a floor of four and transient
 // buttons at its front, would have had to wrap it under any other order.
-let bands = { always: 2, ctx: 1 };              // in ROWS for 'rows'   (Flex: the rest)
-let counts = { always: 16, ctx: 6 };            // in POSITIONS for 'counts' (Flex: rest)
+// The user sets CONTEXT and FLEX; ALWAYS is the remainder (Ken, August 23 2026).
+// That way an untouched panel - no Flex band, a small Context band - is almost exactly
+// today's panel. The Context band has a hard floor of four positions: a menu of four
+// must never have to drop one of the partner's own choices.
+const CTX_FLOOR = 4;
+let bands = { ctx: 1, flex: 1 };                // in ROWS for 'rows'   (Always: the rest)
+let counts = { ctx: 6, flex: 6 };               // in POSITIONS for 'counts' (Always: rest)
 let shape = 'rows';
 let mark = 'shape';    // color | thick | side | shape
 let partner = null, place = null, feeling = null, turn = 'nothing';
@@ -316,25 +322,38 @@ const idsFor = (d) => Object.keys(LAYOUTS).filter(k => LAYOUTS[k].dock === d);
 const positionsIn = (row) => row.filter(c => c.role === 'position').length;
 
 /** The Flex band, filled partner-first then place then general, cut to what fits. */
-function flexPhrases(n) {
+function flexPhrases(n, alwaysSurplus) {
   const out = [];
   const push = (list, source) => { for (const t of (list || [])) if (out.length < n) out.push({ text: t, source }); };
   push(PARTNERS[partner], 'partner');
   push(PLACES[place], 'place');
   push(GENERAL, 'general');
+  // Always phrases with no room in their own band queue LAST, so they take only
+  // genuinely spare positions and can never displace a situational phrase.
+  push(alwaysSurplus, 'always');
   return out;
 }
 
-/** The Context band: offered choices at the FRONT, then the standing toggles. */
+/** The Context band. The standing toggles are kept in their three runs and always in
+ *  the same order - partners, then places, then feelings. What the partner has just put
+ *  on the table takes the FAR END (Ken, August 23 2026): the far end is the feelings run,
+ *  which is expected to be the least used thing on the panel, while the partner buttons
+ *  at the front are the best learned and are never covered. */
 function contextButtons(n) {
-  const out = [];
+  const standing = [];
+  for (const p of Object.keys(PARTNERS)) standing.push({ kind: 'partner', text: p });
+  for (const p of Object.keys(PLACES)) standing.push({ kind: 'place', text: p });
+  for (const f of FEELINGS) standing.push({ kind: 'feeling', text: f });
   const t = TURNS[turn];
-  if (t && t.choices) for (const c of t.choices) out.push({ kind: 'choice', text: c });
-  if (t && t.range) out.push({ kind: 'range', text: t.range });
-  for (const p of Object.keys(PARTNERS)) out.push({ kind: 'partner', text: p });
-  for (const p of Object.keys(PLACES)) out.push({ kind: 'place', text: p });
-  for (const f of FEELINGS) out.push({ kind: 'feeling', text: f });
-  return n === undefined ? out : out.slice(0, n);
+  const transient = [];
+  if (t && t.choices) for (const c of t.choices) transient.push({ kind: 'choice', text: c });
+  if (t && t.range) transient.push({ kind: 'range', text: t.range });
+  if (n === undefined) return standing.concat(transient);
+  const out = standing.slice(0, n);
+  while (out.length < n) out.push(undefined);          // reserved, drawn as an outline
+  const k = Math.min(transient.length, n);
+  for (let i = 0; i < k; i++) out[n - k + i] = transient[i];
+  return out;
 }
 
 function say(what, how) {
@@ -364,11 +383,16 @@ function render() {
   const total = rows.reduce((n, row) => n + positionsIn(row), 0);
   let bandOfPosition;
   if (shape === 'rows') {
-    bandOfPosition = (r) => r < bands.always ? 'always'
-                          : r < bands.always + bands.ctx ? 'ctx' : 'flex';
+    const nRows = rows.length;
+    const ctxR = Math.min(bands.ctx, nRows);
+    const flexR = Math.min(bands.flex, nRows - ctxR);
+    const alwaysR = nRows - ctxR - flexR;
+    bandOfPosition = (r) => r < alwaysR ? 'always'
+                          : r < alwaysR + ctxR ? 'ctx' : 'flex';
   } else {
-    const alwaysN_ = Math.min(counts.always, total);
-    const ctxN_ = Math.min(counts.ctx, total - alwaysN_);
+    const ctxN_ = Math.min(counts.ctx, total);
+    const flexN_ = Math.min(counts.flex, total - ctxN_);
+    const alwaysN_ = total - ctxN_ - flexN_;
     bandOfPosition = (r, i) => i < alwaysN_ ? 'always' : i < alwaysN_ + ctxN_ ? 'ctx' : 'flex';
   }
   const tally = { always: 0, flex: 0, ctx: 0 };
@@ -377,7 +401,7 @@ function render() {
       const b = bandOfPosition(r, i++); if (b) tally[b]++; } }); }
   const alwaysN = tally.always, flexN = tally.flex, ctxN = tally.ctx;
 
-  const flex = flexPhrases(flexN);
+  const flex = flexPhrases(flexN, ALWAYS.slice(alwaysN));
   const ctx = contextButtons(ctxN);
   const seen = { always: 0, flex: 0, ctx: 0 };
 
@@ -471,17 +495,19 @@ function render() {
 
   const byP = flex.filter(f => f.source === 'partner').length,
         byL = flex.filter(f => f.source === 'place').length,
-        byG = flex.filter(f => f.source === 'general').length;
+        byG = flex.filter(f => f.source === 'general').length,
+        byA = flex.filter(f => f.source === 'always').length;
   const wanted = (PARTNERS[partner] || []).length + (PLACES[place] || []).length;
   document.getElementById('fill').innerHTML =
     L.name + ' &mdash; ' + rows.length + ' rows, ' + (alwaysN + flexN + ctxN) + ' button positions in bands. ' +
     'Flex holds ' + flexN + ': <b>' + byP + '</b> from ' + (partner || 'no partner') +
-    ', <b>' + byL + '</b> from ' + (place || 'no place') + ', <b>' + byG + '</b> general.' +
+    ', <b>' + byL + '</b> from ' + (place || 'no place') + ', <b>' + byG + '</b> general' +
+    (byA ? ', <b>' + byA + '</b> Always phrases with no room upstairs' : '') + '.' +
     (wanted > flexN ? ' <span style="color:#B71C1C">' + (wanted - flexN) +
       ' of your own phrases did not fit and cannot be reached.</span>' : '');
 
   const notes = [];
-  if (flexN === 0) notes.push('Always and Context have taken everything; the Flex band has nowhere to go.');
+  if (alwaysN === 0) notes.push('Context and Flex have taken everything; there is no Always band. That is allowed - a panel given over to steering the AI is a legitimate panel - and the Always phrases will show at the end of the Flex band wherever there is room to spare.');
   if (ctxN < 4) notes.push('The Context band has ' + ctxN + ' positions. Fewer than 4 means a four-way menu loses one of the partner’s own choices.');
   const over = contextButtons().length - ctxN;
   if (over > 0) notes.push(over + ' Context button(s) do not fit.');
@@ -491,12 +517,12 @@ function render() {
   const shown = { always: alwaysN, ctx: ctxN, flex: flexN };
   for (const k of ['always', 'ctx', 'flex']) {
     const K = k[0].toUpperCase() + k.slice(1);
-    // Flex is the remainder: reported, never set.
+    // Always is the remainder: reported, never set.
     document.getElementById('n' + K).textContent =
-      k === 'flex' ? '—' : (shape === 'rows' ? bands[k] : counts[k]);
+      k === 'always' ? '—' : (shape === 'rows' ? bands[k] : counts[k]);
     document.getElementById('c' + K).textContent = shown[k] + ' buttons';
     document.querySelectorAll('[data-band="' + k + '"]').forEach((b) => {
-      b.disabled = (k === 'flex');
+      b.disabled = (k === 'always');
       b.style.opacity = b.disabled ? .35 : 1;
     });
   }
@@ -540,7 +566,7 @@ function syncPickers() {
 function fitBands() {
   const n = layout().rows.length;
   bands.ctx = 1;
-  bands.always = Math.max(0, n - 2);   // Flex gets the rest: at least one row
+  bands.flex = n >= 3 ? 1 : 0;         // Always gets the rest
 }
 document.getElementById('pickLayout').onchange = (e) => {
   layoutId = e.target.value; fitBands(); previous = new Map(); everMoved.clear(); render();
@@ -548,9 +574,10 @@ document.getElementById('pickLayout').onchange = (e) => {
 document.querySelectorAll('.rowc button').forEach(b => {
   b.onclick = () => {
     const k = b.dataset.band, d = +b.dataset.d;
-    if (k === 'flex') return;                        // the remainder; nothing to set
-    if (shape === 'rows') bands[k] = Math.max(0, bands[k] + d);
-    else counts[k] = Math.max(0, counts[k] + d);
+    if (k === 'always') return;                      // the remainder; nothing to set
+    const floor = (k === 'ctx' && shape === 'counts') ? CTX_FLOOR : 0;
+    if (shape === 'rows') bands[k] = Math.max(floor, bands[k] + d);
+    else counts[k] = Math.max(floor, counts[k] + d);
     previous = new Map();
     render();
   };

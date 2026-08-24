@@ -2028,14 +2028,48 @@ feeling, the partner's offered choices, and the number button).
   Context band can never say something irreversible.** It also explains something already
   true in the code that nobody had reasoned out — choice buttons ignore the double-tap
   safeguard, because that safeguard guards *speaking*.
-- **Choices take the FRONT of the Context band, in solid color** (Ken: prominence —
-  “this is where the conversation is RIGHT NOW”). Floor of four positions on that band.
+- **Choices take the FAR END of the Context band, in solid color (Ken, August 23 2026 —
+  this SUPERSEDES the earlier "front of the band" note).** The band's fixed order is
+  partners, then places, then feelings, so the far end IS the feelings run — expected to
+  be the least used thing on the panel — while the partner buttons at the front are the
+  best learned and are never covered. The number button is identical to a choice: solid
+  fill, no dashed edge on either, labeled **123** in every case. Both live one exchange.
+- **The floor of four on the Context band is UNCONDITIONAL, and it reverses the July 2026
+  "choice buttons get no standing reservation" decision.** The reason is the whole
+  argument: if the band could collapse when empty, a menu arriving would have to conjure
+  four positions and **the panel would change shape mid-conversation**, which must never
+  happen. Blank reserved outlines are the price. The July decision was right when those
+  cells had no resting job; under bands they hold partner, place and feeling buttons.
+- **SIZING: the user sets CONTEXT and FLEX; ALWAYS takes the remainder** (Ken, August 23
+  2026). Default Flex 0 and a small Context, so an untouched panel is almost exactly
+  today's. **Always has NO floor — zero is legitimate**: a panel given over to steering
+  the AI is an important panel. **An Always phrase with no room queues at the very END of
+  the Flex band and only takes genuinely spare positions — it can NEVER displace a
+  situational phrase** (Ken corrected me on this; I had it backwards). So growing Context
+  shortens Always from its bottom, the remaining Always buttons never move, and the
+  surplus shows only where the situational lists left room.
+- **The Flex band is filled by FOUR situational lists, most specific first**: this partner
+  in this place, this partner anywhere, anyone in this place, then the general set. All
+  four are made by one mechanism — pick a partner and a place from two lists that also
+  offer *Anyone* and *Anyplace*, so the general set is simply Anyone plus Anyplace. A
+  phrase in two lists shows once.
+- **The two remaining questions are SETTINGS, not decisions** (Ken, August 23 2026): band
+  shape (whole rows or a count of buttons) and what tells a partner from a place from a
+  feeling. There is no best answer and only the user can settle it; the SLPs are choosing
+  the DEFAULT. **Ken expects the Context band to become the dominant band**, which raises
+  the differentiator's priority — three kinds in one background is mild at four buttons
+  and the main readability problem at twenty.
+- **The grid selection moves ONTO the Express Panel tab** (Ken: rethinking the grid is
+  part of the same experiment as sizing the bands, so it must not need a tab change).
+  Only button size and spacing go with the keyguard settings, on a renamed tab. **Full
+  administration design — the whole tab, its order, the lists, and the shipped starting
+  set that replaces the hand-delivered panel file — is in the design document, §7.**
 - **⚠ ROLES ARE DEAD. Ken killed them and was right.** The idea was a fixed role per
   position (greeting / their subject / …) so meaning stayed put while wording changed.
   It asks the user to think in categories somebody else invented, and it **restricts**
   them — a partner with four things to say and no fourth-role phrase gets a hole. **The
   replacement: the user orders each list by how likely they are to want it, and the band
-  fills partner-first, then place, then the general set.** The only promise is *the most
+  fills most-specific-first (see the four lists above).** The only promise is *the most
   likely thing is first*, which the user controls directly. Cost accepted: positions
   shift between situations (the weaker stability requirement; the grid never moves).
 - **Turning a band off does NOT re-cut the keyguard** — bands group positions, they do

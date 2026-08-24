@@ -48,9 +48,9 @@
  <div class="b flex">You're the best</div>
 </div>
 <p class="key">
- <span class="tag t-a">Always band</span> the words that stay in the same place forever. First, so nothing can shift them.<br>
+ <span class="tag t-a">Always band</span> the words that stay in the same place forever. First, so nothing can shift them. Takes whatever the other two leave.<br>
  <span class="tag t-c">Context band</span> the buttons that <b>never speak</b>: who the partner is, where the user is, how they feel. Resizing it leaves the Always band untouched.<br>
- <span class="tag t-flex">Flex band</span> phrases suited to the partner and place selected above. Takes whatever is left, and flows around the compose key.
+ <span class="tag t-flex">Flex band</span> phrases suited to the partner and place selected above. Any room still spare at its end goes to Always phrases that did not fit. Flows around the compose key.
 </p>
 <p class="cap"><b>The dividing line that makes this learnable:</b> a button in the Context band never says anything out loud.
 Everywhere else, a button speaks. Feeling does not fill the Flex band; only the partner and the place do.
@@ -60,27 +60,30 @@ is said by the bar down its left edge, not by a different fill.</p>
 </div>
 
 <div class="fig" id="f2">
-<h3>What the partner offers arrives at the front of the Context band</h3>
+<h3>What the partner offers arrives at the far end of the Context band</h3>
 <div class="row">
  <div>
- <div class="panel" style="grid-template-columns:repeat(3,1fr);width:300px">
-  <div class="b always">Yes</div><div class="b always">No</div><div class="b always">Okay</div>
-  <div class="b flex">Can you pass<br>me that?</div><div class="b flex">How's your<br>shoulder?</div><div class="b flex">You're the best</div>
-  <div class="b ctx">Mom</div><div class="b place">Home</div><div class="b feel">Tired</div>
+ <div class="panel" style="grid-template-columns:repeat(4,1fr);width:340px">
+  <div class="b always">Yes</div><div class="b always">No</div><div class="b always">Okay</div><div class="b always">Help</div>
+  <div class="b ctx">Mom</div><div class="b ctx">Dr Ruiz</div><div class="b ctx">Marcus</div><div class="b place">Home</div>
+  <div class="b place">The clinic</div><div class="b feel">Tired</div><div class="b feel">Happy</div><div class="b feel">Sore</div>
+  <div class="b flex">Can you pass<br>me that?</div><div class="b flex">How's your<br>shoulder?</div><div class="b flex">You're the best</div><div class="b imow">In my own<br>words</div>
  </div>
- <p class="cap"><b>At rest.</b></p>
+ <p class="cap"><b>At rest.</b> The Context band runs partners, then places, then feelings.</p>
  </div>
  <div>
- <div class="panel" style="grid-template-columns:repeat(3,1fr);width:300px">
-  <div class="b always">Yes</div><div class="b always">No</div><div class="b always">Okay</div>
-  <div class="b chip">mild</div><div class="b chip">moderate</div><div class="b chip">severe</div>
-  <div class="b flex">Can you pass<br>me that?</div><div class="b flex">How's your<br>shoulder?</div><div class="b flex">You're the best</div>
+ <div class="panel" style="grid-template-columns:repeat(4,1fr);width:340px">
+  <div class="b always">Yes</div><div class="b always">No</div><div class="b always">Okay</div><div class="b always">Help</div>
+  <div class="b ctx">Mom</div><div class="b ctx">Dr Ruiz</div><div class="b ctx">Marcus</div><div class="b place">Home</div>
+  <div class="b place">The clinic</div><div class="b chip">mild</div><div class="b chip">moderate</div><div class="b chip">severe</div>
+  <div class="b flex">Can you pass<br>me that?</div><div class="b flex">How's your<br>shoulder?</div><div class="b flex">You're the best</div><div class="b imow">In my own<br>words</div>
  </div>
- <p class="cap"><b>"Is it mild, moderate or severe?"</b> The choices take the front of the Context band, in solid color
- &mdash; immediate and temporary, and this is where the conversation is right now. Nothing that speaks has moved:
- Mom, Home and Tired are covered for the turn and come back when it ends. A question asking for a number puts one
- button in the same place, with a dashed border rather than a solid one &mdash; the two kinds of transient share a fill
-and differ by their edge.</p>
+ <p class="cap"><b>"Is it mild, moderate or severe?"</b> The choices take the far end of the band, in solid color
+ &mdash; immediate and temporary, and this is where the conversation is right now. Nothing that speaks has moved, and
+ nothing the user has learned well is hidden: the far end is where the feelings sit, which are expected to be the
+ least used thing on the panel, while the partner buttons at the front are never covered. A question asking for a
+ number puts one button labeled <b>123</b> in the same place, styled exactly the same way &mdash; the two are the same
+ kind of thing and live for the same single exchange, so they differ in nothing at all.</p>
  </div>
 </div>
 </div>
@@ -88,19 +91,30 @@ and differ by their edge.</p>
 <div class="fig" id="f3">
 <h3>How the Flex band is filled &mdash; most likely first, and never blank</h3>
 <p class="cap" style="margin:0 0 10px">The user lists each partner's phrases in the order they are likely to want them,
-and does the same for each place. The band is then filled in order: the partner's phrases, then the place's, then the
-general ones, until it runs out of room.</p>
-<div class="lrow"><div class="lname">Partner: <b>Mom</b><br><span style="color:#999">3 phrases</span></div>
+and does the same for each place. Filling runs from the most specific list to the least &mdash; this partner in this
+place, then this partner anywhere, then anyone in this place, then the general set &mdash; until the room runs out. A
+phrase listed in two of them is shown once. All four are made the same way, by picking a partner and a place from two
+lists that also offer Anyone and Anyplace, so the general set is simply Anyone plus Anyplace. Anything still spare at
+the very end is filled from Always phrases that had no room in their own band &mdash; last in the queue, so they never
+cost a situational phrase its place.</p>
+<div class="lrow"><div class="lname"><b>Mom at Home</b><br><span style="color:#999">1 phrase</span></div>
 <div class="layer" style="border-color:#bbb">
+ <div class="b flex">What's for<br>dinner?</div>
+ <div class="b empty" style="border:none;background:none">&nbsp;</div><div class="b empty" style="border:none;background:none">&nbsp;</div>
+ <div class="b empty" style="border:none;background:none">&nbsp;</div><div class="b empty" style="border:none;background:none">&nbsp;</div><div class="b empty" style="border:none;background:none">&nbsp;</div>
+</div></div>
+<div class="lrow"><div class="lname">then Partner: <b>Mom</b><br><span style="color:#999">3 phrases</span></div>
+<div class="layer" style="border-color:#bbb">
+ <div class="b empty" style="border:none;background:none">&nbsp;</div>
  <div class="b flex">Can you pass<br>me that?</div><div class="b flex">How's your<br>shoulder?</div><div class="b flex">You're the best</div>
- <div class="b empty" style="border:none;background:none">&nbsp;</div><div class="b empty" style="border:none;background:none">&nbsp;</div><div class="b empty" style="border:none;background:none">&nbsp;</div>
+ <div class="b empty" style="border:none;background:none">&nbsp;</div><div class="b empty" style="border:none;background:none">&nbsp;</div>
 </div></div>
-<div class="lrow"><div class="lname">then Place: <b>Home</b><br><span style="color:#999">2 phrases</span></div>
+<div class="lrow"><div class="lname">then Place: <b>Home</b><br><span style="color:#999">2 phrases, 1 fits</span></div>
 <div class="layer" style="border-color:#bbb">
  <div class="b empty" style="border:none;background:none">&nbsp;</div><div class="b empty" style="border:none;background:none">&nbsp;</div><div class="b empty" style="border:none;background:none">&nbsp;</div>
- <div class="b flex">What's for<br>dinner?</div><div class="b flex">I need a hand</div><div class="b empty" style="border:none;background:none">&nbsp;</div>
+ <div class="b empty" style="border:none;background:none">&nbsp;</div><div class="b flex">I need a hand</div><div class="b empty" style="border:none;background:none">&nbsp;</div>
 </div></div>
-<div class="lrow"><div class="lname">then the general set<br><span style="color:#999">6 phrases, 1 fits</span></div>
+<div class="lrow"><div class="lname">then Anyone, Anyplace<br><span style="color:#999">6 phrases, 1 fits</span></div>
 <div class="layer" style="border-color:#bbb">
  <div class="b empty" style="border:none;background:none">&nbsp;</div><div class="b empty" style="border:none;background:none">&nbsp;</div><div class="b empty" style="border:none;background:none">&nbsp;</div>
  <div class="b empty" style="border:none;background:none">&nbsp;</div><div class="b empty" style="border:none;background:none">&nbsp;</div><div class="b flex">Could you<br>help me?</div>
@@ -108,8 +122,8 @@ general ones, until it runs out of room.</p>
 <div class="arrow">&#9660; what the user sees</div>
 <div class="lrow"><div class="lname"><b>On screen</b></div>
 <div class="layer result">
- <div class="b flex">Can you pass<br>me that?</div><div class="b flex">How's your<br>shoulder?</div><div class="b flex">You're the best</div>
- <div class="b flex">What's for<br>dinner?</div><div class="b flex">I need a hand</div><div class="b flex">Could you<br>help me?</div>
+ <div class="b flex">What's for<br>dinner?</div><div class="b flex">Can you pass<br>me that?</div><div class="b flex">How's your<br>shoulder?</div>
+ <div class="b flex">You're the best</div><div class="b flex">I need a hand</div><div class="b flex">Could you<br>help me?</div>
 </div></div>
 <p class="cap"><b>No button can be blank</b>, because the general set always has more phrases than the room left over.
 <b>The most likely thing is always first</b>, which is the only ordering promise made &mdash; and it is one the user
@@ -124,9 +138,11 @@ selects it for editing. The bands are tinted so it is obvious which one a button
 what is being edited &mdash; the part that must never be ambiguous.</p>
 <div style="border:1px solid #bbb;border-radius:6px;padding:10px;width:760px">
  <div style="font-size:12px;background:#fff8e1;border-left:4px solid #F9A825;padding:7px 10px;margin-bottom:9px">
-  <b>Editing the Flex band for Mom at Home.</b>
+  <b>Editing the Flex band for</b>
+  <span style="border:1px solid #999;border-radius:3px;padding:1px 6px;background:#fff">Mom &#9662;</span>
+  <b>at</b>
+  <span style="border:1px solid #999;border-radius:3px;padding:1px 6px;background:#fff">Home &#9662;</span>
   &nbsp;<span style="color:#666">Phrases here appear only when both are selected.</span>
-  &nbsp;&nbsp;<span style="border:1px solid #999;border-radius:3px;padding:1px 6px;background:#fff">change</span>
  </div>
  <div class="panel" style="width:auto;grid-template-columns:repeat(6,1fr)">
   <div class="b always">Yes</div><div class="b always">No</div><div class="b always">Okay</div>
@@ -151,8 +167,8 @@ what is being edited &mdash; the part that must never be ambiguous.</p>
  </div>
 </div>
 <p class="cap"><b>Up and down move a phrase within its own list</b>, which is what decides how likely it is and therefore
-where it lands. How many rows each band gets is a setting; it changes nothing about the grid, so it does not affect
-a keyguard.</p>
+where it lands. How big each band is, and whether it is measured in rows or in buttons, are settings; neither changes
+anything about the grid, so neither affects a keyguard.</p>
 </div>
 
 </body></html>
