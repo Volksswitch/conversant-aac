@@ -11,6 +11,7 @@ import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import * as llm from '../app/js/llm.js';
 import * as engine from '../app/js/engine.js';
+import * as convLogic from '../app/js/conversation-logic.js';
 
 beforeEach(() => llm.setApiKey('test-key'));
 afterEach(() => restoreFetch());
@@ -603,6 +604,34 @@ test('a range is parsed, and the ends are tolerated in either order', async () =
     }));
     const out = await llm.generateResponses([{ role: 'partner', text: 'one to ten?' }]);
     assert.deepEqual(out.classification.offered_range, { min: 1, max: 10 });
+});
+
+// ONE CHECK THAT CROSSES EVERY LAYER (the standing rule). The number button shipped in
+// 0.7.14 announced and doing nothing, because each layer was tested with fabricated
+// input and the link between two of them was never run. So this starts from a real
+// model response and ends at the words on the button, taking each layer's OUTPUT as the
+// next one's input: parse -> engine ingest -> snapshot -> label.
+test('a real range response reaches the button as the label 123', async () => {
+    mockFetch(JSON.stringify({
+        partner_action: 'QUESTION', turn_status: 'COMPLETE', offered_options: [],
+        offered_range: { min: 1, max: 10 },
+        responses: [{ slot: 'PREFERRED', text: 'About a six.', hint: 'about a six' }],
+    }));
+    const out = await llm.generateResponses([{ role: 'partner', text: 'On a scale of one to ten?' }]);
+
+    engine.reset();
+    engine.partnerSpeaking('On a scale of one to ten?');
+    const snap = engine.ingestClassification(out, 'On a scale of one to ten?');
+
+    assert.deepEqual(snap.lastClassification.offered_range, { min: 1, max: 10 },
+        'the range survives the engine, which drops any field not on its whitelist');
+    assert.equal(convLogic.rangeLabel(snap.lastClassification.offered_range), '123',
+        'and the button says what it does - never "1-10", which promises ten buttons');
+});
+
+test('no range means no number button at all', () => {
+    assert.equal(convLogic.rangeLabel(null), '',
+        'an ordinary turn must not draw one');
 });
 
 test('an open count has no top, and an ordinary turn has no range at all', async () => {

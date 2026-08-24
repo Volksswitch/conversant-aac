@@ -2441,12 +2441,8 @@ function setOfferedRange(range) {
     renderExpressPanel();
 }
 
-/** What the number button says. "1-10" when both ends are known, "123" otherwise. */
-function rangeLabel(range) {
-    if (!range) return '';
-    if (range.min !== null && range.max !== null) return `${range.min}-${range.max}`;
-    return '123';
-}
+// The number button's label lives in conversation-logic.js so the whole path from a
+// model response to the words on the button can be exercised in one test.
 
 // The user tapped the number button: open "In my own words" with the keyboard already
 // on its number page. Deliberately NOT automatic on the partner's question — the
@@ -2927,7 +2923,7 @@ function renderExpressPanel() {
                 // The number button rides the same mechanism and the same promise —
                 // it does not speak. Only ever one, and never alongside choices,
                 // because the model is told to set one or the other, not both.
-                .concat(offeredRange ? [{ label: rangeLabel(offeredRange), range: true }] : [])
+                .concat(offeredRange ? [{ label: convLogic.rangeLabel(offeredRange), range: true }] : [])
             : []),
         choiceColor: expressItems.CHOICE_COLOR,
         onChoiceChip: (chip) => (chip && chip.range ? handleRangeChip() : handleChoiceChip(chip)),

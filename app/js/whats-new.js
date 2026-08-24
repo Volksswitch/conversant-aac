@@ -21,6 +21,10 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.7.17": [
+    "The button for answering with a number now always reads 123. It used to read something like \"1-10\" when the other person named both ends of the scale, which suggested it would offer ten buttons to choose from. It does not, and never did — it opens the keyboard on its number page so you can give any answer you like, including one it would never have listed, such as seven and a half.",
+    "That button and the buttons for choices the other person has offered no longer have a dashed outline. They are the same kind of button, they both last for a single exchange, and they now look the same as each other."
+  ],
   "0.7.16": [
     "If you use the split keyboard layout (Bottom Layout 8), your Express Panel was showing two identical “In my own words” buttons — one for each of that layout’s two space keys. There is now one, and the space it was taking is a button you can use, so that layout has one more slot than before."
   ],

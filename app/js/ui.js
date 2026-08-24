@@ -569,7 +569,7 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         if (chip.range) {
             b.classList.add('ep-choice-range');
             b.title = 'Answer with a number';
-            b.setAttribute('aria-label', `Answer with a number${chip.label ? ' (' + chip.label + ')' : ''}`);
+            b.setAttribute('aria-label', 'Answer with a number');
             b.innerHTML = `<span class="ep-text">${escapeHtml(chip.label || '123')}</span>`;
             b.addEventListener('click', () => onChoiceChip && onChoiceChip(chip));
             return b;

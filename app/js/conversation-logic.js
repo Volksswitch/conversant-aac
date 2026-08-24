@@ -121,6 +121,22 @@ export function generationOutcome(snap) {
  * control the mic themselves, and the Listen button is one tap away. Overriding an
  * explicit setting is a different decision from fixing an unreachable state.
  */
+/** What the number button says: always "123" (Ken, August 23 2026).
+ *
+ * It used to read "1-10" whenever the partner named both ends of the scale. That is a
+ * promise the button does not keep: what it opens is the composer's number PAD, not a
+ * row of ten buttons, and turning a scale into ten buttons is exactly what the
+ * offered_range prompt rule exists to prevent ("ten buttons reading 1 to 10 is not
+ * something a person can scan mid-conversation"). The label now says what the button
+ * DOES. The range itself is untouched and still reaches the model.
+ *
+ * Takes the offered_range straight off the engine snapshot, so the caller never has to
+ * know its shape; returns '' when there is no range, which is the "draw no button" case.
+ */
+export function rangeLabel(range) {
+    return range ? '123' : '';
+}
+
 export function captureAfterUserSpeaks({ opensConversation, armed, autoResume }) {
     if (opensConversation) return true;   // same act as selecting an opener
     return Boolean(armed && autoResume);

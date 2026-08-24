@@ -1298,14 +1298,14 @@ body.conv-bottom .palette-grid {
 .ep-btn.ep-imow:focus-visible { background: #1d2b38; color: #fff; outline-color: #1d2b38; }
 /* Choice chips — the alternatives the partner just offered, filled into the
    reserved leading cells. Solid green (echoing the CHOICE response cards they
-   steer) so they read apart from the pastel phrases, and dashed-outlined to say
-   "this one is on offer right now", unlike the user's permanent phrases. */
+   steer) so they read apart from the pastel phrases. The solid fill is what says
+   "on offer right now"; a dashed outline used to say it as well and was dropped on
+   August 23 2026 (Ken), because the number button is the same kind of thing living
+   for the same single exchange and the two should differ in nothing at all. */
 .ep-btn.ep-choice {
     background: var(--ep-color);
     color: #fff;
     border-color: var(--ep-color);
-    border-style: dashed;
-    border-left-style: solid;
 }
 .ep-btn.ep-choice:focus-visible {
     background: color-mix(in srgb, var(--ep-color) 82%, #000);
