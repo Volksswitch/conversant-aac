@@ -3836,9 +3836,23 @@ label.radio-label input[type="radio"] {
    buttons apart", whose list appeared under "Measured in"). The direction is the
    platform's choice and no CSS or attribute reaches it, so the only fix is to remove
    the reason: scroll the control away from the bottom edge before the list opens.
-   That needs somewhere to scroll TO, which is what this padding is. It is empty space
-   below the last section, reached only by scrolling, and costs nothing on screen. */
-#settingsContent { padding-bottom: 12rem; }
+   That needs somewhere to scroll TO, which is what this padding is.
+
+   ⚠ IT GOES ON THE PANEL, NOT ON #settingsContent, AND THAT IS THE WHOLE POINT. My
+   first version put it on the scroll container and claimed it "costs nothing on
+   screen". It cost About Me 168px: that tab fills its height with height:100%, which
+   resolves against the container's CONTENT box - so the padding came straight off the
+   list, which then scrolled inside a short box with empty space beneath it. Ken saw it
+   immediately. On the panel it still produces scrollable room below the last control
+   and takes nothing away from any tab's height.
+
+   About Me is excluded by the rule above it, which sets its padding to 0: it has no
+   dropdowns to rescue, and it is the tab that needs its full height. */
+/* Written to out-specify the per-tab padding rules above - the Express tab sets
+   padding:0 for its editor rows, and it is the tab whose dropdowns started all this,
+   so it must not be the one tab that misses out. About Me is the deliberate exception:
+   no dropdowns to rescue, and it is the tab that needs every pixel of its height. */
+.tab-panel.active:not([data-tab="aboutme"]) { padding-bottom: 12rem; }
 
 /* ⚠ THE COMPOSE ICON SIZES TO ITS CELL, NOT TO THE FONT (Ken, August 23 2026).
    .icon is 1.5em, which is right for a control in a text row and wrong for a panel

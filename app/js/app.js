@@ -3353,9 +3353,24 @@ function initSliderSteppers() {
         if (!step) return;
         const slider = document.getElementById(step.dataset.target);
         if (!slider) return;
-        const next = Math.max(0, Math.min(100, Number(slider.value) + Number(step.dataset.step)));
+        // ⚠ THE CONTROL'S OWN RANGE, NOT A HARDCODED 0-100. These steppers were written
+        // for the sizing sliders, which all run 0-100, and are now also used by the band
+        // number boxes, whose ranges are different (the Context band cannot go below its
+        // floor). Reading min/max off the element keeps the number on screen inside the
+        // range the model will actually accept.
+        const lo = slider.min === '' ? 0 : Number(slider.min);
+        const hi = slider.max === '' ? 100 : Number(slider.max);
+        const next = Math.max(lo, Math.min(hi, Number(slider.value) + Number(step.dataset.step)));
         slider.value = String(next);
+        // ⚠ BOTH EVENTS. The steppers only ever fired 'input', which is what a slider
+        // listens for - but a number box listens for 'change', because committing on
+        // every keystroke would re-render the editor while somebody is still typing.
+        // So the band boxes' + and - buttons moved the number on screen and committed
+        // NOTHING: Ken set the Context band to three rows, watched the box say 3, and
+        // saw one row on the panel. Nothing else here listens for 'change', so this
+        // cannot double-fire an existing control.
         slider.dispatchEvent(new Event('input', { bubbles: true }));
+        slider.dispatchEvent(new Event('change', { bubbles: true }));
     });
 }
 
