@@ -156,16 +156,24 @@ test('a situation key round-trips, and a missing half means Anyone or Anyplace',
     assert.deepEqual(bands.parseFlexKey(''), { partnerId: 'anyone', placeId: 'anyplace' });
 });
 
-test('a one-row Context band still gets four positions on a narrow row', () => {
-    // A row is not a fixed quantity - "one row" is 13 positions on one layout and 2 on
-    // another - so the floor cannot be expressed as a row count. Bottom Layout 2 ends
-    // in a row of 2, which is the case that would otherwise lose one of the partner's
-    // own alternatives.
+// A row is not a fixed quantity - "one row" is 13 positions on one layout and 2 on
+// another - so a one-row band can land below the floor of four. It is made up by taking
+// the WHOLE row above, not by borrowing cells from it: borrowing left a row that was
+// half Always and half Context, a ragged edge in the one mode the user chose for its
+// straight edge (Ken, August 23 2026).
+test('a one-row Context band below the floor takes the whole row above', () => {
     const narrow = [Array(10).fill('x'), Array(10).fill('x'), Array(2).fill('x')];
     const plan = bands.bandPlan(narrow, { shape: 'rows', contextRows: 1, flexRows: 0 });
-    assert.equal(plan.contextN, bands.CONTEXT_FLOOR);
-    assert.equal(plan.flexN, 0, 'the extra cells come from Always above, never from Flex');
-    assert.equal(plan.alwaysN, 22 - bands.CONTEXT_FLOOR);
+    assert.equal(plan.contextN, 12, 'the 2-wide row plus the 10-wide row above it');
+    assert.equal(plan.flexN, 0, 'rows come from Always above, never from Flex below');
+    assert.equal(plan.alwaysN, 10);
+    // And the edge stays straight: no row holds two bands.
+    let i = 0;
+    for (const row of [10, 10, 2]) {
+        const kinds = new Set();
+        for (let k = 0; k < row; k++) kinds.add(plan.bands[i++]);
+        assert.equal(kinds.size, 1, 'every row belongs to exactly one band');
+    }
 });
 
 test('a wide row keeps every position the row gives it', () => {
@@ -211,10 +219,10 @@ test('the rescued cells come from Always, never from Flex', () => {
     const s8 = [5, 5, 5, 5, 5, 3, 4, 0].map((n) => Array.from({ length: n }, () => 'x'));
     const plan = bands.bandPlan(s8, { shape: 'rows', contextRows: 1, flexRows: 1 });
     // Seven rows hold buttons. Flex takes the last of them (4 wide), Context the one
-    // above (3 wide) - which is under the floor, so it borrows one cell from Always.
+    // above (3 wide) - under the floor, so it takes the whole 5-wide row above as well.
     assert.equal(plan.flexN, 4, 'Flex gets a row of BUTTONS, not the compose-only row');
-    assert.equal(plan.contextN, 4, 'grown to the floor');
-    assert.equal(plan.alwaysN, 24, 'and the cell came from here, never from Flex');
+    assert.equal(plan.contextN, 8, '3 + 5, made up by a whole row');
+    assert.equal(plan.alwaysN, 20, 'and the row came from here, never from Flex');
 });
 
 // ⚠ KEN'S SECOND REPORT ON THE SAME LAYOUT: he asked for TWO rows of Context and got
@@ -234,4 +242,48 @@ test('a row with no buttons is not counted as one of the rows asked for', () => 
     // The compose-only row belongs to no band, because it has nothing to give one.
     assert.equal(two.bands.length, 32);
     assert.equal(two.bands.filter(Boolean).length, 32);
+});
+
+// ⚠ THE HARD RULE, ASSERTED ACROSS EVERY REAL LAYOUT (Ken, August 23 2026): there must
+// always be room for four offered choices, and they land in the Context band. A one-row
+// band on a narrow bottom row cannot provide that, so the band takes a second row. This
+// walks all 21 shipped layouts rather than a sample, because the failure is per-layout
+// and a sample is exactly how Side Layout 8 got missed.
+test('every shipped layout gives the Context band at least four slots at one row', async () => {
+    const { LAYOUTS, panelRoles } = await import('../app/js/keyboard-layouts.js');
+    const short = [];
+    for (const [id, def] of Object.entries(LAYOUTS)) {
+        const plan = bands.bandPlan(def.rows, { shape: 'rows', contextRows: 1, flexRows: 0 });
+        if (plan.contextN < bands.CONTEXT_FLOOR) short.push(`${id} (${plan.contextN})`);
+        // And no row may hold two bands: the straight edge is why rows mode exists.
+        const perRow = panelRoles(def.rows).map((r) => r.filter((c) => c.role === 'position').length);
+        let i = 0;
+        for (const n of perRow) {
+            const kinds = new Set();
+            for (let k = 0; k < n; k++) kinds.add(plan.bands[i++]);
+            assert.ok(kinds.size <= 1, `${id}: a row holds ${kinds.size} bands`);
+        }
+    }
+    assert.deepEqual(short, [], 'layouts whose Context band cannot hold a four-way menu');
+});
+
+test('the reserved choice cells are the LAST four of the Context band, and only four', () => {
+    const wide = [Array(5).fill('x'), Array(5).fill('x'), Array(7).fill('x')];
+    const c = bands.composePanel(wide, {
+        sizes: { shape: 'rows', contextRows: 1, flexRows: 0 }, always: [], context: [], flex: {},
+    }, {});
+    assert.equal(c.counts.context, 7);
+    // Seven empty Context cells, but only four are spoken for. The other three are
+    // genuinely free and must keep looking free rather than claiming to be reserved.
+    assert.deepEqual(c.choiceSlots, [13, 14, 15, 16]);
+});
+
+test('a Context band smaller than four reserves what it has, without inventing cells', () => {
+    // Cannot normally happen - the floor prevents it - but composePanel must not
+    // fabricate slot numbers if it ever does.
+    const tiny = [Array(4).fill('x'), Array(2).fill('x')];
+    const c = bands.composePanel(tiny, {
+        sizes: { shape: 'counts', context: 2, flex: 0 }, always: [], context: [], flex: {},
+    }, {});
+    assert.ok(c.choiceSlots.length <= c.counts.context);
 });

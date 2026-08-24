@@ -476,7 +476,13 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         // How the three kinds of Context button are told apart inside their shared
         // background: 'color' | 'thick' | 'side' | 'shape'. A setting, not a decision.
         contextMark = 'shape',
+        // The cells the partner's offered choices will land on (express-bands). An empty
+        // one says what it is FOR rather than looking like a cell somebody forgot to
+        // fill - the space is spoken for, and a panel that says so reads as finished
+        // rather than half set up (Ken, August 23 2026).
+        choiceSlots = [],
     } = opts;
+    const choiceSlotAt = new Map(choiceSlots.map((cellIndex, n) => [cellIndex, n + 1]));
     epGrid.classList.remove('ep-mark-color', 'ep-mark-thick', 'ep-mark-side', 'ep-mark-shape');
     epGrid.classList.add('ep-mark-' + (['color', 'thick', 'side', 'shape'].includes(contextMark) ? contextMark : 'shape'));
     epGrid.innerHTML = '';
@@ -608,6 +614,22 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         b.type = 'button';
         b.className = 'ep-btn ep-undefined';
         b.style.flex = `${span} 1 0`;
+        // A reserved choice cell names itself. It is still tappable-to-define in
+        // Settings, because at rest it can hold a partner, place or feeling like any
+        // other Context cell - the choices only borrow it for one exchange.
+        const slot = choiceSlotAt.get(index);
+        if (slot) {
+            b.classList.add('ep-choice-slot');
+            b.innerHTML = `<span class="ep-text">Choice button #${slot}</span>`;
+            b.title = onDefineCell
+                ? `Kept for the choices the other person offers - tap to put a button here instead`
+                : 'Kept for the choices the other person offers';
+            b.setAttribute('aria-label', onDefineCell
+                ? `Choice button ${slot}, kept for the choices the other person offers. Tap to put a button here.`
+                : `Choice button ${slot}, kept for the choices the other person offers`);
+            if (onDefineCell) b.addEventListener('click', () => onDefineCell(index));
+            return b;
+        }
         // Buttons are defined in Settings and nowhere else (Ken, August 15 2026), so
         // outside Settings there is no handler and the cell must not offer one — a
         // label promising something that will not happen is worse than a plain empty

@@ -51,6 +51,16 @@ forgetting to tag one is only ever noise, never silence.
 - **Opening the layout section shows the keyboard instead**, so you can see the key
   positions and the letter and number pages while you choose a grid. Opening any other
   section closes it again and brings the panel back.
+- **The four buttons kept for the other person's choices now say so.** They used to sit
+  empty, which looked like something you had forgotten to fill in. They read "Choice
+  button #1" and so on in muted text until a choice arrives. You can still tap one to
+  put a partner, place or feeling there - the choices only borrow it for one exchange.
+- **On some layouts the Context band takes two rows whether you ask for one or not.**
+  There must always be room for four of the other person's choices, and on a layout
+  whose bottom row is only two buttons wide, one row cannot hold them. The band takes
+  the whole row above rather than half of it, so the bands still line up in straight
+  rows. It can look sparse if you have not filled it, and that is the price of the
+  choices always fitting.
 - **Fixed: asking for two rows of Context gave you one.** Two of the side layouts end
   in a row that holds only the "In my own words" key. That row was being counted as one
   of the rows you asked for, even though it has no buttons in it, so a two-row band came

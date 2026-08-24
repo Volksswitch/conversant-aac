@@ -2971,6 +2971,7 @@ function renderExpressPanel() {
         // glance without reading the button (Ken, August 22 2026). This replaces the
         // per-phrase color the user used to pick: color now carries a meaning.
         bands: composed.bands,
+        choiceSlots: composed.choiceSlots,
         categories: expressItems.CATEGORIES,
         influencerColors: expressItems.INFLUENCER_COLORS,
         // The alternatives the partner just offered. They take the LAST cells of the

@@ -98,9 +98,22 @@ export function bandPlan(layoutRows, sizes = {}) {
         // the panel looks like, so the arithmetic has to count the same thing.
         const filled = perRow.map((count, r) => ({ count, r })).filter((x) => x.count > 0);
         const nRows = filled.length;
-        const ctxRows = clamp(sizes.contextRows ?? 1, 0, nRows);
+        let ctxRows = clamp(sizes.contextRows ?? 1, 0, nRows);
         const flexRows = clamp(sizes.flexRows ?? 0, 0, nRows - ctxRows);
-        const alwaysRows = nRows - ctxRows - flexRows;
+        let alwaysRows = nRows - ctxRows - flexRows;
+
+        // ⚠ IN ROWS MODE THE FLOOR IS MADE UP BY WHOLE ROWS, NOT BY BORROWING CELLS.
+        // Borrowing produced a row that was half Always and half Context - a ragged
+        // edge in the one mode the user chose FOR its straight edge, which defeats the
+        // point of the setting. On Side Layout 1 a one-row Context band is 2 cells, so
+        // it takes the row above and becomes 7; on Side Layout 8 it is already 4 and
+        // nothing moves. Rows come from ALWAYS above, never from Flex below.
+        const ctxPositions = () => filled.slice(alwaysRows, alwaysRows + ctxRows)
+            .reduce((n, x) => n + x.count, 0);
+        while (ctxPositions() < Math.min(CONTEXT_FLOOR, total) && alwaysRows > 0) {
+            alwaysRows--;
+            ctxRows++;
+        }
         // Which band each row belongs to, keyed by its place among the rows that
         // actually hold buttons. An empty row is skipped rather than banded: it has no
         // positions to give anyone, so it can neither be claimed nor spent.
@@ -116,6 +129,7 @@ export function bandPlan(layoutRows, sizes = {}) {
         });
         ctxN = bands.filter((b) => b === BAND.CONTEXT).length;
         flexN = bands.filter((b) => b === BAND.FLEX).length;
+        // Whole rows have already made up the floor above, so nothing is borrowed here.
         // ⚠ THE FLOOR OF FOUR APPLIES IN ROWS MODE TOO, and it has to be enforced here
         // rather than on the row count, because A ROW IS NOT A FIXED QUANTITY. "One row"
         // is 13 positions on one layout, 2 on another - and on Side Layouts 2 and 8 the
@@ -220,9 +234,19 @@ export function composePanel(layoutRows, model = {}, situation = {}) {
         else if (plan.bands[i] === BAND.CONTEXT) items[i] = context[c++];
         else items[i] = flexCells[f++];
     }
+    // WHICH CELLS THE PARTNER'S CHOICES WILL LAND ON: the last four of the Context band
+    // (they take the far end - see the design). Reported so an EMPTY one can say what it
+    // is for rather than looking like a cell somebody forgot to fill. Only the last four,
+    // because only four are ever reserved; any other empty Context cell is genuinely
+    // free and should keep looking free.
+    const ctxIdx = [];
+    for (let i = 0; i < plan.total; i++) if (plan.bands[i] === BAND.CONTEXT) ctxIdx.push(i);
+    const choiceSlots = ctxIdx.slice(Math.max(0, ctxIdx.length - CONTEXT_FLOOR));
+
     return {
         items,
         bands: plan.bands,
+        choiceSlots,
         counts: { always: plan.alwaysN, context: plan.contextN, flex: plan.flexN },
         // What did not fit anywhere. The editor says so rather than hiding it: the user
         // finds out when they add the phrase, not weeks later.

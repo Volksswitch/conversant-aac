@@ -3863,3 +3863,19 @@ label.radio-label input[type="radio"] {
     height: clamp(1.5em, calc(var(--ep-cell-h, 2rem) * 0.5), 3.2rem);
     aspect-ratio: 1;
 }
+
+/* A RESERVED CHOICE CELL SAYS WHAT IT IS FOR (Ken, August 23 2026).
+   The Context band always keeps four cells so a four-way menu can never push out one of
+   the partner's own alternatives. On a panel with few context buttons defined those
+   cells sit empty, and empty reads as "something is missing" rather than "this space is
+   spoken for". Muted wording turns one into the other.
+
+   ⚠ COLOR AND TEXT ONLY. Every box property is inherited from .ep-btn, exactly as for
+   .ep-undefined: a cell that measured differently from a defined one would shift every
+   cell after it and the keyguard holes would stop lining up (Rule 1, the hard
+   requirement). */
+.ep-btn.ep-choice-slot .ep-text {
+    color: color-mix(in srgb, var(--band-color, #4E342E) 55%, transparent);
+    font-style: italic;
+    font-weight: 600;
+}
