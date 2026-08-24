@@ -3839,3 +3839,27 @@ label.radio-label input[type="radio"] {
    That needs somewhere to scroll TO, which is what this padding is. It is empty space
    below the last section, reached only by scrolling, and costs nothing on screen. */
 #settingsContent { padding-bottom: 12rem; }
+
+/* ⚠ THE COMPOSE ICON SIZES TO ITS CELL, NOT TO THE FONT (Ken, August 23 2026).
+   .icon is 1.5em, which is right for a control in a text row and wrong for a panel
+   cell: on Side Layout 8 the compose key is the whole last row, and a 17px pencil in a
+   383x90 button reads as a featureless dark bar. Ken looked at that layout and thought
+   the button was missing altogether - which matters more than it sounds, because this
+   is the only way onto the free-composition path from the panel, and free composition
+   is one of the app's invariants.
+
+   Sized as a percentage of the cell's own height with an em floor, so it grows with the
+   button on a big cell and never shrinks below what it is today on a small one. The
+   aspect ratio keeps it square. This changes nothing about the CELL - the icon is
+   inside it and the grid is laid out by flex - so no keyguard hole moves. */
+.ep-btn.ep-imow .icon {
+    /* ⚠ NOT A PERCENTAGE. A percentage height on a flex item resolves against the flex
+       container only when that height is DEFINITE, and a panel cell's height comes from
+       the row stretching - so the percentage resolved to auto, max() became invalid, the
+       whole declaration was dropped and the icon silently stayed 1.5em. Measured: still
+       17px after the "fix". --ep-cell-h is a real length, derived in CSS from the same
+       numbers the dock grid lays out from, so it is the right thing to size against. */
+    width: auto;
+    height: clamp(1.5em, calc(var(--ep-cell-h, 2rem) * 0.5), 3.2rem);
+    aspect-ratio: 1;
+}

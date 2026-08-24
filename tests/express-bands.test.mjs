@@ -181,3 +181,37 @@ test('a wide row keeps every position the row gives it', () => {
         ['c1', 'c2', 'c3', 'c4', 'c5'], 'the first five show');
     assert.equal(composed.unreachable.context, 1, 'and the sixth is reported, not silently dropped');
 });
+
+// ⚠ KEN'S CASE, August 23 2026, from a real session: Side Layout 8 with the Context
+// band set to one row. That layout's LAST row holds no button positions at all, so the
+// band came out empty and all six feelings were reported as not fitting. The rescue has
+// to be computed from the band BOUNDARY - looking for an existing context cell to grow
+// from finds nothing precisely when the band is empty, which is the case that needs it.
+test('a one-row band landing on a row with no positions is still given four', () => {
+    const s8 = [5, 5, 5, 5, 5, 3, 4, 0].map((n) => Array.from({ length: n }, () => 'x'));
+    const plan = bands.bandPlan(s8, { shape: 'rows', contextRows: 1, flexRows: 0 });
+    assert.equal(plan.total, 32);
+    assert.equal(plan.contextN, bands.CONTEXT_FLOOR, 'not zero');
+    assert.equal(plan.flexN, 0);
+    assert.equal(plan.alwaysN, 28);
+
+    const feelings = ['Happy', 'Sad', 'Stressed', 'Curious', 'Tired', 'Excited']
+        .map((t, i) => ({ id: 'f' + i, type: 'feeling', text: t }));
+    const composed = bands.composePanel(s8, {
+        sizes: { shape: 'rows', contextRows: 1, flexRows: 0 },
+        always: [], context: feelings, flex: {},
+    }, {});
+    const shown = composed.items.filter((x, i) => composed.bands[i] === 'context').map((x) => x && x.text);
+    assert.deepEqual(shown, ['Happy', 'Sad', 'Stressed', 'Curious'],
+        'the first four show rather than none');
+    assert.equal(composed.unreachable.context, 2);
+});
+
+test('the rescued cells come from Always, never from Flex', () => {
+    const s8 = [5, 5, 5, 5, 5, 3, 4, 0].map((n) => Array.from({ length: n }, () => 'x'));
+    // Flex takes the empty last row here, so Context is the 4-wide row above it.
+    const plan = bands.bandPlan(s8, { shape: 'rows', contextRows: 1, flexRows: 1 });
+    assert.equal(plan.flexN, 0, 'the empty row gives Flex nothing, and nothing is taken back for it');
+    assert.equal(plan.contextN, 4);
+    assert.equal(plan.alwaysN, 28);
+});

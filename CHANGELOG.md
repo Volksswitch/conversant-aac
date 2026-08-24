@@ -51,6 +51,13 @@ forgetting to tag one is only ever noise, never silence.
 - **Opening the layout section shows the keyboard instead**, so you can see the key
   positions and the letter and number pages while you choose a grid. Opening any other
   section closes it again and brings the panel back.
+- **Fixed: on some layouts the Context band came out empty.** Two of the side layouts
+  end in a row that holds only the "In my own words" key, so setting the Context band to
+  one row left it with nowhere to put anything and none of your partners, places or
+  feelings appeared. The band now always keeps at least four buttons, taken from the
+  Always band above it rather than from the Flex band below.
+- **The "In my own words" icon now grows with its button.** On a layout where that key
+  fills a whole row it was a tiny mark on a large dark bar, so the button looked blank.
 - **Only one Settings section is open at a time now.** Opening one closes the others on
   that tab, so what you are working on stays on screen instead of being pushed down the
   panel. Each tab still remembers which section you had open.

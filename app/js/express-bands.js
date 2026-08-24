@@ -103,18 +103,28 @@ export function bandPlan(layoutRows, sizes = {}) {
         ctxN = bands.filter((b) => b === BAND.CONTEXT).length;
         flexN = bands.filter((b) => b === BAND.FLEX).length;
         // ⚠ THE FLOOR OF FOUR APPLIES IN ROWS MODE TOO, and it has to be enforced here
-        // rather than on the row count: a row is not a fixed quantity, so "one row" is
-        // 13 positions on one layout and 2 on another. Where the chosen rows cannot
-        // hold four, the band takes the cells it needs from the band ABOVE it - never
-        // from Flex below, which would let a menu push out a situational phrase.
-        if (ctxN < CONTEXT_FLOOR) {
-            let need = Math.min(CONTEXT_FLOOR, total) - ctxN;
-            for (let i = bands.indexOf(BAND.CONTEXT) - 1; i >= 0 && need > 0; i--) {
-                if (bands[i] !== BAND.ALWAYS) break;
-                bands[i] = BAND.CONTEXT;
-                need--;
+        // rather than on the row count, because A ROW IS NOT A FIXED QUANTITY. "One row"
+        // is 13 positions on one layout, 2 on another - and on Side Layouts 2 and 8 the
+        // last row holds NO button positions at all, so a one-row Context band there
+        // came out EMPTY. Ken hit exactly that: six feelings, none of them showing, the
+        // editor reporting all six as not fitting.
+        //
+        // The band takes the cells it needs from the band ABOVE it, never from Flex
+        // below, which would let a menu push out a situational phrase.
+        //
+        // ⚠ AND IT IS COMPUTED FROM THE BOUNDARY, NOT BY FINDING AN EXISTING CONTEXT
+        // CELL. A first version walked back from bands.indexOf(CONTEXT), which is -1
+        // when the band is empty - so the one case that most needed rescuing was the one
+        // case it silently skipped.
+        const want = Math.min(CONTEXT_FLOOR, total);
+        if (ctxN < want) {
+            const firstFlex = bands.indexOf(BAND.FLEX);
+            const firstCtx = bands.indexOf(BAND.CONTEXT);
+            let edge = firstCtx >= 0 ? firstCtx : (firstFlex >= 0 ? firstFlex : total);
+            while (ctxN < want && edge > 0 && bands[edge - 1] === BAND.ALWAYS) {
+                bands[--edge] = BAND.CONTEXT;
+                ctxN++;
             }
-            ctxN = bands.filter((b) => b === BAND.CONTEXT).length;
         }
     } else {
         // The floor applies to what is RESERVED, not to what the user has filled.
