@@ -532,6 +532,8 @@ function initApp() {
     applyFontScales();   // user-set Transcript / Composer / Express text sizes
     initSliderSteppers(); // − / + fine-step buttons on the size sliders
     ui.setRegenerateLabel(storage.loadResponsesPerCategory() * 4); // "New 4"/"New 8"
+    const settingsContent = document.getElementById('settingsContent');
+    if (settingsContent) keepDropdownsOpeningDownward(settingsContent);
     keyboard.init();
     keyboard.setMode(storage.loadKeyboardMode());
     keyboard.setSideLayout(storage.loadSideLayout());
@@ -3796,6 +3798,37 @@ function syncExpressTabDock() {
  * Not applied anywhere else: on every other tab the keyboard staying up through a tap
  * on Save is deliberate and was fixed that way on purpose.
  */
+/**
+ * KEEP A DROPDOWN'S LIST BELOW ITS OWN LABEL.
+ *
+ * A native <select> decides for itself which way its list opens: near the bottom of the
+ * window the browser opens it UPWARD, where it covers the select's own label and comes
+ * to rest directly under the label of the control ABOVE - so the options read as
+ * belonging to the wrong setting. Ken hit this on "Telling context buttons apart",
+ * whose list appeared under "Measured in".
+ *
+ * There is no way to force the direction: it is the platform's popup, not ours, and no
+ * CSS or attribute reaches it. What we CAN do is remove the reason - if the control is
+ * not near the bottom, the browser opens downward. So on pointerdown, if the select
+ * sits in the lower part of its scrolling panel, scroll it up first. The list then
+ * opens below it, under its own label.
+ *
+ * Done on pointerdown rather than focus so the scroll lands BEFORE the popup is
+ * positioned; a focus handler fires too late on some browsers.
+ */
+function keepDropdownsOpeningDownward(scroller) {
+    scroller.addEventListener('pointerdown', (e) => {
+        const sel = e.target instanceof Element ? e.target.closest('select') : null;
+        if (!sel) return;
+        const box = scroller.getBoundingClientRect();
+        const here = sel.getBoundingClientRect();
+        // "Near the bottom" = not enough room under it for a short list.
+        const roomBelow = box.bottom - here.bottom;
+        if (roomBelow >= 180) return;
+        scroller.scrollTop += here.top - box.top - 24;   // bring it near the top
+    }, true);
+}
+
 function wireExpressTabDockBackstop(panel) {
     panel.addEventListener('pointerdown', (e) => {
         const t = e.target instanceof Element ? e.target : null;
@@ -3816,12 +3849,8 @@ function wireExpressTabSections() {
     panel.addEventListener('toggle', (e) => {
         const det = e.target;
         if (!(det instanceof HTMLDetailsElement)) return;
-        const group = det.closest('.setting-group');
-        const isGrid = !!(group && group.getAttribute('data-help') === 'expressKeyboard');
-        if (det.open && !isGrid) {
-            const grid = panel.querySelector('[data-help="expressKeyboard"] details');
-            if (grid && grid.open) grid.open = false;   // fires its own toggle
-        }
+        // Closing the others is sections.js's job now (one section open at a time),
+        // so this only has to follow whatever ended up open.
         syncExpressTabDock();
     }, true);   // capture: <details> toggle does not bubble
 }

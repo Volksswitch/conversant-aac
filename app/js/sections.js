@@ -41,6 +41,40 @@ export function makeCollapsible(container, scope) {
     if (container) build(container, scope, { n: 0 });
 }
 
+/**
+ * ONE SECTION OPEN AT A TIME, PER LEVEL (Ken, August 23 2026).
+ *
+ * Opening a section closes the others beside it. Two reasons it is right for this app
+ * rather than merely tidy: vertical space is the scarce axis, and every extra open
+ * section pushes the one you want further down a panel that a user with limited motor
+ * control has to scroll; and a tab whose sections are all shut opens as a plain list of
+ * what is on it, which is why they start closed in the first place - an accordion keeps
+ * that property true after the first tap instead of only before it.
+ *
+ * What it costs, stated once: you can no longer see two sections at the same time to
+ * compare them. In Settings that is rare, and it is what the panel beside the tab is
+ * for on the surface where it matters.
+ *
+ * Only SIBLINGS at the same level close, so opening a sub-section never shuts the
+ * parent it lives in.
+ */
+function closeSiblings(details) {
+    // ⚠ SCOPED TO THE WHOLE TAB, NOT TO THE IMMEDIATE CONTAINER. The Express tab builds
+    // its sections in two places - the layout and sizing sections are declared in
+    // index.html, the three band sections are built at runtime inside #expressEditor -
+    // so "siblings" in the DOM sense would have let one section from each container sit
+    // open at the same time. What the user sees is one tab, so the rule is about the tab.
+    const root = details.closest('.tab-panel') || details.parentElement.parentElement;
+    if (!root) return;
+    for (const other of root.querySelectorAll('details')) {
+        if (other === details || !other.open) continue;
+        // Never close a section that CONTAINS the one being opened, or one inside it:
+        // opening a sub-section must not shut the parent it lives in.
+        if (other.contains(details) || details.contains(other)) continue;
+        other.open = false;
+    }
+}
+
 function build(container, scope, seq) {
     for (const group of container.querySelectorAll(':scope > .setting-group')) {
         const existing = group.querySelector(':scope > details');
@@ -90,6 +124,7 @@ function build(container, scope, seq) {
         details.open = openSections.has(key);
         details.addEventListener('toggle', () => {
             if (details.open) openSections.add(key); else openSections.delete(key);
+            if (details.open) closeSiblings(details);
         });
         group.appendChild(details);
 

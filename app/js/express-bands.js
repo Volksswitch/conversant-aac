@@ -102,6 +102,20 @@ export function bandPlan(layoutRows, sizes = {}) {
         });
         ctxN = bands.filter((b) => b === BAND.CONTEXT).length;
         flexN = bands.filter((b) => b === BAND.FLEX).length;
+        // ⚠ THE FLOOR OF FOUR APPLIES IN ROWS MODE TOO, and it has to be enforced here
+        // rather than on the row count: a row is not a fixed quantity, so "one row" is
+        // 13 positions on one layout and 2 on another. Where the chosen rows cannot
+        // hold four, the band takes the cells it needs from the band ABOVE it - never
+        // from Flex below, which would let a menu push out a situational phrase.
+        if (ctxN < CONTEXT_FLOOR) {
+            let need = Math.min(CONTEXT_FLOOR, total) - ctxN;
+            for (let i = bands.indexOf(BAND.CONTEXT) - 1; i >= 0 && need > 0; i--) {
+                if (bands[i] !== BAND.ALWAYS) break;
+                bands[i] = BAND.CONTEXT;
+                need--;
+            }
+            ctxN = bands.filter((b) => b === BAND.CONTEXT).length;
+        }
     } else {
         // The floor applies to what is RESERVED, not to what the user has filled.
         ctxN = clamp(Math.max(sizes.context ?? CONTEXT_FLOOR, CONTEXT_FLOOR), 0, total);

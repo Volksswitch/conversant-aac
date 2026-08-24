@@ -409,6 +409,31 @@ Ken is establishing the rules **every conversation-screen layout must obey, BEFO
 
 *(More rules to come. Where these conflict with the UI-Design.docx defaults — notably icon-only buttons vs. the doc's text-badge move cards, and the move-card text-hint anatomy — these field-driven rules win for the control surface; reconcile fully when we pick the first concrete layout.)*
 
+## ⚠ LOCALLY, THE SERVICE WORKER SERVES A STALE APP AND NOTHING SAYS SO (August 23 2026)
+
+**`CACHE_VERSION` in `sw.js` is `aac-v<version>-@@BUILD@@`, and `@@BUILD@@` is only
+substituted at DEPLOY time.** On a local dev server it stays the literal string, so the
+cache name never changes however much code changes - and the browser keeps running the
+modules it cached the first time. Every deploy busts the cache correctly; **every local
+session does the opposite.**
+
+**The failure is silent and it lies convincingly.** A change is edited, saved, the page
+reloaded, and the OLD behavior is observed - so the natural conclusion is that the fix
+is wrong, and the next hour goes into re-fixing code that was already correct. It cost
+that twice in one session: an accordion that "did not work" and a keyboard that "would
+not appear" were both the previous build still running. **`fetch()` shows the new file
+while `import()` returns the old module**, which is the tell, and it reads as
+impossible until you know why.
+
+**To be sure you are testing what you just wrote:** unregister the service worker and
+delete its caches (`navigator.serviceWorker.getRegistrations()` then `caches.keys()`),
+and reload with a changed query string. A plain reload is not enough - an already-loaded
+ES module is cached per URL for the life of the page, so `import('./x.js')` hands back
+the instance the page started with.
+
+**This is very likely what a tester is seeing when a fixed bug "comes back".** Before
+diagnosing a regression on Ken's machine, ask what build he is actually running.
+
 ## Logs are ASCII, and a permission prompt is not a hang (Ken, August 2 2026)
 
 Two fixes from one error-log reading. Ken: *"is that an 'em dash'? If so, it doesn't belong in an error log. I would think that any log should be limited to ASCII."*

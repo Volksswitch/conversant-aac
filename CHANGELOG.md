@@ -51,6 +51,11 @@ forgetting to tag one is only ever noise, never silence.
 - **Opening the layout section shows the keyboard instead**, so you can see the key
   positions and the letter and number pages while you choose a grid. Opening any other
   section closes it again and brings the panel back.
+- **Only one Settings section is open at a time now.** Opening one closes the others on
+  that tab, so what you are working on stays on screen instead of being pushed down the
+  panel. Each tab still remembers which section you had open.
+- **Dropdown lists open downward**, under their own label, instead of upward where they
+  covered it and appeared to belong to the setting above.
 - **Buttons no longer have a color each.** The color says which band a button is in,
   which is what makes the three bands readable at a glance.
 

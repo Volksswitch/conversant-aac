@@ -3767,7 +3767,7 @@ label.radio-label input[type="radio"] {
    are back to being rows because the two things that made them overflow are gone -
    the color swatches (color comes from the band now) and the per-row tools. */
 #expressEditor .ee-section { margin-bottom: 0.6rem; }
-#expressEditor .ee-section-body { padding: 0.4rem 0 0.2rem; }
+#expressEditor .sg-body { padding: 0.4rem 0 0.2rem; }
 #expressEditor .ee-toolbar {
     display: flex;
     flex-wrap: wrap;
@@ -3828,3 +3828,14 @@ label.radio-label input[type="radio"] {
     background: #fff3e0;
     border-top: 2px dashed #e0a44a;
 }
+
+/* ROOM BENEATH THE LAST CONTROL, so a dropdown can open downward.
+   A native <select> near the bottom of the window opens its list UPWARD, where it
+   covers the select's own label and lands under the label of the control above - so
+   the options read as belonging to the wrong setting (Ken hit this on "Telling context
+   buttons apart", whose list appeared under "Measured in"). The direction is the
+   platform's choice and no CSS or attribute reaches it, so the only fix is to remove
+   the reason: scroll the control away from the bottom edge before the list opens.
+   That needs somewhere to scroll TO, which is what this padding is. It is empty space
+   below the last section, reached only by scrolling, and costs nothing on screen. */
+#settingsContent { padding-bottom: 12rem; }

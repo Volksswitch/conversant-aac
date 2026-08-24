@@ -31,6 +31,7 @@ import {
     ANYONE, ANYPLACE, flexKey, parseFlexKey, composePanel, CONTEXT_ORDER,
 } from './express-bands.js';
 import { confirmDanger } from './confirm-dialog.js';
+import { makeCollapsible } from './sections.js';
 import * as tts from './tts.js';
 
 let container = null;
@@ -45,8 +46,11 @@ let pickedId = null;
 // that leaving the tab and coming back does not silently move the user somewhere else.
 let flexPartner = ANYONE;
 let flexPlace = ANYPLACE;
-// Which section is open. Position-keyed, so an add or a reorder cannot slam them shut.
-const openSections = { always: true, flex: false, context: false };
+// Which section to force open after the next render, when something else has decided
+// (a tap on a panel cell, or adding an item to a band). Ordinary open/closed state is
+// NOT tracked here: sections.js owns it, keyed by position within this scope, which is
+// what survives the rebuilds this editor does on add / delete / reorder.
+let openAfterRender = null;
 
 export function init(el, opts = {}) {
     container = el;
@@ -71,13 +75,13 @@ export function focusItem(id) {
     if (!id) return;
     pickedId = id;
     const m = expressPanel.getModel();
-    if (m.always.some((x) => x.id === id)) openSections.always = true;
-    else if (m.context.some((x) => x.id === id)) openSections.context = true;
+    if (m.always.some((x) => x.id === id)) openAfterRender = 'always';
+    else if (m.context.some((x) => x.id === id)) openAfterRender = 'context';
     else {
         for (const [key, list] of Object.entries(m.flex)) {
             if (list.some((x) => x.id === id)) {
                 const { partnerId, placeId } = parseFlexKey(key);
-                flexPartner = partnerId; flexPlace = placeId; openSections.flex = true;
+                flexPartner = partnerId; flexPlace = placeId; openAfterRender = 'flex';
                 break;
             }
         }
@@ -90,7 +94,7 @@ export function focusItem(id) {
 /** A tap on an UNDEFINED panel cell: add an entry to the band that owns that cell. */
 export function addToBand(band) {
     const key = band === 'context' ? 'context' : band === 'flex' ? 'flex' : 'always';
-    openSections[key] = true;
+    openAfterRender = key;
     if (key === 'context') addContext('feeling');
     else if (key === 'flex') addPhrase('flex');
     else addPhrase('always');
@@ -309,21 +313,19 @@ function pickerFor(options, currentId, currentName, onPick) {
 
 // ---------------------------------------------------------------- sections
 
+/**
+ * A band's section. Emitted as a plain .setting-group with a <label> heading and then
+ * handed to sections.js, exactly as the Settings tabs and the Controls editor do, so
+ * the three bands get the same arrow, the same heading styling, the same session
+ * memory and the same one-open-at-a-time behavior as every other section in the app.
+ * Hand-rolling the <details> here made them LOOK like plain blocks rather than
+ * sections, which is what Ken was seeing.
+ */
 function section(key, title, build) {
     const wrap = el('div', 'setting-group ee-section');
-    const det = document.createElement('details');
-    det.open = !!openSections[key];
-    det.addEventListener('toggle', () => { openSections[key] = det.open; });
-    const sum = document.createElement('summary');
-    // A SPAN, never a label: a click whose target is a <label> inside a <summary>
-    // does not toggle the details, so the title would look dead while the arrow
-    // worked (found the hard way in August 2026).
-    sum.appendChild(el('span', 'setting-title', title));
-    det.appendChild(sum);
-    const body = el('div', 'ee-section-body');
-    build(body);
-    det.appendChild(body);
-    wrap.appendChild(det);
+    wrap.dataset.band = key;
+    wrap.appendChild(el('label', null, title));
+    build(wrap);
     return wrap;
 }
 
@@ -526,6 +528,20 @@ export function render() {
     container.appendChild(alwaysSection(composed));
     container.appendChild(flexSection(composed));
     container.appendChild(contextSection(composed));
+    makeCollapsible(container, 'express');
+
+    if (openAfterRender) {
+        const det = container.querySelector(`.setting-group[data-band="${openAfterRender}"] details`);
+        openAfterRender = null;
+        if (det && !det.open) det.open = true;   // fires toggle, which closes the others
+    }
+}
+
+/** Which band's section is open right now, read from the DOM rather than remembered. */
+export function openBand() {
+    if (!container) return null;
+    const det = container.querySelector('.setting-group[data-band] details[open]');
+    return det ? det.closest('.setting-group').dataset.band : null;
 }
 
 export { CONTEXT_ORDER };

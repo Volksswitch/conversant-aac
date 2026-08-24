@@ -155,3 +155,29 @@ test('a situation key round-trips, and a missing half means Anyone or Anyplace',
     assert.deepEqual(bands.parseFlexKey('mom|home'), { partnerId: 'mom', placeId: 'home' });
     assert.deepEqual(bands.parseFlexKey(''), { partnerId: 'anyone', placeId: 'anyplace' });
 });
+
+test('a one-row Context band still gets four positions on a narrow row', () => {
+    // A row is not a fixed quantity - "one row" is 13 positions on one layout and 2 on
+    // another - so the floor cannot be expressed as a row count. Bottom Layout 2 ends
+    // in a row of 2, which is the case that would otherwise lose one of the partner's
+    // own alternatives.
+    const narrow = [Array(10).fill('x'), Array(10).fill('x'), Array(2).fill('x')];
+    const plan = bands.bandPlan(narrow, { shape: 'rows', contextRows: 1, flexRows: 0 });
+    assert.equal(plan.contextN, bands.CONTEXT_FLOOR);
+    assert.equal(plan.flexN, 0, 'the extra cells come from Always above, never from Flex');
+    assert.equal(plan.alwaysN, 22 - bands.CONTEXT_FLOOR);
+});
+
+test('a wide row keeps every position the row gives it', () => {
+    const wide = [Array(9).fill('x'), Array(9).fill('x'), Array(9).fill('x'), Array(5).fill('x')];
+    const plan = bands.bandPlan(wide, { shape: 'rows', contextRows: 1, flexRows: 0 });
+    assert.equal(plan.contextN, 5, 'five-wide row, five context cells - not clamped to the floor');
+    const composed = bands.composePanel(wide, {
+        sizes: { shape: 'rows', contextRows: 1, flexRows: 0 },
+        always: [], context: phrases('c1', 'c2', 'c3', 'c4', 'c5', 'c6').map((p) => ({ ...p, type: 'feeling' })),
+        flex: {},
+    }, {});
+    assert.deepEqual(composed.items.slice(27).map((x) => x && x.text),
+        ['c1', 'c2', 'c3', 'c4', 'c5'], 'the first five show');
+    assert.equal(composed.unreachable.context, 1, 'and the sixth is reported, not silently dropped');
+});
