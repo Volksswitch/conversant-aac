@@ -166,6 +166,21 @@ async function removePicked(band) {
     render();
 }
 
+/**
+ * ⚠ PICKING A ROW MUST NOT RE-RENDER THE EDITOR, and the reason is the same one the
+ * Controls editor already records: a rebuild replaces the very field the user just
+ * touched, so the tap's focus lands on an element that no longer exists and the
+ * on-screen keyboard never appears. It looks like the field is dead. Only the
+ * highlight changes here; the panel beside the tab is told separately.
+ */
+function markPicked(row, id) {
+    if (pickedId === id) return;
+    pickedId = id;
+    if (container) container.querySelectorAll('.ee-row-picked').forEach((r) => r.classList.remove('ee-row-picked'));
+    row.classList.add('ee-row-picked');
+    if (onPickCb) onPickCb();
+}
+
 function labelOf(item) {
     if (!item) return '';
     return String(item.text || item.nickname || item.name || '').trim();
@@ -207,12 +222,7 @@ function textInput(value, placeholder, oninput) {
 function phraseRow(band, item) {
     const row = el('div', 'ee-row');
     if (item.id === pickedId) row.classList.add('ee-row-picked');
-    row.addEventListener('pointerdown', () => {
-        if (pickedId === item.id) return;
-        pickedId = item.id;
-        render();
-        if (onPickCb) onPickCb();
-    });
+    row.addEventListener('pointerdown', () => markPicked(row, item.id));
 
     row.appendChild(textInput(item.text, 'What the button says', (v) => {
         const list = bandList(band).slice();
@@ -248,12 +258,7 @@ function phraseRow(band, item) {
 function contextRow(item) {
     const row = el('div', 'ee-row');
     if (item.id === pickedId) row.classList.add('ee-row-picked');
-    row.addEventListener('pointerdown', () => {
-        if (pickedId === item.id) return;
-        pickedId = item.id;
-        render();
-        if (onPickCb) onPickCb();
-    });
+    row.addEventListener('pointerdown', () => markPicked(row, item.id));
     row.appendChild(el('span', 'ee-kind', item.type === 'partner' ? 'Partner'
         : item.type === 'place' ? 'Place' : 'Feeling'));
 

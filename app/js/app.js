@@ -3731,21 +3731,99 @@ function handleSettingsTab(tabName) {
     // band, so it covers the panel once a field is focused and the two swap — which
     // is tolerable on a Settings surface in a way it would not be during a
     // conversation. In physical-keyboard mode there is no conflict at all.
-    if (tabName === 'express') { expressEditor.render(); keyboard.hideKeyboard(); return; }
+    if (tabName === 'express') {
+        expressEditor.render();
+        wireExpressTabSections();
+        // On this tab the Express Panel is the thing being worked on, so it must be
+        // visible whenever the user is not actually typing (Ken, August 23 2026).
+        // Focus leaving a phrase box now puts the panel back by itself.
+        keyboard.setHideOnBlur(true);
+        syncExpressTabDock();
+        return;
+    }
+    keyboard.setHideOnBlur(false);
     if (tabName === 'controls') { controlEditor.render(); keyboard.hideKeyboard(); return; }
     if (tabName === 'practice') { renderPracticePanel(); keyboard.hideKeyboard(); return; }
     // Rendered on open rather than at Settings-open: reading every conversation log
     // off disk is the most expensive thing in this panel, and it is pointless on the
     // ten other tabs. Keeps the keyboard available — the note field is typed into.
     if (tabName === 'troubleshooting') { renderTroubleshooting(); return; }
-    if (tabName === 'input' && storage.loadKeyboardMode() === 'onscreen') {
-        keyboard.previewShow(storage.loadKeyboardDock());
-    } else {
-        // hideKeyboard (not previewHide) so leaving any tab forcibly drops the
-        // keyboard even if a field there still holds stale focus (e.g. an About Me
-        // card field whose focusout was suppressed while Settings is open).
+    // hideKeyboard (not previewHide) so leaving any tab forcibly drops the keyboard
+    // even if a field there still holds stale focus (e.g. an About Me card field whose
+    // focusout was suppressed while Settings is open). The layout controls used to
+    // live on the Buttons tab and previewed the keyboard here; they moved to the
+    // Express tab, so that preview moved with them into syncExpressTabDock.
+    keyboard.hideKeyboard();
+}
+
+/**
+ * WHICH OF THE TWO THE DOCK SHOWS WHILE THE EXPRESS TAB IS OPEN.
+ *
+ * They occupy the same rectangle by design (Rule 9: the panel is grid-congruent with
+ * the keyboard so one keyguard overlays both), so only one can be up. The rule is in
+ * one sentence: choosing a layout shows the KEYBOARD, because that is when the key
+ * positions and the letter and number pages are what you need to see; everything else
+ * shows the PANEL, because the panel is what is being administered.
+ *
+ * Driven by which section is open rather than by a toggle the user has to find and
+ * remember to put back. A toggle would be a mode, and being stuck in a mode with no
+ * obvious way out is the failure this is fixing. The keyboard's own Hide icon remains
+ * the manual override, and opening any other section puts the panel back.
+ */
+function syncExpressTabDock() {
+    const grid = document.querySelector('#settingsDialog [data-help="expressKeyboard"] details');
+    const wantKeyboard = !!(grid && grid.open) && storage.loadKeyboardMode() === 'onscreen';
+    if (wantKeyboard) keyboard.previewShow(storage.loadKeyboardDock());
+    else keyboard.hideKeyboard();
+}
+
+/**
+ * Watch the Express tab's sections so the dock follows them. Opening the layout
+ * section brings the keyboard up; opening any other section closes the layout section
+ * and puts the panel back, so the two can never both be asking for the dock.
+ */
+/**
+ * THE BACKSTOP, and on this tab it is the primary mechanism rather than a safety net.
+ *
+ * The focus rules in keyboard.js decide things from focusin/focusout, which is right
+ * for a form but fragile here: whether a tap on a heading, a toolbar icon or the panel
+ * itself moves focus at all varies by browser and by whether the target is focusable,
+ * and a rule that only sometimes fires is worse than no rule. So on the Express tab a
+ * POINTERDOWN anywhere that is not a text box and not the keyboard puts the panel
+ * back. It asks the question the user is actually asking - "am I typing right now?" -
+ * and it needs no focus event to answer it.
+ *
+ * Not applied anywhere else: on every other tab the keyboard staying up through a tap
+ * on Save is deliberate and was fixed that way on purpose.
+ */
+function wireExpressTabDockBackstop(panel) {
+    panel.addEventListener('pointerdown', (e) => {
+        const t = e.target instanceof Element ? e.target : null;
+        if (!t) return;
+        if (t.closest('#expressEditor input, #expressEditor textarea')) return;  // they ARE typing
+        if (t.closest('#appKeyboard')) return;                                   // using the keys
+        const grid = panel.querySelector('[data-help="expressKeyboard"] details');
+        if (grid && grid.open) return;   // the layout section is meant to show the keyboard
         keyboard.hideKeyboard();
-    }
+    }, true);
+}
+
+function wireExpressTabSections() {
+    const panel = document.querySelector('#settingsDialog .tab-panel[data-tab="express"]');
+    if (!panel || panel.dataset.dockWired === '1') return;
+    panel.dataset.dockWired = '1';
+    wireExpressTabDockBackstop(panel);
+    panel.addEventListener('toggle', (e) => {
+        const det = e.target;
+        if (!(det instanceof HTMLDetailsElement)) return;
+        const group = det.closest('.setting-group');
+        const isGrid = !!(group && group.getAttribute('data-help') === 'expressKeyboard');
+        if (det.open && !isGrid) {
+            const grid = panel.querySelector('[data-help="expressKeyboard"] details');
+            if (grid && grid.open) grid.open = false;   // fires its own toggle
+        }
+        syncExpressTabDock();
+    }, true);   // capture: <details> toggle does not bubble
 }
 
 // Show only the controls relevant to the chosen dock: side → which-side + side

@@ -566,6 +566,24 @@ function visible() {
 // type). Robust where `relatedTarget` isn't the tapped element. The surfaces'
 // explicit close paths (worldview close(), Settings Close/Escape, the composer's
 // Speak/Reframe/Cancel) still take the keyboard down.
+// ⚠ THE EXPRESS TAB OPTS OUT OF THE KEEP-OPEN RULE BELOW (Ken, August 23 2026).
+// Keeping the keyboard up while Settings is open is right almost everywhere: it must
+// not vanish when the user taps Save, and it must not reflow the layout out from
+// under a finger. But on the Express Panel tab it made the app unusable - focusing a
+// phrase box raised the keyboard over the panel and NOTHING except the toolbar's Hide
+// icon would put it back, so the user was left administering a panel they could not
+// see. Ken hit this in testing and could not get out of it.
+//
+// Neither reason for the rule applies there, and the second one is measured rather
+// than assumed: the keyboard and the Express Panel occupy the IDENTICAL rectangle
+// (0,504 1280x216 at the bottom dock), so swapping one for the other moves nothing
+// and cannot steal a tap. And there is no Save - the editor commits on every
+// keystroke. So the tab turns this on, and focus leaving a field puts the panel back.
+let hideOnBlur = false;
+
+/** Let focus leaving a field dismiss the keyboard even while Settings is open. */
+export function setHideOnBlur(on) { hideOnBlur = !!on; }
+
 function servingPanelOpen() {
     // About Me now lives inside the Settings dialog (a normal tab), so `dlg.open`
     // already covers it — no separate #worldviewScreen check needed.
@@ -686,8 +704,30 @@ export function init() {
         //   the first click and forces a second Save press (Ken's bug 3).
         // The panels' explicit close paths (worldview close(), Settings
         // Close/Escape, renderHome) and the Hide button take it down.
-        if (servingPanelOpen()) return;
-        if (previewing) return;   // keep the Settings layout-preview keyboard up
+        // The Settings layout preview owns the dock deliberately - there is no focused
+        // field to lose - so nothing about blur may take it down. Checked before the
+        // rules below, which are all about a field that HAD focus.
+        if (previewing) return;
+        if (servingPanelOpen()) {
+            if (!hideOnBlur) return;
+            // ⚠ AND EVEN THEN, NOT IMMEDIATELY. Showing the keyboard scrolls the field
+            // into view, and that reflow can itself produce a focusout-then-focusin on
+            // the SAME field. Hiding on the first of those took the keyboard down again
+            // the instant it appeared - which is precisely the stray-blur case the
+            // keep-open rule above was written to survive, so relaxing the rule brought
+            // it straight back.
+            //
+            // So ask on the next tick where focus actually ENDED UP. If it is back on a
+            // field, nothing happened worth acting on; if it has genuinely gone
+            // somewhere else, put the panel back.
+            setTimeout(() => {
+                const now = document.activeElement;
+                if (isScoped(now)) return;
+                if (rootEl && rootEl.contains(now)) return;
+                hide();
+            }, 0);
+            return;
+        }
         // Keep up when the blur was caused by tapping a composer control (Speak /
         // Clear) so the reflow doesn't steal the tap. relatedTarget covers
         // desktop; lastPointerDownEl covers touch where the button isn't reported.
