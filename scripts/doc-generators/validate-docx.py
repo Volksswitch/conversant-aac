@@ -23,8 +23,28 @@ def check(path, backup, expect_changed=('word/document.xml',)):
     a, b = zipfile.ZipFile(path), zipfile.ZipFile(backup)
     fails = []
 
-    if set(a.namelist()) != set(b.namelist()):
-        fails.append('the set of parts changed')
+    # ⚠ TWO KINDS OF "MISSING PART" ARE BENIGN, and saying so matters because a check
+    # that fires on them is a check people learn to skip. python-docx normalizes what
+    # docx-js writes: it omits zero-length DIRECTORY entries (optional in a zip), and it
+    # omits .rels parts that declare NO relationships (an absent empty rels file means
+    # the same thing as an empty one). Anything else going missing is real.
+    def meaningful(names, z):
+        out = set()
+        for n in names:
+            if n.endswith('/'):
+                continue
+            if n.endswith('.rels'):
+                try:
+                    if b'<Relationship ' not in z.read(n):
+                        continue
+                except Exception:
+                    pass
+            out.add(n)
+        return out
+    lost = meaningful(set(b.namelist()) - set(a.namelist()), b)
+    gained = set(a.namelist()) - set(b.namelist())
+    if lost or gained:
+        fails.append('parts lost: %s  parts gained: %s' % (sorted(lost), sorted(gained)))
     if a.namelist()[0] != '[Content_Types].xml':
         fails.append('[Content_Types].xml is not the first zip entry')
     # ⚠ COMPARE MEANING, NOT BYTES. python-docx re-serializes every part it models -
@@ -46,7 +66,18 @@ def check(path, backup, expect_changed=('word/document.xml',)):
         if name == '[Content_Types].xml':
             import re
             f = lambda blob: set(re.findall(rb'(?:PartName|Extension)="([^"]+)"', blob))
-            return f(x) == f(y)
+            # Only declarations for parts that still EXIST are comparable: dropping an
+            # empty .rels correctly drops its Override too.
+            # Compare only what the package actually USES. docx-js declares a Default
+            # for every image type it might ever write (bmp, gif, jpeg, svg, odttf);
+            # python-docx declares the ones present. With no such part in either file
+            # the difference means nothing, and flagging it trains people to ignore
+            # this check - which is how the real faults got through twice.
+            live = {('/' + n).encode() for n in a.namelist()}
+            exts = {n.rsplit('.', 1)[-1].encode() for n in a.namelist() if '.' in n}
+            keep = lambda st: {v for v in st
+                               if (v in live if v.startswith(b'/') else v in exts)}
+            return keep(f(x)) == keep(f(y))
         return canon(x) == canon(y)
     changed = [n for n in a.namelist()
                if n in set(b.namelist()) and not same(n, a.read(n), b.read(n))]

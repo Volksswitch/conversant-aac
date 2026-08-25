@@ -1239,6 +1239,19 @@ Product-document currency is tracked by [`DOC-SYNC.md`](DOC-SYNC.md) (any root d
    simply does not have it.
 4. **Stamp `X`'s row in DOC-SYNC.md:** Status `✓ current`, Last reviewed = today, At commit = current `HEAD`, Notes = what changed + any residual. Commit DOC-SYNC.md (the `.docx` itself stays on OneDrive, git-ignored).
 
+**THE HOUSE PARAGRAPH STYLE, and it is applied by a tool rather than remembered (Ken, August 24 2026: "I'd prefer consistent formatting attributes throughout all documents").** Three numbers, and **none of them is invented** — each was already the dominant value across the 33 documents, so the pass makes the outliers agree with the majority rather than imposing a new look:
+
+| | before | after |
+|---|---|---|
+| body prose | 0 | 160 |
+| list items | 0 | 80 |
+| table cells | 0 | 0 |
+
+- **Run `scripts/doc-generators/apply-doc-style.py <docs>` as the LAST step of every "sync docs" pass**, together with `fix-docx-lists.py`. Measured after the first run: prose 1845/1845 at 0/160 (the rest all involve the 240 threshold below), lists 1034/1034, cells 4108/4108.
+- **⚠ WHAT IT MUST NEVER TOUCH, because a formatting pass that flattens something deliberate does real damage while looking tidy:** headings (97% carry no direct spacing and take it from the style, which is the right way round); **centered** paragraphs and anything containing a drawing (figures and captions); **anything already at 240 twips or more** (title pages and deliberate breaks — 12pt, which prose never reaches by accident); empty spacer paragraphs; and the contents listing.
+- **The three list symptoms Ken reported were ONE cause and are fixed by `fix-docx-lists.py`.** A Word list is a paragraph property, not a container, and each concrete numbering counts independently — so *1, 3, 4* was two numberings in one visual list, *8, 9, 10* was one numbering shared with an earlier section, and *bullets turning into numbers* was two adjacent lists of different formats. The tool gives every RUN (a stretch of numbered paragraphs of one format, bounded by headings) its own numbering. Prose between items does not end a run; a note inside a procedure is still one procedure.
+- **⚠ IT CANNOT BE DONE IN THE GENERATORS, which is what Ken asked for first.** Of the seventeen generated documents only five still match their generator, and **the two USER MANUALS — where he saw every symptom — have no generator at all.** A post-pass reaches every document regardless of how it was produced. If a generator is ever brought back into line, it should emit these same numbers.
+
 **Tooling note (this dev box):** docx edits are made with `python-docx` **or `lxml` — NEVER `xml.etree`**; backups are a file copy. **LibreOffice and Word ARE both installed** — the old "no pandoc / LibreOffice" here was wrong, and see below for why neither one is the oracle you want anyway.
   - **⚠ THE AUGUST 20 RULE WAS FOLLOWED IN FULL AND BOTH USER MANUALS STILL WOULD NOT OPEN (August 24 2026, second round trip with Ken on the same class of fault).** lxml was used, the nsmap and `mc:Ignorable` were preserved, and the prescribed check passed — every part byte-identical except `document.xml`, roots matching. **That rule checks the FILE. Word also enforces the SCHEMA, and from outside the two failures are indistinguishable: everything parses, all the text reads back, nothing is missing.**
   - **⚠ THE FAULT: A SETTINGS ENTRY IN THE MANUALS IS A TABLE CELL, NOT PROSE.** Deleting a paragraph that is the ONLY `<w:p>` in its `<w:tc>` leaves an **empty cell, which is invalid OOXML**, and Word refuses the document outright. **What you almost always mean is to delete the ROW.** Only the two manuals had deletions, which is why only they broke while seven other edited documents were fine — that asymmetry is the diagnostic, and it is worth reaching for first.
