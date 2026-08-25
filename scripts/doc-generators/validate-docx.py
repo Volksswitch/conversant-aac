@@ -27,10 +27,32 @@ def check(path, backup, expect_changed=('word/document.xml',)):
         fails.append('the set of parts changed')
     if a.namelist()[0] != '[Content_Types].xml':
         fails.append('[Content_Types].xml is not the first zip entry')
-    changed = [n for n in a.namelist() if n in set(b.namelist()) and a.read(n) != b.read(n)]
+    # ⚠ COMPARE MEANING, NOT BYTES. python-docx re-serializes every part it models -
+    # styles, numbering, settings, comments - so a byte comparison reports parts as
+    # "changed" when nothing about them changed. That is a false alarm, and a check that
+    # cries wolf is a check that gets ignored, which is how this class of fault survived
+    # twice. What must not happen is content being LOST, so untouched parts are compared
+    # as canonical XML with whitespace normalized.
+    def canon(blob):
+        try:
+            t = etree.fromstring(blob, etree.XMLParser(remove_blank_text=True))
+            return etree.tostring(t, method='c14n')
+        except Exception:
+            return blob
+    def same(name, x, y):
+        # [Content_Types].xml is an unordered declaration list; python-docx rewrites it
+        # in a different order and Word does not care. What WOULD matter is a
+        # declaration going missing, so compare the set rather than the sequence.
+        if name == '[Content_Types].xml':
+            import re
+            f = lambda blob: set(re.findall(rb'(?:PartName|Extension)="([^"]+)"', blob))
+            return f(x) == f(y)
+        return canon(x) == canon(y)
+    changed = [n for n in a.namelist()
+               if n in set(b.namelist()) and not same(n, a.read(n), b.read(n))]
     unexpected = [n for n in changed if n not in expect_changed]
     if unexpected:
-        fails.append('parts changed that should not have: %s' % unexpected)
+        fails.append('parts whose CONTENT changed and should not have: %s' % unexpected)
 
     ra = etree.fromstring(a.read('word/document.xml'))
     rb = etree.fromstring(b.read('word/document.xml'))
