@@ -1,56 +1,73 @@
-"""Restart numbered lists at each heading, and even out list spacing.
+"""Make list numbering behave: one list per run, restarting at each heading.
 
-⚠ WHY THIS IS A POST-PASS AND NOT A GENERATOR CHANGE (Ken, August 24 2026). Ken asked
-for the formatting to be fixed "in the document generation so I don't have to worry
-about it after a sync". Most of the documents cannot be reached that way: of the
-seventeen generated documents only five still match their generator, and the two USER
-MANUALS - the ones he reads most - have no generator at all. A post-pass runs over any
-.docx, generated or hand-written, drifted or clean, so one fix covers all of them.
+⚠ WHY A POST-PASS AND NOT A GENERATOR CHANGE (Ken, August 24 2026). He asked for this
+to be fixed "in the document generation so I don't have to worry about formatting after
+document syncs". Generation cannot reach it: of the seventeen generated documents only
+five still match their generator, and the two USER MANUALS - where he saw every one of
+these symptoms - have no generator at all. A post-pass runs over any .docx.
 
-WHAT IT FIXES
+THE THREE SYMPTOMS, ALL ONE CAUSE. A Word list is a paragraph property, not a
+container: each item points at a "concrete numbering" and Word counts each of those
+independently. So:
 
-1. NUMBERED LISTS CONTINUING ACROSS SECTIONS. docx-js gives every paragraph that names
-   the same numbering reference ONE concrete numbering, so a list in section 8 carries
-   on from section 7's count instead of restarting at 1. The fix is to clone the
-   concrete numbering for each run and point the later runs at their own copy; a fresh
-   numId restarts at its abstract definition's start value.
+  - "1, 3, 4"  - adjacent items pointing at DIFFERENT concrete numberings. Measured in
+                 the Windows manual: item 1 was numId 8, items 2 and 3 were numId 7,
+                 whose counter already stood at 2 from earlier in the document.
+  - "8, 9, 10" at the top of section 5.5 - one numbering shared with an earlier
+                 section, so it carries on counting instead of restarting.
+  - bullets that turn into numbers mid-list - two lists of different formats sitting
+                 adjacent with nothing between them.
 
-   A run ends at a HEADING. That is the boundary Ken described, it is the one a reader
-   sees, and it leaves a list that is merely interrupted by a paragraph of prose alone -
-   which is usually a deliberate aside inside one list rather than two lists.
+THE RULE. Walk the body. A RUN is a maximal stretch of numbered paragraphs sharing the
+same format (bullet or decimal), bounded by headings; ordinary prose between items does
+NOT end a run, because a note in the middle of a procedure is still one procedure. Every
+run gets its own fresh concrete numbering, so it starts at 1 and cannot be disturbed by
+anything before it.
 
-2. UNEVEN SPACING WITHIN A LIST. Items in one run are given the same space after, so a
-   list does not visibly loosen halfway down. Prose is not touched: guessing at the
-   author's intent outside a list is how a formatting pass starts making things worse.
+Formats are kept apart deliberately: a bullet list followed by a numbered list is two
+lists, and merging them would silently change what the author wrote.
 
-Run:  python fix-docx-lists.py <file.docx> [more.docx ...]
-      python fix-docx-lists.py --check <file.docx>     (report, change nothing)
+SPACING is evened only WITHIN a run, to the spacing of that run's first item. Prose is
+never touched - guessing at intent outside a list is how a formatting pass starts doing
+harm.
+
+Run:  python fix-docx-lists.py [--check] <file.docx> [more.docx ...]
 """
 import sys, copy
 from docx import Document
 from lxml import etree
 
 W = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
-LIST_SPACE_AFTER = '100'          # twentieths of a point, matching the generators
+def q(t): return W + t
 
-def q(tag):
-    return W + tag
+def numpr(p):
+    return p.find(q('pPr') + '/' + q('numPr'))
 
-def num_id_of(p):
-    npr = p.find(q('pPr') + '/' + q('numPr'))
-    if npr is None:
+def num_id(p):
+    n = numpr(p)
+    if n is None:
         return None
-    n = npr.find(q('numId'))
-    return n.get(W + 'val') if n is not None else None
+    e = n.find(q('numId'))
+    return e.get(W + 'val') if e is not None else None
 
 def is_heading(p):
     st = p.find(q('pPr') + '/' + q('pStyle'))
     return st is not None and str(st.get(W + 'val') or '').lower().startswith('heading')
 
-def clone_num(numbering_root, num_id):
-    """A new concrete numbering pointing at the same abstract definition."""
-    nums = numbering_root.findall(q('num'))
-    src = next((n for n in nums if n.get(W + 'numId') == num_id), None)
+def formats(numbering):
+    """concrete numId -> 'bullet' | 'decimal' (level 0)."""
+    absn = {a.get(W + 'abstractNumId'): a for a in numbering.findall(q('abstractNum'))}
+    out = {}
+    for n in numbering.findall(q('num')):
+        a = absn.get(n.find(q('abstractNumId')).get(W + 'val'))
+        lvl = a.find(q('lvl')) if a is not None else None
+        fmt = lvl.find(q('numFmt')).get(W + 'val') if lvl is not None else 'decimal'
+        out[n.get(W + 'numId')] = 'bullet' if fmt == 'bullet' else 'decimal'
+    return out
+
+def clone(numbering, num_id_val):
+    nums = numbering.findall(q('num'))
+    src = next((n for n in nums if n.get(W + 'numId') == num_id_val), None)
     if src is None:
         return None
     new_id = str(max(int(n.get(W + 'numId')) for n in nums) + 1)
@@ -59,17 +76,25 @@ def clone_num(numbering_root, num_id):
     src.addnext(new)
     return new_id
 
-def set_space_after(p, twips):
+def spacing_of(p):
+    sp = p.find(q('pPr') + '/' + q('spacing'))
+    return None if sp is None else (sp.get(W + 'before'), sp.get(W + 'after'))
+
+def apply_spacing(p, before, after):
     pPr = p.find(q('pPr'))
     if pPr is None:
         pPr = etree.SubElement(p, q('pPr'))
         p.insert(0, pPr)
     sp = pPr.find(q('spacing'))
     if sp is None:
-        sp = etree.SubElement(pPr, q('spacing'))
-    before = sp.get(W + 'after')
-    sp.set(W + 'after', twips)
-    return before != twips
+        sp = etree.Element(q('spacing'))
+        pPr.append(sp)
+    changed = False
+    for key, val in (('before', before), ('after', after)):
+        if val is not None and sp.get(W + key) != val:
+            sp.set(W + key, val)
+            changed = True
+    return changed
 
 def fix(path, check_only=False):
     doc = Document(path)
@@ -77,44 +102,53 @@ def fix(path, check_only=False):
     try:
         numbering = doc.part.numbering_part.element
     except Exception:
-        return 'no numbering in this document'
+        return 'no lists in this document'
+    fmt = formats(numbering)
 
-    body = [p for p in root.iter(q('p'))]
-    seen_since_heading = {}          # numId -> the concrete id this run should use
-    started = set()                  # numIds whose first run keeps the original id
-    restarts = 0
-    spacing_fixed = 0
-
-    for p in body:
+    runs, cur, cur_fmt = [], [], None
+    for p in root.iter(q('p')):
         if is_heading(p):
-            seen_since_heading = {}
+            if cur:
+                runs.append((cur_fmt, cur))
+            cur, cur_fmt = [], None
             continue
-        nid = num_id_of(p)
+        nid = num_id(p)
         if nid is None:
-            continue
-        if nid not in seen_since_heading:
-            if nid in started:
-                new_id = clone_num(numbering, nid)
-                if new_id:
-                    seen_since_heading[nid] = new_id
-                    restarts += 1
-                else:
-                    seen_since_heading[nid] = nid
-            else:
-                started.add(nid)
-                seen_since_heading[nid] = nid
-        use = seen_since_heading[nid]
-        if use != nid and not check_only:
-            p.find(q('pPr') + '/' + q('numPr') + '/' + q('numId')).set(W + 'val', use)
-        if not check_only and set_space_after(p, LIST_SPACE_AFTER):
-            spacing_fixed += 1
+            continue                       # prose inside a list does not end the run
+        f = fmt.get(nid, 'decimal')
+        if cur and f != cur_fmt:
+            runs.append((cur_fmt, cur))
+            cur = []
+        cur_fmt = f
+        cur.append(p)
+    if cur:
+        runs.append((cur_fmt, cur))
 
-    if not check_only and (restarts or spacing_fixed):
+    merged = sum(1 for _, r in runs if len({num_id(p) for p in r}) > 1)
+    restarted = 0
+    respaced = 0
+    for _, run in runs:
+        if check_only:
+            restarted += 1
+            continue
+        new_id = clone(numbering, num_id(run[0]))
+        if not new_id:
+            continue
+        restarted += 1
+        for p in run:
+            numpr(p).find(q('numId')).set(W + 'val', new_id)
+        want = spacing_of(run[0])
+        if want:
+            for p in run[1:]:
+                if apply_spacing(p, want[0], want[1]):
+                    respaced += 1
+
+    if not check_only and restarted:
         doc.save(path)
-    return f'{restarts} list(s) restarted at their heading, {spacing_fixed} item spacing(s) evened'
+    return (f'{restarted} list run(s); {merged} had items split across different '
+            f'numberings; {respaced} item spacing(s) evened')
 
 if __name__ == '__main__':
-    args = [a for a in sys.argv[1:] if a != '--check']
     check = '--check' in sys.argv
-    for path in args:
+    for path in [a for a in sys.argv[1:] if a != '--check']:
         print(f'{fix(path, check)}  <- {path.split("/")[-1]}')

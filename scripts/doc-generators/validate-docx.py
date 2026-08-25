@@ -91,9 +91,13 @@ def check(path, backup, expect_changed=('word/document.xml',)):
     return fails
 
 if __name__ == '__main__':
+    # fix-docx-lists.py legitimately rewrites numbering.xml, so allow it on request
+    # rather than teaching people to ignore a failure - an ignored check is no check.
+    args = [a for a in sys.argv[1:] if a != '--lists']
+    expect = ('word/document.xml', 'word/numbering.xml') if '--lists' in sys.argv         else ('word/document.xml',)
     bad = 0
-    for path, backup in zip(sys.argv[1::2], sys.argv[2::2]):
-        fails = check(path, backup)
+    for path, backup in zip(args[0::2], args[1::2]):
+        fails = check(path, backup, expect)
         name = path.split('/')[-1]
         if fails:
             bad += 1
