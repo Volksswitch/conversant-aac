@@ -96,7 +96,44 @@ def apply_spacing(p, before, after):
             changed = True
     return changed
 
-def fix(path, check_only=False):
+# ⚠ PROSE SPACING IS NORMALIZED ONLY WITHIN A NARROW BAND, and the band is the point.
+# Ken's complaint was that section 6.7 and 9.2 run together while the rest of the manual
+# breathes. Measured: 68 prose paragraphs sit at 80/80, 31 at 100/100, and 14 carry NO
+# spacing at all - those last inherit zero, which is why they butt up against each other.
+# Four values for one kind of paragraph is the inconsistency.
+#
+# Anything at 240 or more is left alone. Those are the title page and deliberate breaks,
+# and a formatting pass that flattens them would do real damage while looking tidy - the
+# whole risk of automating this is confidently destroying something somebody meant.
+PROSE_BEFORE, PROSE_AFTER = '80', '80'
+LEAVE_ALONE_AT_OR_ABOVE = 240
+
+def is_prose(p):
+    anc = [a.tag for a in p.iterancestors()]
+    if q('sdt') in anc or q('tc') in anc:      # contents listing, table cell
+        return False
+    if numpr(p) is not None:                   # list items are handled by the run rule
+        return False
+    st = p.find(q('pPr') + '/' + q('pStyle'))
+    name = str(st.get(W + 'val') or '').lower() if st is not None else ''
+    if name.startswith('heading') or name == 'listparagraph':
+        return False
+    return bool(''.join(x.text or '' for x in p.iter(q('t'))).strip())
+
+def normalize_prose(root):
+    changed = 0
+    for p in root.iter(q('p')):
+        if not is_prose(p):
+            continue
+        cur = spacing_of(p) or (None, None)
+        big = any(v and v.isdigit() and int(v) >= LEAVE_ALONE_AT_OR_ABOVE for v in cur)
+        if big:
+            continue
+        if apply_spacing(p, PROSE_BEFORE, PROSE_AFTER):
+            changed += 1
+    return changed
+
+def fix(path, check_only=False, prose=False):
     doc = Document(path)
     root = doc.element
     try:
@@ -143,12 +180,19 @@ def fix(path, check_only=False):
                 if apply_spacing(p, want[0], want[1]):
                     respaced += 1
 
-    if not check_only and restarted:
+    prose_fixed = 0
+    if prose and not check_only:
+        prose_fixed = normalize_prose(root)
+
+    if not check_only and (restarted or prose_fixed):
         doc.save(path)
     return (f'{restarted} list run(s); {merged} had items split across different '
-            f'numberings; {respaced} item spacing(s) evened')
+            f'numberings; {respaced} item spacing(s) evened'
+            + (f'; {prose_fixed} prose paragraph(s) set to {PROSE_BEFORE}/{PROSE_AFTER}'
+               if prose else ''))
 
 if __name__ == '__main__':
     check = '--check' in sys.argv
-    for path in [a for a in sys.argv[1:] if a != '--check']:
-        print(f'{fix(path, check)}  <- {path.split("/")[-1]}')
+    prose = '--prose' in sys.argv
+    for path in [a for a in sys.argv[1:] if a not in ('--check', '--prose')]:
+        print(f'{fix(path, check, prose)}  <- {path.split("/")[-1]}')
