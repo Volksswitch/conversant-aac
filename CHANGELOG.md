@@ -26,11 +26,12 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
-- **Feelings are now chosen from a real dropdown.** The box under **Settings → Express
-  Panel → Context** had an arrow at the end but was not a dropdown, so tapping it did
-  not behave the way it looked. It is a proper list of feelings now, with **Something
-  else…** at the bottom for a word of your own. Anything you had typed yourself is kept
-  and still shows in the box.
+- **The feeling box is a plain text box now, and looks like one.** It used to show a
+  pull-down arrow at the end without being a pull-down, which is confusing. Type
+  whatever word best describes how you are — **dog tired**, **stretched thin**,
+  **wrung out** — rather than picking from a list of moods somebody else chose. The AI
+  understands ordinary turns of phrase, so your own words work better than the nearest
+  item on a list would.
 
 - **The speaker beside a "how to say it" box now works before you have typed anything.**
   In **About Me**, tapping it plays whatever is in the box — and if the box is empty it

@@ -83,11 +83,9 @@ export const INFLUENCER_COLORS = {
 // displacing the user's own phrases.
 export const CHOICE_COLOR = { color: '#2E7D32', tint: '#e8f5e9' }; // green
 
-// Suggested feelings for the editor's quick-add (the user can type any).
-export const FEELING_PRESETS = [
-  'Happy', 'Sad', 'Angry', 'Stressed', 'Curious', 'Bored',
-  'Excited', 'Tired', 'Anxious', 'Calm', 'Frustrated', 'Grateful',
-];
+// (A FEELING_PRESETS list lived here and is deliberately gone - Ken, August 25 2026.
+// A feeling is typed, never chosen from a list; the reasoning is in the Architecture
+// Overview, under the Express Panel. Do not reintroduce it.)
 
 // --- item builders (defaults only) ------------------------------------------
 const PH = (text, cat = 'cont', speak) => (speak ? { type: 'phrase', text, cat, speak } : { type: 'phrase', text, cat });
