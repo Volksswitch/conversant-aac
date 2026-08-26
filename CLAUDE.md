@@ -2023,6 +2023,47 @@ not.
 
 ---
 
+## The therapists' Express Panel set REPLACES what is there (DECIDED Ken, August 25 2026)
+
+**The shipped Always phrases and the six Context feelings are explicitly TEMPORARY** —
+the speech and language therapists are authoring the set that goes to testers, and it
+lands before the beta opens. When it arrives it **replaces** what is on a tester's
+panel; it is NOT merged in.
+
+**Ken's reasoning, which is what makes this cheap rather than rude:** *"The SLPs are the
+only 'existing testers' at this point. Replacing their phrases won't be a problem.
+Should some beta testers come onboard before we can nail down the initial set, I'll warn
+them that the Always phrases will be reset soon and not to put too much effort into
+redefining them at this point."* So the cost is bounded by who is actually running the
+app, and the people who would pay it are told in advance.
+
+**⚠ DO NOT REACH FOR THE ADDITIVE-MERGE MACHINERY HERE.** The `seeded` watermark used by
+the control phrases and the placeholder pools appends genuinely-new defaults while
+leaving edits alone — the right answer for a list a user has curated, and the WRONG one
+for a set that is being replaced wholesale. Merging would leave a panel that is neither
+theirs nor the therapists'. This is the same call Ken made for the version-1 bands
+upgrade, and for the same reason.
+
+**⚠ AND A FULL RESEED OVERSHOOTS WHAT HE ASKED FOR — this is the part to get right.**
+Bumping `MODEL_VERSION` is a one-line reseed and is TOO BLUNT: `normalize()` returns
+`defaults()` wholesale, which also discards the band sizes, every Flex situational list,
+and **the Context band's partner and place buttons — which point at real people and
+places the tester entered in About Me and My Places.** Re-adding those means walking the
+picker again for each. Ken said the *phrases* would be reset. So the shape to build is a
+one-shot **seed revision** (a number on the model; when it does not match, replace the
+Always band and the Context band's FEELINGS, stamp it, and leave partner buttons, place
+buttons, sizes and Flex untouched).
+
+**When the set arrives it needs no category and no color** — color comes from the band,
+and the old per-phrase `cat` field is dead (`ui.renderExpressPanel` explicitly voids it;
+only a test still reads it). Ask only for the words, in priority order, plus a
+respelling where one is wanted. **The Always band holds 26** at the shipped sizes on 17
+of the 21 layouts (27 on two, 35–36 on the two digit-row layouts), so a longer list is
+not lost but sits below the editor's cut line, and 26 is the number to brief them with.
+Announce the replacement in the release notes: the panel visibly changes under somebody.
+
+---
+
 ## The Express Panel has NO folders or pages (DECIDED Ken, August 22 2026)
 
 Asked by an outside reviewer whether a panel button could reveal *other* buttons -
