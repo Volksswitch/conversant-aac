@@ -26,6 +26,12 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- **Feelings are now chosen from a real dropdown.** The box under **Settings → Express
+  Panel → Context** had an arrow at the end but was not a dropdown, so tapping it did
+  not behave the way it looked. It is a proper list of feelings now, with **Something
+  else…** at the bottom for a word of your own. Anything you had typed yourself is kept
+  and still shows in the box.
+
 - **The speaker beside a "how to say it" box now works before you have typed anything.**
   In **About Me**, tapping it plays whatever is in the box — and if the box is empty it
   says the name itself, so you can hear the voice get it wrong and decide whether writing

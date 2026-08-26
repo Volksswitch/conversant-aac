@@ -288,9 +288,19 @@ function contextRow(item) {
         row.appendChild(pickerFor(places.listPlaces().map((p) => ({ id: p.id, name: p.name })),
             item.placeId, item.name, (id, name) => save({ placeId: id, name })));
     } else {
-        const i = textInput(item.text, 'A feeling', (v) => save({ text: v }));
-        i.setAttribute('list', 'ee-feeling-presets');
-        row.appendChild(i);
+        // A REAL dropdown, plus "Something else..." for the user's own word (Ken,
+        // August 25 2026). It was a text box carrying a `list` of suggestions, and the
+        // browser draws its own arrow on one of those - so it looked exactly like a
+        // dropdown and was not one. Two reasons the arrow had to go one way or the
+        // other rather than being left ambiguous: the popup it opens is browser chrome,
+        // which cannot be sized or positioned for a direct-select user on a
+        // keyguard-backed screen; and every other picker in this app is a real select,
+        // so one control that merely resembled them taught the wrong lesson about all
+        // of them.
+        //   The same shape as the People editor's Relationship field, deliberately -
+        // a fixed list is faster to tap, and "Something else..." keeps a feeling that
+        // is nobody's preset but this person's.
+        row.append(...feelingPicker(item.text, (v) => save({ text: v })));
     }
     return row;
 }
@@ -315,6 +325,68 @@ function pickerFor(options, currentId, currentName, onPick) {
         onPick(hit ? hit.id : null, hit ? hit.name : '');
     });
     return sel;
+}
+
+/**
+ * The feeling control: a select over the suggested feelings, plus "Something else..."
+ * which reveals a text box.
+ *
+ * Returns BOTH elements so the caller appends them side by side in the row; the text
+ * box hides itself unless it is being used, so an ordinary row is one control wide.
+ * A feeling already recorded that is not one of the suggestions selects
+ * "Something else..." and prefills the box, so nothing anybody typed is lost or
+ * silently rewritten to the nearest preset.
+ */
+function feelingPicker(current, onChange) {
+    const OTHER = '__other__';
+    const value = String(current || '').trim();
+    const preset = FEELING_PRESETS.find((f) => f.toLowerCase() === value.toLowerCase());
+
+    const sel = document.createElement('select');
+    sel.className = 'ee-name-select';
+    const none = document.createElement('option');
+    none.value = '';
+    none.textContent = '— choose —';
+    sel.appendChild(none);
+    for (const f of FEELING_PRESETS) {
+        const op = document.createElement('option');
+        op.value = f;
+        op.textContent = f;
+        sel.appendChild(op);
+    }
+    const other = document.createElement('option');
+    other.value = OTHER;
+    other.textContent = 'Something else…';
+    sel.appendChild(other);
+
+    // ⚠ THE BOX HAS TO BE CAUGHT UP BEFORE IT IS SHOWN, and this is the whole
+    // subtlety of the control. A committed edit does NOT re-render the row (so the
+    // field being typed into keeps focus), so the box still holds whatever the row was
+    // built with. Pick "Grateful" from the list, then reach for "Something else..." to
+    // adjust it, and without this the box would open on the word from before the pick
+    // and commit THAT - quietly undoing a choice the user had just made and watched
+    // take effect. So the last committed value is tracked here and written into the
+    // box at the moment it appears: what you open for editing is what the button says
+    // right now.
+    let committed = value;
+    const free = textInput(value, 'A feeling, in your words', (v) => { committed = v; onChange(v); });
+    const sync = () => { free.style.display = sel.value === OTHER ? '' : 'none'; };
+
+    if (preset) sel.value = preset;
+    else if (value) sel.value = OTHER;
+    sync();
+
+    sel.addEventListener('change', () => {
+        if (sel.value === OTHER) free.value = committed;
+        sync();
+        // Choosing a preset commits it; choosing "Something else..." commits the word
+        // already on the button, so opening the box cannot blank a feeling by itself.
+        committed = sel.value === OTHER ? free.value : sel.value;
+        onChange(committed);
+        if (sel.value === OTHER) free.focus();
+    });
+
+    return [sel, free];
 }
 
 // ---------------------------------------------------------------- sections
@@ -519,17 +591,6 @@ export function render() {
     container.innerHTML = '';
     const composed = composePanel(layoutRowsFn(), expressPanel.getModel(),
         { partnerId: null, placeId: null });
-
-    if (!container.querySelector('#ee-feeling-presets')) {
-        const dl = document.createElement('datalist');
-        dl.id = 'ee-feeling-presets';
-        FEELING_PRESETS.forEach((f) => {
-            const o = document.createElement('option');
-            o.value = f;
-            dl.appendChild(o);
-        });
-        container.appendChild(dl);
-    }
 
     container.appendChild(alwaysSection(composed));
     container.appendChild(flexSection(composed));
