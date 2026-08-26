@@ -2023,12 +2023,21 @@ not.
 
 ---
 
-## The therapists' Express Panel set REPLACES what is there (DECIDED Ken, August 25 2026)
+## The therapists' set replaces the ALWAYS band, and nothing else (DECIDED Ken, August 25 2026)
 
-**The shipped Always phrases and the six Context feelings are explicitly TEMPORARY** —
-the speech and language therapists are authoring the set that goes to testers, and it
-lands before the beta opens. When it arrives it **replaces** what is on a tester's
-panel; it is NOT merged in.
+**The shipped Always phrases are explicitly TEMPORARY** — the speech and language
+therapists are authoring the set that goes to testers, and it lands before the beta
+opens. When it arrives it **replaces** the Always band; it is NOT merged in.
+
+**⚠ THE SIX CONTEXT FEELINGS STAY. They are not part of the handover** (Ken, narrowing
+his own instruction the same day). His reasoning, and it is a genuine asymmetry rather
+than a shortcut: a feeling is **one word**, there are only a few of them, and a user
+swaps one for a word that actually means something to them in seconds — where getting
+the Always set right is real work by people who know what they are doing. He also wants
+the **Context band populated from the first launch**: an empty band reads as something
+missing rather than as an invitation, which is the same argument that had the Express
+Panel ship half-filled rather than blank. So they are placeholders **by design**, and a
+future pass should not "finish" them.
 
 **Ken's reasoning, which is what makes this cheap rather than rude:** *"The SLPs are the
 only 'existing testers' at this point. Replacing their phrases won't be a problem.
@@ -2044,15 +2053,15 @@ for a set that is being replaced wholesale. Merging would leave a panel that is 
 theirs nor the therapists'. This is the same call Ken made for the version-1 bands
 upgrade, and for the same reason.
 
-**⚠ AND A FULL RESEED OVERSHOOTS WHAT HE ASKED FOR — this is the part to get right.**
-Bumping `MODEL_VERSION` is a one-line reseed and is TOO BLUNT: `normalize()` returns
-`defaults()` wholesale, which also discards the band sizes, every Flex situational list,
-and **the Context band's partner and place buttons — which point at real people and
-places the tester entered in About Me and My Places.** Re-adding those means walking the
-picker again for each. Ken said the *phrases* would be reset. So the shape to build is a
-one-shot **seed revision** (a number on the model; when it does not match, replace the
-Always band and the Context band's FEELINGS, stamp it, and leave partner buttons, place
-buttons, sizes and Flex untouched).
+**⚠ AND A FULL RESEED OVERSHOOTS BADLY — this is the part to get right.** Bumping
+`MODEL_VERSION` is a one-line reseed and is TOO BLUNT: `normalize()` returns
+`defaults()` wholesale, which discards the band sizes, every Flex situational list, the
+Context band **including the partner and place buttons that point at real people and
+places the tester entered in About Me and My Places** — re-adding those means walking
+the picker again for each — and the feelings they had already made their own. So the
+shape to build is a one-shot **seed revision**: a number on the model; when it does not
+match, replace **the Always band only**, stamp it, and leave the whole Context band,
+the sizes and the Flex lists untouched.
 
 **When the set arrives it needs no category and no color** — color comes from the band,
 and the old per-phrase `cat` field is dead (`ui.renderExpressPanel` explicitly voids it;

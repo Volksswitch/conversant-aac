@@ -169,7 +169,8 @@ export const DEFAULT_ITEMS = [
 
 // --- BAND DEFAULTS (August 23 2026) ------------------------------------------
 // TEMPORARY, and deliberately so. The speech and language therapists are authoring
-// the set that ships to testers, and it replaces this one before the beta opens.
+// the set that ships to testers, and it replaces this one before the beta opens. THIS
+// BAND ONLY - the Context feelings below are staying (see the note there).
 // Until then this is a FULL set rather than a minimal one, so the Always band's
 // "Reset" button gives Ken something complete to test against and the panel is not
 // half empty while the bands are being tried out.
@@ -209,9 +210,14 @@ export const ALWAYS_DEFAULTS = [
 // launch, with nothing on screen to say why. The softer reason stands too (inventing
 // somebody's people is putting words in their mouth), but this is the structural one.
 //
-// The therapists are choosing the feelings too - guessing the "right" six is exactly
-// the part Ken expects to be hardest, which is why he expects feelings to be the least
-// used thing on the panel.
+// THESE SIX STAY, and the therapists' set does NOT replace them (Ken, August 25 2026).
+// They are deliberate placeholders, and that is not a stopgap waiting to be fixed:
+// a feeling is one word, there are only a few of them, and a user swaps one for a word
+// that actually means something to them in seconds - which is the opposite of the
+// Always phrases, where getting the starting set right is real work by people who know
+// what they are doing. And a Context band POPULATED FROM THE FIRST LAUNCH is worth
+// having in itself: an empty band would read as something missing rather than as an
+// invitation. So the only thing the therapists' set replaces is the Always band.
 export const CONTEXT_DEFAULTS = [
   FE('Happy'), FE('Sad'), FE('Stressed'), FE('Curious'), FE('Tired'), FE('Excited'),
 ].map((it, i) => ({ id: 'c' + i, ...it, origin: ORIGIN.DEFAULT }));
