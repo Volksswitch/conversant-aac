@@ -117,6 +117,28 @@ function meEdge(personId) {
     return ensureLoaded().edges.find((e) => e.from === ME && e.to === personId);
 }
 
+/**
+ * What to CALL this person on screen and out loud: what the user calls them if they
+ * said, otherwise their name.
+ *
+ * One resolver, because the answer is now read in five places (the Express Panel
+ * button, the prompt's situation block, the turn stamp, the opener substitution and
+ * the panel editor's list) and it used to be a copy STORED on the Express Panel item
+ * and edited there. Ken removed that box on August 25 2026 — it asked a second time
+ * for something About Me already knows, so the two could disagree and nothing said
+ * which was right. About Me is the single place it is entered, and this is the single
+ * place it is answered.
+ *
+ * `fallback` covers a panel button that names somebody who is not in the graph at all:
+ * a legacy free-typed partner, or one whose person has since been removed. Returning
+ * their stored name is better than a blank button.
+ */
+export function displayName(personId, fallback = '') {
+    const p = personId ? ensureLoaded().people.find((x) => x.id === personId) : null;
+    if (!p) return (fallback || '').trim();
+    return ((p.attrs && p.attrs.nickname) || p.name || fallback || '').trim();
+}
+
 /** People joined with their relationship-to-the-user, for the editor + display. */
 export function listPeople() {
     return ensureLoaded().people.map((p) => {

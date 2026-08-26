@@ -185,3 +185,30 @@ test('a person with no respelling is unchanged in every way', async () => {
     assert.equal(p.pronunciation, '');
     assert.equal(p.nicknamePronunciation, '');
 });
+
+/* --- What to call somebody, answered in ONE place (Ken, August 25 2026) -----------
+ * The Express Panel used to keep its own copy of "what you call them" and offer a box
+ * to edit it, so About Me and the panel could disagree with nothing to say which was
+ * right. The box is gone and every reader now asks here.
+ */
+test('displayName prefers what the user calls them, and falls back to the name', async () => {
+    const withNick = await rel.addPerson({ name: 'Siobhan', nickname: 'Shiv' });
+    const plain = await rel.addPerson({ name: 'Tim' });
+    assert.equal(rel.displayName(withNick), 'Shiv');
+    assert.equal(rel.displayName(plain), 'Tim');
+});
+
+test('renaming in About Me changes what every reader gets — no stored copy to go stale', async () => {
+    const id = await rel.addPerson({ name: 'Mary', nickname: 'Mom' });
+    assert.equal(rel.displayName(id), 'Mom');
+    await rel.updatePerson(id, { nickname: 'Mother' });
+    assert.equal(rel.displayName(id), 'Mother', 'the new word, with nothing to re-enter elsewhere');
+});
+
+// A panel button can outlive the person it names — an old free-typed one, or somebody
+// removed from About Me. A stale word beats a blank button.
+test('displayName falls back to the caller\'s own word for an unknown person', () => {
+    assert.equal(rel.displayName(null, 'Coach'), 'Coach');
+    assert.equal(rel.displayName('no-such-id', 'Coach'), 'Coach');
+    assert.equal(rel.displayName('no-such-id'), '');
+});

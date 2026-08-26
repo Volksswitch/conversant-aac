@@ -2230,7 +2230,7 @@ async function handleInitiate() {
     await terminateConversation();
     // If a Partner is active, personalize the openers with their name ("Hi Tim,
     // have you got a minute?" instead of "Hey, got a minute?").
-    const partnerName = activePartner ? (activePartner.nickname || activePartner.name) : '';
+    const partnerName = partnerLabel(activePartner);
     metrics.conversationStarted({ practice: practiceMode });
     const snap = engine.initiate({ partnerName });
     ui.showEngineState(snap);
@@ -2936,11 +2936,33 @@ function editedInSettings(item) {
  * which is all it needs to pick the background. The grid is untouched, so a keyguard
  * cut for this layout still fits whatever the band sizes are.
  */
+/**
+ * What to CALL the person a partner button stands for.
+ *
+ * Answered from About Me every time rather than from a copy kept on the button, so a
+ * name changed there is right everywhere at once (Ken, August 25 2026 - he removed the
+ * second box that used to ask for it here). The stored `name` is the fallback for a
+ * button whose person is not in the graph: an old free-typed one, or somebody since
+ * removed, where a blank button would be worse than a stale word.
+ */
+function partnerLabel(item) {
+    if (!item) return '';
+    return relationships.displayName(item.personId, item.nickname || item.name);
+}
+
 function composedPanel() {
-    return expressBands.composePanel(expressLayoutRows(), expressPanel.getModel(), {
+    const composed = expressBands.composePanel(expressLayoutRows(), expressPanel.getModel(), {
         partnerId: activePartner ? (activePartner.personId || activePartner.id) : null,
         placeId: activePlace ? (activePlace.placeId || activePlace.id) : null,
     });
+    // Resolve each partner button's face HERE, on the way to the renderer, because the
+    // renderer is deliberately ignorant of the relationship graph and must stay so.
+    // This is also what carries the answer to the toggle handler, since the item the
+    // user taps is one of these.
+    composed.items = composed.items.map((item) => (item && item.type === 'partner'
+        ? { ...item, label: partnerLabel(item) }
+        : item));
+    return composed;
 }
 
 function rowsMode() {
@@ -3084,7 +3106,7 @@ function buildSituationBlock() {
     // read as "the user wants to talk about this person" (that is what Reframe is
     // for). Ken, August 5 2026.
     if (activePartner) {
-        const label = (activePartner.nickname || activePartner.name || '').trim();
+        const label = partnerLabel(activePartner);
         if (label) lines.push(`You are currently talking with ${label} — ${label} is the person being spoken TO, not a topic to raise. When you address or refer to them, use "${label}".`);
         // How the user speaks WITH this particular person (Phase 3). Only for a
         // partner who is a real node in the graph — a free-typed Express Panel
@@ -3126,7 +3148,7 @@ function partnerStamp() {
     if (!activePartner) return null;
     return {
         id: activePartner.personId || null,
-        label: (activePartner.nickname || activePartner.name || '').trim(),
+        label: partnerLabel(activePartner),
     };
 }
 function feelingStamp() {
@@ -3155,7 +3177,7 @@ function handleTogglePartner(item) {
     // Switching partner has to re-run this in both directions — selecting one adds
     // their phrases, clearing one has to take them back out again.
     applyControlPhrases();
-    ui.setStatus(activePartner ? `Talking with ${activePartner.nickname || activePartner.name}` : 'Partner cleared');
+    ui.setStatus(activePartner ? `Talking with ${partnerLabel(activePartner)}` : 'Partner cleared');
 }
 
 // Feeling toggle: one active at a time, same on/off/switch behavior.

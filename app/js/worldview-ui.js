@@ -785,23 +785,39 @@ function buildPersonForm(existing) {
     // How the voice should SAY the name, when it gets it wrong. Respelling it works
     // (measured on the paid voice, August 8 2026): "Shiv-awn" for Siobhan.
     //   The 🔊 is not optional decoration — you cannot tune a respelling you cannot
-    // hear, so the field and the ear have to sit together. It speaks the respelling
-    // itself, which is exactly what will be said.
+    // hear, so the field and the ear have to sit together.
     //   Name and nickname are separate because they are separate words, and the
     // NICKNAME is the one spoken more often: the conversation openers use it in
     // preference to the name.
-    const sayAs = (getValue, placeholder, initial) => {
+    //
+    // ⚠ AN EMPTY BOX FALLS BACK TO THE WORD IT IS ABOUT (Ken, August 25 2026), and
+    // that is what makes the button useful BEFORE anything has been typed rather than
+    // only after. It used to speak the respelling and nothing else, so on an empty box
+    // it did nothing at all — which is exactly the moment you need it: you have to
+    // hear the voice get the name wrong to know whether a respelling is worth writing.
+    // So each row asks its own question in turn: "say it this way if I have told you
+    // how, otherwise just say it" — the name row falls back to the name, the
+    // nickname row to the nickname. Each falls back to its OWN word, never across, or
+    // the nickname button would answer a question nobody asked.
+    //   Both read the LIVE fields rather than values captured when the form was drawn,
+    // so a name typed a moment ago is what you hear.
+    const sayAs = (getValue, getFallback, placeholder, initial) => {
         const inp = el('input', { type: 'text', class: 'wv-text wv-say-as',
             placeholder, value: initial || '' });
         const hear = el('button', { class: 'wv-btn-speak wv-say-as-hear', text: '🔊',
-            title: 'Hear it said this way', 'aria-label': 'Hear it said this way',
-            onclick: () => { const v = getValue().trim(); if (v) speak(v); } });
+            title: 'Hear it said', 'aria-label': 'Hear it said',
+            onclick: () => {
+                const v = getValue().trim() || getFallback().trim();
+                if (v) speak(v);
+            } });
         return { row: el('div', { class: 'wv-say-as-row' }, [inp, hear]), inp };
     };
 
-    const namePron = sayAs(() => namePron.inp.value, 'How to say the name — only if the voice gets it wrong',
+    const namePron = sayAs(() => namePron.inp.value, () => nameIn.value,
+        'How to say the name — only if the voice gets it wrong',
         existing ? existing.pronunciation : '');
-    const nickPron = sayAs(() => nickPron.inp.value, 'How to say what you call them — only if needed',
+    const nickPron = sayAs(() => nickPron.inp.value, () => nicknameIn.value,
+        'How to say what you call them — only if needed',
         existing ? existing.nicknamePronunciation : '');
 
     // Relationship — standard list + "Other…" (free text).
@@ -1008,9 +1024,16 @@ function buildPlaceForm(existing) {
     const pronIn = el('input', { type: 'text', class: 'wv-text wv-say-as',
         placeholder: 'How to say it — only if the voice gets it wrong',
         value: existing ? existing.pronunciation : '' });
+    // Empty box falls back to the place name, for the same reason as a person's
+    // (Ken, August 25 2026): you have to hear the voice get it wrong before you know
+    // whether writing a respelling is worth the effort, and until you have written one
+    // there is nothing for this button to say.
     const pronHear = el('button', { class: 'wv-btn-speak wv-say-as-hear', text: '🔊',
-        title: 'Hear it said this way', 'aria-label': 'Hear it said this way',
-        onclick: () => { const v = pronIn.value.trim(); if (v) speak(v); } });
+        title: 'Hear it said', 'aria-label': 'Hear it said',
+        onclick: () => {
+            const v = pronIn.value.trim() || nameIn.value.trim();
+            if (v) speak(v);
+        } });
     const pronRow = el('div', { class: 'wv-say-as-row' }, [pronIn, pronHear]);
 
     // One blank row to start, so the first fact costs no extra tap.

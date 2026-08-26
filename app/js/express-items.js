@@ -7,7 +7,7 @@
  *
  *   - phrase  : { type:'phrase',  text, cat, speak? }   speaks directly on tap
  *                 (single- or confirming double-tap per Rule 10). `cat` colors it.
- *   - partner : { type:'partner', name, nickname?, personId? }   a TOGGLE that
+ *   - partner : { type:'partner', name, personId? }             a TOGGLE that
  *                 marks who the user is talking with (a substitute / validation
  *                 for partner recognition). Personalizes openers ("Hi Tim, …")
  *                 and tells the AI who the partner is. May reference a person in

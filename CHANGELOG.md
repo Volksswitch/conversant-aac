@@ -26,6 +26,17 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- **The speaker beside a "how to say it" box now works before you have typed anything.**
+  In **About Me**, tapping it plays whatever is in the box — and if the box is empty it
+  says the name itself, so you can hear the voice get it wrong and decide whether writing
+  a respelling is worth it. The name row plays the name, the "what you call them" row
+  plays what you call them, and the same goes for a place.
+- **The Express Panel no longer asks a second time what you call someone.** Setting up a
+  partner button under **Settings → Express Panel** used to have its own "what you call
+  them" box, which could end up saying something different from **About Me**. It is gone:
+  you pick the person, and the button shows whatever About Me says you call them. Change
+  it there and the button follows, with nothing to re-enter.
+
 ## Version 0.8.1
 
 - **The app no longer goes silent while you are typing in "In my own words".** It used

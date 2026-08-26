@@ -129,7 +129,7 @@ function addPhrase(band) {
 
 function addContext(type) {
     const list = bandList('context').slice();
-    const item = type === 'partner' ? { id: makeId(), type: 'partner', name: '', nickname: '' }
+    const item = type === 'partner' ? { id: makeId(), type: 'partner', name: '' }
         : type === 'place' ? { id: makeId(), type: 'place', name: '' }
             : { id: makeId(), type: 'feeling', text: '' };
     list.push(item);
@@ -187,7 +187,10 @@ function markPicked(row, id) {
 
 function labelOf(item) {
     if (!item) return '';
-    return String(item.text || item.nickname || item.name || '').trim();
+    // A partner's face is resolved live from About Me, so the list here reads the same
+    // as the panel beside it - and keeps up the moment somebody is renamed there.
+    if (item.type === 'partner') return relationships.displayName(item.personId, item.name);
+    return String(item.text || item.name || '').trim();
 }
 
 // ---------------------------------------------------------------- small builders
@@ -275,9 +278,12 @@ function contextRow(item) {
     };
 
     if (item.type === 'partner') {
+        // ONE control: WHO this button is for. What to call them is not asked here
+        // (Ken, August 25 2026) - it is already answered on the About Me tab, and
+        // asking a second time let the two disagree with nothing to say which was
+        // right. The button's face comes from relationships.displayName.
         row.appendChild(pickerFor(relationships.listPeople().map((p) => ({ id: p.id, name: p.name })),
             item.personId, item.name, (id, name) => save({ personId: id, name })));
-        row.appendChild(textInput(item.nickname, 'What you call them (optional)', (v) => save({ nickname: v })));
     } else if (item.type === 'place') {
         row.appendChild(pickerFor(places.listPlaces().map((p) => ({ id: p.id, name: p.name })),
             item.placeId, item.name, (id, name) => save({ placeId: id, name })));

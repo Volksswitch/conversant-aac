@@ -512,7 +512,9 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         b.style.flex = `${span} 1 0`;
 
         if (item.type === 'partner') {
-            const label = item.nickname || item.name || 'Partner';
+            // Resolved from About Me by app.js before it reaches here; `name` is the
+            // fallback for a button whose person is no longer in the graph.
+            const label = item.label || item.name || 'Partner';
             const ic = influencerColors.partner || {};
             setColor(b, ic.color, ic.tint);
             b.classList.add('ep-partner');
