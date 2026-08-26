@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.8.1
+
 - **The app no longer goes silent while you are typing in "In my own words".** It used
   to stay quiet for as long as the box was open, however long you took — so the
   longest pauses in a conversation were the ones nobody heard anything during. Choosing
