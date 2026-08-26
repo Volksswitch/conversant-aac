@@ -23,6 +23,7 @@ import { SOUND_CHECK_ITEMS, VERDICT, questionFor } from './sound-check-items.js'
 import { REGISTER_DIMENSIONS, RELATIONSHIP_GOALS } from './partner-profile.js';
 import * as voiceHarvest from './voice-harvest.js';
 import * as controlPhrases from './control-phrases.js';
+import * as placeholderPhrases from './placeholder-phrases.js';
 import * as expressPanel from './express-panel.js';
 import { speak } from './tts.js';
 import * as storage from './storage.js';
@@ -486,7 +487,10 @@ function buildHarvestSection() {
                         // Needed to classify turns written before the source field
                         // existed: our own control phrases and the user's Express
                         // labels must not be mistaken for prose they composed.
-                        controlPhrases: controlPhrases.allPhrases(),
+                        // The placeholders join them: they are equally OUR words,
+                        // and harvesting one as an example of how this person talks
+                        // would be teaching the model its own stalling back to itself.
+                        controlPhrases: [...controlPhrases.allPhrases(), ...placeholderPhrases.allPhrases()],
                         expressPhrases: expressPanel.allItems()
                             .filter((i) => i.type === 'phrase' && i.text).map((i) => i.text),
                     }));

@@ -179,6 +179,7 @@
                 <div class="settings-tab" data-tab="speech">Speech</div>
                 <div class="settings-tab" data-tab="input">Button Sizes</div>
                 <div class="settings-tab" data-tab="conversation">Conversation</div>
+                <div class="settings-tab" data-tab="placeholders">Placeholders</div>
                 <div class="settings-tab" data-tab="practice">Practice</div>
                 <div class="settings-tab" data-tab="express">Express Panel</div>
                 <div class="settings-tab" data-tab="controls">Controls</div>
@@ -298,9 +299,25 @@
                          belong in one expanding section. -->
                     <div class="setting-group" data-help="textSize">
                         <label>Text size</label>
+                        <!-- The two forms on a response card are sized apart (Ken,
+                             August 25 2026). A card can show both, and "What a response
+                             card shows" already lets the user decide which one the eye
+                             should land on -- so the sizes have to be separable or that
+                             choice is only half available. Each size follows its form of
+                             words wherever it appears, so "the short version" is the same
+                             size whichever mode is in force. -->
                         <div class="setting-item">
-                            <label for="responseFontSelect">Response cards</label>
+                            <label for="responseFontSelect">Response cards &mdash; the full response</label>
                             <select id="responseFontSelect" class="font-size-select">
+                            <option value="0.85">Smaller</option>
+                            <option value="1" selected>Default</option>
+                            <option value="1.2">Larger</option>
+                            <option value="1.45">Largest</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label for="hintFontSelect">Response cards &mdash; the short version</label>
+                            <select id="hintFontSelect" class="font-size-select">
                             <option value="0.85">Smaller</option>
                             <option value="1" selected>Default</option>
                             <option value="1.2">Larger</option>
@@ -543,11 +560,46 @@
                             Play a chime when listening starts
                         </label>
                     </div>
-                    <!-- The three timings that govern the holding phrases. Ken's own
-                         example of the shape to avoid: three expanding sections, one
-                         dropdown apiece. -->
+                    <!-- The interval is meaningless unless a double tap is required, so
+                         the two belong together. -->
+                    <div class="setting-group" data-help="tapToSpeak">
+                        <label>Tapping to speak</label>
+                        <div class="setting-item">
+                            <label>Speaking an Express Panel phrase</label>
+                            <div class="radio-row">
+                                <label class="radio-label">
+                                    <input type="radio" name="expressTapMode" value="single" checked>
+                                    Single tap speaks it
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="expressTapMode" value="double">
+                                    Require a double tap (guards against accidental taps)
+                                </label>
+                            </div>
+                        </div>
+                        <div class="setting-item">
+                            <label for="doubleTapMsSelect">Double-tap interval</label>
+                            <select id="doubleTapMsSelect">
+                                <option value="300">0.3 seconds</option>
+                                <option value="400" selected>0.4 seconds</option>
+                                <option value="600">0.6 seconds</option>
+                                <option value="800">0.8 seconds</option>
+                                <option value="1000">1 second</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-panel" data-tab="placeholders">
+                    <!-- The tab-level note carries the two rules the wording has to
+                         obey, because neither can be enforced in code and both are easy
+                         to break from an editor. It also says that order does not decide
+                         what gets said, which the arrows otherwise imply. -->
+                    <p class="tab-intro">While you are choosing a response the app speaks a short phrase, so the other person hears that you are on it rather than sitting in silence. Set how long it waits below, and change the wording to sound like you. Two things to keep in mind: the app does not know whether the other person asked a question, said something or just said hello, so each phrase has to fit any of them; and phrases about <strong>yourself</strong> land better than ones aimed at <strong>them</strong> &mdash; &ldquo;I&rsquo;m thinking about that&rdquo; rather than &ldquo;hold on a second&rdquo;, which the flat built-in voices make sound short-tempered. A phrase is picked at random, so the order of a list does not decide what gets said.</p>
+                    <!-- Named for what it holds, not for the tab it sits on: every
+                         section on this tab is about placeholders, so a heading saying
+                         so again would not tell the reader which one to open. -->
                     <div class="setting-group" data-help="placeholders">
-                        <label>Placeholders</label>
+                        <label>Timing and count</label>
                         <div class="setting-item">
                             <label for="initialDelayInput">Initial delay</label>
                             <select id="initialDelayInput">
@@ -580,34 +632,7 @@
                             </select>
                         </div>
                     </div>
-                    <!-- The interval is meaningless unless a double tap is required, so
-                         the two belong together. -->
-                    <div class="setting-group" data-help="tapToSpeak">
-                        <label>Tapping to speak</label>
-                        <div class="setting-item">
-                            <label>Speaking an Express Panel phrase</label>
-                            <div class="radio-row">
-                                <label class="radio-label">
-                                    <input type="radio" name="expressTapMode" value="single" checked>
-                                    Single tap speaks it
-                                </label>
-                                <label class="radio-label">
-                                    <input type="radio" name="expressTapMode" value="double">
-                                    Require a double tap (guards against accidental taps)
-                                </label>
-                            </div>
-                        </div>
-                        <div class="setting-item">
-                            <label for="doubleTapMsSelect">Double-tap interval</label>
-                            <select id="doubleTapMsSelect">
-                                <option value="300">0.3 seconds</option>
-                                <option value="400" selected>0.4 seconds</option>
-                                <option value="600">0.6 seconds</option>
-                                <option value="800">0.8 seconds</option>
-                                <option value="1000">1 second</option>
-                            </select>
-                        </div>
-                    </div>
+                    <div id="placeholderEditor"></div>
                 </div>
                 <div class="tab-panel" data-tab="practice">
                     <p class="tab-intro">In <strong>Practice Mode</strong> the AI plays the other person, so you can rehearse a conversation without a microphone and without spending anyone's patience. Pick something to practice below; the conversation screen works exactly as it normally does, except <strong>Start Listening</strong> cues the other person to speak instead of opening the mic. Give them their own voice under <strong>Speech</strong>.</p>

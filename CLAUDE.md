@@ -1620,18 +1620,39 @@ when the AI is slow, failing, or absent.
    is spoken over them; the next pause re-arms from the fuller utterance.
 4. **A repair-initiator turn** ("What?") — the one turn that warrants none.
 
-**⚠ A FIFTH WAS MISSING AND IS NOW ADDED: while "In my own words" is open.** Ken
-asked for this on August 20 2026 and it was implemented by cancelling the generation,
-which does not achieve it: **arming happens at the partner's pause, before and
-independently of the request**, so opening the box silences the ladder already
-running and CANNOT silence one armed afterwards — and one is armed whenever the
-partner speaks again while the user is still typing. Measured August 21 2026: a
-placeholder spoke 3s into a composing session. **The old code had exactly the same
-hole for exactly the same reason.** It is now carried by the existing
-`setUserSpeakingGate`, which holds however late the ladder starts. Verified: zero
-placeholders across seven seconds spanning a whole new partner turn with the box open.
+**⚠ THERE IS DELIBERATELY NO FIFTH — "In my own words" DOES NOT SILENCE THEM
+(Ken, August 25 2026, REVERSING his own August 20 2026 instruction).** A fifth silencer
+was added then and removed now, and the reversal is the entry worth keeping because the
+reasoning generalizes. **Ken's rule: COMPOSING IS THE EQUIVALENT OF READING THE OFFERED
+CARDS, so it follows the same placeholder rules.** Both are the user deciding what to
+say while the other person waits, and filling exactly that gap is the whole purpose of a
+floor-holder — the longer it runs, the more it is needed. Typing is the SLOWER of the
+two ways to answer, so silencing it left **the longest silences in the app entirely
+unfilled**, which is the opposite of what the feature is for.
 
-**THE GENERAL LESSON, and it is why this is worth the words: cancelling a REQUEST is
+**How far the old behavior went, because it was worse than "late":** the gate DEFERS
+rather than counting, so no placeholder was ever spent and the app stayed silent for as
+long as the box was open, however long that was. Both mechanisms are gone —
+`composerOpen` is out of `setUserSpeakingGate`, and `openComposer` no longer calls
+`abortPlaceholders()`. **That second one was the odd caller out**: the other three are
+Say again, Hold on and a choice chip, every one of which is the user having ACTED, where
+opening the box is the user still choosing.
+
+**Nothing else changed, and the three properties that make it safe were verified in the
+browser (Aug 25 2026):** the ladder runs to its normal cap with the box open (two
+phrases at the default, then quiet); a ladder already running SURVIVES the box being
+opened; and **nothing speaks over the user's own composed statement** —
+`speakingUserStatement` still gates that, which is the half of the old gate that was
+always right. The partner speaking again still aborts and resets it.
+
+**Guarded by two SOURCE-level tests in `tests/placeholders.test.mjs`** (the gate must not
+carry `composerOpen`; `openComposer` must not abort the ladder), because the decision
+lives in `app.js`, which no test can load — and because both of the old mechanisms
+were **silent**: the app simply said nothing, and nothing anywhere reported that it had
+chosen not to. Verified to fail when the change is reverted.
+
+**THE GENERAL LESSON FROM THE AUGUST 21 BUILD, still worth the words even though the
+behavior it achieved has since been reversed: cancelling a REQUEST is
 not the same as silencing a BEHAVIOR that the request does not drive.** Placeholders,
 arming, and the palette render are three separate mechanisms hung off one partner
 pause; suppressing one of them by killing the request only appears to work while the

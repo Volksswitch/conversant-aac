@@ -24,6 +24,8 @@ import * as voiceProfile from './voice.js';
 import * as expressEditor from './express-editor.js';
 import * as controlPhrases from './control-phrases.js';
 import * as controlEditor from './control-phrases-editor.js';
+import * as placeholderPhrases from './placeholder-phrases.js';
+import * as placeholderEditor from './placeholder-editor.js';
 import * as whatsNew from './whats-new.js';
 import * as chime from './chime.js';
 import * as practiceScenarios from './practice-scenarios.js';
@@ -417,18 +419,25 @@ function initApp() {
     }
 
     // Hard backstop: a placeholder must never speak over the user's own statement
-    // (a spoken button). If a stray scheduled placeholder fires while the user's TTS
-    // is playing, placeholders defers instead of barging in (Ken, July 2026).
+    // (a spoken button, or the composed statement itself). If a stray scheduled
+    // placeholder fires while the user's TTS is playing, placeholders defers instead
+    // of barging in (Ken, July 2026).
     //
-    // ⚠ AND NEVER WHILE THE USER IS TYPING IN "In my own words" (Ken, August 20 2026;
-    // the hole found August 21 2026). Opening the box silences the ladder that is
-    // already running, but it CANNOT silence one armed afterwards — and one is armed
-    // afterwards whenever the partner speaks again while the user is still typing,
-    // because arming happens at the pause in their speech, before any of this. The
-    // old code had the same hole for the same reason: it cancelled the request, and
-    // arming does not depend on the request. So the gate carries it instead, which
-    // holds however late the ladder starts.
-    placeholders.setUserSpeakingGate(() => speakingUserStatement || composerOpen);
+    // ⚠ THE GATE COVERS SPEECH AND NOTHING ELSE. It used to carry `composerOpen` too
+    // (August 20 2026), so the app stayed silent for as long as "In my own words" was
+    // open, however long that was — and because the gate DEFERS rather than counting,
+    // no placeholder was ever spent, so it was silent indefinitely rather than merely
+    // late. Ken reversed it on August 25 2026, and his reasoning is the rule to keep:
+    // COMPOSING IS THE EQUIVALENT OF READING THE OFFERED CARDS, so it follows the same
+    // placeholder rules. Both are the user deciding what to say while the other person
+    // waits, and the whole purpose of a floor-holder is to fill exactly that gap — the
+    // longer it runs, the more it is needed. Typing is the SLOWER of the two, so the
+    // old behaviour left the longest silences in the app entirely unfilled.
+    //
+    // What still holds while the box is open, unchanged: the partner speaking again
+    // aborts and resets the ladder, tapping Speak stops it, and the per-turn cap ends
+    // it — so it goes quiet after the same two phrases it would have said anyway.
+    placeholders.setUserSpeakingGate(() => speakingUserStatement);
 
     // Count the floor-holding phrases as they are actually spoken. Nothing else can:
     // they are scheduled on timers, aborted by the partner resuming, and capped by a
@@ -526,6 +535,9 @@ function initApp() {
         layoutRows: expressLayoutRows,
     });
     controlEditor.init(document.getElementById('controlEditor'), { onChange: applyControlPhrases });
+    // No onChange: placeholders.js reads the pools at the moment it speaks, so an
+    // edit is in force on the next phrase with nothing to re-inject.
+    placeholderEditor.init(document.getElementById('placeholderEditor'));
     // About Me is an ordinary Settings tab — it renders into its tab-panel and is
     // dismissed by the shared Settings Close button (no overlay of its own).
     worldviewUI.init();
@@ -608,6 +620,7 @@ function initApp() {
     expressPanel.load().then(renderExpressPanel).catch(() => { /* falls back to defaults */ });
     // Control phrases (Hold on / Pardon? / openers / closers) — own model + file.
     controlPhrases.load().then(applyControlPhrases).catch(() => { /* engine keeps inline defaults */ });
+    placeholderPhrases.load().catch(() => { /* the model falls back to its defaults */ });
 
     const savedKey = storage.loadApiKey();
     if (savedKey) {
@@ -944,6 +957,8 @@ async function warmUpStorage() {
     // Same for the control phrases (Hold on / Pardon? / openers / closers).
     try { await controlPhrases.load(); } catch { /* keep cached/default phrases */ }
     try { await controlPhrases.syncToFolder(); } catch { /* best-effort */ }
+    try { await placeholderPhrases.load(); } catch { /* keep cached/default phrases */ }
+    try { await placeholderPhrases.syncToFolder(); } catch { /* best-effort */ }
     applyControlPhrases();
 }
 
@@ -2763,7 +2778,12 @@ function openComposer(opts = {}) {
     // read in generateOptions), and the placeholder ladder is silenced through its
     // own mechanism rather than as a side effect of cancelling the generation.
     composerOpen = true;
-    abortPlaceholders();
+    // ⚠ THE LADDER IS DELIBERATELY LEFT RUNNING (Ken, August 25 2026). abortPlaceholders()
+    // was called here, which killed it outright the moment the box opened — and opening
+    // the box is not an act of speaking or deciding, it is the user still choosing. The
+    // three other callers of abortPlaceholders are Say again, Hold on and a choice chip,
+    // every one of which is the user having ACTED; this one was the odd one out. Reading
+    // the cards holds the floor with a phrase, and so does typing.
     ui.setPaletteBusy(false);
     ui.clearComposer();
     ui.showComposerOverlay();
@@ -3331,14 +3351,17 @@ function applyButtonSizing() {
     root.setProperty('--kbd-cols', String(cols));
 }
 
-// Apply the user-set text-size scales (Transcript / Composer / Express Panel) as
-// CSS multipliers on each surface's base font-size. 1 = the design default.
+// Apply the user-set text-size scales as CSS multipliers on each surface's base
+// font-size. 1 = the design default. A response card counts as TWO surfaces: the
+// full response and the AI's short label are sized apart, because a card can show
+// both at once and which one should carry the reading is the user's choice.
 function applyFontScales() {
     const root = document.documentElement.style;
     root.setProperty('--transcript-font-scale', String(storage.loadTranscriptFontScale()));
     root.setProperty('--composer-font-scale', String(storage.loadComposerFontScale()));
     root.setProperty('--express-font-scale', String(storage.loadExpressFontScale()));
     root.setProperty('--response-font-scale', String(storage.loadResponseFontScale()));
+    root.setProperty('--hint-font-scale', String(storage.loadHintFontScale()));
 }
 
 // The − / + buttons flanking each size slider nudge it by a small fixed step
@@ -3761,6 +3784,7 @@ function handleSettingsTab(tabName) {
     }
     keyboard.setHideOnBlur(false);
     if (tabName === 'controls') { controlEditor.render(); keyboard.hideKeyboard(); return; }
+    if (tabName === 'placeholders') { placeholderEditor.render(); return; }
     if (tabName === 'practice') { renderPracticePanel(); keyboard.hideKeyboard(); return; }
     // Rendered on open rather than at Settings-open: reading every conversation log
     // off disk is the most expensive thing in this panel, and it is pointless on the
@@ -4633,10 +4657,12 @@ function openSettings() {
     const composerFontSelect = document.getElementById('composerFontSelect');
     const expressFontSelect = document.getElementById('expressFontSelect');
     const responseFontSelect = document.getElementById('responseFontSelect');
+    const hintFontSelect = document.getElementById('hintFontSelect');
     transcriptFontSelect.value = String(storage.loadTranscriptFontScale());
     composerFontSelect.value = String(storage.loadComposerFontScale());
     expressFontSelect.value = String(storage.loadExpressFontScale());
     responseFontSelect.value = String(storage.loadResponseFontScale());
+    hintFontSelect.value = String(storage.loadHintFontScale());
     // Conversation privacy default (the Command Bar "Don't save" button overrides
     // it live for the current conversation).
     const noSaveDefaultInput = document.getElementById('noSaveDefaultInput');
@@ -4696,6 +4722,7 @@ function openSettings() {
             try { await expressPanel.syncToFolder(); } catch { /* best-effort */ }
             renderExpressPanel();
             try { await controlPhrases.syncToFolder(); } catch { /* best-effort */ }
+            try { await placeholderPhrases.syncToFolder(); } catch { /* best-effort */ }
             applyControlPhrases();
             updateFolderDisplay();
         } catch (err) {
@@ -5371,6 +5398,7 @@ function openSettings() {
     composerFontSelect.onchange = () => { storage.saveComposerFontScale(composerFontSelect.value); applyFontScales(); };
     expressFontSelect.onchange = () => { storage.saveExpressFontScale(expressFontSelect.value); applyFontScales(); };
     responseFontSelect.onchange = () => { storage.saveResponseFontScale(responseFontSelect.value); applyFontScales(); };
+    hintFontSelect.onchange = () => { storage.saveHintFontScale(hintFontSelect.value); applyFontScales(); };
 
     document.getElementById('closeSettingsBtn').onclick = () => {
         // Belt-and-suspenders: persist the API key from the field on Close.

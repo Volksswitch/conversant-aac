@@ -26,6 +26,28 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- **The app no longer goes silent while you are typing in "In my own words".** It used
+  to stay quiet for as long as the box was open, however long you took — so the
+  longest pauses in a conversation were the ones nobody heard anything during. Choosing
+  your own words is the same kind of moment as reading the suggestions, so it now holds
+  your place the same way: the same phrases, the same delays, and the same limit on how
+  many it may say. It still never speaks over you.
+
+- **You can now change the phrases the app says while you are choosing.** There is a
+  new **Placeholders** tab in Settings holding both the wording and the timings that
+  used to sit under Conversation. Edit, add or remove any of them, and tap the speaker
+  beside a phrase to hear how it sounds in your voice before you keep it. Two things
+  worth knowing: the app does not know whether the other person asked a question or
+  just said hello, so each phrase has to fit either; and a phrase is picked at random,
+  so the order of a list does not decide what gets said. There is a **Reset to
+  default** if you want the original wording back, and your phrases travel with your
+  backups.
+- **The two sizes of writing on a response card are now set separately.** Under
+  **Settings → Text Size**, "the full response" and "the short version" have a size
+  each, so you can make the short label big enough to read at a glance while keeping
+  the full wording modest, or the other way round. Each size follows its own form of
+  words, whichever of them the card is showing larger.
+
 ## Version 0.8.0
 
 - **The Express Panel is now in three bands.** The top band holds the words that never

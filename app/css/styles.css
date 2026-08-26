@@ -1083,14 +1083,14 @@ body.conv-bottom .palette-grid {
    the four `.cards-*` rules below. */
 .response-hint {
     flex: 0 0 auto;
-    font-size: calc(clamp(0.75rem, 1.35vh, 1rem) * var(--response-font-scale, 1));
+    font-size: calc(clamp(0.75rem, 1.35vh, 1rem) * var(--hint-font-scale, 1));
     font-weight: 400;
     line-height: 1.2;
     color: #5a6169;
     overflow: hidden;
 }
 .response-card-half .response-hint {
-    font-size: calc(clamp(0.68rem, 1.1vh, 0.85rem) * var(--response-font-scale, 1));
+    font-size: calc(clamp(0.68rem, 1.1vh, 0.85rem) * var(--hint-font-scale, 1));
 }
 
 /* --- What a response card shows (Settings -> Conversation) ----------------
@@ -1111,17 +1111,19 @@ body.conv-bottom .palette-grid {
 #responseOptions.cards-condensed .response-card.has-hint .response-text { display: none; }
 #responseOptions.cards-condensed .response-hint {
     /* It is the only thing on the card now, so it takes the full-size treatment
-       and fills the card the way .response-text otherwise would. */
+       and fills the card the way .response-text otherwise would. It keeps the SHORT
+       text size, though: the setting follows the form of words, not the slot it is
+       sitting in, so "short version" means the same size in every mode. */
     flex: 1 1 auto;
     display: flex;
     align-items: center;
-    font-size: calc(clamp(1.3rem, 2.6vh, 1.9rem) * var(--response-font-scale, 1));
+    font-size: calc(clamp(1.3rem, 2.6vh, 1.9rem) * var(--hint-font-scale, 1));
     font-weight: 600;
     line-height: 1.18;
     color: var(--ink);
 }
 #responseOptions.cards-condensed .response-card-half .response-hint {
-    font-size: calc(clamp(1rem, 1.9vh, 1.4rem) * var(--response-font-scale, 1));
+    font-size: calc(clamp(1rem, 1.9vh, 1.4rem) * var(--hint-font-scale, 1));
     -webkit-line-clamp: 3;
     display: -webkit-box;
     -webkit-box-orient: vertical;
@@ -1137,7 +1139,7 @@ body.conv-bottom .palette-grid {
     flex: 1 1 auto;
     display: flex;
     align-items: center;
-    font-size: calc(clamp(1.3rem, 2.6vh, 1.9rem) * var(--response-font-scale, 1));
+    font-size: calc(clamp(1.3rem, 2.6vh, 1.9rem) * var(--hint-font-scale, 1));
     font-weight: 600;
     line-height: 1.18;
     color: var(--ink);
@@ -1151,7 +1153,7 @@ body.conv-bottom .palette-grid {
     color: #5a6169;
 }
 #responseOptions.cards-both-condensed .response-card-half.has-hint .response-hint {
-    font-size: calc(clamp(1rem, 1.9vh, 1.4rem) * var(--response-font-scale, 1));
+    font-size: calc(clamp(1rem, 1.9vh, 1.4rem) * var(--hint-font-scale, 1));
     -webkit-line-clamp: 3;
     display: -webkit-box;
     -webkit-box-orient: vertical;
@@ -1566,7 +1568,8 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
    excluded in the :not() instead — not an option here, because the ↑ and ↓ buttons
    carry no class of their own to exclude by. */
 #settingsContent .ee-row .ee-swatch,
-#controlEditor .ee-row .ee-tools button {
+#controlEditor .ee-row .ee-tools button,
+#placeholderEditor .ee-row .ee-tools button {
     min-width: var(--btn-min-dim);
     width: var(--btn-min-dim);
     min-height: var(--btn-min-dim);
@@ -1721,17 +1724,27 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
 .ee-fields .ee-add { background: #2c3e50; color: #fff; border: none; border-radius: 6px; padding: 0.4rem 0.7rem; font-weight: 600; cursor: pointer; }
 .ee-fields .ee-add:hover { filter: brightness(1.1); }
 
-/* Control-phrases editor (Settings → Controls). Reuses .ee-row/.ee-list/.ee-tools;
-   adds section grouping and grows the bare text input (it isn't wrapped in
-   .ee-fields). */
+/* Control-phrases editor (Settings → Controls) and the placeholder editor (Settings →
+   Placeholders), which are the same shape: a text field per phrase with icon tools.
+   Both reuse .ee-row/.ee-list/.ee-tools; these rules add section grouping and grow the
+   bare text input (it isn't wrapped in .ee-fields).
+
+   ⚠ EVERY ONE OF THESE SELECTORS HAS TO NAME BOTH EDITORS. Leaving one out is not a
+   cosmetic miss: without the square --btn-min-dim rule above, an icon tool falls back
+   to the general Express-derived button width (~100px), and four of them at that width
+   overflow the row and push the last one off the panel. Found exactly that way. */
 .cpe-section { margin-bottom: 1.1rem; }
 .cpe-section > label { display: block; font-weight: 600; margin-bottom: 0.2rem; }
 .cpe-section .ee-row { margin-top: 0.35rem; }
 .cpe-section .ee-row > input { flex: 1 1 auto; min-width: 0; padding: 0.4rem 0.5rem; border: 1px solid #c4ccd2; border-radius: 6px; font-size: 0.95rem; }
-#controlEditor .ee-add { margin-top: 0.45rem; background: #2c3e50; color: #fff; border: none; border-radius: 6px; padding: 0.4rem 0.7rem; font-weight: 600; cursor: pointer; }
-#controlEditor .ee-add:hover { filter: brightness(1.1); }
-#controlEditor .ee-reset { display: inline-block; margin-top: 0.5rem; background: #fff; color: #c0392b; border: 1px solid #e0a4a0; border-radius: 6px; padding: 0.45rem 0.8rem; cursor: pointer; }
-#controlEditor .ee-reset:hover { background: #c0392b; color: #fff; }
+#controlEditor .ee-add,
+#placeholderEditor .ee-add { margin-top: 0.45rem; background: #2c3e50; color: #fff; border: none; border-radius: 6px; padding: 0.4rem 0.7rem; font-weight: 600; cursor: pointer; }
+#controlEditor .ee-add:hover,
+#placeholderEditor .ee-add:hover { filter: brightness(1.1); }
+#controlEditor .ee-reset,
+#placeholderEditor .ee-reset { display: inline-block; margin-top: 0.5rem; background: #fff; color: #c0392b; border: 1px solid #e0a4a0; border-radius: 6px; padding: 0.45rem 0.8rem; cursor: pointer; }
+#controlEditor .ee-reset:hover,
+#placeholderEditor .ee-reset:hover { background: #c0392b; color: #fff; }
 
 /* Engine diagnostics — collapsed <details> for development / bug reports. The
    user-facing inference is the mode chip in Region A. */
@@ -2075,12 +2088,20 @@ dialog::backdrop {
     min-height: 0;
 }
 
+/* ⚠ THE TAB COLUMN MUST SCROLL, or the tabs at the bottom are simply GONE on a short
+   screen -- no cut edge, no scrollbar, nothing to say the list continues. Measured at
+   a 640px-tall viewport: About had already fallen off the bottom before the
+   Placeholders tab existed, and adding it took Troubleshooting with it. The panel is
+   fixed-size by Rule 11 (one keyguard has to overlay Settings and the conversation
+   screen alike), so the column cannot grow to fit; scrolling is the only answer that
+   leaves the geometry alone. */
 #settingsTabs {
     width: 140px;
     background: #f4f5f6;
     border-right: 1px solid #ddd;
     padding-top: 0.75rem;
     flex-shrink: 0;
+    overflow-y: auto;
 }
 
 .settings-tab {

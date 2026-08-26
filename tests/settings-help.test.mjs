@@ -52,12 +52,21 @@ function sectionKeys() {
     return [...fromHtml, ...runtimeSectionKeys()];
 }
 
-// The Controls editor's keys, read from its source the same way the markup is read.
-// It passes the phrase-list key straight through as the help key, so the section
-// names ARE the arguments of its two section builders.
+// The runtime-built editors' keys, read from their source the same way the markup is
+// read. Each passes the list key straight through as the help key, so the section
+// names ARE the arguments of its section builders.
+//
+// ⚠ AN EDITOR ADDED HERE WITHOUT BEING ADDED TO THIS LIST IS NOT COVERED, which is a
+// silent hole: its headings simply say nothing under the "?" and no test notices.
 function runtimeSectionKeys() {
-    const src = readFileSync(join(root, 'app', 'js', 'control-phrases-editor.js'), 'utf8');
-    return [...src.matchAll(/(?:single|list)Section\([^,]+,\s*'([^']+)'\)/g)].map(m => m[1]);
+    const sources = [
+        ['control-phrases-editor.js', /(?:single|list)Section\([^,]+,\s*'([^']+)'\)/g],
+        ['placeholder-editor.js', /poolSection\([^,]+,\s*'([^']+)'\)/g],
+    ];
+    return sources.flatMap(([file, re]) => {
+        const src = readFileSync(join(root, 'app', 'js', file), 'utf8');
+        return [...src.matchAll(re)].map(m => m[1]);
+    });
 }
 
 test('every Settings control has spoken help', () => {

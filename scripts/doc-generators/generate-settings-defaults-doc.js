@@ -13,7 +13,7 @@
  *   2. EVERY DEFAULT IS STATED, and stated as the app actually behaves — every
  *      value below was read out of app/js/storage.js, app/index.html,
  *      app/js/express-items.js, app/js/control-phrases.js,
- *      app/data/placeholders.json and app/data/worldview-questions.json on
+ *      app/js/placeholder-phrases.js and app/data/worldview-questions.json on
  *      August 21 2026, not recalled.
  *   3. WHAT IS NOT UP FOR REVIEW IS SAID PLAINLY AND ONCE. A worksheet that asks
  *      for an opinion on something individual (this person's phone number, their

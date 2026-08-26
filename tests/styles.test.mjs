@@ -117,3 +117,27 @@ test('an undefined Express cell changes only colour, never its box', () => {
             `.ep-btn.ep-undefined must not set ${prop} -- it would resize the cell and move every keyguard hole after it`);
     }
 });
+
+test('the two response-card text sizes are wired to separate scales', () => {
+    // The full response and the AI's short label are sized apart (Ken, August 25
+    // 2026), and each scale follows its FORM OF WORDS rather than the slot it sits
+    // in -- so "the short version" is the same size whether it is the small line
+    // under the response or the large line above it. A hint rule left on
+    // --response-font-scale would make one of the four card modes ignore the
+    // setting, which nothing on screen would announce.
+    const css = readFileSync(new URL('../app/css/styles.css', import.meta.url), 'utf8');
+    const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)];
+    for (const [, selector, body] of rules) {
+        if (!/font-size/.test(body)) continue;
+        const sel = selector.trim();
+        if (/\.response-hint\s*(,|$)/.test(sel) || /\.response-hint\b[^,]*$/.test(sel)) {
+            assert.ok(!/--response-font-scale/.test(body),
+                `${sel} sizes the short label, so it must use --hint-font-scale`);
+        }
+        if (/\.response-text\b[^,]*$/.test(sel)) {
+            assert.ok(!/--hint-font-scale/.test(body),
+                `${sel} sizes the full response, so it must use --response-font-scale`);
+        }
+    }
+    assert.ok(/--hint-font-scale/.test(css), '--hint-font-scale is not used anywhere');
+});

@@ -1,5 +1,6 @@
 import * as tts from './tts.js';
 import * as storage from './storage.js';
+import * as phrasePools from './placeholder-phrases.js';
 
 /* Floor-holding placeholders — role-differentiated by position (Ken, June 18
  * 2026).
@@ -41,41 +42,12 @@ import * as storage from './storage.js';
  *   2. Declarative and first-person — never imperative, never directed at the
  *      partner ("Let me think", "Give me a second", "One moment") — flat built-in
  *      voices make those read as curt or annoyed.
- * The pools live in data/placeholders.json (an { acknowledgment:[], thinking:[] }
- * object) and will become user-editable later. start()/stop() keep the signature
- * app.js calls.
+ * The pools are USER-EDITABLE (Settings -> Placeholders) and live in
+ * placeholder-phrases.js, which owns the file and the defaults. They are read at
+ * the moment of speaking, so an edit lands on the next phrase. start()/stop() keep
+ * the signature app.js calls.
  */
 
-// Inline fallback if data/placeholders.json fails to load.
-//
-// EVERY phrase must be PARTNER-STATEMENT INDEPENDENT (Ken, August 7 2026): it has
-// to read correctly after a question, a statement, an assessment or a greeting,
-// because the placeholder now fires on the timer without knowing which it was.
-// This replaced the question/neutral sub-pools added July 8 2026, whose only
-// purpose was to keep "Good question." off a turn that wasn't one — the very
-// defect that produced the original questions-only gate in June. Statement
-// independence removes the need to know the turn type at all, which is what lets
-// the ladder run off partner silence instead of the AI round-trip.
-//
-// They must also stay declarative and first-person — never imperative, never
-// directed at the partner ("Let me think", "Give me a second", "One moment") —
-// because the flat built-in voices make those read as curt or annoyed.
-const FALLBACK_POOLS = {
-    acknowledgment: [
-        "I'm thinking about that.",
-        'Thinking that over.',
-        "I'm thinking.",
-        'Working that out.',
-    ],
-    thinking: [
-        'Still thinking it through.',
-        "I'm working out what I want to say.",
-        'Putting my thoughts together.',
-        'Still mulling that over.',
-    ],
-};
-
-let pools = null;            // { acknowledgment:[], thinking:[] }
 let timer = null;
 let active = false;
 let count = 0;               // placeholders spoken this window (for role + cap)
@@ -97,42 +69,24 @@ export function setUserSpeakingGate(fn) { userSpeaking = typeof fn === 'function
 let onSpoken = () => {};
 export function setOnSpoken(fn) { onSpoken = typeof fn === 'function' ? fn : () => {}; }
 
-// Normalize to { acknowledgment:[], thinking:[] }. Tolerates
-// two legacy shapes: a flat array (used for all pools), and an object whose
-// `acknowledgment` is a flat array (the pre-July-2026 shape — used for both
-// question and general). Empty sub-pools are filled from the others so there is
-// always something to say.
-function normalizePools(data) {
-    if (Array.isArray(data) && data.length) {
-        return { acknowledgment: data.slice(), thinking: data.slice() };
-    }
-    if (data && typeof data === 'object') {
-        const think = Array.isArray(data.thinking) ? data.thinking.slice() : [];
-        const ack = data.acknowledgment;
-        let acknowledgment = [];
-        if (Array.isArray(ack)) acknowledgment = ack.slice();
-        else if (ack && typeof ack === 'object') {
-            // Legacy { question:[], general:[] } shape (July 8 – August 7 2026).
-            // Take only `general`: those were the turn-type-independent ones, and
-            // the whole point of dropping the split is that "Good question." must
-            // never play on a turn that wasn't a question.
-            acknowledgment = Array.isArray(ack.general) ? ack.general.slice() : [];
-        }
-        if (!acknowledgment.length) acknowledgment = think.slice();
-        if (acknowledgment.length || think.length) {
-            return { acknowledgment, thinking: think.length ? think : acknowledgment.slice() };
-        }
-    }
-    return null;
-}
-
-async function loadPools() {
-    if (pools) return;
-    try {
-        const data = await fetch('data/placeholders.json').then(r => r.json());
-        pools = normalizePools(data);
-    } catch { /* fall back below */ }
-    if (!pools) pools = normalizePools(FALLBACK_POOLS);
+// Read the user's pools, dropping blank entries.
+//
+// Blanks are kept by the model because the editor needs an empty row to type into;
+// they must be dropped HERE, at the point of speaking, or a half-finished edit
+// becomes a moment of silence exactly where a floor-holder was expected. If the
+// user has emptied a pool outright, fall back to the other one rather than going
+// quiet — an acknowledgment in place of a "still thinking" reads fine, whereas
+// nothing at all is the failure this whole ladder exists to prevent.
+function readPools() {
+    const p = phrasePools.getPools();
+    const clean = (list) => list.map((s) => String(s || '').trim()).filter(Boolean);
+    const acknowledgment = clean(p.acknowledgment);
+    const thinking = clean(p.thinking);
+    if (!acknowledgment.length && !thinking.length) return null;
+    return {
+        acknowledgment: acknowledgment.length ? acknowledgment : thinking.slice(),
+        thinking: thinking.length ? thinking : acknowledgment.slice(),
+    };
 }
 
 // Pick from a list, avoiding the immediately-previous phrase for that key.
@@ -159,7 +113,7 @@ function pick(list, key) {
 // takes 4s, which is the whole point of a floor-holder.
 //
 // Speaking without knowing the turn type is safe because every acknowledgment
-// phrase is partner-statement independent (see FALLBACK_POOLS). The one turn that
+// phrase is partner-statement independent (see placeholder-phrases.js). The one turn that
 // warrants no placeholder at all — a repair-initiator ("What?") — is only
 // identifiable from the classification, so on a slow round-trip one acknowledgment
 // can precede the re-speak; app.js stops the ladder as soon as it knows. A mild
@@ -171,7 +125,6 @@ export function arm() {
     armTime = Date.now();
     count = 0;
     lastIndex = { acknowledgment: -1, thinking: -1 };
-    loadPools().catch(() => { /* fallback handled in loadPools */ });
     const { initialDelay, maxPlaceholders } = storage.loadPlaceholderSettings();
     // 0 = the user wants no placeholders at all (they read as artificial).
     if (maxPlaceholders === 0) { active = false; return; }
@@ -199,7 +152,6 @@ export async function start() {
     active = true;
     count = 0;
     lastIndex = { acknowledgment: -1, thinking: -1 };
-    loadPools().catch(() => { /* fallback handled in loadPools */ });
     timer = setTimeout(speakNext, Math.max(0, initialDelay * 1000 - (Date.now() - base)));
 }
 
@@ -215,9 +167,10 @@ export function stop() {
 
 async function speakNext() {
     if (!active) return;
-    if (!pools) {
-        try { await loadPools(); } catch { /* ignore */ }
-    }
+    // Read the pools at the moment of speaking rather than caching them at arm().
+    // They are user-editable now, so an edit made in Settings takes effect on the
+    // very next phrase instead of at the next reload.
+    const pools = readPools();
     if (!active || !pools) return;
     // Never speak over the user's own statement (a spoken button). If one is
     // playing right now, try again after the normal interval rather than barging

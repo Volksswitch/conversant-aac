@@ -43,7 +43,8 @@
     "controls": "Change the words spoken by the command buttons, and your conversation starters and goodbyes.",
     "keyguard": "Spacing settings for fitting a physical keyguard, and a file listing where every button sits.",
     "about": "Which version you are running, what you have spent, and a way to restart the app.",
-    "troubleshooting": "Tell us when something goes wrong, and read back what the app has recorded about how it is working."
+    "troubleshooting": "Tell us when something goes wrong, and read back what the app has recorded about how it is working.",
+    "placeholders": "What the app says to hold your place while you choose a response, how long it waits, and the wording itself."
   },
   "sections": {
     "apiKey": "Your key from Anthropic. It is what lets the app suggest responses. Everything else still works without one.",
@@ -73,10 +74,12 @@
     "textSize": "How big the writing is in each part of the app. Every area is set separately, so you can enlarge one without the others.",
     "expressKeyboard": "Whether you type on your own keyboard or the app's, where the Express Panel and keyboard sit, and how they are laid out.",
     "suggestions": "How many response suggestions you are offered, and how much of each one is shown on its card.",
-    "placeholders": "The short phrases the app says to hold your place while you choose, and how often it says them.",
+    "placeholders": "How long the app waits before it says something to hold your place, and how many times it may say one.",
     "tapToSpeak": "Whether one tap or two speaks an Express Panel button, and how quickly the two taps must follow one another.",
     "keyguardSpacing": "How much space sits around the edges of the app and between its parts. Changing these moves the holes in a keyguard.",
-    "bandSizes": "How the panel is divided into bands, and how the buttons that never speak are told apart from each other."
+    "bandSizes": "How the panel is divided into bands, and how the buttons that never speak are told apart from each other.",
+    "acknowledgment": "The phrases it may say first, right after the other person stops talking. One is picked at random.",
+    "thinking": "The phrases it may say after that, if you are still choosing. One is picked at random."
   },
   "radioGroups": {
     "sttProvider": "Who turns the other person's speech into words. Your browser does it free. Deepgram is paid, and works where the browser cannot.",
@@ -102,7 +105,8 @@
     "importDataFile": "Choose the backup file you want to load.",
     "backupFileSelect": "Choose one of the backups the app has already made for you.",
     "restoreBackupBtn": "Puts everything back from the backup you chose. This replaces what is on this device now.",
-    "responseFontSelect": "How big the writing is on the suggested response cards.",
+    "responseFontSelect": "How big the full wording is on the suggested response cards.",
+    "hintFontSelect": "How big the short version is on the suggested response cards. Set apart from the full wording.",
     "transcriptFontSelect": "How big the writing is in the conversation, where what was said is shown.",
     "composerFontSelect": "How big the writing is when you type something in your own words.",
     "expressFontSelect": "How big the writing is on the Express Panel buttons.",

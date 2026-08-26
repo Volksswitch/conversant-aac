@@ -1047,6 +1047,21 @@ export function saveResponseFontScale(v) {
     settings.responseFontScale = clampScale(v);
     saveSettings(settings);
 }
+// The AI's short label for a response, sized on its own (Ken, August 25 2026).
+// A card can carry both forms at once, and which one the eye should land on is the
+// user's call -- "What a response card shows" already lets them swap which is
+// prominent, so the two sizes have to be settable apart or that choice is only half
+// available. The scale follows the CONTENT, not the position: the short label uses
+// this wherever it appears, including the modes where it takes the large treatment.
+export function loadHintFontScale() {
+    const s = loadSettings();
+    return s.hintFontScale == null ? 1 : clampScale(s.hintFontScale);
+}
+export function saveHintFontScale(v) {
+    const settings = loadSettings();
+    settings.hintFontScale = clampScale(v);
+    saveSettings(settings);
+}
 
 // --- Conversation privacy (Ken, July 2026) ---
 // The user can hold a conversation that is NOT written to the data folder, for

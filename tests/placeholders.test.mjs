@@ -6,15 +6,18 @@
  * Observes output via the speechSynthesis shim (spokenTexts). Real timers with
  * tiny delays (savePlaceholderSettings sets them small).
  */
-import { resetLocalStorage, resetSpoken, mockFetchFromDisk, spokenTexts } from './env.mjs';
+import { resetLocalStorage, resetSpoken, spokenTexts } from './env.mjs';
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import * as placeholders from '../app/js/placeholders.js';
 import * as storage from '../app/js/storage.js';
+import * as phrasePools from '../app/js/placeholder-phrases.js';
 
-// Mirrors app/data/placeholders.json (served from disk via mockFetchFromDisk).
-const ACK = ["I'm thinking about that.", 'Thinking that over.', "I'm thinking.", 'Working that out.'];
-const THINKING = ['Still thinking it through.', "I'm working out what I want to say.", 'Putting my thoughts together.', 'Still mulling that over.', 'Just gathering my thoughts.'];
+// The pools are user-owned now (placeholder-phrases.js), so the expected phrases come
+// from the model's own defaults rather than being copied here — a copy would have to be
+// kept in step by hand and would pass while the app said something else.
+const ACK = phrasePools.DEFAULTS.acknowledgment;
+const THINKING = phrasePools.DEFAULTS.thinking;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -23,7 +26,6 @@ beforeEach(() => {
     placeholders.setUserSpeakingGate(() => false);   // singleton — reset per test
     resetLocalStorage();
     resetSpoken();
-    mockFetchFromDisk();       // serve the real placeholder pools
 });
 
 // THE regression guard for the August 7 2026 timing fix (Ken). Placeholders are
@@ -44,8 +46,8 @@ test('arm() alone speaks the first placeholder — the AI is never consulted', a
 // Every acknowledgment must be partner-statement independent, which is what removed
 // the need to know the turn type. Guards against reintroducing a turn-type-dependent
 // pool (e.g. "Good question.") without re-deciding the timing model.
-test('no acknowledgment assumes the partner asked a question', async () => {
-    const pools = await fetch('data/placeholders.json').then((r) => r.json());
+test('no acknowledgment assumes the partner asked a question', () => {
+    const pools = phrasePools.DEFAULTS;
     assert.ok(Array.isArray(pools.acknowledgment), 'acknowledgment is a flat list, not split by turn type');
     for (const phrase of [...pools.acknowledgment, ...pools.thinking]) {
         assert.ok(!/question/i.test(phrase), `"${phrase}" presumes a question`);
@@ -105,7 +107,7 @@ test('consecutive thinking placeholders are never the same phrase back-to-back',
 
 test('userSpeakingGate: a placeholder waits for the user statement to finish instead of barging in', async () => {
     // Ken July 2026: pressing a speaking button must not let a (stray, in-flight)
-    // placeholder cut into the user's own speech. The gate defers it, then it speaks
+    // placeholder cut into the user\'s own speech. The gate defers it, then it speaks
     // once the user is done — it isn't lost.
     storage.savePlaceholderSettings(0.02, 0.03, 2);
     let userSpeaking = true;
@@ -126,4 +128,45 @@ test('stop() cancels a scheduled placeholder before it speaks', async () => {
     placeholders.stop();       // quick selection cancels everything
     await sleep(160);
     assert.equal(spokenTexts.length, 0);
+});
+
+/* --- Composing follows the same rules as reading the cards (Ken, August 25 2026) ---
+ *
+ * ⚠ A SOURCE CHECK, NOT A BEHAVIOUR CHECK, and the reason is worth stating: this
+ * decision lives in app.js, which is not loadable in a test (it touches the DOM, the
+ * mic and the network at import). The behaviour was verified in the browser; these two
+ * assertions are the tripwire that stops it being undone by a change that looks
+ * unrelated, because both of the old mechanisms were silent — the app simply said
+ * nothing, and nothing anywhere reported that it had chosen not to.
+ *
+ * THE RULE: opening "In my own words" is the user still CHOOSING, exactly as reading
+ * the offered cards is. It is not an act of speaking and not a decision, so it must not
+ * silence the floor-holding phrases. Typing is the slower of the two ways to answer, so
+ * silencing it left the longest gaps in the app unfilled — the opposite of what a
+ * floor-holder is for.
+ */
+import { readFileSync } from 'node:fs';
+
+const appSource = readFileSync(new URL('../app/js/app.js', import.meta.url), 'utf8');
+
+test('the placeholder gate covers speech only, never an open composer', () => {
+    // To the end of the LINE, not to the first ')': the argument is an arrow function,
+    // so a lazy paren match stops at its own empty parameter list and captures nothing.
+    const call = /setUserSpeakingGate\((.*)$/m.exec(appSource);
+    assert.ok(call, 'app.js no longer sets the user-speaking gate at all');
+    assert.ok(!/composerOpen/.test(call[1]),
+        'the gate must not carry composerOpen — it would silence the ladder for as long as '
+        + 'the box is open, and because the gate DEFERS rather than counting, indefinitely');
+    assert.ok(/speakingUserStatement/.test(call[1]),
+        'the gate must still cover the user\'s own speech — nothing may speak over that');
+});
+
+test('opening the composer does not abort the running ladder', () => {
+    const at = appSource.indexOf('function openComposer(');
+    assert.ok(at > 0, 'openComposer not found');
+    const body = appSource.slice(at, appSource.indexOf('\nfunction ', at + 10));
+    // Comments explain why it is absent, so match a CALL rather than the bare word.
+    assert.ok(!/^\s*abortPlaceholders\(\);/m.test(body),
+        'openComposer must not abort placeholders — opening the box is the user still '
+        + 'choosing, the same state as reading the cards');
 });
