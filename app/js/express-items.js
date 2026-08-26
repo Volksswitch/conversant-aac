@@ -197,10 +197,20 @@ export const ALWAYS_DEFAULTS = [
   PH('This device listens and speaks for me', 'notice'),
 ].map((it, i) => ({ id: 'a' + i, ...it, origin: ORIGIN.DEFAULT }));
 
-// The Context band's starting contents. Feelings only: a new user has no people and
-// no places yet, and inventing either would be putting words in their mouth. The
-// therapists are choosing the feelings too - guessing the "right" six is exactly the
-// part Ken expects to be hardest, which is why he expects feelings to be the least
+// The Context band's starting contents. FEELINGS ONLY, and a shipped person or place
+// would not merely be in poor taste - it would be BROKEN (Ken, August 25 2026).
+//
+// A partner button names somebody in About Me and carries their identity so the app
+// can look up what it knows about them; a place button does the same for My Places.
+// A new user has neither, so a defaulted one would point at a record that does not
+// exist: the panel would show a name About Me has never heard of, and the picker in
+// the editor - which lists only real people - could not represent it, so it would sit
+// on "- choose -" while the button beside it showed a name. Out of sync from the first
+// launch, with nothing on screen to say why. The softer reason stands too (inventing
+// somebody's people is putting words in their mouth), but this is the structural one.
+//
+// The therapists are choosing the feelings too - guessing the "right" six is exactly
+// the part Ken expects to be hardest, which is why he expects feelings to be the least
 // used thing on the panel.
 export const CONTEXT_DEFAULTS = [
   FE('Happy'), FE('Sad'), FE('Stressed'), FE('Curious'), FE('Tired'), FE('Excited'),
