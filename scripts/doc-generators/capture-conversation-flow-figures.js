@@ -14,7 +14,7 @@ const puppeteer = require('puppeteer');
 const path = require('path');
 
 const CHECK = '.fig, .box, .side, .loop, .lab, .seg, .seg2, .n, .dtext, .lanehead, ' +
-              '.trklab, .ann, .rlab, .fanhead, .colhead, .item, .out';
+              '.trklab, .ann, .rlab, .fanhead, .colhead, .item, .out, .llab, .mark';
 
 (async () => {
     const browser = await puppeteer.launch({ headless: true });

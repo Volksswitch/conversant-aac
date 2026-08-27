@@ -85,6 +85,17 @@
   .rule { position:absolute; height:2px; background:#DCE3E9; }
   .rlab { position:absolute; overflow:hidden; font-size:11.5px; color:#7A8A99; text-align:center; }
 
+  /* --- figures 3 and 4: the anatomy of a pause, one lane per participant --- */
+  .lrow { position:absolute; background:#FAFBFC; border:1px solid #EDF1F4; border-radius:5px; }
+  .llab { position:absolute; overflow:hidden; font-size:12.5px; line-height:1.24;
+          text-align:right; color:#33414D; font-weight:bold; }
+  .llab span { display:block; font-weight:normal; color:#7A8A99; font-size:11.5px; }
+  .chunk { position:absolute; width:3px; background:#1F4E79; border-radius:1px; }
+  .thin { font-size:11px; }
+  .now { background:#FBE9A7; border:2px solid #8A6400; }
+  .mark { position:absolute; overflow:hidden; font-size:11px; font-weight:bold;
+          color:#8A6400; text-align:center; }
+
   /* --- figure 4: one pause, on a time line (kept from the first edition) --- */
   .fig4 { width: 1000px; }
   .tl { position:relative; width:940px; height:330px; margin-top:6px; }
@@ -205,83 +216,169 @@
 </div>
 
 <div class="fig" id="f3">
-  <p class="cap">Four things happen at once during one exchange. Twenty seconds, left to right; nothing on any row waits for anything on another row. The amber sliver after each stretch of talking is the recognition delay plus the Silence Period, which Figure 4 opens out.</p>
-  <div class="canvas" style="width:1000px; height:400px;">
-    <div class="rule" style="left:180px; top:52px; width:800px;"></div>
-    <div class="rlab" style="left:160px; top:34px; width:40px; height:16px;">0s</div>
-    <div class="rlab" style="left:360px; top:34px; width:40px; height:16px;">5s</div>
-    <div class="rlab" style="left:560px; top:34px; width:40px; height:16px;">10s</div>
-    <div class="rlab" style="left:760px; top:34px; width:40px; height:16px;">15s</div>
-    <div class="rlab" style="left:960px; top:34px; width:40px; height:16px;">20s</div>
+  <p class="cap">One pause, with every part in its own lane. Eighteen seconds, left to right. The Silence Period does not start when they stop talking &#8212; it starts when their last words reach the app.</p>
+  <div class="canvas" style="width:1000px; height:674px;">
+    <div class="rule" style="left:200px; top:46px; width:774px;"></div>
+    <div class="rlab" style="left:180px; top:26px; width:40px; height:16px;">0s</div>
+    <div class="rlab" style="left:395px; top:26px; width:40px; height:16px;">5s</div>
+    <div class="rlab" style="left:610px; top:26px; width:40px; height:16px;">10s</div>
+    <div class="rlab" style="left:825px; top:26px; width:40px; height:16px;">15s</div>
 
-    <div class="tick" style="left:416px; top:64px; height:236px;"></div>
-    <div class="tick" style="left:580px; top:64px; height:236px;"></div>
-    <div class="tick" style="left:736px; top:64px; height:236px;"></div>
+    <div class="lrow" style="left:196px; top:62px;  width:782px; height:34px;"></div>
+    <div class="lrow" style="left:196px; top:116px; width:782px; height:34px;"></div>
+    <div class="lrow" style="left:196px; top:170px; width:782px; height:34px;"></div>
+    <div class="lrow" style="left:196px; top:224px; width:782px; height:34px;"></div>
+    <div class="lrow" style="left:196px; top:278px; width:782px; height:34px;"></div>
+    <div class="lrow" style="left:196px; top:332px; width:782px; height:34px;"></div>
+    <div class="lrow" style="left:196px; top:386px; width:782px; height:34px;"></div>
+    <div class="lrow" style="left:196px; top:440px; width:782px; height:34px;"></div>
 
-    <div class="trklab" style="left:0; top:73px;  width:165px; height:16px;">The other person</div>
-    <div class="trklab" style="left:0; top:135px; width:165px; height:16px;">Holding phrases</div>
-    <div class="trklab" style="left:0; top:197px; width:165px; height:16px;">Asking the AI</div>
-    <div class="trklab" style="left:0; top:259px; width:165px; height:16px;">The suggestion panel</div>
+    <div class="tick" style="left:381px; top:58px; height:428px;"></div>
+    <div class="tick" style="left:398px; top:58px; height:428px;"></div>
+    <div class="tick" style="left:419px; top:58px; height:428px;"></div>
+    <div class="tick" style="left:643px; top:58px; height:428px;"></div>
 
-    <div class="seg talk" style="left:180px; top:64px; width:200px; height:34px;">They are talking</div>
-    <div class="seg gap"  style="left:380px; top:64px; width:36px;  height:34px;"></div>
-    <div class="seg idle" style="left:416px; top:64px; width:164px; height:34px;">quiet</div>
-    <div class="seg talk" style="left:580px; top:64px; width:120px; height:34px;">talking again</div>
-    <div class="seg gap"  style="left:700px; top:64px; width:36px;  height:34px;"></div>
-    <div class="seg idle" style="left:736px; top:64px; width:244px; height:34px;">quiet &#8212; waiting for you</div>
+    <div class="llab" style="left:0; top:62px;  width:188px; height:34px;">The other person<span>what you hear in the room</span></div>
+    <div class="llab" style="left:0; top:116px; width:188px; height:34px;">Speech recognition<span>chunks of words arriving</span></div>
+    <div class="llab" style="left:0; top:170px; width:188px; height:34px;">Its own verdict<span>sent to the app, and ignored</span></div>
+    <div class="llab" style="left:0; top:224px; width:188px; height:34px;">The words the app has<span>chunks joined into one turn</span></div>
+    <div class="llab" style="left:0; top:278px; width:188px; height:34px;">Is this a pause?<span>the Silence Period clock</span></div>
+    <div class="llab" style="left:0; top:332px; width:188px; height:34px;">Holding phrases<span>the app's own clock</span></div>
+    <div class="llab" style="left:0; top:386px; width:188px; height:34px;">Asking the AI<span>one request per pause</span></div>
+    <div class="llab" style="left:0; top:440px; width:188px; height:34px;">You<span>reading and choosing</span></div>
 
-    <div class="seg idle"  style="left:180px; top:126px; width:236px; height:34px;">none yet</div>
-    <div class="seg clock" style="left:416px; top:126px; width:80px;  height:34px;">counting</div>
-    <div class="seg said"  style="left:496px; top:126px; width:64px;  height:34px;">spoken</div>
-    <div class="seg clock" style="left:560px; top:126px; width:20px;  height:34px;"></div>
-    <div class="seg idle"  style="left:580px; top:126px; width:156px; height:34px;">clock reset</div>
-    <div class="seg clock" style="left:736px; top:126px; width:80px;  height:34px;">counting</div>
-    <div class="seg said"  style="left:816px; top:126px; width:64px;  height:34px;">spoken</div>
-    <div class="seg idle"  style="left:880px; top:126px; width:100px; height:34px;"></div>
+    <div class="seg talk" style="left:200px; top:62px; width:181px; height:34px;">They are speaking</div>
+    <div class="seg idle" style="left:381px; top:62px; width:593px; height:34px;">silent</div>
 
-    <div class="seg idle" style="left:180px; top:188px; width:236px; height:34px;"></div>
-    <div class="seg ask"  style="left:416px; top:188px; width:160px; height:34px;">asking the AI</div>
-    <div class="seg idle" style="left:576px; top:188px; width:160px; height:34px;"></div>
-    <div class="seg ask"  style="left:736px; top:188px; width:144px; height:34px;">asking again</div>
-    <div class="seg idle" style="left:880px; top:188px; width:100px; height:34px;"></div>
+    <div class="seg idle" style="left:200px; top:116px; width:198px; height:34px;"></div>
+    <div class="seg idle" style="left:398px; top:116px; width:576px; height:34px;"></div>
+    <div class="chunk" style="left:216px; top:122px; height:22px;"></div>
+    <div class="chunk" style="left:236px; top:122px; height:22px;"></div>
+    <div class="chunk" style="left:256px; top:122px; height:22px;"></div>
+    <div class="chunk" style="left:276px; top:122px; height:22px;"></div>
+    <div class="chunk" style="left:296px; top:122px; height:22px;"></div>
+    <div class="chunk" style="left:316px; top:122px; height:22px;"></div>
+    <div class="chunk" style="left:336px; top:122px; height:22px;"></div>
+    <div class="chunk" style="left:356px; top:122px; height:22px;"></div>
+    <div class="chunk" style="left:376px; top:122px; height:22px;"></div>
+    <div class="chunk" style="left:393px; top:118px; height:30px; width:5px;"></div>
 
-    <div class="seg idle" style="left:180px; top:250px; width:396px; height:34px;">empty &#8212; this is the first exchange</div>
-    <div class="seg talk" style="left:576px; top:250px; width:304px; height:34px;">the first set of four</div>
-    <div class="seg talk" style="left:880px; top:250px; width:100px; height:34px;">a fuller set</div>
+    <div class="seg gap" style="left:411px; top:170px; width:119px; height:34px;">they have stopped</div>
 
-    <div class="ann"   style="left:300px; top:306px; width:190px; height:88px;"><b>Pause 1</b>Their last words have arrived and the Silence Period has run out. Both clocks start here.</div>
-    <div class="ann w" style="left:500px; top:306px; width:150px; height:88px;"><b>They speak again</b>The holding-phrase clock stops and resets. Their words join the same turn.</div>
-    <div class="ann"   style="left:742px; top:306px; width:238px; height:88px;"><b>Pause 2</b>The app asks again, with everything they have now said, and the fuller set replaces the first one. The panel is never emptied in between.</div>
+    <div class="seg clock" style="left:200px; top:224px; width:198px; height:34px;">growing</div>
+    <div class="seg talk"  style="left:398px; top:224px; width:576px; height:34px;">So how was your weekend?</div>
+
+    <div class="seg gap"   style="left:200px; top:278px; width:198px; height:34px;">restarted by every chunk</div>
+    <div class="seg now" style="left:398px; top:278px; width:21px;  height:34px;"></div>
+    <div class="mark" style="left:384px; top:260px; width:50px; height:16px;">0.5s</div>
+    <div class="seg idle"  style="left:419px; top:278px; width:555px; height:34px;"></div>
+
+    <div class="seg idle"  style="left:200px; top:332px; width:219px; height:34px;">not running</div>
+    <div class="seg clock" style="left:419px; top:332px; width:86px;  height:34px;">2 seconds</div>
+    <div class="seg said"  style="left:505px; top:332px; width:52px;  height:34px;">spoken</div>
+    <div class="seg clock" style="left:557px; top:332px; width:417px; height:34px;">10 seconds until another</div>
+
+    <div class="seg idle" style="left:200px; top:386px; width:219px; height:34px;"></div>
+    <div class="seg ask"  style="left:419px; top:386px; width:224px; height:34px;">waiting for the AI</div>
+    <div class="seg idle" style="left:643px; top:386px; width:331px; height:34px;"></div>
+
+    <div class="seg idle" style="left:200px; top:440px; width:443px; height:34px;">nothing to read yet</div>
+    <div class="seg talk" style="left:643px; top:440px; width:138px; height:34px;">reading, choosing</div>
+    <div class="seg said" style="left:781px; top:440px; width:193px; height:34px;">your reply is spoken</div>
+
+    <div class="ann"   style="left:200px; top:500px; width:196px; height:96px;"><b>They stop talking &#8212; 4.2s</b>You hear it at once. Nothing in the app knows yet.</div>
+    <div class="ann w" style="left:408px; top:500px; width:236px; height:96px;"><b>Their last chunk lands &#8212; 4.6s</b>The Silence Period starts here, not when they stopped. Every chunk before it restarted the clock, so while they were talking it could never run out.</div>
+    <div class="ann"   style="left:656px; top:500px; width:150px; height:96px;"><b>Pause &#8212; 5.1s</b>Both clocks start, and neither waits for the other.</div>
+    <div class="ann"   style="left:818px; top:500px; width:156px; height:96px;"><b>Suggestions &#8212; 10.3s</b>About five seconds after the pause.</div>
+    <div class="ann w" style="left:200px; top:604px; width:774px; height:60px;"><b>The recognizer decides for itself that they have finished, and it tells the app. The app does not act on it.</b>The Silence Period is the user's own setting and has to behave the same whichever recognizer is in use, so the app makes its own decision from the arrival of the chunks. That row is the one thing here that is sent and deliberately not used.</div>
   </div>
 </div>
 
 <div class="fig" id="f4">
-  <p class="cap">What the Silence Period actually measures &mdash; and why the wait you feel is longer than the setting.</p>
-  <div class="fig4"><div class="tl">
-    <div class="axis"></div>
-    <div class="seg2 talk" style="left:0; width:250px;">The other person is talking</div>
-    <div class="seg2 gap"  style="left:250px; width:100px;">arriving</div>
-    <div class="seg2 gap"  style="left:350px; width:120px;">Silence Period</div>
-    <div class="seg2 ask"  style="left:470px; width:250px;">the app is asking the AI</div>
-    <div class="seg2 said" style="left:720px; width:220px;">Your reply is spoken</div>
+  <p class="cap">The same eighteen seconds when they pause and then carry on. Everything up to 5.1s is identical to Figure 3; what changes is what the two clocks and the request do about it.</p>
+  <div class="canvas" style="width:1000px; height:674px;">
+    <div class="rule" style="left:200px; top:46px; width:774px;"></div>
+    <div class="rlab" style="left:180px; top:26px; width:40px; height:16px;">0s</div>
+    <div class="rlab" style="left:395px; top:26px; width:40px; height:16px;">5s</div>
+    <div class="rlab" style="left:610px; top:26px; width:40px; height:16px;">10s</div>
+    <div class="rlab" style="left:825px; top:26px; width:40px; height:16px;">15s</div>
+    <div class="lrow" style="left:196px; top:62px; width:782px; height:34px;"></div>
+    <div class="lrow" style="left:196px; top:116px; width:782px; height:34px;"></div>
+    <div class="lrow" style="left:196px; top:170px; width:782px; height:34px;"></div>
+    <div class="lrow" style="left:196px; top:224px; width:782px; height:34px;"></div>
+    <div class="lrow" style="left:196px; top:278px; width:782px; height:34px;"></div>
+    <div class="lrow" style="left:196px; top:332px; width:782px; height:34px;"></div>
+    <div class="lrow" style="left:196px; top:386px; width:782px; height:34px;"></div>
+    <div class="lrow" style="left:196px; top:440px; width:782px; height:34px;"></div>
 
-    <div class="tick" style="left:250px; top:60px; height:96px;"></div>
-    <div class="lab" style="left:140px; top:8px; text-align:right;"><b>They stop talking</b>You hear this instantly. The app does not.</div>
+    <div class="tick" style="left:419px; top:58px; height:428px;"></div>
+    <div class="tick" style="left:475px; top:58px; height:428px;"></div>
+    <div class="tick" style="left:626px; top:58px; height:428px;"></div>
+    <div class="tick" style="left:849px; top:58px; height:428px;"></div>
 
-    <div class="tick" style="left:350px; top:170px; height:40px;"></div>
-    <div class="lab warn" style="left:262px; top:214px;"><b>Their last words arrive</b>Speech recognition runs online and reports what it heard a moment late. Nothing can change that delay, and the Silence Period only starts here.</div>
+    <div class="llab" style="left:0; top:62px; width:188px; height:34px;">The other person<span>what you hear in the room</span></div>
+    <div class="llab" style="left:0; top:116px; width:188px; height:34px;">Speech recognition<span>chunks of words arriving</span></div>
+    <div class="llab" style="left:0; top:170px; width:188px; height:34px;">Its own verdict<span>sent to the app, and ignored</span></div>
+    <div class="llab" style="left:0; top:224px; width:188px; height:34px;">The words the app has<span>chunks joined into one turn</span></div>
+    <div class="llab" style="left:0; top:278px; width:188px; height:34px;">Is this a pause?<span>the Silence Period clock</span></div>
+    <div class="llab" style="left:0; top:332px; width:188px; height:34px;">Holding phrases<span>the app's own clock</span></div>
+    <div class="llab" style="left:0; top:386px; width:188px; height:34px;">Asking the AI<span>one request per pause</span></div>
+    <div class="llab" style="left:0; top:440px; width:188px; height:34px;">You<span>reading and choosing</span></div>
 
-    <div class="tick" style="left:470px; top:60px; height:96px;"></div>
-    <div class="lab" style="left:476px; top:8px;"><b>The app calls this a pause</b>It asks the AI, and starts the holding-phrase clock.</div>
-
-    <div class="tick" style="left:540px; top:170px; height:40px;"></div>
-    <div class="lab" style="left:530px; top:214px;"><b>A holding phrase is spoken</b>Two seconds after the pause, so the wait is not silent.</div>
-
-    <div class="tick" style="left:720px; top:60px; height:96px;"></div>
-    <div class="lab" style="left:726px; top:8px;"><b>Suggestions appear</b>Typically four to eight seconds after the pause. You then read and choose.</div>
-  </div></div>
+    <div class="seg talk" style="left:200px; top:62px; width:181px; height:34px;">They are speaking</div>
+    <div class="seg idle" style="left:381px; top:62px; width:94px; height:34px;">silent</div>
+    <div class="seg talk" style="left:475px; top:62px; width:112px; height:34px;">talking again</div>
+    <div class="seg idle" style="left:587px; top:62px; width:387px; height:34px;">silent</div>
+    <div class="seg idle" style="left:200px; top:116px; width:198px; height:34px;"></div>
+    <div class="seg idle" style="left:398px; top:116px; width:77px; height:34px;"></div>
+    <div class="seg idle" style="left:475px; top:116px; width:129px; height:34px;"></div>
+    <div class="seg idle" style="left:604px; top:116px; width:370px; height:34px;"></div>
+    <div class="chunk" style="left:216px; top:122px; height:22px;"></div>
+    <div class="chunk" style="left:236px; top:122px; height:22px;"></div>
+    <div class="chunk" style="left:256px; top:122px; height:22px;"></div>
+    <div class="chunk" style="left:276px; top:122px; height:22px;"></div>
+    <div class="chunk" style="left:296px; top:122px; height:22px;"></div>
+    <div class="chunk" style="left:316px; top:122px; height:22px;"></div>
+    <div class="chunk" style="left:336px; top:122px; height:22px;"></div>
+    <div class="chunk" style="left:356px; top:122px; height:22px;"></div>
+    <div class="chunk" style="left:376px; top:122px; height:22px;"></div>
+    <div class="chunk" style="left:492px; top:122px; height:22px;"></div>
+    <div class="chunk" style="left:510px; top:122px; height:22px;"></div>
+    <div class="chunk" style="left:528px; top:122px; height:22px;"></div>
+    <div class="chunk" style="left:546px; top:122px; height:22px;"></div>
+    <div class="chunk" style="left:564px; top:122px; height:22px;"></div>
+    <div class="chunk" style="left:582px; top:122px; height:22px;"></div>
+    <div class="chunk" style="left:599px; top:118px; height:30px; width:5px;"></div>
+    <div class="seg gap" style="left:411px; top:170px; width:89px; height:34px;">stopped</div>
+    <div class="seg gap" style="left:617px; top:170px; width:89px; height:34px;">stopped</div>
+    <div class="seg clock" style="left:200px; top:224px; width:198px; height:34px;">growing</div>
+    <div class="seg talk" style="left:398px; top:224px; width:206px; height:34px;">the first sentence</div>
+    <div class="seg talk" style="left:604px; top:224px; width:370px; height:34px;">both, joined into one turn</div>
+    <div class="seg gap" style="left:200px; top:278px; width:198px; height:34px;">restarted by every chunk</div>
+    <div class="seg now" style="left:398px; top:278px; width:21px; height:34px;"></div>
+    <div class="mark" style="left:384px; top:260px; width:50px; height:16px;">0.5s</div>
+    <div class="seg idle" style="left:419px; top:278px; width:56px; height:34px;"></div>
+    <div class="seg gap" style="left:475px; top:278px; width:129px; height:34px;">restarted again</div>
+    <div class="seg now" style="left:604px; top:278px; width:22px; height:34px;"></div>
+    <div class="mark" style="left:590px; top:260px; width:50px; height:16px;">0.5s</div>
+    <div class="seg idle" style="left:626px; top:278px; width:348px; height:34px;"></div>
+    <div class="seg idle" style="left:200px; top:332px; width:219px; height:34px;">not running</div>
+    <div class="seg clock" style="left:419px; top:332px; width:56px; height:34px;">counting</div>
+    <div class="seg idle" style="left:475px; top:332px; width:151px; height:34px;">reset, nothing spoken</div>
+    <div class="seg clock" style="left:626px; top:332px; width:86px; height:34px;">counting</div>
+    <div class="seg said" style="left:712px; top:332px; width:51px; height:34px;">spoken</div>
+    <div class="seg clock" style="left:763px; top:332px; width:211px; height:34px;">10 seconds until another</div>
+    <div class="seg ask thin" style="left:419px; top:386px; width:224px; height:16px;">first request</div>
+    <div class="seg ask thin" style="left:626px; top:404px; width:223px; height:16px;">second request, with all of it</div>
+    <div class="seg idle" style="left:200px; top:440px; width:649px; height:34px;">nothing to read yet</div>
+    <div class="seg talk" style="left:849px; top:440px; width:125px; height:34px;">suggestions</div>
+    <div class="ann" style="left:200px; top:500px; width:200px; height:96px;"><b>Pause 1 &#8212; 5.1s</b>Everything to here is exactly Figure 3. Both clocks start and the app asks the AI.</div>
+    <div class="ann w" style="left:412px; top:500px; width:196px; height:96px;"><b>They start again &#8212; 6.4s</b>The holding-phrase clock is reset before it ever fires, so nothing is spoken. Their new words join the same turn.</div>
+    <div class="ann" style="left:620px; top:500px; width:180px; height:96px;"><b>Pause 2 &#8212; 9.9s</b>The app asks again, this time with the whole of what they said.</div>
+    <div class="ann" style="left:812px; top:500px; width:162px; height:96px;"><b>Suggestions &#8212; 15.1s</b>Ten seconds after the first pause, not five.</div>
+    <div class="ann w" style="left:200px; top:604px; width:774px; height:60px;"><b>The first request is not shown &#8212; it is thrown away.</b>Its answer comes back at 10.3s, by which time the app has already asked again with the fuller sentence, so the older answer is discarded rather than put on screen. That is why someone who keeps going pushes the wait out: for practical purposes the clock restarts at their last pause.</div>
+  </div>
 </div>
-
 <div class="fig" id="f5" style="padding-left:6px; padding-right:6px;">
   <p class="cap">Ending a conversation is two steps, and it can be started from either side. The branch on the right is the one people do not expect.</p>
   <div class="canvas" style="width:1040px; height:660px;">

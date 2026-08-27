@@ -22,9 +22,43 @@
  *   - Figure 2 opens out the decision the user is actually at, grouped by CONSEQUENCE
  *     rather than by which button it is - that grouping is the point, and it is what
  *     answers Ken's list.
- *   - Figure 3 shows the four concurrent tracks across a partner resumption.
- *   - Figure 4 is the first edition's pause timeline, kept unchanged.
+ *   - Figure 3 opens a single pause into EIGHT LANES.
+ *   - Figure 4 is the same eighteen seconds when the partner resumes.
  *   - Figure 5 is the closing sub-flow, including the branch that declines a closing.
+ *
+ * THIRD EDITION, August 27 2026. Ken again, on the pause timeline: "It needs to show
+ * the user, STT module, app separately. The app should be broken into the placeholder
+ * statement logic and the AI prompt logic. It should make clear that the STT is sending
+ * chunks of words and how they are bundled, when the STT module determines that the
+ * user has stopped talking and when (if) that determination is sent to the app, the
+ * different timers that start at that point. A second picture should show how that
+ * timeline changes if the partner resumes talking." And then: "the original document
+ * documented the figures at the same level of detail (not much). Ensure that you are now
+ * providing descriptive documentation that matches the detail of the figures."
+ *
+ * So the old Figure 3 (four coarse tracks) and the old Figure 4 (one pause, five bands)
+ * were BOTH replaced by the eight-lane pair, and sections 5 and 6 were rewritten to walk
+ * every lane rather than summarize the picture. The lanes are: the other person / speech
+ * recognition / its own verdict / the words the app has / the Silence Period clock /
+ * holding phrases / asking the AI / you.
+ *
+ * ⚠ THE ANSWER TO KEN'S "WHEN (IF) IS THAT DETERMINATION SENT TO THE APP" IS THE MOST
+ * IMPORTANT THING THESE FIGURES SAY, and it is counter-intuitive: BOTH recognizers make
+ * their own end-of-utterance decision and BOTH send it, and the app acts on NEITHER.
+ * Read off the code, not the design record:
+ *   - stt-deepgram.js handleMessage: speech_final is reported as ordinary final text and
+ *     the comment states the rule - "the app's own silence period decides when a turn is
+ *     over (that is a user-facing setting and must behave the same on every backend), so
+ *     both are reported as final text and neither is allowed to drive turn-taking."
+ *   - stt.js never binds onspeechend (grep count: zero). Only onresult, onend, onerror.
+ *   - resetSilenceTimer is called from afterIngest, i.e. from the ARRIVAL OF A CHUNK. So
+ *     the Silence Period is restarted by every chunk and can only run out after the last
+ *     one - which is why it can never fire mid-sentence, and why it starts later than the
+ *     moment the person actually stopped.
+ *   - generateOptions takes `const token = ++generationToken` and returns early when the
+ *     token has moved on, so a request superseded by a later pause is DISCARDED on
+ *     arrival rather than shown. Figure 4 draws that case; the note beside it says the
+ *     other case (answer back before the next pause, so it IS shown) is equally normal.
  *
  * ⚠ EVERY NUMBER AND EVERY BUTTON NAME HERE WAS READ OFF THE SHIPPED CODE, not off the
  * design record - the two have disagreed before. Checked:
@@ -242,12 +276,44 @@ const doc = new Document({
             lead(`The one that catches people out is "Ask them to repeat". `, `It sits with "Hold on" and "Repeat what I said" on the screen and it behaves like the answering group: it clears the suggestions. That is correct rather than inconsistent - the other two are things you say while you keep thinking, and asking them to repeat hands the turn back, so the suggestions on screen were built from a sentence you have just said you did not catch.`),
             lead(`Everything on that list is available at every one of those moments. `, `There is no state in which some of them are unavailable and no order they must be used in. A user can tap a choice button, then "New 4", then type something and press "Reframe", then tap "Hold on" because it is taking a while, and only then answer - and each of those loops back to the same place.`),
 
-            heading1(`5.  What Is Happening at the Same Time`),
-            para(`Three things run at once during a turn, and none of them waits for the others. That is what makes the flow hard to describe as a list of steps, and it is why the app can be filling a silence at the same moment as it is waiting for the AI and listening for the other person to start up again.`),
-            ...figure('cf-fig3.png', 1052, 498, `Figure 3 - twenty seconds of one exchange, with each track drawn separately. Read down a column to see what is going on at that instant.`),
-            para(`People do not speak in tidy turns. They pause, and carry on. The app is built around that rather than against it: every pause is a checkpoint, not an ending.`),
-            para(`If the other person starts up again, the holding phrases stop immediately and their new words are added to the same turn. At their next pause the app asks again, with everything they have said so far, and a better set of suggestions replaces the one on screen.`),
-            lead(`The rule that matters here: `, `the suggestions are never emptied and refilled. They are only ever replaced by a new set, at the moment that set is ready. There is no point at which the user is looking at an empty panel because the app is busy.`),
+            heading1(`5.  What a Pause Actually Is`),
+            para(`The Silence Period is the setting people ask about most, and it is the one most easily misread. It does not measure the silence you can hear, and the app does not simply wait for the speech recognition to say that the other person has finished. Figure 3 puts every part of it in its own lane.`),
+            ...figure('cf-fig3.png', 1052, 772, `Figure 3 - one pause, with every part in its own lane. Eighteen seconds, left to right. The vertical lines are, in order: they stop talking, their last chunk of words lands, the app declares a pause, and the suggestions arrive.`),
+            para(`Reading down the lanes:`),
+            numBold(`The other person. `, `What somebody standing in the room would hear. They speak for about four seconds and stop. Nothing else on the diagram happens at that instant, which is the first surprise: at the moment they stop talking, no part of the app knows it yet.`, "flow"),
+            numBold(`Speech recognition. `, `The service does not hand over one block of text when they finish. It sends the words back in a stream of chunks a few tenths of a second apart, each carrying what it has settled on so far. Every tick on that lane is one arrival. The heavier tick at the end is their last chunk, and it lands after they have already stopped talking, because recognition runs online and takes a moment to come back.`, "flow"),
+            numBold(`Its own verdict. `, `Both recognizers decide for themselves that the speaker has finished, and both announce it. The app does not act on it. The Silence Period belongs to the user, it is a number they can change, and it has to mean the same thing whichever recognizer is in use - so the app makes its own decision from the arrival of the chunks and treats the recognizer as a source of text and nothing else. That lane is the one thing on the diagram that is sent and deliberately not used.`, "flow"),
+            numBold(`The words the app has. `, `Each chunk is added to the ones before it, separated by a single space, so what builds up is one growing turn rather than a list of fragments. That is what appears in the Conversation Log while they are still speaking, and it is also what makes "Ask them to repeat" able to drop only the last thing they said rather than the whole turn.`, "flow"),
+            numBold(`Is this a pause? `, `This is the Silence Period clock, and the mechanism is the whole point: every arriving chunk restarts it. While somebody is talking the chunks arrive faster than the clock runs, so it can never reach the end - which is exactly what stops the app interrupting mid-sentence. The only time it runs to completion is after the last chunk, and at the default setting that takes half a second. That short solid block is the only moment on the whole diagram at which the clock actually finishes.`, "flow"),
+            numBold(`Holding phrases. `, `Not running at all until the pause. Then two seconds, then a phrase is spoken, then ten seconds before another would be due - at most two in one turn by default.`, "flow"),
+            numBold(`Asking the AI. `, `One request, sent at the same instant the holding-phrase clock starts. The two never wait for each other, and that independence is deliberate: it is why a holding phrase is still spoken when the AI is slow, failing, or has no key at all.`, "flow"),
+            numBold(`You. `, `Nothing to read until the suggestions land, typically four to eight seconds after the pause. On the very first exchange the panel is genuinely empty; on every later one it is still holding the previous set.`, "flow"),
+            emptyPara(),
+            lead(`What follows from all that. `, `The pause the other person actually experiences is longer than the number in Settings: it is the recognition delay plus the Silence Period. That delay varies with the connection and no setting can change it. So a Silence Period of half a second does not mean the app pounces half a second after somebody stops; in practice the real pause is closer to a second.`),
+            para(`It also explains a complaint that sounds like a contradiction: that the app both interrupts too eagerly and takes too long. Those are different moments. Being cut off early is the Silence Period running out while the person was only drawing breath - which happens when their chunks stop arriving for a moment, not when they have finished. The wait before suggestions appear is the AI, and the holding phrase is what covers it.`),
+            emptyPara(),
+            simpleTable([`Setting`, `Default`, `What raising it does`], [
+                [`Silence period`, `0.5 seconds`, `Gives the other person longer to pause mid-sentence without the app deciding they have finished. Costs a longer wait before suggestions start being prepared. Range 0 to 3 seconds; at 0 the app acts the moment the recognizer settles a chunk.`],
+                [`Initial delay`, `2 seconds`, `How long after the pause the first holding phrase is spoken. Raise it if the app feels quick to fill a silence; lower it if the gap feels awkward.`],
+                [`Subsequent delay`, `10 seconds`, `The gap before another holding phrase, measured from the end of the last one, if the user is still choosing.`],
+                [`Maximum per turn`, `2`, `How many holding phrases one turn may have. 0 means none at all; No limit keeps them coming.`],
+            ], W3),
+
+            heading1(`6.  When They Start Talking Again`),
+            para(`People do not speak in tidy turns. They pause, and carry on. The app is built around that rather than against it: every pause is a checkpoint, not an ending. Figure 4 is the same eighteen seconds as Figure 3, with one difference - after the first pause they start up again.`),
+            ...figure('cf-fig4.png', 1052, 772, `Figure 4 - the same lanes when the other person resumes. Everything up to the first pause is identical to Figure 3; the vertical lines are the first pause, the moment they start again, the second pause, and the suggestions finally arriving.`),
+            para(`What changes, lane by lane:`),
+            numBold(`The other person `, `speaks twice, with about a second and a half of quiet between. To them it is one thought with a breath in the middle.`, "acts"),
+            numBold(`Speech recognition `, `stops sending chunks, then starts again. Nothing in the stream marks the two bursts as separate; they are simply chunks, with a gap.`, "acts"),
+            numBold(`Its own verdict `, `says they have stopped - twice - and the first time it was wrong. That is worth noticing on its own: a recognizer that had been allowed to end the turn would have ended it in the middle of what they were saying. The app not using that signal is what makes the second burst join the first.`, "acts"),
+            numBold(`The words the app has `, `grow into one turn, not two. The second burst is appended to the first, and when the app asks the AI it sends the whole thing. This is why a partner who thinks out loud is not turned into a series of disconnected fragments.`, "acts"),
+            numBold(`Is this a pause? `, `The clock behaves exactly as before - restarted by every new chunk, and running to completion only after their last one. It finishes twice, so there are two pauses in one turn.`, "acts"),
+            numBold(`Holding phrases `, `are the visible casualty. The clock had been counting since the first pause and was a little over half a second from speaking; the moment they started again it was reset, and nothing was said. Only after the second pause does it run its two seconds through and speak. The app will not talk over somebody who has resumed.`, "acts"),
+            numBold(`Asking the AI `, `is the lane that surprises people. Two requests overlap. The first is not canceled when they start talking again - it is still out there - and it is not canceled when the second one is sent either. It is superseded: when its answer comes back at 10.3 seconds the app has already asked again with the fuller sentence, so the older answer is discarded rather than put on screen.`, "acts"),
+            numBold(`You `, `wait about ten seconds rather than about five. Not because anything went wrong, but because the clock effectively restarts at their last pause.`, "acts"),
+            emptyPara(),
+            lead(`Whether that first answer is thrown away depends purely on timing, `, `and both outcomes are normal. If it comes back before the next pause it is shown, and the fuller set replaces it a few seconds later - so the panel fills, then improves. If it comes back after the next pause, as in Figure 4, it is discarded and the panel stays as it was. Either way the user is never shown suggestions built from half a sentence while a better set is already on its way.`),
+            lead(`The rule that holds all of this together: `, `the suggestions are never emptied and refilled. They are only ever replaced by a new set, at the moment that set is ready. There is no point at which the user is looking at an empty panel because the app is busy.`),
             para(`Five things replace the set on screen, and nothing else does:`),
             bullet(`The other person said more, and paused again.`),
             bullet(`The user pressed "New 4", asking for a different set for the same turn.`),
@@ -255,23 +321,9 @@ const doc = new Document({
             bullet(`The user tapped one of the choices the other person had offered.`),
             bullet(`The kind of moment changed: the other person began saying goodbye, or asked the user to repeat themselves.`),
             para(`The suggestions clear only when something has been spoken, or when the conversation ends.`),
-            lead(`The user is never locked out while this is going on. `, `A suggestion already on screen can be tapped, an Express Panel phrase can be spoken, or the Composition Pane can be opened, at any point. Any of those abandons the set that was on its way.`),
+            lead(`The user is never locked out while any of this is going on. `, `A suggestion already on screen can be tapped, an Express Panel phrase can be spoken, or the Composition Pane can be opened, at any point. Any of those abandons the set that was on its way.`),
             emptyPara(),
-            lead(`A limitation worth knowing. `, `While a holding phrase is actually playing, the app cannot reliably tell that the other person has started talking again, because the microphone is hearing the app's own voice. Someone who cuts in mid-phrase is not noticed until it finishes. Cutting in between phrases is caught immediately.`),
-
-            heading1(`6.  Where the Waiting Goes`),
-            para(`The Silence Period is the setting people ask about most, and it is the one most easily misread. It does not measure the silence you can hear.`),
-            ...figure('cf-fig4.png', 1052, 411, `Figure 4 - one pause, laid out in time. The Silence Period starts later than you would expect.`),
-            para(`Speech recognition runs online. The other person stops talking, and a moment later the service reports what it heard. The app cannot know they have stopped until that report arrives, so the Silence Period is counted from the arrival of their last words, not from the moment they went quiet.`),
-            lead(`What follows from that. `, `The pause the other person actually experiences is longer than the number in Settings: it is the recognition delay plus the Silence Period. That delay varies with the connection and no setting can change it. So a Silence Period of half a second does not mean the app pounces half a second after someone stops; in practice the real pause is closer to a second.`),
-            para(`It also explains a complaint that sounds like a contradiction: that the app both interrupts too eagerly and takes too long. Those are different moments. Being cut off early is the Silence Period expiring while the person was only drawing breath. The wait before suggestions appear is the AI, and the holding phrase is what covers it.`),
-            emptyPara(),
-            simpleTable([`Setting`, `Default`, `What raising it does`], [
-                [`Silence period`, `0.5 seconds`, `Gives the other person longer to pause mid-sentence without the app deciding they have finished. Costs a longer wait before suggestions start being prepared. Range 0 to 3 seconds.`],
-                [`Initial delay`, `2 seconds`, `How long after the pause the first holding phrase is spoken. Raise it if the app feels quick to fill a silence; lower it if the gap feels awkward.`],
-                [`Subsequent delay`, `10 seconds`, `The gap before another holding phrase, if the user is still choosing.`],
-                [`Maximum per turn`, `2`, `How many holding phrases one turn may have. 0 means none at all; No limit keeps them coming.`],
-            ], W3),
+            lead(`One limitation worth knowing. `, `While a holding phrase is actually playing, the app cannot reliably tell that the other person has started talking again, because the microphone is hearing the app's own voice and has no way to separate the two. Somebody who cuts in mid-phrase is not noticed until it finishes. Cutting in between phrases - which is what Figure 4 shows - is caught on the very first chunk.`),
 
             heading1(`7.  The Command Bar, Button by Button`),
             para(`The Command Bar sits between the Conversation Pane and the Response Panel. Its buttons are icons with no text; the names below are what a screen reader announces, and what this document and the manual call them.`),
@@ -306,11 +358,13 @@ const doc = new Document({
             lead(`Typing does not silence the holding phrases. `, `Composing is the user deciding what to say, exactly as reading the suggestions is, and it is the slower of the two, so it is the moment the other person most needs something to listen to. The app carries on filling the silence while the user types, up to the usual limit.`),
 
             heading1(`10.  Ending a Conversation`),
-            para(`Ending a conversation is two steps, because that is how people do it, and it can be started from either side.`),
+            para(`Ending a conversation is two steps, because that is how people do it, and it can be started from either side. Figure 5 shows both routes and the point at which they join.`),
             ...figure('cf-fig5.png', 1052, 741, `Figure 5 - the closing, from both directions. The branch on the right is the one people do not expect: an offer to finish can be declined.`),
-            para(`"Wrap up" offers statements that signal the user is finishing without actually saying goodbye. Choosing one speaks it, and then the goodbyes are offered. Choosing a goodbye speaks it and offers them again, because the other person will usually say goodbye back.`),
-            para(`If the other person starts closing first, the app notices and offers the goodbyes without being asked. One of the options on offer is a way to decline the closing - "Actually, before you go" - because being able to say that at that exact moment is the whole point of noticing the closing at all. Choosing it puts the conversation back where it was, and the loop in Figure 1 carries on.`),
-            para(`"End conversation" stops listening, saves what was said, and clears the screen. The next Start begins a fresh record.`),
+            lead(`Starting it yourself. `, `"Wrap up" replaces the Response Panel with statements that signal the user is finishing without actually saying goodbye - I should get going, it has been good talking to you. Nothing is said by pressing the button, and pressing it again puts back exactly what it covered, so a mis-hit costs nothing. Choosing one speaks it, and the goodbyes are then offered by themselves.`),
+            lead(`When they start it. `, `A closing rarely begins with the word goodbye. It begins with something almost empty - anyway, so, right, I should let you go, see you Tuesday - and the app is looking for exactly that. When it recognizes one, it offers the goodbyes without being asked, so the user does not have to find the button while the other person is already leaving.`),
+            lead(`Declining a closing. `, `On that branch, and only on that branch, one of the cards is a way not to finish: Actually, before you go. It is offered only when the other person started the closing, because that is the one moment at which declining is the natural thing to say - and without it the user's only options at that moment would be to say goodbye or to leave the palette entirely. Choosing it abandons the closing and puts the conversation back where it was, and the loop in Figure 1 carries on as though nothing had happened.`),
+            lead(`Saying goodbye. `, `Choosing a goodbye speaks it and then offers the goodbyes again, because the other person will usually say goodbye back and the user will want to answer. If none of the offered farewells fits, "New 4" pages through the rest of the list rather than asking the AI for more - these are the user's own phrases, edited in Settings, not generated ones.`),
+            lead(`Finishing. `, `"End conversation" stops listening, saves what was said, and clears the screen. The next Start begins a fresh record. It can be pressed at any point, including instead of any of the above.`),
 
             heading1(`11.  When Something Goes Wrong`),
             para(`Everything above assumes the parts are working. What the user actually sees when they are not:`),
