@@ -181,7 +181,7 @@
                 <div class="settings-tab" data-tab="conversation">Conversation</div>
                 <div class="settings-tab" data-tab="placeholders">Placeholders</div>
                 <div class="settings-tab" data-tab="practice">Practice</div>
-                <div class="settings-tab" data-tab="express">Express Panel</div>
+                <div class="settings-tab" data-tab="express">Express Panel and Keyboard</div>
                 <div class="settings-tab" data-tab="controls">Controls</div>
                 <div class="settings-tab" data-tab="keyguard">Keyguard Design</div>
                 <div class="settings-tab" data-tab="troubleshooting">Troubleshooting</div>
@@ -819,6 +819,11 @@
                             <button id="sendProblemReportBtn" type="button">Send</button>
                             <button id="saveProblemReportBtn" type="button">Save to a file</button>
                             <button id="copyProblemReportBtn" type="button">Copy</button>
+                            <!-- Clear empties the note only. It is LAST, away from
+                                 Send, because the two are adjacent in consequence:
+                                 losing a report you have just typed is exactly what
+                                 this population cannot easily redo. -->
+                            <button id="clearProblemNoteBtn" type="button">Clear</button>
                         </div>
                         <!-- Shown only once Send has been tapped. The report carries
                              transcripts of any conversation that hit an error, so the

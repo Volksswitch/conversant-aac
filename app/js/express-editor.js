@@ -399,25 +399,48 @@ function flexSection(composed) {
 
         // What has already been made. Without it there is no screen anywhere that says
         // which situations exist, and after a month there may be fifteen.
+        //
+        // ⚠ A DROPDOWN, NOT A ROW OF BUTTONS (Ken, August 26 2026). It was one button
+        // per situation, which is fine at three and unusable at fifteen: the buttons
+        // are full-height touch targets, so the list grew DOWNWARD without limit and
+        // pushed the phrases it exists to serve off the bottom of the tab. A dropdown
+        // is one row whatever the count. The cost is that you can no longer see every
+        // situation at a glance - accepted, because the thing you actually do with this
+        // list is pick one, and a dropdown does that in the same number of taps.
         const made = expressPanel.flexSituations();
         if (made.length) {
             const box = el('div', 'ee-situations');
             box.appendChild(el('span', 'ee-scope-lead', 'Already set up:'));
-            made.map((key) => ({ key, ...parseFlexKey(key) }))
-                .sort((a, b) => nameOf(a).localeCompare(nameOf(b)))
-                .forEach(({ key, partnerId, placeId }) => {
-                    const b = mkBtn(situationName(partnerId, placeId), 'ee-situation', () => {
-                        flexPartner = partnerId; flexPlace = placeId; render();
-                    });
-                    if (partnerId === flexPartner && placeId === flexPlace) b.classList.add('ee-situation-on');
-                    box.appendChild(b);
-                });
+            const entries = made.map((key) => ({ key, ...parseFlexKey(key) }))
+                .sort((a, b) => nameOf(a).localeCompare(nameOf(b)));
+            const sel = document.createElement('select');
+            sel.className = 'ee-situation-pick';
+            sel.setAttribute('aria-label', 'Jump to a situation you have already set up');
+            entries.forEach(({ key, partnerId, placeId }) => {
+                const o = document.createElement('option');
+                o.value = key;
+                o.textContent = situationName(partnerId, placeId);
+                if (partnerId === flexPartner && placeId === flexPlace) o.selected = true;
+                sel.appendChild(o);
+            });
+            sel.addEventListener('change', () => {
+                const { partnerId, placeId } = parseFlexKey(sel.value);
+                flexPartner = partnerId; flexPlace = placeId;
+                render();
+            });
+            box.appendChild(sel);
+            // ⚠ THE DELETE MOVED HERE, BESIDE THE THING IT DELETES, and shrank to an X.
+            // As a full-width "Delete this situation" button in the toolbar it sat next
+            // to "Add a phrase" - two adjacent targets, one of which removes every
+            // phrase for the situation. Beside the dropdown it reads as "remove the one
+            // named here", which is what it does.
+            box.appendChild(mkBtn('✕', 'ee-situation-del', deleteSituation,
+                'Delete every phrase for the situation shown'));
             body.appendChild(box);
         }
 
         body.appendChild(toolbar('flex', [
             mkBtn('Add a phrase', 'ee-add', () => addPhrase('flex')),
-            mkBtn('Delete this situation', 'ee-reset', deleteSituation),
         ]));
         const list = el('div', 'ee-list');
         const items = bandList('flex');
@@ -525,9 +548,13 @@ export function render() {
     const composed = composePanel(layoutRowsFn(), expressPanel.getModel(),
         { partnerId: null, placeId: null });
 
+    // ⚠ THE SAME ORDER AS THE BANDS ON SCREEN: Always, Context, Flex (Ken, August 26
+    // 2026). The editor listed Flex second, so the tab read in a different order from
+    // the panel sitting beside it - and the panel is the thing the user is looking at
+    // while they edit. Reading down the tab should walk down the panel.
     container.appendChild(alwaysSection(composed));
-    container.appendChild(flexSection(composed));
     container.appendChild(contextSection(composed));
+    container.appendChild(flexSection(composed));
     // ⚠ A SCOPE NAME OF ITS OWN, NOT THE TAB'S. sections.js remembers which sections
     // are open by POSITION within a named scope, and the Express tab registers its own
     // sections under the tab name - so with both called "express", the tab's second
