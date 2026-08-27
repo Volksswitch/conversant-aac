@@ -37,6 +37,7 @@ import * as tts from './tts.js';
 let container = null;
 let onChangeCb = null;
 let onPickCb = null;
+let onAutoFocusCb = null;
 let layoutRowsFn = () => [];
 
 // The row the user last tapped — in the panel or in a list. It STAYS marked until
@@ -56,6 +57,7 @@ export function init(el, opts = {}) {
     container = el;
     onChangeCb = opts.onChange || null;
     onPickCb = opts.onPick || null;
+    onAutoFocusCb = opts.onAutoFocus || null;
     if (typeof opts.layoutRows === 'function') layoutRowsFn = opts.layoutRows;
 }
 
@@ -124,7 +126,13 @@ function addPhrase(band) {
     saveBand(band, list);
     render();
     const inp = container && container.querySelector('.ee-row-picked input');
-    if (inp) inp.focus();
+    if (inp) {
+        // Say so BEFORE focusing: focusing raises the on-screen keyboard synchronously,
+        // and the rebuild above has already queued the <details> toggle that would
+        // otherwise put the panel back over it one tick later (see syncExpressTabDock).
+        if (onAutoFocusCb) onAutoFocusCb();
+        inp.focus();
+    }
 }
 
 function addContext(type) {

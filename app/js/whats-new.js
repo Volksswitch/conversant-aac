@@ -21,6 +21,9 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.8.3": [
+    "Fixed: the on-screen keyboard did not appear when you added a phrase to the Express Panel. Pressing Add a phrase put the cursor in the new box, but the panel stayed in front of you instead of the keyboard, so there was no way to type until you tapped outside the box and back in again. It now comes up straight away, in every band. Only affects people using the app's own on-screen keyboard."
+  ],
   "0.8.2": [
     "\"Wind down\" is now called \"Wrap up\", and you can change your mind. Pressing it shows the wind-down statements as before, but the button now stays lit while they are showing, and pressing it a second time puts back whatever was on screen. Nothing is spoken either way. Before, a tap you did not mean left you with no way back that did not either say something or end the conversation. To page through a different set of wind-downs, use the New 4 button, which already pages the openers and goodbyes.",
     "\"Start conversation\" no longer ends the conversation you are in the moment you press it. The openers appear and the button stays lit; press it again and you are back where you were, with the conversation untouched. The conversation you were having ends only when you actually choose an opener — which is the moment the new one begins. This means an accidental press costs you nothing, and you can look at the openers while deciding whether you really want to start again.",

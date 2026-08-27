@@ -530,6 +530,11 @@ function initApp() {
     expressEditor.init(document.getElementById('expressEditor'), {
         onChange: renderExpressPanel,
         onPick: renderExpressPanel,   // the mark lives on the panel, so a pick redraws it
+        // The editor moved the caret into a box it just built, so the user is typing
+        // and the dock must stay on the keyboard -- see syncExpressTabDock. Cleared by
+        // the next tap on the tab, which is the next thing that could legitimately ask
+        // for the panel back.
+        onAutoFocus: () => { expressAutoFocusedBox = true; },
         // The editor needs the live grid to say where the panel runs out, which is
         // what the cut line in each list reports.
         layoutRows: expressLayoutRows,
@@ -4001,11 +4006,34 @@ function handleSettingsTab(tabName) {
  * obvious way out is the failure this is fixing. The keyboard's own Hide icon remains
  * the manual override, and opening any other section puts the panel back.
  */
+let expressAutoFocusedBox = false;
+
 function syncExpressTabDock() {
     const grid = document.querySelector('#settingsDialog [data-help="expressKeyboard"] details');
     const wantKeyboard = !!(grid && grid.open) && storage.loadKeyboardMode() === 'onscreen';
-    if (wantKeyboard) keyboard.previewShow(storage.loadKeyboardDock());
-    else keyboard.hideKeyboard();
+    if (wantKeyboard) { keyboard.previewShow(storage.loadKeyboardDock()); return; }
+    // ⚠ EXCEPT WHEN THE EDITOR HAS JUST PUT THE CARET IN A NEW BOX ITSELF. "Add a
+    // phrase" rebuilds the editor, and rebuilding re-creates the <details> elements,
+    // so restoring their open state fires `toggle` -- which lands here on the very
+    // next tick and took the keyboard straight back down again, one tick after Add
+    // had raised it (Ken, August 27 2026: "the Express Panel is still displayed
+    // rather than the keyboard... if I click outside of the box and then back in,
+    // the keyboard appears" -- clicking back in works precisely because nothing
+    // rebuilds, so no toggle fires).
+    //
+    // ⚠ THE SIGNAL IS THE EDITOR SAYING SO, NOT A READ OF WHERE FOCUS IS. Reading
+    // live focus looks equivalent and is not: a tap on a section heading is supposed
+    // to put the panel back, and whether that tap has moved focus off the box yet is
+    // a browser detail we would then be depending on. An explicit one-shot answers
+    // the only question that matters -- "did the app itself just move the caret?" --
+    // and a heading tap can never set it.
+    // NOT consumed on read: one rebuild fires SEVERAL toggles (opening a section
+    // closes the others, and each of those is its own event), so a one-shot was eaten
+    // by the first and the second still hid the keyboard. It is cleared by the next
+    // pointerdown instead, which is deterministic -- no reliance on which queued task
+    // runs first -- and is exactly the moment the user could be asking for the panel.
+    if (expressAutoFocusedBox) return;
+    keyboard.hideKeyboard();
 }
 
 /**
@@ -4060,6 +4088,10 @@ function keepDropdownsOpeningDownward(scroller) {
 
 function wireExpressTabDockBackstop(panel) {
     panel.addEventListener('pointerdown', (e) => {
+        // Any tap ends the "the editor just moved the caret here" exemption, whatever
+        // the tap turns out to be -- cleared before the early returns below so a tap
+        // that keeps the keyboard up still cancels it.
+        expressAutoFocusedBox = false;
         const t = e.target instanceof Element ? e.target : null;
         if (!t) return;
         if (t.closest('#expressEditor input, #expressEditor textarea')) return;  // they ARE typing

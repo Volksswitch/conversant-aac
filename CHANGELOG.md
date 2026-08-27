@@ -26,6 +26,12 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- **Fixed: the on-screen keyboard did not appear when you added a phrase to the Express
+  Panel.** Pressing **Add a phrase** put the cursor in the new box, but the panel stayed
+  in front of you instead of the keyboard, so there was no way to type until you tapped
+  outside the box and back in again. It now comes up straight away, in every band. Only
+  affects people using the app's own on-screen keyboard.
+
 ## Version 0.8.2
 
 - **"Wind down" is now called "Wrap up", and you can change your mind.** Pressing it
