@@ -26,6 +26,54 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.8.2
+
+- **"Wind down" is now called "Wrap up", and you can change your mind.** Pressing it
+  shows the wind-down statements as before, but the button now stays lit while they are
+  showing, and pressing it a second time puts back whatever was on screen. Nothing is
+  spoken either way. Before, a tap you did not mean left you with no way back that did
+  not either say something or end the conversation. To page through a different set of
+  wind-downs, use the **New 4** button, which already pages the openers and goodbyes.
+
+- **"Start conversation" no longer ends the conversation you are in the moment you press
+  it.** The openers appear and the button stays lit; press it again and you are back
+  where you were, with the conversation untouched. The conversation you were having ends
+  only when you actually choose an opener — which is the moment the new one begins. This
+  means an accidental press costs you nothing, and you can look at the openers while
+  deciding whether you really want to start again.
+
+- **"Hold on" now says one of your own placeholder phrases.** It used to say one fixed
+  sentence of its own, edited in a different place from the phrases the app says by
+  itself — two lists saying the same kind of thing. Now it draws on the same list and
+  follows the same rule, so it will not repeat the phrase the app has just used. Because
+  of that, the "Hold on" phrase has gone from **Settings → Controls**: the words to edit
+  are the placeholder ones, on the **Placeholders** tab.
+
+- **The marks that tell partner, place and feeling buttons apart are easier to see.** The
+  feeling mark was a diamond, which at that size is a rotated square and looked much like
+  the circle used for a partner. It is now a square: round, pointed and flat-sided are as
+  different as three small shapes get.
+
+- **Setting up the Express Panel reads the way the panel looks.** The tab is now called
+  **Express Panel and Keyboard**, and its sections are in the same order as the bands on
+  screen — Always, then Context, then Flex. In the Flex section, the situations you have
+  already set up are a drop-down list rather than a row of buttons, so a long list no
+  longer pushes the phrases off the bottom of the tab, and the **✕** beside it deletes
+  the situation shown.
+
+- **"Report a problem" has a Clear button.** It empties the box you describe the problem
+  in, and asks first, so a stray tap cannot lose what you have written.
+
+- **Fixed: the buttons showing the choices your partner offered now appear where the
+  panel says they will.** The Context band reserves its last few places for them and
+  says so in faint lettering. If you had given the Flex band any size, the choices were
+  landing on Flex phrases instead, while those reserved places sat unused.
+
+- **Fixed: the app copes better with a connection that is working badly rather than not
+  at all.** If the website is reachable but slow or in trouble, the app now falls back to
+  the copy saved on your device instead of waiting indefinitely or showing an error page
+  where the app should be. A completely absent connection already worked and is unchanged.
+
 - **The feeling box is a plain text box now, and looks like one.** It used to show a
   pull-down arrow at the end without being a pull-down, which is confusing. Type
   whatever word best describes how you are — **dog tired**, **stretched thin**,
