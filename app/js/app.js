@@ -110,6 +110,16 @@ let tour = null;
 // Raw, combined speech-to-text for the partner's current (uncommitted) turn.
 // Grows across silence periods until the user picks a response.
 let currentPartnerText = '';
+/* Words in the partner's turn the model suspects the recognizer got wrong, from the
+ * most recent generation for THIS turn (llm `heard_uncertain`). Recorded onto the
+ * saved turn when it is committed, so the weekly report can say how often the
+ * microphone is struggling -- and, because turns carry who and where, whether it
+ * struggles more with a particular person or in a particular room.
+ *
+ * Overwritten rather than accumulated: each pause re-sends the FULLER utterance, so
+ * the latest answer is about the whole turn and the earlier ones are about fragments
+ * of it. Cleared wherever currentPartnerText is. */
+let currentPartnerUncertain = [];
 // The alternatives the partner has on the table right now ("mild","moderate",
 // "severe") — from the classification's offered_options. They fill the Express
 // Panel's reserved choice cells so the user can ask for the full four-response
@@ -303,16 +313,21 @@ function flushLivePartnerToHistory() {
 // (a mid-turn user command), update that entry in place (preserving its position
 // before the intervening user turn); otherwise append it. Returns its index; clears
 // the promoted-turn tracker.
-function placePartnerTurn(raw, uncleaned) {
+/* ⚠ NO "uncleaned" FLAG ON A COMMITTED TURN ANY MORE. It used to mark a turn the AI
+ * had not tidied, in blue italics -- a real distinction while some turns were tidied
+ * and some were not. Nothing is tidied now, so it would have been true of every turn
+ * and would have read as "every line of this conversation is degraded". The live
+ * turn keeps its own 'uncleaned' state, which means something different and still
+ * holds: the AI is unreachable RIGHT NOW. */
+function placePartnerTurn(raw) {
     if (pendingPartnerHistoryIdx >= 0 && conversationHistory[pendingPartnerHistoryIdx]) {
         const idx = pendingPartnerHistoryIdx;
         conversationHistory[idx].text = raw;
-        conversationHistory[idx].uncleaned = uncleaned;
         pendingPartnerHistoryIdx = -1;
         return idx;
     }
     pendingPartnerHistoryIdx = -1;
-    conversationHistory.push({ role: 'partner', text: raw, uncleaned });
+    conversationHistory.push({ role: 'partner', text: raw });
     return conversationHistory.length - 1;
 }
 
@@ -1134,6 +1149,7 @@ function startFreshListening() {
     metrics.turnBoundary();
     metrics.conversationStarted({ practice: practiceMode });
     currentPartnerText = '';
+    currentPartnerUncertain = [];
     setOfferedChoices([]);   // a new partner turn — last turn's choices are gone
     setOfferedRange(null);
     clearTurnSteering();
@@ -1217,9 +1233,8 @@ async function generateOptions(partnerText) {
     // shorter turn is dropped rather than silently shaping the new palette.
     clearTurnSteering();
 
-    // Generate from prior committed turns plus the partner's current
-    // (provisional, uncleaned) speech — the transcript is cleaned only once, at
-    // the end, when the user selects a response.
+    // Generate from prior committed turns plus what the partner has said so far in
+    // this one. All of it is the recognizer's own wording; nothing rewrites it.
     const history = [...conversationHistory, { role: 'partner', text: partnerText }];
 
     // Inject the current worldview profile so the assistant speaks AS the user.
@@ -1330,6 +1345,13 @@ async function generateOptions(partnerText) {
         // call so those cards show real, speakable text (re-speak is already in hand).
         if (snap.mode === engine.MODE.REPAIR_OF_SELF) prefetchRepairOptions(token);
 
+        // Which of the partner's words the model would not swear to. Recorded, not
+        // acted on: it does not change the responses (the model answers the turn as it
+        // best understands it either way) and nothing is shown to the user yet. Its
+        // job for now is to say how well the microphone is doing -- see the note in
+        // usage-summary on what this measure can and cannot see.
+        currentPartnerUncertain = Array.isArray(result.heardUncertain) ? result.heardUncertain : [];
+
         // Record facts the model lacked — drives the questionnaire's "suggested
         // next." Open gaps only; recordGaps drops answered/declined keys.
         if (result.missingFacts && result.missingFacts.length) {
@@ -1347,12 +1369,12 @@ async function generateOptions(partnerText) {
         placeholders.stop();
         // The AI is unreachable, so it can neither suggest responses NOR tidy the
         // transcript. Keep the partner's raw words visible, marked blue/italic
-        // (state 'uncleaned'), so the user can read them and reply with the Express
-        // Panel / "In my own words" — those commit + save on top of this (the red
-        // wash from logError flags the hiccup). Nothing is committed here: when the
-        // user replies, the partner turn is committed uncleaned via
-        // commitExchange({cleanup:false}), so the words aren't duplicated and none
-        // are lost if the partner keeps talking. Try again retries the same turn.
+        // (state 'uncleaned' on the LIVE turn), so the user can read them and reply
+        // with the Express Panel / "In my own words" — those commit + save on top of
+        // this (the red wash from logError flags the hiccup). Nothing is committed
+        // here: when the user replies the partner turn is committed like any other, so
+        // the words aren't duplicated and none are lost if the partner keeps talking.
+        // Try again retries the same turn.
         updatePartnerLive(partnerText);
         ui.setTranscriptState('uncleaned');
         ui.showResponseError('AI is unavailable — reply using the Express Panel or “In my own words.” The partner\'s words are shown above.', () => generateOptions(partnerText));
@@ -1429,6 +1451,7 @@ async function handleResponseSelected(response, index) {
         stt.resetTranscript();
     }
     currentPartnerText = '';
+    currentPartnerUncertain = [];
 
     ui.setStatus('Speaking...');
     await speakUserStatement(response.text);
@@ -1493,6 +1516,7 @@ function offerClosings() {
     // rule already in force. (Ken, August 7 2026.)
     if (!practiceMode && manualListenArmed && storage.loadAutoRelisten()) {
         currentPartnerText = '';
+        currentPartnerUncertain = [];
         generationToken++;
         ui.setLiveTranscript('');
         ui.setTranscriptState('idle');
@@ -1561,6 +1585,7 @@ async function handleRepairOfSelf(response) {
 
     const raw = currentPartnerText; // the partner's repair-initiator turn ("What?")
     currentPartnerText = '';
+    currentPartnerUncertain = [];
 
     ui.setStatus('Speaking...');
     await speakUserStatement(text);
@@ -1572,9 +1597,9 @@ async function handleRepairOfSelf(response) {
 
     // Log the partner's repair initiation and the user's restated turn. The
     // partner's "What?" was already written at its pause, so finalize that pending
-    // entry (raw, no cleanup) rather than appending a duplicate.
+    // entry rather than appending a duplicate.
     if (raw) {
-        placePartnerTurn(raw, false);   // in place if promoted mid-turn, else append
+        placePartnerTurn(raw);   // in place if promoted mid-turn, else append
         const h = storage.detachPendingPartnerTurn();
         storage.finalizePartnerTurn(h, { rawTranscript: raw, cleanedTranscript: raw });
     }
@@ -1586,17 +1611,17 @@ async function handleRepairOfSelf(response) {
 }
 
 // Commit the partner turn (it feeds context for future turns) followed by the
-// user's response. The user's spoken words are rendered to the transcript
-// IMMEDIATELY (Ken, June 29 2026 — they were lagging several seconds behind the
-// speech because we awaited the partner-transcript cleanup round-trip first); the
-// partner turn is shown with its raw text at once and quietly upgraded to the
-// cleaned text when that round-trip returns. `raw` may be empty (openers /
-// closers have no captured partner turn).
+// user's response. `raw` may be empty (openers / closers have no captured partner
+// turn).
 //
-// `opts.cleanup` (default true): run the AI transcript-cleanup pass on the partner
-// text. Set FALSE for the interruption case — when the user cuts the partner off
-// with an instant statement, we just record what we heard verbatim; there's no
-// completed utterance to clean and no point spending an AI call on a fragment (Ken).
+// ⚠ THE PARTNER'S WORDS ARE RECORDED AS HEARD. There used to be a second AI request
+// here that rewrote them into readable prose; it was removed on August 27 2026
+// because of WHEN it ran -- after the user had already chosen a response, so it could
+// never improve the suggestions for the turn it tidied, while it could quietly
+// rewrite something that had been right. The reasoning is in full above
+// llm.generateResponses. What survives of it is `heard_uncertain`, which reports the
+// same judgment instead of acting on it, inside the request that was going out
+// anyway.
 /**
  * What the synthesiser was actually handed, when that differs from the words shown.
  * Two layers can move it: an Express phrase carrying its own spoken form, and a name
@@ -1613,7 +1638,7 @@ function spokenFormFor(displayText, spokenOverride) {
 }
 
 async function commitExchange(raw, userText, index, opts = {}) {
-    const { cleanup = true, spokenText = null, decideMs = null } = opts;
+    const { spokenText = null, decideMs = null } = opts;
     // The user has taken the floor, so the partner's turn — and any choices it put
     // on the table, and any steering of it — is done. Shared by every path that
     // commits a user turn (response pick, Express phrase, composer, repair-of-self).
@@ -1621,17 +1646,10 @@ async function commitExchange(raw, userText, index, opts = {}) {
     setOfferedRange(null);
     clearTurnSteering();
     dropHeldForComposer();
-    // Snapshot the history BEFORE this exchange — that's the context the cleanup
-    // pass should see (it shouldn't include the turn it's cleaning).
-    const cleanupContext = [...conversationHistory];
-
-    let partnerIdx = -1;
     if (raw) {
-        // cleanup:false means the AI never tidied this turn (interruption fragment,
-        // or AI unreachable) — flag it so the transcript renders it raw (blue/italic).
-        // placePartnerTurn updates the entry in place if it was already promoted by a
-        // mid-turn user command (so it stays before that command), else appends it.
-        partnerIdx = placePartnerTurn(raw, !cleanup);
+        // Updates the entry in place if it was already promoted by a mid-turn user
+        // command (so it stays before that command), else appends it.
+        placePartnerTurn(raw);
     }
     conversationHistory.push({ role: 'user', text: userText });
     // Render the running transcript (user turn visible now) and clear the live turn.
@@ -1671,39 +1689,29 @@ async function commitExchange(raw, userText, index, opts = {}) {
         place: placeStamp(),
     };
 
-    if (raw && cleanup) {
-        // The partner's raw turn is already in the transcript (written at each
-        // pause). Detach it so a resumed partner turn can't overwrite it, write the
-        // USER turn to the transcript immediately (Ken — no longer waiting on the
-        // cleanup round-trip), then clean the partner text in the background and
-        // finalize its entry in place (fills the cleaned line) when it returns.
+    if (raw) {
+        // Finalize the partner entry FIRST, then write the user turn, so the file keeps
+        // partner-then-user order whether or not a pause had already written the
+        // partner line: with a handle the entry is updated in place at its existing
+        // position, without one it is appended and must land before the user's turn.
         const stamp = partnerStamp();
-        const partnerHandle = storage.detachPendingPartnerTurn();
-        storage.logUserResponse(userLog);
-        (async () => {
-            let cleaned = raw;
-            // Whether the tidy-up actually happened, so the saved turn can say so --
-            // it is the difference between "the call changed nothing" and "no call was
-            // made", which the two wordings alone cannot tell apart. A throw leaves it
-            // false: nothing was tidied. See transcript-log.finalizePartner.
-            let didClean = false;
-            try { cleaned = await llm.cleanupTranscript(raw, cleanupContext); didClean = true; }
-            catch (err) { storage.logError('cleanupTranscript', err.message); /* fall back to raw */ }
-            if (conversationHistory[partnerIdx]) {
-                conversationHistory[partnerIdx].text = cleaned;
-                ui.renderConversation(conversationHistory);
-            }
-            await storage.finalizePartnerTurn(partnerHandle, { rawTranscript: raw, cleanedTranscript: cleaned, partner: stamp, cleaned: didClean });
-        })();
-    } else if (raw) {
-        // Interruption case: record the partner's raw heard text as-is, no AI
-        // cleanup (Ken). Finalize the partner entry (its cleaned line = raw), THEN
-        // write the user turn, so the transcript keeps partner-then-user order —
-        // whether or not a pause had already written the partner line.
-        const stamp = partnerStamp();
+        const placeAt = placeStamp();
+        const uncertain = currentPartnerUncertain;
         const partnerHandle = storage.detachPendingPartnerTurn();
         (async () => {
-            await storage.finalizePartnerTurn(partnerHandle, { rawTranscript: raw, cleanedTranscript: raw, partner: stamp });
+            await storage.finalizePartnerTurn(partnerHandle, {
+                rawTranscript: raw,
+                // Kept equal to the raw wording, and kept as a field: every reader of
+                // an older conversation still expects it, and files written while the
+                // tidy-up existed genuinely differ. Nothing writes a different value.
+                cleanedTranscript: raw,
+                partner: stamp,
+                // Where they were, so hearing trouble can be read per room and not only
+                // per person. Already stamped on the user's side of the exchange; the
+                // partner's side is the half that says how well they were heard.
+                place: placeAt,
+                uncertain,
+            });
             await storage.logUserResponse(userLog);
         })();
     } else {
@@ -2071,6 +2079,7 @@ async function terminateConversation() {
     stt.resetTranscript();
     generationToken++;                 // invalidate any in-flight generation
     currentPartnerText = '';
+    currentPartnerUncertain = [];
     setOfferedChoices([]);
     setOfferedRange(null);
     clearTurnSteering();
@@ -2090,7 +2099,7 @@ async function terminateConversation() {
     // Finalize the pending partner turn (if any) in the CURRENT <id>.json, THEN
     // reset the id. Ordered/awaited so the write lands in this conversation's file,
     // not the next one's, and done BEFORE the privacy re-seed below so it uses THIS
-    // conversation's save setting. Finalized raw (no AI cleanup round-trip) — a
+    // conversation's save setting. Finalized as heard — a
     // dangling turn with no user reply isn't a completed exchange, and raw keeps
     // the flush fast so it can't race the id reset. `heardPartnerText()` may hold
     // speech captured since the last pause, so prefer it over the pending entry's
@@ -2513,6 +2522,7 @@ async function handlePardon() {
     finalizePendingPartnerTurn();
     stt.resetTranscript();
     currentPartnerText = '';
+    currentPartnerUncertain = [];
     pendingPartnerHistoryIdx = -1;
     ui.setTranscriptState('idle');
     ui.setStatus(isListening ? 'Listening...' : 'Ready');
@@ -2901,6 +2911,7 @@ async function speakAsUserTurn(historyText, spokenText = historyText, source = '
     const raw = heardPartnerText();
     stt.stopListening();
     currentPartnerText = '';
+    currentPartnerUncertain = [];
 
     ui.setStatus('Speaking...');
     clearPalette();               // any AI palette shown is now stale
@@ -2910,8 +2921,8 @@ async function speakAsUserTurn(historyText, spokenText = historyText, source = '
     // during the speech, so there's no pre-text preview.
     engine.selectResponse({ text: historyText });
     ui.showEngineState(engine.getSnapshot());
-    // Interruption: record the partner's raw heard text verbatim, no AI cleanup (Ken).
-    await commitExchange(raw, historyText, -1, { cleanup: false, spokenText });
+    // Interruption: the partner's heard text is recorded verbatim, like every turn.
+    await commitExchange(raw, historyText, -1, { spokenText });
 
     // The user has spoken and a reply is coming, so the mic has to be open to catch
     // it. Opening a conversation this way is the same act as selecting an opener, so
@@ -4383,27 +4394,6 @@ async function renderUsageSummary() {
     view.scrollTop = 0;
 }
 
-/* The before-and-after wordings, on screen and nowhere else.
- *
- * ⚠ NOT ADDED TO buildProblemReportText, AND THAT IS THE POINT OF IT BEING SEPARATE.
- * The counts in the summary above answer "is the tidy-up doing anything", which is
- * what can be judged at a distance; "was this rewrite an improvement" needs the
- * wording, and the wording is what the other person said. They never agreed to
- * anything and cannot be asked, so it stays here for a person to read. It reaches us
- * only if the tester deliberately attaches a saved conversation. */
-async function renderCleanupSamples() {
-    const view = document.getElementById('cleanupSamplesView');
-    if (!view) return;
-    try {
-        view.value = usageSummary.formatCleanupSamples(
-            usageSummary.cleanupSamples(await storage.listConversationLogs()));
-    } catch (e) {
-        view.value = `Could not read the saved conversations.
-${e && e.message ? e.message : e}`;
-    }
-    view.scrollTop = 0;
-}
-
 async function renderSystemInfo() {
     const view = document.getElementById('systemInfoView');
     if (!view) return;
@@ -4436,7 +4426,6 @@ function renderWeeklyReport() {
 function renderTroubleshooting() {
     renderErrorLog();
     renderUsageSummary();
-    renderCleanupSamples();
     renderSystemInfo();
     renderWeeklyReport();
 }

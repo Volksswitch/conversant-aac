@@ -52,7 +52,6 @@ export function renderConversation(history) {
         div.className = `turn turn-${t.role === 'partner' ? 'partner' : 'user'}`;
         // A partner turn recorded without the AI cleanup pass (AI unreachable, or an
         // interruption fragment) is marked raw — blue/italic.
-        if (t.uncleaned) div.classList.add('turn-uncleaned');
         div.textContent = t.text;
         transcriptLog.appendChild(div);
     });

@@ -8,8 +8,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
-import { summarize, formatSummary, summarizePersonalization, cleanupSamples, formatCleanupSamples } from '../app/js/usage-summary.js';
+import { summarize, formatSummary, summarizePersonalization } from '../app/js/usage-summary.js';
 
 const at = (iso) => new Date(iso).toISOString();
 const partner = (iso, extra = {}) => ({ timestamp: at(iso), role: 'partner', rawTranscript: 'hello', cleanedTranscript: 'Hello.', ...extra });
@@ -353,110 +352,90 @@ test('the error count says which period it covers', () => {
     assert.match(formatSummary(s), /Errors since you began\s+1/);
 });
 
-/* ── Is the tidy-up earning its round trip? (Ken, August 26 2026) ──────────────
+/* ── How well did it hear them? (Ken, August 27 2026) ──────────────────────────
  *
- * Every committed exchange makes a SECOND AI request to rewrite what the recognizer
- * heard. Ken's question was how many of those do more than adjust capitalization and
- * punctuation, because only those needed an AI at all.
+ * The tidy-up pass was removed; the suggestions request now names the words it
+ * suspects were misheard, and those are recorded on the turn. This is a rough read on
+ * recognition quality, readable per person and per place.
  */
 
-const heard = (iso, raw, cleanedText, extra = {}) => ({
-    timestamp: at(iso), role: 'partner', rawTranscript: raw, cleanedTranscript: cleanedText, ...extra,
+const heard = (iso, raw, extra = {}) => ({
+    timestamp: at(iso), role: 'partner', rawTranscript: raw, cleanedTranscript: raw, ...extra,
 });
 
-test('tidy-up: the three buckets are told apart', () => {
+test('hearing: turns carrying a doubted word are counted, as turns and as words', () => {
     const s = summarize([conv('a', [
-        heard('2026-08-20T10:00:00Z', 'Hello.', 'Hello.'),                       // none
-        heard('2026-08-20T10:01:00Z', 'hello there', 'Hello there.'),            // punctuation
-        heard('2026-08-20T10:02:00Z', 'i sore him yesterday', 'I saw him yesterday.'), // words
+        heard('2026-08-27T10:00:00Z', 'i can make it on saturday', { uncertain: ['can'] }),
+        heard('2026-08-27T10:01:00Z', 'that sounds good to me', { uncertain: [] }),
+        heard('2026-08-27T10:02:00Z', 'see you at four', { uncertain: [] }),
+        heard('2026-08-27T10:03:00Z', 'ill bring the tuesday papers', { uncertain: ['tuesday'] }),
     ])]);
-    assert.deepEqual(
-        { compared: s.cleanup.compared, none: s.cleanup.none, punctuation: s.cleanup.punctuation, words: s.cleanup.words },
-        { compared: 3, none: 1, punctuation: 1, words: 1 });
+    assert.equal(s.hearing.turns, 4);
+    assert.equal(s.hearing.flagged, 2);
+    assert.equal(s.hearing.flaggedWords, 2);
+    assert.equal(s.hearing.words, 6 + 5 + 4 + 5);
+    assert.match(formatSummary(s), /With a doubtful word    2  \(50%\)/);
 });
 
-test('tidy-up: adding an apostrophe is PUNCTUATION, not a change of wording', () => {
-    // The commonest tidy-up there is. Splitting on the apostrophe would compare
-    // "dont" against "don t" and file it under "the wording changed", which would
-    // inflate the one bucket the whole measure exists to count.
-    const s = summarize([conv('a', [heard('2026-08-20T10:00:00Z', 'i dont think so', "I don't think so.")])]);
-    assert.equal(s.cleanup.punctuation, 1);
-    assert.equal(s.cleanup.words, 0);
-});
-
-test('tidy-up: a turn still in progress is not compared', () => {
-    // Written at the partner's first pause, with the cleaned line still empty. It is
-    // not a tidy-up that did nothing; there is simply nothing to compare yet.
-    const s = summarize([conv('a', [heard('2026-08-20T10:00:00Z', 'half a sentence', '')])]);
-    assert.equal(s.cleanup.compared, 0);
-});
-
-test('tidy-up: a turn that was never sent is separated from one that changed nothing', () => {
-    // ⚠ THE LOAD-BEARING DISTINCTION. An interruption, a pardon and ending the
-    // conversation all record what was heard verbatim WITHOUT asking the AI, and
-    // afterwards look identical to a call that ran and changed nothing. Counting them
-    // together fills the "the call did nothing" bucket with calls never made.
+test('hearing: a turn recorded before this existed is not counted as clean', () => {
+    // ⚠ Silently treating a turn with no field as "nothing doubted" would report a
+    // whole history of older conversations as perfectly heard.
     const s = summarize([conv('a', [
-        heard('2026-08-20T10:00:00Z', 'Hello.', 'Hello.', { cleaned: true }),   // asked, no change
-        heard('2026-08-20T10:01:00Z', 'wait I', 'wait I', { cleaned: false }),  // never asked
+        heard('2026-08-27T10:00:00Z', 'no field here'),
+        heard('2026-08-27T10:01:00Z', 'this one has one', { uncertain: [] }),
     ])]);
-    assert.equal(s.cleanup.none, 2, 'both are unchanged');
-    assert.equal(s.cleanup.calls, 1, 'only one of them cost anything');
-    assert.equal(s.cleanup.callsRecorded, 2);
+    assert.equal(s.hearing.recorded, 1);
+    assert.equal(s.hearing.turns, 1);
 });
 
-test('tidy-up: older records say so rather than being counted as unsent', () => {
-    // Records written before August 27 2026 carry no flag. Reporting them as "not
-    // sent" would be a guess in the flattering direction.
-    const s = summarize([conv('a', [heard('2026-08-20T10:00:00Z', 'hello there', 'Hello there.')])]);
-    assert.equal(s.cleanup.callsRecorded, 0);
-    assert.match(formatSummary(s), /older records do not say which turns were sent/);
-});
-
-test('tidy-up: the summary names the base when the flag is present', () => {
-    const s = summarize([conv('a', [heard('2026-08-20T10:00:00Z', 'hello there', 'Hello there.', { cleaned: true })])]);
-    assert.match(formatSummary(s), /TIDYING UP WHAT WAS HEARD/);
-    assert.match(formatSummary(s), /Actually sent to the AI 1 of 1 recent turns/);
-});
-
-test('⚠ the summary carries COUNTS ONLY — no wording can ride the weekly report', () => {
-    // summarize()'s whole return value is sent verbatim in the weekly report, and the
-    // one firm rule is that verbatim speech never leaves the device automatically.
-    // The words below are deliberately distinctive so a leak anywhere in the object
-    // is caught, however it got there.
+test('hearing: read per person and per place, worst first', () => {
+    const withWho = (iso, raw, who, where, unc) =>
+        heard(iso, raw, { uncertain: unc, partner: { label: who }, place: { label: where } });
     const s = summarize([conv('a', [
-        heard('2026-08-20T10:00:00Z', 'zarquon frobnitz', 'Zarquon Frobnitz reticulated.', { cleaned: true }),
-        user('2026-08-20T10:00:05Z', { selectedText: 'plugh xyzzy' }),
+        withWho('2026-08-27T10:00:00Z', 'one two three', 'Mom', 'The cafe', ['two']),
+        withWho('2026-08-27T10:01:00Z', 'four five six', 'Mom', 'The cafe', ['five']),
+        withWho('2026-08-27T10:02:00Z', 'seven eight nine', 'Mom', 'The cafe', ['eight']),
+        withWho('2026-08-27T10:03:00Z', 'ten eleven twelve', 'Devon', 'Home', []),
+        withWho('2026-08-27T10:04:00Z', 'a b c', 'Devon', 'Home', []),
+        withWho('2026-08-27T10:05:00Z', 'd e f', 'Devon', 'Home', []),
     ])]);
-    const dumped = JSON.stringify(s);
-    for (const word of ['zarquon', 'frobnitz', 'reticulated', 'plugh', 'xyzzy']) {
-        assert.ok(!dumped.toLowerCase().includes(word), `"${word}" must not appear in the summary`);
+    assert.equal(s.hearingByPartner.Mom.flagged, 3);
+    assert.equal(s.hearingByPartner.Devon.flagged, 0);
+    assert.equal(s.hearingByPlace['The cafe'].flagged, 3);
+    const text = formatSummary(s);
+    assert.match(text, /By who they were with:/);
+    assert.match(text, /Where they were:/);
+    // Worst first — the point of the breakdown is to find the setting going badly.
+    assert.ok(text.indexOf('The cafe') < text.indexOf('Home'), 'the worse place is listed first');
+});
+
+test('hearing: a setting with too few turns is left out rather than shown at 100%', () => {
+    const s = summarize([conv('a', [
+        heard('2026-08-27T10:00:00Z', 'one bad turn', { uncertain: ['bad'], partner: { label: 'Stranger' } }),
+    ])]);
+    assert.equal(s.hearingByPartner.Stranger.turns, 1, 'still counted in the data');
+    // Scoped to the hearing breakdown: the name legitimately appears elsewhere in the
+    // summary, under the people section.
+    assert.ok(!/By who they were with:/.test(formatSummary(s)),
+        'the breakdown is omitted entirely — 1 of 1 reads as 100% and says nothing');
+});
+
+test('hearing: the report says out loud that it is a floor', () => {
+    const s = summarize([conv('a', [heard('2026-08-27T10:00:00Z', 'hello there', { uncertain: [] })])]);
+    // ⚠ The measure is blind to any mishearing that leaves an ordinary sentence, which
+    // is the class that matters most. Printed as an absolute it would be believed.
+    assert.match(formatSummary(s), /Treat this as a floor/);
+});
+
+test('⚠ the summary carries COUNTS ONLY — no doubted word can ride the weekly report', () => {
+    // A doubted word IS a word the partner said, and summarize()'s whole return value
+    // is sent verbatim in the weekly report.
+    const s = summarize([conv('a', [
+        heard('2026-08-27T10:00:00Z', 'zarquon frobnitz reticulated', { uncertain: ['frobnitz'] }),
+        user('2026-08-27T10:00:05Z', { selectedText: 'plugh xyzzy' }),
+    ])]);
+    const dumped = JSON.stringify(s).toLowerCase();
+    for (const w of ['zarquon', 'frobnitz', 'reticulated', 'plugh', 'xyzzy']) {
+        assert.ok(!dumped.includes(w), `"${w}" must not appear in the summary`);
     }
-});
-
-test('the before-and-after pairs are a SEPARATE call, newest first, and only the rewrites', () => {
-    const samples = cleanupSamples([conv('a', [
-        heard('2026-08-20T10:00:00Z', 'hello there', 'Hello there.'),                  // punctuation
-        heard('2026-08-21T10:00:00Z', 'i sore him', 'I saw him.'),                     // words
-        heard('2026-08-22T10:00:00Z', 'we went to the see side', 'We went to the seaside.'),
-    ])]);
-    assert.equal(samples.length, 2, 'only the turns where the wording changed');
-    assert.match(samples[0].before, /see side/, 'newest first');
-    assert.equal(samples[1].after, 'I saw him.');
-});
-
-test('the sample list is capped and survives a malformed file', () => {
-    const many = Array.from({ length: 30 }, (_, i) =>
-        heard(`2026-08-${String(i + 1).padStart(2, '0')}T10:00:00Z`, 'i sore him', `I saw him ${i}.`));
-    assert.equal(cleanupSamples([conv('a', many)], 5).length, 5);
-    assert.deepEqual(cleanupSamples([{ id: 'bad', data: null }, null, { id: 'x', data: { exchanges: 'nope' } }]), []);
-});
-
-test('⚠ nothing in weekly-send may reach the sample pairs', async () => {
-    // The counts are safe to send and the wordings are not, so the two are separate
-    // functions. This asserts the separation still holds at the only place it could
-    // be undone by accident: the module that builds the outgoing payload.
-    const src = await readFile(new URL('../app/js/weekly-send.js', import.meta.url), 'utf8');
-    assert.ok(!src.includes('cleanupSamples'),
-        'weekly-send.js must never import or call cleanupSamples — it carries what people said');
 });

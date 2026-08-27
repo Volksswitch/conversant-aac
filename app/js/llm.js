@@ -240,43 +240,32 @@ function trackUsage(data) {
     });
 }
 
-export async function cleanupTranscript(rawText, conversationHistory) {
-    if (!apiKey) return rawText;
-
-    const contextLines = conversationHistory.slice(-6).map(entry =>
-        `${entry.role === 'partner' ? 'Partner' : 'User'}: ${entry.text}`
-    ).join('\n');
-
-    const systemPrompt = `You are cleaning up a speech-to-text transcript from a live conversation. The transcript may contain:
-- Missing or incorrect punctuation and capitalization
-- Words the speech recognizer misheard (e.g., "Kmart" instead of "Hey Mark", "eye pad" instead of "iPad")
-
-Use the conversation context to identify likely mishearings and correct them. Apply proper punctuation and capitalization. Keep corrections conservative — only fix words that are clearly wrong given the context. Do not add, remove, or rephrase beyond correcting recognition errors.
-
-Return ONLY the corrected transcript text, nothing else.${contextLines ? '\n\nConversation so far:\n' + contextLines : ''}`;
-
-    const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01',
-            'anthropic-dangerous-direct-browser-access': 'true'
-        },
-        body: JSON.stringify({
-            model: MODEL,
-            max_tokens: 200,
-            system: systemPrompt,
-            messages: [{ role: 'user', content: rawText }]
-        })
-    });
-
-    if (!response.ok) return rawText;
-
-    const data = await response.json();
-    trackUsage(data);
-    return data.content[0].text.trim();
-}
+/* THE TIDY-UP PASS WAS REMOVED (Ken, August 27 2026), and this note is here so it is
+ * not rebuilt by someone noticing the transcript reads roughly.
+ *
+ * It made a SECOND request per exchange that rewrote what the recognizer heard into
+ * readable prose. Ken's argument for removing it is about WHEN it ran, so no amount of
+ * accuracy would have rescued it: it fired after the user had already chosen a
+ * response, so it could never improve the suggestions for the turn it tidied. The user
+ * hears the partner directly and is looking at them, not at the transcript, so it was
+ * not helping them in the moment either.
+ *
+ * Two supporting findings, both measured against the live model on August 27 2026:
+ *   - When a garble leaves the sentence IMPLAUSIBLE, generateResponses already reads
+ *     through it unaided -- given "i went to the see side" it wrote "seaside" back in
+ *     its own card. So the tidy-up was redundant exactly where it worked.
+ *   - When a garble leaves the sentence PLAUSIBLE ("i can make it" for "i can't"), the
+ *     tidy-up had no more to go on than the responses did -- same words, same history,
+ *     no separate source of truth -- so it failed alongside them. Not a safety net
+ *     under the suggestions; the same net hung twice.
+ *
+ * It could also corrupt the record, confidently and invisibly: it rewrote whatever it
+ * judged implausible and had no way to know it was right, landing in the saved
+ * conversation as clean prose with no trace anything had changed. For a beta whose
+ * records exist to show what the recognizer gets wrong, that destroys the evidence.
+ *
+ * What replaced it is `heard_uncertain` in the generation call above: the same
+ * judgment, reported rather than acted on, at no extra request. */
 
 // Single combined call (Conversation-Engine-Design.docx §9): classify the
 // partner's action AND generate a typed, slot-structured response palette AND report
@@ -388,7 +377,8 @@ Return ONLY a JSON object, no other text, with exactly this shape:
     {"slot": "INITIATIVE", "text": "...", "hint": "...", "format": "counter-offer|return-question|expansion"},
     {"slot": "REPAIR", "text": "...", "hint": "...", "trigger": "low_stt_confidence|uncertain_span|long_utterance|none"}
   ],
-  "missing_facts": ["<key>", ...]
+  "missing_facts": ["<key>", ...],
+  "heard_uncertain": ["<word>", ...]
 }
 
 Speak only to what is real — this is the most important rule. You are voicing a real person in a real conversation, NOT writing fiction about a character. Never invent specific events, episodes, outcomes, results, scores, dates, numbers, places, or names that you were not given. Do NOT fabricate autobiography: e.g. never produce "I beat Tyler at a game last night", "I won three matches", "we went to the lake on Saturday", or any concrete happening you have not been told occurred. You MAY draw on the standing facts in the user's profile below (habitual activities, interests, the people in their life) and you MAY offer general, open, or non-committal replies. When a natural answer would otherwise need a specific detail you don't have, keep it GENERAL ("Been playing online games with friends lately") instead of inventing the specifics ("I won last night"). Every option must be something the user could select and have it be TRUE — either grounded in their profile, or general enough that only they would know the particulars. The user is the sole source of truth about their own life; never put invented events in their mouth.
@@ -442,6 +432,11 @@ ${NO_VULGARITY}
 Get to the point: NO response may begin with an empty interjection — no "Ah", "Oh", "Um", "Er", "Well", "So", "Hmm", "You know" at the start. Open with the substance. (A meaningful softener on DISPREFERRED, like "I'd love to, but…", is fine; a bare interjection is not.)
 
 - "missing_facts": lowercase snake_case keys for personal facts about the user you needed but were not given (e.g. "home_city", "fav_team", "occupation"). Use [] if none. Always phrase responses around any missing fact — never output bracketed placeholders.
+- "heard_uncertain": words in the partner's MOST RECENT turn that you suspect the SPEECH RECOGNIZER got wrong. Copy them exactly as they appear in that turn. Use [] when nothing looks wrong.
+  Flag any word that looks like a mis-recognition, whether or not you can work out what was meant. "see side" for "seaside" is a flag even though the meaning is obvious. So is a missing or added negative ("can" where the conversation calls for "can't"), a day, time or number that a similar-sounding one could just as easily have been, and a name that came out as an unrelated word.
+  Do NOT flag ordinary informal speech, slang, contractions, filler, false starts, repetition, or a turn that is simply short or blunt. Those are how people talk, not recognition errors. Do NOT flag a word merely because you would have phrased it differently.
+  Over-flagging is worse than under-flagging: this is a measure of how well the microphone is doing, so a flag has to mean something.
+  This does NOT change your responses. Work out what the partner meant and answer that, exactly as you would if you had flagged nothing.
 
 ${perCatBlock}${buildProfileBlock()}`;
 
@@ -779,6 +774,7 @@ function parseGeneration(text) {
             classification: null,
             responses: parsed.map((t, i) => ({ slot: SLOTS[i] || 'PREFERRED', text: String(t), hint: '' })),
             missingFacts: [],
+            heardUncertain: [],
         };
     }
 
@@ -796,9 +792,15 @@ function parseGeneration(text) {
             // mid-conversation, so it routes to the number pad instead. null otherwise.
             offered_range: parseRange(parsed.offered_range),
         };
+        // ⚠ RETURNED AT THE TOP LEVEL, NOT INSIDE `classification`, AND ON PURPOSE.
+        // engine.ingestClassification rebuilds that object field by field and drops
+        // anything it does not know about, with no error -- the defect that shipped
+        // the number button doing nothing in 0.7.14. Nothing here needs the engine, so
+        // it never goes near it.
+        const heardUncertain = arr(parsed.heard_uncertain).map((w) => String(w).trim()).filter(Boolean);
         // Preferred shape: typed responses.
         if (Array.isArray(parsed.responses)) {
-            return { classification, responses: parsed.responses, missingFacts: arr(parsed.missing_facts) };
+            return { classification, responses: parsed.responses, missingFacts: arr(parsed.missing_facts), heardUncertain };
         }
         // Legacy {options:[...]}.
         if (Array.isArray(parsed.options)) {
@@ -806,6 +808,7 @@ function parseGeneration(text) {
                 classification,
                 responses: parsed.options.map((t, i) => ({ slot: SLOTS[i] || 'PREFERRED', text: String(t), hint: '' })),
                 missingFacts: arr(parsed.missing_facts),
+                heardUncertain,
             };
         }
     }

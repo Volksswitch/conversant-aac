@@ -117,80 +117,51 @@ function isPractice(data) {
 /* Aggregate [{ id, data }] into the summary object. Everything is null/0 rather
  * than absent when there is nothing to measure, so the formatter never has to
  * guard. */
-/* ── Is the tidy-up earning its round trip? (Ken, August 26 2026) ───────────────
+/* ── How well is the microphone doing? (Ken, August 27 2026) ───────────────────
  *
- * Every committed exchange makes a SECOND AI request, which rewrites what the
- * recognizer heard into readable prose. Ken's question on being shown it was not
- * "is it good" but "how many of these do more than adjust capitalization and
- * punctuation?" -- because that is the share that could not have been done on the
- * device for nothing, and so the share that justifies the call.
+ * The tidy-up pass that used to rewrite what the recognizer heard was removed: it ran
+ * after the user had already chosen a response, so it could never improve the
+ * suggestions for the turn it tidied, and it could quietly rewrite something that had
+ * been right. What replaced it reports the same judgment instead of acting on it --
+ * the suggestions request now names the words in the partner's turn it suspects were
+ * misheard, at no extra request, and those words are recorded on the turn.
  *
- * Both wordings are already on every partner turn, so this is a comparison rather
- * than new capture. Three answers:
+ * That gives a rough read on recognition quality. Because a turn also carries WHO the
+ * user was with and WHERE they were, it can be read per person and per place, which is
+ * the reading Ken wants: a rate that jumps in one room or with one person says
+ * something actionable about the setting rather than about the app.
  *
- *   none         the two are identical
- *   punctuation  they differ ONLY in capitals, punctuation or spacing
- *   words        the wording itself changed
+ * ⚠ WHAT THIS MEASURE CANNOT SEE, AND IT IS THE SAME BLIND SPOT THE TIDY-UP HAD. The
+ * model can only doubt a word when something looks wrong. A mishearing that leaves an
+ * ORDINARY SENTENCE -- "can" for "can't", "Tuesday" for "Thursday", "fifty" for
+ * "fifteen" -- looks like nothing at all, and those are the errors that matter most.
+ * So the rate is a FLOOR on how often the recognizer errs, never the true rate, and it
+ * must be reported as one.
  *
- * Only `words` needs an AI. `punctuation` is a local pass we are paying a network
- * round trip for, and if that turns out to be most of them the cheap fix is to stop
- * paying for it rather than to remove the feature.
+ * That makes it useful for COMPARISON and misleading as an absolute. A quiet room and
+ * a noisy cafe are being scored by the same blind judge, so the difference between
+ * them means something even though neither number is the truth.
  *
- * ⚠ THE COMPARISON IS ON SUBSTANCE, SO APOSTROPHES ARE DELETED RATHER THAN TURNED
- * INTO SPACES. "dont" -> "don't" is punctuation being added, which is exactly the
- * cheap bucket; splitting on the apostrophe would make it read as "dont" vs "don t"
- * and file the commonest tidy-up of all under "the wording changed".
- *
- * ⚠ THIS CANNOT SAY WHETHER A CHANGE WAS AN IMPROVEMENT. Nothing here judges the
- * rewrite -- a confident correction of a misheard word into the wrong word counts as
- * `words` exactly like a good one. That question needs the two wordings in front of
- * a person, which is what cleanupSamples() is for, and it stays on the device.
+ * The independent measure that would not be blind this way is Deepgram's own per-word
+ * confidence, which the paid recognizer returns and the browser one cannot. Not built.
  */
-export function normalizeForCompare(text) {
-    return String(text || '')
-        .toLowerCase()
-        .replace(/[‘’]/g, "'")      // curly apostrophes first, then drop them all
-        .replace(/'/g, '')
-        .replace(/[^\p{L}\p{N}]+/gu, ' ')
-        .trim();
+
+// One row's worth: how many partner turns, and how many of them carried a doubt.
+function hearingRow() { return { turns: 0, flagged: 0, words: 0, flaggedWords: 0 }; }
+
+function addHearing(row, turn) {
+    row.turns++;
+    const flags = Array.isArray(turn.uncertain) ? turn.uncertain.length : 0;
+    if (flags) row.flagged++;
+    row.words += words(turn.rawTranscript) || 0;
+    row.flaggedWords += flags;
 }
 
-/* Which of the three a finalized partner turn is, or null when there is nothing to
- * compare (a turn still in progress has no cleaned line yet). */
-export function classifyCleanup(turn) {
-    if (!turn) return null;
-    const raw = turn.rawTranscript;
-    const cleaned = turn.cleanedTranscript;
-    if (typeof raw !== 'string' || typeof cleaned !== 'string') return null;
-    if (!raw.trim() || !cleaned.trim()) return null;
-    if (raw === cleaned) return 'none';
-    return normalizeForCompare(raw) === normalizeForCompare(cleaned) ? 'punctuation' : 'words';
-}
-
-/* THE BEFORE-AND-AFTER PAIRS, FOR READING BY A PERSON -- deliberately NOT part of
- * summarize(), and this separation is the load-bearing part rather than tidiness.
- *
- * The weekly report sends summarize()'s whole return value verbatim, so anything
- * carrying words that ends up in there leaves the device. The counts answer the
- * question that can be answered at a distance; judging whether a rewrite was an
- * improvement needs the wording, so it is a separate call that only the on-device
- * Troubleshooting view makes. Nothing in weekly-send.js may ever import this.
- *
- * Newest first: a rewrite from months ago says less about the model in use now. */
-export function cleanupSamples(logs, limit = 12) {
-    const out = [];
-    if (!Array.isArray(logs)) return out;
-    for (const entry of logs) {
-        const data = entry && entry.data;
-        if (!data || !Array.isArray(data.exchanges)) continue;
-        for (const e of data.exchanges) {
-            if (!isPartner(e)) continue;
-            if (classifyCleanup(e) !== 'words') continue;
-            out.push({ at: ms(e.timestamp), before: e.rawTranscript, after: e.cleanedTranscript });
-        }
-    }
-    out.sort((a, b) => (b.at || 0) - (a.at || 0));
-    return out.slice(0, limit);
+// Share of turns carrying at least one doubted word. Turns rather than words is the
+// headline because one doubted word can spoil a whole turn, and because a turn is the
+// unit a person can picture.
+function flaggedPercent(row) {
+    return row && row.turns ? Math.round((row.flagged / row.turns) * 100) : null;
 }
 
 export function summarize(logs) {
@@ -215,10 +186,11 @@ export function summarize(logs) {
         voiceByProvider: {}, voiceFellBack: 0,
         byRecognizer: {},
         partnerWordsMedian: null, userWordsMedian: null,
-        // ⚠ COUNTS ONLY, NEVER WORDINGS. This whole object is sent verbatim in the
-        // weekly report, so the before-and-after pairs live in cleanupSamples()
-        // instead and never leave the device. See the note above classifyCleanup.
-        cleanup: { compared: 0, none: 0, punctuation: 0, words: 0, calls: 0, callsRecorded: 0 },
+        // ⚠ COUNTS ONLY, NEVER THE WORDS THEMSELVES. This whole object is sent
+        // verbatim in the weekly report, and a doubted word IS a word the partner
+        // said. How many, never which.
+        hearing: { turns: 0, flagged: 0, words: 0, flaggedWords: 0, recorded: 0 },
+        hearingByPartner: {}, hearingByPlace: {}, hearingByRecognizer: {},
         palettesOffered: 0, optionsOffered: 0, cardsPerPaletteMedian: null, optionWordsMedian: null,
         decideMsMedian: null, decideSamples: 0,
     };
@@ -299,21 +271,30 @@ export function summarize(logs) {
                 // August 2026, and the single biggest influence on how accurate that
                 // line is — so every other number can be read separately for the two
                 // instead of averaging two different products together.
-                // Did tidying up earn its round trip? Free to answer: both wordings
-                // are already here. `calls` is reported alongside because it is what
-                // makes the `none` bucket readable -- several paths finalize a turn
-                // with cleaned = raw having never asked the AI at all, and records
-                // written before August 27 2026 do not say which they were.
-                const kind = classifyCleanup(e);
-                if (kind) {
-                    out.cleanup.compared++;
-                    out.cleanup[kind]++;
-                }
-                if (typeof e.cleaned === 'boolean') {
-                    out.cleanup.callsRecorded++;
-                    if (e.cleaned) out.cleanup.calls++;
-                }
+                // How well was this turn heard? Only turns that carry the field at
+                // all are counted: it has only been recorded since August 27 2026, and
+                // treating an older turn as "nothing doubted" would quietly report the
+                // whole history as clean.
                 const rec = e.stt || '(not recorded)';
+                if (Array.isArray(e.uncertain)) {
+                    out.hearing.recorded++;
+                    addHearing(out.hearing, e);
+                    // The two breakdowns Ken asked for. A turn with no partner or no
+                    // place simply does not appear in that breakdown, rather than being
+                    // lumped into a bucket that would then read as a real setting.
+                    const who = e.partner && e.partner.label;
+                    if (who && !practice && !isPracticeLabel(who)) {
+                        if (!out.hearingByPartner[who]) out.hearingByPartner[who] = hearingRow();
+                        addHearing(out.hearingByPartner[who], e);
+                    }
+                    const where = e.place && (e.place.label || e.place.id);
+                    if (where) {
+                        if (!out.hearingByPlace[where]) out.hearingByPlace[where] = hearingRow();
+                        addHearing(out.hearingByPlace[where], e);
+                    }
+                    if (!out.hearingByRecognizer[rec]) out.hearingByRecognizer[rec] = hearingRow();
+                    addHearing(out.hearingByRecognizer[rec], e);
+                }
                 if (!recognizers.has(rec)) recognizers.set(rec, { partnerTurns: 0, gaps: [] });
                 recognizers.get(rec).partnerTurns++;
                 if (t !== null) bucketable.push({ t, kind: 'partnerTurn', convId, practice });
@@ -663,28 +644,32 @@ export function formatSummary(s, personalization = null) {
     }
     L.push('');
 
-    // Is the second AI request per exchange earning its keep? Only the last bucket
-    // needs an AI at all; the middle one is a local job we are paying a network round
-    // trip for. Shown as counts because that is all that can be judged at a distance -
-    // whether a rewrite was an IMPROVEMENT needs the two wordings and a person.
-    const c = s.cleanup;
-    if (c && c.compared) {
-        L.push('TIDYING UP WHAT WAS HEARD');
-        L.push(`  Turns compared          ${c.compared}`);
-        L.push(`  Wording changed         ${c.words}  (${pct(Math.round((c.words / c.compared) * 100))})`);
-        L.push(`  Only punctuation        ${c.punctuation}`);
-        L.push(`  No change at all        ${c.none}`);
-        if (c.callsRecorded) {
-            // Naming the base, for the same reason the two blocks above do it: this has
-            // only been recorded since August 27 2026, so on a history that spans the
-            // change it covers a fraction of the turns counted three lines up.
-            L.push(`  Actually sent to the AI ${c.calls} of ${c.callsRecorded} recent turns`);
-        } else {
-            // Without it, "no change at all" is not a measure of anything: an
-            // interruption, a pardon and ending the conversation all record what was
-            // heard verbatim without ever asking.
-            L.push('  (older records do not say which turns were sent for tidying)');
-        }
+    // A rough read on how well the recognizer is doing, from the words the model
+    // would not swear to. A FLOOR, never the true error rate — the errors that leave
+    // an ordinary sentence ("can" for "can't") look like nothing and are invisible
+    // here. Useful for comparing one setting against another, misleading read alone.
+    const h = s.hearing;
+    if (h && h.recorded) {
+        L.push('HOW WELL IT HEARD THEM');
+        L.push(`  Turns checked           ${h.turns}`);
+        L.push(`  With a doubtful word    ${h.flagged}  (${pct(flaggedPercent(h))})`);
+        if (h.words) L.push(`  Share of words doubted  ${pct(Math.round((h.flaggedWords / h.words) * 100))}`);
+        // Worst first: the point of splitting it up is to find the setting that is
+        // going badly. Anything under three turns is dropped — one bad turn out of one
+        // reads as 100% and would sit at the top of the list saying nothing.
+        const rows = (label, byWhat) => {
+            const entries = Object.entries(byWhat || {}).filter(([, r]) => r.turns >= 3);
+            if (!entries.length) return;
+            L.push(`  ${label}`);
+            for (const [name, r] of entries.sort((a, b) => flaggedPercent(b[1]) - flaggedPercent(a[1])).slice(0, 6)) {
+                L.push(`    ${String(name).padEnd(20)} ${String(pct(flaggedPercent(r))).padStart(4)} of ${r.turns} turns`);
+            }
+        };
+        rows('By who they were with:', s.hearingByPartner);
+        rows('Where they were:', s.hearingByPlace);
+        rows('By what heard them:', s.hearingByRecognizer);
+        L.push('  A word is only doubted when it looks wrong, so a mishearing that');
+        L.push('  still reads normally is invisible here. Treat this as a floor.');
         L.push('');
     }
 
@@ -727,27 +712,4 @@ export function formatSummary(s, personalization = null) {
         L.push('  None recorded.');
     }
     return L.join('\n');
-}
-
-/* The sample pairs as text for the on-screen box. Local only -- see cleanupSamples.
- *
- * Both wordings on their own lines rather than side by side: they are usually close
- * enough that the difference is a word or two, and reading them one above the other
- * is what makes that word findable. */
-export function formatCleanupSamples(samples) {
-    if (!Array.isArray(samples) || !samples.length) {
-        return 'No rewrites to show yet.\n\n'
-            + 'This fills in when tidying up changes the WORDING of something that was\n'
-            + 'heard, rather than only its capitals and punctuation. Those are the ones\n'
-            + 'worth reading: they are the ones the AI was needed for.\n\n'
-            + 'Stays on this device. It is never included in a report.';
-    }
-    const L = ['These are on this device only and are never sent anywhere.', ''];
-    for (const x of samples) {
-        L.push(dateOnly(x.at));
-        L.push(`  heard   ${x.before}`);
-        L.push(`  tidied  ${x.after}`);
-        L.push('');
-    }
-    return L.join('\n').trimEnd();
 }

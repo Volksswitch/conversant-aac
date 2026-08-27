@@ -87,29 +87,33 @@ export function upsertPartnerInterim(exchanges, pending, { rawTranscript, partne
 // If `handle` is set it is updated IN PLACE — preserving its position before the
 // user's turn; if `handle` is null (an interruption captured before any pause was
 // ever written) a fresh finalized partner entry is appended. Returns the entry.
-/* ⚠ `cleaned` RECORDS WHETHER THE TIDY-UP CALL ACTUALLY RAN, and without it the
- * raw-vs-cleaned comparison cannot be read (Ken, August 26 2026: "do we have a metric
- * associated with the number of cleaned statements that do more than adjust
- * capitalization and punctuation?").
+/* ⚠ `uncertain` IS THE WORDS THE MODEL WOULD NOT SWEAR TO, and it is a MEASURE, not a
+ * correction (Ken, August 27 2026). The app used to make a second AI request that
+ * rewrote what the recognizer heard; that was removed because of when it ran, and this
+ * replaced it -- the same judgment, reported instead of applied, inside the request
+ * that was already going out.
  *
- * Both wordings have been stored on every partner turn since July 2026, so comparing
- * them is free -- but several paths finalize a turn with cleaned = raw WITHOUT ever
- * asking the AI: an interruption, a pardon, and ending the conversation all record
- * what was heard verbatim by design. Those are indistinguishable afterwards from a
- * call that ran and changed nothing, so counting them together would fill the "the
- * call did nothing" bucket with calls that were never made -- understating the value
- * of the ones that were, on the exact question being asked.
+ * Recorded on the turn so a report can say how often the microphone is struggling, and
+ * -- because a turn also carries who the user was with and where they were -- whether
+ * it struggles more with a particular person or in a particular room. Nothing is shown
+ * to the user from it yet.
  *
- * true only when a cleanup response came back. A call that THREW leaves it false: no
- * tidying happened, which is what the measure is about. Absent on records written
- * before this, which usage-summary reports as its own count rather than assuming. */
-export function finalizePartner(exchanges, handle, { rawTranscript, cleanedTranscript, partner = null, stt = null, cleaned = false, timestamp }) {
+ * ⚠ `cleanedTranscript` IS KEPT AND ALWAYS EQUALS `rawTranscript` NOW. Every reader of
+ * an older conversation still expects the field, and files written while the tidy-up
+ * existed genuinely hold a different value in it, so it cannot simply be dropped.
+ *
+ * `place` joins `partner` here: the situation was already stamped on the user's side
+ * of an exchange, and the partner's side is the half that says how well they were
+ * heard, so it is the half a per-room reading has to come from. */
+export function finalizePartner(exchanges, handle, { rawTranscript, cleanedTranscript, partner = null, place = null, stt = null, uncertain = [], timestamp }) {
+    const flagged = Array.isArray(uncertain) ? uncertain.filter((w) => typeof w === 'string' && w.trim()) : [];
     if (handle) {
         handle.rawTranscript = rawTranscript;
         handle.cleanedTranscript = cleanedTranscript;
-        handle.cleaned = !!cleaned;
+        handle.uncertain = flagged;
         pushRevision(handle, rawTranscript, timestamp);
         if (partner) handle.partner = partner;
+        if (place) handle.place = place;
         if (stt) handle.stt = stt;
         return handle;
     }
@@ -118,8 +122,9 @@ export function finalizePartner(exchanges, handle, { rawTranscript, cleanedTrans
         role: 'partner',
         rawTranscript,
         cleanedTranscript,
-        cleaned: !!cleaned,
+        uncertain: flagged,
         partner,
+        place,
         stt,
     };
     exchanges.push(turn);

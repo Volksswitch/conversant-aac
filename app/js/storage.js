@@ -1247,7 +1247,7 @@ export function detachPendingPartnerTurn() {
 // (keeping its position, before the user's turn); if null, a fresh finalized
 // partner entry is appended (an interruption captured before any pause was
 // written). Creates the log lazily if needed.
-export async function finalizePartnerTurn(handle, { rawTranscript, cleanedTranscript, partner = null, cleaned = false }) {
+export async function finalizePartnerTurn(handle, { rawTranscript, cleanedTranscript, partner = null, place = null, uncertain = [] }) {
     if (!conversationSaving) return; // private conversation — nothing is written
     if (!handle) {
         if (!currentLogData) await startConversationLog();
@@ -1259,7 +1259,7 @@ export async function finalizePartnerTurn(handle, { rawTranscript, cleanedTransc
     // background cleanup landed — the raw partner line is already on disk, so this
     // just no-ops the cleaned-line update (the rare deferred-cleanup split).
     const exchanges = currentLogData ? currentLogData.exchanges : null;
-    tlog.finalizePartner(exchanges, handle, { rawTranscript, cleanedTranscript, partner, stt: sttBackend, cleaned });
+    tlog.finalizePartner(exchanges, handle, { rawTranscript, cleanedTranscript, partner, place, stt: sttBackend, uncertain });
     await flushLog();
 }
 

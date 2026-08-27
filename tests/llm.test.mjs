@@ -253,24 +253,6 @@ test('repairOptions parses {rephrase, expand}', async () => {
     assert.equal(r.expand, 'I went to the market for fruit.');
 });
 
-test('cleanupTranscript returns the corrected text', async () => {
-    mockFetch('Hey Mark, how are you?');
-    const out = await llm.cleanupTranscript('kmart how are you', [{ role: 'partner', text: 'x' }]);
-    assert.equal(out, 'Hey Mark, how are you?');
-});
-
-test('cleanupTranscript falls back to the raw text with no API key', async () => {
-    llm.setApiKey('');   // no key
-    const out = await llm.cleanupTranscript('raw and uncleaned');
-    assert.equal(out, 'raw and uncleaned');
-});
-
-test('cleanupTranscript falls back to the raw text on an API error', async () => {
-    mockFetch('boom', { ok: false, status: 500 });
-    const out = await llm.cleanupTranscript('raw and uncleaned', []);
-    assert.equal(out, 'raw and uncleaned');
-});
-
 test('repairSelf(expand) instructs the model to expand and returns the new utterance', async () => {
     mockFetch('I went to the market to buy some fruit.');
     const out = await llm.repairSelf('I went to the market.', 'expand', []);
@@ -575,9 +557,11 @@ test('usage reports the three input buckets separately, not one merged number', 
     await llm.generateResponses([{ role: 'partner', text: 'Hi' }]);
     assert.deepEqual(seen[1], { input: 12, output: 34, cacheWrite: 0, cacheRead: 3400 });
 
-    // An uncached call reports zeros rather than undefined, so the counter can add.
-    mockFetch(structured);
-    await llm.cleanupTranscript('hello there', []);
+    // A call with no cache fields reports zeros rather than undefined, so the counter
+    // can add them. repairOptions is uncached — only generateResponses is worth a
+    // cache entry, because only it fires repeatedly against the same prefix.
+    mockFetch(JSON.stringify({ rephrase: 'a', expand: 'b' }));
+    await llm.repairOptions('hello there');
     assert.deepEqual(seen[2], { input: 1, output: 1, cacheWrite: 0, cacheRead: 0 });
     llm.onUsage(null);
 });
@@ -644,4 +628,60 @@ test('an open count has no top, and an ordinary turn has no range at all', async
     const plain = await llm.generateResponses([{ role: 'partner', text: 'How are you?' }]);
     assert.equal(plain.classification.offered_range, null,
         'an ordinary turn must not acquire a number pad button');
+});
+
+// --- words the recognizer may have got wrong (Ken, August 27 2026) -----------
+// This replaced the separate tidy-up request. It reports the same judgment instead
+// of acting on it, inside the call that was already going out.
+
+test('the prompt asks which words may have been misheard, with a precision guard', async () => {
+    mockFetch(structured);
+    await llm.generateResponses([{ role: 'partner', text: 'i can make it saturday' }]);
+    const sys = sysText(getFetchCalls()[0]);
+    assert.match(sys, /"heard_uncertain"/, 'the field is in the schema');
+    // ⚠ WIDENED ON PURPOSE (August 27 2026). It first said to flag only a mishearing
+    // that CHANGES THE MEANING, and two live runs disagreed with each other on the same
+    // turn: "see side" for "seaside" is plainly a recognition error but the meaning is
+    // obvious, so the criterion could be read either way. Ambiguous instruction,
+    // unstable measure. It also aimed at the rarest case, which is the wrong target for
+    // something whose job is comparing one room or one person against another.
+    assert.match(sys, /whether or not you can work out what was meant/, 'any suspected mis-recognition');
+    assert.match(sys, /slang, contractions, filler, false starts/, 'but how people talk is not an error');
+    assert.match(sys, /Over-flagging is worse than under-flagging/, 'and a guard against flagging everything');
+    assert.match(sys, /does NOT change your responses/,
+        'the turn is still answered as best understood — this reports, it does not gate');
+});
+
+test('the asking rides in the CACHED half, so it costs nothing after the first send', async () => {
+    // ⚠ Caching breaks silently and perfectly: move per-turn content into the cached
+    // block and everything still works while the bill quietly triples. The instruction
+    // is fixed text, so it belongs in the prefix — asserted rather than assumed.
+    mockFetch(structured);
+    await llm.generateResponses([{ role: 'partner', text: 'Hi' }]);
+    const sys = getFetchCalls()[0].body.system;
+    assert.ok(Array.isArray(sys), 'sent as blocks with a cache breakpoint');
+    assert.match(sys[0].text, /"heard_uncertain"/, 'in the cached head');
+});
+
+test('doubted words are parsed out, and are NOT put in the classification', async () => {
+    // ⚠ engine.ingestClassification rebuilds that object field by field and drops
+    // anything it does not know about, silently — the defect that shipped the number
+    // button doing nothing. Nothing here needs the engine, so it never goes near it.
+    mockFetch(JSON.stringify({
+        partner_action: 'STATEMENT', turn_status: 'COMPLETE', is_repair_initiator: false,
+        offered_options: [], offered_range: null,
+        responses: [{ slot: 'PREFERRED', text: 'Great.', hint: 'Great' }],
+        missing_facts: [], heard_uncertain: ['can', '  ', ''],
+    }));
+    const r = await llm.generateResponses([{ role: 'partner', text: 'i can make it' }]);
+    assert.deepEqual(r.heardUncertain, ['can'], 'trimmed, with blanks dropped');
+    assert.ok(!('heard_uncertain' in r.classification), 'not routed through the engine');
+});
+
+test('a response with no doubted words yields an empty list, never undefined', async () => {
+    // The app records the list on the turn; undefined would land in the file as a
+    // missing field and read later as "this turn was never checked".
+    mockFetch(structured);
+    const r = await llm.generateResponses([{ role: 'partner', text: 'Hi' }]);
+    assert.deepEqual(r.heardUncertain, []);
 });
