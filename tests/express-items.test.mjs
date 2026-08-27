@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DEFAULT_ITEMS, CATEGORIES, ensureIds, makeId,
          ORIGIN, isUserAuthored, ensureOrigin, markEdits,
-         newEmptyItem, isEmptyItem, chipStartIndex } from '../app/js/express-items.js';
+         newEmptyItem, isEmptyItem, choiceCells } from '../app/js/express-items.js';
 
 test('every default item has a stable id, a type, and a known category/color', () => {
     for (const it of DEFAULT_ITEMS) {
@@ -152,35 +152,48 @@ test('DEFINING an empty slot in place makes it the user\'s, at the same position
 });
 
 // --- where the partner's offered alternatives sit ----------------------------
-// The behavior these guard replaced one that broke spatial stability across the
-// WHOLE panel for a single turn: chips used to take the FIRST cells, so every
-// phrase shifted by however many alternatives were on offer.
+// Two earlier versions were wrong in different ways. They first took the FIRST
+// cells, so every phrase shifted by however many alternatives were on offer. They
+// then took the last cells of the WHOLE PANEL, which coincides with the reserved
+// run only while the Flex band is empty — the shipped default, which is exactly why
+// nobody noticed. These guard the property that matters: the cells the Context band
+// RESERVES are the cells that get used.
 
-test('CHIPS TAKE THE LAST CELLS, so no phrase ever moves', () => {
-    const cells = 33;
+test('choice buttons land on the cells the Context band reserved, not the panel end', () => {
+    const reserved = [20, 21, 22, 23];   // last four of a Context band
+    assert.deepEqual(choiceCells(reserved, 4), [20, 21, 22, 23]);
+});
+
+test('a short menu fills the reserved run from its FAR END', () => {
+    const reserved = [20, 21, 22, 23];
+    assert.deepEqual(choiceCells(reserved, 2), [22, 23], 'flush to the end');
+    assert.deepEqual(choiceCells(reserved, 1), [23]);
+});
+
+test('with a Flex band below it, no choice button can reach a Flex cell', () => {
+    // THE REGRESSION. Context reserves 20-23; Flex owns 24-31. The old arithmetic
+    // (panel end minus count) returned 28-31 — four Flex phrases covered while the
+    // Context band went on advertising space it never received.
+    const reserved = [20, 21, 22, 23];
+    const firstFlexCell = 24;
     for (const n of [1, 2, 3, 4]) {
-        const start = chipStartIndex(cells, n);
-        assert.equal(start, cells - n, `${n} chips start ${n} from the end`);
-        // Every cell before the start still draws the item whose ordinal it is —
-        // which is the whole property: an item's cell does not depend on the chips.
-        for (let i = 0; i < start; i++) assert.ok(i < start, 'item cell, unmoved');
+        for (const cell of choiceCells(reserved, n)) {
+            assert.ok(cell < firstFlexCell, `${n} choices must not reach the Flex band`);
+        }
     }
 });
 
-test('with NO chips on offer the panel is exactly what it was', () => {
-    // No ordinal can reach the start, so every cell draws its own item.
-    const cells = 33;
-    assert.equal(chipStartIndex(cells, 0), cells);
+test('with NO choices on offer the panel is exactly what it was', () => {
+    assert.deepEqual(choiceCells([20, 21, 22, 23], 0), []);
 });
 
-test('more alternatives than cells does not push a chip off the front', () => {
-    // The surplus simply does not render; the response cards carry the full set.
-    assert.equal(chipStartIndex(2, 4), 0);
+test('more alternatives than reserved cells does not spill past the reservation', () => {
+    // The surplus simply does not render; the response options carry the full set.
+    assert.deepEqual(choiceCells([22, 23], 4), [22, 23]);
 });
 
-test('a nonsense count cannot produce a negative start', () => {
-    // A negative start would make every cell a chip cell and blank the panel.
-    for (const [c, n] of [[undefined, 3], [10, -2], [null, null], ['x', 'y']]) {
-        assert.ok(chipStartIndex(c, n) >= 0);
+test('nonsense input yields no cells rather than blanking the panel', () => {
+    for (const [slots, n] of [[undefined, 3], [null, null], ['x', 'y'], [[], 4], [[1, 2], -2]]) {
+        assert.deepEqual(choiceCells(slots, n), []);
     }
 });

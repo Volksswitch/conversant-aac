@@ -1,5 +1,5 @@
 import { setIconButton } from './icons.js';
-import { chipStartIndex } from './express-items.js';
+import { choiceCells } from './express-items.js';
 import { panelRoles } from './keyboard-layouts.js';
 import * as chime from './chime.js';
 
@@ -645,20 +645,22 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         return b;
     };
 
-    // WHERE THE TRANSIENT CHIPS GO: THE END OF THE PANEL, NOT THE FRONT (Ken, August
-    // 22 2026). They used to claim the LEADING cells, which pushed every phrase along
-    // by however many alternatives the partner had offered — so for the duration of
-    // that turn, every button on the panel sat one, two or three cells away from where
-    // the user had learned it, and the same number fell off the end. That is spatial
-    // stability broken across the WHOLE panel to make room for something that lasts one
-    // turn. Taking the last cells instead means nothing moves: every phrase keeps its
-    // position and at most the final few are temporarily covered.
+    // WHERE THE TRANSIENT CHOICE BUTTONS GO: THE CELLS THE CONTEXT BAND RESERVES FOR THEM, AND
+    // ONLY THOSE (Ken, August 26 2026). Two earlier versions were wrong in different
+    // ways. They first claimed the LEADING cells, which pushed every phrase along by
+    // however many alternatives were offered — spatial stability broken across the
+    // whole panel for one turn. They then took the last cells of the WHOLE PANEL, which
+    // is the same thing as the reserved run ONLY while the Flex band is empty (the
+    // shipped default, which is why it looked right): with a Flex band the choice buttons
+    // landed on Flex phrases while the Context band went on drawing "Choice button #1" over
+    // cells that never received one. Reserving cells the user can see and then using
+    // different ones is not allowed.
     // What each cell of the layout is FOR on the panel — see panelRoles. Asking one
     // place means the count below and the loop underneath cannot disagree about which
     // cell is the compose key, which is how one layout ended up with two of them.
     const roles = panelRoles(layoutRows);
-    const itemCells = roles.reduce((n, row) => n + row.filter((c) => c.role === 'position').length, 0);
-    const chipStart = chipStartIndex(itemCells, choiceChips.length);
+    // cell ordinal -> the alternative drawn there this turn.
+    const choiceAt = new Map(choiceCells(choiceSlots, choiceChips.length).map((cell, n) => [cell, choiceChips[n]]));
 
     let pi = 0;              // index into the ordered item list AND the cell ordinal
     roles.forEach((row) => {
@@ -687,11 +689,13 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
             // A panel position. Its ordinal is fixed by the layout, so an item's cell
             // never depends on how many chips are showing.
             const index = pi++;
-            // The last cells belong to the partner's offered alternatives while any are
-            // on the table. The items they cover are not re-homed — they are simply not
-            // drawn for this turn, and come back untouched when it ends.
-            if (index >= chipStart) {
-                rowEl.appendChild(buildChoiceCell(choiceChips[index - chipStart], span));
+            // A reserved Context cell belongs to the partner's offered alternatives
+            // while any are on the table. The items they cover are not re-homed and not
+            // lost — they are simply not drawn for this turn, and come back untouched
+            // when it ends (Ken: covering an existing Context button is correct).
+            const choice = choiceAt.get(index);
+            if (choice) {
+                rowEl.appendChild(buildChoiceCell(choice, span));
                 return;
             }
             // Two cases render as an undefined cell: an explicit 'empty' item (a
@@ -813,6 +817,39 @@ export function setPrivacyState(isPrivate) {
     btn.title = label;
 }
 
+// Reflect the "Wrap up" latch on the Command Bar button (Rule 6: a sticky action is
+// shown as a selected button). This does double duty: it is how the user cancels, and
+// it is the only thing on screen that says a wrap-up is in progress at all - without it
+// the wind-down statements just look like a strange set of suggestions.
+export function setWrapUpState(on) {
+    const btn = document.getElementById('windDownBtn');
+    if (!btn) return;
+    btn.classList.toggle('wrapup-on', !!on);
+    btn.setAttribute('aria-pressed', String(!!on));
+    const label = on ? 'Wrapping up - tap to go back' : 'Wrap up';
+    btn.setAttribute('aria-label', label);
+    btn.title = label;
+}
+
+// Reflect the "Start conversation" latch. Same idea as the Wrap up latch: pressing it
+// mid-conversation puts the openers up WITHOUT ending anything, so the button has to
+// show that it is on and that pressing it again is the way back.
+export function setStartConversationState(on) {
+    const btn = document.getElementById('initiateBtn');
+    if (!btn) return;
+    btn.classList.toggle('opener-on', !!on);
+    btn.setAttribute('aria-pressed', String(!!on));
+    const label = on ? 'Choosing an opener - tap to go back' : 'Start conversation';
+    btn.setAttribute('aria-label', label);
+    btn.title = label;
+}
+
+// What the status line currently says, so a caller that is about to replace it can put
+// it back afterwards.
+export function getStatus() {
+    return statusBar ? statusBar.textContent : '';
+}
+
 export function setStatus(message) {
     statusBar.textContent = message;
 }
@@ -857,7 +894,7 @@ export function applyControlIcons() {
     setIconButton(document.getElementById('sayAgainBtn'), 'replay', 'Repeat what I said');
     setIconButton(document.getElementById('holdOnBtn'), 'pause', 'Hold on');
     setIconButton(document.getElementById('pardonBtn'), 'pardon', 'Ask them to repeat');
-    setIconButton(document.getElementById('windDownBtn'), 'windDown', 'Wind down');
+    setIconButton(document.getElementById('windDownBtn'), 'windDown', 'Wrap up');
     setIconButton(document.getElementById('initiateBtn'), 'startChat', 'Start conversation');
     setIconButton(document.getElementById('endConversationBtn'), 'endChat', 'End conversation');
     setIconButton(document.getElementById('privacyBtn'), 'noSave', "Don't save this conversation");

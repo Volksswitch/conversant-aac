@@ -301,3 +301,34 @@ test('the band editor registers its sections under its own scope name', async ()
     assert.notEqual(call[1], 'express',
         'must not collide with the Express tab panel, whose scope is its data-tab name');
 });
+
+// --- the reserved cells ARE the cells used (Ken, August 26 2026) -------------
+// ⚠ THE CROSS-LAYER CHECK. Every other case here fabricates its own input, and the
+// bug this guards lived precisely in the join: composePanel reserved the last cells
+// of the CONTEXT band while the renderer placed the partner's alternatives on the
+// last cells of the WHOLE PANEL. Both halves were individually correct and agreed
+// only while the Flex band was empty — the shipped default, which is why it looked
+// right for as long as it did. So this test takes composePanel's real output and
+// feeds it to the real placement function, rather than asserting about either alone.
+test('a real composed panel places choice buttons only on the cells it reserved', async () => {
+    const { choiceCells } = await import('../app/js/express-items.js');
+    const layout = rows(8, 8, 8, 8);          // 32 positions
+    const model = {
+        sizes: { shape: bands.SHAPE.COUNTS, context: 6, flex: 8 },   // a NON-EMPTY Flex band
+        always: [], context: [], flex: {},
+    };
+    const panel = bands.composePanel(layout, model, {});
+    const contextCells = panel.bands
+        .map((b, i) => (b === bands.BAND.CONTEXT ? i : -1)).filter((i) => i >= 0);
+
+    for (const n of [1, 2, 3, 4]) {
+        const cells = choiceCells(panel.choiceSlots, n);
+        assert.equal(cells.length, n, `${n} alternatives get ${n} cells`);
+        for (const cell of cells) {
+            assert.ok(contextCells.includes(cell),
+                `cell ${cell} must be in the Context band, not ${panel.bands[cell]}`);
+        }
+    }
+    // And the reservation the user can SEE is the reservation that gets used.
+    assert.deepEqual(choiceCells(panel.choiceSlots, 4), panel.choiceSlots);
+});

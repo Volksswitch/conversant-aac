@@ -120,6 +120,73 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// How long to wait for the network before serving the cached copy instead.
+//
+// ⚠ THIS IS NOT ABOUT BEING OFFLINE. A server that is genuinely DOWN fails in
+// milliseconds and never reaches this deadline. The deadline is for the far nastier
+// case: a server that is REACHABLE BUT SICK — answering very slowly, or accepting the
+// connection and then saying nothing. Without a deadline the browser waits as long as
+// it is willing to (which can be minutes) and the user sits in front of a blank screen
+// with a perfectly good copy of the app cached on the device.
+//
+// Falling back is safe, which is what makes a short deadline the right trade: the
+// cached copy is a working app, at worst one version behind, and the next launch
+// updates it. Waiting is only better when there is nothing to fall back TO — see the
+// retry at the end of networkFirst, which covers the first-ever load on a slow link.
+const NETWORK_TIMEOUT_MS = 6000;
+
+async function networkFirst(request) {
+  let response = null;
+  let timedOut = false;
+  const controller = new AbortController();
+  const timer = setTimeout(() => { timedOut = true; controller.abort(); }, NETWORK_TIMEOUT_MS);
+  try {
+    // `cache: 'no-cache'` forces revalidation with the server (ETag) instead of
+    // letting the browser's HTTP cache serve a stale copy within GitHub Pages'
+    // max-age=600 window — so a launch while online always gets the latest.
+    response = await fetch(new Request(request, { cache: 'no-cache' }), { signal: controller.signal });
+  } catch {
+    response = null;            // offline, DNS failure, or aborted at the deadline
+  } finally {
+    clearTimeout(timer);
+  }
+
+  // ⚠ AN ERROR RESPONSE IS A FAILURE, NOT AN ANSWER. This used to return whatever the
+  // server said as long as it said something, and only skipped CACHING a non-OK reply.
+  // So a host that was up but broken — a 503 from an overloaded server, a hosting
+  // provider's parking page, a captive portal at a hotel or an airport — was handed
+  // to the page AS THE APP, and the app failed to start while a working copy sat in
+  // the cache unused. That made a half-broken host worse than a completely dead one,
+  // which is backwards. Anything that is not OK now falls through to the cache.
+  if (response && response.ok) {
+    if (response.type === 'basic') {
+      const copy = response.clone();
+      caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {});
+    }
+    return response;
+  }
+
+  const cached = await caches.match(request);
+  if (cached) return cached;
+  // Navigation requests fall back to the cached app shell.
+  if (request.mode === 'navigate') {
+    const shell = await caches.match('./index.html');
+    if (shell) return shell;
+  }
+
+  // Nothing cached to fall back on, so the deadline bought nothing and cost a load:
+  // it exists to avoid waiting for a sick server WHEN THERE IS A GOOD COPY TO SERVE
+  // INSTEAD. With no copy, waiting is strictly better than failing. This is the
+  // first-ever visit on a slow connection, and cutting that off at six seconds would
+  // turn "slow" into "broken" for exactly the user who has nothing cached yet.
+  if (timedOut) {
+    try { return await fetch(new Request(request, { cache: 'no-cache' })); } catch { /* fall through */ }
+  }
+  // Hand back whatever the network said, so the user sees a real browser error
+  // rather than a silent nothing.
+  return response || Response.error();
+}
+
 self.addEventListener('fetch', (event) => {
   const { request } = event;
 
@@ -128,24 +195,5 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   if (new URL(request.url).origin !== self.location.origin) return;
 
-  event.respondWith(
-    // `cache: 'no-cache'` forces revalidation with the server (ETag) instead of
-    // letting the browser's HTTP cache serve a stale copy within GitHub Pages'
-    // max-age=600 window — so a launch while online always gets the latest.
-    fetch(new Request(request, { cache: 'no-cache' }))
-      .then((response) => {
-        // Cache a copy of successful responses for offline fallback.
-        if (response && response.ok && response.type === 'basic') {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-        }
-        return response;
-      })
-      .catch(() => caches.match(request).then((cached) => {
-        if (cached) return cached;
-        // Navigation requests fall back to the cached app shell.
-        if (request.mode === 'navigate') return caches.match('./index.html');
-        return Response.error();
-      }))
-  );
+  event.respondWith(networkFirst(request));
 });

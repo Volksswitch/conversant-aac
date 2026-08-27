@@ -291,23 +291,36 @@ export function ensureIds(items) {
   return (items || []).map((it) => (it && it.id ? it : { ...it, id: makeId() }));
 }
 
-// --- where the transient choice chips sit (Ken, August 22 2026) ---------------
+// --- where the transient choice buttons sit (Ken, August 22 2026) ------------
 /**
- * The cell ordinal at which the partner's offered alternatives begin.
+ * WHICH CELLS the partner's offered alternatives occupy, in the order they are
+ * offered. Returns cell ordinals into the composed panel.
  *
- * They take the LAST cells of the panel, not the first. Claiming the leading cells
- * — which is what shipped until August 22 2026 — pushed every phrase along by the
- * number of alternatives on offer, so for the duration of one turn every button sat
- * a cell or three from where the user had learned it and the same number dropped off
- * the end. Claiming the last cells moves nothing: each phrase keeps its position, and
- * at most the final few are covered until the turn ends.
+ * ⚠ THEY LAND ON THE CELLS THE CONTEXT BAND RESERVES FOR THEM, AND ONLY THOSE.
+ * Until August 26 2026 this was computed as "the last N cells of the WHOLE panel",
+ * which is the same thing ONLY while the Flex band is empty — the shipped default,
+ * which is why it looked right. Give the Flex band any size and the choice buttons landed on
+ * Flex phrases while the Context band went on drawing "Choice button #1" over cells
+ * that never received one: the reservation the user could SEE and the cells actually
+ * used were two different places (Ken: "this is not allowed").
  *
- * More alternatives than cells is not a failure worth guarding against here — the
- * app caps how many chips it offers, and the response cards carry the full set
- * regardless — so the surplus simply does not render.
+ * They fill the reserved run from its FAR END, so the last alternative sits in the
+ * last reserved cell and a short menu leaves the earlier reserved cells showing
+ * whatever they normally show.
+ *
+ * COVERING A CONTEXT BUTTON IS CORRECT, NOT A FAILURE (Ken, August 26 2026): "the
+ * app should cover existing Context panel buttons with option buttons if it needs
+ * to. These covered buttons will not be used until the user selects and clears the
+ * option buttons." The covered items are not re-homed and not lost — they are simply
+ * not drawn for the turn, and come back untouched when it ends.
+ *
+ * More alternatives than reserved cells is not guarded against here: the app caps how
+ * many it offers and the response options carry the full set regardless, so a surplus
+ * simply does not render.
  */
-export function chipStartIndex(itemCells, chipCount) {
-  const cells = Math.max(0, Number(itemCells) || 0);
-  const chips = Math.max(0, Number(chipCount) || 0);
-  return Math.max(0, cells - chips);
+export function choiceCells(choiceSlots, choiceCount) {
+  const slots = Array.isArray(choiceSlots) ? choiceSlots.filter((n) => Number.isInteger(n) && n >= 0) : [];
+  const shown = Math.max(0, Number(choiceCount) || 0);
+  if (!shown || !slots.length) return [];
+  return slots.slice(Math.max(0, slots.length - shown));
 }
