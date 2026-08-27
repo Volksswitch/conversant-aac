@@ -8,7 +8,8 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { summarize, formatSummary, summarizePersonalization } from '../app/js/usage-summary.js';
+import { readFile } from 'node:fs/promises';
+import { summarize, formatSummary, summarizePersonalization, cleanupSamples, formatCleanupSamples } from '../app/js/usage-summary.js';
 
 const at = (iso) => new Date(iso).toISOString();
 const partner = (iso, extra = {}) => ({ timestamp: at(iso), role: 'partner', rawTranscript: 'hello', cleanedTranscript: 'Hello.', ...extra });
@@ -350,4 +351,112 @@ test('the error count says which period it covers', () => {
     // report - and the two get read as the same number.
     const s = summarize([conv('a', [partner('2026-08-01T10:00:00Z'), err('2026-08-01T10:00:01Z', 'generate')])]);
     assert.match(formatSummary(s), /Errors since you began\s+1/);
+});
+
+/* ── Is the tidy-up earning its round trip? (Ken, August 26 2026) ──────────────
+ *
+ * Every committed exchange makes a SECOND AI request to rewrite what the recognizer
+ * heard. Ken's question was how many of those do more than adjust capitalization and
+ * punctuation, because only those needed an AI at all.
+ */
+
+const heard = (iso, raw, cleanedText, extra = {}) => ({
+    timestamp: at(iso), role: 'partner', rawTranscript: raw, cleanedTranscript: cleanedText, ...extra,
+});
+
+test('tidy-up: the three buckets are told apart', () => {
+    const s = summarize([conv('a', [
+        heard('2026-08-20T10:00:00Z', 'Hello.', 'Hello.'),                       // none
+        heard('2026-08-20T10:01:00Z', 'hello there', 'Hello there.'),            // punctuation
+        heard('2026-08-20T10:02:00Z', 'i sore him yesterday', 'I saw him yesterday.'), // words
+    ])]);
+    assert.deepEqual(
+        { compared: s.cleanup.compared, none: s.cleanup.none, punctuation: s.cleanup.punctuation, words: s.cleanup.words },
+        { compared: 3, none: 1, punctuation: 1, words: 1 });
+});
+
+test('tidy-up: adding an apostrophe is PUNCTUATION, not a change of wording', () => {
+    // The commonest tidy-up there is. Splitting on the apostrophe would compare
+    // "dont" against "don t" and file it under "the wording changed", which would
+    // inflate the one bucket the whole measure exists to count.
+    const s = summarize([conv('a', [heard('2026-08-20T10:00:00Z', 'i dont think so', "I don't think so.")])]);
+    assert.equal(s.cleanup.punctuation, 1);
+    assert.equal(s.cleanup.words, 0);
+});
+
+test('tidy-up: a turn still in progress is not compared', () => {
+    // Written at the partner's first pause, with the cleaned line still empty. It is
+    // not a tidy-up that did nothing; there is simply nothing to compare yet.
+    const s = summarize([conv('a', [heard('2026-08-20T10:00:00Z', 'half a sentence', '')])]);
+    assert.equal(s.cleanup.compared, 0);
+});
+
+test('tidy-up: a turn that was never sent is separated from one that changed nothing', () => {
+    // ⚠ THE LOAD-BEARING DISTINCTION. An interruption, a pardon and ending the
+    // conversation all record what was heard verbatim WITHOUT asking the AI, and
+    // afterwards look identical to a call that ran and changed nothing. Counting them
+    // together fills the "the call did nothing" bucket with calls never made.
+    const s = summarize([conv('a', [
+        heard('2026-08-20T10:00:00Z', 'Hello.', 'Hello.', { cleaned: true }),   // asked, no change
+        heard('2026-08-20T10:01:00Z', 'wait I', 'wait I', { cleaned: false }),  // never asked
+    ])]);
+    assert.equal(s.cleanup.none, 2, 'both are unchanged');
+    assert.equal(s.cleanup.calls, 1, 'only one of them cost anything');
+    assert.equal(s.cleanup.callsRecorded, 2);
+});
+
+test('tidy-up: older records say so rather than being counted as unsent', () => {
+    // Records written before August 27 2026 carry no flag. Reporting them as "not
+    // sent" would be a guess in the flattering direction.
+    const s = summarize([conv('a', [heard('2026-08-20T10:00:00Z', 'hello there', 'Hello there.')])]);
+    assert.equal(s.cleanup.callsRecorded, 0);
+    assert.match(formatSummary(s), /older records do not say which turns were sent/);
+});
+
+test('tidy-up: the summary names the base when the flag is present', () => {
+    const s = summarize([conv('a', [heard('2026-08-20T10:00:00Z', 'hello there', 'Hello there.', { cleaned: true })])]);
+    assert.match(formatSummary(s), /TIDYING UP WHAT WAS HEARD/);
+    assert.match(formatSummary(s), /Actually sent to the AI 1 of 1 recent turns/);
+});
+
+test('⚠ the summary carries COUNTS ONLY — no wording can ride the weekly report', () => {
+    // summarize()'s whole return value is sent verbatim in the weekly report, and the
+    // one firm rule is that verbatim speech never leaves the device automatically.
+    // The words below are deliberately distinctive so a leak anywhere in the object
+    // is caught, however it got there.
+    const s = summarize([conv('a', [
+        heard('2026-08-20T10:00:00Z', 'zarquon frobnitz', 'Zarquon Frobnitz reticulated.', { cleaned: true }),
+        user('2026-08-20T10:00:05Z', { selectedText: 'plugh xyzzy' }),
+    ])]);
+    const dumped = JSON.stringify(s);
+    for (const word of ['zarquon', 'frobnitz', 'reticulated', 'plugh', 'xyzzy']) {
+        assert.ok(!dumped.toLowerCase().includes(word), `"${word}" must not appear in the summary`);
+    }
+});
+
+test('the before-and-after pairs are a SEPARATE call, newest first, and only the rewrites', () => {
+    const samples = cleanupSamples([conv('a', [
+        heard('2026-08-20T10:00:00Z', 'hello there', 'Hello there.'),                  // punctuation
+        heard('2026-08-21T10:00:00Z', 'i sore him', 'I saw him.'),                     // words
+        heard('2026-08-22T10:00:00Z', 'we went to the see side', 'We went to the seaside.'),
+    ])]);
+    assert.equal(samples.length, 2, 'only the turns where the wording changed');
+    assert.match(samples[0].before, /see side/, 'newest first');
+    assert.equal(samples[1].after, 'I saw him.');
+});
+
+test('the sample list is capped and survives a malformed file', () => {
+    const many = Array.from({ length: 30 }, (_, i) =>
+        heard(`2026-08-${String(i + 1).padStart(2, '0')}T10:00:00Z`, 'i sore him', `I saw him ${i}.`));
+    assert.equal(cleanupSamples([conv('a', many)], 5).length, 5);
+    assert.deepEqual(cleanupSamples([{ id: 'bad', data: null }, null, { id: 'x', data: { exchanges: 'nope' } }]), []);
+});
+
+test('⚠ nothing in weekly-send may reach the sample pairs', async () => {
+    // The counts are safe to send and the wordings are not, so the two are separate
+    // functions. This asserts the separation still holds at the only place it could
+    // be undone by accident: the module that builds the outgoing payload.
+    const src = await readFile(new URL('../app/js/weekly-send.js', import.meta.url), 'utf8');
+    assert.ok(!src.includes('cleanupSamples'),
+        'weekly-send.js must never import or call cleanupSamples — it carries what people said');
 });

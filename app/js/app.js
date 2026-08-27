@@ -1682,13 +1682,18 @@ async function commitExchange(raw, userText, index, opts = {}) {
         storage.logUserResponse(userLog);
         (async () => {
             let cleaned = raw;
-            try { cleaned = await llm.cleanupTranscript(raw, cleanupContext); }
+            // Whether the tidy-up actually happened, so the saved turn can say so --
+            // it is the difference between "the call changed nothing" and "no call was
+            // made", which the two wordings alone cannot tell apart. A throw leaves it
+            // false: nothing was tidied. See transcript-log.finalizePartner.
+            let didClean = false;
+            try { cleaned = await llm.cleanupTranscript(raw, cleanupContext); didClean = true; }
             catch (err) { storage.logError('cleanupTranscript', err.message); /* fall back to raw */ }
             if (conversationHistory[partnerIdx]) {
                 conversationHistory[partnerIdx].text = cleaned;
                 ui.renderConversation(conversationHistory);
             }
-            await storage.finalizePartnerTurn(partnerHandle, { rawTranscript: raw, cleanedTranscript: cleaned, partner: stamp });
+            await storage.finalizePartnerTurn(partnerHandle, { rawTranscript: raw, cleanedTranscript: cleaned, partner: stamp, cleaned: didClean });
         })();
     } else if (raw) {
         // Interruption case: record the partner's raw heard text as-is, no AI
@@ -4378,6 +4383,27 @@ async function renderUsageSummary() {
     view.scrollTop = 0;
 }
 
+/* The before-and-after wordings, on screen and nowhere else.
+ *
+ * ⚠ NOT ADDED TO buildProblemReportText, AND THAT IS THE POINT OF IT BEING SEPARATE.
+ * The counts in the summary above answer "is the tidy-up doing anything", which is
+ * what can be judged at a distance; "was this rewrite an improvement" needs the
+ * wording, and the wording is what the other person said. They never agreed to
+ * anything and cannot be asked, so it stays here for a person to read. It reaches us
+ * only if the tester deliberately attaches a saved conversation. */
+async function renderCleanupSamples() {
+    const view = document.getElementById('cleanupSamplesView');
+    if (!view) return;
+    try {
+        view.value = usageSummary.formatCleanupSamples(
+            usageSummary.cleanupSamples(await storage.listConversationLogs()));
+    } catch (e) {
+        view.value = `Could not read the saved conversations.
+${e && e.message ? e.message : e}`;
+    }
+    view.scrollTop = 0;
+}
+
 async function renderSystemInfo() {
     const view = document.getElementById('systemInfoView');
     if (!view) return;
@@ -4410,6 +4436,7 @@ function renderWeeklyReport() {
 function renderTroubleshooting() {
     renderErrorLog();
     renderUsageSummary();
+    renderCleanupSamples();
     renderSystemInfo();
     renderWeeklyReport();
 }

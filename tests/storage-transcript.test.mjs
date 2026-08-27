@@ -22,6 +22,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { summarize, cleanupSamples } from '../app/js/usage-summary.js';
 
 /* ── A directory handle that behaves like the browser's ───────────────────── */
 
@@ -186,4 +187,67 @@ test('the written file is valid JSON with the shape a later reader expects', asy
     assert.equal(typeof log.started, 'string');
     assert.ok(Array.isArray(log.exchanges));
     for (const e of log.exchanges) assert.ok(e.role, 'every entry says what it is');
+});
+
+/* ── The tidy-up measurement, end to end (Ken, August 27 2026) ─────────────────
+ *
+ * ⚠ THIS IS THE CHECK THAT CROSSES THE LAYERS, and it is here rather than in
+ * usage-summary.test.mjs for exactly the reason the standing rule gives: those tests
+ * FABRICATE the conversation records they classify, so they prove the classifier and
+ * nothing about whether the app ever writes a record it can classify. Here the real
+ * storage layer writes real files, and the summary reads back what it wrote.
+ *
+ * It is the same shape as the number-button failure: parser fine, renderer fine,
+ * field dropped in the one link nothing ran.
+ */
+test('what the app writes is what the measurement reads', async () => {
+    // Its own conversation file: startConversationLog is idempotent by design, so
+    // without this it would append to the one the tests above built and count their
+    // turns too.
+    storage.resetConversationId();
+    storage.setConversationSaving(true);
+    storage.setSttBackend('deepgram');
+    await storage.startConversationLog();
+    const id = storage.getConversationId();
+
+    // A turn the AI rewrote.
+    await storage.logPartnerInterim({ rawTranscript: 'i went to the see side' });
+    await storage.finalizePartnerTurn(storage.detachPendingPartnerTurn(), {
+        rawTranscript: 'i went to the see side',
+        cleanedTranscript: 'I went to the seaside.',
+        cleaned: true,
+    });
+    // A turn the AI only repunctuated.
+    await storage.logPartnerInterim({ rawTranscript: 'that sounds nice' });
+    await storage.finalizePartnerTurn(storage.detachPendingPartnerTurn(), {
+        rawTranscript: 'that sounds nice',
+        cleanedTranscript: 'That sounds nice.',
+        cleaned: true,
+    });
+    // An interruption: recorded verbatim, never sent. Must not be counted as a call
+    // that happened to change nothing — that is the whole point of the flag.
+    await storage.logPartnerInterim({ rawTranscript: 'wait I' });
+    await storage.finalizePartnerTurn(storage.detachPendingPartnerTurn(), {
+        rawTranscript: 'wait I', cleanedTranscript: 'wait I',
+    });
+
+    const data = await readLog(id);
+    const s = summarize([{ id, data }]);
+    assert.equal(s.cleanup.compared, 3);
+    assert.equal(s.cleanup.words, 1, 'one rewrite that needed an AI');
+    assert.equal(s.cleanup.punctuation, 1, 'one that did not');
+    assert.equal(s.cleanup.none, 1);
+    assert.equal(s.cleanup.calls, 2, 'the interruption cost nothing and is not counted');
+    assert.equal(s.cleanup.callsRecorded, 3);
+
+    // And the before-and-after pair survives the round trip to disk, which is what
+    // makes the on-screen list able to answer "was that rewrite an improvement".
+    const samples = cleanupSamples([{ id, data }]);
+    assert.equal(samples.length, 1);
+    assert.equal(samples[0].before, 'i went to the see side');
+    assert.equal(samples[0].after, 'I went to the seaside.');
+
+    // ⚠ AND THE WORDS STAY OUT OF WHAT GETS SENT. Same assertion as the pure test,
+    // made again on a summary built from a file the app actually wrote.
+    assert.ok(!JSON.stringify(s).includes('see side'));
 });

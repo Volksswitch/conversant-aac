@@ -117,6 +117,82 @@ function isPractice(data) {
 /* Aggregate [{ id, data }] into the summary object. Everything is null/0 rather
  * than absent when there is nothing to measure, so the formatter never has to
  * guard. */
+/* ── Is the tidy-up earning its round trip? (Ken, August 26 2026) ───────────────
+ *
+ * Every committed exchange makes a SECOND AI request, which rewrites what the
+ * recognizer heard into readable prose. Ken's question on being shown it was not
+ * "is it good" but "how many of these do more than adjust capitalization and
+ * punctuation?" -- because that is the share that could not have been done on the
+ * device for nothing, and so the share that justifies the call.
+ *
+ * Both wordings are already on every partner turn, so this is a comparison rather
+ * than new capture. Three answers:
+ *
+ *   none         the two are identical
+ *   punctuation  they differ ONLY in capitals, punctuation or spacing
+ *   words        the wording itself changed
+ *
+ * Only `words` needs an AI. `punctuation` is a local pass we are paying a network
+ * round trip for, and if that turns out to be most of them the cheap fix is to stop
+ * paying for it rather than to remove the feature.
+ *
+ * ⚠ THE COMPARISON IS ON SUBSTANCE, SO APOSTROPHES ARE DELETED RATHER THAN TURNED
+ * INTO SPACES. "dont" -> "don't" is punctuation being added, which is exactly the
+ * cheap bucket; splitting on the apostrophe would make it read as "dont" vs "don t"
+ * and file the commonest tidy-up of all under "the wording changed".
+ *
+ * ⚠ THIS CANNOT SAY WHETHER A CHANGE WAS AN IMPROVEMENT. Nothing here judges the
+ * rewrite -- a confident correction of a misheard word into the wrong word counts as
+ * `words` exactly like a good one. That question needs the two wordings in front of
+ * a person, which is what cleanupSamples() is for, and it stays on the device.
+ */
+export function normalizeForCompare(text) {
+    return String(text || '')
+        .toLowerCase()
+        .replace(/[‘’]/g, "'")      // curly apostrophes first, then drop them all
+        .replace(/'/g, '')
+        .replace(/[^\p{L}\p{N}]+/gu, ' ')
+        .trim();
+}
+
+/* Which of the three a finalized partner turn is, or null when there is nothing to
+ * compare (a turn still in progress has no cleaned line yet). */
+export function classifyCleanup(turn) {
+    if (!turn) return null;
+    const raw = turn.rawTranscript;
+    const cleaned = turn.cleanedTranscript;
+    if (typeof raw !== 'string' || typeof cleaned !== 'string') return null;
+    if (!raw.trim() || !cleaned.trim()) return null;
+    if (raw === cleaned) return 'none';
+    return normalizeForCompare(raw) === normalizeForCompare(cleaned) ? 'punctuation' : 'words';
+}
+
+/* THE BEFORE-AND-AFTER PAIRS, FOR READING BY A PERSON -- deliberately NOT part of
+ * summarize(), and this separation is the load-bearing part rather than tidiness.
+ *
+ * The weekly report sends summarize()'s whole return value verbatim, so anything
+ * carrying words that ends up in there leaves the device. The counts answer the
+ * question that can be answered at a distance; judging whether a rewrite was an
+ * improvement needs the wording, so it is a separate call that only the on-device
+ * Troubleshooting view makes. Nothing in weekly-send.js may ever import this.
+ *
+ * Newest first: a rewrite from months ago says less about the model in use now. */
+export function cleanupSamples(logs, limit = 12) {
+    const out = [];
+    if (!Array.isArray(logs)) return out;
+    for (const entry of logs) {
+        const data = entry && entry.data;
+        if (!data || !Array.isArray(data.exchanges)) continue;
+        for (const e of data.exchanges) {
+            if (!isPartner(e)) continue;
+            if (classifyCleanup(e) !== 'words') continue;
+            out.push({ at: ms(e.timestamp), before: e.rawTranscript, after: e.cleanedTranscript });
+        }
+    }
+    out.sort((a, b) => (b.at || 0) - (a.at || 0));
+    return out.slice(0, limit);
+}
+
 export function summarize(logs) {
     const out = {
         conversations: 0, practiceConversations: 0,
@@ -139,6 +215,10 @@ export function summarize(logs) {
         voiceByProvider: {}, voiceFellBack: 0,
         byRecognizer: {},
         partnerWordsMedian: null, userWordsMedian: null,
+        // ⚠ COUNTS ONLY, NEVER WORDINGS. This whole object is sent verbatim in the
+        // weekly report, so the before-and-after pairs live in cleanupSamples()
+        // instead and never leave the device. See the note above classifyCleanup.
+        cleanup: { compared: 0, none: 0, punctuation: 0, words: 0, calls: 0, callsRecorded: 0 },
         palettesOffered: 0, optionsOffered: 0, cardsPerPaletteMedian: null, optionWordsMedian: null,
         decideMsMedian: null, decideSamples: 0,
     };
@@ -219,6 +299,20 @@ export function summarize(logs) {
                 // August 2026, and the single biggest influence on how accurate that
                 // line is — so every other number can be read separately for the two
                 // instead of averaging two different products together.
+                // Did tidying up earn its round trip? Free to answer: both wordings
+                // are already here. `calls` is reported alongside because it is what
+                // makes the `none` bucket readable -- several paths finalize a turn
+                // with cleaned = raw having never asked the AI at all, and records
+                // written before August 27 2026 do not say which they were.
+                const kind = classifyCleanup(e);
+                if (kind) {
+                    out.cleanup.compared++;
+                    out.cleanup[kind]++;
+                }
+                if (typeof e.cleaned === 'boolean') {
+                    out.cleanup.callsRecorded++;
+                    if (e.cleaned) out.cleanup.calls++;
+                }
                 const rec = e.stt || '(not recorded)';
                 if (!recognizers.has(rec)) recognizers.set(rec, { partnerTurns: 0, gaps: [] });
                 recognizers.get(rec).partnerTurns++;
@@ -569,6 +663,31 @@ export function formatSummary(s, personalization = null) {
     }
     L.push('');
 
+    // Is the second AI request per exchange earning its keep? Only the last bucket
+    // needs an AI at all; the middle one is a local job we are paying a network round
+    // trip for. Shown as counts because that is all that can be judged at a distance -
+    // whether a rewrite was an IMPROVEMENT needs the two wordings and a person.
+    const c = s.cleanup;
+    if (c && c.compared) {
+        L.push('TIDYING UP WHAT WAS HEARD');
+        L.push(`  Turns compared          ${c.compared}`);
+        L.push(`  Wording changed         ${c.words}  (${pct(Math.round((c.words / c.compared) * 100))})`);
+        L.push(`  Only punctuation        ${c.punctuation}`);
+        L.push(`  No change at all        ${c.none}`);
+        if (c.callsRecorded) {
+            // Naming the base, for the same reason the two blocks above do it: this has
+            // only been recorded since August 27 2026, so on a history that spans the
+            // change it covers a fraction of the turns counted three lines up.
+            L.push(`  Actually sent to the AI ${c.calls} of ${c.callsRecorded} recent turns`);
+        } else {
+            // Without it, "no change at all" is not a measure of anything: an
+            // interruption, a pardon and ending the conversation all record what was
+            // heard verbatim without ever asking.
+            L.push('  (older records do not say which turns were sent for tidying)');
+        }
+        L.push('');
+    }
+
     L.push('WHO, WHERE AND HOW YOU FELT');
     if (s.partners.length) {
         L.push(`  People named            ${s.partners.length}, of whom ${s.returningPartners} in more than one conversation`);
@@ -608,4 +727,27 @@ export function formatSummary(s, personalization = null) {
         L.push('  None recorded.');
     }
     return L.join('\n');
+}
+
+/* The sample pairs as text for the on-screen box. Local only -- see cleanupSamples.
+ *
+ * Both wordings on their own lines rather than side by side: they are usually close
+ * enough that the difference is a word or two, and reading them one above the other
+ * is what makes that word findable. */
+export function formatCleanupSamples(samples) {
+    if (!Array.isArray(samples) || !samples.length) {
+        return 'No rewrites to show yet.\n\n'
+            + 'This fills in when tidying up changes the WORDING of something that was\n'
+            + 'heard, rather than only its capitals and punctuation. Those are the ones\n'
+            + 'worth reading: they are the ones the AI was needed for.\n\n'
+            + 'Stays on this device. It is never included in a report.';
+    }
+    const L = ['These are on this device only and are never sent anywhere.', ''];
+    for (const x of samples) {
+        L.push(dateOnly(x.at));
+        L.push(`  heard   ${x.before}`);
+        L.push(`  tidied  ${x.after}`);
+        L.push('');
+    }
+    return L.join('\n').trimEnd();
 }

@@ -22,6 +22,7 @@ import * as storage from './storage.js';
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
   "0.8.3": [
+    "Settings → Troubleshooting now shows whether tidying up what was heard is worth doing. After each exchange the app sends what the microphone heard back to the AI to be written out properly. The summary now counts how often that changed the actual wording, how often it only added capitals and punctuation, and how often it changed nothing — and a new box shows recent before-and-after examples so you can judge whether the change was an improvement. Those examples stay on your device and are never included in any report.",
     "Fixed: the on-screen keyboard did not appear when you added a phrase to the Express Panel. Pressing Add a phrase put the cursor in the new box, but the panel stayed in front of you instead of the keyboard, so there was no way to type until you tapped outside the box and back in again. It now comes up straight away, in every band. Only affects people using the app's own on-screen keyboard."
   ],
   "0.8.2": [

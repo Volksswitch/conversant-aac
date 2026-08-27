@@ -864,6 +864,17 @@
                             <button id="copyUsageSummaryBtn" type="button">Copy</button>
                         </div>
                     </div>
+                    <div class="setting-group" data-help="cleanupSamples">
+                        <label>What tidying up rewrote</label>
+                        <!-- The counts live in the summary above; this is the half a
+                             count cannot answer - whether a rewrite was an IMPROVEMENT
+                             needs both wordings in front of a person. Deliberately has
+                             no Copy button and is never folded into a problem report:
+                             it is the only box on this tab that holds what somebody
+                             actually said, and the other person never agreed to
+                             anything. -->
+                        <textarea id="cleanupSamplesView" readonly rows="8" placeholder="No rewrites to show yet." aria-label="What tidying up rewrote"></textarea>
+                    </div>
                     <div class="setting-group" data-help="errorLog">
                         <!-- The count sits OUTSIDE the heading: the heading's text
                              becomes the section title, so anything nested in it would

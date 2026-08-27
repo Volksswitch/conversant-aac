@@ -87,10 +87,27 @@ export function upsertPartnerInterim(exchanges, pending, { rawTranscript, partne
 // If `handle` is set it is updated IN PLACE — preserving its position before the
 // user's turn; if `handle` is null (an interruption captured before any pause was
 // ever written) a fresh finalized partner entry is appended. Returns the entry.
-export function finalizePartner(exchanges, handle, { rawTranscript, cleanedTranscript, partner = null, stt = null, timestamp }) {
+/* ⚠ `cleaned` RECORDS WHETHER THE TIDY-UP CALL ACTUALLY RAN, and without it the
+ * raw-vs-cleaned comparison cannot be read (Ken, August 26 2026: "do we have a metric
+ * associated with the number of cleaned statements that do more than adjust
+ * capitalization and punctuation?").
+ *
+ * Both wordings have been stored on every partner turn since July 2026, so comparing
+ * them is free -- but several paths finalize a turn with cleaned = raw WITHOUT ever
+ * asking the AI: an interruption, a pardon, and ending the conversation all record
+ * what was heard verbatim by design. Those are indistinguishable afterwards from a
+ * call that ran and changed nothing, so counting them together would fill the "the
+ * call did nothing" bucket with calls that were never made -- understating the value
+ * of the ones that were, on the exact question being asked.
+ *
+ * true only when a cleanup response came back. A call that THREW leaves it false: no
+ * tidying happened, which is what the measure is about. Absent on records written
+ * before this, which usage-summary reports as its own count rather than assuming. */
+export function finalizePartner(exchanges, handle, { rawTranscript, cleanedTranscript, partner = null, stt = null, cleaned = false, timestamp }) {
     if (handle) {
         handle.rawTranscript = rawTranscript;
         handle.cleanedTranscript = cleanedTranscript;
+        handle.cleaned = !!cleaned;
         pushRevision(handle, rawTranscript, timestamp);
         if (partner) handle.partner = partner;
         if (stt) handle.stt = stt;
@@ -101,6 +118,7 @@ export function finalizePartner(exchanges, handle, { rawTranscript, cleanedTrans
         role: 'partner',
         rawTranscript,
         cleanedTranscript,
+        cleaned: !!cleaned,
         partner,
         stt,
     };

@@ -52,7 +52,10 @@ test('finalize with a null handle APPENDS a finished partner turn (interruption 
     const ex = [];
     finalizePartner(ex, null, { rawTranscript: 'wait I', cleanedTranscript: 'wait I' });
     assert.equal(ex.length, 1);
-    assert.deepEqual(ex[0], { timestamp: ex[0].timestamp, role: 'partner', rawTranscript: 'wait I', cleanedTranscript: 'wait I', partner: null, stt: null });
+    // cleaned:false is correct and load-bearing here — an interruption records what
+    // was heard verbatim and never asks the AI, so it must not be counted later as a
+    // tidy-up that happened to change nothing (see usage-summary.classifyCleanup).
+    assert.deepEqual(ex[0], { timestamp: ex[0].timestamp, role: 'partner', rawTranscript: 'wait I', cleanedTranscript: 'wait I', cleaned: false, partner: null, stt: null });
 });
 
 test('a resumed partner turn after finalize appends a SECOND turn (detached handle not overwritten)', () => {
