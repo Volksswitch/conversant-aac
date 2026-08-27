@@ -32,6 +32,7 @@ green run as "the document is good":
   - whether a figure shows what its caption says
 """
 import sys, os, re, json, glob
+import subprocess
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from docx_model import Doc, W
@@ -540,8 +541,53 @@ def main(argv):
 
     print('\n%s\n%d error(s), %d to review across %d document(s).'
           % ('-' * 70, totals['error'], totals['review'], len(paths)))
+    # The last word, and it overrides everything above: a document Word will not open
+    # is not clean with a caveat, it is broken, whatever the rules said.
+    word_bad, why = (None, 'skipped') if ('--no-word' in argv) else word_opens(paths)
+    if why:
+        print('WORD CHECK NOT RUN (%s) - a green result above does NOT mean they open.' % why)
+    elif word_bad:
+        print()
+        print('%d document(s) WORD WILL NOT OPEN: %s' % (len(word_bad), ', '.join(word_bad)))
+        if not totals['error']:
+            print('Everything above passed anyway, which is exactly why this check exists.')
+        return 1
+    else:
+        print('Word opens all %d.' % len(paths))
     return 1 if totals['error'] else 0
 
+
+def word_opens(paths):
+    """The only check that has ever been right: ask Word to open the file.
+
+    Three separate times a .docx has been produced that Word refuses - xml.etree
+    rewriting the namespace prefixes, an emptied table cell, and a numbering list used
+    but never declared - and every single time EVERY OTHER CHECK PASSED. It unzipped,
+    every part parsed, python-docx read all the text back, LibreOffice converted it
+    without complaint, and the rules above called the document clean.
+
+    The lesson written down after the second time - assert what the CONSUMER requires,
+    not what the parser accepts - was right, and was implemented as a list of the two
+    faults already known, which by construction could not catch a third. This asks the
+    consumer instead of guessing what it wants.
+
+    Skipped LOUDLY where Word is unavailable. A silent skip puts us straight back to a
+    green run on a file nobody can open.
+    """
+    if os.name != 'nt':
+        return None, 'not Windows'
+    ps = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'doc-generators', 'open-in-word.ps1')
+    if not os.path.exists(ps):
+        return None, 'open-in-word.ps1 is missing'
+    # ⚠ ONE Word for the whole batch. Starting it per document took over two minutes
+    # across the document set and seconds this way.
+    r = subprocess.run(['powershell', '-ExecutionPolicy', 'Bypass', '-File', ps] + list(paths),
+                       capture_output=True, text=True)
+    bad = [ln.split('  ->')[0].replace('WORD REFUSES', '').strip()
+           for ln in (r.stdout or '').splitlines() if 'WORD REFUSES' in ln]
+    if r.returncode != 0 and not bad:
+        return None, 'the Word check itself failed: %s' % ((r.stderr or r.stdout or '').strip()[:120])
+    return bad, None
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))
