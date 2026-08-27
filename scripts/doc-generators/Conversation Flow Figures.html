@@ -1,0 +1,103 @@
+<!doctype html>
+<meta charset="utf-8">
+<!-- Source for the two figures in "Conversant AAC Conversation Flow.docx".
+     Captured by capture-conversation-flow-figures.js, which REFUSES if any box has
+     outgrown its container - these are drawn blind, so nothing else would catch it. -->
+<style>
+  :root { --ink:#222; --line:#7A8A99; --blue:#1F4E79; --soft:#F0F4F8; --edge:#C4CCD2; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: Arial, Helvetica, sans-serif; color: var(--ink); background:#fff; }
+  .fig { width: 1000px; padding: 26px 30px 30px; background:#fff; }
+  .cap { font-size: 15px; color:#555; margin: 0 0 18px; }
+  .col { display:flex; flex-direction:column; align-items:center; gap:0; }
+  .box { width: 560px; border:2px solid var(--blue); border-radius:8px; background:#fff;
+         padding:11px 16px; text-align:center; font-size:17px; line-height:1.35; }
+  .box b { display:block; font-size:18px; }
+  .box small { display:block; color:#4A5A68; font-size:14px; margin-top:3px; }
+  .soft { background: var(--soft); border-color: var(--edge); }
+  .wide { width: 720px; }
+  .arrow { width:0; height:26px; border-left:2px solid var(--line); }
+  .arrow::after { content:''; display:block; position:relative; left:-6px; top:26px;
+                  border-left:6px solid transparent; border-right:6px solid transparent;
+                  border-top:9px solid var(--line); }
+  .row { display:flex; align-items:center; gap:14px; }
+  .side { width: 300px; font-size:14px; color:#4A5A68; line-height:1.4; }
+  .side b { color: var(--blue); }
+  .loop { font-size:14px; color:var(--blue); border:1px dashed var(--line); border-radius:6px;
+          padding:7px 12px; margin:8px 0; background:#FBFDFF; max-width:720px; text-align:center; }
+  /* --- figure 2: one pause, on a time line --- */
+  .tl { position:relative; width:940px; height:330px; margin-top:6px; }
+  .axis { position:absolute; left:0; width:940px; top:120px; height:2px; background:var(--line); }
+  .seg { position:absolute; top:96px; height:50px; border-radius:5px; font-size:15px;
+         display:flex; align-items:center; justify-content:center; }
+  .talk { background:#E4ECF4; border:2px solid var(--blue); color:var(--blue); }
+  .gap  { background:#FFF8E6; border:2px dashed #B8860B; color:#8A6400; }
+  .tick { position:absolute; width:2px; background:var(--line); }
+  .lab  { position:absolute; font-size:14px; line-height:1.35; color:#33414D; width:230px; }
+  .lab b { color:var(--blue); display:block; }
+  .warn { color:#8A6400; }
+</style>
+
+<div class="fig" id="f1">
+  <p class="cap">How one exchange goes, from the other person speaking to your reply being said aloud.</p>
+  <div class="col">
+    <div class="box"><b>You open the conversation</b><small>"Start conversation" offers openers to choose from &middot; "Start Listening" goes straight to listening</small></div>
+    <div class="arrow"></div>
+    <div class="row">
+      <div class="box"><b>The other person talks</b><small>Their words appear in the Conversation Log as they are heard</small></div>
+      <div class="side">The microphone stays on for the whole exchange. Nothing is spoken by the app while they are still talking.</div>
+    </div>
+    <div class="arrow"></div>
+    <div class="row">
+      <div class="box soft"><b>They pause</b><small>Quiet for the Silence Period &mdash; half a second by default</small></div>
+      <div class="side">Two things start here, and they are independent: the app asks the AI for suggestions, <b>and</b> the holding-phrase clock starts.</div>
+    </div>
+    <div class="arrow"></div>
+    <div class="row">
+      <div class="box"><b>A holding phrase is spoken</b><small>Two seconds after the pause &mdash; "I'm thinking about that."</small></div>
+      <div class="side">It fills the silence while you read. It is not an answer, and it never waits for the AI.</div>
+    </div>
+    <div class="arrow"></div>
+    <div class="row">
+      <div class="box"><b>Four suggestions appear</b><small>A plain reply, a way to decline, a way to take the lead, and a way to ask</small></div>
+      <div class="side">Usually four to eight seconds after the pause. Until then the panel keeps whatever was there before &mdash; on the first exchange, nothing.</div>
+    </div>
+    <div class="loop">If the other person starts talking again, the holding phrases stop at once and their words keep being added. At their next pause the suggestions are <b>replaced</b> by a fresh set &mdash; the panel is never emptied while you are reading it.</div>
+    <div class="arrow"></div>
+    <div class="box wide"><b>You answer, in any of three ways</b><small>Tap a suggestion &nbsp;&middot;&nbsp; tap a phrase in the Express Panel &nbsp;&middot;&nbsp; type your own in the Composition Pane and tap Speak</small></div>
+    <div class="arrow"></div>
+    <div class="row">
+      <div class="box"><b>The app says it in your voice</b><small>The exchange is written to the Conversation Log and saved</small></div>
+      <div class="side">Listening restarts by itself only if you have turned on "Resume listening automatically". Otherwise tap Listen again.</div>
+    </div>
+    <div class="arrow"></div>
+    <div class="box soft"><b>Back to the top &mdash; or wind the conversation up</b><small>"Wrap up" offers ways to signal you are finishing, then the goodbyes</small></div>
+  </div>
+</div>
+
+<div class="fig" id="f2">
+  <p class="cap">What the Silence Period actually measures &mdash; and why the wait you feel is longer than the setting.</p>
+  <div class="tl">
+    <div class="axis"></div>
+    <div class="seg talk" style="left:0; width:250px;">The other person is talking</div>
+    <div class="seg gap"  style="left:250px; width:100px;">arriving</div>
+    <div class="seg gap"  style="left:350px; width:120px;">Silence Period</div>
+    <div class="seg gap"  style="left:470px; width:250px; background:#F4F0F8; border-color:#6A1B9A; color:#4A148C;">the app is asking the AI</div>
+    <div class="seg talk" style="left:720px; width:220px; background:#EAF3EA; border-color:#2E7D32; color:#2E7D32;">Your reply is spoken</div>
+
+    <div class="tick" style="left:250px; top:60px; height:96px;"></div>
+    <div class="lab" style="left:140px; top:8px; text-align:right;"><b>They stop talking</b>You hear this instantly. The app does not.</div>
+
+    <div class="tick" style="left:350px; top:170px; height:40px;"></div>
+    <div class="lab warn" style="left:262px; top:214px;"><b>Their last words arrive</b>Speech recognition runs online and reports what it heard a moment late. Nothing can change that delay, and the Silence Period only starts here.</div>
+
+    <div class="tick" style="left:470px; top:60px; height:96px;"></div>
+    <div class="lab" style="left:476px; top:8px;"><b>The app calls this a pause</b>It asks the AI, and starts the holding-phrase clock.</div>
+
+    <div class="tick" style="left:540px; top:170px; height:40px;"></div>
+    <div class="lab" style="left:530px; top:214px;"><b>A holding phrase is spoken</b>Two seconds after the pause, so the wait is not silent.</div>
+
+    <div class="tick" style="left:720px; top:60px; height:96px;"></div>
+    <div class="lab" style="left:726px; top:8px;"><b>Suggestions appear</b>Typically four to eight seconds after the pause. You then read and choose.</div>
+  </div>
+</div>

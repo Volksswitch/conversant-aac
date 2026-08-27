@@ -1,6 +1,15 @@
 """Put every table on the one named house style, and make that style actually govern.
 
   python scripts/doc-generators/apply-table-style.py "<file.docx>" [--dry]
+  python scripts/doc-generators/apply-table-style.py "<file.docx>" --from "<source.docx>"
+
+⚠ THE STYLE LIVES IN ONE DOCUMENT AND HAS TO BE CARRIED TO THE OTHERS. Ken built it in
+Word, in the Windows manual, so that is the only file that has ever had the definition -
+every generated document has tables carrying their own formatting and no style at all,
+which is 29 findings across the set and the single commonest complaint the document
+checker makes. --from copies the definition in, after which the rest of this script
+works exactly as it does on the manual. The manual is the source of truth for what the
+style IS; nothing here invents one.
 
 Ken's comment 4, anchored on the hardware table in section 2.1: "All tables in the
 document should share this style including font size bold background color and borders."
@@ -32,6 +41,29 @@ STYLE_ID = 'Conversant'
 # Taken from the table Ken pointed at (section 2.1), not invented.
 FIRST_COL_FILL = 'F0F4F8'
 FIRST_COL_SIZE = '22'          # half-points, so 11pt
+
+
+def import_style(doc, source_path):
+    """Copy the style definition out of `source_path` into `doc`, if it is not there.
+
+    A deep copy of the whole <w:style> element rather than a rebuild: it carries the
+    conditional formatting for the header row and the first column, which is the part
+    that actually does the work, and rebuilding it by hand is how a second, subtly
+    different house style gets created."""
+    import copy
+    src = Document(source_path)
+    donor = None
+    for st in src.styles.element.iter(W + 'style'):
+        if st.get(W + 'styleId') == STYLE_ID:
+            donor = st
+            break
+    if donor is None:
+        raise SystemExit('the "%s" style is not in %s either' % (STYLE_ID, os.path.basename(source_path)))
+    for st in doc.styles.element.iter(W + 'style'):
+        if st.get(W + 'styleId') == STYLE_ID:
+            return False
+    doc.styles.element.append(copy.deepcopy(donor))
+    return True
 
 
 def fix_style(doc):
@@ -135,6 +167,11 @@ if __name__ == '__main__':
     path = [a for a in sys.argv[1:] if not a.startswith('--')][0]
     dry = '--dry' in sys.argv
     doc = Document(path)
+    src = None
+    if '--from' in sys.argv:
+        src = sys.argv[sys.argv.index('--from') + 1]
+        if import_style(doc, src):
+            print('  imported the "%s" style from %s' % (STYLE_ID, os.path.basename(src)))
     style_changes = fix_style(doc)
     table_report = fix_tables(doc)
     print(('DRY RUN - ' if dry else '') + os.path.basename(path))
