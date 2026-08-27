@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.8.3
+
 - **The app no longer rewrites what it heard the other person say, and asks the AI one
   less time per exchange.** It used to send their words back to be written out neatly.
   That happened after you had already picked your reply, so it could never improve the
