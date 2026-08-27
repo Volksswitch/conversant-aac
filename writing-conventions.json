@@ -1,0 +1,604 @@
+{
+  "_README": [
+    "ONE source for the writing conventions, read by BOTH checkers.",
+    "  tests/american-spelling.test.mjs  - the app, release notes and spoken help (runs in CI)",
+    "  scripts/doc-tests/check-docs.py   - the .docx in Documents/ (run on demand: 'check docs')",
+    "A second copy of these lists would drift, and drift in exactly this kind of list is a",
+    "failure this project has already paid for more than once. Edit here, nowhere else."
+  ],
+  "britishSpellings": [
+    [
+      "colour",
+      "color"
+    ],
+    [
+      "recolour",
+      "recolor"
+    ],
+    [
+      "favourite",
+      "favorite"
+    ],
+    [
+      "favour",
+      "favor"
+    ],
+    [
+      "behaviour",
+      "behavior"
+    ],
+    [
+      "neighbour",
+      "neighbor"
+    ],
+    [
+      "honour",
+      "honor"
+    ],
+    [
+      "humour",
+      "humor"
+    ],
+    [
+      "labour",
+      "labor"
+    ],
+    [
+      "flavour",
+      "flavor"
+    ],
+    [
+      "rumour",
+      "rumor"
+    ],
+    [
+      "endeavour",
+      "endeavor"
+    ],
+    [
+      "saviour",
+      "savior"
+    ],
+    [
+      "harbour",
+      "harbor"
+    ],
+    [
+      "odour",
+      "odor"
+    ],
+    [
+      "organise",
+      "organize"
+    ],
+    [
+      "organisation",
+      "organization"
+    ],
+    [
+      "recognise",
+      "recognize"
+    ],
+    [
+      "personalise",
+      "personalize"
+    ],
+    [
+      "personalisation",
+      "personalization"
+    ],
+    [
+      "customise",
+      "customize"
+    ],
+    [
+      "prioritise",
+      "prioritize"
+    ],
+    [
+      "summarise",
+      "summarize"
+    ],
+    [
+      "apologise",
+      "apologize"
+    ],
+    [
+      "realise",
+      "realize"
+    ],
+    [
+      "emphasise",
+      "emphasize"
+    ],
+    [
+      "maximise",
+      "maximize"
+    ],
+    [
+      "minimise",
+      "minimize"
+    ],
+    [
+      "initialise",
+      "initialize"
+    ],
+    [
+      "utilise",
+      "utilize"
+    ],
+    [
+      "analyse",
+      "analyze"
+    ],
+    [
+      "paralyse",
+      "paralyze"
+    ],
+    [
+      "centre",
+      "center"
+    ],
+    [
+      "metre",
+      "meter"
+    ],
+    [
+      "litre",
+      "liter"
+    ],
+    [
+      "theatre",
+      "theater"
+    ],
+    [
+      "fibre",
+      "fiber"
+    ],
+    [
+      "calibre",
+      "caliber"
+    ],
+    [
+      "licence",
+      "license"
+    ],
+    [
+      "defence",
+      "defense"
+    ],
+    [
+      "offence",
+      "offense"
+    ],
+    [
+      "pretence",
+      "pretense"
+    ],
+    [
+      "practise",
+      "practice"
+    ],
+    [
+      "cancelled",
+      "canceled"
+    ],
+    [
+      "cancelling",
+      "canceling"
+    ],
+    [
+      "travelled",
+      "traveled"
+    ],
+    [
+      "travelling",
+      "traveling"
+    ],
+    [
+      "labelled",
+      "labeled"
+    ],
+    [
+      "labelling",
+      "labeling"
+    ],
+    [
+      "modelled",
+      "modeled"
+    ],
+    [
+      "modelling",
+      "modeling"
+    ],
+    [
+      "fuelled",
+      "fueled"
+    ],
+    [
+      "signalled",
+      "signaled"
+    ],
+    [
+      "totalled",
+      "totaled"
+    ],
+    [
+      "fulfil",
+      "fulfill"
+    ],
+    [
+      "enrol",
+      "enroll"
+    ],
+    [
+      "instalment",
+      "installment"
+    ],
+    [
+      "skilful",
+      "skillful"
+    ],
+    [
+      "wilful",
+      "willful"
+    ],
+    [
+      "judgement",
+      "judgment"
+    ],
+    [
+      "grey",
+      "gray"
+    ],
+    [
+      "programme",
+      "program"
+    ],
+    [
+      "catalogue",
+      "catalog"
+    ],
+    [
+      "analogue",
+      "analog"
+    ],
+    [
+      "plough",
+      "plow"
+    ],
+    [
+      "mould",
+      "mold"
+    ],
+    [
+      "storey",
+      "story"
+    ],
+    [
+      "tyre",
+      "tire"
+    ],
+    [
+      "kerb",
+      "curb"
+    ],
+    [
+      "draught",
+      "draft"
+    ],
+    [
+      "cheque",
+      "check"
+    ],
+    [
+      "aluminium",
+      "aluminum"
+    ],
+    [
+      "sulphur",
+      "sulfur"
+    ],
+    [
+      "whilst",
+      "while"
+    ],
+    [
+      "learnt",
+      "learned"
+    ],
+    [
+      "spelt",
+      "spelled"
+    ],
+    [
+      "amongst",
+      "among"
+    ]
+  ],
+  "britishVocabulary": [
+    [
+      "mum",
+      "mom"
+    ],
+    [
+      "mummy",
+      "mommy"
+    ],
+    [
+      "lorry",
+      "truck"
+    ],
+    [
+      "petrol",
+      "gas"
+    ],
+    [
+      "nappy",
+      "diaper"
+    ],
+    [
+      "pram",
+      "stroller"
+    ],
+    [
+      "pushchair",
+      "stroller"
+    ],
+    [
+      "fortnight",
+      "two weeks"
+    ],
+    [
+      "maths",
+      "math"
+    ],
+    [
+      "aeroplane",
+      "airplane"
+    ],
+    [
+      "motorway",
+      "highway"
+    ],
+    [
+      "car park",
+      "parking lot"
+    ],
+    [
+      "postcode",
+      "zip code"
+    ],
+    [
+      "dustbin",
+      "trash can"
+    ],
+    [
+      "aubergine",
+      "eggplant"
+    ],
+    [
+      "courgette",
+      "zucchini"
+    ],
+    [
+      "anticlockwise",
+      "counterclockwise"
+    ],
+    [
+      "telly",
+      "TV"
+    ],
+    [
+      "bloke",
+      "guy"
+    ],
+    [
+      "chuffed",
+      "pleased"
+    ],
+    [
+      "knackered",
+      "exhausted"
+    ],
+    [
+      "whinge",
+      "complain"
+    ],
+    [
+      "nought",
+      "zero"
+    ],
+    [
+      "jumble sale",
+      "rummage sale"
+    ],
+    [
+      "holidaymaker",
+      "vacationer"
+    ]
+  ],
+  "properNounExemptions": [
+    {
+      "source": "CALL Centre",
+      "flags": "g"
+    },
+    {
+      "source": "\\bprogramm(?:ing|ed|er|ers)\\b",
+      "flags": "gi"
+    },
+    {
+      "source": "the shopping centre",
+      "flags": "g"
+    },
+    {
+      "source": "on the telly",
+      "flags": "g"
+    }
+  ],
+  "_officialNames": [
+    "The screen regions, settled by Ken August 26 2026. PANE = a region with no grid;",
+    "PANEL = a region with a grid; the Command Bar is a bar because it is an inflexible",
+    "row of buttons; the keyboard is the keyboard. Capitalized in prose, and every one",
+    "must appear in each user manual's Glossary."
+  ],
+  "officialNames": [
+    "Conversation Pane",
+    "Conversation Log",
+    "Response Panel",
+    "Command Bar",
+    "Express Panel",
+    "Composition Pane",
+    "Settings Panel",
+    "Always band",
+    "Context band",
+    "Flex band"
+  ],
+  "_retiredNames": "Old names that must not survive anywhere a user reads.",
+  "retiredNames": [
+    [
+      "Response Palette",
+      "Response Panel"
+    ],
+    [
+      "composer box",
+      "Composition Pane"
+    ],
+    [
+      "the composer",
+      "the Composition Pane"
+    ],
+    [
+      "Sound Check",
+      "Sounds Like Me"
+    ],
+    [
+      "Wind down",
+      "Wrap up"
+    ],
+    [
+      "wind-down button",
+      "Wrap up button"
+    ]
+  ],
+  "_bannedTerms": [
+    "Terms that must not appear in a document a user reads. 'severity' is honest about",
+    "which can be decided by a machine: ERROR is unambiguous, REVIEW needs a person to",
+    "read the sentence because the word has innocent uses too."
+  ],
+  "bannedTerms": [
+    {
+      "term": "chip",
+      "use": "choice button (the partner's alternatives) or answer button (About Me)",
+      "why": "designer vocabulary from Google's design system; not general English",
+      "severity": "error"
+    },
+    {
+      "term": "Preferred",
+      "use": "describe the response instead of naming the category",
+      "why": "Conversation Analysis category names are removed from user documents (comment 33)",
+      "severity": "review"
+    },
+    {
+      "term": "Dispreferred",
+      "use": "describe the response instead of naming the category",
+      "why": "Conversation Analysis category names are removed from user documents (comment 33)",
+      "severity": "error"
+    },
+    {
+      "term": "Initiative",
+      "use": "describe the response instead of naming the category",
+      "why": "Conversation Analysis category names are removed from user documents (comment 33)",
+      "severity": "review"
+    },
+    {
+      "term": "response card",
+      "use": "response option",
+      "why": "'card' is a development concept, not a user's word (comment 68)",
+      "severity": "error"
+    },
+    {
+      "term": "the cards",
+      "use": "the response options",
+      "why": "'card' is a development concept, not a user's word (comment 68)",
+      "severity": "error"
+    },
+    {
+      "term": "group",
+      "use": "section",
+      "why": "the collapsible Settings headings are Sections (comment 112)",
+      "severity": "review"
+    }
+  ],
+  "_historyPhrases": [
+    "A user document describes the product AS IT IS NOW (Ken, comment 247). How it used",
+    "to behave belongs in the changelog and the git log, never in a manual - it makes a",
+    "working feature read as unreliable."
+  ],
+  "historyPhrases": [
+    "used to",
+    "no longer",
+    "in earlier versions",
+    "previously",
+    "before this",
+    "has changed",
+    "we have changed",
+    "this is new",
+    "as of version",
+    "recently added"
+  ],
+  "_devJargon": [
+    "Plain language, or say nothing (Ken, August 8 2026). Words whose reader would have",
+    "to be a programmer. Code comments are exempt; documents are not."
+  ],
+  "devJargon": [
+    "object",
+    "array",
+    "string literal",
+    "parse",
+    "callback",
+    "hook",
+    "invariant",
+    "refactor",
+    "regex",
+    "DOM",
+    "JSON",
+    "boolean",
+    "null",
+    "API call",
+    "front-end",
+    "back-end",
+    "repository",
+    "commit",
+    "cache invalidation"
+  ],
+  "_userFacingDocuments": [
+    "Documents written for someone outside the project. These get every rule.",
+    "Everything else in Documents/ is internal design material and gets only the",
+    "structural and spelling rules."
+  ],
+  "userFacingDocuments": [
+    "Conversant AAC User Manual (Windows Chromebook Mac).docx",
+    "Conversant AAC User Manual (iPad).docx",
+    "Conversant AAC Product Overview.docx",
+    "Conversant AAC Partner Card.docx",
+    "Conversant AAC Beta Test Plan.docx",
+    "Conversant AAC Keeping Costs Down.docx"
+  ],
+  "_style": "House paragraph spacing, in twips. Applied by apply-doc-style.py.",
+  "style": {
+    "prose": {
+      "before": 0,
+      "after": 160
+    },
+    "listItem": {
+      "before": 0,
+      "after": 80
+    },
+    "tableCell": {
+      "before": 0,
+      "after": 0
+    },
+    "deliberateBreakThreshold": 240
+  }
+}

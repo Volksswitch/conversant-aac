@@ -38,91 +38,15 @@ const root = dirname(dirname(fileURLToPath(import.meta.url)));
 //
 // Stems, not whole words -- `grey` alone misses "greyed" and "greying", `colour` misses
 // "recolour". That is exactly how two slipped through the first manual sweep.
-const BRITISH = [
-    // -our
-    ['colour', 'color'], ['recolour', 'recolor'], ['favourite', 'favorite'],
-    ['favour', 'favor'], ['behaviour', 'behavior'], ['neighbour', 'neighbor'],
-    ['honour', 'honor'], ['humour', 'humor'], ['labour', 'labor'],
-    ['flavour', 'flavor'], ['rumour', 'rumor'], ['endeavour', 'endeavor'],
-    ['saviour', 'savior'], ['harbour', 'harbor'], ['odour', 'odor'],
-    // -ise / -isation (only the ones that are genuinely British)
-    ['organise', 'organize'], ['organisation', 'organization'],
-    ['recognise', 'recognize'], ['personalise', 'personalize'],
-    ['personalisation', 'personalization'], ['customise', 'customize'],
-    ['prioritise', 'prioritize'], ['summarise', 'summarize'],
-    ['apologise', 'apologize'], ['realise', 'realize'], ['emphasise', 'emphasize'],
-    ['maximise', 'maximize'], ['minimise', 'minimize'], ['initialise', 'initialize'],
-    ['utilise', 'utilize'], ['analyse', 'analyze'], ['paralyse', 'paralyze'],
-    // -re
-    ['centre', 'center'], ['metre', 'meter'], ['litre', 'liter'],
-    ['theatre', 'theater'], ['fibre', 'fiber'], ['calibre', 'caliber'],
-    // -ce nouns / -se verbs
-    ['licence', 'license'], ['defence', 'defense'], ['offence', 'offense'],
-    ['pretence', 'pretense'], ['practise', 'practice'],
-    // doubled consonants American does not double
-    ['cancelled', 'canceled'], ['cancelling', 'canceling'],
-    ['travelled', 'traveled'], ['travelling', 'traveling'],
-    ['labelled', 'labeled'], ['labelling', 'labeling'],
-    ['modelled', 'modeled'], ['modelling', 'modeling'],
-    ['fuelled', 'fueled'], ['signalled', 'signaled'], ['totalled', 'totaled'],
-    // single consonants American doubles, and other odds
-    ['fulfil', 'fulfill'], ['enrol', 'enroll'], ['instalment', 'installment'],
-    ['skilful', 'skillful'], ['wilful', 'willful'],
-    ['judgement', 'judgment'], ['grey', 'gray'], ['programme', 'program'],
-    ['catalogue', 'catalog'], ['analogue', 'analog'], ['plough', 'plow'],
-    ['mould', 'mold'], ['storey', 'story'], ['tyre', 'tire'], ['kerb', 'curb'],
-    ['draught', 'draft'], ['cheque', 'check'], ['aluminium', 'aluminum'],
-    ['sulphur', 'sulfur'], ['whilst', 'while'], ['learnt', 'learned'],
-    ['spelt', 'spelled'], ['amongst', 'among'],
-];
-
-// BRITISH VOCABULARY, which is a different failure from British SPELLING and was
-// missed for months because the words above are all misspellings (Ken, August 22 2026:
-// "Mum" and "the surgery" had both reached a design document). A correctly spelled word
-// can still be the wrong word.
-//
-// ⚠ THIS LIST IS SHORT ON PURPOSE, AND CANNOT BE MADE LONG. Most British vocabulary is
-// also perfectly good American vocabulary with a different meaning, so a keen list
-// produces false failures instead of catching anything: SURGERY is an operation,
-// TABLETS are iPads, a TORCH burns, a BOOT is footwear, PANTS are trousers, a FLAT is
-// level, a LIFT is a ride, a CHEMIST does chemistry, a BISCUIT comes with gravy. Every
-// one of those is a real word here. Only words that are wrong in EVERY American reading
-// belong below — which means the test catches "Mum" and can never catch "the surgery".
-// That half is a job for a person reading the sentence, which is why the rule in
-// CLAUDE.md carries the judgment and this list only carries the easy cases.
-const BRITISH_WORDS = [
-    ['mum', 'mom'], ['mummy', 'mommy'], ['lorry', 'truck'], ['petrol', 'gas'],
-    ['nappy', 'diaper'], ['pram', 'stroller'], ['pushchair', 'stroller'],
-    ['fortnight', 'two weeks'], ['maths', 'math'], ['aeroplane', 'airplane'],
-    ['motorway', 'highway'], ['car park', 'parking lot'], ['postcode', 'zip code'],
-    ['dustbin', 'trash can'], ['aubergine', 'eggplant'], ['courgette', 'zucchini'],
-    ['anticlockwise', 'counterclockwise'], ['telly', 'TV'], ['bloke', 'guy'],
-    ['chuffed', 'pleased'], ['knackered', 'exhausted'], ['whinge', 'complain'],
-    ['nought', 'zero'], ['jumble sale', 'rummage sale'], ['holidaymaker', 'vacationer'],
-];
-
-// ⚠ WORDS THAT LOOK BRITISH AND ARE NOT. Both of these were "corrected" on the first
-// manual pass before someone read the sentence:
-//   dialogue  -- meaning a conversation, this IS American English; only the UI-box
-//                sense is "dialog". It is absent from the list above on purpose.
-//   Centre    -- correct inside a proper noun. "CALL Centre, University of Edinburgh"
-//                is a cited institution; Americanizing it makes the citation false.
-const PROPER_NOUNS = [
-    /CALL Centre/g,
-    // ⚠ A DETECTOR BUG, NOT A SPELLING (found August 23 2026). "programme" -> "program"
-    // is a real pair, but the -ing and -ed forms DOUBLE THE M IN AMERICAN ENGLISH TOO:
-    // programming and programmed are correct here. The stem-plus-suffix rule below
-    // generates "programm" + "ing" and matches them, so they are excused by name. The
-    // same trap waits for any entry whose American form doubles a consonant.
-    /\bprogramm(?:ing|ed|er|ers)\b/gi,
-    // ⚠ ONE PERSONA IS IRISH ON PURPOSE — Dublin, a GAA club, the seafront at Clontarf —
-    // and Americanizing his world would make the test persona false in the same way
-    // Americanizing a cited institution would. These are HIS words, listed exactly, so a
-    // "colour" appearing anywhere in that file still fails. If the cast is ever made
-    // uniformly American these three lines go with it.
-    /the shopping centre/g,
-    /on the telly/g,
-];
+// ⚠ THE LISTS THEMSELVES LIVE IN writing-conventions.json AT THE PROJECT ROOT, because
+// the .docx checker (scripts/doc-tests/check-docs.py, run by "check docs") enforces the
+// same conventions and a second copy would drift. Drift in precisely this kind of list
+// is a failure this project has already paid for. The reasoning above still governs what
+// may go IN the lists; this file only reads them.
+const CONVENTIONS = JSON.parse(readFileSync(join(root, 'writing-conventions.json'), 'utf8'));
+const BRITISH = CONVENTIONS.britishSpellings;
+const BRITISH_WORDS = CONVENTIONS.britishVocabulary;
+const PROPER_NOUNS = CONVENTIONS.properNounExemptions.map((r) => new RegExp(r.source, r.flags));
 
 // ⚠ THE INFLECTION THAT NEEDS ITS OWN ALTERNATIVE: a stem ending in -e DROPS it before
 // -ing and -ed, so "practise" + "ing" is "practising", not "practiseing". Matching the

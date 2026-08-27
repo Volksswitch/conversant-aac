@@ -124,8 +124,12 @@ def check(path, backup, expect_changed=('word/document.xml',)):
 if __name__ == '__main__':
     # fix-docx-lists.py legitimately rewrites numbering.xml, so allow it on request
     # rather than teaching people to ignore a failure - an ignored check is no check.
-    args = [a for a in sys.argv[1:] if a != '--lists']
-    expect = ('word/document.xml', 'word/numbering.xml') if '--lists' in sys.argv         else ('word/document.xml',)
+    # apply-table-style.py legitimately rewrites styles.xml, for the same reason:
+    # naming the exception is better than teaching people to ignore a failure.
+    FLAGS = {'--lists': 'word/numbering.xml', '--styles': 'word/styles.xml'}
+    args = [a for a in sys.argv[1:] if a not in FLAGS]
+    expect = ('word/document.xml',) + tuple(
+        part for flag, part in FLAGS.items() if flag in sys.argv)
     bad = 0
     for path, backup in zip(args[0::2], args[1::2]):
         fails = check(path, backup, expect)

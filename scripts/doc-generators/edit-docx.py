@@ -66,6 +66,50 @@ def run(path, ops):
             new = copy.deepcopy(p)
             p.addnext(new)
             set_text(new, op['text'])
+        elif kind == 'row-after':
+            # Add a TABLE ROW after the row that paragraph i sits in, copying that row
+            # so the new one inherits its widths, shading and cell formatting. op['cells']
+            # supplies the text for each cell in order.
+            #
+            # ⚠ 'after' CANNOT DO THIS. It clones the PARAGRAPH, which inside a table
+            # means a second paragraph in the same cell - a taller cell, not a new row.
+            # The settings tables in the manuals are one row per setting, so adding a
+            # setting means adding a row.
+            row = p.getparent()
+            while row is not None and row.tag != W + 'tr':
+                row = row.getparent()
+            if row is None:
+                raise SystemExit('paragraph %d is not in a table row' % op['i'])
+            new = copy.deepcopy(row)
+            row.addnext(new)
+            cells = new.findall(W + 'tc')
+            for cell, text in zip(cells, op['cells']):
+                paras = cell.findall(W + 'p')
+                for extra in paras[1:]:
+                    cell.remove(extra)
+                set_text(paras[0], text)
+        elif kind == 'before':
+            # Insert BEFORE paragraph i, taking formatting from op['from'] (or from the
+            # anchor itself when 'from' is absent). Needed whenever the new material
+            # belongs at the START of something - a new section ahead of an existing
+            # heading, where anchoring on the paragraph before would land inside the
+            # preceding table.
+            src = ps[op['from']] if 'from' in op else p
+            new = copy.deepcopy(src)
+            p.addprevious(new)
+            set_text(new, op['text'])
+        elif kind == 'clone':
+            # Insert after paragraph i, but take the FORMATTING from paragraph
+            # op['from']. 'after' can only copy its anchor, which is no use for adding a
+            # heading in the middle of prose or a numbered step beside a plain one -
+            # both of which this manual pass needs constantly. Borrowing a real
+            # paragraph of the right kind is safer than building style properties by
+            # hand: it inherits the style, the numbering and the spacing that the rest
+            # of the document already agrees on.
+            src = ps[op['from']]
+            new = copy.deepcopy(src)
+            p.addnext(new)
+            set_text(new, op['text'])
     doc.save(path)
     return len(ops)
 
