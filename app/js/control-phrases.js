@@ -3,7 +3,13 @@
  * The user-editable spoken text behind the persistent override controls and the
  * conversation opener/closer cards, so a user can make each one sound like
  * something THEY would say:
- *   - holdOn   : spoken when "Hold on" is tapped (a floor-holding beat)
+ *   - holdOn   : LAST-RESORT fallback for "Hold on". That button now draws from
+ *                the placeholder list and follows its no-repeat rule (Ken, comment
+ *                76: it is a placeholder the user fires themselves), so this is
+ *                reached only if every placeholder pool has been emptied. Kept
+ *                because a button that says nothing is never acceptable; it has no
+ *                editor on the Controls tab any more, since the words users edit
+ *                are the placeholder ones.
  *   - pardon   : spoken when "Pardon?" is tapped (asks the partner to repeat)
  *   - openers  : the cards shown by "Start conversation" (templates; {name} is
  *                replaced with the active Partner's name, dropped when none)

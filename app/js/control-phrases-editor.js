@@ -122,7 +122,6 @@ export function render() {
     container.innerHTML = '';
 
     container.append(
-        singleSection('“Hold on” phrase', 'holdOn'),
         singleSection('“Ask them to repeat” phrase', 'pardon'),
         listSection('Openers (Start conversation)', 'openers'),
         listSection('Wind-down statements (Wind down)', 'windDowns'),

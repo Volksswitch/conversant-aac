@@ -101,6 +101,31 @@ function pick(list, key) {
     return list[index];
 }
 
+/**
+ * The phrase the "Hold on" button says: a placeholder the user fires themselves.
+ *
+ * ⚠ IT DRAWS FROM THE SAME POOL AND SHARES THE SAME no-repeat STATE (Ken, comment 76:
+ * "The Hold on phrase appears to be a special case of a placeholder statement... it
+ * should simply pull from the placeholder list and obey the placeholder requirement
+ * that the same statement can't be made twice in a row"). Sharing `lastIndex` is the
+ * load-bearing half: with its own state, Hold on could repeat the phrase the app had
+ * just spoken by itself, which is the one thing the no-repeat rule exists to prevent -
+ * and pressing the button is exactly the moment an automatic phrase has just played.
+ *
+ * It takes from the THINKING pool rather than the acknowledgment one because of what
+ * the two mean. Acknowledgment is the "I heard you, I'm on it" said right after the
+ * other person stops; Hold on is pressed when the user is already working on a reply
+ * and needs longer, which is what the thinking pool says.
+ *
+ * Returns the phrase for the caller to speak, so the app owns speaking and the
+ * transcript exactly as it does for every other spoken button.
+ */
+export function phraseOnDemand() {
+    const pools = readPools();
+    if (!pools) return null;
+    return pick(pools.thinking, 'thinking');
+}
+
 // Called at the silence checkpoint (partner stopped). SCHEDULES the first
 // placeholder here, initialDelay after the pause, using the neutral acknowledgment.
 //

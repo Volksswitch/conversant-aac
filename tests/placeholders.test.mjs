@@ -170,3 +170,36 @@ test('opening the composer does not abort the running ladder', () => {
         'openComposer must not abort placeholders — opening the box is the user still '
         + 'choosing, the same state as reading the cards');
 });
+
+// --- "Hold on" is a placeholder the user fires themselves (Ken, comment 76) --------
+// It used to say one fixed phrase of its own, edited on a different tab from the
+// automatic ones: two lists of holding phrases, maintained separately, saying the same
+// kind of thing. These guard the two properties that make it one list instead.
+
+test('Hold on draws from the placeholder list, not a phrase of its own', () => {
+    const seen = new Set();
+    for (let i = 0; i < 40; i++) seen.add(placeholders.phraseOnDemand());
+    for (const phrase of seen) {
+        assert.ok(THINKING.includes(phrase),
+            `"${phrase}" is not one of the placeholder phrases`);
+    }
+    assert.ok(seen.size > 1, 'it varies rather than saying one fixed thing');
+});
+
+test('Hold on cannot repeat the phrase the app just said by itself', () => {
+    // ⚠ THE LOAD-BEARING ONE. The no-repeat rule is per pool, so sharing that state is
+    // what stops the button echoing the automatic phrase - and pressing it right after
+    // one has played is exactly when a user would.
+    for (let i = 0; i < 60; i++) {
+        const first = placeholders.phraseOnDemand();
+        const second = placeholders.phraseOnDemand();
+        assert.notEqual(second, first, 'said the same phrase twice in a row');
+    }
+});
+
+test('an emptied placeholder list leaves Hold on with nothing rather than crashing', () => {
+    // The app falls back to a fixed phrase in that case; what must not happen is a throw.
+    phrasePools.setPools({ acknowledgment: [], thinking: [] });
+    assert.doesNotThrow(() => placeholders.phraseOnDemand());
+    phrasePools.resetPools();
+});
