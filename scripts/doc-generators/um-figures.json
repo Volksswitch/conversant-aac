@@ -1,0 +1,87 @@
+{
+ "scale": 2,
+ "fig1": [
+  {
+   "label": "Conversation Pane",
+   "corner": "bl",
+   "x": 0,
+   "y": 0,
+   "w": 1792,
+   "h": 480
+  },
+  {
+   "label": "Conversation Log",
+   "corner": "tr",
+   "x": 23.875,
+   "y": 23.875,
+   "w": 1744.25,
+   "h": 204.03125
+  },
+  {
+   "label": "Command Bar",
+   "corner": null,
+   "x": 0,
+   "y": 480,
+   "w": 1792,
+   "h": 160
+  },
+  {
+   "label": "Response Panel",
+   "corner": null,
+   "x": 0,
+   "y": 640,
+   "w": 1792,
+   "h": 960
+  },
+  {
+   "label": "Express Panel",
+   "corner": null,
+   "x": 1794,
+   "y": 0,
+   "w": 766,
+   "h": 1600
+  }
+ ],
+ "fig2": [
+  {
+   "label": "Type what you want to say here",
+   "corner": "bl",
+   "x": 0,
+   "y": 657.5,
+   "w": 1792,
+   "h": 779.03125
+  },
+  {
+   "label": "Speak — say it aloud in your voice",
+   "corner": null,
+   "x": 0,
+   "y": 1465.71875,
+   "w": 802.78125,
+   "h": 116.78125
+  },
+  {
+   "label": "Reframe — get new suggestions built from it",
+   "corner": null,
+   "x": 802.78125,
+   "y": 1465.71875,
+   "w": 802.8125,
+   "h": 116.78125
+  },
+  {
+   "label": "Cancel — close without saying anything",
+   "corner": null,
+   "x": 1605.59375,
+   "y": 1465.71875,
+   "w": 186.40625,
+   "h": 116.78125
+  },
+  {
+   "label": "The on-screen keyboard, if you use one",
+   "corner": null,
+   "x": 1792,
+   "y": 0,
+   "w": 768,
+   "h": 1600
+  }
+ ]
+}
