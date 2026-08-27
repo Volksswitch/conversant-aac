@@ -525,7 +525,7 @@ function initApp() {
     document.addEventListener('click', handleTourPress, true);
     ui.setCardsPerCategory(storage.loadResponsesPerCategory()); // 8-card mode → 8 reserved slots
     ui.setCardTextMode(storage.loadCardTextMode());   // full / short / both, per the user's choice
-    ui.clearResponseOptions(); // render the reserved empty card footprint at rest
+    clearPalette(); // render the reserved empty card footprint at rest
     renderExpressPanel();
     expressEditor.init(document.getElementById('expressEditor'), {
         onChange: renderExpressPanel,
@@ -1137,7 +1137,7 @@ function startFreshListening() {
     generationToken++;
     ui.setLiveTranscript('');
     ui.setTranscriptState('idle');
-    ui.clearResponseOptions();
+    clearPalette();
     // Create the transcript file as soon as we enter Listen mode, so it exists and
     // mirrors the conversation pane from the very start (Ken). Idempotent — a no-op
     // if this conversation's log already exists. Fire-and-forget (needs a granted
@@ -1381,6 +1381,32 @@ async function handleResponseSelected(response, index) {
     // palette is cleared several awaits later (Ken, August 20 2026).
     generationToken++; // invalidate any in-flight generation
     ui.setPaletteBusy(false);
+
+    // ⚠ THE DEFERRED ENDING, AND IT MUST HAPPEN HERE — BEFORE `raw` IS READ BELOW.
+    // Start conversation puts the openers up without ending anything (see
+    // handleInitiate), so choosing one is the moment the old conversation actually
+    // closes. terminateConversation() commits whatever the other person had half-said
+    // to the OLD conversation and then clears the speech buffer, which is exactly the
+    // right home for it. Doing this after `raw` was read would carry their words
+    // forward into the NEW conversation instead, where nobody said them — a turn in
+    // the wrong file, silent, and only visible weeks later in a review.
+    // ⚠ CHOOSING ANY CARD COMMITS, so there is nothing left to go back to and the latch
+    // must go out here rather than on the paths that happen to redraw the palette. It
+    // was originally cleared only when an opener closed a live conversation, which left
+    // the button lit after the ordinary case of opening a conversation from cold - the
+    // palette is CLEARED at the end of that path rather than replaced, so the guard in
+    // showPalette never saw it either. Two partial clears and no complete one.
+    overlayClearLatch();
+
+    if (wasOpener && pendingNewConversation) {
+        pendingNewConversation = false;
+        await terminateConversation();
+        metrics.conversationStarted({ practice: practiceMode });
+        // terminateConversation() resets the engine, so put it back into the opening
+        // state the card was drawn from before the selection below consumes it.
+        ui.showEngineState(engine.initiate({ partnerName: partnerLabel(activePartner) }));
+    }
+
     // Capture the partner's speech BEFORE stopping the mic — if they were still
     // talking (resumed after the options appeared), grab what they'd said, not just
     // the last checkpoint's text.
@@ -1416,7 +1442,7 @@ async function handleResponseSelected(response, index) {
         // typically wait). From here "In my own words" / Reframe generate the lead.
         ui.showEngineState(engine.reopenFromClosing());
         resetStaticPaging();
-        ui.clearResponseOptions();
+        clearPalette();
         if (practiceMode) {
             // No mic in practice: wait for the user to say their piece (composer /
             // Express), then Start Listening cues the partner's reply as usual.
@@ -2048,7 +2074,7 @@ async function terminateConversation() {
     ui.setLiveTranscript('');
     ui.setTranscriptState('idle');
     ui.setTranscriptError(false);        // fresh conversation starts clean
-    ui.clearResponseOptions();          // clear all cards (back to empty reserved)
+    clearPalette();                     // clear all cards (back to empty reserved)
     ui.showEngineState(engine.getSnapshot());
 
     // Finalize the pending partner turn (if any) in the CURRENT <id>.json, THEN
@@ -2111,7 +2137,60 @@ function showHeldForComposer() {
     ui.setStatus('Select a response');
     return true;
 }
-let windDownShown = false;                       // has Wind down been shown this conversation?
+let windDownShown = false;                       // has Wrap up been shown this conversation?
+let shownCards = { cards: [], kind: 'ai' };      // what is on the Response Panel right now
+
+/* TEMPORARY PALETTE OVERLAYS — Wrap up and Start conversation (Ken, August 26 2026).
+ *
+ * Both buttons replace the Response Panel with a set of predefined cards, and before
+ * this neither could be taken back: a stray tap left the user somewhere they had not
+ * meant to go, with no way out that did not either say something or end something.
+ *
+ * ⚠ ONE BACKOUT SLOT, NOT ONE PER BUTTON, and the reason is the case with two presses
+ * in it: from the openers you press Wrap up. If each button kept its own backout, the
+ * Wrap up cancel would return you to the OPENERS - another place you did not mean to
+ * be - and you would have to find the second cancel to get home. Keeping the first
+ * capture means one cancel always returns to the real cards.
+ */
+let paletteOverlay = null;   // { which:'wrapUp'|'opener', cards, kind, static, status }
+
+// An opener is showing over a live conversation that has NOT been ended yet. The
+// ending is deferred to the moment an opener is actually chosen — see handleInitiate.
+let pendingNewConversation = false;
+
+function overlayEnter(which) {
+    // Keep the FIRST capture: it is the one that leads back out of the app's overlays
+    // entirely rather than into the other one.
+    if (!paletteOverlay) {
+        paletteOverlay = {
+            which, cards: shownCards.cards, kind: shownCards.kind,
+            static: currentStatic, status: ui.getStatus(),
+        };
+    }
+    paletteOverlay.which = which;
+    ui.setWrapUpState(which === 'wrapUp');
+    ui.setStartConversationState(which === 'opener');
+}
+
+function overlayCancel() {
+    const back = paletteOverlay;
+    paletteOverlay = null;
+    pendingNewConversation = false;
+    ui.setWrapUpState(false);
+    ui.setStartConversationState(false);
+    // The general "we are staying in this conversation after all" transition.
+    ui.showEngineState(engine.resumeConversation());
+    currentStatic = back.static;
+    showPalette(back.cards, back.kind);
+    ui.setStatus(back.status || '');
+}
+
+function overlayClearLatch() {
+    if (!paletteOverlay) return;
+    paletteOverlay = null;
+    ui.setWrapUpState(false);
+    ui.setStartConversationState(false);
+}
 
 // A window of `cap` cards starting at `offset`, wrapping so the footprint stays
 // full even when the list isn't a whole number of pages.
@@ -2175,8 +2254,32 @@ function noteUserAction(kind) {
 // footprint goes through here so the clock and the offer count cannot drift apart —
 // there are six such paths, and instrumenting them one at a time is how one gets
 // missed.
+/* Clearing the panel back to the empty reserved outlines.
+ *
+ * ⚠ IT GOES THROUGH HERE SO shownCards CANNOT GO STALE. That record is what the Wrap up
+ * and Start conversation cancels put back, and calling ui.clearResponseOptions()
+ * directly left it holding whatever was last SHOWN - so cancelling out of the openers
+ * restored a palette from an earlier turn instead of the empty panel the user had been
+ * looking at. Every path that empties the panel has to say so.
+ */
+function clearPalette() {
+    ui.clearResponseOptions();
+    shownCards = { cards: [], kind: 'none' };
+}
+
 function showPalette(cards, kind = 'ai') {
     ui.showResponses(cards, handleResponseSelected);
+    // The one choke point every palette passes through, so remembering it here is the
+    // only way to know what was on screen without every caller reporting it. Used by
+    // the Wrap up toggle to put back exactly what it covered.
+    shownCards = { cards, kind };
+    // ⚠ ANY palette that is not the wind-down statements ends the wrap-up, so the latch
+    // is cleared HERE rather than at each of the paths that can do it - speaking a
+    // wind-down (which moves on to the goodbyes), the other person talking again, a
+    // reframe, a regenerate. Clearing it at the call sites means the one path nobody
+    // thought of leaves the button lit with nothing behind it. The cancel press clears
+    // the backout itself BEFORE calling this, so restoring cannot re-trip it.
+    if (kind !== 'windDown' && kind !== 'opener') overlayClearLatch();
     noteCardsShown(cards, kind);
 }
 
@@ -2212,6 +2315,8 @@ function resetStaticPaging() {
     staticOffsets.closing = 0;
     currentStatic = { kind: null, full: [], pin: [] };
     windDownShown = false;
+    overlayClearLatch();
+    pendingNewConversation = false;
 }
 
 // Show a non-paged conversation palette (the Reframe-to-steer STATEMENT cards,
@@ -2225,14 +2330,46 @@ function showConversationPalette(palette, statusMsg) {
 
 // Start conversation — terminate the current one (clear window + cards), then
 // open a fresh conversation in INITIATING mode with the openers.
-async function handleInitiate() {
+/* Start conversation — put the openers up. A toggle, like Wrap up.
+ *
+ * ⚠ IT NO LONGER ENDS THE CURRENT CONVERSATION WHEN PRESSED. THE ENDING IS DEFERRED
+ * TO THE MOMENT AN OPENER IS CHOSEN (Ken, August 26 2026), and without that this
+ * button could not honestly be a toggle. Pressing it used to run the full teardown at
+ * once: stop listening, commit whatever the other person had half-said, throw away the
+ * speech buffer, clear the conversation from the screen, reset Partner and Feeling,
+ * close the saved conversation file, reset the engine. Putting the cards back
+ * afterwards would have shown a palette belonging to a conversation that no longer
+ * existed - the screen looking recovered while the record underneath had already been
+ * ended. That is a worse failure than the dead end it was meant to fix.
+ *
+ * So: press once, the openers appear and NOTHING else happens. Press again, the
+ * previous cards return and nothing has changed. Choose an opener and only then is the
+ * old conversation closed and the new one begun (see handleResponseSelected).
+ *
+ * Ken's reason for preferring this to simply disabling the button mid-conversation:
+ * starting a new conversation part-way through a session is a legitimate thing to want
+ * - you finish with one person and turn to another - so the fix must not remove it.
+ */
+function handleInitiate() {
+    noteUserAction('command');
+    placeholders.stop();
+    if (paletteOverlay && paletteOverlay.which === 'opener') {
+        metrics.event(metrics.EV.COMMAND_BAR, { button: 'start conversation cancel' });
+        overlayCancel();
+        return;
+    }
     metrics.event(metrics.EV.COMMAND_BAR, { button: 'start conversation' });
-    await terminateConversation();
+    // Nothing here ends anything, but a generation still in flight must not land on
+    // top of the openers.
+    generationToken++;
+    overlayEnter('opener');
+    // Is there actually a conversation to close when an opener is chosen? Openers on
+    // screen are not one, and neither is Practice Mode on its own.
+    pendingNewConversation = conversationHistory.length > 0 || isListening
+        || !!currentPartnerText || !!heardPartnerText();
     // If a Partner is active, personalize the openers with their name ("Hi Tim,
     // have you got a minute?" instead of "Hey, got a minute?").
-    const partnerName = partnerLabel(activePartner);
-    metrics.conversationStarted({ practice: practiceMode });
-    const snap = engine.initiate({ partnerName });
+    const snap = engine.initiate({ partnerName: partnerLabel(activePartner) });
     ui.showEngineState(snap);
     renderStaticPalette('opener', snap.palette, 'Pick an opener');
 }
@@ -2314,11 +2451,16 @@ async function handleHoldOn() {
     noteUserAction('command');
     metrics.event(metrics.EV.COMMAND_BAR, { button: 'hold on' });
     abortPlaceholders();   // instant abort + no in-flight generation restart (options kept)
-    // User-editable (Settings → Controls). The default is softened from "Hold on,
-    // let me think." — imperative phrasing reads as curt through the flat built-in
-    // voices (Ken, June 18 2026), and the leading "Hmm," (v0.3.14) was dropped
-    // (June 19 2026) as the built-in voices render it unintelligibly.
-    const text = controlPhrases.getPhrases().holdOn;
+    // ⚠ THIS IS A PLACEHOLDER THE USER FIRES THEMSELVES, drawn from the same list the
+    // app speaks from by itself and obeying the same no-repeat rule (Ken, comment 76).
+    // It used to say one fixed phrase of its own, edited in a different place from the
+    // automatic ones - two lists of holding phrases, maintained separately, saying the
+    // same kind of thing. One list, edited on the Placeholders tab, is the whole point.
+    //
+    // Falls back to the old fixed phrase only if every pool has been emptied, because
+    // the one outcome that is never acceptable is that the user pressed a button and
+    // nothing was said.
+    const text = placeholders.phraseOnDemand() || controlPhrases.getPhrases().holdOn;
     ui.setStatus('Speaking...');
     await speakUserStatement(text);
     logSpokenUserTurn(text);          // append to the transcript AFTER speaking (Ken)
@@ -2351,7 +2493,7 @@ async function handlePardon() {
     currentPartnerText = kept;
     ui.showEngineState(snap);
     updatePartnerLive(kept);
-    ui.clearResponseOptions();
+    clearPalette();
     const text = controlPhrases.getPhrases().pardon; // user-editable (Settings → Controls)
     ui.setStatus('Speaking...');
     await speakUserStatement(text);
@@ -2620,20 +2762,45 @@ async function handleReframe() {
     }
 }
 
-// Wind down — enter PRE-CLOSING and offer the WIND-DOWN statements (intent to end,
-// not a goodbye). Selecting one auto-offers the closings. If the partner doesn't
-// reciprocate, pressing Wind down again dips to the next page of wind-downs (Ken,
-// July 2026) — the first press of a conversation shows page 0, each re-press advances.
+// Wrap up — enter PRE-CLOSING and offer the WIND-DOWN statements (intent to end, not
+// a goodbye). Selecting one auto-offers the closings.
+//
+// ⚠ IT IS A TOGGLE, AND THAT IS A SAFETY FIX RATHER THAN A CONVENIENCE (Ken, August 26
+// 2026). Before this there was NO WAY BACK. The three exits were: speak a wind-down
+// (which sabotages the conversation you were trying to stay in), End conversation
+// (worse), or turn the microphone on and hope the other person says something — and in
+// manual mode the mic is already off after you answered, so there may be nothing to
+// hear. Ken: "If you accidently tap it (maybe you were trying tap a button on either
+// side), it is impossible to cancel out of it." A stray tap on a keyguard-backed row of
+// buttons is exactly the input this population produces, which is why the double-tap
+// safeguard exists at all.
+//
+// The second press restores WHAT WAS ON SCREEN, not a recomputed guess — see
+// shownCards, recorded at the single choke point every palette passes through.
+//
+// ⚠ PAGING MOVED TO "New N", which already pages a static palette. One button cannot
+// both enter a mode and cycle it AND cancel it; the previous arrangement had the same
+// press meaning "show me different goodbyes", so there was no press left over to mean
+// "I did not mean to do this". Nothing is spoken by either press.
 function handleWindDown() {
     noteUserAction('command');
-    metrics.event(metrics.EV.COMMAND_BAR, { button: 'wind down' });
     placeholders.stop();
-    // Invalidate any in-flight generation so it can't overwrite the wind-downs with
-    // response options — or restart a placeholder — after the user chose to wind down.
+    if (paletteOverlay && paletteOverlay.which === 'wrapUp') {
+        metrics.event(metrics.EV.COMMAND_BAR, { button: 'wrap up cancel' });
+        overlayCancel();
+        return;
+    }
+    metrics.event(metrics.EV.COMMAND_BAR, { button: 'wrap up' });
+    // ⚠ WHAT CANCELLING CANNOT UNDO, stated so it is not mistaken for a bug: this
+    // invalidates any generation still in flight, so if the other person had spoken and
+    // suggestions were on their way, cancelling restores the cards that WERE showing
+    // rather than the ones that would have arrived. Restoring what the user was looking
+    // at is the promise; resurrecting an abandoned request is not.
     generationToken++;
+    overlayEnter('wrapUp');
     const snap = engine.windDown();
     ui.showEngineState(snap);
-    renderStaticPalette('windDown', snap.palette, 'Signal you\'d like to wrap up', { advance: windDownShown });
+    renderStaticPalette('windDown', snap.palette, 'Signal you\'d like to wrap up');
     windDownShown = true;
 }
 
@@ -2726,7 +2893,7 @@ async function speakAsUserTurn(historyText, spokenText = historyText, source = '
     currentPartnerText = '';
 
     ui.setStatus('Speaking...');
-    ui.clearResponseOptions();    // any AI palette shown is now stale
+    clearPalette();               // any AI palette shown is now stale
     await speakUserStatement(spokenText);
 
     // Append to the transcript AFTER speaking (Ken); now-playing stays suppressed
@@ -4831,6 +4998,25 @@ function openSettings() {
     const saveReportBtn = document.getElementById('saveProblemReportBtn');
     if (saveReportBtn) saveReportBtn.onclick = () => saveProblemReport();
     copyFrom('copyProblemReportBtn', () => buildProblemReportText());
+    const clearNoteBtn = document.getElementById('clearProblemNoteBtn');
+    if (clearNoteBtn) clearNoteBtn.onclick = async () => {
+        const box = document.getElementById('problemNoteInput');
+        if (!box || !box.value.trim()) return;   // nothing to lose, so nothing to ask
+        // ⚠ CONFIRMED, because for this population a typed report IS significant work:
+        // composing it may have taken minutes on the on-screen keyboard, and there is
+        // no undo on a textarea the app has emptied. The standing rule is that anything
+        // which can wipe away significant work asks first, through the red danger card
+        // rather than the browser's own dialog (which reads as routine and gets
+        // dismissed on autopilot).
+        if (!(await confirmDanger({
+            title: 'Clear what you have written?',
+            body: 'This deletes the description you typed. It cannot be undone.',
+            confirmLabel: 'Clear it',
+            cancelLabel: 'Keep it',
+        }))) return;
+        box.value = '';
+        box.focus();
+    };
     const testerNameInput = document.getElementById('testerNameInput');
     if (testerNameInput) testerNameInput.oninput = () => {
         storage.saveTesterName(testerNameInput.value);
@@ -5239,7 +5425,7 @@ function openSettings() {
         storage.saveResponsesPerCategory(n);
         ui.setRegenerateLabel((n === 2 ? 2 : 1) * 4); // "New 4" ↔ "New 8"
         ui.setCardsPerCategory(n);
-        ui.clearResponseOptions(); // re-render the reserved footprint (4 vs 8 slots)
+        clearPalette(); // re-render the reserved footprint (4 vs 8 slots)
     };
     cardTextModeInput.onchange = () => {
         storage.saveCardTextMode(cardTextModeInput.value);

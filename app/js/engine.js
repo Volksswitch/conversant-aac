@@ -432,12 +432,31 @@ export function selectResponse(response) {
 // which selectResponse deliberately leaves alone (it assumes a closing in progress
 // stays in progress). Without this the conversation stays stuck in PRE_CLOSING and
 // the next partner turn is still read through the closing fast-path.
-export function reopenFromClosing() {
+/**
+ * "We are staying in this conversation after all" — back to the body of it, nobody
+ * holding the floor, no palette.
+ *
+ * THREE CALLERS, ALL THE SAME MOVE: the partner started closing and the user declined
+ * ("Actually, before you go —"), the user entered a wrap-up and cancelled it, and the
+ * user pressed Start conversation and cancelled it. Each is a departure from the
+ * conversation that did not happen, so each wants the same transition.
+ *
+ * ⚠ IT DOES NOT RESTORE THE PRECEDING FLOOR, and that is deliberate rather than
+ * unfinished: floor is a best-effort reading of whose turn it is, so reconstructing
+ * "whatever it was two taps ago" would be inventing precision the engine never had.
+ * OPEN is the honest answer — nobody has been established as holding the floor.
+ */
+export function resumeConversation() {
     state.phase = 'BODY';
     state.mode = MODE.LISTENING;
     state.floor = FLOOR.OPEN;
     state.palette = [];
     return getSnapshot();
+}
+
+/** The closing-specific name, kept because it says what that caller means. */
+export function reopenFromClosing() {
+    return resumeConversation();
 }
 
 // A REPAIR-OF-SELF operation completed (re-speak / rephrase / expand). The

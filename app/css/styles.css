@@ -763,6 +763,23 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
     color: #fff;
 }
 
+/* "Start conversation" latch - the openers are showing but nothing has been ended yet,
+   and pressing again is the way back. Green, matching the opener cards it puts up. */
+#initiateBtn.opener-on {
+    background: #2E7D32;
+    border-color: #2E7D32;
+    color: #fff;
+}
+
+/* "Wrap up" toggle - latched state, slate to match the wind-down and goodbye cards it
+   puts on screen. It is the user's way back out of a wrap-up entered by accident, so it
+   has to be unmistakable that the button is ON (Rule 6). */
+#windDownBtn.wrapup-on {
+    background: #455A64;
+    border-color: #455A64;
+    color: #fff;
+}
+
 /* Region B — response palette. A grid of cards in fixed priority order (preferred
    first, repair last). The column count adapts to viewport width but the order
    never does, and it stays constant within a session — mode changes swap card
@@ -1318,9 +1335,18 @@ body.conv-bottom .palette-grid {
    than with color alone. Its cost is a little width, which matters most on a
    three-column side dock. */
 .ep-mark-shape .ep-btn.ep-band-context { border-left-color: var(--band-color); }
-.ep-mark-shape .ep-btn.ep-partner .ep-text::before { content: '\25CF\2009'; }
-.ep-mark-shape .ep-btn.ep-place   .ep-text::before { content: '\25B2\2009'; }
-.ep-mark-shape .ep-btn.ep-feeling .ep-text::before { content: '\25C6\2009'; }
+/* CIRCLE / TRIANGLE / SQUARE. The one that had to go was the DIAMOND (Ken, August 26
+   2026: "the person and feeling shapes are very hard to tell apart"). A solid diamond
+   is a rotated square, so at this size it has no corners to speak of and reads as the
+   same blob as the circle. These three are the most different silhouettes available
+   at small sizes - round, pointed, flat-sided - which is why symbol systems reach for
+   them. Differing by ROTATION is what fails; differing by OUTLINE is what works.
+   Sizes are tuned per shape because equal type size is not equal apparent size: a
+   filled square covers its whole box and looks heavier than a circle; a triangle
+   looks lighter than both. */
+.ep-mark-shape .ep-btn.ep-partner .ep-text::before { content: '\25CF\2009'; font-size: 0.92em; }
+.ep-mark-shape .ep-btn.ep-place   .ep-text::before { content: '\25B2\2009'; font-size: 1em; }
+.ep-mark-shape .ep-btn.ep-feeling .ep-text::before { content: '\25A0\2009'; font-size: 0.86em; }
 
 /* An undefined position still reads as part of its band, which is what makes the
    Context band's floor of four tolerable: four reserved outlines rather than four
@@ -3833,9 +3859,17 @@ label.radio-label input[type="radio"] {
 }
 #expressEditor .ee-scope-lead { flex: 0 0 auto; }
 #expressEditor .ee-scope-select { flex: 1 1 7rem; min-width: 6rem; min-height: var(--btn-min-dim); font: inherit; }
-#expressEditor .ee-situations { display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; margin-bottom: 0.5rem; }
-#expressEditor .ee-situation { min-height: var(--btn-min-dim); }
-#expressEditor .ee-situation-on { background: #2c7a3f; color: #fff; border-color: #2c7a3f; }
+/* The "Already set up" row. ONE row whatever the number of situations - it used to be
+   a wrapping row of full-height buttons, which grew downward without limit and pushed
+   the phrases off the tab (Ken, August 26 2026). The dropdown takes the free space; the
+   delete stays square beside it. */
+#expressEditor .ee-situations { display: flex; flex-wrap: nowrap; gap: 0.35rem; align-items: center; margin-bottom: 0.5rem; }
+#expressEditor .ee-situation-pick { flex: 1 1 auto; min-width: 0; }
+#expressEditor .ee-situation-del {
+    flex: 0 0 auto;
+    width: var(--btn-min-dim);
+    min-height: var(--btn-min-dim);
+}
 
 /* Where the panel runs out. Everything below is stored and comes back if the bands
    are resized or the layout changes - it is simply not showing now, and the user is
