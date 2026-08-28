@@ -194,11 +194,15 @@ let conversationPrivate = false;
 
 // True while the app is speaking one of the USER's OWN statements (a selected
 // response, composed text, an Express phrase, an opener/closer, a repaired
-// utterance, or a spoken command like Hold on / Ask them to repeat / Repeat what
-// I said). The user's statements are shown directly in the transcript, so they
-// must NOT also appear as the tentative "now-playing" pre-text line (Ken) — that
-// line is reserved for system-generated placeholder speech the user can't
-// otherwise see.
+// utterance, or "Ask them to repeat" / "Repeat what I said"). The user's statements
+// are shown directly in the transcript, so they must NOT also appear as the
+// tentative "now-playing" pre-text line (Ken) — that line is reserved for
+// system-generated placeholder speech the user can't otherwise see.
+//
+// "Hold on" is deliberately NOT in that list any more: it is a placeholder the user
+// fires themselves, so it goes to the now-playing line like every other placeholder
+// and into no transcript at all. It still sets this flag, because nothing may speak
+// over it either — hence the second flag below.
 let speakingUserStatement = false;
 // ...unless this particular statement is one the user cannot account for. See
 // speakUserStatement's `announce` option.
@@ -2446,9 +2450,14 @@ function applyControlPhrases() {
     });
 }
 
-// A persistent-control action spoke something AS the user (Say again / Hold on /
-// Ask them to repeat). Anything spoken aloud is part of the conversation, so
-// record it in the transcript + log (Ken). Not a palette pick, so index -1.
+// A persistent-control action spoke something AS the user - today "Repeat what I
+// said" and "Ask them to repeat". Both carry content the conversation turns on: one
+// is the user's own words again, the other a repair the partner answers. So they are
+// recorded in the transcript + log (Ken). Not a palette pick, so index -1.
+//
+// "Hold on" used to come through here and no longer does (Ken, August 27 2026): it
+// draws from the placeholder pool, and the app's own placeholders have never been
+// recorded.
 function logSpokenUserTurn(text) {
     if (!text) return;
     // A live partner turn must sit BEFORE this user turn in both the pane and the

@@ -117,8 +117,15 @@ function pick(list, key) {
  * other person stops; Hold on is pressed when the user is already working on a reply
  * and needs longer, which is what the thinking pool says.
  *
- * Returns the phrase for the caller to speak, so the app owns speaking and the
- * transcript exactly as it does for every other spoken button.
+ * Returns the phrase for the caller to speak, so the app owns speaking. It does NOT
+ * own a transcript entry: a phrase from this pool is not recorded whoever asked for
+ * it, and app.js shows it on the same now-playing line, in the same type, for the
+ * same length of time as one the ladder spoke by itself (Ken, August 27 2026).
+ *
+ * The one deliberate difference from the ladder is the per-turn CAP, which this
+ * ignores. The cap exists to stop the app filling a pause over and over by itself;
+ * applying it to a button the user pressed would make that button silently dead,
+ * which is the one outcome that is never acceptable.
  */
 export function phraseOnDemand() {
     const pools = readPools();
