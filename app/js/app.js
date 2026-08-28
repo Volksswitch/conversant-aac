@@ -200,13 +200,26 @@ let conversationPrivate = false;
 // line is reserved for system-generated placeholder speech the user can't
 // otherwise see.
 let speakingUserStatement = false;
+// ...unless this particular statement is one the user cannot account for. See
+// speakUserStatement's `announce` option.
+let announcingUserStatement = false;
 
-// Speak text that IS the user's own statement: suppress the now-playing pre-text
-// line for its duration (the statement is already in the transcript).
-async function speakUserStatement(text) {
+/* Speak text that IS the user's own statement: suppress the now-playing pre-text
+ * line for its duration (the statement is already in the transcript).
+ *
+ * `announce: true` keeps the now-playing line, for a statement that goes into NO
+ * transcript - today that is "Hold on" alone, and the reason is that it draws a
+ * phrase at RANDOM from the placeholder pool (Ken, comment 76). The user pressed
+ * the button, so they know something was said; they do not know WHICH of their
+ * phrases their own voice just used, and that is exactly the speech the line
+ * exists for. It still holds the gate, so an automatic placeholder cannot barge
+ * over it.
+ */
+async function speakUserStatement(text, { announce = false } = {}) {
     speakingUserStatement = true;
+    announcingUserStatement = announce;
     try { await tts.speak(text); }
-    finally { speakingUserStatement = false; }
+    finally { speakingUserStatement = false; announcingUserStatement = false; }
 }
 
 // Spoken help in Settings: arm the "?", then tap a control, its label, or a tab to
@@ -477,7 +490,7 @@ function initApp() {
         // Help is excluded for the same reason a user statement is: this line exists
         // for speech the user cannot otherwise account for, and help is something
         // they just asked for — and it plays behind an open Settings panel anyway.
-        if (speaking && (speakingUserStatement || speakingHelp)) return;
+        if (speaking && ((speakingUserStatement && !announcingUserStatement) || speakingHelp)) return;
         ui.setNowPlaying(speaking ? text : null);
     });
 
@@ -2484,8 +2497,22 @@ async function handleHoldOn() {
     // nothing was said.
     const text = placeholders.phraseOnDemand() || controlPhrases.getPhrases().holdOn;
     ui.setStatus('Speaking...');
-    await speakUserStatement(text);
-    logSpokenUserTurn(text);          // append to the transcript AFTER speaking (Ken)
+    // ⚠ NOT RECORDED AS A TURN, and this follows from the phrase pool being shared
+    // (Ken, August 27 2026). The ladder's own placeholders have never been written to
+    // the conversation, so once "Hold on" started drawing from the SAME pool, logging
+    // it meant the identical sentence appeared in the record when the user pressed a
+    // button and vanished when the app said it by itself - a distinction the record
+    // cannot support and nobody reading it back would want.
+    //
+    // What it buys, beyond consistency: a floor-holder carries no content, so keeping
+    // it out of `conversationHistory` also keeps it out of the AI's context, where it
+    // read as the user having already answered. "Say again" is unaffected either way -
+    // it re-speaks the last utterance from the ENGINE, which this never set.
+    //
+    // Hence `announce: true`: with no transcript entry, the now-playing line is the
+    // only place this speech is visible, and nothing the app says in the user's voice
+    // may be invisible.
+    await speakUserStatement(text, { announce: true });
     ui.setStatus(isListening ? 'Listening...' : 'Ready');
 }
 

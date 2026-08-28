@@ -35,6 +35,14 @@ forgetting to tag one is only ever noise, never silence.
   hold your place while you finish, and "Don't save this conversation". Those two leave
   the box open with your typing untouched.
 
+- **"Hold on" is no longer written into the conversation.** It says one of your
+  holding phrases, drawn at random from the same list the app uses when it fills a
+  pause by itself — and those have never been recorded. Now neither is this one, so a
+  phrase means the same thing in the record whether you asked for it or the app said
+  it. The phrase still appears on screen while it plays, so you can always see what
+  your voice just said. "Repeat what I said" and "Ask them to repeat" are unchanged
+  and still recorded.
+
 ## Version 0.8.3
 
 - **The app no longer rewrites what it heard the other person say, and asks the AI one

@@ -197,6 +197,36 @@ test('Hold on cannot repeat the phrase the app just said by itself', () => {
     }
 });
 
+/* --- ...so it is not written into the conversation either (Ken, August 27 2026) ---
+ *
+ * Another SOURCE check, for the same reason: the decision is in app.js. The ladder's
+ * own phrases have never been recorded, so once the button started drawing from the
+ * SAME pool, logging it meant one sentence appeared in the record when the user pressed
+ * a button and vanished when the app said it by itself.
+ *
+ * ⚠ BOTH HALVES ARE ASSERTED, because doing only the first would make the app speak in
+ * the user's voice with nothing anywhere to show for it: with no transcript entry, the
+ * now-playing line is the ONLY place this speech is visible, and the phrase is a random
+ * draw, so the user cannot otherwise say which of their phrases just went out.
+ */
+function handleHoldOnBody() {
+    const at = appSource.indexOf('async function handleHoldOn(');
+    assert.ok(at > 0, 'handleHoldOn not found');
+    return appSource.slice(at, appSource.indexOf(String.fromCharCode(10) + '// ', at + 10));
+}
+
+test('Hold on is not recorded as a turn', () => {
+    assert.ok(!/^\s*logSpokenUserTurn\(/m.test(handleHoldOnBody()),
+        'Hold on must not log a turn - it is a floor-holder drawn from the placeholder '
+        + 'pool, and the automatic ones are not recorded');
+});
+
+test('Hold on is announced, because nothing now records it', () => {
+    assert.match(handleHoldOnBody(), /speakUserStatement\([^)]*announce:\s*true/,
+        'with no transcript entry the now-playing line is the only place this speech is '
+        + 'visible - nothing spoken in the voice may be invisible');
+});
+
 test('an emptied placeholder list leaves Hold on with nothing rather than crashing', () => {
     // The app falls back to a fixed phrase in that case; what must not happen is a throw.
     phrasePools.setPools({ acknowledgment: [], thinking: [] });
