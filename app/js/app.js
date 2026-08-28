@@ -496,22 +496,25 @@ function initApp() {
     const startReportBtn = document.getElementById('startReportBtn');
     if (startReportBtn) startReportBtn.addEventListener('click', () => saveProblemReport(true));
     document.getElementById('apiKeyContinueBtn').addEventListener('click', finishStart);
-    ui.onListenClick(toggleListening);
+    ui.onListenClick(whileComposerClosed(toggleListening));
     ui.onRegenerateClick(handleRegenerate);
     ui.onSpeakClick(handleSpeakComposed);
     ui.onReframeClick(handleReframe);
     ui.onCancelComposerClick(handleCancelComposed);
-    ui.onSettingsClick(openSettings);
+    ui.onSettingsClick(whileComposerClosed(openSettings));
     // About Me is no longer a title-bar button — it's launched from the Settings
     // panel's "About Me" tab (see initSettingsTabs).
     // Persistent override controls (Conversation-Engine-Design.docx §5.1) — the
     // user's escape hatch when the engine's mode inference is wrong.
-    ui.onInitiateClick(handleInitiate);
-    ui.onSayAgainClick(handleSayAgain);
+    // Every one of these dismisses "In my own words" first if it is open, and puts
+    // back the cards that were showing - see whileComposerClosed. "Hold on" and
+    // "Don't save" are the two deliberate exemptions and are wired straight through.
+    ui.onInitiateClick(whileComposerClosed(handleInitiate));
+    ui.onSayAgainClick(whileComposerClosed(handleSayAgain));
     ui.onHoldOnClick(handleHoldOn);
-    ui.onPardonClick(handlePardon);
-    ui.onWindDownClick(handleWindDown);
-    ui.onEndConversationClick(handleEndConversation);
+    ui.onPardonClick(whileComposerClosed(handlePardon));
+    ui.onWindDownClick(whileComposerClosed(handleWindDown));
+    ui.onEndConversationClick(whileComposerClosed(handleEndConversation));
     ui.onPrivacyToggleClick(handlePrivacyToggle);
     // Seed the privacy state from the Settings default (per-conversation button
     // can override it live; it re-seeds at each Start/End conversation).
@@ -3011,6 +3014,34 @@ async function handleSpeakComposed() {
     // about to be irrelevant (Ken).
     dropHeldForComposer();
     await speakAsUserTurn(text);
+}
+
+/* A Command Bar button was pressed while "In my own words" was open (Ken, August 27
+ * 2026). The box is dismissed exactly as Cancel dismisses it - nothing typed is
+ * spoken, nothing is reframed - and the cards that were on the Response Panel come
+ * back; then the button gets on with its own job.
+ *
+ * ⚠ THE BUTTON STILL RUNS. Swallowing the press would make every one of these a dead
+ * tap that has to be made twice, which for Settings and End conversation means the
+ * control appears broken at the moment it is most wanted. What "no action" rules out
+ * is the COMPOSER acting, not the button.
+ *
+ * ⚠ RESTORE FIRST, THEN ACT, and the order is load-bearing rather than tidy: Wrap up
+ * and Start conversation photograph whatever is on the Response Panel so their cancel
+ * can put it back, so a set held during composition has to be showing before they
+ * look. Dismissing afterwards would photograph the composer's empty footprint and the
+ * backout would return to nothing.
+ *
+ * TWO BUTTONS ARE EXEMPT and are wired straight through: "Hold on" speaks a
+ * floor-holding phrase - the very thing you want while you are still typing - and
+ * "Don't save this conversation" is a toggle that touches neither the floor nor the
+ * cards. Both leave the box open with the typing intact.
+ */
+function whileComposerClosed(handler) {
+    return (...args) => {
+        if (composerOpen) handleCancelComposed();
+        return handler(...args);
+    };
 }
 
 // Cancel: discard the box and dismiss the modal (no speech).

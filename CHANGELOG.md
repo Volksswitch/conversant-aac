@@ -26,6 +26,15 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- **The Command Bar buttons now work while "In my own words" is open.** Before, pressing
+  one left the typing box sitting over your response options, so the button seemed to do
+  nothing. Now the box closes, your response options come back, and the button does its
+  job. Nothing you had typed is spoken — the box is put away exactly as if you had
+  pressed Cancel. Two buttons are deliberately left out, because they are useful in the
+  middle of typing and neither disturbs your words: "Hold on", which says something to
+  hold your place while you finish, and "Don't save this conversation". Those two leave
+  the box open with your typing untouched.
+
 ## Version 0.8.3
 
 - **The app no longer rewrites what it heard the other person say, and asks the AI one
