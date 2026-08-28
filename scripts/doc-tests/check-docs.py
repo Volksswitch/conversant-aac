@@ -425,6 +425,16 @@ def l9_refs(doc):
     for p, m in _hits(doc, r'Section\s+(\d+(?:\.\d+)?)'):
         if p.container == 'sdt':
             continue
+        # ⚠ A REFERENCE TO ANOTHER DOCUMENT'S SECTION IS NOT A BROKEN ONE. The Beta Test
+        # Plan points a tester at the manual - "the manual's section 6.3" - and every one
+        # of those numbers was correct while this rule called all five of them broken.
+        # A rule that cries wolf on correct text is worse than no rule, because the real
+        # ones stop being read. Only a reference with no other document named near it is
+        # taken as internal.
+        # The whole paragraph, not a window around the match: a bullet often carries two
+        # or three references and names the document once.
+        if re.search(r'manual|Overview|document', p.text or '', re.I):
+            continue
         if m.group(1) not in nums:
             out.append(F('points at Section %s, which does not exist' % m.group(1),
                          p.i, snip(p.text)))
@@ -486,6 +496,8 @@ def main(argv):
             errors_only = True
         elif a == '--lang':
             lang_only = True
+        elif a == '--no-word':
+            pass          # handled at the end; listed here so it is not read as a filename
         else:
             pats.append(a)
         i += 1
