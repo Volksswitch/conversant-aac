@@ -1595,6 +1595,61 @@ not the length of the pause.** Nothing in the app measures pause length. `stt_ga
 records the interval between recognizer deliveries, which is the quantity that
 actually causes a checkpoint, and is kept as a distribution only.
 
+## A SHORT SILENCE PERIOD IS THE RIGHT DEFAULT, AND THE DOCUMENTS MUST NOT ARGUE AGAINST IT (Ken, August 29 2026)
+
+**Found in the User Manual, section 9.2, which repeatedly framed a short setting as a
+waste of money and steered the reader toward a longer one — while the app's own default
+is 0.5 seconds.** The manual was arguing against the product's central design decision.
+Ken's ruling, and the reasoning is what matters because this will be re-argued the first
+time somebody sees a discarded request in the logs:
+
+1. **The countdown starts LATE, so the real pause is always longer than the number.** It
+   begins when the last words arrive from the transcription service, not when the room
+   goes quiet. A half-second setting is not a half-second pause. *(The measurement Ken
+   wants here is the already-recorded `L` to-do under Open Questions.)*
+2. **Beating the 1–4 second silence IS the product.** A setting that exists to get
+   suggestions in front of the user early cannot be documented as something to lengthen
+   for tidiness.
+3. **Partners do not usually pause and resume inside one turn.** The pathological case
+   the long settings protect against is uncommon.
+4. **⚠ WHEN THEY DO PAUSE, THE APP ALREADY DOES THE CONVERSATIONALLY CORRECT THING — this
+   is the strongest point and it was being described as a defect.** A speaker who trails
+   off expects the other person to take the floor there, and expects a reply to what they
+   have ALREADY said, not to what they were about to add — which is exactly what the
+   first set of suggestions is built from. They also work to avoid an audible pause ("um",
+   "so…") precisely because they know it invites a reply.
+5. **A partner who habitually stops and restarts gets social feedback for it**, so the
+   behavior is self-limiting rather than a permanent property of a user's conversations.
+
+**The cost is real and it is small and it is the user's to absorb** — one extra request,
+a fraction of a penny, mentioned once. Someone who talks daily with a mid-turn thinker
+lengthens the setting; that is what the longer settings are for. **Do not re-introduce
+cost-avoidance framing into user-facing text about this setting.**
+
+**⚠ Distinguish this from the ENGINEERING note** under "Placeholders are gated by partner
+silence": superseded generations are billed and discarded, which is worth WATCHING as a
+number. Watching a number is not the same as telling the user to turn the feature down.
+
+## TO DO — a DYNAMIC silence period (Ken, August 29 2026; not built)
+
+Lengthen the silence period gradually during a conversation when the partner is pausing
+and resuming often, and shorten it again when they return to a normal speak-then-hand-off
+rhythm. It puts the fix where the problem actually is — with the individual partner, in
+the moment — instead of making the user pre-configure for their worst partner.
+
+- **The signal already exists and needs no new machinery: the CHECKPOINT METRICS** decided
+  August 7 2026 record checkpoints per turn and generations superseded. A turn with several
+  checkpoints and several superseded generations IS a pause-and-resume partner.
+- **⚠ THE RISK TO DESIGN AGAINST, and it is the same one already recorded for the
+  adaptive-threshold idea: a setting that changes without the user asking.** This
+  population depends on predictability. Asymmetric adjustment is the likely shape — lengthen
+  slowly on evidence, shorten quickly, cap the excursion, and reset at the end of the
+  conversation so a difficult partner never leaves a changed setting behind.
+- **Decide whether it is visible.** A silently moving number is unexplainable when a user
+  reports that "it got slower"; a visible one spends UI on something they cannot act on.
+- **Sequence it behind the checkpoint metrics**, for the same reason: if real conversations
+  turn out to produce few multi-checkpoint turns, the feature has nothing to correct.
+
 ## The saved transcript does NOT preserve the pause structure (found August 21 2026)
 
 Ken asked whether the transcript records partial partner speech, so a reader can see
