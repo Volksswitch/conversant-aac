@@ -1595,40 +1595,55 @@ not the length of the pause.** Nothing in the app measures pause length. `stt_ga
 records the interval between recognizer deliveries, which is the quantity that
 actually causes a checkpoint, and is kept as a distribution only.
 
-## A SHORT SILENCE PERIOD IS THE RIGHT DEFAULT, AND THE DOCUMENTS MUST NOT ARGUE AGAINST IT (Ken, August 29 2026)
+## A SHORT SILENCE PERIOD IS SETTLED — DECIDED, NOT OPEN (Ken, August 29 2026)
 
-**Found in the User Manual, section 9.2, which repeatedly framed a short setting as a
-waste of money and steered the reader toward a longer one — while the app's own default
-is 0.5 seconds.** The manual was arguing against the product's central design decision.
-Ken's ruling, and the reasoning is what matters because this will be re-argued the first
-time somebody sees a discarded request in the logs:
+**This is a closed decision. The default silence period is short (0.5s), the reasoning
+below is the whole of it, and a session that finds discarded AI requests in a log has not
+found new information — it has found the known, accepted cost.** Recorded at Ken's
+direction so it is not re-argued. Raise it again only on the evidence named at the end.
 
-1. **The countdown starts LATE, so the real pause is always longer than the number.** It
-   begins when the last words arrive from the transcription service, not when the room
-   goes quiet. A half-second setting is not a half-second pause. *(The measurement Ken
-   wants here is the already-recorded `L` to-do under Open Questions.)*
-2. **Beating the 1–4 second silence IS the product.** A setting that exists to get
-   suggestions in front of the user early cannot be documented as something to lengthen
-   for tidiness.
-3. **Partners do not usually pause and resume inside one turn.** The pathological case
-   the long settings protect against is uncommon.
-4. **⚠ WHEN THEY DO PAUSE, THE APP ALREADY DOES THE CONVERSATIONALLY CORRECT THING — this
-   is the strongest point and it was being described as a defect.** A speaker who trails
-   off expects the other person to take the floor there, and expects a reply to what they
-   have ALREADY said, not to what they were about to add — which is exactly what the
-   first set of suggestions is built from. They also work to avoid an audible pause ("um",
-   "so…") precisely because they know it invites a reply.
-5. **A partner who habitually stops and restarts gets social feedback for it**, so the
-   behavior is self-limiting rather than a permanent property of a user's conversations.
+**Ken's logic, in his order:**
 
-**The cost is real and it is small and it is the user's to absorb** — one extra request,
-a fraction of a penny, mentioned once. Someone who talks daily with a mid-turn thinker
-lengthens the setting; that is what the longer settings are for. **Do not re-introduce
-cost-avoidance framing into user-facing text about this setting.**
+1. **The countdown starts LATE, so the real-life silence is always longer than the
+   number.** It begins when the last words arrive from the transcription service, not
+   when the room goes quiet. A half-second setting is not a half-second pause, and every
+   comparison to the conversation-analysis literature that reads the setting value
+   literally is therefore reading it too low. *(Measuring that lag reliably is the
+   already-recorded `L` to-do under Open Questions — Ken wants it, and its absence is
+   not a reason to lengthen the setting in the meantime.)*
+2. **Overcoming the 1–4 second silence that kills conversation for AAC users IS the
+   product.** A setting whose job is to get suggestions in front of the user as early as
+   possible cannot be defaulted, or documented, as something to lengthen for tidiness.
+3. **Partners do not usually pause and resume within one turn.** The case the long
+   settings exist for is uncommon, so it must not drive the default.
+4. **⚠ WHEN A PARTNER DOES PAUSE, THE APP IS ALREADY DOING THE CONVERSATIONALLY CORRECT
+   THING — this is the load-bearing point, and it had been written up as a defect.** A
+   speaker who pauses expects the other person to take the floor right there; that is why
+   they work to avoid an audible pause at all, with "um" and "so…". And they expect a
+   reply to what they have **already said**, not to whatever they were about to add —
+   which is exactly what the first set of suggestions is built from. **So the "wasted"
+   first set is the RIGHT set.**
+5. **A partner who pauses and resumes constantly, especially inside a single exchange, is
+   avoided and told about it**, so the behavior is self-limiting rather than a permanent
+   property of anyone's conversations.
 
-**⚠ Distinguish this from the ENGINEERING note** under "Placeholders are gated by partner
-silence": superseded generations are billed and discarded, which is worth WATCHING as a
-number. Watching a number is not the same as telling the user to turn the feature down.
+**The argument that was heard and overruled, so it is not re-raised as though it were
+new: a short setting produces extra AI requests whose results are discarded.** True, and
+it is small, it is the user's to absorb, and it belongs to the rare case rather than the
+common one. **The user already has the remedy** — lengthen the setting — which is what
+the longer values are for. **Do not re-introduce cost-avoidance framing into user-facing
+text about this setting**; section 9.2 of both manuals was rewritten on August 29 2026
+precisely to take it out, and it mentions cost exactly once.
+
+**⚠ DO NOT CONFUSE THIS WITH THE ENGINEERING NOTE** under "Placeholders are gated by
+partner silence," which says superseded generations are billed and discarded and worth
+WATCHING as a number. Watching a number is instrumentation. Telling the user to turn the
+feature down is a product decision, and it is this one.
+
+**What would legitimately reopen it:** field evidence from real testers — conversations
+where multi-checkpoint turns are common rather than rare, or a bill a tester notices.
+Not a log reading, not a prior about how people talk. If that evidence appears, the
+answer to reach for first is the dynamic silence period below, not a longer default.
 
 ## TO DO — a DYNAMIC silence period (Ken, August 29 2026; not built)
 
