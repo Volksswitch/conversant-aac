@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.8.5
+
 - **Settings → About now estimates what you have spent with each company separately.**
   You hold an account with Anthropic for the AI, and — if you pay for the better hearing
   and the better voice — one with Deepgram. Those are the two bills you actually get, so
