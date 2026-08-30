@@ -2683,7 +2683,17 @@ label.radio-label input[type="radio"] {
     gap: 0.5rem;
 }
 
-#usageBreakdown .usage-what { min-width: 4.5rem; }
+#usageBreakdown .usage-what { min-width: 8rem; }
+
+/* Hearing and speaking are the Deepgram total broken open, so they are indented under
+   it and the name column gives back what the indent takes - the money column has to
+   stay in line with the two totals above it or the figures cannot be read down. */
+/* The two company names carry the two figures Ken asked to be able to read off, so
+   they are marked as the answer and the rows under Deepgram are not. */
+#usageBreakdown .usage-line:not(.usage-sub) .usage-what { font-weight: 600; }
+
+#usageBreakdown .usage-sub { padding-left: 1rem; }
+#usageBreakdown .usage-sub .usage-what { min-width: 7rem; }
 /* A fixed column rather than flex:1 - stretching pushed the money to the far edge of
    the panel, which is the one place it cannot be compared with the line above it. */
 #usageBreakdown .usage-amount { min-width: 11rem; }

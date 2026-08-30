@@ -4424,18 +4424,37 @@ async function updateUsageDisplay() {
         breakdown.hidden = !paidUsed;
         breakdown.textContent = '';
         if (paidUsed) {
-            const line = (what, amount, money) => {
+            const line = (what, amount, money, cls) => {
                 const row = document.createElement('div');
-                row.className = 'usage-line';
+                row.className = 'usage-line' + (cls ? ' ' + cls : '');
                 const a = document.createElement('span'); a.className = 'usage-what'; a.textContent = what;
                 const b = document.createElement('span'); b.className = 'usage-amount'; b.textContent = amount;
                 const c = document.createElement('span'); c.className = 'usage-money'; c.textContent = `$${money.toFixed(2)}`;
                 row.append(a, b, c);
                 breakdown.appendChild(row);
             };
-            line('AI', `${(usage.inputTokens + usage.cacheWriteTokens + usage.cacheReadTokens + usage.outputTokens).toLocaleString()} words in and out`, aiCost);
-            line('Hearing', sttSeconds > 0 ? `${Math.round(sttSeconds / 60)} min heard` : 'not used', sttCost);
-            line('Voice', ttsCharacters > 0 ? `${ttsCharacters.toLocaleString()} characters spoken` : 'not used', ttsCost);
+            // ⚠ THE TWO HEADLINE FIGURES ARE NAMED BY COMPANY, NOT BY WHAT THEY DO (Ken,
+            // August 29 2026: "they should also be totaled and identified as 'Deepgram
+            // cost estimate' and 'Anthropic Claude' cost estimate. Two values, by
+            // name."). The user holds one account with each company and gets one bill
+            // from each, so those are the two figures they can actually check this
+            // against. "AI", "Hearing" and "Speaking" describe what the app did with the
+            // money, which is the useful SECOND question and not the first one.
+            //
+            // Hearing and speaking stay, indented under the Deepgram total: they are one
+            // bill, but they are two rates on two very different quantities, so which of
+            // them is carrying the cost is exactly what a user deciding whether to keep
+            // paying needs to see.
+            const words = usage.inputTokens + usage.cacheWriteTokens
+                        + usage.cacheReadTokens + usage.outputTokens;
+            // Both names are literal because both services are. When the provider
+            // abstraction lands (CLAUDE.md, "Vendor choice is a USER decision") these
+            // become the chosen provider's name, from the same place the endpoint and
+            // the rates come from - not two more strings to find.
+            line('Anthropic Claude', `${words.toLocaleString()} words in and out`, aiCost);
+            line('Deepgram', '', sttCost + ttsCost);
+            line('Hearing', sttSeconds > 0 ? `${Math.round(sttSeconds / 60)} min heard` : 'not used', sttCost, 'usage-sub');
+            line('Speaking', ttsCharacters > 0 ? `${ttsCharacters.toLocaleString()} characters spoken` : 'not used', ttsCost, 'usage-sub');
         }
     }
 }

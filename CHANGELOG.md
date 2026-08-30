@@ -26,12 +26,14 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
-- **Settings → About now estimates the AI, the paid hearing and the paid voice as three
-  separate figures.** The last release showed what the hearing and the voice each cost but
-  left the AI's share to be worked out by subtraction, which answered half the question.
-  All three are now listed under the total, each beside how much of it you have used, so
-  you can see which one to reconsider. If you are not paying for the hearing or the voice,
-  nothing changes: the total is the AI figure and there is no list.
+- **Settings → About now estimates what you have spent with each company separately.**
+  You hold an account with Anthropic for the AI, and — if you pay for the better hearing
+  and the better voice — one with Deepgram. Those are the two bills you actually get, so
+  those are now the two figures shown under the total, by name. The Deepgram figure is
+  broken open underneath into hearing and speaking, because they are two very different
+  rates and which one is carrying the cost is the thing worth knowing. If you are not
+  paying Deepgram, nothing changes: the total is the Anthropic figure and there is no
+  list.
 
 ## Version 0.8.4
 
