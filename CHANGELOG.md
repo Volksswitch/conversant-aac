@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.8.4
+
 - **The Command Bar buttons now work while "In my own words" is open.** Before, pressing
   one left the typing box sitting over your response options, so the button seemed to do
   nothing. Now the box closes, your response options come back, and the button does its
