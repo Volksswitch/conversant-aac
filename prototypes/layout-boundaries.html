@@ -1,0 +1,832 @@
+<!doctype html>
+<!--
+  Conversation layout boundaries - THROWAWAY PROTOTYPE (August 29 2026)
+
+  Deliberately NOT in app/, so it is never deployed and never becomes something that
+  has to be maintained. Open it directly in a browser; there is nothing to build and
+  nothing to install.
+
+  It exists to settle the question Ken asked on August 29 2026: whether the layout
+  percentages should become the user's to set, and if so in what SHAPE - because the
+  obvious shape (four percentage sliders) is wrong. The regions have to add up to the
+  whole screen, so they are not four independent settings, they are three boundaries,
+  and a set of separate sliders never says what just got smaller.
+
+  So two candidate shapes are here side by side and you can flip between them:
+
+    DRAG THE EDGES     - move a shared boundary and watch the trade happen.
+                         No number appears anywhere unless you ask for one.
+    CHOOSE A SIZE      - small / medium / large per region, the app solves the rest.
+                         Less expressive, no dragging, nothing to aim at.
+
+  The model is to scale and the floors are the app's real ones, so a layout that
+  cannot be reached here cannot be reached in the app either. The percentages
+  reported are the same ones the app computes at startup.
+
+  WHAT IS FAITHFUL: the region proportions and their defaults, the floors, the dock
+  caps, the two dock positions, the 8-cell command bar, the 2x2 / 1x4 response
+  palette and its 9:1 split with the "New 4" button.
+
+  WHAT IS NOT: the Express Panel grid is a plausible shape rather than one of the 21
+  real layouts, the icons are stand-ins, and none of the text is generated. The point
+  is the spaces, not what is in them.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conversation layout boundaries - prototype</title>
+<style>
+  :root {
+    --ink: #222;
+    --muted: #666;
+    --line: #cfd8dc;
+    --head: #1F4E79;
+    --stage-bg: #b0bec5;
+
+    /* The app's own region colors, muted so the model reads as a diagram. */
+    --transcript: #eceff1;
+    --command: #cfd8dc;
+    --response: #e8f0f4;
+    --dock: #e0e4e6;
+
+    /* The four response slots, as the app colors them. */
+    --preferred: #2E7D32;
+    --dispreferred: #FF8F00;
+    --initiative: #1565C0;
+    --repair: #6A1B9A;
+    --persistent: #455A64;
+
+    --handle: #37474F;
+    --handle-live: #1565C0;
+    --handle-stuck: #C62828;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    font: 15px/1.45 Arial, Helvetica, sans-serif;
+    margin: 0; padding: 16px 22px 40px;
+    background: #fafafa; color: var(--ink);
+  }
+  h1 { font-size: 20px; margin: 0 0 4px; color: var(--head); }
+  h2 { font-size: 14px; margin: 0 0 8px; color: var(--head); text-transform: uppercase; letter-spacing: .04em; }
+  .lede { color: var(--muted); margin: 0 0 14px; font-size: 13px; max-width: 940px; }
+  .lede b { color: var(--ink); }
+
+  .wrap { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+  .stage-col { flex: 1 1 660px; min-width: 520px; }
+  .side-col  { flex: 1 1 340px; min-width: 320px; max-width: 460px; }
+
+  /* --- the model screen ------------------------------------------------ */
+  .bezel {
+    background: #263238; padding: 14px; border-radius: 14px;
+    display: inline-block; box-shadow: 0 3px 14px rgba(0,0,0,.22);
+  }
+  #stage {
+    position: relative; background: var(--stage-bg);
+    /* touch-action: none is the app's own finding - without it the browser claims
+       the gesture for panning and a touch drag moves a few millimeters. */
+    touch-action: none; user-select: none;
+    overflow: hidden;
+  }
+  .region {
+    position: absolute; overflow: hidden;
+    border-radius: 3px;
+    display: flex; flex-direction: column;
+    font-size: 11px; color: #37474F;
+  }
+  .region .tag {
+    position: absolute; top: 2px; left: 5px;
+    font-size: 9.5px; letter-spacing: .05em; text-transform: uppercase;
+    color: rgba(0,0,0,.42); pointer-events: none;
+  }
+  #rTranscript { background: var(--transcript); }
+  #rCommand    { background: var(--command); }
+  #rResponse   { background: var(--response); }
+  #rDock       { background: var(--dock); }
+
+  /* --- what lives inside each region ----------------------------------- */
+  .tx-body { padding: 14px 8px 4px; display: flex; flex-direction: column; gap: 3px; overflow: hidden; }
+  .tx-line { font-size: 10px; line-height: 1.3; }
+  .tx-partner { color: #37474F; }
+  .tx-self { color: #1565C0; text-align: right; }
+
+  .cmd-grid { flex: 1; display: flex; gap: var(--g); padding: var(--g); }
+  .cmd { flex: 1 1 0; background: #fff; border: 1px solid rgba(0,0,0,.16); border-radius: 3px;
+         display: flex; align-items: center; justify-content: center; font-size: 13px; color: #455A64; }
+
+  .resp-body { flex: 1; display: flex; gap: var(--g); padding: var(--g); min-height: 0; }
+  .cards { flex: 9 1 0; display: grid; gap: var(--g); min-height: 0; }
+  .cards.two-by-two { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+  .cards.one-by-four { grid-template-columns: repeat(4, 1fr); }
+  .card {
+    background: #fff; border-radius: 3px; border: 1px solid rgba(0,0,0,.14);
+    border-left-width: 4px; padding: 3px 4px; font-size: 9.5px; line-height: 1.2;
+    overflow: hidden; min-width: 0; min-height: 0; color: #263238;
+  }
+  .card.p { border-left-color: var(--preferred); }
+  .card.d { border-left-color: var(--dispreferred); }
+  .card.i { border-left-color: var(--initiative); }
+  .card.r { border-left-color: var(--repair); }
+  .newn { flex: 1 1 0; background: #fff; border: 1px solid rgba(0,0,0,.16); border-radius: 3px;
+          display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--persistent); }
+
+  .dock-grid { flex: 1; display: grid; gap: var(--g); padding: var(--g); min-height: 0; }
+  .key { background: #fff; border: 1px solid rgba(0,0,0,.14); border-radius: 3px;
+         font-size: 8.5px; color: #37474F; display: flex; align-items: center;
+         justify-content: center; overflow: hidden; min-width: 0; min-height: 0; }
+
+  /* --- the draggable boundaries ---------------------------------------- */
+  .handle {
+    position: absolute; z-index: 5; touch-action: none;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .handle.h { cursor: row-resize; }
+  .handle.v { cursor: col-resize; }
+  .handle .grip {
+    background: var(--handle); border-radius: 6px; opacity: .5;
+    transition: opacity .12s, background .12s, transform .12s;
+  }
+  .handle.h .grip { width: 46px; height: 5px; }
+  .handle.v .grip { width: 5px; height: 46px; }
+  .handle:hover .grip, .handle.dragging .grip { opacity: 1; background: var(--handle-live); transform: scale(1.12); }
+  .handle.stuck .grip { background: var(--handle-stuck); opacity: 1; }
+  body.mode-sizes .handle { display: none; }
+
+  .floor-note {
+    position: absolute; z-index: 6; background: var(--handle-stuck); color: #fff;
+    font-size: 10px; padding: 2px 7px; border-radius: 3px; pointer-events: none;
+    opacity: 0; transition: opacity .15s;
+  }
+  .floor-note.show { opacity: 1; }
+
+  /* --- controls --------------------------------------------------------- */
+  .card-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+  .row:last-child { margin-bottom: 0; }
+  .row > label.name { flex: 0 0 118px; font-size: 13px; color: var(--muted); }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .seg button {
+    font: inherit; font-size: 13px; padding: 5px 12px; border: 0; background: #fff;
+    color: #37474F; cursor: pointer; border-right: 1px solid var(--line);
+  }
+  .seg button:last-child { border-right: 0; }
+  .seg button[aria-pressed="true"] { background: var(--head); color: #fff; }
+  select { font: inherit; font-size: 13px; padding: 4px 6px; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
+  .btn {
+    font: inherit; font-size: 13px; padding: 6px 12px; border: 1px solid var(--line);
+    border-radius: 6px; background: #fff; color: #37474F; cursor: pointer;
+  }
+  .btn:hover { background: #eceff1; }
+  .left-over { font-size: 13px; color: var(--muted); font-style: italic; }
+  .checkline { font-size: 13px; color: #37474F; display: flex; align-items: center; gap: 7px; }
+
+  table.readout { border-collapse: collapse; width: 100%; font-size: 13px; }
+  table.readout th, table.readout td { text-align: left; padding: 3px 6px; border-bottom: 1px solid #eceff1; }
+  table.readout th { color: var(--muted); font-weight: normal; font-size: 12px; }
+  table.readout td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  table.readout tr.binding td { color: var(--handle-stuck); }
+  .hint { font-size: 12px; color: var(--muted); margin: 8px 0 0; }
+  .hint code { background: #eceff1; padding: 1px 4px; border-radius: 3px; }
+  body:not(.show-numbers) .numbers-only { display: none; }
+</style>
+</head>
+<body class="mode-drag show-numbers">
+
+<h1>Conversation layout &mdash; where the boundaries go</h1>
+<p class="lede">
+  Two candidate ways of letting somebody set the layout themselves, on the same model screen.
+  <b>Drag the edges</b> moves a shared boundary, so the trade is visible while you make it.
+  <b>Choose a size</b> asks for small, medium or large per region and works the rest out.
+  The model is to scale and the floors are the app's real ones, so anything you cannot
+  reach here you cannot reach in the app.
+</p>
+
+<div class="wrap">
+  <div class="stage-col">
+    <div class="bezel"><div id="stage"></div></div>
+    <p class="hint" id="stageHint"></p>
+  </div>
+
+  <div class="side-col">
+
+    <div class="card-box">
+      <h2>The screen</h2>
+      <div class="row">
+        <label class="name" for="deviceSel">Device</label>
+        <select id="deviceSel"></select>
+      </div>
+      <div class="row">
+        <label class="name">Keyboard sits</label>
+        <span class="seg" id="dockSeg">
+          <button type="button" data-dock="bottom" aria-pressed="true">Along the bottom</button>
+          <button type="button" data-dock="side" aria-pressed="false">Down one side</button>
+        </span>
+      </div>
+    </div>
+
+    <div class="card-box">
+      <h2>How it is set</h2>
+      <div class="row">
+        <span class="seg" id="modeSeg">
+          <button type="button" data-mode="drag" aria-pressed="true">Drag the edges</button>
+          <button type="button" data-mode="sizes" aria-pressed="false">Choose a size</button>
+        </span>
+      </div>
+      <div id="sizeControls" hidden>
+        <div class="row">
+          <label class="name" for="szTranscript">What they said</label>
+          <span class="seg" data-region="transcript">
+            <button type="button" data-size="1">Small</button>
+            <button type="button" data-size="2">Medium</button>
+            <button type="button" data-size="3">Large</button>
+          </span>
+        </div>
+        <div class="row">
+          <label class="name">Control buttons</label>
+          <span class="seg" data-region="command">
+            <button type="button" data-size="1">Small</button>
+            <button type="button" data-size="2">Medium</button>
+            <button type="button" data-size="3">Large</button>
+          </span>
+        </div>
+        <div class="row">
+          <label class="name">Your responses</label>
+          <span class="left-over">takes whatever is left</span>
+        </div>
+        <div class="row">
+          <label class="name">Express Panel</label>
+          <span class="seg" data-region="dock">
+            <button type="button" data-size="1">Small</button>
+            <button type="button" data-size="2">Medium</button>
+            <button type="button" data-size="3">Large</button>
+          </span>
+        </div>
+      </div>
+      <p class="hint" id="modeHint"></p>
+    </div>
+
+    <div class="card-box">
+      <h2>Where it ended up</h2>
+      <table class="readout" id="readout">
+        <thead><tr><th>Region</th><th class="num">Share</th><th class="num">Actual</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p class="hint" id="floorHint"></p>
+    </div>
+
+    <div class="card-box">
+      <h2>Try it against</h2>
+      <div class="row">
+        <button class="btn" type="button" data-preset="default">The shipped default</button>
+        <button class="btn" type="button" data-preset="reader">Reads every word</button>
+      </div>
+      <div class="row">
+        <button class="btn" type="button" data-preset="glancer">Never reads it</button>
+        <button class="btn" type="button" data-preset="eight">Eight response cards</button>
+      </div>
+      <p class="hint">
+        Presets move the boundaries to a person's plausible answer, so you can judge
+        whether the extremes are usable rather than only the middle.
+      </p>
+    </div>
+
+    <div class="card-box">
+      <h2>While experimenting</h2>
+      <label class="checkline"><input type="checkbox" id="showNumbers" checked> Show me the percentages</label>
+      <p class="hint">
+        Off is what the user would see. The percentages are for judging the result, not
+        part of either design.
+      </p>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" type="button" id="cardCount">Show 8 response cards</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------------------------------------------------------------- devices
+  // Real measurements. The Surface figure is the fleet the current percentages
+  // were calibrated against; the iPad ones were measured on the device in July.
+  var DEVICES = [
+    { id: 'surface', name: 'Surface, landscape', w: 1280, h: 800 },
+    { id: 'ipad',    name: 'iPad 10th gen, Safari tab', w: 1180, h: 763 },
+    { id: 'ipadhs',  name: 'iPad, Home Screen app', w: 1180, h: 788 },
+    { id: 'mini',    name: 'iPad mini', w: 1133, h: 744 },
+    { id: 'wide',    name: 'Large desktop', w: 1600, h: 900 }
+  ];
+
+  // The app's floors, in logical pixels at a 16px root.
+  var REM = 16;
+  var FLOOR_TRANSCRIPT = 3.0 * REM;   // about two lines
+  var MIN_BTN          = 2.0 * REM;   // smallest still-recognizable button
+  var DOCK_CAP_W       = 0.70;        // of the width
+  var DOCK_CAP_H       = 0.72;        // of the height
+  var GAP              = 6;           // a plausible spacing, held constant here
+
+  // The shipped defaults, as fractions.
+  var DEFAULTS = {
+    bottom: { dock: 0.30, command: 0.10, response: 0.30 },  // transcript takes the rest
+    side:   { dock: 0.30, transcript: 0.30, command: 0.10, response: 0.60 }
+  };
+
+  var state = {
+    device: DEVICES[0],
+    dock: 'bottom',
+    mode: 'drag',
+    cards: 4,
+    sizes: { transcript: 2, command: 2, response: 2, dock: 2 },
+    bottom: Object.assign({}, DEFAULTS.bottom),
+    side: Object.assign({}, DEFAULTS.side)
+  };
+
+  var stage = document.getElementById('stage');
+  var readoutBody = document.querySelector('#readout tbody');
+  var floorHint = document.getElementById('floorHint');
+  var stageHint = document.getElementById('stageHint');
+  var modeHint = document.getElementById('modeHint');
+  var binding = [];
+
+  // How short the response panel may get, which is not one number: it depends on how
+  // many ROWS of cards it has to hold. A bottom dock lays four cards out in a line, a
+  // side dock stacks them two by two, and eight-card mode doubles both. A flat floor
+  // was too generous for one row and much too mean for four.
+  function responseFloorPx() {
+    var rows;
+    if (state.dock === 'side') rows = state.cards === 8 ? 4 : 2;
+    else rows = state.cards === 8 ? 2 : 1;
+    return rows * MIN_BTN + (rows + 1) * GAP;
+  }
+
+  // ------------------------------------------------------------ the solver
+  // Everything downstream reads this. It returns the four regions in FRACTIONS
+  // of the screen, having applied the same floors and caps the app applies.
+  function solve() {
+    binding = [];
+    var h = state.device.h, w = state.device.w;
+    var floorT = FLOOR_TRANSCRIPT / h;
+    var floorBtn = MIN_BTN / h;
+    var floorR = responseFloorPx() / h;
+
+    if (state.dock === 'bottom') {
+      var b = state.bottom;
+      var dock = clamp(b.dock, floorBtn * 2, DOCK_CAP_H, 'dock');
+      var command = clamp(b.command, floorBtn, 0.4, 'command');
+      var response = clamp(b.response, floorR, 0.6, 'response');
+      // The transcript is the remainder and is the region that yields, so it is
+      // where a shortage shows up. If it would drop under its floor, the response
+      // panel gives the space back - it is the largest flexible neighbor.
+      var transcript = 1 - dock - command - response;
+      if (transcript < floorT) {
+        response = Math.max(floorR, response - (floorT - transcript));
+        transcript = 1 - dock - command - response;
+        note('transcript');
+      }
+      return { dock: dock, command: command, response: response, transcript: transcript };
+    }
+
+    var s = state.side;
+    // A side dock takes width, so the vertical budget is shared by three regions
+    // and the horizontal one by two.
+    var dockW = clamp(s.dock, (5 * MIN_BTN) / w, DOCK_CAP_W, 'dock');
+    // The main area has to hold eight command buttons side by side.
+    var minMainW = (8 * MIN_BTN + 9 * GAP) / w;
+    if (1 - dockW < minMainW) { dockW = 1 - minMainW; note('dock'); }
+
+    var transcript = clamp(s.transcript, floorT, 0.7, 'transcript');
+    var command = clamp(s.command, floorBtn, 0.4, 'command');
+    var response = 1 - transcript - command;
+    if (response < floorR) {
+      transcript = Math.max(floorT, transcript - (floorR - response));
+      response = 1 - transcript - command;
+      note('response');
+    }
+    return { dockW: dockW, transcript: transcript, command: command, response: response };
+  }
+
+  function clamp(v, lo, hi, name) {
+    if (v <= lo) { note(name); return lo; }
+    if (v >= hi) { note(name); return hi; }
+    return v;
+  }
+  function note(name) { if (binding.indexOf(name) === -1) binding.push(name); }
+
+  // The "choose a size" shape. Each choice maps to a SHARE, with medium set to the
+  // shipped value so that all-medium reproduces today's layout exactly - without
+  // that, the neutral setting is not the default and the whole comparison is unfair
+  // to this shape.
+  //
+  // ⚠ ONE REGION CANNOT HAVE A SAY, and that is the finding rather than a gap. Four
+  // regions share one screen, so once three are chosen the fourth is whatever is
+  // left. The response panel is the one that gives, because it is the region people
+  // have the least specific opinion about - "big enough to read the cards" - whereas
+  // how much of what they said to keep on screen is a real preference.
+  var SIZE_SHARES = {
+    transcript: [0.22, 0.30, 0.40],
+    command:    [0.08, 0.10, 0.13],
+    dock:       [0.22, 0.30, 0.40]
+  };
+
+  function applySizes() {
+    var W = state.sizes;
+    var pick = function (name) { return SIZE_SHARES[name][W[name] - 1]; };
+    if (state.dock === 'bottom') {
+      state.bottom.dock = pick('dock');
+      state.bottom.command = pick('command');
+      state.bottom.response = 1 - pick('dock') - pick('command') - pick('transcript');
+    } else {
+      state.side.dock = pick('dock');
+      state.side.transcript = pick('transcript');
+      state.side.command = pick('command');
+    }
+  }
+
+  // ------------------------------------------------------------- rendering
+  function stageSize() {
+    var maxW = 720, maxH = 470;
+    var d = state.device;
+    var scale = Math.min(maxW / d.w, maxH / d.h);
+    return { w: Math.round(d.w * scale), h: Math.round(d.h * scale), scale: scale };
+  }
+
+  function el(tag, cls, html) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (html != null) n.innerHTML = html;
+    return n;
+  }
+
+  function transcriptContent() {
+    var n = el('div', 'tx-body');
+    n.appendChild(el('div', 'tx-line tx-partner', 'So how did the appointment go on Tuesday?'));
+    n.appendChild(el('div', 'tx-line tx-self', 'Better than I expected, honestly.'));
+    n.appendChild(el('div', 'tx-line tx-partner', 'That is good to hear. Did they say anything about the next one?'));
+    return n;
+  }
+
+  function commandContent() {
+    var g = el('div', 'cmd-grid');
+    var icons = ['●', '↺', '⏸', '❓', '⚑', '✎', '⚡', '⚙'];
+    for (var i = 0; i < 8; i++) g.appendChild(el('div', 'cmd', icons[i]));
+    return g;
+  }
+
+  function responseContent(dock) {
+    var body = el('div', 'resp-body');
+    var cards = el('div', 'cards ' + (dock === 'side' ? 'two-by-two' : 'one-by-four'));
+    var set = [
+      ['p', 'They want to see me again in six weeks.'],
+      ['d', 'I would rather not go into it right now.'],
+      ['i', 'How did yours go, though?'],
+      ['r', 'Sorry, which appointment do you mean?']
+    ];
+    var reps = state.cards === 8 ? 2 : 1;
+    if (state.cards === 8) {
+      cards.style.gridTemplateRows = dock === 'side' ? '1fr 1fr 1fr 1fr' : '1fr 1fr';
+    } else {
+      cards.style.gridTemplateRows = '';
+    }
+    for (var r = 0; r < reps; r++) {
+      for (var i = 0; i < set.length; i++) {
+        cards.appendChild(el('div', 'card ' + set[i][0], set[i][1]));
+      }
+    }
+    body.appendChild(cards);
+    body.appendChild(el('div', 'newn', state.cards === 8 ? 'New 8' : 'New 4'));
+    return body;
+  }
+
+  function dockContent(dock) {
+    var cols = dock === 'side' ? 5 : 9;
+    var rows = dock === 'side' ? 7 : 4;
+    var g = el('div', 'dock-grid');
+    g.style.gridTemplateColumns = 'repeat(' + cols + ', 1fr)';
+    g.style.gridTemplateRows = 'repeat(' + rows + ', 1fr)';
+    var words = ['Yes', 'No', 'Please', 'Thanks', 'Hi', 'Bye', 'Wait', 'Help', 'Okay',
+                 'Sorry', 'Maybe', 'I agree', 'Not now', 'Say again', 'Go on', 'That is funny',
+                 'I think so', 'Excuse me', 'You are welcome', 'Got it', 'Well', 'One moment',
+                 'I do not know', 'I am not sure', 'Tired', 'Happy', 'Curious', 'Stressed',
+                 'Mom', 'The clinic', 'Excited', 'Sad', 'Yes please', 'No thank you', 'Later', 'Now'];
+    for (var i = 0; i < cols * rows; i++) {
+      g.appendChild(el('div', 'key', words[i % words.length]));
+    }
+    return g;
+  }
+
+  function region(id, tagText, x, y, w, h, content) {
+    var n = el('div', 'region');
+    n.id = id;
+    n.style.left = x + 'px'; n.style.top = y + 'px';
+    n.style.width = w + 'px'; n.style.height = h + 'px';
+    n.style.setProperty('--g', Math.max(2, Math.round(GAP * curScale)) + 'px');
+    if (content) n.appendChild(content);
+    var t = el('div', 'tag', tagText);
+    n.appendChild(t);
+    return n;
+  }
+
+  var curScale = 1;
+
+  function render() {
+    var size = stageSize();
+    curScale = size.scale;
+    stage.style.width = size.w + 'px';
+    stage.style.height = size.h + 'px';
+    stage.textContent = '';
+
+    var g = Math.max(2, Math.round(GAP * curScale));
+    var r = solve();
+    var W = size.w, H = size.h;
+
+    if (state.dock === 'bottom') {
+      var dockH = r.dock * H, cmdH = r.command * H, respH = r.response * H, txH = r.transcript * H;
+      var y = 0;
+      stage.appendChild(region('rTranscript', 'What they said', g, y + g, W - 2 * g, txH - g, transcriptContent()));
+      y += txH;
+      stage.appendChild(region('rCommand', 'Controls', g, y, W - 2 * g, cmdH, commandContent()));
+      y += cmdH;
+      stage.appendChild(region('rResponse', 'Your responses', g, y, W - 2 * g, respH, responseContent('bottom')));
+      y += respH;
+      stage.appendChild(region('rDock', 'Express Panel', g, y, W - 2 * g, dockH - g, dockContent('bottom')));
+
+      addHandle('h', txH, W / 2, 'bottom.transcriptCommand');
+      addHandle('h', txH + cmdH, W / 2, 'bottom.commandResponse');
+      addHandle('h', txH + cmdH + respH, W / 2, 'bottom.responseDock');
+    } else {
+      var dockW = r.dockW * W, mainW = W - dockW;
+      var txH2 = r.transcript * H, cmdH2 = r.command * H, respH2 = r.response * H;
+      var y2 = 0;
+      stage.appendChild(region('rTranscript', 'What they said', g, y2 + g, mainW - 2 * g, txH2 - g, transcriptContent()));
+      y2 += txH2;
+      stage.appendChild(region('rCommand', 'Controls', g, y2, mainW - 2 * g, cmdH2, commandContent()));
+      y2 += cmdH2;
+      stage.appendChild(region('rResponse', 'Your responses', g, y2, mainW - 2 * g, respH2 - g, responseContent('side')));
+      stage.appendChild(region('rDock', 'Express Panel', mainW, g, dockW - g, H - 2 * g, dockContent('side')));
+
+      // The grip goes on the boundary the dock actually has, which is its LEFT edge -
+      // the panel is drawn on the right. Placing it at dockW put it a third of the way
+      // across the main area, so the first drag jumped the dock straight to its cap.
+      addHandle('v', mainW, H / 2, 'side.dockMain');
+      addHandle('h', txH2, mainW / 2, 'side.transcriptCommand');
+      addHandle('h', txH2 + cmdH2, mainW / 2, 'side.commandResponse');
+    }
+
+    renderReadout(r);
+    renderFloors();
+  }
+
+  function addHandle(dir, pos, across, key) {
+    var h = el('div', 'handle ' + dir);
+    h.dataset.key = key;
+    var size = stageSize();
+    if (dir === 'h') {
+      h.style.left = '0px'; h.style.width = size.w + 'px';
+      h.style.top = (pos - 7) + 'px'; h.style.height = '14px';
+    } else {
+      h.style.top = '0px'; h.style.height = size.h + 'px';
+      h.style.left = (pos - 7) + 'px'; h.style.width = '14px';
+    }
+    h.appendChild(el('div', 'grip'));
+    if (isStuck(key)) h.classList.add('stuck');
+    h.addEventListener('pointerdown', startDrag);
+    stage.appendChild(h);
+  }
+
+  function isStuck(key) {
+    if (binding.length === 0) return false;
+    var map = {
+      'bottom.transcriptCommand': ['transcript'],
+      'bottom.commandResponse': ['command', 'transcript'],
+      'bottom.responseDock': ['dock', 'response'],
+      'side.dockMain': ['dock'],
+      'side.transcriptCommand': ['transcript'],
+      'side.commandResponse': ['command', 'response']
+    };
+    var want = map[key] || [];
+    for (var i = 0; i < want.length; i++) if (binding.indexOf(want[i]) !== -1) return true;
+    return false;
+  }
+
+  // ------------------------------------------------------------- dragging
+  var drag = null;
+
+  function startDrag(e) {
+    if (state.mode !== 'drag') return;
+    var h = e.currentTarget;
+    h.setPointerCapture(e.pointerId);
+    h.classList.add('dragging');
+    var rect = stage.getBoundingClientRect();
+    drag = { key: h.dataset.key, rect: rect, node: h };
+    e.preventDefault();
+    window.addEventListener('pointermove', onDrag);
+    window.addEventListener('pointerup', endDrag);
+  }
+
+  function onDrag(e) {
+    if (!drag) return;
+    var size = stageSize();
+    var fy = (e.clientY - drag.rect.top) / size.h;
+    var fx = (e.clientX - drag.rect.left) / size.w;
+    fy = Math.max(0, Math.min(1, fy));
+    fx = Math.max(0, Math.min(1, fx));
+    var r = solve();
+
+    switch (drag.key) {
+      case 'bottom.transcriptCommand': {
+        // Moving this edge changes the transcript. Everything below keeps its size
+        // and slides, which is the trade being made visible.
+        var newT = fy;
+        var delta = newT - r.transcript;
+        state.bottom.response = r.response - delta;
+        break;
+      }
+      case 'bottom.commandResponse':
+        state.bottom.command = fy - r.transcript;
+        break;
+      case 'bottom.responseDock':
+        state.bottom.dock = 1 - fy;
+        break;
+      case 'side.dockMain':
+        state.side.dock = 1 - fx;
+        break;
+      case 'side.transcriptCommand':
+        state.side.transcript = fy;
+        break;
+      case 'side.commandResponse':
+        state.side.command = fy - r.transcript;
+        break;
+    }
+    render();
+    // The handle was rebuilt by render(), so re-arm the one under the pointer.
+    var again = stage.querySelector('.handle[data-key="' + drag.key + '"]');
+    if (again) again.classList.add('dragging');
+  }
+
+  function endDrag() {
+    drag = null;
+    window.removeEventListener('pointermove', onDrag);
+    window.removeEventListener('pointerup', endDrag);
+    render();
+  }
+
+  // -------------------------------------------------------------- readout
+  function renderReadout(r) {
+    var rows;
+    var h = state.device.h, w = state.device.w;
+    if (state.dock === 'bottom') {
+      rows = [
+        ['What they said', r.transcript, Math.round(r.transcript * h) + ' px tall', 'transcript'],
+        ['Controls', r.command, Math.round(r.command * h) + ' px tall', 'command'],
+        ['Your responses', r.response, Math.round(r.response * h) + ' px tall', 'response'],
+        ['Express Panel', r.dock, Math.round(r.dock * h) + ' px tall', 'dock']
+      ];
+    } else {
+      rows = [
+        ['Express Panel', r.dockW, Math.round(r.dockW * w) + ' px wide', 'dock'],
+        ['What they said', r.transcript, Math.round(r.transcript * h) + ' px tall', 'transcript'],
+        ['Controls', r.command, Math.round(r.command * h) + ' px tall', 'command'],
+        ['Your responses', r.response, Math.round(r.response * h) + ' px tall', 'response']
+      ];
+    }
+    readoutBody.textContent = '';
+    rows.forEach(function (row) {
+      var tr = el('tr');
+      if (binding.indexOf(row[3]) !== -1) tr.className = 'binding';
+      tr.appendChild(el('td', null, row[0]));
+      tr.appendChild(el('td', 'num', Math.round(row[1] * 100) + '%'));
+      tr.appendChild(el('td', 'num', row[2]));
+      readoutBody.appendChild(tr);
+    });
+  }
+
+  function renderFloors() {
+    if (binding.length === 0) {
+      floorHint.textContent = 'Nothing is against a limit.';
+      floorHint.style.color = '';
+      return;
+    }
+    var names = { transcript: 'what they said', command: 'the controls',
+                  response: 'your responses', dock: 'the Express Panel' };
+    var list = binding.map(function (b) { return names[b] || b; }).join(', ');
+    floorHint.textContent = 'At a limit: ' + list + '. It will not go further, and the handle turns red.';
+    floorHint.style.color = '#C62828';
+  }
+
+  // -------------------------------------------------------------- controls
+  var deviceSel = document.getElementById('deviceSel');
+  DEVICES.forEach(function (d, i) {
+    var o = document.createElement('option');
+    o.value = String(i); o.textContent = d.name + ' — ' + d.w + ' by ' + d.h;
+    deviceSel.appendChild(o);
+  });
+  deviceSel.addEventListener('change', function () {
+    state.device = DEVICES[Number(deviceSel.value)];
+    render();
+  });
+
+  document.getElementById('dockSeg').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    state.dock = b.dataset.dock;
+    [].forEach.call(this.querySelectorAll('button'), function (x) {
+      x.setAttribute('aria-pressed', String(x === b));
+    });
+    if (state.mode === 'sizes') applySizes();
+    render();
+    updateHints();
+  });
+
+  document.getElementById('modeSeg').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    state.mode = b.dataset.mode;
+    [].forEach.call(this.querySelectorAll('button'), function (x) {
+      x.setAttribute('aria-pressed', String(x === b));
+    });
+    document.body.className = document.body.className.replace(/mode-\w+/, 'mode-' + state.mode);
+    document.getElementById('sizeControls').hidden = state.mode !== 'sizes';
+    if (state.mode === 'sizes') applySizes();
+    render();
+    updateHints();
+  });
+
+  [].forEach.call(document.querySelectorAll('#sizeControls .seg'), function (seg) {
+    var region = seg.dataset.region;
+    function paint() {
+      [].forEach.call(seg.querySelectorAll('button'), function (b) {
+        b.setAttribute('aria-pressed', String(Number(b.dataset.size) === state.sizes[region]));
+      });
+    }
+    seg.addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      state.sizes[region] = Number(b.dataset.size);
+      paint(); applySizes(); render();
+    });
+    paint();
+  });
+
+  document.getElementById('showNumbers').addEventListener('change', function () {
+    document.body.classList.toggle('show-numbers', this.checked);
+  });
+
+  document.getElementById('cardCount').addEventListener('click', function () {
+    state.cards = state.cards === 4 ? 8 : 4;
+    this.textContent = state.cards === 4 ? 'Show 8 response cards' : 'Show 4 response cards';
+    render();
+  });
+
+  [].forEach.call(document.querySelectorAll('[data-preset]'), function (b) {
+    b.addEventListener('click', function () {
+      var p = b.dataset.preset;
+      if (p === 'default') {
+        state.bottom = Object.assign({}, DEFAULTS.bottom);
+        state.side = Object.assign({}, DEFAULTS.side);
+        state.sizes = { transcript: 2, command: 2, response: 2, dock: 2 };
+      } else if (p === 'reader') {
+        state.bottom = { dock: 0.24, command: 0.09, response: 0.25 };
+        state.side = { dock: 0.26, transcript: 0.46, command: 0.09, response: 0.45 };
+        state.sizes = { transcript: 3, command: 1, response: 2, dock: 1 };
+      } else if (p === 'glancer') {
+        state.bottom = { dock: 0.34, command: 0.11, response: 0.44 };
+        state.side = { dock: 0.34, transcript: 0.10, command: 0.11, response: 0.79 };
+        state.sizes = { transcript: 1, command: 2, response: 3, dock: 3 };
+      } else if (p === 'eight') {
+        state.cards = 8;
+        document.getElementById('cardCount').textContent = 'Show 4 response cards';
+        state.bottom = { dock: 0.26, command: 0.10, response: 0.42 };
+        state.side = { dock: 0.28, transcript: 0.18, command: 0.10, response: 0.72 };
+        state.sizes = { transcript: 1, command: 2, response: 3, dock: 2 };
+      }
+      if (state.mode === 'sizes') applySizes();
+      [].forEach.call(document.querySelectorAll('#sizeControls .seg'), function (seg) {
+        var region = seg.dataset.region;
+        [].forEach.call(seg.querySelectorAll('button'), function (x) {
+          x.setAttribute('aria-pressed', String(Number(x.dataset.size) === state.sizes[region]));
+        });
+      });
+      render();
+    });
+  });
+
+  function updateHints() {
+    if (state.mode === 'drag') {
+      stageHint.textContent = state.dock === 'bottom'
+        ? 'Drag any of the three horizontal grips. Each one is a shared edge, so one region grows and its neighbor gives way.'
+        : 'Drag the vertical grip to resize the Express Panel, or either horizontal grip to trade height between the three regions beside it.';
+      modeHint.textContent = 'Nothing here says a percentage. The trade is shown by the edge moving, not described.';
+    } else {
+      stageHint.textContent = 'The grips are gone. The layout is worked out from the four choices instead.';
+      modeHint.textContent = 'Three choices, no gesture needed - but one region has to absorb the rest, so it gets no say at all. All medium is exactly today\'s layout.';
+    }
+  }
+
+  render();
+  updateHints();
+  window.addEventListener('resize', render);
+})();
+</script>
+</body>
+</html>
