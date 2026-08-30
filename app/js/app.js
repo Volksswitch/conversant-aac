@@ -2342,8 +2342,15 @@ function renderStaticPalette(kind, full, statusMsg, { advance = false, pin = [] 
 // The "Actually, before you go —" card, offered when the PARTNER starts closing.
 // Selecting it speaks the phrase and takes the floor like any other response, so
 // the user holds the conversation open and can then say the thing itself.
-function declineClosingCard() {
-    const text = (controlPhrases.getPhrases().declineClosing || '').trim();
+//
+// The wording is one of a LIST the user owns (Ken, August 29 2026). Only one is ever
+// on screen, because the card is PINNED to a cell and the whole point of pinning it
+// is that a page turn cannot take it away — so "New N" turns the goodbyes AND moves
+// this card to the next wording, which is how every version stays reachable without
+// the palette ever changing shape.
+function declineClosingCard({ advance = false } = {}) {
+    const text = advance ? controlPhrases.nextPhrase('declineClosing')
+                         : controlPhrases.pickPhrase('declineClosing');
     if (!text) return [];
     return [{ slot: engine.SLOT.CLOSING_DECLINE, text, hint: text, priority: 2, latency: 'instant' }];
 }
@@ -2552,7 +2559,9 @@ async function handlePardon() {
     ui.showEngineState(snap);
     updatePartnerLive(kept);
     clearPalette();
-    const text = controlPhrases.getPhrases().pardon; // user-editable (Settings → Controls)
+    // One of the user's own "ask them to repeat" phrases, never the same one twice
+    // running (Settings → Controls).
+    const text = controlPhrases.pickPhrase('pardon');
     ui.setStatus('Speaking...');
     await speakUserStatement(text);
     logSpokenUserTurn(text);          // commits the partner's kept turn, then the pardon after it
@@ -2580,9 +2589,13 @@ async function handleRegenerate() {
     // "New N" dips to the next page of that set rather than calling the AI (Ken,
     // July 2026). Only pages when more cards are defined than fit; otherwise no-op.
     if (currentStatic.kind) {
-        // Keep any pinned card (the decline-the-closing one) across the page turn.
+        // The pinned card (the decline-the-closing one) stays in its cell across the
+        // page turn — but it moves on to the next wording, since "New N" is the ask
+        // for different words and this card is otherwise stuck on one phrase.
+        const pin = (currentStatic.pin || []).length ? declineClosingCard({ advance: true })
+                                                     : [];
         renderStaticPalette(currentStatic.kind, currentStatic.full, null,
-            { advance: true, pin: currentStatic.pin || [] });
+            { advance: true, pin });
         return;
     }
     if (!currentPartnerText || !lastPalette.length) return;
@@ -4365,19 +4378,27 @@ async function updateUsageDisplay() {
     // input_tokens as the UNCACHED REMAINDER, so pricing that one number alone
     // would under-report the bill by the hit rate (~90% on the generation call).
     const inputRate = pricing.inputCostPerMillionTokens / 1_000_000;
+    const sttCost = (sttSeconds / 3600) * (pricing.deepgramSttCostPerHour ?? 0);
+    const ttsCost = (ttsCharacters / 1000) * (pricing.deepgramTtsCostPer1kChars ?? 0);
     const cost = (usage.inputTokens * inputRate)
                + (usage.cacheWriteTokens * inputRate * (pricing.cacheWriteMultiplier ?? 1.25))
                + (usage.cacheReadTokens * inputRate * (pricing.cacheReadMultiplier ?? 0.1))
                + (usage.outputTokens * pricing.outputCostPerMillionTokens / 1_000_000)
-               + (sttSeconds / 3600) * (pricing.deepgramSttCostPerHour ?? 0)
-               + (ttsCharacters / 1000) * (pricing.deepgramTtsCostPer1kChars ?? 0);
+               + sttCost + ttsCost;
     document.getElementById('usageCost').textContent = `$${cost.toFixed(2)}`;
     const sinceDate = new Date(usage.since).toLocaleDateString();
     // Name the paid extras only when they have actually been used, so a Windows
     // user on the free backends sees exactly what they saw before.
+    //
+    // Each carries its OWN share in dollars, not just its amount (Ken, August 29
+    // 2026, asking whether the paid hearing and voice could be shown here). They
+    // have always been inside the total, which is exactly the problem: a user
+    // paying for both had no way to tell what they were paying for, so a bill that
+    // looked high said nothing about which part to reconsider. Minutes and
+    // characters do not answer that question; dollars do.
     const extras = [];
-    if (sttSeconds > 0) extras.push(`${Math.round(sttSeconds / 60)} min heard`);
-    if (ttsCharacters > 0) extras.push(`${ttsCharacters.toLocaleString()} characters spoken`);
+    if (sttSeconds > 0) extras.push(`${Math.round(sttSeconds / 60)} min heard, $${sttCost.toFixed(2)}`);
+    if (ttsCharacters > 0) extras.push(`${ttsCharacters.toLocaleString()} characters spoken, $${ttsCost.toFixed(2)}`);
     // Prompt-cache hit rate — the share of all prompt tokens served from cache. This
     // is the number to WATCH (Ken, August 8 2026): a figure that drops means
     // something is invalidating the prefix, which shows up as spend before it shows

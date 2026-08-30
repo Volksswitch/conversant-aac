@@ -85,19 +85,63 @@ test('a legacy file (single `closers` list, no windDowns/closings) reseeds both 
     assert.equal(p.closers, undefined, 'the legacy key is dropped');
 });
 
-test('declineClosing has a default and survives an edit round-trip', async () => {
+test('declineClosing is a list of defaults and survives an edit round-trip', async () => {
     await cp.load();
-    assert.equal(cp.getPhrases().declineClosing, cp.DEFAULTS.declineClosing);
-    assert.match(cp.getPhrases().declineClosing, /before you go/i);
-    cp.setPhrases({ ...cp.getPhrases(), declineClosing: 'Hang on, one more thing.' });
-    assert.equal(cp.getPhrases().declineClosing, 'Hang on, one more thing.');
+    assert.deepEqual(cp.getPhrases().declineClosing, cp.DEFAULTS.declineClosing);
+    assert.match(cp.getPhrases().declineClosing[0], /before you go/i);
+    cp.setPhrases({ ...cp.getPhrases(), declineClosing: ['Hang on, one more thing.'] });
+    assert.deepEqual(cp.getPhrases().declineClosing, ['Hang on, one more thing.']);
 });
 
-test('a stored file predating declineClosing falls back to the default', async () => {
+test('a stored file predating declineClosing falls back to the defaults', async () => {
     // Files written before this phrase existed must not yield an empty card — an
     // empty phrase renders no decline option at all.
-    seedCache({ holdOn: 'x', pardon: 'y', openers: ['Hi'], windDowns: ['Bye soon'], closings: ['Bye'] });
+    seedCache({ holdOn: 'x', openers: ['Hi'], windDowns: ['Bye soon'], closings: ['Bye'] });
     const p = await cp.load();
-    assert.equal(p.declineClosing, cp.DEFAULTS.declineClosing);
+    assert.deepEqual(p.declineClosing, cp.DEFAULTS.declineClosing);
     assert.equal(p.holdOn, 'x', 'the rest of the stored file is untouched');
+});
+
+// Both of these were a single string until August 29 2026. A file written before
+// then must keep the user's own wording — losing a phrase somebody reworded to
+// sound like themselves is the one outcome the additive-merge rule exists to
+// prevent — and it must come FIRST, where it is reached soonest.
+test('a single stored phrase becomes the first entry of the list', async () => {
+    seedCache({ pardon: 'Say that again, love.', declineClosing: 'Hold up a sec.',
+        openers: ['Hi'], windDowns: ['Bye soon'], closings: ['Bye'] });
+    const p = await cp.load();
+    assert.equal(p.pardon[0], 'Say that again, love.');
+    assert.equal(p.declineClosing[0], 'Hold up a sec.');
+    for (const d of cp.DEFAULTS.pardon) assert.ok(p.pardon.includes(d), `default appended: ${d}`);
+    for (const d of cp.DEFAULTS.declineClosing) assert.ok(p.declineClosing.includes(d), `default appended: ${d}`);
+});
+
+test('pickPhrase never returns the same phrase twice running', async () => {
+    await cp.load();
+    let last = null;
+    for (let i = 0; i < 40; i++) {
+        const got = cp.pickPhrase('pardon');
+        assert.ok(cp.DEFAULTS.pardon.includes(got), 'a real phrase');
+        assert.notEqual(got, last, 'not the same one twice in a row');
+        last = got;
+    }
+});
+
+test('pickPhrase skips blank rows and copes with an emptied list', async () => {
+    await cp.load();
+    // The editor keeps a blank row so there is something to type into; speaking one
+    // would be a moment of silence exactly where a phrase was expected.
+    cp.setPhrases({ ...cp.getPhrases(), pardon: ['', 'Say again?', ''] });
+    assert.equal(cp.pickPhrase('pardon'), 'Say again?');
+    cp.setPhrases({ ...cp.getPhrases(), pardon: [''] });
+    assert.equal(cp.pickPhrase('pardon'), '', 'nothing to say rather than a blank utterance');
+});
+
+test('nextPhrase walks the list in order and wraps', async () => {
+    await cp.load();
+    cp.setPhrases({ ...cp.getPhrases(), declineClosing: ['one', 'two', 'three'] });
+    const seen = [cp.nextPhrase('declineClosing'), cp.nextPhrase('declineClosing'),
+        cp.nextPhrase('declineClosing'), cp.nextPhrase('declineClosing')];
+    assert.deepEqual(seen.slice(0, 3).sort(), ['one', 'three', 'two'], 'every entry is reachable');
+    assert.equal(seen[3], seen[0], 'and it wraps back round');
 });

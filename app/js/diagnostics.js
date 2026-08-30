@@ -145,10 +145,10 @@ export function collectPersonalization() {
         const d = controlPhrases.DEFAULTS;
         // Compared against the shipped text rather than counted, because the lists are
         // seeded from the defaults: a tester who has changed nothing has the full set.
-        for (const k of ['holdOn', 'pardon', 'declineClosing']) {
+        for (const k of ['holdOn']) {
             if (p[k] && d[k] && p[k] !== d[k]) out.controlPhrasesEdited++;
         }
-        for (const k of ['openers', 'windDowns', 'closings']) {
+        for (const k of ['openers', 'windDowns', 'closings', 'pardon', 'declineClosing']) {
             const mine = new Set(p[k] || []);
             for (const phrase of (d[k] || [])) mine.delete(phrase);
             out.controlPhrasesEdited += mine.size;

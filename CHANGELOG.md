@@ -43,6 +43,22 @@ forgetting to tag one is only ever noise, never silence.
   your voice just said. "Repeat what I said" and "Ask them to repeat" are unchanged
   and still recorded.
 
+- **"Ask them to repeat" and "one more thing" are lists now, not one fixed sentence.**
+  Both start with five phrases, and you can reword them, add your own, or put them in
+  the order you like under Settings → Controls. Asking someone to repeat themselves
+  picks a different one each time, so a person who has to be asked twice in one
+  conversation does not hear the identical sentence twice. The "one more thing" card
+  shows one phrase at a time and stays exactly where it is; pressing the button for
+  different suggestions moves it on to the next wording.
+
+- **The placeholder wait can now be as short as one second.** Settings → Placeholders →
+  Initial delay used to start at two.
+
+- **Settings → About now shows what the paid hearing and the paid voice each cost.**
+  They were always part of the total; now the amount for each is shown beside how much
+  you have used, so you can see what you are paying for rather than only what you have
+  spent. The heading no longer says "API", since the figure was never only the AI.
+
 ## Version 0.8.3
 
 - **The app no longer rewrites what it heard the other person say, and asks the AI one

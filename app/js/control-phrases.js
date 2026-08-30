@@ -10,13 +10,20 @@
  *                because a button that says nothing is never acceptable; it has no
  *                editor on the Controls tab any more, since the words users edit
  *                are the placeholder ones.
- *   - pardon   : spoken when "Pardon?" is tapped (asks the partner to repeat)
+ *   - pardon   : the phrases behind "Ask them to repeat". A LIST, picked from at
+ *                random with the placeholder no-repeat rule, so a partner who has
+ *                to be asked twice in one conversation does not hear the identical
+ *                sentence twice (Ken, August 29 2026).
  *   - openers  : the cards shown by "Start conversation" (templates; {name} is
  *                replaced with the active Partner's name, dropped when none)
  *   - windDowns: the cards shown by "Wind down" — signal an intent to end the
  *                conversation ("I should get going.") WITHOUT saying goodbye yet
  *   - closings : the actual goodbyes ("Bye!", "Take care!") that appear once the
  *                user has selected a wind-down statement
+ *   - declineClosing : the "one more thing" card offered when the PARTNER starts
+ *                closing. Also a LIST — one is shown at a time and "New N" moves
+ *                to the next, so every version is reachable without the card ever
+ *                changing shape or leaving its pinned cell.
  * ("Say again" has no editable phrase — it re-speaks the user's own last words.)
  *
  * Wind-down vs. closing (Ken, July 2026): these are two distinct steps of the CA
@@ -45,13 +52,25 @@ const CACHE_KEY = 'aac_control_phrases';
 
 export const DEFAULTS = {
     holdOn: 'Let me think about that.',
-    pardon: "Sorry, I didn't catch that. Could you say it again?",
+    pardon: [
+        "Sorry, I didn't catch that. Could you say it again?",
+        'Sorry, could you say that again?',
+        'I missed that. One more time?',
+        "I didn't quite get that. Could you repeat it?",
+        'Sorry, say that again for me?',
+    ],
     // Shown alongside the goodbyes when the PARTNER starts closing. A pre-closing
     // is an offer to end, and CA is explicit that declining it — raising one more
     // thing — is made maximally relevant at exactly that moment. Without this card
     // the user's only options are to say goodbye or leave the palette (Ken, July
     // 27 2026). It buys the floor; the user then says the thing itself.
-    declineClosing: 'Actually, before you go —',
+    declineClosing: [
+        'Actually, before you go —',
+        'Wait, one more thing.',
+        "Hang on, there's something else.",
+        'Before you head off, one more thing.',
+        'Actually, can I say one more thing?',
+    ],
     // {name} → the active Partner's name; dropped (with tidy punctuation) when
     // no Partner is active. Kept in sync with engine.js's inline fallback.
     openers: [
@@ -108,10 +127,16 @@ function normalize(value) {
     // A legacy file has `closers` and neither new key — since windDowns/closings
     // are absent, list(undefined, DEFAULTS.*) reseeds both from defaults and the old
     // `closers` (which mixed the two senses) is simply ignored. No auto-classify.
+    // "Ask them to repeat" and "one more thing" were single phrases until August 29
+    // 2026. A file written before then holds a bare string: keep it as the first
+    // entry rather than discarding it, and mergeNewDefaults then appends the rest of
+    // the shipped set behind it. A user who had reworded theirs keeps their wording,
+    // at the front, where it is the one most likely to be reached.
+    const listOrString = (x, d) => (typeof x === 'string' && x.trim() ? [x] : list(x, d));
     return {
         holdOn: str(v.holdOn, DEFAULTS.holdOn),
-        pardon: str(v.pardon, DEFAULTS.pardon),
-        declineClosing: str(v.declineClosing, DEFAULTS.declineClosing),
+        pardon: listOrString(v.pardon, DEFAULTS.pardon),
+        declineClosing: listOrString(v.declineClosing, DEFAULTS.declineClosing),
         openers: list(v.openers, DEFAULTS.openers),
         windDowns: list(v.windDowns, DEFAULTS.windDowns),
         closings: list(v.closings, DEFAULTS.closings),
@@ -123,6 +148,8 @@ function normalize(value) {
             openers: seededList(seeded.openers),
             windDowns: seededList(seeded.windDowns),
             closings: seededList(seeded.closings),
+            pardon: seededList(seeded.pardon),
+            declineClosing: seededList(seeded.declineClosing),
         },
     };
 }
@@ -135,9 +162,11 @@ function normalize(value) {
 // `seeded` is new — appended once (unless already present) and recorded. There is
 // no cap on how many can be defined (only on how many the UI shows at once), so
 // appending is always safe. Returns true if anything changed (persist if so).
+const LIST_KEYS = ['openers', 'windDowns', 'closings', 'pardon', 'declineClosing'];
+
 function mergeNewDefaults(p) {
     let changed = false;
-    for (const key of ['openers', 'windDowns', 'closings']) {
+    for (const key of LIST_KEYS) {
         const seededSet = new Set(p.seeded[key]);
         const present = new Set(p[key]);
         for (const d of DEFAULTS[key]) {
@@ -178,12 +207,9 @@ export async function load() {
 /** Synchronous read for the editor / engine injection (returns a copy). */
 export function getPhrases() {
     if (!phrases) phrases = normalize(readCache());
-    return {
-        ...phrases,
-        openers: phrases.openers.slice(),
-        windDowns: phrases.windDowns.slice(),
-        closings: phrases.closings.slice(),
-    };
+    const out = { ...phrases };
+    for (const key of LIST_KEYS) out[key] = phrases[key].slice();
+    return out;
 }
 
 /** Persist an edited set (cache immediately, disk in the background). */
@@ -208,7 +234,7 @@ export function allPhrases() {
 export function setPhrases(next) {
     // Carry the seeded watermark forward — the editor doesn't send it, and losing
     // it would make a deleted default reappear on the next load (mergeNewDefaults).
-    const priorSeeded = (phrases && phrases.seeded) ? phrases.seeded : { openers: [], windDowns: [], closings: [] };
+    const priorSeeded = (phrases && phrases.seeded) ? phrases.seeded : {};
     const incoming = (next && typeof next === 'object') ? next : {};
     phrases = normalize({ ...incoming, seeded: incoming.seeded || priorSeeded });
     writeCache(phrases);
@@ -216,16 +242,55 @@ export function setPhrases(next) {
     return getPhrases();
 }
 
+// Which entry each list handed out last, so the same one is not said twice running.
+const lastIndex = {};
+
+/**
+ * One phrase from a list, never the same one twice in a row.
+ *
+ * The no-repeat rule is borrowed from the placeholder pool for the same reason it
+ * exists there: these are phrases the app says on the user's behalf at moments that
+ * can come round twice in one conversation - being asked to repeat something, or
+ * holding a conversation open a second time - and hearing the identical sentence
+ * again is what makes a device sound like a device.
+ *
+ * Blank entries are dropped HERE rather than in the model, because the editor needs
+ * an empty row to type into and a half-finished edit must never become silence.
+ * Returns '' only when the list is genuinely empty of words.
+ */
+export function pickPhrase(key) {
+    const list = (getPhrases()[key] || []).map((s) => (s || '').trim()).filter(Boolean);
+    if (!list.length) return '';
+    if (list.length === 1) { lastIndex[key] = 0; return list[0]; }
+    let index;
+    do { index = Math.floor(Math.random() * list.length); } while (index === lastIndex[key]);
+    lastIndex[key] = index;
+    return list[index];
+}
+
+/**
+ * The entry AFTER the one last handed out - the "show me a different one" gesture.
+ *
+ * The "one more thing" card is pinned into the response palette, where "New N" is
+ * how the user asks for different wording. Random would work for variety but would
+ * not let them reach a particular phrase, and a pinned card that a page turn hides
+ * is useless, so this rotates the words inside the card and leaves the cell alone.
+ */
+export function nextPhrase(key) {
+    const list = (getPhrases()[key] || []).map((s) => (s || '').trim()).filter(Boolean);
+    if (!list.length) return '';
+    const index = ((lastIndex[key] ?? -1) + 1) % list.length;
+    lastIndex[key] = index;
+    return list[index];
+}
+
 /** Restore the default phrases. */
 export function resetPhrases() {
     phrases = normalize(DEFAULTS);
     // A reset adopts the full current defaults, so watermark them all — a later
     // release still appends only genuinely-new cards, not these.
-    phrases.seeded = {
-        openers: DEFAULTS.openers.slice(),
-        windDowns: DEFAULTS.windDowns.slice(),
-        closings: DEFAULTS.closings.slice(),
-    };
+    phrases.seeded = {};
+    for (const key of LIST_KEYS) phrases.seeded[key] = DEFAULTS[key].slice();
     writeCache(phrases);
     writeDisk(phrases);
     return getPhrases();

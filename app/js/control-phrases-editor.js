@@ -1,11 +1,12 @@
 /* Control phrases editor (Settings → Controls) — Ken, June 28 2026
  *
  * Edits the spoken text behind the persistent override controls and the
- * opener / wind-down / closing cards (control-phrases.js): the "Hold on" and
- * "Pardon?" phrases (single strings) and the "Start conversation" openers, the
- * "Wind down" statements, and the closings/goodbyes (ordered lists). "Say again"
- * has no editable phrase — it re-speaks the user's own last words — so it's shown
- * as a read-only note.
+ * opener / wind-down / closing cards (control-phrases.js). Every one of them is an
+ * ordered list now: the "Ask them to repeat" phrases, the "Start conversation"
+ * openers, the "Wind down" statements, the closings/goodbyes, and the "one more
+ * thing" phrases. "Say again" has no editable phrase — it re-speaks the user's own
+ * last words. "Hold on" has none either — it draws from the placeholder list, which
+ * is edited on its own tab.
  *
  * Reuses the Express-editor (.ee-*) styles for rows/buttons. Plain text edits
  * commit WITHOUT re-rendering so the field keeps focus while typing; structural
@@ -49,27 +50,6 @@ function textInput(value, placeholder, oninput) {
     inp.autocomplete = 'off';
     inp.addEventListener('input', () => oninput(inp.value));
     return inp;
-}
-
-// A single-phrase control (Hold on / Pardon?): label + one text field.
-function singleSection(title, key) {
-    const sec = document.createElement('div');
-    sec.className = 'setting-group cpe-section';
-    // These headings are collapsible sections like every other Settings section, so the
-    // spoken "?" has to reach them. They are built here rather than in index.html, so
-    // the key is stamped here too — keyed by the phrase list it edits, and matched to a
-    // "sections" entry in settings-help.json (tests/settings-help.test.mjs scans this
-    // file for exactly these strings, so a new section cannot ship without its words).
-    //   The fields inside carry no ids, so there is no control phrase for the group to
-    // borrow: without this it would resolve to nothing and the heading would stay
-    // silent.
-    sec.dataset.help = key;
-    sec.appendChild(Object.assign(document.createElement('label'), { textContent: title }));
-    const row = document.createElement('div');
-    row.className = 'ee-row ee-phrase';
-    row.appendChild(textInput(data[key], 'What to say', (v) => { data[key] = v; commit(false); }));
-    sec.appendChild(row);
-    return sec;
 }
 
 // An ordered list of cards (openers / closers): rows with text + ↑ ↓ ✕, plus Add.
@@ -121,12 +101,16 @@ export function render() {
     data = model.getPhrases();
     container.innerHTML = '';
 
+    // Both of these were single phrases until August 29 2026. They are lists for the
+    // same reason the openers and goodbyes are: one fixed sentence, said every time
+    // the button is pressed, is what makes an app sound like an app rather than like
+    // the person using it.
     container.append(
-        singleSection('“Ask them to repeat” phrase', 'pardon'),
+        listSection('“Ask them to repeat” phrases', 'pardon'),
         listSection('Openers (Start conversation)', 'openers'),
         listSection('Wind-down statements (Wind down)', 'windDowns'),
         listSection('Closings (goodbyes)', 'closings'),
-        singleSection('“One more thing” phrase', 'declineClosing'),
+        listSection('“One more thing” phrases', 'declineClosing'),
     );
 
 
@@ -157,8 +141,8 @@ export function render() {
     if (pendingFocus) {
         const sel = `.ee-list`;
         const lists = container.querySelectorAll(sel);
-        // The .ee-list order matches the listSection order: openers, windDowns, closings.
-        const order = { openers: 0, windDowns: 1, closings: 2 };
+        // The .ee-list order matches the order the sections are appended above.
+        const order = { pardon: 0, openers: 1, windDowns: 2, closings: 3, declineClosing: 4 };
         const idx = order[pendingFocus.key] ?? 0;
         const rows = lists[idx]?.querySelectorAll('.ee-row input');
         const inp = rows && rows[pendingFocus.index];
