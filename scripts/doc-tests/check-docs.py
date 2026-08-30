@@ -148,10 +148,15 @@ def s5_toc(doc):
 def s6_lists(doc):
     out, run = [], []
 
+    bullets = doc.bullet_nums
+
     def flush(r):
-        if len(r) > 1 and len({p.num_id for p in r}) > 1:
+        # Bulleted sub-lists are excluded: they are a different numbering by
+        # construction and they count nothing, so they cannot make a list skip.
+        ids = {p.num_id for p in r if p.num_id not in bullets}
+        if len(r) > 1 and len(ids) > 1:
             out.append(F('one visual list is built from %d different numberings, so it '
-                         'will not count 1, 2, 3' % len({p.num_id for p in r}),
+                         'will not count 1, 2, 3' % len(ids),
                          r[0].i, snip(r[0].text)))
     for p in doc.paras:
         if p.numbered:
@@ -165,7 +170,7 @@ def s6_lists(doc):
     for p in doc.paras:
         if p.is_heading:
             section += 1
-        if p.numbered:
+        if p.numbered and p.num_id not in bullets:
             where.setdefault(p.num_id, set()).add(section)
     for nid, secs in sorted(where.items()):
         if len(secs) > 1:
@@ -378,6 +383,12 @@ def l7_quotes(doc):
         text = p.text or ''
         if not text.strip():
             continue
+        # ⚠ HEADINGS AND THE CONTENTS LISTING ARE TITLES, NOT SENTENCES. The convention
+        # exists so a reader can tell where a name ends and the sentence resumes; a
+        # heading has no sentence around it, and quoting one would put quote marks
+        # through the contents listing, which is generated from the headings.
+        if p.is_heading or p.container == 'sdt':
+            continue
         for name in names:
             bare = name.strip('“”"')
             if not bare or bare in official:
@@ -387,7 +398,35 @@ def l7_quotes(doc):
                 after = text[m.end():m.end() + 1]
                 if before in '“"' or after in '”"':
                     continue
+                # ⚠ THE ARROW EXEMPTION COVERS THE WHOLE PATH, NOT JUST WHAT FOLLOWS
+                # THE ARROW. "Settings > Conversation" is one unambiguous reference, so
+                # flagging its first half produced 38 findings on the Windows manual for
+                # a notation the convention already allows.
                 if re.search(r'(?:→|->)\s*$', text[:m.start()]):
+                    continue
+                if re.match(r'\s*(?:→|->)', text[m.end():]):
+                    continue
+                # ⚠ A SHORT NAME SITTING INSIDE A LONGER OFFICIAL ONE IS THE OFFICIAL
+                # ONE. "Conversation" is a Settings tab AND the first word of the
+                # Conversation Pane, which is a region name and correctly unquoted.
+                if any(text.find(o, max(0, m.start() - len(o))) <= m.start()
+                       and text.find(o, max(0, m.start() - len(o))) >= 0
+                       and text.find(o, max(0, m.start() - len(o))) + len(o) >= m.end()
+                       for o in official if bare in o and bare != o):
+                    continue
+                # ⚠ A REGION'S SHORTHAND IS STILL THE REGION. "Settings" alone means
+                # the Settings Panel, which is a region name and so capitalized rather
+                # than quoted; "Conversation" alone can only be the Conversation Pane or
+                # Log. But "the Conversation tab" and "the Settings button" name a
+                # CONTROL, and those are quoted - so the word that follows decides.
+                # WHY "tab" IS NOT IN THIS LIST: the Windows manual names a tab
+                # thirty times and quotes none of them, so tabs are named the way
+                # regions are - by capitalization. BUTTON labels are quoted, and
+                # the manual does that throughout. The word that follows decides,
+                # and both halves follow what Ken has already written.
+                if any(o.split()[0] == bare for o in official) and not re.match(
+                        r'\s+(button|checkbox|box|option|slider|field|'
+                        r'menu|control)\b', text[m.end():]):
                     continue
                 out.append(F('"%s" is a name on screen and is not in quotes' % bare,
                              p.i, snip(text)))
@@ -433,7 +472,7 @@ def l9_refs(doc):
         # taken as internal.
         # The whole paragraph, not a window around the match: a bullet often carries two
         # or three references and names the document once.
-        if re.search(r'manual|Overview|document', p.text or '', re.I):
+        if re.search(r'\bmanual\b|\bOverview\b|\bdocument\b', p.text or '', re.I):
             continue
         if m.group(1) not in nums:
             out.append(F('points at Section %s, which does not exist' % m.group(1),

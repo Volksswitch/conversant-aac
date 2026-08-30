@@ -65,6 +65,33 @@ class Doc:
         self._walk(self.body, container='body', table_index=None)
         self.text = '\n'.join(p.text for p in self.paras)
 
+    @property
+    def bullet_nums(self):
+        """numIds that draw a BULLET rather than a number.
+
+        ⚠ A bulleted sub-list inside a numbered list is legitimate and common - the
+        four color explanations under step 3 of Practice Exchange 1 are exactly that.
+        It is a different numbering by construction, so a rule that only counts
+        numberings reports a real document as broken. Bullets count nothing, so they
+        can never make a numbered list skip.
+        """
+        if getattr(self, '_bullets', None) is None:
+            self._bullets = set()
+            try:
+                root = etree.fromstring(self.zip.read('word/numbering.xml'))
+            except KeyError:
+                return self._bullets
+            fmt = {}
+            for a in root.findall(W + 'abstractNum'):
+                lvl = a.find(W + 'lvl')
+                f = lvl.find(W + 'numFmt') if lvl is not None else None
+                fmt[a.get(W + 'abstractNumId')] = f.get(W + 'val') if f is not None else None
+            for n in root.findall(W + 'num'):
+                aid = n.find(W + 'abstractNumId')
+                if aid is not None and fmt.get(aid.get(W + 'val')) == 'bullet':
+                    self._bullets.add(n.get(W + 'numId'))
+        return self._bullets
+
     def part(self, name):
         try:
             return self.zip.read(name).decode('utf-8', 'replace')

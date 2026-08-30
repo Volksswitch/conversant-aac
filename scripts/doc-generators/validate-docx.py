@@ -126,10 +126,14 @@ if __name__ == '__main__':
     # rather than teaching people to ignore a failure - an ignored check is no check.
     # apply-table-style.py legitimately rewrites styles.xml, for the same reason:
     # naming the exception is better than teaching people to ignore a failure.
-    FLAGS = {'--lists': 'word/numbering.xml', '--styles': 'word/styles.xml'}
+    # Resolving a comment legitimately rewrites all four comment parts together, so
+    # --comments names them as one exception rather than four separate excuses.
+    FLAGS = {'--lists': ('word/numbering.xml',), '--styles': ('word/styles.xml',),
+             '--comments': ('word/comments.xml', 'word/commentsExtended.xml',
+                            'word/commentsIds.xml', 'word/commentsExtensible.xml')}
     args = [a for a in sys.argv[1:] if a not in FLAGS]
     expect = ('word/document.xml',) + tuple(
-        part for flag, part in FLAGS.items() if flag in sys.argv)
+        part for flag, parts in FLAGS.items() if flag in sys.argv for part in parts)
     bad = 0
     for path, backup in zip(args[0::2], args[1::2]):
         fails = check(path, backup, expect)
