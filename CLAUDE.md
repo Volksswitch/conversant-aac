@@ -1248,6 +1248,30 @@ Product-document currency is tracked by [`DOC-SYNC.md`](DOC-SYNC.md) (any root d
 | list items | 0 | 80 |
 | table cells | 0 | 0 |
 
+**TABLE TEXT IS 11pt IN BOTH COLUMNS, AND IT LIVES ON THE STYLE (Ken, August 29 2026).**
+He found the two columns disagreeing and asked whether a house size existed. Half of one
+did: the "Conversant" table style described the FIRST column only - bold, 11pt, pale blue
+fill - and said nothing at all about the body column, so that column took whatever each
+run happened to carry. 11pt in most tables, 12pt from the document default wherever a run
+carried nothing, 9pt in two that had been shrunk to fit, and often more than one of those
+inside a single table.
+- **11pt is not a new number.** It is what the first column already used, and the
+  plurality of the body column (105 runs against 71 at 12pt and 4 at 9pt), and a
+  reference table one step below the 12pt body prose is the ordinary convention.
+- **⚠ THE SIZE GOES ON THE STYLE AND COMES OFF THE RUNS, which is the whole fix.** Direct
+  formatting beats a style, so a size on a run is exactly what stopped the style from
+  governing - the same fault the borders and the cell shading had before. Setting all the
+  runs to 11pt would look identical today and would leave the house look with no single
+  place to change, which is the failure this is meant to prevent.
+- `apply-table-style.py` now sets the base size on the style and strips `sz`/`szCs` from
+  every run inside a table; **`check docs` rule S11 reports any that come back.** Bold is
+  deliberately left alone - bold in a header row is a decision about that table, and only
+  the size was inconsistent.
+- **The manuals are done; the other documents are NOT.** They mostly sit at 10pt with
+  their own generators' sizes, and several are internally mixed (the Architecture Overview
+  is 10pt and 9pt; the Worldview Questionnaire is three sizes). Bringing them to the house
+  size is a deliberate pass, not a drive-by - S11 lists them.
+
 - **Run `scripts/doc-generators/apply-doc-style.py <docs>` as the LAST step of every "sync docs" pass**, together with `fix-docx-lists.py`. Measured after the first run: prose 1845/1845 at 0/160 (the rest all involve the 240 threshold below), lists 1034/1034, cells 4108/4108.
 - **⚠ WHAT IT MUST NEVER TOUCH, because a formatting pass that flattens something deliberate does real damage while looking tidy:** headings (97% carry no direct spacing and take it from the style, which is the right way round); **centered** paragraphs and anything containing a drawing (figures and captions); **anything already at 240 twips or more** (title pages and deliberate breaks — 12pt, which prose never reaches by accident); empty spacer paragraphs; and the contents listing.
 - **The three list symptoms Ken reported were ONE cause and are fixed by `fix-docx-lists.py`.** A Word list is a paragraph property, not a container, and each concrete numbering counts independently — so *1, 3, 4* was two numberings in one visual list, *8, 9, 10* was one numbering shared with an earlier section, and *bullets turning into numbers* was two adjacent lists of different formats. The tool gives every RUN (a stretch of numbered paragraphs of one format, bounded by headings) its own numbering. Prose between items does not end a run; a note inside a procedure is still one procedure.

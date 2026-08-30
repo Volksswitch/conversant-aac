@@ -42,6 +42,19 @@ STYLE_ID = 'Conversant'
 FIRST_COL_FILL = 'F0F4F8'
 FIRST_COL_SIZE = '22'          # half-points, so 11pt
 
+# THE BODY COLUMN HAD NO RULE AT ALL, which is what Ken saw as "inconsistent point sizes
+# in the two columns" (August 29 2026). The style spoke only about the first column, so
+# the second took whatever each run happened to carry: 11pt in most tables, 12pt from the
+# document default wherever a run carried nothing, and 9pt in two tables somebody had
+# shrunk to fit. Often all within one table.
+#
+# 11pt is not a new decision - it is the size the first column already uses and the
+# plurality of the body column (105 runs against 71 at 12pt and 4 at 9pt across the
+# Windows manual), and a reference table set one step below the 12pt body prose is the
+# ordinary convention. It goes on the STYLE, not on the runs, so the house look has one
+# place to change.
+TABLE_TEXT_SIZE = '22'         # half-points, so 11pt - both columns
+
 
 def import_style(doc, source_path):
     """Copy the style definition out of `source_path` into `doc`, if it is not there.
@@ -88,7 +101,46 @@ def fix_style(doc):
         if sz is not None and sz.get(W + 'val') != FIRST_COL_SIZE:
             changed.append('size %s -> %s' % (sz.get(W + 'val'), FIRST_COL_SIZE))
             sz.set(W + 'val', FIRST_COL_SIZE)
+
+    # The base run properties govern every cell, so this is what gives the body column a
+    # size of its own instead of leaving it to the document default.
+    rpr = style.find(W + 'rPr')
+    if rpr is None:
+        rpr = style.makeelement(W + 'rPr', {})
+        tbl_pr = style.find(W + 'tblPr')
+        if tbl_pr is not None:
+            tbl_pr.addprevious(rpr)
+        else:
+            style.append(rpr)
+        changed.append('base text size set')
+    for tag in ('sz', 'szCs'):
+        el = rpr.find(W + tag)
+        if el is None:
+            el = rpr.makeelement(W + tag, {W + 'val': TABLE_TEXT_SIZE})
+            rpr.append(el)
+        elif el.get(W + 'val') != TABLE_TEXT_SIZE:
+            changed.append('base %s %s -> %s' % (tag, el.get(W + 'val'), TABLE_TEXT_SIZE))
+            el.set(W + 'val', TABLE_TEXT_SIZE)
     return changed
+
+
+def strip_direct_sizes(doc):
+    """Take the type size off the runs inside tables, so the style is what decides.
+
+    Direct formatting beats a style, so a size on a run is exactly what stopped the
+    style from governing - the same fault the borders and the cell shading had. Nothing
+    else about the run is touched: bold in a header row is somebody's decision about
+    that table, and only the SIZE was inconsistent.
+    """
+    n = 0
+    for tbl in doc.element.iter(W + 'tbl'):
+        for rpr in tbl.iter(W + 'rPr'):
+            for tag in ('sz', 'szCs'):
+                el = rpr.find(W + tag)
+                if el is not None:
+                    rpr.remove(el)
+                    n += 1
+    return n
 
 
 def fix_tables(doc):
@@ -173,11 +225,13 @@ if __name__ == '__main__':
         if import_style(doc, src):
             print('  imported the "%s" style from %s' % (STYLE_ID, os.path.basename(src)))
     style_changes = fix_style(doc)
+    sizes = strip_direct_sizes(doc)
     table_report = fix_tables(doc)
     print(('DRY RUN - ' if dry else '') + os.path.basename(path))
     print('  style "%s": %s' % (STYLE_ID, ', '.join(style_changes) or 'already correct'))
     for n, notes in table_report:
         print('  table %-3d %s' % (n, '; '.join(notes)))
+    print('  %d direct type size(s) removed from table runs' % sizes)
     print('  %d table(s) touched' % len(table_report))
     if not dry:
         doc.save(path)

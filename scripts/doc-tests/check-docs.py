@@ -207,6 +207,29 @@ def s7_tables(doc):
     return out
 
 
+@rule('S11', 'Table text takes its size from the style, not from the runs',
+      'The house table size is 11pt in both columns, set once on the "Conversant" style. '
+      'A size on a run beats the style, which is how the two columns came to disagree - '
+      '11pt in most tables, 12pt wherever a run carried nothing, 9pt in two that somebody '
+      'had shrunk to fit, sometimes all within one table (Ken, August 29 2026). Fixed by '
+      'apply-table-style.py.', severity='review')
+def s11_table_text(doc):
+    from lxml import etree
+    sizes = {}
+    root = etree.fromstring(doc.zip.read('word/document.xml'))
+    for tbl in root.iter(W + 'tbl'):
+        for rpr in tbl.iter(W + 'rPr'):
+            sz = rpr.find(W + 'sz')
+            if sz is not None:
+                v = sz.get(W + 'val')
+                sizes[v] = sizes.get(v, 0) + 1
+    if not sizes:
+        return []
+    named = ', '.join('%gpt on %d run(s)' % (int(v) / 2.0, n)
+                      for v, n in sorted(sizes.items(), key=lambda kv: -kv[1]))
+    return [F('table text carries its own size rather than taking it from the style: ' + named)]
+
+
 @rule('S8', 'The footer carries "Page m of n"', 'House convention since June 2026.')
 def s8_pages(doc):
     f = doc.footers
