@@ -207,6 +207,13 @@ def s7_tables(doc):
     return out
 
 
+# A table used as a DIAGRAM is not a reference table, and the house size would wreck it:
+# the keyboard documents draw twenty key grids of single letters at 8pt, and the Partner
+# Card is a print-and-cut card whose sizes are its layout. Named by file so the exemption
+# is visible rather than inferred from some property of the tables.
+NOT_REFERENCE_TABLES = ('Keyboard Layout Options', 'Partner Card')
+
+
 @rule('S11', 'Table text takes its size from the style, not from the runs',
       'The house table size is 11pt in both columns, set once on the "Conversant" style. '
       'A size on a run beats the style, which is how the two columns came to disagree - '
@@ -215,6 +222,8 @@ def s7_tables(doc):
       'apply-table-style.py.', severity='review')
 def s11_table_text(doc):
     from lxml import etree
+    if any(k in os.path.basename(doc.path) for k in NOT_REFERENCE_TABLES):
+        return []
     sizes = {}
     root = etree.fromstring(doc.zip.read('word/document.xml'))
     for tbl in root.iter(W + 'tbl'):

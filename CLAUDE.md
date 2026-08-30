@@ -1267,10 +1267,18 @@ inside a single table.
   every run inside a table; **`check docs` rule S11 reports any that come back.** Bold is
   deliberately left alone - bold in a header row is a decision about that table, and only
   the size was inconsistent.
-- **The manuals are done; the other documents are NOT.** They mostly sit at 10pt with
-  their own generators' sizes, and several are internally mixed (the Architecture Overview
-  is 10pt and 9pt; the Worldview Questionnaire is three sizes). Bringing them to the house
-  size is a deliberate pass, not a drive-by - S11 lists them.
+- **APPLIED TO ALL 31 DOCUMENTS (Ken, August 29 2026)**, not only the manuals: 5,433
+  direct sizes came off the runs and every one now takes 11pt from its own copy of the
+  style. Their tables had been 10pt from the generators, with several internally mixed -
+  the Architecture Overview was 10pt and 9pt, the Worldview Questionnaire three sizes.
+- **⚠ THREE DOCUMENTS ARE EXEMPT AND THE RULE NAMES THEM, because a table used as a
+  DIAGRAM is not a reference table.** The two keyboard-layout documents draw twenty key
+  grids of single letters at 8pt, and the Partner Card is a print-and-cut card whose sizes
+  are its layout; the house size would wreck all three. Listed by file in `check-docs.py`
+  so the exemption is visible rather than inferred from some property of the tables.
+- Verified afterwards: Word opens all 36 documents, and the error set of every document is
+  unchanged - the 41 that remain are older faults in the non-manual documents (spacing,
+  footers, byline dates, a few spellings), none of them about tables.
 
 - **Run `scripts/doc-generators/apply-doc-style.py <docs>` as the LAST step of every "sync docs" pass**, together with `fix-docx-lists.py`. Measured after the first run: prose 1845/1845 at 0/160 (the rest all involve the 240 threshold below), lists 1034/1034, cells 4108/4108.
 - **⚠ WHAT IT MUST NEVER TOUCH, because a formatting pass that flattens something deliberate does real damage while looking tidy:** headings (97% carry no direct spacing and take it from the style, which is the right way round); **centered** paragraphs and anything containing a drawing (figures and captions); **anything already at 240 twips or more** (title pages and deliberate breaks — 12pt, which prose never reaches by accident); empty spacer paragraphs; and the contents listing.
