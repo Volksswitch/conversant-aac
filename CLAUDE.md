@@ -2379,6 +2379,54 @@ lie on top. Three consequences, and the first is a **defect in shipped behavior*
 
 ---
 
+## The AI vendor's own safety rules apply here too — and the risk runs the OTHER way (Ken asked, August 30 2026)
+
+Ken: *"is it fair to assume that any guardrails established for the AI API (e.g., no
+instructions about suicide or making a dirty bomb) will be imposed on Conversant
+conversations as well?"* **Yes** — and it is not something the app could opt out of
+even if it wanted to. **The safety behavior is trained into the model, not configured
+on the account**, so it travels with every response whoever is calling and whatever
+instructions are put in front of it; nothing Conversant sends can switch it off, and
+the vendor's usage rules apply on top. **It is per-vendor**, so the lines move a little
+when a user changes provider — one more entry for the multi-vendor adapter list.
+
+**Conversant already sits well ABOVE that floor, which is why the case Ken pictured
+barely arises.** The app never asks the model to *answer* a question; it asks it to
+write what **this person** would say. On top of that, the conversational-honesty rule
+(Further Design Thoughts #2, built August 8 2026) gives it a blanket refusal to supply
+factual knowledge about the world the user did not provide. So a partner asking how to
+build something dangerous meets **our** rule first and comes back as the user saying
+they do not know — the vendor guardrail is never reached. The two are not redundant:
+ours is far narrower and fires far earlier.
+
+**⚠ THE RISK THAT ACTUALLY DESERVES DESIGN ATTENTION RUNS IN THE OPPOSITE DIRECTION
+FROM THE QUESTION.** A non-speaking person saying *"I want to die"*, *"I'm
+frightened"*, or *"I don't want to keep going with this treatment"* is saying a
+legitimate thing, and helping them say it **is the product**. General-purpose safety
+behavior is tuned for a chatbot being *asked* something, not for a device speaking
+**as** someone — so the failure to guard against is not something dangerous getting
+through, it is **the app declining to let a disabled person express real distress in
+their own voice.** That is a communication-rights failure, and it would land on
+precisely the users with the least ability to route around it.
+
+**⚠ AND IF IT HAPPENS TODAY WE WOULD NOT KNOW — verified against the source August 30
+2026: there is no moderation call anywhere in `app/js`, and no handling at all for the
+model declining.** A refusal arrives as suggestions that cannot be read, which the app
+treats as an ordinary generation failure — the faint red transcript wash and empty
+cards. **To the user that reads as the app being broken, not as it having declined**,
+so a tester reports *"it stopped working"* and nothing in the record contradicts them.
+Same silent-failure shape as the July 2026 stall and the number-button whitelist: the
+screen looks like a known failure while the cause is something else entirely.
+
+**[→ PRODUCT OVERVIEW]** — this belongs beside the *Not a Smart Speaker* subsection
+under **Speaking As the User, Not For the User**, which already exists to state what
+the product deliberately is not. Two things to say plainly there: the vendor's safety
+rules apply and cannot be turned off by the app; and the app's own honesty rule is
+stricter still, so the AI will not put facts about the world into the user's mouth.
+**Do NOT write the distress paragraph into the Product Overview as a claim in either
+direction** until the live-model testing below has actually been done — the honest
+position today is that we have not measured it.
+
 ## Open Questions (remaining)
 
 > **SESSION HANDOFF — August 3 2026, after release 0.6.5. START HERE — this supersedes the August 1 block below as the handoff.**
@@ -2416,6 +2464,8 @@ lie on top. Three consequences, and the first is a **defect in shipped behavior*
 
 - **TO DO — support the user in interrupting the communication partner mid exchange (Ken, August 26 2026; the mechanism exists, the speed does not).** Speaking while the partner is still talking already works correctly and has since July 8 2026: whatever they had said up to that moment is captured and kept, the interruption is recorded in order, and listening continues afterward. **So this is not a recording problem — it is a speed problem.** To interrupt, the user must find a phrase on the Express Panel or type one, and interrupting is time-critical by definition: a remark that arrives ten seconds late is not an interruption. Directions to weigh: a dedicated control in the Command Bar that speaks at once ("Hang on —", "Can I say something?"), worded by the user like Hold on and Ask them to repeat; or making the interruption audibly distinct so it is heard over someone who is still speaking. **The obstacle to weigh honestly: an interruption is the one time the app deliberately speaks while the other person is talking**, which is the exact situation the app's defense against hearing itself handles worst — it cannot tell its own louder speech from the partner's continuing speech. Expect the fix to be entangled with partner voice recognition (Phase 2) rather than independent of it.
 
+- **TO DO — tell an AI REFUSAL apart from a network failure, so it is not invisible (Ken, August 30 2026; not built).** Today they look identical: the model declining produces suggestions that cannot be read, which lands in the same generation-failure path as a dropped connection — faint red transcript wash, empty cards, nothing in the record saying which happened. See the safety-guardrails section above for why that matters. **What to build:** read the response's own stop reason and the shape of what came back, log a refusal as its own kind of error, and count it in the weekly report so a pattern is visible across testers rather than arriving as one person saying "it stopped working". **What NOT to build: a worded error box on the conversation screen** — Ken's standing position is that error text means nothing to the user and only confuses, and the amber box is already queued for removal. The user-facing behavior stays as it is; the difference is that the *record* knows.
+- **TO DO — test distress-shaped turns against the LIVE model before beta (Ken, August 30 2026; not built). BETA-gated, and it gates the Product Overview wording.** We do not know how the model behaves when the user needs to say something bleak, and it is the one place a general-purpose guardrail could work against the product rather than for it. **The harness already exists** — Tier 3 runs live-API scenarios from a gitignored key, which is exactly what this needs. A dozen partner turns inviting a distressed reply (suicidal feeling, fear of dying, refusing treatment, describing abuse, wanting to end a relationship), each run against a real profile, checking the four cards are usable, in the user's voice, and not deflections or a lecture. **The measure is whether the user can SAY the thing, not whether the response is comforting.** Record what is found either way: a clean result is worth stating in the Product Overview, and a bad one is a finding we would want long before a tester meets it.
 - **DECIDED (Ken, August 30 2026) — the user CAN see what the app tells the AI about them; TO DO, not built.** The question was whether the instructions sent to the AI should be available on request. **Yes, and the answer splits in two, which is what makes it small.**
   - **The fixed half is ALREADY public and there is nothing to decide about it.** How to write the four kinds of response, the no-fabrication rule, the no-vulgarity rule, the closed-set rules — all of it is in [llm.js](app/js/llm.js), and the project is free and open source. Withholding it would be inconvenient rather than private.
   - **The other half is the user's OWN DATA**, assembled fresh each turn from About Me, the relationship graph, My Places, the per-partner notes, beliefs and humor settings. They wrote every word of it, and *"what does this app tell the AI about me?"* is a fair question to be able to answer in a product whose central promise is privacy.
