@@ -121,7 +121,13 @@ def s4_spacing(doc):
         if p.container == 'sdt':
             continue
         want = st['tableCell'] if p.in_table else (st['listItem'] if p.numbered else st['prose'])
-        if p.after is not None and p.after >= thr:
+        # EITHER value at or above the threshold means leave it alone, which is what
+        # apply-doc-style.py does. Testing only `after` made the two disagree, and the
+        # rule then reported an error on precisely the paragraphs the sanctioned tool
+        # protects - a title line at 240 before / 80 after, in seven documents, none of
+        # them fixable by running the tool. A checker that reports something no tool
+        # will fix is the cry-wolf failure this file exists to avoid.
+        if any(v is not None and v >= thr for v in (p.before, p.after)):
             continue
         for key in ('before', 'after'):
             got = getattr(p, key)
@@ -377,7 +383,16 @@ def l6_commas(doc):
     for p, m in _hits(doc, r'[“"]([^”"]*Conversant AAC[^”"]*)[”"]'):
         if ',' in m.group(1):
             out.append(F('a document name with a comma in it', p.i, snip(m.group(1))))
-    for p, m in _hits(doc, r'Conversant AAC [A-Za-z(][^.;:“”"]*?' + kinds + r'[^.;:“”"]*'):
+    # ⚠ AND STOP AT A PROSE ASIDE. The trailing run used to swallow whatever followed the
+    # kind word, so "Conversant AAC Architecture Overview (slots in as §17, or expands
+    # §6...)" was reported as a name containing a comma. The discriminator is the
+    # parenthesis: a document's own parenthetical starts with a capital ("(iPad)",
+    # "(Windows Chromebook Mac)") and a prose aside starts lowercase.
+    #   ⚠ MATCHED CASE-SENSITIVELY, which is the whole reason it works: _hits searches
+    # case-insensitively by default, so [A-Z] matched the "s" of "(slots in as" and the
+    # first attempt at this changed nothing. A document name is capitalized anyway.
+    for p, m in _hits(doc, r'Conversant AAC [A-Za-z][^.;:“”"()]*?' + kinds
+                           + r'(?:\s*\([A-Z][^)]*\))?', flags=0):
         if ',' in m.group(0):
             out.append(F('a document name with a comma in it', p.i, snip(m.group(0))))
     return out

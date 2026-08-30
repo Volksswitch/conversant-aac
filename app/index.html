@@ -900,6 +900,11 @@
                             <span id="usageCost">$0.00</span>
                             <span id="usageSince" class="setting-hint"></span>
                         </div>
+                        <!-- One line per thing that charges, shown only once a paid
+                             service has actually been used: on the free setup the total
+                             IS the AI figure and repeating it says nothing. Live status,
+                             not per-control help, so Rule 14 permits it. -->
+                        <div id="usageBreakdown" class="setting-hint" hidden></div>
                         <button id="resetUsageBtn" type="button">Reset</button>
                     </div>
                     <p class="about-license">Open source — MIT License</p>

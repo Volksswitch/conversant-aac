@@ -138,7 +138,7 @@ const HELP = {
     "practicePartnerVoice": "The voice used for the other person when you practice, so you can tell it apart from your own.",
     "appUpdates": "The app updates itself when a new version is ready. This is here for when you want it to check straight away.",
     "errorLog": "A record of anything that has gone wrong. It is what to send if you report a problem.",
-    "apiCost": "A rough estimate of what you have spent since the date shown, on the AI and on the paid hearing and voice.",
+    "apiCost": "A rough estimate of what you have spent since the date shown, listed separately for the AI, the paid hearing and the paid voice.",
     "reportProblem": "Write what went wrong in your own words, then tap Send. Everything technical is attached for you.",
     "usageSummary": "A plain summary of how much you have used the app, how often a suggestion fitted, and how long people waited.",
     "systemInfo": "Details about your device and settings, gathered for a problem report. Your keys are never included.",

@@ -2672,6 +2672,23 @@ label.radio-label input[type="radio"] {
     color: #1a1a1a;
 }
 
+#usageBreakdown {
+    margin: 0.1rem 0 0.35rem;
+}
+
+/* The figures line up under each other, so two of them can be compared at a glance -
+   which is the whole reason they are listed apart instead of added together. */
+#usageBreakdown .usage-line {
+    display: flex;
+    gap: 0.5rem;
+}
+
+#usageBreakdown .usage-what { min-width: 4.5rem; }
+/* A fixed column rather than flex:1 - stretching pushed the money to the far edge of
+   the panel, which is the one place it cannot be compared with the line above it. */
+#usageBreakdown .usage-amount { min-width: 11rem; }
+#usageBreakdown .usage-money { font-weight: 600; }
+
 #resetUsageBtn {
     padding: 0.3rem 0.7rem;
     border-radius: 4px;

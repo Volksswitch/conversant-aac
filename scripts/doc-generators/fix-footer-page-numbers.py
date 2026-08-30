@@ -13,6 +13,7 @@ convention exists to prevent.
 """
 import sys, os, copy
 from docx import Document
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from lxml import etree
 
 W = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
@@ -36,6 +37,39 @@ def field_runs(template_rpr, instr):
     return out
 
 
+def _add_line(section):
+    """Append a centered "Page m of n" paragraph, styled like the footer's own text.
+
+    python-docx owns the package, so asking for section.footer creates the footer part
+    and its relationship where there is none - which two of these documents needed.
+    """
+    footer = section.footer
+    footer.is_linked_to_previous = False
+    # Copy the look of whatever the footer already says, so a new line does not arrive
+    # in a different size or color from the byline above it.
+    model = None
+    for r in footer._element.iter(W + 'r'):
+        if any((t.text or '').strip() for t in r.iter(W + 't')):
+            model = r.find(W + 'rPr')
+            break
+    para = footer.add_paragraph()
+    para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    body = para._p
+
+    def word(text):
+        r = etree.SubElement(etree.Element(W + 'tmp'), W + 'r')
+        if model is not None:
+            r.append(copy.deepcopy(model))
+        t = etree.SubElement(r, W + 't')
+        t.text = text
+        t.set(XS, 'preserve')
+        return r
+
+    for node in ([word('Page ')] + field_runs(model, 'PAGE')
+                 + [word(' of ')] + field_runs(model, 'NUMPAGES')):
+        body.append(node)
+
+
 def fix(path, dry=False):
     doc = Document(path)
     touched = 0
@@ -46,7 +80,14 @@ def fix(path, dry=False):
         page = next((t for t in el.iter(W + 'instrText')
                      if (t.text or '').strip().upper().startswith('PAGE')), None)
         if page is None:
-            print('  no PAGE field in the footer - nothing to extend')
+            # No page number at all - three documents had none, and two had no footer
+            # whatsoever. Build the whole line rather than reporting a fault no tool
+            # here can fix: a checker that reports something nothing will repair is the
+            # cry-wolf failure the documentation rules exist to avoid.
+            if not dry:
+                _add_line(section)
+            print('  no PAGE field - added the whole "Page m of n" line')
+            touched += 1
             continue
         run = page.getparent()
         para = run.getparent()

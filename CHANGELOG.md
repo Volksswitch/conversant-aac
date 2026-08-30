@@ -26,6 +26,13 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- **Settings → About now estimates the AI, the paid hearing and the paid voice as three
+  separate figures.** The last release showed what the hearing and the voice each cost but
+  left the AI's share to be worked out by subtraction, which answered half the question.
+  All three are now listed under the total, each beside how much of it you have used, so
+  you can see which one to reconsider. If you are not paying for the hearing or the voice,
+  nothing changes: the total is the AI figure and there is no list.
+
 ## Version 0.8.4
 
 - **The Command Bar buttons now work while "In my own words" is open.** Before, pressing

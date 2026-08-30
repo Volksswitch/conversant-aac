@@ -4380,25 +4380,16 @@ async function updateUsageDisplay() {
     const inputRate = pricing.inputCostPerMillionTokens / 1_000_000;
     const sttCost = (sttSeconds / 3600) * (pricing.deepgramSttCostPerHour ?? 0);
     const ttsCost = (ttsCharacters / 1000) * (pricing.deepgramTtsCostPer1kChars ?? 0);
-    const cost = (usage.inputTokens * inputRate)
+    const aiCost = (usage.inputTokens * inputRate)
                + (usage.cacheWriteTokens * inputRate * (pricing.cacheWriteMultiplier ?? 1.25))
                + (usage.cacheReadTokens * inputRate * (pricing.cacheReadMultiplier ?? 0.1))
-               + (usage.outputTokens * pricing.outputCostPerMillionTokens / 1_000_000)
-               + sttCost + ttsCost;
+               + (usage.outputTokens * pricing.outputCostPerMillionTokens / 1_000_000);
+    const cost = aiCost + sttCost + ttsCost;
     document.getElementById('usageCost').textContent = `$${cost.toFixed(2)}`;
     const sinceDate = new Date(usage.since).toLocaleDateString();
     // Name the paid extras only when they have actually been used, so a Windows
     // user on the free backends sees exactly what they saw before.
-    //
-    // Each carries its OWN share in dollars, not just its amount (Ken, August 29
-    // 2026, asking whether the paid hearing and voice could be shown here). They
-    // have always been inside the total, which is exactly the problem: a user
-    // paying for both had no way to tell what they were paying for, so a bill that
-    // looked high said nothing about which part to reconsider. Minutes and
-    // characters do not answer that question; dollars do.
     const extras = [];
-    if (sttSeconds > 0) extras.push(`${Math.round(sttSeconds / 60)} min heard, $${sttCost.toFixed(2)}`);
-    if (ttsCharacters > 0) extras.push(`${ttsCharacters.toLocaleString()} characters spoken, $${ttsCost.toFixed(2)}`);
     // Prompt-cache hit rate — the share of all prompt tokens served from cache. This
     // is the number to WATCH (Ken, August 8 2026): a figure that drops means
     // something is invalidating the prefix, which shows up as spend before it shows
@@ -4417,6 +4408,36 @@ async function updateUsageDisplay() {
     }
     document.getElementById('usageSince').textContent =
         `since ${sinceDate}` + (extras.length ? ` · ${extras.join(' · ')}` : '');
+
+    // ⚠ THREE SEPARATE ESTIMATES, NOT ONE TOTAL WITH THE PARTS IMPLIED (Ken, August 29
+    // 2026: "why can't you estimate the AI and Deepgram costs separately?"). The first
+    // cut showed the paid extras' shares and left the AI's to be worked out by
+    // subtraction, which is the same failure one step along: three services bill this
+    // user and the question they actually have is which one to reconsider. Nothing
+    // prevented it - all three numbers are computed here already.
+    //
+    // Shown only once a paid service has been used, because on the free setup the AI
+    // figure IS the total and printing it twice says nothing.
+    const breakdown = document.getElementById('usageBreakdown');
+    if (breakdown) {
+        const paidUsed = sttSeconds > 0 || ttsCharacters > 0;
+        breakdown.hidden = !paidUsed;
+        breakdown.textContent = '';
+        if (paidUsed) {
+            const line = (what, amount, money) => {
+                const row = document.createElement('div');
+                row.className = 'usage-line';
+                const a = document.createElement('span'); a.className = 'usage-what'; a.textContent = what;
+                const b = document.createElement('span'); b.className = 'usage-amount'; b.textContent = amount;
+                const c = document.createElement('span'); c.className = 'usage-money'; c.textContent = `$${money.toFixed(2)}`;
+                row.append(a, b, c);
+                breakdown.appendChild(row);
+            };
+            line('AI', `${(usage.inputTokens + usage.cacheWriteTokens + usage.cacheReadTokens + usage.outputTokens).toLocaleString()} words in and out`, aiCost);
+            line('Hearing', sttSeconds > 0 ? `${Math.round(sttSeconds / 60)} min heard` : 'not used', sttCost);
+            line('Voice', ttsCharacters > 0 ? `${ttsCharacters.toLocaleString()} characters spoken` : 'not used', ttsCost);
+        }
+    }
 }
 
 // Group the error log by conversation, most-recent conversation first. Errors
