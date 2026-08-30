@@ -501,18 +501,21 @@
       "term": "Preferred",
       "use": "describe the response instead of naming the category",
       "why": "Conversation Analysis category names are removed from user documents (comment 33)",
+      "exceptDocuments": ["Conversant AAC Product Overview.docx"],
       "severity": "review"
     },
     {
       "term": "Dispreferred",
       "use": "describe the response instead of naming the category",
       "why": "Conversation Analysis category names are removed from user documents (comment 33)",
+      "exceptDocuments": ["Conversant AAC Product Overview.docx"],
       "severity": "error"
     },
     {
       "term": "Initiative",
       "use": "describe the response instead of naming the category",
       "why": "Conversation Analysis category names are removed from user documents (comment 33)",
+      "exceptDocuments": ["Conversant AAC Product Overview.docx"],
       "severity": "review"
     },
     {

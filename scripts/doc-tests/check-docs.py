@@ -330,6 +330,18 @@ def l1_spelling(doc):
 def l2_banned(doc):
     out = []
     for b in CONV['bannedTerms']:
+        # A term can be banned everywhere a user reads EXCEPT one named document.
+        # The Conversation Analysis category names are the case it was added for
+        # (Ken, August 29 2026): the Product Overview is read by clinicians and by
+        # other developers, and its engine section is built on that literature, so
+        # the names are the point there. They are removed from the manuals, where
+        # the reader gains nothing from a category name (comment 33).
+        #   ⚠ EXEMPT THE TERM, NOT THE DOCUMENT. Dropping the Product Overview from
+        # userFacingDocuments would have been one line and would also have switched
+        # off the retired-name, product-history, screen-name-quoting and glossary
+        # rules on it - silently, and with nothing to show that it had happened.
+        if os.path.basename(doc.path) in b.get('exceptDocuments', []):
+            continue
         for p, m in _hits(doc, r'\b%s\b' % re.escape(b['term']) + ('s?' if ' ' not in b['term'] else '')):
             out.append(F('"%s" - use %s (%s)' % (m.group(0), b['use'], b['why']),
                          p.i, snip(p.text), severity=b['severity']))
