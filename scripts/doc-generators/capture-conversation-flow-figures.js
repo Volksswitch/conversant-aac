@@ -1,5 +1,5 @@
-/* Renders the five figures in "Conversation Flow Figures.html" to PNGs
- * (cf-fig1..5.png) for "Conversant AAC Conversation Flow.docx". Re-run after
+/* Renders the nine figures in "Conversation Flow Figures.html" to PNGs
+ * (cf-fig1..9.png) for "Conversant AAC Conversation Flow.docx". Re-run after
  * editing that file.
  *
  * The figures are drawn BLIND - nobody looks at the PNG before it is embedded - so
@@ -14,7 +14,8 @@ const puppeteer = require('puppeteer');
 const path = require('path');
 
 const CHECK = '.fig, .box, .side, .loop, .lab, .seg, .seg2, .n, .dtext, .lanehead, ' +
-              '.trklab, .ann, .rlab, .fanhead, .colhead, .item, .out, .llab, .mark';
+              '.trklab, .ann, .rlab, .fanhead, .colhead, .item, .out, .llab, .mark, ' +
+              '.term, .conn, .note';
 
 (async () => {
     const browser = await puppeteer.launch({ headless: true });
@@ -40,7 +41,7 @@ const CHECK = '.fig, .box, .side, .loop, .lab, .seg, .seg2, .n, .dtext, .lanehea
         process.exit(1);
     }
 
-    for (let i = 1; i <= 5; i++) {
+    for (let i = 1; i <= 9; i++) {
         const el = await page.$('#f' + i);
         if (!el) { console.error('missing #f' + i); continue; }
         const out = path.join(__dirname, `cf-fig${i}.png`);

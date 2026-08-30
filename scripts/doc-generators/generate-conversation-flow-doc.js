@@ -71,6 +71,34 @@
  *     distinction is drawn in Figure 2 and in the table in section 4, and it was the
  *     one thing the first edition got wrong by grouping them together.
  *
+ * FOURTH EDITION, August 30 2026. Ken asked for the flow "in a format and a level of
+ * detail similar to" a hand-drawn chart he supplied - the classic engineering form, boxes
+ * and diamonds and off-page connectors - and said not to assume his own draft had captured
+ * every path. Added as section 12 with figures 6-9 rather than by replacing figure 1: that
+ * one is a three-lane summary of the whole loop and answers "who does what", where these
+ * four pages answer "what happens next, on what condition". Both are wanted.
+ *
+ * ⚠ WHAT HIS DRAFT HAD, THAT THE CODE DOES NOT, since these are the corrections the new
+ * figures encode and the same mistakes are easy to make again:
+ *   - it gated the app's silence timer behind the recognizer's own end-of-speech verdict.
+ *     There is no such gate. resetSilenceTimer is called from afterIngest, i.e. from the
+ *     ARRIVAL OF A CHUNK, so the clock is restarted by every chunk (interim included) and
+ *     the recognizer's verdict is ignored (stt.js binds no onspeechend; stt-deepgram.js
+ *     reports speech_final as ordinary final text, with the reason in a comment).
+ *   - it started the silence timer and the placeholder timer in PARALLEL at the pause.
+ *     They are sequential: placeholders.arm() is called from handleSilencePeriod, i.e.
+ *     AFTER the Silence Period has already elapsed. What is parallel is the placeholder
+ *     ladder and the AI request, which is figure 7.
+ *   - it showed the partner resuming as "stop silence timer". It RESTARTS it; what stops
+ *     is the placeholder ladder (handlePartnerResumed -> placeholders.stop()).
+ *   - it ended the ladder at "PH2 timer fires". The ladder loops on subsequentDelay until
+ *     maxPlaceholders; 0 means none are ever scheduled (arm() returns early).
+ *   - "AI returns 4 or 8 options" is one of four outcomes: also a closed-set palette, the
+ *     goodbyes (CLOSING), the three repair-of-self cards (is_repair_initiator), and the
+ *     superseded case, which is discarded on arrival and never shown.
+ *   - auto-resume is gated on manualListenArmed as well as the setting, and an opener
+ *     opens the microphone unconditionally (handleResponseSelected, wasOpener branch).
+ *
  * Figures come from "Conversation Flow Figures.html" via
  * capture-conversation-flow-figures.js. Re-run that after editing it.
  *
@@ -93,6 +121,9 @@ const cellMargins = { top: 80, bottom: 80, left: 120, right: 120 };
 
 function heading1(text) {
     return new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun(text)] });
+}
+function heading2(text) {
+    return new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun(text)] });
 }
 function para(text, opts = {}) {
     return new Paragraph({
@@ -219,7 +250,7 @@ const doc = new Document({
             new Paragraph({ spacing: { before: 0, after: 80 },
                 children: [new TextRun({ text: `How one conversation runs from start to finish: the decisions in it, the loops it goes round, what every button does to that flow, and what is happening at the same time.`, italics: true, size: 22, color: "555555" })] }),
             new Paragraph({ spacing: { before: 0, after: 260 },
-                children: [new TextRun({ text: `Kenneth R. Hackbarth  |  Volksswitch.org  |  August 2026  |  Last updated August 27, 2026`, size: 18, color: "777777" })] }),
+                children: [new TextRun({ text: `Kenneth R. Hackbarth  |  Volksswitch.org  |  August 2026  |  Last updated August 30, 2026`, size: 18, color: "777777" })] }),
 
             heading1(`1.  What This Is For`),
             para(`What the app does during a conversation is described a step at a time in the User Manual, and mechanism by mechanism in the design documents. Neither shows the shape of a whole exchange. This does.`),
@@ -248,6 +279,7 @@ const doc = new Document({
             numBold(`The third decision, back with the app: does listening resume by itself? `, `Only if "Resume listening automatically" is turned on, which it is not by default. Otherwise the user taps Listen when they are ready. Either way the loop returns to the top.`, "flow"),
             emptyPara(),
             lead(`The arrows that run back up the page are the point of the figure. `, `There are three of them, and each is a different kind of repetition. The short one at the top is the other person still talking, which happens many times inside one turn. The one on the right is the user doing something that does not answer, and finding themselves at the same decision again. The long one down the left is a finished exchange handing back to the next one. A conversation is almost entirely made of those three.`),
+            para(`Section 12 draws the same loop a second time, as an engineering flow chart over four pages, for anyone who wants the condition on every branch spelled out.`),
             lead(`Why the default is to wait. `, `Resuming automatically is faster, and it means the microphone comes back on without anybody deciding that it should. Leaving it off makes every listening period something the user chose. Either is defensible; the app ships with the deliberate one.`),
 
             heading1(`4.  What You Can Do When Suggestions Are on Screen`),
@@ -377,6 +409,50 @@ const doc = new Document({
             ], W2),
             emptyPara(),
             lead(`The general shape of it: `, `the AI is an enhancement, not a dependency. Without it the app is still a communication aid with a live transcript. Without speech recognition it is not, which is why that is the one to check first.`),
+
+            heading1(`12.  The Same Conversation, Drawn as a Flow Chart`),
+            para(`The figures above answer "what happens, and why." This section answers a narrower question: what happens next, exactly, and on what condition. It is the same conversation drawn the way a flow chart draws things - one step to a box, a diamond wherever something is decided, and a numbered circle where the line runs off one page and picks the conversation up on another. Nothing in it is new behavior. It is the same loop at a finer grain, and it is the form to reach for when you are trying to work out why one particular session went the way it did.`),
+            para(`The four circles carry the line between the pages:`),
+            simpleTable([`Circle`, `Where the line goes`], [
+                [`1`, `Listening. The microphone is on and the other person is talking. Page 1, middle.`],
+                [`2`, `A pause. The app has decided they have stopped. End of page 1, top of page 2.`],
+                [`3`, `Suggestions are on the Response Panel and the app is waiting. End of page 2, top of page 3.`],
+                [`4`, `Wrapping up. End of page 3, top of page 4.`],
+            ], W2),
+
+            heading2(`12.1  Page 1 - opening, listening, and how a pause is decided`),
+            ...figure('cf-fig6.png', 1052, 1398, `Figure 6 - page 1 of the flow chart. The lower half is the part worth reading twice: the clock that declares a pause is restarted by every arriving chunk of words, not started when the other person stops.`),
+            lead(`Two ways in. `, `"Start conversation" fills the Response Panel with openers and does nothing else - nothing is said and nothing is ended by pressing it, and pressing it a second time puts back whatever it covered. Choosing an opener is the moment things actually happen: it is said in the user's voice, any conversation still open is closed and a new record begun, and the microphone opens. That last one is unconditional. It does not consult "Resume listening automatically", because the user has just spoken and a reply is coming. The other way in is "Start Listening", which skips the openers and is what you want when the other person is already talking.`),
+            lead(`The listening loop. `, `Words arrive from the recognizer in chunks, several a second while someone is talking. Each chunk joins the turn and restarts the Silence-Period clock. The pause is declared when the clock runs out with no new chunk, and two things follow that are easy to get the wrong way round. The clock can never run out mid-sentence, because more words are still arriving. And it starts later than the moment the person actually went quiet, by however long the recognizer took to deliver their last words - so the silence the other person experiences is always somewhat longer than the number in Settings.`),
+            lead(`The recognizer's own verdict is not used, and that is deliberate. `, `Both recognizers decide for themselves when someone has finished, and both tell the app. The app acts on neither. The Silence Period is a setting the user owns, and it has to mean the same thing whichever recognizer they are on, which it would not if one of them were allowed to declare turns of its own. The single exception is the setting at 0, which means "as soon as possible": there the pause fires the moment the recognizer settles a phrase, with a short fallback in case it never does.`),
+            lead(`The app's own voice is filtered out. `, `While the app is speaking, and for a moment and a half afterwards, anything the microphone picks up is set aside: it does not join the turn, it does not restart the clock, and it cannot declare a pause. Without that, a holding phrase would be heard as the other person talking and the app would answer itself. The microphone is deliberately not muted, so somebody talking over the app is still heard.`),
+
+            heading2(`12.2  Page 2 - the two things that start at a pause`),
+            ...figure('cf-fig7.png', 1052, 1208, `Figure 7 - page 2. The two columns start at the same instant and neither waits for the other, which is the whole reason a holding phrase still gets spoken when the AI is slow.`),
+            lead(`They are independent, and that is the point. `, `The left column counts down to a holding phrase. The right column writes down what was heard and asks the AI. Neither knows what the other is doing. If the AI takes six seconds, the holding phrase still lands at two; if the AI cannot be reached at all, the holding phrase still lands at two.`),
+            lead(`The left column. `, `The first phrase is spoken after the initial delay, two seconds by default. Every later one waits the subsequent delay, ten seconds by default, and the ladder stops when it reaches the maximum for the turn, two by default. Set the maximum to none and nothing is ever spoken automatically, which is a legitimate way to run the app. Three things stop the ladder outright: the user saying anything, the other person starting to talk again, and the one turn where a holding phrase would be wrong, which is the turn where they have asked the user to repeat themselves.`),
+            lead(`The right column. `, `What was heard is written to the saved conversation first, replacing the line written at the previous pause, so the record matches the screen even if the conversation is abandoned from here. Then the AI is asked, with the whole conversation so far and everything heard in this turn. If another pause has already asked again by the time the answer arrives - which happens whenever the other person carried on talking - the answer is thrown away unseen, because a newer one is coming that knows more. The other case is just as ordinary: the answer arrives before the next pause, is shown, and is replaced a few seconds later by a fuller set.`),
+            lead(`Three kinds of answer. `, `Usually it is four suggestions, or eight if the user has asked for two of each kind. If the other person offered a list of things to choose between, it is one card for each thing they offered instead. If they were starting to say goodbye, it is the goodbyes. And if they were asking the user to repeat themselves, it is three ways to say the user's own last words again.`),
+
+            heading2(`12.3  Page 3 - the decision the user is actually at`),
+            ...figure('cf-fig8.png', 1052, 1188, `Figure 8 - page 3, grouped by consequence. Three of the four branches lead straight back to the same decision, which is where a conversation spends most of its time.`),
+            lead(`Only one group ends the turn. `, `Tapping a suggestion, tapping an Express Panel phrase, and typing something and tapping Speak all do the same three things: the words are said in the user's voice, the exchange is written down, and the app decides whether to listen again. Everything else on the page leaves the turn open.`),
+            lead(`The one that catches people out. `, `"Ask them to repeat" sits beside "Hold on" and "Repeat what I said" on the screen and behaves differently from both. All three say something, but only this one hands the floor back, so only this one clears the suggestions. What was already heard is kept as a turn of its own, and their repeat begins a fresh turn after it rather than being run onto the end of the old one.`),
+            lead(`Nothing is emptied while the user is reading. `, `A new set of suggestions replaces the old one at the moment it is ready. The panel is never blanked in the meantime, so there is no window in which the user has nothing to choose from. That is as true of a set the app fetched by itself as of one the user asked for.`),
+            lead(`Whether listening resumes. `, `It does only if "Resume listening automatically" is on and the user has tapped Listen at least once this session. It is off to begin with, and a manual stop withdraws the permission until the user taps Listen again. Otherwise the app waits, and the user opens the microphone when they are ready.`),
+
+            heading2(`12.4  Page 4 - wrapping up and ending`),
+            ...figure('cf-fig9.png', 1052, 1261, `Figure 9 - page 4. Two entrances, because a closing can be started by either side, and they meet at the goodbyes.`),
+            lead(`Both entrances can be backed out of, and neither of them says anything. `, `Pressing "Wrap up" replaces the suggestions with the wind-down statements; pressing it again puts back exactly what it covered. When the other person starts a closing, the goodbyes appear on their own, with one extra card that holds them back for a moment - and choosing that card reopens the conversation and the microphone rather than ending anything.`),
+            lead(`Saying goodbye is a loop. `, `Choosing one speaks it and offers the goodbyes again, because the other person will usually say goodbye back and the user will want to answer. If none of them fits, "New 4" pages through the rest of the user's own list rather than asking the AI for more.`),
+            lead(`"End conversation" is the only thing that ends a conversation, `, `and it is available from any step on any of these four pages. It stops listening, writes anything the other person had half-said to this conversation rather than losing it, clears the panel and the log, and clears who the user is with and how they are feeling. Where they are stays, because ending a conversation does not move them.`),
+
+            heading2(`12.5  What these four pages do not draw`),
+            para(`Four things are deliberately left off, so that what is drawn stays readable:`),
+            bulletLead(`Repeating yourself. `, `When the other person asks the user to repeat, the three cards that appear are say it again exactly, say it another way, and say more about it. They arrive on page 2 and are chosen on page 3 like any other card. The only difference worth knowing is that the second and third are still being written when they first appear, and gain their real wording a second or two later.`),
+            bulletLead(`Practice Mode. `, `The chart is the same one, with the microphone replaced by the AI playing the other person. "Start Listening" cues them to speak instead of opening a microphone, and it honors the same permission, so practice rehearses the real rhythm rather than a shortcut.`),
+            bulletLead(`Everything in Settings, `, `including editing the phrases, the panel and the keyboard. None of it is part of a conversation, and most of it cannot be reached during one.`),
+            bulletLead(`The keyboard itself. `, `Typing, word prediction and the number keys all sit inside the one box on page 3 that says the user typed something.`),
         ],
     }],
 });

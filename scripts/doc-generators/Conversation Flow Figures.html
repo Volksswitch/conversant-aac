@@ -106,6 +106,22 @@
           overflow:hidden; }
   .lab b { color:var(--blue); display:block; }
   .warn { color:var(--amber); }
+
+  /* --- figures 6-9: the engineering flow chart (decision blocks + connectors) ---
+     Same absolute-boxes-over-SVG-wires technique as figure 1, so every word a
+     reader has to read sits in a fixed-size HTML box the capture script can
+     overflow-check. Only one- and two-word edge labels are drawn in SVG. --- */
+  .term { position:absolute; overflow:hidden; border:2px solid var(--blue); border-radius:26px;
+          background:#EAF1F8; padding:6px 12px; z-index:2; display:flex; align-items:center;
+          justify-content:center; text-align:center; font-size:15px; font-weight:bold;
+          line-height:1.2; color:var(--blue); }
+  .conn { position:absolute; overflow:hidden; width:44px; height:44px; border-radius:50%;
+          border:2px solid var(--blue); background:#fff; color:var(--blue); font-weight:bold;
+          font-size:19px; display:flex; align-items:center; justify-content:center; z-index:3; }
+  .note { position:absolute; overflow:hidden; border:2px dashed var(--amberline);
+          background:var(--amberbg); border-radius:8px; padding:8px 10px; z-index:2;
+          font-size:12.5px; line-height:1.32; color:var(--amber); }
+  .note b { display:block; font-size:13.5px; margin-bottom:3px; }
 </style>
 
 <div class="fig" id="f1" style="padding-left:6px; padding-right:6px;">
@@ -410,5 +426,279 @@
     <div class="n warn" style="left:700px; top:420px; width:300px; height:100px;"><b>&#8220;Actually, before you go &#8212;&#8221;</b><small>Offered only when they started the closing, because that is the one moment at which declining it is the natural thing to say.</small></div>
     <div class="n" style="left:700px; top:548px; width:300px; height:76px;"><b>Back to the conversation</b><small>The closing is abandoned, and the loop in Figure 1 carries on.</small></div>
     <div class="n act" style="left:120px; top:548px; width:300px; height:86px;"><b>End conversation</b><small>Stops listening, saves what was said, and clears the screen. The next Start begins a fresh record.</small></div>
+  </div>
+</div>
+
+<div class="fig" id="f6" style="padding-left:6px; padding-right:6px;">
+  <p class="cap">Page 1 of 4 - opening the conversation, and how the app decides that they have stopped. The Silence-Period clock is restarted by every arriving chunk of words, so it can only run out after the last one.</p>
+  <div class="canvas" style="width:1040px; height:1300px;">
+    <svg class="wires" width="1040" height="1300">
+      <defs>
+        <marker id="a6" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto">
+          <path d="M0,0 L7,3.2 L0,6.4 z" fill="#7A8A99"/>
+        </marker>
+      </defs>
+      <g fill="none" stroke="#7A8A99" stroke-width="2" marker-end="url(#a6)">
+        <path d="M520,58 V80"/>
+        <path d="M660,122 H800 V168"/>
+        <path d="M380,122 H250 V168"/>
+        <path d="M800,216 V240"/>
+        <path d="M800,304 V330"/>
+        <path d="M940,372 H1000 V64 H520 V80"/>
+        <path d="M800,414 V436"/>
+        <path d="M800,512 V532"/>
+        <path d="M800,612 V644 H520 V660"/>
+        <path d="M250,298 V644 H520 V660"/>
+        <path d="M322,696 H370"/>
+        <path d="M520,732 V756"/>
+        <path d="M520,810 V834"/>
+        <path d="M660,876 H700"/>
+        <path d="M950,876 H1000 V748 H520 V756"/>
+        <path d="M520,918 V944"/>
+        <path d="M520,1016 V1040"/>
+        <path d="M380,1082 H60 V748 H520 V756"/>
+        <path d="M520,1124 V1152"/>
+        <path d="M520,1216 V1240"/>
+      </g>
+      <polygon points="380,122 520,80 660,122 520,164" fill="#FFF8E6" stroke="#B8860B" stroke-width="2"/>
+      <polygon points="660,372 800,330 940,372 800,414" fill="#FFF8E6" stroke="#B8860B" stroke-width="2"/>
+      <polygon points="380,876 520,834 660,876 520,918" fill="#FFF8E6" stroke="#B8860B" stroke-width="2"/>
+      <polygon points="380,1082 520,1040 660,1082 520,1124" fill="#FFF8E6" stroke="#B8860B" stroke-width="2"/>
+      <g font-family="Arial" font-size="12" fill="#33414D">
+        <text x="668" y="115">Yes</text>
+        <text x="372" y="115" text-anchor="end">No</text>
+        <text x="948" y="365">No</text>
+        <text x="808" y="432">Yes</text>
+        <text x="668" y="869">Yes</text>
+        <text x="528" y="936">No</text>
+        <text x="372" y="1075" text-anchor="end">No</text>
+        <text x="528" y="1144">Yes</text>
+      </g>
+    </svg>
+    <div class="term" style="left:350px; top:8px; width:340px; height:50px;">Start pressed - the conversation screen is up</div>
+    <div class="dtext" style="left:420px; top:102px; width:200px; height:40px;">Do you want to speak first?</div>
+    <div class="n" style="left:120px; top:168px; width:260px; height:130px;"><b>Press Listen</b><small>Or listening comes back on its own - but only if you have tapped Listen at least once this session and &#8220;Resume listening automatically&#8221; is on. It is off to begin with.</small></div>
+    <div class="n" style="left:670px; top:168px; width:260px; height:48px;"><b>Press Start conversation</b></div>
+    <div class="n" style="left:670px; top:240px; width:260px; height:64px;"><b>The openers fill the panel</b><small>Nothing has ended yet</small></div>
+    <div class="dtext" style="left:700px; top:352px; width:200px; height:40px;">Tap an opener?</div>
+    <div class="n act" style="left:670px; top:436px; width:260px; height:76px;"><b>The app says it in your voice</b><small>and any conversation still open is closed at this moment</small></div>
+    <div class="n" style="left:670px; top:532px; width:260px; height:80px;"><b>The microphone opens</b><small>Always - it does not wait for &#8220;Resume listening automatically&#8221;</small></div>
+    <div class="conn" style="left:278px; top:674px;">1</div>
+    <div class="n" style="left:370px; top:660px; width:300px; height:72px;"><b>The microphone is on</b><small>It stays on for the whole exchange, and the app says nothing while they talk.</small></div>
+    <div class="n" style="left:390px; top:756px; width:260px; height:54px;"><b>A chunk of words arrives from the recognizer</b></div>
+    <div class="dtext" style="left:412px; top:846px; width:216px; height:60px;">Is the app speaking, or within 1.5 s of it?</div>
+    <div class="n warn" style="left:700px; top:838px; width:250px; height:76px;"><b>It is the app&#8217;s own voice</b><small>Set aside. The clock is not restarted and no pause can fire.</small></div>
+    <div class="n" style="left:370px; top:944px; width:300px; height:72px;"><b>The words join this turn</b><small>and the Silence-Period clock starts again from zero</small></div>
+    <div class="dtext" style="left:412px; top:1052px; width:216px; height:60px;">Has the clock run out with no new words?</div>
+    <div class="n soft" style="left:360px; top:1152px; width:320px; height:64px;"><b>A pause</b><small>The app treats this as the end of what they had to say</small></div>
+    <div class="conn" style="left:498px; top:1240px;">2</div>
+    <div class="note" style="left:700px; top:950px; width:300px; height:190px;"><b>The recognizer&#8217;s own verdict is not used</b>Both recognizers decide for themselves when someone has stopped, and both tell the app. The app acts on neither: the Silence Period is the only thing that declares a pause, so the setting means the same on either one. Set it to 0 and the pause instead fires the moment the recognizer settles a phrase, with a 1.5-second fallback if it never does.</div>
+  </div>
+</div>
+
+<div class="fig" id="f7" style="padding-left:6px; padding-right:6px;">
+  <p class="cap">Page 2 of 4 - what happens at the pause. The left side and the right side start together and neither waits for the other, which is why a holding phrase still gets spoken when the AI is slow or cannot be reached.</p>
+  <div class="canvas" style="width:1040px; height:1110px;">
+    <svg class="wires" width="1040" height="1110">
+      <defs>
+        <marker id="a7" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto">
+          <path d="M0,0 L7,3.2 L0,6.4 z" fill="#7A8A99"/>
+        </marker>
+      </defs>
+      <g fill="none" stroke="#7A8A99" stroke-width="2" marker-end="url(#a7)">
+        <path d="M407,64 V84"/>
+        <path d="M407,158 V186 H195 V200"/>
+        <path d="M407,158 V186 H620 V200"/>
+        <path d="M195,290 V308"/>
+        <path d="M65,350 H30 V240 H65"/>
+        <path d="M195,392 V420"/>
+        <path d="M195,512 V536"/>
+        <path d="M195,620 V644"/>
+        <path d="M65,680 H30 V466 H65"/>
+        <path d="M325,578 H360 V760 H195 V786"/>
+        <path d="M620,292 V312"/>
+        <path d="M620,398 V424"/>
+        <path d="M620,486 V512"/>
+        <path d="M750,554 H775 V620 H780"/>
+        <path d="M620,596 V624"/>
+        <path d="M775,760 H750"/>
+        <path d="M775,856 H750"/>
+        <path d="M775,960 H750"/>
+        <path d="M490,760 H452"/>
+        <path d="M490,856 H452"/>
+        <path d="M490,960 H452"/>
+        <path d="M620,1030 V1040"/>
+      </g>
+      <g fill="none" stroke="#7A8A99" stroke-width="2">
+        <path d="M750,666 H775 V960"/>
+        <path d="M450,760 V1030 H620"/>
+      </g>
+      <polygon points="65,350 195,308 325,350 195,392" fill="#FFF8E6" stroke="#B8860B" stroke-width="2"/>
+      <polygon points="65,578 195,536 325,578 195,620" fill="#FFF8E6" stroke="#B8860B" stroke-width="2"/>
+      <polygon points="490,554 620,512 750,554 620,596" fill="#FFF8E6" stroke="#B8860B" stroke-width="2"/>
+      <polygon points="490,666 620,624 750,666 620,708" fill="#FFF8E6" stroke="#B8860B" stroke-width="2"/>
+      <g font-family="Arial" font-size="12" fill="#33414D">
+        <text x="36" y="332">No</text>
+        <text x="203" y="412">Yes</text>
+        <text x="203" y="640">No</text>
+        <text x="332" y="570">Yes</text>
+        <text x="758" y="546">Yes</text>
+        <text x="628" y="616">No</text>
+      </g>
+    </svg>
+    <div class="conn" style="left:385px; top:20px;">2</div>
+    <div class="n soft" style="left:257px; top:84px; width:300px; height:74px;"><b>A pause</b><small>Two things start here, and neither waits for the other</small></div>
+    <div class="n" style="left:65px; top:200px; width:260px; height:90px;"><b>The holding-phrase clock starts</b><small>Initial delay - 2 seconds by default. Set &#8220;Maximum per turn&#8221; to 0 and none are ever spoken.</small></div>
+    <div class="dtext" style="left:100px; top:330px; width:190px; height:40px;">Has the delay run out?</div>
+    <div class="n act" style="left:65px; top:420px; width:260px; height:92px;"><b>A holding phrase is spoken</b><small>The first acknowledges; a later one says you are still thinking. Never over the user&#8217;s own voice.</small></div>
+    <div class="dtext" style="left:95px; top:550px; width:200px; height:56px;">Reached the maximum for this turn?</div>
+    <div class="n" style="left:65px; top:644px; width:260px; height:72px;"><b>Wait the Subsequent delay</b><small>10 seconds by default</small></div>
+    <div class="n soft" style="left:65px; top:786px; width:260px; height:62px;"><b>No more are spoken this turn</b></div>
+    <div class="note" style="left:65px; top:880px; width:360px; height:130px;"><b>If they start talking again</b>the holding phrases stop at once and reset, their new words join the same turn, and their next pause asks the AI again - which is what makes the answer on the right be thrown away.</div>
+    <div class="n" style="left:490px; top:200px; width:260px; height:92px;"><b>What they have said is written down</b><small>to the saved conversation, replacing the line written at the previous pause</small></div>
+    <div class="n" style="left:490px; top:312px; width:260px; height:86px;"><b>The AI is asked</b><small>the whole conversation so far, plus everything heard in this turn</small></div>
+    <div class="n" style="left:490px; top:424px; width:260px; height:62px;"><b>The AI answers</b><small>usually 4 to 8 seconds after the pause</small></div>
+    <div class="dtext" style="left:525px; top:526px; width:190px; height:56px;">Has a later pause asked again?</div>
+    <div class="n warn" style="left:780px; top:574px; width:250px; height:92px;"><b>The answer is thrown away</b><small>Nothing appears. The newer request will answer with more of what they said.</small></div>
+    <div class="dtext" style="left:525px; top:638px; width:190px; height:56px;">What sort of turn was it?</div>
+    <div class="n" style="left:490px; top:724px; width:260px; height:72px;"><b>They asked you to repeat</b><small>Three ways to say your last words again</small></div>
+    <div class="n" style="left:490px; top:814px; width:260px; height:84px;"><b>They started saying goodbye</b><small>The goodbyes, plus a card that holds them back</small></div>
+    <div class="n act" style="left:490px; top:910px; width:260px; height:100px;"><b>Anything else</b><small>Four suggestions - eight if you have set two per kind. If they offered you a list, one card for each thing they offered.</small></div>
+    <div class="note" style="left:780px; top:760px; width:250px; height:150px;"><b>If the AI cannot be reached</b>the panel says so and offers Try again. Their words stay on screen, and you can still answer from the Express Panel or in your own words.</div>
+    <div class="conn" style="left:598px; top:1040px;">3</div>
+  </div>
+</div>
+
+<div class="fig" id="f8" style="padding-left:6px; padding-right:6px;">
+  <p class="cap">Page 3 of 4 - the suggestions are on screen and the app is waiting. Three of the branches lead straight back to the same decision, which is where a conversation spends most of its time.</p>
+  <div class="canvas" style="width:1040px; height:1090px;">
+    <svg class="wires" width="1040" height="1090">
+      <defs>
+        <marker id="a8" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto">
+          <path d="M0,0 L7,3.2 L0,6.4 z" fill="#7A8A99"/>
+        </marker>
+      </defs>
+      <g fill="none" stroke="#7A8A99" stroke-width="2" marker-end="url(#a8)">
+        <path d="M520,62 V86"/>
+        <path d="M520,148 V162"/>
+        <path d="M190,272 V290"/>
+        <path d="M520,272 V290"/>
+        <path d="M850,272 V290"/>
+        <path d="M190,386 V410"/>
+        <path d="M190,466 V490"/>
+        <path d="M190,576 V590"/>
+        <path d="M190,720 V740"/>
+        <path d="M190,832 V860"/>
+        <path d="M320,655 H345 V882 H212"/>
+        <path d="M520,430 V456"/>
+        <path d="M390,506 H365 V991 H390"/>
+        <path d="M520,556 V586"/>
+        <path d="M520,706 V740"/>
+        <path d="M850,440 V456"/>
+        <path d="M980,506 H1010 V991 H830"/>
+        <path d="M850,556 V586"/>
+        <path d="M850,706 V740"/>
+        <path d="M610,1022 V1052 H18 V210 H390"/>
+      </g>
+      <g fill="none" stroke="#7A8A99" stroke-width="2">
+        <path d="M520,258 V272"/>
+        <path d="M190,272 H850"/>
+      </g>
+      <polygon points="390,210 520,162 650,210 520,258" fill="#FFF8E6" stroke="#B8860B" stroke-width="2"/>
+      <polygon points="60,655 190,590 320,655 190,720" fill="#FFF8E6" stroke="#B8860B" stroke-width="2"/>
+      <polygon points="390,506 520,456 650,506 520,556" fill="#FFF8E6" stroke="#B8860B" stroke-width="2"/>
+      <polygon points="720,506 850,456 980,506 850,556" fill="#FFF8E6" stroke="#B8860B" stroke-width="2"/>
+      <g font-family="Arial" font-size="12" fill="#33414D">
+        <text x="198" y="736">Yes</text>
+        <text x="326" y="647">No</text>
+        <text x="358" y="498" text-anchor="end">No</text>
+        <text x="528" y="578">Yes</text>
+        <text x="988" y="498">No</text>
+        <text x="858" y="578">Yes</text>
+      </g>
+    </svg>
+    <div class="conn" style="left:498px; top:18px;">3</div>
+    <div class="n soft" style="left:370px; top:86px; width:300px; height:62px;"><b>Suggestions are on the panel</b><small>Nothing happens until you act</small></div>
+    <div class="dtext" style="left:425px; top:190px; width:190px; height:40px;">What do you do?</div>
+    <div class="n" style="left:60px; top:290px; width:260px; height:96px;"><b>You answer</b><small>Tap a suggestion, tap an Express Panel phrase, or type it and tap Speak.</small></div>
+    <div class="n act" style="left:60px; top:410px; width:260px; height:56px;"><b>The app says it in your voice</b></div>
+    <div class="n" style="left:60px; top:490px; width:260px; height:86px;"><b>It is written down</b><small>their words and yours, to the log and to the saved conversation</small></div>
+    <div class="dtext" style="left:90px; top:628px; width:200px; height:54px;">Does listening resume by itself?</div>
+    <div class="n" style="left:60px; top:740px; width:260px; height:92px;"><b>The microphone opens again</b><small>Only when &#8220;Resume listening automatically&#8221; is on and you have tapped Listen at least once this session.</small></div>
+    <div class="conn" style="left:168px; top:860px;">1</div>
+    <div class="n" style="left:390px; top:290px; width:260px; height:140px;"><b>You say something that is not your answer</b><small>Hold on &middot; Repeat what I said &middot; Ask them to repeat</small></div>
+    <div class="dtext" style="left:425px; top:476px; width:190px; height:60px;">Have you handed the floor back?</div>
+    <div class="n" style="left:390px; top:586px; width:260px; height:120px;"><b>Ask them to repeat</b><small>What was already heard is kept as its own turn, the suggestions clear, and their repeat begins a fresh turn.</small></div>
+    <div class="conn" style="left:498px; top:740px;">1</div>
+    <div class="n" style="left:720px; top:290px; width:260px; height:150px;"><b>Nothing is said</b><small>New 4 &middot; Reframe &middot; a choice button &middot; the number button &middot; who you are with, where you are, how you feel &middot; Wrap up &middot; Start conversation</small></div>
+    <div class="dtext" style="left:755px; top:476px; width:190px; height:60px;">Was it Wrap up or Start conversation?</div>
+    <div class="n" style="left:720px; top:586px; width:260px; height:120px;"><b>The panel is replaced</b><small>by the wind-downs, or by the openers. Press the same button again and exactly what it covered comes back.</small></div>
+    <div class="conn" style="left:828px; top:740px;">4</div>
+    <div class="n soft" style="left:390px; top:960px; width:440px; height:62px;"><b>You are back at the same decision</b><small>with a different set in front of you</small></div>
+  </div>
+</div>
+
+<div class="fig" id="f9" style="padding-left:6px; padding-right:6px;">
+  <p class="cap">Page 4 of 4 - wrapping up and ending. Two entrances, because a closing can be started by either side, and they meet at the goodbyes.</p>
+  <div class="canvas" style="width:1040px; height:1180px;">
+    <svg class="wires" width="1040" height="1180">
+      <defs>
+        <marker id="a9" markerWidth="9" markerHeight="9" refX="7" refY="3.2" orient="auto">
+          <path d="M0,0 L7,3.2 L0,6.4 z" fill="#7A8A99"/>
+        </marker>
+      </defs>
+      <g fill="none" stroke="#7A8A99" stroke-width="2" marker-end="url(#a9)">
+        <path d="M200,64 V96"/>
+        <path d="M200,182 V204"/>
+        <path d="M330,250 H360"/>
+        <path d="M490,286 V316"/>
+        <path d="M200,296 V326"/>
+        <path d="M200,382 V406"/>
+        <path d="M790,66 V110"/>
+        <path d="M790,220 V224"/>
+        <path d="M790,316 V344"/>
+        <path d="M790,440 V470"/>
+        <path d="M495,560 V590"/>
+        <path d="M495,676 V684"/>
+        <path d="M495,776 V806"/>
+        <path d="M365,849 H325 V730 H365"/>
+        <path d="M625,730 H700 V1020 H740"/>
+        <path d="M520,1090 V1120"/>
+      </g>
+      <g fill="none" stroke="#7A8A99" stroke-width="2">
+        <path d="M200,482 V560"/>
+        <path d="M920,270 H1010 V560"/>
+        <path d="M200,560 H1010"/>
+      </g>
+      <polygon points="70,250 200,204 330,250 200,296" fill="#FFF8E6" stroke="#B8860B" stroke-width="2"/>
+      <polygon points="660,270 790,224 920,270 790,316" fill="#FFF8E6" stroke="#B8860B" stroke-width="2"/>
+      <polygon points="365,730 495,684 625,730 495,776" fill="#FFF8E6" stroke="#B8860B" stroke-width="2"/>
+      <g font-family="Arial" font-size="12" fill="#33414D">
+        <text x="336" y="242">No</text>
+        <text x="208" y="318">Yes</text>
+        <text x="928" y="262">No</text>
+        <text x="798" y="338">Yes</text>
+        <text x="503" y="798">Yes</text>
+        <text x="632" y="722">No</text>
+      </g>
+    </svg>
+    <div class="conn" style="left:178px; top:20px;">4</div>
+    <div class="n" style="left:70px; top:96px; width:260px; height:86px;"><b>The wind-down statements replace the suggestions</b><small>Nothing is said, and nothing has ended</small></div>
+    <div class="dtext" style="left:85px; top:228px; width:230px; height:44px;">Tap a wind-down?</div>
+    <div class="n soft" style="left:360px; top:214px; width:260px; height:72px;"><b>Press Wrap up again</b><small>What the panel was showing comes back</small></div>
+    <div class="conn" style="left:468px; top:316px;">3</div>
+    <div class="n act" style="left:70px; top:326px; width:260px; height:56px;"><b>The app says it in your voice</b></div>
+    <div class="n" style="left:70px; top:406px; width:260px; height:76px;"><b>The goodbyes appear on their own</b><small>so a farewell is one tap away</small></div>
+    <div class="term" style="left:620px; top:20px; width:340px; height:46px;">They start saying goodbye</div>
+    <div class="n" style="left:660px; top:110px; width:260px; height:110px;"><b>The goodbyes replace the suggestions</b><small>plus one card that holds them back - &#8220;Actually, before you go -&#8221;</small></div>
+    <div class="dtext" style="left:675px; top:248px; width:230px; height:44px;">Hold them back?</div>
+    <div class="n act" style="left:660px; top:344px; width:260px; height:96px;"><b>The card is said</b><small>The conversation is open again and the microphone opens.</small></div>
+    <div class="conn" style="left:768px; top:470px;">1</div>
+    <div class="n" style="left:365px; top:590px; width:260px; height:86px;"><b>The goodbyes are on the panel</b><small>one for every goodbye you have written; New 4 pages through more</small></div>
+    <div class="dtext" style="left:380px; top:708px; width:230px; height:44px;">Tap a goodbye?</div>
+    <div class="n act" style="left:365px; top:806px; width:260px; height:86px;"><b>It is said, and the goodbyes are offered again</b><small>in case they say goodbye back</small></div>
+    <div class="n soft" style="left:300px; top:960px; width:440px; height:130px;"><b>End conversation</b><small>Listening stops. Anything they had half-said is written to this conversation. The panel and the log clear, and who you are with and how you feel are cleared. Where you are stays.</small></div>
+    <div class="term" style="left:350px; top:1120px; width:340px; height:46px;">Ready to start again</div>
+    <div class="note" style="left:780px; top:940px; width:250px; height:130px;"><b>End conversation is always available</b>from any step on any of these four pages, and it is the only control that ends a conversation outright.</div>
   </div>
 </div>
