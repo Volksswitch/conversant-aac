@@ -42,6 +42,10 @@ function safeSettings() {
 async function storageInfo() {
     const info = { backend: platform.isIOS() ? 'app-private storage' : 'data folder', folder: false, persisted: null, quotaMB: null, usageMB: null };
     try { info.folder = storage.hasDataFolder(); } catch { /* ignore */ }
+    // What the reconnect did, step by step. Whether the app got back into the user's
+    // folder is one of the few things that changes what every other number here
+    // means, and until this existed the answer had to be guessed at from symptoms.
+    try { info.reconnect = storage.folderReconnectTrace() || '(nothing recorded)'; } catch { /* ignore */ }
     try {
         if (navigator.storage && navigator.storage.persisted) info.persisted = await navigator.storage.persisted();
         if (navigator.storage && navigator.storage.estimate) {

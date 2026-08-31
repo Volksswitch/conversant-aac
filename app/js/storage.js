@@ -140,9 +140,22 @@ export async function hasRememberedFolder() {
 // anything. Nothing is requested here — this is only the lookup, which is the step
 // that used to push the permission request past its deadline (see below).
 let primedHandle = null;
+// What the reconnect actually did, in order, so a problem report can say why it
+// failed instead of leaving it to be guessed at. Two rounds were spent theorizing
+// about this because nothing anywhere recorded which step did not happen.
+const folderTrace = [];
+function noteFolder(step) { if (folderTrace.length < 20) folderTrace.push(step); }
+export function folderReconnectTrace() { return folderTrace.join(' > '); }
+
 (async () => {
-    if (!supportsFolderPicker()) return;
-    try { primedHandle = await idbGet(DIR_HANDLE_KEY); } catch { primedHandle = null; }
+    if (!supportsFolderPicker()) { noteFolder('no-picker'); return; }
+    try {
+        primedHandle = await idbGet(DIR_HANDLE_KEY);
+        noteFolder(primedHandle ? 'primed' : 'primed-none');
+    } catch (err) {
+        primedHandle = null;
+        noteFolder('primed-failed:' + (err && err.name || 'unknown'));
+    }
 })();
 
 // A permission request started from a user gesture, awaited later by
@@ -169,16 +182,21 @@ let pendingPermission = null;
  * authoritative queryPermission afterwards.
  */
 export function requestFolderPermissionNow() {
-    if (!supportsFolderPicker() || !primedHandle) return;
+    if (!supportsFolderPicker()) { noteFolder('tap:no-picker'); return; }
+    if (!primedHandle) { noteFolder('tap:not-primed'); return; }
     try {
         permissionPromptOpen = true;
+        noteFolder('tap:asking' + (navigator.userActivation
+            ? (navigator.userActivation.isActive ? ':activation-live' : ':activation-GONE') : ''));
         pendingPermission = primedHandle.requestPermission({ mode: 'readwrite' })
+            .then((r) => { noteFolder('tap:answered:' + r); return r; })
             .finally(() => { permissionPromptOpen = false; });
         // Nothing may reject onto the microtask queue unhandled: the caller does not
         // await this, and an unhandled rejection here surfaces to the user as a
         // start-up failure.
         pendingPermission.catch(() => { /* answered by queryPermission below */ });
-    } catch {
+    } catch (err) {
+        noteFolder('tap:threw:' + (err && err.name || 'unknown'));
         permissionPromptOpen = false;
         pendingPermission = null;
     }
@@ -197,11 +215,14 @@ export async function restoreDataFolder() {
             // request returned. queryPermission is the authoritative check and it is
             // asked of THIS handle, so it cannot matter that the request was made
             // against the separately-read primed one.
+            noteFolder('restore:query:' + perm);
             if (perm !== 'granted' && pendingPermission) {
-                try { await pendingPermission; } catch { /* refused, or it threw */ }
+                try { await pendingPermission; } catch { noteFolder('restore:tap-request-rejected'); }
                 pendingPermission = null;
-                try { perm = await stored.queryPermission({ mode: 'readwrite' }); }
-                catch { /* keep the earlier answer */ }
+                try {
+                    perm = await stored.queryPermission({ mode: 'readwrite' });
+                    noteFolder('restore:requery:' + perm);
+                } catch { /* keep the earlier answer */ }
             }
             if (perm !== 'granted') {
                 permissionPromptOpen = true;
@@ -219,8 +240,10 @@ export async function restoreDataFolder() {
             if (perm === 'granted') {
                 setRoot(stored, BACKEND.FOLDER);
                 await ensureDataSubfolders();
+                noteFolder('connected');
                 return true;
             }
+            noteFolder('not-granted:' + perm);
         } catch { /* fall through — the handle is KEPT; see below */ }
         // The handle is deliberately NOT deleted on any failure here. It used to be,
         // and on Android that erased the user's folder on every single launch: the

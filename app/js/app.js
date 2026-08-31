@@ -525,14 +525,24 @@ function initApp() {
         try { ok = await storage.restoreDataFolder(); } catch { ok = false; }
         if (ok) {
             try { await adoptDataFolder(); } catch { /* best-effort */ }
-        } else {
-            // Declined, or the folder is genuinely gone. Say so and carry on rather
-            // than trapping them here: the app runs without it, and Settings has
-            // both "Choose folder" and "Forget this folder".
-            try { storage.logError('folder', 'reconnect was not granted'); } catch { /* best-effort */ }
+            btn.disabled = false;
+            dismissFolderNotice();
+            return;
         }
+        // ⚠ FAILURE MUST NOT LOOK LIKE SUCCESS. This used to dismiss either way, so a
+        // reconnect that did nothing was indistinguishable from one that worked - the
+        // card simply went away and the conversation started. Two rounds of diagnosis
+        // were spent on a misreading that this caused (Ken, August 31 2026: "it appears
+        // to connect"). Say what happened, and leave the way out visible.
+        try { storage.logError('folder', 'reconnect was not granted: ' + storage.folderReconnectTrace()); }
+        catch { /* best-effort */ }
+        const title = document.querySelector('#folderPrompt .apikey-prompt-title');
+        if (title) {
+            title.textContent = 'Conversant could not get back into your data folder. ' +
+                'Carry on without it for now, or choose the folder again in Settings.';
+        }
+        btn.hidden = true;                       // retrying does the same thing again
         btn.disabled = false;
-        dismissFolderNotice();
     });
     document.getElementById('folderSkipBtn').addEventListener('click', dismissFolderNotice);
     ui.onListenClick(whileComposerClosed(toggleListening));
@@ -1153,6 +1163,16 @@ async function afterFolderNotice() {
     try { needed = !storage.hasDataFolder() && await storage.hasRememberedFolder(); }
     catch { needed = false; }
     if (!needed || !prompt) return afterListeningNotice();
+    // Reset: the card is reused, and a failure last time rewrote its wording and hid
+    // its button. Without this, one failed reconnect would leave the card permanently
+    // stuck on its failure message for the rest of the session.
+    const title = prompt.querySelector('.apikey-prompt-title');
+    if (title) {
+        title.textContent = 'Let Conversant back into your data folder to load your ' +
+            'settings and conversations.';
+    }
+    const rbtn = document.getElementById('folderReconnectBtn');
+    if (rbtn) { rbtn.hidden = false; rbtn.disabled = false; }
     document.getElementById('startBtn').hidden = true;   // the card carries its own controls
     document.getElementById('whatsNewPanel').hidden = true;
     prompt.hidden = false;
