@@ -90,6 +90,7 @@ export async function collectSystemInfo({ appVersion = '?', buildId = '?' } = {}
     // failure worth catching here is silent - a lit microphone that is hearing
     // nothing - so the numbers are the only way anyone can report it.
     try { info.speech.listening = stt.listenActivity(); } catch { /* ignore */ }
+    try { info.speech.listenDelay = stt.listenTimings(); } catch { /* ignore */ }
     try {
         // The voice roster answers "why is my voice not in the list", which has no
         // other route on a device with no console. Names only — no settings, no

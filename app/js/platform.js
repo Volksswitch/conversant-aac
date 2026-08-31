@@ -162,14 +162,30 @@ export function speechRecognitionSupport() {
  *  restartDelayMs — a beat before restarting, so a session that ends immediately
  *    cannot spin into a tight restart loop.
  *
- *  guardVisibility — iOS stops recognition when the page is backgrounded without
- *    telling the app, which would leave it believing it is still listening.
+ *  guardVisibility — ON EVERYWHERE since August 31 2026. It was an iOS-only guard,
+ *    because iOS was the only platform where backgrounding was KNOWN to stop
+ *    recognition. Measured on Ken's Android tablet: it does there too, and worse -
+ *    the recognizer came back 'not-allowed' and the app tore listening down
+ *    altogether, so he had to notice and press Listen again mid-conversation.
+ *
+ *    Made universal rather than given an Android branch, which REMOVES a fork
+ *    instead of adding one. It is safe where recognition would have survived: the
+ *    guard stops on hide and restarts on return, and stt.js flushes the pending
+ *    interim on the way out, so nothing heard is lost. What it gives up is hearing
+ *    the room while the app is in the background - which is not a thing this app
+ *    does: the screen IS the interface, and a user who has switched away is not in
+ *    the conversation.
+ *
+ *    ⚠ The alternative - detecting Android - would have needed a THIRD platform
+ *    test in a file whose own header warns that these behaviours are not feature
+ *    detectable, and would have left every future platform defaulting to the
+ *    setting that is now known to be wrong on two of the three we have tried.
  */
 export function speechConfig() {
     if (isIOS()) {
         return { continuous: false, restartDelayMs: 200, guardVisibility: true };
     }
-    return { continuous: true, restartDelayMs: 0, guardVisibility: false };
+    return { continuous: true, restartDelayMs: 0, guardVisibility: true };
 }
 
 // One-line description for diagnostics and bug reports.

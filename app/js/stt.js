@@ -50,6 +50,23 @@ const listenStats = {
 };
 function noteListen(key) { listenStats[key] = (listenStats[key] || 0) + 1; }
 
+// How long from opening the microphone to the FIRST thing heard, per listening run.
+// Ken's question - "the microphone is slow to turn on" - and it is not answerable by
+// eye, because the delay is partly the recognizer starting and partly the person not
+// having said anything yet. Recorded only for a run that DID hear something, so a
+// long quiet stretch cannot be mistaken for a slow start.
+let openedAt = 0;
+let heardThisRun = false;
+const firstHeardMs = [];
+
+export function listenTimings() {
+    if (!firstHeardMs.length) return 'no runs heard anything yet';
+    const sorted = [...firstHeardMs].sort((a, b) => a - b);
+    const median = sorted[Math.floor(sorted.length / 2)];
+    return `firstHeardMs median=${median} min=${sorted[0]} max=${sorted[sorted.length - 1]} ` +
+           `over ${sorted.length} run(s)`;
+}
+
 export function listenActivity() {
     const e = Object.entries(listenStats.errors).map(([k, n]) => `${k}x${n}`).join(',') || 'none';
     return `sessions=${listenStats.sessions} backgrounded=${listenStats.backgrounded} ` +
@@ -314,6 +331,10 @@ function afterIngest(heardPartner, sawFinal) {
     // it hear anything at all? Counted here rather than at the recognizer, so it means
     // "real partner content reached the app", not merely "an event fired".
     if (heardPartner && listenStats.returnedToForeground > 0) noteListen('resultsAfterReturn');
+    if (heardPartner && !heardThisRun && openedAt) {
+        heardThisRun = true;
+        if (firstHeardMs.length < 50) firstHeardMs.push(Date.now() - openedAt);
+    }
     // Only renew the partner's turn (reset the silence checkpoint) when genuine
     // partner content was heard AND the app isn't currently speaking. Pure echo
     // leaves the checkpoint alone (content filter), and any audio captured while we
@@ -536,6 +557,10 @@ function openSource() {
         return;
     }
     noteListen('sessions');
+    // Only the FIRST open of a run starts the clock: the restart-on-end loop reopens
+    // the recognizer constantly, and timing from the latest reopen would measure the
+    // gap since the last restart rather than how long the user waited.
+    if (!openedAt) { openedAt = Date.now(); heardThisRun = false; }
     try { recognition.start(); } catch { /* already started */ }
     if (onStatusChange) onStatusChange('listening');
 }
@@ -571,6 +596,7 @@ export function stopListening() {
     if (!recognition && !externalSource) return;
     listeningIntent = false;
     suspendedForHidden = false;   // a deliberate stop outranks a backgrounded suspend
+    openedAt = 0;                 // the run is over; the next Listen starts a new clock
     clearSilenceTimer();
     if (externalSource) return externalSource.stop();
     recognition.stop();

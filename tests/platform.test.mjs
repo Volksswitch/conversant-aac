@@ -64,12 +64,30 @@ test('a real Mac is not mistaken for an iPad', async () => {
     assert.equal(p.speechConfig().continuous, true, 'desktop keeps continuous mode');
 });
 
-test('Windows Edge: usable, continuous, no visibility guard', async () => {
+test('Windows Edge: usable and continuous, and it still guards backgrounding', async () => {
     const p = await loadPlatform({ ua: UA.windowsEdge });
     assert.equal(p.isIOS(), false);
     const s = p.speechRecognitionSupport();
     assert.equal(s.usable, true);
-    assert.deepEqual(p.speechConfig(), { continuous: true, restartDelayMs: 0, guardVisibility: false });
+    assert.deepEqual(p.speechConfig(), { continuous: true, restartDelayMs: 0, guardVisibility: true });
+});
+
+test('the visibility guard is on EVERYWHERE - it is not an iOS special case', async () => {
+    // It was iOS-only because iOS was the only platform where backgrounding was known
+    // to stop recognition. Measured on Android August 31 2026: it does there too, and
+    // the recognizer came back 'not-allowed', so the app tore listening down and the
+    // user had to press Listen again mid-conversation. Made universal rather than
+    // given an Android branch - that REMOVES a fork, and it means a platform nobody
+    // has tested yet defaults to the safe answer instead of the one now known to be
+    // wrong on two of the three we have tried.
+    for (const [name, opts] of [
+        ['Windows Edge', { ua: UA.windowsEdge }],
+        ['a real Mac', { ua: UA.mac, touch: false }],
+        ['iPadOS Safari', { ua: UA.iosSafari, touch: true }],
+    ]) {
+        const p = await loadPlatform(opts);
+        assert.equal(p.speechConfig().guardVisibility, true, name + ' must guard backgrounding');
+    }
 });
 
 test('iPad Home Screen app: warned, but the recognizer is still there to try', async () => {

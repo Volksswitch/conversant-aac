@@ -26,6 +26,12 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Listening now survives you switching to another app and coming back. Before this,
+  on some devices the microphone was shut off the moment the app went into the
+  background and did not come back on - so you had to notice and press Listen again
+  in the middle of a conversation. The app now pauses listening deliberately when it
+  is put aside and picks it up again when you return.
+
 
 ## Version 0.8.14
 
