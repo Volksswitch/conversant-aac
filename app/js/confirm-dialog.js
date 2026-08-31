@@ -32,7 +32,10 @@ export function confirmDanger({
 } = {}) {
     return new Promise((resolve) => {
         const dlg = document.createElement('dialog');
-        dlg.className = 'danger-dialog';
+        // `has-preview` widens the card to the Settings content area (see styles.css).
+        // Only a card showing a report earns that width; a one-sentence confirmation
+        // stretched across the panel puts its buttons far from the question.
+        dlg.className = preview ? 'danger-dialog has-preview' : 'danger-dialog';
 
         const head = document.createElement('div');
         head.className = 'danger-head';

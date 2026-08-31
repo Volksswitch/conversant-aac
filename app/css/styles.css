@@ -82,6 +82,11 @@
        only pushes the MAIN content away from it, so it does NOT move the keyguard
        holes. Default 0 = flush (the prior look). JS slider sets it. */
     --dock-sep: 0px;
+    /* The Settings tab column. Declared here rather than on #settingsTabs because the
+       report confirmation card is sized to the CONTENT area beside it, so the two have
+       to agree; a hard-coded 140px in either place would drift silently the first time
+       the column changed and misalign the card with the panel it sits in. */
+    --settings-tabs-w: 140px;
     /* Screen edge margin — the whole app's inset from the physical screen edges,
        dock included, so a keyguard clears a tight case opening. Set by the solver. */
     --app-margin: 0px;
@@ -2143,7 +2148,7 @@ dialog::backdrop {
    screen alike), so the column cannot grow to fit; scrolling is the only answer that
    leaves the geometry alone. */
 #settingsTabs {
-    width: 140px;
+    width: var(--settings-tabs-w);
     background: #f4f5f6;
     border-right: 1px solid #ddd;
     padding-top: 0.75rem;
@@ -3279,6 +3284,35 @@ label.radio-label input[type="radio"] {
    arithmetic, that keep #settingsDialog off it. */
 body.conv-side-right .danger-dialog { right: calc(var(--app-margin) + var(--dock-w) + var(--dock-sep)); }
 body.conv-side-left  .danger-dialog { left:  calc(var(--app-margin) + var(--dock-w) + var(--dock-sep)); }
+/* A CARD CARRYING A REPORT IS AS WIDE AS THE SETTINGS CONTENT AREA (Ken, August 31
+   2026: the Send confirmation "should be as wide as the non-tab portion of the settings
+   panel and be sensitive to the resizing of the app in real-time").
+
+   It spans from the inside edge of the tab column to the panel's outer edge, so the
+   card lines up with the panel it belongs to instead of floating in the middle of it.
+   Every term is a CSS variable the layout already maintains, so it follows a resize on
+   its own - there is no JavaScript in this and nothing to re-run.
+
+   (!) SCOPED TO CARDS THAT CARRY A PREVIEW, not to every confirmation. The width exists
+   to make a long monospace report readable; stretching "Delete this person?" across the
+   whole panel would put its buttons a long way from the sentence they answer and read as
+   a mistake. `has-preview` is set by confirmDanger only when there is a report to show.
+
+   (!) THE PER-DOCK RULES BELOW ARE MORE SPECIFIC THAN `.danger-dialog.has-preview`, so
+   the side-dock cases need their own has-preview rules or the dock edge wins and the
+   card is misplaced on exactly the layout that has least room. */
+.danger-dialog.has-preview {
+    max-width: none;
+    left: calc(var(--app-margin) + var(--settings-tabs-w));   /* the column's 1px border is inside its width */
+    right: var(--app-margin);
+}
+body.conv-side-right .danger-dialog.has-preview {
+    right: calc(var(--app-margin) + var(--dock-w) + var(--dock-sep));
+}
+body.conv-side-left .danger-dialog.has-preview {
+    left: calc(var(--app-margin) + var(--dock-w) + var(--dock-sep) + var(--settings-tabs-w));
+}
+
 body.conv-bottom     .danger-dialog {
     bottom: calc(var(--app-margin) + var(--dock-h) + var(--dock-sep));
     max-height: calc(100dvh - 2 * var(--app-margin) - var(--dock-h) - var(--dock-sep) - 1rem);
