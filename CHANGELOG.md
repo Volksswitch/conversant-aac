@@ -26,6 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+
+## Version 0.8.12
+
 - Fixed the "Reconnect my folder" card appearing at every launch on Android even
   though the folder was connecting perfectly well. The app was giving up waiting
   after six seconds and asking "do I have a folder?" while the answer was still

@@ -21,6 +21,10 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.8.12": [
+    "Fixed the \"Reconnect my folder\" card appearing at every launch on Android even though the folder was connecting perfectly well. The app was giving up waiting after six seconds and asking \"do I have a folder?\" while the answer was still being worked out. It now waits for the answer before deciding.",
+    "On a device set to use the whole screen, going full screen was using up the tap that getting back into your data folder also needed. The folder is asked for first now, because your own data matters more than a full-screen window."
+  ],
   "0.8.11": [
     "If Conversant cannot get back into your data folder, it now says so instead of quietly carrying on as though it had. The message stays on screen with a way forward, rather than disappearing and leaving you to find out later.",
     "A problem report now records whether the app got back into your data folder, and where it stopped if it didn't."
