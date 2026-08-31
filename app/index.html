@@ -68,6 +68,18 @@
                          launch, so it belongs in the user documentation rather than
                          in front of the user forever. Ken, July 30 2026.) -->
                     <div id="whatsNewPanel" hidden></div>
+                    <!-- Shown when a data folder is remembered but the browser has
+                         not let the app back into it yet. The button matters: asking
+                         for permission is only allowed just after a tap, and this
+                         gives it one. Informational — "Not now" carries on without
+                         the folder, exactly as if none had ever been chosen. -->
+                    <div id="folderPrompt" hidden>
+                        <p class="apikey-prompt-title">Let Conversant back into your data folder to load your settings and conversations.</p>
+                        <div class="apikey-prompt-actions">
+                            <button id="folderSkipBtn" type="button" class="apikey-continue">Not now</button>
+                            <button id="folderReconnectBtn" type="button">Reconnect my folder</button>
+                        </div>
+                    </div>
                     <!-- Shown when no API key is set. Informational — the app works
                          without one. -->
                     <div id="apiKeyPrompt" hidden>

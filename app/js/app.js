@@ -513,6 +513,28 @@ function initApp() {
     const startReportBtn = document.getElementById('startReportBtn');
     if (startReportBtn) startReportBtn.addEventListener('click', () => sendProblemReportFromStart());
     document.getElementById('apiKeyContinueBtn').addEventListener('click', finishStart);
+
+    // The click IS the fix: a permission request is only granted while the browser
+    // still counts a tap as recent, and this handler runs directly inside one.
+    // restoreDataFolder is deliberately reused rather than given a second entry
+    // point — the code path that failed is the code path that must now succeed.
+    document.getElementById('folderReconnectBtn').addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        let ok = false;
+        try { ok = await storage.restoreDataFolder(); } catch { ok = false; }
+        if (ok) {
+            try { await adoptDataFolder(); } catch { /* best-effort */ }
+        } else {
+            // Declined, or the folder is genuinely gone. Say so and carry on rather
+            // than trapping them here: the app runs without it, and Settings has
+            // both "Choose folder" and "Forget this folder".
+            try { storage.logError('folder', 'reconnect was not granted'); } catch { /* best-effort */ }
+        }
+        btn.disabled = false;
+        dismissFolderNotice();
+    });
+    document.getElementById('folderSkipBtn').addEventListener('click', dismissFolderNotice);
     ui.onListenClick(whileComposerClosed(toggleListening));
     ui.onRegenerateClick(handleRegenerate);
     ui.onSpeakClick(handleSpeakComposed);
@@ -1085,6 +1107,38 @@ async function handleStart() {
 // is still reported by platform.describe() in a bug report.
 function afterWhatsNew() {
     setStartScreenFooter(true);
+    afterFolderNotice();
+}
+
+// Step 3b — the reconnect notice, shown only when a folder is REMEMBERED but the
+// app has not been let back into it. Its whole purpose is to put a fresh tap behind
+// the permission request: the automatic attempt during start-up happens several
+// steps after the Start tap, and where the browser no longer counts that tap as
+// recent, the request is refused outright (measured on Android, every launch).
+//
+// It comes BEFORE the API-key notice for the same reason the listening notice used
+// to: it is about the app finding the user's own data, and carrying on without it
+// means this session writes to the localStorage cache instead of their folder. An
+// API key can be added at any time afterwards from Settings.
+//
+// Skipped entirely where the folder connected normally, so Windows sees nothing new.
+async function afterFolderNotice() {
+    const prompt = document.getElementById('folderPrompt');
+    let needed = false;
+    try { needed = !storage.hasDataFolder() && await storage.hasRememberedFolder(); }
+    catch { needed = false; }
+    if (!needed || !prompt) return afterListeningNotice();
+    document.getElementById('startBtn').hidden = true;   // the card carries its own controls
+    document.getElementById('whatsNewPanel').hidden = true;
+    prompt.hidden = false;
+}
+
+// Leave the reconnect notice, whichever way it was answered, and carry on down the
+// chain. Never blocks: without the folder the app still runs on its cache, which is
+// what it does for a user who has never chosen one.
+function dismissFolderNotice() {
+    document.getElementById('folderPrompt').hidden = true;
+    document.getElementById('startBtn').hidden = false;
     afterListeningNotice();
 }
 
@@ -1119,6 +1173,7 @@ function afterListeningNotice() {
 function finishStart() {
     document.getElementById('startBtn').hidden = false;   // restore for any later start screen
     document.getElementById('apiKeyPrompt').hidden = true;
+    document.getElementById('folderPrompt').hidden = true;
     document.getElementById('startBlock').classList.add('hidden');
     document.querySelector('main').classList.remove('disabled');
 }
@@ -4288,6 +4343,38 @@ function fillLayoutSelect(select, layouts, selectedId) {
     });
 }
 
+// A folder just became available — either the user picked one, or they let the app
+// back into the one it already remembered. Reconcile every user-owned file against
+// it (adopt the on-disk copy where it exists, promote the localStorage cache where
+// it doesn't — the v0.2.25 rule) and redraw everything that reads from it.
+//
+// Shared rather than inlined at each call site, because the list is long and the
+// cost of an omission is silent: the settings-profile list was left out of the pick
+// handler, so a user who connected their folder from Settings saw NO profiles until
+// they closed the panel and opened it again, and reasonably concluded the profiles
+// had been lost (Ken, Android tablet, August 31 2026).
+async function adoptDataFolder() {
+    try { await worldview.syncToFolder(); } catch { /* best-effort */ }
+    try { await relationships.syncToFolder(); } catch { /* best-effort */ }
+    try { await places.syncToFolder(); } catch { /* best-effort */ }
+    try { await voiceProfile.syncToFolder(); } catch { /* best-effort */ }
+    try { await expressPanel.syncToFolder(); } catch { /* best-effort */ }
+    renderExpressPanel();
+    try { await controlPhrases.syncToFolder(); } catch { /* best-effort */ }
+    try { await placeholderPhrases.syncToFolder(); } catch { /* best-effort */ }
+    applyControlPhrases();
+    updateFolderDisplay();
+    // Both of these read FROM the folder, so both show an empty state until one is
+    // connected — and neither was redrawn when one was. The backup list has the same
+    // fault as the profile list and is fixed in the same place rather than waiting to
+    // be reported separately.
+    //
+    // The panel may not even be open (the reconnect card runs before the conversation
+    // starts), in which case these are cheap no-ops against hidden elements.
+    try { await renderSettingsProfiles(); } catch { /* best-effort */ }
+    try { await renderBackupList(); } catch { /* best-effort */ }
+}
+
 function updateFolderDisplay() {
     const nameEl = document.getElementById('dataFolderName');
     const name = storage.getDataFolderName();
@@ -5139,18 +5226,7 @@ function openSettings() {
     document.getElementById('pickFolderBtn').onclick = async () => {
         try {
             await storage.pickDataFolder();
-            // A folder just became available — reconcile the user-owned data:
-            // adopt an existing on-disk copy, else promote the cache.
-            try { await worldview.syncToFolder(); } catch { /* best-effort */ }
-            try { await relationships.syncToFolder(); } catch { /* best-effort */ }
-            try { await places.syncToFolder(); } catch { /* best-effort */ }
-            try { await voiceProfile.syncToFolder(); } catch { /* best-effort */ }
-            try { await expressPanel.syncToFolder(); } catch { /* best-effort */ }
-            renderExpressPanel();
-            try { await controlPhrases.syncToFolder(); } catch { /* best-effort */ }
-            try { await placeholderPhrases.syncToFolder(); } catch { /* best-effort */ }
-            applyControlPhrases();
-            updateFolderDisplay();
+            await adoptDataFolder();
         } catch (err) {
             if (err.name !== 'AbortError') {
                 ui.setStatus(`Folder error: ${err.message}`);

@@ -127,6 +127,15 @@ async function useDeviceStorage() {
 let permissionPromptOpen = false;
 export function isAwaitingPermission() { return permissionPromptOpen; }
 
+// Is a folder REMEMBERED, whether or not we currently have permission to read it?
+// The two are different questions and the difference is the whole point of the
+// reconnect flow: hasDataFolder() answers "can I write right now", this answers
+// "does the user already have a folder that just needs letting back in".
+export async function hasRememberedFolder() {
+    if (!supportsFolderPicker()) return false;
+    try { return !!(await idbGet(DIR_HANDLE_KEY)); } catch { return false; }
+}
+
 export async function restoreDataFolder() {
     // Desktop: re-acquire the folder the user picked previously. Unchanged.
     if (supportsFolderPicker()) {
@@ -137,7 +146,15 @@ export async function restoreDataFolder() {
             let perm = await stored.queryPermission({ mode: 'readwrite' });
             if (perm !== 'granted') {
                 permissionPromptOpen = true;
+                // Asking for permission is only allowed while the browser still counts
+                // a user tap as recent. This runs several awaits into the Start
+                // sequence, by which time it may not — and then the REQUEST throws.
+                // That is not the folder being gone, so it must not be treated as
+                // such: the caller offers the user a reconnect button, whose click is
+                // a fresh tap, and this same function then succeeds (Ken, Android
+                // tablet and phone, August 31 2026 — every launch).
                 try { perm = await stored.requestPermission({ mode: 'readwrite' }); }
+                catch { perm = 'prompt'; }
                 finally { permissionPromptOpen = false; }
             }
             if (perm === 'granted') {
@@ -145,9 +162,15 @@ export async function restoreDataFolder() {
                 await ensureDataSubfolders();
                 return true;
             }
-        } catch {
-            await idbDelete(DIR_HANDLE_KEY);
-        }
+        } catch { /* fall through — the handle is KEPT; see below */ }
+        // The handle is deliberately NOT deleted on any failure here. It used to be,
+        // and on Android that erased the user's folder on every single launch: the
+        // permission request threw, the catch fired, and the app forgot a folder that
+        // was sitting there intact — so the user had to browse for it again rather
+        // than tap "allow". Forgetting is a one-way loss, a failure to connect is not,
+        // and a folder that is genuinely gone costs only a reconnect card the user can
+        // dismiss. Settings > "Forget this folder" is how a handle is deliberately
+        // dropped, and it should stay the only way.
         return false;
     }
     // No picker (iPad): there is nothing for the user to choose, so adopt device

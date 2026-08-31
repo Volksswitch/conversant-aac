@@ -2401,7 +2401,8 @@ dialog select {
 /* Pre-start "no API key" prompt — a visible card above Start. The status bar is
    hidden (v0.5.2), so this is how the user is told a key is missing. Amber
    "action needed" accent; informational (they can still Start without a key). */
-#apiKeyPrompt {
+#apiKeyPrompt,
+#folderPrompt {
     flex: 0 0 auto;
     max-width: 34rem;
     background: #fff8e6;
@@ -2411,7 +2412,8 @@ dialog select {
     padding: 1rem 1.25rem;
     text-align: center;
 }
-#apiKeyPrompt[hidden] { display: none; }
+#apiKeyPrompt[hidden],
+#folderPrompt[hidden] { display: none; }
 
 /* Shares the API-key notice's card so the pre-start screens look like one thing
    shown two ways, but in red: unlike the other notice this one is not
@@ -2450,11 +2452,13 @@ dialog select {
     justify-content: center;
     flex-wrap: wrap;
 }
-#apiKeyPromptBtn {
+#apiKeyPromptBtn,
+#folderReconnectBtn {
     background: #fff; color: #7a5300; border: 2px solid #d99a00;
     padding: 0.7rem 1.4rem; border-radius: 8px; font-size: 1rem; cursor: pointer;
 }
-#apiKeyPromptBtn:hover { background: #fdeec2; }
+#apiKeyPromptBtn:hover,
+#folderReconnectBtn:hover { background: #fdeec2; }
 /* Continue is the primary action — proceed into the app (the API key is optional). */
 .apikey-continue {
     background: #2c3e50; color: #fff; border: none;
