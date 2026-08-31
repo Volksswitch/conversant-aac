@@ -26,6 +26,14 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Fixed the "Reconnect my folder" card appearing at every launch on Android even
+  though the folder was connecting perfectly well. The app was giving up waiting
+  after six seconds and asking "do I have a folder?" while the answer was still
+  being worked out. It now waits for the answer before deciding.
+- On a device set to use the whole screen, going full screen was using up the tap
+  that getting back into your data folder also needed. The folder is asked for
+  first now, because your own data matters more than a full-screen window.
+
 
 ## Version 0.8.11
 

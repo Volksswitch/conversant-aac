@@ -973,6 +973,12 @@ function handleSttStatus(status, detail) {
 // How long the Start button will wait for storage before going on without it.
 // Generous — this is a stuck-detector, not a performance budget.
 const STORAGE_WARMUP_MS = 6000;
+// How much longer the pre-start chain will wait for a restore that is still running
+// before it concludes there is no folder. Separate from the warm-up deadline above
+// and deliberately so: that one decides when to stop BLOCKING Start, this one decides
+// when it is safe to ANSWER a question about the folder. Conflating them is what put
+// a reconnect card in front of a folder that was in the middle of connecting.
+const FOLDER_ANSWER_GRACE_MS = 8000;
 
 // Resolve `promise`, or give up after `ms` and carry on. Resolves rather than
 // rejects, so callers need no extra error path; a timeout is logged, because a
@@ -1066,15 +1072,22 @@ async function handleStart() {
     // Same reason again, and it must stay ABOVE the first await below: a fullscreen
     // request is only granted while user activation lasts, and the first await in an
     // async handler ends it.
-    requestAppFullscreen();
-    // And once more, for the data folder. Android does not retain folder permission
-    // between launches - measured, INCLUDING as an installed app - so it has to be
-    // asked for at every start; asking here spends the tap the user has just made,
-    // instead of reaching the request too late and needing a card with a button of
-    // its own. Windows keeps its permission, so this is a no-op there. Not awaited:
-    // warmUpStorage picks up the answer, and blocking Start on a dialog would leave
-    // a dead-looking button while the user reads it.
+    // ⚠ THE DATA FOLDER IS ASKED FOR BEFORE FULL SCREEN, AND THE ORDER IS THE POINT.
+    // requestFullscreen CONSUMES the tap - it does not merely need one - so anything
+    // asking afterwards finds the tap already spent. Measured on Ken's Android tablet,
+    // which has full screen ON: the trace read "tap:asking:activation-GONE", while his
+    // phone, with it OFF, was unaffected. Chrome granted the permission anyway, so
+    // this is a latent fault rather than the cause of what he was seeing - but a
+    // browser that enforces it would break the folder to win a cosmetic full screen,
+    // which is the wrong way round. Getting back into the user's own data outranks it.
+    //
+    // Android does not retain folder permission between launches (measured, INCLUDING
+    // as an installed app), so it must be asked for at every start; asking here spends
+    // the tap the user has already made. Windows keeps its permission, so this is a
+    // no-op there. Not awaited: warmUpStorage picks up the answer, and blocking Start
+    // on a dialog would leave a dead-looking button while the user reads it.
     storage.requestFolderPermissionNow();
+    requestAppFullscreen();
     // Check for a newer deployed version when the session starts. If one is
     // found the worker activates and the controllerchange handler in index.html
     // reloads the page; when nothing is new this is a cheap no-op.
@@ -1159,6 +1172,19 @@ function afterWhatsNew() {
 // Skipped entirely where the folder connected normally, so Windows sees nothing new.
 async function afterFolderNotice() {
     const prompt = document.getElementById('folderPrompt');
+    // ⚠ WAIT FOR THE RESTORE BEFORE DECIDING. This is what was actually putting the
+    // card in front of Ken at every launch, and it is not about permission at all:
+    // warmUpStorage is abandoned after STORAGE_WARMUP_MS so a hung storage layer can
+    // never strand anyone on the Start screen, and on Android that deadline is reached
+    // while the folder is still being opened - slow, not hung. The chain then asked
+    // "do we have a folder?", got "not yet", and offered to reconnect one that was
+    // already connecting. His report shows it finishing moments later, behind the card.
+    //
+    // So the deadline is left exactly as it is (it guards a real failure) and only the
+    // QUESTION is deferred: give an in-flight restore a little longer to answer before
+    // concluding there is no folder. Bounded, so a genuinely hung restore still falls
+    // through to the card rather than replacing one stall with another.
+    try { await storage.settleRestore(FOLDER_ANSWER_GRACE_MS); } catch { /* decide anyway */ }
     let needed = false;
     try { needed = !storage.hasDataFolder() && await storage.hasRememberedFolder(); }
     catch { needed = false; }

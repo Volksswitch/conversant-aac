@@ -202,7 +202,37 @@ export function requestFolderPermissionNow() {
     }
 }
 
+// The restore currently running, if any. Exposed so the pre-start chain can wait for
+// an answer instead of asking while it is still being worked out - see settleRestore.
+let restoreInFlight = null;
+
+/*
+ * Wait for a restore that is already running to finish, up to `graceMs`.
+ *
+ * Resolves when the restore settles, or when the grace period runs out, whichever is
+ * first - and NEVER rejects, because every caller is deciding what to show the user
+ * and must be able to carry on regardless. Resolves immediately when nothing is
+ * running, which is the Windows case and the second-Start case.
+ */
+export function settleRestore(graceMs) {
+    if (!restoreInFlight) return Promise.resolve();
+    return Promise.race([
+        restoreInFlight.catch(() => {}),
+        new Promise((res) => setTimeout(res, graceMs)),
+    ]);
+}
+
 export async function restoreDataFolder() {
+    // Track this attempt so settleRestore can wait for it. Wrapping the existing body
+    // rather than restructuring it keeps the one code path the card and the Start tap
+    // share - the path that is known to work - exactly as it is.
+    const attempt = restoreDataFolderInner();
+    restoreInFlight = attempt;
+    try { return await attempt; }
+    finally { if (restoreInFlight === attempt) restoreInFlight = null; }
+}
+
+async function restoreDataFolderInner() {
     // Desktop: re-acquire the folder the user picked previously. Unchanged.
     if (supportsFolderPicker()) {
         let stored = null;
