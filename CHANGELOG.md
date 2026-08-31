@@ -27,6 +27,13 @@ forgetting to tag one is only ever noise, never silence.
 ## Unreleased (next release)
 
 
+## Version 0.8.14
+
+_No user-visible changes. This release adds an internal record of how listening
+behaves when the app is put in the background, so a problem report can say what
+happened._
+
+
 ## Version 0.8.13
 
 - The conversation area no longer turns pink at every launch on a device where
