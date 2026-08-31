@@ -31,16 +31,15 @@ forgetting to tag one is only ever noise, never silence.
   in the conversation, in the saved record, and in what was sent to the AI. Android
   hands the app the whole sentence again each time it hears another word, and the
   app was treating every copy as something new. Fixed.
-
-- The app no longer forgets your data folder. It used to be erased whenever the
-  browser turned down the app's request to open it, which on an Android phone or
-  tablet happened at every launch - so the folder was still sitting there and you
-  had to go and find it again. Now it is remembered, and if the app hasn't been let
-  back in you get a "Reconnect my folder" button on the opening screen. One tap
-  instead of browsing for it. "Not now" carries on without it, as before.
+- The app no longer forgets your data folder. If the browser turned down its request
+  to open the folder, the app treated that as the folder being gone and erased it -
+  so the folder was still sitting there and you had to go and find it again. Now it
+  is remembered, and if the app hasn't been let back in you get a "Reconnect my
+  folder" button on the opening screen: one tap instead of browsing for it. "Not now"
+  carries on without it, as before.
 - Connecting a data folder from Settings now shows your saved settings profiles and
-  backups straight away. They were there all along, but the lists didn't redraw
-  until you closed Settings and opened it again, which made it look as though the
+  backups straight away. They were there all along, but the two lists didn't redraw
+  until you closed Settings and opened it again, which made it look as though your
   profiles had been lost.
 
 
