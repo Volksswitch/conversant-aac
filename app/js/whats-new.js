@@ -16,14 +16,26 @@
  */
 
 import * as storage from './storage.js';
+import * as platform from './platform.js';
 
 // Clinician/user-facing "What's new" notes, keyed by app version string
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
   "0.9.0": [
-    "Android phones and tablets are now supported. The app recognizes the device it is running on, so a problem report says \"Android\" instead of \"desktop\".",
-    "On Android, hearing the other person needs the paid transcription service. The built-in listening still works if you want to try the app first, but it drops words and the device plays a tone of its own each time it restarts. Once a Deepgram key is saved, Android uses it for listening automatically."
+    "Android phones and tablets are now supported.",
+    {
+      "for": "android",
+      "note": "Welcome. The app now recognizes the device it is running on, so a problem report says \"Android\" instead of \"desktop\"."
+    },
+    {
+      "for": "android",
+      "note": "Hearing the other person needs the paid transcription service. The built-in listening still works if you want to try the app first, but it drops words and the device plays a tone of its own each time it restarts. Once a Deepgram key is saved, it is used for listening automatically."
+    },
+    {
+      "for": "android",
+      "note": "Your browser will ask permission to open your data folder every time you start the app. That is the device asking, not the app losing your folder."
+    }
   ],
   "0.8.15": [
     "Less of the first word is lost when the other person starts speaking, on the paid transcription service. The app holds back a moment of sound and sends it once it is sure someone is talking; it now keeps three times as much, so a sentence that starts quietly is not clipped.",
@@ -484,14 +496,19 @@ export function compareVersions(a, b) {
 // plain line rather than silently dropping them — the user should know the
 // update was not empty for other people. Never in engine words: the reader is a
 // user or a supporter, and "WebKit" means nothing to them.
-export const PLATFORMS = { IPAD: 'ipad', COMPUTER: 'computer' };
+export const PLATFORMS = { IPAD: 'ipad', COMPUTER: 'computer', ANDROID: 'android' };
 
+// One line naming the OTHER kinds of device, so nobody is left thinking an update was
+// empty. Written per platform rather than assembled from a list, because "a Windows
+// tablet, Chromebook or Mac" is how a person says it and no amount of joining
+// produces that. With three platforms each line names the two it is not.
 const OTHER_PLATFORM_NOTE = {
-    // Shown to a computer user when the range held iPad-only notes.
-    computer: 'There were also improvements for people using Conversant AAC on an iPad.',
-    // Shown to an iPad user when the range held computer-only notes.
+    computer: 'There were also improvements for people using Conversant AAC on an iPad, '
+        + 'or on an Android phone or tablet.',
     ipad: 'There were also improvements for people using Conversant AAC on a Windows '
-        + 'tablet, Chromebook or Mac.',
+        + 'tablet, Chromebook or Mac, or on an Android phone or tablet.',
+    android: 'There were also improvements for people using Conversant AAC on a Windows '
+        + 'tablet, Chromebook or Mac, or on an iPad.',
 };
 
 const noteText = (n) => (typeof n === 'string' ? n : (n && n.note) || '');
@@ -543,6 +560,16 @@ export function collectWhatsNew(sinceVersion, currentVersion, platform) {
 // see the iPad notes, which is the better of the two wrong answers — a Mac
 // without a folder picker has more in common with an iPad than with Chrome.
 export function currentPlatform() {
+    // ⚠ ANDROID IS ASKED FIRST, and it is the one case that must NOT be decided by the
+    // folder picker: Android HAS one, so the capability test below would file it as a
+    // computer - which is how Android users were reading notes about "your computer"
+    // until Android became a supported platform (August 31 2026).
+    //
+    // This is the deliberate exception to the capability-not-user-agent rule stated
+    // below, and it is safe for the reason that rule exists: that rule guards against
+    // iPadOS Safari, which lies about being a Mac. Android does not lie - it says
+    // "Android" - so there is nothing here to get backwards.
+    if (platform.isAndroid()) return PLATFORMS.ANDROID;
     return storage.supportsUserChosenFolder() ? PLATFORMS.COMPUTER : PLATFORMS.IPAD;
 }
 

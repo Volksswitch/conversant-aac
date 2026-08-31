@@ -71,6 +71,11 @@ const clean = (s) => s
 // subheading at all) means everyone.
 function scopeOf(headingText) {
   const h = headingText.toLowerCase();
+  // ⚠ ANDROID IS TESTED FIRST, and the order is load-bearing: "On an Android phone
+  // or tablet" contains "tablet", and a Windows tablet is the computer side - so a
+  // computer-first test would claim every Android heading. Android is the most
+  // specific word here, so it gets the first look.
+  if (/\bandroid\b/.test(h)) return 'android';
   if (/\bipad\b/.test(h)) return 'ipad';
   if (/\bcomputers?\b|\bwindows\b|\bchromebook\b|\bmacs?\b|\blaptop\b/.test(h)) return 'computer';
   return 'all';

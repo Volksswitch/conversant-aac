@@ -111,3 +111,47 @@ test('currentPlatform keys off the folder picker, not the user agent', () => {
         if (saved) globalThis.window.showDirectoryPicker = saved;
     }
 });
+
+/* ── Android as a third scope (Ken, August 31 2026) ───────────────────────────────
+ *
+ * Android became a supported platform in 0.9.0. Before the scope existed, Android
+ * users were classified by the folder-picker capability - and Android HAS a picker,
+ * so they were filed as computer users and read notes about "your computer".
+ */
+
+test('a note scoped to Android reaches Android and nobody else', () => {
+    const android = whatsNew.collectWhatsNew('0.8.16', '0.9.0', whatsNew.PLATFORMS.ANDROID);
+    const computer = whatsNew.collectWhatsNew('0.8.16', '0.9.0', whatsNew.PLATFORMS.COMPUTER);
+    const ipad = whatsNew.collectWhatsNew('0.8.16', '0.9.0', whatsNew.PLATFORMS.IPAD);
+
+    const mentionsTranscription = (ns) => ns.some((n) => /paid transcription service/.test(n));
+    assert.ok(mentionsTranscription(android), 'the Android reader must get the Android notes');
+    assert.ok(!mentionsTranscription(computer), 'a computer user must not');
+    assert.ok(!mentionsTranscription(ipad), 'nor an iPad user');
+
+    // Nothing is HIDDEN, only scoped: the other two are still told the update was not
+    // empty for someone. Noise is the acceptable failure here; silence is not.
+    for (const [name, ns] of [['computer', computer], ['ipad', ipad]]) {
+        assert.ok(ns.some((n) => /There were also improvements/.test(n)),
+            name + ' must still be told the other platforms had improvements');
+    }
+});
+
+test('every platform has its own "other platforms" line, naming the two it is not', () => {
+    // A missing entry would leave a reader with `undefined` in their notes, which is
+    // the kind of thing that only shows up in front of a user.
+    for (const p of Object.values(whatsNew.PLATFORMS)) {
+        const notes = whatsNew.collectWhatsNew('0.8.16', '0.9.0', p);
+        assert.ok(notes.every((n) => typeof n === 'string' && n.length > 0),
+            p + ' produced an empty or undefined note');
+    }
+});
+
+test('asking for every note, with no platform, still returns them all', () => {
+    // The generator's own checks and any "was there anything at all" caller rely on
+    // this, and adding a third scope must not narrow it.
+    const all = whatsNew.collectWhatsNew('0.8.16', '0.9.0');
+    assert.ok(all.some((n) => /paid transcription service/.test(n)));
+    assert.ok(!all.some((n) => /There were also improvements/.test(n)),
+        'the other-platform line belongs to a scoped reader, not to the full list');
+});

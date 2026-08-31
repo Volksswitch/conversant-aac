@@ -29,12 +29,18 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Version 0.9.0
 
-- Android phones and tablets are now supported. The app recognizes the device it is
-  running on, so a problem report says "Android" instead of "desktop".
-- On Android, hearing the other person needs the paid transcription service. The
-  built-in listening still works if you want to try the app first, but it drops words
-  and the device plays a tone of its own each time it restarts. Once a Deepgram key is
-  saved, Android uses it for listening automatically.
+- Android phones and tablets are now supported.
+
+### On an Android phone or tablet
+
+- Welcome. The app now recognizes the device it is running on, so a problem report
+  says "Android" instead of "desktop".
+- Hearing the other person needs the paid transcription service. The built-in
+  listening still works if you want to try the app first, but it drops words and the
+  device plays a tone of its own each time it restarts. Once a Deepgram key is saved,
+  it is used for listening automatically.
+- Your browser will ask permission to open your data folder every time you start the
+  app. That is the device asking, not the app losing your folder.
 
 
 ## Version 0.8.15
