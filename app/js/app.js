@@ -984,31 +984,64 @@ const FOLDER_ANSWER_GRACE_MS = 8000;
 // rejects, so callers need no extra error path; a timeout is logged, because a
 // storage layer that stops answering is worth knowing about even though the app
 // survives it.
+/*
+ * Stop waiting for `promise` after `ms` so the caller can carry on — and report a
+ * fault ONLY if the work never finishes at all.
+ *
+ * ⚠ THE TWO ARE SEPARATE, AND CONFLATING THEM PUT A RED WASH ON THE TRANSCRIPT AT
+ * EVERY LAUNCH. The deadline exists to stop BLOCKING Start; reaching it says the
+ * work is SLOW, which is not the same as saying it is BROKEN. On Android, opening a
+ * real data folder simply takes longer than the deadline, so every launch logged a
+ * failure and painted the transcript with the app's error signal while the folder
+ * connected perfectly well moments later (Ken, August 31 2026 - the trace on the
+ * same launch reads "connected").
+ *
+ * A false alarm on that signal is worse than no signal: it is meant to tell the user
+ * and their partner "expect a hiccup", and one that fires on every healthy start
+ * teaches them to ignore the one time it matters.
+ *
+ * So: the deadline resolves QUIETLY, and a separate, much longer watch reports the
+ * genuine case - work that has still not answered long afterwards.
+ */
+const HANG_FACTOR = 5;      // how much longer than the deadline counts as a real hang
+
 async function withTimeout(promise, ms, label) {
-    let timer = null;
-    let settled = false;
-    // CANCEL the timer when the work finishes. Promise.race does not cancel the
-    // loser, so a bare setTimeout here fires — and logs — even when the promise
-    // won the race milliseconds in. That is what put a "did not finish" line in
-    // the log at every single session start while nothing was actually wrong.
+    let deadlineTimer = null;
+    let hangTimer = null;
+    // ⚠ Whether the WORK finished, tracked separately from whether the RACE settled.
+    // The race settles at the deadline, so a flag set in its `finally` would mark the
+    // work "done" the moment we stopped waiting for it - and silence the hang watch
+    // in exactly the case it exists for.
+    let workDone = false;
+    const done = () => { workDone = true; if (hangTimer !== null) clearTimeout(hangTimer); };
+    Promise.resolve(promise).then(done, done);
+
+    const hangMs = ms * HANG_FACTOR;
+    const watchForHang = () => {
+        if (workDone) return;
+        // A folder-permission dialog on screen is not a hang: the storage layer is
+        // waiting on the USER, who may take as long as they like.
+        if (storage.isAwaitingPermission()) { hangTimer = setTimeout(watchForHang, hangMs); return; }
+        try { storage.logError('timeout', `${label} had still not finished after ${hangMs}ms`); } catch { /* best-effort */ }
+    };
+    hangTimer = setTimeout(watchForHang, hangMs);
+
+    let raceSettled = false;
     const deadline = new Promise((resolve) => {
         const check = () => {
-            if (settled) return;
-            // A folder-permission dialog on screen is not a hang either: the
-            // storage layer is waiting on the USER, who may take as long as they
-            // like. Giving up here would log an error for normal behaviour AND
-            // abandon the folder they are in the middle of granting. Wait it out.
-            if (storage.isAwaitingPermission()) { timer = setTimeout(check, ms); return; }
-            try { storage.logError('timeout', `${label} did not finish within ${ms}ms - continuing without it`); } catch { /* best-effort */ }
-            resolve(null);
+            if (raceSettled || workDone) return;
+            if (storage.isAwaitingPermission()) { deadlineTimer = setTimeout(check, ms); return; }
+            resolve(null);      // carry on WITHOUT logging - slow is not broken
         };
-        timer = setTimeout(check, ms);
+        deadlineTimer = setTimeout(check, ms);
     });
     try {
         return await Promise.race([promise, deadline]);
     } finally {
-        settled = true;
-        if (timer !== null) clearTimeout(timer);
+        raceSettled = true;
+        if (deadlineTimer !== null) clearTimeout(deadlineTimer);
+        // hangTimer is deliberately NOT cleared here: the work may still be running,
+        // and it is the only thing left watching it.
     }
 }
 

@@ -26,6 +26,12 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- The conversation area no longer turns pink at every launch on a device where
+  opening your data folder takes a while. The app treats a slow start as a fault and
+  showed its "something went wrong" tint, when nothing had gone wrong at all - the
+  folder was simply still opening, and finished a moment later. It now says nothing
+  unless the folder genuinely never opens.
+
 
 ## Version 0.8.12
 
