@@ -281,8 +281,18 @@ def s10_notes(doc):
             ital = rPr is not None and rPr.find(W + 'i') is not None
             col = rPr.find(W + 'color') if rPr is not None else None
             runs.append((bold, ital, col.get(W + 'val') if col is not None else 'auto'))
+        # ⚠ COLLAPSE ADJACENT RUNS THAT LOOK THE SAME BEFORE COMPARING. The rule is about
+        # what the reader SEES, and a run boundary is invisible - Word puts them in on its
+        # own account (a proofing or language boundary), so the same note comes back as
+        # three runs after any save through Word rather than two. Comparing the raw list
+        # made this rule fire on two notes that had not changed at all, the first time a
+        # manual went through Word to refresh its contents listing (August 30 2026).
+        looks = []
+        for r in runs:
+            if not looks or looks[-1] != r:
+                looks.append(r)
         want = [(True, False, 'auto'), (False, True, 'auto')]
-        if runs != want:
+        if looks != want:
             out.append(F('%s does not use the house format (bold black label, italic '
                          'black body)' % label, p.i, snip(p.text)))
     return out
