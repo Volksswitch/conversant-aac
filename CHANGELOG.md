@@ -40,77 +40,48 @@ forgetting to tag one is only ever noise, never silence.
   transcription service. The app holds back a moment of sound and sends it once it is
   sure someone is talking; it now keeps three times as much, so a sentence that starts
   quietly is not clipped.
-- Listening now survives you switching to another app and coming back. Before this,
-  on some devices the microphone was shut off the moment the app went into the
-  background and did not come back on - so you had to notice and press Listen again
-  in the middle of a conversation. The app now pauses listening deliberately when it
-  is put aside and picks it up again when you return.
+- Listening now survives you switching to another app and coming back. On some devices
+  the microphone was shut off the moment the app went into the background and did not
+  come back on, so you had to notice and press Listen again in the middle of a
+  conversation. The app now pauses listening deliberately when it is put aside and
+  picks it up again when you return.
 
 
 ## Version 0.8.14
 
-_No user-visible changes. This release adds an internal record of how listening
-behaves when the app is put in the background, so a problem report can say what
-happened._
-
 
 ## Version 0.8.13
 
-- The conversation area no longer turns pink at every launch on a device where
-  opening your data folder takes a while. The app treats a slow start as a fault and
-  showed its "something went wrong" tint, when nothing had gone wrong at all - the
-  folder was simply still opening, and finished a moment later. It now says nothing
-  unless the folder genuinely never opens.
+- The conversation area no longer turns pink when opening your data folder takes a
+  while. The tint means "something went wrong", and a slow folder is not something
+  going wrong - it finishes a moment later. The app now says nothing unless the folder
+  genuinely never opens.
 
 
 ## Version 0.8.12
 
-- Fixed the "Reconnect my folder" card appearing at every launch on Android even
-  though the folder was connecting perfectly well. The app was giving up waiting
-  after six seconds and asking "do I have a folder?" while the answer was still
-  being worked out. It now waits for the answer before deciding.
-- On a device set to use the whole screen, going full screen was using up the tap
-  that getting back into your data folder also needed. The folder is asked for
-  first now, because your own data matters more than a full-screen window.
-
 
 ## Version 0.8.11
-
-- If Conversant cannot get back into your data folder, it now says so instead of
-  quietly carrying on as though it had. The message stays on screen with a way
-  forward, rather than disappearing and leaving you to find out later.
-- A problem report now records whether the app got back into your data folder, and
-  where it stopped if it didn't.
 
 
 ## Version 0.8.10
 
-- Getting back into your data folder is now one tap on "Start", with no extra card in
-  the way. Some devices - Android in particular - ask permission every single time the
-  app is opened, so the app now asks as part of the Start you already pressed. The
-  "Reconnect my folder" card is still there if that doesn't work.
-- The app now asks your browser to promise not to erase its stored settings, every
-  time it starts, instead of only when you found a button in Settings. The browser
-  answers silently, so there is nothing to do and nothing to see.
-
 
 ## Version 0.8.9
 
-- On an Android phone or tablet, what the other person said was written down as a
-  stutter - "this this is this is a this is a test" instead of "this is a test" -
-  in the conversation, in the saved record, and in what was sent to the AI. Android
-  hands the app the whole sentence again each time it hears another word, and the
-  app was treating every copy as something new. Fixed.
-- The app no longer forgets your data folder. If the browser turned down its request
-  to open the folder, the app treated that as the folder being gone and erased it -
-  so the folder was still sitting there and you had to go and find it again. Now it
-  is remembered, and if the app hasn't been let back in you get a "Reconnect my
-  folder" button on the opening screen: one tap instead of browsing for it. "Not now"
-  carries on without it, as before.
+- The app no longer forgets your data folder. If your browser turned down its request
+  to open the folder, the app treated that as the folder being gone and erased it - so
+  the folder was still sitting there and you had to go and find it again. It is now
+  remembered, and getting back into it is part of pressing "Start". Some devices ask
+  your permission every time the app opens; that is the device asking, not the app
+  losing your folder.
 - Connecting a data folder from Settings now shows your saved settings profiles and
   backups straight away. They were there all along, but the two lists didn't redraw
   until you closed Settings and opened it again, which made it look as though your
   profiles had been lost.
+- The app asks your browser to promise not to erase its stored settings, every time it
+  starts, instead of only when you found a button in Settings. The browser answers
+  silently, so there is nothing to do and nothing to see.
 
 
 ## Version 0.8.8
