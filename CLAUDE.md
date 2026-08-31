@@ -89,7 +89,7 @@ Literate, non-speaking individual with cerebral palsy (CP), 16+, using **direct 
 
 **Platform:** Static web app served from GitHub Pages (or similar). User points browser at a URL. App runs entirely in-browser. No backend server.
 
-**Target hardware:** The File System Access API (FSA) is not supported on iOS or Android, and Apple does not make a tablet-class Mac. Therefore the device must be a Windows tablet running Microsoft Edge or Google Chrome. The Microsoft Surface is the primary candidate.
+**Target hardware:** A Windows tablet running Microsoft Edge or Google Chrome; the Microsoft Surface is the primary candidate. **⚠ THE ORIGINAL REASONING FOR "WINDOWS ONLY" IS NOW HALF WRONG, AND THE HALF THAT IS WRONG WAS NEVER MEASURED.** It read: *"The File System Access API (FSA) is not supported on iOS or Android, and Apple does not make a tablet-class Mac. Therefore the device must be a Windows tablet."* The iOS half stands. **The Android half is FALSE — measured on Ken's own Android tablet and phone, August 31 2026: Chrome offers a real folder picker and the app connects to a real, user-visible folder** (see the Android section below). So the storage leg of the argument does not apply to Android at all, and Android was excluded on a fact nobody had checked. **This is NOT a decision to support Android — that is Ken's call and he has not made it.** It is a note that the recorded reason for excluding it does not hold, so anyone re-opening the question should start from what has actually been measured rather than from this paragraph's original claim. *(Same shape as the iPad probe's finding that half the published claims about iOS were out of date. The lesson keeps repeating: a platform excluded on a remembered fact deserves ten minutes with the device before the exclusion is treated as settled.)*
 
 > **iPad viability — the "browser DB" path (Ken asked June 9 2026; recorded, NOT a decision to switch).** The "must be Windows" rationale is over-attributed to FSA alone. The blocker is specifically FSA's **directory picker** (`showDirectoryPicker()` — pick a real, user-visible folder), which iOS will not support (all iOS browsers are forced onto WebKit, so Chrome/Edge on iPad can't add it either). But the app's *data* could live on an iPad two other ways that iOS **does** support: **IndexedDB** (a real in-browser database — the app already uses it to stash the FSA folder handle) and **OPFS** (Origin Private File System — confusingly *part of* the FSA spec and supported on iOS Safari 16+, but it's the app-**sandboxed** private filesystem, NOT the user-picked folder). So iPad storage is technically viable by swapping the `storage.js` layer off the user-folder and onto IndexedDB/OPFS. **Two real costs, why it's not a free win:** (1) it forfeits exactly what the FSA folder was chosen to give — a **user-visible, portable file** they can back up and copy between machines; the v0.2.25 "drop `worldview.json` into the folder" cross-PC flow evaporates and cross-device transfer becomes a deliberate **export/import** feature; and (2) **durability** — iOS aggressively evicts script-writable storage (historically a ~7-day cap for non-installed sites, plus eviction under storage pressure), so it would **require** PWA install (Add to Home Screen) + `navigator.storage.persist()`, and even then persistence is best-effort. **[SUPERSEDED July 29 2026 — this durability pessimism is out of date.** Safari 17+ supports the Storage API fully, and WebKit's eviction sweep **skips origins that have been granted `navigator.storage.persist()`** — so a granted persist() is an actual exemption, not best-effort, and a Home Screen install may not be *required* for durability. That matters because of a newly-found pincer: speech recognition is reported **not to work in a standalone Home Screen app**, so "install for durability" and "stay in a tab for speech" may be mutually exclusive. See `Conversant AAC iPad Architecture.docx` §3.4 and §7.1; the probe settles it.**]** **The bigger iPad blocker is NOT storage — it's speech-to-text, and it WILL NOT work as expected on iOS.** The core loop depends on the Web Speech API (`SpeechRecognition`), whose iOS Safari support has been historically absent-to-flaky; that, not storage, is the load-bearing risk with no clean fallback (TTS/`speechSynthesis` is fine on iOS — only *recognition* is the problem). **A related fact that surfaced July 9 2026:** browser `SpeechRecognition` is **cloud-based, not on-device** — Chrome ships the audio to Google, Edge to Microsoft — so it needs a live internet connection *regardless of platform* (with no internet it can't transcribe at all; the app now trips the transcript red-wash on that STT `network` error). This compounds the iOS problem: even where the Web Speech API nominally exists on iOS it's unreliable, and it's a network service either way, so partner-speech capture cannot be assumed to work on an iPad. **Bottom line:** browser DB removes the *storage* leg of the Windows-only decision; the **STT leg remains** and must be prototyped on current iPadOS Safari before any iPad bet.
 
@@ -1112,6 +1112,89 @@ Ken asked for an architecture document for running Conversant AAC on an iPad —
 **The probe source survives at [`ipad-probe.html`](ipad-probe.html) in this repo** (committed `f9c5dc5`; verified byte-identical to the deployed copy, SHA-256 `78AB1F94…`, before deletion). Re-hosting it is a copy-to-a-new-Pages-repo away if a later iPadOS release needs re-testing — which the 50% research-error-rate finding above suggests is worth doing rather than trusting the record.
 
 ---
+
+## Android — MEASURED, August 31 2026; a supported platform is Ken's call, not made
+
+Ken installed the app on an Android phone and an Android tablet. **Everything works
+except the one thing recorded below, which is fixed.** Nothing here is inferred from
+documentation; it is what the devices did. Where this contradicts an older note in
+this file, this is the newer fact.
+
+**THE HEADLINE, because it overturns a founding assumption: Chrome on Android gives
+the app a REAL, user-visible folder.** The folder picker exists and works. On the
+phone it offers internal storage, where the user can make their own folder beside
+Download and the rest; on the tablet it offers internal storage **and Google Drive**.
+So Android is not the iPad case at all - the portable-file model the whole storage
+design rests on works there. **The Google Drive option needs a plain warning in the
+setup instructions**, for the same reason OneDrive does on Windows: that folder holds
+transcripts of real conversations, and choosing Drive copies every one of them to
+Google. It is easier to do by accident here, because it is offered in the picker.
+
+**Permission is not retained across launches.** Windows remembers it; Android asks
+every time. That is normal for the platform and should be documented as a step rather
+than left to surprise a tester - but it is what exposed the bug below.
+
+**⚠ THE BUG, AND ITS LESSON IS THE PART TO KEEP: `restoreDataFolder` DELETED THE
+USER'S FOLDER whenever it failed for ANY reason.** Asking for permission is only
+allowed while the browser still counts a tap as recent; the reconnect runs several
+awaits into the Start sequence, so on Android the request was refused outright, it
+threw, and the catch erased a folder that was sitting there intact. **Windows never
+reached that line, because the permission is retained there** - so a fault that had
+been in the code for a year first appeared the moment a platform took the other
+branch.
+
+- **The general rule: a catch that covers ANY failure will eventually cover a failure
+  you did not mean, and the wider the recovery, the worse that is.** Here the recovery
+  was destructive and the trigger was routine. **Where the recovery destroys something,
+  the catch must name the failure it is for.**
+- **And the asymmetry that decides the fix: forgetting is a one-way loss, failing to
+  connect is not.** The handle is now KEPT on any failure; `clearDataFolder` (Settings
+  > "Forget this folder") stays the only thing that drops it. Where the app has not
+  been let back in, a **"Reconnect my folder"** card in the pre-start chain supplies
+  the fresh tap the request needs. It never appears where the folder connected
+  normally, so Windows and the iPad see nothing new.
+- **A second, unrelated omission surfaced beside it:** connecting a folder reconciled
+  seven data stores and did not redraw the **settings-profile list** or the **backup
+  list**, both of which read from the folder - so the profiles looked lost until
+  Settings was closed and reopened. Both now go through one shared post-connect
+  function, because the failure of an eight-item list is always the item somebody
+  forgot.
+
+**Speech recognition WORKS, but the recognizer RE-SENDS the whole utterance.** One
+sentence arrives as a ladder of growing prefixes, so filing each rung as its own
+statement wrote *"this this is this is a this is a test"* into the partner's turn, the
+saved conversation, and the text sent to the AI. **Fixed in `stt.js`: settled text that
+begins with the statement already recorded replaces it rather than being appended.**
+Written as an unconditional rule rather than an Android branch - a well-behaved
+recognizer sends only the new words, so it is a no-op on Windows and the iPad. That
+follows the standing rule recorded for iOS: platform behavior goes behind something
+that is a no-op elsewhere, never a fork.
+
+**⚠ ANDROID IS CLASSIFIED AS A DESKTOP, and that is the thing to check first when
+something else turns out to be wrong there.** `platform.js` tests for an Apple device,
+so Android falls through to the Windows answers - which is mostly right and is why so
+much works untouched. Three consequences, only the first of which is settled:
+- **Speech settings**: Android gets the Windows values. This is where the duplication
+  above lived.
+- **Backgrounding is NOT guarded. UNTESTED, and the likeliest next fault.** The iPad
+  has a guard because recognition silently stops when the page is backgrounded and the
+  app would otherwise sit with the microphone lit hearing nothing. **A phone is
+  backgrounded constantly**, so if that behavior is shared, Android needs the guard
+  more than the iPad does.
+- **The full-screen setting is offered** on Android and hidden on the iPad. Probably
+  right, and nobody has tried it.
+
+**Persistent storage is not granted, and nothing had ever asked.** `persisted: false`
+is a true reading, not a misclassification - the only thing that requests it is the
+button in Settings. **It matters less on Android than the number suggests**, because
+the real data is in a folder on disk, outside anything the browser sweeps; what sits
+in evictable storage is the app's memory of WHICH folder, and the settings. So pressing
+that button protects the pointer and the preferences, not the conversations.
+
+**Not yet done, if Android becomes supported:** `platform.js` does not know the word
+Android, so a bug report from one says "desktop" and tells us nothing about the
+device; the release notes have no Android scope, so an Android-only note either goes
+to everyone or not at all; and the two User Manuals cover Windows and iPad only.
 
 ## Platform naming, the paid-service journey, and document structure (Ken, August 1 2026)
 
