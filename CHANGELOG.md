@@ -27,9 +27,11 @@ forgetting to tag one is only ever noise, never silence.
 ## Unreleased (next release)
 
 - The command bar buttons can now show a short word instead of a picture. Settings
-  &rarr; Controls &rarr; "What the command buttons show" switches between the two, and the
-  buttons stay exactly the same size and in exactly the same places either way, so a
-  keyguard still fits.
+  &rarr; Commands &rarr; "What the command buttons show" switches between the two, and
+  the buttons stay exactly the same size and in exactly the same places either way, so
+  a keyguard still fits.
+- The Settings tab that used to be called "Controls" is now called "Commands". It has
+  everything the command bar buttons say, so its new name says where to look.
 
 
 ## Version 0.8.5

@@ -2562,7 +2562,7 @@ async function handlePardon() {
     updatePartnerLive(kept);
     clearPalette();
     // One of the user's own "ask them to repeat" phrases, never the same one twice
-    // running (Settings → Controls).
+    // running (Settings → Commands).
     const text = controlPhrases.pickPhrase('pardon');
     ui.setStatus('Speaking...');
     await speakUserStatement(text);
@@ -4075,7 +4075,7 @@ function handleSettingsTab(tabName) {
         return;
     }
     keyboard.setHideOnBlur(false);
-    if (tabName === 'controls') { controlEditor.render(); keyboard.hideKeyboard(); return; }
+    if (tabName === 'commands') { controlEditor.render(); keyboard.hideKeyboard(); return; }
     if (tabName === 'placeholders') { placeholderEditor.render(); return; }
     if (tabName === 'practice') { renderPracticePanel(); keyboard.hideKeyboard(); return; }
     // Rendered on open rather than at Settings-open: reading every conversation log

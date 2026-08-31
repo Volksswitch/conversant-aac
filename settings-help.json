@@ -40,7 +40,7 @@
     "conversation": "How the app listens, how many responses it offers you, and what it says while you are choosing.",
     "practice": "Practice a conversation with the AI playing the other person. You do not need a microphone.",
     "express": "Change the buttons on the Express Panel: the phrases you speak, the people you talk to, and how you are feeling.",
-    "controls": "Change the words spoken by the command buttons, and your conversation starters and goodbyes.",
+    "commands": "Change the words spoken by the command buttons, and your conversation starters and goodbyes.",
     "keyguard": "Spacing settings for fitting a physical keyguard, and a file listing where every button sits.",
     "about": "Which version you are running, what you have spent, and a way to restart the app.",
     "troubleshooting": "Tell us when something goes wrong, and read back what the app has recorded about how it is working.",
