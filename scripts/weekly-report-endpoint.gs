@@ -62,12 +62,25 @@ var PROBLEMS_SHEET_NAME = 'problems';  // one row per 'Report a problem' the tes
  * It also covers PROBLEM reports, which mail on arrival regardless of the threshold -
  * those are a tester deliberately writing to us, so there is no volume to filter.
  *
- * The threshold is 1 rather than 5 deliberately. Five was a volume filter written
- * when nobody was reading the Sheet; with a handful of testers the interesting event
- * is a KIND of error appearing for the first time, and that arrives as a one. The
- * cost of being wrong is an email. */
+ * (!) WEEKLY-REPORT ERRORS DO NOT MAIL (Ken, August 31 2026). They are things the app
+ * noticed about ITSELF, with nobody involved and usually nothing the user saw - a
+ * failed AI request, a slow start, a storage call that gave up. Ken: "I would not want
+ * to be notified about errors that show up in a weekly report. They weren't noticed by
+ * the user. They will be caught when we do a weekly review."
+ *
+ * That is the right split, because the two channels answer different questions. A
+ * PROBLEM REPORT is a person choosing to write to us, so it is addressed to Ken and
+ * arrives whenever they send it. An ERROR is a measurement, and a measurement belongs
+ * in the review where it can be read against everything else - on its own in an inbox
+ * it demands attention it cannot reward, which is exactly what the two mails on the
+ * morning of August 31 did: both were week-old backlogs from devices that had just
+ * been switched on.
+ *
+ * NOTHING IS LOST BY THIS. Every error still travels in the weekly report, is still
+ * written to the Sheet, and is still read by "evaluate beta" - only the notification
+ * stops. Set the switch back to true if the weekly review ever lapses. */
 var ALERT_EMAIL = 'ken@volksswitch.org';
-var ALERT_ERROR_THRESHOLD = 1;
+var ALERT_ON_WEEKLY_ERRORS = false;
 
 function doPost(e) {
   try {
@@ -163,7 +176,7 @@ function doPost(e) {
 
     _writeWeeks(p);
 
-    if (ALERT_EMAIL && errors.length >= ALERT_ERROR_THRESHOLD) {
+    if (ALERT_EMAIL && ALERT_ON_WEEKLY_ERRORS && errors.length) {
       MailApp.sendEmail(ALERT_EMAIL,
         // The subject carries the two things worth knowing without opening anything:
         // who, and what kind. Since 0.7.11 these are only the errors NEW since that
@@ -241,7 +254,7 @@ function _writeWeeks(p) {
  * Visiting the /exec URL in a browser now prints this, so a redeploy is confirmable in
  * two seconds with nothing written. The correct redeploy is:
  *   Deploy > Manage deployments > pencil > Version: New version > Deploy   (same URL) */
-var SCRIPT_VERSION = '2026-08-22a';
+var SCRIPT_VERSION = '2026-08-31a';
 
 // A GET is handy for confirming the deployment is live, and WHICH CODE is live.
 function doGet() {
