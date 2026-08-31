@@ -8,7 +8,13 @@
  *   2. Personalized learning — the user's own word frequency, persisted locally
  *      (localStorage), boosted ahead of the dictionary so their vocabulary and
  *      recent words surface first and improve over time. No network, no privacy
- *      cost. (A next-word n-gram layer is the recorded future extension.)
+ *      cost.
+ *
+ * NEXT-WORD prediction is deliberately NOT here (decided August 30 2026, see
+ * CLAUDE.md "Word prediction — local tiers"). The guessing would be easy; the
+ * problem is that at a word boundary there is no remainder to shade in and no
+ * spare keystroke to accept a guess with, so it would need on-keyboard buttons
+ * whose meaning changes every keypress — to save one letter. Do not add it.
  *
  * predict(prefix) returns up to `limit` lowercase words; the caller (keyboard)
  * matches the typed prefix's capitalization when inserting.
