@@ -826,6 +826,27 @@ export function saveCardTextMode(mode) {
     saveSettings(settings);
 }
 
+// --- What the Command Bar buttons show (Ken, August 30 2026) ---
+// 'icon'  each button shows only its glyph (the default, and what Rule 12 asks for)
+// 'words' each button shows a one- or two-word label instead
+//
+// The accessible name stays the long, explanatory one in BOTH modes -- the short
+// label is what fits on the face, not what the button is called. Geometry is
+// identical either way: the Command Bar cells are equal-width flex children, so
+// nothing moves and no keyguard hole shifts.
+const COMMAND_LABEL_MODES = ['icon', 'words'];
+
+export function loadCommandLabels() {
+    const v = loadSettings().commandLabels;
+    return COMMAND_LABEL_MODES.includes(v) ? v : 'icon';
+}
+
+export function saveCommandLabels(mode) {
+    const settings = loadSettings();
+    settings.commandLabels = COMMAND_LABEL_MODES.includes(mode) ? mode : 'icon';
+    saveSettings(settings);
+}
+
 // --- Choice chips (Express Panel) ---
 // The MOST chips to show at once when the partner offers a set of choices. They
 // take cells only while a set is on offer and only as many as there are choices

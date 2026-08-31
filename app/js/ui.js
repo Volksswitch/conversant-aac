@@ -865,7 +865,7 @@ export function setListenButtonState(listening) {
 
     // Icon-only (Rule 4); the .listening (selected/red) state signals capture is
     // on (Rule 6 — a sticky action shown as a selected button).
-    setIconButton(listenBtn, 'mic', listening ? 'Stop listening' : 'Start listening');
+    setCommandFace(listenBtn, 'mic', listening ? 'Stop listening' : 'Start listening', 'Listen');
     listenBtn.classList.toggle('listening', listening);
     // Mic capture is an I/O state, separate from the engine's CA mode — surface
     // it on its own row so "Mode: LISTENING" (the engine's resting mode) isn't
@@ -883,28 +883,82 @@ export function setListenButtonState(listening) {
     renderModeChip();
 }
 
+// What the Command Bar buttons show: 'icon' (Rule 12) or 'words'. Held here so
+// setListenButtonState — which re-renders the Listen button on every mic
+// transition — draws the same face as the rest of the bar without asking storage
+// each time.
+let commandLabelMode = 'icon';
+
+// The short faces, for the 'words' mode. One or two words each (Ken, August 30
+// 2026), NOT a truncation of the accessible name: the name says what the button
+// does, the face is only what fits on it. The accessible name is unchanged in
+// both modes, so a screen reader and the spoken help hear the same thing either
+// way. Listen keeps ONE word across both mic states — the fill is what says it
+// is on (Rule 6), and a face that changed with state would be a second, weaker
+// signal for the same thing.
+const COMMAND_FACES = {
+    listenBtn: 'Listen',
+    sayAgainBtn: 'Say again',
+    holdOnBtn: 'Hold on',
+    pardonBtn: 'Pardon?',
+    windDownBtn: 'Wrap up',
+    initiateBtn: 'Start',
+    endConversationBtn: 'End',
+    privacyBtn: "Don't save",
+    settingsBtn: 'Settings',
+};
+
+// Draw one Command Bar button in the current mode. The accessible name (aria-label
+// + title) is set identically either way; only the face differs.
+function setCommandFace(btn, iconName, label, face) {
+    if (!btn) return;
+    if (commandLabelMode !== 'words' || !face) {
+        setIconButton(btn, iconName, label);
+        btn.classList.remove('cmd-worded');
+        return;
+    }
+    btn.textContent = face;
+    btn.classList.remove('icon-btn');
+    btn.classList.add('cmd-worded');
+    btn.setAttribute('aria-label', label);
+    btn.title = label;
+}
+
+// Switch the Command Bar between icons and short labels. Re-draws the buttons
+// already on screen — no reload, and the Listen button keeps whatever mic state
+// it was in (re-rendering it with the CURRENT `capturing` cannot fire the
+// start-of-listening chime, which needs a false->true edge).
+export function setCommandLabelMode(mode) {
+    commandLabelMode = mode === 'words' ? 'words' : 'icon';
+    applyControlIcons();
+}
+
 // Convert the control buttons to icon-only (Rule 4), keeping each one's
 // accessible name (aria-label + title). Content buttons — response cards
 // and Express Panel buttons — are intentionally NOT touched (they show text).
-// Called once at startup.
+// Called once at startup, and again whenever the icon/words setting changes.
 export function applyControlIcons() {
     // Two distinct repeat controls, named speaker-specifically (Ken): one
     // re-speaks the USER's last words, one asks the PARTNER to repeat.
-    setIconButton(document.getElementById('sayAgainBtn'), 'replay', 'Repeat what I said');
-    setIconButton(document.getElementById('holdOnBtn'), 'pause', 'Hold on');
-    setIconButton(document.getElementById('pardonBtn'), 'pardon', 'Ask them to repeat');
-    setIconButton(document.getElementById('windDownBtn'), 'windDown', 'Wrap up');
-    setIconButton(document.getElementById('initiateBtn'), 'startChat', 'Start conversation');
-    setIconButton(document.getElementById('endConversationBtn'), 'endChat', 'End conversation');
-    setIconButton(document.getElementById('privacyBtn'), 'noSave', "Don't save this conversation");
-    setIconButton(document.getElementById('settingsBtn'), 'settings', 'Settings');
+    const cmd = (id, icon, label) =>
+        setCommandFace(document.getElementById(id), icon, label, COMMAND_FACES[id]);
+    cmd('sayAgainBtn', 'replay', 'Repeat what I said');
+    cmd('holdOnBtn', 'pause', 'Hold on');
+    cmd('pardonBtn', 'pardon', 'Ask them to repeat');
+    cmd('windDownBtn', 'windDown', 'Wrap up');
+    cmd('initiateBtn', 'startChat', 'Start conversation');
+    cmd('endConversationBtn', 'endChat', 'End conversation');
+    cmd('privacyBtn', 'noSave', "Don't save this conversation");
+    cmd('settingsBtn', 'settings', 'Settings');
+    // Not on the Command Bar, so the words setting does not reach them: these
+    // sit in Settings and on the composer, where Rule 12 stands unqualified.
     setIconButton(document.getElementById('settingsHelpBtn'), 'help', 'Explain a setting — tap this, then tap a setting to hear what it does');
     setIconButton(document.getElementById('closeSettingsBtn'), 'close', 'Close settings');
     setIconButton(document.getElementById('regenerateBtn'), 'shuffle', 'New 4 — different options');
     setIconButton(document.getElementById('speakBtn'), 'speak', 'Speak');
     setIconButton(document.getElementById('reframeBtn'), 'reframe', 'Reframe — new options from this');
     setIconButton(document.getElementById('cancelComposerBtn'), 'clear', 'Cancel');
-    setListenButtonState(false); // initialize the Listen button's mic icon
+    setListenButtonState(capturing); // (re)draw the Listen button's face in this mode
 }
 
 // --- "In my own words" modal overlay (Rule 8). Shows the input box over the

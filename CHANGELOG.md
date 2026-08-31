@@ -26,6 +26,12 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- The command bar buttons can now show a short word instead of a picture. Settings
+  &rarr; Controls &rarr; "What the command buttons show" switches between the two, and the
+  buttons stay exactly the same size and in exactly the same places either way, so a
+  keyguard still fits.
+
+
 ## Version 0.8.5
 
 - **Settings → About now estimates what you have spent with each company separately.**

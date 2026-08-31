@@ -538,7 +538,9 @@ function initApp() {
     conversationPrivate = storage.loadNoSaveDefault();
     applyPrivacyState();
     ui.showEngineState(engine.getSnapshot());
-    ui.applyControlIcons();
+    // Draws the Command Bar in the stored mode (icons or short labels); calls
+    // applyControlIcons itself, so this replaces it rather than preceding it.
+    ui.setCommandLabelMode(storage.loadCommandLabels());
     applyConversationDockClasses();
     applyButtonSizing();   // compute the conversation layout (region sizes + gaps)
     // Region sizes depend on the viewport — recompute on resize/orientation.
@@ -4968,6 +4970,7 @@ function openSettings() {
     const maxPlaceholdersInput = document.getElementById('maxPlaceholdersInput');
     const responsesPerCategoryInput = document.getElementById('responsesPerCategoryInput');
     const cardTextModeInput = document.getElementById('cardTextModeInput');
+    const commandLabelsInput = document.getElementById('commandLabelsInput');
     const choiceChipMaxInput = document.getElementById('choiceChipMaxInput');
 
     showRedactedKey(apiKeyInput, storage.loadApiKey());
@@ -4978,6 +4981,7 @@ function openSettings() {
     listenChimeInput.checked = storage.loadListenChime();
     responsesPerCategoryInput.value = storage.loadResponsesPerCategory();
     cardTextModeInput.value = storage.loadCardTextMode();
+    commandLabelsInput.value = storage.loadCommandLabels();
     choiceChipMaxInput.value = storage.loadChoiceChipMax();
     const keyboardMode = storage.loadKeyboardMode();
     const keyboardRadio = document.querySelector(`input[name="keyboardMode"][value="${keyboardMode}"]`);
@@ -5609,6 +5613,14 @@ function openSettings() {
         // user can flip through the four modes mid-conversation and see the real
         // suggestions in each without spending a round trip or losing the palette.
         ui.setCardTextMode(cardTextModeInput.value);
+    };
+    commandLabelsInput.onchange = () => {
+        storage.saveCommandLabels(commandLabelsInput.value);
+        // Re-draws the bar behind Settings straight away, so the user can see the
+        // change without closing the panel. Geometry is identical in both modes, so
+        // nothing re-solves and no keyguard hole moves.
+        ui.setCommandLabelMode(commandLabelsInput.value);
+        applyListenAvailability();   // keeps a disabled Listen button's explanation
     };
     choiceChipMaxInput.onchange = () => {
         storage.saveChoiceChipMax(choiceChipMaxInput.value);

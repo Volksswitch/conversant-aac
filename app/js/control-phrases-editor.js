@@ -108,7 +108,7 @@ export function render() {
     container.append(
         listSection('“Ask them to repeat” phrases', 'pardon'),
         listSection('Openers (Start conversation)', 'openers'),
-        listSection('Wind-down statements (Wind down)', 'windDowns'),
+        listSection('Wind-down statements (Wrap up)', 'windDowns'),
         listSection('Closings (goodbyes)', 'closings'),
         listSection('“One more thing” phrases', 'declineClosing'),
     );
@@ -135,7 +135,13 @@ export function render() {
     // editor re-renders itself on add / reorder / delete, and slamming every section
     // shut on the user mid-edit would be worse than not collapsing at all. Reset sits
     // outside the sections, so it stays reachable with everything closed.
-    makeCollapsible(container, 'controls');
+    // ⚠ A SCOPE NAME OF ITS OWN, NOT THE TAB'S — the same trap the Express tab hit.
+    // sections.js remembers open state by POSITION within a named scope, and the tab
+    // itself now declares a section in index.html ("What the command buttons show"),
+    // which the panel registers under the tab name. Sharing the scope would give that
+    // section and this editor's first one the same key "controls#0", so opening one
+    // would open the other on the next rebuild. Two containers, two scopes.
+    makeCollapsible(container, 'controlPhrases');
 
     // Focus a just-added list row so the user can type immediately.
     if (pendingFocus) {

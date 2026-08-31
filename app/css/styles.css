@@ -738,6 +738,31 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
     outline: none;
 }
 
+/* Command Bar showing words instead of glyphs (Ken, August 30 2026). The cells
+   are equal-width flex children, so swapping the face changes nothing about the
+   grid — same cells, same sizes, same keyguard holes (Rule 1, requirement 1).
+   The label is deliberately smaller than the 1rem body size: a Command Bar cell
+   is much wider than it is tall, and "Don't save" has to fit inside one without
+   the cell growing. It stays in rem so it still tracks the proportional scale.
+   Two short lines are allowed ("Say again"), and anything longer is clipped
+   rather than permitted to widen the cell — the accessible name and the
+   tooltip carry the full wording in both modes.
+
+   ⚠ NO PADDING HERE, and that is load-bearing rather than a style choice. These
+   cells are flex items with `flex-basis: 0`, so under `box-sizing: border-box` the
+   used width is floored at the item's own padding + border — a cell with padding
+   comes out WIDER than one without. Measured: 0.15rem/0.25rem of padding made every
+   worded button 0.8px wider than its icon self and pushed the eight buttons after
+   Listen 7px along, which is a keyguard hole moving because a label was turned on.
+   Anything that adds horizontal padding, a border, or a margin here reintroduces it. */
+.cmd-btn.cmd-worded {
+    font-size: 0.8rem;
+    line-height: 1.15;
+    overflow: hidden;
+    hyphens: none;
+    overflow-wrap: break-word;
+}
+
 /* Recording indicator (Ken, July 18 2026) — the Listen button turns red and the
    whole button slowly brightens and dims (the fill breathes) while the mic is live,
    so it reads as "recording" without any screen-wide frame. */

@@ -21,6 +21,9 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.8.6": [
+    "The command bar buttons can now show a short word instead of a picture. Settings &rarr; Controls &rarr; \"What the command buttons show\" switches between the two, and the buttons stay exactly the same size and in exactly the same places either way, so a keyguard still fits."
+  ],
   "0.8.5": [
     "Settings → About now estimates what you have spent with each company separately. You hold an account with Anthropic for the AI, and — if you pay for the better hearing and the better voice — one with Deepgram. Those are the two bills you actually get, so those are now the two figures shown under the total, by name. The Deepgram figure is broken open underneath into hearing and speaking, because they are two very different rates and which one is carrying the cost is the thing worth knowing. If you are not paying Deepgram, nothing changes: the total is the Anthropic figure and there is no list."
   ],
