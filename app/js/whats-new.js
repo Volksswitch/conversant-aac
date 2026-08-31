@@ -21,6 +21,9 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.8.13": [
+    "The conversation area no longer turns pink at every launch on a device where opening your data folder takes a while. The app treats a slow start as a fault and showed its \"something went wrong\" tint, when nothing had gone wrong at all - the folder was simply still opening, and finished a moment later. It now says nothing unless the folder genuinely never opens."
+  ],
   "0.8.12": [
     "Fixed the \"Reconnect my folder\" card appearing at every launch on Android even though the folder was connecting perfectly well. The app was giving up waiting after six seconds and asking \"do I have a folder?\" while the answer was still being worked out. It now waits for the answer before deciding.",
     "On a device set to use the whole screen, going full screen was using up the tap that getting back into your data folder also needed. The folder is asked for first now, because your own data matters more than a full-screen window."
