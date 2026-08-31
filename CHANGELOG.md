@@ -26,6 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+
+## Version 0.9.0
+
 - Android phones and tablets are now supported. The app recognizes the device it is
   running on, so a problem report says "Android" instead of "desktop".
 - On Android, hearing the other person needs the paid transcription service. The

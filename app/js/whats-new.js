@@ -21,7 +21,7 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
-  "0.8.16": [
+  "0.9.0": [
     "Android phones and tablets are now supported. The app recognizes the device it is running on, so a problem report says \"Android\" instead of \"desktop\".",
     "On Android, hearing the other person needs the paid transcription service. The built-in listening still works if you want to try the app first, but it drops words and the device plays a tone of its own each time it restarts. Once a Deepgram key is saved, Android uses it for listening automatically."
   ],
