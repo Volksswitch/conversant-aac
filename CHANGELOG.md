@@ -26,6 +26,13 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Android phones and tablets are now supported. The app recognizes the device it is
+  running on, so a problem report says "Android" instead of "desktop".
+- On Android, hearing the other person needs the paid transcription service. The
+  built-in listening still works if you want to try the app first, but it drops words
+  and the device plays a tone of its own each time it restarts. Once a Deepgram key is
+  saved, Android uses it for listening automatically.
+
 
 ## Version 0.8.15
 

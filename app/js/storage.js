@@ -1,4 +1,6 @@
 import * as tlog from './transcript-log.js';
+// platform.js imports nothing, so this cannot create a cycle.
+import * as platform from './platform.js';
 
 const STORAGE_KEY = 'aac_settings';
 const IDB_NAME = 'aac-db';
@@ -766,7 +768,25 @@ export function saveApiKey(apiKey) {
 // 'deepgram' (paid, the user's own key). Default builtin — nobody should have to
 // sign up for anything to try the app, and on Windows the built-in one works.
 export function loadSttProvider() {
-    return loadSettings().sttProvider || 'builtin';
+    const chosen = loadSettings().sttProvider;
+    if (chosen) return chosen;
+    // Android defaults to the paid transcription, because it is REQUIRED there (Ken,
+    // August 31 2026): the built-in recognizer works but drops words and makes the
+    // device play a tone at each of its many restarts. A default rather than a forced
+    // value - the setting is still the user's, and a stored choice always wins - so
+    // someone who has pasted a key gets the right behaviour without having to know
+    // that a second setting also had to be changed.
+    //
+    // ⚠ ONLY WITH A KEY IN HAND. An earlier cut defaulted Android to deepgram
+    // unconditionally, on the belief that stt.js falls back to the built-in recognizer
+    // when the paid one cannot work. IT DOES NOT: that fallback covers a source that
+    // cannot be CONSTRUCTED, and an empty key constructs perfectly well and then fails
+    // at start with 'no-key' - which handleSourceError treats as fatal and switches
+    // listening off. So the default would have left every Android user WITHOUT a key
+    // unable to listen at all, which is far worse than the imperfect built-in
+    // recognizer they have today.
+    if (platform.isAndroid() && (loadDeepgramKey() || '').trim()) return 'deepgram';
+    return 'builtin';
 }
 
 export function saveSttProvider(provider) {

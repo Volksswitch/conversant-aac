@@ -28,6 +28,11 @@ const UA = {
     // A real Mac — same "Macintosh" token as iPadOS Safari, but no touch points.
     mac: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
     windowsEdge: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0',
+    // Android says "Android" and means it - no trickery needed, unlike the Apple side.
+    androidTablet: 'Mozilla/5.0 (Linux; Android 14; SM-X200) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
+    androidPhone: 'Mozilla/5.0 (Linux; Android 15; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Mobile Safari/537.36',
+    // Chrome OS is a DESKTOP and must not be caught by the Android test.
+    chromeOS: 'Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
 };
 
 let caseId = 0;
@@ -145,4 +150,93 @@ test('describe() distinguishes "unreliable here" from "no recognition at all"', 
 
     const ok = await loadPlatform({ ua: UA.windowsEdge });
     assert.match(ok.describe(), /listening available/);
+});
+
+
+/* ── Android: a supported platform, and the paid transcription is required ────────
+ *
+ * Ken, August 31 2026, measured on his own phone and tablet. Until then Android
+ * matched no test here and fell through to the desktop answers, so every bug report
+ * from one said "desktop" and said nothing about the device.
+ */
+
+test('Android is recognized, on a phone and on a tablet', async () => {
+    for (const [name, ua] of [['tablet', UA.androidTablet], ['phone', UA.androidPhone]]) {
+        const p = await loadPlatform({ ua, touch: true });
+        assert.equal(p.isAndroid(), true, name + ' must be recognized as Android');
+        assert.equal(p.isIOS(), false, name + ' is not an Apple device');
+        assert.match(p.describe(), /Android/, 'a bug report must name the device');
+    }
+});
+
+test('Android needs the paid transcription - but the control stays live', async () => {
+    const p = await loadPlatform({ ua: UA.androidTablet, touch: true });
+    const s = p.speechRecognitionSupport();
+    assert.equal(s.usable, false, 'the built-in recognizer is not the supported path here');
+    // The warn-don't-block rule (July 30 2026). Unlike an installed iPad, Android's
+    // built-in recognizer genuinely works - poorly - so a user evaluating the app
+    // before paying for a second service must still be able to try it.
+    assert.equal(s.apiPresent, true, 'the button must stay live');
+    assert.match(s.remedy, /Deepgram/, 'it has to say WHICH service, not just "a paid one"');
+    assert.match(s.reason + s.remedy, /Settings/, 'and where to put the key');
+});
+
+test('Chrome OS is a desktop, not Android', async () => {
+    // "Linux" appears in both user agents; only Android says "Android". A looser test
+    // would quietly hand every Chromebook the Android verdict, telling those users
+    // they must pay for transcription they do not need.
+    const p = await loadPlatform({ ua: UA.chromeOS });
+    assert.equal(p.isAndroid(), false);
+    assert.equal(p.speechRecognitionSupport().usable, true, 'a Chromebook is a fully supported free path');
+    assert.match(p.describe(), /desktop/);
+});
+
+test('an iPad is never mistaken for Android', async () => {
+    for (const ua of [UA.iosSafari, UA.iosChrome, UA.iosEdge]) {
+        const p = await loadPlatform({ ua, touch: true });
+        assert.equal(p.isAndroid(), false);
+    }
+});
+
+/* ── The Android default for hearing the other person ──────────────────────────
+ *
+ * Checked here rather than in a storage test because the whole decision is a
+ * platform one, and because the dangerous case is not the happy path.
+ */
+test('Android defaults to the paid transcription ONLY when a key is set', async () => {
+    // A localStorage just for this test: this file deliberately builds its own minimal
+    // globals per case rather than using the shared harness, so that the navigator each
+    // case sees is exactly the one it declared.
+    const load = async (ua, settings) => {
+        const store = new Map([['aac_settings', JSON.stringify(settings)]]);
+        globalThis.localStorage = {
+            getItem: (k) => (store.has(k) ? store.get(k) : null),
+            setItem: (k, v) => store.set(k, String(v)),
+            removeItem: (k) => store.delete(k),
+        };
+        Object.defineProperty(globalThis, 'navigator',
+            { value: { userAgent: ua, maxTouchPoints: 5 }, configurable: true, writable: true });
+        globalThis.window = { navigator: globalThis.navigator, matchMedia: () => ({ matches: false }) };
+        const s = await import('../app/js/storage.js?b=' + Math.random());
+        return s.loadSttProvider();
+    };
+    assert.equal(await load(UA.androidTablet, { deepgramKey: 'dg-key' }), 'deepgram',
+        'with a key, Android should use the path it is required to use');
+    // ⚠ THE CASE THAT MATTERS. An empty key CONSTRUCTS a paid source fine and then
+    // fails at start with 'no-key', which is treated as fatal - so defaulting without
+    // a key would leave an Android user unable to listen at all, which is far worse
+    // than the imperfect built-in recognizer they have today.
+    assert.equal(await load(UA.androidTablet, {}), 'builtin',
+        'with no key, Android must keep the recognizer that actually works');
+    assert.equal(await load(UA.androidTablet, { deepgramKey: '   ' }), 'builtin',
+        'whitespace is not a key');
+    // A stored choice is still the user's and always wins.
+    assert.equal(await load(UA.androidTablet, { sttProvider: 'builtin', deepgramKey: 'dg-key' }), 'builtin',
+        'an explicit choice outranks the platform default');
+    // ⚠ NO WINDOWS CASE HERE, and the reason is a real constraint rather than an
+    // omission: storage.js imports platform.js WITHOUT a cache-buster, so one platform
+    // instance serves this whole file and it captured whichever user agent was set on
+    // the first storage import. That is exactly right in a browser - a user agent does
+    // not change mid-session - and it means a single process cannot answer for two
+    // platforms. The computer side is covered by isAndroid() being false there.
 });

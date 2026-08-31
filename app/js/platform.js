@@ -65,6 +65,25 @@ export function isIOS() {
     return isTouchApple();
 }
 
+/*
+ * An Android phone or tablet.
+ *
+ * A SUPPORTED PLATFORM since August 31 2026 (Ken), measured on his own phone and
+ * tablet. Until then the app did not know the word: Android matched no test here and
+ * fell through to the desktop answers, so every bug report from one said "desktop"
+ * and told us nothing about the device - which is a poor position to be in for a
+ * platform people are being asked to use.
+ *
+ * Plain substring test, and unlike the Apple case it needs no trickery: Android
+ * browsers say "Android" and mean it. Chrome OS says "CrOS" and is a desktop, so it
+ * is not caught here. Deliberately does NOT try to separate phone from tablet - the
+ * app has no behaviour that depends on which, and a guess based on screen size would
+ * be wrong for a small tablet and a large phone alike.
+ */
+export function isAndroid() {
+    return /\bAndroid\b/.test(ua);
+}
+
 // Running as a Home Screen app rather than in a browser tab. Both signals are
 // checked because navigator.standalone is the older iOS-specific one and
 // display-mode is the standard.
@@ -118,6 +137,31 @@ export function speechRecognitionSupport() {
             remedy: isIOS()
                 ? 'Use Safari on this iPad.'
                 : 'Use Microsoft Edge or Google Chrome.',
+        };
+    }
+
+    // Android: the built-in recognizer WORKS, unlike the installed iPad's - it is
+    // simply poor. Measured on Ken's tablet: it re-sends the whole sentence on every
+    // update (so what the partner said arrived as a stutter until stt.js learned to
+    // collapse it), it restarted eighteen times in one conversation, and Android plays
+    // its own tone at each restart, which is disconcerting mid-conversation.
+    //
+    // Ken's decision, August 31 2026: the paid transcription is REQUIRED on Android,
+    // as it is on an installed iPad. Said here, in the one place that already carries
+    // this kind of verdict, so the reason travels with a bug report instead of living
+    // only in a manual.
+    //
+    // Still `apiPresent: true`, so the control stays live and the user may try
+    // anyway - the warn-don't-block rule (July 30 2026) is unchanged, and the free
+    // recognizer really does work well enough to evaluate the app with.
+    if (isAndroid()) {
+        return {
+            usable: false,
+            apiPresent: true,
+            reason: 'On Android, hearing the other person needs the paid transcription service.',
+            remedy: 'Add a Deepgram key in Settings, under Speech, and choose it for hearing '
+                + 'the other person. Without it the built-in listening still works, but it '
+                + 'drops words and the device plays a tone of its own each time it restarts.',
         };
     }
 
@@ -191,7 +235,7 @@ export function speechConfig() {
 // One-line description for diagnostics and bug reports.
 export function describe() {
     const bits = [];
-    bits.push(isIOS() ? 'iPadOS/iOS' : 'desktop');
+    bits.push(isIOS() ? 'iPadOS/iOS' : isAndroid() ? 'Android' : 'desktop');
     const shell = iosBrowserShell();
     if (shell) bits.push(shell + ' (WebKit wrapper)');
     else if (isIOS()) bits.push('Safari');
