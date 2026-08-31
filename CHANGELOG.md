@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.8.6
+
 - The command bar buttons can now show a short word instead of a picture. Settings
   &rarr; Commands &rarr; "What the command buttons show" switches between the two, and
   the buttons stay exactly the same size and in exactly the same places either way, so
