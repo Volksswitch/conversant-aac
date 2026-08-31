@@ -26,6 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+
+## Version 0.8.8
+
 - The box that shows a report before you send it is now as wide as the settings
   panel beside it, and follows the app as you resize the window.
 

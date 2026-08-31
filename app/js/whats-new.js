@@ -21,6 +21,9 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.8.8": [
+    "The box that shows a report before you send it is now as wide as the settings panel beside it, and follows the app as you resize the window."
+  ],
   "0.8.7": [
     "\"Tester name\" has moved out of the \"Weekly reports\" section into its own section near the top of Settings > Troubleshooting. It was never only about weekly reports - the same name goes on a problem report you send yourself.",
     "Reporting a problem is now one button: Send. \"Save to a file\" and \"Copy\" have gone - they carried exactly the same report, and both left you to find a file or somewhere to paste it before we ever saw it.",
