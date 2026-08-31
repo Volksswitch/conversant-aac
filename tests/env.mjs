@@ -59,6 +59,27 @@ function mkResults(segments) {
 if (!globalThis.window) globalThis.window = {};
 globalThis.window.SpeechRecognition = FakeRecognition;
 
+// A minimal document, so the backgrounding guard in stt.js can be driven. It installs
+// itself only where `document` exists, so without this it was silently absent from
+// every test - and the guard's failure to cover the paid backend went unnoticed for
+// exactly that reason. `setHidden` flips visibility and fires the event the guard
+// listens for.
+if (!globalThis.document) {
+    const listeners = {};
+    globalThis.document = {
+        hidden: false,
+        addEventListener(type, fn) { (listeners[type] = listeners[type] || []).push(fn); },
+        removeEventListener(type, fn) {
+            listeners[type] = (listeners[type] || []).filter((f) => f !== fn);
+        },
+        dispatchEvent(ev) { for (const fn of listeners[ev.type] || []) fn(ev); return true; },
+    };
+}
+export function setHidden(hidden) {
+    globalThis.document.hidden = hidden;
+    globalThis.document.dispatchEvent({ type: 'visibilitychange' });
+}
+
 // --- Mock fetch (for llm.js) -------------------------------------------------
 // The native fetch captured at load, so the live tier can restore/use it even if a
 // deterministic test swapped in a mock earlier in the same process.

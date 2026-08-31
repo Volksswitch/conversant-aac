@@ -12,6 +12,7 @@
 import { recognitions } from './env.mjs';
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const THRESHOLD_S = 0.04;      // 40 ms silence checkpoint for fast tests
@@ -285,6 +286,28 @@ test('source: "deepgram" does not construct the browser recognizer', () => {
     const before = recognitions.length;
     stt.init({ onResult() {}, onSilence() {}, onStatus() {}, onPartnerSpeech() {}, source: 'deepgram', getDeepgramKey: () => '' });
     assert.equal(recognitions.length, before, 'no Web Speech recognizer may be created for a paid backend');
+});
+
+test('the backgrounding guard covers the PAID backend, not just the browser one', async () => {
+    // ⚠ The guard used to read `if (!recognition) return;` - so with a paid backend
+    // selected, where `recognition` is null, it did NOTHING AT ALL. Invisible: no
+    // error, no symptom until a real backgrounding, and it covered exactly the
+    // configuration Android is recommended to use. The paid path holds a microphone
+    // and a socket of its own and can come back deaf just as easily.
+    //
+    // Checked at the source, because driving it needs a live socket and microphone.
+    // Same precedent as the placeholder tests: where the decision lives in code no
+    // test can run, assert the decision is still written down.
+    const src = await readFile(new URL('../app/js/stt.js', import.meta.url), 'utf8');
+    // ⚠ Anchored on guardVisibility, NOT on the first visibilitychange listener:
+    // there are two, and the first is the diagnostic one that only counts. Same
+    // trap as searching for the first matching CSS block instead of the right one.
+    const guard = src.slice(src.indexOf('speechCfg.guardVisibility'));
+    const body = guard.slice(0, 2000);   // the handler; no escapes needed to bound it
+    assert.ok(/!recognition && !externalSource/.test(body),
+        'the guard must not early-return on the browser recognizer alone');
+    assert.ok(/suspendSource\(\)/.test(body),
+        'it must stop whichever source is active, not recognition.stop() directly');
 });
 
 test('the default is still the browser recognizer', () => {

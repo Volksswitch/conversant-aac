@@ -41,7 +41,23 @@ export const DEFAULTS = {
     openLevel: 0.020,    // RMS (0–1) above which we call it speech
     closeLevel: 0.012,   // …and below which we call it silence (hysteresis gap)
     hangMs: 900,         // keep sending this long after the level drops
-    preRollMs: 400,      // audio kept before the gate opened, flushed on open
+    // ⚠ 1200, not the original 400 (Ken, on an Android tablet, August 31 2026: "it
+    // still loses about the first second of speech from the partner"). The gate can
+    // only open once the level has actually risen, so a speaker who starts quietly is
+    // already part-way into a word by then; the pre-roll is what covers that lag, and
+    // 400ms did not.
+    //
+    // Raising THIS rather than lowering openLevel is deliberate. Pre-roll only ever
+    // sends audio that is already in the buffer AND only when the gate genuinely
+    // opened - so it cannot make the gate fire on a door closing. Lowering the
+    // threshold would, and every false open is billed audio plus a chance of the
+    // partner's turn being renewed by a noise.
+    //
+    // What it costs: about 0.8s more audio per utterance. Deepgram bills per second
+    // submitted, so at a hundred utterances an hour that is roughly a minute more per
+    // hour - against losing the first word of every sentence, which is the thing the
+    // whole product exists to avoid.
+    preRollMs: 1200,     // audio kept before the gate opened, flushed on open
 };
 
 export function createGate(opts = {}) {

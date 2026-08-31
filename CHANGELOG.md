@@ -26,6 +26,10 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Less of the first word is lost when the other person starts speaking, on the paid
+  transcription service. The app holds back a moment of sound and sends it once it is
+  sure someone is talking; it now keeps three times as much, so a sentence that starts
+  quietly is not clipped.
 - Listening now survives you switching to another app and coming back. Before this,
   on some devices the microphone was shut off the moment the app went into the
   background and did not come back on - so you had to notice and press Listen again

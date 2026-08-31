@@ -456,17 +456,26 @@ export function init({ onResult, onSilence, onStatus, onPartnerSpeech, source, g
     // are already ignored, which covers normal session teardown.)
     if (speechCfg.guardVisibility && typeof document !== 'undefined') {
         document.addEventListener('visibilitychange', () => {
-            if (!recognition) return;
+            // ⚠ BOTH BACKENDS. This used to test `recognition` alone, so with a paid
+            // backend selected - where `recognition` is null - the guard did nothing
+            // at all. It was written when the browser recognizer was the only source,
+            // and the gap became load-bearing the moment a platform was recommended
+            // to use the paid one (Ken, Android, August 31 2026): the configuration
+            // being recommended was the one configuration the guard did not cover.
+            //
+            // The paid path is not immune to this. It holds a microphone and a socket
+            // of its own, and a backgrounded page has its audio pipeline suspended, so
+            // it can just as easily come back deaf - and being paid, it fails in a way
+            // the user has been told is the reliable option.
+            if (!recognition && !externalSource) return;
             if (document.hidden) {
                 if (listeningIntent && !suspendedForHidden) {
                     suspendedForHidden = true;
-                    try { recognition.stop(); } catch { /* not running */ }
+                    suspendSource();
                 }
             } else if (suspendedForHidden) {
                 suspendedForHidden = false;
-                if (listeningIntent) {
-                    try { recognition.start(); } catch { /* already started */ }
-                }
+                if (listeningIntent) openSource();
             }
         });
     }
@@ -546,6 +555,15 @@ function handleSourceError(detail) {
 // resumeListening (a turn already in progress) — the only difference between the
 // two is whether the accumulated transcript survives, so the recognizer/socket
 // handling lives here once and cannot drift between them.
+// Stop capturing WITHOUT clearing the user's intent to listen - the guard has to be
+// able to put it back. stopListening() is the deliberate, user-driven stop and does
+// clear the intent; conflating the two would turn a trip to the home screen into the
+// user having switched listening off.
+function suspendSource() {
+    if (externalSource) { try { externalSource.stop(); } catch { /* not running */ } return; }
+    try { recognition.stop(); } catch { /* not running */ }
+}
+
 function openSource() {
     listeningIntent = true;
     suspendedForHidden = false;   // a deliberate (re)start clears any backgrounded state
