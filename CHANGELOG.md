@@ -27,6 +27,13 @@ forgetting to tag one is only ever noise, never silence.
 ## Unreleased (next release)
 
 
+## Version 0.9.1
+
+_No user-visible changes. Notes like these can now be aimed at Android readers as
+well as at computer and iPad readers, so nobody is told about a device they do not
+have._
+
+
 ## Version 0.9.0
 
 - Android phones and tablets are now supported.
