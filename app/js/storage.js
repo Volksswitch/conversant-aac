@@ -136,6 +136,54 @@ export async function hasRememberedFolder() {
     try { return !!(await idbGet(DIR_HANDLE_KEY)); } catch { return false; }
 }
 
+// The remembered folder, read at page load so it is IN HAND before the user taps
+// anything. Nothing is requested here — this is only the lookup, which is the step
+// that used to push the permission request past its deadline (see below).
+let primedHandle = null;
+(async () => {
+    if (!supportsFolderPicker()) return;
+    try { primedHandle = await idbGet(DIR_HANDLE_KEY); } catch { primedHandle = null; }
+})();
+
+// A permission request started from a user gesture, awaited later by
+// restoreDataFolder. Cleared once consumed so a stale answer is never reused.
+let pendingPermission = null;
+
+/*
+ * Ask for the folder back RIGHT NOW, from a live user gesture.
+ *
+ * ⚠ MUST be called synchronously from the gesture handler, with NO await before it.
+ * A permission request is only granted while the browser still counts a tap as
+ * recent, and the first await in an async handler ends that — the same rule that
+ * puts requestAppFullscreen at the top of handleStart.
+ *
+ * Why this exists: Android does not retain folder permission between launches
+ * (measured, including as an INSTALLED app — see below), so it must be asked for at
+ * every start. The request used to run several awaits into the Start sequence, was
+ * refused outright for want of a recent tap, and needed a card with a button of its
+ * own to supply one. Starting it here spends the Start tap the user has already
+ * made, so Android costs the same number of taps as Windows. The card remains as
+ * the fallback for anything this does not cover.
+ *
+ * Returns nothing useful — restoreDataFolder awaits the result and re-checks the
+ * authoritative queryPermission afterwards.
+ */
+export function requestFolderPermissionNow() {
+    if (!supportsFolderPicker() || !primedHandle) return;
+    try {
+        permissionPromptOpen = true;
+        pendingPermission = primedHandle.requestPermission({ mode: 'readwrite' })
+            .finally(() => { permissionPromptOpen = false; });
+        // Nothing may reject onto the microtask queue unhandled: the caller does not
+        // await this, and an unhandled rejection here surfaces to the user as a
+        // start-up failure.
+        pendingPermission.catch(() => { /* answered by queryPermission below */ });
+    } catch {
+        permissionPromptOpen = false;
+        pendingPermission = null;
+    }
+}
+
 export async function restoreDataFolder() {
     // Desktop: re-acquire the folder the user picked previously. Unchanged.
     if (supportsFolderPicker()) {
@@ -144,6 +192,17 @@ export async function restoreDataFolder() {
         if (!stored) return false;
         try {
             let perm = await stored.queryPermission({ mode: 'readwrite' });
+            // A request already started from the Start tap: wait for the user's
+            // answer, then ask queryPermission again rather than trusting what the
+            // request returned. queryPermission is the authoritative check and it is
+            // asked of THIS handle, so it cannot matter that the request was made
+            // against the separately-read primed one.
+            if (perm !== 'granted' && pendingPermission) {
+                try { await pendingPermission; } catch { /* refused, or it threw */ }
+                pendingPermission = null;
+                try { perm = await stored.queryPermission({ mode: 'readwrite' }); }
+                catch { /* keep the earlier answer */ }
+            }
             if (perm !== 'granted') {
                 permissionPromptOpen = true;
                 // Asking for permission is only allowed while the browser still counts
@@ -182,6 +241,7 @@ export async function pickDataFolder() {
     if (supportsFolderPicker()) {
         const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
         await idbPut(DIR_HANDLE_KEY, handle);   // permissions attach to this handle
+        primedHandle = handle;                  // so the next Start can ask about THIS folder
         setRoot(handle, BACKEND.FOLDER);
         await ensureDataSubfolders();
         return dirHandle;
@@ -199,6 +259,8 @@ export async function clearDataFolder() {
     // deliberately a no-op there.
     if (backend === BACKEND.DEVICE) return;
     setRoot(null, BACKEND.NONE);
+    primedHandle = null;
+    pendingPermission = null;
     await idbDelete(DIR_HANDLE_KEY);
 }
 

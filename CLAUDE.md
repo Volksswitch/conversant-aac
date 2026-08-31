@@ -1130,9 +1130,33 @@ setup instructions**, for the same reason OneDrive does on Windows: that folder 
 transcripts of real conversations, and choosing Drive copies every one of them to
 Google. It is easier to do by accident here, because it is offered in the picker.
 
-**Permission is not retained across launches.** Windows remembers it; Android asks
-every time. That is normal for the platform and should be documented as a step rather
-than left to surprise a tester - but it is what exposed the bug below.
+**⚠ PERMISSION IS NOT RETAINED ACROSS LAUNCHES, AND INSTALLING THE APP DOES NOT FIX
+IT (measured, August 31 2026).** Windows remembers the folder permission; Android asks
+every time. **Ken's tablet runs the INSTALLED app and is still asked at every launch**,
+which settles a hypothesis worth recording because it is documented behavior that does
+not hold here: Chrome is described as keeping file and folder permissions for installed
+web apps, and on Android it does not - or at least not for this app on this device. **So
+an extra tap per launch is a permanent property of Android, not something an install or
+a setting removes.** *(Same lesson as the iPad probe, where half the published claims
+about the platform turned out to be stale. Measure it.)*
+
+- **THE CONSEQUENCE FOR DESIGN: the request is made ON THE START TAP, not later.** A
+  permission request is only granted while the browser still counts a tap as recent,
+  and the first `await` in an async handler ends that. So the handle is read at PAGE
+  LOAD (`primedHandle` in `storage.js`, no request, just the lookup) and
+  `requestFolderPermissionNow()` is called at the top of `handleStart`, beside
+  `requestAppFullscreen` and the audio unlocks, which are there for exactly the same
+  reason. **The lookup was the whole problem**: it was one `await` too many, and it is
+  what pushed the request past the deadline. Android now costs the same number of taps
+  as Windows, and the reconnect card is the fallback rather than the routine.
+  **Measured in the running app with a REAL tap** (a programmatic click carries no
+  activation and would prove nothing): the request fires with
+  `navigator.userActivation.isActive === true`, exactly once, the folder connects, and
+  no card appears.
+- **`restoreDataFolder` re-checks `queryPermission` after awaiting that request rather
+  than trusting what the request returned**, because the request was made against the
+  primed handle and the restore holds a separately-read one. The re-check is asked of
+  the handle actually being adopted, so object identity cannot matter.
 
 **⚠ THE BUG, AND ITS LESSON IS THE PART TO KEEP: `restoreDataFolder` DELETED THE
 USER'S FOLDER whenever it failed for ANY reason.** Asking for permission is only
@@ -1184,12 +1208,21 @@ much works untouched. Three consequences, only the first of which is settled:
 - **The full-screen setting is offered** on Android and hidden on the iPad. Probably
   right, and nobody has tried it.
 
-**Persistent storage is not granted, and nothing had ever asked.** `persisted: false`
-is a true reading, not a misclassification - the only thing that requests it is the
-button in Settings. **It matters less on Android than the number suggests**, because
-the real data is in a folder on disk, outside anything the browser sweeps; what sits
-in evictable storage is the app's memory of WHICH folder, and the settings. So pressing
-that button protects the pointer and the preferences, not the conversations.
+**Persistent storage: nothing had ever asked, and now the app asks automatically
+everywhere (Ken, August 31 2026).** `persisted: false` was a true reading, not a
+misclassification - the only thing that requested it was a button in Settings, and
+**that button is shown only where there is no folder picker**, so on Android Ken could
+not reach it. That gating was reasonable while a folder meant Windows (the real data is
+on disk, outside anything the browser sweeps) and stopped being reasonable when Android
+turned out to have a folder too: **a phone runs out of space, Chrome is more aggressive
+when it does, and what is lost is the app's memory of WHICH folder plus every setting**
+- recoverable, but only by someone who had saved a settings profile into the folder
+first. `warmUpStorage` now calls `requestPersistentStorage()` on every platform, fire
+and forget. **On Chrome and Safari the answer is silent** - no prompt, no tap - so it
+costs no UI, which is what makes "always ask" the right shape and a button the wrong
+one. The button stays for the iPad, where it is also the only place the answer is
+reported; everywhere else the result reads as `persisted` in a problem report.
+**A promise worth having should not depend on the user finding a control.**
 
 **Not yet done, if Android becomes supported:** `platform.js` does not know the word
 Android, so a bug report from one says "desktop" and tells us nothing about the

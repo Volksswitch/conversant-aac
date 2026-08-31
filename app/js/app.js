@@ -1001,6 +1001,23 @@ async function withTimeout(promise, ms, label) {
 // localStorage cache is promoted where it doesn't (the v0.2.25 rule).
 async function warmUpStorage() {
     try { await storage.restoreDataFolder(); } catch { /* no stored handle yet */ }
+    // Ask the browser to promise not to erase this origin's storage. Fire and
+    // forget: on Chrome and Safari the answer is silent - no prompt, no tap - so
+    // there is nothing to wait for and nothing for the user to do.
+    //
+    // It used to be asked ONLY by a button in Settings, which is shown only where
+    // there is no folder picker (the iPad). That was reasonable while a folder meant
+    // Windows: the real data sits on disk, outside anything the browser sweeps. It
+    // stopped being reasonable when Android turned out to have a folder too - a
+    // phone runs out of space, Chrome is more aggressive when it does, and what is
+    // lost is the app's memory of WHICH folder plus every setting. Recoverable, but
+    // only by someone who had saved a settings profile into the folder first.
+    //
+    // So it is asked for everywhere, always, because it costs nothing to ask. The
+    // button stays for the iPad, where it is also the only place the answer is
+    // reported; everyone else can read the result under "persisted" in a problem
+    // report. A promise worth having should not depend on finding a control.
+    storage.requestPersistentStorage().catch(() => { /* declining is not an error */ });
     // Reload the worldview profile from the (now-restored) data folder, then
     // reconcile: if answers accumulated only in the localStorage cache (no
     // folder earlier), promote them to the on-disk worldview.json now.
@@ -1040,6 +1057,14 @@ async function handleStart() {
     // request is only granted while user activation lasts, and the first await in an
     // async handler ends it.
     requestAppFullscreen();
+    // And once more, for the data folder. Android does not retain folder permission
+    // between launches - measured, INCLUDING as an installed app - so it has to be
+    // asked for at every start; asking here spends the tap the user has just made,
+    // instead of reaching the request too late and needing a card with a button of
+    // its own. Windows keeps its permission, so this is a no-op there. Not awaited:
+    // warmUpStorage picks up the answer, and blocking Start on a dialog would leave
+    // a dead-looking button while the user reads it.
+    storage.requestFolderPermissionNow();
     // Check for a newer deployed version when the session starts. If one is
     // found the worker activates and the controllerchange handler in index.html
     // reloads the page; when nothing is new this is a cheap no-op.

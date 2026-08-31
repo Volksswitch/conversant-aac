@@ -26,6 +26,14 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Getting back into your data folder is now one tap on "Start", with no extra card in
+  the way. Some devices - Android in particular - ask permission every single time the
+  app is opened, so the app now asks as part of the Start you already pressed. The
+  "Reconnect my folder" card is still there if that doesn't work.
+- The app now asks your browser to promise not to erase its stored settings, every
+  time it starts, instead of only when you found a button in Settings. The browser
+  answers silently, so there is nothing to do and nothing to see.
+
 
 ## Version 0.8.9
 
