@@ -26,6 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+
+## Version 0.8.11
+
 - If Conversant cannot get back into your data folder, it now says so instead of
   quietly carrying on as though it had. The message stays on screen with a way
   forward, rather than disappearing and leaving you to find out later.
