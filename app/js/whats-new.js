@@ -21,6 +21,15 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.8.7": [
+    "\"Tester name\" has moved out of the \"Weekly reports\" section into its own section near the top of Settings > Troubleshooting. It was never only about weekly reports - the same name goes on a problem report you send yourself.",
+    "Reporting a problem is now one button: Send. \"Save to a file\" and \"Copy\" have gone - they carried exactly the same report, and both left you to find a file or somewhere to paste it before we ever saw it.",
+    "The app can now tell whether a report actually arrived, so it says so. If it cannot get through, it keeps the report and sends it by itself the next time you open the app - you are never asked to check whether something worked.",
+    "The \"If something is wrong\" link on the opening screen now sends the report too, showing you exactly what it contains first.",
+    "Before a report is sent you now read it in the confirmation box itself, and that box stays inside the settings area so it never sits under a keyguard. The description of what is in a report was wrong in places and has been corrected - it also contains how you have been using the app, including the names of people you have talked to.",
+    "Usage reports now wait until you have actually started using the app, rather than going a few seconds after it opens. They also now count the conversations saved in your data folder, which they were often missing before.",
+    "Your data folder now gets its \"settings\", \"conversations\" and \"backups\" folders as soon as you connect it, instead of each one appearing the first time it is needed. So when you copy a saved settings profile or a backup over from another device, there is already somewhere to put it and you can just press Load."
+  ],
   "0.8.6": [
     "The command bar buttons can now show a short word instead of a picture. Settings &rarr; Commands &rarr; \"What the command buttons show\" switches between the two, and the buttons stay exactly the same size and in exactly the same places either way, so a keyguard still fits.",
     "The Settings tab that used to be called \"Controls\" is now called \"Commands\". It has everything the command bar buttons say, so its new name says where to look."

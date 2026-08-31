@@ -26,6 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+
+## Version 0.8.7
+
 - "Tester name" has moved out of the "Weekly reports" section into its own section
   near the top of Settings > Troubleshooting. It was never only about weekly reports -
   the same name goes on a problem report you send yourself.
