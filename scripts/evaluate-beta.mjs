@@ -92,10 +92,16 @@ async function main() {
         process.exit(1);
     }
 
-    const allReports = [], allProblems = [], broken = [];
+    const allReports = [], allProblems = [], broken = [], unread = [];
     for (const file of inputs) {
         const text = await readFile(file, 'utf8');
-        const { reports, problems, broken: bad } = readReports(parseCsv(text));
+        const { reports, problems, broken: bad, skipped } = readReports(parseCsv(text));
+        // (!) SAY SO WHEN A FILE GIVES UP NOTHING. A tab this tool cannot read used to
+        // pass through in silence, and the report then stated the opposite of the
+        // truth - "No problem reports" with four of them in the file. A count that
+        // cannot be turned into anything is now named, with the file it came from.
+        const empty = !reports.length && !problems.length && !bad.length;
+        if (skipped || empty) unread.push({ file: path.basename(file), skipped, empty });
         // The same tab exported twice, or a tab that is not this Sheet, both land
         // here harmlessly: a duplicate report is deduplicated by device below, and a
         // file with no payload column contributes nothing.
@@ -103,6 +109,12 @@ async function main() {
         allProblems.push(...problems);
         broken.push(...bad);
     }
+    for (const u of unread) {
+        // One line per file: "nothing readable" already covers "some rows skipped".
+        if (u.empty) console.error(`Nothing readable in ${u.file} - is it an export of this Sheet?`);
+        else console.error(`${u.skipped} row(s) in ${u.file} could not be read and are NOT in what follows.`);
+    }
+    if (unread.length) console.error('');
     if (!allReports.length && !allProblems.length) {
         console.error(`Read ${inputs.length} file(s) but found no reports in them.`);
         console.error('The export needs to include the last column, which carries the');

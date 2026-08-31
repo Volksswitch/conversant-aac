@@ -37,6 +37,55 @@ test('a problem report is kept apart from a weekly one', () => {
     assert.equal(problems[0].note, 'the cards keep changing');
 });
 
+test('the problems tab is read, though it carries no payload column', () => {
+    // (!) THE BUG THIS EXISTS FOR, and the reason the case above it did not catch it:
+    // that one fabricates a JSON payload carrying kind:'problem', and the real problems
+    // tab has no payload column at all - the receiving script writes it as flat text
+    // (PROBLEM_HEADER in scripts/weekly-report-endpoint.gs). So every problem report
+    // ever sent was dropped without a word, and the reading printed "No problem
+    // reports" with four of them sitting in the file. This case uses the shape the
+    // Sheet actually exports, which is the only shape that proves anything.
+    const csv = [
+        'received,sent,tester,install,version,build,what happened (their words),full report',
+        '8/24/2026 7:06,2026-08-24T12:06:18Z,SLP3,i9,0.7.16,ac0ff75,'
+            + '"Still adding placeholder phrases to the partner messages",'
+            + '"CONVERSANT AAC - PROBLEM REPORT',
+        'Version: 0.7.16"',
+        '',
+    ].join('\n');
+    const { reports, problems, skipped } = readReports(parseCsv(csv));
+    assert.equal(reports.length, 0);
+    assert.equal(problems.length, 1);
+    assert.equal(skipped, 0, 'a readable row must not be counted as lost');
+    assert.equal(problems[0].testerName, 'SLP3');
+    assert.equal(problems[0].appVersion, '0.7.16');
+    assert.match(problems[0].note, /placeholder phrases/);
+    // The renderer prints what the tester wrote, so it has to survive all the way there.
+    const text = render({ testers: [], excluded: [], unnamed: [], problems, broken: [] });
+    assert.match(text, /placeholder phrases/);
+});
+
+test('a row nothing can be made of is counted, never passed over in silence', () => {
+    // The failure was not that a row was unreadable. It was that being unreadable
+    // looked exactly the same as there being nothing to read.
+    // The realistic shape of it: a reports-tab export that left out the last column,
+    // which is the one carrying the report. Everything looks present and nothing is.
+    const csv = 'received,sent,tester,version\n8/24/2026,2026-08-24T12:06:18Z,SLP3,0.7.16\n';
+    const { reports, problems, skipped } = readReports(parseCsv(csv));
+    assert.equal(reports.length, 0);
+    assert.equal(problems.length, 0);
+    assert.equal(skipped, 1);
+});
+
+test('the problems columns are found by name, so reordering them is safe', () => {
+    const csv = 'received,sent,what happened (their words),tester,version\n'
+        + '8/30/2026,2026-08-30T19:17:02Z,saw a pink background,(not set),0.8.5\n';
+    const { problems, skipped } = readReports(parseCsv(csv));
+    assert.equal(skipped, 0);
+    assert.equal(problems[0].note, 'saw a pink background');
+    assert.equal(problems[0].appVersion, '0.8.5');
+});
+
 test('several reports from one device are not added together', () => {
     // Every report re-counts the whole history, so a tester with three reports has
     // not had three times as many conversations. The newest one wins.

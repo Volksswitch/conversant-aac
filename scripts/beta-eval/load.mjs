@@ -83,22 +83,88 @@ export function versionAtLeast(v, floor) {
     return true;
 }
 
-/* Pull the reports out of the rows. The payload column is found by looking for it
- * rather than by position, because a Sheet gets columns reordered by hand. */
+/* Pull the reports out of the rows.
+ *
+ * The two tabs arrive in two different shapes, and that is not a quirk of the export -
+ * it is how the receiving script writes them (scripts/weekly-report-endpoint.gs).
+ *
+ *   `reports`  carries the whole weekly report as JSON in its last column, so it is
+ *              read by looking for that payload and nothing else. Columns can be
+ *              renamed, reordered or added at the far end and nothing here notices.
+ *
+ *   `problems` has NO payload column at all. What a tester wrote goes into a plain
+ *              text column, so it can only be read BY COLUMN NAME.
+ *
+ * (!) THAT MAKES THE PROBLEMS PATH THE ONE PLACE THAT DEPENDS ON HEADER NAMES, against
+ * the rule at the top of this file. It is unavoidable rather than careless, so it is
+ * kept as narrow as possible - four columns, located by name so reordering is safe -
+ * and any row it cannot read is COUNTED AND REPORTED rather than passed over. That
+ * counting is the actual fix: this function used to require a JSON payload in every
+ * row, so every problem report ever sent was skipped in silence and the tool said
+ * "No problem reports" while looking straight at four of them.
+ */
+
+const norm = (c) => String(c || '').trim().toLowerCase();
+
+/* The column that exists on the problems tab and nowhere else. Matched on its opening
+ * words so the parenthetical can be reworded without breaking this. */
+const NOTE_COL = /^what happened/;
+
+function problemHeader(row) {
+    const at = (re) => row.findIndex(c => re.test(norm(c)));
+    const note = at(NOTE_COL);
+    if (note < 0) return null;
+    return { note, sent: at(/^sent$/), tester: at(/^tester$/), version: at(/^version$/), full: at(/^full report$/) };
+}
+
+function isHeaderRow(row) {
+    const cells = row.map(norm);
+    return cells.includes('received') && cells.includes('sent');
+}
+
 export function readReports(rows) {
     const reports = [], problems = [], broken = [];
+    let skipped = 0;                          // data rows nothing could be made of
+    let cols = null;                          // set once a problems header is seen
+
     for (const row of rows) {
+        if (isHeaderRow(row)) { cols = cols || problemHeader(row); continue; }
+
         const raw = row.find(cell => {
             const t = String(cell || '').trim();
             return t.startsWith('{') && t.includes('"sentAt"');
         });
-        if (!raw) continue;                       // header row, or a row with no payload
-        let p;
-        try { p = JSON.parse(raw); } catch { broken.push(row[0] || '?'); continue; }
-        p.receivedAt = row[0] || '';
-        (p.kind === 'problem' ? problems : reports).push(p);
+
+        if (raw) {
+            let p;
+            try { p = JSON.parse(raw); } catch { broken.push(row[0] || '?'); continue; }
+            p.receivedAt = row[0] || '';
+            (p.kind === 'problem' ? problems : reports).push(p);
+            continue;
+        }
+
+        // No payload. On the problems tab that is normal and the row is read by name.
+        if (cols) {
+            const get = (i) => (i >= 0 ? String(row[i] || '').trim() : '');
+            const note = get(cols.note), full = get(cols.full);
+            // A row with neither the tester's words nor the report body is an empty
+            // row, not a lost complaint - do not count it against the reader.
+            if (!note && !full) continue;
+            problems.push({
+                kind: 'problem',
+                sentAt: get(cols.sent),
+                testerName: get(cols.tester) || '(not set)',
+                appVersion: get(cols.version),
+                note,
+                report: full,
+                receivedAt: row[0] || '',
+            });
+            continue;
+        }
+
+        skipped++;
     }
-    return { reports, problems, broken };
+    return { reports, problems, broken, skipped };
 }
 
 /* One record per DEVICE, built from its reports.

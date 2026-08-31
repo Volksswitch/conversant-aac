@@ -114,11 +114,35 @@ export function describeReport() {
  * both differ from a real address, so both trigger. A build with no address never
  * forces a send — there is nowhere for it to go, and forcing one would rebuild a
  * payload on every single launch. */
-export function shouldSend({ enabled, lastAt, now, intervalDays = INTERVAL_DAYS, endpoint = '', lastEndpoint = null }) {
+export function shouldSend({ enabled, lastAt, now, intervalDays = INTERVAL_DAYS, endpoint = '', lastEndpoint = null, hasActivity = true }) {
     if (!enabled) return false;
-    if (!lastAt) return true;
+    if (!lastAt) return hasActivity;
     if (endpoint && endpoint !== lastEndpoint) return true;
     return (now - lastAt) >= intervalDays * 86400000;
+}
+
+/* Has this installation actually been USED, or merely opened?
+ *
+ * (!) WHY THIS EXISTS, measured August 31 2026: 25 of the 29 reports in the Sheet were
+ * not from testers at all. They came from development launches - the preview pane and
+ * headless test browsers - each of which starts with empty storage, so each looked
+ * like a brand-new install, took the first-launch shortcut above, and posted a report
+ * nobody wanted. Ten of them reported a screen of 0x0. Six arrived in one day. They
+ * outnumbered the real reports six to one and polluted every pooled figure.
+ *
+ * The first-launch shortcut is still right for a real tester - waiting a week to find
+ * out whether reporting works at all would be worse - so it is kept and qualified:
+ * a first report goes when there is something in it. Later reports are unaffected,
+ * because by then the interval governs and this is never consulted.
+ *
+ * Read from the event tally rather than from the saved conversations, because it is
+ * local, cheap and needs no data folder. Metrics run on the same switch as reporting
+ * (app.js sets them from loadWeeklySendEnabled), so a tester who reports has them. */
+const ACTIVITY_EVENTS = [metrics.EV.CONVERSATION_STARTED, metrics.EV.CARD_SELECTED, metrics.EV.COMPOSER_SPOKEN, metrics.EV.EXPRESS_PHRASE];
+
+export function hasActivity(totals) {
+    const t = totals || {};
+    return ACTIVITY_EVENTS.some(name => (t[name] || 0) > 0);
 }
 
 export function enqueue(queue, payload, max = QUEUE_MAX) {
@@ -287,12 +311,17 @@ export async function flush() {
  * break the app it is reporting on is worse than no diagnostic. */
 export async function maybeSend({ appVersion, build, now = Date.now() } = {}) {
     try {
+        // Only consulted for a first-ever report; see hasActivity. Read defensively
+        // because a diagnostic must never be the thing that breaks the launch.
+        let used = true;
+        try { used = hasActivity((metrics.snapshot() || {}).totals); } catch { used = true; }
         if (!shouldSend({
             enabled: storage.loadWeeklySendEnabled(),
             lastAt: storage.loadWeeklySendLastAt(),
             now,
             endpoint: ENDPOINT,
             lastEndpoint: storage.loadWeeklyEndpoint(),
+            hasActivity: used,
         })) {
             // Still flush anything stranded from a previous week.
             return await flush();

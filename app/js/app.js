@@ -1033,6 +1033,9 @@ async function handleStart() {
     // The data is a nice-to-have at this moment (every module falls back to its
     // localStorage cache); getting the user into the conversation is not.
     await withTimeout(warmUpStorage(), STORAGE_WARMUP_MS, 'storage warm-up');
+    // Storage is now reconnected, so the weekly report can count what is actually
+    // on disk. See scheduleWeeklyReport for why it is not on a page-load timer.
+    scheduleWeeklyReport();
     // Fresh conversation state for this session.
     engine.reset();
     ui.showEngineState(engine.getSnapshot());
@@ -5867,15 +5870,38 @@ try {
     reportStartupFailure('initApp', err);
 }
 
-// The weekly report (Ken, August 7 2026). Fired AFTER initApp and deliberately not
-// awaited: it reads every saved conversation off disk and then talks to the
-// network, and a diagnostic that can slow or break the app it reports on is worse
-// than no diagnostic. maybeSend never throws, and the .catch is belt-and-braces so
-// a rejection here can never reach the unhandledrejection handler above and be
-// reported to the user as a startup failure.
-setTimeout(() => {
-    // Write the tally out first, so the report cannot miss the session that is
-    // sending it — the debounce would otherwise still be pending.
-    metrics.flush();
-    weeklySend.maybeSend({ appVersion: APP_VERSION, build: BUILD_ID }).catch(() => { /* never surfaces */ });
-}, 3000);
+// The weekly report (Ken, August 7 2026). Deliberately not awaited: it reads every
+// saved conversation off disk and then talks to the network, and a diagnostic that
+// can slow or break the app it reports on is worse than no diagnostic. maybeSend
+// never throws, and the .catch is belt-and-braces so a rejection here can never
+// reach the unhandledrejection handler above and be reported to the user as a
+// startup failure.
+//
+// (!) IT HANGS OFF START, NOT OFF PAGE LOAD, AND THAT IS THE WHOLE POINT (Ken,
+// August 31 2026). It used to fire on a three-second timer from load. The data
+// folder is reconnected inside handleStart and NOWHERE ELSE, so that timer was a
+// race the report usually lost: it counted the conversations in a folder that had
+// not been reopened yet and reported "no data folder, no conversations" for anyone
+// who took more than three seconds to press Start. Measured against the live Sheet,
+// that was both speech therapists - one had said 47 things across four days and was
+// filed as having said nothing - while Ken, who presses Start at once, got through.
+// The two numbers the beta exists to produce were being silently zeroed for exactly
+// the testers it exists to learn from.
+//
+// It also removes the larger half of the noise: a session where nobody pressed
+// Start now reports nothing at all, and 17 of those 29 rows were precisely that.
+//
+// Called after storage is warm rather than awaited inside handleStart, so nothing
+// here can delay getting the user into their conversation. Guarded because Start
+// can be reached more than once in a session and this is a once-per-launch job.
+let weeklyReportScheduled = false;
+function scheduleWeeklyReport() {
+    if (weeklyReportScheduled) return;
+    weeklyReportScheduled = true;
+    setTimeout(() => {
+        // Write the tally out first, so the report cannot miss the session that is
+        // sending it — the debounce would otherwise still be pending.
+        metrics.flush();
+        weeklySend.maybeSend({ appVersion: APP_VERSION, build: BUILD_ID }).catch(() => { /* never surfaces */ });
+    }, 3000);
+}

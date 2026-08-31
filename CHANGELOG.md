@@ -26,6 +26,10 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Usage reports now wait until you have actually started using the app, rather than
+  going a few seconds after it opens. They also now count the conversations saved in
+  your data folder, which they were often missing before.
+
 ## Version 0.8.6
 
 - The command bar buttons can now show a short word instead of a picture. Settings

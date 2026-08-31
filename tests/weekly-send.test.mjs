@@ -17,7 +17,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-    shouldSend, enqueue, redactErrors, assemblePayload, describeReport,
+    shouldSend, hasActivity, enqueue, redactErrors, assemblePayload, describeReport,
     hashOf, formatSendLog, PAYLOAD_FIELDS, errorsSince, newestErrorTs,
 } from '../app/js/weekly-send.js';
 
@@ -219,4 +219,41 @@ test('the disclosure still says what is actually sent', () => {
     // behaviour: the report carries errors SINCE THE LAST ONE, not all of them.
     assert.match(PAYLOAD_FIELDS.errors, /since the last report/i);
     assert.match(describeReport(), /No transcripts, ever/i);
+});
+
+test('a brand new install reports only once it has actually been used', () => {
+    // (!) THE POLLUTION THIS STOPS, measured against the live Sheet on August 31 2026:
+    // 25 of its 29 rows were development launches, not testers. The preview pane and
+    // the headless test browsers each start with empty storage, so each looked like a
+    // brand-new install, took the first-launch shortcut, and posted a report nobody
+    // wanted - ten of them reporting a screen of 0x0, six of them in a single day.
+    // They outnumbered the real reports six to one.
+    const now = Date.now();
+    const opened = { app_opened: 1, start_pressed: 1 };
+    const used = { app_opened: 1, start_pressed: 1, card_selected: 3 };
+    assert.equal(hasActivity(opened), false, 'opening the app is not using it');
+    assert.equal(hasActivity(used), true);
+    assert.equal(shouldSend({ enabled: true, lastAt: 0, now, hasActivity: false }), false);
+    assert.equal(shouldSend({ enabled: true, lastAt: 0, now, hasActivity: true }), true);
+});
+
+test('the activity gate applies to the FIRST report only, never to later ones', () => {
+    // A tester who reported last month and has been quiet since must still report:
+    // silence is a finding, and suppressing it would hide the very people worth
+    // reaching out to. The gate exists to stop a fresh empty install introducing
+    // itself, not to stop a known one speaking up.
+    const now = Date.now();
+    assert.equal(shouldSend({ enabled: true, lastAt: now - 40 * DAY, now, hasActivity: false }), true);
+    assert.equal(shouldSend({ enabled: true, lastAt: now - 3 * DAY, now, endpoint: 'https://x', lastEndpoint: null, hasActivity: false }), true);
+});
+
+test('anything the user actually says counts as activity, not just a card', () => {
+    // Typing a sentence or tapping a phrase is use. Counting only card selections
+    // would silence the tester who composes everything - the one whose report the
+    // suggestions most need.
+    assert.equal(hasActivity({ composer_spoken: 1 }), true);
+    assert.equal(hasActivity({ express_phrase: 1 }), true);
+    assert.equal(hasActivity({ conversation_started: 1 }), true);
+    assert.equal(hasActivity({}), false);
+    assert.equal(hasActivity(null), false);
 });
