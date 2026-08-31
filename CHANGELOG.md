@@ -26,6 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- "Tester name" has moved out of the "Weekly reports" section into its own section
+  near the top of Settings > Troubleshooting. It was never only about weekly reports -
+  the same name goes on a problem report you send yourself.
 - Reporting a problem is now one button: **Send**. "Save to a file" and "Copy" have
   gone - they carried exactly the same report, and both left you to find a file or
   somewhere to paste it before we ever saw it.

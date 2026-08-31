@@ -817,6 +817,29 @@
                         <label>Known issues</label>
                         <button id="knownIssuesBtn" type="button">Open the known-issues page</button>
                     </div>
+                    <!-- WHOSE REPORT THIS IS. One name, used by BOTH the weekly
+                         report and the problem report (Ken, August 31 2026).
+                         It used to sit inside "Weekly reports", which was wrong in a
+                         way that cost real data rather than merely being untidy:
+                         sending a problem report is deliberately NOT gated on the
+                         weekly switch, but the placement said otherwise, so a tester
+                         who turned weekly reports off could reasonably leave the name
+                         blank - and then every problem report they sent arrived
+                         unattributed. In the Sheet on the day this moved, 27 of 29
+                         weekly reports and half the problem reports had no name.
+                         It sits after Known issues, which is deliberately first so a
+                         tester reads it before reporting anything, and before both
+                         things that depend on it.
+                         Its own section rather than a loose control, per Rule 18:
+                         every control is in a section, and where none fits, it gets
+                         one of its own. The heading names the topic instead of
+                         repeating the control's own label. -->
+                    <div class="setting-group" data-help="whoReports">
+                        <label>Who these reports come from</label>
+                        <label for="testerNameInput">Tester name</label>
+                        <input type="text" id="testerNameInput" placeholder="The name we gave you" autocomplete="off">
+                        <p id="testerNameStatus" class="setting-status" role="status"></p>
+                    </div>
                     <div class="setting-group" data-help="reportProblem">
                         <label for="problemNoteInput">Report a problem</label>
                         <textarea id="problemNoteInput" rows="3" placeholder="What happened? &quot;I pressed Listen and nothing happened&quot; is a perfect report."></textarea>
@@ -850,13 +873,10 @@
                          this text IS the disclosure, so it has to be unable to
                          drift out of date silently. -->
                     <div class="setting-group" data-help="weeklyReports">
-                        <!-- Section heading in its own right: this group holds four
-                             controls, so the first control's label ("Tester name")
-                             would name the section after one part of it. -->
+                        <!-- Section heading in its own right: this group holds three
+                             controls, so the first control's label would name the
+                             section after one part of it. -->
                         <label>Weekly reports</label>
-                        <label for="testerNameInput">Tester name</label>
-                        <input type="text" id="testerNameInput" placeholder="The name we gave you" autocomplete="off">
-                        <p id="testerNameStatus" class="setting-status" role="status"></p>
                         <label class="checkbox-label">
                             <input type="checkbox" id="weeklySendEnabledInput">
                             Send a short report automatically about once a week
