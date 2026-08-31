@@ -24,6 +24,7 @@
 import * as storage from './storage.js';
 import * as platform from './platform.js';
 import * as viewport from './viewport.js';
+import * as stt from './stt.js';
 import * as worldview from './worldview.js';
 import * as relationships from './relationships.js';
 import * as places from './places.js';
@@ -85,6 +86,10 @@ export async function collectSystemInfo({ appVersion = '?', buildId = '?' } = {}
         info.speech.sttProvider = storage.loadSttProvider ? storage.loadSttProvider() : '(n/a)';
         info.speech.ttsProvider = storage.loadTtsProvider ? storage.loadTtsProvider() : '(n/a)';
     } catch { /* ignore */ }
+    // How listening actually behaved, including across being backgrounded. The
+    // failure worth catching here is silent - a lit microphone that is hearing
+    // nothing - so the numbers are the only way anyone can report it.
+    try { info.speech.listening = stt.listenActivity(); } catch { /* ignore */ }
     try {
         // The voice roster answers "why is my voice not in the list", which has no
         // other route on a device with no console. Names only — no settings, no

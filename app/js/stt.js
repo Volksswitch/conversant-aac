@@ -27,6 +27,48 @@ let currentInterim = '';
 let silenceTimer = null;
 let silenceThreshold = 2000;
 let listeningIntent = false;
+
+/*
+ * What listening actually DID, for a problem report.
+ *
+ * The failure this exists for is silent by construction: if the recognizer stops
+ * when the page is backgrounded, the app goes on showing a lit microphone and simply
+ * hears nothing - the user finds out when the other person's words never appear, and
+ * has no way to describe what happened. The iPad has a guard for exactly that; no
+ * other platform does, because nowhere else was it known to happen. A phone or tablet
+ * is backgrounded constantly, so it is worth knowing rather than assuming.
+ *
+ * Counts and timings only - never words. Same rule as every other diagnostic here.
+ */
+const listenStats = {
+    sessions: 0,          // recognition.start() calls - a restart loop shows up here
+    restartsWhileHidden: 0,
+    backgrounded: 0,      // times the page was hidden WHILE the user meant to listen
+    resultsAfterReturn: 0,// results heard after coming back - 0 is the bad answer
+    returnedToForeground: 0,
+    errors: {},           // by kind, including the ones onerror deliberately ignores
+};
+function noteListen(key) { listenStats[key] = (listenStats[key] || 0) + 1; }
+
+export function listenActivity() {
+    const e = Object.entries(listenStats.errors).map(([k, n]) => `${k}x${n}`).join(',') || 'none';
+    return `sessions=${listenStats.sessions} backgrounded=${listenStats.backgrounded} ` +
+           `restartsWhileHidden=${listenStats.restartsWhileHidden} ` +
+           `returns=${listenStats.returnedToForeground} heardAfterReturn=${listenStats.resultsAfterReturn} ` +
+           `errors=${e}`;
+}
+
+// Watch visibility on EVERY platform, for the record only. This does not change
+// behaviour anywhere - the iPad's guard is separate and untouched - it just means a
+// report can say whether the app was backgrounded and whether it heard anything
+// afterwards, instead of leaving that to be guessed at.
+if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', () => {
+        if (!listeningIntent) return;
+        if (document.hidden) noteListen('backgrounded');
+        else noteListen('returnedToForeground');
+    });
+}
 // Echo filtering. While the app speaks (placeholder ladder, prompts), the mic would
 // otherwise capture our own TTS, treat it as partner speech, append it to
 // accumulatedText and renew the silence timer — restarting the placeholder ladder
@@ -268,6 +310,10 @@ function ingest(transcript, isFinal) {
 }
 
 function afterIngest(heardPartner, sawFinal) {
+    // The question a backgrounding report has to answer: after the app came back, did
+    // it hear anything at all? Counted here rather than at the recognizer, so it means
+    // "real partner content reached the app", not merely "an event fired".
+    if (heardPartner && listenStats.returnedToForeground > 0) noteListen('resultsAfterReturn');
     // Only renew the partner's turn (reset the silence checkpoint) when genuine
     // partner content was heard AND the app isn't currently speaking. Pure echo
     // leaves the checkpoint alone (content filter), and any audio captured while we
@@ -363,12 +409,15 @@ export function init({ onResult, onSilence, onStatus, onPartnerSpeech, source, g
             // A short beat before restarting where the platform needs it: with
             // continuous off, sessions end constantly by design, and restarting
             // synchronously into an immediately-ending session spins a tight loop.
+            if (typeof document !== 'undefined' && document.hidden) noteListen('restartsWhileHidden');
             if (speechCfg.restartDelayMs > 0) {
                 setTimeout(() => {
                     if (!listeningIntent) return;      // stopped while we waited
+                    noteListen('sessions');
                     try { recognition.start(); } catch { /* already starting */ }
                 }, speechCfg.restartDelayMs);
             } else {
+                noteListen('sessions');
                 try { recognition.start(); } catch { /* already starting */ }
             }
             return;
@@ -402,6 +451,9 @@ export function init({ onResult, onSilence, onStatus, onPartnerSpeech, source, g
     }
 
     recognition.onerror = (event) => {
+        // Counted BEFORE the allow-list: 'aborted' is normal once, and hundreds of
+        // them is a restart loop, which is the thing worth seeing.
+        listenStats.errors[event.error] = (listenStats.errors[event.error] || 0) + 1;
         if (event.error === 'no-speech' || event.error === 'aborted') return;
         // A surfaced error (network / not-allowed / service-not-allowed /
         // audio-capture) is fatal for this session — see handleSourceError. Without
@@ -483,6 +535,7 @@ function openSource() {
         externalSource.start();
         return;
     }
+    noteListen('sessions');
     try { recognition.start(); } catch { /* already started */ }
     if (onStatusChange) onStatusChange('listening');
 }
