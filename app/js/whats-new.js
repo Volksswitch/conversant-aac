@@ -21,6 +21,10 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.8.10": [
+    "Getting back into your data folder is now one tap on \"Start\", with no extra card in the way. Some devices - Android in particular - ask permission every single time the app is opened, so the app now asks as part of the Start you already pressed. The \"Reconnect my folder\" card is still there if that doesn't work.",
+    "The app now asks your browser to promise not to erase its stored settings, every time it starts, instead of only when you found a button in Settings. The browser answers silently, so there is nothing to do and nothing to see."
+  ],
   "0.8.9": [
     "On an Android phone or tablet, what the other person said was written down as a stutter - \"this this is this is a this is a test\" instead of \"this is a test\" - in the conversation, in the saved record, and in what was sent to the AI. Android hands the app the whole sentence again each time it hears another word, and the app was treating every copy as something new. Fixed.",
     "The app no longer forgets your data folder. If the browser turned down its request to open the folder, the app treated that as the folder being gone and erased it - so the folder was still sitting there and you had to go and find it again. Now it is remembered, and if the app hasn't been let back in you get a \"Reconnect my folder\" button on the opening screen: one tap instead of browsing for it. \"Not now\" carries on without it, as before.",

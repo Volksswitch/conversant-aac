@@ -26,6 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+
+## Version 0.8.10
+
 - Getting back into your data folder is now one tap on "Start", with no extra card in
   the way. Some devices - Android in particular - ask permission every single time the
   app is opened, so the app now asks as part of the Start you already pressed. The
