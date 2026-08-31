@@ -26,6 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+
+## Version 0.8.15
+
 - Less of the first word is lost when the other person starts speaking, on the paid
   transcription service. The app holds back a moment of sound and sends it once it is
   sure someone is talking; it now keeps three times as much, so a sentence that starts

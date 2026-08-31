@@ -21,6 +21,10 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.8.15": [
+    "Less of the first word is lost when the other person starts speaking, on the paid transcription service. The app holds back a moment of sound and sends it once it is sure someone is talking; it now keeps three times as much, so a sentence that starts quietly is not clipped.",
+    "Listening now survives you switching to another app and coming back. Before this, on some devices the microphone was shut off the moment the app went into the background and did not come back on - so you had to notice and press Listen again in the middle of a conversation. The app now pauses listening deliberately when it is put aside and picks it up again when you return."
+  ],
   "0.8.13": [
     "The conversation area no longer turns pink at every launch on a device where opening your data folder takes a while. The app treats a slow start as a fault and showed its \"something went wrong\" tint, when nothing had gone wrong at all - the folder was simply still opening, and finished a moment later. It now says nothing unless the folder genuinely never opens."
   ],
