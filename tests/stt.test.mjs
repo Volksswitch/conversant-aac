@@ -330,3 +330,72 @@ test('0 seconds: an interim that is never finalised still fires, via the fallbac
     await sleep(1700);   // ZERO_FALLBACK_MS is 1500
     assert.deepEqual(silences, ['I think so']);
 });
+
+
+/* --- A recognizer that re-sends the whole utterance (Android Chrome) ------------
+ *
+ * Measured on an Android tablet and phone, August 31 2026: one sentence arrives as
+ * a ladder of growing prefixes, and filing each rung as its own statement wrote
+ * "this this is this is a this is a test" into the partner's turn. Both captured
+ * examples in the report are that exact shape.
+ */
+
+test('a re-sent utterance collapses instead of laddering (Android Chrome)', async () => {
+    stt.startListening();
+    // Every rung settled, each carrying the whole sentence so far.
+    rec.emitFinal('this');
+    rec.emitFinal('this is');
+    rec.emitFinal('this is a');
+    rec.emitFinal('this is a test');
+    assert.equal(stt.getCurrentTranscript(), 'this is a test',
+        'the ladder must collapse to the sentence, not concatenate into gibberish');
+    await sleep(THRESHOLD_S * 1000 + 60);
+    assert.equal(silences.at(-1), 'this is a test', 'the AI must be sent the sentence, not the ladder');
+});
+
+test('the ladder collapses when the session ends between rungs, too', async () => {
+    // The second mechanism that fits the captured data: the session ends mid-ladder
+    // and the pending interim is flushed into the transcript on the way out.
+    stt.startListening();
+    rec.emitInterim("hey how's");
+    rec.onend();                       // flush + restart
+    rec.emitFinal("hey how's it going");
+    assert.equal(stt.getCurrentTranscript(), "hey how's it going");
+});
+
+test('a re-sent utterance leaves ONE statement for Pardon to drop', async () => {
+    // Segment boundaries are what let Pardon discard just the last thing the partner
+    // said. If each rung were its own boundary, Pardon would peel off one word.
+    stt.startListening();
+    rec.emitFinal('Good morning.');
+    rec.emitFinal('How');
+    rec.emitFinal('How was your weekend?');
+    assert.equal(stt.getCurrentTranscript(), 'Good morning. How was your weekend?');
+    assert.equal(stt.dropLastStatement(), 'Good morning.',
+        'the whole re-sent sentence is one statement');
+});
+
+test('ordinary consecutive statements are still kept apart', async () => {
+    // The guard on the rule above: a well-behaved recognizer sends only the new
+    // words, so nothing here may be treated as a re-send. This is the Windows and
+    // iPad path, and it must be untouched.
+    stt.startListening();
+    rec.emitFinal('Good morning.');
+    rec.emitFinal('How was your weekend?');
+    rec.emitFinal('Mine was quiet.');
+    assert.equal(stt.getCurrentTranscript(), 'Good morning. How was your weekend? Mine was quiet.');
+    assert.equal(stt.dropLastStatement(), 'Good morning. How was your weekend?',
+        'three separate statements, so Pardon drops exactly the last one');
+});
+
+test('a repeated word is not mistaken for a re-send', async () => {
+    // "No." then "No." is two statements, not a rung and its continuation: the rule
+    // only fires on text that EXTENDS what came before.
+    stt.startListening();
+    rec.emitFinal('No.');
+    rec.emitFinal('No.');
+    assert.equal(stt.getCurrentTranscript(), 'No.',
+        'identical settled text is the same statement re-sent, so it collapses');
+    rec.emitFinal('I disagree.');
+    assert.equal(stt.getCurrentTranscript(), 'No. I disagree.');
+});

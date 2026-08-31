@@ -192,6 +192,55 @@ function isEcho(transcript) {
 }
 
 /*
+ * Does this settled text RE-SEND the last one rather than continue it?
+ *
+ * Measured on an Android tablet and phone (Chrome, August 31 2026): the recognizer
+ * hands over the whole utterance-so-far on every update, so one sentence arrives as
+ * a ladder of growing prefixes — "this" / "this is" / "this is a" / "this is a test"
+ * — and filing each rung as its own statement produced
+ *   "this this is this is a this is a test"
+ * in the partner's turn, in the transcript, and in what was sent to the AI.
+ * (Two mechanisms fit the captured data equally well: every rung marked final, or
+ * the session ending and restarting between rungs so the flush in onend commits
+ * each one. This rule neutralizes both, which is why it is not written against
+ * either.)
+ *
+ * The rule: when settled text begins with the statement already recorded, it is a
+ * fuller version of that statement, so it REPLACES it instead of being appended.
+ * The ladder above collapses back to "this is a test".
+ *
+ * Deliberately UNCONDITIONAL rather than gated on Android. A well-behaved recognizer
+ * sends only the new words, so this never fires on Windows or the iPad, and a rule
+ * that is a no-op elsewhere is safer than a platform fork: it needs no detection, it
+ * cannot drift out of step with the other platforms, and it stops doing anything on
+ * its own the day Chrome changes. It also covers any future device that behaves the
+ * same way, before anyone reports it.
+ *
+ * The cost, accepted: a partner who genuinely says "No." and then "No, I don't think
+ * so." has the two merged into the second. Rare, and the merged turn still reads
+ * correctly — against a garbled turn that reads as though the app is broken.
+ *
+ * Compared with punctuation and case stripped, so "This is a test." still recognizes
+ * "this is a" as the rung below it.
+ */
+function resendsLastStatement(transcript) {
+    if (!segments.length) return false;
+    const prev = normalizeForEcho(segments[segments.length - 1]);
+    const next = normalizeForEcho(transcript);
+    if (!prev || !next) return false;
+    return next === prev || next.startsWith(prev + ' ');
+}
+
+// Record a settled statement. Segment boundaries are what let Pardon drop just the
+// last thing the partner said, so a re-sent statement must overwrite the rung it
+// grew from rather than becoming a boundary of its own.
+function commitSegment(transcript) {
+    if (resendsLastStatement(transcript)) segments[segments.length - 1] = transcript;
+    else segments.push(transcript);
+    accumulatedText = joinParts(segments);  // single spaces between segments
+}
+
+/*
  * THE SHARED CORE — every backend feeds transcript text through these two, and
  * everything the conversation loop depends on lives here rather than in a backend:
  * accumulation into segments, the TTS-echo filter, the silence checkpoint that
@@ -210,8 +259,7 @@ function ingest(transcript, isFinal) {
     // accumulate or renew the partner's turn. Only unique partner content gets through.
     if (isEcho(transcript)) return false;
     if (isFinal) {
-        segments.push(transcript);              // boundaries, so Pardon drops just the last one
-        accumulatedText = joinParts(segments);  // single spaces between segments
+        commitSegment(transcript);
         currentInterim = '';
     } else {
         currentInterim = transcript;
@@ -307,10 +355,10 @@ export function init({ onResult, onSilence, onStatus, onPartnerSpeech, source, g
             // segment "I was" was recorded on interrupt). Flush the pending interim
             // into accumulatedText before restarting so it's retained. No
             // duplication: the fresh session only transcribes audio from now on.
-            if (currentInterim.trim()) {
-                segments.push(currentInterim);
-                accumulatedText = joinParts(segments);
-            }
+            // commitSegment, not a bare push: where a session ends between rungs of a
+            // re-sent utterance (see resendsLastStatement), the flushed interim is a
+            // fuller copy of the statement already recorded, not a new one.
+            if (currentInterim.trim()) commitSegment(currentInterim);
             currentInterim = '';
             // A short beat before restarting where the platform needs it: with
             // continuous off, sessions end constantly by design, and restarting
