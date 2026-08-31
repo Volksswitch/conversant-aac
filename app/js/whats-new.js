@@ -21,6 +21,11 @@ import * as storage from './storage.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.8.9": [
+    "On an Android phone or tablet, what the other person said was written down as a stutter - \"this this is this is a this is a test\" instead of \"this is a test\" - in the conversation, in the saved record, and in what was sent to the AI. Android hands the app the whole sentence again each time it hears another word, and the app was treating every copy as something new. Fixed.",
+    "The app no longer forgets your data folder. If the browser turned down its request to open the folder, the app treated that as the folder being gone and erased it - so the folder was still sitting there and you had to go and find it again. Now it is remembered, and if the app hasn't been let back in you get a \"Reconnect my folder\" button on the opening screen: one tap instead of browsing for it. \"Not now\" carries on without it, as before.",
+    "Connecting a data folder from Settings now shows your saved settings profiles and backups straight away. They were there all along, but the two lists didn't redraw until you closed Settings and opened it again, which made it look as though your profiles had been lost."
+  ],
   "0.8.8": [
     "The box that shows a report before you send it is now as wide as the settings panel beside it, and follows the app as you resize the window."
   ],

@@ -26,6 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+
+## Version 0.8.9
+
 - On an Android phone or tablet, what the other person said was written down as a
   stutter - "this this is this is a this is a test" instead of "this is a test" -
   in the conversation, in the saved record, and in what was sent to the AI. Android
