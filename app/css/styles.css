@@ -3239,15 +3239,49 @@ label.radio-label input[type="radio"] {
 
 /* Danger confirmation modal — deliberately distinct from routine/permission
    dialogs so a destructive action reads as dangerous (Ken, June 15 2026). */
+/* (!) IT IS CONFINED TO THE SAME BOX AS THE SETTINGS PANEL, and that is a keyguard
+   requirement rather than a matter of taste (Ken, August 31 2026). Centred in the
+   whole viewport, this card could sit over the dock - which is the part of the screen
+   a physical keyguard covers with the Express Panel and keyboard, so its buttons
+   would end up under plastic with no holes above them. Rule 11: one keyguard has to
+   work for the conversation screen AND every overlay, so an overlay may only ever use
+   the area Settings uses.
+
+   HOW IT CENTRES: with all four insets set, `margin: auto` centres the card inside
+   that inset rectangle rather than inside the viewport. Width is deliberately `auto`
+   rather than a viewport calculation - it then fills the cleared box and is capped by
+   max-width, so on a wide screen it is a card and on the pathologically narrow
+   side-dock panel it simply uses what there is. A vw-based width cannot do that: it
+   knows nothing about the dock.
+
+   ⚠ NO `display` HERE. A `display` value on the base selector overrides the UA's
+   `dialog:not([open]) { display: none }` - author origin beats UA whatever the
+   specificity - so the card would be on screen at all times. */
 .danger-dialog {
+    position: fixed;
+    inset: var(--app-margin);
+    margin: auto;
     border: none;
     border-top: 6px solid #c62828;
     border-radius: 10px;
     padding: 1.5rem;
     max-width: 26rem;
-    width: calc(100vw - 2rem);
+    width: auto;
+    height: auto;
+    /* Tall content scrolls inside the card instead of growing past the cleared box. */
+    max-height: calc(100dvh - 2 * var(--app-margin) - 1rem);
+    overflow: auto;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
     font-family: inherit;
+}
+
+/* Clear the dock on whichever edge it occupies - the same three rules, and the same
+   arithmetic, that keep #settingsDialog off it. */
+body.conv-side-right .danger-dialog { right: calc(var(--app-margin) + var(--dock-w) + var(--dock-sep)); }
+body.conv-side-left  .danger-dialog { left:  calc(var(--app-margin) + var(--dock-w) + var(--dock-sep)); }
+body.conv-bottom     .danger-dialog {
+    bottom: calc(var(--app-margin) + var(--dock-h) + var(--dock-sep));
+    max-height: calc(100dvh - 2 * var(--app-margin) - var(--dock-h) - var(--dock-sep) - 1rem);
 }
 
 .danger-dialog::backdrop {

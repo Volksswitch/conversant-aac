@@ -837,12 +837,10 @@
                                  this population cannot easily redo. -->
                             <button id="clearProblemNoteBtn" type="button">Clear</button>
                         </div>
-                        <!-- Shown only once Send has been tapped. The report carries
-                             transcripts of any conversation that hit an error, so the
-                             standing rule is that the tester sees the exact text and
-                             confirms before it leaves the device. This is the seeing
-                             half; the confirmation card is the other. -->
-                        <textarea id="problemReportPreview" readonly rows="8" hidden aria-label="The report that will be sent"></textarea>
+                        <!-- The report itself is shown in the confirmation card, not
+                             here: the seeing and the confirming belong in one place,
+                             and the card is confined to the Settings area so it cannot
+                             sit under the part of a keyguard covering the dock. -->
                         <p id="problemReportStatus" class="setting-status" role="status"></p>
                     </div>
                     <!-- Weekly report. The disclosure below is GENERATED from the

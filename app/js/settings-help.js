@@ -96,7 +96,6 @@ const HELP = {
     "problemNoteInput": "Describe what went wrong. One line is plenty. Say what you did and what happened instead.",
     "sendProblemReportBtn": "Shows you the whole report, then sends it to us once you confirm. Nothing goes until you say so.",
     "clearProblemNoteBtn": "Empties the box where you described the problem. It asks first, so a stray tap cannot lose what you wrote.",
-    "problemReportPreview": "The exact text that will be sent. Read it through before you confirm; nothing here is hidden from you.",
     "usageSummaryView": "A summary built from your saved conversations. Nothing anyone said appears here, only counts and timings.",
     "refreshUsageSummaryBtn": "Rebuilds the summary from your saved conversations, including anything since you opened this.",
     "copyUsageSummaryBtn": "Copies the usage summary so you can paste it into a message.",

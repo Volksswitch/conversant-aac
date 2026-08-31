@@ -34,6 +34,11 @@ forgetting to tag one is only ever noise, never silence.
   app - you are never asked to check whether something worked.
 - The "If something is wrong" link on the opening screen now sends the report too,
   showing you exactly what it contains first.
+- Before a report is sent you now read it in the confirmation box itself, and that
+  box stays inside the settings area so it never sits under a keyguard. The
+  description of what is in a report was wrong in places and has been corrected -
+  it also contains how you have been using the app, including the names of people
+  you have talked to.
 - Usage reports now wait until you have actually started using the app, rather than
   going a few seconds after it opens. They also now count the conversations saved in
   your data folder, which they were often missing before.

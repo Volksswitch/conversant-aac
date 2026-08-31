@@ -4634,10 +4634,7 @@ async function sendProblemReportFromStart() {
     }
     if (!(await confirmDanger({
         title: 'Send this report?',
-        body: 'It goes to the Conversant AAC team. Below you can read exactly what will '
-            + 'be sent: your settings, your device, and the errors the app recorded - '
-            + 'including what was said in any conversation those errors happened in. '
-            + 'Conversations you marked as not to be saved are not in it.',
+        body: REPORT_DISCLOSURE,
         preview: text,
         confirmLabel: 'Send it',
         cancelLabel: 'Not now'
@@ -4656,6 +4653,32 @@ async function sendProblemReportFromStart() {
     }
 }
 
+/* THE ONE DISCLOSURE, used by both places a report can be sent from.
+ *
+ * (!) EVERY CLAIM IN IT WAS CHECKED AGAINST WHAT IS ACTUALLY SENT (Ken, August 31
+ * 2026), and the wording it replaces got four things wrong. It said the text appeared
+ * "above the button" when it appeared below it; it said a conversation marked "Don't
+ * save" was not in the report at all, when what is withheld is the TRANSCRIPT and an
+ * error from it may still be listed; and it named only the note, settings, device and
+ * errors while the report also carries the usage summary - which prints THE NAMES OF
+ * PEOPLE THE USER HAS TALKED TO - and the recent-actions list.
+ *
+ * The names are the reason this matters rather than being tidy: those are third
+ * parties who never agreed to anything, so a tester cannot meaningfully consent to
+ * sending them without being told they are in there.
+ *
+ * ⚠ IF A SECTION IS EVER ADDED TO buildProblemReport, IT BELONGS HERE TOO. A
+ * disclosure that has quietly stopped listing what it sends is worse than none,
+ * because it is read as complete. */
+const REPORT_DISCLOSURE =
+    'It goes to the Conversant AAC team. You can read the whole report below before it '
+    + 'leaves. It contains what you typed, your settings, your device, how you have been '
+    + 'using the app - including the names of people you have talked to - and the errors '
+    + 'it recorded, along with what was said in any conversation those errors happened in. '
+    + 'A conversation you marked "Don\u2019t save" has no transcript here, though an error '
+    + 'from it may still be listed. Your API keys are never included.';
+
+
 /* Send the problem report back over the same path the weekly report uses (Ken,
  * August 21 2026). Ken's objection to Save-to-a-file was tester workload: it leaves
  * them to find the file and decide what to do with it, and Copy assumes somewhere to
@@ -4672,7 +4695,6 @@ async function sendProblemReportFromStart() {
  * after the confirmation would let it drift between the two.
  */
 async function sendProblemReport() {
-    const preview = document.getElementById('problemReportPreview');
     let text;
     try {
         text = await buildProblemReportText();
@@ -4682,18 +4704,11 @@ async function sendProblemReport() {
         storage.logError('problem report', msg);
         return;
     }
-    if (preview) {
-        preview.value = text;
-        preview.hidden = false;
-        preview.scrollTop = 0;
-    }
     setProblemReportStatus('Read it through, then confirm to send.');
     if (!(await confirmDanger({
         title: 'Send this report?',
-        body: 'It goes to the Conversant AAC team. Above the button you can read exactly '
-            + 'what will be sent: your note, your settings, your device, and the errors the '
-            + 'app recorded — including what was said in any conversation those errors '
-            + 'happened in. Conversations you marked “Don’t save” are not in it.',
+        body: REPORT_DISCLOSURE,
+        preview: text,
         confirmLabel: 'Send it',
         cancelLabel: 'Not yet'
     }))) {
