@@ -3274,6 +3274,25 @@ label.radio-label input[type="radio"] {
     color: #c62828;
 }
 
+/* The exact text an action is about to send, shown so the tester can read it
+   before confirming. Monospace and scrollable: this is a record to be checked,
+   not prose, and it is far longer than the dialog. */
+.danger-preview {
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0 0 1.25rem;
+    padding: 0.5rem;
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: #333;
+    background: #fafafa;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    resize: vertical;
+    overflow: auto;
+}
+
 .danger-body {
     margin: 0 0 1.25rem;
     color: #333;

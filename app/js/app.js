@@ -511,7 +511,7 @@ function initApp() {
     // to a file with no note, because the panel you would type a note into is
     // exactly what may be unreachable (Ken, August 7 2026).
     const startReportBtn = document.getElementById('startReportBtn');
-    if (startReportBtn) startReportBtn.addEventListener('click', () => saveProblemReport(true));
+    if (startReportBtn) startReportBtn.addEventListener('click', () => sendProblemReportFromStart());
     document.getElementById('apiKeyContinueBtn').addEventListener('click', finishStart);
     ui.onListenClick(whileComposerClosed(toggleListening));
     ui.onRegenerateClick(handleRegenerate);
@@ -4588,34 +4588,71 @@ function setProblemReportStatus(msg) {
     if (el) el.textContent = msg || '';
 }
 
-// Save rather than copy is the route that works on a tablet: clipboard assumes
-// somewhere to paste, whereas a file goes through the share sheet as an attachment.
-async function saveProblemReport(fromStartScreen = false) {
-    // From the launch screen the status line is inside Settings, which is exactly
-    // the panel that may be unreachable — so the button reports on itself instead.
-    // Without this the tester gets no confirmation at all beyond whatever the
-    // browser's download UI happens to show, which on a tablet can be nothing.
-    const btn = fromStartScreen ? document.getElementById('startReportBtn') : null;
+/* The problem report from the LAUNCH SCREEN.
+ *
+ * This button exists because Settings can be unreachable - it is off-limits before
+ * Start by design, and the 0.6.5 top-layer fault made it unreachable mid-session on an
+ * iPad. So it must not depend on any part of the Settings panel.
+ *
+ * (!) IT SENDS RATHER THAN SAVING A FILE (Ken, August 31 2026). A file left the tester
+ * to find it and decide what to do with it, which is real work at the worst possible
+ * moment and, for this population, may not be possible unaided.
+ *
+ * (!) AND IT STILL SHOWS THE TEXT BEFORE SENDING. The report carries the transcripts
+ * of any conversation that hit an error, which is the one thing the app never sends on
+ * its own - so the tester SEES the exact text and then CONFIRMS, two steps, neither
+ * optional. In Settings the seeing is a preview box on the panel; here the panel is
+ * exactly what may be missing, so the dialog carries the preview instead.
+ *
+ * The report is built ONCE and the same string is previewed, confirmed and sent, so
+ * what leaves the device is character-for-character what was shown.
+ */
+async function sendProblemReportFromStart() {
+    // The status line lives in Settings, which is the panel that may be unreachable,
+    // so the button reports on itself. Without this the tester gets no confirmation
+    // at all beyond whatever the browser happens to show, which can be nothing.
+    const btn = document.getElementById('startReportBtn');
     const say = (msg) => {
         setProblemReportStatus(msg);
         if (btn) {
             const orig = btn.dataset.label || btn.textContent;
             btn.dataset.label = orig;
             btn.textContent = msg;
-            setTimeout(() => { btn.textContent = btn.dataset.label; }, 4000);
+            setTimeout(() => { btn.textContent = btn.dataset.label; }, 5000);
         }
     };
+    let text;
     try {
-        const text = await buildProblemReportText();
-        dataTransfer.downloadText(diagnostics.reportFilename(), text, 'text/plain');
-        say('Report saved — please send us the file');
+        text = await buildProblemReportText();
     } catch (e) {
         const msg = e && e.message ? e.message : String(e);
         say(`Could not build the report: ${msg}`);
-        // Deliberately not logged from the start screen: the app may be mid-failure,
-        // and logError writes to disk and dispatches a UI event, either of which
-        // could throw again and swallow the message the tester needs to see.
-        if (!fromStartScreen) storage.logError('problem report', msg);
+        // Deliberately not logged from here: the app may be mid-failure, and logError
+        // writes to disk and dispatches a UI event, either of which could throw again
+        // and swallow the message the tester needs to see.
+        return;
+    }
+    if (!(await confirmDanger({
+        title: 'Send this report?',
+        body: 'It goes to the Conversant AAC team. Below you can read exactly what will '
+            + 'be sent: your settings, your device, and the errors the app recorded - '
+            + 'including what was said in any conversation those errors happened in. '
+            + 'Conversations you marked as not to be saved are not in it.',
+        preview: text,
+        confirmLabel: 'Send it',
+        cancelLabel: 'Not now'
+    }))) {
+        say('Not sent. Nothing has left this device.');
+        return;
+    }
+    try {
+        const res = await weeklySend.sendProblemReport({
+            note: '', report: text, appVersion: APP_VERSION, build: BUILD_ID,
+        });
+        if (res && res.sent) say('Sent and received. Thank you.');
+        else say('Not sent yet - it is saved and will go by itself next time.');
+    } catch {
+        say('Not sent yet - it is saved and will go by itself next time.');
     }
 }
 
@@ -4670,17 +4707,19 @@ async function sendProblemReport() {
             appVersion: APP_VERSION,
             build: BUILD_ID,
         });
-        // "Sent" means the request left the device, never that it arrived: the
-        // response is opaque by design (see post() in weekly-send.js). Anything that
-        // could not go is queued and tried again the next time the app opens, which
-        // is what makes writing a report with no signal worth doing.
-        if (res && res.sent) setProblemReportStatus('Sent. Thank you — that is the whole procedure.');
-        else if (res && res.queued) setProblemReportStatus('Saved to send later — it will go the next time you open the app with a connection.');
-        else setProblemReportStatus('Could not send it. Use Save to a file and send that to Ken instead.');
+        // (!) THESE THREE MESSAGES ARE NOW TRUE, WHICH THEY WERE NOT BEFORE. The app
+        // used to be unable to read the reply, so "Sent" meant only that the request
+        // had left the device and a report the far end threw away said thank you.
+        // post() now reads the answer, so "received" means received. The tester is
+        // never asked to detect a failure by noticing that nothing happened - which
+        // was the previous plan and put the onus in the wrong place entirely.
+        if (res && res.sent) setProblemReportStatus('Sent and received. Thank you — that is the whole procedure.');
+        else if (res && res.queued) setProblemReportStatus('Not sent yet — it is saved and will go by itself next time you open the app. Nothing more for you to do.');
+        else setProblemReportStatus('Not sent yet — it is saved and will try again on its own.');
         renderWeeklyReport();
     } catch (e) {
         const msg = e && e.message ? e.message : String(e);
-        setProblemReportStatus('Could not send it. Use Save to a file and send that to Ken instead.');
+        setProblemReportStatus('Not sent yet — it is saved and will try again next time you open the app.');
         storage.logError('problem report send', msg);
     }
 }
@@ -5178,9 +5217,6 @@ function openSettings() {
     if (refreshBtn) refreshBtn.onclick = () => renderTroubleshooting();
     const sendReportBtn = document.getElementById('sendProblemReportBtn');
     if (sendReportBtn) sendReportBtn.onclick = () => sendProblemReport();
-    const saveReportBtn = document.getElementById('saveProblemReportBtn');
-    if (saveReportBtn) saveReportBtn.onclick = () => saveProblemReport();
-    copyFrom('copyProblemReportBtn', () => buildProblemReportText());
     const clearNoteBtn = document.getElementById('clearProblemNoteBtn');
     if (clearNoteBtn) clearNoteBtn.onclick = async () => {
         const box = document.getElementById('problemNoteInput');

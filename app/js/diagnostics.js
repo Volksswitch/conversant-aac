@@ -237,9 +237,3 @@ export async function buildProblemReport({ note, appVersion, buildId, errorRepor
         '(No API keys are included in this report.)',
     ].join('\n');
 }
-
-// yyyy-mm-dd-hhmm, for a filename a tester can tell apart from the last one.
-export function reportFilename(now = new Date()) {
-    const p = (n) => String(n).padStart(2, '0');
-    return `conversant-problem-report-${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}-${p(now.getHours())}${p(now.getMinutes())}.txt`;
-}

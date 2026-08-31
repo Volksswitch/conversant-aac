@@ -14,9 +14,19 @@
  * Use via: if (!(await confirmDanger({ title, body, confirmLabel }))) return;
  */
 
+/* `preview` renders the exact text an action is about to send, in a scrollable
+ * read-only box between the explanation and the buttons (August 31 2026).
+ *
+ * It exists for the launch-screen problem report. The standing rule for anything
+ * carrying conversation text is that the tester must SEE it and then CONFIRM - the
+ * seeing and the confirming are two separate steps and neither is optional. In
+ * Settings the seeing is done by a preview box on the panel; the launch screen has no
+ * panel, and is reached precisely when Settings cannot be, so without this the report
+ * could only be sent blind. */
 export function confirmDanger({
     title = 'Are you sure?',
     body = 'This cannot be undone.',
+    preview = '',
     confirmLabel = 'Delete',
     cancelLabel = 'Cancel'
 } = {}) {
@@ -49,7 +59,17 @@ export function confirmDanger({
         confirmBtn.textContent = confirmLabel;
         actions.append(cancelBtn, confirmBtn);
 
-        dlg.append(head, p, actions);
+        // Read-only rather than disabled: a disabled control cannot be scrolled, and
+        // a preview the tester cannot scroll through is not a preview.
+        let pre = null;
+        if (preview) {
+            pre = document.createElement('textarea');
+            pre.className = 'danger-preview';
+            pre.readOnly = true;
+            pre.rows = 10;
+            pre.value = preview;
+        }
+        dlg.append(head, p, ...(pre ? [pre] : []), actions);
 
         let settled = false;
         const done = (val) => {

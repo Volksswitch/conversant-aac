@@ -94,7 +94,7 @@
                          is deliberately small and quiet: this is the launch screen,
                          not a support desk. Saves straight to a file, because a
                          panel to type into is exactly what may be unavailable. -->
-                    <button id="startReportBtn" type="button" class="start-report">If something is wrong — save a report</button>
+                    <button id="startReportBtn" type="button" class="start-report">If something is wrong — send a report</button>
                 </div>
             </section>
 
@@ -821,15 +821,16 @@
                         <label for="problemNoteInput">Report a problem</label>
                         <textarea id="problemNoteInput" rows="3" placeholder="What happened? &quot;I pressed Listen and nothing happened&quot; is a perfect report."></textarea>
                         <div id="problemReportActions">
-                            <!-- Send is first because it is the route that asks least
-                                 of the tester (Ken, August 21 2026): saving a file
-                                 leaves them to find it and decide what to do with it,
-                                 and Copy assumes somewhere to paste. Save and Copy
-                                 stay for anyone offline, opted out, or who would
-                                 rather see it leave by their own hand. -->
+                            <!-- Send is the ONLY route (Ken, August 31 2026), and the
+                                 two it replaced were removed rather than hidden.
+                                 Saving a file left the tester to find it and decide
+                                 what to do with it; Copy assumed somewhere to paste,
+                                 which on a tablet often does not exist. Both were
+                                 real work at the worst possible moment, and both
+                                 carried exactly the same text Send does.
+                                 Offline needs no file either: an unsent report is
+                                 kept and goes by itself next time the app opens. -->
                             <button id="sendProblemReportBtn" type="button">Send</button>
-                            <button id="saveProblemReportBtn" type="button">Save to a file</button>
-                            <button id="copyProblemReportBtn" type="button">Copy</button>
                             <!-- Clear empties the note only. It is LAST, away from
                                  Send, because the two are adjacent in consequence:
                                  losing a report you have just typed is exactly what

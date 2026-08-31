@@ -266,18 +266,41 @@ async function gatherPayload({ appVersion, build, now }) {
     });
 }
 
+/* Hand one report to the endpoint and find out what it did with it.
+ *
+ * (!) THIS READS THE REPLY, AND THAT IS A CHANGE WORTH UNDERSTANDING (August 31 2026).
+ * It used to post with mode 'no-cors' on the belief that Apps Script could not answer
+ * a cross-origin request, which made the response opaque: every send looked like a
+ * success, including the ones the far end threw away. That is exactly how reports were
+ * lost silently for six days in August - the endpoint was refusing every one of them
+ * and nothing anywhere could tell.
+ *
+ * MEASURED against the live endpoint rather than assumed: a POST with mode 'cors' and
+ * Content-Type text/plain comes back status 200, type 'cors', with the body readable.
+ * text/plain keeps it a SIMPLE request, so no preflight is involved - which is the
+ * thing Apps Script genuinely cannot answer, and the reason the old belief was half
+ * right. Do not add a custom header here: that would trigger a preflight and put the
+ * blindness back.
+ *
+ * The contract is the endpoint's own: 'ok' means written, anything else ('bad secret',
+ * 'no body', 'error: ...') means it was not. A body we do not recognise counts as a
+ * refusal, because the alternative is to call an unknown answer a success - which is
+ * the failure this whole change exists to remove.
+ *
+ * If the endpoint is ever redeployed without CORS the fetch will simply reject, which
+ * is handled as "no connection": kept and retried, never dropped. */
 async function post(payload) {
     if (!ENDPOINT) return 'not configured';
-    // 'no-cors' + text/plain keeps this a simple request, avoiding the preflight
-    // Apps Script cannot answer. The response is opaque, so reaching here means the
-    // request left the device — not that it arrived.
-    await fetch(ENDPOINT, {
+    const res = await fetch(ENDPOINT, {
         method: 'POST',
-        mode: 'no-cors',
+        mode: 'cors',
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({ secret: SHARED_SECRET, ...payload }),
     });
-    return 'sent';
+    let body = '';
+    try { body = (await res.text()).trim(); } catch { /* unreadable - treat as refused */ }
+    if (res.ok && body === 'ok') return 'sent';
+    return `refused: ${body || res.status}`;
 }
 
 /* Try to send everything queued. Each success is logged for the tester to read
@@ -298,11 +321,24 @@ export async function flush() {
             storage.appendWeeklySendLog({ at: new Date().toISOString(), bytes: JSON.stringify(payload).length, outcome: 'waiting for a connection' });
             return { sent, queued: queue.length };
         }
+        // (!) ONLY AN ACCEPTED REPORT LEAVES THE QUEUE. Anything else is KEPT and
+        // tried again next launch. The old code sliced the payload off before
+        // checking the outcome, so a report the endpoint had not taken was thrown
+        // away - the one thing a queue exists to prevent. It could not bite while
+        // every send was reported as a success; now that refusals are visible, it
+        // would have become the way reports are lost.
+        //
+        // A permanently refused report does sit at the head and block the rest, but
+        // it cannot do so forever: enqueue() drops the OLDEST on overflow, so a stuck
+        // head is evicted in time rather than jamming the queue for good.
+        if (outcome !== 'sent') {
+            storage.appendWeeklySendLog({ at: new Date().toISOString(), bytes: JSON.stringify(payload).length, outcome });
+            return { sent, queued: queue.length };
+        }
         queue = queue.slice(1);
         storage.saveWeeklyQueue(queue);
         storage.appendWeeklySendLog({ at: new Date().toISOString(), bytes: JSON.stringify(payload).length, outcome });
-        if (outcome === 'sent') sent++;
-        else break;   // 'not configured' — no point retrying the rest this run
+        sent++;
     }
     return { sent, queued: queue.length };
 }

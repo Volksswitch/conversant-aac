@@ -217,9 +217,10 @@ happened, and it may carry a transcript you have chosen to attach.
 
 You can turn automatic reporting off in the same place. We would rather you left it on, because it
 means you never have to remember to send us anything — but it is your choice and turning it off
-will not affect the app. **If you do turn it off**, nothing is lost: **Settings → Troubleshooting**
-still has **Save to a file** and **Copy** for both the problem report and the error log, and you
-can send either to Ken whenever you like.
+will not affect the app. **If you do turn it off**, you can still report a problem: the **Send**
+button in **Settings → Troubleshooting** is a deliberate act on your part, so it keeps working
+either way. If there is no connection when you tap it, the report is kept and goes by itself the
+next time you open the app - there is nothing for you to chase.
 
 **This arrangement ends with the beta.** In the public release, sending anything back will be off
 unless the person using the app deliberately turns it on.

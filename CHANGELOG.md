@@ -26,6 +26,14 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Reporting a problem is now one button: **Send**. "Save to a file" and "Copy" have
+  gone - they carried exactly the same report, and both left you to find a file or
+  somewhere to paste it before we ever saw it.
+- The app can now tell whether a report actually arrived, so it says so. If it cannot
+  get through, it keeps the report and sends it by itself the next time you open the
+  app - you are never asked to check whether something worked.
+- The "If something is wrong" link on the opening screen now sends the report too,
+  showing you exactly what it contains first.
 - Usage reports now wait until you have actually started using the app, rather than
   going a few seconds after it opens. They also now count the conversations saved in
   your data folder, which they were often missing before.
