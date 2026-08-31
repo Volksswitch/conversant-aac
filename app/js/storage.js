@@ -111,6 +111,7 @@ async function useDeviceStorage() {
     try {
         const root = await navigator.storage.getDirectory();
         setRoot(root, BACKEND.DEVICE);
+        await ensureDataSubfolders();
         return true;
     } catch {
         return false;
@@ -141,6 +142,7 @@ export async function restoreDataFolder() {
             }
             if (perm === 'granted') {
                 setRoot(stored, BACKEND.FOLDER);
+                await ensureDataSubfolders();
                 return true;
             }
         } catch {
@@ -158,6 +160,7 @@ export async function pickDataFolder() {
         const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
         await idbPut(DIR_HANDLE_KEY, handle);   // permissions attach to this handle
         setRoot(handle, BACKEND.FOLDER);
+        await ensureDataSubfolders();
         return dirHandle;
     }
     // Called on a platform with no picker: adopt device storage rather than
@@ -462,6 +465,35 @@ export function applyPortableSettings(incoming) {
 // a reset, a bad import), not against losing the folder. Copying it somewhere else
 // is still the user's job — but now it is a file they can see in order to copy.
 const BACKUP_DIR = 'backups';
+const CONVERSATIONS_DIR = 'conversations';
+
+/* THE THREE SUBFOLDERS ARE CREATED WHEN THE FOLDER IS CONNECTED, not when something
+ * first needs one (Ken, August 31 2026).
+ *
+ * They used to appear on first use, which meant a freshly chosen folder looked empty
+ * and `backups` in particular might not exist for weeks. Ken's reason for changing it
+ * is about MOVING A FILE BETWEEN DEVICES: copying a settings profile or a backup
+ * across should mean dropping it into a folder that is already sitting there and then
+ * pressing Load - not hunting for somewhere to put it, or having to guess the name.
+ * An empty folder is the instruction.
+ *
+ * (!) IT RUNS ON EVERY CONNECTION, NOT ONLY ON THE FIRST PICK, and that is the half
+ * that matters in practice: every existing device already has its folder chosen, so
+ * creating these only at pick time would never reach any of them. Creating a folder
+ * that is already there costs nothing and is the same call either way.
+ *
+ * Failure is deliberately silent. A folder granted read-only, or holding a FILE of
+ * the same name, must not stop the app connecting to it - the app worked without
+ * these folders before and still does. */
+const DATA_SUBFOLDERS = [SETTINGS_DIR, CONVERSATIONS_DIR, BACKUP_DIR];
+
+async function ensureDataSubfolders() {
+    if (!dirHandle) return;
+    for (const name of DATA_SUBFOLDERS) {
+        try { await dirHandle.getDirectoryHandle(name, { create: true }); }
+        catch { /* read-only, or a file of that name is in the way - not fatal */ }
+    }
+}
 
 // True only for a real folder the user picked and can open. DEVICE (OPFS) is a
 // data folder for every other purpose but deliberately not for this one.
@@ -1177,7 +1209,7 @@ export function resetConversationId() {
 async function getConversationsDir() {
     if (!dirHandle) return null;
     if (!conversationDirHandle) {
-        conversationDirHandle = await dirHandle.getDirectoryHandle('conversations', { create: true });
+        conversationDirHandle = await dirHandle.getDirectoryHandle(CONVERSATIONS_DIR, { create: true });
     }
     return conversationDirHandle;
 }

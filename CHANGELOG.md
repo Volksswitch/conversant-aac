@@ -29,6 +29,10 @@ forgetting to tag one is only ever noise, never silence.
 - Usage reports now wait until you have actually started using the app, rather than
   going a few seconds after it opens. They also now count the conversations saved in
   your data folder, which they were often missing before.
+- Your data folder now gets its "settings", "conversations" and "backups" folders as
+  soon as you connect it, instead of each one appearing the first time it is needed.
+  So when you copy a saved settings profile or a backup over from another device,
+  there is already somewhere to put it and you can just press Load.
 
 ## Version 0.8.6
 

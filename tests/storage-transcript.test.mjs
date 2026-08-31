@@ -110,6 +110,37 @@ test('the app adopts device storage when there is no folder to pick', async () =
     assert.equal(storage.supportsUserChosenFolder(), false);
 });
 
+test('connecting the data folder creates all three subfolders, before anything is saved', async () => {
+    // (!) WHY THIS IS ASSERTED ON DISK RATHER THAN BY CALLING THE GETTERS: the point
+    // of the change is that the folders exist BEFORE anything asks for one. Ken's
+    // reason is moving a file between devices - copying a settings profile or a
+    // backup across should mean dropping it into a folder that is already sitting
+    // there and pressing Load, not hunting for somewhere to put it. Asking a getter
+    // to make the folder and then finding it there would prove nothing.
+    //
+    // restoreDataFolder() has already run in the first test, so this reads the state
+    // it left behind: no conversation has been saved, no profile written, no backup
+    // taken, and all three must be present regardless.
+    const names = [...root._dirs.keys()].sort();
+    assert.deepEqual(names, ['backups', 'conversations', 'settings']);
+});
+
+test('reconnecting a folder that already has the subfolders changes nothing', async () => {
+    // It runs on EVERY connection, not just the first pick - which is the half that
+    // reaches devices whose folder was chosen months ago. Creating a folder that is
+    // already there has to be a no-op, and must not disturb what is in it.
+    const dir = await root.getDirectoryHandle('backups');
+    await (await dir.getFileHandle('keep-me.json', { create: true }))
+        .createWritable().then(w => w.write('{"a":1}').then(() => w.close()));
+
+    await storage.restoreDataFolder();
+
+    assert.deepEqual([...root._dirs.keys()].sort(), ['backups', 'conversations', 'settings']);
+    const again = await root.getDirectoryHandle('backups');
+    const fh = await again.getFileHandle('keep-me.json');
+    assert.equal(await (await fh.getFile()).text(), '{"a":1}', 'reconnecting must not wipe a backup');
+});
+
 test('a partner turn is written to disk with its revision history', async () => {
     storage.setConversationSaving(true);
     storage.setSttBackend('browser');
