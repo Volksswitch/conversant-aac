@@ -27,6 +27,17 @@ forgetting to tag one is only ever noise, never silence.
 ## Unreleased (next release)
 
 
+## Version 0.9.2
+
+_Nothing changed in the app itself. This release corrects the documents._
+
+- Your manual may be out of date, and it is worth taking a fresh copy. The
+  Android manual told Android readers their device was not supported and listed a
+  computer’s hardware; a picture that had gone missing was put back in all three
+  manuals; and the instructions for reporting a problem now match the single
+  “Send” button.
+
+
 ## Version 0.9.1
 
 _No user-visible changes. Notes like these can now be aimed at Android readers as

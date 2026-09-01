@@ -22,6 +22,9 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.9.2": [
+    "Your manual may be out of date, and it is worth taking a fresh copy. The Android manual told Android readers their device was not supported and listed a computer’s hardware; a picture that had gone missing was put back in all three manuals; and the instructions for reporting a problem now match the single “Send” button."
+  ],
   "0.9.0": [
     "Android phones and tablets are now supported.",
     {
