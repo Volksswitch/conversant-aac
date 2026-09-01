@@ -549,6 +549,91 @@ def l9_refs(doc):
     return out
 
 
+@rule('L10', "A manual carries only its own device's hardware words",
+      'Each manual is self-contained for one family of device, so a reader never meets an '
+      "instruction for someone else's. A manual built by copying another starts out "
+      'describing the original, and that is invisible to every other rule here.',
+      scope='user')
+def l10_platform(doc):
+    """The defect this exists for, and why nothing else could have caught it.
+
+    August 31 2026: the Android manual was written by copying the Windows one. The scan
+    used to find which paragraphs were device-specific listed only paragraphs OUTSIDE
+    tables, so it reported 12 when the real count was higher, and the whole "What You
+    Need" table came across untouched - recommending a Microsoft Surface, naming a
+    MacBook, listing Windows 10 as the operating system, and ending with "Not supported:
+    iPhone, Android phones and tablets" in the Android manual.
+
+    Neither half is a judgment call, which is what makes them checkable. Whether a
+    sentence is TRUE is not something this suite can decide - but "this manual is for
+    Android and this paragraph says Surface" is arithmetic, and so is "this document
+    says a platform we support is not supported".
+
+    ⚠ THE EXEMPTION IS WHAT KEEPS IT HONEST. A manual SHOULD name the other devices when
+    it is pointing the reader at their manual - that is the whole redirect convention.
+    So a paragraph naming another family is fine when it also names that family's
+    manual. Without this the rule fires on every correct cross-reference and gets
+    switched off, which is worse than not having it.
+    """
+    cfg = CONV.get('platformManuals')
+    if not cfg:
+        return []
+    base = os.path.basename(doc.path)
+    family = None
+    for frag, fam in cfg['manualFamily'].items():
+        if frag in base:
+            family = fam
+            break
+    if family is None:
+        return []
+
+    foreign = []
+    for fam, words in cfg['families'].items():
+        if fam != family:
+            foreign += words
+    foreign_rx = re.compile(r'\b(%s)\b' % '|'.join(sorted(map(re.escape, foreign), key=len, reverse=True)))
+    redirect_rx = re.compile(r'Conversant AAC User Manual', re.I)
+    supported_rx = re.compile(r'\b(%s)\b' % '|'.join(sorted(map(re.escape, cfg['supported']), key=len, reverse=True)))
+
+    out = []
+    for p in doc.paras:
+        text = p.text or ''
+        if not text.strip():
+            continue
+        if p.container == 'sdt':
+            continue
+
+        # Half one: another device's hardware words, with no redirect in the sentence.
+        if not redirect_rx.search(text):
+            hits = sorted(set(m.group(0) for m in foreign_rx.finditer(text)))
+            if hits:
+                # ⚠ SEVERITY SPLITS ON THE CONTAINER, and the split is the defect, not a
+                # hedge. Device SPECIFICATIONS live in the tables - the hardware row, the
+                # browser row, the operating-system row - and those are pure facts about
+                # one device, so another device's word in one is always wrong. PROSE is
+                # where a deliberate contrast is legitimate ("Windows remembers the
+                # permission between launches and Android does not"), so that is a
+                # person's call. Erroring on prose would make this a rule people switch
+                # off, which the file's own doctrine says is worse than no rule.
+                out.append(F('a %s manual, but this says %s - left over from the manual '
+                             'it was copied from?' % (family, ', '.join('"%s"' % h for h in hits)),
+                             p.i, snip(text),
+                             severity='error' if p.in_table else 'review'))
+
+        # Half two: claiming a platform we support is not supported. Only the list form
+        # with a colon, so "Safari is not supported on your MacBook" - a browser, and
+        # correct - is never touched.
+        m = re.search(r'[Nn]ot supported:(.*)', text)
+        if m:
+            claimed = sorted(set(x.group(0) for x in supported_rx.finditer(m.group(1))))
+            if claimed:
+                out.append(F('says %s not supported, but we support %s'
+                             % (', '.join('"%s"' % c for c in claimed),
+                                'it' if len(claimed) == 1 else 'them'),
+                             p.i, snip(text)))
+    return out
+
+
 def _screen_names():
     """Button, tab and setting names harvested from the app, so the list cannot go stale.
 
@@ -585,6 +670,36 @@ def documents(patterns):
     return paths
 
 
+def _blind_scans():
+    """Any documentation script still reading paragraphs the way that hides tables.
+
+    python-docx's document.paragraphs skips every paragraph inside a table, and on the
+    manuals the two iterations disagree by hundreds (595 against 379). A one-off scan
+    written that way is what produced the August 31 2026 Android manual with the Windows
+    hardware table still in it. The standing tools all walk the XML; this makes sure a
+    new one cannot quietly reintroduce the view that hides half the document.
+
+    Read with the syntax tree rather than by searching the text, so that a docstring
+    WARNING about the wrong view - which several of these files rightly carry, this one
+    included - is not itself reported as the wrong view.
+    """
+    import glob as _glob
+    import ast as _ast
+    hits = []
+    roots = [os.path.join(ROOT, 'scripts', 'doc-tests'),
+             os.path.join(ROOT, 'scripts', 'doc-generators')]
+    for root in roots:
+        for path in _glob.glob(os.path.join(root, '*.py')):
+            try:
+                tree = _ast.parse(open(path, encoding='utf-8').read())
+            except (OSError, SyntaxError):
+                continue
+            for node in _ast.walk(tree):
+                if isinstance(node, _ast.Attribute) and node.attr == 'paragraphs':
+                    hits.append('%s:%d' % (os.path.relpath(path, ROOT), node.lineno))
+    return sorted(set(hits))
+
+
 def main(argv):
     only = None
     errors_only = lang_only = False
@@ -615,6 +730,15 @@ def main(argv):
         print('No documents matched.')
         return 1
 
+    blind = _blind_scans()
+    if blind:
+        print('TOOLING WARNING - these read documents with a view that cannot see inside')
+        print('tables, which is how the Android manual kept the Windows hardware table:')
+        for where in blind:
+            print('   %s' % where)
+        print('   use scripts/doc-tests/docx_model.py instead.')
+        print('')
+
     user_facing = set(CONV['userFacingDocuments'])
     totals = {'error': 0, 'review': 0}
     for path in paths:
@@ -633,6 +757,19 @@ def main(argv):
         nc = lambda x: x.replace(',', '')
         is_user = nc(base) in {nc(u) for u in user_facing}
         lines = []
+        # A document missing from the user-facing list is DOWNGRADED, not flagged - every
+        # rule that matters most to a manual is skipped and it reports clean. That is
+        # exactly what happened to the Android manual, which was created on August 31
+        # 2026, never added to the list, and checked by almost nothing for as long as it
+        # existed. Anything named like a manual is held to the manual's rules, and a
+        # missing entry is an error rather than a quiet reclassification.
+        if not is_user and 'User Manual' in base:
+            lines.append('  %-6s %-3s %-9s %s' % ('ERROR', '-', '-',
+                         'named like a user manual but missing from userFacingDocuments '
+                         'in writing-conventions.json, so every user-facing rule was '
+                         'skipped - add it'))
+            totals['error'] += 1
+            is_user = True
         for r in RULES:
             if only and r.rid != only:
                 continue

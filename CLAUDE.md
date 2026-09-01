@@ -1339,6 +1339,56 @@ A batch of Ken's thoughts captured this session. **Status: recorded only — non
 
 ---
 
+## DECIDED — a "purification" pass before general release, driven from the CODE (Ken, August 31 2026)
+
+**Ken's decision, and the reasoning is his: *"The current process is faster but it has an
+obvious frailty: it only addresses document changes for product changes that it has
+recorded. Miss a recording and the documents can remain out of sync forever."*** Before
+general release the documents get a **purification** that starts from an **extraction of
+all product functionality from the code base**, and checks the documents against that -
+rather than against the change log, which is what every "sync docs" pass has done.
+
+**WHY THIS IS NOT REDUNDANT WITH "sync docs", stated once so it is not re-argued as
+duplicate effort.** The two ask different questions and neither can answer the other's.
+
+| | asks | blind to |
+|---|---|---|
+| sync docs | what changed since this document was last reviewed - does it still match? | anything that was never recorded, and any sentence the change window does not touch |
+| check docs | does this document obey the conventions? | whether a sentence is TRUE - stated in its own header |
+| purification | does the product actually behave the way every document says? | nothing structural; it is bounded by the extraction's completeness |
+
+**A sync works from a CHANGE WINDOW, so it never re-reads a whole document.** A sentence
+that was true when written and that nothing in the window disturbs is never looked at
+again - for the life of the product. That is the permanent hole, and it is not fixable by
+being more careful during a sync, because the sync is never shown the sentence.
+
+**⚠ THE SHAPE OF THE FAILURE THAT PROVES IT, August 31 2026 - and note it is the MILD
+version, because here the change WAS recorded.** Android became supported and the sync
+ran that same day. The Windows and iPad manuals still said "Not supported: iPhone, Android
+phones and tablets" afterwards, and the brand-new Android manual said it about its own
+reader. The prose above that row was correctly updated; the row itself was not, because it
+is a **table cell** and the scan being used could not see inside tables. **If a recorded
+change can be missed, an unrecorded one has nothing to catch it at all.**
+
+**HOW TO DO IT, when the time comes.** Extract from the code, not from memory or from the
+documents - the settings and their defaults (`storage.js` accessors and `index.html`), every
+control on screen (the same harvest `_screen_names()` already does for the quotes rule), the
+Command Bar buttons, the Express Panel item types, what each prompt actually instructs
+(`llm.js`), the platform decisions (`platform.js`), and the conversation-file fields. Then
+walk each document against that inventory in both directions: **every claim a document makes
+must be found in the code, and every user-visible capability must be found in some document.**
+The second direction is the one no existing process performs at all.
+
+**⚠ EXPECT THE EXTRACTION ITSELF TO BE THE HARD PART, and expect it to be wrong the first
+time.** Anything that cannot be read mechanically out of the code - why a setting exists,
+what a number means for a user, whether a figure still matches the screen - is a person
+reading, and the pass must say which findings are which rather than presenting a list that
+mixes them. Where the extraction cannot reach a layer, name the layer in the report; the
+standing rule about reporting what was actually exercised applies here as much as to tests.
+
+**Gate: before general release**, and it is a distinct piece of work from any sync - schedule
+it as its own pass, not as a longer "sync docs".
+
 ## Keeping product documents in sync — trigger phrase "sync docs" (Ken, July 8 2026)
 
 Product-document currency is tracked by [`DOC-SYNC.md`](DOC-SYNC.md) (any root document named `Conversant AAC *`, each stamped with the git commit it was last reviewed against — never file modification date, which a format-only edit would bump).
@@ -1547,6 +1597,35 @@ Ken: *"there needs to be a test suite for documentation like there is for code�
 - **⚠ THE FALSE POSITIVES ARE THE PART TO GET RIGHT, and three of my own rules had to be narrowed before they were usable.** The quotes rule flagged the official region names (which are capitalized, not quoted), names that were *already* quoted, and the `Settings > Conversation` arrow notation — all three genuinely wrong, all three now excluded.
 - **⚠ THE QUOTES RULE COVERS EVERY NAME, WHATEVER ITS LENGTH, AND A NARROWING OF MINE WAS OVERRULED (Ken, August 26 2026).** I had restricted it to multi-word names, reasoning that comment 51 describes an ambiguity — not being able to tell where a name ends — that a one-word name cannot have. Ken: *"this is a convention... Button/setting/section names are contained in double quotes irregardless of the number of words that make up the name."* **The general lesson, which applies well beyond this rule: a convention the reader can state in one line beats a rule that is individually justified case by case.** A document where "Wind down" is quoted and "Reframe" is not reads as an oversight, and the reader has to reconstruct the reasoning to learn it was deliberate. The long finding list on a document that has never followed the convention is its true state, not noise. **Region names remain the one exception, because they are capitalized instead.**
 - **The app's own button and setting names are HARVESTED from `app/index.html` at run time**, never hand-listed, for the same reason the word lists are shared: a second copy of the app's vocabulary drifts from the app within a release.
+
+- **⚠ RULE L10 AND TWO GUARDS ADDED August 31 2026, after a manual shipped telling its own
+  reader the device was not supported.** All three come from one fault: the Android manual
+  was written by copying the Windows one, and the scan used to decide what was
+  device-specific listed only paragraphs OUTSIDE tables, so it reported 12 when the real
+  number was higher and the whole "What You Need" table came across unedited.
+  - **L10 - a manual carries only its own device's hardware words.** Two halves, both
+    mechanical: another family's hardware word in a paragraph that is not redirecting the
+    reader; and a "Not supported:" list naming a platform we actually support. **Severity
+    splits on the container and that is the design, not a hedge** - a device SPECIFICATION
+    lives in a table row and another device's word there is always wrong (error), while
+    PROSE is where a deliberate contrast is legitimate ("Windows remembers the permission
+    between launches and Android does not"), so a person decides (review).
+  - **A document named like a manual but missing from `userFacingDocuments` is now an
+    ERROR, not a silent downgrade.** The Android manual was never added, so every rule that
+    matters most to a manual was skipped on it **and it reported clean** for as long as it
+    existed. A green run that checked almost nothing is the worst result this suite can give.
+  - **A tooling warning names any documentation script still reading `document.paragraphs`**,
+    the view that cannot see inside tables (595 paragraphs against 379 on a manual). Read
+    with the syntax tree, so a docstring warning ABOUT the wrong view is not itself reported
+    as the wrong view. **It currently names `generate-product-overview.py` and
+    `insert-manual-figures.py`** - the second places figures BY PARAGRAPH INDEX on that
+    basis, which is the index-mismatch trap already recorded here, so figures may be landing
+    in the wrong place. Not investigated; flagged.
+- **⚠ AND THE POINT OF THE CLI: `python scripts/doc-tests/docx_model.py <doc> [pattern ...]`
+  now exists so that reaching for the CORRECT reader is easier than writing a wrong one.**
+  Prints every paragraph by the numbering the checker reports, with its container, so a
+  table cell can never be invisible again. **The standing tools were never wrong; the
+  throwaway was.** Writing a fresh scan is how the wrong view gets used, so do not write one.
 
 ## Development phases (Ken, July 8 2026) — to-do organizing convention
 

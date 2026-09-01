@@ -501,21 +501,27 @@
       "term": "Preferred",
       "use": "describe the response instead of naming the category",
       "why": "Conversation Analysis category names are removed from user documents (comment 33)",
-      "exceptDocuments": ["Conversant AAC Product Overview.docx"],
+      "exceptDocuments": [
+        "Conversant AAC Product Overview.docx"
+      ],
       "severity": "review"
     },
     {
       "term": "Dispreferred",
       "use": "describe the response instead of naming the category",
       "why": "Conversation Analysis category names are removed from user documents (comment 33)",
-      "exceptDocuments": ["Conversant AAC Product Overview.docx"],
+      "exceptDocuments": [
+        "Conversant AAC Product Overview.docx"
+      ],
       "severity": "error"
     },
     {
       "term": "Initiative",
       "use": "describe the response instead of naming the category",
       "why": "Conversation Analysis category names are removed from user documents (comment 33)",
-      "exceptDocuments": ["Conversant AAC Product Overview.docx"],
+      "exceptDocuments": [
+        "Conversant AAC Product Overview.docx"
+      ],
       "severity": "review"
     },
     {
@@ -582,11 +588,13 @@
   "_userFacingDocuments": [
     "Documents written for someone outside the project. These get every rule.",
     "Everything else in Documents/ is internal design material and gets only the",
-    "structural and spelling rules."
+    "structural and spelling rules.",
+    "⚠ A DOCUMENT MISSING FROM THIS LIST IS SILENTLY DOWNGRADED, NOT FLAGGED. The Android manual was created on August 31 2026 and never added, so every rule that matters most to a manual - spelling, plain language, quotes, cross-references - was skipped on it and it reported clean. The runner now refuses to let a file named 'User Manual' be treated as internal, because a green run that checked almost nothing is the worst result a test suite can give."
   ],
   "userFacingDocuments": [
     "Conversant AAC User Manual (Windows Chromebook Mac).docx",
     "Conversant AAC User Manual (iPad).docx",
+    "Conversant AAC User Manual (Android).docx",
     "Conversant AAC Product Overview.docx",
     "Conversant AAC Partner Card.docx",
     "Conversant AAC Beta Test Plan.docx",
@@ -607,5 +615,58 @@
       "after": 0
     },
     "deliberateBreakThreshold": 240
+  },
+  "_platformManuals": [
+    "Each user manual is self-contained for ONE family of device (Ken, August 1 2026): a",
+    "reader must never meet an instruction for someone else's device. Rule L10 checks that.",
+    "'words' are the hardware words that belong to each family. A manual may name another",
+    "family only when it is REDIRECTING the reader - that is, when the sentence also names",
+    "that family's manual. Anything else is the other manual's text left behind.",
+    "'supported' is every family the product supports, used to catch a document claiming one",
+    "of them is not supported. Both halves failed on August 31 2026: the Android manual kept",
+    "the Windows hardware table wholesale, and the Windows and iPad manuals both went on",
+    "saying 'Not supported: iPhone, Android phones and tablets' after Android was supported.",
+    "One scan that could not see inside tables produced all three, and nothing else looked."
+  ],
+  "platformManuals": {
+    "supported": [
+      "Windows",
+      "Chromebook",
+      "Chromebooks",
+      "Mac",
+      "Macs",
+      "MacBook",
+      "iPad",
+      "iPads",
+      "Android"
+    ],
+    "families": {
+      "windows": [
+        "Windows",
+        "Surface",
+        "Chromebook",
+        "Chromebooks",
+        "ChromeOS",
+        "MacBook",
+        "macOS",
+        "Mac",
+        "Macs",
+        "taskbar"
+      ],
+      "ipad": [
+        "iPad",
+        "iPads",
+        "iPadOS"
+      ],
+      "android": [
+        "Android",
+        "Google Play"
+      ]
+    },
+    "manualFamily": {
+      "(Windows Chromebook Mac)": "windows",
+      "(iPad)": "ipad",
+      "(Android)": "android"
+    }
   }
 }

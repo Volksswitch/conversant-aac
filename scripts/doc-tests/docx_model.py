@@ -145,3 +145,53 @@ class Doc:
                 self._walk(ch, container='sdt', table_index=table_index)
             elif tag == W + 'sdtContent':
                 self._walk(ch, container=container, table_index=table_index)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# A COMMAND-LINE SCAN, so that reaching for the correct reader is easier than
+# writing a wrong one.
+#
+# ⚠ THIS EXISTS BECAUSE OF A REAL COST, NOT FOR TIDINESS. On August 31 2026 the
+# Android manual was written by copying the Windows one, and the scan used to
+# decide which paragraphs were device-specific was a throwaway that listed only
+# `document.paragraphs`. That view cannot see inside tables, so it reported 12
+# device-specific paragraphs when the true number was higher, and the entire
+# "What You Need" table came across unedited - recommending a Microsoft Surface
+# and ending with "Not supported: Android" in the Android manual.
+#
+# The standing tools were never wrong; the one-off was. Writing a fresh scan is
+# how the wrong view gets used, so there is now a right one to hand:
+#
+#     python scripts/doc-tests/docx_model.py <document.docx>
+#     python scripts/doc-tests/docx_model.py <document.docx> Surface Windows
+#
+# Prints every paragraph by the same numbering the checker reports, with the
+# container it lives in, so a table cell can never be invisible again.
+if __name__ == '__main__':
+    import sys, os, re
+
+    args = sys.argv[1:]
+    if not args:
+        print(__doc__)
+        print('usage: docx_model.py <document.docx> [pattern ...]')
+        raise SystemExit(2)
+
+    path, patterns = args[0], args[1:]
+    doc = Doc(path)
+    rx = re.compile('|'.join(patterns), re.I) if patterns else None
+
+    shown = 0
+    for p in doc.paras:
+        text = p.text or ''
+        if rx and not rx.search(text):
+            continue
+        if not rx and not text.strip():
+            continue
+        shown += 1
+        print('%4d  %-4s  %s' % (p.i, p.container, text[:150]))
+
+    print('\n%s: %d paragraph(s) in the body, %d shown%s.'
+          % (os.path.basename(path), len(doc.paras), shown,
+             ' (%d inside tables)' % sum(1 for p in doc.paras if p.in_table
+                                         and (not rx or rx.search(p.text or '')))
+             if True else ''))
