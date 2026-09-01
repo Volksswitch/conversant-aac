@@ -43,6 +43,11 @@ DOCS = os.path.join(ROOT, 'Documents')
 
 RULES = []
 
+# A caption paragraph: "Figure 1." or "Figure 1:" at the start of the line. The number
+# followed by a period or colon is what separates a CAPTION from ordinary prose that
+# merely mentions one ("Figure 3 shows..."), which must never be flagged.
+CAPTION_RX = re.compile(r'^\s*Figure\s+\d+\s*[.:]')
+
 
 def rule(rid, title, why, scope='all', severity='error'):
     """scope: 'all' every document, 'user' only the ones a user reads."""
@@ -243,6 +248,69 @@ def s11_table_text(doc):
     named = ', '.join('%gpt on %d run(s)' % (int(v) / 2.0, n)
                       for v, n in sorted(sizes.items(), key=lambda kv: -kv[1]))
     return [F('table text carries its own size rather than taking it from the style: ' + named)]
+
+
+@rule('S12', 'A figure caption has its figure',
+      'A caption over blank space is a figure that has gone missing, and it is invisible '
+      'to every other check here: a picture lives in a run carrying no text, so a '
+      'paragraph-by-paragraph text comparison passes with the picture gone.')
+def s12_caption_has_figure(doc):
+    """Caught nothing when it was written, because the fault it exists for had just been
+    repaired - "Figure 2. The Composition Pane" sat over blank space in all three User
+    Manuals for a day (August 30-31 2026) and nothing reported it.
+
+    ⚠ HOW IT WENT MISSING is the reason this rule is worth having. The figure was lost in
+    a OneDrive conflict, and the recorded way of resolving one of those is to compare the
+    TEXT of every paragraph between the two copies. A picture has no text, so the two
+    files compared equal with a figure gone. The caption survived, because a caption is
+    text. Then a third manual was created by copying and inherited the gap.
+
+    ⚠ EITHER ARRANGEMENT IS ACCEPTED, because the documents genuinely use both and both
+    are internally consistent: the User Manuals put the picture ABOVE its caption, the
+    Architecture Overview puts it BELOW (9 of 9). Enforcing one would be inventing a
+    convention rather than checking one.
+
+    ⚠ AND A DOCUMENT THAT EMBEDS NO PICTURES AT ALL IS SKIPPED, which is not a loophole
+    but the point. "Sounds Like Me" captions a mockup TYPED OUT AS TEXT - a partner turn
+    and four candidate replies, laid out in the paragraphs above the caption - and there
+    is no image to find. Demanding a picture there would be reporting a correct document
+    as broken. Where a document does embed pictures, its figures are pictures, and a
+    caption without one is a gap.
+
+    The known limitation, stated rather than hidden: a document whose ONLY picture is the
+    one that goes missing falls out of scope at exactly the moment it is wrong. Nothing
+    cheap fixes that, and it is still far better than the nothing that was here before.
+    """
+    pics = [p for p in doc.paras if p.has_drawing]
+    if not pics:
+        return []
+
+    def empty(p):
+        return p is not None and not (p.text or '').strip() and not p.has_drawing
+
+    def at(n):
+        return doc.paras[n] if 0 <= n < len(doc.paras) else None
+
+    out = []
+    for p in doc.paras:
+        if not CAPTION_RX.match(p.text or ''):
+            continue
+        # Directly above or directly below, and one blank spacer either way is tolerated
+        # so that a stray empty paragraph is not read as a missing figure.
+        found = False
+        for step in (-1, 1):
+            n = at(p.i + step)
+            if n is not None and n.has_drawing:
+                found = True
+                break
+            if empty(n):
+                n2 = at(p.i + 2 * step)
+                if n2 is not None and n2.has_drawing:
+                    found = True
+                    break
+        if not found:
+            out.append(F('caption with no figure above or below it', p.i, snip(p.text)))
+    return out
 
 
 @rule('S8', 'The footer carries "Page m of n"', 'House convention since June 2026.')
