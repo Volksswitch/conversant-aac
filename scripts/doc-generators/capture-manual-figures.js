@@ -105,7 +105,7 @@ const boxesOf = (page, pairs) => page.evaluate((pairs, scale) => {
         ui.showResponses([
             { slot: 'PREFERRED', text: 'Yes, every week \u2014 I really look forward to it.', hint: 'Still going' },
             { slot: 'DISPREFERRED', text: 'I had to stop for a while, unfortunately.', hint: 'Had to stop' },
-            { slot: 'INITIATIVE', text: 'I am. Do you fancy coming along sometime?', hint: 'Invite them' },
+            { slot: 'INITIATIVE', text: 'I am. Do you want to come along sometime?', hint: 'Invite them' },
             { slot: 'REPAIR', text: 'Sorry, which class do you mean?', hint: 'Which class?' },
         ], () => {});
     });
