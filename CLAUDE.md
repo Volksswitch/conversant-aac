@@ -1113,6 +1113,87 @@ Ken asked for an architecture document for running Conversant AAC on an iPad —
 
 ---
 
+## Deepgram is NOT the only browser-direct option — MEASURED September 2 2026
+
+**Trigger: Ken could not create a Deepgram account for the first beta tester** (the
+Create Account button never enabled), and asked what makes Deepgram compatible when
+other voice providers are not. **The recorded answer turned out to be half wrong, and
+it had been recorded from documentation rather than from a test.**
+
+**THE ARCHITECTURAL RULE IS UNCHANGED AND IS STILL WHAT DECIDES EVERYTHING: no server
+we have to run.** So a provider is usable only if a BROWSER can reach it with the
+USER'S OWN key. What changed is the answer to who can.
+
+**MEASURED, from a real browser origin, with a deliberately invalid key.** A readable
+HTTP status means the browser was permitted to see the response, so a real key could
+work; a "Failed to fetch" means blocked.
+
+| Service | Result |
+|---|---|
+| OpenAI (speech + transcription) | reachable, HTTP 401, type `cors` |
+| ElevenLabs | reachable, HTTP 401, type `cors` |
+| Cartesia | reachable, HTTP 401, type `cors` |
+| Google Cloud TTS | reachable, HTTP 400, type `cors` |
+| Azure Speech (token endpoint AND TTS) | reachable, HTTP 401, type `cors` |
+| **AssemblyAI realtime token — THE CONTROL** | **BLOCKED, "Failed to fetch"** |
+
+**⚠ THE CONTROL IS WHAT MAKES THE TABLE TRUSTWORTHY**, and any repeat of this probe
+must keep one: without a case that genuinely fails, "everything is reachable" is
+equally consistent with a probe that cannot detect a block at all. AssemblyAI failing
+also confirms the ORIGINAL reasoning for rejecting it still stands — that half of the
+record was right.
+
+**SO THE REAL BARRIER FOR MOST VENDORS IS A POLICY RECOMMENDATION, NOT A TECHNICAL
+WALL — and it is a recommendation that DOES NOT APPLY TO THIS PRODUCT.** Their
+documentation says "never ship YOUR key in a browser", which is correct advice for an
+ordinary web app whose operator holds one key for all users. Conversant's key belongs
+to the USER, lives on the USER'S device, and never reaches us — the objection is
+answered by the architecture rather than defied. **Do not read a vendor's
+"browser-direct is not supported" as a capability claim; it is usually a posture
+claim. Test it.**
+
+**AZURE SPEECH IS THE STRONGEST ALTERNATIVE and covers BOTH halves.** Microsoft's own
+browser quickstart calls `SpeechConfig.fromSubscription(key, region)` with the key
+typed straight into the page — no server anywhere — so streaming recognition from the
+microphone is a supported browser scenario, not a workaround. It also has a **free
+tier (F0): about 5 audio hours of recognition and 500,000 characters of neural speech
+per month**, which for a beta tester plausibly means no card and no bill. It supports
+SSML, which is the lever the *Shaping-Speech-Through-Text* work found the browser
+voices do not give us.
+
+**⚠ WHAT WAS NOT MEASURED, and the honest boundary: only REACHABILITY with an invalid
+key.** No synthesis with a real key, no full streaming session, no latency, no voice
+quality. Reachability was the *believed blocker*, so removing it is the finding — it
+is necessary, not sufficient. **Anything built on this needs its own on-device
+confirmation, exactly as Deepgram's own Aura path did (July 31 2026, the Test button
+speaking on the iPad, which is what settled that bet).**
+
+**WHAT THIS DOES AND DOES NOT CHANGE.** Nothing needs rebuilding today: Deepgram
+works, is paid for, and is proven on the device. What it changes is that **a single
+supplier for a load-bearing function is now a choice rather than a constraint**, and
+the provider-agnostic adapter already promised for the LLM (see the vendor-choice note
+under Build Decisions) has the same argument behind it for speech.
+
+**⚠ AND THE DEPENDENCY IS NARROWER THAN "several platforms" (verified against the
+platform table): Deepgram is load-bearing in exactly ONE configuration — an iPad
+running as an INSTALLED Home Screen app**, where built-in recognition delivers nothing
+(measured July 30 2026). On Windows, Chromebook, Android and an iPad in Safari,
+built-in recognition is free and works, so Deepgram is a VOICE-QUALITY upgrade and its
+absence costs quality, not function. **A tester who cannot get a Deepgram key is not
+blocked** unless they are on that one setup, and the interim answer there is to run
+Conversant in Safari rather than installed.
+
+**On the signup failure itself (reproduced September 2 2026):** the Create Account
+button is disabled on load, Deepgram's status page showed no incident, and the
+reCAPTCHA loads correctly — so it is the form's own validation, not an outage. **The
+page offers Google, GitHub and Azure sign-in above the email form, all enabled, and
+that is the workaround to hand a tester.** The password rule is stated only as grey
+helper text ("minimum 8 characters and 1 number") and a password missing a digit
+leaves the button dead with no error shown, which is the most likely explanation.
+*(Not verified by typing one: creating accounts and entering passwords is a line this
+project's assistant does not cross.)*
+
+
 ## Android — MEASURED, August 31 2026; a supported platform is Ken's call, not made
 
 Ken installed the app on an Android phone and an Android tablet. **Everything works

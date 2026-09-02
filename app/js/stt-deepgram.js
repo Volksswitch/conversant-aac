@@ -17,6 +17,28 @@
  * the one thing this architecture refuses, and the reason the project can outlive
  * its funding. Paying 3x for no server is the right trade here.
  *
+ *
+ * (!) SUPERSEDED IN PART - MEASURED September 2 2026. The line above says Deepgram is
+ * "the only cheap one that can be connected DIRECTLY FROM A BROWSER". That is NO
+ * LONGER TRUE, and it was recorded from documentation rather than from a test.
+ *
+ * Probed from a real browser origin with a deliberately invalid key, which is the
+ * whole question: a readable HTTP status means the browser was allowed to see the
+ * response, so a user's own key could be used. OpenAI, ElevenLabs, Cartesia, Google
+ * Cloud TTS and Azure Speech ALL answered with a plain 401/400 of response type
+ * "cors" - they permit browser-direct calls today. AssemblyAI's realtime token
+ * endpoint was the CONTROL and genuinely failed to fetch, which is what proves the
+ * probe can detect a block and that the original AssemblyAI reasoning still stands.
+ *
+ * So the barrier for most vendors is a POLICY RECOMMENDATION - "do not ship YOUR key
+ * in a browser" - and not a technical wall. That recommendation does not apply here:
+ * the key is the USER'S OWN, on the USER'S OWN device, and never reaches us.
+ *
+ * (!) WHAT WAS NOT MEASURED, so this is not read as more than it is: only
+ * REACHABILITY with an invalid key. No synthesis with a real key, and no full
+ * streaming session. Reachability was the believed blocker; it is necessary, not
+ * sufficient. See CLAUDE.md, "Deepgram is not the only browser-direct option".
+ *
  * WHY RAW PCM RATHER THAN MediaRecorder. MediaRecorder produces a webm/opus STREAM:
  * only the first chunk carries the header, so a chunk taken from the middle is
  * undecodable on its own. That is fatal here, because the whole point of the gate

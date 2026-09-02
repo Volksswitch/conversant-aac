@@ -21,6 +21,28 @@
  * reasoning applies here. If this ever stops working, the answer is a different
  * vendor, not a backend.
  *
+ *
+ * (!) SUPERSEDED IN PART - MEASURED September 2 2026. The line above says Deepgram is
+ * "the only cheap one that can be connected DIRECTLY FROM A BROWSER". That is NO
+ * LONGER TRUE, and it was recorded from documentation rather than from a test.
+ *
+ * Probed from a real browser origin with a deliberately invalid key, which is the
+ * whole question: a readable HTTP status means the browser was allowed to see the
+ * response, so a user's own key could be used. OpenAI, ElevenLabs, Cartesia, Google
+ * Cloud TTS and Azure Speech ALL answered with a plain 401/400 of response type
+ * "cors" - they permit browser-direct calls today. AssemblyAI's realtime token
+ * endpoint was the CONTROL and genuinely failed to fetch, which is what proves the
+ * probe can detect a block and that the original AssemblyAI reasoning still stands.
+ *
+ * So the barrier for most vendors is a POLICY RECOMMENDATION - "do not ship YOUR key
+ * in a browser" - and not a technical wall. That recommendation does not apply here:
+ * the key is the USER'S OWN, on the USER'S OWN device, and never reaches us.
+ *
+ * (!) WHAT WAS NOT MEASURED, so this is not read as more than it is: only
+ * REACHABILITY with an invalid key. No synthesis with a real key, and no full
+ * streaming session. Reachability was the believed blocker; it is necessary, not
+ * sufficient. See CLAUDE.md, "Deepgram is not the only browser-direct option".
+ *
  * WHY THE CACHE IS NOT AN OPTIMIZATION. Aura is billed per character. A conversation
  * repeats the same short strings constantly — placeholders ("Good question."),
  * control phrases, openers and closings, every Express Panel button — so without a
