@@ -22,6 +22,9 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.9.5": [
+    "Fixed: the first word of a statement could be missing when the app spoke it in a Deepgram voice. It happened after a quiet stretch — most noticeably when you had spent a while typing in \"In my own words\" — because the sound was starting before the audio had finished waking up. Whole sentences are spoken now."
+  ],
   "0.9.3": [
     "The Express Panel now starts with a set of everyday phrases chosen by speech and language therapists, and with six feelings in the Context band. Your panel is updated to the new phrases the first time you open this version. Anything you had already written yourself is kept, and from here on the panel is yours — it will not be replaced again.",
     "The Express Panel is now measured in whole rows to begin with, with one row set aside for context buttons and none for situational phrases. You can change any of that in Settings → Express Panel."

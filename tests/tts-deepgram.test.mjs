@@ -88,3 +88,90 @@ test('voiceLabel falls back to the raw id for an unknown voice', () => {
     assert.equal(aura.voiceLabel('aura-2-thalia-en'), 'Thalia — Female · American');
     assert.equal(aura.voiceLabel('something-else'), 'something-else');
 });
+
+/* --- the audio device, faked just enough to catch a dropped first word --------
+ *
+ * (!) THIS IS THE ONE CHECK THAT CROSSES THE LAYERS. The pure decode above and a
+ * hand-built AudioContext each prove nothing on their own about the bug Ken hit
+ * (September 2 2026): the audio was decoded perfectly and the context was real, and
+ * the opening word still went missing - because the buffer was started while the
+ * context was still waking from suspend. So the assertion has to be about the ORDER
+ * of two things in different layers: the resume must have completed before start().
+ */
+function fakeSocket() {
+    class FakeWebSocket {
+        constructor() {
+            this.readyState = 1;
+            this.binaryType = '';
+            this.onopen = null; this.onmessage = null;
+            this.onerror = null; this.onclose = null;
+            setTimeout(() => this.onopen && this.onopen(), 0);
+        }
+        send(raw) {
+            const msg = JSON.parse(raw);
+            if (msg.type !== 'Flush') return;
+            // One chunk of audio, then the end marker - what Deepgram sends back.
+            setTimeout(() => {
+                this.onmessage && this.onmessage({ data: pcm(1000, 2000, 3000, 4000) });
+                this.onmessage && this.onmessage({ data: JSON.stringify({ type: 'Flushed' }) });
+            }, 0);
+        }
+        close() { this.readyState = 3; }
+    }
+    FakeWebSocket.OPEN = 1;
+    return FakeWebSocket;
+}
+
+// An AudioContext that starts SUSPENDED and takes a turn of the event loop to wake,
+// which is what a browser actually does to a context that has been idle.
+function fakeAudio(log) {
+    return class FakeAudioContext {
+        constructor() { this.state = 'suspended'; this.currentTime = 0; this.destination = {}; }
+        resume() {
+            return new Promise((res) => setTimeout(() => {
+                this.state = 'running';
+                log.push('resumed');
+                res();
+            }, 0));
+        }
+        createBuffer(ch, len) {
+            const data = new Float32Array(len);
+            return { getChannelData: () => data, length: len };
+        }
+        createBufferSource() {
+            const ctx = this;
+            return {
+                buffer: null, onended: null,
+                connect() {},
+                start() {
+                    // The heart of it: note the context's state AT THE MOMENT the
+                    // audio is started. 'suspended' here is the dropped word.
+                    log.push('start:' + ctx.state);
+                    setTimeout(() => this.onended && this.onended(), 0);
+                },
+                stop() {},
+            };
+        }
+    };
+}
+
+test('the audio is not started until a suspended context has resumed', async () => {
+    const log = [];
+    const savedWs = globalThis.WebSocket;
+    const savedAc = globalThis.window.AudioContext;
+    globalThis.WebSocket = fakeSocket();
+    globalThis.window.AudioContext = fakeAudio(log);
+    try {
+        const voice = aura.createVoice({ getKey: () => 'test-key' });
+        await voice.speak('Are you wearing a tie tonight?', { model: 'aura-2-apollo-en' });
+        // The connection is kept alive by an interval, which would hold the test
+        // runner's event loop open long past the assertion.
+        voice.reset();
+    } finally {
+        globalThis.WebSocket = savedWs;
+        globalThis.window.AudioContext = savedAc;
+    }
+    assert.deepEqual(log, ['resumed', 'start:running'],
+        'the buffer must start only after resume() has settled - starting it against ' +
+        'a suspended context is what dropped the opening word');
+});
