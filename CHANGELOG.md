@@ -27,6 +27,11 @@ forgetting to tag one is only ever noise, never silence.
 ## Unreleased (next release)
 
 
+## Version 0.9.4
+
+_No user-visible changes. The manuals and the other documents caught up with the Express Panel phrases that arrived in 0.9.3, so it is worth taking a fresh copy of your manual._
+
+
 ## Version 0.9.3
 
 - The Express Panel now starts with a set of everyday phrases chosen by speech and
