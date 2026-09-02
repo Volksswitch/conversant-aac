@@ -26,6 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+
+## Version 0.9.3
+
 - The Express Panel now starts with a set of everyday phrases chosen by speech and
   language therapists, and with six feelings in the Context band. Your panel is
   updated to the new phrases the first time you open this version. Anything you had
