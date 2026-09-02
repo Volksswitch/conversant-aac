@@ -218,12 +218,14 @@ function mkBtn(label, cls, onClick, title) {
     return b;
 }
 
-function textInput(value, placeholder, oninput) {
+function textInput(value, placeholder, oninput, opts = {}) {
     const i = document.createElement('input');
     i.type = 'text';
     i.value = value || '';
     i.placeholder = placeholder || '';
     i.className = 'ee-input';
+    // A respelling must not be word-completed - see predictionOff in keyboard.js.
+    if (opts.noPredict) i.dataset.noPredict = '';
     // Committed on every keystroke WITHOUT a re-render, so the field keeps focus and
     // the panel beside the tab updates as the user types.
     i.addEventListener('input', () => oninput(i.value));
@@ -258,7 +260,7 @@ function phraseRow(band, item) {
         if (v.trim()) next.speak = v; else delete next.speak;
         list[at] = next;
         saveBand(band, list);
-    }));
+    }, { noPredict: true }));
 
     // Reads the LIVE value rather than one captured at build time, so it speaks what
     // is in the field now and not what was there when the row was drawn.

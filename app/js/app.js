@@ -4895,7 +4895,12 @@ async function sendProblemReport() {
         storage.logError('problem report', msg);
         return;
     }
-    setProblemReportStatus('Read it through, then confirm to send.');
+    /* No "read it through" line here (Ken, September 2 2026). It was written to the
+     * status area under the Send button and the dialog then covered the panel, so the
+     * one moment it applied was the one moment it could not be seen - and it was still
+     * sitting there afterwards, telling the tester to do something they had already
+     * done. The instruction belongs where the reading happens, and it does: the dialog
+     * carries the disclosure and the full report. */
     if (!(await confirmDanger({
         title: 'Send this report?',
         body: REPORT_DISCLOSURE,
@@ -4906,6 +4911,7 @@ async function sendProblemReport() {
         setProblemReportStatus('Not sent. Nothing has left this device.');
         return;
     }
+    setProblemReportStatus('Sending...');
     try {
         const res = await weeklySend.sendProblemReport({
             note: document.getElementById('problemNoteInput')?.value || '',

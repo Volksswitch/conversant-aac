@@ -802,8 +802,10 @@ function buildPersonForm(existing) {
     //   Both read the LIVE fields rather than values captured when the form was drawn,
     // so a name typed a moment ago is what you hear.
     const sayAs = (getValue, getFallback, placeholder, initial) => {
+        // data-no-predict: a respelling is a deliberate misspelling, so completing it
+        // to a real word is the opposite of helpful. See predictionOff in keyboard.js.
         const inp = el('input', { type: 'text', class: 'wv-text wv-say-as',
-            placeholder, value: initial || '' });
+            'data-no-predict': '', placeholder, value: initial || '' });
         const hear = el('button', { class: 'wv-btn-speak wv-say-as-hear', text: '🔊',
             title: 'Hear it said', 'aria-label': 'Hear it said',
             onclick: () => {
@@ -1022,6 +1024,7 @@ function buildPlaceForm(existing) {
     // synthesiser mangles (local, foreign, or a coined brand). Blank means "say it as
     // written", and the 🔊 is what makes a respelling tunable.
     const pronIn = el('input', { type: 'text', class: 'wv-text wv-say-as',
+        'data-no-predict': '',
         placeholder: 'How to say it — only if the voice gets it wrong',
         value: existing ? existing.pronunciation : '' });
     // Empty box falls back to the place name, for the same reason as a person's

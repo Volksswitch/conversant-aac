@@ -317,11 +317,36 @@ function handleKey(keyEl) {
 
 // --- word prediction (local; see prediction.js) ----------------------------
 
-// The partial word immediately before the caret (letters/apostrophe). Empty for
-// the API-key field (a key is not natural-language) and when not on a word.
+/*
+ * Fields where guessing the next word is WRONG, not merely unhelpful.
+ *
+ * Two kinds, and they fail differently. A key is not language at all, so a
+ * suggestion is noise. A "How to say it" box holds a RESPELLING - "Shiv-awn",
+ * "Folks-switch" - which is a deliberate misspelling whose whole purpose is to not
+ * be a real word; offering the real word there fights the user on every keystroke
+ * and, worse, accepting one silently replaces the respelling with the very spelling
+ * the voice already gets wrong (Ken, September 2 2026).
+ *
+ * Marked at the field with `data-no-predict` rather than listed here by id, because
+ * the respelling boxes are built at runtime by three different editors and a list
+ * kept in this file would fall behind the next one silently.
+ *
+ * Suppressing it HERE also stops those words being LEARNED: learnCurrentWord() reads
+ * this function, so a respelling can never enter the user's own word list and start
+ * being suggested in ordinary composing.
+ */
+function predictionOff(f) {
+    return !f
+        || f.id === 'apiKeyInput'
+        || f.id === 'deepgramKeyInput'
+        || (f.dataset && f.dataset.noPredict !== undefined);
+}
+
+// The partial word immediately before the caret (letters/apostrophe). Empty where
+// prediction does not belong (see predictionOff) and when not on a word.
 function currentWordPrefix() {
     const f = activeField;
-    if (!f || f.id === 'apiKeyInput') return '';
+    if (predictionOff(f)) return '';
     const caret = f.selectionStart ?? f.value.length;
     const m = f.value.slice(0, caret).match(/[A-Za-z']+$/);
     return m ? m[0] : '';
@@ -363,7 +388,7 @@ function caseMatch(word, typed) {
 // longer than the typed prefix; otherwise hide.
 function updateGhost() {
     const f = activeField;
-    if (!f || f.id === 'apiKeyInput') { clearGhost(); return; }
+    if (predictionOff(f)) { clearGhost(); return; }
     const caret = f.selectionStart ?? f.value.length;
     if (caret !== f.value.length) { clearGhost(); return; }   // only when appending
     const prefix = currentWordPrefix();

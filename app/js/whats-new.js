@@ -23,7 +23,9 @@ import * as platform from './platform.js';
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
   "0.9.5": [
-    "Fixed: the first word of a statement could be missing when the app spoke it in a Deepgram voice. It happened after a quiet stretch — most noticeably when you had spent a while typing in \"In my own words\" — because the sound was starting before the audio had finished waking up. Whole sentences are spoken now."
+    "Fixed: the first word of a statement could be missing when the app spoke it in a Deepgram voice. It happened after a quiet stretch — most noticeably when you had spent a while typing in \"In my own words\" — because the sound was starting before the audio had finished waking up. Whole sentences are spoken now.",
+    "The “How to say it” boxes no longer try to complete what you are typing. A respelling is meant to be spelled oddly, so guessing the real word there fought you on every letter — and accepting a guess put back the very spelling the voice was getting wrong. Word completion is unchanged everywhere else.",
+    "When you send a problem report, the line telling you to read it through first has gone. It sat behind the pop-up while it applied and was still on screen afterwards, asking you to do something you had already done. The report itself is still shown in full for you to read before anything leaves your device."
   ],
   "0.9.3": [
     "The Express Panel now starts with a set of everyday phrases chosen by speech and language therapists, and with six feelings in the Context band. Your panel is updated to the new phrases the first time you open this version. Anything you had already written yourself is kept, and from here on the panel is yours — it will not be replaced again.",
