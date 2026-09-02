@@ -26,6 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+
+## Version 0.9.5
+
 - Fixed: the first word of a statement could be missing when the app spoke it in
   a Deepgram voice. It happened after a quiet stretch — most noticeably when you
   had spent a while typing in "In my own words" — because the sound was starting
