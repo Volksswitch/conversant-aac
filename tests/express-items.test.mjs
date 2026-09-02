@@ -197,3 +197,24 @@ test('nonsense input yields no cells rather than blanking the panel', () => {
         assert.deepEqual(choiceCells(slots, n), []);
     }
 });
+
+/* THE TWO HOUSE CONVENTIONS FOR A PANEL PHRASE (Ken, September 2 2026).
+ *
+ * A button is a spoken utterance, not a sentence on a page. Guarded rather than
+ * remembered because the failure is invisible: a stray period reads as correct
+ * English and only shows up as a set that looks ragged, which nobody reports.
+ */
+test('no shipped phrase ends in a period, and none has a capital part-way through', async () => {
+    const items = await import('../app/js/express-items.js');
+    const all = [...items.ALWAYS_DEFAULTS, ...items.CONTEXT_DEFAULTS];
+    const texts = all.map((x) => x.text).filter(Boolean);
+
+    assert.deepEqual(texts.filter((t) => t.endsWith('.')), [],
+        'a phrase ending in a period (a question mark is part of the words, and stays)');
+
+    // Every word after the first must start lower-case, unless it is a name or an
+    // all-caps word like OK - neither of which is in the shipped set today, so the
+    // rule is stated plainly and an addition that needs an exception will say so here.
+    const midCaps = texts.filter((t) => t.split(' ').slice(1).some((w) => /^[A-Z]/.test(w)));
+    assert.deepEqual(midCaps, [], 'a capital letter part-way through a phrase');
+});

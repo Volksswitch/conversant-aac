@@ -179,7 +179,12 @@ export const SEED_REVISION = 1;
 // (Ken, August 25 2026 - the additive-merge watermark used by the control phrases is
 // deliberately not used here; a merged panel would be neither theirs nor ours).
 //
-// The wording is theirs and is kept VERBATIM, punctuation and capitalization included.
+// The wording is theirs, with two house conventions applied across the whole set
+// (Ken, September 2 2026): NO TRAILING PERIOD on a phrase, and no capital letter
+// part-way through one. A panel button is a spoken utterance, not a sentence on a
+// page - the period buys nothing when the phrase is said aloud and only makes the
+// set look ragged when some have one and some do not. Question marks stay: they are
+// part of the words ("Wanna chat?"), not punctuation at the end of a statement.
 // The order is theirs too: it is what a user reaches for, most-used first, so the band
 // shortens from its bottom when the Context band grows and the phrases that go first
 // are the ones they ranked last.
@@ -188,12 +193,12 @@ export const SEED_REVISION = 1;
 // category has had no effect since bands shipped (ui.renderExpressPanel voids it).
 export const ALWAYS_DEFAULTS = [
   PH('Yes'), PH('No'),
-  PH("I don't know."), PH('Maybe.'),
+  PH("I don't know"), PH('Maybe'),
   PH('OK'), PH('Excuse me'),
-  PH('Hey there.'), PH('Come here please'),
+  PH('Hey there'), PH('Come here please'),
   PH('Hi'), PH('Bye'),
   PH('Awesome'), PH('No way'),
-  PH('Please'), PH('Thank you'), PH("You're Welcome"),
+  PH('Please'), PH('Thank you'), PH("You're welcome"),
   PH('When?'), PH('Where?'), PH('Why?'), PH('Who?'), PH('What?'),
   PH('Wanna chat?'),
   PH('I need something for my care'),
@@ -235,9 +240,9 @@ const SHIPPED_DEFAULT_TEXTS = new Set([
   // Feelings, current and retired
   'Happy', 'Sad', 'Stressed', 'Curious', 'Tired', 'Excited', 'Silly',
   // The therapists' Always set
-  'Yes', 'No', "I don't know.", 'Maybe.', 'OK', 'Excuse me', 'Hey there.',
+  'Yes', 'No', "I don't know", 'Maybe', 'OK', 'Excuse me', 'Hey there',
   'Come here please', 'Hi', 'Bye', 'Awesome', 'No way', 'Please', 'Thank you',
-  "You're Welcome", 'When?', 'Where?', 'Why?', 'Who?', 'What?', 'Wanna chat?',
+  "You're welcome", 'When?', 'Where?', 'Why?', 'Who?', 'What?', 'Wanna chat?',
   'I need something for my care', 'Please help me',
   "I'm typing a longer response and need more time", 'My device is glitching',
   'My device listens and speaks for me',
