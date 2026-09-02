@@ -131,41 +131,15 @@ export function isEmptyItem(item) {
   return !!item && item.type === 'empty';
 }
 
-// The provided STARTING LAYOUT (Ken: "a starting layout should be provided").
-//
-// HALF-POPULATED BY DESIGN (Ken, August 7 2026). An empty grid means blank holes on
-// day one, the feature is never discovered, and the app reads as broken; a full grid
-// of our phrases is complete, and so invites nothing. Half is a task framed as begun
-// rather than not-yet-started, which is completed more often (Nunes & Dreze 2006,
-// the endowed progress effect). The remaining cells render blank — the renderer
-// already leaves leftover cells empty — and those blanks are the invitation.
-//
-// WHAT STAYS is conversational plumbing: immediately useful, and it makes no claim
-// about the user, because nobody's identity is in "Yes". WHAT LEFT ("Yes please",
-// "Maybe", "That's funny", "See you later", "I agree", "Got it", "One moment", …)
-// is the set that LOOKS like voice while being ours — exactly the cells worth
-// handing over.
-//
-// Feelings lead so the influencer concept is visible, then the common phrases.
-// Partners start empty — they are personal; the user adds their own people in the
-// editor (free-form or picked from People I Know).
-// Stable ids ('d0', 'd1', …) so getItems() returns the SAME id every call —
-// the toggle state (active partner/feeling) is tracked by id, so an unstable id
-// would break the toggled-on highlight.
-export const DEFAULT_ITEMS = [
-  FE('Happy'), FE('Sad'), FE('Stressed'), FE('Curious'), FE('Tired'), FE('Excited'),
-  PH('Yes', 'affirm'), PH('No', 'affirm'),
-  PH('Okay', 'cont'),
-  PH('Please', 'social'), PH('Thank you', 'social'), PH('Sorry', 'social'),
-  PH('Hi', 'social'), PH('Bye', 'social'),
-  PH('Wait', 'pace'),
-  PH('Help', 'need'),
-  // The partner-awareness disclosure, shipped as a default because the Beta Test
-  // Plan asks every tester to say it and nobody should have to type it. Last, so
-  // adding it moves none of the plumbing cells above.
-  PH('This device listens and speaks for me', 'notice'),
-].map((it, i) => ({ id: 'd' + i, ...it, origin: ORIGIN.DEFAULT }));
-
+// (The version-1 flat DEFAULT_ITEMS list lived here, with the rule that the panel
+// should ship HALF-POPULATED - half our phrases, half blank as an invitation. BOTH ARE
+// GONE (Ken, September 2 2026): "the Express Panel has undergone a fundamental redesign
+// which eliminates this as an issue." Bands did that. The blank half existed to teach
+// the user that a cell is theirs to fill, and under bands there is a whole Flex band
+// that starts empty, an empty band for every new partner and place, and a Context band
+// they populate themselves - so the lesson is taught by the structure rather than by
+// leaving holes in the words they need. The shipped bands are ALWAYS_DEFAULTS and
+// CONTEXT_DEFAULTS below; nothing reads a flat list any more.)
 
 // WHICH SHIPPED ALWAYS SET A PANEL STARTED FROM. Bump it whenever the shipped Always
 // phrases change and every existing panel should take the new ones: express-panel.js

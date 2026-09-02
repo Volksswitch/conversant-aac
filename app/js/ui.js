@@ -699,7 +699,8 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
             }
             // Two cases render as an undefined cell: an explicit 'empty' item (a
             // position the user opened up but has not filled), and anything past the end
-            // of the list (the panel ships half-populated, so most cells start here).
+            // of the list (a band with more cells than phrases, which is the Flex band's
+            // resting state and every new partner's and place's starting state).
             const item = items[index];
             const cellEl = (!item || item.type === 'empty')
                 ? buildUndefinedCell(index, span)

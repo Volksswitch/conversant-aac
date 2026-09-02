@@ -1,20 +1,21 @@
 /* Tier 1 — Express Panel item data (app/js/express-items.js). */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { DEFAULT_ITEMS, CATEGORIES, ensureIds, makeId,
+import { ALWAYS_DEFAULTS, CONTEXT_DEFAULTS, ensureIds, makeId,
          ORIGIN, isUserAuthored, ensureOrigin, markEdits,
          newEmptyItem, isEmptyItem, choiceCells } from '../app/js/express-items.js';
 
-test('every default item has a stable id, a type, and a known category/color', () => {
-    for (const it of DEFAULT_ITEMS) {
+const SHIPPED = [...ALWAYS_DEFAULTS, ...CONTEXT_DEFAULTS];
+
+test('every default item has a stable id and a known type', () => {
+    for (const it of SHIPPED) {
         assert.ok(it.id, 'has an id');
-        assert.ok(['phrase', 'feeling', 'partner'].includes(it.type), `known type: ${it.type}`);
-        if (it.type === 'phrase') assert.ok(CATEGORIES[it.cat], `phrase has a known category: ${it.cat}`);
+        assert.ok(['phrase', 'feeling'].includes(it.type), `known type: ${it.type}`);
     }
 });
 
-test('default item ids are unique', () => {
-    const ids = DEFAULT_ITEMS.map((i) => i.id);
+test('default item ids are unique across the bands', () => {
+    const ids = SHIPPED.map((i) => i.id);
     assert.equal(new Set(ids).size, ids.length);
 });
 
@@ -36,21 +37,10 @@ test('makeId returns distinct ids', () => {
 // phrases to the user, which is the specific error the field exists to prevent.
 
 test('every shipped default is marked as ours, not the user phrase set', () => {
-    for (const it of DEFAULT_ITEMS) {
+    for (const it of SHIPPED) {
         assert.equal(it.origin, ORIGIN.DEFAULT, `${it.text} must be a default`);
         assert.equal(isUserAuthored(it), false);
     }
-});
-
-test('the panel ships HALF-populated, not full', () => {
-    // Half of a ~32-cell layout. The exact number is a judgment call; that it is
-    // materially less than the layout's capacity is the design (endowed progress).
-    assert.ok(DEFAULT_ITEMS.length <= 18, `expected roughly half a layout, got ${DEFAULT_ITEMS.length}`);
-    const texts = DEFAULT_ITEMS.map((i) => i.text);
-    for (const keep of ['Yes', 'No', 'Okay', 'Please', 'Thank you', 'Sorry', 'Wait', 'Help', 'Hi', 'Bye'])
-        assert.ok(texts.includes(keep), `plumbing kept: ${keep}`);
-    for (const gone of ["That's funny", 'See you later', 'I think so', 'I agree'])
-        assert.ok(!texts.includes(gone), `flavored item vacated: ${gone}`);
 });
 
 test('MIGRATION: a retired default is still recognized as ours, not credited to the user', () => {
@@ -82,8 +72,8 @@ test('MIGRATION does not overwrite an origin that is already set', () => {
 });
 
 test('editing a default flips it to the user, without touching its neighbors', () => {
-    const prev = DEFAULT_ITEMS.map((x) => ({ ...x }));
-    const next = prev.map((x) => (x.text === 'Okay' ? { ...x, text: 'Righto' } : { ...x }));
+    const prev = SHIPPED.map((x) => ({ ...x }));
+    const next = prev.map((x) => (x.text === 'OK' ? { ...x, text: 'Righto' } : { ...x }));
     const out = markEdits(next, prev);
     const changed = out.find((x) => x.text === 'Righto');
     assert.equal(changed.origin, ORIGIN.EDITED);
@@ -104,7 +94,7 @@ test('a newly added item belongs to the user', () => {
 });
 
 test('REORDERING is not an edit — position is not authorship', () => {
-    const prev = DEFAULT_ITEMS.map((x) => ({ ...x }));
+    const prev = SHIPPED.map((x) => ({ ...x }));
     const out = markEdits([...prev].reverse(), prev);
     assert.ok(out.every((x) => x.origin === ORIGIN.DEFAULT), 'moving our phrases does not make them theirs');
 });
