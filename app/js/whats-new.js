@@ -22,6 +22,10 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.9.3": [
+    "The Express Panel now starts with a set of everyday phrases chosen by speech and language therapists, and with six feelings in the Context band. Your panel is updated to the new phrases the first time you open this version. Anything you had already written yourself is kept, and from here on the panel is yours — it will not be replaced again.",
+    "The Express Panel is now measured in whole rows to begin with, with one row set aside for context buttons and none for situational phrases. You can change any of that in Settings → Express Panel."
+  ],
   "0.9.2": [
     "Your manual may be out of date, and it is worth taking a fresh copy. The Android manual told Android readers their device was not supported and listed a computer’s hardware; a picture that had gone missing was put back in all three manuals; and the instructions for reporting a problem now match the single “Send” button."
   ],

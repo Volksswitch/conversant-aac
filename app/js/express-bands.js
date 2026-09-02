@@ -45,11 +45,21 @@ export const CONTEXT_FLOOR = 4;
 /** A band is measured either in whole rows or in a count of buttons (user setting). */
 export const SHAPE = { ROWS: 'rows', COUNTS: 'counts' };
 
-// The shipped Context band is SIX, not the floor of four: the starting set has six
-// feelings in it, and a default that cannot show its own defaults would greet a new
-// user with two buttons already overflowing. Flex starts at none, so an untouched
-// panel is the Always phrases plus the feelings and nothing else to explain.
-export const DEFAULT_SIZES = { shape: SHAPE.COUNTS, context: 6, flex: 0 };
+// THE SHIPPED PANEL IS MEASURED IN WHOLE ROWS, one row of Context and no Flex (Ken,
+// September 2 2026). Rows because a straight edge is what makes three bands read as
+// three bands on first sight; ONE row of Context because the band has a floor and
+// cannot be turned off - a menu arriving has to have somewhere to land, and a band
+// that could collapse would change the panel's shape mid-conversation. No Flex,
+// because a new user has no partners and no places yet, so a Flex band would open
+// empty and explain nothing.
+//
+// The COUNTS values are kept as the defaults for a user who switches to that mode.
+// Context is SIX there, not the floor of four: the starting set has six feelings in
+// it, and a default that cannot show its own defaults would greet a new user with two
+// buttons already overflowing.
+export const DEFAULT_SIZES = {
+    shape: SHAPE.ROWS, contextRows: 1, flexRows: 0, context: 6, flex: 0,
+};
 
 /** The key naming one situational list. Anyone + Anyplace IS the general list. */
 export const ANYONE = 'anyone';

@@ -15,6 +15,19 @@
  *     context: [ partner|place|feeling ], the buttons that never speak
  *     flex:    { "<partnerId>|<placeId>": [ phrase, ... ] } }
  *
+ * ⚠ A SEED REVISION REPLACES THE ALWAYS BAND ONCE, AND NOTHING ELSE (Ken, August 25
+ * 2026, for the therapists' set that landed September 2 2026). `seed` on the model
+ * records which shipped Always set this panel started from; when it does not match the
+ * current one, the Always band is replaced and the number stamped.
+ *
+ * ⚠ IT IS DELIBERATELY NOT A FULL RESEED, and bumping MODEL_VERSION instead would be
+ * far too blunt: that path returns defaults() wholesale and would throw away the band
+ * sizes, every Flex situational list, and the whole Context band - INCLUDING the
+ * partner and place buttons that point at real people and places the user entered in
+ * About Me and My Places, which can only be re-added by walking the picker again.
+ * The Context band is refreshed only when the user has never touched it (every item
+ * still ours), so nobody's own feelings are overwritten to change one of ours.
+ *
  * ⚠ THE UPGRADE DISCARDS A VERSION-1 PANEL AND RESEEDS FROM THE SHIPPED DEFAULTS,
  * ONCE (Ken, August 23 2026). That is his decision and it is deliberate, not a gap:
  * the shipped set is being authored by the therapists, every tester is to start from
@@ -30,8 +43,8 @@
 
 import { readFile, writeFile, hasDataFolder } from './storage.js';
 import {
-    ALWAYS_DEFAULTS, CONTEXT_DEFAULTS,
-    ensureIds, ensureOrigin, markEdits, isUserAuthored,
+    ALWAYS_DEFAULTS, CONTEXT_DEFAULTS, SEED_REVISION,
+    ensureIds, ensureOrigin, markEdits, isUserAuthored, ORIGIN,
 } from './express-items.js';
 import { DEFAULT_SIZES, SHAPE, CONTEXT_FLOOR, sortContext, flexKey } from './express-bands.js';
 
@@ -44,6 +57,7 @@ let model = null; // in-memory working copy
 function defaults() {
     return {
         version: MODEL_VERSION,
+        seed: SEED_REVISION,
         sizes: { ...DEFAULT_SIZES },
         always: ALWAYS_DEFAULTS.map((x) => ({ ...x })),
         context: CONTEXT_DEFAULTS.map((x) => ({ ...x })),
@@ -64,17 +78,34 @@ function normalize(raw) {
         if (!Array.isArray(list)) continue;
         flex[key] = ensureOrigin(ensureIds(list.filter((x) => x && x.type === 'phrase')));
     }
+    // The one-shot seed revision. A panel that started from an older shipped Always
+    // set takes the current one; the Context band comes with it ONLY if the user has
+    // never touched it. Everything else - sizes, Flex lists, a Context band with any
+    // of the user's own buttons in it - is left exactly as they had it.
+    const stale = num(raw.seed, 0) !== SEED_REVISION;
+    // ⚠ Judge "untouched" AFTER stamping provenance, not before. A file written before
+    // the origin field existed carries none at all, and a bare `!x.origin` would read
+    // a partner button the user added as ours and throw it away - which is precisely
+    // the loss this narrow rule exists to avoid.
+    const rawContext = ensureOrigin(ensureIds(asList(raw.context)));
+    const contextUntouched = rawContext.every((x) => x.origin === ORIGIN.DEFAULT);
+
     return {
         version: MODEL_VERSION,
+        seed: SEED_REVISION,
         sizes: {
+            // An absent shape means a file written before rows became the default, so
+            // it keeps counts; only an explicit 'rows' switches.
             shape: sizes.shape === SHAPE.ROWS ? SHAPE.ROWS : SHAPE.COUNTS,
             context: Math.max(CONTEXT_FLOOR, num(sizes.context, DEFAULT_SIZES.context)),
             flex: Math.max(0, num(sizes.flex, DEFAULT_SIZES.flex)),
-            contextRows: Math.max(1, num(sizes.contextRows, 1)),
-            flexRows: Math.max(0, num(sizes.flexRows, 0)),
+            contextRows: Math.max(1, num(sizes.contextRows, DEFAULT_SIZES.contextRows)),
+            flexRows: Math.max(0, num(sizes.flexRows, DEFAULT_SIZES.flexRows)),
         },
-        always: ensureOrigin(ensureIds(asList(raw.always))),
-        context: sortContext(ensureOrigin(ensureIds(asList(raw.context)))),
+        always: stale ? d.always : ensureOrigin(ensureIds(asList(raw.always))),
+        context: stale && contextUntouched
+            ? d.context
+            : sortContext(rawContext),
         flex,
     };
 }
@@ -110,6 +141,11 @@ export function getModel() {
     if (!model) model = normalize(readCache());
     return {
         version: model.version,
+        // ⚠ seed MUST be carried out and back in. setModel normalizes what it is
+        // handed, so a getModel/setModel round trip that dropped it would look like a
+        // panel that had never been seeded and would replace the Always band on the
+        // user's very next edit - silently, and every time.
+        seed: model.seed,
         sizes: { ...model.sizes },
         always: model.always.map((x) => ({ ...x })),
         context: model.context.map((x) => ({ ...x })),
@@ -123,7 +159,7 @@ export function getModel() {
  */
 export function setModel(next) {
     const prev = model || getModel();
-    const n = normalize({ ...next, version: MODEL_VERSION });
+    const n = normalize({ ...next, version: MODEL_VERSION, seed: SEED_REVISION });
     n.always = markEdits(n.always, prev.always);
     n.context = markEdits(n.context, prev.context);
     for (const key of Object.keys(n.flex)) {

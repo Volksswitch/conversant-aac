@@ -167,35 +167,40 @@ export const DEFAULT_ITEMS = [
 ].map((it, i) => ({ id: 'd' + i, ...it, origin: ORIGIN.DEFAULT }));
 
 
-// --- BAND DEFAULTS (August 23 2026) ------------------------------------------
-// TEMPORARY, and deliberately so. The speech and language therapists are authoring
-// the set that ships to testers, and it replaces this one before the beta opens. THIS
-// BAND ONLY - the Context feelings below are staying (see the note there).
-// Until then this is a FULL set rather than a minimal one, so the Always band's
-// "Reset" button gives Ken something complete to test against and the panel is not
-// half empty while the bands are being tried out.
+// WHICH SHIPPED ALWAYS SET A PANEL STARTED FROM. Bump it whenever the shipped Always
+// phrases change and every existing panel should take the new ones: express-panel.js
+// replaces that band once and stamps the number. Do NOT bump it for a change nobody
+// needs to receive - it overwrites whatever the user had in that band.
+export const SEED_REVISION = 1;
+
+// --- BAND DEFAULTS ------------------------------------------------------------
+// THE ALWAYS BAND IS THE SPEECH AND LANGUAGE THERAPISTS' SET (September 2 2026), and
+// it REPLACED the project's own placeholder set wholesale rather than merging with it
+// (Ken, August 25 2026 - the additive-merge watermark used by the control phrases is
+// deliberately not used here; a merged panel would be neither theirs nor ours).
 //
-// The words are the fuller Express Panel set this project proposed and then trimmed:
-// every phrase we have ever shipped as a default, minus the feelings (which are
-// Context buttons now, because they influence and never speak). Grouped by job, in
-// the order somebody reaches for them, with the disclosure last so that adding it
-// moves none of the plumbing above it.
+// The wording is theirs and is kept VERBATIM, punctuation and capitalization included.
+// The order is theirs too: it is what a user reaches for, most-used first, so the band
+// shortens from its bottom when the Context band grows and the phrases that go first
+// are the ones they ranked last.
+//
+// `cat` is not set. A phrase takes its color from the BAND it sits in, so a per-phrase
+// category has had no effect since bands shipped (ui.renderExpressPanel voids it).
 export const ALWAYS_DEFAULTS = [
-  PH('Yes', 'affirm'), PH('No', 'affirm'),
-  PH('Yes please', 'affirm'), PH('No thank you', 'affirm'),
-  PH('Maybe', 'hedge'), PH("I don't know", 'hedge'),
-  PH("I'm not sure", 'hedge'), PH('I think so', 'hedge'),
-  PH('Okay', 'cont'), PH('Got it', 'cont'),
-  PH('I agree', 'cont'), PH('Go on', 'cont'),
-  PH("That's funny", 'social'),
-  PH('Please', 'social'), PH('Thank you', 'social'),
-  PH("You're welcome", 'social'), PH('Sorry', 'social'),
-  PH('Excuse me', 'social'), PH('Hi', 'social'),
-  PH('Bye', 'social'), PH('See you later', 'social'),
-  PH('Wait', 'pace'), PH('One moment', 'pace'),
-  PH('Not now', 'pace'), PH('Say that again', 'pace'),
-  PH('Help', 'need'),
-  PH('This device listens and speaks for me', 'notice'),
+  PH('Yes'), PH('No'),
+  PH("I don't know."), PH('Maybe.'),
+  PH('OK'), PH('Excuse me'),
+  PH('Hey there.'), PH('Come here please'),
+  PH('Hi'), PH('Bye'),
+  PH('Awesome'), PH('No way'),
+  PH('Please'), PH('Thank you'), PH("You're Welcome"),
+  PH('When?'), PH('Where?'), PH('Why?'), PH('Who?'), PH('What?'),
+  PH('Wanna chat?'),
+  PH('I need something for my care'),
+  PH('Please help me'),
+  PH("I'm typing a longer response and need more time"),
+  PH('My device is glitching'),
+  PH('My device listens and speaks for me'),
 ].map((it, i) => ({ id: 'a' + i, ...it, origin: ORIGIN.DEFAULT }));
 
 // The Context band's starting contents. FEELINGS ONLY, and a shipped person or place
@@ -219,7 +224,7 @@ export const ALWAYS_DEFAULTS = [
 // having in itself: an empty band would read as something missing rather than as an
 // invitation. So the only thing the therapists' set replaces is the Always band.
 export const CONTEXT_DEFAULTS = [
-  FE('Happy'), FE('Sad'), FE('Stressed'), FE('Curious'), FE('Tired'), FE('Excited'),
+  FE('Happy'), FE('Sad'), FE('Tired'), FE('Excited'), FE('Curious'), FE('Silly'),
 ].map((it, i) => ({ id: 'c' + i, ...it, origin: ORIGIN.DEFAULT }));
 
 // Every phrase/feeling we have EVER shipped as a default. Used only to classify a
@@ -227,12 +232,20 @@ export const CONTEXT_DEFAULTS = [
 // retired above would migrate as user-authored and be credited to the user as
 // voice — the precise error provenance exists to prevent.
 const SHIPPED_DEFAULT_TEXTS = new Set([
-  'Happy', 'Sad', 'Stressed', 'Curious', 'Tired', 'Excited',
-  'Yes', 'No', 'Yes please', 'No thank you', 'Maybe', "I don't know", "I'm not sure",
-  'I think so', 'Okay', 'Got it', "That's funny", 'I agree', 'Please', 'Thank you',
-  "You're welcome", 'Sorry', 'Excuse me', 'Hi', 'Bye', 'See you later', 'Wait',
-  'One moment', 'Go on', 'Not now', 'Say that again', 'Help',
-  'This device listens and speaks for me',
+  // Feelings, current and retired
+  'Happy', 'Sad', 'Stressed', 'Curious', 'Tired', 'Excited', 'Silly',
+  // The therapists' Always set
+  'Yes', 'No', "I don't know.", 'Maybe.', 'OK', 'Excuse me', 'Hey there.',
+  'Come here please', 'Hi', 'Bye', 'Awesome', 'No way', 'Please', 'Thank you',
+  "You're Welcome", 'When?', 'Where?', 'Why?', 'Who?', 'What?', 'Wanna chat?',
+  'I need something for my care', 'Please help me',
+  "I'm typing a longer response and need more time", 'My device is glitching',
+  'My device listens and speaks for me',
+  // Retired defaults, kept so a legacy file's copy is still recognized as ours
+  'Yes please', 'No thank you', 'Maybe', "I don't know", "I'm not sure",
+  'I think so', 'Okay', 'Got it', "That's funny", 'I agree', "You're welcome",
+  'Sorry', 'See you later', 'Wait', 'One moment', 'Go on', 'Not now',
+  'Say that again', 'Help', 'This device listens and speaks for me',
 ]);
 
 // The user-authored content of an item, for change detection. Excludes id and

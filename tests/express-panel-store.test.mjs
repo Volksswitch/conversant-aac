@@ -112,6 +112,7 @@ test('the whole chain runs: bytes on disk to the cells of the panel', async () =
     // list and more Always phrases than its band can hold.
     await writePanelFile({
         version: 2,
+        seed: items.SEED_REVISION, // already carries the current shipped Always set
         sizes: { shape: 'counts', context: 4, flex: 4 },
         always: [
             { id: 'w1', type: 'phrase', text: 'Yes' },
@@ -191,4 +192,79 @@ test('deleting a situation removes only that list', () => {
     panel.removeFlexList('mom|anyplace');
     const after = panel.getModel();
     assert.deepEqual(Object.keys(after.flex), ['anyone|anyplace']);
+});
+
+/* THE ONE-SHOT SEED REVISION (September 2 2026).
+ *
+ * The therapists authored the Always phrases, and every panel that already exists on
+ * a device has to take them - otherwise the set that was actually commissioned
+ * reaches nobody who is already running the app. These four tests are the whole
+ * contract: it replaces the Always band, it replaces the feelings ONLY where the user
+ * has not touched them, it never touches anything else, and IT ONLY HAPPENS ONCE.
+ */
+
+test('an older panel takes the shipped Always set, and keeps everything else', async () => {
+    await writePanelFile({
+        version: 2,
+        // no seed: written before the therapists' set existed
+        sizes: { shape: 'counts', context: 8, flex: 5 },
+        always: [{ id: 'w1', type: 'phrase', text: 'Got it', origin: 'default' }],
+        context: [
+            { id: 'c1', type: 'feeling', text: 'Tired', origin: 'default' },
+            { id: 'c2', type: 'partner', name: 'Mom', personId: 'p1', origin: 'added' },
+        ],
+        flex: { 'p1|anyplace': [{ id: 'f1', type: 'phrase', text: 'How is your shoulder?' }] },
+    });
+    store.clear();
+    const m = await panel.load();
+
+    assert.deepEqual(m.always.map((x) => x.text), items.ALWAYS_DEFAULTS.map((x) => x.text),
+        'the Always band is the therapists\u2019 set');
+    // Their own partner button, their own band sizes, their own situational list.
+    assert.ok(m.context.some((x) => x.name === 'Mom'), 'a partner button the user added survives');
+    assert.deepEqual(m.sizes, { shape: 'counts', context: 8, flex: 5, contextRows: 1, flexRows: 0 });
+    assert.equal(m.flex['p1|anyplace'][0].text, 'How is your shoulder?');
+});
+
+test('a Context band the user never touched takes the new feelings', async () => {
+    await writePanelFile({
+        version: 2,
+        always: [], flex: {},
+        context: [{ id: 'c1', type: 'feeling', text: 'Stressed', origin: 'default' }],
+    });
+    store.clear();
+    const m = await panel.load();
+    assert.deepEqual(m.context.map((x) => x.text), items.CONTEXT_DEFAULTS.map((x) => x.text));
+});
+
+test('a Context band the user HAS touched is left exactly as it is', async () => {
+    await writePanelFile({
+        version: 2,
+        always: [], flex: {},
+        context: [{ id: 'c1', type: 'feeling', text: 'Wired', origin: 'edited' }],
+    });
+    store.clear();
+    const m = await panel.load();
+    assert.deepEqual(m.context.map((x) => x.text), ['Wired']);
+});
+
+test('the seed is spent once - a later edit never re-replaces the Always band', async () => {
+    await writePanelFile({ version: 2, always: [], context: [], flex: {} });
+    store.clear();
+    await panel.load();
+
+    // The user then makes the band their own, the way the editor does.
+    panel.setBand('always', [{ id: 'mine', type: 'phrase', text: 'My own words' }]);
+    // ...and something else is saved afterwards, which round-trips the whole model.
+    panel.setFlexList('anyone', 'anyplace', [{ id: 'g1', type: 'phrase', text: 'Nice day' }]);
+
+    assert.deepEqual(panel.getModel().always.map((x) => x.text), ['My own words'],
+        'the seed must not fire again on a later save');
+
+    // And it survives a reload, i.e. the number really was written to disk. The disk
+    // write is fire-and-forget by design, so let it land before reading it back.
+    await new Promise((r) => setTimeout(r, 0));
+    store.clear();
+    const reloaded = await panel.load();
+    assert.deepEqual(reloaded.always.map((x) => x.text), ['My own words']);
 });
