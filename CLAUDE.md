@@ -1146,6 +1146,44 @@ Ken asked for an architecture document for running Conversant AAC on an iPad —
 
 ---
 
+## A speech-to-speech model CANNOT be used here, however good they get (September 3 2026)
+
+**Ken noticed that OpenAI and Google sell speech services alongside their AI and
+Anthropic does not, and asked whether Claude therefore lacks voice chat.** It does not
+lack it - and the answer matters less than what it rules out, because this question
+will come back every time those services get cheaper.
+
+**The facts, checked rather than recalled.** Anthropic's API takes text, images and
+documents and returns text; there is no audio in, no audio out, and no speech endpoint.
+Their consumer app does have a voice mode, but it is built as **speech to text, then a
+text model, then text to speech** - a pipeline, not a native audio model. OpenAI and
+Google both sell native SPEECH-TO-SPEECH developer APIs (Realtime, Gemini Live);
+Anthropic sells nothing comparable.
+
+**So Anthropic's own voice mode is put together the same way Conversant is**, which is
+mild corroboration that the pipeline shape is a reasonable one rather than a compromise
+forced on us.
+
+**⚠ THE DECISION THIS FORECLOSES, and it is the reason the entry exists: CONVERSANT
+COULD NOT USE A SPEECH-TO-SPEECH MODEL EVEN IF ANTHROPIC SHIPPED THE BEST ONE
+TOMORROW.** In speech-to-speech, audio goes in and audio comes out and **the model is
+the one talking**. This product's founding rule is the exact opposite - the AI writes
+candidate sentences, the USER picks one, and only the picked one is ever spoken. A
+speech-to-speech model deletes the selection step, which is not a feature of the
+product, it IS the product. It would also hide the partner transcript, which the
+project has held since the beginning to be critical rather than optional: the user must
+be able to see what was heard before responding to it.
+
+**So the separate-services arrangement is not a gap we are working around.** It is the
+only shape that leaves both the transcript and the choice visible. If a future session
+is tempted by a realtime voice API on latency or cost grounds, the answer is no on
+design grounds, and the trade is not close.
+
+*(The one thing that WOULD be worth revisiting is narrower and does not touch this: a
+speech-to-speech vendor whose components can be used separately, i.e. as a plain
+recognizer and a plain voice. That is just another provider for the adapter, and is
+already covered by the provider survey above.)*
+
 ## Deepgram is NOT the only browser-direct option — MEASURED September 2 2026
 
 **Trigger: Ken could not create a Deepgram account for the first beta tester** (the
