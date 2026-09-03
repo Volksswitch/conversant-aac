@@ -581,7 +581,8 @@ const TTS = [
   {
     id: 'el', name: 'ElevenLabs', needs: 'k_eleven',
     cfg: [{ id: 'el_voice', label: 'voice', value: '21m00Tcm4TlvDq8ikWAM',
-            kind: 'voice', builtin: [['21m00Tcm4TlvDq8ikWAM', 'Rachel (their sample voice)']],
+            kind: 'voice',
+            builtin: [['21m00Tcm4TlvDq8ikWAM', 'Rachel - a library voice, needs a paid plan']],
             fetch: 'el' },
           { id: 'el_model', label: 'model', value: 'eleven_multilingual_v2' }],
     run: async (c) => {
@@ -655,6 +656,10 @@ async function describe(r) {
       : r.status === 429 ? (/insufficient_quota|billing|exceeded your current quota/i.test(body)
             ? 'this account has no credit for the API - paying anything, even the $5 minimum, turns it on'
             : 'too many requests just now - wait a moment and try again')
+      : r.status === 402 ? (/paid_plan_required|library voices/i.test(body)
+            ? 'this voice needs a paid plan - press Load voices and pick one from '
+              + 'your own account instead, which a free plan can use'
+            : 'this plan does not cover that')
       : r.status >= 500 ? 'the service had a problem'
       // (!) GOOGLE REPORTS A BAD KEY AS A BAD REQUEST, not as a refusal, so it lands
       // here rather than in the 401 case above. Worth naming, because it also rules

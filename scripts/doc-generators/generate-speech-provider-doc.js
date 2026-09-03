@@ -330,6 +330,8 @@ const doc = new Document({
             step("Go to elevenlabs.io and create an account. The free tier needs no card.", "el"),
             step("Open your profile settings and find the API key.", "el"),
             step("Note that the free allowance is small - roughly ten thousand characters a month, which is a few days of ordinary use.", "el"),
+            lead("⚠ A free plan cannot use their library voices through the API, only your own. ",
+                "Most of the voices people know ElevenLabs for are library voices, and asking for one on a free plan is refused outright with a message about upgrading. It reads like a broken key and is not. In the bench, press Load voices to fetch the voices your own account actually has and pick from those; on a free plan that is a shorter list than the website suggests. Worth knowing before judging them on the free tier, since it is not their best voices you are hearing."),
 
             heading2("Cartesia"),
             para("Fast and inexpensive, and less well known than the others."),
