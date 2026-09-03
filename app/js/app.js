@@ -361,17 +361,27 @@ function handlePrivacyToggle() {
     applyPrivacyState();
 }
 
-// Light or dark (Ken, September 3 2026). One place owns it, because the theme is
+// The colour scheme (Ken, September 3 2026). One place owns it, because it is
 // applied from THREE: the inline script in index.html (before the first paint), app
-// start-up, and the Settings dropdown. The <meta> keeps the browser's own chrome --
-// the iPad's status bar, an installed window's title bar -- in step with the page,
+// start-up, and the Settings dropdown.
+//
+// The stored value IS the attribute value IS the key in styles.css, so a scheme has
+// one name and there is no mapping table to fall out of step. The only thing this
+// knows that the stylesheet does not is the browser-CHROME tint -- the iPad's status
+// bar, an installed window's title bar -- which has to be a real colour because a
+// <meta> cannot read a CSS variable. Keep it in step with each scheme's page colour,
 // or the app sits in a dark window inside a white frame.
+const SCHEME_CHROME = {
+    'bold': '#2c3e50', 'hc-light': '#000000', 'dark': '#15181b',
+    'hc-dark': '#000000', 'yellow': '#000000', 'cb': '#2c3e50',
+};
+
 function applyColorScheme(scheme) {
-    const dark = scheme === 'dark';
-    if (dark) document.documentElement.setAttribute('data-theme', 'dark');
-    else document.documentElement.removeAttribute('data-theme');
+    const chrome = SCHEME_CHROME[scheme];
+    if (chrome) document.documentElement.setAttribute('data-theme', scheme);
+    else document.documentElement.removeAttribute('data-theme');   // Default
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', dark ? '#15181b' : '#2c3e50');
+    if (meta) meta.setAttribute('content', chrome || '#2c3e50');
 }
 
 function initApp() {

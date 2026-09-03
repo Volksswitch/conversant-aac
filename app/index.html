@@ -16,16 +16,23 @@
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <link rel="stylesheet" href="css/styles.css">
     <script>
-        // Runs before the first paint on purpose -- see index.html's note above.
-        // Deliberately tolerant: any failure just leaves the app light.
+        // Runs before the first paint on purpose -- see the note above. The colours
+        // here are only the browser-chrome tint per scheme; every colour the PAGE
+        // uses lives in styles.css. Deliberately tolerant: any failure leaves the
+        // app on Default.
         try {
+            var CHROME = {
+                'bold': '#2c3e50', 'hc-light': '#000000', 'dark': '#15181b',
+                'hc-dark': '#000000', 'yellow': '#000000', 'cb': '#2c3e50'
+            };
             var saved = JSON.parse(localStorage.getItem('aac_settings') || '{}');
-            if (saved.colorScheme === 'dark') {
-                document.documentElement.setAttribute('data-theme', 'dark');
+            var scheme = saved.colorScheme;
+            if (scheme && CHROME[scheme]) {
+                document.documentElement.setAttribute('data-theme', scheme);
                 var m = document.querySelector('meta[name="theme-color"]');
-                if (m) m.setAttribute('content', '#15181b');
+                if (m) m.setAttribute('content', CHROME[scheme]);
             }
-        } catch (e) { /* no stored settings, or storage is blocked: stay light */ }
+        } catch (e) { /* no stored settings, or storage is blocked: stay on Default */ }
     </script>
 </head>
 <body>
@@ -321,8 +328,13 @@
                         <div class="setting-item">
                             <label for="colorSchemeInput">Color scheme</label>
                             <select id="colorSchemeInput">
-                                <option value="light" selected>Light</option>
+                                <option value="light" selected>Default</option>
+                                <option value="bold">Bold outlines</option>
+                                <option value="hc-light">High contrast, light</option>
                                 <option value="dark">Dark</option>
+                                <option value="hc-dark">High contrast, dark</option>
+                                <option value="yellow">Yellow on black</option>
+                                <option value="cb">Color-blind safe</option>
                             </select>
                         </div>
                     </div>

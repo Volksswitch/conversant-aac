@@ -1016,11 +1016,16 @@ export function saveCardTextMode(mode) {
     saveSettings(settings);
 }
 
-// --- Light or dark (Ken, September 3 2026) ---
-// 'light'  the app as it has always looked (the default)
-// 'dark'   light text on a near-black ground
+// --- Color scheme (Ken, September 3 2026) ---
+// 'light'     Default -- the app as it has always looked
+// 'bold'      Bold outlines: the same colors, boundaries drawn heavily
+// 'hc-light'  High contrast, light: black on white, no tints
+// 'dark'      Dark: light text on a near-black ground
+// 'hc-dark'   High contrast, dark: white on black
+// 'yellow'    Yellow on black
+// 'cb'        Color-blind safe
 //
-// DEFAULT IS LIGHT, deliberately: a setting that changes how the app looks should
+// DEFAULT IS 'light', deliberately: a setting that changes how the app looks should
 // not change it for somebody who has never touched it. Same call as full screen.
 //
 // THERE IS NO "MATCH MY DEVICE", and that is a decision rather than an omission.
@@ -1030,7 +1035,11 @@ export function saveCardTextMode(mode) {
 // and cannot easily ask what happened, an interface that redecorates itself without
 // being asked is worse than one that needs a trip to Settings. Reopen it only if a
 // tester actually asks for it.
-const COLOR_SCHEMES = ['light', 'dark'];
+//
+// The stored value is the same string used as the `data-theme` attribute and as the
+// scheme's key in styles.css, so there is one name for a scheme and no mapping table
+// to fall out of step. 'light' sets no attribute at all.
+const COLOR_SCHEMES = ['light', 'bold', 'hc-light', 'dark', 'hc-dark', 'yellow', 'cb'];
 
 export function loadColorScheme() {
     const v = loadSettings().colorScheme;

@@ -71,8 +71,24 @@ function lightPalette() {
     return paletteBlock(css.lastIndexOf(':root', at), 'the light palette');
 }
 
-function darkPalette() {
-    return paletteBlock(css.indexOf(':root[data-theme="dark"]'), 'the dark theme');
+function schemePalette(key) {
+    return paletteBlock(css.indexOf(`:root[data-theme="${key}"]`), `the "${key}" scheme`);
+}
+
+// Read the scheme keys out of the stylesheet rather than listing them here, so a
+// scheme added to the CSS is checked without anyone remembering to add it.
+function schemeKeys() {
+    const found = [...css.matchAll(/:root\[data-theme="([a-z-]+)"\]\s*\{/g)].map(m => m[1]);
+    const unique = [...new Set(found)];
+    assert.ok(unique.length >= 6, `only ${unique.length} schemes found in styles.css`);
+    return unique;
+}
+
+// Every scheme, Default included, keyed the way Settings stores it.
+function allPalettes() {
+    const out = { light: lightPalette() };
+    for (const key of schemeKeys()) out[key] = schemePalette(key);
+    return out;
 }
 
 // ⚠ WHETHER A TOKEN NEEDS A DARK VALUE IS DECIDED BY ITS VALUE, NEVER BY ITS NAME.
@@ -87,30 +103,33 @@ function darkPalette() {
 // follows the theme without needing a second value of its own.
 const holdsLiteralColour = value => /#[0-9a-fA-F]{3,8}|rgba?\(/.test(value);
 
-test('every colour is defined in BOTH themes', () => {
+test('every colour is defined in EVERY scheme', () => {
     const light = lightPalette();
-    const dark = darkPalette();
     const lightColours = Object.keys(light).filter(n => holdsLiteralColour(light[n]));
-
-    const missingInDark = lightColours.filter(n => !(n in dark));
-    const strayInDark = Object.keys(dark).filter(n => !(n in light));
-
-    assert.deepEqual(missingInDark, [],
-        `these colours have no dark value, so they stay LIGHT in dark mode: ${missingInDark.join(', ')}`);
-    assert.deepEqual(strayInDark, [],
-        `the dark theme sets colours the light theme never declares: ${strayInDark.join(', ')}`);
     assert.ok(lightColours.length > 60,
         `only ${lightColours.length} colours found — did the palette move?`);
+
+    for (const key of schemeKeys()) {
+        const p = schemePalette(key);
+        const missing = lightColours.filter(n => !(n in p));
+        const stray = Object.keys(p).filter(n => !(n in light));
+        assert.deepEqual(missing, [],
+            `"${key}" has no value for ${missing.join(', ')} — those colours stay on Default in that scheme`);
+        assert.deepEqual(stray, [],
+            `"${key}" sets colours Default never declares: ${stray.join(', ')}`);
+    }
 });
 
-test('the dark theme declares color-scheme, so native controls follow', () => {
+test('every scheme declares color-scheme, so native controls follow', () => {
     // Without it the parts the stylesheet does not paint — native scrollbars,
     // checkboxes, radio buttons, select menus, the controls inside dialogs — stay
     // light, and the panel looks half converted rather than dark.
-    const at = css.indexOf(':root[data-theme="dark"]');
-    const body = css.slice(at, css.indexOf('}', at));
-    assert.ok(/color-scheme:\s*dark/.test(body),
-        'the dark theme must set color-scheme: dark');
+    for (const key of schemeKeys()) {
+        const at = css.indexOf(`:root[data-theme="${key}"]`);
+        const body = css.slice(at, css.indexOf('}', at));
+        assert.ok(/color-scheme:\s*(dark|light)/.test(body),
+            `the "${key}" scheme must declare color-scheme, or its native controls keep the previous scheme's look`);
+    }
     const lightAt = css.indexOf('--surface-page:');
     const lightBody = css.slice(css.lastIndexOf(':root', lightAt), lightAt);
     assert.ok(/color-scheme:\s*light/.test(lightBody),
@@ -166,6 +185,14 @@ const PAIRS = [
     ['the initiative bar', 'slot-initiative', 'slot-initiative-tint', 3],
     ['the repair bar', 'slot-repair', 'slot-repair-tint', 3],
     ['a command button outline', 'slot-persistent', 'surface-page', 3],
+    // The slot badge — the TEXT leg of the triple coding, so it has to be read.
+    // Nothing checked this pair until September 3 2026, and the dispreferred amber
+    // had been sitting at 4.24:1 the whole time.
+    ['the preferred badge', 'ink-inverse', 'slot-preferred', 4.5],
+    ['the dispreferred badge', 'ink-inverse', 'slot-dispreferred', 4.5],
+    ['the initiative badge', 'ink-inverse', 'slot-initiative', 4.5],
+    ['the repair badge', 'ink-inverse', 'slot-repair', 4.5],
+    ['a persistent badge', 'ink-inverse', 'slot-persistent', 4.5],
     ['the Always band outline', 'band-always', 'band-always-tint', 3],
     ['the Context band outline', 'band-context', 'band-context-tint', 3],
     ['the Flex band outline', 'band-flex', 'band-flex-tint', 3],
@@ -177,13 +204,28 @@ const PAIRS = [
     ['a warning fill on a card', 'warn', 'surface-raised', 3],
     ['a confirmation fill on a card', 'ok', 'surface-raised', 3],
     ['an information fill on a card', 'info', 'surface-raised', 3],
-    ['a card against the page', 'surface-raised', 'surface-page', 1.08],
 ];
 
-test('both themes clear the contrast bars', () => {
-    const themes = { light: lightPalette(), dark: darkPalette() };
+test('a card is always tellable from the page — by fill or by outline', () => {
+    // NOT a fill check. The high-contrast schemes give a card the same fill as the
+    // page on purpose and let the heavy outline carry the boundary, which is the
+    // right design and would fail a naive "these two must differ" rule. What must
+    // hold is that ONE of the two does the job.
     const bad = [];
-    for (const [name, palette] of Object.entries(themes)) {
+    for (const [name, p] of Object.entries(allPalettes())) {
+        const byFill = ratio(p['surface-raised'], p['surface-page']);
+        const byEdge = ratio(p['edge-strong'], p['surface-page']);
+        if (byFill < 1.08 && byEdge < 3) {
+            bad.push(`${name}: a card differs from the page by ${byFill.toFixed(2)}:1 and its ` +
+                     `outline by only ${byEdge.toFixed(2)}:1 — nothing marks where the card is`);
+        }
+    }
+    assert.deepEqual(bad, []);
+});
+
+test('every scheme clears the contrast bars', () => {
+    const bad = [];
+    for (const [name, palette] of Object.entries(allPalettes())) {
         for (const [what, fg, bg, min] of PAIRS) {
             const a = palette[fg], b = palette[bg];
             assert.ok(a && b, `${name}: --${fg} or --${bg} is not defined`);
@@ -201,9 +243,13 @@ test('no rule carries a raw colour — every colour comes from the palette', () 
     // cannot be themed, so one added later is a colour that stays put when the
     // lights go out, with nothing on screen to say so. Only the two palette blocks
     // may hold values; everything below them names one.
-    const darkAt = css.indexOf(':root[data-theme="dark"]');
-    assert.ok(darkAt >= 0, 'the dark theme block is missing');
-    const offset = css.indexOf('}', css.indexOf('{', darkAt));
+    // ⚠ After the LAST scheme, not the first. When this said `indexOf("dark")` the
+    // five schemes declared after it were themselves reported as raw colours --
+    // which is the same shape as the bug it exists to catch, in the test.
+    const keys = schemeKeys();
+    const lastAt = Math.max(...keys.map(k => css.indexOf(`:root[data-theme="${k}"]`)));
+    assert.ok(lastAt >= 0, 'no scheme blocks found');
+    const offset = css.indexOf('}', css.indexOf('{', lastAt));
     const rest = css.slice(offset);
 
     // ⚠ A CUSTOM PROPERTY BELOW THE PALETTE COUNTS TOO, and skipping them is how the

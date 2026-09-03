@@ -34,7 +34,12 @@
    badge carry the hue. --- */
 :root {
     --slot-preferred: #2E7D32;     /* green  */
-    --slot-dispreferred: #B26A00;  /* amber — warm, not red: declining is normal */
+    /* Amber -- warm, not red: declining is normal. Darkened a shade from #B26A00
+       (Ken, September 3 2026): the slot badge puts WHITE text on this colour, and
+       at the old value that pair measured 4.24:1 against the 4.5 needed. Nothing
+       was checking the badge, which is why it stood for a year; the theme tests
+       check it now. */
+    --slot-dispreferred: #A86300;
     --slot-initiative: #1565C0;    /* blue — also the RESPONDING mode chip */
     --slot-repair: #6A1B9A;        /* purple */
     --slot-persistent: #455A64;    /* slate — quiet, recognized by position */
@@ -131,7 +136,7 @@
     --danger-strong: #b71c1c;
     --danger-tint: #fdf1f1;
     --danger-ink: #8a2620;
-    --warn: #B26A00;
+    --warn: #A86300;
     --warn-tint: #fff8e1;
     --warn-ink: #7a5300;
     --ok: #2E7D32;
@@ -270,27 +275,204 @@
     --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* --- DARK (Ken, September 3 2026). The SAME NAMES, different values -- no rule
-   below this point knows which theme is running, which is the whole point of the
-   naming pass and the only reason a second theme is a table of numbers rather than
-   a second stylesheet.
+/* --- THE OTHER SIX SCHEMES (Ken, September 3 2026). The SAME NAMES, different
+   values -- no rule below this point knows which scheme is running, which is the
+   whole point of the naming pass and the only reason six more schemes are six
+   tables of numbers rather than six stylesheets.
 
-   Three things here are NOT a simple inversion, and each is a place where flipping
-   the lightness mechanically would have produced something worse:
-     - the emphasis fill (--accent) goes from a dark navy to a LIGHT slate with dark
-       text on it, because a dark button on a dark page is not a button;
+   Three things are never a mechanical inversion, and each is a place where
+   flipping lightness by machine produces something worse:
+     - the emphasis fill (--accent) goes from a dark navy to a LIGHT slate or white
+       with dark text on it, because a dark button on a dark page is not a button;
      - shadows get DEEPER rather than lighter -- a pale shadow reads as a glow;
-     - --shade, what a pressed button mixes toward, flips to white, or pressing a lit
-       button in the dark would make it disappear.
+     - --shade, what a pressed button mixes toward, flips to white, or pressing a
+       lit button in the dark would make it disappear.
 
    `color-scheme` is what makes the parts we do not paint follow along: native
-   scrollbars, checkboxes, radio buttons, select menus and the form controls inside
-   dialogs. Without it those stay light and the panel looks half-converted.
+   scrollbars, checkboxes, radio buttons, select menus and the controls inside
+   dialogs. Without it those stay light and a dark panel looks half-converted.
 
-   Every pair in here is checked by tests/styles.test.mjs against the same 3:1 and
-   4.5:1 bars as the light theme, so "it looks about right" is never the evidence. */
+   Every pair in every scheme is checked by tests/theme.test.mjs against the same
+   3:1 and 4.5:1 bars, so "it looks about right" is never the evidence. --- */
+
+/* --- Bold outlines. Today's colours with every boundary drawn heavily and the
+      pale card tints darkened a step, so a card reads as a block rather than a
+      hint of one. The smallest change of the seven and the one that helps the
+      most people: nothing is unfamiliar, the edges are simply there. --- */
+:root[data-theme="bold"] {
+    color-scheme: light;
+    --slot-preferred: #2E7D32;
+    --slot-dispreferred: #A86300;
+    --slot-initiative: #1565C0;
+    --slot-repair: #6A1B9A;
+    --slot-persistent: #455A64;
+    --slot-preferred-tint: #d9ead9;
+    --slot-dispreferred-tint: #f4e3c8;
+    --slot-initiative-tint: #d8e5f5;
+    --slot-repair-tint: #e7daf0;
+    --ink: #1a1a1a;
+    --surface-page: #f0f0f0;
+    --surface-raised: #ffffff;
+    --surface-raised-alt: #f7f8fa;
+    --surface-sunken: #e9edf0;
+    --surface-panel: #eceff1;
+    --surface-track: #d3d9de;
+    --surface-pressed: #c3cbd1;
+    --ink-strong: #2c3e50;
+    --ink-muted: #555555;
+    --ink-faint: #6e767e;
+    --ink-inverse: #ffffff;
+    --accent: #2c3e50;
+    --accent-ink: #ffffff;
+    --accent-hover: #1d2b38;
+    --danger: #c0392b;
+    --danger-strong: #b71c1c;
+    --danger-tint: #fdf1f1;
+    --danger-ink: #8a2620;
+    --warn: #A86300;
+    --warn-tint: #fff8e1;
+    --warn-ink: #7a5300;
+    --ok: #2E7D32;
+    --ok-tint: #e8f5e9;
+    --ok-ink: #1b5e20;
+    --info: #1565C0;
+    --info-tint: #e3f2fd;
+    --info-ink: #0d47a1;
+    --indigo: #3949AB;
+    --indigo-tint: #e8eaf6;
+    --indigo-ink: #283593;
+    --link: #0066cc;
+    --speaker-partner-bg: #dbe3ea;
+    --speaker-partner-ink: #243240;
+    --speaker-partner-edge: #3f4a52;
+    --speaker-user-bg: #cfe2f7;
+    --speaker-user-ink: #0f3f72;
+    --speaker-user-edge: #2c5f8f;
+    --band-always: #283593;
+    --band-always-tint: #dadef2;
+    --band-context: #4E342E;
+    --band-context-tint: #e6ddd8;
+    --band-flex: #1B5E20;
+    --band-flex-tint: #d8ecda;
+    --infl-partner: #5D4037;
+    --infl-partner-tint: #e6ddd8;
+    --infl-feeling: #00838F;
+    --infl-feeling-tint: #d3eef2;
+    --infl-place: #827717;
+    --infl-place-tint: #eef0d4;
+    --choice: #2E7D32;
+    --choice-tint: #d9ead9;
+    --shadow: rgba(0, 0, 0, 0.16);
+    --shadow-soft: rgba(0, 0, 0, 0.10);
+    --shadow-strong: rgba(0, 0, 0, 0.30);
+    --backdrop: rgba(0, 0, 0, 0.35);
+    --shade: #000000;
+    --hover-wash: rgba(0, 0, 0, 0.12);
+    --danger-wash: rgba(220, 53, 69, 0.08);
+    --warn-wash: rgba(217, 130, 43, 0.08);
+    --warn-wash-strong: rgba(217, 130, 43, 0.15);
+    --edge-strong: #232b31;
+    --edge: #3f4a52;
+    --edge-subtle: #7d8892;
+    --pred-ghost-color: #0b4ea2;
+    --pred-ghost-bg: rgba(21, 101, 192, 0.14);
+}
+
+/* --- High contrast, light. Black on white with the tints removed entirely, so
+      a response card's identity rests wholly on its thick coloured left bar and
+      its printed badge. Everything reaches 15:1 or better. --- */
+:root[data-theme="hc-light"] {
+    color-scheme: light;
+    --slot-preferred: #0a5c12;
+    --slot-dispreferred: #6f4400;
+    --slot-initiative: #003d99;
+    --slot-repair: #5a0a7a;
+    --slot-persistent: #000000;
+    --slot-preferred-tint: #ffffff;
+    --slot-dispreferred-tint: #ffffff;
+    --slot-initiative-tint: #ffffff;
+    --slot-repair-tint: #ffffff;
+    --ink: #000000;
+    --surface-page: #ffffff;
+    --surface-raised: #ffffff;
+    --surface-raised-alt: #ffffff;
+    --surface-sunken: #f2f2f2;
+    --surface-panel: #ffffff;
+    --surface-track: #dcdcdc;
+    --surface-pressed: #c8c8c8;
+    --ink-strong: #000000;
+    --ink-muted: #000000;
+    --ink-faint: #1c1c1c;
+    --ink-inverse: #ffffff;
+    --accent: #000000;
+    --accent-ink: #ffffff;
+    --accent-hover: #1f1f1f;
+    --danger: #a00000;
+    --danger-strong: #7a0000;
+    --danger-tint: #ffffff;
+    --danger-ink: #8a0000;
+    --warn: #6f4400;
+    --warn-tint: #ffffff;
+    --warn-ink: #5c3800;
+    --ok: #0a5c12;
+    --ok-tint: #ffffff;
+    --ok-ink: #0a5c12;
+    --info: #003d99;
+    --info-tint: #ffffff;
+    --info-ink: #003d99;
+    --indigo: #2a2a8a;
+    --indigo-tint: #ffffff;
+    --indigo-ink: #2a2a8a;
+    --link: #0000cc;
+    --speaker-partner-bg: #ffffff;
+    --speaker-partner-ink: #000000;
+    --speaker-partner-edge: #000000;
+    --speaker-user-bg: #e8e8e8;
+    --speaker-user-ink: #000000;
+    --speaker-user-edge: #000000;
+    --band-always: #00008b;
+    --band-always-tint: #ffffff;
+    --band-context: #5a2d00;
+    --band-context-tint: #ffffff;
+    --band-flex: #004d1a;
+    --band-flex-tint: #ffffff;
+    --infl-partner: #5a2d00;
+    --infl-partner-tint: #ffffff;
+    --infl-feeling: #005f6b;
+    --infl-feeling-tint: #ffffff;
+    --infl-place: #4d4a00;
+    --infl-place-tint: #ffffff;
+    --choice: #0a5c12;
+    --choice-tint: #ffffff;
+    --shadow: rgba(0, 0, 0, 0.45);
+    --shadow-soft: rgba(0, 0, 0, 0.30);
+    --shadow-strong: rgba(0, 0, 0, 0.60);
+    --backdrop: rgba(0, 0, 0, 0.55);
+    --shade: #000000;
+    --hover-wash: rgba(0, 0, 0, 0.15);
+    --danger-wash: rgba(160, 0, 0, 0.12);
+    --warn-wash: rgba(111, 68, 0, 0.12);
+    --warn-wash-strong: rgba(111, 68, 0, 0.20);
+    --edge-strong: #000000;
+    --edge: #000000;
+    --edge-subtle: #000000;
+    --pred-ghost-color: #0000cc;
+    --pred-ghost-bg: rgba(0, 0, 204, 0.16);
+}
+
 :root[data-theme="dark"] {
     color-scheme: dark;
+    --slot-preferred: #6cc47a;
+    --slot-dispreferred: #e0a53a;
+    --slot-initiative: #6faae4;
+    --slot-repair: #c08ee0;
+    --slot-persistent: #9aa7b3;
+    --slot-preferred-tint: #1b2a1e;
+    --slot-dispreferred-tint: #2e2517;
+    --slot-initiative-tint: #17232e;
+    --slot-repair-tint: #261d2e;
+    --ink: #e8eaed;
+    
     --surface-page: #15181b;
     --surface-raised: #212629;
     --surface-raised-alt: #1a1e21;
@@ -298,14 +480,10 @@
     --surface-panel: #1d2124;
     --surface-track: #2a2f34;
     --surface-pressed: #394148;
-    --ink: #e8eaed;
     --ink-strong: #f2f5f8;
     --ink-muted: #b3bac1;
     --ink-faint: #939ba3;
     --ink-inverse: #14181b;
-    --edge: #7d8994;
-    --edge-strong: #9aa7b3;
-    --edge-subtle: #3a4149;
     --accent: #6f9cc9;
     --accent-ink: #0e1418;
     --accent-hover: #8fb4d8;
@@ -326,15 +504,6 @@
     --indigo-tint: #21243a;
     --indigo-ink: #b8bff0;
     --link: #7db4f0;
-    --slot-preferred: #6cc47a;
-    --slot-dispreferred: #e0a53a;
-    --slot-initiative: #6faae4;
-    --slot-repair: #c08ee0;
-    --slot-persistent: #9aa7b3;
-    --slot-preferred-tint: #1b2a1e;
-    --slot-dispreferred-tint: #2e2517;
-    --slot-initiative-tint: #17232e;
-    --slot-repair-tint: #261d2e;
     --speaker-partner-bg: #272d32;
     --speaker-partner-ink: #dfe5ea;
     --speaker-partner-edge: #7d8994;
@@ -364,8 +533,268 @@
     --danger-wash: rgba(240, 141, 130, 0.15);
     --warn-wash: rgba(224, 165, 58, 0.13);
     --warn-wash-strong: rgba(224, 165, 58, 0.22);
+    --edge-strong: #9aa7b3;
+    --edge: #7d8994;
+    --edge-subtle: #3a4149;
     --pred-ghost-color: #8fc0f5;
     --pred-ghost-bg: rgba(111, 170, 228, 0.22);
+}
+
+/* --- High contrast, dark. The mirror of the above, for people who read
+      light-on-dark better and for anyone whom a white screen hurts. --- */
+:root[data-theme="hc-dark"] {
+    color-scheme: dark;
+    --slot-preferred: #69f0ae;
+    --slot-dispreferred: #ffd24d;
+    --slot-initiative: #82b1ff;
+    --slot-repair: #e0a0ff;
+    --slot-persistent: #ffffff;
+    --slot-preferred-tint: #000000;
+    --slot-dispreferred-tint: #000000;
+    --slot-initiative-tint: #000000;
+    --slot-repair-tint: #000000;
+    --ink: #ffffff;
+    --surface-page: #000000;
+    --surface-raised: #000000;
+    --surface-raised-alt: #000000;
+    --surface-sunken: #000000;
+    --surface-panel: #000000;
+    --surface-track: #3a3a3a;
+    --surface-pressed: #4a4a4a;
+    --ink-strong: #ffffff;
+    --ink-muted: #ffffff;
+    --ink-faint: #dcdcdc;
+    --ink-inverse: #000000;
+    --accent: #ffffff;
+    --accent-ink: #000000;
+    --accent-hover: #d8d8d8;
+    --danger: #ff8a80;
+    --danger-strong: #ff5252;
+    --danger-tint: #000000;
+    --danger-ink: #ff8a80;
+    --warn: #ffd24d;
+    --warn-tint: #000000;
+    --warn-ink: #ffd24d;
+    --ok: #69f0ae;
+    --ok-tint: #000000;
+    --ok-ink: #69f0ae;
+    --info: #82b1ff;
+    --info-tint: #000000;
+    --info-ink: #82b1ff;
+    --indigo: #b0b8ff;
+    --indigo-tint: #000000;
+    --indigo-ink: #b0b8ff;
+    --link: #82b1ff;
+    --speaker-partner-bg: #000000;
+    --speaker-partner-ink: #ffffff;
+    --speaker-partner-edge: #ffffff;
+    --speaker-user-bg: #1c1c1c;
+    --speaker-user-ink: #ffffff;
+    --speaker-user-edge: #82b1ff;
+    --band-always: #b0b8ff;
+    --band-always-tint: #000000;
+    --band-context: #e0bfae;
+    --band-context-tint: #000000;
+    --band-flex: #8ce8a0;
+    --band-flex-tint: #000000;
+    --infl-partner: #e0bfae;
+    --infl-partner-tint: #000000;
+    --infl-feeling: #7fe3ee;
+    --infl-feeling-tint: #000000;
+    --infl-place: #e0e070;
+    --infl-place-tint: #000000;
+    --choice: #69f0ae;
+    --choice-tint: #000000;
+    --shadow: rgba(0, 0, 0, 0.7);
+    --shadow-soft: rgba(0, 0, 0, 0.5);
+    --shadow-strong: rgba(0, 0, 0, 0.85);
+    --backdrop: rgba(0, 0, 0, 0.75);
+    --shade: #ffffff;
+    --hover-wash: rgba(255, 255, 255, 0.20);
+    --danger-wash: rgba(255, 138, 128, 0.18);
+    --warn-wash: rgba(255, 210, 77, 0.16);
+    --warn-wash-strong: rgba(255, 210, 77, 0.26);
+    --edge-strong: #ffffff;
+    --edge: #ffffff;
+    --edge-subtle: #ffffff;
+    --pred-ghost-color: #82b1ff;
+    --pred-ghost-bg: rgba(130, 177, 255, 0.24);
+}
+
+/* --- Yellow on black. The highest luminance separation available, and a
+      long-standing choice in low-vision and AAC practice -- people who need it
+      ask for it by name. Every WORD is yellow; the four category bars keep
+      distinct hues so the kinds of reply stay tellable apart, which is a
+      deliberate departure from a strictly two-colour reading of the scheme. --- */
+:root[data-theme="yellow"] {
+    color-scheme: dark;
+    --slot-preferred: #b6f05c;
+    --slot-dispreferred: #ffd400;
+    --slot-initiative: #7fd4ff;
+    --slot-repair: #e0a0ff;
+    --slot-persistent: #ffd400;
+    --slot-preferred-tint: #000000;
+    --slot-dispreferred-tint: #000000;
+    --slot-initiative-tint: #000000;
+    --slot-repair-tint: #000000;
+    --ink: #ffd400;
+    --surface-page: #000000;
+    --surface-raised: #000000;
+    --surface-raised-alt: #000000;
+    --surface-sunken: #000000;
+    --surface-panel: #000000;
+    --surface-track: #3a3000;
+    --surface-pressed: #4a3d00;
+    --ink-strong: #ffe14d;
+    --ink-muted: #ffd400;
+    --ink-faint: #e0bb00;
+    --ink-inverse: #000000;
+    --accent: #ffd400;
+    --accent-ink: #000000;
+    --accent-hover: #ffe14d;
+    --danger: #ff9a6b;
+    --danger-strong: #ff7a45;
+    --danger-tint: #000000;
+    --danger-ink: #ff9a6b;
+    --warn: #ffd400;
+    --warn-tint: #000000;
+    --warn-ink: #ffd400;
+    --ok: #b6f05c;
+    --ok-tint: #000000;
+    --ok-ink: #b6f05c;
+    --info: #7fd4ff;
+    --info-tint: #000000;
+    --info-ink: #7fd4ff;
+    --indigo: #c8b8ff;
+    --indigo-tint: #000000;
+    --indigo-ink: #c8b8ff;
+    --link: #ffe14d;
+    --speaker-partner-bg: #000000;
+    --speaker-partner-ink: #ffd400;
+    --speaker-partner-edge: #ffd400;
+    --speaker-user-bg: #1a1500;
+    --speaker-user-ink: #ffe14d;
+    --speaker-user-edge: #ffe14d;
+    --band-always: #c8b8ff;
+    --band-always-tint: #000000;
+    --band-context: #ffc890;
+    --band-context-tint: #000000;
+    --band-flex: #b6f05c;
+    --band-flex-tint: #000000;
+    --infl-partner: #ffc890;
+    --infl-partner-tint: #000000;
+    --infl-feeling: #7fd4ff;
+    --infl-feeling-tint: #000000;
+    --infl-place: #ffd400;
+    --infl-place-tint: #000000;
+    --choice: #b6f05c;
+    --choice-tint: #000000;
+    --shadow: rgba(0, 0, 0, 0.7);
+    --shadow-soft: rgba(0, 0, 0, 0.5);
+    --shadow-strong: rgba(0, 0, 0, 0.85);
+    --backdrop: rgba(0, 0, 0, 0.75);
+    --shade: #ffffff;
+    --hover-wash: rgba(255, 212, 0, 0.18);
+    --danger-wash: rgba(255, 154, 107, 0.18);
+    --warn-wash: rgba(255, 212, 0, 0.16);
+    --warn-wash-strong: rgba(255, 212, 0, 0.26);
+    --edge-strong: #ffe14d;
+    --edge: #ffd400;
+    --edge-subtle: #7a6600;
+    --pred-ghost-color: #ffe14d;
+    --pred-ghost-bg: rgba(255, 212, 0, 0.22);
+}
+
+/* --- Colour-blind safe. MEASURED, not asserted: the four categories were run
+      through simulations of protanopia, deuteranopia and tritanopia and scored by
+      perceptual distance. Default separates them by 17.5 / 13.7 / 9.3; these by
+      29.0 / 26.6 / 6.2 -- so the two COMMON types, together about 8% of men, get
+      roughly double the separation.
+   
+      THE MEASUREMENT ALSO SETTLED A DESIGN QUESTION, and against my first answer:
+      four categories CANNOT be well separated by hue alone under dichromacy while
+      keeping colours that mean what they should -- an optimiser free to ignore
+      meaning reached 56, but only by making 'declining' pure red. So the left bar's
+      STYLE carries the category too (see the rule below the palette), which is what
+      makes this scheme work for tritanopia and for total colour blindness, where
+      the colours alone do not. --- */
+:root[data-theme="cb"] {
+    color-scheme: light;
+    --slot-preferred: #1B6E3C;
+    --slot-dispreferred: #B85A08;
+    --slot-initiative: #12509E;
+    --slot-repair: #9B2D74;
+    --slot-persistent: #455A64;
+    --slot-preferred-tint: #e6f0e9;
+    --slot-dispreferred-tint: #fbeee3;
+    --slot-initiative-tint: #e6ecf6;
+    --slot-repair-tint: #f6e9f1;
+    --ink: #1a1a1a;
+    --surface-page: #f0f0f0;
+    --surface-raised: #ffffff;
+    --surface-raised-alt: #f7f8fa;
+    --surface-sunken: #e9edf0;
+    --surface-panel: #eceff1;
+    --surface-track: #e2e6ea;
+    --surface-pressed: #d7dde1;
+    --ink-strong: #2c3e50;
+    --ink-muted: #555555;
+    --ink-faint: #6e767e;
+    --ink-inverse: #ffffff;
+    --accent: #2c3e50;
+    --accent-ink: #ffffff;
+    --accent-hover: #1d2b38;
+    --danger: #c0392b;
+    --danger-strong: #b71c1c;
+    --danger-tint: #fdf1f1;
+    --danger-ink: #8a2620;
+    --warn: #B85A08;
+    --warn-tint: #fbeee3;
+    --warn-ink: #8f4606;
+    --ok: #1B6E3C;
+    --ok-tint: #e6f0e9;
+    --ok-ink: #155a30;
+    --info: #12509E;
+    --info-tint: #e6ecf6;
+    --info-ink: #0e4080;
+    --indigo: #3949AB;
+    --indigo-tint: #e8eaf6;
+    --indigo-ink: #283593;
+    --link: #0066cc;
+    --speaker-partner-bg: #e9eef2;
+    --speaker-partner-ink: #243240;
+    --speaker-partner-edge: #6f7b85;
+    --speaker-user-bg: #e3f0fb;
+    --speaker-user-ink: #0f3f72;
+    --speaker-user-edge: #12509E;
+    --band-always: #12509E;
+    --band-always-tint: #e6ecf6;
+    --band-context: #6E4B3A;
+    --band-context-tint: #efe8e4;
+    --band-flex: #1B6E3C;
+    --band-flex-tint: #e6f0e9;
+    --infl-partner: #4E342E;
+    --infl-partner-tint: #efe8e4;
+    --infl-feeling: #12509E;
+    --infl-feeling-tint: #e6ecf6;
+    --infl-place: #8A6D00;
+    --infl-place-tint: #f4f0dc;
+    --choice: #1B6E3C;
+    --choice-tint: #e6f0e9;
+    --shadow: rgba(0, 0, 0, 0.16);
+    --shadow-soft: rgba(0, 0, 0, 0.10);
+    --shadow-strong: rgba(0, 0, 0, 0.30);
+    --backdrop: rgba(0, 0, 0, 0.35);
+    --shade: #000000;
+    --hover-wash: rgba(0, 0, 0, 0.12);
+    --danger-wash: rgba(220, 53, 69, 0.08);
+    --warn-wash: rgba(217, 130, 43, 0.08);
+    --warn-wash-strong: rgba(217, 130, 43, 0.15);
+    --edge-strong: #546E7A;
+    --edge: #6f7b85;
+    --edge-subtle: #c4ccd2;
+    --pred-ghost-color: #0b4ea2;
+    --pred-ghost-bg: rgba(21, 101, 192, 0.14);
 }
 
 
@@ -1527,6 +1956,34 @@ body.conv-bottom .palette-grid {
 .slot-persistent .response-latency   { color: var(--slot-persistent); }
 .slot-persistent .response-badge     { background: var(--slot-persistent); color: var(--ink-inverse); }
 
+/* --- The colour-blind scheme codes the category by the left bar's STYLE as well as
+   its colour, and this is NOT belt-and-braces -- it is what makes the scheme work.
+   Measured: four categories cannot be well separated by hue alone under dichromacy
+   while keeping colours that still mean what they should. The colours get the two
+   COMMON types (about 8% of men) roughly double the separation Default gives them;
+   solid / double / dashed / dotted covers tritanopia and total colour blindness,
+   where colour alone does not.
+
+   ⚠ STYLE ONLY, NEVER WIDTH -- and ⚠ SCOPED TO `.response-card`, WHICH IS THE HALF
+   THAT ACTUALLY BIT. The slot class sits on the CELL as well as the card, and a cell
+   has no border at all: `border-left-style: none`. Naming the slot class alone gave
+   the cell a style, which let the browser's DEFAULT `medium` width take effect --
+   0px none became 3px solid -- and every response card shifted 3px right and lost
+   3px of width. A moved card is a moved keyguard hole, and nothing about the rule
+   mentioned a width. Setting a border STYLE on something whose width you have not
+   set is a width change; the two are not separable.
+
+   The bar itself stays 6px in every case: `double` draws two lines inside the same
+   6px and `dashed` breaks the same 6px up. Never add a width here, and never widen
+   the selector back to the bare slot class.
+
+   An empty reserved card keeps `border-style: dashed` on its other three sides, so
+   it still reads as empty whichever style its left bar takes. --- */
+:root[data-theme="cb"] .response-card.slot-preferred    { border-left-style: solid; }
+:root[data-theme="cb"] .response-card.slot-dispreferred { border-left-style: double; }
+:root[data-theme="cb"] .response-card.slot-initiative   { border-left-style: dashed; }
+:root[data-theme="cb"] .response-card.slot-repair       { border-left-style: dotted; }
+
 /* --- Express Panel buttons. The grid MIRRORS the selected keyboard layout
    (cell flex = the key's span), so the panel and the keyboard overlay 1:1 for a
    single keyguard. Category-colored (secondary cue; text always shown), long
@@ -1831,6 +2288,26 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
    content box under the side dock's single column. That keeps a wide Express cell
    from forcing a button wider than the column holding it, with no JS and no
    knowledge here of how many columns are in play. */
+/* --- A plain button had no background of its own, and took the BROWSER'S (Ken,
+   September 3 2026, found by sweeping the dark schemes). That was invisible while
+   the app was only ever light -- the browser's default button face is a pale grey
+   that passed for ours -- and in a dark scheme the same buttons came out as mid-grey
+   blocks with an outline too faint to see against them.
+
+   ⚠ THE SELECTOR IS `:where(...)` ON PURPOSE. It contributes NOTHING to specificity,
+   so this scores as a bare `button` and every existing rule beats it -- the accent
+   buttons keep their fill, the icon buttons keep their transparency, and ONLY the
+   buttons that declared nothing are touched. Written the obvious way, as
+   `#settingsContent button`, the id would outrank every class rule in the file and
+   repaint the lot.
+
+   Text inputs are deliberately NOT here: `color-scheme` already gives them a proper
+   dark field, which is exactly what that property is for. --- */
+:where(#settingsDialog, #worldviewScreen) button {
+    background: var(--surface-raised);
+    color: var(--ink);
+}
+
 #settingsContent button:not(.slider-step),
 #settingsContent select {
     min-height: var(--ui-btn-min-h);

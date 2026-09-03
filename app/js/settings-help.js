@@ -17,7 +17,7 @@ const HELP = {
   "tabs": {
     "general": "Your AI key, where your information is kept, saved copies of your settings, and backing up or moving everything.",
     "aboutme": "The getting-to-know-you questions. Anything you answer here helps the AI suggest responses that sound like you.",
-    "textsize": "How the app looks: light or dark, and how big the writing is in each part. Every area is set on its own.",
+    "textsize": "How the app looks: which color scheme it uses, and how big the writing is in each part. Every area is set on its own.",
     "speech": "Your key for the paid services, how the app hears the other person, and the voices used for speaking.",
     "input": "How big the buttons are, how far apart they sit, and where the Express Panel and keyboard go.",
     "conversation": "How the app listens, how many responses it offers you, and what it says while you are choosing.",
@@ -110,7 +110,7 @@ const HELP = {
     "bandFlexInput": "How many buttons change with who you are talking to and where you are. Start at none if you are unsure.",
     "bandShapeSelect": "Whether a band is measured in whole rows, which keeps a straight edge, or in buttons, which gives the exact size.",
     "contextMarkSelect": "What tells a partner button from a place or a feeling: a shape, the bar color, its thickness, or which side it is on.",
-    "colorSchemeInput": "Switches the whole app between light and dark. It changes at once, so you can see it while this panel is open."
+    "colorSchemeInput": "Changes the colors of the whole app. It takes effect at once, so you can try each one while this panel is open."
   },
   "radioGroups": {
     "sttProvider": "Who turns the other person's speech into words. Your browser does it free. Deepgram is paid, and works where the browser cannot.",
@@ -154,7 +154,7 @@ const HELP = {
     "bandSizes": "How the panel is divided into bands, and how the buttons that never speak are told apart from each other.",
     "acknowledgment": "The phrases it may say first, right after the other person stops talking. One is picked at random.",
     "thinking": "The phrases it may say after that, if you are still choosing. One is picked at random.",
-    "colorScheme": "Choose light or dark for the whole app. Dark can be easier on the eyes in a dim room or if bright screens bother you."
+    "colorScheme": "Seven color schemes, from the usual look to bolder outlines, high contrast, dark, yellow on black, and one for color blindness."
   }
 };
 // @@SETTINGS_HELP_END@@
