@@ -44,12 +44,14 @@
     --slot-initiative-tint: #eaf1fa;
     --slot-repair-tint: #f4ecf8;
 
-    --state-unconfirmed: #B26A00;  /* amber */
-    --state-generating: #1565C0;   /* blue  */
-    --state-ready: #2E7D32;        /* green */
+    /* The transcript's three states reuse three slot colours rather than repeating
+       their values, which is how they came to be left out of the first dark
+       palette: a duplicated literal is a colour with nowhere to be themed. */
+    --state-unconfirmed: var(--slot-dispreferred);
+    --state-generating: var(--slot-initiative);
+    --state-ready: var(--slot-preferred);
 
     --ink: #1a1a1a;
-    --header: #2c3e50;
 
     /* --- The EDGE layer: every line that says where one thing ends and the next
        begins (Ken, September 3 2026). Measured before this existed: the app's TEXT
@@ -78,6 +80,111 @@
        a grey light enough to look right on white fails on the dock. Verified by
        tests/styles.test.mjs, which recomputes the ratios rather than trusting these
        comments. --- */
+    /* --- THE PALETTE (Ken, September 3 2026 - "do the naming work and ship light
+       and dark"). Every colour in the app is named for the JOB IT DOES, and the two
+       themes are the same names with different values. Nothing below this line in
+       the stylesheet should carry a raw colour; tests/styles.test.mjs fails the
+       build if one appears.
+
+       WHY NAMING WAS THE BULK OF THE WORK, and worth saying because it looks like
+       clerical effort: a literal cannot be themed, and the same literal was doing
+       DIFFERENT JOBS in different places. #2c3e50 was the dark navy of the Start
+       button AND the colour of a heading. Those two have to move in opposite
+       directions when the lights go out - the fill becomes light, the text becomes
+       lighter still - so until they had separate names, dark mode could not be
+       expressed at all. Every token pair below exists because some literal was
+       carrying more than one meaning.
+
+       THE RULE FOR ADDING ONE: name it for what it IS FOR, never for what it looks
+       like. `--warn-tint` survives a theme; `--pale-yellow` does not. */
+    color-scheme: light;
+
+    /* Surfaces - what things sit ON. Ordered by how they stack: the page is the
+       ground, raised is a card or an input, sunken is the dock and the tracks. */
+    --surface-page: #f0f0f0;
+    --surface-raised: #ffffff;
+    --surface-raised-alt: #f7f8fa;
+    --surface-sunken: #e9edf0;
+    --surface-panel: #eceff1;
+    --surface-track: #e2e6ea;
+    --surface-pressed: #d7dde1;
+
+    /* Ink - text, by how loud it is. ink-inverse is text ON an accent fill, so it
+       flips with the theme and is NOT simply "white". */
+    --ink: #1a1a1a;
+    --ink-strong: #2c3e50;
+    --ink-muted: #555555;
+    --ink-faint: #6e767e;
+    --ink-inverse: #ffffff;
+
+    /* The emphasis fill - Start, Add, Continue, the compose cell, a selected tab.
+       In light it is the dark navy the app has always used; in dark it INVERTS to a
+       light slate with dark text, because a dark fill on a dark page is not a button. */
+    --accent: #2c3e50;
+    --accent-ink: #ffffff;
+    --accent-hover: #1d2b38;
+
+    /* Feedback hues. Each is a solid (a fill or a rule), a tint (a panel) and an ink
+       (text on that tint). Splitting the three is what lets dark mode keep the
+       MEANING of a colour while inverting its lightness. */
+    --danger: #c0392b;
+    --danger-strong: #b71c1c;
+    --danger-tint: #fdf1f1;
+    --danger-ink: #8a2620;
+    --warn: #B26A00;
+    --warn-tint: #fff8e1;
+    --warn-ink: #7a5300;
+    --ok: #2E7D32;
+    --ok-tint: #e8f5e9;
+    --ok-ink: #1b5e20;
+    --info: #1565C0;
+    --info-tint: #e3f2fd;
+    --info-ink: #0d47a1;
+    --indigo: #3949AB;
+    --indigo-tint: #e8eaf6;
+    --indigo-ink: #283593;
+    --link: #0066cc;
+
+    /* The two speakers in the transcript. */
+    --speaker-partner-bg: #e9eef2;
+    --speaker-partner-ink: #243240;
+    --speaker-partner-edge: #6f7b85;
+    --speaker-user-bg: #e3f0fb;
+    --speaker-user-ink: #0f3f72;
+    --speaker-user-edge: #4d7ba8;
+
+    /* Express Panel bands, and the kinds inside the Context band. These are read
+       from JS as var() references, so a theme moves them without JS knowing. */
+    --band-always: #283593;
+    --band-always-tint: #e8eaf6;
+    --band-context: #4E342E;
+    --band-context-tint: #efebe9;
+    --band-flex: #1B5E20;
+    --band-flex-tint: #e8f5e9;
+    --infl-partner: #5D4037;
+    --infl-partner-tint: #efebe9;
+    --infl-feeling: #00838F;
+    --infl-feeling-tint: #e0f7fa;
+    --infl-place: #827717;
+    --infl-place-tint: #f9fbe7;
+    --choice: #2E7D32;
+    --choice-tint: #e8f5e9;
+
+    /* Shadows, washes and the press shade. A shadow is a dark smudge on a light
+       theme and has to get DEEPER, not lighter, on a dark one -- a light shadow
+       reads as a glow. --shade is what a pressed button is mixed toward, and it is
+       the one token that flips to white, because mixing toward black in the dark
+       makes a lit button disappear. */
+    --shadow: rgba(0, 0, 0, 0.16);
+    --shadow-soft: rgba(0, 0, 0, 0.10);
+    --shadow-strong: rgba(0, 0, 0, 0.30);
+    --backdrop: rgba(0, 0, 0, 0.35);
+    --shade: #000000;
+    --hover-wash: rgba(0, 0, 0, 0.12);
+    --danger-wash: rgba(220, 53, 69, 0.08);
+    --warn-wash: rgba(217, 130, 43, 0.08);
+    --warn-wash-strong: rgba(217, 130, 43, 0.15);
+
     --edge-strong: #546E7A;   /* worst case 4.59:1 */
     --edge: #6f7b85;          /* worst case 3.68:1 */
     --edge-subtle: #c4ccd2;   /* decorative only -- see above */
@@ -163,10 +270,109 @@
     --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* --- DARK (Ken, September 3 2026). The SAME NAMES, different values -- no rule
+   below this point knows which theme is running, which is the whole point of the
+   naming pass and the only reason a second theme is a table of numbers rather than
+   a second stylesheet.
+
+   Three things here are NOT a simple inversion, and each is a place where flipping
+   the lightness mechanically would have produced something worse:
+     - the emphasis fill (--accent) goes from a dark navy to a LIGHT slate with dark
+       text on it, because a dark button on a dark page is not a button;
+     - shadows get DEEPER rather than lighter -- a pale shadow reads as a glow;
+     - --shade, what a pressed button mixes toward, flips to white, or pressing a lit
+       button in the dark would make it disappear.
+
+   `color-scheme` is what makes the parts we do not paint follow along: native
+   scrollbars, checkboxes, radio buttons, select menus and the form controls inside
+   dialogs. Without it those stay light and the panel looks half-converted.
+
+   Every pair in here is checked by tests/styles.test.mjs against the same 3:1 and
+   4.5:1 bars as the light theme, so "it looks about right" is never the evidence. */
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-page: #15181b;
+    --surface-raised: #212629;
+    --surface-raised-alt: #1a1e21;
+    --surface-sunken: #0e1113;
+    --surface-panel: #1d2124;
+    --surface-track: #2a2f34;
+    --surface-pressed: #394148;
+    --ink: #e8eaed;
+    --ink-strong: #f2f5f8;
+    --ink-muted: #b3bac1;
+    --ink-faint: #939ba3;
+    --ink-inverse: #14181b;
+    --edge: #7d8994;
+    --edge-strong: #9aa7b3;
+    --edge-subtle: #3a4149;
+    --accent: #6f9cc9;
+    --accent-ink: #0e1418;
+    --accent-hover: #8fb4d8;
+    --danger: #f08d82;
+    --danger-strong: #ff9d94;
+    --danger-tint: #33201f;
+    --danger-ink: #ffb5ad;
+    --warn: #e0a53a;
+    --warn-tint: #302617;
+    --warn-ink: #f0c67a;
+    --ok: #6cc47a;
+    --ok-tint: #1a2a1d;
+    --ok-ink: #9adba4;
+    --info: #6faae4;
+    --info-tint: #17242f;
+    --info-ink: #a6cdf0;
+    --indigo: #9aa4e8;
+    --indigo-tint: #21243a;
+    --indigo-ink: #b8bff0;
+    --link: #7db4f0;
+    --slot-preferred: #6cc47a;
+    --slot-dispreferred: #e0a53a;
+    --slot-initiative: #6faae4;
+    --slot-repair: #c08ee0;
+    --slot-persistent: #9aa7b3;
+    --slot-preferred-tint: #1b2a1e;
+    --slot-dispreferred-tint: #2e2517;
+    --slot-initiative-tint: #17232e;
+    --slot-repair-tint: #261d2e;
+    --speaker-partner-bg: #272d32;
+    --speaker-partner-ink: #dfe5ea;
+    --speaker-partner-edge: #7d8994;
+    --speaker-user-bg: #1c2b3a;
+    --speaker-user-ink: #cfe2f5;
+    --speaker-user-edge: #5a86b3;
+    --band-always: #8f9adf;
+    --band-always-tint: #1e2136;
+    --band-context: #c3a99e;
+    --band-context-tint: #2a2320;
+    --band-flex: #7fc98a;
+    --band-flex-tint: #1a2a1d;
+    --infl-partner: #c8a99c;
+    --infl-partner-tint: #2a2320;
+    --infl-feeling: #6fc9d4;
+    --infl-feeling-tint: #12292c;
+    --infl-place: #c3c265;
+    --infl-place-tint: #262712;
+    --choice: #6cc47a;
+    --choice-tint: #1b2a1e;
+    --shadow: rgba(0, 0, 0, 0.55);
+    --shadow-soft: rgba(0, 0, 0, 0.40);
+    --shadow-strong: rgba(0, 0, 0, 0.70);
+    --backdrop: rgba(0, 0, 0, 0.65);
+    --shade: #ffffff;
+    --hover-wash: rgba(255, 255, 255, 0.12);
+    --danger-wash: rgba(240, 141, 130, 0.15);
+    --warn-wash: rgba(224, 165, 58, 0.13);
+    --warn-wash-strong: rgba(224, 165, 58, 0.22);
+    --pred-ghost-color: #8fc0f5;
+    --pred-ghost-bg: rgba(111, 170, 228, 0.22);
+}
+
+
 body {
     font-family: system-ui, -apple-system, sans-serif;
-    background: #f0f0f0;
-    color: #1a1a1a;
+    background: var(--surface-page);
+    color: var(--ink);
     /* Bound the app to the viewport (was min-height:100vh, which let content
        grow the page). Fixed height + the min-height:0 flex chain means the
        transcript scrolls INTERNALLY and the conversation layout never grows —
@@ -225,22 +431,22 @@ body {
 
 #startBtn {
     flex: 0 0 auto;
-    background: #2c3e50;
-    color: white;
+    background: var(--accent);
+    color: var(--ink-inverse);
     border: none;
     padding: 1.2rem 3.5rem;
     border-radius: 12px;
     font-size: 2rem;
     font-weight: 600;
     cursor: pointer;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 16px var(--shadow-strong);
 }
 
 /* Practice Mode panel (Settings → Practice): the scenario list, or — while a
    practice conversation is running — the way out of it. */
 #practicePanel { display: flex; flex-direction: column; gap: 0.6rem; }
-.practice-title { margin: 0 0 0.2rem; font-size: 1.3rem; font-weight: 700; color: #2c3e50; }
-.practice-note { margin: 0 0 0.6rem; color: #5a4a1e; line-height: 1.45; }
+.practice-title { margin: 0 0 0.2rem; font-size: 1.3rem; font-weight: 700; color: var(--ink-strong); }
+.practice-note { margin: 0 0 0.6rem; color: var(--warn-ink); line-height: 1.45; }
 .practice-active { margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--slot-initiative); }
 .practice-list { display: flex; flex-direction: column; gap: 0.5rem; }
 .practice-card {
@@ -248,7 +454,7 @@ body {
     flex-direction: column;
     gap: 0.15rem;
     text-align: left;
-    background: #fff;
+    background: var(--surface-raised);
     border: 2px solid var(--edge);
     border-left: 6px solid var(--slot-initiative);
     border-radius: 8px;
@@ -257,11 +463,11 @@ body {
 }
 .practice-card:hover, .practice-card:focus-visible { border-color: var(--slot-initiative); outline: none; }
 .practice-cat { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--slot-initiative); font-weight: 700; }
-.practice-name { font-size: 1.15rem; font-weight: 700; color: #2c3e50; }
-.practice-desc { color: #555; }
+.practice-name { font-size: 1.15rem; font-weight: 700; color: var(--ink-strong); }
+.practice-desc { color: var(--ink-muted); }
 .practice-add-key, .practice-end {
     align-self: flex-start;
-    background: #2c3e50; color: #fff; border: 2px solid #2c3e50;
+    background: var(--accent); color: var(--ink-inverse); border: 2px solid var(--accent);
     padding: 0.5rem 1.2rem; border-radius: 8px; font-size: 1rem; cursor: pointer;
 }
 .practice-end { background: var(--slot-dispreferred); border-color: var(--slot-dispreferred); }
@@ -334,7 +540,7 @@ body.conv-bottom     main { flex-direction: column; }
     flex: 0 0 auto;
     display: flex;
     min-height: 0;
-    background: #e9edf0;
+    background: var(--surface-sunken);
 }
 /* SIDE dock: a FULL-HEIGHT fixed column on the chosen edge (y0..bottom), so the
    Express Panel occupies the exact same region the keyboard and the About Me /
@@ -498,7 +704,7 @@ body.conv-side   #expressPanel {
     position: fixed;
     z-index: 50;
     width: auto;                 /* left/right (or width, side) place it instead */
-    background: #e9edf0;         /* #dockArea's background travels with it */
+    background: var(--surface-sunken);         /* #dockArea's background travels with it */
 }
 body.conv-bottom #expressPanel.ep-in-settings {
     left: var(--app-margin);
@@ -535,18 +741,18 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
     font-size: 0.95rem;
     font-weight: 600;
     margin-bottom: 0.5rem;
-    color: #555;
+    color: var(--ink-muted);
 }
 
 .panel {
-    background: white;
+    background: var(--surface-raised);
     border-radius: 8px;
     padding: 1rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 3px var(--shadow-soft);
 }
 
 .placeholder {
-    color: #888;
+    color: var(--ink-faint);
     font-style: italic;
 }
 
@@ -556,12 +762,12 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
     font-size: 0.8rem;
     font-weight: 700;
     letter-spacing: 0.02em;
-    color: #fff;
+    color: var(--ink-inverse);
     border-radius: 14px;
     padding: 0.25rem 0.75rem;
     white-space: nowrap;
 }
-.chip-standby    { background: #90a4ae; }
+.chip-standby    { background: var(--ink-faint); }
 .chip-listening  { background: var(--slot-persistent); }
 .chip-responding { background: var(--slot-initiative); }
 .chip-repair     { background: var(--slot-repair); }
@@ -605,17 +811,17 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
     width: 22px;
 }
 .transcript-log::-webkit-scrollbar-track {
-    background: #e2e6ea;
+    background: var(--surface-track);
     border-radius: 11px;
 }
 .transcript-log::-webkit-scrollbar-thumb {
     background: var(--edge-strong);
     border-radius: 11px;
-    border: 3px solid #e2e6ea;   /* track-coloured inset around the thumb */
+    border: 3px solid var(--surface-track);   /* track-coloured inset around the thumb */
 }
 .transcript-log::-webkit-scrollbar-thumb:hover,
 .transcript-log::-webkit-scrollbar-thumb:active {
-    background: #66727e;
+    background: var(--edge-strong);
 }
 /* Error heads-up: a faint-red wash (+ red border) on the transcript box when the
    app has logged an error this conversation. Deliberately subtle — signals "a
@@ -623,13 +829,13 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
    Cleared on the next working cycle (a real palette render) or conversation
    reset. */
 .transcript-log.has-error {
-    background: rgba(220, 53, 69, 0.08);
+    background: var(--danger-wash);
     /* Opaque, not the original 55% (Ken, September 3 2026). The wash is meant to be
        faint -- that is the whole design -- but the BORDER is the part that says
        "something went wrong here", and at 55% it measured 2.1:1 against the washed
        interior, so the one signal the app gives for an error was itself hard to see.
        The fill keeps its 8%; only the line firms up. */
-    border-color: #dc3545;
+    border-color: var(--danger);
 }
 
 /* Turn entries — partner vs user styled DIFFERENTLY (distinct font, color,
@@ -652,17 +858,17 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
 }
 .turn-partner {
     margin-right: auto;
-    background: #e9eef2;
+    background: var(--speaker-partner-bg);
     border: 1px solid var(--edge);
-    color: #243240;
+    color: var(--speaker-partner-ink);
     font-family: Georgia, "Times New Roman", serif;  /* partner: serif */
     border-bottom-left-radius: 2px;
 }
 .turn-user {
     margin-left: auto;
-    background: #e3f0fb;
-    border: 1px solid #4d7ba8;
-    color: #0f3f72;
+    background: var(--speaker-user-bg);
+    border: 1px solid var(--speaker-user-edge);
+    color: var(--speaker-user-ink);
     font-family: system-ui, -apple-system, sans-serif;  /* user: sans */
     font-weight: 600;
     text-align: right;
@@ -678,9 +884,9 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
     max-width: 100%;
     margin-left: 0;
     margin-right: 0;
-    background: #fff8e1;
-    color: #5d4200;
-    border-left: 4px solid var(--slot-dispreferred, #B26A00);
+    background: var(--warn-tint);
+    color: var(--warn-ink);
+    border-left: 4px solid var(--slot-dispreferred);
     border-radius: 6px;
     font-family: system-ui, -apple-system, sans-serif;
     /* The "where is it" hint is added to the instruction on a second line. The line
@@ -740,8 +946,8 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
 }
 
 #listenBtn {
-    background: var(--header);
-    color: white;
+    background: var(--accent);
+    color: var(--ink-inverse);
     border: none;
     border-radius: 8px;
     font-size: 1.05rem;
@@ -752,7 +958,7 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
    the session ones (start/end) and Settings sit in the same row, distinguished
    by icon and (for End) color. */
 .cmd-btn {
-    background: #fff;
+    background: var(--surface-raised);
     border: 2px solid var(--slot-persistent);
     color: var(--slot-persistent);
     border-radius: 8px;
@@ -768,16 +974,16 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
    Rule 6. Inverting on hover or focus made an ordinary button look latched, so
    this removes a genuine ambiguity rather than only matching a style. */
 .cmd-btn:focus-visible {
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
+    box-shadow: 0 2px 10px var(--shadow);
     outline: none;
 }
 .cmd-btn:active { transform: translateY(1px); }
 .cmd-btn-end {
-    border-color: #c0392b;
-    color: #c0392b;
+    border-color: var(--danger);
+    color: var(--danger);
 }
 .cmd-btn-end:focus-visible {
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
+    box-shadow: 0 2px 10px var(--shadow);
     outline: none;
 }
 
@@ -810,7 +1016,7 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
    whole button slowly brightens and dims (the fill breathes) while the mic is live,
    so it reads as "recording" without any screen-wide frame. */
 #listenBtn.listening {
-    background: #c0392b;
+    background: var(--danger);
     animation: listen-btn-pulse 2s ease-in-out infinite;
 }
 @keyframes listen-btn-pulse {
@@ -822,26 +1028,26 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
    user can see at a glance that the current conversation is NOT being recorded
    (Rule 6: a sticky action shown as a selected button). */
 #privacyBtn.private-on {
-    background: #b9770e;
-    border-color: #b9770e;
-    color: #fff;
+    background: var(--warn);
+    border-color: var(--warn);
+    color: var(--ink-inverse);
 }
 
 /* "Start conversation" latch - the openers are showing but nothing has been ended yet,
    and pressing again is the way back. Green, matching the opener cards it puts up. */
 #initiateBtn.opener-on {
-    background: #2E7D32;
-    border-color: #2E7D32;
-    color: #fff;
+    background: var(--ok);
+    border-color: var(--ok);
+    color: var(--ink-inverse);
 }
 
 /* "Wrap up" toggle - latched state, slate to match the wind-down and goodbye cards it
    puts on screen. It is the user's way back out of a wrap-up entered by accident, so it
    has to be unmistakable that the button is ON (Rule 6). */
 #windDownBtn.wrapup-on {
-    background: #455A64;
-    border-color: #455A64;
-    color: #fff;
+    background: var(--slot-persistent);
+    border-color: var(--slot-persistent);
+    color: var(--ink-inverse);
 }
 
 /* Region B — response palette. A grid of cards in fixed priority order (preferred
@@ -889,15 +1095,15 @@ body.conv-bottom .palette-grid {
     gap: 0.75rem;
     padding: 1rem;
     text-align: center;
-    border: 2px dashed var(--slot-dispreferred, #B26A00);
+    border: 2px dashed var(--slot-dispreferred);
     border-radius: 10px;
-    background: rgba(217, 130, 43, 0.08);
+    background: var(--warn-wash);
 }
-.response-error-msg { margin: 0; color: #8a4b00; font-weight: 600; }
+.response-error-msg { margin: 0; color: var(--warn-ink); font-weight: 600; }
 .response-error-retry {
-    border: 2px solid var(--slot-dispreferred, #B26A00);
-    background: #fff;
-    color: #8a4b00;
+    border: 2px solid var(--slot-dispreferred);
+    background: var(--surface-raised);
+    color: var(--warn-ink);
     border-radius: 8px;
     padding: 0.5rem 1.25rem;
     font-weight: 600;
@@ -917,8 +1123,8 @@ body.conv-bottom .palette-grid {
     border: 1px solid var(--edge);
     border-radius: 6px;
     padding: 0.5rem;
-    background: #fafafa;
-    color: #333;
+    background: var(--surface-raised);
+    color: var(--ink);
 }
 #errorLogActions, #usageSummaryActions, #systemInfoActions, #problemReportActions { display: flex; gap: 0.5rem; margin-top: 0.4rem; }
 /* Monospace so the summary's aligned columns line up (Ken, Aug 7 2026). */
@@ -929,7 +1135,7 @@ body.conv-bottom .palette-grid {
 /* Version on the opening screen. Quiet — it is a fact you look up, not something
    the user is being asked to read every launch. */
 .start-version {
-    margin: 0.9rem 0 0; text-align: center; color: #666; font-size: 0.85rem;
+    margin: 0.9rem 0 0; text-align: center; color: var(--ink-muted); font-size: 0.85rem;
 }
 .start-version + #startReportBtn.start-report { margin-top: 0.3rem; }
 
@@ -940,7 +1146,7 @@ body.conv-bottom .palette-grid {
 
 #startReportBtn.start-report {
     display: block; margin: 0.9rem auto 0; background: none; border: none;
-    color: #666; font-size: 0.85rem; text-decoration: underline; cursor: pointer;
+    color: var(--ink-muted); font-size: 0.85rem; text-decoration: underline; cursor: pointer;
     min-height: 0; padding: 0.3rem 0.6rem;
 }
 
@@ -999,7 +1205,7 @@ body.conv-bottom .palette-grid {
        clipped at the footprint edges so it read as "cut off" — and a flush,
        borderless container matches the Response Palette it overlays. */
     padding: 0.6rem 0;
-    background: #fff;
+    background: var(--surface-raised);
     border-radius: 10px;
     box-shadow: none;
 }
@@ -1088,7 +1294,7 @@ body.conv-bottom .palette-grid {
     flex-direction: column;
     gap: clamp(0.2rem, 0.6vh, 0.45rem);
     text-align: left;
-    background: #fff;
+    background: var(--surface-raised);
     border: 2px solid var(--edge-strong);
     border-left-width: 6px;
     border-radius: 10px;
@@ -1098,7 +1304,7 @@ body.conv-bottom .palette-grid {
     transition: box-shadow 0.12s, transform 0.05s;
 }
 .response-card:focus-visible {
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
+    box-shadow: 0 2px 10px var(--shadow);
     outline: none;
 }
 .response-card:active { transform: translateY(1px); }
@@ -1115,7 +1321,7 @@ body.conv-bottom .palette-grid {
     font-size: 0.68rem;
     font-weight: 800;
     letter-spacing: 0.05em;
-    color: #fff;
+    color: var(--ink-inverse);
     border-radius: 4px;
     padding: 0.15rem 0.45rem;
 }
@@ -1166,7 +1372,7 @@ body.conv-bottom .palette-grid {
     font-size: calc(clamp(0.75rem, 1.35vh, 1rem) * var(--hint-font-scale, 1));
     font-weight: 400;
     line-height: 1.2;
-    color: #5a6169;
+    color: var(--ink-muted);
     overflow: hidden;
 }
 .response-card-half .response-hint {
@@ -1230,7 +1436,7 @@ body.conv-bottom .palette-grid {
     font-size: calc(clamp(0.75rem, 1.35vh, 1rem) * var(--response-font-scale, 1));
     font-weight: 400;
     line-height: 1.2;
-    color: #5a6169;
+    color: var(--ink-muted);
 }
 #responseOptions.cards-both-condensed .response-card-half.has-hint .response-hint {
     font-size: calc(clamp(1rem, 1.9vh, 1.4rem) * var(--hint-font-scale, 1));
@@ -1307,27 +1513,27 @@ body.conv-bottom .palette-grid {
 
 .slot-preferred .response-badge,
 .slot-preferred .response-latency    { color: var(--slot-preferred); }
-.slot-preferred .response-badge      { background: var(--slot-preferred); color: #fff; }
+.slot-preferred .response-badge      { background: var(--slot-preferred); color: var(--ink-inverse); }
 .slot-dispreferred .response-badge,
 .slot-dispreferred .response-latency { color: var(--slot-dispreferred); }
-.slot-dispreferred .response-badge   { background: var(--slot-dispreferred); color: #fff; }
+.slot-dispreferred .response-badge   { background: var(--slot-dispreferred); color: var(--ink-inverse); }
 .slot-initiative .response-badge,
 .slot-initiative .response-latency   { color: var(--slot-initiative); }
-.slot-initiative .response-badge     { background: var(--slot-initiative); color: #fff; }
+.slot-initiative .response-badge     { background: var(--slot-initiative); color: var(--ink-inverse); }
 .slot-repair .response-badge,
 .slot-repair .response-latency       { color: var(--slot-repair); }
-.slot-repair .response-badge         { background: var(--slot-repair); color: #fff; }
+.slot-repair .response-badge         { background: var(--slot-repair); color: var(--ink-inverse); }
 .slot-persistent .response-badge,
 .slot-persistent .response-latency   { color: var(--slot-persistent); }
-.slot-persistent .response-badge     { background: var(--slot-persistent); color: #fff; }
+.slot-persistent .response-badge     { background: var(--slot-persistent); color: var(--ink-inverse); }
 
 /* --- Express Panel buttons. The grid MIRRORS the selected keyboard layout
    (cell flex = the key's span), so the panel and the keyboard overlay 1:1 for a
    single keyguard. Category-colored (secondary cue; text always shown), long
    phrases ellipsis-truncate. --- */
 .ep-btn {
-    --ep-color: #546E7A;
-    --ep-tint: #eceff1;
+    --ep-color: var(--edge-strong);
+    --ep-tint: var(--surface-panel);
     min-width: 0;
     /* Like the keyboard keys (.kbd-key): the row stretch drives the height, so
        the button shrinks to fit the dock and never overflows / falls off. */
@@ -1353,9 +1559,9 @@ body.conv-bottom .palette-grid {
    the compose key, an offered choice, a selected influencer, an armed button - still
    wins over it. Bands group POSITIONS; they change nothing about the grid, so none
    of this moves a keyguard hole. */
-.ep-btn.ep-band-always  { --band-color: #283593; --band-tint: #e8eaf6; }
-.ep-btn.ep-band-context { --band-color: #4E342E; --band-tint: #efebe9; }
-.ep-btn.ep-band-flex    { --band-color: #1B5E20; --band-tint: #e8f5e9; }
+.ep-btn.ep-band-always  { --band-color: var(--band-always);  --band-tint: var(--band-always-tint); }
+.ep-btn.ep-band-context { --band-color: var(--band-context); --band-tint: var(--band-context-tint); }
+.ep-btn.ep-band-flex    { --band-color: var(--band-flex);    --band-tint: var(--band-flex-tint); }
 .ep-btn.ep-band-always,
 .ep-btn.ep-band-context,
 .ep-btn.ep-band-flex {
@@ -1440,7 +1646,7 @@ body.conv-bottom .palette-grid {
     -webkit-box-orient: vertical;
 }
 .ep-btn:focus-visible {
-    background: #fff;
+    background: var(--surface-raised);
     outline: 2px solid var(--ep-color);
     outline-offset: -1px;
 }
@@ -1448,17 +1654,17 @@ body.conv-bottom .palette-grid {
 /* Armed: first tap of a required double-tap — clearly "waiting for confirm". */
 .ep-btn.ep-armed {
     background: var(--ep-color);
-    color: #fff;
+    color: var(--ink-inverse);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--ep-color) 35%, transparent);
 }
 /* "In my own words" — the space-cell counterpart, distinct (dark) background. */
 .ep-btn.ep-imow {
-    --ep-color: #2c3e50;
-    background: #2c3e50;
-    color: #fff;
+    --ep-color: var(--accent);
+    background: var(--accent);
+    color: var(--ink-inverse);
 }
 .ep-btn.ep-imow .ep-text { font-weight: 700; }
-.ep-btn.ep-imow:focus-visible { background: #1d2b38; color: #fff; outline-color: #1d2b38; }
+.ep-btn.ep-imow:focus-visible { background: var(--accent-hover); color: var(--ink-inverse); outline-color: var(--accent-hover); }
 /* Choice chips — the alternatives the partner just offered, filled into the
    reserved leading cells. Solid green (echoing the CHOICE response cards they
    steer) so they read apart from the pastel phrases. The solid fill is what says
@@ -1467,12 +1673,12 @@ body.conv-bottom .palette-grid {
    for the same single exchange and the two should differ in nothing at all. */
 .ep-btn.ep-choice {
     background: var(--ep-color);
-    color: #fff;
+    color: var(--ink-inverse);
     border-color: var(--ep-color);
 }
 .ep-btn.ep-choice:focus-visible {
-    background: color-mix(in srgb, var(--ep-color) 82%, #000);
-    color: #fff;
+    background: color-mix(in srgb, var(--ep-color) 82%, var(--shade));
+    color: var(--ink-inverse);
     outline-color: var(--ep-color);
 }
 /* Partner / Feeling influencer TOGGLES — solid fill so they read apart from the
@@ -1482,17 +1688,17 @@ body.conv-bottom .palette-grid {
 .ep-btn.ep-partner,
 .ep-btn.ep-feeling {
     background: var(--ep-color);
-    color: #fff;
+    color: var(--ink-inverse);
     border-color: var(--ep-color);
 }
 .ep-btn.ep-partner:focus-visible,
 .ep-btn.ep-feeling:focus-visible {
-    background: color-mix(in srgb, var(--ep-color) 82%, #000);
-    color: #fff;
+    background: color-mix(in srgb, var(--ep-color) 82%, var(--shade));
+    color: var(--ink-inverse);
     outline-color: var(--ep-color);
 }
 .ep-btn.ep-on {
-    box-shadow: inset 0 0 0 3px #fff, 0 0 0 3px var(--ep-color);
+    box-shadow: inset 0 0 0 3px var(--surface-sunken), 0 0 0 3px var(--ep-color);
     position: relative;
     z-index: 1;
 }
@@ -1519,10 +1725,10 @@ body.conv-bottom .palette-grid {
 }
 .ep-btn.ep-band-context.ep-on {
     background: var(--band-color);
-    color: #fff;
+    color: var(--ink-inverse);
 }
 .ep-btn.ep-band-context:focus-visible {
-    background: #fff;
+    background: var(--surface-raised);
     color: var(--ink);
     outline-color: var(--band-color);
 }
@@ -1537,7 +1743,7 @@ body.conv-bottom .palette-grid {
     /* Dark enough to see (Ken, August 8 2026). The first cut was #b9c4ca, which
        measures 1.5:1 against the #e9edf0 dock — well under the 3:1 that a UI
        element's boundary needs to be made out. This is 3.7:1. */
-    --ep-color: #607d8b;
+    --ep-color: var(--edge-strong);
     background: transparent;
     /* The left edge is 5px on every cell because that is where a DEFINED button
        carries its colour bar. Leaving it unpainted (the first cut) left the frame
@@ -1558,12 +1764,12 @@ body.conv-bottom .palette-grid {
    own-colour ring. Colour only — a ring is drawn outside the box and changes no
    dimension, so no keyguard hole moves (the .ep-undefined lesson). */
 .ep-btn.ep-picked {
-    box-shadow: 0 0 0 3px #1565C0;
+    box-shadow: 0 0 0 3px var(--info);
     position: relative;
     z-index: 2;              /* above an .ep-on neighbour's ring, at gap 0 */
 }
 .ep-btn.ep-on.ep-picked {
-    box-shadow: inset 0 0 0 3px #fff, 0 0 0 3px #1565C0;
+    box-shadow: inset 0 0 0 3px var(--surface-sunken), 0 0 0 3px var(--info);
 }
 
 /* Inert grid spacer (matches a blank/pred or leftover key cell). */
@@ -1705,7 +1911,7 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
     flex: 0 0 auto;
     align-self: stretch;
     width: var(--btn-min-dim);   /* a button — at least the button size wide */
-    background: #fff;
+    background: var(--surface-raised);
     border: 2px solid var(--slot-persistent);
     color: var(--slot-persistent);
     border-radius: 8px;
@@ -1722,7 +1928,7 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
    sticks on a touch screen, which is how the black background was reported in the
    first place). */
 .regenerate-btn:focus-visible {
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
+    box-shadow: 0 2px 10px var(--shadow);
     outline: none;
 }
 .regenerate-btn:active { transform: translateY(1px); }
@@ -1732,8 +1938,8 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
 /* The invitation shown until a button is tapped, and the whole-panel Reset that has
    nowhere else to live once the tab shows one button at a time. */
 .ee-prompt { display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; }
-.ee-prompt .ee-reset { background: #fff; color: #c0392b; border: 1px solid #c0392b; border-radius: 6px; padding: 0.4rem 0.7rem; cursor: pointer; }
-.ee-prompt .ee-reset:hover { background: #c0392b; color: #fff; }
+.ee-prompt .ee-reset { background: var(--surface-raised); color: var(--danger); border: 1px solid var(--danger); border-radius: 6px; padding: 0.4rem 0.7rem; cursor: pointer; }
+.ee-prompt .ee-reset:hover { background: var(--danger); color: var(--ink-inverse); }
 
 /* ⚠ .ee-row AND .ee-tools ARE SHARED WITH THE CONTROLS EDITOR (control-phrases-editor
    .js), which still builds a horizontal row of one text field plus ↑ ↓ ✕. So the base
@@ -1741,7 +1947,7 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
    #expressEditor. Changing the base rules is what would silently restack the Controls
    tab. */
 .ee-list { display: flex; flex-direction: column; gap: 0.35rem; }
-.ee-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem; border: 1px solid var(--edge); border-radius: 8px; background: #fff; }
+.ee-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem; border: 1px solid var(--edge); border-radius: 8px; background: var(--surface-raised); }
 
 /* ⚠ THE EXPRESS CARD IS A COLUMN, NOT A ROW, AND THAT IS THE FIX. As a single row the
    fields, seven colour swatches and six tools could not all fit a narrow side dock,
@@ -1750,26 +1956,26 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
    card gets taller as the tab narrows and never wider. */
 #expressEditor .ee-row { flex-direction: column; align-items: stretch; padding: 0.5rem; }
 .ee-card-head { display: flex; align-items: center; gap: 0.5rem; }
-.ee-card-pos { font-size: 0.85rem; color: #555; }
-.ee-badge { flex: 0 0 auto; font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #fff; border-radius: 4px; padding: 0.25rem 0.4rem; min-width: 4.2rem; text-align: center; }
-.ee-badge-phrase  { background: #546E7A; }
-.ee-badge-partner { background: #5D4037; }
-.ee-badge-feeling { background: #00838F; }
-.ee-badge-place   { background: #827717; }
+.ee-card-pos { font-size: 0.85rem; color: var(--ink-muted); }
+.ee-badge { flex: 0 0 auto; font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-inverse); border-radius: 4px; padding: 0.25rem 0.4rem; min-width: 4.2rem; text-align: center; }
+.ee-badge-phrase  { background: var(--edge-strong); }
+.ee-badge-partner { background: var(--infl-partner); }
+.ee-badge-feeling { background: var(--infl-feeling); }
+.ee-badge-place   { background: var(--infl-place); }
 /* An undefined slot — a position with nothing in it yet. Grey and dashed so the
    list reads at a glance as "these cells are still yours to fill", matching how the
    same slot looks in the panel itself. */
-.ee-badge-empty   { background: #b9c4ca; }
-.ee-row.ee-empty { border-style: dashed; background: #fbfcfd; }
-.ee-empty-label { flex: 0 0 auto; align-self: center; color: #78909c; font-size: 0.9rem; }
+.ee-badge-empty   { background: var(--surface-pressed); }
+.ee-row.ee-empty { border-style: dashed; background: var(--surface-raised); }
+.ee-empty-label { flex: 0 0 auto; align-self: center; color: var(--ink-faint); font-size: 0.9rem; }
 /* The row a panel tap just chose. Thirty-odd rows look alike, so a scroll alone is
    easy to miss — this says which one the tap landed on. */
-.ee-row.ee-row-picked { border-color: #2c7a3f; box-shadow: 0 0 0 2px rgba(44, 122, 63, 0.25); }
+.ee-row.ee-row-picked { border-color: var(--ok); box-shadow: 0 0 0 2px var(--ok); }
 .ee-fields { display: flex; flex: 1 1 auto; gap: 0.4rem; flex-wrap: wrap; min-width: 0; }
 .ee-fields input, .ee-fields select { flex: 1 1 8rem; min-width: 0; padding: 0.35rem 0.5rem; border: 1px solid var(--edge); border-radius: 6px; font-size: 0.95rem; }
 .ee-fields .ee-name-select { flex: 2 1 16rem; } /* the "Choose a name" dropdown — twice as wide */
 .ee-tools { flex: 0 0 auto; display: flex; gap: 0.25rem; }
-.ee-tools button { width: 2rem; height: 2rem; border: 1px solid var(--edge); background: #f4f6f8; border-radius: 6px; cursor: pointer; font-size: 1rem; line-height: 1; }
+.ee-tools button { width: 2rem; height: 2rem; border: 1px solid var(--edge); background: var(--surface-raised-alt); border-radius: 6px; cursor: pointer; font-size: 1rem; line-height: 1; }
 /* The Express card's actions WRAP, which the old fixed row of icon tools did not —
    that is what overflowed on a narrow tab. Text labels because this is a
    supporter-assisted Settings overlay, which Rule 12's scope note exempts from
@@ -1777,16 +1983,16 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
 #expressEditor .ee-tools { flex-wrap: wrap; gap: 0.35rem; }
 #expressEditor .ee-tools button { width: auto; padding: 0 0.7rem; font-size: 0.95rem; }
 .ee-tools button:disabled { opacity: 0.35; cursor: default; }
-.ee-tools .ee-del { color: #c0392b; border-color: #c0392b; }
+.ee-tools .ee-del { color: var(--danger); border-color: var(--danger); }
 /* "Hear this phrase" — the same blue as About Me's "Speak my answer" and Sound
    Check's per-candidate speaker, so one look means one thing across every editor. */
-.ee-tools .ee-hear { background: #e3f2fd; border-color: var(--slot-initiative); color: #1565c0; }
+.ee-tools .ee-hear { background: var(--info-tint); border-color: var(--slot-initiative); color: var(--info); }
 /* Done closes the card, so it reads as the primary way out — and sits last, away from
    Delete, which is the one button here that cannot be undone. */
-.ee-tools .ee-done { background: #2c7a3f; color: #fff; border: none; font-weight: 600; }
+.ee-tools .ee-done { background: var(--ok); color: var(--ink-inverse); border: none; font-weight: 600; }
 .ee-tools .ee-done:hover { filter: brightness(1.1); }
-.ee-tools .ee-add { background: #2c3e50; color: #fff; border: none; font-weight: 600; }
-.ee-tools .ee-add:disabled { background: #8b97a1; }
+.ee-tools .ee-add { background: var(--accent); color: var(--ink-inverse); border: none; font-weight: 600; }
+.ee-tools .ee-add:disabled { background: var(--ink-faint); }
 /* Button-color picker — pick by color, not by (meaningless) category name. */
 .ee-swatches { flex: 0 0 auto; display: flex; gap: 0.3rem; align-items: center; flex-wrap: wrap; }
 /* ⚠ `flex-wrap: wrap` ABOVE DOES NOTHING ON ITS OWN, and this is the trap: as a
@@ -1796,8 +2002,8 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
    420px editor: seven swatches at the larger button sizes overflowed by 5px before
    this and by nothing after. */
 #expressEditor .ee-swatches { flex: 1 1 100%; }
-.ee-swatch { width: 1.7rem; height: 1.7rem; padding: 0; border-radius: 5px; border: 2px solid rgba(0, 0, 0, 0.25); cursor: pointer; }
-.ee-swatch-on { outline: 3px solid #2c3e50; outline-offset: 1px; border-color: #fff; }
+.ee-swatch { width: 1.7rem; height: 1.7rem; padding: 0; border-radius: 5px; border: 2px solid var(--edge); cursor: pointer; }
+.ee-swatch-on { outline: 3px solid var(--accent); outline-offset: 1px; border-color: var(--surface-raised); }
 /* The color on a Partner / Feeling / Place card is a SAMPLE, not a control — those
    types have one fixed color each. It used to be drawn at the full touch-target size
    with the same border and radius as the seven tappable swatches on a phrase card,
@@ -1816,7 +2022,7 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
 }
 /* The four type buttons an undefined slot offers ("Not set yet — Phrase / Partner /
    Feeling / Place"). They sit in .ee-fields, so they wrap with everything else. */
-.ee-fields .ee-add { background: #2c3e50; color: #fff; border: none; border-radius: 6px; padding: 0.4rem 0.7rem; font-weight: 600; cursor: pointer; }
+.ee-fields .ee-add { background: var(--accent); color: var(--ink-inverse); border: none; border-radius: 6px; padding: 0.4rem 0.7rem; font-weight: 600; cursor: pointer; }
 .ee-fields .ee-add:hover { filter: brightness(1.1); }
 
 /* Control-phrases editor (Settings → Controls) and the placeholder editor (Settings →
@@ -1833,13 +2039,13 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
 .cpe-section .ee-row { margin-top: 0.35rem; }
 .cpe-section .ee-row > input { flex: 1 1 auto; min-width: 0; padding: 0.4rem 0.5rem; border: 1px solid var(--edge); border-radius: 6px; font-size: 0.95rem; }
 #controlEditor .ee-add,
-#placeholderEditor .ee-add { margin-top: 0.45rem; background: #2c3e50; color: #fff; border: none; border-radius: 6px; padding: 0.4rem 0.7rem; font-weight: 600; cursor: pointer; }
+#placeholderEditor .ee-add { margin-top: 0.45rem; background: var(--accent); color: var(--ink-inverse); border: none; border-radius: 6px; padding: 0.4rem 0.7rem; font-weight: 600; cursor: pointer; }
 #controlEditor .ee-add:hover,
 #placeholderEditor .ee-add:hover { filter: brightness(1.1); }
 #controlEditor .ee-reset,
-#placeholderEditor .ee-reset { display: inline-block; margin-top: 0.5rem; background: #fff; color: #c0392b; border: 1px solid #c0392b; border-radius: 6px; padding: 0.45rem 0.8rem; cursor: pointer; }
+#placeholderEditor .ee-reset { display: inline-block; margin-top: 0.5rem; background: var(--surface-raised); color: var(--danger); border: 1px solid var(--danger); border-radius: 6px; padding: 0.45rem 0.8rem; cursor: pointer; }
 #controlEditor .ee-reset:hover,
-#placeholderEditor .ee-reset:hover { background: #c0392b; color: #fff; }
+#placeholderEditor .ee-reset:hover { background: var(--danger); color: var(--ink-inverse); }
 
 /* Engine diagnostics — collapsed <details> for development / bug reports. The
    user-facing inference is the mode chip in Region A. */
@@ -1848,14 +2054,14 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
 }
 #engineDetails summary {
     font-size: 0.8rem;
-    color: #95a5a6;
+    color: var(--ink-faint);
     cursor: pointer;
     padding: 0.25rem 0;
 }
 #enginePanel {
     font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
     font-size: 0.9rem;
-    background: #f4f6f8;
+    background: var(--surface-raised-alt);
 }
 .engine-row {
     display: flex;
@@ -1864,27 +2070,27 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
 }
 .engine-label {
     flex: 0 0 9rem;
-    color: #7f8c8d;
+    color: var(--ink-faint);
 }
 .engine-val {
     font-weight: 600;
-    color: #2c3e50;
+    color: var(--ink-strong);
     word-break: break-word;
 }
 .engine-val.capture-on {
-    color: #c0392b;
+    color: var(--danger);
 }
 .engine-val.capture-off {
-    color: #95a5a6;
+    color: var(--ink-faint);
 }
 .engine-val.floor-self {
-    color: #2980b9;
+    color: var(--link);
 }
 .engine-val.floor-partner {
-    color: #d35400;
+    color: var(--warn);
 }
 .engine-val.floor-open {
-    color: #95a5a6;
+    color: var(--ink-faint);
 }
 
 /* Region C — persistent controls (§3.3). The four CA overrides: always present,
@@ -1904,7 +2110,7 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
        keyboard's toolbar and misalign the grids beneath them. Horizontal padding
        only; the button centers its text. */
     min-height: var(--btn-min-dim);
-    background: #fff;
+    background: var(--surface-raised);
     border: 2px solid var(--slot-persistent);
     color: var(--slot-persistent);
     border-radius: 8px;
@@ -1916,7 +2122,7 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
 }
 /* Same treatment as .cmd-btn above — shadow and nudge, never a fill. */
 .persist-btn:focus-visible {
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
+    box-shadow: 0 2px 10px var(--shadow);
     outline: none;
 }
 .persist-btn:active { transform: translateY(1px); }
@@ -1930,8 +2136,8 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
 }
 .session-btn {
     flex: 1 1 0;
-    background: var(--header);
-    color: #fff;
+    background: var(--accent);
+    color: var(--ink-inverse);
     border: none;
     border-radius: 8px;
     padding: 0.65rem 0.8rem;
@@ -1940,9 +2146,9 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
     cursor: pointer;
 }
 .session-btn-end {
-    background: #fff;
-    color: #c0392b;
-    border: 2px solid #c0392b;
+    background: var(--surface-raised);
+    color: var(--danger);
+    border: 2px solid var(--danger);
 }
 
 /* Region D — composer access. */
@@ -1972,19 +2178,19 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    border: 2px solid var(--header);
-    background: #fff;
-    color: var(--header);
+    border: 2px solid var(--accent);
+    background: var(--surface-raised);
+    color: var(--accent);
 }
 .composer-btn-primary {
-    background: var(--header);
-    color: #fff;
+    background: var(--accent);
+    color: var(--ink-inverse);
 }
 .composer-btn-quiet {
     flex: 0 0 auto;
-    /* Solid dark border matching Reframe (.composer-btn's var(--header)) (Ken). */
-    border-color: var(--header);
-    color: #666;
+    /* Solid dark border matching Reframe (.composer-btn's var(--accent)) (Ken). */
+    border-color: var(--accent);
+    color: var(--ink-muted);
 }
 
 /* Status bar removed from view (Ken) — kept as a visually-hidden aria-live
@@ -2044,7 +2250,7 @@ dialog[open] {
     max-height: none;
     border-radius: 0;
     box-shadow: none;
-    background: #fff;
+    background: var(--surface-raised);
     overflow: hidden;
 }
 body.conv-side-right #settingsDialog { right: calc(var(--app-margin) + var(--dock-w) + var(--dock-sep)); }
@@ -2057,7 +2263,7 @@ body.conv-bottom .setting-group {
 }
 
 dialog::backdrop {
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--backdrop);
 }
 
 /* Draggable title bar (see initSettingsDrag in app.js). The panel stays modal —
@@ -2078,8 +2284,8 @@ dialog::backdrop {
        changed to match it. Text and the X flip to dark to stay legible — #2c3e50 on
        #dfe4e8 is 8.6:1, well clear of the 4.5:1 minimum — and the bottom border
        separates it from the #f4f5f6 tab strip below, which is a near neighbour. */
-    background: #dfe4e8;
-    color: #2c3e50;
+    background: var(--surface-track);
+    color: var(--ink-strong);
     border-bottom: 1px solid var(--edge);
     user-select: none;
     flex-shrink: 0;
@@ -2108,11 +2314,11 @@ dialog::backdrop {
    state a swallowed tap reads as the app being broken. */
 #settingsHeader #settingsHelpBtn.help-armed {
     background: var(--slot-initiative);
-    color: #fff;
+    color: var(--ink-inverse);
 }
 #settingsHeader #settingsHelpBtn.help-speaking {
     background: var(--slot-initiative);
-    color: #fff;
+    color: var(--ink-inverse);
     animation: help-pulse 1.4s ease-in-out infinite;
 }
 @keyframes help-pulse { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.45); } }
@@ -2148,7 +2354,7 @@ dialog::backdrop {
     border: none;
     border-radius: 4px;
     background: transparent;
-    color: #2c3e50;   /* dark, to match the light title bar */
+    color: var(--ink-strong);   /* dark, to match the light title bar */
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -2167,7 +2373,7 @@ dialog::backdrop {
 #settingsHeader #closeSettingsBtn:hover,
 #settingsHeader #closeSettingsBtn:focus-visible {
     /* Was a white wash for the old dark bar; on light grey that is invisible. */
-    background: rgba(0, 0, 0, 0.12);
+    background: var(--hover-wash);
 }
 /* ...but not while lit: the wash would fight the armed/speaking colour. */
 #settingsHeader #settingsHelpBtn.help-armed:hover,
@@ -2192,7 +2398,7 @@ dialog::backdrop {
    leaves the geometry alone. */
 #settingsTabs {
     width: var(--settings-tabs-w);
-    background: #f4f5f6;
+    background: var(--surface-raised-alt);
     border-right: 1px solid var(--edge);
     padding-top: 0.75rem;
     flex-shrink: 0;
@@ -2206,18 +2412,18 @@ dialog::backdrop {
 }
 
 .settings-tab:hover {
-    background: #e0e0e0;
+    background: var(--surface-sunken);
 }
 
 .settings-tab.active {
-    background: #d8e6f8;
+    background: var(--info-tint);
     font-weight: 600;
-    color: #06c;
+    color: var(--link);
 }
 
 /* Keyboard focus ring for arrow-key tab navigation (the tabs are focusable divs). */
 .settings-tab:focus-visible {
-    outline: 3px solid #06c;
+    outline: 3px solid var(--link);
     outline-offset: -3px;
 }
 
@@ -2267,7 +2473,7 @@ dialog::backdrop {
     display: flex;
     align-items: center;
     gap: 0.6rem;
-    background: #eceff1;
+    background: var(--surface-panel);
     border: 1px solid var(--border, var(--edge));
     border-radius: 8px;
 }
@@ -2306,10 +2512,10 @@ dialog::backdrop {
    that is what says it applies to all of them. */
 .setting-group .setting-group { margin: 0.35rem 0; }
 .setting-group .setting-group > details > summary {
-    background: #f4f6f7;
+    background: var(--surface-raised-alt);
     font-size: 0.95em;
 }
-.setting-group .setting-group > details > summary:hover { background: #eceff1; }
+.setting-group .setting-group > details > summary:hover { background: var(--surface-panel); }
 
 /* Settings form elements */
 
@@ -2345,7 +2551,7 @@ dialog textarea {
 }
 
 dialog select {
-    background: white;
+    background: var(--surface-raised);
     cursor: pointer;
 }
 
@@ -2366,7 +2572,7 @@ dialog select {
 #apiKeyInput.key-redacted,
 #deepgramKeyInput.key-redacted {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    color: #5a6570;
+    color: var(--ink-muted);
 }
 
 /* API-key row: the field + a Paste button (replaces the keyboard's removed
@@ -2390,7 +2596,7 @@ dialog select {
     padding: 0.5rem 0.9rem;
     border-radius: 4px;
     border: 1px solid var(--edge);
-    background: #f5f5f5;
+    background: var(--surface-raised-alt);
     cursor: pointer;
 }
 /* The per-backend voice pickers on the Speech tab. `hidden` alone loses to the
@@ -2411,12 +2617,12 @@ dialog select {
     padding: 0.5rem 0.9rem;
     border-radius: 4px;
     border: 1px solid var(--edge);
-    background: #fff;
+    background: var(--surface-raised);
     cursor: pointer;
     font-size: 0.9rem;
     white-space: nowrap;
 }
-#pasteApiKeyBtn:hover { background: #eef1f4; }
+#pasteApiKeyBtn:hover { background: var(--surface-panel); }
 
 /* "Test" button beside the API key field — verifies the key against the API. */
 #testApiKeyBtn {
@@ -2424,10 +2630,10 @@ dialog select {
     padding: 0.5rem 0.9rem;
     border-radius: 4px;
     border: 1px solid var(--edge);
-    background: #fff;
+    background: var(--surface-raised);
     cursor: pointer;
 }
-#testApiKeyBtn:hover { background: #eef1f4; }
+#testApiKeyBtn:hover { background: var(--surface-panel); }
 #testApiKeyBtn:disabled { opacity: 0.6; cursor: default; }
 
 /* Format-warning / verify-result line under the API key field (Ken, July 2026). */
@@ -2437,9 +2643,9 @@ dialog select {
     line-height: 1.35;
 }
 .api-key-status[hidden] { display: none; }
-.api-key-status.warn { color: #b3261e; }
-.api-key-status.ok   { color: #1b7f34; }
-.api-key-status.checking { color: #555; }
+.api-key-status.warn { color: var(--danger); }
+.api-key-status.ok   { color: var(--ok); }
+.api-key-status.checking { color: var(--ink-muted); }
 
 /* Pre-start "no API key" prompt — a visible card above Start. The status bar is
    hidden (v0.5.2), so this is how the user is told a key is missing. Amber
@@ -2448,7 +2654,7 @@ dialog select {
 #folderPrompt {
     flex: 0 0 auto;
     max-width: 34rem;
-    background: #fff8e6;
+    background: var(--warn-tint);
     border: 1px solid var(--slot-dispreferred);
     border-left: 6px solid var(--slot-dispreferred);
     border-radius: 8px;
@@ -2464,7 +2670,7 @@ dialog select {
 #startupError {
     flex: 0 0 auto;
     max-width: 34rem;
-    background: #fff8e6;
+    background: var(--warn-tint);
     border: 1px solid var(--slot-dispreferred);
     border-left: 6px solid var(--slot-dispreferred);
     border-radius: 8px;
@@ -2472,11 +2678,11 @@ dialog select {
     text-align: center;
 }
 #startupError {
-    background: #fdf1f1;
-    border-color: #c0392b;
-    border-left-color: #c0392b;
+    background: var(--danger-tint);
+    border-color: var(--danger);
+    border-left-color: var(--danger);
 }
-#startupError .apikey-prompt-title { color: #8a2620; }
+#startupError .apikey-prompt-title { color: var(--danger-ink); }
 /* The exception text: monospace so a stack trace stays readable, and wrapped so a
    long single-token message can't push the card wider than the screen. */
 #startupErrorDetail {
@@ -2488,7 +2694,7 @@ dialog select {
     overflow-y: auto;
 }
 #startupError[hidden] { display: none; }
-.apikey-prompt-title { margin: 0 0 0.9rem; font-weight: 700; color: #7a5300; line-height: 1.45; }
+.apikey-prompt-title { margin: 0 0 0.9rem; font-weight: 700; color: var(--warn-ink); line-height: 1.45; }
 .apikey-prompt-actions {
     display: flex;
     gap: 0.6rem;
@@ -2497,17 +2703,17 @@ dialog select {
 }
 #apiKeyPromptBtn,
 #folderReconnectBtn {
-    background: #fff; color: #7a5300; border: 2px solid var(--slot-dispreferred);
+    background: var(--surface-raised); color: var(--warn-ink); border: 2px solid var(--slot-dispreferred);
     padding: 0.7rem 1.4rem; border-radius: 8px; font-size: 1rem; cursor: pointer;
 }
 #apiKeyPromptBtn:hover,
-#folderReconnectBtn:hover { background: #fdeec2; }
+#folderReconnectBtn:hover { background: var(--warn-tint); }
 /* Continue is the primary action — proceed into the app (the API key is optional). */
 .apikey-continue {
-    background: #2c3e50; color: #fff; border: none;
+    background: var(--accent); color: var(--ink-inverse); border: none;
     padding: 0.7rem 1.4rem; border-radius: 8px; font-size: 1rem; cursor: pointer;
 }
-.apikey-continue:hover { background: #22303d; }
+.apikey-continue:hover { background: var(--accent-hover); }
 
 /* Both voice Test buttons share one rule so they stay identical — the partner one
    had no rule of its own and inherited the dialog's generic button sizing, which
@@ -2563,7 +2769,7 @@ dialog select {
 
 .setting-hint {
     font-size: 0.8rem;
-    color: #777;
+    color: var(--ink-faint);
     margin-top: 0.5rem;
     line-height: 1.4;
 }
@@ -2577,7 +2783,7 @@ dialog select {
    flush against the panel edge. */
 .tab-intro {
     font-size: 1.05rem;
-    color: #333;
+    color: var(--ink);
     line-height: 1.5;
     margin: 0 0 0.8rem;
     padding: 0 0.2rem;
@@ -2594,7 +2800,7 @@ dialog select {
 
 .slider-end {
     font-size: 0.9rem;
-    color: #444;
+    color: var(--ink);
 }
 
 /* Range sliders (Button size / spacing / minimum gap) fill the row between
@@ -2614,13 +2820,13 @@ dialog select {
     padding: 0;
     border: 1px solid var(--edge);
     border-radius: 6px;
-    background: #fff;
-    color: #2c3e50;
+    background: var(--surface-raised);
+    color: var(--ink-strong);
     font-size: 1.4rem;
     line-height: 1;
     cursor: pointer;
 }
-.slider-step:hover { background: #eef1f4; }
+.slider-step:hover { background: var(--surface-panel); }
 .slider-step:active { transform: translateY(1px); }
 
 /* "Reset buttons and gaps to default" — a quiet full-width action. */
@@ -2629,12 +2835,12 @@ dialog select {
     padding: 0.45rem 0.7rem;
     border: 1px solid var(--edge);
     border-radius: 6px;
-    background: #fff;
-    color: #2c3e50;
+    background: var(--surface-raised);
+    color: var(--ink-strong);
     font-size: 0.9rem;
     cursor: pointer;
 }
-.reset-sizing-btn:hover { background: #eef1f4; }
+.reset-sizing-btn:hover { background: var(--surface-panel); }
 
 .switch {
     position: relative;
@@ -2656,7 +2862,7 @@ dialog select {
 .switch-track {
     position: absolute;
     inset: 0;
-    background: #c9d2d8;
+    background: var(--surface-pressed);
     border-radius: 1.5rem;
     transition: background 0.15s;
 }
@@ -2668,14 +2874,14 @@ dialog select {
     left: 0.15rem;
     width: 1.2rem;
     height: 1.2rem;
-    background: #fff;
+    background: var(--surface-raised);
     border-radius: 50%;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 1px 2px var(--shadow-strong);
     transition: transform 0.15s;
 }
 
 .switch input:checked + .switch-track {
-    background: #2c3e50;
+    background: var(--accent);
 }
 
 .switch input:checked + .switch-track::before {
@@ -2726,7 +2932,7 @@ label.radio-label input[type="radio"] {
 
 .about-version {
     font-size: 0.85rem;
-    color: #666;
+    color: var(--ink-muted);
     margin-bottom: 1rem;
 }
 
@@ -2746,7 +2952,7 @@ label.radio-label input[type="radio"] {
 #usageCost {
     font-size: 1.4rem;
     font-weight: 700;
-    color: #1a1a1a;
+    color: var(--ink);
 }
 
 #usageBreakdown {
@@ -2786,12 +2992,12 @@ label.radio-label input[type="radio"] {
 
 .about-license {
     font-size: 0.85rem;
-    color: #555;
+    color: var(--ink-muted);
     margin-bottom: 0.5rem;
 }
 
 .about-link a {
-    color: #06c;
+    color: var(--link);
     text-decoration: none;
 }
 
@@ -2818,7 +3024,7 @@ label.radio-label input[type="radio"] {
 .wv-page-title {
     font-size: 1.15rem;
     font-weight: 700;
-    color: #2c3e50;
+    color: var(--ink-strong);
     margin: 0.25rem 0 0.75rem;
 }
 
@@ -2832,21 +3038,21 @@ label.radio-label input[type="radio"] {
 
 #worldviewContent::-webkit-scrollbar-track,
 #settingsContent::-webkit-scrollbar-track {
-    background: #e2e6ea;
+    background: var(--surface-track);
 }
 
 #worldviewContent::-webkit-scrollbar-thumb,
 #settingsContent::-webkit-scrollbar-thumb {
     background: var(--edge-strong);
     border-radius: 11px;
-    border: 3px solid #e2e6ea;   /* track-coloured inset around the thumb */
+    border: 3px solid var(--surface-track);   /* track-coloured inset around the thumb */
 }
 
 #worldviewContent::-webkit-scrollbar-thumb:hover,
 #worldviewContent::-webkit-scrollbar-thumb:active,
 #settingsContent::-webkit-scrollbar-thumb:hover,
 #settingsContent::-webkit-scrollbar-thumb:active {
-    background: #66727e;
+    background: var(--edge-strong);
 }
 
 #worldviewContent {
@@ -2860,7 +3066,7 @@ label.radio-label input[type="radio"] {
 }
 
 .wv-intro {
-    color: #555;
+    color: var(--ink-muted);
     line-height: 1.5;
     margin-bottom: 1.25rem;
 }
@@ -2868,12 +3074,12 @@ label.radio-label input[type="radio"] {
 .wv-section-title {
     font-size: 0.95rem;
     font-weight: 700;
-    color: #444;
+    color: var(--ink);
     margin: 1.25rem 0 0.5rem;
 }
 
 .wv-person-about {
-    color: #555;
+    color: var(--ink-muted);
     line-height: 1.4;
     margin: 0.25rem 0 0.5rem;
 }
@@ -2909,11 +3115,11 @@ label.radio-label input[type="radio"] {
     display: flex;
     align-items: center;
     gap: 0.6rem;
-    background: #eceff1;
+    background: var(--surface-panel);
     border: 1px solid var(--border, var(--edge));
     border-radius: 8px;
 }
-.wv-partner-profile > summary:hover { background: #e2e7ea; }
+.wv-partner-profile > summary:hover { background: var(--surface-track); }
 /* Hides the marker in Safari, which draws its own even when display is not
    list-item — belt and braces against two triangles. */
 .wv-partner-profile > summary::-webkit-details-marker { display: none; }
@@ -2931,7 +3137,7 @@ label.radio-label input[type="radio"] {
     width: 1.1rem;            /* fixed, so the titles line up open or closed */
     text-align: center;
     line-height: 1;
-    color: #546E7A;
+    color: var(--ink-muted);
     transition: transform 0.12s ease;
 }
 .wv-partner-profile[open] > summary .wv-disclosure-mark { transform: rotate(90deg); }
@@ -2991,12 +3197,12 @@ label.radio-label input[type="radio"] {
 .wv-fact-key {
     flex: 0 0 auto;
     font-weight: 600;
-    color: #555;
+    color: var(--ink-muted);
 }
 
 .wv-fact-key::after { content: ':'; }
 
-.wv-fact-value { color: #333; }
+.wv-fact-value { color: var(--ink); }
 
 /* Fact entry rows in the place form: what / is / remove. The two text fields share
    the width; the remove button keeps the app-wide minimum touch dimension so it is
@@ -3019,23 +3225,23 @@ label.radio-label input[type="radio"] {
     flex: 0 0 auto;
     min-width: var(--btn-min-dim);
     min-height: var(--btn-min-dim);
-    border: 1px solid #c0392b;
-    background: #fff;
-    color: #c0392b;
+    border: 1px solid var(--danger);
+    background: var(--surface-raised);
+    color: var(--danger);
     border-radius: 6px;
     cursor: pointer;
     font-size: 1rem;
     line-height: 1;
 }
 
-.wv-fact-del:hover { background: #c0392b; color: #fff; }
+.wv-fact-del:hover { background: var(--danger); color: var(--ink-inverse); }
 
 /* Shared style for checkbox rows in the People editor (Lives with me, Private) */
 .wv-person-checkbox-row {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    color: #555;
+    color: var(--ink-muted);
     font-size: 0.95rem;
     cursor: pointer;
     padding: 0.1rem 0;
@@ -3049,27 +3255,27 @@ label.radio-label input[type="radio"] {
 
 /* Distinct badge for Private people (different from the grey "Prefer not to say") */
 .wv-badge-private {
-    background: #e8eaf6;
-    color: #3949ab;
-    border: 1px solid #5c6bc0;
+    background: var(--indigo-tint);
+    color: var(--indigo);
+    border: 1px solid var(--indigo);
 }
 
 /* Privacy note on questionnaire fields that are private by default (e.g. A5) */
 .wv-private-note {
     font-size: 0.8rem;
-    color: #5c6bc0;
+    color: var(--indigo);
     margin: 0.1rem 0 0.5rem;
     padding: 0.25rem 0.5rem;
-    background: #f3f4ff;
+    background: var(--indigo-tint);
     border-radius: 4px;
 }
 
 /* Module-level note shown at the top of a module (e.g. "Private by default" on A5) */
 .wv-module-note {
     font-size: 0.85rem;
-    color: #5c6bc0;
-    background: #f3f4ff;
-    border: 1px solid #5c6bc0;
+    color: var(--indigo);
+    background: var(--indigo-tint);
+    border: 1px solid var(--indigo);
     border-radius: 6px;
     padding: 0.6rem 0.75rem;
     margin-bottom: 0.75rem;
@@ -3092,13 +3298,13 @@ label.radio-label input[type="radio"] {
 }
 
 .wv-person-tag-lives {
-    background: #e8f5e9;
-    color: #2e7d32;
+    background: var(--ok-tint);
+    color: var(--ok);
     border: 1px solid var(--slot-preferred);
 }
 
 .wv-folder-prompt {
-    background: #e3f2fd;
+    background: var(--info-tint);
     border: 1px solid var(--slot-initiative);
     border-radius: 8px;
     padding: 1rem;
@@ -3106,14 +3312,14 @@ label.radio-label input[type="radio"] {
 }
 
 .wv-folder-prompt-text {
-    color: #0d47a1;
+    color: var(--link);
     line-height: 1.5;
     margin: 0 0 0.75rem;
 }
 
 .wv-folder-prompt-btn {
-    background: #1976d2;
-    color: #fff;
+    background: var(--info);
+    color: var(--ink-inverse);
     border: none;
     border-radius: 6px;
     padding: 0.7rem 1.1rem;
@@ -3123,7 +3329,7 @@ label.radio-label input[type="radio"] {
 }
 
 .wv-folder-prompt-btn:hover {
-    background: #1565c0;
+    background: var(--info);
 }
 
 .wv-folder-prompt-btn:disabled {
@@ -3136,7 +3342,7 @@ label.radio-label input[type="radio"] {
     align-items: center;
     width: 100%;
     text-align: left;
-    background: white;
+    background: var(--surface-raised);
     border: 1px solid var(--edge);
     border-radius: 8px;
     padding: 0.9rem 1rem;
@@ -3145,7 +3351,7 @@ label.radio-label input[type="radio"] {
 }
 
 .wv-module-row:hover {
-    border-color: #2c3e50;
+    border-color: var(--accent);
 }
 
 .wv-module-main {
@@ -3160,33 +3366,33 @@ label.radio-label input[type="radio"] {
 
 .wv-module-meta {
     font-size: 0.85rem;
-    color: #777;
+    color: var(--ink-faint);
     margin: 0.15rem 0 0.4rem;
 }
 
 .wv-progress {
     height: 6px;
-    background: #eee;
+    background: var(--surface-sunken);
     border-radius: 3px;
     overflow: hidden;
 }
 
 .wv-progress-fill {
     height: 100%;
-    background: #43a047;
+    background: var(--ok);
     transition: width 0.2s;
 }
 
 .wv-chevron {
     font-size: 1.6rem;
-    color: #bbb;
+    color: var(--ink-faint);
     padding-left: 0.75rem;
 }
 
 .wv-back {
     background: transparent;
     border: none;
-    color: #06c;
+    color: var(--link);
     font-size: 1rem;
     cursor: pointer;
     padding: 0.25rem 0;
@@ -3194,7 +3400,7 @@ label.radio-label input[type="radio"] {
 }
 
 .wv-card {
-    background: white;
+    background: var(--surface-raised);
     border: 1px solid var(--edge);
     border-radius: 8px;
     padding: 1rem;
@@ -3206,7 +3412,7 @@ label.radio-label input[type="radio"] {
 }
 
 @keyframes wv-flash {
-    0% { border-color: var(--slot-dispreferred); box-shadow: 0 0 0 3px rgba(178, 106, 0, 0.55); }
+    0% { border-color: var(--slot-dispreferred); box-shadow: 0 0 0 3px var(--warn); }
     100% { border-color: var(--edge); box-shadow: none; }
 }
 
@@ -3233,13 +3439,13 @@ label.radio-label input[type="radio"] {
 }
 
 .wv-badge-answered {
-    background: #e8f5e9;
-    color: #2e7d32;
+    background: var(--ok-tint);
+    color: var(--ok);
 }
 
 .wv-badge-declined {
-    background: #eceff1;
-    color: #607d8b;
+    background: var(--surface-panel);
+    color: var(--ink-muted);
 }
 
 .wv-chips {
@@ -3250,7 +3456,7 @@ label.radio-label input[type="radio"] {
 }
 
 .wv-chip {
-    background: #f8f9fa;
+    background: var(--surface-raised-alt);
     border: 2px solid var(--edge);
     border-radius: 20px;
     padding: 0.45rem 0.9rem;
@@ -3259,13 +3465,13 @@ label.radio-label input[type="radio"] {
 }
 
 .wv-chip:hover {
-    border-color: #2c3e50;
+    border-color: var(--accent);
 }
 
 .wv-chip-on {
-    background: #2c3e50;
-    color: white;
-    border-color: #2c3e50;
+    background: var(--accent);
+    color: var(--ink-inverse);
+    border-color: var(--accent);
 }
 
 .wv-own,
@@ -3314,7 +3520,7 @@ label.radio-label input[type="radio"] {
     inset: var(--app-margin);
     margin: auto;
     border: none;
-    border-top: 6px solid #c62828;
+    border-top: 6px solid var(--danger);
     border-radius: 10px;
     padding: 1.5rem;
     max-width: 26rem;
@@ -3323,7 +3529,7 @@ label.radio-label input[type="radio"] {
     /* Tall content scrolls inside the card instead of growing past the cleared box. */
     max-height: calc(100dvh - 2 * var(--app-margin) - 1rem);
     overflow: auto;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 12px 40px var(--backdrop);
     font-family: inherit;
 }
 
@@ -3366,7 +3572,7 @@ body.conv-bottom     .danger-dialog {
 }
 
 .danger-dialog::backdrop {
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--backdrop);
 }
 
 .danger-head {
@@ -3379,14 +3585,14 @@ body.conv-bottom     .danger-dialog {
 .danger-mark {
     font-size: 1.6rem;
     line-height: 1;
-    color: #c62828;
+    color: var(--danger);
 }
 
 .danger-title {
     margin: 0;
     font-size: 1.25rem;
     font-weight: 700;
-    color: #c62828;
+    color: var(--danger);
 }
 
 /* The exact text an action is about to send, shown so the tester can read it
@@ -3400,8 +3606,8 @@ body.conv-bottom     .danger-dialog {
     font-family: ui-monospace, Menlo, Consolas, monospace;
     font-size: 0.8rem;
     line-height: 1.4;
-    color: #333;
-    background: #fafafa;
+    color: var(--ink);
+    background: var(--surface-raised);
     border: 1px solid var(--edge);
     border-radius: 4px;
     resize: vertical;
@@ -3410,7 +3616,7 @@ body.conv-bottom     .danger-dialog {
 
 .danger-body {
     margin: 0 0 1.25rem;
-    color: #333;
+    color: var(--ink);
     line-height: 1.5;
     /* confirmDanger sets this with textContent, so a body containing newlines (e.g.
        the import dialog listing what a backup holds) would otherwise render as one
@@ -3427,7 +3633,7 @@ body.conv-bottom     .danger-dialog {
     font-weight: 600;
 }
 .storage-warn {
-    color: #8a4b00;
+    color: var(--warn-ink);
     font-weight: 600;
     background: var(--slot-dispreferred-tint);
     border-left: 4px solid var(--slot-dispreferred);
@@ -3452,23 +3658,23 @@ body.conv-bottom     .danger-dialog {
 }
 
 .danger-cancel {
-    background: #f0f0f0;
+    background: var(--surface-page);
     border: 1px solid var(--edge);
-    color: #333;
+    color: var(--ink);
 }
 
 .danger-confirm {
-    background: #c62828;
-    border: 1px solid #c62828;
-    color: #fff;
+    background: var(--danger);
+    border: 1px solid var(--danger);
+    color: var(--ink-inverse);
 }
 
 .danger-confirm:hover {
-    background: #b71c1c;
+    background: var(--danger-strong);
 }
 
 .danger-cancel:hover {
-    background: #e4e4e4;
+    background: var(--surface-sunken);
 }
 
 /* --- "What's new" post-update notice (whats-new.js). Rendered as a card WITHIN the
@@ -3485,7 +3691,7 @@ body.conv-bottom     .danger-dialog {
     min-height: 0;
     display: flex;
     flex-direction: column;
-    background: #fff;
+    background: var(--surface-raised);
     border: 1px solid var(--edge);              /* match the conversation box */
     border-top: 6px solid var(--slot-initiative);
     border-radius: 8px;
@@ -3525,7 +3731,7 @@ body.conv-bottom     .danger-dialog {
     margin: 0;
     padding-left: 1.25rem;
     overflow-y: auto;
-    color: #333;
+    color: var(--ink);
     line-height: 1.5;
 }
 
@@ -3549,11 +3755,11 @@ body.conv-bottom     .danger-dialog {
     cursor: pointer;
     background: var(--slot-initiative);
     border: 1px solid var(--slot-initiative);
-    color: #fff;
+    color: var(--ink-inverse);
 }
 
 #whatsNewPanel .whatsnew-ok:hover {
-    background: #0d4f9e;
+    background: var(--info);
 }
 
 .wv-select {
@@ -3563,7 +3769,7 @@ body.conv-bottom     .danger-dialog {
     border-radius: 6px;
     font-size: 1rem;
     font-family: inherit;
-    background: #fff;
+    background: var(--surface-raised);
 }
 
 .wv-entry-list {
@@ -3574,7 +3780,7 @@ body.conv-bottom     .danger-dialog {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: #f8f9fa;
+    background: var(--surface-raised-alt);
     border-radius: 6px;
     padding: 0.4rem 0.6rem;
     margin-bottom: 0.3rem;
@@ -3584,7 +3790,7 @@ body.conv-bottom     .danger-dialog {
 .wv-entry-remove {
     background: transparent;
     border: none;
-    color: #c0392b;
+    color: var(--danger);
     cursor: pointer;
     font-size: 0.95rem;
 }
@@ -3603,19 +3809,19 @@ body.conv-bottom     .danger-dialog {
     font-size: 0.95rem;
     cursor: pointer;
     border: 1px solid var(--edge);
-    background: #f8f9fa;
+    background: var(--surface-raised-alt);
 }
 
 .wv-btn-primary {
-    background: #2c3e50;
-    color: white;
-    border-color: #2c3e50;
+    background: var(--accent);
+    color: var(--ink-inverse);
+    border-color: var(--accent);
 }
 
 .wv-btn-speak {
-    background: #e3f2fd;
+    background: var(--info-tint);
     border-color: var(--slot-initiative);
-    color: #1565c0;
+    color: var(--info);
 }
 
 /* "How to say it" — a respelling for a name the voice gets wrong, with its own 🔊
@@ -3639,19 +3845,19 @@ body.conv-bottom     .danger-dialog {
 .wv-btn-link {
     background: transparent;
     border: none;
-    color: #607d8b;
+    color: var(--ink-muted);
     padding: 0.5rem 0.4rem;
 }
 
 .wv-btn-link:hover {
-    color: #2c3e50;
+    color: var(--ink-strong);
     text-decoration: underline;
 }
 
 .wv-btn-danger {
-    background: #fff;
-    border-color: #c0392b;
-    color: #c62828;
+    background: var(--surface-raised);
+    border-color: var(--danger);
+    color: var(--danger);
 }
 
 .wv-home-footer {
@@ -3669,7 +3875,7 @@ body.conv-bottom     .danger-dialog {
 #appKeyboard {
     position: fixed;
     z-index: 300;            /* above the worldview overlay (200) */
-    background: #e9edf0;
+    background: var(--surface-sunken);
     display: flex;
     flex-direction: column;
     gap: var(--grid-gap);    /* between key rows — keyguard bar width (settable) */
@@ -3697,7 +3903,7 @@ body.conv-bottom     .danger-dialog {
     bottom: var(--app-margin);
     height: var(--dock-h);   /* exactly fills the bottom dock band (= #dockArea) */
     border-top: 1px solid var(--edge);
-    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.18);
+    box-shadow: 0 -4px 16px var(--shadow);
     /* ½·gap surround (matches #expressPanel); keep the safe-area inset at the bottom. */
     padding: calc(var(--grid-gap) / 2) calc(var(--grid-gap) / 2) calc(var(--grid-gap) / 2 + var(--safe-bottom));
 }
@@ -3720,13 +3926,13 @@ body.conv-bottom     .danger-dialog {
 #appKeyboard.kbd-dock-side.kbd-side-right {
     right: var(--app-margin);
     border-left: 1px solid var(--edge);
-    box-shadow: -4px 0 16px rgba(0, 0, 0, 0.18);
+    box-shadow: -4px 0 16px var(--shadow);
 }
 
 #appKeyboard.kbd-dock-side.kbd-side-left {
     left: var(--app-margin);
     border-right: 1px solid var(--edge);
-    box-shadow: 4px 0 16px rgba(0, 0, 0, 0.18);
+    box-shadow: 4px 0 16px var(--shadow);
 }
 
 /* In the side dock each row stretches to share the full column height. */
@@ -3785,19 +3991,19 @@ body.conv-bottom     .danger-dialog {
     min-height: clamp(2.2rem, 7.5vh, 4rem);
     border: 1px solid var(--edge);
     border-radius: 8px;
-    background: #fff;
-    color: #1a1a1a;
+    background: var(--surface-raised);
+    color: var(--ink);
     font-size: 1.35rem;
     font-family: inherit;
     cursor: pointer;
-    box-shadow: 0 1px 0 #b8c0c6;
+    box-shadow: 0 1px 0 var(--edge);
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .kbd-key:active {
-    background: #d7dde1;
+    background: var(--surface-pressed);
     transform: translateY(1px);
     box-shadow: none;
 }
@@ -3808,12 +4014,12 @@ body.conv-bottom     .danger-dialog {
 .kbd-backspace,
 .kbd-enter,
 .kbd-page {
-    background: #d4dade;
+    background: var(--surface-pressed);
     font-size: 1.2rem;
 }
 
 .kbd-space {
-    background: #eef3f6;
+    background: var(--info-tint);
 }
 
 /* Inert filler (grid gaps) and future word-prediction slots. */
@@ -3826,16 +4032,16 @@ body.conv-bottom     .danger-dialog {
 
 /* One-shot shift (next letter only) — lighter than the solid caps-lock state. */
 #appKeyboard.kbd-shift-on .kbd-shift {
-    background: #5a7891;
-    color: #fff;
-    border-color: #5a7891;
+    background: var(--accent);
+    color: var(--ink-inverse);
+    border-color: var(--accent);
 }
 
 /* Caps lock (engaged by a double tap) — solid dark, clearly "stuck on". */
 #appKeyboard.kbd-caps .kbd-shift {
-    background: #2c3e50;
-    color: #fff;
-    border-color: #2c3e50;
+    background: var(--accent);
+    color: var(--ink-inverse);
+    border-color: var(--accent);
 }
 
 /* ---------------------------------------------------------------------------
@@ -3871,42 +4077,42 @@ body.conv-bottom     .danger-dialog {
     .cmd-btn:hover,
     .cmd-btn-end:hover,
     .persist-btn:hover {
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
+        box-shadow: 0 2px 10px var(--shadow);
         outline: none;
     }
     /* Matches .response-card:hover directly below — same shadow, no fill change
        (Ken, August 20 2026). The other slate-inverting controls above are the
        Command Bar's, which are a separate surface and are left as they are. */
     .regenerate-btn:hover {
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
+        box-shadow: 0 2px 10px var(--shadow);
         outline: none;
     }
     .response-card:hover {
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
+        box-shadow: 0 2px 10px var(--shadow);
         outline: none;
     }
-    .response-error-retry:hover { background: rgba(217, 130, 43, 0.15); }
+    .response-error-retry:hover { background: var(--warn-wash-strong); }
     .ep-btn:hover {
-        background: #fff;
+        background: var(--surface-raised);
         outline: 2px solid var(--ep-color);
         outline-offset: -1px;
     }
-    .ep-btn.ep-imow:hover { background: #1d2b38; color: #fff; outline-color: #1d2b38; }
+    .ep-btn.ep-imow:hover { background: var(--accent-hover); color: var(--ink-inverse); outline-color: var(--accent-hover); }
     .ep-btn.ep-choice:hover,
     .ep-btn.ep-partner:hover,
     .ep-btn.ep-feeling:hover {
-        background: color-mix(in srgb, var(--ep-color) 82%, #000);
-        color: #fff;
+        background: color-mix(in srgb, var(--ep-color) 82%, var(--shade));
+        color: var(--ink-inverse);
         outline-color: var(--ep-color);
     }
     .session-btn:hover { filter: brightness(1.1); }
     .session-btn-end:hover {
-        background: #c0392b;
-        color: #fff;
+        background: var(--danger);
+        color: var(--ink-inverse);
         filter: none;
     }
-    .composer-btn:hover { background: #eef1f4; }
-    .composer-btn-primary:hover { filter: brightness(1.1); background: var(--header); }
+    .composer-btn:hover { background: var(--surface-panel); }
+    .composer-btn-primary:hover { filter: brightness(1.1); background: var(--accent); }
 }
 
 
@@ -3920,10 +4126,10 @@ body.conv-bottom     .danger-dialog {
    another thing to choose. */
 .sc-stipulate {
     font-style: italic;
-    color: #5f6c72;
+    color: var(--ink-muted);
     font-size: 0.95em;
 }
-.sc-disclaimer { color: #5f6c72; }
+.sc-disclaimer { color: var(--ink-muted); }
 
 .sc-partner {
     font-family: Georgia, 'Times New Roman', serif;   /* echoes the partner's voice in the transcript */
@@ -3945,9 +4151,9 @@ body.conv-bottom     .danger-dialog {
     text-align: left;
     padding: 0.6rem 0.8rem;
     border: 1px solid var(--edge);
-    border-left: 5px solid var(--slot-preferred, #2E7D32);
+    border-left: 5px solid var(--slot-preferred, var(--ok));
     border-radius: 8px;
-    background: #fff;
+    background: var(--surface-raised);
     color: var(--ink);
     font-size: 1.02em;
     line-height: 1.35;
@@ -3961,8 +4167,8 @@ body.conv-bottom     .danger-dialog {
 .sc-escapes { flex-wrap: wrap; gap: 0.4rem; }
 
 .sc-chosen {
-    background: #f1f8e9;
-    border-left: 4px solid var(--slot-preferred, #2E7D32);
+    background: var(--ok-tint);
+    border-left: 4px solid var(--slot-preferred, var(--ok));
     border-radius: 6px;
     padding: 0.5rem 0.7rem;
     margin: 0.4rem 0;
@@ -3971,7 +4177,7 @@ body.conv-bottom     .danger-dialog {
 .sc-never .wv-text { flex: 1 1 auto; }
 
 @media (hover: hover) {
-    .sc-choice:hover { background: #f1f8e9; }
+    .sc-choice:hover { background: var(--ok-tint); }
 }
 
 /* What the harvest concluded — shown so the user can correct it. */
@@ -3982,8 +4188,8 @@ body.conv-bottom     .danger-dialog {
     padding-right: 0.5rem;
 }
 .sc-lean {
-    background: #eef4f8;
-    border-left: 4px solid var(--slot-initiative, #1565C0);
+    background: var(--info-tint);
+    border-left: 4px solid var(--slot-initiative, var(--info));
     border-radius: 6px;
     padding: 0.5rem 0.7rem;
     margin: 0.4rem 0 0.6rem;
@@ -4007,7 +4213,7 @@ body.conv-bottom     .danger-dialog {
     border-bottom: 1px solid var(--edge-subtle);
     position: sticky;
     top: 0;
-    background: var(--panel-bg, #fff);
+    background: var(--panel-bg, var(--surface-raised));
     z-index: 1;
 }
 #expressEditor .ee-toolbar button {
@@ -4020,8 +4226,8 @@ body.conv-bottom     .danger-dialog {
 /* A row is a row again: the words, how to say them, and a speaker. */
 #expressEditor .ee-row { flex-direction: row; align-items: center; padding: 0.35rem; }
 #expressEditor .ee-input { flex: 1 1 8rem; min-width: 0; font: inherit; padding: 0.35rem 0.45rem; border: 1px solid var(--edge); border-radius: 6px; }
-#expressEditor .ee-kind { flex: 0 0 auto; font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #4E342E; min-width: 4.2rem; }
-#expressEditor .ee-note { font-size: 0.85rem; color: #55606a; margin: 0.2rem 0 0.5rem; }
+#expressEditor .ee-kind { flex: 0 0 auto; font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--band-context); min-width: 4.2rem; }
+#expressEditor .ee-note { font-size: 0.85rem; color: var(--ink-muted); margin: 0.2rem 0 0.5rem; }
 
 /* Which situation is being edited. Two selects that read as a sentence, sized to be
    read: somebody who believes they are editing their clinic phrases and is in fact
@@ -4034,7 +4240,7 @@ body.conv-bottom     .danger-dialog {
     gap: 0.4rem;
     padding: 0.5rem;
     margin-bottom: 0.5rem;
-    background: #fff8e1;
+    background: var(--warn-tint);
     border-left: 4px solid var(--slot-dispreferred);
     border-radius: 6px;
     font-weight: 700;
@@ -4061,9 +4267,9 @@ body.conv-bottom     .danger-dialog {
     padding: 0.3rem 0.45rem;
     font-size: 0.85rem;
     font-weight: 700;
-    color: #8a5300;
-    background: #fff3e0;
-    border-top: 2px dashed #a06600;
+    color: var(--warn-ink);
+    background: var(--warn-tint);
+    border-top: 2px dashed var(--warn);
 }
 
 /* ROOM BENEATH THE LAST CONTROL, so a dropdown can open downward.
@@ -4126,7 +4332,7 @@ body.conv-bottom     .danger-dialog {
    cell after it and the keyguard holes would stop lining up (Rule 1, the hard
    requirement). */
 .ep-btn.ep-choice-slot .ep-text {
-    color: color-mix(in srgb, var(--band-color, #4E342E) 55%, transparent);
+    color: color-mix(in srgb, var(--band-color, var(--band-context)) 55%, transparent);
     font-style: italic;
     font-weight: 600;
 }

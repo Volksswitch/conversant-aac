@@ -69,10 +69,14 @@ export const CATEGORIES = {
 // pop apart from the pastel phrase buttons; the toggled-on state is stronger still.
 // Place is olive: the palette had no yellow-green, so it cannot be confused with
 // the deep orange (pace) or cyan (feeling) it sits nearest in hue.
+// These are var() REFERENCES, not colours (Ken, September 3 2026). They are handed
+// to CSS as inline custom properties, and a custom property resolves where it is
+// USED -- so the theme moves them and this module never learns that themes exist.
+// The values themselves live with the rest of the palette in styles.css.
 export const INFLUENCER_COLORS = {
-  partner: { color: '#5D4037', tint: '#efebe9' }, // brown
-  feeling: { color: '#00838F', tint: '#e0f7fa' }, // cyan
-  place:   { color: '#827717', tint: '#f9fbe7' }, // olive
+  partner: { color: 'var(--infl-partner)', tint: 'var(--infl-partner-tint)' }, // brown
+  feeling: { color: 'var(--infl-feeling)', tint: 'var(--infl-feeling-tint)' }, // cyan
+  place:   { color: 'var(--infl-place)',   tint: 'var(--infl-place-tint)' },   // olive
 };
 
 // Choice chips: the alternatives the partner just offered ("mild / moderate /
@@ -81,7 +85,7 @@ export const INFLUENCER_COLORS = {
 // two surfaces read as the same idea. Not user-editable — these are transient and
 // AI-derived, which is exactly why they live in RESERVED cells rather than
 // displacing the user's own phrases.
-export const CHOICE_COLOR = { color: '#2E7D32', tint: '#e8f5e9' }; // green
+export const CHOICE_COLOR = { color: 'var(--choice)', tint: 'var(--choice-tint)' }; // green
 
 // (A FEELING_PRESETS list lived here and is deliberately gone - Ken, August 25 2026.
 // A feeling is typed, never chosen from a list; the reasoning is in the Architecture

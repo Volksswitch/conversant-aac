@@ -23,6 +23,10 @@ import * as platform from './platform.js';
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
   "0.9.6": [
+    "New: a dark color scheme. Settings, on the tab now called \"Text & Color\", has \"Color scheme\" with Light and Dark. Dark can be easier on the eyes in a dim room, and much easier for anyone bothered by bright screens. It changes the whole app at once, including Settings and About Me, and it takes effect straight away so you can judge it with the panel still open.",
+    "The app stays Light unless you change it, and remembers your choice next time.",
+    "Nothing moves when you switch. Every button and card is in the same place at the same size in both schemes, so one keyguard fits either.",
+    "The \"Text Size\" tab is now \"Text & Color\", since it holds both.",
     "Everything on screen now has a clearly visible outline. The words were always easy to read, but the lines that separate one thing from another — the edge of a response card, the box around the conversation, the outline of a button — were so faint that the screen could look like one gray field with words floating in it. That is hardest on anyone whose eyes struggle with faint differences, which becomes more common with age and is common alongside cerebral palsy. Every one of those lines is now dark enough to make out.",
     "The empty response spaces that wait at the start of a conversation are visible again. They were faded so far that the four places a suggestion will appear were hard to find before anything had been said.",
     "The transcript's scroll bar, the warning line that appears when something has gone wrong, and the amber notices are all easier to see for the same reason.",

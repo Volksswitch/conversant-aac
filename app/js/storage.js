@@ -1016,6 +1016,33 @@ export function saveCardTextMode(mode) {
     saveSettings(settings);
 }
 
+// --- Light or dark (Ken, September 3 2026) ---
+// 'light'  the app as it has always looked (the default)
+// 'dark'   light text on a near-black ground
+//
+// DEFAULT IS LIGHT, deliberately: a setting that changes how the app looks should
+// not change it for somebody who has never touched it. Same call as full screen.
+//
+// THERE IS NO "MATCH MY DEVICE", and that is a decision rather than an omission.
+// It is what most apps offer, and it would mean the app changing appearance on its
+// own -- at sunset, on a schedule somebody else set, or when a supporter changes an
+// OS setting for unrelated reasons. For a user who navigates by shape and position
+// and cannot easily ask what happened, an interface that redecorates itself without
+// being asked is worse than one that needs a trip to Settings. Reopen it only if a
+// tester actually asks for it.
+const COLOR_SCHEMES = ['light', 'dark'];
+
+export function loadColorScheme() {
+    const v = loadSettings().colorScheme;
+    return COLOR_SCHEMES.includes(v) ? v : 'light';
+}
+
+export function saveColorScheme(scheme) {
+    const settings = loadSettings();
+    settings.colorScheme = COLOR_SCHEMES.includes(scheme) ? scheme : 'light';
+    saveSettings(settings);
+}
+
 // --- What the Command Bar buttons show (Ken, August 30 2026) ---
 // 'icon'  each button shows only its glyph (the default, and what Rule 12 asks for)
 // 'words' each button shows a one- or two-word label instead

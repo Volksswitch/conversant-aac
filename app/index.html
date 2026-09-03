@@ -15,6 +15,18 @@
     <link rel="icon" type="image/png" href="icons/icon-192.png">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <link rel="stylesheet" href="css/styles.css">
+    <script>
+        // Runs before the first paint on purpose -- see index.html's note above.
+        // Deliberately tolerant: any failure just leaves the app light.
+        try {
+            var saved = JSON.parse(localStorage.getItem('aac_settings') || '{}');
+            if (saved.colorScheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                var m = document.querySelector('meta[name="theme-color"]');
+                if (m) m.setAttribute('content', '#15181b');
+            }
+        } catch (e) { /* no stored settings, or storage is blocked: stay light */ }
+    </script>
 </head>
 <body>
     <!-- Conversation screen: a MAIN area + a DOCK area. The dock area occupies
@@ -187,7 +199,7 @@
             <nav id="settingsTabs">
                 <div class="settings-tab active" data-tab="general">General</div>
                 <div class="settings-tab" data-tab="aboutme">About Me</div>
-                <div class="settings-tab" data-tab="textsize">Text Size</div>
+                <div class="settings-tab" data-tab="textsize">Text &amp; Color</div>
                 <div class="settings-tab" data-tab="speech">Speech</div>
                 <div class="settings-tab" data-tab="input">Button Sizes</div>
                 <div class="settings-tab" data-tab="conversation">Conversation</div>
@@ -304,6 +316,16 @@
                     <div id="worldviewContent"></div>
                 </div>
                 <div class="tab-panel" data-tab="textsize">
+                    <div class="setting-group" data-help="colorScheme">
+                        <label>Colors</label>
+                        <div class="setting-item">
+                            <label for="colorSchemeInput">Color scheme</label>
+                            <select id="colorSchemeInput">
+                                <option value="light" selected>Light</option>
+                                <option value="dark">Dark</option>
+                            </select>
+                        </div>
+                    </div>
                     <!-- ONE section, not four (Ken, August 21 2026). Four headings each
                          hiding a single dropdown is the shape this tab used to have, and
                          it made the reader open four sections to set four values that are

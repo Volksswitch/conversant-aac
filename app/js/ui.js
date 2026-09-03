@@ -500,8 +500,8 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         return f;
     };
     const setColor = (b, color, tint) => {
-        b.style.setProperty('--ep-color', color || '#546E7A');
-        b.style.setProperty('--ep-tint', tint || '#eceff1');
+        b.style.setProperty('--ep-color', color || 'var(--edge-strong)');
+        b.style.setProperty('--ep-tint', tint || 'var(--surface-panel)');
     };
 
     const buildItemBtn = (item, span) => {

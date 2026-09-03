@@ -361,6 +361,19 @@ function handlePrivacyToggle() {
     applyPrivacyState();
 }
 
+// Light or dark (Ken, September 3 2026). One place owns it, because the theme is
+// applied from THREE: the inline script in index.html (before the first paint), app
+// start-up, and the Settings dropdown. The <meta> keeps the browser's own chrome --
+// the iPad's status bar, an installed window's title bar -- in step with the page,
+// or the app sits in a dark window inside a white frame.
+function applyColorScheme(scheme) {
+    const dark = scheme === 'dark';
+    if (dark) document.documentElement.setAttribute('data-theme', 'dark');
+    else document.documentElement.removeAttribute('data-theme');
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', dark ? '#15181b' : '#2c3e50');
+}
+
 function initApp() {
     // Stamp the error log with this build's version (Ken, July 2026).
     storage.setAppVersion(APP_VERSION);
@@ -593,6 +606,7 @@ function initApp() {
     // a tour is running.
     document.addEventListener('click', handleTourPress, true);
     ui.setCardsPerCategory(storage.loadResponsesPerCategory()); // 8-card mode → 8 reserved slots
+    applyColorScheme(storage.loadColorScheme());
     ui.setCardTextMode(storage.loadCardTextMode());   // full / short / both, per the user's choice
     clearPalette(); // render the reserved empty card footprint at rest
     renderExpressPanel();
@@ -5223,6 +5237,7 @@ function openSettings() {
     const subsequentDelayInput = document.getElementById('subsequentDelayInput');
     const maxPlaceholdersInput = document.getElementById('maxPlaceholdersInput');
     const responsesPerCategoryInput = document.getElementById('responsesPerCategoryInput');
+    const colorSchemeInput = document.getElementById('colorSchemeInput');
     const cardTextModeInput = document.getElementById('cardTextModeInput');
     const commandLabelsInput = document.getElementById('commandLabelsInput');
     const choiceChipMaxInput = document.getElementById('choiceChipMaxInput');
@@ -5234,6 +5249,7 @@ function openSettings() {
     autoRelistenInput.checked = storage.loadAutoRelisten();
     listenChimeInput.checked = storage.loadListenChime();
     responsesPerCategoryInput.value = storage.loadResponsesPerCategory();
+    colorSchemeInput.value = storage.loadColorScheme();
     cardTextModeInput.value = storage.loadCardTextMode();
     commandLabelsInput.value = storage.loadCommandLabels();
     choiceChipMaxInput.value = storage.loadChoiceChipMax();
@@ -5865,6 +5881,13 @@ function openSettings() {
     choiceChipMaxInput.onchange = () => {
         storage.saveChoiceChipMax(choiceChipMaxInput.value);
         renderExpressPanel();
+    };
+    colorSchemeInput.onchange = () => {
+        storage.saveColorScheme(colorSchemeInput.value);
+        // Takes effect at once and with the panel still open, so the user judges it
+        // against the app rather than against a memory of it. Nothing re-solves:
+        // this is paint only, so no keyguard hole moves.
+        applyColorScheme(colorSchemeInput.value);
     };
     document.querySelectorAll('input[name="keyboardMode"]').forEach(radio => {
         radio.onchange = () => {
