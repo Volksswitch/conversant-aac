@@ -175,7 +175,7 @@ const doc = new Document({
             new Paragraph({ spacing: { before: 0, after: 80 },
                 children: [new TextRun({ text: "What each speech service costs, how to sign up for it, and how to compare them for yourself", italics: true, size: 24, color: "555555" })] }),
             new Paragraph({ spacing: { before: 0, after: 320 },
-                children: [new TextRun({ text: "Kenneth R. Hackbarth  |  Volksswitch.org  |  September 2026  |  Last updated September 2, 2026", size: 20, color: "808080" })] }),
+                children: [new TextRun({ text: "Kenneth R. Hackbarth  |  Volksswitch.org  |  September 2026  |  Last updated September 3, 2026", size: 20, color: "808080" })] }),
 
             // ===== 1 =====
             heading1("1. What This Is For"),
@@ -198,6 +198,8 @@ const doc = new Document({
                     ["Hearing", "Turning the other person's speech into text", "Only people whose device cannot do it for free. Windows, Chromebook, Android and an iPad in the Safari browser all hear for nothing"],
                 ], W3),
             emptyPara(),
+            lead("Some services sell only one of the two. ",
+                "ElevenLabs and Cartesia speak but do not hear. Deepgram, Azure, Google and OpenAI do both, and Azure and Deepgram do both from a single key."),
             lead("Only one setup truly depends on a paid service for hearing: ",
                 "an iPad running Conversant as an installed app from the Home Screen. Everywhere else, the device hears for free and a paid service only changes the voice. A tester who cannot get a key is therefore not stuck; they have a plainer voice."),
 
@@ -210,7 +212,7 @@ const doc = new Document({
             heading2("A note on the beta arrangement"),
             para("For the beta, Ken creates an account per tester against his own card and hands over the key, and the accounts are closed when the beta ends. Two practical consequences are worth knowing before setting them up."),
             lead("Separate accounts get separate free allowances. ",
-                "Several services give a monthly allowance that renews - Azure and Google especially. One account shared across several testers gets one allowance between them; an account each gets an allowance each. For a small beta, an account per tester is both tidier to close down and materially cheaper."),
+                "Several services give a monthly allowance that renews - Azure and Google especially. One account shared across several testers gets one allowance between them; an account each gets an allowance each. Azure states this as a rule rather than leaving it to arithmetic: only one free Speech resource per account, per region. For a small beta, an account per tester is both tidier to close down and materially cheaper."),
             lead("What is free during the beta may not be free afterwards. ",
                 "Judge a service by what a user will pay in a year, not by what the trial credit covers. A one-time credit flatters a service that is expensive to keep."),
 
@@ -285,12 +287,20 @@ const doc = new Document({
 
             heading2("Azure Speech"),
             para("The most involved sign-up of the six, and the one with the best long-term offer: an allowance that renews every month rather than a credit that runs out."),
+            lead("One key covers both speaking and hearing. ",
+                "Azure sells these as two capabilities of a single Speech resource rather than as two products, so you create one thing, and its key and region are used for both. There is no second key to find. That is why the bench asks for one Azure key and one region and not two of each."),
             step("Go to azure.microsoft.com and create a free account. A card is required to prove you are a real person; there is a temporary hold of about a dollar and no charge.", "az"),
             step("In the Azure portal, create a resource of type Speech.", "az"),
             step("When asked for a pricing tier, choose the free tier, named F0. This is the step that matters - it is what keeps the account free, and it survives after the introductory credit expires.", "az"),
             step("Note the region you chose. It is part of the address the app talks to, and the bench asks for it separately.", "az"),
             step("Open the Keys and Endpoint page for that resource and copy one of the two keys.", "az"),
-            lead("Two keys, on purpose. ", "Azure gives every resource a pair so you can replace one while the other keeps working. Either will do."),
+            lead("Two keys, on purpose. ", "Azure gives every resource a pair so you can replace one while the other keeps working. Either will do, and either covers both speaking and hearing."),
+            lead("⚠ The free tier is one per account, per region - and this decides how to set up testers. ",
+                "Azure allows only one free Speech resource in a subscription for a given region. So one account shared across several people gets one allowance between them, and when it runs out everybody is on paid rates for the rest of the month; an account each gets a full allowance each, renewing monthly. For a small group that difference is the difference between most people costing nothing and everybody costing something."),
+            lead("A wrinkle worth knowing before you meet it. ",
+                "Deleting a free resource leaves it in a half-deleted state for a while, and Azure will refuse to create another free one in that region until it clears. It looks like a fault and is not. Wait it out, or use a different region."),
+            lead("What this means at public release. ",
+                "Every user signs up for themselves, so every user gets their own monthly allowance. That makes a renewing allowance worth considerably more across many people than a one-time credit, which each user spends once and never sees again."),
 
             heading2("OpenAI"),
             para("The cheapest of the six overall on these figures, with no free allowance."),
