@@ -93,6 +93,12 @@
   .prov label.pick{font-weight:bold}
   .prov .cfg{display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap}
   .prov .cfg input{width:100%;font-size:13px}
+  .prov .cfg select{width:100%;font:inherit;font-size:13px;padding:5px 6px;
+                    border:1px solid #b9c2cc;border-radius:5px;background:#fff}
+  .prov .voicerow{display:flex;gap:6px;align-items:center;margin-top:6px}
+  .prov .voicerow select{flex:1;min-width:0}
+  .prov .voicerow button{padding:5px 9px;font-size:12.5px;white-space:nowrap}
+  .prov .vstatus{font-size:12px;color:var(--dim);margin-top:3px;min-height:15px}
   .transcript{white-space:pre-wrap;font-size:13.5px}
   code{background:var(--chip);padding:1px 4px;border-radius:3px;font-size:12.5px}
   .timer{font-variant-numeric:tabular-nums;font-weight:bold;color:var(--bad)}
@@ -398,6 +404,98 @@ $('reachBtn').addEventListener('click', async () => {
 });
 
 /* ============================================================================
+   Voice lists.
+
+   (!) FOUR OF THE SIX WILL HAND A BROWSER THEIR LIVE LIST, TWO WILL NOT, and that
+   is measured rather than assumed (September 2 2026). Azure, ElevenLabs, Cartesia
+   and Google all answered a browser request for their voice list. Deepgram's ordinary
+   web address refuses browser calls outright - the very reason the app talks to it
+   over a streaming connection instead - and OpenAI publishes no list endpoint at all.
+   So those two carry a built-in list, and the rest are fetched with your key.
+
+   (!) THE BUILT-IN LISTS ARE THE ONES WE WOULD ACTUALLY SHIP, not every id that might
+   exist. Inventing plausible-looking ids would produce failures that look like bugs in
+   the bench, so anything not listed is reached through "Other" instead.
+   ========================================================================== */
+
+// Deepgram Aura-2 - the same curated set the app offers in Settings.
+const DG_VOICES = [
+  ['aura-2-thalia-en', 'Thalia - female, American'],
+  ['aura-2-andromeda-en', 'Andromeda - female, American'],
+  ['aura-2-helena-en', 'Helena - female, American'],
+  ['aura-2-aurora-en', 'Aurora - female, American'],
+  ['aura-2-luna-en', 'Luna - female, American'],
+  ['aura-2-cordelia-en', 'Cordelia - female, American'],
+  ['aura-2-apollo-en', 'Apollo - male, American'],
+  ['aura-2-arcas-en', 'Arcas - male, American'],
+  ['aura-2-aries-en', 'Aries - male, American'],
+  ['aura-2-orion-en', 'Orion - male, American'],
+  ['aura-2-atlas-en', 'Atlas - male, American'],
+  ['aura-2-zeus-en', 'Zeus - male, American'],
+  ['aura-2-pandora-en', 'Pandora - female, British'],
+  ['aura-2-draco-en', 'Draco - male, British'],
+  ['aura-2-theia-en', 'Theia - female, Australian'],
+  ['aura-2-hyperion-en', 'Hyperion - male, Australian'],
+];
+
+// OpenAI publishes a short fixed set and no endpoint to read it from.
+const OA_VOICES = [
+  ['alloy', 'Alloy'], ['ash', 'Ash'], ['ballad', 'Ballad'], ['coral', 'Coral'],
+  ['echo', 'Echo'], ['fable', 'Fable'], ['nova', 'Nova'], ['onyx', 'Onyx'],
+  ['sage', 'Sage'], ['shimmer', 'Shimmer'], ['verse', 'Verse'],
+];
+
+// Keeps a 500-entry picker down to the ones a user here would actually pick. The
+// checkbox beside each picker turns it off.
+function englishOnly(lang) {
+  return !lang || /^en/i.test(lang);
+}
+
+const VOICE_FETCHERS = {
+  az: async () => {
+    const region = key('k_azure_region') || 'eastus';
+    const r = await fetch('https://' + region + '.tts.speech.microsoft.com/cognitiveservices/voices/list',
+      { headers: { 'Ocp-Apim-Subscription-Key': key('k_azure') } });
+    if (!r.ok) throw new Error(await describe(r));
+    return (await r.json()).map((v) => ({
+      id: v.ShortName,
+      label: (v.DisplayName || v.ShortName) + ' - ' + (v.Gender || '').toLowerCase()
+             + ', ' + (v.Locale || '') + (v.VoiceType === 'Neural' ? '' : ' (' + v.VoiceType + ')'),
+      lang: v.Locale,
+    }));
+  },
+  el: async () => {
+    const r = await fetch('https://api.elevenlabs.io/v1/voices',
+      { headers: { 'xi-api-key': key('k_eleven') } });
+    if (!r.ok) throw new Error(await describe(r));
+    return (await r.json()).voices.map((v) => ({
+      id: v.voice_id,
+      label: v.name + (v.labels && v.labels.accent ? ' - ' + v.labels.accent : ''),
+      lang: (v.labels && v.labels.language) || 'en',
+    }));
+  },
+  ca: async () => {
+    const r = await fetch('https://api.cartesia.ai/voices?limit=100',
+      { headers: { 'X-API-Key': key('k_cartesia'), 'Cartesia-Version': '2024-06-10' } });
+    if (!r.ok) throw new Error(await describe(r));
+    const j = await r.json();
+    const list = Array.isArray(j) ? j : (j.data || []);
+    return list.map((v) => ({ id: v.id, label: v.name + (v.description ? ' - ' + String(v.description).slice(0, 40) : ''),
+                              lang: v.language || 'en' }));
+  },
+  go: async () => {
+    const r = await fetch('https://texttospeech.googleapis.com/v1/voices?key='
+                          + encodeURIComponent(key('k_google')));
+    if (!r.ok) throw new Error(await describe(r));
+    return (await r.json()).voices.map((v) => ({
+      id: v.name,
+      label: v.name + ' - ' + String(v.ssmlGender || '').toLowerCase(),
+      lang: (v.languageCodes || [])[0],
+    }));
+  },
+};
+
+/* ============================================================================
    3. Speaking
    Each entry knows how to turn text into playable audio. They all return
    { blob } or throw with a readable message.
@@ -405,7 +503,8 @@ $('reachBtn').addEventListener('click', async () => {
 const TTS = [
   {
     id: 'dg', name: 'Deepgram Aura', needs: 'k_deepgram',
-    cfg: [{ id: 'dg_voice', label: 'model', value: 'aura-2-thalia-en' }],
+    cfg: [{ id: 'dg_voice', label: 'voice', value: 'aura-2-thalia-en',
+            kind: 'voice', builtin: DG_VOICES }],
     // Deepgram's ordinary web address refuses browser calls, which is why the app
     // uses their streaming connection instead. Same approach here.
     run: async (c) => {
@@ -443,7 +542,9 @@ const TTS = [
   },
   {
     id: 'az', name: 'Azure Speech', needs: 'k_azure',
-    cfg: [{ id: 'az_voice', label: 'voice', value: 'en-US-JennyNeural' }],
+    cfg: [{ id: 'az_voice', label: 'voice', value: 'en-US-JennyNeural',
+            kind: 'voice', builtin: [['en-US-JennyNeural', 'Jenny - female, en-US']],
+            fetch: 'az' }],
     run: async (c) => {
       const region = key('k_azure_region') || 'eastus';
       const ssml = '<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis"'
@@ -462,7 +563,8 @@ const TTS = [
   },
   {
     id: 'oa', name: 'OpenAI', needs: 'k_openai',
-    cfg: [{ id: 'oa_voice', label: 'voice', value: 'alloy' },
+    cfg: [{ id: 'oa_voice', label: 'voice', value: 'alloy',
+            kind: 'voice', builtin: OA_VOICES },
           { id: 'oa_model', label: 'model', value: 'gpt-4o-mini-tts' }],
     run: async (c) => {
       const r = await fetch('https://api.openai.com/v1/audio/speech', {
@@ -478,7 +580,9 @@ const TTS = [
   },
   {
     id: 'el', name: 'ElevenLabs', needs: 'k_eleven',
-    cfg: [{ id: 'el_voice', label: 'voice id', value: '21m00Tcm4TlvDq8ikWAM' },
+    cfg: [{ id: 'el_voice', label: 'voice', value: '21m00Tcm4TlvDq8ikWAM',
+            kind: 'voice', builtin: [['21m00Tcm4TlvDq8ikWAM', 'Rachel (their sample voice)']],
+            fetch: 'el' },
           { id: 'el_model', label: 'model', value: 'eleven_multilingual_v2' }],
     run: async (c) => {
       const r = await fetch('https://api.elevenlabs.io/v1/text-to-speech/'
@@ -493,7 +597,8 @@ const TTS = [
   },
   {
     id: 'ca', name: 'Cartesia', needs: 'k_cartesia',
-    cfg: [{ id: 'ca_voice', label: 'voice id', value: '' },
+    cfg: [{ id: 'ca_voice', label: 'voice', value: '',
+            kind: 'voice', builtin: [], fetch: 'ca' },
           { id: 'ca_model', label: 'model', value: 'sonic-2' }],
     run: async (c) => {
       if (!c.ca_voice) throw new Error('Cartesia needs a voice id - copy one from '
@@ -512,7 +617,9 @@ const TTS = [
   },
   {
     id: 'go', name: 'Google Cloud', needs: 'k_google',
-    cfg: [{ id: 'go_voice', label: 'voice', value: 'en-US-Neural2-F' }],
+    cfg: [{ id: 'go_voice', label: 'voice', value: 'en-US-Neural2-F',
+            kind: 'voice', builtin: [['en-US-Neural2-F', 'Neural2-F - female, en-US']],
+            fetch: 'go' }],
     run: async (c) => {
       const r = await fetch('https://texttospeech.googleapis.com/v1/text:synthesize?key='
                             + encodeURIComponent(key('k_google')), {
@@ -533,10 +640,18 @@ function escapeXml(s) {
   return String(s).replace(/[<>&'"]/g, (ch) => ({ '<': '&lt;', '>': '&gt;',
     '&': '&amp;', "'": '&apos;', '"': '&quot;' }[ch]));
 }
+// Say what the number MEANS before quoting it. Several of these services answer a
+// refused key with an empty body, so a bare "HTTP 401" was the whole message.
 async function describe(r) {
   let body = '';
   try { body = (await r.text()).slice(0, 200).replace(/\s+/g, ' '); } catch {}
-  return 'HTTP ' + r.status + (body ? ' - ' + body : '');
+  const plain = r.status === 401 || r.status === 403
+      ? 'the key was refused'
+      : r.status === 404 ? 'not found - check the voice or the region'
+      : r.status === 429 ? 'too many requests just now'
+      : r.status >= 500 ? 'the service had a problem'
+      : 'the request was rejected';
+  return plain + ' (HTTP ' + r.status + ')' + (body ? ' - ' + body : '');
 }
 function b64ToBlob(b64, type) {
   const bin = atob(b64);
@@ -576,6 +691,7 @@ function buildProviderCards(list, host, prefix) {
     h.appendChild(lab);
     card.appendChild(h);
     for (const f of (p.cfg || [])) {
+      if (f.kind === 'voice') { card.appendChild(buildVoicePicker(f)); continue; }
       const wrap = document.createElement('div');
       wrap.className = 'cfg';
       const l = document.createElement('span');
@@ -589,6 +705,109 @@ function buildProviderCards(list, host, prefix) {
     host.appendChild(card);
   }
 }
+
+/*
+ * A voice picker: a list you choose from, rather than an id you have to know.
+ *
+ * (!) "OTHER" IS NOT DECORATION. The built-in lists hold only the ids we are sure of,
+ * and a provider's real catalog is bigger, so there has to be a way to reach a voice
+ * the list does not name. It is also the escape hatch when a live list will not load.
+ */
+const OTHER = '__other__';
+
+function fillVoiceSelect(sel, entries, keep) {
+  sel.textContent = '';
+  for (const e of entries) {
+    const o = document.createElement('option');
+    o.value = e[0]; o.textContent = e[1];
+    sel.appendChild(o);
+  }
+  const o = document.createElement('option');
+  o.value = OTHER; o.textContent = 'Other - type an id';
+  sel.appendChild(o);
+  if (keep && entries.some((e) => e[0] === keep)) sel.value = keep;
+}
+
+// A picker with five hundred entries in it is not a picker, so the live lists are
+// filtered to English unless the box beside them is unticked.
+function renderVoices(sel, box, f) {
+  const enOnly = document.getElementById(f.id + '_en');
+  const list = box._all.filter((v) => (enOnly && !enOnly.checked) || englishOnly(v.lang));
+  fillVoiceSelect(sel, list.map((v) => [v.id, v.label]), sel.value);
+  return list.length;
+}
+
+function buildVoicePicker(f) {
+  const box = document.createElement('div');
+
+  const row = document.createElement('div');
+  row.className = 'voicerow';
+  const sel = document.createElement('select');
+  sel.id = f.id + '_sel';
+  fillVoiceSelect(sel, f.builtin || [], f.value);
+  row.appendChild(sel);
+
+  const status = document.createElement('div');
+  status.className = 'vstatus';
+
+  // The typed id, shown only when the list cannot name the voice.
+  const other = document.createElement('input');
+  other.type = 'text'; other.id = f.id; other.placeholder = 'voice id';
+  other.value = (f.builtin || []).some((e) => e[0] === f.value) ? '' : (f.value || '');
+  if (!(f.builtin || []).length) sel.value = OTHER;
+  const syncOther = () => { other.hidden = sel.value !== OTHER; };
+  syncOther();
+  sel.addEventListener('change', syncOther);
+
+  if (f.fetch) {
+    const btn = document.createElement('button');
+    btn.textContent = 'Load voices';
+    btn.addEventListener('click', async () => {
+      if (!key(TTS.find((x) => x.cfg && x.cfg.some((c) => c.id === f.id)).needs)) {
+        status.textContent = 'enter the key first';
+        return;
+      }
+      btn.disabled = true; status.textContent = 'loading...';
+      try {
+        box._all = await VOICE_FETCHERS[f.fetch]();
+        status.textContent = renderVoices(sel, box, f) + ' of ' + box._all.length + ' voices';
+      } catch (e) {
+        status.textContent = e.message;
+      }
+      btn.disabled = false; syncOther();
+    });
+    row.appendChild(btn);
+  }
+  box.appendChild(row);
+
+  if (f.fetch) {
+    const lab = document.createElement('label');
+    lab.className = 'hint';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.checked = true; cb.id = f.id + '_en';
+    cb.addEventListener('change', () => {
+      if (!box._all) return;
+      status.textContent = renderVoices(sel, box, f) + ' of ' + box._all.length + ' voices';
+      syncOther();
+    });
+    lab.appendChild(cb);
+    lab.appendChild(document.createTextNode(' English only'));
+    box.appendChild(lab);
+  }
+
+  box.appendChild(status);
+  box.appendChild(other);
+  return box;
+}
+
+// What the runner uses: the typed id when "Other" is chosen, the picked one otherwise.
+function voiceValue(fieldId) {
+  const sel = document.getElementById(fieldId + '_sel');
+  const other = document.getElementById(fieldId);
+  if (!sel) return other ? other.value.trim() : '';
+  return sel.value === OTHER ? (other ? other.value.trim() : '') : sel.value;
+}
+
 buildProviderCards(TTS, $('ttsProviders'), 'tts');
 
 let currentAudio = null;
@@ -626,7 +845,9 @@ $('ttsRun').addEventListener('click', async () => {
       continue;
     }
     const cfg = {};
-    for (const f of (p.cfg || [])) cfg[f.id] = $(f.id).value.trim();
+    for (const f of (p.cfg || [])) {
+      cfg[f.id] = f.kind === 'voice' ? voiceValue(f.id) : $(f.id).value.trim();
+    }
     const t0 = performance.now();
     try {
       const r = await p.run(cfg);
@@ -855,7 +1076,9 @@ $('sttRun').addEventListener('click', async () => {
       continue;
     }
     const cfg = {};
-    for (const f of (p.cfg || [])) cfg[f.id] = $(f.id).value.trim();
+    for (const f of (p.cfg || [])) {
+      cfg[f.id] = f.kind === 'voice' ? voiceValue(f.id) : $(f.id).value.trim();
+    }
     const t0 = performance.now();
     try {
       const text = await p.run(cfg);
