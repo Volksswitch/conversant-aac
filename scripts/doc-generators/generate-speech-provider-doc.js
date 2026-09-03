@@ -198,6 +198,8 @@ const doc = new Document({
                     ["Hearing", "Turning the other person's speech into text", "Only people whose device cannot do it for free. Windows, Chromebook, Android and an iPad in the Safari browser all hear for nothing"],
                 ], W3),
             emptyPara(),
+            lead("The AI company cannot supply either of these. ",
+                "Anthropic, whose service writes the suggested replies, takes text and pictures in and gives text back. It has no voice and no ears - there is no speech service to buy from them at any price. So a speech account is necessarily a second account alongside the AI one, rather than something that could be folded into it."),
             lead("Some services sell only one of the two. ",
                 "ElevenLabs and Cartesia speak but do not hear. Deepgram, Azure, Google and OpenAI do both, and Azure and Deepgram do both from a single key."),
             lead("Only one setup truly depends on a paid service for hearing: ",
