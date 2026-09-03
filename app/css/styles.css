@@ -707,7 +707,7 @@
 
 /* --- Colour-blind safe. MEASURED, not asserted: the four categories were run
       through simulations of protanopia, deuteranopia and tritanopia and scored by
-      perceptual distance. Default separates them by 17.5 / 13.7 / 9.3; these by
+      perceptual distance. Default separates them by 17.0 / 13.7 / 9.3; these by
       29.0 / 26.6 / 6.2 -- so the two COMMON types, together about 8% of men, get
       roughly double the separation.
    

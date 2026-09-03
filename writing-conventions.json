@@ -434,6 +434,14 @@
     {
       "source": "on the telly",
       "flags": "g"
+    },
+    {
+      "source": "Colour Blind Awareness",
+      "flags": "g"
+    },
+    {
+      "source": "colourblindawareness\\.org[^\\s]*",
+      "flags": "g"
     }
   ],
   "_officialNames": [
