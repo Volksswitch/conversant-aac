@@ -648,7 +648,13 @@ async function describe(r) {
   const plain = r.status === 401 || r.status === 403
       ? 'the key was refused'
       : r.status === 404 ? 'not found - check the voice or the region'
-      : r.status === 429 ? 'too many requests just now'
+      // (!) 429 IS TWO DIFFERENT THINGS AND THEY NEED DIFFERENT ANSWERS. OpenAI
+      // returns it for "this account has no credit" as well as for genuine rate
+      // limiting, and calling the first one "too many requests" sends you looking
+      // for a traffic problem when the answer is to put money on the account.
+      : r.status === 429 ? (/insufficient_quota|billing|exceeded your current quota/i.test(body)
+            ? 'this account has no credit for the API - paying anything, even the $5 minimum, turns it on'
+            : 'too many requests just now - wait a moment and try again')
       : r.status >= 500 ? 'the service had a problem'
       : 'the request was rejected';
   return plain + ' (HTTP ' + r.status + ')' + (body ? ' - ' + body : '');
