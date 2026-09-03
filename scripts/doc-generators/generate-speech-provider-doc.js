@@ -317,7 +317,11 @@ const doc = new Document({
             step("Create a project.", "go"),
             step("Switch on the Cloud Text-to-Speech API, and separately the Cloud Speech-to-Text API. Leaving one off is the usual reason a key appears not to work.", "go"),
             step("Go to the Credentials page and create an API key.", "go"),
-            step("Restrict the key to those two services. Google will warn you about an unrestricted key, and it is right to.", "go"),
+            step("Restrict the key to those two services - in the API restrictions section, not the Application restrictions one above it. Google will warn you about an unrestricted key, and it is right to.", "go"),
+            lead("⚠ Three different things are easy to run together here, and only the first is required. ",
+                "Switching a service ON makes it available to the project at all. API RESTRICTIONS say which of the switched-on services a particular key may call - that is where Text-to-Speech and Speech-to-Text appear as choices. APPLICATION RESTRICTIONS are a separate list higher up the page offering None, Websites, IP addresses, Android apps and iOS apps, and they say where a key may be used FROM rather than what it may do. Looking for the services in that list is the natural mistake, and they are not in it."),
+            lead("The Websites option is worth knowing about for later. ",
+                "It ties a key to one web address, so a copied key is useless anywhere else - a protection none of the other services here offer, and a real advantage for an app that runs in a browser. Leave it on None while testing, though: the bench runs from a file on your own machine, and a website restriction would refuse it."),
 
             heading2("ElevenLabs"),
             para("The best-regarded voices of the six and much the most expensive. Worth hearing before ruling out on price."),
