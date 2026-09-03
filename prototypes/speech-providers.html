@@ -656,6 +656,14 @@ async function describe(r) {
             ? 'this account has no credit for the API - paying anything, even the $5 minimum, turns it on'
             : 'too many requests just now - wait a moment and try again')
       : r.status >= 500 ? 'the service had a problem'
+      // (!) GOOGLE REPORTS A BAD KEY AS A BAD REQUEST, not as a refusal, so it lands
+      // here rather than in the 401 case above. Worth naming, because it also rules
+      // things OUT: this is the key STRING not being recognized, never a restriction.
+      // A key blocked by its restrictions comes back 403 and says referrer or API.
+      : /API_KEY_INVALID|API key not valid/i.test(body)
+            ? 'the key string was not recognized - check the whole key was copied, and '
+              + 'note a brand new key can take a minute or two to start working. This is '
+              + 'not a restrictions problem; those are refused differently'
       : 'the request was rejected';
   return plain + ' (HTTP ' + r.status + ')' + (body ? ' - ' + body : '');
 }
