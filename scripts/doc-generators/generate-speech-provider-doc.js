@@ -275,7 +275,56 @@ const doc = new Document({
             bullet("ElevenLabs and Cartesia: their published plan pages. Both sell monthly plans rather than pure pay-as-you-go, so the per-character rate depends on the plan."),
 
             // ===== 4 =====
-            heading1("4. Signing Up"),
+            heading1("4. What They Do With Your Words"),
+            para("The prices decide what a service costs. This decides what it costs the person on the other side of the conversation, and it is the second question rather than an afterthought."),
+            lead("Why this weighs more here than in most products. ",
+                "What gets sent is the COMMUNICATION PARTNER'S speech. They did not choose this device, were not asked, and in most conversations there is no moment at which asking would be anything but strange. What they say is also disproportionately medical, family, or private, because that is who a person using this app talks to. Choosing a service is therefore choosing who receives those words, and it is not a decision that can be made on price alone."),
+            lead("The pattern to watch for, because it is exactly where a cheap option hides its cost. ",
+                "Terms often differ by PLAN, and the cheaper the plan the weaker they tend to be. Anyone evaluating on a free tier, and any tester left on one, is the most exposed - which is the opposite of what people assume."),
+
+            emptyPara(),
+            para("Read on September 3 2026, from each company's own documentation. Terms change; re-check before a real conversation is sent through any of them."),
+            simpleTable(
+                ["Service", "Is what you send kept?", "Used to train their models?", "What you have to do"],
+                [
+                    [{ text: "Azure Speech", bold: true },
+                     "No. Live speech is processed in memory and not stored, provided logging is off and no custom voice is in use",
+                     "No. Microsoft states customer speech is not used to improve its speech models",
+                     "Nothing. This is the default"],
+                    [{ text: "Deepgram", bold: true },
+                     "No retention by default",
+                     "Only through their Model Improvement Partnership Program",
+                     "Send mip_opt_out=true with requests to be certain - see the note below"],
+                    [{ text: "Cartesia", bold: true },
+                     "Their data terms say customer content is not retained or used beyond providing the service",
+                     "No, per those terms",
+                     "Nothing, though the formal zero-retention option is enterprise only"],
+                    [{ text: "OpenAI", bold: true },
+                     "Yes - up to 30 days, for abuse monitoring, then deleted",
+                     "No. API data is not used for training by default",
+                     "Nothing, unless the 30 days is itself a problem for you"],
+                    [{ text: "Google Cloud", bold: true },
+                     "No, unless you switch on data logging",
+                     "Only if you switch on data logging",
+                     "Leave data logging OFF - see the note below"],
+                    [{ text: "ElevenLabs", bold: true },
+                     "Yes. Retention is ON by default, and the zero-retention option is enterprise only",
+                     "Their documentation is clear that third-party providers may not train on your content; it does not plainly state their own position for ordinary plans",
+                     "Nothing available on a normal plan"],
+                ], [1800, 2700, 2700, 2160]),
+
+            emptyPara(),
+            lead("Deepgram: there is a switch, and it costs nothing to throw. ",
+                "Their documentation says training data comes only from contractual participation in a partnership program - and also documents a per-request opt-out, mip_opt_out=true. Those two statements sit oddly together, and the sensible reading is to send the parameter rather than rely on not having signed anything. It is one word on the end of a web address."),
+            lead("\u26a0 Google: the cheaper rate is paid for with the partner's words. ",
+                "Google offers a substantial discount on transcription - roughly a quarter of the standard rate - in exchange for letting them keep and learn from your audio. That is a fair trade for somebody transcribing their own podcast and the wrong one here, because the audio is not yours to trade. The price quoted in the cost section above is the ordinary one, with logging off. If a figure ever looks too good against the table, this is why."),
+            lead("ElevenLabs is the weakest of the six on this, and it is not close. ",
+                "Retention is on by default and cannot be turned off except on an enterprise agreement. Set against being three to six times the price of the nearest good alternative, that is a second reason to want them to be clearly better before choosing them."),
+            lead("What this cannot tell you. ",
+                "These are published terms read on one day, not audits, and none of it is a legal opinion. The point is narrower and still worth having: on the two questions that matter - is it kept, is it learned from - four of these six are safe by default and two need something done about them."),
+
+            // ===== 5 =====
+            heading1("5. Signing Up"),
             para("Each of these ends the same way: you reach a page listing your keys, create one, and copy it. The steps below name the destination rather than the exact wording of each button, because the wording changes and the destination does not."),
 
             heading2("Deepgram"),
@@ -345,7 +394,7 @@ const doc = new Document({
             step("Copy a voice identifier from their voice library as well. Cartesia will not speak without one, and the bench has a box for it.", "ca"),
 
             // ===== 5 =====
-            heading1("5. Trying Them Out"),
+            heading1("6. Trying Them Out"),
             para("The comparison tool is prototypes/speech-providers.html in the project folder. Open it in a browser; there is nothing to install."),
             step("Paste in keys for the services you want to compare. Blank ones are simply skipped.", "use"),
             step("Press Check reachability. This confirms a browser can talk to each service at all, and needs no key of your own.", "use"),
@@ -362,13 +411,61 @@ const doc = new Document({
                 "The bench waits for the whole clip before it plays anything, whereas the app starts speaking as soon as the first part arrives. So the numbers are useful against each other and are not what a user would experience."),
 
             // ===== 6 =====
-            heading1("6. What We Already Know"),
+            heading1("7. What We Already Know"),
             lead("A browser can reach all six. ",
                 "Measured on September 2 2026 by asking each service a question with a deliberately wrong key: a plain refusal means the door is open and only the key was bad. All six refused politely. AssemblyAI, included deliberately as a service that should fail, refused to answer at all - which is what proves the test could tell the difference."),
             lead("The obstacle was never technical. ",
                 "Most of these companies advise against putting a key in a web page, which is correct advice for an ordinary website holding one key for all its customers. It does not describe this app, where the key belongs to the user and stays on their device."),
             lead("What has not been tested. ",
                 "Only that the door opens. Not how good the voices sound, how accurate the transcripts are, or how quickly either arrives. That is exactly what the bench is for, and it is why this document ends here rather than recommending one."),
+
+            // ===== 8 =====
+            heading1("8. Future Considerations"),
+            para("Conversant starts with a literate adult using touch, and is meant to reach further than that over time - younger users, other languages, other cultures. The service chosen for speech is one of the few decisions taken now that either helps or hinders that later, which is why it belongs in a document about choosing one."),
+
+            heading2("Why the choice made now matters later"),
+            lead("A service is not only a price and a voice; it is a catalog. ",
+                "Standardizing on one that speaks good American English and little else works perfectly until the first user who is eleven, or Deaf and signing in another language, or living in a household that speaks Spanish at home. At that point a narrow service has to be replaced rather than adjusted - and replacing it means redoing the work rather than changing a setting. A broad catalog is a hedge bought cheaply now."),
+
+            heading2("Younger voices, which is the nearest and most concrete need"),
+            lead("This is a real and long-standing gap in AAC rather than a hypothetical one. ",
+                "For years children using these devices had only adult voices to speak with, and the first genuine children's synthetic voices were made specifically for AAC because the mainstream industry had not produced any. A child who sounds like a middle-aged man to everyone they meet is being misrepresented by their own device, every time they speak."),
+            para("Where the six stand, as of September 2026. This is about what each company offers, not about what has been listened to - and see the caution below."),
+            simpleTable(
+                ["Service", "Breadth of catalog", "Younger voices"],
+                [
+                    [{ text: "Azure Speech", bold: true },
+                     "The widest by a distance - over 600 voices across more than 150 languages and locales",
+                     "Documented child voices exist in the catalog, and the range of ages and accents per language is far larger than anyone else's"],
+                    [{ text: "Google Cloud", bold: true },
+                     "Large, several hundred voices across dozens of languages",
+                     "Several voices per language, though ages are not labeled as such"],
+                    [{ text: "ElevenLabs", bold: true },
+                     "A library of many voices, plus the ability to design or clone one",
+                     "The most flexible in principle: a voice of any age can be made rather than chosen. Cloning carries its own consent questions - see below"],
+                    [{ text: "Cartesia", bold: true },
+                     "A library plus cloning, smaller than ElevenLabs",
+                     "Same shape as ElevenLabs, from a smaller starting catalog"],
+                    [{ text: "Deepgram", bold: true },
+                     "Narrow - a few dozen voices, overwhelmingly English",
+                     "Adult voices. This is its weakest point for where the product is going"],
+                    [{ text: "OpenAI", bold: true },
+                     "Eleven voices, one set, no per-language variants",
+                     "Adult voices, and no mechanism to get anything else"],
+                ], [1800, 3780, 3780]),
+
+            emptyPara(),
+            lead("\u26a0 Take the table as a direction, not an inventory. ",
+                "Nobody here has listened to a child voice from any of these, and none of these companies labels age in a way you can filter on reliably. The definitive answer is one press of Load voices in the bench with a real key, which fetches what that account can actually use - and then listening. Treat the row for a service as a reason to go and check it, not as a finding."),
+
+            heading2("Voice banking, and the harder question under it"),
+            lead("Cloning a voice is the strongest answer to the age problem and the one that needs most care. ",
+                "It is already on this project's list as a valuable future feature, and the services that can do it are the two most expensive. But a cloned voice raises questions that a catalog voice does not: whose voice is it, who agreed, and what happens to that recording afterwards - which loops directly back to the retention terms in section 4. A voice built from a child's recordings, held by a company that keeps what you send, is a different proposition from picking a voice off a list."),
+
+            heading2("Languages and cultures"),
+            para("The same split runs through language support. Azure and Google carry most of the world's widely spoken languages; ElevenLabs and Cartesia cover many; Deepgram and OpenAI are narrower, and Deepgram narrowest of all. Nothing needs deciding about this now, and it is worth knowing which way each door opens before walking through one."),
+            lead("A caution about the app rather than the services. ",
+                "Supporting another language is not only a matter of a voice and a recognizer: the phrases the app ships with, the questions it asks about the user, the words on its own buttons and the assumptions in its prompts are all in English today. A service that speaks fifty languages does not by itself make the product speak any of them. What the service choice decides is whether that work is possible when somebody wants it, or blocked before it starts."),
 
             emptyPara(),
             para("Nothing needs to change today. Deepgram works, is paid for, and has been confirmed on the actual devices. What has changed is that relying on one company is now a choice rather than a constraint - and that is a much better position to be in the next time one of them will not let a tester sign up.",
