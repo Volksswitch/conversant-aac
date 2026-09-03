@@ -141,3 +141,95 @@ test('the two response-card text sizes are wired to separate scales', () => {
     }
     assert.ok(/--hint-font-scale/.test(css), '--hint-font-scale is not used anywhere');
 });
+
+// --- The EDGE layer (Ken, September 3 2026) ------------------------------------
+//
+// WHY THESE EXIST: before this, 26 of the 29 boundaries in the app failed the 3:1
+// that a user-interface boundary needs -- a response card's outline stood out from
+// the page by 1.14:1 -- while every piece of TEXT was comfortably above the bar. The
+// failure is invisible in the worst way: nothing is missing, nothing errors, the
+// screen looks tidy, and a person with reduced contrast sensitivity sees one grey
+// field instead of four cards. So the ratios are recomputed here rather than trusted
+// to the comments beside them, and a new too-light border trips the second test.
+
+function luminance(hex) {
+    let h = hex.replace('#', '');
+    if (h.length === 3) h = h.split('').map(c => c + c).join('');
+    const v = [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16) / 255)
+        .map(c => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+    return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2];
+}
+function ratio(a, b) {
+    const x = luminance(a), y = luminance(b);
+    return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+}
+function token(name) {
+    // Read the declaration by hand rather than building a regex: this ran once as
+    // `--edge:s*(...)` after a shell heredoc ate a backslash, matched nothing, and
+    // reported a token that was plainly there as missing.
+    const at = css.indexOf(name + ':');
+    assert.ok(at >= 0, `${name} is not declared in styles.css`);
+    const value = css.slice(at + name.length + 1, css.indexOf(';', at)).trim();
+    assert.ok(/^#[0-9a-fA-F]{3,6}$/.test(value),
+        `${name} is "${value}" — these tests can only check a plain hex colour`);
+    return value;
+}
+
+// Every background an edge is actually drawn against. An edge only has to clear the
+// bar on the surfaces it appears on -- but these are all of them, and the point of
+// listing them is that a grey light enough to look right on white fails on the dock.
+const SURFACES = {
+    'the page': '#f0f0f0',
+    'white (cards, inputs, panels)': '#ffffff',
+    'the dock': '#e9edf0',
+    'a settings panel': '#eceff1',
+    'the settings tab column': '#f4f5f6',
+    'the preferred card tint': '#eef6ef',
+    'the dispreferred card tint': '#fbf2e6',
+    'the initiative card tint': '#eaf1fa',
+    'the repair card tint': '#f4ecf8',
+};
+
+test('--edge and --edge-strong are visible on every surface in the app', () => {
+    for (const name of ['--edge', '--edge-strong']) {
+        const colour = token(name);
+        for (const [where, bg] of Object.entries(SURFACES)) {
+            const r = ratio(colour, bg);
+            assert.ok(r >= 3,
+                `${name} (${colour}) measures ${r.toFixed(2)}:1 against ${where} (${bg}) — a boundary needs 3:1`);
+        }
+    }
+});
+
+test('--edge-strong is at least as strong as --edge', () => {
+    // The two are a pair: --edge-strong outlines the things you act on. If a change
+    // ever inverted them the names would lie and the emphasis would be backwards.
+    const weak = ratio(token('--edge'), '#f0f0f0');
+    const strong = ratio(token('--edge-strong'), '#f0f0f0');
+    assert.ok(strong >= weak,
+        `--edge-strong (${strong.toFixed(2)}:1) is weaker than --edge (${weak.toFixed(2)}:1) against the page`);
+});
+
+test('no border is drawn in a colour too light to be seen on a light surface', () => {
+    // The tripwire. A literal in a border declaration that clears neither 3:1 against
+    // the page nor near-white is the mistake this whole pass was undoing: it cannot
+    // be a boundary anywhere in a light interface. Near-white IS allowed — a white
+    // border on a dark or saturated fill is a real thing the app does (a chosen
+    // colour swatch, a pressed key).
+    const EXEMPT = new Set([
+        // The scrollbar thumb's border is deliberately TRACK-coloured: it insets the
+        // thumb rather than outlining it, so it is padding, not a boundary.
+        '#e2e6ea',
+    ]);
+    const decl = /border(?:-(?:top|right|bottom|left))?(?:-color)?\s*:[^;{}]*?(#[0-9a-fA-F]{3,6})/g;
+    const bad = [];
+    for (const m of css.matchAll(decl)) {
+        const colour = m[1];
+        if (EXEMPT.has(colour.toLowerCase())) continue;
+        if (luminance(colour) >= 0.85) continue;            // near-white, deliberate
+        const r = ratio(colour, '#f0f0f0');
+        if (r < 3) bad.push(`line ${lineOf(m.index)}: ${colour} is ${r.toFixed(2)}:1 against the page`);
+    }
+    assert.deepEqual(bad, [],
+        `border colours too light to read as a boundary — use var(--edge) or var(--edge-strong):\n  ${bad.join('\n  ')}`);
+});

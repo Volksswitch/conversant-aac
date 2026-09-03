@@ -22,6 +22,12 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.9.6": [
+    "Everything on screen now has a clearly visible outline. The words were always easy to read, but the lines that separate one thing from another — the edge of a response card, the box around the conversation, the outline of a button — were so faint that the screen could look like one gray field with words floating in it. That is hardest on anyone whose eyes struggle with faint differences, which becomes more common with age and is common alongside cerebral palsy. Every one of those lines is now dark enough to make out.",
+    "The empty response spaces that wait at the start of a conversation are visible again. They were faded so far that the four places a suggestion will appear were hard to find before anything had been said.",
+    "The transcript's scroll bar, the warning line that appears when something has gone wrong, and the amber notices are all easier to see for the same reason.",
+    "Nothing moved. Every button and card is in exactly the same place, at exactly the same size, so an existing keyguard still fits."
+  ],
   "0.9.5": [
     "Fixed: the first word of a statement could be missing when the app spoke it in a Deepgram voice. It happened after a quiet stretch — most noticeably when you had spent a while typing in \"In my own words\" — because the sound was starting before the audio had finished waking up. Whole sentences are spoken now.",
     "The “How to say it” boxes no longer try to complete what you are typing. A respelling is meant to be spelled oddly, so guessing the real word there fought you on every letter — and accepting a guess put back the very spelling the voice was getting wrong. Word completion is unchanged everywhere else.",

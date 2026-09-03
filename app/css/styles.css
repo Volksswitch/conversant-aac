@@ -51,6 +51,37 @@
     --ink: #1a1a1a;
     --header: #2c3e50;
 
+    /* --- The EDGE layer: every line that says where one thing ends and the next
+       begins (Ken, September 3 2026). Measured before this existed: the app's TEXT
+       was excellent everywhere (15.8:1 on a response card, 11.2:1 in a partner
+       bubble) and its BOUNDARIES were invisible -- a response card's outline stood
+       out from the page by 1.14:1 against the 3:1 the standard asks for, the
+       conversation box by 1.62, the transcript's scrollbar by 2.38, and 26 of the
+       29 boundaries audited failed. For reduced contrast sensitivity -- ordinary
+       with age and cataracts, and common alongside cerebral palsy -- that is the
+       difference between seeing four separate cards and seeing one grey field with
+       words floating in it. So more contrast on the TEXT was never the fix; the
+       lines around things were.
+
+       Three weights, and the split is by JOB rather than by taste, so a later
+       colour scheme can move all three together and keep the relationships:
+         --edge-strong  the boundary of something you act on -- a response card, the
+                        conversation box, a key, the scrollbar you drag.
+         --edge         ordinary containers and inputs.
+         --edge-subtle  a rule that merely groups (a toolbar underline). This one is
+                        DECORATIVE and is deliberately allowed below 3:1: nothing is
+                        lost if it is not seen. Never put a component's own outline
+                        here -- if losing the line loses the boundary, it is --edge.
+       Both --edge and --edge-strong clear 3:1 against EVERY background in the app,
+       not merely the page: white, the dock, the settings panel, the four card tints
+       and the tab column. That is why they are slate rather than a plain grey --
+       a grey light enough to look right on white fails on the dock. Verified by
+       tests/styles.test.mjs, which recomputes the ratios rather than trusting these
+       comments. --- */
+    --edge-strong: #546E7A;   /* worst case 4.59:1 */
+    --edge: #6f7b85;          /* worst case 3.68:1 */
+    --edge-subtle: #c4ccd2;   /* decorative only -- see above */
+
     /* --- The DOCK region (Spatial Stability, Ken June 2026). The keyboard /
        Express Panel footprint is ONE fixed region used identically on EVERY
        screen (conversation, About Me, Settings) so a single physical keyguard
@@ -218,7 +249,7 @@ body {
     gap: 0.15rem;
     text-align: left;
     background: #fff;
-    border: 2px solid #cbd5dd;
+    border: 2px solid var(--edge);
     border-left: 6px solid var(--slot-initiative);
     border-radius: 8px;
     padding: 0.6rem 0.9rem;
@@ -322,8 +353,8 @@ body.conv-side #dockArea {
     width: var(--dock-w);
     z-index: 50;
 }
-body.conv-side-right #dockArea { right: var(--app-margin); border-left: 1px solid #c4ccd2; }
-body.conv-side-left  #dockArea { left: var(--app-margin);  border-right: 1px solid #c4ccd2; }
+body.conv-side-right #dockArea { right: var(--app-margin); border-left: 1px solid var(--edge); }
+body.conv-side-left  #dockArea { left: var(--app-margin);  border-right: 1px solid var(--edge); }
 /* Reserve the dock width PLUS the separation gap, so the main content stops
    --dock-sep short of the fixed dock and the page background shows between them.
    --app-margin is added back because this shorthand-overriding longhand would
@@ -334,7 +365,7 @@ body.conv-side-right #conversationMain { padding-right: calc(var(--app-margin) +
 body.conv-side-left  #conversationMain { padding-left: calc(var(--app-margin) + var(--dock-w) + var(--dock-sep)); }
 /* FIXED bottom dock height so the Express Panel and the keyboard occupy the
    identical band (one keyguard). margin-top opens the separation gap above it. */
-body.conv-bottom #dockArea { width: 100%; height: var(--dock-h); flex: 0 0 var(--dock-h); margin-top: var(--dock-sep); border-top: 1px solid #c4ccd2; }
+body.conv-bottom #dockArea { width: 100%; height: var(--dock-h); flex: 0 0 var(--dock-h); margin-top: var(--dock-sep); border-top: 1px solid var(--edge); }
 
 /* ============================================================================
    CONVERSATION default percentage layout (Ken, June 30 2026).
@@ -474,15 +505,15 @@ body.conv-bottom #expressPanel.ep-in-settings {
     right: var(--app-margin);
     bottom: var(--app-margin);
     height: var(--dock-h);
-    border-top: 1px solid #c4ccd2;
+    border-top: 1px solid var(--edge);
 }
 body.conv-side #expressPanel.ep-in-settings {
     top: var(--app-margin);
     bottom: var(--app-margin);
     width: var(--dock-w);
 }
-body.conv-side-right #expressPanel.ep-in-settings { right: var(--app-margin); border-left: 1px solid #c4ccd2; }
-body.conv-side-left  #expressPanel.ep-in-settings { left: var(--app-margin);  border-right: 1px solid #c4ccd2; }
+body.conv-side-right #expressPanel.ep-in-settings { right: var(--app-margin); border-left: 1px solid var(--edge); }
+body.conv-side-left  #expressPanel.ep-in-settings { left: var(--app-margin);  border-right: 1px solid var(--edge); }
 
 #epGrid {
     flex: 1 1 auto;
@@ -559,7 +590,7 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
     min-height: 3rem;
     overflow-y: auto;
     background: transparent;     /* not an input — no light card background */
-    border: 1px solid #b7c0c8;   /* delineate the conversation box */
+    border: 1px solid var(--edge-strong);   /* delineate the conversation box */
     border-radius: 8px;
     padding: 0.5rem 0.75rem;
     box-shadow: none;
@@ -578,7 +609,7 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
     border-radius: 11px;
 }
 .transcript-log::-webkit-scrollbar-thumb {
-    background: #8a97a4;
+    background: var(--edge-strong);
     border-radius: 11px;
     border: 3px solid #e2e6ea;   /* track-coloured inset around the thumb */
 }
@@ -593,7 +624,12 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
    reset. */
 .transcript-log.has-error {
     background: rgba(220, 53, 69, 0.08);
-    border-color: rgba(220, 53, 69, 0.55);
+    /* Opaque, not the original 55% (Ken, September 3 2026). The wash is meant to be
+       faint -- that is the whole design -- but the BORDER is the part that says
+       "something went wrong here", and at 55% it measured 2.1:1 against the washed
+       interior, so the one signal the app gives for an error was itself hard to see.
+       The fill keeps its 8%; only the line firms up. */
+    border-color: #dc3545;
 }
 
 /* Turn entries — partner vs user styled DIFFERENTLY (distinct font, color,
@@ -617,6 +653,7 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
 .turn-partner {
     margin-right: auto;
     background: #e9eef2;
+    border: 1px solid var(--edge);
     color: #243240;
     font-family: Georgia, "Times New Roman", serif;  /* partner: serif */
     border-bottom-left-radius: 2px;
@@ -624,6 +661,7 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
 .turn-user {
     margin-left: auto;
     background: #e3f0fb;
+    border: 1px solid #4d7ba8;
     color: #0f3f72;
     font-family: system-ui, -apple-system, sans-serif;  /* user: sans */
     font-weight: 600;
@@ -642,7 +680,7 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
     margin-right: 0;
     background: #fff8e1;
     color: #5d4200;
-    border-left: 4px solid var(--slot-dispreferred, #F9A825);
+    border-left: 4px solid var(--slot-dispreferred, #B26A00);
     border-radius: 6px;
     font-family: system-ui, -apple-system, sans-serif;
     /* The "where is it" hint is added to the instruction on a second line. The line
@@ -735,7 +773,7 @@ body.conv-bottom .ep-row { flex: 1 1 0; }
 }
 .cmd-btn:active { transform: translateY(1px); }
 .cmd-btn-end {
-    border-color: #e0a4a0;
+    border-color: #c0392b;
     color: #c0392b;
 }
 .cmd-btn-end:focus-visible {
@@ -851,13 +889,13 @@ body.conv-bottom .palette-grid {
     gap: 0.75rem;
     padding: 1rem;
     text-align: center;
-    border: 2px dashed var(--slot-dispreferred, #d9822b);
+    border: 2px dashed var(--slot-dispreferred, #B26A00);
     border-radius: 10px;
     background: rgba(217, 130, 43, 0.08);
 }
 .response-error-msg { margin: 0; color: #8a4b00; font-weight: 600; }
 .response-error-retry {
-    border: 2px solid var(--slot-dispreferred, #d9822b);
+    border: 2px solid var(--slot-dispreferred, #B26A00);
     background: #fff;
     color: #8a4b00;
     border-radius: 8px;
@@ -876,7 +914,7 @@ body.conv-bottom .palette-grid {
     white-space: pre;
     overflow: auto;
     resize: vertical;
-    border: 1px solid #ccc;
+    border: 1px solid var(--edge);
     border-radius: 6px;
     padding: 0.5rem;
     background: #fafafa;
@@ -943,7 +981,6 @@ body.conv-bottom .palette-grid {
     border-style: dashed;
     box-shadow: none;
     cursor: default;
-    opacity: 0.6;
     pointer-events: none;
 }
 
@@ -1052,7 +1089,7 @@ body.conv-bottom .palette-grid {
     gap: clamp(0.2rem, 0.6vh, 0.45rem);
     text-align: left;
     background: #fff;
-    border: 2px solid #dee2e6;
+    border: 2px solid var(--edge-strong);
     border-left-width: 6px;
     border-radius: 10px;
     /* vertical padding → vh, horizontal padding → vw (independent axes). */
@@ -1377,12 +1414,18 @@ body.conv-bottom .palette-grid {
 /* An undefined position still reads as part of its band, which is what makes the
    Context band's floor of four tolerable: four reserved outlines rather than four
    holes. Color only - never a box property, or the cell would measure differently
-   from a defined one and every cell after it would shift (see tests/styles). */
+   from a defined one and every cell after it would shift (see tests/styles).
+   65%, not the original 30% (Ken, September 3 2026): this rule overrides the
+   border-colour that .ep-btn.ep-undefined sets, so it was silently undoing that
+   rule's own fix -- 30% measured 1.6:1 against the dock where the base rule is a
+   deliberate 3.7:1, and a reserved cell nobody can see is the exact failure the
+   base rule was written to stop. 65% is the weakest mix that clears 3:1 for all
+   three bands (the Flex green is the binding one at 3.12:1). */
 .ep-btn.ep-undefined.ep-band-always,
 .ep-btn.ep-undefined.ep-band-context,
 .ep-btn.ep-undefined.ep-band-flex {
     background: transparent;
-    border-color: color-mix(in srgb, var(--band-color) 30%, transparent);
+    border-color: color-mix(in srgb, var(--band-color) 65%, transparent);
 }
 
 /* Word-wrap the phrase onto multiple lines (less need for ellipsis); clamp to
@@ -1504,7 +1547,7 @@ body.conv-bottom .palette-grid {
        the frame closes, but in a quieter grey than the outline: at full strength a
        heavy bar on every unused cell reads as a category colour, which is the one
        thing an undefined cell must not look like. */
-    border-left-color: #aebbc3;
+    border-left-color: var(--edge);
     box-shadow: none;
 }
 
@@ -1689,7 +1732,7 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
 /* The invitation shown until a button is tapped, and the whole-panel Reset that has
    nowhere else to live once the tab shows one button at a time. */
 .ee-prompt { display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; }
-.ee-prompt .ee-reset { background: #fff; color: #c0392b; border: 1px solid #e0a4a0; border-radius: 6px; padding: 0.4rem 0.7rem; cursor: pointer; }
+.ee-prompt .ee-reset { background: #fff; color: #c0392b; border: 1px solid #c0392b; border-radius: 6px; padding: 0.4rem 0.7rem; cursor: pointer; }
 .ee-prompt .ee-reset:hover { background: #c0392b; color: #fff; }
 
 /* ⚠ .ee-row AND .ee-tools ARE SHARED WITH THE CONTROLS EDITOR (control-phrases-editor
@@ -1698,7 +1741,7 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
    #expressEditor. Changing the base rules is what would silently restack the Controls
    tab. */
 .ee-list { display: flex; flex-direction: column; gap: 0.35rem; }
-.ee-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem; border: 1px solid #d6dde2; border-radius: 8px; background: #fff; }
+.ee-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem; border: 1px solid var(--edge); border-radius: 8px; background: #fff; }
 
 /* ⚠ THE EXPRESS CARD IS A COLUMN, NOT A ROW, AND THAT IS THE FIX. As a single row the
    fields, seven colour swatches and six tools could not all fit a narrow side dock,
@@ -1723,10 +1766,10 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
    easy to miss — this says which one the tap landed on. */
 .ee-row.ee-row-picked { border-color: #2c7a3f; box-shadow: 0 0 0 2px rgba(44, 122, 63, 0.25); }
 .ee-fields { display: flex; flex: 1 1 auto; gap: 0.4rem; flex-wrap: wrap; min-width: 0; }
-.ee-fields input, .ee-fields select { flex: 1 1 8rem; min-width: 0; padding: 0.35rem 0.5rem; border: 1px solid #c4ccd2; border-radius: 6px; font-size: 0.95rem; }
+.ee-fields input, .ee-fields select { flex: 1 1 8rem; min-width: 0; padding: 0.35rem 0.5rem; border: 1px solid var(--edge); border-radius: 6px; font-size: 0.95rem; }
 .ee-fields .ee-name-select { flex: 2 1 16rem; } /* the "Choose a name" dropdown — twice as wide */
 .ee-tools { flex: 0 0 auto; display: flex; gap: 0.25rem; }
-.ee-tools button { width: 2rem; height: 2rem; border: 1px solid #c4ccd2; background: #f4f6f8; border-radius: 6px; cursor: pointer; font-size: 1rem; line-height: 1; }
+.ee-tools button { width: 2rem; height: 2rem; border: 1px solid var(--edge); background: #f4f6f8; border-radius: 6px; cursor: pointer; font-size: 1rem; line-height: 1; }
 /* The Express card's actions WRAP, which the old fixed row of icon tools did not —
    that is what overflowed on a narrow tab. Text labels because this is a
    supporter-assisted Settings overlay, which Rule 12's scope note exempts from
@@ -1734,10 +1777,10 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
 #expressEditor .ee-tools { flex-wrap: wrap; gap: 0.35rem; }
 #expressEditor .ee-tools button { width: auto; padding: 0 0.7rem; font-size: 0.95rem; }
 .ee-tools button:disabled { opacity: 0.35; cursor: default; }
-.ee-tools .ee-del { color: #c0392b; border-color: #e0a4a0; }
+.ee-tools .ee-del { color: #c0392b; border-color: #c0392b; }
 /* "Hear this phrase" — the same blue as About Me's "Speak my answer" and Sound
    Check's per-candidate speaker, so one look means one thing across every editor. */
-.ee-tools .ee-hear { background: #e3f2fd; border-color: #90caf9; color: #1565c0; }
+.ee-tools .ee-hear { background: #e3f2fd; border-color: var(--slot-initiative); color: #1565c0; }
 /* Done closes the card, so it reads as the primary way out — and sits last, away from
    Delete, which is the one button here that cannot be undone. */
 .ee-tools .ee-done { background: #2c7a3f; color: #fff; border: none; font-weight: 600; }
@@ -1788,13 +1831,13 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
 .cpe-section { margin-bottom: 1.1rem; }
 .cpe-section > label { display: block; font-weight: 600; margin-bottom: 0.2rem; }
 .cpe-section .ee-row { margin-top: 0.35rem; }
-.cpe-section .ee-row > input { flex: 1 1 auto; min-width: 0; padding: 0.4rem 0.5rem; border: 1px solid #c4ccd2; border-radius: 6px; font-size: 0.95rem; }
+.cpe-section .ee-row > input { flex: 1 1 auto; min-width: 0; padding: 0.4rem 0.5rem; border: 1px solid var(--edge); border-radius: 6px; font-size: 0.95rem; }
 #controlEditor .ee-add,
 #placeholderEditor .ee-add { margin-top: 0.45rem; background: #2c3e50; color: #fff; border: none; border-radius: 6px; padding: 0.4rem 0.7rem; font-weight: 600; cursor: pointer; }
 #controlEditor .ee-add:hover,
 #placeholderEditor .ee-add:hover { filter: brightness(1.1); }
 #controlEditor .ee-reset,
-#placeholderEditor .ee-reset { display: inline-block; margin-top: 0.5rem; background: #fff; color: #c0392b; border: 1px solid #e0a4a0; border-radius: 6px; padding: 0.45rem 0.8rem; cursor: pointer; }
+#placeholderEditor .ee-reset { display: inline-block; margin-top: 0.5rem; background: #fff; color: #c0392b; border: 1px solid #c0392b; border-radius: 6px; padding: 0.45rem 0.8rem; cursor: pointer; }
 #controlEditor .ee-reset:hover,
 #placeholderEditor .ee-reset:hover { background: #c0392b; color: #fff; }
 
@@ -1899,7 +1942,7 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
 .session-btn-end {
     background: #fff;
     color: #c0392b;
-    border: 2px solid #e0a4a0;
+    border: 2px solid #c0392b;
 }
 
 /* Region D — composer access. */
@@ -1908,7 +1951,7 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
 #composerInput {
     width: 100%;
     padding: 0.6rem;
-    border: 1px solid #ccc;
+    border: 1px solid var(--edge);
     border-radius: 6px;
     font-family: inherit;
     /* User-settable "In my own words" text size (Settings → Speech & Input). */
@@ -2037,7 +2080,7 @@ dialog::backdrop {
        separates it from the #f4f5f6 tab strip below, which is a near neighbour. */
     background: #dfe4e8;
     color: #2c3e50;
-    border-bottom: 1px solid #c4ccd2;
+    border-bottom: 1px solid var(--edge);
     user-select: none;
     flex-shrink: 0;
 }
@@ -2150,7 +2193,7 @@ dialog::backdrop {
 #settingsTabs {
     width: var(--settings-tabs-w);
     background: #f4f5f6;
-    border-right: 1px solid #ddd;
+    border-right: 1px solid var(--edge);
     padding-top: 0.75rem;
     flex-shrink: 0;
     overflow-y: auto;
@@ -2225,7 +2268,7 @@ dialog::backdrop {
     align-items: center;
     gap: 0.6rem;
     background: #eceff1;
-    border: 1px solid var(--border, #d7dde3);
+    border: 1px solid var(--border, var(--edge));
     border-radius: 8px;
 }
 .setting-group > details > summary::-webkit-details-marker { display: none; }
@@ -2244,7 +2287,7 @@ dialog::backdrop {
 .setting-group > details > .sg-body {
     margin-left: 0.75rem;
     padding: 0.5rem 0.1rem 0.3rem 0.85rem;
-    border-left: 2px solid var(--border, #d7dde3);
+    border-left: 2px solid var(--border, var(--edge));
 }
 
 /* A control (or a radio group, or a slider with its steppers) INSIDE a section that
@@ -2291,7 +2334,7 @@ dialog select,
 dialog textarea {
     width: 100%;
     padding: 0.5rem;
-    border: 1px solid #ccc;
+    border: 1px solid var(--edge);
     border-radius: 4px;
     font-size: 1rem;
 }
@@ -2346,7 +2389,7 @@ dialog select {
     flex: 0 0 auto;
     padding: 0.5rem 0.9rem;
     border-radius: 4px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--edge);
     background: #f5f5f5;
     cursor: pointer;
 }
@@ -2367,7 +2410,7 @@ dialog select {
     flex: 0 0 auto;
     padding: 0.5rem 0.9rem;
     border-radius: 4px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--edge);
     background: #fff;
     cursor: pointer;
     font-size: 0.9rem;
@@ -2380,7 +2423,7 @@ dialog select {
     flex: 0 0 auto;
     padding: 0.5rem 0.9rem;
     border-radius: 4px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--edge);
     background: #fff;
     cursor: pointer;
 }
@@ -2406,8 +2449,8 @@ dialog select {
     flex: 0 0 auto;
     max-width: 34rem;
     background: #fff8e6;
-    border: 1px solid #e6c34a;
-    border-left: 6px solid #d99a00;
+    border: 1px solid var(--slot-dispreferred);
+    border-left: 6px solid var(--slot-dispreferred);
     border-radius: 8px;
     padding: 1rem 1.25rem;
     text-align: center;
@@ -2422,15 +2465,15 @@ dialog select {
     flex: 0 0 auto;
     max-width: 34rem;
     background: #fff8e6;
-    border: 1px solid #e6c34a;
-    border-left: 6px solid #d99a00;
+    border: 1px solid var(--slot-dispreferred);
+    border-left: 6px solid var(--slot-dispreferred);
     border-radius: 8px;
     padding: 1rem 1.25rem;
     text-align: center;
 }
 #startupError {
     background: #fdf1f1;
-    border-color: #e2a2a2;
+    border-color: #c0392b;
     border-left-color: #c0392b;
 }
 #startupError .apikey-prompt-title { color: #8a2620; }
@@ -2454,7 +2497,7 @@ dialog select {
 }
 #apiKeyPromptBtn,
 #folderReconnectBtn {
-    background: #fff; color: #7a5300; border: 2px solid #d99a00;
+    background: #fff; color: #7a5300; border: 2px solid var(--slot-dispreferred);
     padding: 0.7rem 1.4rem; border-radius: 8px; font-size: 1rem; cursor: pointer;
 }
 #apiKeyPromptBtn:hover,
@@ -2481,7 +2524,7 @@ dialog select {
     margin-top: 0.4rem;
     padding: 0.5rem;
     border-radius: 4px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--edge);
     cursor: pointer;
     font-size: 1rem;
 }
@@ -2512,7 +2555,7 @@ dialog select {
 #pickFolderBtn {
     padding: 0.3rem 0.7rem;
     border-radius: 4px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--edge);
     cursor: pointer;
     font-size: 0.85rem;
     white-space: nowrap;
@@ -2569,7 +2612,7 @@ dialog select {
     flex: 0 0 auto;
     width: 2.6rem;
     padding: 0;
-    border: 1px solid #bbb;
+    border: 1px solid var(--edge);
     border-radius: 6px;
     background: #fff;
     color: #2c3e50;
@@ -2584,7 +2627,7 @@ dialog select {
 .reset-sizing-btn {
     width: 100%;
     padding: 0.45rem 0.7rem;
-    border: 1px solid #bbb;
+    border: 1px solid var(--edge);
     border-radius: 6px;
     background: #fff;
     color: #2c3e50;
@@ -2736,7 +2779,7 @@ label.radio-label input[type="radio"] {
 #resetUsageBtn {
     padding: 0.3rem 0.7rem;
     border-radius: 4px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--edge);
     cursor: pointer;
     font-size: 0.85rem;
 }
@@ -2794,7 +2837,7 @@ label.radio-label input[type="radio"] {
 
 #worldviewContent::-webkit-scrollbar-thumb,
 #settingsContent::-webkit-scrollbar-thumb {
-    background: #8a97a4;
+    background: var(--edge-strong);
     border-radius: 11px;
     border: 3px solid #e2e6ea;   /* track-coloured inset around the thumb */
 }
@@ -2847,7 +2890,7 @@ label.radio-label input[type="radio"] {
    default so the person form stays short; everything inside defaults to neutral,
    so a person whose section was never opened is unaffected. */
 .wv-partner-profile {
-    border-top: 1px solid var(--border, #d7dde3);
+    border-top: 1px solid var(--border, var(--edge));
     margin: 0.5rem 0;
     padding-top: 0.5rem;
 }
@@ -2867,7 +2910,7 @@ label.radio-label input[type="radio"] {
     align-items: center;
     gap: 0.6rem;
     background: #eceff1;
-    border: 1px solid var(--border, #d7dde3);
+    border: 1px solid var(--border, var(--edge));
     border-radius: 8px;
 }
 .wv-partner-profile > summary:hover { background: #e2e7ea; }
@@ -2976,7 +3019,7 @@ label.radio-label input[type="radio"] {
     flex: 0 0 auto;
     min-width: var(--btn-min-dim);
     min-height: var(--btn-min-dim);
-    border: 1px solid #e0a4a0;
+    border: 1px solid #c0392b;
     background: #fff;
     color: #c0392b;
     border-radius: 6px;
@@ -3008,7 +3051,7 @@ label.radio-label input[type="radio"] {
 .wv-badge-private {
     background: #e8eaf6;
     color: #3949ab;
-    border: 1px solid #9fa8da;
+    border: 1px solid #5c6bc0;
 }
 
 /* Privacy note on questionnaire fields that are private by default (e.g. A5) */
@@ -3026,7 +3069,7 @@ label.radio-label input[type="radio"] {
     font-size: 0.85rem;
     color: #5c6bc0;
     background: #f3f4ff;
-    border: 1px solid #c5cae9;
+    border: 1px solid #5c6bc0;
     border-radius: 6px;
     padding: 0.6rem 0.75rem;
     margin-bottom: 0.75rem;
@@ -3051,12 +3094,12 @@ label.radio-label input[type="radio"] {
 .wv-person-tag-lives {
     background: #e8f5e9;
     color: #2e7d32;
-    border: 1px solid #a5d6a7;
+    border: 1px solid var(--slot-preferred);
 }
 
 .wv-folder-prompt {
     background: #e3f2fd;
-    border: 1px solid #90caf9;
+    border: 1px solid var(--slot-initiative);
     border-radius: 8px;
     padding: 1rem;
     margin-bottom: 1.25rem;
@@ -3094,7 +3137,7 @@ label.radio-label input[type="radio"] {
     width: 100%;
     text-align: left;
     background: white;
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--edge);
     border-radius: 8px;
     padding: 0.9rem 1rem;
     margin-bottom: 0.5rem;
@@ -3152,7 +3195,7 @@ label.radio-label input[type="radio"] {
 
 .wv-card {
     background: white;
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--edge);
     border-radius: 8px;
     padding: 1rem;
     margin-bottom: 0.75rem;
@@ -3163,8 +3206,8 @@ label.radio-label input[type="radio"] {
 }
 
 @keyframes wv-flash {
-    0% { border-color: #ffca28; box-shadow: 0 0 0 3px rgba(255, 202, 40, 0.4); }
-    100% { border-color: #e0e0e0; box-shadow: none; }
+    0% { border-color: var(--slot-dispreferred); box-shadow: 0 0 0 3px rgba(178, 106, 0, 0.55); }
+    100% { border-color: var(--edge); box-shadow: none; }
 }
 
 .wv-card-head {
@@ -3208,7 +3251,7 @@ label.radio-label input[type="radio"] {
 
 .wv-chip {
     background: #f8f9fa;
-    border: 2px solid #dee2e6;
+    border: 2px solid var(--edge);
     border-radius: 20px;
     padding: 0.45rem 0.9rem;
     font-size: 0.95rem;
@@ -3236,7 +3279,7 @@ label.radio-label input[type="radio"] {
     flex: 1;
     min-width: 0;
     padding: 0.5rem;
-    border: 1px solid #ccc;
+    border: 1px solid var(--edge);
     border-radius: 6px;
     font-size: 1rem;
     font-family: inherit;
@@ -3359,7 +3402,7 @@ body.conv-bottom     .danger-dialog {
     line-height: 1.4;
     color: #333;
     background: #fafafa;
-    border: 1px solid #ccc;
+    border: 1px solid var(--edge);
     border-radius: 4px;
     resize: vertical;
     overflow: auto;
@@ -3410,7 +3453,7 @@ body.conv-bottom     .danger-dialog {
 
 .danger-cancel {
     background: #f0f0f0;
-    border: 1px solid #ccc;
+    border: 1px solid var(--edge);
     color: #333;
 }
 
@@ -3443,7 +3486,7 @@ body.conv-bottom     .danger-dialog {
     display: flex;
     flex-direction: column;
     background: #fff;
-    border: 1px solid #b7c0c8;              /* match the conversation box */
+    border: 1px solid var(--edge);              /* match the conversation box */
     border-top: 6px solid var(--slot-initiative);
     border-radius: 8px;
     padding: 0.75rem 1rem;
@@ -3516,7 +3559,7 @@ body.conv-bottom     .danger-dialog {
 .wv-select {
     width: 100%;
     padding: 0.5rem;
-    border: 1px solid #ccc;
+    border: 1px solid var(--edge);
     border-radius: 6px;
     font-size: 1rem;
     font-family: inherit;
@@ -3559,7 +3602,7 @@ body.conv-bottom     .danger-dialog {
     padding: 0.5rem 0.9rem;
     font-size: 0.95rem;
     cursor: pointer;
-    border: 1px solid #ccc;
+    border: 1px solid var(--edge);
     background: #f8f9fa;
 }
 
@@ -3571,7 +3614,7 @@ body.conv-bottom     .danger-dialog {
 
 .wv-btn-speak {
     background: #e3f2fd;
-    border-color: #90caf9;
+    border-color: var(--slot-initiative);
     color: #1565c0;
 }
 
@@ -3607,7 +3650,7 @@ body.conv-bottom     .danger-dialog {
 
 .wv-btn-danger {
     background: #fff;
-    border-color: #e57373;
+    border-color: #c0392b;
     color: #c62828;
 }
 
@@ -3653,7 +3696,7 @@ body.conv-bottom     .danger-dialog {
     right: var(--app-margin);
     bottom: var(--app-margin);
     height: var(--dock-h);   /* exactly fills the bottom dock band (= #dockArea) */
-    border-top: 1px solid #c4ccd2;
+    border-top: 1px solid var(--edge);
     box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.18);
     /* ½·gap surround (matches #expressPanel); keep the safe-area inset at the bottom. */
     padding: calc(var(--grid-gap) / 2) calc(var(--grid-gap) / 2) calc(var(--grid-gap) / 2 + var(--safe-bottom));
@@ -3676,13 +3719,13 @@ body.conv-bottom     .danger-dialog {
 
 #appKeyboard.kbd-dock-side.kbd-side-right {
     right: var(--app-margin);
-    border-left: 1px solid #c4ccd2;
+    border-left: 1px solid var(--edge);
     box-shadow: -4px 0 16px rgba(0, 0, 0, 0.18);
 }
 
 #appKeyboard.kbd-dock-side.kbd-side-left {
     left: var(--app-margin);
-    border-right: 1px solid #c4ccd2;
+    border-right: 1px solid var(--edge);
     box-shadow: 4px 0 16px rgba(0, 0, 0, 0.18);
 }
 
@@ -3740,7 +3783,7 @@ body.conv-bottom     .danger-dialog {
     min-width: 0;
     /* Window-aware height: scales with the viewport, clamped to sane bounds. */
     min-height: clamp(2.2rem, 7.5vh, 4rem);
-    border: 1px solid #b8c0c6;
+    border: 1px solid var(--edge);
     border-radius: 8px;
     background: #fff;
     color: #1a1a1a;
@@ -3901,7 +3944,7 @@ body.conv-bottom     .danger-dialog {
     min-height: var(--btn-min-dim);
     text-align: left;
     padding: 0.6rem 0.8rem;
-    border: 1px solid #b0bec5;
+    border: 1px solid var(--edge);
     border-left: 5px solid var(--slot-preferred, #2E7D32);
     border-radius: 8px;
     background: #fff;
@@ -3961,7 +4004,7 @@ body.conv-bottom     .danger-dialog {
     align-items: center;
     padding: 0.35rem 0;
     margin-bottom: 0.4rem;
-    border-bottom: 1px solid #e3e9ed;
+    border-bottom: 1px solid var(--edge-subtle);
     position: sticky;
     top: 0;
     background: var(--panel-bg, #fff);
@@ -3976,7 +4019,7 @@ body.conv-bottom     .danger-dialog {
 }
 /* A row is a row again: the words, how to say them, and a speaker. */
 #expressEditor .ee-row { flex-direction: row; align-items: center; padding: 0.35rem; }
-#expressEditor .ee-input { flex: 1 1 8rem; min-width: 0; font: inherit; padding: 0.35rem 0.45rem; border: 1px solid #bbc7cd; border-radius: 6px; }
+#expressEditor .ee-input { flex: 1 1 8rem; min-width: 0; font: inherit; padding: 0.35rem 0.45rem; border: 1px solid var(--edge); border-radius: 6px; }
 #expressEditor .ee-kind { flex: 0 0 auto; font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #4E342E; min-width: 4.2rem; }
 #expressEditor .ee-note { font-size: 0.85rem; color: #55606a; margin: 0.2rem 0 0.5rem; }
 
@@ -3992,7 +4035,7 @@ body.conv-bottom     .danger-dialog {
     padding: 0.5rem;
     margin-bottom: 0.5rem;
     background: #fff8e1;
-    border-left: 4px solid #F9A825;
+    border-left: 4px solid var(--slot-dispreferred);
     border-radius: 6px;
     font-weight: 700;
 }
@@ -4020,7 +4063,7 @@ body.conv-bottom     .danger-dialog {
     font-weight: 700;
     color: #8a5300;
     background: #fff3e0;
-    border-top: 2px dashed #e0a44a;
+    border-top: 2px dashed #a06600;
 }
 
 /* ROOM BENEATH THE LAST CONTROL, so a dropdown can open downward.

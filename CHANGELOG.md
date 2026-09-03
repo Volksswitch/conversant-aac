@@ -26,6 +26,21 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Everything on screen now has a clearly visible outline. The words were always easy
+  to read, but the lines that separate one thing from another — the edge of a response
+  card, the box around the conversation, the outline of a button — were so faint that
+  the screen could look like one gray field with words floating in it. That is hardest
+  on anyone whose eyes struggle with faint differences, which becomes more common with
+  age and is common alongside cerebral palsy. Every one of those lines is now dark
+  enough to make out.
+- The empty response spaces that wait at the start of a conversation are visible again.
+  They were faded so far that the four places a suggestion will appear were hard to
+  find before anything had been said.
+- The transcript's scroll bar, the warning line that appears when something has gone
+  wrong, and the amber notices are all easier to see for the same reason.
+- Nothing moved. Every button and card is in exactly the same place, at exactly the
+  same size, so an existing keyguard still fits.
+
 
 ## Version 0.9.5
 
