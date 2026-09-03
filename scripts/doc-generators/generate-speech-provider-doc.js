@@ -305,9 +305,11 @@ const doc = new Document({
             heading2("OpenAI"),
             para("The cheapest of the six overall on these figures, with no free allowance."),
             step("Go to platform.openai.com and create an account, or sign in with one you already have.", "oa"),
-            step("Add a payment method and put a small amount of credit on the account. Nothing works until there is credit.", "oa"),
+            step("Add a payment method and put a small amount of credit on the account. Nothing works until there is credit. The minimum is five dollars, and that is enough to test with.", "oa"),
             step("Set a monthly spending limit while you are there. This is the most useful minute you will spend on any of these services.", "oa"),
-            step("Go to the API keys page and create a key.", "oa"),
+            step("Go to the API keys page and create a key. You are not asked what it is for - an OpenAI key works for everything the account can reach, unlike an Azure key, which belongs to one service.", "oa"),
+            lead("⚠ A free ChatGPT plan does not pay for this, and the error says something else. ",
+                "The chat website and the developer service are billed separately, so an account that has never paid has no credit here however much free use the website allows. What makes it hard to place is the answer you get: OpenAI reports having no credit with the same code it uses for too many requests, so it reads as a traffic problem when it is a billing one. Confirmed on September 3 2026 - adding the five dollar minimum turned it on and the voices worked immediately."),
 
             heading2("Google Cloud"),
             para("The largest recurring free allowance for speaking, and the fiddliest sign-up, because speaking and hearing are two separate services that each have to be switched on."),

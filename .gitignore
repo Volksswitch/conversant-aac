@@ -69,6 +69,9 @@ tests/.anthropic-key*
 .openai-key.*
 *openai*key*
 *oai-key*
+
+# Audio written by scripts/test-openai-speech.mjs so the voice can be listened to.
+scripts/hello.mp3
 deepgram-probe-audio/
 
 # Exported beta reports and anything saved out of the Sheet.
