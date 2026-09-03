@@ -1161,6 +1161,31 @@ per month**, which for a beta tester plausibly means no card and no bill. It sup
 SSML, which is the lever the *Shaping-Speech-Through-Text* work found the browser
 voices do not give us.
 
+**THE BENCH AND THE GUIDE (September 2 2026).** `prototypes/speech-providers.html` is a
+self-contained page that hears the voices and reads the transcripts side by side - one
+sentence through every voice, ONE recording through every recognizer, so what is compared
+is the services and not the room. It carries the reachability probe above, re-runnable.
+`Documents/Conversant AAC Speech Provider Guide.docx` carries the costs and the sign-up
+steps (generator `generate-speech-provider-doc.js`).
+- **⚠ A WEBSOCKET CANNOT BE PROBED WITH A WRONG KEY, and the first version of the bench
+  got this wrong in the most embarrassing possible direction: it reported DEEPGRAM AS
+  BLOCKED**, the one service we know works. A browser is never told why a websocket
+  handshake failed - "your key is refused" and "no such service" are both close code
+  1006, with nothing to separate them. So the bench now checks websocket services with a
+  REAL key and says "cannot tell" without one. **Generalize it: a check that cannot
+  distinguish two outcomes must report that, not pick one.**
+- **THE COST HEADLINE, list prices September 2 2026: Azure is FREE for a light user,
+  permanently** - 500,000 characters and 5 audio hours renew monthly and never expire,
+  where Deepgram's $200 is one-time. **Nobody wins both halves**: Azure speaks at about
+  half Deepgram's price ($16 vs $30 per million characters) and hears at about twice it
+  ($1.00 vs $0.46 per hour). On most devices hearing is free anyway, which settles it
+  toward Azure for the majority. **The AI is billed separately and is likely the larger
+  number** - do not choose a speech service as though it were the whole bill.
+- **Ken pays during the beta** (an account per tester against his card, closed at the
+  end) **but users pay at public release**, so cost is a product decision rather than an
+  expense line. **An account per tester also gets an allowance per tester**, which for
+  Azure and Google is worth more than the convenience of one shared account.
+
 **⚠ WHAT WAS NOT MEASURED, and the honest boundary: only REACHABILITY with an invalid
 key.** No synthesis with a real key, no full streaming session, no latency, no voice
 quality. Reachability was the *believed blocker*, so removing it is the finding — it
