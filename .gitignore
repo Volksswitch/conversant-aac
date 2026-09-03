@@ -61,6 +61,14 @@ tests/.anthropic-key*
 .deepgram-key.*
 *deepgram*key*
 *dg-key*
+
+# Same again for the OpenAI key used by scripts/test-openai-speech.mjs. The wide
+# patterns are deliberate for the same reason as above: a key file whose name is
+# slightly off would otherwise be swept in, and a leaked key cannot be un-leaked.
+.openai-key
+.openai-key.*
+*openai*key*
+*oai-key*
 deepgram-probe-audio/
 
 # Exported beta reports and anything saved out of the Sheet.
