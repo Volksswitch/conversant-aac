@@ -76,8 +76,20 @@ const FRAME_SAMPLES = 4096;
 // which is exactly what happened on Ken's iPad (August 3 2026), where Test passed
 // and Listen closed immediately. A diagnostic that does not exercise the failing
 // path is worse than none, because it sends you looking in the wrong place.
+// (!) mip_opt_out KEEPS THE PARTNER'S WORDS OUT OF DEEPGRAM'S TRAINING DATA, and it
+// goes on every request rather than being relied upon to be unnecessary. Their
+// documentation says training data comes only from contractual participation in their
+// Model Improvement Partnership Program - and also documents this per-request opt-out.
+// The two statements sit oddly together, and the cheap, certain reading is to send the
+// parameter. It costs nothing.
+//
+// It matters more here than the usual privacy boilerplate because the audio is the
+// COMMUNICATION PARTNER'S speech: they never chose this device, cannot sensibly be
+// asked mid-conversation, and what they say is disproportionately medical or private.
+// See the Speech Provider Guide, "What They Do With Your Words".
 function listenParams(sampleRate) {
     return new URLSearchParams({
+        mip_opt_out: 'true',
         model: MODEL,
         encoding: 'linear16',
         // Send at the capture device's own rate rather than resampling. Billing is

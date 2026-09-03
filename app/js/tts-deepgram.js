@@ -217,8 +217,13 @@ export function createVoice({ getKey, onBilled } = {}) {
         if (!key) return Promise.reject(new Error('No Deepgram key is set.'));
 
         return new Promise((resolve, reject) => {
+            // mip_opt_out: see the note above listenParams in stt-deepgram.js. Sent on
+            // the speaking connection too - the text handed over is the user's own
+            // words, which is theirs to keep out of a training set as much as the
+            // partner's audio is.
             const url = `${ENDPOINT}?model=${encodeURIComponent(model)}` +
-                        `&encoding=${ENCODING}&sample_rate=${SAMPLE_RATE}`;
+                        `&encoding=${ENCODING}&sample_rate=${SAMPLE_RATE}` +
+                        `&mip_opt_out=true`;
             let ws;
             try {
                 // The subprotocol pair is how a browser authenticates to Deepgram:

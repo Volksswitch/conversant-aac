@@ -509,8 +509,10 @@ const TTS = [
     // uses their streaming connection instead. Same approach here.
     run: async (c) => {
       const k = key('k_deepgram');
+      // mip_opt_out keeps what is sent out of Deepgram's training data - the same
+      // parameter the app sends on every Deepgram request.
       const url = 'wss://api.deepgram.com/v1/speak?model=' + encodeURIComponent(c.dg_voice)
-                + '&encoding=linear16&sample_rate=24000';
+                + '&encoding=linear16&sample_rate=24000&mip_opt_out=true';
       const chunks = await new Promise((resolve, reject) => {
         const ws = new WebSocket(url, ['token', k]);
         ws.binaryType = 'arraybuffer';
@@ -991,7 +993,8 @@ const STT = [
     cfg: [{ id: 'dgs_model', label: 'model', value: 'nova-3' }],
     run: async (c) => new Promise((resolve, reject) => {
       const url = 'wss://api.deepgram.com/v1/listen?encoding=linear16&sample_rate='
-        + REC_RATE + '&channels=1&punctuate=true&model=' + encodeURIComponent(c.dgs_model);
+        + REC_RATE + '&channels=1&punctuate=true&mip_opt_out=true&model='
+        + encodeURIComponent(c.dgs_model);
       const ws = new WebSocket(url, ['token', key('k_deepgram')]);
       ws.binaryType = 'arraybuffer';
       let text = '';

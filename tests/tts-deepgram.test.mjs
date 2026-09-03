@@ -175,3 +175,35 @@ test('the audio is not started until a suspended context has resumed', async () 
         'the buffer must start only after resume() has settled - starting it against ' +
         'a suspended context is what dropped the opening word');
 });
+
+/* --- the training opt-out must ride on every Deepgram request ----------------
+ *
+ * (!) ITS ABSENCE IS COMPLETELY INVISIBLE. Drop the parameter and the app behaves
+ * identically in every observable way - it speaks, it hears, no error, no warning -
+ * and the only consequence is that the communication partner's words become eligible
+ * for somebody's training set. There is nothing to notice, which is exactly why it
+ * needs a test rather than care.
+ *
+ * Checked at the SOURCE because neither URL builder is reachable from here: the
+ * listening one is a module-private function, and the speaking one builds its URL
+ * inside a closure at connect time. A real connection would need a real key.
+ */
+import { readFileSync } from 'node:fs';
+
+const src = (f) => readFileSync(new URL('../app/js/' + f, import.meta.url), 'utf8');
+
+test('the Deepgram listening connection opts out of training', () => {
+    const s = src('stt-deepgram.js');
+    assert.match(s, /mip_opt_out:\s*'true'/,
+        'the partner audio would become eligible for training, silently');
+    // One builder feeds both connect paths; if that stops being true, the parameter
+    // has to be proven on whichever path grew its own URL.
+    const builders = (s.match(/new URLSearchParams\(/g) || []).length;
+    assert.equal(builders, 1,
+        `expected one URL builder in stt-deepgram.js, found ${builders} - check the new one carries mip_opt_out`);
+});
+
+test('the Deepgram speaking connection opts out of training', () => {
+    assert.match(src('tts-deepgram.js'), /mip_opt_out=true/,
+        'the spoken text would become eligible for training, silently');
+});

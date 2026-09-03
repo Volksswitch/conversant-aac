@@ -26,6 +26,11 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Conversant now tells Deepgram not to use your conversations to train their
+  systems. It asks this on every request, for what the other person says and for
+  what you say. Nothing looks or works differently; it is about where the words
+  end up.
+
 - **New: seven color schemes.** Settings, on the tab now called "Text & Color", has
   "Color scheme": Default, Bold outlines, High contrast light, Dark, High contrast
   dark, Yellow on black, and Color-blind safe. Each changes the whole app at once,
