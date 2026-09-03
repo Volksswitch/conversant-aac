@@ -329,6 +329,7 @@ const doc = new Document({
             para("The best-regarded voices of the six and much the most expensive. Worth hearing before ruling out on price."),
             step("Go to elevenlabs.io and create an account. The free tier needs no card.", "el"),
             step("Open your profile settings and find the API key.", "el"),
+            step("Give the key the permissions it needs when you create it. A key can be issued with only some abilities switched on, and one that can speak may still be unable to LIST the voices - which fails separately, and reads like a bad key when it is not. Text to speech and reading voices are the two that matter here.", "el"),
             step("Note that the free allowance is small - roughly ten thousand characters a month, which is a few days of ordinary use.", "el"),
             lead("⚠ A free plan cannot use their library voices through the API, only your own. ",
                 "Most of the voices people know ElevenLabs for are library voices, and asking for one on a free plan is refused outright with a message about upgrading. It reads like a broken key and is not. In the bench, press Load voices to fetch the voices your own account actually has and pick from those; on a free plan that is a shorter list than the website suggests. Worth knowing before judging them on the free tier, since it is not their best voices you are hearing."),

@@ -646,7 +646,15 @@ function escapeXml(s) {
 async function describe(r) {
   let body = '';
   try { body = (await r.text()).slice(0, 200).replace(/\s+/g, ' '); } catch {}
-  const plain = r.status === 401 || r.status === 403
+  // (!) A REFUSAL AND A MISSING PERMISSION NEED DIFFERENT FIXES, and they share a
+  // status code. "The key was refused" sends you off to make a new key; the actual
+  // repair is to edit the one you have and grant it the permission it names. The
+  // body is what distinguishes them - the number never can.
+  const plain = (r.status === 401 || r.status === 403)
+        && /missing_permissions|missing the permission|insufficient scope/i.test(body)
+      ? 'the key is valid but lacks a permission it needs - edit the key where you '
+        + 'created it and grant the one named below, rather than making a new one'
+      : r.status === 401 || r.status === 403
       ? 'the key was refused'
       : r.status === 404 ? 'not found - check the voice or the region'
       // (!) 429 IS TWO DIFFERENT THINGS AND THEY NEED DIFFERENT ANSWERS. OpenAI
