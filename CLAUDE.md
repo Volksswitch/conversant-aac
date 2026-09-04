@@ -1186,6 +1186,25 @@ never closes it, so a single sentence sits in the buffer forever and the call si
 hangs with no error. Drive `TextSplitterStream` yourself and `close()` it. Anyone
 adopting kokoro-js for on-device speech will hit this.
 
+**THE TERMS, because the documents and the therapists both use them:** changing the
+spelling to fix a name is **phonetic respelling**; the exact sounds written in the
+linguists' alphabet is a **phonetic transcription**; a list of those held by the service
+and applied to everything it says is a **pronunciation lexicon**. Everything laid over
+the top - rise and fall, stress, pauses, pace - is **prosody**, and working it out from
+the sentence with nothing marked up is **prosody prediction** (sold as "expressiveness"
+or "naturalness"). **Keep respelling and prosody apart: they fail in different directions
+and neither rescues the other** - a faultless voice still cannot guess a family name, and
+a perfect respelling still reads flat in a poor voice.
+
+**⚠ THE DEVICE'S OWN VOICES DO NEITHER, which is the honest summary of the free
+option** (Ken, September 4 2026). No transcription and no lexicon - a browser offers no
+way to pass either, measured. And nothing can be marked up for inflection: punctuation,
+the only lever available, did nothing on the Google and Microsoft voices (June 2026), so
+there is no way to ASK for a pause. They keep whatever prosody is built in - a question
+mark still lifts a sentence - but they are the oldest and flattest voices in the
+comparison, **and that last part is listening, not measurement.** Respelling is the whole
+of what can be done with them, which is why it is the mechanism the app uses.
+
 **The full comparison is section 5 of `Conversant AAC Speech Provider Guide.docx`.**
 
 ## A speech-to-speech model CANNOT be used here, however good they get (September 3 2026)
