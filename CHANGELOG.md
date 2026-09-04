@@ -26,6 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+
+## Version 0.10.0
+
 - Conversant now tells Deepgram not to use your conversations to train their
   systems. It asks this on every request, for what the other person says and for
   what you say. Nothing looks or works differently; it is about where the words
