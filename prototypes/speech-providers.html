@@ -120,8 +120,29 @@
   Volksswitch. Before sharing this file with anyone, press <em>Forget all keys</em>.
 </div>
 
+<!-- ===================== THIS MACHINE ===================== -->
+<h2>1. This machine</h2>
+<p class="lede">
+  The on-device engines are much faster on some machines than others, and the reason is
+  almost never the model - it is whether the browser will let the page use the graphics
+  hardware. That is reported here rather than left to be guessed at from a slow result.
+  Everything in this first line is free to check and is done as the page opens.
+</p>
+
+<table id="machineTable">
+  <thead><tr><th>What</th><th>On this machine</th></tr></thead>
+  <tbody id="machineBody"></tbody>
+</table>
+
+<div class="row">
+  <button id="netBtn">Measure the connection</button>
+  <button id="copyMachine">Copy this report</button>
+  <span class="hint" id="netHint">Downloads about 4 MB from the place the models come
+    from, so it costs a little data. Nothing is uploaded.</span>
+</div>
+
 <!-- ===================== KEYS ===================== -->
-<h2>1. Keys</h2>
+<h2>2. Keys</h2>
 <p class="lede">
   Fill in only the services you want to try. A blank key simply means that service is
   skipped. The sign-up steps for each one are in the accompanying write-up.
@@ -161,7 +182,7 @@
 </div>
 
 <!-- ===================== REACHABILITY ===================== -->
-<h2>2. Can a browser reach them at all?</h2>
+<h2>3. Can a browser reach them at all?</h2>
 <p class="lede">
   The question the whole architecture turns on. Each service is asked a question with a
   deliberately wrong key: a plain refusal means the door is open and only the key was
@@ -180,7 +201,7 @@
 </table>
 
 <!-- ===================== SPEAKING ===================== -->
-<h2>3. Speaking - how the voices sound</h2>
+<h2>4. Speaking - how the voices sound</h2>
 <p class="lede">
   One sentence, every voice you have a key for. Press a <em>Play</em> button to hear a
   voice again once it has been fetched.
@@ -209,7 +230,7 @@
 </table>
 
 <!-- ===================== HEARING ===================== -->
-<h2>4. Hearing - how well they transcribe</h2>
+<h2>5. Hearing - how well they transcribe</h2>
 <p class="lede">
   Record yourself once, then send that same recording to every service. Say something
   a communication partner might say, and include a name or a place if you want to see
@@ -533,12 +554,256 @@ function setLocalNote(text) {
   if (el) el.textContent = text;
 }
 
-// WebGPU where it exists, otherwise the slower path that works everywhere. Reported,
-// because it is most of the explanation for a surprising speed either way.
-async function localDevice() {
-  return (navigator.gpu && await navigator.gpu.requestAdapter().catch(() => null))
-    ? 'webgpu' : 'wasm';
+/* WebGPU where it exists, otherwise the slower path that works everywhere.
+ *
+ * (!) THE REPORT IN SECTION 1 AND THE ENGINES MUST NEVER DISAGREE, so they read the
+ * same probe rather than each asking the question their own way. A panel that says
+ * "fast path in use" over an engine that quietly chose the slow one is worse than no
+ * panel: it makes a slow result look like the model's fault. Hence one function, its
+ * answer remembered, and the dtype rule kept beside it instead of repeated at each
+ * loader.
+ *
+ * (!) AN ADAPTER GRANTED IS NOT SPEED PROVEN. All this settles is which path the
+ * engines take. It is still the single biggest thing to know before judging an
+ * on-device result, which is why it is the first thing on the page.
+ */
+let gpuProbe = null;
+async function probeGraphics() {
+  if (gpuProbe) return gpuProbe;
+  const out = { supported: !!navigator.gpu, granted: false, info: null, reason: '' };
+  if (!out.supported) {
+    out.reason = 'this browser does not offer WebGPU at all';
+  } else {
+    let adapter = null;
+    try { adapter = await navigator.gpu.requestAdapter(); }
+    catch (e) { out.reason = 'asking for the graphics hardware failed: ' + e; }
+    if (adapter) {
+      out.granted = true;
+      // Chrome moved this from a method to a property; take whichever exists, and
+      // treat its absence as "granted but unnamed" rather than as a failure.
+      try {
+        out.info = adapter.info
+          || (adapter.requestAdapterInfo ? await adapter.requestAdapterInfo() : null);
+      } catch { /* naming it is a nicety; the grant is the finding */ }
+    } else if (!out.reason) {
+      out.reason = 'the browser offers WebGPU but would not grant this page an adapter '
+        + 'on this machine - usually the driver, the hardware, or a browser policy';
+    }
+  }
+  out.device = out.granted ? 'webgpu' : 'wasm';
+  out.dtype = out.granted ? 'fp32' : 'q8';
+  gpuProbe = out;
+  return out;
 }
+async function localDevice() { return (await probeGraphics()).device; }
+async function localDtype() { return (await probeGraphics()).dtype; }
+
+/* ============================================================================
+   SECTION 1 - what this machine is, and what its connection is like
+
+   Two questions, and they are asked very differently on purpose.
+
+   (!) THE GRAPHICS QUESTION IS FREE, SO IT IS ANSWERED WITHOUT BEING ASKED. It costs
+   nothing but a call, and without it a slow on-device result is unreadable - you cannot
+   tell a slow machine from a fast machine that was refused its graphics hardware. That
+   refusal is common, silent, and the largest single factor in the numbers further down
+   this page.
+
+   (!) THE NETWORK QUESTION COSTS DATA, SO IT IS BEHIND A BUTTON. Measuring a connection
+   means using it, this page may well be opened on a tablet on somebody's data plan, and
+   a few megabytes spent without asking is exactly the kind of surprise the download
+   consent further down exists to avoid. Same principle, applied twice.
+   ========================================================================== */
+
+// The file this machine would actually fetch, so the size and the estimate are about
+// this machine rather than about an average one. The fast path uses full-precision
+// weights and is several times larger - which is worth seeing, because the machine that
+// downloads the most is the one that will then be quickest.
+const HF_BASE = 'https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX/resolve/main/';
+const modelFileFor = (dtype) => dtype === 'fp32' ? 'onnx/model.onnx' : 'onnx/model_quantized.onnx';
+
+const machineRows = new Map();
+function machineRow(id, label, value) {
+  let tr = machineRows.get(id);
+  if (!tr) {
+    tr = document.createElement('tr');
+    tr.appendChild(document.createElement('td'));
+    tr.appendChild(document.createElement('td'));
+    tr.cells[0].textContent = label;
+    machineRows.set(id, tr);
+    $('machineBody').appendChild(tr);
+  }
+  tr.cells[1].textContent = value;
+  return tr;
+}
+
+const mbytes = (bytes) => (bytes / 1048576).toFixed(0) + ' MB';
+function humanTime(seconds) {
+  if (!isFinite(seconds)) return 'unknown';
+  if (seconds < 90) return Math.round(seconds) + ' seconds';
+  return Math.round(seconds / 60) + ' minutes';
+}
+
+async function reportMachine() {
+  const g = await probeGraphics();
+
+  machineRow('gpu', 'Graphics hardware', g.granted
+    ? 'Granted to this page' + (g.info && (g.info.vendor || g.info.description)
+        ? ' - ' + [g.info.vendor, g.info.architecture, g.info.description]
+            .filter(Boolean).join(', ')
+        : '')
+    : 'Not available - ' + g.reason);
+
+  machineRow('path', 'Path the on-device engines will take', g.granted
+    ? 'WebGPU, the fast path, with full-precision weights'
+    : 'The fallback path, which works everywhere and is slower');
+
+  machineRow('cores', 'Processor cores the browser admits to',
+    navigator.hardwareConcurrency ? String(navigator.hardwareConcurrency) : 'not reported');
+
+  // (!) ONLY MEANINGFUL ON THE FALLBACK PATH, and it is a genuine handicap rather than a
+  // detail: without these two headers a browser withholds shared memory, so the fallback
+  // runs on ONE core however many the machine has. A slow result measured that way is not
+  // the model's true speed, and concluding "too slow for a tablet" from it would be the
+  // wrong lesson drawn from a handicapped measurement.
+  if (!g.granted) {
+    machineRow('threads', 'Can the fallback path use several cores?', crossOriginIsolated
+      ? 'Yes'
+      : 'No - this page is not served with the two headers a browser wants before it '
+        + 'shares memory between cores, so the fallback is running on one. Times below '
+        + 'are a floor, not the best this machine can do.');
+  }
+
+  try {
+    const q = await navigator.storage.estimate();
+    if (q && q.quota) {
+      const persisted = navigator.storage.persisted ? await navigator.storage.persisted() : false;
+      machineRow('storage', 'Storage the browser offers',
+        (q.quota / 1073741824).toFixed(1) + ' GB'
+        + (persisted ? ', and it has agreed to keep it' : ', not yet marked as kept'));
+    }
+  } catch { /* not every browser answers, and the page works without it */ }
+
+  // Asked of the real file rather than remembered, because these models are re-published
+  // and a number written down here would go quietly stale.
+  try {
+    const url = HF_BASE + modelFileFor(g.dtype);
+    const r = await fetch(url, { method: 'HEAD' });
+    const len = Number(r.headers.get('content-length'));
+    if (len) {
+      machineRow('model', 'One-time download for the speaking model',
+        mbytes(len) + ' (' + modelFileFor(g.dtype).split('/').pop() + ')');
+      modelBytes = len;
+    }
+  } catch {
+    machineRow('model', 'One-time download for the speaking model',
+      'could not be asked - no connection, or the model host is unreachable');
+  }
+
+  // (!) LABELLED A GUESS, BECAUSE IT IS ONE. The browser's own figure is a rolling
+  // estimate rounded into buckets, and some browsers offer it and others do not. It sits
+  // beside the measurement rather than instead of it.
+  const c = navigator.connection;
+  if (c && (c.effectiveType || c.downlink)) {
+    machineRow('netguess', "The browser's own guess at the connection",
+      [c.effectiveType, c.downlink ? c.downlink + ' Mbps' : null,
+       c.rtt ? c.rtt + ' ms round trip' : null, c.saveData ? 'data saver on' : null]
+        .filter(Boolean).join(', ') + ' - a rounded guess, not a measurement');
+  }
+}
+
+let modelBytes = 0;
+
+/* (!) WHAT THIS MEASURES IS NARROWER THAN "NETWORK SPEED", and saying so is the point.
+ * It is this machine's connection TO THE PLACE THE MODELS COME FROM, at this moment.
+ * That is the number worth having - a first-run download is the one thing on this page
+ * big enough for a connection to matter - and it is not a general speed test.
+ *
+ * Setting up the connection is counted separately from moving bytes over it. Timing the
+ * whole thing from the first byte of the request would fold the round trip into the
+ * throughput and report a fast link as a slow one, which is the usual way these come out
+ * wrong.
+ */
+async function measureNetwork() {
+  const btn = $('netBtn');
+  btn.disabled = true;
+  const g = await probeGraphics();
+  const url = HF_BASE + modelFileFor(g.dtype);
+  const TARGET = 4 * 1048576;
+  try {
+    machineRow('net', 'Connection to the model host', 'measuring...');
+    const t0 = performance.now();
+    const res = await fetch(url + '?probe=' + Date.now(),
+      { headers: { Range: 'bytes=0-' + (TARGET - 1) }, cache: 'no-store' });
+    if (!res.ok && res.status !== 206) throw new Error('the host answered ' + res.status);
+    const reader = res.body.getReader();
+    let got = 0, tFirst = null, firstChunk = 0;
+    while (got < TARGET) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (tFirst === null) { tFirst = performance.now(); firstChunk = value.length; }
+      got += value.length;
+    }
+    const tEnd = performance.now();
+    try { await reader.cancel(); } catch { /* already finished */ }
+
+    const setup = Math.round(tFirst - t0);
+    const movedBits = (got - firstChunk) * 8;
+    const movedSecs = (tEnd - tFirst) / 1000;
+    const mbps = movedSecs > 0.05 ? movedBits / movedSecs / 1e6 : null;
+
+    machineRow('net', 'Connection to the model host',
+      'answered in ' + setup + ' ms'
+      + (mbps ? ', then about ' + mbps.toFixed(1) + ' Mbps over ' + mbytes(got) : '')
+      + (mbps ? '' : ' (it arrived too quickly to time - already cached, or very fast)'));
+
+    if (mbps && modelBytes) {
+      const secs = (modelBytes * 8) / (mbps * 1e6);
+      machineRow('estimate', 'So the one-time model download would take',
+        'about ' + humanTime(secs) + ', once');
+    }
+  } catch (e) {
+    machineRow('net', 'Connection to the model host', 'could not be measured - ' + e.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// The report is only useful if it can leave the machine it describes.
+function copyMachineReport() {
+  const lines = [...$('machineBody').rows]
+    .map((r) => r.cells[0].textContent + ': ' + r.cells[1].textContent);
+  lines.push('Browser: ' + navigator.userAgent);
+  lines.push('Screen: ' + screen.width + ' x ' + screen.height
+    + ' at ' + window.devicePixelRatio + 'x');
+  lines.push('Page: ' + location.href.split('?')[0]);
+  const text = 'Speech bench - this machine\n\n' + lines.join('\n');
+  const done = () => { $('netHint').textContent = 'Report copied. Paste it wherever it is wanted.'; };
+
+  // (!) TWO WAYS OF COPYING, AND THE OLD ONE IS THE FALLBACK RATHER THAN THE OTHER WAY
+  // ROUND. The modern call is cleaner and is also refused in more situations than one
+  // would expect - an unfocused window, a browser policy, older Safari - and it is
+  // refused SILENTLY, as a rejected promise. The older way is governed by none of that.
+  // A report that cannot leave the machine it describes is the one thing this button
+  // must not do.
+  navigator.clipboard.writeText(text).then(done).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch { ok = false; }
+    ta.remove();
+    if (ok) done();
+    else $('netHint').textContent = 'This browser would not let the page copy. '
+      + 'Select the table and copy it by hand.';
+  });
+}
+
+$('netBtn').addEventListener('click', measureNetwork);
+$('copyMachine').addEventListener('click', copyMachineReport);
+reportMachine();
 
 async function loadLocalTts() {
   if (local.tts) return local.tts;
@@ -546,7 +811,7 @@ async function loadLocalTts() {
   setLocalNote(`Speaking model: starting download (${device})...`);
   const { KokoroTTS } = await import('https://cdn.jsdelivr.net/npm/kokoro-js@1.2.1/+esm');
   local.tts = await KokoroTTS.from_pretrained(LOCAL_TTS_MODEL, {
-    dtype: device === 'webgpu' ? 'fp32' : 'q8',
+    dtype: await localDtype(),
     device,
     progress_callback: localProgress('Speaking model'),
   });
@@ -560,7 +825,7 @@ async function loadLocalStt(modelId) {
   setLocalNote(`Hearing model: starting download (${device})...`);
   const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.6/+esm');
   const fn = await pipeline('automatic-speech-recognition', modelId, {
-    dtype: device === 'webgpu' ? 'fp32' : 'q8',
+    dtype: await localDtype(),
     device,
     progress_callback: localProgress('Hearing model'),
   });
