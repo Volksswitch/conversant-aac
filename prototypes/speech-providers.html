@@ -237,9 +237,20 @@
 </div>
 
 <table id="sttTable" hidden>
-  <thead><tr><th>Service</th><th>Result</th><th class="num">Time</th><th>What it heard</th></tr></thead>
+  <thead><tr><th>Service</th><th>Result</th><th class="num">Time</th>
+      <th class="num">Against the clip</th><th>What it heard</th></tr></thead>
   <tbody></tbody>
 </table>
+<div class="note" id="sttRatioNote" hidden>
+  <strong>How to read &ldquo;against the clip&rdquo;.</strong> It is the time taken divided by
+  the length of what you recorded. <em>For the on-device engine this is close to the real
+  thing:</em> it cannot start until you stop talking, so 0.2&times; means a ten-second
+  sentence leaves about two seconds of silence before any words appear.
+  <em>For the services it is not</em> - in a real conversation the app keeps a connection
+  open and they transcribe while the other person is still speaking, so their true wait is
+  the tail end of that, not what is shown here. This bench sends all of them a finished
+  recording, which is fair for comparing accuracy and flatters nobody equally on time.
+</div>
 
 <script>
 /* ============================================================================
@@ -1109,7 +1120,8 @@ function stopRecording() {
   $('recBtn').textContent = 'Start recording';
   $('recStatus').textContent = 'Recorded.';
   $('clipInfo').textContent = secs.toFixed(1) + ' seconds, '
-    + Math.round(clipWav.size / 1024) + ' KB';
+    + Math.round(clipWav.size / 1024) + ' KB'
+    + ' - the "against the clip" column below is measured against this';
   $('playbackRow').hidden = false;
   $('sttRun').disabled = total === 0;
   $('sttStatus').textContent = total ? 'Ready.' : 'Nothing was recorded - try again.';
@@ -1237,12 +1249,14 @@ function blobToBase64(blob) {
 $('sttRun').addEventListener('click', async () => {
   const table = $('sttTable'), body = table.querySelector('tbody');
   body.textContent = ''; table.hidden = false;
+  $('sttRatioNote').hidden = false;
   $('sttRun').disabled = true;
   for (const p of STT.filter((x) => $('stt_on_' + x.id).checked)) {
     const tr = document.createElement('tr');
     tr.appendChild(cell(p.name));
     const res = cell('working...', 'pending'); tr.appendChild(res);
     const tm = cell('', 'num'); tr.appendChild(tm);
+    const rf = cell('', 'num'); tr.appendChild(rf);
     const out = cell('', 'transcript'); tr.appendChild(out);
     body.appendChild(tr);
 
@@ -1258,7 +1272,13 @@ $('sttRun').addEventListener('click', async () => {
     const t0 = performance.now();
     try {
       const text = await p.run(cfg);
-      tm.textContent = ms(performance.now() - t0);
+      const took = performance.now() - t0;
+      tm.textContent = ms(took);
+      // Against the length of the recording, which is the number that says whether a
+      // local engine could keep up: it cannot begin until the talking stops, so this
+      // ratio IS roughly the silence a listener would sit through.
+      const clipMs = (clipPcm.length / REC_RATE) * 1000;
+      if (clipMs > 0) rf.textContent = (took / clipMs).toFixed(2) + '\u00d7';
       if (text && text.trim()) {
         res.textContent = 'heard'; res.className = 'ok';
         out.textContent = text.trim();
