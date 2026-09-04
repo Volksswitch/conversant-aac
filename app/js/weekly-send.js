@@ -53,6 +53,49 @@ export const ENDPOINT = 'https://script.google.com/macros/s/AKfycbx1Y_slFybVpzX3
 // answer, so the only symptom is reports quietly not arriving.
 export const SHARED_SECRET = 'u_mlqOZgElbxCB7732CAwSzC';
 
+/* IS THIS COPY BEING SERVED LOCALLY - i.e. a build somebody is developing or testing,
+ * rather than the app a tester actually uses?
+ *
+ * (!) WHY THIS EXISTS, measured September 4 2026. Eleven anonymous rows appeared on the
+ * retention tab days after the Sheet had been cleared for the first beta tester, under a
+ * tester name nobody had set. They came from `serve.bat`: a locally-served copy runs on a
+ * different address, so the browser treats it as a different site entirely - its own
+ * settings, so no tester name; its own identity, so its own installation id - while the
+ * data folder it is pointed at is the real one, holding months of real conversations. One
+ * such report re-created a whole retention curve belonging to nobody.
+ *
+ * ⚠ THE AUGUST 31 GATE DOES NOT COVER THIS, which is why a second guard is needed rather
+ * than a tightening of the first. That one withholds a FIRST report until the copy has
+ * actually been used; once a local copy has reported even once, the weekly interval takes
+ * over and the activity check is never consulted again. So the noise stops for one launch
+ * and resumes for every launch after.
+ *
+ * ⚠ AND IT COST A REAL FALSE ALARM, which is the reason it is worth closing rather than
+ * filtering: the retention tab carries no build column, so unlike the other two tabs there
+ * is nothing on it that says "dev". An anonymous row there is indistinguishable from a
+ * tester who has not typed their name, and the natural response is to go and nudge a
+ * tester who has done nothing wrong.
+ *
+ * Private network addresses count as local too, and deliberately: testing a local build on
+ * the tablet means pointing it at this machine's address on the network, which is the same
+ * build with the same absent tester name. The real app is only ever served over https from
+ * its own domain, so nothing a tester runs can match any of these.
+ */
+export function isLocalOrigin(loc = (typeof location === 'undefined' ? null : location)) {
+    if (!loc) return false;
+    if (loc.protocol === 'file:') return true;
+    const h = String(loc.hostname || '').toLowerCase().replace(/^\[|\]$/g, '');
+    if (!h) return true;                                    // opened from disk
+    if (h === 'localhost' || h.endsWith('.localhost')) return true;
+    if (h === '::1' || h === '0.0.0.0') return true;
+    if (/^127\./.test(h)) return true;                      // loopback
+    if (/^10\./.test(h)) return true;                       // private network
+    if (/^192\.168\./.test(h)) return true;                 // private network
+    if (/^172\.(1[6-9]|2\d|3[01])\./.test(h)) return true;  // private network
+    if (/^169\.254\./.test(h)) return true;                 // link-local
+    return false;
+}
+
 const INTERVAL_DAYS = 7;
 const QUEUE_MAX = 8;          // a tester offline for two months must not grow it forever
 const MAX_MESSAGE = 200;      // see the residual note above
@@ -114,7 +157,10 @@ export function describeReport() {
  * both differ from a real address, so both trigger. A build with no address never
  * forces a send — there is nowhere for it to go, and forcing one would rebuild a
  * payload on every single launch. */
-export function shouldSend({ enabled, lastAt, now, intervalDays = INTERVAL_DAYS, endpoint = '', lastEndpoint = null, hasActivity = true }) {
+export function shouldSend({ enabled, lastAt, now, intervalDays = INTERVAL_DAYS, endpoint = '', lastEndpoint = null, hasActivity = true, local = false }) {
+    // First, and ahead of the switch: a locally-served build has no tester behind
+    // it, so its report is noise by construction. See isLocalOrigin.
+    if (local) return false;
     if (!enabled) return false;
     if (!lastAt) return hasActivity;
     if (endpoint && endpoint !== lastEndpoint) return true;
@@ -358,6 +404,7 @@ export async function maybeSend({ appVersion, build, now = Date.now() } = {}) {
             endpoint: ENDPOINT,
             lastEndpoint: storage.loadWeeklyEndpoint(),
             hasActivity: used,
+            local: isLocalOrigin(),
         })) {
             // Still flush anything stranded from a previous week.
             return await flush();
@@ -417,6 +464,14 @@ export function formatSendLog(entries) {
  * like the button being broken. The Beta Test Plan says so in section 8.
  */
 export async function sendProblemReport({ note = '', report = '', appVersion = '', build = '', now = Date.now() } = {}) {
+    // ⚠ THE LOCAL GUARD DOES APPLY HERE, and for a different reason than the one the
+    // paragraph above refuses. That refusal is about a PREFERENCE: a tester who turned
+    // background reporting off has not asked to be silenced when they choose to write to
+    // us. This is about there being no tester at all — a locally-served build is a
+    // developer's copy, and its report would arrive nameless in the tab that carries the
+    // most sensitive content in the Sheet. It is reported back plainly rather than
+    // swallowed, because a Send button that appears to do nothing is its own bug.
+    if (isLocalOrigin()) return { sent: 0, queued: 0, blocked: 'local' };
     const payload = {
         // `kind` is what lets the receiver tell this from a weekly report. The
         // currently-deployed script does not read it, and that is deliberately safe:

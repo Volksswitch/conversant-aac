@@ -18,7 +18,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
     shouldSend, hasActivity, enqueue, redactErrors, assemblePayload, describeReport,
-    hashOf, formatSendLog, PAYLOAD_FIELDS, errorsSince, newestErrorTs,
+    hashOf, formatSendLog, PAYLOAD_FIELDS, errorsSince, newestErrorTs, isLocalOrigin,
 } from '../app/js/weekly-send.js';
 
 const DAY = 86400000;
@@ -256,4 +256,45 @@ test('anything the user actually says counts as activity, not just a card', () =
     assert.equal(hasActivity({ conversation_started: 1 }), true);
     assert.equal(hasActivity({}), false);
     assert.equal(hasActivity(null), false);
+});
+
+/* (!) THE LOCAL GUARD. Eleven anonymous rows reached the retention tab on September 4
+ * 2026 from a copy served by serve.bat, days after the Sheet had been cleared for the
+ * first beta tester. That tab carries no build column, so the rows were indistinguishable
+ * from a real tester who had not typed their name - and the natural response was to go
+ * and nudge a tester who had done nothing wrong.
+ *
+ * These assert the guard from BOTH directions, because either half failing is silent:
+ * lose the local cases and the dev noise comes back, lose the real cases and every
+ * tester stops reporting with nothing anywhere saying so. */
+test('schedule: a locally-served copy never reports, whatever else is true', () => {
+    const now = Date.parse('2026-09-04T09:00:00Z');
+    // Outranks the first-launch shortcut, the weekly interval, and a changed endpoint.
+    assert.equal(shouldSend({ enabled: true, lastAt: 0, now, local: true }), false);
+    assert.equal(shouldSend({ enabled: true, lastAt: now - 40 * DAY, now, local: true }), false);
+    assert.equal(shouldSend({ enabled: true, lastAt: now - 1 * DAY, now, endpoint: 'https://x/exec', lastEndpoint: null, local: true }), false);
+    // And absent or false, nothing about the existing behaviour moves.
+    assert.equal(shouldSend({ enabled: true, lastAt: now - 8 * DAY, now, local: false }), true);
+    assert.equal(shouldSend({ enabled: true, lastAt: now - 8 * DAY, now }), true);
+});
+
+test('local origin: development addresses are local, the real app is not', () => {
+    // Served by serve.bat, and the same build opened from another device on the network.
+    assert.equal(isLocalOrigin({ protocol: 'http:', hostname: 'localhost' }), true);
+    assert.equal(isLocalOrigin({ protocol: 'http:', hostname: '127.0.0.1' }), true);
+    assert.equal(isLocalOrigin({ protocol: 'http:', hostname: 'app.localhost' }), true);
+    assert.equal(isLocalOrigin({ protocol: 'http:', hostname: '[::1]' }), true);
+    assert.equal(isLocalOrigin({ protocol: 'http:', hostname: '192.168.1.42' }), true);
+    assert.equal(isLocalOrigin({ protocol: 'http:', hostname: '10.0.0.7' }), true);
+    assert.equal(isLocalOrigin({ protocol: 'http:', hostname: '172.20.3.4' }), true);
+    assert.equal(isLocalOrigin({ protocol: 'file:', hostname: '' }), true);
+
+    // What every tester is actually on. A miss here silences the whole beta.
+    assert.equal(isLocalOrigin({ protocol: 'https:', hostname: 'conversant.volksswitch.org' }), false);
+    assert.equal(isLocalOrigin({ protocol: 'https:', hostname: 'volksswitch.github.io' }), false);
+    // Near-misses that are ordinary public addresses, not private ranges.
+    assert.equal(isLocalOrigin({ protocol: 'https:', hostname: '172.15.0.1' }), false);
+    assert.equal(isLocalOrigin({ protocol: 'https:', hostname: '172.32.0.1' }), false);
+    assert.equal(isLocalOrigin({ protocol: 'https:', hostname: '1.10.0.1' }), false);
+    assert.equal(isLocalOrigin({ protocol: 'https:', hostname: 'notlocalhost.com' }), false);
 });
