@@ -21,7 +21,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # Stamp the commit into the build. Two jobs, both about telling deliveries
       # apart:
       #   app.js   — shows "v0.5.99 · 8c1394f" under the Start button, so the build
@@ -41,9 +41,9 @@ jobs:
           grep -q '@@BUILD@@' app/sw.js   || { echo "sw.js has no @@BUILD@@ placeholder"; exit 1; }
           sed -i "s/@@BUILD@@/${SHA}/g" app/js/app.js app/sw.js
           echo "Stamped build ${SHA}"
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: app
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
