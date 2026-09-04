@@ -284,6 +284,14 @@
       <th class="num">Against the clip</th><th>What it heard</th></tr></thead>
   <tbody></tbody>
 </table>
+<div class="note">
+  <strong>Every service is asked for its most readable form</strong> - punctuation,
+  capitals, and numbers written as digits - because that is what a reader would actually
+  see. It has to be said because it is not what any of them do by default: some punctuate
+  unasked and some do not, so a transcript that arrives as one unbroken run of words is
+  usually the request's fault rather than the service's.
+</div>
+
 <div class="note" id="sttRatioNote" hidden>
   <strong>How to read &ldquo;against the clip&rdquo;.</strong> It is the time taken divided by
   the length of what you recorded. <em>For the on-device engine this is close to the real
@@ -1669,8 +1677,12 @@ const STT = [
     id: 'dg', name: 'Deepgram', needs: 'k_deepgram',
     cfg: [{ id: 'dgs_model', label: 'model', value: 'nova-3' }],
     run: async (c) => new Promise((resolve, reject) => {
+      // (!) THE SAME FORM THE APP ASKS FOR, and the same form the others return.
+      // smart_format adds the number, date and time formatting that Azure's DisplayText
+      // does by default - so without it Deepgram was being judged on plainer output than
+      // its neighbours, for no reason but the shape of this line.
       const url = 'wss://api.deepgram.com/v1/listen?encoding=linear16&sample_rate='
-        + REC_RATE + '&channels=1&punctuate=true&mip_opt_out=true&model='
+        + REC_RATE + '&channels=1&punctuate=true&smart_format=true&mip_opt_out=true&model='
         + encodeURIComponent(c.dgs_model);
       const ws = new WebSocket(url, ['token', key('k_deepgram')]);
       ws.binaryType = 'arraybuffer';
@@ -1756,8 +1768,14 @@ const STT = [
                             + encodeURIComponent(key('k_google')), {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          // (!) GOOGLE PUNCTUATES ONLY WHEN ASKED. The default is off, so without this
+          // line the transcript comes back as one unbroken run of words while every
+          // other service here returns sentences - which looks like Google being worse
+          // and is us asking it for something different. Switching it on also
+          // capitalizes after a period or a question mark.
           config: { encoding: 'LINEAR16', sampleRateHertz: REC_RATE,
-                    languageCode: 'en-US', model: c.gos_model },
+                    languageCode: 'en-US', model: c.gos_model,
+                    enableAutomaticPunctuation: true },
           audio: { content: b64 } }),
       });
       if (!r.ok) throw new Error(await describe(r));

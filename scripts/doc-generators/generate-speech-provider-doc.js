@@ -485,6 +485,8 @@ const doc = new Document({
             heading2("What to listen and look for"),
             lead("For speaking, judge it as the user's own voice, not as a demonstration. ",
                 "The question is not which is most impressive but which one a person would be willing to be heard as, every day, by people who know them. Try a question, something short and blunt, and something with a name in it."),
+            lead("\u26a0 Punctuation is a REQUEST, not a property of the service, and forgetting it makes one look far worse than it is. ",
+                "Some of these punctuate unasked and some return an unbroken run of words until told otherwise - Google's automatic punctuation is off by default, and switching it on also capitalizes after a period. Azure's ordinary output goes further still and writes numbers as digits. So a transcript that arrives without a single full stop is almost always the request's doing rather than the service's. The bench now asks every one of them for its most readable form, which is the fair comparison and also the one a user would actually see. If you are reading a transcript from anywhere else, check what was asked for before drawing a conclusion from it."),
             lead("For hearing, the differences show up on the hard words. ",
                 "Every one of these will transcribe a clear sentence correctly. Include a name, a place, or a word said quickly, because that is where they diverge and that is what a real conversation is full of."),
             lead("Sentences that actually separate them. ",
