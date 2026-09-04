@@ -194,6 +194,10 @@
 </fieldset>
 
 <div class="row">
+  <span class="hint" id="localNote"></span>
+</div>
+
+<div class="row">
   <button class="primary" id="ttsRun">Speak it with every voice</button>
   <button id="ttsStop">Stop</button>
   <span class="hint" id="ttsStatus"></span>
@@ -451,6 +455,114 @@ function englishOnly(lang) {
   return !lang || /^en/i.test(lang);
 }
 
+/* ============================================================================
+   ON THE DEVICE - no company, no key, no bill.
+
+   (!) THIS IS THE ONE OPTION THAT SENDS NOTHING ANYWHERE. Everything else on this
+   page hands the words to somebody. These two download a model once and then run in
+   this browser, so the partner's speech never leaves the machine - which removes the
+   whole retention question rather than answering it.
+
+   (!) THE FIRST RUN IS A BIG DOWNLOAD AND THAT IS WHY THEY ARE OFF BY DEFAULT.
+   Hundreds of megabytes, once, cached by the browser afterwards. Nobody should hit
+   that by pressing a button labelled "speak it with every voice", so these two are
+   the only entries that start unticked, and the download is announced before it
+   starts rather than reported after.
+
+   (!) WHAT IS BEING MEASURED HERE IS NOT COMPARABLE TO THE REST ON TIMING. A service
+   answers over the network with somebody else's hardware doing the work; this does
+   the work on the machine in front of you, and the first call also pays for loading
+   the model into memory. Judge these on how they SOUND and on what they GET RIGHT.
+   ========================================================================== */
+
+// Loaded once and kept. `import()` of an address is cached by the browser, and the
+// model weights are cached too, so a second run in the same session is immediate.
+const local = { tts: null, stt: null };
+
+const LOCAL_TTS_MODEL = 'onnx-community/Kokoro-82M-v1.0-ONNX';
+
+// Read out of the library itself rather than invented - a wrong voice id here would
+// fail in a way that looks like the engine being broken.
+const LOCAL_VOICES = [
+  ['af_heart', 'Heart - female, American'], ['af_alloy', 'Alloy - female, American'],
+  ['af_aoede', 'Aoede - female, American'], ['af_bella', 'Bella - female, American'],
+  ['af_jessica', 'Jessica - female, American'], ['af_kore', 'Kore - female, American'],
+  ['af_nicole', 'Nicole - female, American'], ['af_nova', 'Nova - female, American'],
+  ['af_river', 'River - female, American'], ['af_sarah', 'Sarah - female, American'],
+  ['af_sky', 'Sky - female, American'],
+  ['am_adam', 'Adam - male, American'], ['am_echo', 'Echo - male, American'],
+  ['am_eric', 'Eric - male, American'], ['am_fenrir', 'Fenrir - male, American'],
+  ['am_liam', 'Liam - male, American'], ['am_michael', 'Michael - male, American'],
+  ['am_onyx', 'Onyx - male, American'], ['am_puck', 'Puck - male, American'],
+  ['am_santa', 'Santa - male, American'],
+  ['bf_emma', 'Emma - female, British'], ['bf_isabella', 'Isabella - female, British'],
+  ['bf_alice', 'Alice - female, British'], ['bf_lily', 'Lily - female, British'],
+  ['bm_george', 'George - male, British'], ['bm_lewis', 'Lewis - male, British'],
+  ['bm_daniel', 'Daniel - male, British'], ['bm_fable', 'Fable - male, British'],
+];
+
+// One place to report a long download, so both engines behave the same way.
+function localProgress(label) {
+  return (p) => {
+    if (!p || p.status !== 'progress' || !p.total) return;
+    const pct = Math.round((p.loaded / p.total) * 100);
+    setLocalNote(`${label}: downloading ${p.file || 'model'} - ${pct}%`);
+  };
+}
+function setLocalNote(text) {
+  const el = $('localNote');
+  if (el) el.textContent = text;
+}
+
+// WebGPU where it exists, otherwise the slower path that works everywhere. Reported,
+// because it is most of the explanation for a surprising speed either way.
+async function localDevice() {
+  return (navigator.gpu && await navigator.gpu.requestAdapter().catch(() => null))
+    ? 'webgpu' : 'wasm';
+}
+
+async function loadLocalTts() {
+  if (local.tts) return local.tts;
+  const device = await localDevice();
+  setLocalNote(`Speaking model: starting download (${device})...`);
+  const { KokoroTTS } = await import('https://cdn.jsdelivr.net/npm/kokoro-js@1.2.1/+esm');
+  local.tts = await KokoroTTS.from_pretrained(LOCAL_TTS_MODEL, {
+    dtype: device === 'webgpu' ? 'fp32' : 'q8',
+    device,
+    progress_callback: localProgress('Speaking model'),
+  });
+  setLocalNote(`Speaking model ready (${device}). It is cached now.`);
+  return local.tts;
+}
+
+async function loadLocalStt(modelId) {
+  if (local.stt && local.stt.id === modelId) return local.stt.fn;
+  const device = await localDevice();
+  setLocalNote(`Hearing model: starting download (${device})...`);
+  const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.6/+esm');
+  const fn = await pipeline('automatic-speech-recognition', modelId, {
+    dtype: device === 'webgpu' ? 'fp32' : 'q8',
+    device,
+    progress_callback: localProgress('Hearing model'),
+  });
+  local.stt = { id: modelId, fn };
+  setLocalNote(`Hearing model ready (${device}). It is cached now.`);
+  return fn;
+}
+
+// (!) ASKED BEFORE THE DOWNLOAD, NOT AFTER. Several hundred megabytes arriving
+// unannounced on a tablet is the kind of surprise that makes somebody distrust a
+// tool. Answered once per page.
+let localAgreed = false;
+function agreeToDownload() {
+  if (localAgreed) return true;
+  localAgreed = window.confirm(
+    'Running speech on this device needs a one-time download of the model - '
+    + 'a few hundred megabytes. It is kept by the browser afterwards, and nothing '
+    + 'you say is sent anywhere. Download it now?');
+  return localAgreed;
+}
+
 const VOICE_FETCHERS = {
   az: async () => {
     const region = key('k_azure_region') || 'eastus';
@@ -540,6 +652,17 @@ const TTS = [
           if (!got.length) reject(new Error('connection closed, code ' + e.code)); };
       });
       return { pcm: chunks, rate: 24000 };
+    },
+  },
+  {
+    id: 'local', name: 'On this device (no key, no bill)', local: true,
+    cfg: [{ id: 'local_voice', label: 'voice', value: 'af_heart',
+            kind: 'voice', builtin: LOCAL_VOICES }],
+    run: async (c) => {
+      if (!agreeToDownload()) throw new Error('download declined - nothing was sent or fetched');
+      const tts = await loadLocalTts();
+      const audio = await tts.generate($('ttsText').value, { voice: c.local_voice });
+      return { blob: audio.toBlob() };
     },
   },
   {
@@ -714,7 +837,10 @@ function buildProviderCards(list, host, prefix) {
     const lab = document.createElement('label');
     lab.className = 'pick';
     const cb = document.createElement('input');
-    cb.type = 'checkbox'; cb.id = prefix + '_on_' + p.id; cb.checked = true;
+    cb.type = 'checkbox'; cb.id = prefix + '_on_' + p.id;
+    // The local engines start OFF: their first run is a large download, and nobody
+    // should trigger that by pressing a button about voices.
+    cb.checked = !p.local;
     lab.appendChild(cb);
     lab.appendChild(document.createTextNode(' ' + p.name));
     h.appendChild(lab);
@@ -730,6 +856,13 @@ function buildProviderCards(list, host, prefix) {
       inp.placeholder = f.label;
       wrap.appendChild(l); wrap.appendChild(inp);
       card.appendChild(wrap);
+    }
+    if (p.local) {
+      const n = document.createElement('div');
+      n.className = 'hint';
+      n.textContent = 'Runs here. Nothing is sent anywhere. First use downloads the '
+                    + 'model - a few hundred megabytes, once.';
+      card.appendChild(n);
     }
     host.appendChild(card);
   }
@@ -868,7 +1001,7 @@ $('ttsRun').addEventListener('click', async () => {
     const det = cell(''); tr.appendChild(det);
     body.appendChild(tr);
 
-    if (!key(p.needs)) {
+    if (!p.local && !key(p.needs)) {
       res.textContent = 'skipped'; res.className = 'pending';
       det.textContent = 'no key entered';
       continue;
@@ -1019,6 +1152,19 @@ const STT = [
     }),
   },
   {
+    id: 'local', name: 'On this device (no key, no bill)', local: true,
+    cfg: [{ id: 'locals_model', label: 'model', value: 'onnx-community/whisper-base' }],
+    run: async (c) => {
+      if (!agreeToDownload()) throw new Error('download declined - nothing was sent or fetched');
+      const fn = await loadLocalStt(c.locals_model);
+      // Whisper wants plain 16 kHz mono samples, which is exactly what was recorded.
+      const f32 = new Float32Array(clipPcm.length);
+      for (let i = 0; i < clipPcm.length; i++) f32[i] = clipPcm[i] / 32768;
+      const out = await fn(f32);
+      return (out && out.text) || '';
+    },
+  },
+  {
     id: 'az', name: 'Azure Speech', needs: 'k_azure',
     cfg: [{ id: 'azs_lang', label: 'language', value: 'en-US' }],
     run: async (c) => {
@@ -1100,7 +1246,7 @@ $('sttRun').addEventListener('click', async () => {
     const out = cell('', 'transcript'); tr.appendChild(out);
     body.appendChild(tr);
 
-    if (!key(p.needs)) {
+    if (!p.local && !key(p.needs)) {
       res.textContent = 'skipped'; res.className = 'pending';
       out.textContent = 'no key entered';
       continue;
