@@ -175,7 +175,7 @@ const doc = new Document({
             new Paragraph({ spacing: { before: 0, after: 80 },
                 children: [new TextRun({ text: "What each speech service costs, how to sign up for it, and how to compare them for yourself", italics: true, size: 24, color: "555555" })] }),
             new Paragraph({ spacing: { before: 0, after: 320 },
-                children: [new TextRun({ text: "Kenneth R. Hackbarth  |  Volksswitch.org  |  September 2026  |  Last updated September 3, 2026", size: 20, color: "808080" })] }),
+                children: [new TextRun({ text: "Kenneth R. Hackbarth  |  Volksswitch.org  |  September 2026  |  Last updated September 4, 2026", size: 20, color: "808080" })] }),
 
             // ===== 1 =====
             heading1("1. What This Is For"),
@@ -324,7 +324,56 @@ const doc = new Document({
                 "These are published terms read on one day, not audits, and none of it is a legal opinion. The point is narrower and still worth having: on the two questions that matter - is it kept, is it learned from - four of these six are safe by default and two need something done about them."),
 
             // ===== 5 =====
-            heading1("5. Signing Up"),
+            heading1("5. Getting Names Right"),
+            para("Conversant has a \u201cHow to say it\u201d box beside every person, every place, and every Express Panel phrase. You type a respelling - \u201cShiv-awn\u201d for Siobhan - and the app swaps that spelling in at the last moment, as the words are handed to the voice. It never reaches the screen, the saved conversation, or the AI."),
+            lead("The headline, and it is the one that decides how much weight to give this: the box works with every service here, including the device's own voices and the on-device option. ",
+                "That is by construction rather than by luck. The app changes the TEXT, so the service is not being asked to do anything special and cannot fail to support it. Nobody choosing between these services is choosing whether the box works."),
+            lead("What differs is the ceiling. ",
+                "Respelling is a blunt instrument. You are guessing at spellings until one sounds right, an unusual name sometimes never quite comes out, and a spelling that works for one voice may not for another. Several of these services offer a precise alternative: you give the exact sounds of a word rather than a guessed spelling, and some keep a list of names that gets applied to everything they say. Conversant uses none of that today, and it would be separate work for each service - so this column matters only if respelling turns out not to be good enough in real use."),
+
+            emptyPara(),
+            para("Read from each company's own documentation on September 4 2026, except where a row says it was heard."),
+            simpleTable(
+                ["Service", "The \u201cHow to say it\u201d box", "Something more precise, if respelling is not enough"],
+                [
+                    [{ text: "Azure Speech", bold: true },
+                     "Works",
+                     "The most complete of the six: the exact sounds of a word can be given, and a list of names can be uploaded once and applied to everything that service says"],
+                    [{ text: "Google Cloud", bold: true },
+                     "Works",
+                     "Yes - exact sounds, and a list of custom pronunciations. American English first, and still marked preview on their newest voices"],
+                    [{ text: "Cartesia", bold: true },
+                     "Works",
+                     "Yes - exact sounds written into the sentence itself, and name lists on their newest model"],
+                    [{ text: "ElevenLabs", bold: true },
+                     "Works",
+                     "A name list, yes. Exact sounds only on some of their models; on the rest the list does a spelling swap, which is what the box already does"],
+                    [{ text: "Deepgram", bold: true },
+                     "Works - heard, not assumed (August 8 2026)",
+                     "Nothing. They have no markup at all and say the omission is deliberate. Their own advice is to respell, which is what the box does"],
+                    [{ text: "OpenAI", bold: true },
+                     "Works",
+                     "No control over sounds. You can describe the delivery in a sentence - speak slowly, sound warm - which is a different thing"],
+                    [{ text: "The device's own voices", bold: true },
+                     "Works - heard (June 2026)",
+                     "Nothing. There is no way to supply sounds or a name list through a browser, so respelling is all there is"],
+                    [{ text: "On this device", bold: true },
+                     "Should work, but nobody has listened yet",
+                     "Nothing. The speaking model the bench uses takes a sentence and a voice and accepts nothing else"],
+                ], [1800, 2300, 5260]),
+
+            emptyPara(),
+            lead("What has actually been heard, and what has only been read. ",
+                "Two rows were measured. Respelling demonstrably changes what Deepgram says - \u201cVolksswitch\u201d written as \u201cFolks-switch\u201d moved the first sound from a V to an F - and it works on the device's own voices, where a separate finding also stands: punctuation does NOT buy pauses or intonation on those voices, however much the general advice says it should. Everything else in the table above is documentation, not listening."),
+            lead("Testing one is a minute's work. ",
+                "Type the respelling straight into the bench's sentence box and hear it in every voice at once. That is the fastest way to find out whether a difficult name needs more than a respelling before deciding it does."),
+            lead("The related thing this is NOT about. ",
+                "The box is about SPEAKING. Names being misheard on the way in is the other half of the problem, most services have their own way of being told which names to expect, and the app does not use that either. Keep the two apart when judging a service."),
+            lead("So what to do with this section. ",
+                "If you are choosing today, do not weigh pronunciation heavily - the box works everywhere, and the difference is a ceiling nobody has hit yet. Weigh it if a name that matters cannot be got right by spelling: Azure and Google have the most room left to fix that one, and Deepgram and OpenAI have none."),
+
+            // ===== 6 =====
+            heading1("6. Signing Up"),
             para("Each of these ends the same way: you reach a page listing your keys, create one, and copy it. The steps below name the destination rather than the exact wording of each button, because the wording changes and the destination does not."),
 
             heading2("Deepgram"),
@@ -393,8 +442,8 @@ const doc = new Document({
             step("Find the API keys page in the console and create a key.", "ca"),
             step("Copy a voice identifier from their voice library as well. Cartesia will not speak without one, and the bench has a box for it.", "ca"),
 
-            // ===== 5 =====
-            heading1("6. Trying Them Out"),
+            // ===== 7 =====
+            heading1("7. Trying Them Out"),
             para("The comparison tool is prototypes/speech-providers.html in the project folder. Open it in a browser; there is nothing to install."),
             step("Paste in keys for the services you want to compare. Blank ones are simply skipped.", "use"),
             step("Press Check reachability. This confirms a browser can talk to each service at all, and needs no key of your own.", "use"),
@@ -411,8 +460,8 @@ const doc = new Document({
             lead("Treat the timings as a ranking, not a measurement. ",
                 "The bench waits for the whole clip before it plays anything, whereas the app starts speaking as soon as the first part arrives. So the numbers are useful against each other and are not what a user would experience."),
 
-            // ===== 6 =====
-            heading1("7. What We Already Know"),
+            // ===== 8 =====
+            heading1("8. What We Already Know"),
             lead("A browser can reach all six. ",
                 "Measured on September 2 2026 by asking each service a question with a deliberately wrong key: a plain refusal means the door is open and only the key was bad. All six refused politely. AssemblyAI, included deliberately as a service that should fail, refused to answer at all - which is what proves the test could tell the difference."),
             lead("The obstacle was never technical. ",
@@ -420,8 +469,8 @@ const doc = new Document({
             lead("What has not been tested. ",
                 "Only that the door opens. Not how good the voices sound, how accurate the transcripts are, or how quickly either arrives. That is exactly what the bench is for, and it is why this document ends here rather than recommending one."),
 
-            // ===== 8 =====
-            heading1("8. Future Considerations"),
+            // ===== 9 =====
+            heading1("9. Future Considerations"),
             para("Conversant starts with a literate adult using touch, and is meant to reach further than that over time - younger users, other languages, other cultures. The service chosen for speech is one of the few decisions taken now that either helps or hinders that later, which is why it belongs in a document about choosing one."),
 
             heading2("Why the choice made now matters later"),

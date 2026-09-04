@@ -1146,6 +1146,32 @@ Ken asked for an architecture document for running Conversant AAC on an iPad —
 
 ---
 
+## The "How to say it" boxes work with EVERY provider, by construction (September 4 2026)
+
+**Ken asked which speech services support pronunciation modification, for the evaluation
+in the Speech Provider Guide. The answer is all of them, and the reason is worth keeping
+because it forecloses a question that will otherwise be re-asked: the app changes the
+TEXT, so no service is being asked to do anything special and none can fail to support
+it.** A respelling is substituted at `tts.setPronouncer`, one line before the string
+reaches the voice. So pronunciation is NOT a reason to prefer one service over another.
+
+**What differs is the CEILING, and only that.** Several services will take the exact
+sounds of a word instead of a guessed spelling, and some keep a name list applied to
+everything they say - **Azure is the most complete, Google next, Cartesia and ElevenLabs
+partial; Deepgram and OpenAI offer nothing at all.** The app uses none of it, and it
+would be separate work per service. **Reach for it only if respelling proves not good
+enough in the field** - which is a thing to find out from a tester with a hard name, not
+from the table.
+
+**Measured vs read, because the distinction decides how much the table is worth:** only
+Deepgram (August 8 2026) and the device's own voices (June 2026) have been HEARD to
+honor a respelling. Everything else is documentation read on September 4 2026. The
+on-device speaking model is the one genuine unknown - `kokoro-js@1.2.1` was read
+directly and takes a sentence and a voice and nothing else, so a respelling *should*
+work through its text-to-sounds step, and nobody has listened.
+
+**The full comparison is section 5 of `Conversant AAC Speech Provider Guide.docx`.**
+
 ## A speech-to-speech model CANNOT be used here, however good they get (September 3 2026)
 
 **Ken noticed that OpenAI and Google sell speech services alongside their AI and
