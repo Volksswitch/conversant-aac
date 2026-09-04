@@ -22,6 +22,9 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.10.1": [
+    "Fixed: your Tester name could go missing on its own. Loading a saved settings file emptied it if that file had been saved before you typed the name in, and restoring a backup made on another device replaced it with that device's name. It now stays as you set it, whatever you load or restore. If you filled that box in once and later found it blank or showing somebody else, this was why."
+  ],
   "0.10.0": [
     "Conversant now tells Deepgram not to use your conversations to train their systems. It asks this on every request, for what the other person says and for what you say. Nothing looks or works differently; it is about where the words end up.",
     "New: seven color schemes. Settings, on the tab now called \"Text & Color\", has \"Color scheme\": Default, Bold outlines, High contrast light, Dark, High contrast dark, Yellow on black, and Color-blind safe. Each changes the whole app at once, Settings and About Me included, and takes effect straight away so you can try them with the panel still open.",
