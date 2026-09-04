@@ -214,6 +214,19 @@
 
 <textarea id="ttsText">Are you wearing a tie tonight? I thought we might walk down to the diner after.</textarea>
 
+<p class="lede">
+  <strong>Testing a respelling?</strong> Put the same sentence in the second box with the
+  name spelled the way it should sound - &ldquo;Volksswitch&rdquo; as
+  &ldquo;Folks-switch&rdquo;. Each voice then says both, one straight after the other, so
+  they can be judged against each other rather than from memory. Leave it empty and
+  nothing changes. Two things to listen for: whether the respelling was needed at all -
+  some voices get a name right unaided, and repairing what is not broken can only make it
+  worse - and what it cost, because a hyphen can buy the right sounds and put a pause in
+  the middle of the name.
+</p>
+
+<textarea id="ttsText2" placeholder="Optional - the same sentence, respelled"></textarea>
+
 <fieldset>
   <legend>Voices to try</legend>
   <div class="provgrid" id="ttsProviders"></div>
@@ -955,7 +968,7 @@ const TTS = [
             kind: 'voice', builtin: DG_VOICES }],
     // Deepgram's ordinary web address refuses browser calls, which is why the app
     // uses their streaming connection instead. Same approach here.
-    run: async (c) => {
+    run: async (c, text) => {
       const k = key('k_deepgram');
       // mip_opt_out keeps what is sent out of Deepgram's training data - the same
       // parameter the app sends on every Deepgram request.
@@ -968,7 +981,7 @@ const TTS = [
         const t = setTimeout(() => { try { ws.close(); } catch {}
           reject(new Error('no answer within 15 seconds')); }, 15000);
         ws.onopen = () => {
-          ws.send(JSON.stringify({ type: 'Speak', text: $('ttsText').value }));
+          ws.send(JSON.stringify({ type: 'Speak', text: text }));
           ws.send(JSON.stringify({ type: 'Flush' }));
         };
         ws.onmessage = (e) => {
@@ -994,10 +1007,10 @@ const TTS = [
     id: 'local', name: 'On this device (no key, no bill)', local: true,
     cfg: [{ id: 'local_voice', label: 'voice', value: 'af_heart',
             kind: 'voice', builtin: LOCAL_VOICES }],
-    run: async (c) => {
+    run: async (c, text) => {
       if (!(await agreeToDownload())) throw new Error('download declined - nothing was sent or fetched');
       const tts = await loadLocalTts();
-      const audio = await tts.generate($('ttsText').value, { voice: c.local_voice });
+      const audio = await tts.generate(text, { voice: c.local_voice });
       return { blob: audio.toBlob() };
     },
   },
@@ -1006,11 +1019,11 @@ const TTS = [
     cfg: [{ id: 'az_voice', label: 'voice', value: 'en-US-JennyNeural',
             kind: 'voice', builtin: [['en-US-JennyNeural', 'Jenny - female, en-US']],
             fetch: 'az' }],
-    run: async (c) => {
+    run: async (c, text) => {
       const region = key('k_azure_region') || 'eastus';
       const ssml = '<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis"'
         + ' xml:lang="en-US"><voice name="' + c.az_voice + '">'
-        + escapeXml($('ttsText').value) + '</voice></speak>';
+        + escapeXml(text) + '</voice></speak>';
       const r = await fetch('https://' + region + '.tts.speech.microsoft.com/cognitiveservices/v1', {
         method: 'POST',
         headers: { 'Ocp-Apim-Subscription-Key': key('k_azure'),
@@ -1027,13 +1040,13 @@ const TTS = [
     cfg: [{ id: 'oa_voice', label: 'voice', value: 'alloy',
             kind: 'voice', builtin: OA_VOICES },
           { id: 'oa_model', label: 'model', value: 'gpt-4o-mini-tts' }],
-    run: async (c) => {
+    run: async (c, text) => {
       const r = await fetch('https://api.openai.com/v1/audio/speech', {
         method: 'POST',
         headers: { Authorization: 'Bearer ' + key('k_openai'),
                    'Content-Type': 'application/json' },
         body: JSON.stringify({ model: c.oa_model, voice: c.oa_voice,
-                               input: $('ttsText').value }),
+                               input: text }),
       });
       if (!r.ok) throw new Error(await describe(r));
       return { blob: await r.blob() };
@@ -1046,12 +1059,12 @@ const TTS = [
             builtin: [['21m00Tcm4TlvDq8ikWAM', 'Rachel - a library voice, needs a paid plan']],
             fetch: 'el' },
           { id: 'el_model', label: 'model', value: 'eleven_multilingual_v2' }],
-    run: async (c) => {
+    run: async (c, text) => {
       const r = await fetch('https://api.elevenlabs.io/v1/text-to-speech/'
                             + encodeURIComponent(c.el_voice), {
         method: 'POST',
         headers: { 'xi-api-key': key('k_eleven'), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: $('ttsText').value, model_id: c.el_model }),
+        body: JSON.stringify({ text: text, model_id: c.el_model }),
       });
       if (!r.ok) throw new Error(await describe(r));
       return { blob: await r.blob() };
@@ -1062,14 +1075,14 @@ const TTS = [
     cfg: [{ id: 'ca_voice', label: 'voice', value: '',
             kind: 'voice', builtin: [], fetch: 'ca' },
           { id: 'ca_model', label: 'model', value: 'sonic-2' }],
-    run: async (c) => {
+    run: async (c, text) => {
       if (!c.ca_voice) throw new Error('Cartesia needs a voice id - copy one from '
         + 'their voice library and paste it above.');
       const r = await fetch('https://api.cartesia.ai/tts/bytes', {
         method: 'POST',
         headers: { 'X-API-Key': key('k_cartesia'), 'Cartesia-Version': '2024-06-10',
                    'Content-Type': 'application/json' },
-        body: JSON.stringify({ model_id: c.ca_model, transcript: $('ttsText').value,
+        body: JSON.stringify({ model_id: c.ca_model, transcript: text,
           voice: { mode: 'id', id: c.ca_voice }, language: 'en',
           output_format: { container: 'wav', encoding: 'pcm_s16le', sample_rate: 24000 } }),
       });
@@ -1082,11 +1095,11 @@ const TTS = [
     cfg: [{ id: 'go_voice', label: 'voice', value: 'en-US-Neural2-F',
             kind: 'voice', builtin: [['en-US-Neural2-F', 'Neural2-F - female, en-US']],
             fetch: 'go' }],
-    run: async (c) => {
+    run: async (c, text) => {
       const r = await fetch('https://texttospeech.googleapis.com/v1/text:synthesize?key='
                             + encodeURIComponent(key('k_google')), {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ input: { text: $('ttsText').value },
+        body: JSON.stringify({ input: { text: text },
           voice: { languageCode: 'en-US', name: c.go_voice },
           audioConfig: { audioEncoding: 'MP3' } }),
       });
@@ -1353,55 +1366,91 @@ $('ttsStop').addEventListener('click', () => {
   if (currentAudio) { try { currentAudio.pause(); } catch {} }
 });
 
+// (!) A PAIR HAS TO BE HEARD BACK TO BACK OR IT IS NOT A COMPARISON. Judging a
+// respelling means holding two deliveries of the same sentence side by side, and a
+// person cannot do that across a gap of several seconds and five other voices. So when
+// the second box is filled every voice says both, one immediately after the other, and
+// the two rows sit together in the table.
+function playSequence(blobs, onBlocked) {
+  let i = 0;
+  const next = () => {
+    if (i >= blobs.length) return;
+    const el = playBlob(blobs[i++], onBlocked);
+    if (!el) return;
+    el.addEventListener('ended', next, { once: true });
+  };
+  next();
+}
+
 $('ttsRun').addEventListener('click', async () => {
   audioCtx();                       // unlock audio inside this real tap
   unlockPlayback();                 // and the element that will play the clips
   const table = $('ttsTable'), body = table.querySelector('tbody');
   body.textContent = ''; table.hidden = false;
   $('ttsRun').disabled = true;
-  const chosen = TTS.filter((p) => $('tts_on_' + p.id).checked);
-  let done = 0;
-  for (const p of chosen) {
-    const tr = document.createElement('tr');
-    tr.appendChild(cell(p.name));
-    const res = cell('working...', 'pending'); tr.appendChild(res);
-    const tm = cell('', 'num'); tr.appendChild(tm);
-    const playCell = document.createElement('td'); tr.appendChild(playCell);
-    const det = cell(''); tr.appendChild(det);
-    body.appendChild(tr);
 
-    if (!p.local && !key(p.needs)) {
-      res.textContent = 'skipped'; res.className = 'pending';
-      det.textContent = 'no key entered';
-      continue;
+  // One variant normally; two when a respelling is being tested. The label is only
+  // shown in the second case, so an ordinary run looks exactly as it always did.
+  const respelled = $('ttsText2').value.trim();
+  const variants = respelled
+    ? [{ label: 'as written', text: $('ttsText').value },
+       { label: 'respelled', text: respelled }]
+    : [{ label: '', text: $('ttsText').value }];
+
+  const chosen = TTS.filter((p) => $('tts_on_' + p.id).checked);
+  let done = 0, played = false;
+  for (const p of chosen) {
+    const heard = [];
+    for (const v of variants) {
+      const tr = document.createElement('tr');
+      tr.appendChild(cell(p.name + (v.label ? ' - ' + v.label : '')));
+      const res = cell('working...', 'pending'); tr.appendChild(res);
+      const tm = cell('', 'num'); tr.appendChild(tm);
+      const playCell = document.createElement('td'); tr.appendChild(playCell);
+      const det = cell(''); tr.appendChild(det);
+      body.appendChild(tr);
+
+      if (!p.local && !key(p.needs)) {
+        res.textContent = 'skipped'; res.className = 'pending';
+        det.textContent = 'no key entered';
+        continue;
+      }
+      const cfg = {};
+      for (const f of (p.cfg || [])) {
+        cfg[f.id] = f.kind === 'voice' ? voiceValue(f.id) : $(f.id).value.trim();
+      }
+      const t0 = performance.now();
+      try {
+        const r = await p.run(cfg, v.text);
+        const blob = r.blob || pcmToWavBlob(r.pcm, r.rate);
+        const took = performance.now() - t0;
+        res.textContent = 'spoke'; res.className = 'ok';
+        tm.textContent = ms(took);
+        const b = document.createElement('button');
+        b.textContent = 'Play';
+        b.addEventListener('click', () => playBlob(blob));
+        playCell.appendChild(b);
+        det.textContent = Math.round(blob.size / 1024) + ' KB';
+        heard.push(blob);
+        done++;
+      } catch (e) {
+        res.textContent = 'failed'; res.className = 'fail';
+        tm.textContent = ms(performance.now() - t0);
+        det.textContent = e.message;
+      }
     }
-    const cfg = {};
-    for (const f of (p.cfg || [])) {
-      cfg[f.id] = f.kind === 'voice' ? voiceValue(f.id) : $(f.id).value.trim();
-    }
-    const t0 = performance.now();
-    try {
-      const r = await p.run(cfg);
-      const blob = r.blob || pcmToWavBlob(r.pcm, r.rate);
-      const took = performance.now() - t0;
-      res.textContent = 'spoke'; res.className = 'ok';
-      tm.textContent = ms(took);
-      const b = document.createElement('button');
-      b.textContent = 'Play';
-      b.addEventListener('click', () => playBlob(blob));
-      playCell.appendChild(b);
-      det.textContent = Math.round(blob.size / 1024) + ' KB';
-      if (done === 0) playBlob(blob, (why) => { det.textContent = why; });
-      done++;
-    } catch (e) {
-      res.textContent = 'failed'; res.className = 'fail';
-      tm.textContent = ms(performance.now() - t0);
-      det.textContent = e.message;
+    // The first voice to produce anything plays itself, as it always has - and now
+    // plays the pair rather than half of it.
+    if (heard.length && !played) {
+      played = true;
+      playSequence(heard, (why) => { $('ttsStatus').textContent = why; });
     }
   }
   $('ttsRun').disabled = false;
   $('ttsStatus').textContent = done
-    ? 'Press Play on any row to hear it again.'
+    ? (respelled
+        ? 'Each voice said both. Press Play on any row to hear one again.'
+        : 'Press Play on any row to hear it again.')
     : 'Nothing was spoken - check the keys and the detail column.';
 });
 
