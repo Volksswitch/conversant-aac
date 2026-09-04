@@ -538,6 +538,9 @@ function englishOnly(lang) {
 const local = { tts: null, stt: null };
 
 const LOCAL_TTS_MODEL = 'onnx-community/Kokoro-82M-v1.0-ONNX';
+// Named here as well as in the hearing section, so section 1 can report the size of
+// the download before that section has been built.
+const LOCAL_STT_MODEL = 'onnx-community/whisper-base';
 
 // Read out of the library itself rather than invented - a wrong voice id here would
 // fail in a way that looks like the engine being broken.
@@ -637,8 +640,37 @@ async function localDtype() { return (await probeGraphics()).dtype; }
 // this machine rather than about an average one. The fast path uses full-precision
 // weights and is several times larger - which is worth seeing, because the machine that
 // downloads the most is the one that will then be quickest.
-const HF_BASE = 'https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX/resolve/main/';
+const HF_TTS = 'https://huggingface.co/' + LOCAL_TTS_MODEL + '/resolve/main/';
+const HF_STT = 'https://huggingface.co/' + LOCAL_STT_MODEL + '/resolve/main/';
 const modelFileFor = (dtype) => dtype === 'fp32' ? 'onnx/model.onnx' : 'onnx/model_quantized.onnx';
+// The hearing model is two files - an encoder that listens and a decoder that turns
+// what it heard into words - and both are fetched, so both count.
+const sttModelFiles = (dtype) => (dtype === 'fp32'
+  ? ['onnx/encoder_model.onnx', 'onnx/decoder_model_merged.onnx']
+  : ['onnx/encoder_model_quantized.onnx', 'onnx/decoder_model_merged_quantized.onnx']
+).map((f) => HF_STT + f);
+
+// Remembered so the download question further down can say how big the thing it is
+// asking about actually is, instead of "a few hundred megabytes".
+const modelBytes = { tts: 0, stt: 0 };
+
+async function reportModelSize(which, label, urls, dtype) {
+  try {
+    const sizes = await Promise.all(urls.map(async (u) => {
+      const r = await fetch(u, { method: 'HEAD' });
+      return Number(r.headers.get('content-length')) || 0;
+    }));
+    const total = sizes.reduce((a, b) => a + b, 0);
+    if (!total) throw new Error('no size returned');
+    modelBytes[which] = total;
+    machineRow('model_' + which, label, mbytes(total)
+      + (urls.length > 1 ? ' in ' + urls.length + ' files' : '')
+      + (dtype === 'fp32' ? ' - the fast path uses fuller weights' : ''));
+  } catch {
+    machineRow('model_' + which, label,
+      'could not be asked - no connection, or the model host is unreachable');
+  }
+}
 
 const machineRows = new Map();
 function machineRow(id, label, value) {
@@ -697,20 +729,20 @@ async function reportMachine() {
     }
   } catch { /* not every browser answers, and the page works without it */ }
 
-  // Asked of the real file rather than remembered, because these models are re-published
-  // and a number written down here would go quietly stale.
-  try {
-    const url = HF_BASE + modelFileFor(g.dtype);
-    const r = await fetch(url, { method: 'HEAD' });
-    const len = Number(r.headers.get('content-length'));
-    if (len) {
-      machineRow('model', 'One-time download for the speaking model',
-        mbytes(len) + ' (' + modelFileFor(g.dtype).split('/').pop() + ')');
-    }
-  } catch {
-    machineRow('model', 'One-time download for the speaking model',
-      'could not be asked - no connection, or the model host is unreachable');
-  }
+  // (!) SPEAKING AND HEARING ARE TWO SEPARATE DOWNLOADS, FROM TWO DIFFERENT PROJECTS,
+  // and reporting only the first understates what somebody using both will pay by
+  // roughly another half. They are cached independently, so turning one on costs
+  // nothing toward the other and either can be used alone - which is the reason to
+  // report them as two figures rather than one total.
+  //
+  // Asked of the real files rather than remembered, because these models are
+  // re-published and a number written down here would go quietly stale. The hearing
+  // model arrives in two pieces: one that listens and one that turns what it heard
+  // into words.
+  await reportModelSize('tts', 'One-time download - the speaking model',
+    [HF_TTS + modelFileFor(g.dtype)], g.dtype);
+  await reportModelSize('stt', 'One-time download - the hearing model',
+    sttModelFiles(g.dtype), g.dtype);
 
   // (!) LABELLED A GUESS, BECAUSE IT IS ONE. The browser's own figure is a rolling
   // estimate rounded into buckets, and some browsers offer it and others do not. It sits
@@ -886,9 +918,25 @@ async function loadLocalStt(modelId) {
 // (!) ASKED BEFORE THE DOWNLOAD, NOT AFTER. Several hundred megabytes arriving
 // unannounced on a tablet is the kind of surprise that makes somebody distrust a
 // tool. Answered once per page.
-let localAgreed = false;
-async function agreeToDownload() {
-  if (localAgreed) return true;
+// (!) ASKED PER MODEL, NOT ONCE. Speaking and hearing are two separate downloads from
+// two different projects, and a single answer covering both meant that agreeing in
+// order to hear a voice silently authorized another download later, whenever the
+// hearing box was ticked. The whole purpose of asking is not springing a few hundred
+// megabytes on somebody on a data plan - so the question names which model it is about
+// and is asked again for the second one.
+//
+// (!) AND IT NAMES THE REAL SIZE where section 1 has already measured it. "A few
+// hundred megabytes" is true of both and useful for neither: the answer is 88 MB or
+// 310 MB for speaking and 73 MB or 276 MB for hearing, depending on which path this
+// machine takes, and that is a different decision on a phone.
+const localAgreed = { speaking: false, hearing: false };
+
+async function agreeToDownload(kind) {
+  if (localAgreed[kind]) return true;
+
+  const bytes = modelBytes[kind === 'speaking' ? 'tts' : 'stt'];
+  const size = bytes ? mbytes(bytes) : 'a few hundred megabytes';
+
   // (!) ASK THE BROWSER HOW MUCH ROOM IT WILL GIVE, and say so in the question. On a
   // tablet the answer can be far smaller than the model, and a download that cannot be
   // kept means paying for it again on every visit - which reads as the engine being
@@ -905,11 +953,15 @@ async function agreeToDownload() {
           + 'is room to keep it.';
     }
   } catch { /* not all browsers answer; the question stands without it */ }
-  localAgreed = window.confirm(
-    'Running speech on this device needs a one-time download of the model - '
-    + 'a few hundred megabytes. It is kept by the browser afterwards, and nothing '
-    + 'you say is sent anywhere.' + room + '\n\nDownload it now?');
-  return localAgreed;
+
+  const other = kind === 'speaking' ? 'hearing' : 'speaking';
+  localAgreed[kind] = window.confirm(
+    `${kind === 'speaking' ? 'Speaking' : 'Hearing'} on this device needs a one-time `
+    + `download of the ${kind} model - `
+    + `${size}. It is kept by the browser afterwards, and nothing you say is sent `
+    + `anywhere.\n\nThe ${other} model is a separate download and is not included here; `
+    + `you will be asked again if you turn it on.` + room + '\n\nDownload it now?');
+  return localAgreed[kind];
 }
 
 const VOICE_FETCHERS = {
@@ -1008,7 +1060,7 @@ const TTS = [
     cfg: [{ id: 'local_voice', label: 'voice', value: 'af_heart',
             kind: 'voice', builtin: LOCAL_VOICES }],
     run: async (c, text) => {
-      if (!(await agreeToDownload())) throw new Error('download declined - nothing was sent or fetched');
+      if (!(await agreeToDownload('speaking'))) throw new Error('download declined - nothing was sent or fetched');
       const tts = await loadLocalTts();
       const audio = await tts.generate(text, { voice: c.local_voice });
       return { blob: audio.toBlob() };
@@ -1581,9 +1633,9 @@ const STT = [
   },
   {
     id: 'local', name: 'On this device (no key, no bill)', local: true,
-    cfg: [{ id: 'locals_model', label: 'model', value: 'onnx-community/whisper-base' }],
+    cfg: [{ id: 'locals_model', label: 'model', value: LOCAL_STT_MODEL }],
     run: async (c) => {
-      if (!(await agreeToDownload())) throw new Error('download declined - nothing was sent or fetched');
+      if (!(await agreeToDownload('hearing'))) throw new Error('download declined - nothing was sent or fetched');
       const fn = await loadLocalStt(c.locals_model);
       // Whisper wants plain 16 kHz mono samples, which is exactly what was recorded.
       const f32 = new Float32Array(clipPcm.length);
