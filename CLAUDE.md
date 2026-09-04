@@ -1163,12 +1163,28 @@ would be separate work per service. **Reach for it only if respelling proves not
 enough in the field** - which is a thing to find out from a tester with a hard name, not
 from the table.
 
-**Measured vs read, because the distinction decides how much the table is worth:** only
-Deepgram (August 8 2026) and the device's own voices (June 2026) have been HEARD to
-honor a respelling. Everything else is documentation read on September 4 2026. The
-on-device speaking model is the one genuine unknown - `kokoro-js@1.2.1` was read
-directly and takes a sentence and a voice and nothing else, so a respelling *should*
-work through its text-to-sounds step, and nobody has listened.
+**Measured vs read, because the distinction decides how much the table is worth:**
+Deepgram (August 8 2026), the device's own voices (June 2026) and the **ON-DEVICE voice
+(September 4 2026, in the bench)** are measured; everything else is documentation.
+
+**⚠ THE ON-DEVICE TEST FOUND A BETTER METHOD THAN LISTENING, and it should be the
+first one reached for on any model that runs here: `tts.stream()` YIELDS THE PHONEMES it
+is about to speak**, so two spellings can be compared as sound strings rather than judged
+by ear. Volksswitch `vˈɑːlkswɪtʃ` → Folks-switch `fˈoʊkssswˈɪtʃ` (V to F, and the vowel
+moved); rendezvous `ɹˈɑːndɪvˌuː` → rahn-day-voo `ɹˈɑːndˈeɪvˈuː` (the middle vowel became
+"day"). **This also sidesteps the August 8 trap** that speech-to-text normalises a
+respelling back to the real word, so a round trip cannot confirm one.
+
+**⚠ AND THE FINDING WORTH MORE THAN THE RESULT: one of the three names did not need
+respelling.** Kokoro already said Siobhan correctly, so "Shiv-awn" moved only the stress
+marks. **A respelling is a REPAIR** - hear the real spelling first, because respelling
+something the voice already gets right can only make it worse. Say this in any
+user-facing text about the boxes.
+
+**⚠ `stream(text)` NEVER YIELDS when handed a plain string** - it builds a splitter and
+never closes it, so a single sentence sits in the buffer forever and the call simply
+hangs with no error. Drive `TextSplitterStream` yourself and `close()` it. Anyone
+adopting kokoro-js for on-device speech will hit this.
 
 **The full comparison is section 5 of `Conversant AAC Speech Provider Guide.docx`.**
 
