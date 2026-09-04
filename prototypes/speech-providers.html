@@ -216,6 +216,14 @@
   where the services differ - that is usually where they do.
 </p>
 
+<div class="note" id="micWarning" hidden>
+  <strong>The microphone will not work on this page.</strong> A browser only offers it
+  to a page served over <code>https</code> (or from <code>localhost</code>), and this one
+  was opened another way - most likely straight from a file. The speaking tests above are
+  unaffected. To test hearing, put this file somewhere it can be served over https and
+  open it from there.
+</div>
+
 <div class="row">
   <button class="rec" id="recBtn">Start recording</button>
   <span class="timer" id="recTimer"></span>
@@ -565,12 +573,28 @@ async function loadLocalStt(modelId) {
 // unannounced on a tablet is the kind of surprise that makes somebody distrust a
 // tool. Answered once per page.
 let localAgreed = false;
-function agreeToDownload() {
+async function agreeToDownload() {
   if (localAgreed) return true;
+  // (!) ASK THE BROWSER HOW MUCH ROOM IT WILL GIVE, and say so in the question. On a
+  // tablet the answer can be far smaller than the model, and a download that cannot be
+  // kept means paying for it again on every visit - which reads as the engine being
+  // slow rather than as storage being full.
+  let room = '';
+  try {
+    const q = await navigator.storage.estimate();
+    if (q && q.quota) {
+      const mb = Math.round(q.quota / 1048576);
+      room = mb < 800
+        ? `\n\nWARNING: this browser offers about ${mb} MB of storage, which may not be `
+          + 'enough to keep the model. It would then be downloaded again each visit.'
+        : `\n\nThis browser offers about ${Math.round(mb / 1024)} GB of storage, so there `
+          + 'is room to keep it.';
+    }
+  } catch { /* not all browsers answer; the question stands without it */ }
   localAgreed = window.confirm(
     'Running speech on this device needs a one-time download of the model - '
     + 'a few hundred megabytes. It is kept by the browser afterwards, and nothing '
-    + 'you say is sent anywhere. Download it now?');
+    + 'you say is sent anywhere.' + room + '\n\nDownload it now?');
   return localAgreed;
 }
 
@@ -670,7 +694,7 @@ const TTS = [
     cfg: [{ id: 'local_voice', label: 'voice', value: 'af_heart',
             kind: 'voice', builtin: LOCAL_VOICES }],
     run: async (c) => {
-      if (!agreeToDownload()) throw new Error('download declined - nothing was sent or fetched');
+      if (!(await agreeToDownload())) throw new Error('download declined - nothing was sent or fetched');
       const tts = await loadLocalTts();
       const audio = await tts.generate($('ttsText').value, { voice: c.local_voice });
       return { blob: audio.toBlob() };
@@ -984,20 +1008,53 @@ function voiceValue(fieldId) {
 buildProviderCards(TTS, $('ttsProviders'), 'tts');
 
 let currentAudio = null;
-function playBlob(blob) {
-  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
-  const a = new Audio(URL.createObjectURL(blob));
-  currentAudio = a;
-  a.play().catch(() => {});
-  return a;
+/*
+ * (!) ONE AUDIO ELEMENT, UNLOCKED DURING A REAL TAP, REUSED FOREVER AFTER.
+ *
+ * iOS will not let a page play sound unless the play came from a tap, and a tap's
+ * permission is spent at the first `await`. Every clip here arrives AFTER an await -
+ * the service has to answer first - so a fresh `new Audio()` played at that point is
+ * refused on an iPad. A single element that was played once during the tap stays
+ * playable, so swapping its src later works.
+ *
+ * The old code also swallowed the refusal, which is the worst version of this: on an
+ * iPad the row would say "spoke", the timing would look fine, and no sound would come
+ * out, with nothing anywhere saying why.
+ */
+let player = null;
+const SILENCE = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9'
+              + 'AAACABAAZGF0YQAAAAA=';
+
+function unlockPlayback() {
+  if (player) return;
+  player = new Audio();
+  player.src = SILENCE;
+  // Refusal here is not fatal - it only means playback may need its own tap later.
+  player.play().then(() => player.pause()).catch(() => {});
+}
+
+function playBlob(blob, onBlocked) {
+  if (!player) player = new Audio();          // never unlocked; may still work off iOS
+  try { player.pause(); } catch { /* nothing playing */ }
+  if (player.src && player.src.startsWith('blob:')) URL.revokeObjectURL(player.src);
+  player.src = URL.createObjectURL(blob);
+  currentAudio = player;
+  player.play().catch((e) => {
+    // Say so rather than looking like silence from the service.
+    if (onBlocked) onBlocked(e && e.name === 'NotAllowedError'
+      ? 'the browser would not play it without a tap - press Play on the row'
+      : 'could not play the audio: ' + (e && e.message));
+  });
+  return player;
 }
 
 $('ttsStop').addEventListener('click', () => {
-  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+  if (currentAudio) { try { currentAudio.pause(); } catch {} }
 });
 
 $('ttsRun').addEventListener('click', async () => {
   audioCtx();                       // unlock audio inside this real tap
+  unlockPlayback();                 // and the element that will play the clips
   const table = $('ttsTable'), body = table.querySelector('tbody');
   body.textContent = ''; table.hidden = false;
   $('ttsRun').disabled = true;
@@ -1033,7 +1090,7 @@ $('ttsRun').addEventListener('click', async () => {
       b.addEventListener('click', () => playBlob(blob));
       playCell.appendChild(b);
       det.textContent = Math.round(blob.size / 1024) + ' KB';
-      if (done === 0) playBlob(blob);      // play the first one straight away
+      if (done === 0) playBlob(blob, (why) => { det.textContent = why; });
       done++;
     } catch (e) {
       res.textContent = 'failed'; res.className = 'fail';
@@ -1127,6 +1184,15 @@ function stopRecording() {
   $('sttStatus').textContent = total ? 'Ready.' : 'Nothing was recorded - try again.';
 }
 
+// (!) A FILE OPENED DIRECTLY IS NOT A SECURE PAGE, and the microphone is refused
+// without one. Worth saying up front rather than after a permission error, because the
+// bench is meant to be opened by double-clicking it - which is exactly the case that
+// cannot record.
+if (!window.isSecureContext) {
+  $('micWarning').hidden = false;
+  $('recStatus').textContent = 'Recording needs the page served over https.';
+}
+
 $('recBtn').addEventListener('click', () => {
   if (recording) stopRecording(); else startRecording();
 });
@@ -1167,7 +1233,7 @@ const STT = [
     id: 'local', name: 'On this device (no key, no bill)', local: true,
     cfg: [{ id: 'locals_model', label: 'model', value: 'onnx-community/whisper-base' }],
     run: async (c) => {
-      if (!agreeToDownload()) throw new Error('download declined - nothing was sent or fetched');
+      if (!(await agreeToDownload())) throw new Error('download declined - nothing was sent or fetched');
       const fn = await loadLocalStt(c.locals_model);
       // Whisper wants plain 16 kHz mono samples, which is exactly what was recorded.
       const f32 = new Float32Array(clipPcm.length);
