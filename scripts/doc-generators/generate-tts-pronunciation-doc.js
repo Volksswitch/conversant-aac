@@ -13,11 +13,16 @@ const borders = { top: border, bottom: border, left: border, right: border,
                   insideHorizontal: border, insideVertical: border };
 const cellMargins = { top: 80, bottom: 80, left: 120, right: 120 };
 
+// keepNext goes on the PARAGRAPH, not on the paragraph style: setting it in the style
+// definition is silently ignored, and the checker then reports every heading as able to
+// be stranded at the foot of a page (rule S3).
 function heading1(text) {
-    return new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun(text)] });
+    return new Paragraph({ heading: HeadingLevel.HEADING_1, keepNext: true,
+        children: [new TextRun(text)] });
 }
 function heading2(text) {
-    return new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun(text)] });
+    return new Paragraph({ heading: HeadingLevel.HEADING_2, keepNext: true,
+        children: [new TextRun(text)] });
 }
 function para(text, opts = {}) {
     return new Paragraph({
@@ -129,139 +134,164 @@ const doc = new Document({
             }),
             new Paragraph({
                 spacing: { before: 0, after: 60 },
-                children: [new TextRun({ text: "Punctuation and Characters That Affect How Browser Voices Pronounce a Phrase", italics: true, color: "595959", size: 24, font: "Arial" })]
+                children: [new TextRun({ text: "What Text Can and Cannot Do About the Way a Voice Says Something", italics: true, color: "595959", size: 24, font: "Arial" })]
             }),
             new Paragraph({
                 spacing: { before: 0, after: 240 },
-                children: [new TextRun({ text: "Kenneth R. Hackbarth  |  Volksswitch.org  |  June 2026", color: "808080", size: 20, font: "Arial" })]
+                children: [new TextRun({ text: "Kenneth R. Hackbarth  |  Volksswitch.org  |  June 2026  |  Last updated September 4, 2026", color: "808080", size: 20, font: "Arial" })]
             }),
 
-            // ===== 1. PURPOSE & SCOPE =====
+            // ===== 1 =====
             heading1("1.  Purpose and Scope"),
-            para("This document is a practical reference for nudging how the app's voices pronounce a phrase — pacing, pauses, and intonation — using only the characters you type into the text itself. It exists because our text-to-speech runs entirely in the browser, where the richer controls (SSML markup) are not available. The aim is to give you a short list of promising characters to try, and a clear note on what each one is likely to do, so you can experiment by ear."),
-            para("Scope: the voices we ship with today — the voices built into Windows and the voices supplied by Google Chrome — driven through the browser's built-in speech engine. The first place to apply anything you discover is the placeholder (\"filler\") statements, where a more thoughtful, unhurried delivery would sound far less robotic. See Section 6."),
-            emptyPara(),
+            para("Everything the app says is text before it is sound. This is a practical reference for what can be done to that text to change how it comes out, what cannot, and which of the two problems you are actually looking at."),
+            boldPara("Two jobs, and they are not the same one. ",
+                "The first is getting a word MADE OF THE RIGHT SOUNDS - a family name, a place, a brand. The second is everything laid over the top: where the voice rises and falls, which word is leaned on, where it pauses, how fast it goes. They have different remedies, they fail in different directions, and neither rescues the other. A voice with faultless delivery still has no idea how your cousin's name is said; a voice given a perfect respelling still reads the sentence flat if its delivery is poor."),
+            boldPara("Their names, because every company uses them. ",
+                "Writing a word the way it sounds rather than the way it is spelled - Worcester as Wooster - is PHONETIC RESPELLING, or just respelling. Everything laid over the top is PROSODY; a voice working that out from the sentence unaided, with nothing marked up by hand, is doing PROSODY PREDICTION, which the companies usually advertise as expressiveness or naturalness."),
+            boldPara("Scope: the voices the app can actually use. ",
+                "Those are the voices built into the device, driven through the browser, and Deepgram's Aura voice. A third, running the speaking model on the machine itself, exists in the comparison bench but not in the app. Services the app does not use are covered only where they show what would be gained by adding one."),
+            boldPara("⚠ This edition corrects the first, which was wrong about its own main subject. ",
+                "The June 2026 edition was largely a table of what commas, periods, ellipses and dashes do to pacing and intonation. It was written days before that was tested, and the test found the device's voices ignore all of it. The table is gone. What survived is the section it gave least room to - respelling - which turns out to be the one lever that works everywhere."),
 
-            boldPara("How to test (no special tools needed): ", "Use the \"Speak my answer\" button already built into the About Me questionnaire. Type a candidate phrase — punctuation and all — into any free-text (\"in my own words\") answer field, then tap \"Speak my answer\" and listen. That speaks the exact text in the voice currently selected in Settings, which is precisely the path real responses and placeholders take. To compare, change the voice in Settings and speak the same text again."),
-            emptyPara(),
-
-            // ===== 2. THE ONE BIG CAVEAT =====
-            heading1("2.  The One Big Caveat: Effects Are Per-Voice and Not Guaranteed"),
-            para("There is no formal, documented way to control prosody through the browser speech engine. Everything in this document is an effect that the underlying voice may produce — not a setting it must honor. The same character can behave differently on a Windows voice (e.g., \"Microsoft David\" / \"Microsoft Zira\") than on a Google Chrome voice (e.g., \"Google US English\"), and differently again across Windows versions."),
-            para("Two consequences follow, and they shape everything below:"),
-            bullet("Always test on the actual voice you intend to ship with. A pause that sounds perfect on one voice may be ignored — or read aloud as a word — on another."),
-            bullet("Some characters are spoken literally rather than interpreted. A voice may say \"dot dot dot\" for an ellipsis, \"ampersand\" for \"&\", or \"slash\" for \"/\". When that happens, the character is doing the opposite of what you want. Treat every candidate as guilty until you have heard it behave."),
-            emptyPara(),
-            para("What is reliable is the formal record: SSML (the markup standard that would let us write things like \"pause 400 milliseconds\" or \"raise the pitch here\") is not supported by the browser speech engine. Typing SSML tags into a phrase does not work — they are read aloud or stripped. Full prosody control is only available if we later move text-to-speech to a cloud voice service (a separate, future decision)."),
-            emptyPara(),
-
-            // ===== 3. PUNCTUATION FOR PAUSES & INTONATION =====
-            heading1("3.  Punctuation: Pacing and Intonation"),
-            para("Punctuation is the single most useful lever, because well-behaved voices already use it to decide where to pause and how a sentence rises or falls. The table lists the characters most likely to help, from shortest pause to longest, plus the intonation marks. \"Likely effect\" is the common behavior; confirm by ear."),
-            emptyPara(),
+            // ===== 2 =====
+            heading1("2.  What Works, and Where"),
+            para("The single most useful thing to know is that the answer depends on which voice is speaking, not on which trick you use. Read down the column you are actually on."),
             simpleTable(
-                ["Character", "Type as", "Likely effect", "Watch for"],
+                ["Voice", "Respelling a name", "Marking up the delivery", "A stored list of names"],
                 [
-                    ["Comma", { text: ", ", mono: true }, "Short pause; slight intonation reset. The gentlest way to slow a phrase.", "Usually safe."],
-                    ["Period", { text: ". ", mono: true }, "Sentence-final falling tone + a medium pause.", "Ends the 'sentence' — intonation drops."],
-                    ["Semicolon", { text: "; ", mono: true }, "Medium pause, less final than a period (tone doesn't fully drop).", "Some voices treat it like a comma."],
-                    ["Colon", { text: ": ", mono: true }, "Pause with an anticipatory feel ('here it comes').", "Varies; test."],
-                    ["Ellipsis", { text: "…  or  ...", mono: true }, "Trailing, hesitant pause — the most 'thinking out loud' mark. Ideal for fillers.", "Some voices say 'dot dot dot'. Try the single … character vs three periods."],
-                    ["Em dash", { text: "—  or  --", mono: true }, "Abrupt break or aside; a beat of separation.", "Some voices ignore it or say 'dash'."],
-                    ["Question mark", { text: "? ", mono: true }, "Rising / yes-no question intonation.", "Strongest, most reliable intonation cue."],
-                    ["Exclamation", { text: "! ", mono: true }, "A little more energy / emphasis.", "Effect is mild on most voices."],
-                    ["Parentheses", { text: "( ) ", mono: true }, "Sometimes a lowered, aside-like delivery for the enclosed words.", "Many voices ignore them entirely."],
-                    ["Line break", { text: "(new line)", mono: true }, "Often a pause similar to a period.", "Engine-dependent; not all honor it."]
-                ],
-                [1500, 1700, 3760, 2400]
-            ),
-            emptyPara(),
-            boldPara("Lengthening a pause. ", "To stretch a pause, the first thing to try is a stronger mark (comma → period → ellipsis), not a repeated one. Repeating marks (\"wait,, for it\" or extra dots) sometimes lengthens the gap but just as often gets read aloud or ignored — test before relying on it."),
-            boldPara("Stacking marks. ", "Combinations can read naturally: \"Hmm — let me think…\" gives a beat, then a trailing tail. Build the contour you want from the single-character effects above, then listen to the whole phrase, not the parts."),
-            emptyPara(),
+                    [{ text: "The device's own voices", bold: true },
+                     "Works - heard (June 2026)",
+                     "Nothing. Punctuation was tested and does not move pacing or intonation on the Google and Microsoft voices",
+                     "None. A browser offers no way to pass one"],
+                    [{ text: "Deepgram Aura", bold: true },
+                     "Works - heard (August 2026)",
+                     "No markup language, deliberately - but some text does carry through, measured below",
+                     "None"],
+                    [{ text: "On this device (bench only)", bold: true },
+                     "Works - measured (September 2026)",
+                     "Nothing",
+                     "None"],
+                    [{ text: "Azure, Google, Cartesia, ElevenLabs", bold: true },
+                     "Works",
+                     "Real markup, in various amounts",
+                     "Yes, on most of them"],
+                ], [2100, 1900, 3100, 2260]),
+            boldPara("So in practice, today, respelling is the whole toolkit. ",
+                "The app uses the first two rows and nothing else, and neither offers anything but respelling. That is not as thin as it sounds - respelling is the half that fixes names, which is the half that comes up."),
 
-            // ===== 4. CHARACTERS THAT CHANGE PRONUNCIATION =====
-            heading1("4.  Characters That Change Pronunciation (and Ones to Avoid)"),
-            para("Beyond pacing, some characters change which words are said or how a word is pronounced. These are useful for getting names and unusual words right — and a few are traps that make a voice say something you didn't intend."),
+            // ===== 3 =====
+            heading1("3.  Respelling: the Lever That Works Everywhere"),
+            para("The app has a “How to say it” box beside every person, every place, and every Express Panel phrase. What is typed there is swapped in at the last moment, as the words are handed to the voice."),
+            boldPara("⚠ Ask first whether it is needed at all. ",
+                "This is the lesson from the most recent test and it is worth more than the technique. Three names were tried; one of them, Siobhan, was already said correctly, so the respelling changed nothing but where the stress fell. A respelling is a REPAIR, and repairing something that is not broken can only make it worse. Hear the real spelling first."),
+            boldPara("Then write it the way it sounds. ",
+                "Do not fight the real spelling - abandon it. Break the word at the syllables with hyphens if that helps the voice find them. Use whatever spelling would make an English reader say the right thing, however odd it looks on the page: it is never seen by anybody."),
             emptyPara(),
+            para("Measured, on more than one voice:"),
             simpleTable(
-                ["Device", "Example", "Likely effect"],
+                ["Written as", "Respelled", "What actually changed"],
                 [
-                    ["Hyphenate to separate syllables", { text: "Volks-switch", mono: true }, "Encourages a clean two-part pronunciation instead of a slur. Good for names the voice mangles."],
-                    ["Respell phonetically", { text: "say 'kew' for Q", mono: true }, "Type the word the way it sounds. The most dependable way to fix a mispronounced name."],
-                    ["Spaces between letters", { text: "A A C", mono: true }, "Often spoken as separate letters ('A-A-C'). Useful for acronyms — or a problem if you wanted a word."],
-                    ["ALL CAPS", { text: "STOP", mono: true }, "Usually NOT louder or emphasized. Short all-caps words may be spelled out as letters instead — a common surprise."],
-                    ["Digits vs. words", { text: "1996  vs  nineteen ninety-six", mono: true }, "Digits are interpreted ('nineteen ninety-six' or 'one thousand…') in ways that vary; spelling it out removes all doubt."],
-                    ["Symbols read as words", { text: "&  %  $  #  /", mono: true }, "Commonly spoken as 'and', 'percent', 'dollars', 'number/hash', 'slash'. Spell out the word you actually want."],
-                    ["Quotation marks", { text: "\"like this\"", mono: true }, "Usually silent (ignored). Safe, but don't expect them to add emphasis."],
-                    ["Emoji / special glyphs", { text: "🙂  →  ★", mono: true }, "May be read aloud by name or skipped. Avoid in spoken text."]
-                ],
-                [2700, 2860, 3800]
-            ),
+                    ["Volksswitch", "Folks-switch",
+                     "The opening sound moved from a V to an F, and the vowel with it. Confirmed on two different voices"],
+                    ["rendezvous", "rahn-day-voo",
+                     "The middle vowel became “day”, as intended"],
+                    ["Siobhan", "Shiv-awn",
+                     "Almost nothing - the voice already said it correctly. The case that argues for listening first"],
+                ], [2000, 2000, 5360]),
             emptyPara(),
-            boldPara("Rule of thumb. ", "If a word or name comes out wrong, do not fight the spelling of the real word — type a respelling that sounds right and hyphenate the syllables. The listener hears speech, not text, so the 'misspelling' is invisible."),
-            emptyPara(),
+            boldPara("⚠ Notice what the repair costs. ",
+                "A hyphen buys the right sounds and can put a small pause in the middle of a name. Both respellings above produced a measurably longer clip than the original. A repair that fixes the name and breaks the rhythm may not be the one to keep."),
+            boldPara("⚠ And it is per voice. ",
+                "A spelling tuned to one voice is not guaranteed on another, so it has to be tried on the voice you actually intend to use. This is the strongest argument for the stored name lists the other services offer: those are held by the service and applied everywhere, rather than guessed at one sentence at a time."),
 
-            // ===== 5. WHEN CHARACTERS AREN'T ENOUGH =====
-            heading1("5.  When Characters Aren't Enough"),
-            para("Punctuation can shift pacing and the rise-and-fall at phrase boundaries, but it cannot raise the pitch of one word in the middle of a sentence or set an exact pause length. If a phrase needs more than the characters above can give, there are two deeper levers — noted here so the boundary is clear, but they are code changes, not things you type:"),
-            bulletBold("Per-utterance voice settings. ", "The app can already set a whole phrase's pitch, speaking rate, and volume. A filler could be spoken a little slower and lower than a real response, for instance."),
-            bulletBold("Splitting one phrase into several. ", "Because settings apply to a whole utterance, the only way to vary pitch or rate within a sentence is to speak it as two or three back-to-back pieces with different settings. This is how you would fake an inflection contour today."),
-            para("Anything richer than that — precise pause durations, true word-level emphasis — needs a cloud voice service that accepts SSML, which is a separate future decision with its own cost and network implications."),
-            emptyPara(),
+            // ===== 4 =====
+            heading1("4.  Delivery: What Can and Cannot Be Asked For"),
+            boldPara("On the device's own voices: nothing. ",
+                "Commas, periods, ellipses and em dashes were tried and produced no usable change in pausing or intonation on either the Google or the Microsoft voices. There is no way to ask them for a pause or a stress. They still have whatever delivery is built into the voice - a question mark lifts the end of a sentence - but it cannot be steered, and they are the oldest and flattest voices available to the app."),
+            boldPara("On Deepgram Aura: no markup, but some text does carry through. ",
+                "Measured on one voice, one run each, in August 2026. An ellipsis produced the longest pause of anything tried, about twice a period; a comma produced almost none. Writing a word in capitals made the phrase around half again as long, which is a real emphasis lever - and worth hearing before using, since the company's own advice is to avoid it."),
+            boldPara("⚠ Two pieces of common advice did NOT hold up when measured. ",
+                "More dots do not make a longer pause: six spaced dots produced a SHORTER one than three. And a hyphen, which is widely said to add a pause, produced less of one than a plain period. Where a technique is repeated everywhere and nobody has timed it, assume nothing."),
+            boldPara("What the app could still do on any voice, and does not. ",
+                "The browser lets a whole utterance be given a speaking rate, a pitch and a volume. The app sets none of them today - it chooses the voice and nothing else. Because those apply to a whole utterance, the only way to vary delivery inside a sentence is to speak it as two, which is worth knowing but is a build, not a text trick."),
+            boldPara("What a different service would add. ",
+                "Azure, Google, Cartesia and ElevenLabs all accept real markup, so a pause of a stated length or a stress on a chosen word becomes possible. Set against that, Deepgram's stated reason for having none is that voices now get delivery right unaided, and that hand-marking it is on the way out. If that holds, this is the half of the problem that shrinks with time - while the name problem does not move at all."),
 
-            // ===== 6. FIRST APPLICATION: PLACEHOLDER STATEMENTS =====
-            heading1("6.  First Application: Placeholder Statements"),
-            para("Placeholders are the best first target. They are short, they repeat, and they are supposed to sound like the user is thinking — exactly the delivery that a trailing pause conveys well. A flat \"Let me think.\" sounds like a finished statement; \"Let me think…\" sounds like the thought is still forming. The goal for fillers is unhurried and tentative, not crisp and final."),
-            emptyPara(),
-            para("Candidate rewrites to speak through the \"Speak my answer\" button and compare against the current versions:"),
-            emptyPara(),
+            // ===== 5 =====
+            heading1("5.  Things Every Voice Transforms"),
+            para("Separately from delivery, some characters change which words come out. These behave broadly alike everywhere and are worth knowing because they bite by accident."),
             simpleTable(
-                ["Current", "Try", "Why"],
+                ["What", "Example", "What happens"],
                 [
-                    [{ text: "Hmm.", mono: true }, { text: "Hmm…", mono: true }, "Trailing tail reads as pensive rather than clipped."],
-                    [{ text: "Let me think.", mono: true }, { text: "Let me think…", mono: true }, "Sounds like the thought is still forming."],
-                    [{ text: "Good question.", mono: true }, { text: "Good question…", mono: true }, "Softens the full stop into a lead-in to the pause that follows."],
-                    [{ text: "Give me a second.", mono: true }, { text: "Give me a second…", mono: true }, "Open-ended; less like an order, more like a request for patience."],
-                    [{ text: "Well…", mono: true }, { text: "Well…  (keep)", mono: true }, "Already uses the trailing ellipsis — a good model for the rest."],
-                    [{ text: "Oh.", mono: true }, { text: "Oh…", mono: true }, "Lets the reaction breathe instead of snapping shut."]
-                ],
-                [2700, 3000, 3660]
-            ),
-            emptyPara(),
-            para("Two cautions specific to fillers, both from earlier design notes:"),
-            bullet("A filler must read as 'I'm thinking', never as a real reply. (This is why short acknowledgment words that double as answers — 'Okay.', 'Right.', 'I see.' — were removed from the set: a partner hears them as the user's actual response to a greeting.)"),
-            bullet("If a candidate's punctuation gets read aloud on your chosen voice (e.g., '…' becomes 'dot dot dot'), discard that punctuation for that voice — a verbalized mark is worse than none."),
-            emptyPara(),
+                    ["Symbols", "&   %   $   #   /",
+                     "Spoken as words - “and”, “percent”, “dollars”, “slash”. Write the word you actually want"],
+                    ["Digits", "1235",
+                     "Interpreted, and not always as you meant: read as a year, “twelve thirty five”. Adding the word “and” - twelve hundred and thirty five - settles it. Measured"],
+                    ["Money and dates", "$45.82",
+                     "Expanded correctly on the voices tried, including the cents. Measured"],
+                    ["Digits with periods between them", "555.867.5309",
+                     "Forces digit-by-digit reading, which is what a phone number wants. Measured"],
+                    ["Initials and acronyms", "AAC   NASA",
+                     "Said correctly untouched on the voices tried - no help needed. Spacing the letters out is the fix if one is wrong. Measured"],
+                    ["Quotation marks", "“like this”",
+                     "Usually silent. Do not expect emphasis from them"],
+                    ["Emoji and stray glyphs", "★",
+                     "Read aloud by name, or skipped. Keep them out of anything that will be spoken"],
+                ], [2100, 1900, 5360]),
 
-            // ===== 7. SUGGESTED TESTING PROTOCOL =====
-            heading1("7.  Suggested Testing Protocol"),
-            para("A quick, repeatable way to evaluate any candidate string:"),
-            new Paragraph({ numbering: { reference: "numbers", level: 0 }, spacing: { after: 80 },
-                children: [new TextRun("In Settings, select the voice you intend to ship with, and note its name.")] }),
-            new Paragraph({ numbering: { reference: "numbers", level: 0 }, spacing: { after: 80 },
-                children: [new TextRun("Open About Me, open any topic, and find a free-text (\"in my own words\") field.")] }),
-            new Paragraph({ numbering: { reference: "numbers", level: 0 }, spacing: { after: 80 },
-                children: [new TextRun("Type the candidate phrase with its punctuation, then tap \"Speak my answer\" and listen.")] }),
-            new Paragraph({ numbering: { reference: "numbers", level: 0 }, spacing: { after: 80 },
-                children: [new TextRun("Type the plain version (no special punctuation) and speak it. Compare the two by ear.")] }),
-            new Paragraph({ numbering: { reference: "numbers", level: 0 }, spacing: { after: 80 },
-                children: [new TextRun("Confirm nothing was read aloud that shouldn't be (no 'dot dot dot', no 'dash', no symbol names).")] }),
-            new Paragraph({ numbering: { reference: "numbers", level: 0 }, spacing: { after: 160 },
-                children: [new TextRun("Repeat on a second voice (one Windows, one Google) before deciding — effects differ by voice.")] }),
-            para("Record which punctuation worked on which voice. Because behavior is per-voice, the practical output of this exploration is a short, voice-specific list of safe characters — not a universal rule.", { run: { italics: true, color: "595959" } }),
+            // ===== 6 =====
+            heading1("6.  Where This Shows Up in the App"),
+            bulletBold("The “How to say it” boxes. ",
+                "On every person, every place, and every Express Panel phrase. This is the main home for everything in section 3."),
+            bulletBold("Placeholder statements. ",
+                "The short phrases spoken while the user is choosing - “I'm thinking about that.”, “Still thinking it through.” and their siblings. The previous edition suggested adding trailing dots to make them sound pensive; that advice is WITHDRAWN for the device's own voices, which ignore them. On Aura an ellipsis does buy a real pause, so it is worth hearing there."),
+            bulletBold("The command phrases. ",
+                "Ask-them-to-repeat, hold on, the conversation openers, the wind-downs and the goodbyes are all user-authored text, so anything here applies to them too."),
             emptyPara(),
+            boldPara("⚠ A respelling must never leave the sound. ",
+                "It is swapped in at the last moment and reaches the voice alone - never the screen, never the saved conversation, never the AI. The last one is the trap: an assistant told that somebody is called “Shiv-awn” will write that into its suggestions, and the misspelling then appears on screen as the person's name."),
 
-            // ===== 8. QUICK REFERENCE =====
+            // ===== 7 =====
+            heading1("7.  How to Test"),
+            boldPara("To compare services, use the bench. ",
+                "prototypes/speech-providers.html speaks one sentence with every voice you have a key for. Its second box takes the same sentence respelled, and each voice then says both, one straight after the other - which is the only way to judge a respelling, since nobody can hold two deliveries in mind across a gap of several seconds."),
+            boldPara("To test the voice you actually ship with, stay in the app. ",
+                "Every Express Panel phrase has a speaker beside it in Settings, and every About Me answer has one. Those speak through the real voice with the real settings, which the bench does not."),
+            emptyPara(),
+            para("Four rules that matter more than the word list:"),
+            bullet("Always inside a carrying sentence, never a bare name. A word alone gets end-of-sentence intonation and comes out differently from the same word in the middle of a sentence, which is the real case."),
+            bullet("Hear the plain spelling first. Half the time there is nothing to fix."),
+            bullet("Listen for what the repair costs, not only for whether it worked - an inserted pause is the usual price."),
+            bullet("Test on the voice you will use. None of this transfers reliably between voices."),
+            emptyPara(),
+            para("A test set, each row aimed at something different:"),
+            simpleTable(
+                ["Sentence", "Respelled", "What it tells you"],
+                [
+                    ["Her name is Siobhan.", "Shiv-awn",
+                     "Whether it is needed at all - some voices already say it right"],
+                    ["I work with Volksswitch.", "Folks-switch",
+                     "The known-good case, confirmed on two voices. Your control"],
+                    ["She's from Worcester.", "Wooster",
+                     "A place name where the real spelling actively misleads"],
+                    ["I was talking to Nguyen.", "Win",
+                     "A very common surname that most voices get wrong - the hardest case"],
+                    ["Ask Regina about it.", "ruh-JY-nuh",
+                     "Stress rather than sounds. Some voices will move the emphasis and some will not, and a name can be wrong in that way alone"],
+                    ["I read that book last night.", "(nothing)",
+                     "Tests the VOICE, not the box: it should say “red”. A voice that gets this from the sentence around it needs less help generally"],
+                    ["It's an AAC device.", "A-A-C",
+                     "Whether letters need forcing apart, and whether hyphens do it or get spoken"],
+                ], [2500, 1500, 5360]),
+
+            // ===== 8 =====
             heading1("8.  Quick Reference"),
-            bulletBold("Slow a phrase gently: ", "add a comma."),
-            bulletBold("Make it sound tentative / thinking: ", "end with an ellipsis (…)."),
-            bulletBold("Add a beat or aside: ", "use an em dash (—)."),
-            bulletBold("Question intonation: ", "end with ? (the most reliable intonation cue)."),
-            bulletBold("Fix a mispronounced name: ", "respell it phonetically and hyphenate the syllables."),
-            bulletBold("Avoid: ", "ALL CAPS for emphasis (doesn't work), bare symbols (& % $ # /), emoji, and any mark your chosen voice reads aloud."),
-            bulletBold("Remember: ", "test on the real voice — none of this is guaranteed across voices, and SSML markup does not work in the browser engine."),
-            emptyPara(),
+            bullet("A name comes out wrong: respell it the way it sounds, hyphenate the syllables, and hear the plain version first in case it was already right."),
+            bullet("A respelling is never seen by anyone - not on screen, not in the saved conversation, not by the AI."),
+            bullet("Pauses and intonation cannot be steered at all on the device's own voices. Punctuation was tested and does nothing."),
+            bullet("On Deepgram Aura an ellipsis buys the longest pause available, and capitals genuinely add emphasis - but more dots do not buy more pause."),
+            bullet("Symbols, digits and emoji are transformed on every voice. Write the words you want said."),
+            bullet("Nothing here transfers between voices. Test on the one you will use, in a full sentence."),
         ]
     }]
 });

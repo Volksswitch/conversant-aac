@@ -89,6 +89,12 @@ fs.writeFileSync = function guardedWriteFileSync(target, data, ...rest) {
     // else is a trap baited with its own name.
     const redirected = !!process.env.OUTPATH;
     if (redirected) {
+        // Say where it really went. Generators log the canonical path themselves, so
+        // without this line a redirected run announces that it wrote the live document
+        // - which reads as exactly the accident this branch exists to prevent, and
+        // sends the reader to check whether their work has just been destroyed.
+        console.log('OUTPATH set: ' + name + ' written to ' + process.env.OUTPATH
+            + ' instead (the document was not touched)');
         return previous(process.env.OUTPATH, data, ...rest);
     }
     const guarded = !redirected
