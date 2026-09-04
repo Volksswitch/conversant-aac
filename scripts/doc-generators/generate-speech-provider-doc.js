@@ -394,7 +394,7 @@ const doc = new Document({
             step("Go to azure.microsoft.com and create a free account. A card is required to prove you are a real person; there is a temporary hold of about a dollar and no charge.", "az"),
             step("In the Azure portal, create a resource of type Speech.", "az"),
             step("When asked for a pricing tier, choose the free tier, named F0. This is the step that matters - it is what keeps the account free, and it survives after the introductory credit expires.", "az"),
-            step("Note the region you chose. It is part of the address the app talks to, and the bench asks for it separately.", "az"),
+            step("Note the region you chose, and choose a near one. It is part of the address the app talks to, the bench asks for it separately, and it is a speed decision rather than paperwork: measured from a machine in the United States, the round trip to an eastern-US region was 108 ms and to a western-European one 266 ms. That is paid on every turn of every conversation.", "az"),
             step("Open the Keys and Endpoint page for that resource and copy one of the two keys.", "az"),
             lead("Two keys, on purpose. ", "Azure gives every resource a pair so you can replace one while the other keeps working. Either will do, and either covers both speaking and hearing."),
             lead("⚠ The free tier is one per account, per region - and this decides how to set up testers. ",
@@ -447,7 +447,7 @@ const doc = new Document({
             // ===== 7 =====
             heading1("7. Trying Them Out"),
             para("The comparison tool is prototypes/speech-providers.html in the project folder. Open it in a browser; there is nothing to install."),
-            step("Read section 1 first. It reports itself as the page opens: whether the browser will let this machine use its graphics hardware, which decides how fast the on-device engines can possibly be, and how big their one-time download would be here. A button beside it measures the connection to the place those models come from, and another copies the lot for sending on.", "use"),
+            step("Read section 1 first. It reports itself as the page opens: whether the browser will let this machine use its graphics hardware, which decides how fast the on-device engines can possibly be, and how big their one-time download would be here. A button beside it measures the round trip to each service - the travel time paid on every turn of every conversation - and another copies the lot for sending on.", "use"),
             step("Paste in keys for the services you want to compare. Blank ones are simply skipped.", "use"),
             step("Press Check reachability. This confirms a browser can talk to each service at all, and needs no key of your own.", "use"),
             step("For speaking: edit the sentence if you like, then press the button to speak it with every voice. The first is played automatically; press Play on any row to hear it again.", "use"),
@@ -462,6 +462,8 @@ const doc = new Document({
                 "Every one of these will transcribe a clear sentence correctly. Include a name, a place, or a word said quickly, because that is where they diverge and that is what a real conversation is full of."),
             lead("Treat the timings as a ranking, not a measurement. ",
                 "The bench waits for the whole clip before it plays anything, whereas the app starts speaking as soon as the first part arrives. So the numbers are useful against each other and are not what a user would experience."),
+            lead("⚠ The one timing on the page that IS a measurement is the round trip in section 1. ",
+                "It is travel time alone - the services refuse those requests and do no work for them - so it separates the two halves of a wait that otherwise arrive as one number. A slow total with a fast round trip is the service being slow; a slow round trip is the network, and no choice of service will fix it. It also belongs to the CONNECTION rather than to the machine, so it is worth taking again on each one somebody will really use: a wired network, Wi-Fi and cellular give three different answers, and cellular is usually much the worst."),
 
             // ===== 8 =====
             heading1("8. What We Already Know"),

@@ -123,10 +123,15 @@
 <!-- ===================== THIS MACHINE ===================== -->
 <h2>1. This machine</h2>
 <p class="lede">
-  The on-device engines are much faster on some machines than others, and the reason is
-  almost never the model - it is whether the browser will let the page use the graphics
-  hardware. That is reported here rather than left to be guessed at from a slow result.
-  Everything in this first line is free to check and is done as the page opens.
+  Two things about the machine in front of you decide more than any choice of service.
+  The <strong>graphics hardware</strong> is why the on-device engines are much faster on
+  some machines than others - the reason is almost never the model, it is whether the
+  browser will let the page use it, and that is reported here rather than left to be
+  guessed at from a slow result. The <strong>round trip to each service</strong> is what
+  is paid on every turn of every conversation, and it belongs to the connection rather
+  than to the machine: the same tablet on a wired network, on Wi-Fi and on cellular will
+  give three different answers. Everything free to check is done as the page opens;
+  anything that costs data waits for the button.
 </p>
 
 <table id="machineTable">
@@ -135,10 +140,10 @@
 </table>
 
 <div class="row">
-  <button id="netBtn">Measure the connection</button>
+  <button id="netBtn">Measure the round trip to each service</button>
   <button id="copyMachine">Copy this report</button>
-  <span class="hint" id="netHint">Downloads about 4 MB from the place the models come
-    from, so it costs a little data. Nothing is uploaded.</span>
+  <span class="hint" id="netHint">A handful of tiny requests, no key needed and nothing
+    uploaded. Worth running again on every connection you will really use.</span>
 </div>
 
 <!-- ===================== KEYS ===================== -->
@@ -638,11 +643,6 @@ function machineRow(id, label, value) {
 }
 
 const mbytes = (bytes) => (bytes / 1048576).toFixed(0) + ' MB';
-function humanTime(seconds) {
-  if (!isFinite(seconds)) return 'unknown';
-  if (seconds < 90) return Math.round(seconds) + ' seconds';
-  return Math.round(seconds / 60) + ' minutes';
-}
 
 async function reportMachine() {
   const g = await probeGraphics();
@@ -693,7 +693,6 @@ async function reportMachine() {
     if (len) {
       machineRow('model', 'One-time download for the speaking model',
         mbytes(len) + ' (' + modelFileFor(g.dtype).split('/').pop() + ')');
-      modelBytes = len;
     }
   } catch {
     machineRow('model', 'One-time download for the speaking model',
@@ -712,58 +711,95 @@ async function reportMachine() {
   }
 }
 
-let modelBytes = 0;
-
-/* (!) WHAT THIS MEASURES IS NARROWER THAN "NETWORK SPEED", and saying so is the point.
- * It is this machine's connection TO THE PLACE THE MODELS COME FROM, at this moment.
- * That is the number worth having - a first-run download is the one thing on this page
- * big enough for a connection to matter - and it is not a general speed test.
+/* (!) THE NUMBER THAT MATTERS IS THE ROUND TRIP TO EACH SERVICE, NOT DOWNLOAD SPEED.
+ * A first-run model download is large but happens once, so how long it takes changes
+ * nothing about living with the app. What is paid on EVERY turn of EVERY conversation
+ * is the travel time to whichever service is speaking or hearing - and that is the
+ * thing this app spends its whole design fighting, because a partner will not wait.
  *
- * Setting up the connection is counted separately from moving bytes over it. Timing the
- * whole thing from the first byte of the request would fold the round trip into the
- * throughput and report a fast link as a slow one, which is the usual way these come out
- * wrong.
+ * (!) AND IT IS A PROPERTY OF THE CONNECTION, NOT OF THE MACHINE. The same tablet on
+ * a wired network, on Wi-Fi, and on cellular will give three different answers, and
+ * cellular is usually several times the worst. So this is worth running again on each
+ * connection somebody will really use, rather than once at a desk.
+ *
+ * (!) WHAT IT IS NOT: the app's response time. This is travel only - the request is
+ * deliberately refused, so no service does any work for it. The whole wait is that plus
+ * however long the service then takes to speak or transcribe, which sections 4 and 5
+ * measure for real once there are keys. Separating the two is the point: a slow total
+ * with a fast round trip is the service's doing, and a slow round trip is the network's.
  */
-async function measureNetwork() {
+
+// The same hosts the app really talks to. Deepgram is asked over https rather than over
+// the websocket it uses in earnest - same host, same handshake, so the same travel time,
+// and a websocket cannot be timed cleanly with a wrong key (see the note on the
+// reachability probe). The refusals are deliberate; no key of yours is used.
+function latencyTargets() {
+  const region = key('k_azure_region') || 'eastus';
+  return [
+    ['Deepgram', 'https://api.deepgram.com/v1/speak?model=aura-2-thalia-en',
+      { method: 'POST', headers: { Authorization: 'Token ' + FAKE,
+        'Content-Type': 'application/json' }, body: JSON.stringify({ text: 'hi' }) }],
+    ['Azure Speech (' + region + ')',
+      'https://' + region + '.api.cognitive.microsoft.com/sts/v1.0/issueToken',
+      { method: 'POST', headers: { 'Ocp-Apim-Subscription-Key': FAKE } }],
+    ['OpenAI', 'https://api.openai.com/v1/audio/speech',
+      { method: 'POST', headers: { Authorization: 'Bearer ' + FAKE,
+        'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'tts-1', input: 'hi', voice: 'alloy' }) }],
+    ['ElevenLabs', 'https://api.elevenlabs.io/v1/voices',
+      { headers: { 'xi-api-key': FAKE } }],
+    ['Cartesia', 'https://api.cartesia.ai/voices?limit=1',
+      { headers: { 'X-API-Key': FAKE, 'Cartesia-Version': '2024-06-10' } }],
+    ['Google Cloud', 'https://texttospeech.googleapis.com/v1/voices?key=' + FAKE, {}],
+  ];
+}
+
+// (!) THE FIRST CALL AND THE ONES AFTER IT ARE DIFFERENT QUESTIONS, so both are kept.
+// The first pays for finding the host and setting up an encrypted connection; the rest
+// reuse it. In a real conversation the app pays the first once and the rest on every
+// turn, so the repeated figure is the one that describes living with it - and a large
+// gap between the two is itself worth seeing, because it says the setup is the
+// expensive part on this connection.
+async function timeOne(url, init) {
+  const t0 = performance.now();
+  try {
+    await fetch(url, Object.assign({ cache: 'no-store' }, init));
+  } catch (e) {
+    return null;                       // blocked or offline; the caller says so
+  }
+  return performance.now() - t0;
+}
+
+async function measureRoundTrips() {
   const btn = $('netBtn');
   btn.disabled = true;
-  const g = await probeGraphics();
-  const url = HF_BASE + modelFileFor(g.dtype);
-  const TARGET = 4 * 1048576;
+  $('netHint').textContent = 'Measuring...';
   try {
-    machineRow('net', 'Connection to the model host', 'measuring...');
-    const t0 = performance.now();
-    const res = await fetch(url + '?probe=' + Date.now(),
-      { headers: { Range: 'bytes=0-' + (TARGET - 1) }, cache: 'no-store' });
-    if (!res.ok && res.status !== 206) throw new Error('the host answered ' + res.status);
-    const reader = res.body.getReader();
-    let got = 0, tFirst = null, firstChunk = 0;
-    while (got < TARGET) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      if (tFirst === null) { tFirst = performance.now(); firstChunk = value.length; }
-      got += value.length;
+    for (const [name, url, init] of latencyTargets()) {
+      machineRow('rt_' + name, 'Round trip - ' + name, 'measuring...');
+      const cold = await timeOne(url, init);
+      if (cold === null) {
+        machineRow('rt_' + name, 'Round trip - ' + name,
+          'no answer - offline, or this service is blocked here');
+        continue;
+      }
+      const warm = [];
+      for (let i = 0; i < 3; i++) {
+        const t = await timeOne(url, init);
+        if (t !== null) warm.push(t);
+      }
+      warm.sort((a, b) => a - b);
+      const median = warm.length ? warm[Math.floor(warm.length / 2)] : null;
+      machineRow('rt_' + name, 'Round trip - ' + name,
+        (median === null ? Math.round(cold) + ' ms'
+          : Math.round(median) + ' ms once connected')
+        + ' (first call ' + Math.round(cold) + ' ms)');
     }
-    const tEnd = performance.now();
-    try { await reader.cancel(); } catch { /* already finished */ }
-
-    const setup = Math.round(tFirst - t0);
-    const movedBits = (got - firstChunk) * 8;
-    const movedSecs = (tEnd - tFirst) / 1000;
-    const mbps = movedSecs > 0.05 ? movedBits / movedSecs / 1e6 : null;
-
-    machineRow('net', 'Connection to the model host',
-      'answered in ' + setup + ' ms'
-      + (mbps ? ', then about ' + mbps.toFixed(1) + ' Mbps over ' + mbytes(got) : '')
-      + (mbps ? '' : ' (it arrived too quickly to time - already cached, or very fast)'));
-
-    if (mbps && modelBytes) {
-      const secs = (modelBytes * 8) / (mbps * 1e6);
-      machineRow('estimate', 'So the one-time model download would take',
-        'about ' + humanTime(secs) + ', once');
-    }
-  } catch (e) {
-    machineRow('net', 'Connection to the model host', 'could not be measured - ' + e.message);
+    $('netHint').textContent = 'Travel time only - the services refused these on purpose '
+      + 'and did no work. Run it again on Wi-Fi, on cellular and on a wired network: the '
+      + 'numbers will differ, and that difference is the point. Changing the Azure region '
+      + 'above and measuring again adds a row rather than replacing one, so two regions '
+      + 'can be compared side by side.';
   } finally {
     btn.disabled = false;
   }
@@ -801,7 +837,7 @@ function copyMachineReport() {
   });
 }
 
-$('netBtn').addEventListener('click', measureNetwork);
+$('netBtn').addEventListener('click', measureRoundTrips);
 $('copyMachine').addEventListener('click', copyMachineReport);
 reportMachine();
 
