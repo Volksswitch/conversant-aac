@@ -26,6 +26,12 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Fixed: your Tester name could go missing on its own. Loading a saved settings
+  file emptied it if that file had been saved before you typed the name in, and
+  restoring a backup made on another device replaced it with that device's name.
+  It now stays as you set it, whatever you load or restore. If you filled that box
+  in once and later found it blank or showing somebody else, this was why.
+
 
 ## Version 0.10.0
 

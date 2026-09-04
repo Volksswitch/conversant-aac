@@ -420,9 +420,29 @@ const SETTINGS_DIR = 'settings';
 // the same class of reason as `activeSettingsProfile`: they describe THIS
 // installation, not the person. A profile loaded onto a second device must not
 // clone the first device's identity or make it think it has already reported this
-// week. `testerName` is deliberately NOT excluded — it identifies the tester, so it
-// should follow them (Ken, August 7 2026).
-const PROFILE_EXCLUDE = ['apiKey', 'deepgramKey', 'usageInputTokens', 'usageOutputTokens', 'usageCacheWriteTokens', 'usageCacheReadTokens', 'usageSttSeconds', 'usageTtsCharacters', 'usageSince', 'lastSeenVersion', 'activeSettingsProfile', 'installId', 'weeklySendLastAt', 'weeklyInfoHash', 'weeklyEndpoint', 'weeklyErrorMark'];
+// week.
+//
+// (!) `testerName` IS EXCLUDED, REVERSING THE AUGUST 7 2026 DECISION that it should
+// follow the tester because it identifies the person. It does not behave that way in
+// practice, and the reversal is Ken's (September 4 2026) after he described the field
+// sequence that breaks it: set the UI up, save a profile, THEN type the tester name,
+// and later reload that profile to undo a bad setting. The reload silently blanks the
+// name, because a profile replaces the whole bundle with what it happens to carry —
+// and the tester never looks, because they set it once and assume it stuck.
+//
+// (!) THE WORSE CASE, AND IT IS THE ONE THAT DECIDED THIS: a name in a BACKUP is not
+// blanked, it is INHERITED. Measured in Ken's own folder — two backups an hour apart
+// carrying 'Ken - Laptop' and 'Ken - Desktop'. Restoring the older one onto the desktop
+// makes that machine report under the laptop's name, and handing a starter backup to a
+// new tester makes their device report as Ken. A wrong name is worse than a missing one
+// because a missing one announces itself: '(not set)' is visible in the Sheet and gets
+// chased, while a plausible wrong name is never questioned and quietly corrupts the very
+// data the beta exists to produce.
+//
+// The cost is one field retyped when a person sets up a second device, and it is not
+// really a cost: Ken's own devices are named 'Ken - Laptop' and 'Ken - Desktop', so the
+// name is in practice a property of the DEVICE, which is exactly what this list holds.
+const PROFILE_EXCLUDE = ['apiKey', 'deepgramKey', 'usageInputTokens', 'usageOutputTokens', 'usageCacheWriteTokens', 'usageCacheReadTokens', 'usageSttSeconds', 'usageTtsCharacters', 'usageSince', 'lastSeenVersion', 'activeSettingsProfile', 'installId', 'testerName', 'weeklySendLastAt', 'weeklyInfoHash', 'weeklyEndpoint', 'weeklyErrorMark'];
 
 // The settings bundle with both API keys replaced by a presence marker, for a
 // problem report (Ken, August 7 2026). The redaction lives HERE rather than in

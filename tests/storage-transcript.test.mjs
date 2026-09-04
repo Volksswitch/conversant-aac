@@ -279,3 +279,57 @@ test('the tidy-up is gone: a committed partner turn is stored exactly as heard',
     // files written while the tidy-up existed genuinely hold a different value.
     assert.equal(first.cleanedTranscript, first.rawTranscript);
 });
+
+/* ── The tester name survives everything that replaces settings ───────────── */
+
+/* (!) WHY THESE EXIST (Ken, September 4 2026). He described the field sequence that
+ * breaks it, and it is an ordinary one: set the UI up, save a profile, THEN type the
+ * tester name, and later reload that profile to undo a setting you regret. The reload
+ * used to blank the name, because a profile replaces the whole bundle with whatever it
+ * happens to carry — and nobody looks afterwards, because they set it once and assume
+ * it stuck. Everything they send from then on is anonymous.
+ *
+ * ⚠ THE SECOND TEST IS THE IMPORTANT ONE, and it is the case that decided the fix: a
+ * name in a BACKUP is not blanked, it is INHERITED. Two backups in Ken's own folder an
+ * hour apart carry 'Ken - Laptop' and 'Ken - Desktop'. Restoring one onto the other
+ * machine makes it report under the wrong name, and a starter backup handed to a new
+ * tester would make their device report as Ken. A plausible wrong name is never
+ * questioned, where a missing one shows up as '(not set)' and gets chased.
+ *
+ * Driven through the real profile writer and reader against a real folder, because the
+ * bug lived in the merge between them and not in either end. */
+test('reloading a settings profile cannot blank the tester name', async () => {
+    await storage.restoreDataFolder();
+    // The sequence Ken described: settings saved as a profile BEFORE the name is typed.
+    storage.saveSilenceThreshold(2000);
+    await storage.saveSettingsProfile('before naming');
+    storage.saveTesterName('SLP 2 - iPad');
+
+    await storage.applySettingsProfile('before naming');
+    assert.equal(storage.loadTesterName(), 'SLP 2 - iPad');
+    // The profile still did its actual job.
+    assert.equal(storage.loadSilenceThreshold(), 2000);
+
+    // And a profile written now carries no name at all, so it cannot revive a stale
+    // one later either — nor leak a tester's name into a file they share.
+    await storage.saveSettingsProfile('after naming');
+    const dir = await root.getDirectoryHandle('settings');
+    const fh = await dir.getFileHandle('after naming.json');
+    const saved = JSON.parse(await (await fh.getFile()).text());
+    assert.equal('testerName' in saved.settings, false);
+});
+
+test('importing a backup cannot rename this device to somebody else', async () => {
+    await storage.restoreDataFolder();
+    storage.saveTesterName('SLP 2 - iPad');
+    // A backup made on a different machine, of the kind handed to a new tester.
+    storage.applyPortableSettings({ testerName: 'Ken - Laptop', silenceThreshold: 1500 });
+    assert.equal(storage.loadTesterName(), 'SLP 2 - iPad');
+    assert.equal(storage.loadSilenceThreshold(), 1500);
+
+    // A device that has never been named stays visibly unnamed rather than borrowing
+    // one. '(not set)' in the Sheet is a question somebody asks; a wrong name is not.
+    storage.saveTesterName('');
+    storage.applyPortableSettings({ testerName: 'Ken - Laptop' });
+    assert.equal(storage.loadTesterName(), '');
+});
