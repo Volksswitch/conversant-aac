@@ -1207,6 +1207,40 @@ of what can be done with them, which is why it is the mechanism the app uses.
 
 **The full comparison is section 5 of `Conversant AAC Speech Provider Guide.docx`.**
 
+## ON HOLD - a BLIND listening study for choosing a voice (Ken, September 4 2026)
+
+**Ken's idea, recorded and deliberately not built: keep the spoken results for several
+sentences, and give listeners a way to hear them blind, comment, and pick a favorite -
+either a composite recording or a row of play buttons.** He put it on hold the same day
+and may come back to it. Nothing exists; what follows is the design thinking, so it is
+not re-derived from scratch.
+
+**⚠ BLINDING THE LABELS IS NOT ENOUGH, AND THE LEAK THAT WOULD DECIDE THE RESULT IS
+LOUDNESS.** These services return audio at noticeably different levels, and in listening
+tests the louder one is reliably preferred - which is why the audio standards require
+level-matching before any comparison is run. Without normalizing, the study partly
+measures output gain and nobody would ever know. Order is the second leak: shuffle per
+LISTENER, not once when the file is built.
+
+**A self-contained page beats a composite recording, and it is not close.** One file
+either way, and both email just as easily - but a page can shuffle per listener, hide the
+names, and end with a copy-my-answers button, which is the pattern the bench and the
+problem report already use. A single recording can do none of that and makes replaying
+one item a chore.
+
+**Ask by FORCED CHOICE, for the reason already settled in `Conversant AAC Sounds Like
+Me.docx`:** comparative judgment is far more reliable than rating each voice out of five,
+and people are much better at "this one, not that one" than at scoring in isolation. Six
+voices is fifteen pairs, roughly ten minutes.
+
+**⚠ AND THE PART THAT IS A PRODUCT DECISION RATHER THAN A METHOD ONE: this is the
+USER'S voice, so a panel must not be allowed to outvote them.** The project's standing
+position on partner input applies unchanged - it informs, it is marked second-hand, and
+it never outranks the user. It also means the two groups get DIFFERENT questions, exactly
+as the partner-review decision concluded: the user is asked what they would want to be
+heard as, and everybody else is asked what sounds natural and easy to understand, because
+that is the question each is qualified to answer.
+
 ## A speech-to-speech model CANNOT be used here, however good they get (September 3 2026)
 
 **Ken noticed that OpenAI and Google sell speech services alongside their AI and
