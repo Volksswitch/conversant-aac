@@ -233,10 +233,6 @@
 </fieldset>
 
 <div class="row">
-  <span class="hint" id="localNote"></span>
-</div>
-
-<div class="row">
   <button class="primary" id="ttsRun">Speak it with every voice</button>
   <button id="ttsStop">Stop</button>
   <span class="hint" id="ttsStatus"></span>
@@ -563,16 +559,15 @@ const LOCAL_VOICES = [
 ];
 
 // One place to report a long download, so both engines behave the same way.
-function localProgress(label) {
+// (!) PROGRESS GOES WHERE IT WAS ASKED FOR. It used to go to one span in the SPEAKING
+// section whichever model was downloading, so fetching the hearing model reported its
+// progress under the voices - in a section the reader was not looking at.
+function localProgress(el) {
   return (p) => {
-    if (!p || p.status !== 'progress' || !p.total) return;
+    if (!el || !p || p.status !== 'progress' || !p.total) return;
     const pct = Math.round((p.loaded / p.total) * 100);
-    setLocalNote(`${label}: downloading ${p.file || 'model'} - ${pct}%`);
+    el.textContent = `Downloading ${p.file || 'the model'} - ${pct}%`;
   };
-}
-function setLocalNote(text) {
-  const el = $('localNote');
-  if (el) el.textContent = text;
 }
 
 /* WebGPU where it exists, otherwise the slower path that works everywhere.
@@ -650,9 +645,15 @@ const sttModelFiles = (dtype) => (dtype === 'fp32'
   : ['onnx/encoder_model_quantized.onnx', 'onnx/decoder_model_merged_quantized.onnx']
 ).map((f) => HF_STT + f);
 
-// Remembered so the download question further down can say how big the thing it is
-// asking about actually is, instead of "a few hundred megabytes".
+// Remembered so the download button can say how big the thing it is offering actually
+// is, instead of "a few hundred megabytes".
 const modelBytes = { tts: 0, stt: 0 };
+
+// The two on-device cards, and whether their model is here yet. Declared with the sizes
+// rather than beside the cards themselves, because the size report reaches for them and
+// runs before the cards are built.
+const localCards = { tts: null, stt: null };
+const localReady = { tts: false, stt: false };
 
 async function reportModelSize(which, label, urls, dtype) {
   try {
@@ -663,6 +664,7 @@ async function reportModelSize(which, label, urls, dtype) {
     const total = sizes.reduce((a, b) => a + b, 0);
     if (!total) throw new Error('no size returned');
     modelBytes[which] = total;
+    refreshLocalCard(which);          // the button quotes this, and may already be drawn
     machineRow('model_' + which, label, mbytes(total)
       + (urls.length > 1 ? ' in ' + urls.length + ' files' : '')
       + (dtype === 'fp32' ? ' - the fast path uses fuller weights' : ''));
@@ -886,83 +888,38 @@ $('netBtn').addEventListener('click', measureRoundTrips);
 $('copyMachine').addEventListener('click', copyMachineReport);
 reportMachine();
 
-async function loadLocalTts() {
+async function loadLocalTts(statusEl) {
   if (local.tts) return local.tts;
   const device = await localDevice();
-  setLocalNote(`Speaking model: starting download (${device})...`);
+  if (statusEl) statusEl.textContent = `Starting the download (${device})...`;
   const { KokoroTTS } = await import('https://cdn.jsdelivr.net/npm/kokoro-js@1.2.1/+esm');
   local.tts = await KokoroTTS.from_pretrained(LOCAL_TTS_MODEL, {
     dtype: await localDtype(),
     device,
-    progress_callback: localProgress('Speaking model'),
+    progress_callback: localProgress(statusEl),
   });
-  setLocalNote(`Speaking model ready (${device}). It is cached now.`);
+  if (statusEl) statusEl.textContent = `Ready (${device}), and kept by the browser.`;
   return local.tts;
 }
 
-async function loadLocalStt(modelId) {
+async function loadLocalStt(modelId, statusEl) {
   if (local.stt && local.stt.id === modelId) return local.stt.fn;
   const device = await localDevice();
-  setLocalNote(`Hearing model: starting download (${device})...`);
+  if (statusEl) statusEl.textContent = `Starting the download (${device})...`;
   const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.6/+esm');
   const fn = await pipeline('automatic-speech-recognition', modelId, {
     dtype: await localDtype(),
     device,
-    progress_callback: localProgress('Hearing model'),
+    progress_callback: localProgress(statusEl),
   });
   local.stt = { id: modelId, fn };
-  setLocalNote(`Hearing model ready (${device}). It is cached now.`);
+  if (statusEl) statusEl.textContent = `Ready (${device}), and kept by the browser.`;
   return fn;
 }
 
 // (!) ASKED BEFORE THE DOWNLOAD, NOT AFTER. Several hundred megabytes arriving
 // unannounced on a tablet is the kind of surprise that makes somebody distrust a
 // tool. Answered once per page.
-// (!) ASKED PER MODEL, NOT ONCE. Speaking and hearing are two separate downloads from
-// two different projects, and a single answer covering both meant that agreeing in
-// order to hear a voice silently authorized another download later, whenever the
-// hearing box was ticked. The whole purpose of asking is not springing a few hundred
-// megabytes on somebody on a data plan - so the question names which model it is about
-// and is asked again for the second one.
-//
-// (!) AND IT NAMES THE REAL SIZE where section 1 has already measured it. "A few
-// hundred megabytes" is true of both and useful for neither: the answer is 88 MB or
-// 310 MB for speaking and 73 MB or 276 MB for hearing, depending on which path this
-// machine takes, and that is a different decision on a phone.
-const localAgreed = { speaking: false, hearing: false };
-
-async function agreeToDownload(kind) {
-  if (localAgreed[kind]) return true;
-
-  const bytes = modelBytes[kind === 'speaking' ? 'tts' : 'stt'];
-  const size = bytes ? mbytes(bytes) : 'a few hundred megabytes';
-
-  // (!) ASK THE BROWSER HOW MUCH ROOM IT WILL GIVE, and say so in the question. On a
-  // tablet the answer can be far smaller than the model, and a download that cannot be
-  // kept means paying for it again on every visit - which reads as the engine being
-  // slow rather than as storage being full.
-  let room = '';
-  try {
-    const q = await navigator.storage.estimate();
-    if (q && q.quota) {
-      const mb = Math.round(q.quota / 1048576);
-      room = mb < 800
-        ? `\n\nWARNING: this browser offers about ${mb} MB of storage, which may not be `
-          + 'enough to keep the model. It would then be downloaded again each visit.'
-        : `\n\nThis browser offers about ${Math.round(mb / 1024)} GB of storage, so there `
-          + 'is room to keep it.';
-    }
-  } catch { /* not all browsers answer; the question stands without it */ }
-
-  const other = kind === 'speaking' ? 'hearing' : 'speaking';
-  localAgreed[kind] = window.confirm(
-    `${kind === 'speaking' ? 'Speaking' : 'Hearing'} on this device needs a one-time `
-    + `download of the ${kind} model - `
-    + `${size}. It is kept by the browser afterwards, and nothing you say is sent `
-    + `anywhere.\n\nThe ${other} model is a separate download and is not included here; `
-    + `you will be asked again if you turn it on.` + room + '\n\nDownload it now?');
-  return localAgreed[kind];
-}
 
 const VOICE_FETCHERS = {
   az: async () => {
@@ -1060,8 +1017,8 @@ const TTS = [
     cfg: [{ id: 'local_voice', label: 'voice', value: 'af_heart',
             kind: 'voice', builtin: LOCAL_VOICES }],
     run: async (c, text) => {
-      if (!(await agreeToDownload('speaking'))) throw new Error('download declined - nothing was sent or fetched');
-      const tts = await loadLocalTts();
+      if (!localReady.tts) throw new Error('the speaking model has not been downloaded yet - use the button on this card');
+      const tts = await loadLocalTts(localCards.tts && localCards.tts.status);
       const audio = await tts.generate(text, { voice: c.local_voice });
       return { blob: audio.toBlob() };
     },
@@ -1229,6 +1186,92 @@ function pcmToWavBlob(chunks, rate) {
   return new Blob([out], { type: 'audio/wav' });
 }
 
+/* ============================================================================
+   Downloading the on-device models, deliberately
+
+   (!) THE BOX IS DISABLED UNTIL THE MODEL IS HERE, which is the honest state: an
+   engine with no model cannot speak or hear, and letting it be ticked only moves the
+   discovery of that to the middle of a run. The button beside it says what will be
+   fetched and how big it is, so the decision is made once, in the open, by somebody
+   who meant to make it.
+
+   (!) ALREADY DOWNLOADED IS A DIFFERENT STATE FROM NOT YET, and the browser can be
+   asked rather than guessed at. The model files are kept in the browser's own cache
+   between visits, so a returning visitor should find the box live and no download
+   offered - not be invited to fetch 88 MB they already have.
+   ========================================================================== */
+
+const localModelUrls = (which, dtype) => which === 'tts'
+  ? [HF_TTS + modelFileFor(dtype)]
+  : sttModelFiles(dtype);
+
+// caches.match searches every cache the origin has, which is what we want: the two
+// libraries name their caches differently and neither name is ours to rely on.
+async function isModelCached(urls) {
+  if (!window.caches || !caches.match) return false;
+  try {
+    for (const u of urls) {
+      if (!(await caches.match(u))) return false;
+    }
+    return true;
+  } catch { return false; }
+}
+
+async function refreshLocalCard(which) {
+  const c = localCards[which];
+  if (!c) return;
+  const noun = which === 'tts' ? 'speaking' : 'hearing';
+  const g = await probeGraphics();
+  const cached = localReady[which] || await isModelCached(localModelUrls(which, g.dtype));
+  if (cached) {
+    localReady[which] = true;
+    c.cb.disabled = false;
+    c.btn.hidden = true;
+    c.status.textContent = 'The ' + noun + ' model is on this machine already.';
+    return;
+  }
+  const bytes = modelBytes[which];
+  c.btn.hidden = false;
+  c.btn.disabled = false;
+  c.btn.textContent = 'Download the ' + noun + ' model'
+    + (bytes ? ' (' + mbytes(bytes) + ')' : '');
+  c.cb.disabled = true;
+  c.status.textContent = 'Downloaded once and kept by the browser. Until then this '
+    + 'engine cannot be tried.';
+}
+
+async function downloadLocalModel(which) {
+  const c = localCards[which];
+  const noun = which === 'tts' ? 'speaking' : 'hearing';
+  c.btn.disabled = true;
+
+  // (!) SAY IT BEFORE, NOT AFTER. A browser that cannot keep the file will fetch it
+  // again on every visit, which reads as the engine being slow rather than as storage
+  // being full - so the warning belongs beside the button that starts the download.
+  try {
+    const q = await navigator.storage.estimate();
+    if (q && q.quota && modelBytes[which] && q.quota < modelBytes[which] * 2) {
+      c.status.textContent = 'Warning: this browser offers only about '
+        + Math.round(q.quota / 1048576) + ' MB of storage, so it may not be able to keep '
+        + 'the model. Downloading anyway.';
+    }
+  } catch { /* not every browser answers; the download stands without it */ }
+
+  try {
+    if (which === 'tts') await loadLocalTts(c.status);
+    else await loadLocalStt($('locals_model') ? $('locals_model').value.trim()
+      : LOCAL_STT_MODEL, c.status);
+    localReady[which] = true;
+    // Pressing Download is asking to use it, so it is switched on rather than left
+    // for a second decision.
+    c.cb.checked = true;
+    await refreshLocalCard(which);
+  } catch (e) {
+    c.btn.disabled = false;
+    c.status.textContent = 'The download failed: ' + (e && e.message ? e.message : e);
+  }
+}
+
 function buildProviderCards(list, host, prefix) {
   host.textContent = '';
   for (const p of list) {
@@ -1258,12 +1301,33 @@ function buildProviderCards(list, host, prefix) {
       wrap.appendChild(l); wrap.appendChild(inp);
       card.appendChild(wrap);
     }
+    // (!) THE DOWNLOAD IS ITS OWN BUTTON, AND THE BOX STAYS OFF UNTIL IT IS DONE.
+    // It used to happen as a side effect of pressing "Speak it with every voice",
+    // which meant the only way to fetch the model was to ask for something else and
+    // wait - and the one control that says what is about to happen was a dialog that
+    // interrupted a run already under way. An explicit button, labelled with the real
+    // size, IS the consent: nobody presses "Download the speaking model (88 MB)" by
+    // accident, and nothing large starts without it.
     if (p.local) {
+      const which = prefix === 'tts' ? 'tts' : 'stt';
+      const row = document.createElement('div');
+      row.className = 'row';
+      const btn = document.createElement('button');
+      const status = document.createElement('span');
+      status.className = 'hint';
+      status.id = prefix + '_dlstatus';
+      row.appendChild(btn); row.appendChild(status);
+      card.appendChild(row);
+
       const n = document.createElement('div');
       n.className = 'hint';
-      n.textContent = 'Runs here. Nothing is sent anywhere. First use downloads the '
-                    + 'model - a few hundred megabytes, once.';
+      n.textContent = 'Runs here. Nothing is sent anywhere, and there is nothing to pay.';
       card.appendChild(n);
+
+      cb.disabled = true;
+      localCards[which] = { cb, btn, status, prefix };
+      btn.addEventListener('click', () => downloadLocalModel(which));
+      refreshLocalCard(which);
     }
     host.appendChild(card);
   }
@@ -1635,8 +1699,8 @@ const STT = [
     id: 'local', name: 'On this device (no key, no bill)', local: true,
     cfg: [{ id: 'locals_model', label: 'model', value: LOCAL_STT_MODEL }],
     run: async (c) => {
-      if (!(await agreeToDownload('hearing'))) throw new Error('download declined - nothing was sent or fetched');
-      const fn = await loadLocalStt(c.locals_model);
+      if (!localReady.stt) throw new Error('the hearing model has not been downloaded yet - use the button on this card');
+      const fn = await loadLocalStt(c.locals_model, localCards.stt && localCards.stt.status);
       // Whisper wants plain 16 kHz mono samples, which is exactly what was recorded.
       const f32 = new Float32Array(clipPcm.length);
       for (let i = 0; i < clipPcm.length; i++) f32[i] = clipPcm[i] / 32768;
