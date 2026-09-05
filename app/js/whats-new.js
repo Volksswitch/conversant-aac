@@ -22,6 +22,9 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.10.2": [
+    "The paid Deepgram voice now starts speaking as soon as the first sound is ready, instead of waiting for the whole sentence to arrive. Measured on a Windows laptop, a Surface Pro, a Chromebook, an Android tablet and an iPad, that is about two seconds off the wait before every single thing you say."
+  ],
   "0.10.1": [
     "Fixed: your Tester name could go missing on its own. Loading a saved settings file emptied it if that file had been saved before you typed the name in, and restoring a backup made on another device replaced it with that device's name. It now stays as you set it, whatever you load or restore. If you filled that box in once and later found it blank or showing somebody else, this was why."
   ],
