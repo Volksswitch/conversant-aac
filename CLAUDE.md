@@ -1250,11 +1250,50 @@ the website - **not a secure origin, so no microphone**, the same rule that make
 plain-http origin functionally broken. And the iPad installed app losing its keys is
 the known separate-storage-silo behavior, not the bench.
 
+**MEASURED THE SAME DAY, AND IT CLOSES THE QUESTION: MEMORY WAS THE CAUSE, AND FIXING
+IT BOUGHT A WORKING FAILURE RATHER THAN A WORKING FEATURE.** On the fallback path both
+tablets ran what had crashed them. Neither is anywhere near fast enough.
+
+| | hearing | speaking |
+|---|---|---|
+| iPad, fallback path | 1.04x the clip | never returned |
+| Android tablet, fallback path | 5.95x the clip | 64 s per sentence |
+
+**⚠ THE SPEAKING FIGURE IS PER SENTENCE, NOT A WARM-UP - measured three times (71.4 s,
+then 64.2 s and 64.2 s), so the first run's extra seven seconds were the engine loading
+and 64 s is the steady cost.** The test sentence is about five and a half seconds of
+speech, so that is **roughly twelve times as long to say something as it takes to say
+it**, against about a fifth of a second to reach a paid voice from the same tablet.
+
+**⚠ MORE CORES DID NOT HELP, WHICH TAKES A WHOLE LINE OF WORK OFF THE TABLE.** The
+Android tablet has EIGHT cores to the iPad's four and was about six times SLOWER. So
+the limit is the chip, not how many cores the page is allowed. **Do not pursue the
+cross-origin-isolation headers** that would let the fallback path use several cores -
+they carry real costs (they restrict what the page may load from other sites, and this
+app loads from several) and this measurement says they would buy little.
+
+**Speaking is far worse than hearing on both devices, and it is not download size** -
+88 MB against 73 MB on this path. Generating speech is simply more work per second of
+output. That is the wrong way round for this product: hearing already has a free
+alternative that works (the browser's own recognition, in an iPad Safari tab or on
+Android), and **speaking is where the genuine gap is** - the device's own voices are
+Samantha or a novelty voice on an iPad, with no free local route to anything better.
+
+**So the picture the product already had is unchanged and now rests on measurement: the
+browser's own recognition for hearing, and a paid voice for speaking.** Revisit only
+when tablet chips are several times quicker or a much smaller model ships; neither
+helps now.
+
+**One design note if any of this is ever reconsidered: the iPad did not fail, it
+HUNG** - reported working and never returned. Slowness in proportion would have been
+ten or fifteen seconds. Anything shipped on this path needs a time limit, or the user
+is left in front of a device that has silently stopped being able to speak for them.
+
 **WHAT THIS MEANS FOR THE PRODUCT, stated once: the free, private, no-account speech
-option is not currently available on tablets, which is the whole target.** There is a
-second barrier waiting behind the crash even if it is cleared - the Android tablet's
-connection was reported at about 1.5 Mbps, which makes the two full-detail downloads
-roughly a fifty-minute wait before anyone finds out whether they work.
+option is not available on tablets, which is the whole target.** And speed is not the
+only barrier - the Android tablet's connection was reported at about 1.5 Mbps, so the
+two full-detail downloads are roughly a fifty-minute wait before anyone finds out
+whether they work at all.
 
 ## ON HOLD - a BLIND listening study for choosing a voice (Ken, September 4 2026)
 
