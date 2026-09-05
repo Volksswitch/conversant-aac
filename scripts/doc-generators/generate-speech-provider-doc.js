@@ -175,7 +175,7 @@ const doc = new Document({
             new Paragraph({ spacing: { before: 0, after: 80 },
                 children: [new TextRun({ text: "What each speech service costs, how to sign up for it, and how to compare them for yourself", italics: true, size: 24, color: "555555" })] }),
             new Paragraph({ spacing: { before: 0, after: 320 },
-                children: [new TextRun({ text: "Kenneth R. Hackbarth  |  Volksswitch.org  |  September 2026  |  Last updated September 4, 2026", size: 20, color: "808080" })] }),
+                children: [new TextRun({ text: "Kenneth R. Hackbarth  |  Volksswitch.org  |  September 2026  |  Last updated September 5, 2026", size: 20, color: "808080" })] }),
 
             // ===== 1 =====
             heading1("1. What This Is For"),
@@ -533,21 +533,160 @@ const doc = new Document({
             lead("\u26a0 Judge the second list by ear only, and expect the difference to be large. ",
                 "There is no measurement to take here - and the device's own voices will lose all six, because they were tested and have no inflection to steer at all. That is the single clearest reason to hear a paid voice before dismissing one on price."),
             lead("Treat the timings as a ranking, not a measurement. ",
-                "The bench waits for the whole clip before it plays anything, whereas the app starts speaking as soon as the first part arrives. So the numbers are useful against each other and are not what a user would experience."),
+                "They move with the network, so they are useful against each other rather than as figures to rely on. The speaking table gives two: when the first sound arrives and when all of it has. For every service but one those are the same number, because the service does the work and then hands over a finished file - only Deepgram sends audio while it is still making it, and the app plays that as it arrives."),
             lead("⚠ The one timing on the page that IS a measurement is the round trip in section 1. ",
                 "It is travel time alone - the services refuse those requests and do no work for them - so it separates the two halves of a wait that otherwise arrive as one number. A slow total with a fast round trip is the service being slow; a slow round trip is the network, and no choice of service will fix it. It also belongs to the CONNECTION rather than to the machine, so it is worth taking again on each one somebody will really use: a wired network, Wi-Fi and cellular give three different answers, and cellular is usually much the worst."),
 
             // ===== 8 =====
-            heading1("8. What We Already Know"),
-            lead("A browser can reach all six. ",
-                "Measured on September 2 2026 by asking each service a question with a deliberately wrong key: a plain refusal means the door is open and only the key was bad. All six refused politely. AssemblyAI, included deliberately as a service that should fail, refused to answer at all - which is what proves the test could tell the difference."),
-            lead("The obstacle was never technical. ",
-                "Most of these companies advise against putting a key in a web page, which is correct advice for an ordinary website holding one key for all its customers. It does not describe this app, where the key belongs to the user and stays on their device."),
-            lead("What has not been tested. ",
-                "Only that the door opens. Not how good the voices sound, how accurate the transcripts are, or how quickly either arrives. That is exactly what the bench is for, and it is why this document ends here rather than recommending one."),
+            heading1("8. What the Testing Found"),
+            para("Everything above this point is what the companies say. This section is what happened when they were actually used, on six machines, in September 2026."),
+
+            heading2("How it was measured, and what that is worth"),
+            para("Six devices, all on WiFi: a Windows laptop, a Surface Pro, a MacBook, a Chromebook, an Android tablet and an iPad. Each test was run three or four times and the first run is set aside, because the first run of anything includes waking the service up and is reliably the slowest. One recording was made and sent to every hearing service, so what is being compared is the services rather than the rooms."),
+            lead("What these numbers are not. ",
+                "One room, one connection, one voice per service, one sentence. Timings move with the network, so treat them as a ranking that held steady across six very different machines rather than as figures to quote to two decimal places. Nothing here says anything at all about how good a voice SOUNDS - see the end of this section."),
+
+            heading2("Speaking: how long before a voice starts"),
+            para("Two numbers matter and they are not the same. One service sends its audio while it is still making it, so it can begin talking almost at once; the rest hand over a finished file and nothing can be heard until all of it has arrived. Since September 2026 the app plays sound as soon as it has some, so for that one service the first column is what a person actually waits."),
+            simpleTable(
+                ["Service", "Before the first sound", "Before all of it", "Notes"],
+                [
+                    ["Azure Speech", "0.2 to 0.45 s", "same", "Fastest on every device tested"],
+                    ["Deepgram", "0.3 to 0.5 s", "1.5 to 2.5 s", "The only one that sends audio as it makes it"],
+                    ["Google Cloud", "0.6 to 1.2 s", "same", ""],
+                    ["Cartesia", "0.9 to 1.6 s", "same", ""],
+                    ["ElevenLabs", "1.0 to 1.7 s", "same", ""],
+                    ["OpenAI", "1.2 to 3.6 s", "same", "The slowest, and the least consistent"],
+                ], [2200, 2300, 2000, 2860]),
+            lead("The reversal worth knowing about. ",
+                "Judged on the total, Deepgram looked like the slowest voice on the page - roughly ten times behind Azure. It is not: it starts in about four tenths of a second and streams the rest in behind. The app used to collect the whole sentence before playing any of it, which threw that away and cost about two seconds on every single utterance. That is fixed, and it is the single largest speed improvement to come out of this testing."),
+
+            heading2("Hearing: how long before the words come back"),
+            para("Measured against the length of the recording, so 0.3 means a ten-second sentence took three seconds to come back. Lower is better."),
+            simpleTable(
+                ["Service", "Against the recording", "Notes"],
+                [
+                    ["Azure Speech", "0.21 to 0.37", "Fastest, and steady across every machine"],
+                    ["Google Cloud", "0.23 to 0.36", ""],
+                    ["OpenAI", "0.15 to 0.54", "Fastest single reading, and the most variable"],
+                    ["Deepgram", "0.82 to 0.92", "Slowest, and oddly identical on all six machines"],
+                ], [2600, 3000, 3760]),
+            lead("Do not read the Deepgram figure as the wait in the app. ",
+                "The bench hands every service a finished recording, which is fair between them and unfair to the way Deepgram is actually used: in the app it transcribes while the other person is still talking, so what a user waits for is the tail end of that rather than this whole number. The figure being nearly identical on six very different machines does tell us it is the service's own work rather than the device or the network."),
+
+            heading2("The device's own hearing, which is free and was not measured"),
+            lead("This is the gap in the evidence, and it is an important one. ",
+                "Most people will never pay for hearing, because the browser already does it: it works on Windows, Chromebook, Mac, Android, and on an iPad in the Safari browser. It costs nothing, needs no account, and - like the app itself - it transcribes while the other person is still speaking."),
+            lead("It could not be put in the same test as the others, and that is a property of the thing rather than an oversight. ",
+                "The bench works by making one recording and sending that same recording to every service. The browser's own recognizer will not accept a recording; it listens to a live microphone and nothing else. So it cannot be given the same input, which means it cannot be fairly compared - and any figure produced for it would be measuring something different from every other row."),
+            lead("What is known about it anyway. ",
+                "It has been in daily use in this app since the beginning and it works. It is not running on the device: the browser sends the audio to Google or to Microsoft, so it needs a live internet connection exactly as the paid services do, and the partner's words leave the device either way. It cannot be steered - there is no way to give it names to expect or to ask it to punctuate - which is the practical difference a user would notice against a paid service."),
+            lead("The honest summary. ",
+                "Free, adequate, unmeasured, and unavailable in exactly one place: an iPad running the app installed from the Home Screen, where it delivers nothing at all."),
+
+            heading2("Speech that runs on the device itself"),
+            para("Both halves can also run entirely on the machine, with no account and no bill, using models downloaded once. This was tested on all six devices and the result splits cleanly by the kind of machine."),
+            simpleTable(
+                ["Device", "Hearing", "Speaking"],
+                [
+                    ["Surface Pro", "0.33 - as fast as a paid service", "about 3 seconds a sentence"],
+                    ["Windows laptop", "0.35 - as fast as a paid service", "about 3 seconds a sentence"],
+                    ["MacBook", "0.50 - usable", "about 6.6 seconds a sentence"],
+                    ["Chromebook", "2.6 - too slow", "about 36 seconds a sentence"],
+                    ["Android tablet", "5.0 - far too slow", "about 64 seconds a sentence"],
+                    ["iPad", "not measured", "did not finish at all"],
+                ], [2200, 3580, 3580]),
+            lead("On a Windows machine the hearing half is genuinely good. ",
+                "0.33 against the recording is level with the fastest paid service, free, private, and with nothing sent anywhere. That is a real option for a laptop user and the most encouraging thing in this whole section."),
+            lead("The speaking half is not ready anywhere. ",
+                "Three seconds a sentence on the best machine tested, against a quarter of a second from Azure. On the two tablets it is hopeless - a minute a sentence on Android - and the iPad simply never returned an answer."),
+            lead("The tablets fail for a reason that is worth writing down: memory. ",
+                "Both tablets crashed the browser outright until the models were switched to a smaller form about a fifth the size, at which point they ran and were merely far too slow. Two facts point the same way. The Android tablet has eight processor cores to the iPad's four and was about six times slower, so the limit is the chip rather than how many cores are available - which also means the obvious remedy of using more cores would buy very little. And the full-detail download is about 590 megabytes for both halves, which on the connection that tablet reported is close to a fifty-minute wait before anyone finds out whether it works."),
+
+            heading2("Two accuracy notes, from the transcripts rather than the clock"),
+            bullet("Azure writes numbers oddly. Asked to transcribe \"testing one two three testing\" it produced \"testing one 2-3 testing\" on every device and every run - turning two spoken words into a numeric range. Google and OpenAI both handled it cleanly. On a test sentence this is harmless; in real conversation, which is full of times, dates, prices and phone numbers, it is the kind of habit a user would have to read past."),
+            bullet("Every service transcribed ordinary sentences correctly. The differences only appear on hard words, which is why section 7 suggests the sentences it does. Nothing in this testing separates them on plain accuracy."),
+
+            heading2("What was NOT measured, and it may matter more than anything that was"),
+            lead("Nobody has judged how these voices SOUND. ",
+                "Not their naturalness, not their intonation, not whether a question sounds like a question or a correction lands on the right word. Every number in this section is about speed, cost or reliability, and none of it is about quality. That evaluation has not been done, cannot be done by measurement, and needs people listening - ideally without knowing which voice is which."),
+            lead("Why this is a genuine limitation rather than a caveat. ",
+                "This is the voice a person speaks in. Someone might reasonably accept a slower or dearer service because it sounds like them and the fast one does not, and nothing in this document would tell them they were wrong to. The recommendations that follow are explicitly about speed, cost and reach - they are the ranking you would use if every voice sounded equally good, which they certainly do not."),
+            lead("Where it is most likely to change the answer. ",
+                "ElevenLabs is the most expensive service here and among the slowest to start, and it is also the one with the strongest reputation for how its voices sound. It sits low in the recommendations below on measured grounds alone. A listening test is exactly what could move it, and no one should be talked out of it by a table."),
 
             // ===== 9 =====
-            heading1("9. Future Considerations"),
+            heading1("9. Which to Choose"),
+            para("A ranking on speed, cost and reach, for each kind of setup. Read the last part of section 8 first: how good a voice sounds has not been judged, and for the speaking half that could reasonably override everything here."),
+
+            heading2("Start by working out what you actually need"),
+            para("Most people need to buy one half, not two, and one setup needs both. Which one you are in decides almost everything."),
+            simpleTable(
+                ["Your setup", "Hearing", "Speaking"],
+                [
+                    ["Windows, Chromebook or Mac", "Free. The browser does it", "Optional. Worth paying for if the device voices disappoint"],
+                    ["Android", "Free. The browser does it", "Optional, same as above"],
+                    ["iPad, in the Safari browser", "Free. The browser does it", "Strongly wanted. The built-in choice is one ordinary voice or a joke voice"],
+                    ["iPad, installed from the Home Screen", "MUST be paid for. The browser delivers nothing here", "Strongly wanted, same as above"],
+                ], [2400, 3040, 3920]),
+            lead("Only one row in that table is forced. ",
+                "An iPad running as an installed app cannot hear at all without a paid service - it is the single configuration where this is not a preference. Everywhere else, somebody who wants to spend nothing can, and the app still works."),
+            lead("A note on the iPad's two modes, because they pull against each other. ",
+                "Installing it from the Home Screen makes better use of the screen and keeps your data safely, but it is the one place hearing must be paid for. Running it in a Safari tab hears for free but the browser can clear your data if the app is unused for a while. There is no arrangement that gives both."),
+
+            heading2("An important limit on all of this"),
+            lead("The app today can only use one of these six. ",
+                "Deepgram is built in, for both halves, and nothing else is. So a recommendation for another service is a recommendation about what to BUILD next, not something a user can act on this afternoon. That distinction is kept explicit below, because a table that quietly recommends something unreachable is worse than no table."),
+
+            heading2("Hearing, in priority order"),
+            simpleTable(
+                ["", "Choice", "Why"],
+                [
+                    ["1", "The browser's own", "Free, no account, and it listens while the other person is still talking. Works everywhere except an installed iPad app. Its accuracy has not been measured against the paid ones, but it has carried this app since the start"],
+                    ["2", "On the device itself, on a Windows machine only", "Measured as fast as the best paid service, free, and nothing leaves the machine. Not in the app yet, and no good on a Chromebook or either tablet"],
+                    ["3", "Deepgram", "The only paid one the app can use today, and therefore the answer for an installed iPad app. Built for live listening, and the cheapest per hour"],
+                    ["4", "Azure Speech", "Fastest measured, five free hours every month that renew - but twice Deepgram's price per hour beyond that, and the app cannot use it yet"],
+                    ["5", "Google Cloud or OpenAI", "Both fine on speed. Neither offers a reason to choose it over the two above"],
+                ], [700, 3100, 5560]),
+            lead("The short version. ",
+                "Do not buy hearing unless you are on an installed iPad app, in which case buy Deepgram, because it is the only one that works."),
+            lead("Why Deepgram outranks Azure here despite being slower on the clock. ",
+                "Three reasons and none of them is speed. It is the only one the app can use; it is half the price per hour, which matters because hearing is billed by time and the app listens for the whole conversation; and it is built for listening while somebody talks rather than for handing over a finished recording, which is how the app uses it. The bench measures the wrong one of those two things for Deepgram specifically."),
+
+            heading2("Speaking, in priority order"),
+            para("On speed, cost and catalog only. How the voices sound is not in this ranking and could reasonably reorder it."),
+            simpleTable(
+                ["", "Choice", "Why"],
+                [
+                    ["1", "Azure Speech", "Fastest to start on every device, half Deepgram's price, and 500,000 characters free every month that renew and never expire - which covers a light user entirely, forever. Much the widest catalog, including the child voices this product will need. Not in the app yet"],
+                    ["2", "Deepgram", "What the app uses, proven on the actual devices, and now starts speaking in about four tenths of a second. Twice Azure's price, a one-time credit rather than a renewing allowance, and the narrowest catalog here - which is its real weakness rather than its speed"],
+                    ["3", "Google Cloud", "Middling speed, a large catalog, and the biggest recurring free allowance of any of them. A reasonable third if the first two disappoint"],
+                    ["4", "ElevenLabs", "Slow to start and by far the most expensive - and the strongest reputation for how it sounds, which this testing did not check. The one most likely to move up after a listening test"],
+                    ["5", "Cartesia", "Similar speed to ElevenLabs and cheaper, with a smaller catalog. Nothing here recommends or rules it out"],
+                    ["6", "OpenAI", "Slowest to start by a wide margin and the least consistent, with eleven voices and no per-language range. Cheap, and that is all"],
+                ], [700, 2200, 6460]),
+            lead("The recommendation with teeth. ",
+                "If one piece of work comes out of this document, it is adding Azure to the app. It is the fastest voice measured AND the cheapest to run AND the only one with a permanently free allowance that covers an ordinary user AND the one whose catalog answers the younger-voice problem coming down the road. Every other candidate wins on at most one of those."),
+            lead("What that would cost the project, stated plainly. ",
+                "The app's connection to Deepgram was built once and works; a second service means a second one of those, plus a way to choose between them in Settings and to keep two keys rather than one. It is real work rather than a setting, and it is worth doing because it is the difference between a light user paying about fifteen dollars a month and paying nothing."),
+            lead("What nobody should do on this evidence. ",
+                "Replace Deepgram. It works, it is paid for, it is proven on real devices, and it now starts fast. The recommendation is to ADD a second choice, not to change the one that is running."),
+
+            heading2("Put together, by setup"),
+            simpleTable(
+                ["Your setup", "Today, with the app as it is", "If a second service were added"],
+                [
+                    ["Windows or Mac", "Browser hearing, free. Deepgram speaking if the device voices disappoint", "Azure speaking, free for a light user. On-device hearing is also worth building here"],
+                    ["Chromebook", "Browser hearing, free. Deepgram speaking", "Azure speaking. On-device is too slow on this hardware"],
+                    ["Android", "Browser hearing, free. Deepgram speaking", "Azure speaking"],
+                    ["iPad, Safari browser", "Browser hearing, free. Deepgram speaking - and here it is close to essential", "Azure speaking"],
+                    ["iPad, installed app", "Deepgram for both. The only setup with no free option at all", "Deepgram hearing either way; Azure speaking"],
+                ], [1800, 3780, 3780]),
+            lead("One line for the whole thing. ",
+                "Nobody needs to buy hearing except an installed iPad app; everybody who wants a decent voice should buy speaking; and the app should learn to speak through Azure."),
+
+            // ===== 10 =====
+            heading1("10. Future Considerations"),
             para("Conversant starts with a literate adult using touch, and is meant to reach further than that over time - younger users, other languages, other cultures. The service chosen for speech is one of the few decisions taken now that either helps or hinders that later, which is why it belongs in a document about choosing one."),
 
             heading2("Why the choice made now matters later"),
@@ -613,8 +752,10 @@ const doc = new Document({
                 "They come from two different projects, they are stored separately, and either can be used without the other - so turning on one costs nothing toward the other, and agreeing to one does not agree to the other. Measured on September 4 2026: on the ordinary path the speaking model is 88 MB and the hearing model 73 MB, arriving in two pieces - one that listens and one that turns what it heard into words. On the fast path both are much larger, 310 MB and 276 MB, because that path uses fuller weights. So the machine that will be quickest is also the one that downloads the most: about 160 MB for both on an ordinary machine, and nearer 590 MB on a fast one."),
             lead("\u26a0 Whether the machine's graphics hardware is used is the first thing to check, not a detail. ",
                 "The bench now reports which path it took as the page opens, before anything is downloaded, along with the size of the download this particular machine would face - which is more than three times larger on the fast path, because that path uses fuller weights. Where the graphics hardware is available the work is far quicker than on the processor alone; on the processor-only path, in a deliberately unrepresentative test setup, a single short sentence took long enough that it would be useless in a conversation. That number is not worth quoting and is not a measure of any real tablet - but it does say where the risk lies. If a local voice seems impossibly slow, look at which path it reported before concluding anything about the idea."),
-            lead("What is still not known, and it is the part that decides it. ",
-                "Whether the speed is good enough on a tablet rather than a desktop; whether a first-run download of that size is acceptable to somebody who just wants to talk; and how a local voice sounds beside a paid one. Those are now questions of pressing the button on real hardware rather than questions of principle."),
+            lead("This has now been measured, and section 8 has the numbers. ",
+                "The short version: on a Windows machine the hearing half is already as fast as a paid service, and on either tablet both halves are far too slow to use. The speaking half is not ready on any machine tested. So this is a real option for a laptop today and not for a tablet, which is close to the opposite of what would be most useful."),
+            lead("What is still not known. ",
+                "How a local voice SOUNDS beside a paid one - nobody has listened - and whether somebody who just wants to talk would accept a first-run download of about 590 megabytes. Both are questions of pressing the button rather than questions of principle."),
             lead("Why it is worth writing down now rather than later. ",
                 "It does not change today's choice - a service is still needed, and the comparison above still has to be made. What it changes is how much weight to put on a long-term bet. If the destination is the device, then today's provider is a stepping stone rather than a permanent foundation, and the argument for keeping the app able to swap providers easily is stronger still - a local engine would be one more provider behind the same seam."),
 
