@@ -249,9 +249,27 @@
 </div>
 
 <table id="ttsTable" hidden>
-  <thead><tr><th>Voice</th><th>Result</th><th class="num">Time</th><th>Play</th><th>Detail</th></tr></thead>
+  <thead><tr><th>Voice</th><th>Result</th><th class="num">First sound</th><th class="num">All of it</th><th>Play</th><th>Detail</th></tr></thead>
   <tbody></tbody>
 </table>
+
+<div class="note">
+  <strong>How to read the two times.</strong> <em>First sound</em> is how long before any
+  audio exists to play; <em>all of it</em> is how long before the whole sentence has
+  arrived. For every voice here except one those are the same number, because the
+  service does the work and then hands over a finished file. <strong>Deepgram is the
+  exception</strong> - it sends the audio as it makes it, so it starts in a fraction of a
+  second and the rest streams in behind. Judged on the total alone it looks like the
+  slowest voice on this page; judged on when a person would first hear something, it is
+  among the quickest.
+  <br><br>
+  <strong>Why Deepgram's file is so much bigger.</strong> Its streaming connection sends
+  uncompressed audio and will not accept anything else - asking for a compressed format
+  is refused outright (tested, September 2026). The others are asked for a compressed
+  file, which is around a sixth of the size. So on a slow connection some of Deepgram's
+  total is simply carrying more data, and the gap between its two columns will widen as
+  the connection gets worse.
+</div>
 
 <!-- ===================== HEARING ===================== -->
 <h2>5. Hearing - how well they transcribe</h2>
@@ -1106,7 +1124,7 @@ const TTS = [
             kind: 'voice', builtin: DG_VOICES }],
     // Deepgram's ordinary web address refuses browser calls, which is why the app
     // uses their streaming connection instead. Same approach here.
-    run: async (c, text) => {
+    run: async (c, text, onFirst) => {
       const k = key('k_deepgram');
       // mip_opt_out keeps what is sent out of Deepgram's training data - the same
       // parameter the app sends on every Deepgram request.
@@ -1131,6 +1149,7 @@ const TTS = [
               reject(new Error(m.description || 'the service reported a problem')); }
             return;
           }
+          if (!got.length && onFirst) onFirst();   // audio is arriving; see the note
           got.push(e.data);
         };
         ws.onerror = () => { clearTimeout(t);
@@ -1664,6 +1683,7 @@ $('ttsRun').addEventListener('click', async () => {
       const tr = document.createElement('tr');
       tr.appendChild(cell(p.name + (v.label ? ' - ' + v.label : '')));
       const res = cell('working...', 'pending'); tr.appendChild(res);
+      const first = cell('', 'num'); tr.appendChild(first);
       const tm = cell('', 'num'); tr.appendChild(tm);
       const playCell = document.createElement('td'); tr.appendChild(playCell);
       const det = cell(''); tr.appendChild(det);
@@ -1678,12 +1698,22 @@ $('ttsRun').addEventListener('click', async () => {
       for (const f of (p.cfg || [])) {
         cfg[f.id] = f.kind === 'voice' ? voiceValue(f.id) : $(f.id).value.trim();
       }
+      // (!) TWO TIMES, BECAUSE FOR A STREAMING SERVICE THEY ARE NOTHING ALIKE AND ONLY
+      // ONE OF THEM IS WHAT A PERSON WOULD FEEL. Deepgram sends the audio as it makes
+      // it, so its first sound arrives in a fraction of a second while the whole file
+      // takes seconds. Every other service here hands over a finished file, so its two
+      // figures are the same by definition. Reporting only the total made Deepgram look
+      // like the slowest voice on the page when it is among the quickest to start.
+      let firstMs = null;
       const t0 = performance.now();
       try {
-        const r = await p.run(cfg, v.text);
+        const r = await p.run(cfg, v.text, () => {
+          if (firstMs === null) firstMs = performance.now() - t0;
+        });
         const blob = r.blob || pcmToWavBlob(r.pcm, r.rate);
         const took = performance.now() - t0;
         res.textContent = 'spoke'; res.className = 'ok';
+        first.textContent = ms(firstMs === null ? took : firstMs);
         tm.textContent = ms(took);
         const b = document.createElement('button');
         b.textContent = 'Play';
@@ -1694,6 +1724,7 @@ $('ttsRun').addEventListener('click', async () => {
         done++;
       } catch (e) {
         res.textContent = 'failed'; res.className = 'fail';
+        if (firstMs !== null) first.textContent = ms(firstMs);
         tm.textContent = ms(performance.now() - t0);
         det.textContent = e.message;
       }

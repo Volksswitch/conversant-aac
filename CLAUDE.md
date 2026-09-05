@@ -1207,6 +1207,47 @@ of what can be done with them, which is why it is the mechanism the app uses.
 
 **The full comparison is section 5 of `Conversant AAC Speech Provider Guide.docx`.**
 
+## THE PAID VOICE STARTS IN A TENTH OF A SECOND AND THE APP WAITS TWO SECONDS ANYWAY (measured September 4 2026)
+
+Ken's four-laptop bench made Deepgram look like the **slowest** voice on the page - about
+2.4 s a sentence against Azure's 0.25 s, last or second to last on all four machines.
+That reading was an artifact of what the bench measured, and chasing it down turned up a
+real opportunity in the app.
+
+**MEASURED AGAINST THE LIVE SERVICE (`scripts/` one-off, same message sequence the app
+uses): FIRST AUDIO AT 127 ms, WHOLE SENTENCE AT 2123 ms.** Deepgram streams the audio as
+it makes it. It is not slow to start; it is slow to *finish*, because it is sending 211 KB
+of uncompressed audio.
+
+**⚠ AND `tts-deepgram.js` THROWS THAT AWAY: `synthesize()` collects every chunk and
+resolves only on `Flushed`, so nothing is played until the last byte lands.** The audio
+is arriving the whole time and being put on a pile. **So the user waits about two seconds
+on every utterance for audio that was ready in a tenth of one** - on the app's slowest
+path, against the four-second silence the product exists to fight.
+- **Playing progressively is feasible rather than hypothetical: the format is raw PCM,
+  which is stateless**, so a chunk can be scheduled as it arrives. That is the same
+  property already recorded as the reason the STT side sends raw PCM rather than a
+  compressed stream. What needs care is chunk scheduling and jitter, and making cancel
+  still cancel.
+- **Not built, and it should be costed against the alternative** - Azure hands over a
+  finished file in ~0.25 s with no streaming work at all, which may simply be the better
+  answer for both speed and money (Azure also speaks at about half Deepgram's price and
+  has a permanently free tier). **The finding here is that Deepgram's 2.4 s is OUR
+  arrangement, not the service's speed** - which has to be known before that comparison
+  means anything.
+
+**⚠ THE FORMAT IS FORCED, NOT A BENCH CHOICE - TESTED, DO NOT RE-DERIVE.** Deepgram's
+streaming speak connection accepts `linear16` only; `mp3`, `opus`, `aac` and `flac` are
+all refused outright at the handshake. So the six-times-larger payload cannot be tuned
+away, and on a slow connection it is a real part of the total. The other services are
+asked for a compressed file, which is why their sizes look so different.
+
+**THE BENCH NOW REPORTS BOTH TIMES** - "First sound" and "All of it". For every provider
+that hands over a finished file they are identical by construction; only Deepgram
+separates. **Reporting one number made the honest comparison impossible**, which is the
+transferable part: where one service in a comparison works differently in kind, a single
+column will flatter or damn it at random.
+
 ## ON-DEVICE SPEECH CRASHES BOTH TABLETS, and the bench was telling them the wrong thing (Ken tested, September 4 2026)
 
 Ken ran the bench on an Android tablet and an iPad, in a browser tab and as an
