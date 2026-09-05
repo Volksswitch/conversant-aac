@@ -1279,21 +1279,29 @@ alternative that works (the browser's own recognition, in an iPad Safari tab or 
 Android), and **speaking is where the genuine gap is** - the device's own voices are
 Samantha or a novelty voice on an iPad, with no free local route to anything better.
 
-**So the picture the product already had is unchanged and now rests on measurement: the
-browser's own recognition for hearing, and a paid voice for speaking.** Revisit only
-when tablet chips are several times quicker or a much smaller model ships; neither
-helps now.
+**So ON A TABLET the picture the product already had is unchanged and now rests on
+measurement: the browser's own recognition for hearing, and a paid voice for speaking.**
+Revisit the tablets when their chips are several times quicker or a much smaller model
+ships; neither helps now.
 
 **One design note if any of this is ever reconsidered: the iPad did not fail, it
 HUNG** - reported working and never returned. Slowness in proportion would have been
 ten or fifteen seconds. Anything shipped on this path needs a time limit, or the user
 is left in front of a device that has silently stopped being able to speak for them.
 
-**WHAT THIS MEANS FOR THE PRODUCT, stated once: the free, private, no-account speech
-option is not available on tablets, which is the whole target.** And speed is not the
-only barrier - the Android tablet's connection was reported at about 1.5 Mbps, so the
-two full-detail downloads are roughly a fifty-minute wait before anyone finds out
-whether they work at all.
+**⚠ THIS IS A TABLET FINDING AND NOTHING MORE - IT IS NOT A VERDICT ON THE FEATURE
+(Ken, correcting me, September 4 2026).** He has collected on-device figures on
+**Windows, a MacBook and a Chromebook, and on all three it performed reasonably**, so
+the honest statement is that the on-device engines are a real option on laptop-class
+machines and not on the two tablets measured here. Anything written for a user must
+say which machine it is talking about. **Do not write off the on-device option; write
+off the tablets.** (His numbers are not yet in this file - fold them in when they are,
+and the Speech Provider Guide's on-device section needs the same split rather than a
+blanket warning.)
+
+**And speed is not the only tablet barrier** - the Android tablet's connection was
+reported at about 1.5 Mbps, so the two full-detail downloads are roughly a fifty-minute
+wait before anyone finds out whether they work at all.
 
 ## ON HOLD - a BLIND listening study for choosing a voice (Ken, September 4 2026)
 
