@@ -140,6 +140,16 @@
 </table>
 
 <div class="row">
+  <label for="pathChoice">Path for the on-device engines</label>
+  <select id="pathChoice">
+    <option value="auto">Let this machine decide</option>
+    <option value="fast">Force the fast path (graphics hardware, full-detail weights)</option>
+    <option value="slow">Force the fallback path (smaller weights, no graphics hardware)</option>
+  </select>
+  <span class="hint" id="pathHint"></span>
+</div>
+
+<div class="row">
   <button id="netBtn">Measure the round trip to each service</button>
   <button id="copyMachine">Copy this report</button>
   <span class="hint" id="netHint">A handful of tiny requests, no key needed and nothing
@@ -578,7 +588,8 @@ function localProgress(el) {
   };
 }
 
-/* WebGPU where it exists, otherwise the slower path that works everywhere.
+/* WebGPU where it exists AND CAN ACTUALLY BE USED, otherwise the slower path that
+ * works everywhere.
  *
  * (!) THE REPORT IN SECTION 1 AND THE ENGINES MUST NEVER DISAGREE, so they read the
  * same probe rather than each asking the question their own way. A panel that says
@@ -587,10 +598,32 @@ function localProgress(el) {
  * answer remembered, and the dtype rule kept beside it instead of repeated at each
  * loader.
  *
- * (!) AN ADAPTER GRANTED IS NOT SPEED PROVEN. All this settles is which path the
- * engines take. It is still the single biggest thing to know before judging an
- * on-device result, which is why it is the first thing on the page.
+ * (!) AN ADAPTER IS NOT A WORKING GPU, AND THE DIFFERENCE COST A ROUND OF TESTING.
+ * On an iPad (iPadOS 26.6, Safari 26.6, Sept 2026) this page reported the fast path
+ * granted, and the speaking engine then refused to load with "Failed to get GPU
+ * adapter". Asking for an adapter is the cheap half of the question; the half that
+ * decides whether an engine can run is whether a DEVICE can be made from it. So one
+ * is made here and thrown away again. This matters twice over: a wrong answer does
+ * not merely mislabel the row, it makes the page choose the LARGEST weights, which is
+ * the thing a tablet then runs out of memory on.
+ *
+ * (!) AND THE PROBE MUST HAND THE HARDWARE BACK. An adapter that has produced a device
+ * is spent, and not every browser will hand out a second one - so a probe that keeps
+ * what it asked for is capable of causing the very failure it reports. Destroy the
+ * device, drop the adapter, ask for nothing more.
+ *
+ * (!) SPEED IS STILL NOT PROVEN BY ANY OF THIS. All it settles is which path the
+ * engines can take.
  */
+
+// Which path to use, when the machine is not the one deciding. Kept in its own
+// storage key rather than with the API keys, because "Forget keys" must not quietly
+// put a tablet back on the path that crashed it - and because the way this is found
+// out IS a crash, so the choice has to survive the page dying.
+const PATH_STORE = 'vs_speech_bench_path';
+let pathChoice = 'auto';
+try { pathChoice = localStorage.getItem(PATH_STORE) || 'auto'; } catch {}
+
 let gpuProbe = null;
 async function probeGraphics() {
   if (gpuProbe) return gpuProbe;
@@ -602,22 +635,43 @@ async function probeGraphics() {
     try { adapter = await navigator.gpu.requestAdapter(); }
     catch (e) { out.reason = 'asking for the graphics hardware failed: ' + e; }
     if (adapter) {
-      out.granted = true;
       // Chrome moved this from a method to a property; take whichever exists, and
       // treat its absence as "granted but unnamed" rather than as a failure.
       try {
         out.info = adapter.info
           || (adapter.requestAdapterInfo ? await adapter.requestAdapterInfo() : null);
       } catch { /* naming it is a nicety; the grant is the finding */ }
+      let device = null;
+      try { device = await adapter.requestDevice(); }
+      catch (e) {
+        out.reason = 'the browser named the graphics hardware but would not open it '
+          + 'for this page (' + (e && e.message ? e.message : e) + ') - so an engine '
+          + 'asking for it would fail the same way';
+      }
+      if (device) {
+        out.granted = true;
+        try { device.destroy(); } catch { /* handing it back is best effort */ }
+      }
     } else if (!out.reason) {
       out.reason = 'the browser offers WebGPU but would not grant this page an adapter '
         + 'on this machine - usually the driver, the hardware, or a browser policy';
     }
   }
-  out.device = out.granted ? 'webgpu' : 'wasm';
-  out.dtype = out.granted ? 'fp32' : 'q8';
   gpuProbe = out;
+  applyPathChoice();
   return out;
+}
+
+// The hardware answer and the choice made about it are two different things, and only
+// this function joins them. fp32 is the full-detail weights the fast path wants; q8 is
+// the same models squeezed down, several times smaller both to download and to hold in
+// memory while running.
+function applyPathChoice() {
+  if (!gpuProbe) return;
+  const fast = pathChoice === 'fast' || (pathChoice === 'auto' && gpuProbe.granted);
+  gpuProbe.forced = pathChoice !== 'auto';
+  gpuProbe.device = fast ? 'webgpu' : 'wasm';
+  gpuProbe.dtype = fast ? 'fp32' : 'q8';
 }
 async function localDevice() { return (await probeGraphics()).device; }
 async function localDtype() { return (await probeGraphics()).dtype; }
@@ -675,7 +729,9 @@ async function reportModelSize(which, label, urls, dtype) {
     refreshLocalCard(which);          // the button quotes this, and may already be drawn
     machineRow('model_' + which, label, mbytes(total)
       + (urls.length > 1 ? ' in ' + urls.length + ' files' : '')
-      + (dtype === 'fp32' ? ' - the fast path uses fuller weights' : ''));
+      + (dtype === 'fp32'
+          ? ' - the fast path uses full-detail weights'
+          : ' - the fallback path uses squeezed-down weights'));
   } catch {
     machineRow('model_' + which, label,
       'could not be asked - no connection, or the model host is unreachable');
@@ -697,6 +753,14 @@ function machineRow(id, label, value) {
   return tr;
 }
 
+// (!) ROWS COME OFF AGAIN AS WELL AS ON. The path can now be changed after the table
+// is drawn, and a row that only makes sense on one path would otherwise stay behind
+// and contradict the path row above it.
+function removeMachineRow(id) {
+  const tr = machineRows.get(id);
+  if (tr) { tr.remove(); machineRows.delete(id); }
+}
+
 const mbytes = (bytes) => (bytes / 1048576).toFixed(0) + ' MB';
 
 async function reportMachine() {
@@ -709,9 +773,23 @@ async function reportMachine() {
         : '')
     : 'Not available - ' + g.reason);
 
-  machineRow('path', 'Path the on-device engines will take', g.granted
-    ? 'WebGPU, the fast path, with full-precision weights'
-    : 'The fallback path, which works everywhere and is slower');
+  machineRow('path', 'Path the on-device engines will take',
+    (g.device === 'webgpu'
+      ? 'WebGPU, the fast path, with full-detail weights'
+      : 'The fallback path, which works everywhere, is slower, and uses squeezed-down '
+        + 'weights that are several times smaller to download and to hold in memory')
+    + (g.forced ? ' - chosen by hand below, not by this machine' : ''));
+
+  // (!) THE FAST PATH'S COST IS MEMORY, NOT DOWNLOAD, and that is the part that kills a
+  // tablet. A model needs several times its file size in working memory once it is
+  // actually running, which is why the crashes seen on both an Android tablet and an
+  // iPad happened at the moment of speaking or transcribing rather than while
+  // downloading. Reported where it can be read before the download is agreed to.
+  if (navigator.deviceMemory) {
+    machineRow('ram', 'Memory the browser admits to',
+      navigator.deviceMemory + ' GB or more - a rounded figure, and the whole browser '
+      + 'shares it');
+  }
 
   machineRow('cores', 'Processor cores the browser admits to',
     navigator.hardwareConcurrency ? String(navigator.hardwareConcurrency) : 'not reported');
@@ -721,12 +799,14 @@ async function reportMachine() {
   // runs on ONE core however many the machine has. A slow result measured that way is not
   // the model's true speed, and concluding "too slow for a tablet" from it would be the
   // wrong lesson drawn from a handicapped measurement.
-  if (!g.granted) {
+  if (g.device !== 'webgpu') {
     machineRow('threads', 'Can the fallback path use several cores?', crossOriginIsolated
       ? 'Yes'
       : 'No - this page is not served with the two headers a browser wants before it '
         + 'shares memory between cores, so the fallback is running on one. Times below '
         + 'are a floor, not the best this machine can do.');
+  } else {
+    removeMachineRow('threads');
   }
 
   try {
@@ -891,6 +971,47 @@ function copyMachineReport() {
       + 'Select the table and copy it by hand.';
   });
 }
+
+/* (!) THE CHOICE IS OFFERED BECAUSE THE AUTOMATIC ANSWER CAN STILL BE WRONG, and the
+ * way that is discovered is the browser dying - on both an Android tablet and an iPad
+ * (Sept 2026) the engines crashed the page at the moment of speaking or transcribing.
+ * Proving the graphics device above removes one cause of that; it cannot remove the
+ * other, which is simply that full-detail weights need more memory than a tablet has.
+ * Forcing the fallback path is the way to find out which of the two it was, and it has
+ * to be reachable without any of the on-device engines having run.
+ *
+ * (!) SWITCHING PATHS MEANS DIFFERENT FILES, so everything downstream is reset: the
+ * sizes, whether the model counts as already here, and any engine already built. A
+ * model downloaded on one path is not the model the other path loads.
+ */
+function pathHintText() {
+  if (pathChoice === 'auto') {
+    return 'Changed only to answer a question. The fallback path is much slower but '
+      + 'asks for far less memory, so it is what to try when an engine crashes the page.';
+  }
+  return pathChoice === 'fast'
+    ? 'Forced. If the page dies when an engine runs, this is the setting to change.'
+    : 'Forced to the slower, smaller path. Different files, so a model fetched on the '
+      + 'fast path will be downloaded again.';
+}
+
+$('pathChoice').value = pathChoice;
+$('pathHint').textContent = pathHintText();
+$('pathChoice').addEventListener('change', async () => {
+  pathChoice = $('pathChoice').value;
+  try { localStorage.setItem(PATH_STORE, pathChoice); } catch {}
+  applyPathChoice();
+  $('pathHint').textContent = pathHintText();
+  local.tts = null;
+  local.stt = null;
+  localReady.tts = false;
+  localReady.stt = false;
+  modelBytes.tts = 0;
+  modelBytes.stt = 0;
+  await refreshLocalCard('tts');
+  await refreshLocalCard('stt');
+  await reportMachine();
+});
 
 $('netBtn').addEventListener('click', measureRoundTrips);
 $('copyMachine').addEventListener('click', copyMachineReport);
@@ -1243,7 +1364,11 @@ async function refreshLocalCard(which) {
   c.btn.disabled = false;
   c.btn.textContent = 'Download the ' + noun + ' model'
     + (bytes ? ' (' + mbytes(bytes) + ')' : '');
+  // Unchecked as well as disabled: a disabled box keeps whatever tick it had, so
+  // switching paths would otherwise leave an engine selected for a run whose model is
+  // no longer the one on this machine.
   c.cb.disabled = true;
+  c.cb.checked = false;
   c.status.textContent = 'Downloaded once and kept by the browser. Until then this '
     + 'engine cannot be tried.';
 }
@@ -1276,7 +1401,17 @@ async function downloadLocalModel(which) {
     await refreshLocalCard(which);
   } catch (e) {
     c.btn.disabled = false;
-    c.status.textContent = 'The download failed: ' + (e && e.message ? e.message : e);
+    const msg = (e && e.message ? e.message : String(e));
+    // (!) NAME THE REMEDY, because this failure reads as the model being broken when it
+    // is almost always the path. A graphics-shaped complaint here means the engine
+    // could not get the hardware this page said was available - the fallback path
+    // needs none of it.
+    const gpuish = /gpu|webgpu|adapter|device/i.test(msg);
+    c.status.textContent = 'The download failed: ' + msg
+      + (gpuish && (await probeGraphics()).device === 'webgpu'
+          ? ' - this is the graphics hardware, not the model. Set the path above to '
+            + 'the fallback and try again; it is slower but needs none of it.'
+          : '');
   }
 }
 

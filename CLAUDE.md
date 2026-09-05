@@ -1207,6 +1207,55 @@ of what can be done with them, which is why it is the mechanism the app uses.
 
 **The full comparison is section 5 of `Conversant AAC Speech Provider Guide.docx`.**
 
+## ON-DEVICE SPEECH CRASHES BOTH TABLETS, and the bench was telling them the wrong thing (Ken tested, September 4 2026)
+
+Ken ran the bench on an Android tablet and an iPad, in a browser tab and as an
+installed app. **Every on-device combination failed**, and the failures line up: the
+crash comes at the moment a model is asked to DO something, not while downloading.
+That is the signature of running out of memory - a model needs several times its file
+size in working memory once it is running, and these are phone-class chips. **The paid
+services, by contrast, all answered from both tablets in under a third of a second.**
+
+**⚠ THE BENCH ITSELF WAS PART OF THE PROBLEM, AND THE LESSON IS AN OLD ONE ARRIVING IN
+A NEW PLACE: ASKING WHETHER THE GRAPHICS HARDWARE EXISTS IS NOT ASKING WHETHER IT
+WORKS.** Both tablets were told "the fast path, with full-detail weights", and the
+iPad's speaking model then refused to load saying it could not get the graphics
+hardware at all. The probe was asking for an *adapter*, which succeeds; the engines
+need a *device* made from that adapter, which on the iPad does not. **And the wrong
+answer does more than mislabel a row - it makes the page choose the LARGEST weights,
+which is precisely what a tablet then runs out of memory on. The detection error and
+the crash may be one fault.**
+- **FIXED: the probe now makes a device and throws it away again.** It also has to hand
+  the hardware back - an adapter that has produced a device is spent, and not every
+  browser hands out a second one, so **a probe that keeps what it asked for can cause
+  the very failure it reports**.
+- **ALSO BUILT: the path can be forced by hand** (Section 1, "Path for the on-device
+  engines"). Necessary because the way this is discovered is the browser dying, so the
+  choice has to survive the page being killed - it is kept separately from the API keys
+  so that "Forget keys" cannot put a tablet back on the path that crashed it.
+
+**THE NUMBER THAT MAKES THE RETEST WORTH RUNNING: the fallback path's models are about
+a FIFTH the size** - measured 88 MB and 73 MB against 310 MB and 278 MB - so the memory
+demand falls by roughly the same factor. If memory is the cause, the fallback path
+survives. **That is a hypothesis, not a finding, until Ken re-runs it.**
+
+**⚠ AND THE FALLBACK PATH IS GENUINELY SLOW, so do not read a survival as a solution:
+measured here, one sentence took 29.5 seconds** on a desktop restricted to one core (a
+page needs two particular headers before a browser will share memory between cores, and
+neither this bench nor GitHub Pages sends them). A tablet will not beat that.
+
+**TWO OF KEN'S FAILURES ARE NOT FAULTS AND SHOULD NOT BE CHASED.** The Android tab's
+refused microphone was a page opened from a Google Drive file address rather than from
+the website - **not a secure origin, so no microphone**, the same rule that makes a
+plain-http origin functionally broken. And the iPad installed app losing its keys is
+the known separate-storage-silo behavior, not the bench.
+
+**WHAT THIS MEANS FOR THE PRODUCT, stated once: the free, private, no-account speech
+option is not currently available on tablets, which is the whole target.** There is a
+second barrier waiting behind the crash even if it is cleared - the Android tablet's
+connection was reported at about 1.5 Mbps, which makes the two full-detail downloads
+roughly a fifty-minute wait before anyone finds out whether they work.
+
 ## ON HOLD - a BLIND listening study for choosing a voice (Ken, September 4 2026)
 
 **Ken's idea, recorded and deliberately not built: keep the spoken results for several
