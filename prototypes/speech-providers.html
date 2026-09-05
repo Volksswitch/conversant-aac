@@ -1783,6 +1783,12 @@ async function startRecording() {
     return;
   }
   const c = audioCtx();
+  // (!) SAFARI HANDS BACK A SUSPENDED AUDIO ENGINE, AND A SUSPENDED ENGINE DELIVERS NO
+  // AUDIO WHILE LOOKING LIKE IT IS WORKING. Seen on an iPad (Sept 2026): the microphone
+  // was granted, the timer counted up to 4.3 seconds, and the recording came out 0.0
+  // seconds and 0 KB - nothing anywhere said why. This runs inside the tap on Start
+  // recording, which is the only moment a browser will accept it.
+  try { await c.resume(); } catch { /* nothing else to try; the watchdog below reports it */ }
   recSource = c.createMediaStreamSource(recStream);
   recNode = c.createScriptProcessor(4096, 1, 1);
   recBuf = [];
@@ -1799,6 +1805,17 @@ async function startRecording() {
   timerId = setInterval(() => {
     $('recTimer').textContent = ((performance.now() - recStart) / 1000).toFixed(1) + 's';
   }, 100);
+
+  // (!) SAY IT WHILE THERE IS STILL TIME TO ACT, not after the recording is over. A
+  // counter running against a silent microphone is indistinguishable from a working
+  // one, so somebody talks for five seconds and only then finds out none of it was
+  // kept. A second and a half of real audio is many callbacks; none at all is a fault.
+  setTimeout(() => {
+    if (recording && !recBuf.length) {
+      $('recStatus').textContent = 'No sound is reaching the page - the microphone is '
+        + 'open but nothing is arriving. Stop, reload the page, and start again.';
+    }
+  }, 1500);
 }
 
 function stopRecording() {
@@ -1821,7 +1838,9 @@ function stopRecording() {
     + ' - the "against the clip" column below is measured against this';
   $('playbackRow').hidden = false;
   $('sttRun').disabled = total === 0;
-  $('sttStatus').textContent = total ? 'Ready.' : 'Nothing was recorded - try again.';
+  $('sttStatus').textContent = total ? 'Ready.'
+    : 'Nothing was recorded. The microphone was open but no sound reached the page - '
+      + 'reload the page and try again before recording anything long.';
 }
 
 // (!) A FILE OPENED DIRECTLY IS NOT A SECURE PAGE, and the microphone is refused
