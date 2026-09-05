@@ -207,3 +207,269 @@ test('the Deepgram speaking connection opts out of training', () => {
     assert.match(src('tts-deepgram.js'), /mip_opt_out=true/,
         'the spoken text would become eligible for training, silently');
 });
+
+/* ---------------------------------------------------------------------------
+ * Tier 2 - the streaming playback path, driven end to end.
+ *
+ * (!) THIS IS THE CHECK THE PROJECT'S CROSS-LAYER RULE ASKS FOR, and without it the
+ * feature is untestable in the way that matters. Every layer here is easy to fool on
+ * its own: the decoder can be handed bytes and the player can be handed samples, and
+ * both pass while the socket's chunks never reach the audio device at all. So a fake
+ * socket's chunks go into the REAL createVoice(), and what comes out is read off a
+ * fake audio device - the same path a real utterance takes, minus the network and the
+ * speaker.
+ *
+ * What still cannot be exercised here: whether the audio SOUNDS continuous on a real
+ * device. Scheduling is asserted against the context's own clock, which is where a
+ * gap would show up, but only a person listening can settle the last of it.
+ *
+ * (!) EVERY TEST MUST reset() THE VOICE, and it is not tidiness: an open connection
+ * carries an 8-second keepalive timer, and one un-cleared timer holds the whole test
+ * process open forever with no output and no failure. That cost a run to discover.
+ * ------------------------------------------------------------------------- */
+
+// A fake audio device that records what was scheduled and when.
+function fakeContext() {
+    const ctx = {
+        state: 'running',
+        currentTime: 0,
+        scheduled: [],          // { at, seconds, samples, node }
+        resumed: 0,
+        async resume() { this.resumed++; this.state = 'running'; },
+        createBuffer(channels, length, rate) {
+            const data = new Float32Array(length);
+            return { length, sampleRate: rate, duration: length / rate,
+                     getChannelData: () => data };
+        },
+        createBufferSource() {
+            const node = {
+                buffer: null, onended: null, started: null, stopped: false, done: false,
+                connect() {},
+                start(at) {
+                    node.started = at === undefined ? ctx.currentTime : at;
+                    ctx.scheduled.push({ at: node.started,
+                                         seconds: node.buffer.duration,
+                                         samples: node.buffer.getChannelData(0).slice(),
+                                         node });
+                },
+                stop() { node.stopped = true; },
+            };
+            return node;
+        },
+        destination: {},
+    };
+    // Every finished piece reports back, which is what resolves speak().
+    ctx.finishAll = () => {
+        for (const s of ctx.scheduled) {
+            if (s.node.onended && !s.node.done) { s.node.done = true; s.node.onended(); }
+        }
+    };
+    return ctx;
+}
+
+// A fake Deepgram socket. Chunks are pushed one at a time by the test, so the
+// question "did playback start before the last chunk?" can actually be asked.
+function fakeSocketFactory() {
+    const made = [];
+    class FakeWS {
+        constructor(url, protocols) {
+            this.url = url; this.protocols = protocols;
+            this.readyState = 1; this.sent = [];
+            made.push(this);
+            setTimeout(() => this.onopen && this.onopen(), 0);
+        }
+        send(m) { this.sent.push(m); }
+        close() { this.readyState = 3; }
+        chunk(buf) { this.onmessage({ data: buf }); }
+        flushed() { this.onmessage({ data: JSON.stringify({ type: 'Flushed' }) }); }
+    }
+    FakeWS.OPEN = 1;
+    return { FakeWS, made };
+}
+
+// 40 ms of audio at 24 kHz, exactly as Deepgram sends it: 960 signed 16-bit samples.
+function chunk40ms(value) {
+    const buf = new ArrayBuffer(960 * 2);
+    const view = new DataView(buf);
+    for (let i = 0; i < 960; i++) view.setInt16(i * 2, value, true);
+    return buf;
+}
+
+const tick = () => new Promise((r) => setTimeout(r, 0));
+
+// One voice wired to one fake device and one fake network, cleaned up afterwards.
+function setup(t, { suspended = false } = {}) {
+    const ctx = fakeContext();
+    if (suspended) ctx.state = 'suspended';
+    const { FakeWS, made } = fakeSocketFactory();
+    global.WebSocket = FakeWS;
+    global.window = { AudioContext: function () { return ctx; } };
+    const voice = aura.createVoice({ getKey: () => 'k' });
+    t.after(() => voice.reset());     // see the keepalive note above
+    return { ctx, made, voice };
+}
+
+test('audio plays while it is still arriving, not after the last chunk', async (t) => {
+    const { ctx, made, voice } = setup(t);
+    const speaking = voice.speak('hello');
+    await tick(); await tick();
+    const ws = made[0];
+
+    // The lead-in is 300 ms and the chunks are 40 ms each, so the eighth starts it.
+    for (let i = 0; i < 7; i++) ws.chunk(chunk40ms(1000));
+    assert.equal(ctx.scheduled.length, 0, 'nothing is played inside the lead-in');
+    ws.chunk(chunk40ms(1000));
+    assert.ok(ctx.scheduled.length > 0,
+        'playback must start once the lead-in is buffered - 92 chunks are still to come');
+
+    for (let i = 0; i < 92; i++) ws.chunk(chunk40ms(1000));
+    ws.flushed();
+    await tick(); await tick();
+    ctx.finishAll();
+    await speaking;
+
+    const played = ctx.scheduled.reduce((n, s) => n + s.samples.length, 0);
+    assert.equal(played, 100 * 960, 'every sample handed over must reach the device');
+    assert.ok(ctx.scheduled.length > 1, 'streamed audio arrives as several pieces');
+});
+
+test('the pieces are scheduled end to end, with no seam and no overlap', async (t) => {
+    const { ctx, made, voice } = setup(t);
+    const speaking = voice.speak('hello');
+    await tick(); await tick();
+    for (let i = 0; i < 40; i++) made[0].chunk(chunk40ms(500));
+    made[0].flushed();
+    await tick(); await tick();
+    ctx.finishAll();
+    await speaking;
+
+    // (!) THE SEAM IS THE WHOLE POINT. Each piece must begin exactly where the last
+    // ended; scheduling each one "now" instead would leave a silent gap the length of
+    // however late that chunk was, heard as the voice stuttering.
+    let expected = ctx.scheduled[0].at;
+    for (const s of ctx.scheduled) {
+        assert.ok(Math.abs(s.at - expected) < 1e-9,
+            `piece starts at ${s.at}, expected ${expected} - a gap or an overlap`);
+        expected += s.seconds;
+    }
+});
+
+test('a repeated phrase plays as one piece and opens no connection', async (t) => {
+    const { ctx, made, voice } = setup(t);
+    const first = voice.speak('Bye!');
+    await tick(); await tick();
+    made[0].chunk(chunk40ms(700));
+    made[0].flushed();
+    await tick(); await tick();
+    ctx.finishAll();
+    await first;
+
+    const socketsBefore = made.length;
+    ctx.scheduled.length = 0;
+    const again = voice.speak('Bye!');
+    await tick(); await tick();
+    ctx.finishAll();
+    await again;
+
+    assert.equal(made.length, socketsBefore, 'a repeat must not reach the network');
+    assert.equal(ctx.scheduled.length, 1, 'a whole phrase plays as one piece');
+});
+
+test('cancel stops what is playing and everything scheduled behind it', async (t) => {
+    const { ctx, made, voice } = setup(t);
+    const speaking = voice.speak('a long sentence');
+    speaking.catch(() => {});          // cancelling rejects; the assertion is below
+    await tick(); await tick();
+    const ws = made[0];
+    for (let i = 0; i < 30; i++) ws.chunk(chunk40ms(1200));
+    assert.ok(ctx.scheduled.length > 1, 'several pieces are scheduled ahead');
+
+    voice.cancel();
+    assert.ok(ctx.scheduled.every((s) => s.node.stopped),
+        'a piece scheduled to start in a moment must be stopped too, or a cancelled '
+        + 'sentence carries on talking');
+
+    const after = ctx.scheduled.length;
+    for (let i = 0; i < 10; i++) ws.chunk(chunk40ms(1200));
+    assert.equal(ctx.scheduled.length, after, 'a late chunk must not schedule itself');
+    assert.equal(voice.isSpeaking(), false);
+});
+
+test('a failure after audio has started is not retried, and our fragment is stopped',
+     async (t) => {
+    const { ctx, made, voice } = setup(t);
+    const speaking = voice.speak('half a sentence');
+    await tick(); await tick();
+    const ws = made[0];
+    for (let i = 0; i < 10; i++) ws.chunk(chunk40ms(1500));
+    assert.ok(ctx.scheduled.length > 0, 'playback has started');
+
+    const socketsBefore = made.length;
+    ws.onclose({ code: 1006 });                 // the connection drops mid-sentence
+    await assert.rejects(speaking, /closed/i,
+        'it must throw, so tts.js speaks the whole sentence in the browser voice');
+
+    assert.equal(made.length, socketsBefore,
+        'a retry would start the sentence again and the partner would hear the front '
+        + 'of it twice, in two different voices');
+    assert.ok(ctx.scheduled.every((s) => s.node.stopped),
+        'our own fragment must be stopped before the fallback speaks');
+});
+
+test('a failure BEFORE any audio is still retried on a fresh connection', async (t) => {
+    const { ctx, made, voice } = setup(t);
+    const speaking = voice.speak('hello');
+    await tick(); await tick();
+    made[0].onclose({ code: 1006 });            // the idle-socket case the retry exists for
+    await tick(); await tick();
+    assert.equal(made.length, 2, 'a second connection is opened');
+
+    for (let i = 0; i < 10; i++) made[1].chunk(chunk40ms(900));
+    made[1].flushed();
+    await tick(); await tick();
+    ctx.finishAll();
+    await speaking;
+    assert.ok(ctx.scheduled.length > 0, 'the retry speaks');
+});
+
+test('the audio device is woken before any audio can arrive', async (t) => {
+    const { ctx, made, voice } = setup(t, { suspended: true });
+    const speaking = voice.speak('hello');
+    await tick(); await tick();
+    // (!) The September 2 2026 dropped-opening-word fix, kept and strengthened. A piece
+    // started against a context that is still waking is scheduled at a clock that has
+    // not begun advancing, and the browser discards whatever it treats as already past.
+    assert.equal(ctx.resumed, 1, 'resume must be awaited before the first piece');
+    for (let i = 0; i < 10; i++) made[0].chunk(chunk40ms(800));
+    made[0].flushed();
+    await tick(); await tick();
+    ctx.finishAll();
+    await speaking;
+    assert.ok(ctx.scheduled.length > 0);
+});
+
+test('a short phrase that ends inside the lead-in is still spoken', async (t) => {
+    // (!) THE CASE THE LEAD-IN COULD SWALLOW. "Yes." is shorter than 300 ms of audio,
+    // so waiting for a full lead-in that never arrives would say nothing at all.
+    const { ctx, made, voice } = setup(t);
+    const speaking = voice.speak('Yes.');
+    await tick(); await tick();
+    made[0].chunk(chunk40ms(600));              // 40 ms - far inside the lead-in
+    assert.equal(ctx.scheduled.length, 0);
+    made[0].flushed();
+    await tick(); await tick();
+    ctx.finishAll();
+    await speaking;
+    assert.equal(ctx.scheduled.length, 1, 'the whole short phrase goes out in one piece');
+    assert.equal(ctx.scheduled[0].samples.length, 960);
+});
+
+test('a service that returns no audio throws, so the browser voice takes over',
+     async (t) => {
+    const { ctx, made, voice } = setup(t);
+    const speaking = voice.speak('hello');
+    await tick(); await tick();
+    made[0].flushed();                          // Flushed with nothing before it
+    await assert.rejects(speaking, /no audio/i);
+    assert.equal(ctx.scheduled.length, 0);
+});

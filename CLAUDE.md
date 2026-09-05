@@ -1207,7 +1207,7 @@ of what can be done with them, which is why it is the mechanism the app uses.
 
 **The full comparison is section 5 of `Conversant AAC Speech Provider Guide.docx`.**
 
-## THE PAID VOICE STARTS IN A TENTH OF A SECOND AND THE APP WAITS TWO SECONDS ANYWAY (measured September 4 2026)
+## THE PAID VOICE STARTS IN A TENTH OF A SECOND, AND THE APP USED TO WAIT TWO SECONDS ANYWAY (measured September 4 2026, fixed September 5)
 
 Ken's four-laptop bench made Deepgram look like the **slowest** voice on the page - about
 2.4 s a sentence against Azure's 0.25 s, last or second to last on all four machines.
@@ -1219,22 +1219,52 @@ uses): FIRST AUDIO AT 127 ms, WHOLE SENTENCE AT 2123 ms.** Deepgram streams the 
 it makes it. It is not slow to start; it is slow to *finish*, because it is sending 211 KB
 of uncompressed audio.
 
-**⚠ AND `tts-deepgram.js` THROWS THAT AWAY: `synthesize()` collects every chunk and
-resolves only on `Flushed`, so nothing is played until the last byte lands.** The audio
-is arriving the whole time and being put on a pile. **So the user waits about two seconds
-on every utterance for audio that was ready in a tenth of one** - on the app's slowest
-path, against the four-second silence the product exists to fight.
-- **Playing progressively is feasible rather than hypothetical: the format is raw PCM,
-  which is stateless**, so a chunk can be scheduled as it arrives. That is the same
-  property already recorded as the reason the STT side sends raw PCM rather than a
-  compressed stream. What needs care is chunk scheduling and jitter, and making cancel
-  still cancel.
-- **Not built, and it should be costed against the alternative** - Azure hands over a
+**⚠ AND `tts-deepgram.js` USED TO THROW THAT AWAY: `synthesize()` collected every chunk
+and resolved only on `Flushed`, so nothing played until the last byte landed.** The audio
+was arriving the whole time and being put on a pile. **So the user waited about two
+seconds on every utterance for audio that was ready in a tenth of one** - on the app's
+slowest path, against the four-second silence the product exists to fight. **Fixed
+September 5 2026; see below.**
+- **It was feasible rather than hypothetical because the format is raw PCM, which is
+  stateless**, so a chunk can be scheduled as it arrives. Same property already recorded
+  as the reason the STT side sends raw PCM rather than a compressed stream.
+- **Still worth costing against the alternative** - Azure hands over a
   finished file in ~0.25 s with no streaming work at all, which may simply be the better
   answer for both speed and money (Azure also speaks at about half Deepgram's price and
   has a permanently free tier). **The finding here is that Deepgram's 2.4 s is OUR
   arrangement, not the service's speed** - which has to be known before that comparison
   means anything.
+
+**BUILT September 5 2026 - the app now plays it as it arrives, and the numbers that
+shaped it were measured rather than guessed.** 102 chunks of exactly 1920 bytes (40 ms
+of audio each), delivered at about 2.08x real time, largest gap between chunks 266 ms,
+and the worst shortfall - audio owed by the clock minus audio received - only **60 ms**
+when starting from the very first chunk.
+- **A 300 ms LEAD-IN is the whole safety margin, and it is why playback does not start
+  on chunk one.** Running out of audio mid-sentence is not a delay, it is a **stutter in
+  the user's own speaking voice, in front of a person**. 300 ms is five times the worst
+  shortfall measured and costs about a sixth of a second against starting immediately.
+- **Pieces are scheduled on the context's own clock, each beginning exactly where the
+  last ended.** Scheduling each one "now" would leave a gap the length of however late
+  that chunk was - which is the same stutter, arriving by a different route.
+- **Only the FRESH path streams; a cached phrase still plays as one piece.** That is most
+  of what the app says (placeholders, control phrases, Express buttons), and it is
+  already instant.
+- **⚠ NEVER RETRY ONCE AUDIO HAS BEEN HEARD.** The retry restarts the sentence from the
+  beginning, which was invisible before and is now the partner hearing the front of it
+  twice. Costs nothing in practice: the failure the retry exists for is an idle socket
+  closed BETWEEN utterances, discovered before any audio arrives.
+- **⚠ AND ON A MID-SENTENCE FAILURE, STOP OUR OWN FRAGMENT BEFORE HANDING THE ERROR ON.**
+  `tts.js` answers a failure by speaking the whole sentence in the browser voice, so a
+  half-sentence left playing would be heard twice in two voices. **A clipped fragment
+  then one complete sentence is the better of two bad outcomes; a TRUNCATED sentence is
+  the worst, because the meaning is lost.**
+- **The September 2 2026 dropped-opening-word fix is kept and STRENGTHENED**: the resume
+  moved ahead of the socket, so the context has the whole first lead-in to finish waking.
+- **⚠ A TEST THAT LEAVES A TIMER RUNNING HANGS THE WHOLE RUN WITH NO OUTPUT AND NO
+  FAILURE.** An open connection carries an 8-second keepalive; one un-cleared interval
+  held the test process open forever. Every test calls `reset()` in an `after` hook.
+  Cost a run to find, and reads exactly like an infinite loop in the code under test.
 
 **⚠ THE FORMAT IS FORCED, NOT A BENCH CHOICE - TESTED, DO NOT RE-DERIVE.** Deepgram's
 streaming speak connection accepts `linear16` only; `mp3`, `opus`, `aac` and `flac` are

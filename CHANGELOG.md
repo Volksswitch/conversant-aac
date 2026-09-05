@@ -26,6 +26,11 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- The paid Deepgram voice now starts speaking as soon as the first sound is ready,
+  instead of waiting for the whole sentence to arrive. Measured on a Windows laptop,
+  a Surface Pro, a Chromebook, an Android tablet and an iPad, that is about two
+  seconds off the wait before every single thing you say.
+
 
 ## Version 0.10.1
 

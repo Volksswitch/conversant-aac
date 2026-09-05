@@ -154,9 +154,14 @@ export function createVoice({ getKey, onBilled } = {}) {
     let socket = null;
     let socketModel = null;
     let pending = null;        // the synthesis in flight: { chunks, resolve, reject, timer }
-    let source = null;         // the AudioBufferSourceNode currently playing
+    // (!) A SET, NOT ONE NODE: streamed audio is many nodes scheduled back to back,
+    // and cancel() has to be able to stop every one of them - including the ones
+    // scheduled to start in a moment, which are the reason a cancelled sentence would
+    // otherwise carry on talking.
+    const sources = new Set();  // playback nodes started but not yet finished
     let playToken = 0;         // bumped by cancel(), so a cancel during the
                                // resume wait below is not overtaken by playback
+    let player = null;         // the streaming player for the utterance in flight
     let chain = Promise.resolve();
     const cache = new Map();
     // Set only while the Settings Test button is exercising a key the user has
@@ -264,6 +269,7 @@ export function createVoice({ getKey, onBilled } = {}) {
                     return;
                 }
                 pending.chunks.push(e.data);
+                if (pending.onChunk) pending.onChunk(e.data);
             };
             ws.onerror = () => {
                 clearTimeout(openTimer);
@@ -282,10 +288,11 @@ export function createVoice({ getKey, onBilled } = {}) {
     }
 
     // Ask for one utterance and collect its audio.
-    function synthesize(model, text) {
+    function synthesize(model, text, onChunk) {
         return connect(model).then((ws) => new Promise((resolve, reject) => {
             pending = {
                 chunks: [],
+                onChunk,
                 resolve,
                 reject,
                 timer: setTimeout(() => failPending('The voice service took too long.'), SYNTH_TIMEOUT_MS),
@@ -340,13 +347,140 @@ export function createVoice({ getKey, onBilled } = {}) {
             const node = c.createBufferSource();
             node.buffer = buffer;
             node.connect(c.destination);
-            source = node;
+            sources.add(node);
             node.onended = () => {
-                if (source === node) source = null;
+                sources.delete(node);
                 resolve();
             };
             node.start();
         });
+    }
+
+    /*
+     * ⚠ PLAY IT AS IT ARRIVES. Deepgram sends the audio while it is still making it,
+     * and until September 2026 this module threw that away: it collected every chunk
+     * and played nothing until the last byte landed. Measured against the live service
+     * and on five devices, that cost about two seconds on EVERY utterance - first
+     * sound at 0.3-0.5 s, whole sentence at 1.5-2.5 s - on the app's slowest path,
+     * against the four-second silence this product exists to fight.
+     *
+     * MEASURED, so the numbers below are not guesses: 102 chunks of exactly 1920 bytes
+     * (40 ms of audio each), delivered at about 2.08x real time, largest gap between
+     * chunks 266 ms, and the worst shortfall - audio owed by the clock minus audio
+     * received - only 60 ms when starting from the very first chunk.
+     *
+     * (!) SO THE LEAD-IN IS THE WHOLE SAFETY MARGIN, and it is why playback does not
+     * simply start on chunk one. Running out of audio mid-sentence is not a delay, it
+     * is a STUTTER in the user's own speaking voice, in front of a person. 300 ms is
+     * five times the worst shortfall measured, and costs about a sixth of a second
+     * against starting immediately.
+     *
+     * (!) BATCHED because 102 separate playback nodes for one sentence is a lot of
+     * objects to create, schedule and cancel. 200 ms per node is 20 of them.
+     */
+    const LEAD_IN_MS = 300;
+    const BATCH_MS = 200;
+    const leadInSamples = () => Math.round((LEAD_IN_MS / 1000) * SAMPLE_RATE);
+    const batchSamples = () => Math.round((BATCH_MS / 1000) * SAMPLE_RATE);
+
+    /*
+     * Schedules audio end to end on the context's own clock as it arrives.
+     *
+     * (!) THE CURSOR IS THE POINT. Each batch starts exactly where the previous one
+     * ended, in AudioContext time, so there is no seam between them - scheduling each
+     * one "now" would leave a gap the length of however late the chunk was. If the
+     * cursor ever falls behind the clock the audio has already run out, and the only
+     * thing left to do is carry on from the present rather than schedule into the past.
+     */
+    function createStreamPlayer(c) {
+        let queue = [];            // Float32Array pieces not yet scheduled
+        let queued = 0;            // samples in queue
+        let cursor = 0;            // context time where the next batch begins
+        let started = false;
+        let ended = false;         // no more audio is coming
+        let live = 0;              // scheduled nodes that have not finished
+        let aborted = false;
+        let underruns = 0;
+        let settle = null;
+        const done = new Promise((resolve) => { settle = resolve; });
+
+        function finishIfDone() {
+            if (ended && live === 0 && !queued && settle) { settle(); settle = null; }
+        }
+
+        function schedule(samples) {
+            if (aborted || !samples.length) return;
+            const buffer = c.createBuffer(1, samples.length, SAMPLE_RATE);
+            buffer.getChannelData(0).set(samples);
+            const node = c.createBufferSource();
+            node.buffer = buffer;
+            node.connect(c.destination);
+            // Behind the clock means the audio already ran out; start from now, and
+            // count it so a stutter is something the app can know about rather than
+            // only the user hearing it.
+            if (cursor < c.currentTime) { if (started) underruns++; cursor = c.currentTime; }
+            live++;
+            sources.add(node);
+            node.onended = () => {
+                sources.delete(node);
+                live--;
+                finishIfDone();
+            };
+            node.start(cursor);
+            cursor += samples.length / SAMPLE_RATE;
+            started = true;
+        }
+
+        function drain(all) {
+            const want = all ? 1 : batchSamples();
+            while (queued >= want) {
+                const take = all ? queued : Math.min(queued, batchSamples());
+                const out = new Float32Array(take);
+                let at = 0;
+                while (at < take) {
+                    const head = queue[0];
+                    const n = Math.min(head.length, take - at);
+                    out.set(head.subarray(0, n), at);
+                    at += n;
+                    if (n === head.length) queue.shift(); else queue[0] = head.subarray(n);
+                }
+                queued -= take;
+                schedule(out);
+                if (all) break;
+            }
+        }
+
+        return {
+            push(chunk) {
+                if (aborted) return;
+                const f = pcm16ToFloat32([chunk]);
+                if (!f.length) return;
+                queue.push(f);
+                queued += f.length;
+                if (!started) {
+                    if (queued >= leadInSamples()) { cursor = c.currentTime; drain(false); }
+                    return;
+                }
+                drain(false);
+            },
+            // Everything that is left goes out in one piece: waiting for a full batch
+            // that will never arrive would drop the tail of the sentence.
+            end() {
+                if (aborted) return;
+                ended = true;
+                if (!started) cursor = c.currentTime;
+                drain(true);
+                finishIfDone();
+            },
+            abort() {
+                aborted = true;
+                queue = []; queued = 0;
+                if (settle) { settle(); settle = null; }
+            },
+            hasStarted: () => started,
+            underruns: () => underruns,
+            done,
+        };
     }
 
     function remember(key, samples) {
@@ -356,6 +490,13 @@ export function createVoice({ getKey, onBilled } = {}) {
         }
     }
 
+    function stopAllSources() {
+        for (const node of sources) {
+            try { node.stop(); } catch { /* already stopped */ }
+        }
+        sources.clear();
+    }
+
     /*
      * Speak, and resolve when the audio has finished playing. Throws on any failure
      * so tts.js can fall back to the browser voice — never swallow an error here,
@@ -363,20 +504,66 @@ export function createVoice({ getKey, onBilled } = {}) {
      *
      * Serialized through `chain` so two overlapping calls cannot interleave on one
      * socket; cancel() breaks the chain by stopping playback.
+     *
+     * (!) TWO PATHS, AND ONLY THE FRESH ONE STREAMS. A cached phrase is already whole,
+     * so it plays as one piece exactly as it always has - which is most of what the app
+     * says, since placeholders, control phrases and Express buttons repeat constantly.
+     * Streaming is for the sentence being heard for the first time, which is also the
+     * only one anybody is waiting on.
+     *
+     * (!) THE RESUME MOVED UP HERE, and it must stay ahead of the socket. The September
+     * 2 2026 fix awaited it immediately before playing; with streaming there is no
+     * single such moment, so it is awaited before any audio can arrive. That is a
+     * stronger guarantee than the one it replaces, not a weaker one - the context has a
+     * few hundred milliseconds to finish waking while the first chunks are in flight.
      */
     function speak(text, { model = DEFAULT_VOICE } = {}) {
         const run = async () => {
             const trimmed = (text || '').trim();
             if (!trimmed) return;
             const key = cacheKey(model, trimmed);
-            let samples = cache.get(key);
-            if (!samples) {
-                const chunks = await synthesizeWithRetry(model, trimmed);
-                samples = pcm16ToFloat32(chunks);
-                if (!samples.length) throw new Error('The voice service returned no audio.');
-                remember(key, samples);
+            const cached = cache.get(key);
+            if (cached) { await play(cached); return; }
+
+            const c = audioContext();          // throws if this browser cannot play audio
+            const mine = ++playToken;
+            if (c.state === 'suspended') {
+                // A refused resume is not fatal - the audio may still play, and throwing
+                // here would cost the user the browser-voice fallback as well.
+                try { await c.resume(); } catch { /* fall through and try anyway */ }
+                if (mine !== playToken) return;
             }
-            await play(samples);
+
+            const p = createStreamPlayer(c);
+            player = p;
+            let chunks;
+            try {
+                chunks = await synthesizeWithRetry(model, trimmed,
+                    (buf) => p.push(buf), p.hasStarted);
+            } catch (err) {
+                // (!) STOP OUR OWN FRAGMENT BEFORE HANDING THE ERROR ON. tts.js answers
+                // a failure by speaking the whole sentence in the browser voice, so
+                // leaving a half-sentence playing would have the partner hear the front
+                // of it twice in two different voices. A clipped fragment followed by
+                // one complete sentence is the better of the two bad outcomes; a
+                // TRUNCATED sentence is the worst, because the meaning is lost.
+                p.abort();
+                if (player === p) player = null;
+                stopAllSources();
+                throw err;
+            }
+            if (mine !== playToken) { p.abort(); if (player === p) player = null; return; }
+
+            const samples = pcm16ToFloat32(chunks);
+            if (!samples.length) {
+                p.abort();
+                if (player === p) player = null;
+                throw new Error('The voice service returned no audio.');
+            }
+            remember(key, samples);   // so the next time this phrase is said, it is instant
+            p.end();
+            await p.done;
+            if (player === p) player = null;
         };
         chain = chain.then(run, run);   // one failure must not wedge the queue
         return chain;
@@ -401,15 +588,22 @@ export function createVoice({ getKey, onBilled } = {}) {
      */
     const RETRYABLE = /closed|did not respond|took too long|refused the connection/i;
 
-    async function synthesizeWithRetry(model, text) {
+    async function synthesizeWithRetry(model, text, onChunk, hasStarted) {
         try {
-            return await synthesize(model, text);
+            return await synthesize(model, text, onChunk);
         } catch (err) {
             if (!RETRYABLE.test(err && err.message ? err.message : '')) throw err;
+            // (!) NEVER RETRY ONCE THE USER HAS BEEN HEARD SPEAKING. A retry starts the
+            // sentence again from the beginning, which before streaming was invisible
+            // and is now the partner hearing the first half twice. In practice this
+            // costs nothing: the failure a retry exists for is an idle connection that
+            // was closed BETWEEN utterances, which is discovered before any audio
+            // arrives - so a failure this late is a different failure anyway.
+            if (hasStarted && hasStarted()) throw err;
             // Drop the dead connection so the retry cannot reuse it — without this the
             // second attempt would hand back the same broken one and fail the same way.
             closeSocket();
-            return synthesize(model, text);
+            return synthesize(model, text, onChunk);
         }
     }
 
@@ -451,10 +645,14 @@ export function createVoice({ getKey, onBilled } = {}) {
 
     function cancel() {
         playToken++;               // a play() waiting on resume() must not start now
-        if (source) {
-            try { source.stop(); } catch { /* already stopped */ }
-            source = null;
+        // The player first: it must stop handing out new nodes before the live ones
+        // are stopped, or a chunk arriving in between would schedule itself and speak
+        // after the cancel.
+        if (player) { player.abort(); player = null; }
+        for (const node of sources) {
+            try { node.stop(); } catch { /* already stopped */ }
         }
+        sources.clear();
         // Drop anything the server has queued for us, so a cancelled sentence does
         // not arrive on top of the next one.
         if (socket && socket.readyState === WebSocket.OPEN) {
@@ -464,7 +662,7 @@ export function createVoice({ getKey, onBilled } = {}) {
     }
 
     function isSpeaking() {
-        return source !== null;
+        return sources.size > 0;
     }
 
     /*
