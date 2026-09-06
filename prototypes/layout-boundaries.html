@@ -378,15 +378,16 @@
       var dock = clamp(b.dock, floorBtn * 2, DOCK_CAP_H, 'dock');
       var command = clamp(b.command, floorBtn, 0.4, 'command');
       var response = clamp(b.response, floorR, 0.6, 'response');
-      // The transcript is the remainder and is the region that yields, so it is
-      // where a shortage shows up. If it would drop under its floor, the response
-      // panel gives the space back - it is the largest flexible neighbor.
+      // The transcript is simply the remainder. There is deliberately NO rebalancing
+      // here: the three stored regions are kept inside the budget as they are set
+      // (see setBottom and normalizeBottom), so by the time solve runs the layout is
+      // already a valid partition. An earlier version rescued an over-committed state
+      // right here, and it fed back badly - solve is consulted mid-drag to decide
+      // where a grip should stop, so a rescue that depends on WHICH region moved last
+      // changed the budget underneath the drag in progress, and regions nobody was
+      // touching grew. Keep this pure and keep the state valid instead.
       var transcript = 1 - dock - command - response;
-      if (transcript < floorT) {
-        response = Math.max(floorR, response - (floorT - transcript));
-        transcript = 1 - dock - command - response;
-        note('transcript');
-      }
+      if (transcript <= floorT + 1e-9) note('transcript');
       return { dock: dock, command: command, response: response, transcript: transcript };
     }
 
@@ -398,14 +399,16 @@
     var minMainW = (8 * MIN_BTN + 9 * GAP) / w;
     if (1 - dockW < minMainW) { dockW = 1 - minMainW; note('dock'); }
 
-    var transcript = clamp(s.transcript, floorT, 0.7, 'transcript');
-    var command = clamp(s.command, floorBtn, 0.4, 'command');
-    var response = 1 - transcript - command;
-    if (response < floorR) {
-      transcript = Math.max(floorT, transcript - (floorR - response));
-      response = 1 - transcript - command;
-      note('response');
-    }
+    // The column beside the dock follows exactly the same rule as the bottom stack:
+    // the transcript is the remainder, and the two regions below it are the stored
+    // ones. It used to be the other way round - the response panel was the remainder -
+    // which meant dragging the top grip resized the BOTTOM region, two boundaries away
+    // from the one under the finger.
+    var lim = sideLimits();
+    var command = clamp(s.command, lim.command.lo, lim.command.hi, 'command');
+    var response = clamp(s.response, lim.response.lo, lim.response.hi, 'response');
+    var transcript = 1 - command - response;
+    if (transcript <= lim.floorT + 1e-9) note('transcript');
     return { dockW: dockW, transcript: transcript, command: command, response: response };
   }
 
@@ -441,8 +444,10 @@
       state.bottom.response = 1 - pick('dock') - pick('command') - pick('transcript');
     } else {
       state.side.dock = pick('dock');
-      state.side.transcript = pick('transcript');
       state.side.command = pick('command');
+      // The transcript is the remainder here now, so its choice is spent by setting
+      // the response panel to what is left over.
+      state.side.response = 1 - pick('transcript') - pick('command');
     }
   }
 
@@ -533,6 +538,11 @@
   var curScale = 1;
 
   function render() {
+    // One place to keep the stored bottom layout legal, whatever changed it - a drag,
+    // a different screen, eight cards instead of four, or the size buttons. A drag has
+    // already stopped itself at the limits, so this is a no-op there; it earns its
+    // keep when a floor moves under a layout that was legal a moment ago.
+    if (state.dock === 'bottom') normalizeBottom(); else normalizeSide();
     var size = stageSize();
     curScale = size.scale;
     stage.style.width = size.w + 'px';
@@ -554,9 +564,9 @@
       y += respH;
       stage.appendChild(region('rDock', 'Express Panel', g, y, W - 2 * g, dockH - g, dockContent('bottom')));
 
-      addHandle('h', txH, W / 2, 'bottom.transcriptCommand');
-      addHandle('h', txH + cmdH, W / 2, 'bottom.commandResponse');
-      addHandle('h', txH + cmdH + respH, W / 2, 'bottom.responseDock');
+      addHandle('h', txH, W, 'bottom.transcriptCommand');
+      addHandle('h', txH + cmdH, W, 'bottom.commandResponse');
+      addHandle('h', txH + cmdH + respH, W, 'bottom.responseDock');
     } else {
       var dockW = r.dockW * W, mainW = W - dockW;
       var txH2 = r.transcript * H, cmdH2 = r.command * H, respH2 = r.response * H;
@@ -571,24 +581,30 @@
       // The grip goes on the boundary the dock actually has, which is its LEFT edge -
       // the panel is drawn on the right. Placing it at dockW put it a third of the way
       // across the main area, so the first drag jumped the dock straight to its cap.
-      addHandle('v', mainW, H / 2, 'side.dockMain');
-      addHandle('h', txH2, mainW / 2, 'side.transcriptCommand');
-      addHandle('h', txH2 + cmdH2, mainW / 2, 'side.commandResponse');
+      addHandle('v', mainW, H, 'side.dockMain');
+      // Both horizontal grips stop at the dock, because that is where the boundary
+      // they represent stops.
+      addHandle('h', txH2, mainW, 'side.transcriptCommand');
+      addHandle('h', txH2 + cmdH2, mainW, 'side.commandResponse');
     }
 
     renderReadout(r);
     renderFloors();
   }
 
-  function addHandle(dir, pos, across, key) {
+  // `extent` is how far the boundary actually RUNS. It used to be passed as a centre
+  // point and then ignored, so every horizontal grip was stretched across the whole
+  // screen and its grip - centred in the bar - sat in the middle of the SCREEN rather
+  // than the middle of the column it divides. On a side dock that put all three grips
+  // inside the Express Panel, over a boundary that does not exist there.
+  function addHandle(dir, pos, extent, key) {
     var h = el('div', 'handle ' + dir);
     h.dataset.key = key;
-    var size = stageSize();
     if (dir === 'h') {
-      h.style.left = '0px'; h.style.width = size.w + 'px';
+      h.style.left = '0px'; h.style.width = extent + 'px';
       h.style.top = (pos - 7) + 'px'; h.style.height = '14px';
     } else {
-      h.style.top = '0px'; h.style.height = size.h + 'px';
+      h.style.top = '0px'; h.style.height = extent + 'px';
       h.style.left = (pos - 7) + 'px'; h.style.width = '14px';
     }
     h.appendChild(el('div', 'grip'));
@@ -600,12 +616,15 @@
   function isStuck(key) {
     if (binding.length === 0) return false;
     var map = {
-      'bottom.transcriptCommand': ['transcript'],
-      'bottom.commandResponse': ['command', 'transcript'],
-      'bottom.responseDock': ['dock', 'response'],
+      // A bottom grip is stuck when the region below it cannot move any further,
+      // or when the transcript - which absorbs every one of those moves - is at
+      // its own floor.
+      'bottom.transcriptCommand': ['command', 'transcript'],
+      'bottom.commandResponse': ['response', 'transcript'],
+      'bottom.responseDock': ['dock', 'transcript'],
       'side.dockMain': ['dock'],
-      'side.transcriptCommand': ['transcript'],
-      'side.commandResponse': ['command', 'response']
+      'side.transcriptCommand': ['command', 'transcript'],
+      'side.commandResponse': ['response', 'transcript']
     };
     var want = map[key] || [];
     for (var i = 0; i < want.length; i++) if (binding.indexOf(want[i]) !== -1) return true;
@@ -627,6 +646,92 @@
     window.addEventListener('pointerup', endDrag);
   }
 
+  // Resize ONE bottom region, stopping it where the transcript reaches its floor.
+  // The stop has to happen here, on the way in, rather than being corrected after
+  // the fact: a correction applied afterwards has no way to tell which direction the
+  // drag was going, so it claws space back out of the very region being dragged and
+  // the panel shrinks while the user pulls to make it bigger. Refusing to go past the
+  // limit simply stops the grip, which is what a limit should feel like.
+  function setBottom(which, value) {
+    var lim = bottomLimits();
+    var others = 0;
+    ['command', 'response', 'dock'].forEach(function (k) {
+      if (k !== which) others += state.bottom[k];
+    });
+    // Budget against the STORED siblings, which normalizeBottom keeps valid. Reading
+    // them back out of solve() instead would be reading a number solve had already
+    // adjusted, and the two would chase each other.
+    var ceiling = Math.min(lim[which].hi, 1 - lim.floorT - others);
+    state.bottom[which] = Math.max(lim[which].lo, Math.min(value, ceiling));
+    state.bottom.last = which;
+  }
+
+  // The floor and cap of each stored bottom region, in one place so the drag stop,
+  // the normalizer and the solver cannot disagree about them.
+  function bottomLimits() {
+    var h = state.device.h;
+    return {
+      floorT:   FLOOR_TRANSCRIPT / h,
+      command:  { lo: MIN_BTN / h,     hi: 0.4 },
+      response: { lo: responseFloorPx() / h, hi: 0.6 },
+      dock:     { lo: 2 * MIN_BTN / h, hi: DOCK_CAP_H }
+    };
+  }
+
+  // The same three pieces for the column beside a side dock. The horizontal grip is
+  // not part of this: the dock's width has only one neighbour, so there is nothing to
+  // arbitrate and state.side.dock is clamped in solve alone.
+  function sideLimits() {
+    var h = state.device.h;
+    return {
+      floorT:   FLOOR_TRANSCRIPT / h,
+      command:  { lo: MIN_BTN / h,           hi: 0.4 },
+      response: { lo: responseFloorPx() / h, hi: 0.85 }
+    };
+  }
+
+  function setSide(which, value) {
+    var lim = sideLimits();
+    var other = which === 'command' ? state.side.response : state.side.command;
+    var ceiling = Math.min(lim[which].hi, 1 - lim.floorT - other);
+    state.side[which] = Math.max(lim[which].lo, Math.min(value, ceiling));
+    state.side.last = which;
+  }
+
+  function normalizeSide() {
+    var lim = sideLimits(), b = state.side;
+    ['command', 'response'].forEach(function (k) {
+      b[k] = Math.max(lim[k].lo, Math.min(b[k], lim[k].hi));
+    });
+    var order = ['response', 'command'].filter(function (k) { return k !== b.last; });
+    if (b.last) order.push(b.last);
+    for (var i = 0; i < order.length; i++) {
+      var owe = lim.floorT - (1 - b.command - b.response);
+      if (owe <= 0) break;
+      b[order[i]] = Math.max(lim[order[i]].lo, b[order[i]] - owe);
+    }
+  }
+
+  // Force the stored bottom layout back inside the budget. Needed only when
+  // something OTHER than a drag changes the sums - a different screen, or eight
+  // cards instead of four, both of which can raise a floor under a layout that was
+  // legal a moment ago. Regions are trimmed furthest-from-the-last-touched first,
+  // so the thing the user most recently set is the last thing taken from.
+  function normalizeBottom() {
+    var lim = bottomLimits(), b = state.bottom;
+    ['command', 'response', 'dock'].forEach(function (k) {
+      b[k] = Math.max(lim[k].lo, Math.min(b[k], lim[k].hi));
+    });
+    var order = ['dock', 'response', 'command'].filter(function (k) { return k !== b.last; });
+    if (b.last) order.push(b.last);
+    for (var i = 0; i < order.length; i++) {
+      var owe = lim.floorT - (1 - b.command - b.response - b.dock);
+      if (owe <= 0) break;
+      var k = order[i];
+      b[k] = Math.max(lim[k].lo, b[k] - owe);
+    }
+  }
+
   function onDrag(e) {
     if (!drag) return;
     var size = stageSize();
@@ -637,28 +742,37 @@
     var r = solve();
 
     switch (drag.key) {
-      case 'bottom.transcriptCommand': {
-        // Moving this edge changes the transcript. Everything below keeps its size
-        // and slides, which is the trade being made visible.
-        var newT = fy;
-        var delta = newT - r.transcript;
-        state.bottom.response = r.response - delta;
+      // One rule for all three bottom grips: a grip resizes the region DIRECTLY
+      // BELOW it and nothing else below it moves. Each of those regions keeps its
+      // own bottom edge, so the change is absorbed at the top, by the transcript -
+      // which is the remainder anyway. Anything between the transcript and the grip
+      // keeps its size and slides. This is what the response/Express Panel grip has
+      // always done; the other two now do the same thing.
+      case 'bottom.transcriptCommand':
+        // Below the grip: Controls. Its bottom edge is fixed by response + dock.
+        setBottom('command', (r.transcript + r.command) - fy);
         break;
-      }
       case 'bottom.commandResponse':
-        state.bottom.command = fy - r.transcript;
+        // Below the grip: the response panel. Its bottom edge is fixed by the dock.
+        setBottom('response', (1 - r.dock) - fy);
         break;
       case 'bottom.responseDock':
-        state.bottom.dock = 1 - fy;
+        // Below the grip: the Express Panel. Its bottom edge is the screen edge.
+        setBottom('dock', 1 - fy);
         break;
       case 'side.dockMain':
+        // Two regions share the width and nothing else is at stake, so this one grip
+        // simply trades the Express Panel against the column. solve holds it inside
+        // the dock's own cap and the room the command row needs.
         state.side.dock = 1 - fx;
         break;
       case 'side.transcriptCommand':
-        state.side.transcript = fy;
+        // Below the grip: Controls. Its bottom edge is fixed by the response panel.
+        setSide('command', (r.transcript + r.command) - fy);
         break;
       case 'side.commandResponse':
-        state.side.command = fy - r.transcript;
+        // Below the grip: the response panel, whose bottom edge is the screen edge.
+        setSide('response', 1 - fy);
         break;
     }
     render();
@@ -814,8 +928,8 @@
   function updateHints() {
     if (state.mode === 'drag') {
       stageHint.textContent = state.dock === 'bottom'
-        ? 'Drag any of the three horizontal grips. Each one is a shared edge, so one region grows and its neighbor gives way.'
-        : 'Drag the vertical grip to resize the Express Panel, or either horizontal grip to trade height between the three regions beside it.';
+        ? 'Drag any of the three horizontal grips. Each one resizes the region directly below it; everything further down stays exactly as it is, and the space comes out of the transcript at the top.'
+        : 'Drag the vertical grip to resize the Express Panel. Either horizontal grip resizes the region directly below it; anything further down stays as it is, and the space comes out of the transcript at the top.';
       modeHint.textContent = 'Nothing here says a percentage. The trade is shown by the edge moving, not described.';
     } else {
       stageHint.textContent = 'The grips are gone. The layout is worked out from the four choices instead.';
