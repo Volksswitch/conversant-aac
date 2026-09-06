@@ -1470,7 +1470,15 @@ body.conv-bottom .ep-row {
    worded button 0.8px wider than its icon self and pushed the eight buttons after
    Listen 7px along, which is a keyguard hole moving because a label was turned on.
    Anything that adds horizontal padding, a border, or a margin here reintroduces it. */
-.cmd-btn.cmd-worded {
+/* ⚠ NOT `.cmd-btn.cmd-worded`, WHICH IS WHAT THIS USED TO BE AND WAS SILENTLY WRONG.
+   The Listen button is the one Command Bar button carrying no `cmd-btn` class - it
+   has its own rules, because its fill changes with the microphone - so a selector
+   written that way styled the other eight and skipped it entirely. Its worded face
+   therefore kept the 1rem default instead of the 0.8rem here, and on a narrow side
+   dock "Listen" wanted 39px in a 35px button and hung over the edge.
+   Measured: with the selector alone put back, two test configurations lose it again;
+   nothing else in this rule makes the difference. */
+.cmd-worded {
     font-size: 0.8rem;
     line-height: 1.15;
     overflow: hidden;

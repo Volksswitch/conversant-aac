@@ -3827,11 +3827,12 @@ function applyButtonSizing() {
     const { rows, cols } = activeLayoutGrid();
     root.setProperty('--kbd-rows', String(rows));
     root.setProperty('--kbd-cols', String(cols));
-    // Every one of the numbers above can change how tall a panel cell is, and a
-    // label is trimmed to the lines that fit INSIDE that cell - so re-fit them here
-    // rather than only when the panel re-renders. This is also the path a window
-    // resize takes, which does not re-render the panel at all.
+    // Every one of the numbers above can change how tall a button or a card is, and
+    // text is trimmed to the lines that fit INSIDE it - so re-fit here rather than
+    // only when each surface re-renders. This is also the path a window resize
+    // takes, which re-renders none of them.
     ui.fitPanelText();
+    ui.fitCardsAndCommands();
 }
 
 // Apply the user-set text-size scales as CSS multipliers on each surface's base

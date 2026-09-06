@@ -366,6 +366,7 @@ export function showResponses(palette, onSelect) {
         cell.responses.forEach((response) => el.appendChild(buildResponseCard(response, palette.indexOf(response), onSelect, half)));
         responseOptions.appendChild(el);
     }
+    fitCardsAndCommands();
 }
 
 export function clearResponseOptions() {
@@ -733,6 +734,65 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
 }
 
 /**
+ * Trim ONE piece of text to the lines that fit its box, so anything too long ends in
+ * an ellipsis rather than stopping mid-word (Ken's rule, September 2026).
+ *
+ * ⚠ IT ONLY INTERVENES WHEN THE TEXT ACTUALLY OVERFLOWS, and that is what keeps it
+ * safe to point at anything. Clamping needs the element laid out as a vertical box,
+ * which loses whatever vertical centring it had - so doing it unconditionally would
+ * shunt every short response to the top of its card for no reason. Text that
+ * overflows fills its box anyway, so there is no centring left to lose in the one
+ * case that needs the clamp.
+ *
+ * Anything already set is cleared first: the question "does this overflow?" cannot
+ * be answered while a previous answer is still clamping it.
+ *
+ * `room` defaults to the element's own box. Pass one where the element sizes itself
+ * to its content, in which case its own height can never report an overflow.
+ */
+export function fitText(el, room) {
+    if (!el) return;
+    el.style.removeProperty('-webkit-line-clamp');
+    el.style.removeProperty('display');
+    el.style.removeProperty('-webkit-box-orient');
+    el.style.removeProperty('align-items');
+    const box = room != null ? room : el.clientHeight;
+    if (!(box > 0)) return;                     // not laid out - leave it be
+    const cs = getComputedStyle(el);
+    const line = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.15;
+    if (!(line > 0)) return;
+    if (el.scrollHeight <= box + 0.5) return;   // it fits - nothing to do
+    // +0.01 so a box exactly two lines tall counts as two: sub-pixel layout leaves
+    // these a hair under a whole multiple.
+    el.style.display = '-webkit-box';
+    el.style.webkitBoxOrient = 'vertical';
+    el.style.alignItems = 'initial';
+    el.style.webkitLineClamp = String(Math.max(1, Math.floor(box / line + 0.01)));
+}
+
+/**
+ * The response cards and the Command Bar's worded faces, re-fitted. Both are drawn
+ * into a box whose size comes from the layout, so both can be handed more words than
+ * they have room for - a long opener the user wrote, or a response the model made
+ * longer than usual.
+ *
+ * ⚠ THE SHORT LABEL UNDER A RESPONSE IS DELIBERATELY NOT TOUCHED. It sizes itself to
+ * its own content rather than taking a share of the card, so it cannot overflow
+ * ITSELF - a long one pushes the card instead, which is a different fault needing a
+ * decision about how much of a card a short label may take, not a clamp.
+ */
+export function fitCardsAndCommands() {
+    if (responseOptions) {
+        responseOptions.querySelectorAll('.response-text').forEach((el) => fitText(el));
+    }
+    document.querySelectorAll('#listenControls > button.cmd-worded').forEach((btn) => {
+        const bs = getComputedStyle(btn);
+        fitText(btn, btn.clientHeight
+            - parseFloat(bs.paddingTop) - parseFloat(bs.paddingBottom));
+    });
+}
+
+/**
  * Trim every panel label to the number of lines that actually FIT, so anything too
  * long ends in an ellipsis instead of being cut off (Ken, September 2026: "a label
  * too long to fit on a button should be trimmed sufficiently to provide room for a
@@ -985,6 +1045,9 @@ function setCommandFace(btn, iconName, label, face) {
 export function setCommandLabelMode(mode) {
     commandLabelMode = mode === 'words' ? 'words' : 'icon';
     applyControlIcons();
+    // The faces have just been written, so any that do not fit their button need
+    // trimming - and switching back to icons needs the clamps taken off again.
+    fitCardsAndCommands();
 }
 
 // Convert the control buttons to icon-only (Rule 4), keeping each one's

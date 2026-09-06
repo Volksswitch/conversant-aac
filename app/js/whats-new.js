@@ -24,7 +24,8 @@ import * as platform from './platform.js';
 const RELEASE_NOTES = {
   "0.10.3": [
     "Fixed: the buttons on the Express Panel and the keys on the on-screen keyboard now sit in exactly the same places. On most keyboard layouts the row holding the space bar did not quite line up between the two, so a keyguard cut for one was slightly out over the other.",
-    "Fixed: a phrase too long for its button is now shortened with a \"...\" on the end. Before, it was cut off mid-word with nothing to show that anything was missing, and a long phrase could stretch its own row taller than the rest of the panel."
+    "Fixed: text too long for the space it is in is now shortened with a \"...\" on the end, on the Express Panel, on the response cards and on the command buttons when they are set to show words. Before, it was cut off mid-word with nothing to show that anything was missing, and a long phrase could stretch its own row taller than the rest of the Express Panel.",
+    "Fixed: with the command buttons set to show words, the word on the Listen button was larger than the words on the others, and could run over the edge of the button on a narrow keyboard dock."
   ],
   "0.10.2": [
     "The paid Deepgram voice now starts speaking as soon as the first sound is ready, instead of waiting for the whole sentence to arrive. Measured on a Windows laptop, a Surface Pro, a Chromebook, an Android tablet and an iPad, that is about two seconds off the wait before every single thing you say."

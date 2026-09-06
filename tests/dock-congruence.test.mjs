@@ -298,3 +298,110 @@ for (const [label, settings] of LABEL_CASES) {
             t.diagnostic(`${label}: all ${n} labels fit their button`);
         });
 }
+
+// The same rule on the other two surfaces that are handed text they may not have
+// room for: a response card and a worded Command Bar face.
+//
+// ⚠ THE OPENERS ARE THE WAY IN, and it matters that they are a REAL path rather than
+// cards poked into the page: "Start conversation" draws the user's own opening
+// phrases onto the actual response cards with no AI involved, so the whole chain
+// runs - the phrases the user wrote, the card builder, the layout, the fitting.
+// Long openers because a user may well write one, and a short one proves nothing.
+//
+// ⚠ WHAT IS NOT COVERED, AND IT IS THE HALF NEEDING THE AI: the model's short label
+// under a response. No static palette carries one - an opener, a wind-down and a
+// goodbye are all their own label - so it cannot be driven from here. It is handled
+// by the same code, and that is an argument, not a measurement.
+const LONG_OPENERS = [
+    'I was wondering whether you might have a few minutes to talk about the thing we discussed last week',
+    'Hi {name}, could I ask you something?',
+    'There is something I have been meaning to bring up with you when we next had a quiet moment',
+    'Can we talk?',
+];
+
+// Each case carries its own screen, because how narrow a Command Bar button gets
+// depends on the screen as much as on the settings - and the case that squeezes a
+// face until a single word will not fit is a different one from the case that
+// squeezes a response card until its wording will not.
+const IPAD_MINI = { width: 1133, height: 744 };   // the smallest screen supported
+const IPAD = { width: 1180, height: 763 };
+const TEXT_CASES = [
+    ['default', {}, IPAD_MINI],
+    ['eight cards, large response text',
+        { responseFontScale: 2, responsesPerCategory: 2 }, IPAD_MINI],
+    ['the tightest configuration there is',
+        { keyboardDock: 'side', sideLayout: 'S6', responseFontScale: 2,
+          responsesPerCategory: 2, buttonSizePos: 95 }, IPAD_MINI],
+    // ⚠ THE CASE THAT SQUEEZES A COMMAND FACE SIDEWAYS. A wide side dock leaves the
+    // Command Bar about 35px per button, which is narrower than the word "Listen" -
+    // the one failure a downward clamp cannot reach. Keep this case: without it the
+    // sideways half of the rule is unguarded, which was true when it was first
+    // written.
+    ['side dock, large text, big buttons',
+        { keyboardDock: 'side', sideLayout: 'S2', responseFontScale: 1.8,
+          buttonSizePos: 90 }, IPAD],
+];
+
+for (const [label, extra, viewport] of TEXT_CASES) {
+    test(`${label}: response cards and command faces are trimmed, never cut off`,
+        { timeout: 30000 }, async (t) => {
+            if (skip) { t.skip(skip); return; }
+            await page.evaluateOnNewDocument(({ openers, settings }) => {
+                localStorage.setItem('aac_settings', JSON.stringify(settings));
+                localStorage.setItem('aac_control_phrases', JSON.stringify({ openers }));
+            }, {
+                openers: LONG_OPENERS,
+                settings: Object.assign({
+                    keyboardMode: 'onscreen', keyboardDock: 'bottom', bottomLayout: 'B10',
+                    commandLabels: 'words',
+                }, extra),
+            });
+            await page.setViewport(viewport);
+            await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'networkidle0' });
+            await new Promise((r) => setTimeout(r, 500));
+            await page.evaluate(() => document.querySelector('main')?.classList.remove('disabled'));
+            await page.click('#initiateBtn');
+            await new Promise((r) => setTimeout(r, 500));
+
+            const found = await page.evaluate(() => {
+                // ⚠ "scrollHeight > clientHeight" is TRUE of every correctly trimmed
+                // box - a clamp is visual, the words are still there underneath. The
+                // question is whether the clamp matches the lines that fit: if it does
+                // not, the ellipsis is drawn on a line nobody can see and the text just
+                // stops.
+                const bad = [];
+                const check = (el, what) => {
+                    const cs = getComputedStyle(el);
+                    const line = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.15;
+                    const room = el.clientHeight;
+                    if (!(room > 0) || !(line > 0)) return;
+                    const fits = Math.max(1, Math.floor(room / line + 0.01));
+                    const clamp = parseInt(cs.webkitLineClamp, 10);
+                    if (el.scrollHeight > room + 0.5 && clamp !== fits) {
+                        bad.push({ what, text: el.textContent.trim().slice(0, 30), clamp, fits });
+                    }
+                    // Sideways is the other way to lose words, and no downward clamp
+                    // reaches it - a single word too wide for its button.
+                    if (el.scrollWidth > el.clientWidth + 0.5) {
+                        bad.push({ what, text: el.textContent.trim().slice(0, 30),
+                                   wide: el.scrollWidth, room: el.clientWidth });
+                    }
+                };
+                document.querySelectorAll('#responseOptions .response-text')
+                    .forEach((el) => check(el, 'response'));
+                document.querySelectorAll('#listenControls > button.cmd-worded')
+                    .forEach((el) => check(el, 'command face'));
+                return {
+                    bad,
+                    cards: document.querySelectorAll('#responseOptions .response-text').length,
+                    faces: document.querySelectorAll('#listenControls > button.cmd-worded').length,
+                };
+            });
+            assert.ok(found.cards > 0, `${label}: no response cards drawn, so nothing was checked`);
+            assert.ok(found.faces > 0, `${label}: no worded faces drawn, so nothing was checked`);
+            assert.equal(found.bad.length, 0,
+                `${label}: ${found.bad.length} piece(s) of text lose words with no ellipsis: `
+                + JSON.stringify(found.bad.slice(0, 4)));
+            t.diagnostic(`${label}: ${found.cards} cards and ${found.faces} faces all fit`);
+        });
+}
