@@ -1,6 +1,6 @@
 import { setIconButton } from './icons.js';
 import { choiceCells } from './express-items.js';
-import { panelRoles } from './keyboard-layouts.js';
+import { panelRoles, setRowColumns } from './keyboard-layouts.js';
 import * as chime from './chime.js';
 
 const responseOptions = document.getElementById('responseOptions');
@@ -430,6 +430,7 @@ const epGrid = document.getElementById('epGrid');
 const expressPanel = document.getElementById('expressPanel');
 const dockArea = document.getElementById('dockArea');
 
+
 /**
  * Host the Express Panel inside `dialog` (live) or back in the dock (`null`).
  * Idempotent — safe to call on every tab switch.
@@ -496,7 +497,7 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
     const blank = (span) => {
         const f = document.createElement('div');
         f.className = 'ep-cell-blank';
-        f.style.flex = `${span} 1 0`;
+        f.style.gridColumn = `span ${span}`;
         return f;
     };
     const setColor = (b, color, tint) => {
@@ -508,7 +509,7 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         const b = document.createElement('button');
         b.type = 'button';
         b.className = 'ep-btn';
-        b.style.flex = `${span} 1 0`;
+        b.style.gridColumn = `span ${span}`;
 
         if (item.type === 'partner') {
             // Resolved from About Me by app.js before it reaches here; `name` is the
@@ -574,7 +575,7 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         const b = document.createElement('button');
         b.type = 'button';
         b.className = 'ep-btn ep-choice';
-        b.style.flex = `${span} 1 0`;
+        b.style.gridColumn = `span ${span}`;
         setColor(b, choiceColor.color, choiceColor.tint);
         // A tapped chip STAYS selected while its steering is in effect (Rule 6 — a
         // latched action shows as a selected button). Without this the steering was
@@ -614,7 +615,7 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         const b = document.createElement('button');
         b.type = 'button';
         b.className = 'ep-btn ep-undefined';
-        b.style.flex = `${span} 1 0`;
+        b.style.gridColumn = `span ${span}`;
         // A reserved choice cell names itself. It is still tappable-to-define in
         // Settings, because at rest it can hold a partner, place or feeling like any
         // other Context cell - the choices only borrow it for one exchange.
@@ -665,6 +666,10 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
     roles.forEach((row) => {
         const rowEl = document.createElement('div');
         rowEl.className = 'ep-row';
+        // Equal columns, as many as this row's spans add up to (see .ep-row in
+        // styles.css). Taken from the row itself rather than from --kbd-cols, so the
+        // track count can never disagree with the cells about to go in it.
+        setRowColumns(rowEl, row);
         (row || []).forEach((cell) => {
             const span = cell.span || 1;
             if (cell.role === 'compose') {
@@ -675,7 +680,7 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
                 const b = document.createElement('button');
                 b.type = 'button';
                 b.className = 'ep-btn ep-imow';
-                b.style.flex = `${span} 1 0`;
+                b.style.gridColumn = `span ${span}`;
                 setIconButton(b, 'compose', 'In my own words');
                 b.addEventListener('click', () => onInMyOwnWords && onInMyOwnWords());
                 rowEl.appendChild(b);
@@ -723,6 +728,54 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
             rowEl.appendChild(cellEl);
         });
         epGrid.appendChild(rowEl);
+    });
+    fitPanelText();
+}
+
+/**
+ * Trim every panel label to the number of lines that actually FIT, so anything too
+ * long ends in an ellipsis instead of being cut off (Ken, September 2026: "a label
+ * too long to fit on a button should be trimmed sufficiently to provide room for a
+ * terminating ellipsis").
+ *
+ * ⚠ WHY THE LINE COUNT CANNOT SIMPLY BE 3, WHICH IS WHAT IT WAS. A line clamp puts
+ * its ellipsis at the end of the LAST LINE IT ALLOWS - so a clamp of 3 in a box only
+ * two lines tall puts the ellipsis on a line nobody can see, and what the user gets
+ * is a sentence stopping mid-word with no sign that anything is missing. Measured
+ * before this: seven of the shipped phrases on a side dock, at DEFAULT settings.
+ *
+ * The clamp has to match the box, and the box is a function of the dock size, the
+ * layout's rows, the gap and the text size - so it is worked out from the rendered
+ * box rather than re-derived from those four, which would be a second opinion about
+ * a number the browser already knows.
+ *
+ * ⚠ A BOX OF ZERO HEIGHT MEANS "NOT LAID OUT YET", NOT "NO ROOM". The panel is
+ * rendered while it is hidden (before Start) and while Settings covers it, and a
+ * clamp of 0 there would blank every button on the dock. Those are left alone, and
+ * the next call - the panel re-renders on every settings change, and this also runs
+ * on a resize - puts the real number in.
+ */
+export function fitPanelText() {
+    if (!epGrid) return;
+    epGrid.querySelectorAll('.ep-btn').forEach((btn) => {
+        const t = btn.querySelector('.ep-text');
+        if (!t) return;
+        // ⚠ MEASURE THE BUTTON, NOT THE TEXT. The text element is itself clamped, so
+        // its own height is however tall the CLAMP has made it - ask it how much room
+        // it has and it answers with how much room it is already taking, which is
+        // circular. The room available is the button's, less its padding.
+        const bs = getComputedStyle(btn);
+        const room = btn.clientHeight
+            - parseFloat(bs.paddingTop) - parseFloat(bs.paddingBottom);
+        if (!(room > 0)) return;                // not laid out - see above
+        const ts = getComputedStyle(t);
+        const line = parseFloat(ts.lineHeight)
+            || parseFloat(ts.fontSize) * 1.12;  // the stylesheet's own line-height
+        if (!line) return;
+        // +0.01 so a box that is exactly two lines tall counts as two, not one:
+        // sub-pixel layout leaves these a hair under a whole multiple.
+        const lines = Math.max(1, Math.floor(room / line + 0.01));
+        t.style.webkitLineClamp = String(lines);
     });
 }
 

@@ -1157,14 +1157,51 @@ body.conv-side-left  #expressPanel.ep-in-settings { left: var(--app-margin);  bo
     gap: var(--grid-gap);   /* between rows — also the keyguard bar width (settable) */
     min-height: 0;
 }
+/* ⚠ A ROW IS A GRID OF EQUAL COLUMNS, AND A CELL CLAIMS COLUMNS - it is never a
+   share of the leftover space (Ken, September 2026). The rule he stated: a button's
+   border must sit INSIDE the space set aside for it, so that whatever ornamentation
+   a button carries, its overall size does not change.
+
+   Sharing out the leftover breaks that rule, even with border-box: with nothing to
+   start from, each button's own border and padding are a floor UNDER its share
+   rather than part of it, so they end up added on top. Where every cell in a row is
+   one column wide that cancels exactly - each cell adds back one border - which is
+   why it was invisible for so long. On a row of MIXED widths it does not: the wide
+   cell adds its border back once while the narrow ones add theirs back several
+   times over.
+
+   That mattered because the Express Panel and the keyboard are decorated very
+   differently (a 5px band, a border and side padding, about 17.7px, against a 1px
+   border) - so the same span drew different boxes on the two surfaces, and they
+   have to be identical for ONE keyguard to fit both (Rule 9). Measured before the
+   change: up to 43px apart on the space-bar row. Guarded by
+   tests/dock-congruence.test.mjs.
+
+   The column count is set per row, in JS, from that row's own contents - not from
+   --kbd-cols - so a row can never disagree with what is in it. minmax(0, 1fr) is
+   load-bearing: a bare 1fr lets a long phrase push its own column wider and the
+   whole point is columns that do not care what is in them. */
 .ep-row {
-    display: flex;
+    display: grid;
+    grid-auto-flow: column;
     gap: var(--grid-gap);   /* between cells — the keyguard bar width (settable) */
 }
 /* Rows stretch to fill the dock in BOTH layouts (the dock is a fixed size each
    way), so the Express Panel exactly fills the dock region the keyboard occupies. */
 body.conv-side .ep-row,
-body.conv-bottom .ep-row { flex: 1 1 0; }
+body.conv-bottom .ep-row {
+    flex: 1 1 0;
+    /* ⚠ min-height: 0 IS LOAD-BEARING, and it is Ken's rule again in the other
+       direction: what is IN a button must never change the space set aside for it.
+       A row left to size itself will not go below its own contents, so a phrase
+       long enough to wrap to three lines pushed ITS row taller and took the height
+       out of the rows above and below - which moves every keyguard hole below it,
+       and moves them again the next time somebody edits that phrase to something
+       longer. Measured before the fix, at a wide gap: three rows at 37.5px and one
+       at 47.1px, against the keyboard's four even rows of 39.9px. The vertical
+       counterpart of the minmax(0, 1fr) on the columns. */
+    min-height: 0;
+}
 
 .region h2 {
     font-size: 0.95rem;
@@ -4384,8 +4421,11 @@ body.conv-bottom     .danger-dialog {
     /* ½·gap surround (matches #expressPanel); keep the safe-area inset at the bottom. */
     padding: calc(var(--grid-gap) / 2) calc(var(--grid-gap) / 2) calc(var(--grid-gap) / 2 + var(--safe-bottom));
 }
-/* Key rows stretch to fill the fixed-height bottom dock (like the side dock). */
-#appKeyboard.kbd-dock-bottom .kbd-row { flex: 1 1 0; }
+/* Key rows stretch to fill the fixed-height bottom dock (like the side dock).
+   min-height: 0 for the same reason as .ep-row - a key must not be able to push its
+   own row taller. A no-op while keys are single characters, and stated anyway: the
+   two dock surfaces have to stay congruent, and this is one of the pairs. */
+#appKeyboard.kbd-dock-bottom .kbd-row { flex: 1 1 0; min-height: 0; }
 #appKeyboard.kbd-dock-bottom .kbd-key { min-height: 0; }
 
 /* Side dock — About Me / Settings (compete for horizontal space, so the
@@ -4412,9 +4452,11 @@ body.conv-bottom     .danger-dialog {
     box-shadow: 4px 0 16px var(--shadow);
 }
 
-/* In the side dock each row stretches to share the full column height. */
+/* In the side dock each row stretches to share the full column height.
+   min-height: 0 for the same reason as .ep-row - see the note there. */
 #appKeyboard.kbd-dock-side .kbd-row {
     flex: 1 1 0;
+    min-height: 0;
 }
 
 #appKeyboard.kbd-dock-side .kbd-key {
@@ -4455,10 +4497,11 @@ body.conv-bottom     .danger-dialog {
     border-radius: 3px;
 }
 
+/* The same grid as .ep-row, and it MUST stay the same - see the note there. */
 .kbd-row {
-    display: flex;
+    display: grid;
+    grid-auto-flow: column;
     gap: var(--grid-gap);    /* between keys — keyguard bar width (settable) */
-    justify-content: center;
 }
 
 .kbd-key {

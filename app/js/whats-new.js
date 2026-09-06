@@ -22,6 +22,10 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.10.3": [
+    "Fixed: the buttons on the Express Panel and the keys on the on-screen keyboard now sit in exactly the same places. On most keyboard layouts the row holding the space bar did not quite line up between the two, so a keyguard cut for one was slightly out over the other.",
+    "Fixed: a phrase too long for its button is now shortened with a \"...\" on the end. Before, it was cut off mid-word with nothing to show that anything was missing, and a long phrase could stretch its own row taller than the rest of the panel."
+  ],
   "0.10.2": [
     "The paid Deepgram voice now starts speaking as soon as the first sound is ready, instead of waiting for the whole sentence to arrive. Measured on a Windows laptop, a Surface Pro, a Chromebook, an Android tablet and an iPad, that is about two seconds off the wait before every single thing you say."
   ],

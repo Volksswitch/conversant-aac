@@ -3827,6 +3827,11 @@ function applyButtonSizing() {
     const { rows, cols } = activeLayoutGrid();
     root.setProperty('--kbd-rows', String(rows));
     root.setProperty('--kbd-cols', String(cols));
+    // Every one of the numbers above can change how tall a panel cell is, and a
+    // label is trimmed to the lines that fit INSIDE that cell - so re-fit them here
+    // rather than only when the panel re-renders. This is also the path a window
+    // resize takes, which does not re-render the panel at all.
+    ui.fitPanelText();
 }
 
 // Apply the user-set text-size scales as CSS multipliers on each surface's base

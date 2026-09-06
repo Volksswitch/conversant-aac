@@ -241,3 +241,60 @@ test('with a wide gap and a screen edge margin, the two surfaces still agree',
         assert.ok(parseFloat(gap) > 1, `expected a wide gap to be in force, got "${gap}"`);
         compare(t, 'B10 with wide gap + margin', panel, keyboard);
     });
+
+// A label too long for its button must be TRIMMED far enough to leave room for a
+// terminating ellipsis - it must never be cut off, and it must never change the size
+// of the button (Ken, September 2026). The button half is the grid above; this is
+// the label half.
+//
+// ⚠ WHAT GOES WRONG IS SILENT AND LOOKS DELIBERATE. A line clamp puts its ellipsis
+// at the end of the last line it ALLOWS, so a clamp of three in a box two lines tall
+// puts the ellipsis on a line nobody can see: the phrase simply stops mid-word, and
+// on screen that reads as a short phrase rather than as a truncated one. The clamp
+// therefore has to match the box, and this is what says it does.
+const LABEL_CASES = [
+    ['bottom dock, default', { keyboardMode: 'onscreen', keyboardDock: 'bottom', bottomLayout: 'B10' }],
+    ['side dock, default', { keyboardMode: 'onscreen', keyboardDock: 'side', sideLayout: 'S2' }],
+    ['side dock, narrow cells', { keyboardMode: 'onscreen', keyboardDock: 'side', sideLayout: 'S6' }],
+    ['big text in a tight dock', { keyboardMode: 'onscreen', keyboardDock: 'side', sideLayout: 'S2',
+        buttonGapPos: 80, minGapPos: 60, appMarginPos: 55, expressFontScale: 1.6 }],
+];
+
+for (const [label, settings] of LABEL_CASES) {
+    test(`${label}: every phrase is trimmed to the lines that fit, never cut off`,
+        { timeout: 30000 }, async (t) => {
+            if (skip) { t.skip(skip); return; }
+            await page.evaluateOnNewDocument((s) => {
+                localStorage.setItem('aac_settings', JSON.stringify(s));
+            }, settings);
+            await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'networkidle0' });
+            await new Promise((r) => setTimeout(r, 400));
+
+            const bad = await page.evaluate(() => {
+                const out = [];
+                document.querySelectorAll('#epGrid .ep-btn').forEach((btn) => {
+                    const t2 = btn.querySelector('.ep-text');
+                    if (!t2) return;
+                    const ts = getComputedStyle(t2);
+                    const bs = getComputedStyle(btn);
+                    const line = parseFloat(ts.lineHeight) || parseFloat(ts.fontSize) * 1.12;
+                    // The room the BUTTON has, not the height the clamped text has
+                    // taken - asking the text is circular (see ui.fitPanelText).
+                    const room = btn.clientHeight
+                        - parseFloat(bs.paddingTop) - parseFloat(bs.paddingBottom);
+                    const fits = Math.max(1, Math.floor(room / line + 0.01));
+                    const clamp = parseInt(ts.webkitLineClamp, 10);
+                    if (clamp !== fits) {
+                        out.push({ text: t2.textContent.trim().slice(0, 30), clamp, fits });
+                    }
+                });
+                return out;
+            });
+            const n = await page.evaluate(() => document.querySelectorAll('#epGrid .ep-btn').length);
+            assert.ok(n > 0, `${label}: no panel buttons rendered, so nothing was checked`);
+            assert.equal(bad.length, 0,
+                `${label}: ${bad.length} label(s) drawn on a different number of lines than fit `
+                + `- these are cut off with no ellipsis: ${JSON.stringify(bad.slice(0, 4))}`);
+            t.diagnostic(`${label}: all ${n} labels fit their button`);
+        });
+}

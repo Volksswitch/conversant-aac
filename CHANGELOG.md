@@ -26,6 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Fixed: the buttons on the Express Panel and the keys on the on-screen keyboard now sit in exactly the same places. On most keyboard layouts the row holding the space bar did not quite line up between the two, so a keyguard cut for one was slightly out over the other.
+- Fixed: a phrase too long for its button is now shortened with a "..." on the end. Before, it was cut off mid-word with nothing to show that anything was missing, and a long phrase could stretch its own row taller than the rest of the panel.
+
 
 ## Version 0.10.2
 

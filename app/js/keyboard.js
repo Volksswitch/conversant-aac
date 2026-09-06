@@ -20,7 +20,7 @@
  * preventDefault) so the caret never moves and no field blurs mid-type.
  */
 
-import { LAYOUTS, buildSymbolsPage } from './keyboard-layouts.js';
+import { LAYOUTS, buildSymbolsPage, setRowColumns } from './keyboard-layouts.js';
 import * as prediction from './prediction.js';
 
 // Fields the app keyboard handles. Includes the Settings API-key field so the
@@ -510,13 +510,17 @@ function renderRows() {
     for (const row of currentRows()) {
         const rowEl = document.createElement('div');
         rowEl.className = 'kbd-row';
+        // The SAME call the Express Panel uses, so the two dock surfaces cannot end
+        // up with different column tracks - which is the whole point (see .ep-row in
+        // styles.css, and tests/dock-congruence.test.mjs).
+        setRowColumns(rowEl, row);
         for (const cell of row) {
             const span = cell.span || 1;
             if (cell.kind === 'blank') {
                 // Inert filler / future prediction slot — no key, just holds space.
                 const filler = document.createElement('div');
                 filler.className = 'kbd-key kbd-' + cell.kind;
-                filler.style.flex = `${span} 1 0`;
+                filler.style.gridColumn = `span ${span}`;
                 rowEl.appendChild(filler);
                 continue;
             }
@@ -528,7 +532,7 @@ function renderRows() {
             // keys, and an on-screen-keyboard user reaches keys by tapping, not
             // Tab. So keep them out of the tab order in both modes (Ken, July 2026).
             btn.tabIndex = -1;
-            btn.style.flex = `${span} 1 0`;
+            btn.style.gridColumn = `span ${span}`;
             if (cell.kind === 'char') {
                 btn.dataset.char = cell.char;
                 btn.textContent = cell.char;

@@ -235,3 +235,25 @@ export function panelRoles(rows) {
 export function panelPositionCount(rows) {
     return panelRoles(rows).reduce((n, row) => n + row.filter((c) => c.role === 'position').length, 0);
 }
+
+/**
+ * Lay one row of a dock surface out as a grid of EQUAL COLUMNS, as many as that
+ * row's spans add up to. Each cell then claims columns (`grid-column: span N`)
+ * rather than taking a share of the leftover space.
+ *
+ * ⚠ IT LIVES HERE, WITH THE LAYOUTS, BECAUSE BOTH DOCK SURFACES MUST CALL THE SAME
+ * ONE. The Express Panel and the on-screen keyboard have to occupy identical cells
+ * so a single keyguard fits both (Rule 9), and the columns are the thing that
+ * decides where those cells are. Two copies of this - even two correct copies -
+ * would be two things that have to be kept in step, which is how the surfaces came
+ * to disagree in the first place (see the note on .ep-row in styles.css).
+ *
+ * The count comes from the row's own contents, never from --kbd-cols, so a row can
+ * never disagree with the cells about to go into it. minmax(0, 1fr) rather than 1fr
+ * is load-bearing: a bare 1fr lets a long phrase widen its own column, and these
+ * columns must not care what is in them.
+ */
+export function setRowColumns(rowEl, cells) {
+    const columns = (cells || []).reduce((n, c) => n + (c.span || 1), 0) || 1;
+    rowEl.style.gridTemplateColumns = `repeat(${columns}, minmax(0, 1fr))`;
+}
