@@ -1855,6 +1855,15 @@ Product-document currency is tracked by [`DOC-SYNC.md`](DOC-SYNC.md) (any root d
    have. Documents acquire the line as they are synced, so one that has not been synced yet
    simply does not have it.
 4. **Run "check docs" (`scripts/doc-tests/check-docs.py`) and clear what it finds — MANDATORY, and it is the LAST step before stamping (Ken, August 26 2026). It now ENDS BY ASKING WORD TO OPEN EVERY FILE, and that result overrides everything else — see the Word check above.** A sync is the moment new text enters a document, and inserting text is what breaks spacing, list numbering and the conventions; running the suite anywhere other than at the end of a sync means the sync itself is what puts the document back out of compliance. **A document is not synced until it passes.** Order within the pass: wording edits → `apply-doc-style.py` + `fix-docx-lists.py` → `update-toc.ps1` (whenever anything was added or removed — the contents listing is a cached field and drifts silently) → **check docs** → stamp.
+4b. **Export the PDF, if the document has one** (`scripts/doc-generators/export-pdf.ps1`).
+   **⚠ NOTHING WAS DOING THIS AND NOTHING CAUGHT IT** (found Sep 5 2026): the workflow never
+   mentioned PDFs, so every sync left the `.docx` correct and the `.pdf` beside it — **the copy
+   a tester actually opens** — describing the app as it was weeks earlier. The manuals were
+   three days newer than their own PDFs and the PDFs still named a Settings tab that no longer
+   existed. **A stale PDF is worse than no PDF**: it carries no sign of its age and sits under
+   the same name as the current document. It must run **after** the contents listing is
+   refreshed, or yesterday's page numbers are baked in permanently — a PDF has no field to
+   recalculate later.
 5. **Stamp `X`'s row in DOC-SYNC.md:** Status `✓ current`, Last reviewed = today, At commit = current `HEAD`, Notes = what changed + any residual. Commit DOC-SYNC.md (the `.docx` itself stays on OneDrive, git-ignored).
 
 **THE HOUSE PARAGRAPH STYLE, and it is applied by a tool rather than remembered (Ken, August 24 2026: "I'd prefer consistent formatting attributes throughout all documents").** Three numbers, and **none of them is invented** — each was already the dominant value across the 33 documents, so the pass makes the outliers agree with the majority rather than imposing a new look:
