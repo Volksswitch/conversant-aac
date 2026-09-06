@@ -548,6 +548,55 @@ test('a border cannot be dragged while a conversation is under way', { timeout: 
         'the border was still stuck after the conversation ended');
 });
 
+test('PRACTICE MODE is not a conversation - the borders stay draggable there',
+    { timeout: 40000 }, async (t) => {
+        if (skip) { t.skip(skip); return; }
+        // ⚠ THIS WAS WRONG THE FIRST TIME, and backwards rather than merely strict:
+        // Practice Mode is the BEST place to judge a layout, not a place to be
+        // protected from doing so. Realistic text in the transcript and on the cards,
+        // nobody waiting, nothing at stake, no keyguard fitted - and a layout that
+        // looks fine on an empty screen is the one that turns out wrong once three
+        // turns of real speech are in it.
+        await conv({ layoutUnlocked: true });
+        const before = await regionRects();
+
+        // In through the real door: Settings -> Practice, then the controls tour, which
+        // is the one "scenario" that needs no API key.
+        await page.click('#settingsBtn');
+        await new Promise((r) => setTimeout(r, 350));
+        await page.evaluate(() => [...document.querySelectorAll('.settings-tab')]
+            .find((t) => t.dataset.tab === 'practice').click());
+        await new Promise((r) => setTimeout(r, 450));
+        const started = await page.evaluate(() => {
+            const card = [...document.querySelectorAll('#practicePanel button')]
+                .find((b) => /tour|buttons/i.test(b.textContent));
+            if (!card) return [...document.querySelectorAll('#practicePanel button')]
+                .map((b) => b.textContent.trim().slice(0, 30));
+            card.click();
+            return 'started';
+        });
+        assert.equal(started, 'started', `could not start the tour; offered: ${JSON.stringify(started)}`);
+        await new Promise((r) => setTimeout(r, 700));
+
+        // ⚠ PROVE WE ARE ACTUALLY IN PRACTICE MODE, or this test passes for the wrong
+        // reason: outside a conversation the borders drag anyway, so a tour that failed
+        // to start would look exactly like a pass. The status line is written by
+        // startPractice and by nothing else, which makes it the reliable marker.
+        const status = await page.evaluate(() => {
+            const n = document.getElementById('statusBar');
+            return n ? n.textContent.trim() : '(no status region)';
+        });
+        assert.ok(/^Practice:/.test(status),
+            `not actually in Practice Mode - the status line reads "${status}"`);
+        t.diagnostic('in practice: ' + status.slice(0, 60));
+
+        // The whole point: a border still moves.
+        await dragBorder('dock', 0, -70);
+        const after = await regionRects();
+        assert.equal(after.dock.h - before.dock.h, 70,
+            'a border would not move in Practice Mode - it is a rehearsal, not a conversation');
+    });
+
 test('a dragged layout is remembered, and is stored as a share of the screen', { timeout: 30000 }, async (t) => {
     if (skip) { t.skip(skip); return; }
     await conv({ layoutUnlocked: true });

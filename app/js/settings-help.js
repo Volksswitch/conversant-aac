@@ -109,7 +109,7 @@ const HELP = {
     "bandShapeSelect": "Whether a band is measured in whole rows, which keeps a straight edge, or in buttons, which gives the exact size.",
     "contextMarkSelect": "What tells a partner button from a place or a feeling: a shape, the bar color, its thickness, or which side it is on.",
     "colorSchemeInput": "Changes the colors of the whole app. It takes effect at once, so you can try each one while this panel is open.",
-    "layoutUnlockToggle": "Lets you drag the borders between the screen areas to resize them. Off during a conversation.",
+    "layoutUnlockToggle": "Lets you drag the borders between the screen areas to resize them. Off while you are talking to someone, but available in Practice.",
     "resetLayoutBtn": "Puts every border back where it started, for both keyboard positions. Asks first."
   },
   "radioGroups": {

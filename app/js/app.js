@@ -3885,7 +3885,28 @@ function layoutContext(dock, VW, VH, rem, gap) {
 const GRIP_PX = 20;   // how close to a border counts as grabbing it
 
 function layoutDraggable() {
-    return storage.loadLayoutUnlocked() && !conversationInProgress();
+    return storage.loadLayoutUnlocked() && !realConversationInProgress();
+}
+
+/**
+ * A conversation with a real person, as opposed to a rehearsal.
+ *
+ * ⚠ PRACTICE MODE IS DELIBERATELY NOT ONE (Ken, September 2026, correcting the first
+ * cut). Dragging a border was blocked during a practice conversation as well, which
+ * got it backwards: Practice Mode is the BEST place to judge a layout, not a place to
+ * be protected from doing so. There is realistic text in the transcript and on the
+ * cards, nobody is waiting, nothing is at stake, and no keyguard is fitted - and a
+ * layout that looks fine on an empty screen is exactly the one that turns out wrong
+ * once three turns of real speech are in it.
+ *
+ * That was the argument for dragging the real screen rather than a mock in the first
+ * place, so blocking it in rehearsal gave most of it away.
+ *
+ * The gate that remains is the one worth having: a partner is actually waiting, so a
+ * border must not move under the user mid-exchange.
+ */
+function realConversationInProgress() {
+    return !practiceMode && conversationInProgress();
 }
 
 // Keep the "you can drag things" colouring in step. Cosmetic only - the gate above is
