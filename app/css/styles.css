@@ -1064,22 +1064,76 @@ body.conv-side {
 body.conv-side #mainArea,
 body.conv-bottom #mainArea { padding: var(--grid-gap); gap: var(--grid-gap); }
 
-/* Vertical budget. SIDE: the transcript height is JS-computed (it yields as
-   command/response buttons grow); command:response keep 1:6 of the rest (10:60
-   at the default 30% transcript). BOTTOM: fixed 3:1:3 (solver pending). */
-/* Transcript separation (Keyguard tab): a margin-bottom opens a gap above the
-   command bar. In SIDE mode the transcript basis is reduced by the same amount so
-   only the transcript shrinks (command/response keep their position); in BOTTOM
-   mode the transcript is already flexible, so the margin alone shortens it. */
+/* THE VERTICAL BUDGET, and it is now the SAME for both keyboard positions - which is
+   itself the point. The command bar and the response panel take the heights the user
+   has dragged their borders to; the transcript is the remainder, so it is the region
+   that gives or takes. See conv-layout.js for the rule and why the transcript is the
+   one that yields.
+
+   Before the borders could be dragged these two rules disagreed: a side keyboard fixed
+   the transcript and let command/response share what was left in a 1:6 ratio, while a
+   bottom keyboard fixed command and response at 10vh/30vh and let the transcript flex.
+   One of them had to change for a border to mean the same thing in both, and making
+   the transcript the remainder in both is what lets the same rule be stated once.
+
+   Transcript separation (Keyguard tab) opens a gap above the command bar. The
+   transcript is flexible in both positions now, so the margin alone shortens it. */
 #transcriptSection { margin-bottom: var(--transcript-sep, 0px); }
-body.conv-side   #transcriptSection { flex: 0 0 calc(var(--conv-transcript-v, 30vh) - var(--transcript-sep, 0px)); min-height: 0; }
-body.conv-side   #listenControls    { flex: 1 1 0; min-height: 0; margin-top: 0; }
-body.conv-side   #responsesSection  { flex: 6 1 0; min-height: 0; display: flex; }
-/* BOTTOM: command (10vh) + response (30vh) are FIXED; the transcript yields
-   vertically (flex, with a floor) as the dock grows taller. */
-body.conv-bottom #transcriptSection { flex: 1 1 0; min-height: var(--conv-transcript-floor, 3rem); }
-body.conv-bottom #listenControls    { flex: 0 0 10vh; min-height: 0; margin-top: 0; }
-body.conv-bottom #responsesSection  { flex: 0 0 30vh; min-height: 0; display: flex; }
+body.conv-side #transcriptSection,
+body.conv-bottom #transcriptSection {
+    flex: 1 1 0;
+    min-height: var(--conv-transcript-floor, 3rem);
+}
+body.conv-side #listenControls,
+body.conv-bottom #listenControls {
+    flex: 0 0 var(--conv-command-h, 10vh);
+    min-height: 0;
+    margin-top: 0;
+}
+body.conv-side #responsesSection,
+body.conv-bottom #responsesSection {
+    flex: 0 0 var(--conv-response-h, 30vh);
+    min-height: 0;
+    display: flex;
+}
+
+/* --- WHILE THE LAYOUT IS UNLOCKED (Ken, September 2026) ----------------------
+   No handles. Ken's reasoning: a handle is only there to say which borders move, and
+   somebody who has deliberately unlocked the layout already expects the major borders
+   to be draggable - on a mouse the cursor says so, and on a touch screen there is
+   nothing to aim at anyway because the whole border is live.
+
+   What IS needed is a sign that the mode is on at all, or the user has no way to tell
+   an unlocked screen from a locked one. That is a colour on the borders themselves.
+
+   ⚠ PAINT ONLY - NOTHING HERE MAY TAKE SPACE. An outline that took a pixel would
+   change the layout the moment the mode was entered, which is absurd for a mode whose
+   whole job is judging that layout; it would also move every keyguard hole. So this is
+   an inset box-shadow, which is drawn inside the element and occupies nothing.
+   Measured: every region rect identical locked and unlocked. */
+body.layout-unlocked #transcriptSection,
+body.layout-unlocked #listenControls,
+body.layout-unlocked #responsesSection {
+    box-shadow: inset 0 -3px 0 0 var(--accent);
+}
+body.layout-unlocked.conv-side #dockArea { box-shadow: inset 3px 0 0 0 var(--accent); }
+body.layout-unlocked.conv-side-left #dockArea { box-shadow: inset -3px 0 0 0 var(--accent); }
+body.layout-unlocked.conv-bottom #dockArea { box-shadow: inset 0 3px 0 0 var(--accent); }
+
+/* The cursor is set in JS as the pointer crosses a border (app.js onLayoutHover) -
+   it cannot be a CSS rule, because a border is a LINE between two regions rather than
+   an element of its own. Touch gets nothing from this and needs nothing: the border is
+   live along its whole length, so there is no small target to find. */
+
+/* ⚠ THERE ARE NO DRAG ELEMENTS. A first version laid an invisible strip over each
+   border; strips sit above everything, so they swallow taps, and they only knew a
+   conversation had begun if something remembered to rebuild them. The border is found
+   at the moment of the gesture instead (app.js borderUnder), which cannot go stale.
+
+   While a border is being dragged nothing else may react to the pointer - a drag that
+   ends over a response card must not also tap it. */
+body.layout-dragging * { pointer-events: none !important; }
+body.layout-dragging { user-select: none; }
 
 /* Command bar: 8 buttons, each 1/8 of the width, full region height (both docks). */
 body.conv-side #listenControls,

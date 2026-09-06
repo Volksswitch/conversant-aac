@@ -13,6 +13,7 @@ import * as worldviewUI from './worldview-ui.js';
 import * as keyboard from './keyboard.js';
 import { SIDE_LAYOUTS, BOTTOM_LAYOUTS, LAYOUTS } from './keyboard-layouts.js';
 import * as viewport from './viewport.js';
+import * as convLayout from './conv-layout.js';
 import * as expressItems from './express-items.js';
 import * as pronunciation from './pronunciation.js';
 import * as expressPanel from './express-panel.js';
@@ -606,6 +607,13 @@ function initApp() {
     applyButtonSizing();   // compute the conversation layout (region sizes + gaps)
     // Region sizes depend on the viewport — recompute on resize/orientation.
     window.addEventListener('resize', applyButtonSizing);
+    // Dragging a border is decided at the moment of the gesture (see borderUnder), so
+    // these two are armed ONCE here rather than being rebuilt. They were briefly wired
+    // inside openSettings, which meant they did not exist until the user had opened
+    // Settings and were added again every time they did.
+    document.addEventListener('pointerdown', onLayoutPointerDown, true);
+    document.addEventListener('pointermove', onLayoutHover);
+    refreshLayoutMode();
     // Entering or leaving fullscreen changes whether a title-bar offset exists at
     // all, so the keyguard field has to follow it — including when the user leaves
     // by Esc, which never touches the setting.
@@ -3311,12 +3319,29 @@ function expressLayoutRows() {
     return (LAYOUTS[id] && LAYOUTS[id].rows) || [];
 }
 
-// (conversationInProgress() lived here. It gated tap-to-define on whether a
-// conversation was under way — the August 7 2026 rule — and became dead when Ken
-// moved editing into Settings entirely on August 15 2026. Recover it from git if a
-// future feature needs "is a conversation open"; it read practiceMode || isListening
-// || a user statement mid-speech || a committed turn || a partner turn in flight ||
-// a live or static palette, all of which terminateConversation() clears.)
+// Is a conversation under way? Recovered from git in September 2026 - the note that
+// stood here said to, and the draggable borders are the future feature it anticipated.
+// It first gated tap-to-define (Ken, August 7 2026) and went dead when editing moved
+// into Settings; it now gates dragging a border, for exactly the same reason. The
+// predicate is the CONVERSATION, not the moment: a control that works at some points
+// within a conversation and not others is less predictable than one simply unavailable
+// for the duration, and predictability is worth more than reach here.
+//
+// Every term is cleared by terminateConversation(), which is what makes it go false
+// again.
+function conversationInProgress() {
+    return practiceMode
+        || isListening
+        // The user's statement is still being SPOKEN. Its turn reaches the history
+        // only after the speech finishes, so an opening Express phrase left a window -
+        // about as long as the utterance - where a conversation had visibly begun and
+        // every term below was still false. (Found in verification, August 15 2026.)
+        || speakingUserStatement
+        || conversationHistory.length > 0
+        || !!currentPartnerText
+        || lastPalette.length > 0
+        || !!currentStatic.kind;
+}
 
 // True while the panel is hosted inside the open Settings dialog (Express tab).
 let expressPanelInSettings = false;
@@ -3694,7 +3719,6 @@ const APP_MARGIN_MAX_REM = 3.0;
 const TRANSCRIPTSEP_MAX_REM = 4.0; // transcript-separation slider 0–100 → 0..4rem
 const MIN_BTN_REM = 2.0;          // smallest still-recognizable button (icon + border)
 const MIN_TRANSCRIPT_REM = 3.0;   // transcript floor (~2 lines)
-const SHRINK_GAP_REM = 1.4;       // how much gap a full left-shrink adds
 
 const remPx = () => parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
 const lerp = (pos, lo, hi) => lo + (Math.max(0, Math.min(100, pos)) / 100) * (hi - lo);
@@ -3760,7 +3784,20 @@ function activeLayoutGrid() {
     return { rows: r, cols: c };
 }
 
-// Compute the conversation layout from the three sliders and write CSS vars.
+// The conversation layout: where the four regions' borders sit, written as CSS vars.
+//
+// The borders are DRAGGED (conv-layout.js holds the rule); this turns the stored
+// fractions into pixels, applies the floors, and hands the result to the stylesheet.
+// Everything else here is the surrounds - the screen edge margin, the gap and the
+// keyboard's grid - which are settings rather than borders.
+//
+// WARNING: "Button size" USED TO LIVE HERE AND IS GONE (Ken, September 2026). It was
+// two unrelated controls on one slider: right of centre it moved the keyboard's border
+// and the transcript's, which is precisely what dragging them now does; left of centre
+// it moved no border at all and merely widened the gaps, which is what Button spacing
+// does - measured, at its lowest setting it produced the identical gap to Button
+// spacing at its highest. One half a duplicate, the other half superseded, and leaving
+// it would have meant two controls writing the same numbers.
 function applyButtonSizing() {
     const root = document.documentElement.style;
     const rem = remPx();
@@ -3768,66 +3805,42 @@ function applyButtonSizing() {
     // Screen edge margin: how far the whole app is held off the physical screen
     // edges so a keyguard has material to sit on inside a tight case opening
     // (Ken, Aug 2 2026). EVERY region below is then budgeted against the REDUCED
-    // viewport — that is the load-bearing part. The dock's extent comes from these
+    // viewport - that is the load-bearing part. The dock's extent comes from these
     // numbers, so computing it from the full viewport and merely insetting it in
     // CSS would push it back over the margin instead of shrinking it into the
     // space that is left.
     const appMargin = lerp(storage.loadAppMarginPos(), 0, APP_MARGIN_MAX_REM) * rem;
-    root.setProperty('--app-margin', `${appMargin.toFixed(2)}px`);
+    root.setProperty('--app-margin', appMargin.toFixed(2) + 'px');
     const VW = layoutVW() - 2 * appMargin, VH = layoutVH() - 2 * appMargin;
 
     // ONE number for every gap in the app, including the one around the outside.
     // "Minimum spacing" used to floor this and was removed - see
     // storage.foldInLegacyMinGap for why it earned nothing.
-    let gap = (lerp(storage.loadButtonGapPos(), 0, GAP_MAX_REM)) * rem;
+    const gap = (lerp(storage.loadButtonGapPos(), 0, GAP_MAX_REM)) * rem;
 
-    // Button size: middle (50) = the % default; >50 grows, <50 shrinks.
-    const growth = (storage.loadButtonSizePos() - 50) / 50;
+    const dock = storage.loadKeyboardDock() === 'side' ? 'side' : 'bottom';
+    const ctx = layoutContext(dock, VW, VH, rem, gap);
+    // normalize() only bites when something that is NOT a drag changed the sums - a
+    // different screen, or eight cards instead of four. A drag has already stopped
+    // itself at the limits, so this is a no-op on that path.
+    const stored = convLayout.normalize(storage.loadConvLayout(dock), ctx);
+    const r = convLayout.solve(stored, ctx);
 
-    // Region defaults (the slider's middle): dock 30%, transcript 30%.
-    let dockW = 0.30 * VW;
-    let transcriptV = 0.30 * VH;
+    root.setProperty('--conv-command-h', Math.round(r.command * VH) + 'px');
+    root.setProperty('--conv-response-h', Math.round(r.response * VH) + 'px');
+    root.setProperty('--conv-transcript-floor', Math.round(MIN_TRANSCRIPT_REM * rem) + 'px');
+    if (dock === 'side') root.setProperty('--conv-dock-w', Math.round(r.dock * VW) + 'px');
+    else root.setProperty('--conv-dock-h', Math.round(r.dock * VH) + 'px');
 
-    const minTranscript = MIN_TRANSCRIPT_REM * rem;
-    if (storage.loadKeyboardDock() === 'side') {
-        const minBtn = MIN_BTN_REM * rem;
-        // Main-area minimum width: the command bar's 8 buttons bind first.
-        const minMainW = 8 * minBtn + 9 * gap;
-        if (growth > 0) {
-            // GROW: the dock widens (main shrinks W → command/response buttons
-            // narrow) and the transcript shrinks V (command/response grow V).
-            const maxDockW = Math.max(0.30 * VW, VW - minMainW);
-            dockW = 0.30 * VW + growth * (maxDockW - 0.30 * VW);
-            transcriptV = 0.30 * VH - growth * (0.30 * VH - minTranscript);
-        } else if (growth < 0) {
-            // SHRINK: regions stay default; buttons shrink, gap fills.
-            gap += (-growth) * SHRINK_GAP_REM * rem;
-        }
-        root.setProperty('--conv-dock-w', `${Math.round(dockW)}px`);
-        root.setProperty('--conv-transcript-v', `${Math.round(transcriptV)}px`);
-    } else {
-        // BOTTOM dock: the dock's expandable axis is VERTICAL. GROW makes the
-        // dock taller (its buttons taller); command (10vh) + response (30vh)
-        // stay fixed, the transcript yields vertically to its floor.
-        let dockH = 0.30 * VH;
-        if (growth > 0) {
-            const maxDockH = Math.max(0.30 * VH, 0.60 * VH - minTranscript); // transcript→floor
-            dockH = 0.30 * VH + growth * (maxDockH - 0.30 * VH);
-        } else if (growth < 0) {
-            gap += (-growth) * SHRINK_GAP_REM * rem;
-        }
-        root.setProperty('--conv-dock-h', `${Math.round(dockH)}px`);
-    }
-
-    root.setProperty('--grid-gap', `${gap.toFixed(2)}px`);
-    // Keyboard separation: gap between the dock and the rest of the UI (does not
-    // touch the dock footprint, so the keyguard holes don't move).
+    root.setProperty('--grid-gap', gap.toFixed(2) + 'px');
+    // Keyboard separation: the gap between the dock and the rest of the UI. It does
+    // NOT touch the dock's footprint, so it moves no keyguard hole.
     const dockSep = lerp(storage.loadDockSepPos(), 0, DOCKSEP_MAX_REM) * rem;
-    root.setProperty('--dock-sep', `${dockSep.toFixed(2)}px`);
-    // Transcript separation: shortens the transcript vertically to open a gap
-    // above the command bar (does not move the command-bar / dock holes).
+    root.setProperty('--dock-sep', dockSep.toFixed(2) + 'px');
+    // Transcript separation: shortens the transcript to open a gap above the command
+    // bar, again without moving the command bar or the dock.
     const transcriptSep = lerp(storage.loadTranscriptSepPos(), 0, TRANSCRIPTSEP_MAX_REM) * rem;
-    root.setProperty('--transcript-sep', `${transcriptSep.toFixed(2)}px`);
+    root.setProperty('--transcript-sep', transcriptSep.toFixed(2) + 'px');
     const { rows, cols } = activeLayoutGrid();
     root.setProperty('--kbd-rows', String(rows));
     root.setProperty('--kbd-cols', String(cols));
@@ -3837,6 +3850,155 @@ function applyButtonSizing() {
     // takes, which re-renders none of them.
     ui.fitPanelText();
     ui.fitCardsAndCommands();
+    // The borders have just moved, so the strips that drag them must move too. Guarded
+    // because this runs during start-up before the function below is reachable.
+    if (typeof refreshLayoutMode === 'function') refreshLayoutMode();
+}
+
+// Everything conv-layout needs to know about the screen right now. One place, so the
+// solver, the drag stop and the normalizer cannot disagree about the budget.
+function layoutContext(dock, VW, VH, rem, gap) {
+    return {
+        dock,
+        width: VW,
+        height: VH,
+        rem,
+        gap,
+        cards: storage.loadResponsesPerCategory() === 2 ? 8 : 4,
+    };
+}
+
+// --- Dragging the borders ----------------------------------------------------
+// No handles, and NO ELEMENTS AT ALL. Ken's reasoning for no handle: it is only there
+// to say which borders move, and somebody who has deliberately unlocked the layout
+// already expects the major borders to move - on a mouse the cursor says so, and on a
+// touch screen there is nothing to aim at anyway, because the whole length of a border
+// is live.
+//
+// ⚠ AND HAVING NO ELEMENTS IS WHAT MAKES THE GATE SAFE, WHICH IS A STRONGER REASON.
+// A first version laid an invisible strip over each border. Those strips sit above
+// everything, so they swallow taps - and they only knew a conversation had started if
+// something remembered to rebuild them, which meant chasing every place conversation
+// state changes and being silently wrong at the one that got missed. Deciding at the
+// moment of the gesture cannot go stale: the pointer lands on the real region, and the
+// drag is claimed only if the layout is unlocked, no conversation is under way, and
+// the point is actually on a border.
+const GRIP_PX = 20;   // how close to a border counts as grabbing it
+
+function layoutDraggable() {
+    return storage.loadLayoutUnlocked() && !conversationInProgress();
+}
+
+// Keep the "you can drag things" colouring in step. Cosmetic only - the gate above is
+// what actually decides - so a stale class costs nothing but a line in the wrong place.
+function refreshLayoutMode() {
+    document.body.classList.toggle('layout-unlocked', layoutDraggable());
+}
+
+// Which border, if any, is under this point. Returns null for everything else, which
+// is the common case and is why this is cheap enough to run on every pointerdown.
+function borderUnder(x, y) {
+    if (!layoutDraggable()) return null;
+    const dock = storage.loadKeyboardDock() === 'side' ? 'side' : 'bottom';
+    const r = {
+        transcript: boxOf('#transcriptSection'),
+        command: boxOf('#listenControls'),
+        response: boxOf('#responsesSection'),
+        dock: boxOf('#dockArea'),
+    };
+    if (!r.transcript || !r.command || !r.response || !r.dock) return null;
+
+    for (const border of convLayout.borders(dock)) {
+        if (border.axis === 'x') {
+            // The keyboard's own edge - whichever side it is on.
+            const edge = storage.loadSideDockPosition() === 'left' ? r.dock.right : r.dock.left;
+            if (Math.abs(x - edge) <= GRIP_PX / 2 && y >= r.dock.top && y <= r.dock.bottom) return border;
+            continue;
+        }
+        // A horizontal border sits at the TOP of the region it resizes, and runs only
+        // across the COLUMN it divides - it stops at the keyboard, because past that
+        // there is no such border.
+        const below = border.resizes === 'command' ? r.command
+            : border.resizes === 'response' ? r.response : r.dock;
+        const span = dock === 'side' ? r.command : r.dock;
+        if (Math.abs(y - below.top) <= GRIP_PX / 2 && x >= span.left && x <= span.right) return border;
+    }
+    return null;
+}
+
+function boxOf(sel) {
+    const n = document.querySelector(sel);
+    if (!n) return null;
+    const b = n.getBoundingClientRect();
+    return (b.width || b.height) ? b : null;
+}
+
+let layoutDrag = null;
+
+// Capture phase, so the border wins over whatever is drawn there - a response card
+// reaches almost to its own top edge, and while the layout is unlocked the border is
+// the thing the user means.
+function onLayoutPointerDown(e) {
+    if (e.button != null && e.button !== 0) return;
+    const border = borderUnder(e.clientX, e.clientY);
+    if (!border) return;
+    layoutDrag = { border: border.id, resizes: border.resizes };
+    document.body.classList.add('layout-dragging');
+    e.preventDefault();
+    e.stopPropagation();
+    window.addEventListener('pointermove', onLayoutDrag);
+    window.addEventListener('pointerup', endLayoutDrag);
+    window.addEventListener('pointercancel', endLayoutDrag);
+}
+
+// The cursor is the only affordance a mouse user gets, and it is enough: it changes
+// the moment the pointer crosses a border. Touch gets nothing and needs nothing.
+function onLayoutHover(e) {
+    if (layoutDrag) return;
+    const border = borderUnder(e.clientX, e.clientY);
+    document.body.style.cursor = border ? (border.axis === 'x' ? 'col-resize' : 'row-resize') : '';
+}
+
+function onLayoutDrag(e) {
+    if (!layoutDrag) return;
+    const rem = remPx();
+    const appMargin = lerp(storage.loadAppMarginPos(), 0, APP_MARGIN_MAX_REM) * rem;
+    const VW = layoutVW() - 2 * appMargin, VH = layoutVH() - 2 * appMargin;
+    const dock = storage.loadKeyboardDock() === 'side' ? 'side' : 'bottom';
+    const gap = lerp(storage.loadButtonGapPos(), 0, GAP_MAX_REM) * rem;
+    const ctx = layoutContext(dock, VW, VH, rem, gap);
+
+    const stored = storage.loadConvLayout(dock);
+    const solved = convLayout.solve(stored, ctx);
+    // Where the pointer is, as a fraction of the SAME budget the solver uses - so the
+    // screen edge margin comes off both and the border lands under the finger.
+    const axis = layoutDrag.border === 'dockMain' ? 'x' : 'y';
+    const fraction = axis === 'x'
+        ? clamp01((e.clientX - appMargin) / VW)
+        : clamp01((e.clientY - appMargin) / VH);
+    // A side keyboard ON THE LEFT grows the other way: its border is measured from the
+    // left edge, so the fraction has to be read from that side or the keyboard shrinks
+    // as the user drags it wider.
+    const flipped = axis === 'x' && storage.loadSideDockPosition() === 'left';
+    const value = convLayout.valueForDrag(
+        layoutDrag.border, flipped ? 1 - fraction : fraction, solved, ctx);
+    if (value == null) return;
+
+    const next = convLayout.setRegion(stored, layoutDrag.resizes, value, ctx);
+    next.last = layoutDrag.resizes;   // normalize trims this one LAST
+    storage.saveConvLayout(dock, next);
+    applyButtonSizing();
+}
+
+function clamp01(n) { return Math.max(0, Math.min(1, n)); }
+
+function endLayoutDrag() {
+    layoutDrag = null;
+    document.body.classList.remove('layout-dragging');
+    document.body.style.cursor = '';
+    window.removeEventListener('pointermove', onLayoutDrag);
+    window.removeEventListener('pointerup', endLayoutDrag);
+    window.removeEventListener('pointercancel', endLayoutDrag);
 }
 
 // Apply the user-set text-size scales as CSS multipliers on each surface's base
@@ -5299,12 +5461,10 @@ function openSettings() {
     doubleTapMsSelect.value = storage.loadDoubleTapMs();
     reflectBandSizes();
     // Button sizing sliders (unitless 0–100).
-    const buttonSizeSlider = document.getElementById('buttonSizeSlider');
     const buttonGapSlider = document.getElementById('buttonGapSlider');
     const dockSepSlider = document.getElementById('dockSepSlider');
     const appMarginSlider = document.getElementById('appMarginSlider');
     const transcriptSepSlider = document.getElementById('transcriptSepSlider');
-    buttonSizeSlider.value = storage.loadButtonSizePos();
     buttonGapSlider.value = storage.loadButtonGapPos();
     dockSepSlider.value = storage.loadDockSepPos();
     appMarginSlider.value = storage.loadAppMarginPos();
@@ -6016,14 +6176,41 @@ function openSettings() {
     // visible immediately (incl. the keyboard preview on this tab), persisting as
     // it goes. applyButtonSizing() re-derives --btn-min-dim / --grid-gap and the
     // dock grows/shrinks accordingly.
-    buttonSizeSlider.oninput = () => {
-        storage.saveButtonSizePos(Number(buttonSizeSlider.value));
-        applyButtonSizing();
-    };
     buttonGapSlider.oninput = () => {
         storage.saveButtonGapPos(Number(buttonGapSlider.value));
         applyButtonSizing();
     };
+    // --- The layout lock -----------------------------------------------------
+    // Unlocking makes the borders between the four regions draggable on the
+    // conversation screen itself. Default LOCKED, and that is a safeguard rather than
+    // a preference: a stray tap on a locked screen does nothing, while a stray drag on
+    // an unlocked one moves a boundary the user then has to find their way back from.
+    const layoutLockToggle = document.getElementById('layoutUnlockToggle');
+    if (layoutLockToggle) {
+        layoutLockToggle.checked = storage.loadLayoutUnlocked();
+        layoutLockToggle.onchange = () => {
+            storage.saveLayoutUnlocked(layoutLockToggle.checked);
+            refreshLayoutMode();
+        };
+    }
+    const resetLayoutBtn = document.getElementById('resetLayoutBtn');
+    if (resetLayoutBtn) {
+        resetLayoutBtn.onclick = async () => {
+            // Putting every border back is squarely the "significant work" bar - the
+            // user may have spent a while on it - so it confirms, and through the red
+            // card rather than a browser dialog nobody reads.
+            if (!(await confirmDanger({
+                title: 'Put the layout back?',
+                body: 'Every border goes back where it started, for both keyboard positions. '
+                    + 'Anything you have dragged is lost.',
+                confirmLabel: 'Put it back',
+                cancelLabel: 'Keep my layout',
+            }))) return;
+            storage.resetConvLayout();
+            applyButtonSizing();
+        };
+    }
+
     // Screen edge margin — holds the WHOLE app off the physical screen edges, the
     // dock included, so a keyguard has material to sit on inside a tight case
     // opening. Unlike keyboard separation this DOES move the keyguard holes.
@@ -6044,10 +6231,9 @@ function openSettings() {
         applyButtonSizing();
     };
 
-    // Reset button size and spacing to their defaults (Ken).
+    // Reset spacing to its default (Ken).
     document.getElementById('resetSizingBtn').onclick = () => {
         storage.resetButtonSizing();
-        buttonSizeSlider.value = String(storage.loadButtonSizePos());
         buttonGapSlider.value = String(storage.loadButtonGapPos());
         // dockSepSlider is intentionally left untouched — keyboard separation is
         // not part of the button/gap sizing the reset restores (Ken).

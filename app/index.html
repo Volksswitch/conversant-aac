@@ -498,14 +498,6 @@
                     <div class="setting-group" data-help="buttonSizing">
                         <label>Button sizes and gaps</label>
                         <div class="setting-group">
-                            <label for="buttonSizeSlider">Button size</label>
-                            <div class="slider-row">
-                                <button type="button" class="slider-step" data-target="buttonSizeSlider" data-step="-4" aria-label="Smaller">&minus;</button>
-                                <input type="range" id="buttonSizeSlider" min="0" max="100" step="1" class="size-slider">
-                                <button type="button" class="slider-step" data-target="buttonSizeSlider" data-step="4" aria-label="Larger">+</button>
-                            </div>
-                        </div>
-                        <div class="setting-group">
                             <label for="buttonGapSlider">Button spacing</label>
                             <div class="slider-row">
                                 <button type="button" class="slider-step" data-target="buttonGapSlider" data-step="-4" aria-label="Tighter">&minus;</button>
@@ -513,7 +505,15 @@
                                 <button type="button" class="slider-step" data-target="buttonGapSlider" data-step="4" aria-label="Wider">+</button>
                             </div>
                         </div>
-                        <button id="resetSizingBtn" type="button" class="reset-sizing-btn">Reset buttons and gaps to default</button>
+                        <button id="resetSizingBtn" type="button" class="reset-sizing-btn">Reset spacing to default</button>
+                        <div class="setting-group" data-help="layoutBorders">
+                            <label>Resizing the screen areas</label>
+                            <label class="checkbox-row">
+                                <input type="checkbox" id="layoutUnlockToggle">
+                                Let me drag the borders to resize
+                            </label>
+                            <button id="resetLayoutBtn" type="button" class="reset-sizing-btn">Put the layout back</button>
+                        </div>
                     </div>
                     <!-- Keyboard choice, where the dock sits, which side, and which
                          layout are ONE decision made in four parts (Ken, August 21 2026),

@@ -1219,6 +1219,54 @@ export function foldInLegacyMinGap() {
     saveSettings(settings);
     return legacy > current;
 }
+// --- The conversation screen's own layout (Ken, September 2026) ---------------
+// Where the borders between the four regions sit, as FRACTIONS of the screen, kept
+// separately for each keyboard position because the two are genuinely different
+// shapes. Fractions rather than pixels so a layout survives a change of screen and
+// travels with a settings profile onto another device.
+//
+// The rules that move these live in conv-layout.js; this only stores them. An absent
+// value means "never dragged", and conv-layout supplies the shipped default - so a
+// user who never touches a border gets exactly the layout the app has always drawn.
+export function loadConvLayout(dock) {
+    const s = loadSettings();
+    const all = s.convLayout && typeof s.convLayout === 'object' ? s.convLayout : {};
+    const one = all[dock === 'side' ? 'side' : 'bottom'];
+    return one && typeof one === 'object' ? { ...one } : {};
+}
+
+export function saveConvLayout(dock, layout) {
+    const settings = loadSettings();
+    const all = settings.convLayout && typeof settings.convLayout === 'object'
+        ? { ...settings.convLayout } : {};
+    all[dock === 'side' ? 'side' : 'bottom'] = { ...layout };
+    settings.convLayout = all;
+    saveSettings(settings);
+}
+
+// Put every border back where it shipped. BOTH keyboard positions at once, because
+// "reset the layout" means the layout, and leaving the other one altered would be a
+// surprise the next time the user switched.
+export function resetConvLayout() {
+    const settings = loadSettings();
+    delete settings.convLayout;
+    saveSettings(settings);
+}
+
+// Whether the borders can be dragged at all. Default OFF, and it is a safeguard
+// rather than a preference: a stray tap on a locked screen does nothing, while a
+// stray DRAG on an unlocked one moves a boundary the user then has to find their way
+// back from. Same reasoning as the conversation gate on tap-to-define.
+export function loadLayoutUnlocked() {
+    return loadSettings().layoutUnlocked === true;
+}
+
+export function saveLayoutUnlocked(on) {
+    const settings = loadSettings();
+    settings.layoutUnlocked = !!on;
+    saveSettings(settings);
+}
+
 // Keyboard separation — the gap between the dock (keyboard / Express Panel) and
 // the rest of the UI (transcript / command bar / response palette, and the main
 // content of About Me & Settings). Independent of the inter-button gap: it shifts

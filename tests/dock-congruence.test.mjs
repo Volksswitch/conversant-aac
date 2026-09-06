@@ -405,3 +405,164 @@ for (const [label, extra, viewport] of TEXT_CASES) {
             t.diagnostic(`${label}: ${found.cards} cards and ${found.faces} faces all fit`);
         });
 }
+
+// --- Dragging the borders ----------------------------------------------------
+// The arithmetic is covered by tests/conv-layout.test.mjs, which needs no browser.
+// What only a browser can answer is whether the app WIRES it correctly: whether a
+// pointer landing on a border is claimed, whether the region below it actually
+// moves, and - the two that matter most - whether an unlocked screen is laid out
+// identically to a locked one, and whether a locked border lets a tap through.
+
+async function conv(settings) {
+    await page.evaluateOnNewDocument((s) => {
+        localStorage.setItem('aac_settings', JSON.stringify(s));
+    }, Object.assign({ keyboardMode: 'onscreen', keyboardDock: 'bottom', bottomLayout: 'B10',
+                       sideLayout: 'S2' }, settings));
+    await page.setViewport({ width: 1280, height: 800 });
+    await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'networkidle0' });
+    await new Promise((r) => setTimeout(r, 400));
+    await page.evaluate(() => document.querySelector('main')?.classList.remove('disabled'));
+}
+
+const regionRects = () => page.evaluate(() => {
+    const R = (s) => {
+        const b = document.querySelector(s).getBoundingClientRect();
+        return { t: Math.round(b.top), h: Math.round(b.height),
+                 l: Math.round(b.left), w: Math.round(b.width) };
+    };
+    return { transcript: R('#transcriptSection'), command: R('#listenControls'),
+             response: R('#responsesSection'), dock: R('#dockArea') };
+});
+
+// A border sits at the TOP of the region it resizes; the side keyboard's own border
+// is its inner edge.
+async function borderPoint(resizes) {
+    return page.evaluate((sel) => {
+        const b = document.querySelector(sel).getBoundingClientRect();
+        return document.body.classList.contains('conv-side') && sel === '#dockArea'
+            ? { x: b.left, y: b.top + b.height / 2 }
+            : { x: b.left + b.width / 2, y: b.top };
+    }, resizes === 'command' ? '#listenControls'
+        : resizes === 'response' ? '#responsesSection' : '#dockArea');
+}
+
+async function dragBorder(resizes, dx, dy) {
+    const at = await borderPoint(resizes);
+    await page.mouse.move(at.x, at.y);
+    await page.mouse.down();
+    for (let i = 1; i <= 8; i++) await page.mouse.move(at.x + dx * i / 8, at.y + dy * i / 8);
+    await page.mouse.up();
+    await new Promise((r) => setTimeout(r, 120));
+}
+
+test('unlocking the layout changes NOTHING about it', { timeout: 30000 }, async (t) => {
+    if (skip) { t.skip(skip); return; }
+    // ⚠ THE POINT OF THIS ONE: whatever says "you may drag here" must take no space.
+    // Anything that did would change the layout the moment the mode was entered -
+    // absurd for a mode whose whole job is judging that layout - and would move every
+    // keyguard opening with it.
+    await conv({});
+    const locked = await regionRects();
+    await conv({ layoutUnlocked: true });
+    const unlocked = await regionRects();
+    assert.deepEqual(unlocked, locked,
+        'the regions moved when the layout was unlocked - the unlocked cue must be paint only');
+    t.diagnostic('every region identical locked and unlocked');
+});
+
+test('a locked border lets a tap through to what is underneath', { timeout: 30000 }, async (t) => {
+    if (skip) { t.skip(skip); return; }
+    // A first version laid invisible strips over the borders. They sit above
+    // everything, so they swallowed taps - and a strip over the keyboard's top edge
+    // eats taps meant for the phrases along its first row.
+    await conv({});
+    const hit = await page.evaluate(() => {
+        const b = document.querySelector('#dockArea').getBoundingClientRect();
+        const el = document.elementFromPoint(b.left + b.width / 2, b.top + 1);
+        return el ? String(el.className || el.tagName) : '(nothing)';
+    });
+    assert.ok(/ep-btn|kbd-key/.test(hit),
+        `a tap on the keyboard's top edge hit "${hit}" instead of a button - something is covering the border`);
+});
+
+for (const dock of ['bottom', 'side']) {
+    test(`${dock} keyboard: a border moves the region below it and nothing else`,
+        { timeout: 40000 }, async (t) => {
+            if (skip) { t.skip(skip); return; }
+            const order = ['command', 'response', 'dock'];
+            for (const resizes of order) {
+                await conv({ keyboardDock: dock, layoutUnlocked: true });
+                const before = await regionRects();
+                // Towards the top / the near edge, which grows the region below.
+                const sideways = dock === 'side' && resizes === 'dock';
+                await dragBorder(resizes, sideways ? -70 : 0, sideways ? 0 : -70);
+                const after = await regionRects();
+
+                const axis = sideways ? 'w' : 'h';
+                assert.equal(after[resizes][axis] - before[resizes][axis], 70,
+                    `${dock}/${resizes}: dragging 70px should move it by exactly 70px`);
+                if (sideways) {
+                    // ⚠ THE SIDE KEYBOARD'S OWN BORDER IS A DIFFERENT RULE, and asserting
+                    // the vertical one here was my mistake rather than the app's: it
+                    // trades the keyboard against the column beside it, so all three
+                    // regions in that column necessarily change WIDTH. What must hold is
+                    // that it is a trade - the column gives up exactly what the keyboard
+                    // gains - and that no HEIGHT moves at all.
+                    assert.equal(before.command.w - after.command.w, 70,
+                        'the column should have given up exactly what the keyboard gained');
+                    for (const k of Object.keys(before)) {
+                        assert.equal(after[k].h, before[k].h,
+                            `${k} changed height when only the keyboard's WIDTH was dragged`);
+                    }
+                } else {
+                    // Only the region below the border, and the transcript, may move.
+                    for (const other of order) {
+                        if (other === resizes) continue;
+                        assert.equal(after[other][axis], before[other][axis],
+                            `${dock}/${resizes}: ${other} moved as well - a border must only resize the region below it`);
+                    }
+                }
+            }
+            t.diagnostic(`${dock}: all three borders move only the region below them`);
+        });
+}
+
+test('a border cannot be dragged while a conversation is under way', { timeout: 30000 }, async (t) => {
+    if (skip) { t.skip(skip); return; }
+    // The predicate is the CONVERSATION, not the moment - a control that works at some
+    // points within one and not others is less predictable than one simply unavailable
+    // for the duration.
+    await conv({ layoutUnlocked: true });
+    const before = await regionRects();
+    await page.click('#initiateBtn');          // "Start conversation" - no AI needed
+    await new Promise((r) => setTimeout(r, 400));
+    await dragBorder('dock', 0, -70);
+    const during = await regionRects();
+    assert.deepEqual(during, before, 'a border moved during a conversation');
+
+    await page.click('#endConversationBtn');
+    await new Promise((r) => setTimeout(r, 400));
+    await dragBorder('dock', 0, -70);
+    const after = await regionRects();
+    assert.ok(after.dock.h > before.dock.h,
+        'the border was still stuck after the conversation ended');
+});
+
+test('a dragged layout is remembered, and is stored as a share of the screen', { timeout: 30000 }, async (t) => {
+    if (skip) { t.skip(skip); return; }
+    await conv({ layoutUnlocked: true });
+    await dragBorder('dock', 0, -70);
+    const moved = await regionRects();
+    const saved = await page.evaluate(() =>
+        JSON.parse(localStorage.getItem('aac_settings')).convLayout);
+    assert.ok(saved && saved.bottom && typeof saved.bottom.dock === 'number',
+        'nothing was saved for the bottom keyboard');
+    assert.ok(saved.bottom.dock > 0 && saved.bottom.dock < 1,
+        `stored as ${saved.bottom.dock} - it must be a FRACTION of the screen, so it `
+        + 'survives a different screen and travels with a settings profile');
+
+    // Come back to it the way a returning user does.
+    await conv({ layoutUnlocked: true, convLayout: saved });
+    const again = await regionRects();
+    assert.equal(again.dock.h, moved.dock.h, 'the layout was not the same on the next launch');
+});

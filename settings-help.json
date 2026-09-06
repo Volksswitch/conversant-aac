@@ -81,7 +81,8 @@
     "bandSizes": "How the panel is divided into bands, and how the buttons that never speak are told apart from each other.",
     "acknowledgment": "The phrases it may say first, right after the other person stops talking. One is picked at random.",
     "thinking": "The phrases it may say after that, if you are still choosing. One is picked at random.",
-    "colorScheme": "Seven color schemes, from the usual look to bolder outlines, high contrast, dark, yellow on black, and one for color blindness."
+    "colorScheme": "Seven color schemes, from the usual look to bolder outlines, high contrast, dark, yellow on black, and one for color blindness.",
+    "layoutBorders": "Unlock the borders between the transcript, the controls, the responses and the keyboard, then drag them to resize."
   },
   "radioGroups": {
     "sttProvider": "Who turns the other person's speech into words. Your browser does it free. Deepgram is paid, and works where the browser cannot.",
@@ -124,7 +125,6 @@
     "testPartnerVoiceBtn": "Says a few words in the practice partner's voice.",
     "auraPartnerVoiceSelect": "Choose the Deepgram voice for the person you practice with.",
     "testAuraPartnerVoiceBtn": "Says a few words in the practice partner's Deepgram voice.",
-    "buttonSizeSlider": "How big the buttons are. Bigger ones are easier to hit, but fewer of them fit on the screen.",
     "buttonGapSlider": "The space between the buttons. On a keyguard this is the width of the bars between the holes.",
     "resetSizingBtn": "Puts button size and spacing back to how they started. Screen edge margin is left alone.",
     "sideDockPositionToggle": "Which side the Express Panel and keyboard sit on, the left or the right.",
@@ -170,6 +170,8 @@
     "bandFlexInput": "How many buttons change with who you are talking to and where you are. Start at none if you are unsure.",
     "bandShapeSelect": "Whether a band is measured in whole rows, which keeps a straight edge, or in buttons, which gives the exact size.",
     "contextMarkSelect": "What tells a partner button from a place or a feeling: a shape, the bar color, its thickness, or which side it is on.",
-    "colorSchemeInput": "Changes the colors of the whole app. It takes effect at once, so you can try each one while this panel is open."
+    "colorSchemeInput": "Changes the colors of the whole app. It takes effect at once, so you can try each one while this panel is open.",
+    "layoutUnlockToggle": "Lets you drag the borders between the screen areas to resize them. Off during a conversation.",
+    "resetLayoutBtn": "Puts every border back where it started, for both keyboard positions. Asks first."
   }
 }
