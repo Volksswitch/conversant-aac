@@ -389,11 +389,10 @@ function initApp() {
     // Stamp the error log with this build's version (Ken, July 2026).
     storage.setAppVersion(APP_VERSION);
 
-    // Carry a removed setting's value into the one that replaced it, BEFORE anything
-    // reads either. "Minimum spacing" floored the gap, so somebody who set it higher
-    // than Button spacing was getting it as their real gap - dropping it would have
-    // tightened every gap on their device with no warning.
-    storage.foldInLegacyMinGap();
+    // Carry removed settings forward BEFORE anything reads them. Everything arriving
+    // later - a named profile, an imported or restored backup - is migrated by
+    // storage.saveSettings itself, which is the only way a bundle becomes live.
+    storage.migrateStoredSettings();
 
     // Counting rides on the SAME switch as the weekly report, so a tester who turns
     // reporting off is not still having their taps written to disk. Set before the
@@ -3815,7 +3814,7 @@ function applyButtonSizing() {
 
     // ONE number for every gap in the app, including the one around the outside.
     // "Minimum spacing" used to floor this and was removed - see
-    // storage.foldInLegacyMinGap for why it earned nothing.
+    // storage.migrateBundle for how an existing value is carried forward.
     const gap = (lerp(storage.loadButtonGapPos(), 0, GAP_MAX_REM)) * rem;
 
     const dock = storage.loadKeyboardDock() === 'side' ? 'side' : 'bottom';

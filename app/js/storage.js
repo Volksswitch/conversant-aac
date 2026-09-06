@@ -396,6 +396,10 @@ function loadSettings() {
 }
 
 function saveSettings(settings) {
+    // Every bundle passes through here - an ordinary change, a named profile, an
+    // imported backup, a restored one - so this is the one place a removed
+    // setting can be carried forward without a route being missed.
+    settings = migrateBundle(settings);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
 }
 
@@ -1194,30 +1198,99 @@ export function saveButtonGapPos(pos) {
     settings.buttonGapPos = clampPos(pos, DEFAULT_BTN_GAP_POS);
     saveSettings(settings);
 }
-// "Minimum spacing" was REMOVED (Ken, September 2026). It was a floor under the gap,
-// and it existed to stop the button-size slider's growth squeezing the bar between
-// keyguard holes below a usable width. Measured across its whole range: with Button
-// spacing already set, moving it changed the gap by nothing at all - the app used
-// whichever of the two was larger, so a user setting both was setting one thing
-// twice. Its only separate effect was the padding around the main area, which now
-// comes from the gap like every other space in the app.
+// --- CARRYING A REMOVED SETTING FORWARD --------------------------------------
+// Two controls were removed in September 2026, and each held a value that still has
+// to mean something or somebody's screen quietly changes shape:
 //
-// ⚠ THE FOLD IS NOT TIDINESS - WITHOUT IT SOMEBODY'S PANEL SILENTLY TIGHTENS. Anyone
-// whose minimum was set higher than their spacing was getting the minimum as their
-// real gap, so dropping the key would shrink every gap on their device with no
-// warning and no way to tell what had happened. Taking the larger of the two into
-// Button spacing reproduces exactly what they had. Runs once; the key is deleted, so
-// a later change to Button spacing is never overridden by a ghost.
-export function foldInLegacyMinGap() {
-    const settings = loadSettings();
-    if (settings.minGapPos == null) return false;
-    const legacy = clampPos(settings.minGapPos, 0);
-    const current = settings.buttonGapPos == null
-        ? DEFAULT_BTN_GAP_POS : clampPos(settings.buttonGapPos, DEFAULT_BTN_GAP_POS);
-    delete settings.minGapPos;
-    if (legacy > current) settings.buttonGapPos = legacy;
-    saveSettings(settings);
-    return legacy > current;
+//   "Minimum spacing"  was a floor under the gap. Anyone whose minimum was set higher
+//                      than their spacing was getting the minimum as their real gap.
+//   "Button size"      moved the keyboard's border and the transcript's. Dragging the
+//                      borders does that now, but a value set with the slider has to
+//                      become a dragged layout or the keyboard springs back to 30%.
+//
+// ⚠ THIS RUNS INSIDE saveSettings, WHICH IS THE ONLY WAY A BUNDLE EVER BECOMES THE
+// LIVE SETTINGS - an ordinary change, loading a named profile, importing a backup,
+// restoring one. A first version ran once at start-up, which quietly missed all three
+// of the other routes: loading a profile saved last month would have reset the
+// keyboard and tightened every gap, with nothing on screen to say why. A migration
+// belongs where the data ARRIVES, not where the app happens to begin.
+//
+// ⚠ THE CONSTANTS BELOW ARE FROZEN COPIES AND MUST NOT BE MADE TO TRACK app.js. They
+// describe how the REMOVED slider behaved; if the live gap range is ever changed, this
+// arithmetic still has to describe the old one, or an old value is read against a
+// scale it was never written on.
+const LEGACY_GAP_MAX_REM = 1.4;      // the gap slider's range, then and now
+const LEGACY_SHRINK_GAP_REM = 1.4;   // how much gap a full left-shrink used to add
+// How far the keyboard could grow, as a share of the screen, at the largest button
+// size. Reconstructed from the old solver using nominal proportions rather than the
+// actual screen: it depended on the transcript's floor over the viewport height (and,
+// sideways, on the room nine command buttons need over its width), which vary by only
+// a percentage point or so across every screen the app supports. A percentage point of
+// keyboard is a far smaller error than resetting it.
+const LEGACY_GROWTH_H = 0.245;   // bottom keyboard: 0.30 -> ~0.545
+const LEGACY_GROWTH_W = 0.5175;  // side keyboard:   0.30 -> ~0.8175
+
+// Transform a settings bundle from any era into the current one. Pure, and idempotent
+// - a bundle with neither legacy key passes straight through, which is every bundle
+// after the first save.
+function migrateBundle(s) {
+    if (s.minGapPos == null && s.buttonSizePos == null) return s;
+    const out = { ...s };
+
+    // --- Minimum spacing -> Button spacing ---------------------------------
+    if (out.minGapPos != null) {
+        const legacy = clampPos(out.minGapPos, 0);
+        const current = out.buttonGapPos == null
+            ? DEFAULT_BTN_GAP_POS : clampPos(out.buttonGapPos, DEFAULT_BTN_GAP_POS);
+        if (legacy > current) out.buttonGapPos = legacy;
+        delete out.minGapPos;
+    }
+
+    // --- Button size -> a dragged layout, or a wider gap --------------------
+    if (out.buttonSizePos != null) {
+        const growth = (clampPos(out.buttonSizePos, 50) - 50) / 50;
+        if (growth > 0) {
+            // It grew the keyboard, and on a side keyboard shrank the transcript with
+            // it. Written into BOTH layouts, because one slider produced a different
+            // shape in each and the user may switch between them.
+            const layout = out.convLayout && typeof out.convLayout === 'object'
+                ? { ...out.convLayout } : {};
+            // Never over a layout the user has already dragged - that is a deliberate
+            // choice and outranks a reconstruction of a slider they no longer have.
+            if (!layout.bottom) {
+                layout.bottom = { command: 0.10, response: 0.30,
+                                  dock: 0.30 + growth * LEGACY_GROWTH_H };
+            }
+            if (!layout.side) {
+                // The transcript used to be fixed and the two below it shared what was
+                // left, one to six. Now the transcript is the remainder, so the same
+                // shape is expressed by giving those two their share of it.
+                const transcript = 0.30 - growth * LEGACY_GROWTH_H;
+                const rest = 1 - transcript;
+                layout.side = { command: rest / 7, response: rest * 6 / 7,
+                                dock: 0.30 + growth * LEGACY_GROWTH_W };
+            }
+            out.convLayout = layout;
+        } else if (growth < 0) {
+            // It moved no border at all - it only widened the gaps. That converts
+            // EXACTLY, because the amount it added and the gap slider's range are the
+            // same 1.4rem, so a point of one is a point of the other.
+            const added = (-growth) * 100 * (LEGACY_SHRINK_GAP_REM / LEGACY_GAP_MAX_REM);
+            const current = out.buttonGapPos == null
+                ? DEFAULT_BTN_GAP_POS : clampPos(out.buttonGapPos, DEFAULT_BTN_GAP_POS);
+            out.buttonGapPos = clampPos(Math.round(current + added), current);
+        }
+        delete out.buttonSizePos;
+    }
+    return out;
+}
+
+// Migrate whatever is already in storage, at start-up. Everything arriving later is
+// caught by saveSettings itself.
+export function migrateStoredSettings() {
+    const before = loadSettings();
+    const after = migrateBundle(before);
+    if (after !== before) saveSettings(after);
 }
 // --- The conversation screen's own layout (Ken, September 2026) ---------------
 // Where the borders between the four regions sit, as FRACTIONS of the screen, kept
@@ -1327,7 +1400,7 @@ export function resetButtonSizing() {
     const settings = loadSettings();
     delete settings.buttonSizePos;
     delete settings.buttonGapPos;
-    delete settings.minGapPos;   // legacy - see foldInLegacyMinGap
+    delete settings.minGapPos;   // legacy - see migrateBundle
     // NOTE: dockSepPos (keyboard separation) is deliberately NOT reset here — it's
     // an independent layout preference, not part of button sizing (Ken).
     saveSettings(settings);
