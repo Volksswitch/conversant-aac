@@ -110,11 +110,19 @@ const HELP = {
     "contextMarkSelect": "What tells a partner button from a place or a feeling: a shape, the bar color, its thickness, or which side it is on.",
     "colorSchemeInput": "Changes the colors of the whole app. It takes effect at once, so you can try each one while this panel is open.",
     "layoutUnlockToggle": "Lets you drag the borders between the screen areas to resize them. Off while you are talking to someone, but available in Practice.",
-    "resetLayoutBtn": "Puts every border back where it started, for both keyboard positions. Asks first."
+    "resetLayoutBtn": "Puts every border back where it started, for both keyboard positions. Asks first.",
+    "azureKeyInput": "Paste your Azure Speech key here. It stays on this device and is never put into a backup.",
+    "azureRegionInput": "The region your Azure account is in, such as eastus. A good key with the wrong region here is refused.",
+    "pasteAzureKeyBtn": "Pastes an Azure Speech key you have already copied.",
+    "testAzureKeyBtn": "Checks your Azure key and region, and tells you whether they were accepted.",
+    "azureVoiceSelect": "Choose which Azure voice speaks as you.",
+    "testAzureVoiceBtn": "Says a few words in the Azure voice you have chosen.",
+    "azurePartnerVoiceSelect": "Choose the Azure voice for the person you practice with.",
+    "testAzurePartnerVoiceBtn": "Says a few words in the practice partner's Azure voice."
   },
   "radioGroups": {
-    "sttProvider": "Who turns the other person's speech into words. Your browser does it free. Deepgram is paid, and works where the browser cannot.",
-    "ttsProvider": "Which voice speaks for you. This device's own voices are free. A Deepgram voice is paid and usually sounds far better.",
+    "sttProvider": "Who turns the other person's speech into words. Your browser does it free. Deepgram and Azure are paid, and work where the browser cannot.",
+    "ttsProvider": "Which voice speaks for you. This device's own voices are free. A Deepgram or Azure voice is paid and usually sounds far better.",
     "keyboardMode": "Whether you type on a keyboard you plug in, or on the app's own keyboard on the screen.",
     "keyboardDock": "Whether the Express Panel and keyboard sit along the bottom of the screen, or down one side.",
     "expressTapMode": "Whether one tap speaks an Express Panel button, or two are needed so you cannot set it off by accident."
@@ -155,7 +163,8 @@ const HELP = {
     "acknowledgment": "The phrases it may say first, right after the other person stops talking. One is picked at random.",
     "thinking": "The phrases it may say after that, if you are still choosing. One is picked at random.",
     "colorScheme": "Seven color schemes, from the usual look to bolder outlines, high contrast, dark, yellow on black, and one for color blindness.",
-    "layoutBorders": "Unlock the borders between the transcript, the controls, the responses and the keyboard, then drag them to resize."
+    "layoutBorders": "Unlock the borders between the transcript, the controls, the responses and the keyboard, then drag them to resize.",
+    "azureKey": "A second paid service for hearing and speaking. It needs your key and the region your account is in."
   }
 };
 // @@SETTINGS_HELP_END@@

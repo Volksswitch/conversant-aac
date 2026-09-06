@@ -418,6 +418,49 @@
                         </div>
                         <p id="deepgramKeyStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
                     </div>
+                    <!-- The second paid service. Shown alongside Deepgram rather than
+                         instead of it: neither one wins both halves. Azure speaks at
+                         about half Deepgram's price and hears at about twice it, and
+                         its free allowance renews every month where Deepgram's credit
+                         is one-time — so which is cheaper depends on whether this
+                         person mostly speaks or mostly listens.
+
+                         ⚠ THE REGION IS NOT OPTIONAL AND NOT COSMETIC. Azure builds
+                         its addresses out of the region name, so a perfectly good key
+                         aimed at the wrong region is refused exactly as a wrong key
+                         would be — which is why it has its own field, why Test quotes
+                         it back, and why every error message here names it. -->
+                    <div class="setting-group" data-help="azureKey">
+                        <label for="azureKeyInput">Azure Speech key</label>
+                        <div id="azureKeyRow">
+                            <input type="text" id="azureKeyInput" placeholder="Your Azure Speech key" autocomplete="off" spellcheck="false">
+                            <button id="pasteAzureKeyBtn" type="button" aria-label="Paste Azure Speech key">Paste</button>
+                            <button id="testAzureKeyBtn" type="button">Test</button>
+                        </div>
+                        <div id="azureRegionRow">
+                            <label for="azureRegionInput">Region</label>
+                            <!-- A list of suggestions rather than a closed menu: Azure
+                                 has dozens of regions and adds more, so a fixed menu
+                                 would eventually be unable to express a real account.
+                                 The common ones are one tap; anything else is typed. -->
+                            <input type="text" id="azureRegionInput" list="azureRegions" placeholder="eastus" autocomplete="off" spellcheck="false">
+                            <datalist id="azureRegions">
+                                <option value="eastus"></option>
+                                <option value="eastus2"></option>
+                                <option value="westus"></option>
+                                <option value="westus2"></option>
+                                <option value="westus3"></option>
+                                <option value="centralus"></option>
+                                <option value="northeurope"></option>
+                                <option value="westeurope"></option>
+                                <option value="uksouth"></option>
+                                <option value="australiaeast"></option>
+                                <option value="canadacentral"></option>
+                                <option value="japaneast"></option>
+                            </datalist>
+                        </div>
+                        <p id="azureKeyStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
+                    </div>
                     <!-- Hearing the other person. Built-in is free and works on
                          Windows; the paid backend exists for the platforms where the
                          browser's own recognizer silently delivers nothing (an iPad
@@ -430,6 +473,7 @@
                         <div class="radio-row">
                             <label class="radio-label"><input type="radio" name="sttProvider" value="builtin"> This browser's own (free)</label>
                             <label class="radio-label"><input type="radio" name="sttProvider" value="deepgram"> Deepgram transcription (paid)</label>
+                            <label class="radio-label"><input type="radio" name="sttProvider" value="azure"> Azure transcription (paid)</label>
                         </div>
                     </div>
                     <!-- The voice the app speaks WITH. The browser's own voices are
@@ -443,6 +487,7 @@
                         <div class="radio-row">
                             <label class="radio-label"><input type="radio" name="ttsProvider" value="builtin"> This device's voices (free)</label>
                             <label class="radio-label"><input type="radio" name="ttsProvider" value="deepgram"> Deepgram voice (paid)</label>
+                            <label class="radio-label"><input type="radio" name="ttsProvider" value="azure"> Azure voice (paid)</label>
                         </div>
                         <!-- Only the picker for the chosen backend is shown. Showing
                              both at once is what made the voice settings read as
@@ -467,6 +512,14 @@
                             </div>
                             <p id="auraVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
                         </div>
+                        <div id="azureVoiceRow" hidden>
+                            <label for="azureVoiceSelect">Azure voice</label>
+                            <select id="azureVoiceSelect"></select>
+                            <div class="profiles-row profiles-actions">
+                                <button id="testAzureVoiceBtn" type="button">Test this voice</button>
+                            </div>
+                            <p id="azureVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
+                        </div>
                     </div>
                     <div class="setting-group" data-help="practicePartnerVoice">
                         <label>Practice partner voice</label>
@@ -486,6 +539,13 @@
                                 <button id="testAuraPartnerVoiceBtn" type="button">Test partner voice</button>
                             </div>
                             <p id="auraPartnerVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
+                        </div>
+                        <div id="azurePartnerRow" hidden>
+                            <select id="azurePartnerVoiceSelect" aria-label="Practice partner's Azure voice"></select>
+                            <div class="profiles-row profiles-actions">
+                                <button id="testAzurePartnerVoiceBtn" type="button">Test partner voice</button>
+                            </div>
+                            <p id="azurePartnerVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
                         </div>
                     </div>
                 </div>

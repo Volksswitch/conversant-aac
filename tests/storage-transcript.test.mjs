@@ -333,3 +333,55 @@ test('importing a backup cannot rename this device to somebody else', async () =
     storage.applyPortableSettings({ testerName: 'Ken - Laptop' });
     assert.equal(storage.loadTesterName(), '');
 });
+
+/* ── SEC-6: a speech key must never leave this device ─────────────────────── */
+
+test('NO API KEY reaches a settings profile, a backup, or a problem report', async () => {
+    // ⚠ ASSERTED ON THE BYTES, not on an exclusion list, and asserted for EVERY key
+    // rather than the one just added. The failure this guards is silent by
+    // construction: the app works perfectly with a key sitting in a file, and the file
+    // is one that gets copied to a cloud drive (a settings profile, a backup) or mailed
+    // to us (a problem report). Nothing would ever surface it.
+    //
+    // It is written as a loop over storage.SECRET_KEYS rather than as three named
+    // checks, so a fourth credential is covered the moment it is added to that list —
+    // which is the whole reason the list exists.
+    await storage.restoreDataFolder();
+    storage.saveApiKey('sk-ant-secret');
+    storage.saveDeepgramKey('dg-secret');
+    storage.saveAzureKey('az-secret');
+    // The region is NOT a secret and must travel, so a restored setup asks only for
+    // the key. Losing it would leave a good key pointed at the wrong service.
+    storage.saveAzureRegion('westeurope');
+
+    assert.ok(storage.SECRET_KEYS.includes('azureKey'), 'the Azure key is declared a secret');
+
+    await storage.saveSettingsProfile('with keys');
+    const dir = await root.getDirectoryHandle('settings');
+    const fh = await dir.getFileHandle('with keys.json');
+    const text = await (await fh.getFile()).text();
+    const saved = JSON.parse(text);
+
+    for (const k of storage.SECRET_KEYS) {
+        assert.equal(k in saved.settings, false, `${k} must not be written to a profile`);
+    }
+    // Belt and braces: the VALUES must not appear anywhere in the file, whatever key
+    // they might have been stored under.
+    for (const secret of ['sk-ant-secret', 'dg-secret', 'az-secret']) {
+        assert.equal(text.includes(secret), false, `the file must not contain ${secret}`);
+    }
+    assert.equal(saved.settings.azureRegion, 'westeurope', 'the region does travel');
+
+    // A problem report gets pasted into messages and mailed around, so it reports only
+    // whether a key is SET — which is the diagnostic value — and never the key.
+    const report = storage.reportableSettings();
+    for (const k of storage.SECRET_KEYS) {
+        assert.equal(report[k], '(set - not included)', `${k} must be redacted in a report`);
+    }
+    assert.equal(report.azureRegion, 'westeurope', 'but the region is reportable');
+
+    // And a backup arriving from another device cannot plant a key on this one.
+    storage.applyPortableSettings({ azureKey: 'someone-elses-key', azureRegion: 'japaneast' });
+    assert.equal(storage.loadAzureKey(), 'az-secret', 'the local key is untouched');
+    assert.equal(storage.loadAzureRegion(), 'japaneast', 'but the region is adopted');
+});

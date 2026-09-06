@@ -1,57 +1,98 @@
 import * as aura from './tts-deepgram.js';
+import * as azure from './tts-azure.js';
 
 const synth = window.speechSynthesis;
 let selectedVoiceURI = null;
 
-// --- Voice provider (Ken, July 31 2026) ---
+// --- Voice provider (Ken, July 31 2026; Azure added September 6 2026) ---
 //
-// Two backends behind ONE seam, on the same reasoning as stt.js: the browser's own
-// speechSynthesis (free, works everywhere, the default), and Deepgram Aura (the
-// user's own key) for platforms whose built-in voices are unusable — measured on
-// iPadOS, where the only ordinary en-US voice is Samantha and everything else is a
-// novelty voice or a one-per-language minimum-quality voice.
+// Three backends behind ONE seam, on the same reasoning as stt.js: the browser's own
+// speechSynthesis (free, works everywhere, the default), and two paid services on the
+// user's own key — Deepgram Aura and Azure Speech — for platforms whose built-in
+// voices are unusable. Measured on iPadOS: the only ordinary en-US voice on offer is
+// Samantha, and everything else is a novelty voice or a one-per-language
+// minimum-quality voice, with no upgrade reachable from a web app at any price.
 //
 // EVERYTHING THAT MATTERS STAYS IN THIS FILE, not in the backend: the speaking-state
 // broadcast that the STT echo filter depends on, the token that stops a superseded
-// utterance reporting a spurious end, and the fallback. A backend only produces
-// sound.
+// utterance reporting a spurious end, and the fallback to the browser's own voice. A
+// backend only produces sound.
+//
+// ⚠ THE TWO PAID BACKENDS EXPOSE AN IDENTICAL SHAPE — { speak, cancel, isSpeaking,
+// unlock, test, reset } — so everything below treats them interchangeably and none of
+// the routing has to know which is which. Adding a fourth means adding a factory to
+// the table and nothing else. Where they genuinely differ is the SHAPE OF THEIR
+// CREDENTIAL: Deepgram takes a key, Azure takes a key AND a region, which is why the
+// readers below are passed through rather than being one getKey.
 let provider = 'builtin';
-let auraModel = aura.DEFAULT_VOICE;
-let auraVoice = null;
-// Reported when the paid voice fails and the browser voice speaks instead. The app
+// The chosen voice id per paid service, kept SEPARATELY rather than as one "paid
+// voice" value. The two id namespaces have nothing in common ('aura-2-thalia-en' vs
+// 'en-US-AvaMultilingualNeural'), so one cannot stand in for the other, and sharing a
+// slot would mean switching services back and forth silently discarded the choice
+// made in each.
+const models = { deepgram: aura.DEFAULT_VOICE, azure: azure.DEFAULT_VOICE };
+const backends = { deepgram: null, azure: null };
+// Reported when a paid voice fails and the browser voice speaks instead. The app
 // wires this to the error log, so a silent downgrade is still visible afterwards.
 let onFallback = null;
 
-// Held at module scope rather than captured when the voice is built: the backend is
-// created ONCE and reused, so wiring these in at creation time would silently pin
-// the first key source forever and a later setProvider() call would appear to do
-// nothing. The voice reads through these on every utterance instead.
-let auraGetKey = () => '';
-let auraOnBilled = () => {};
+// Held at module scope rather than captured when a backend is built: a backend is
+// created ONCE and reused, so wiring these in at creation time would silently pin the
+// first key source forever and a later setProvider() call would appear to do nothing.
+// A backend reads through these on every utterance instead.
+let getKey = () => '';
+let getRegion = () => '';
+let onBilled = () => {};
+
+function isPaid(name) {
+    return name === 'deepgram' || name === 'azure';
+}
+
+// Build on first use, so a user who never chooses a paid voice never constructs one.
+function backendFor(name) {
+    if (!isPaid(name)) return null;
+    if (!backends[name]) {
+        backends[name] = name === 'deepgram'
+            ? aura.createVoice({ getKey: () => getKey(), onBilled: (n) => onBilled(n) })
+            : azure.createVoice({
+                getKey: () => getKey(),
+                getRegion: () => getRegion(),
+                onBilled: (n) => onBilled(n),
+            });
+    }
+    return backends[name];
+}
 
 export function setProvider(name, opts = {}) {
-    provider = name === 'deepgram' ? 'deepgram' : 'builtin';
-    if (opts.model) auraModel = opts.model;
-    if (opts.getKey) auraGetKey = opts.getKey;
-    if (opts.onBilled) auraOnBilled = opts.onBilled;
-    if (provider === 'deepgram' && !auraVoice) {
-        auraVoice = aura.createVoice({
-            getKey: () => auraGetKey(),
-            onBilled: (n) => auraOnBilled(n),
-        });
-    }
+    provider = isPaid(name) ? name : 'builtin';
+    if (opts.model) models[provider === 'builtin' ? 'deepgram' : provider] = opts.model;
+    if (opts.getKey) getKey = opts.getKey;
+    if (opts.getRegion) getRegion = opts.getRegion;
+    if (opts.onBilled) onBilled = opts.onBilled;
+    if (isPaid(provider)) backendFor(provider);
 }
 
 export function getProvider() {
     return provider;
 }
 
+// The voice for a named paid service, or for the one currently in use.
+export function setPaidVoice(name, model) {
+    if (model && isPaid(name)) models[name] = model;
+}
+
+export function getPaidVoice(name = provider) {
+    return models[name] || null;
+}
+
+// Kept under the old names because the Deepgram wiring and its tests call them; they
+// are now the Deepgram-shaped view of the table above.
 export function setAuraModel(model) {
-    if (model) auraModel = model;
+    setPaidVoice('deepgram', model);
 }
 
 export function getAuraModel() {
-    return auraModel;
+    return models.deepgram;
 }
 
 export function onFallbackToBrowser(cb) {
@@ -59,17 +100,22 @@ export function onFallbackToBrowser(cb) {
 }
 
 // iOS will not start audio outside a user gesture, and placeholders fire on timers,
-// so the audio path has to be unlocked during some earlier tap or the app goes
-// silent exactly when it is trying to hold the floor. Safe to call on any tap.
+// so the audio path has to be unlocked during some earlier tap or the app goes silent
+// exactly when it is trying to hold the floor. Safe to call on any tap. Unlocks EVERY
+// constructed backend rather than the current one, because the setting can change
+// between the unlocking tap and the first thing the app says.
 export function unlockAudio() {
-    if (auraVoice) auraVoice.unlock();
+    for (const b of Object.values(backends)) if (b) b.unlock();
 }
 
-export function testAuraVoice(key, model, phrase = 'This is how I will sound during our conversation.') {
-    if (!auraVoice) {
-        auraVoice = aura.createVoice({ getKey: () => key });
-    }
-    return auraVoice.test(key, model, phrase);
+const SAMPLE_PHRASE = 'This is how I will sound during our conversation.';
+
+export function testAuraVoice(key, model, phrase = SAMPLE_PHRASE) {
+    return backendFor('deepgram').test(key, model, phrase);
+}
+
+export function testAzureVoice(key, region, model, phrase = SAMPLE_PHRASE) {
+    return backendFor('azure').test(key, region, model, phrase);
 }
 
 // Speaking-state broadcast. Anything that needs to know when the app is
@@ -149,9 +195,10 @@ function speakBuiltin(text, opts, myToken) {
 
 /*
  * speak(text, opts). opts.voiceURI overrides the user's selected browser voice for
- * this utterance; opts.auraModel does the same for the paid voice. Practice Mode
- * passes both, so the AI partner sounds distinct from the user whichever provider
- * is in use.
+ * this utterance; opts.auraModel and opts.azureVoice do the same for the two paid
+ * voices. Practice Mode passes all three, so the AI partner sounds distinct from the
+ * user whichever provider is in use — and the same is true of the spoken Settings
+ * help, which borrows the practice partner's voice for exactly that reason.
  *
  * The speaking-state broadcast happens HERE, once, around whichever backend runs —
  * including a fallback. The STT echo filter uses that text to recognize and discard
@@ -185,13 +232,19 @@ export function speak(text, opts = {}) {
     notifySpeaking(text);
     const said = pronounce(text);
 
-    if (provider !== 'deepgram' || !auraVoice) {
+    const paid = backendFor(provider);
+    if (!paid) {
         lastUsed = { provider: 'browser', voice: opts.voiceURI || selectedVoiceURI || null };
         return speakBuiltin(said, opts, myToken);
     }
 
-    lastUsed = { provider: 'deepgram', voice: opts.auraModel || auraModel };
-    return auraVoice.speak(said, { model: opts.auraModel || auraModel })
+    // Each caller may override the voice for one utterance — Practice Mode does, so
+    // the AI partner sounds distinct from the user whichever service is in use. The
+    // two overrides are named per service for the same reason the stored voices are:
+    // an Aura id handed to Azure is not a voice, it is a 400.
+    const model = (provider === 'azure' ? opts.azureVoice : opts.auraModel) || models[provider];
+    lastUsed = { provider, voice: model };
+    return paid.speak(said, { model })
         .then(() => {
             if (myToken === speakToken && speaking) {
                 speaking = false;
@@ -231,7 +284,10 @@ function pronounce(text) {
 export function cancel() {
     speakToken++; // invalidate any pending utterance's finish handler
     synth.cancel();
-    if (auraVoice) auraVoice.cancel();
+    // EVERY constructed backend, not just the current one: the provider can change
+    // while an utterance is still playing, and a cancel that reached only the new
+    // backend would leave the old one talking with nothing able to stop it.
+    for (const b of Object.values(backends)) if (b) b.cancel();
     if (speaking) {
         speaking = false;
         notifySpeaking(null);

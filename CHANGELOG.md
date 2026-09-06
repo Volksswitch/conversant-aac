@@ -26,6 +26,13 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- New: Azure Speech is now offered alongside Deepgram, for both hearing the other person and speaking as you. You choose them separately, so you can hear through one service and speak through the other. Both are on Settings, on the "Speech" tab, and both still need only your own account — nothing goes through us.
+- Which one is cheaper depends on how you use the app, and neither wins both halves. Azure speaks for about half what Deepgram charges and hears for about twice; Azure also gives a monthly free allowance that renews, where Deepgram gives a one-time credit. If you mostly want a better voice, Azure is likely to be cheaper, and may well be free.
+- Azure asks for two things rather than one: your key, and the region your account is in. The region matters as much as the key — a perfectly good key with the wrong region beside it is refused just as a wrong key would be — so the Test buttons tell you which region they tried.
+- The cost estimate on Settings → About now uses the rates of whichever services you have actually chosen, and names each company separately, so the figures can be checked against the bills you get.
+- Your Azure key is kept on this device only. Like your other keys, it is never written into a settings profile or a backup, and never included in a problem report. The region is not a secret and does travel, so a restored setup only asks you for the key again.
+- Worth knowing if you choose Azure for hearing: it works a phrase at a time rather than word by word, so the transcript of what the other person said fills in when they pause rather than as they speak, and lands about a second later than Deepgram's. Everything else behaves the same, including your silence period and "Ask them to repeat".
+
 
 ## Version 0.10.3
 

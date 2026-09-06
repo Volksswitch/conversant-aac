@@ -1,8 +1,9 @@
 import * as platform from './platform.js';
 import * as deepgram from './stt-deepgram.js';
+import * as azure from './stt-azure.js';
 
 let recognition = null;
-// A non-browser capture backend (Deepgram), or null when using the built-in
+// A non-browser capture backend (Deepgram or Azure), or null when using the built-in
 // recognizer. Only one is ever active.
 let externalSource = null;
 // Which one heard the partner — recorded against each turn in the conversation log,
@@ -360,27 +361,48 @@ function afterIngest(heardPartner, sawFinal) {
  *                         nothing. `opts.getDeepgramKey` reads the key at start
  *                         time so pasting one into Settings takes effect without a
  *                         reload.
+ *   'azure'             — a second paid service, on the user's own Azure Speech key
+ *                         and region (`opts.getAzureKey` / `opts.getAzureRegion`,
+ *                         read at start time for the same reason). It submits a
+ *                         phrase at a time rather than streaming word by word — see
+ *                         stt-azure.js for why, and for what would change that.
  *
  * Falls back to the built-in recognizer if a paid backend is asked for but cannot
  * be constructed — an app that can hear is better than one that refuses to try.
+ *
+ * ⚠ EVERY BACKEND FEEDS THE SAME CORE, and that is the whole design: accumulation,
+ * the TTS-echo filter, the silence checkpoint and dropLastStatement all live below,
+ * so the user's silence-period setting and "Ask them to repeat" behave identically
+ * whichever service produced the words. A backend supplies text and nothing else.
  */
-export function init({ onResult, onSilence, onStatus, onPartnerSpeech, source, getDeepgramKey, onBilled }) {
-    backend = source === 'deepgram' ? 'deepgram' : 'browser';
+export function init({ onResult, onSilence, onStatus, onPartnerSpeech, source,
+                       getDeepgramKey, getAzureKey, getAzureRegion, onBilled }) {
+    backend = (source === 'deepgram' || source === 'azure') ? source : 'browser';
     onTranscript = onResult;
     onSilencePeriod = onSilence;
     onStatusChange = onStatus;
     onPartnerActivity = onPartnerSpeech;
 
-    if (source === 'deepgram') {
-        externalSource = deepgram.createSource({
-            getKey: getDeepgramKey || (() => ''),
+    // The two paid backends differ only in what they are handed; everything they call
+    // back into is identical, so it is written once. Routing them separately is what
+    // would let the echo filter or the checkpoint quietly apply to one and not the
+    // other.
+    if (source === 'deepgram' || source === 'azure') {
+        const wiring = {
             onText: (text, isFinal) => { afterIngest(ingest(text, isFinal), !!isFinal); },
             onStatus: (status, detail) => {
                 if (status === 'error') handleSourceError(detail);
-                else if (onStatusChange) onStatusChange(status);
+                else if (onStatusChange) onStatusChange(status, detail);
             },
             onBilled,
-        });
+        };
+        externalSource = source === 'deepgram'
+            ? deepgram.createSource({ getKey: getDeepgramKey || (() => ''), ...wiring })
+            : azure.createSource({
+                getKey: getAzureKey || (() => ''),
+                getRegion: getAzureRegion || (() => ''),
+                ...wiring,
+            });
         return;
     }
 

@@ -3180,8 +3180,41 @@ dialog select {
    surrounding layout rules, so state it, as the key row above always did. */
 #auraRow[hidden],
 #auraPartnerRow[hidden],
+#azureVoiceRow[hidden],
+#azurePartnerRow[hidden],
 #builtinVoiceRow[hidden],
 #builtinPartnerVoiceRow[hidden] { display: none; }
+/* The Azure key row carries a second line for the region, so it is a column of two
+   rows rather than one flex row. The key line itself matches the others exactly, so
+   the third key does not look like a different kind of thing. */
+#azureKeyRow,
+#azureRegionRow {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+}
+#azureKeyRow #azureKeyInput {
+    flex: 0 1 9rem;
+    width: auto;
+    min-width: 0;
+}
+/* Shorter than the key: a region name is about ten characters, and a box sized for a
+   key would suggest something longer is expected. */
+#azureRegionRow #azureRegionInput {
+    flex: 0 1 7rem;
+    width: auto;
+    min-width: 0;
+}
+#azureRegionRow label { flex: 0 0 auto; }
+#azureKeyRow button {
+    flex: 0 0 auto;
+    padding: 0.5rem 0.9rem;
+    border-radius: 4px;
+    border: 1px solid var(--edge);
+    background: var(--surface-raised-alt);
+    cursor: pointer;
+}
 #apiKeyRow #apiKeyInput {
     /* The key is masked to dots, so it needs no room to read — keep it short so
        the Paste button shows fully and the column isn't crowded (Ken). */

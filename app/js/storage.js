@@ -446,7 +446,15 @@ const SETTINGS_DIR = 'settings';
 // The cost is one field retyped when a person sets up a second device, and it is not
 // really a cost: Ken's own devices are named 'Ken - Laptop' and 'Ken - Desktop', so the
 // name is in practice a property of the DEVICE, which is exactly what this list holds.
-const PROFILE_EXCLUDE = ['apiKey', 'deepgramKey', 'usageInputTokens', 'usageOutputTokens', 'usageCacheWriteTokens', 'usageCacheReadTokens', 'usageSttSeconds', 'usageTtsCharacters', 'usageSince', 'lastSeenVersion', 'activeSettingsProfile', 'installId', 'testerName', 'weeklySendLastAt', 'weeklyInfoHash', 'weeklyEndpoint', 'weeklyErrorMark'];
+// ⚠ ONE LIST OF SECRETS, READ BY BOTH THE EXCLUSION AND THE REDACTION BELOW.
+// They used to name 'apiKey' and 'deepgramKey' separately, in two places, so adding a
+// third service meant two edits and forgetting either one leaks a key — into a
+// cloud-synced folder, or into a problem report that gets mailed around. Neither
+// failure shows up anywhere: the app works perfectly with a key in a backup file.
+// A new credential goes in here and is covered by both.
+export const SECRET_KEYS = ['apiKey', 'deepgramKey', 'azureKey'];
+
+const PROFILE_EXCLUDE = [...SECRET_KEYS, 'usageInputTokens', 'usageOutputTokens', 'usageCacheWriteTokens', 'usageCacheReadTokens', 'usageSttSeconds', 'usageTtsCharacters', 'usageSince', 'lastSeenVersion', 'activeSettingsProfile', 'installId', 'testerName', 'weeklySendLastAt', 'weeklyInfoHash', 'weeklyEndpoint', 'weeklyErrorMark'];
 
 // The settings bundle with both API keys replaced by a presence marker, for a
 // problem report (Ken, August 7 2026). The redaction lives HERE rather than in
@@ -457,7 +465,7 @@ const PROFILE_EXCLUDE = ['apiKey', 'deepgramKey', 'usageInputTokens', 'usageOutp
 export function reportableSettings() {
     const out = {};
     for (const [k, v] of Object.entries(loadSettings())) {
-        out[k] = (k === 'apiKey' || k === 'deepgramKey')
+        out[k] = SECRET_KEYS.includes(k)
             ? (v ? '(set - not included)' : '(not set)')
             : v;
     }
@@ -813,9 +821,21 @@ export function loadSttProvider() {
     return 'builtin';
 }
 
+// ⚠ THE WHITELIST IS SHARED BY BOTH PROVIDER SETTINGS, and it exists because these
+// two functions used to spell it out as `x === 'deepgram' ? 'deepgram' : 'builtin'`
+// — which silently turns any value it does not recognize into the free one. Adding a
+// third service without touching both lines would therefore have looked like the
+// setting refusing to save, with nothing anywhere saying why. Adding a fourth now
+// means adding it here, once.
+const SPEECH_PROVIDERS = ['builtin', 'deepgram', 'azure'];
+
+function normalizeProvider(provider) {
+    return SPEECH_PROVIDERS.includes(provider) ? provider : 'builtin';
+}
+
 export function saveSttProvider(provider) {
     const settings = loadSettings();
-    settings.sttProvider = provider === 'deepgram' ? 'deepgram' : 'builtin';
+    settings.sttProvider = normalizeProvider(provider);
     saveSettings(settings);
 }
 
@@ -826,6 +846,64 @@ export function loadDeepgramKey() {
 export function saveDeepgramKey(key) {
     const settings = loadSettings();
     settings.deepgramKey = key;
+    saveSettings(settings);
+}
+
+// --- Azure Speech (Ken, September 6 2026) ------------------------------------
+//
+// A second paid service for both hearing and speaking. It needs TWO values, not one:
+// Azure's hostnames are built from the region, so a perfectly good key aimed at the
+// wrong region is refused exactly as a bad key would be. That is why the region is a
+// stored setting with its own field rather than a constant — and why every error
+// message quotes it back.
+//
+// `azureKey` is excluded from settings profiles and backups alongside `apiKey` and
+// `deepgramKey` (SEC-6): a key must never be written into a folder that may be
+// syncing to somebody's cloud drive. The REGION is not a secret and travels normally,
+// so a restored profile keeps the right region and asks only for the key.
+export function loadAzureKey() {
+    return loadSettings().azureKey || null;
+}
+
+export function saveAzureKey(key) {
+    const settings = loadSettings();
+    settings.azureKey = key;
+    saveSettings(settings);
+}
+
+export function loadAzureRegion() {
+    return loadSettings().azureRegion || 'eastus';
+}
+
+export function saveAzureRegion(region) {
+    const settings = loadSettings();
+    settings.azureRegion = (region || '').trim() || 'eastus';
+    saveSettings(settings);
+}
+
+// The Azure voice id (e.g. 'en-US-AvaMultilingualNeural'). Null means "use the
+// default". Kept separate from the Aura voice rather than sharing one "paid voice"
+// setting, so switching services back and forth does not lose the choice made in
+// each — the ids have nothing in common and one cannot stand in for the other.
+export function loadAzureVoice() {
+    return loadSettings().azureVoice || null;
+}
+
+export function saveAzureVoice(voice) {
+    const settings = loadSettings();
+    settings.azureVoice = voice || null;
+    saveSettings(settings);
+}
+
+// The Azure voice for the Practice Mode partner; null means "pick one that isn't the
+// user's own".
+export function loadAzurePartnerVoice() {
+    return loadSettings().azurePartnerVoice || null;
+}
+
+export function saveAzurePartnerVoice(voice) {
+    const settings = loadSettings();
+    settings.azurePartnerVoice = voice || null;
     saveSettings(settings);
 }
 
@@ -841,7 +919,7 @@ export function loadTtsProvider() {
 
 export function saveTtsProvider(provider) {
     const settings = loadSettings();
-    settings.ttsProvider = provider === 'deepgram' ? 'deepgram' : 'builtin';
+    settings.ttsProvider = normalizeProvider(provider);
     saveSettings(settings);
 }
 

@@ -7,5 +7,8 @@
   "cacheReadMultiplier": 0.1,
   "deepgramSttCostPerHour": 0.46,
   "deepgramTtsCostPer1kChars": 0.03,
-  "lastVerified": "2026-07-31"
+  "lastVerified": "2026-09-06",
+  "_speechNote": "Per-service speech rates. Neither service wins both halves: Azure hears at about twice Deepgram's price and speaks at about half it. List prices; the estimate ignores each service's free allowance, so a light user owes less.",
+  "azureSttCostPerHour": 1.0,
+  "azureTtsCostPer1kChars": 0.016
 }

@@ -35,6 +35,8 @@ import * as dataTransfer from './data-transfer.js';
 import * as platform from './platform.js';
 import * as sttDeepgram from './stt-deepgram.js';
 import * as ttsDeepgram from './tts-deepgram.js';
+import * as ttsAzure from './tts-azure.js';
+import * as sttAzure from './stt-azure.js';
 import { confirmDanger } from './confirm-dialog.js';
 import * as helpMode from './help-mode.js';
 import * as usageSummary from './usage-summary.js';
@@ -243,7 +245,7 @@ function initSpokenHelp() {
             speakingHelp = true;
             // The SAME selection Practice Mode uses, and BOTH backends, so the rule
             // holds whichever voice the user is on — see the note above pickPartnerVoice.
-            try { await tts.speak(text, { voiceURI: pickPartnerVoice(), auraModel: pickAuraPartnerVoice() }); }
+            try { await tts.speak(text, partnerVoiceOptions()); }
             finally { speakingHelp = false; }
         },
         cancel: () => tts.cancel(),
@@ -435,7 +437,15 @@ function initApp() {
     // nothing in a Home Screen app" simply does not apply to it. That is the whole
     // point of paying — capture where the platform has none.
     const sttProvider = storage.loadSttProvider();
-    const usingPaidStt = sttProvider === 'deepgram' && !!(storage.loadDeepgramKey() || '').trim();
+    // A paid backend counts only WITH ITS KEY IN HAND. An empty key constructs a
+    // source perfectly well and then fails at start with 'no-key', which
+    // handleSourceError treats as fatal and switches listening off — so treating a
+    // keyless paid choice as "paid" would leave the user unable to listen at all,
+    // rather than falling back to the recognizer they do have.
+    const paidSttKey = sttProvider === 'deepgram' ? storage.loadDeepgramKey()
+                     : sttProvider === 'azure'    ? storage.loadAzureKey()
+                     : null;
+    const usingPaidStt = !!(paidSttKey || '').trim();
     const speechSupport = platform.speechRecognitionSupport();
     listeningUnavailable = (usingPaidStt || speechSupport.usable) ? null : speechSupport;
 
@@ -465,16 +475,18 @@ function initApp() {
         stt.setSilenceThreshold(storage.loadSilenceThreshold());
         // Stamp every partner turn with what heard it. Set beside init because that
         // is what fixes the choice; changing it needs a reload, so this cannot drift.
-        storage.setSttBackend(usingPaidStt ? 'deepgram' : 'browser');
+        storage.setSttBackend(usingPaidStt ? sttProvider : 'browser');
         stt.init({
             onResult: handleSpeechResult,
             onSilence: handleSilencePeriod,
             onStatus: handleSttStatus,
             onPartnerSpeech: handlePartnerResumed,
-            source: usingPaidStt ? 'deepgram' : 'builtin',
+            source: usingPaidStt ? sttProvider : 'builtin',
             // Read at start time, so a key pasted into Settings works on the next
             // Listen rather than needing a reload.
             getDeepgramKey: () => storage.loadDeepgramKey() || '',
+            getAzureKey: () => storage.loadAzureKey() || '',
+            getAzureRegion: () => storage.loadAzureRegion(),
             onBilled: handleSttBilled,
         });
     }
@@ -829,37 +841,66 @@ function wireKeyField(input, { load, save, onChange }) {
     showRedactedKey(input, load());
 }
 
-function showDeepgramStatus(kind, msg) {
-    const el = document.getElementById('deepgramKeyStatus');
+// One status line, written the same way everywhere. There were three near-identical
+// copies of this before Azure; a fourth would have been the point at which one of
+// them quietly stopped clearing itself and nobody noticed, because an uncleared
+// status line reads as a message about whatever the user did NEXT.
+function setStatusLine(id, kind, msg) {
+    const el = document.getElementById(id);
     if (!el) return;
     if (!msg) { el.hidden = true; el.textContent = ''; el.className = 'api-key-status'; return; }
     el.hidden = false;
     el.textContent = msg;
     el.className = 'api-key-status ' + (kind === 'ok' ? 'ok' : kind === 'checking' ? 'checking' : 'warn');
+}
+
+function showDeepgramStatus(kind, msg) {
+    setStatusLine('deepgramKeyStatus', kind, msg);
+}
+
+function showAzureStatus(kind, msg) {
+    setStatusLine('azureKeyStatus', kind, msg);
+}
+
+// The status line beside whichever Azure voice picker is being tested.
+function showAzureVoiceStatus(which, kind, msg) {
+    setStatusLine(which === 'partner' ? 'azurePartnerVoiceStatus' : 'azureVoiceStatus', kind, msg);
 }
 
 // Point tts.js at the chosen voice backend. Called at startup and whenever the
 // setting changes — unlike transcription, this takes effect immediately, because
 // tts.js routes per utterance instead of building a source once.
 function applyTtsProvider() {
-    tts.setProvider(storage.loadTtsProvider(), {
-        model: storage.loadAuraVoice() || ttsDeepgram.DEFAULT_VOICE,
-        // Read at speak time, so a key pasted into Settings works without a reload.
-        getKey: () => storage.loadDeepgramKey() || '',
+    const provider = storage.loadTtsProvider();
+    tts.setProvider(provider, {
+        model: paidVoiceFor(provider),
+        // Read at speak time, so a key or region pasted into Settings works without a
+        // reload. Which one is read depends on the provider, so both are supplied and
+        // the seam picks — the alternative, choosing here, would mean tts.js could
+        // never change provider without being re-wired.
+        getKey: () => (provider === 'azure'
+            ? storage.loadAzureKey()
+            : storage.loadDeepgramKey()) || '',
+        getRegion: () => storage.loadAzureRegion(),
         onBilled: (characters) => storage.addTtsCharacters(characters),
     });
-    tts.setAuraModel(storage.loadAuraVoice() || ttsDeepgram.DEFAULT_VOICE);
+    // Both voices are set regardless of which service is in use, so switching
+    // provider in Settings does not have to re-read them and cannot pick up a stale
+    // one from before the switch.
+    tts.setPaidVoice('deepgram', storage.loadAuraVoice() || ttsDeepgram.DEFAULT_VOICE);
+    tts.setPaidVoice('azure', storage.loadAzureVoice() || ttsAzure.DEFAULT_VOICE);
+}
+
+// The user's chosen voice for a paid service, falling back to that service's default.
+function paidVoiceFor(provider) {
+    if (provider === 'azure') return storage.loadAzureVoice() || ttsAzure.DEFAULT_VOICE;
+    return storage.loadAuraVoice() || ttsDeepgram.DEFAULT_VOICE;
 }
 
 // Same shape as showDeepgramStatus, for whichever of the two Aura voice pickers is
 // being tested.
 function showAuraStatus(which, kind, msg) {
-    const el = document.getElementById(which === 'partner' ? 'auraPartnerVoiceStatus' : 'auraVoiceStatus');
-    if (!el) return;
-    if (!msg) { el.hidden = true; el.textContent = ''; el.className = 'api-key-status'; return; }
-    el.hidden = false;
-    el.textContent = msg;
-    el.className = 'api-key-status ' + (kind === 'ok' ? 'ok' : kind === 'checking' ? 'checking' : 'warn');
+    setStatusLine(which === 'partner' ? 'auraPartnerVoiceStatus' : 'auraVoiceStatus', kind, msg);
 }
 
 // The Aura voice the Practice partner speaks in: the user's chosen partner voice,
@@ -870,6 +911,33 @@ function pickAuraPartnerVoice(chosen = storage.loadAuraPartnerVoice()) {
     const own = storage.loadAuraVoice() || ttsDeepgram.DEFAULT_VOICE;
     const other = ttsDeepgram.VOICES.find((v) => v.id !== own);
     return other ? other.id : own;
+}
+
+// The same rule for Azure. Written out rather than folded into the function above
+// because the two draw on different voice lists and different stored settings, and a
+// shared version would take four arguments to say what two lines say plainly.
+function pickAzurePartnerVoice(chosen = storage.loadAzurePartnerVoice()) {
+    if (chosen) return chosen;
+    const own = storage.loadAzureVoice() || ttsAzure.DEFAULT_VOICE;
+    const other = ttsAzure.VOICES.find((v) => v.id !== own);
+    return other ? other.id : own;
+}
+
+// Everything that speaks AS SOMEONE OTHER THAN THE USER passes this: the Practice
+// Mode partner, the practice tour, and the spoken Settings help.
+//
+// ⚠ ALL THREE VOICES GO IN EVERY TIME, and that is the point rather than
+// belt-and-braces. tts.js ignores the ones that do not apply, so a caller never has
+// to know which service is in use — and the bug this prevents is one that has already
+// happened: spoken help passed only `voiceURI`, which the Deepgram backend ignores,
+// so a user on a paid voice heard the app explain itself in THEIR OWN voice.
+// Intelligible, and indistinguishable from themselves, which loses half the point.
+function partnerVoiceOptions() {
+    return {
+        voiceURI: pickPartnerVoice(),
+        auraModel: pickAuraPartnerVoice(),
+        azureVoice: pickAzurePartnerVoice(),
+    };
 }
 
 function showApiKeyStatus(kind, msg) {
@@ -989,6 +1057,14 @@ function handleSttStatus(status, detail) {
     // connecting and the button would then claim to be listening early — the very
     // thing moving 'listening' to ws.onopen was meant to stop. Measured: it does.
     else if (status === 'capturing') { /* activity, not a state change */ }
+    // 'warning' — something went wrong with ONE phrase and capture is still running.
+    // It has to be a separate state from 'error', because an error is fatal for the
+    // whole listening session (handleSourceError clears the intent so nothing retries
+    // into the same failure). That is right for a rejected key and wrong for a single
+    // request that timed out on a flaky connection, where the next phrase would very
+    // likely have worked — switching the microphone off there would turn a hiccup
+    // into the end of the conversation.
+    else if (status === 'warning') { /* recoverable: keep listening */ }
     else storage.logError('stt-status', `unknown status "${status}"`);
     ui.setListenButtonState(isListening);
 
@@ -1000,6 +1076,11 @@ function handleSttStatus(status, detail) {
         // speech recognition is cloud-based (Chrome→Google, Edge→Microsoft), so with
         // no internet it can't transcribe at all and this is the only signal the user gets.
         storage.logError('stt', detail || 'unknown');
+    } else if (status === 'warning') {
+        // Recorded but not announced: it trips the transcript red-wash, which is the
+        // right signal for "some of what they said may be missing", and there is
+        // nothing for the user to do about it mid-conversation.
+        storage.logError('stt', detail || 'a phrase could not be transcribed');
     } else if (status === 'listening') {
         ui.setStatus('Listening...');
     } else if (status === 'stopped') {
@@ -2137,7 +2218,7 @@ async function advancePracticePartner() {
     // practice, so there's no echo to filter.
     // Both voices are passed; tts.js uses whichever matches the active provider, so
     // the partner stays distinct from the user on either one.
-    await tts.speak(line, { voiceURI: pickPartnerVoice(), auraModel: pickAuraPartnerVoice() });
+    await tts.speak(line, partnerVoiceOptions());
     if (token !== generationToken || !practiceMode) return;
     // Feed the spoken line through the normal pipeline (logs the partner turn,
     // updates the engine, generates the user's response palette). Mic-free.
@@ -2156,7 +2237,7 @@ async function speakTourStep() {
     // The practice partner's voice, for the same reason spoken help uses it: it must
     // be audibly NOT the user's own, or the app explaining itself sounds like the
     // user saying it. One selection, already solved, nothing extra to configure.
-    await tts.speak(step.say, { voiceURI: pickPartnerVoice(), auraModel: pickAuraPartnerVoice() });
+    await tts.speak(step.say, partnerVoiceOptions());
 }
 
 // Set when the tour's last step was one that ends the session, so the closing
@@ -2218,14 +2299,14 @@ function hintWhere(step, target) {
     ui.setCoachLine(`${step.say}\n${step.where}`);
     // Only the new information is spoken. Repeating the whole instruction on every
     // mis-tap would be slower to sit through each time it happened.
-    tts.speak(step.where, { voiceURI: pickPartnerVoice(), auraModel: pickAuraPartnerVoice() });
+    tts.speak(step.where, partnerVoiceOptions());
 }
 
 function announceTourFinished() {
     tourFinishPending = false;
     ui.setCoachLine(practiceTour.TOUR_DONE);
     tts.speak(practiceTour.TOUR_DONE,
-        { voiceURI: pickPartnerVoice(), auraModel: pickAuraPartnerVoice() });
+        partnerVoiceOptions());
 }
 
 // "Start Listening" in practice: cue the partner (or pause if already in a turn).
@@ -4814,8 +4895,27 @@ async function updateUsageDisplay() {
     // input_tokens as the UNCACHED REMAINDER, so pricing that one number alone
     // would under-report the bill by the hit rate (~90% on the generation call).
     const inputRate = pricing.inputCostPerMillionTokens / 1_000_000;
-    const sttCost = (sttSeconds / 3600) * (pricing.deepgramSttCostPerHour ?? 0);
-    const ttsCost = (ttsCharacters / 1000) * (pricing.deepgramTtsCostPer1kChars ?? 0);
+    // ⚠ PRICED AT THE RATES OF THE SERVICE ACTUALLY CHOSEN, not at one service's.
+    // The two are not close — Azure hears at about twice Deepgram's price and speaks
+    // at about half it — so using one set of rates for both would overstate hearing
+    // and understate speaking by roughly a factor of two each, in a product whose
+    // whole funding model is "you pay only for what you use". A cost display that
+    // reads wrong is worse than none.
+    //
+    // KNOWN APPROXIMATION, and it is the honest one available: the counters are
+    // totals since the user last reset them, and they do not record WHICH service
+    // produced each second or character. So a user who switched services mid-period
+    // is priced entirely at their current choice. Attributing usage per service would
+    // need a counter per service, which is worth doing only if switching turns out to
+    // be common — today it is a setup decision, made once.
+    const sttProviderNow = storage.loadSttProvider();
+    const ttsProviderNow = storage.loadTtsProvider();
+    const sttRate = sttProviderNow === 'azure'
+        ? (pricing.azureSttCostPerHour ?? 0) : (pricing.deepgramSttCostPerHour ?? 0);
+    const ttsRate = ttsProviderNow === 'azure'
+        ? (pricing.azureTtsCostPer1kChars ?? 0) : (pricing.deepgramTtsCostPer1kChars ?? 0);
+    const sttCost = (sttSeconds / 3600) * sttRate;
+    const ttsCost = (ttsCharacters / 1000) * ttsRate;
     const aiCost = (usage.inputTokens * inputRate)
                + (usage.cacheWriteTokens * inputRate * (pricing.cacheWriteMultiplier ?? 1.25))
                + (usage.cacheReadTokens * inputRate * (pricing.cacheReadMultiplier ?? 0.1))
@@ -4888,9 +4988,25 @@ async function updateUsageDisplay() {
             // become the chosen provider's name, from the same place the endpoint and
             // the rates come from - not two more strings to find.
             line('Anthropic Claude', `${words.toLocaleString()} words in and out`, aiCost);
-            line('Deepgram', '', sttCost + ttsCost);
-            line('Hearing', sttSeconds > 0 ? `${Math.round(sttSeconds / 60)} min heard` : 'not used', sttCost, 'usage-sub');
-            line('Speaking', ttsCharacters > 0 ? `${ttsCharacters.toLocaleString()} characters spoken` : 'not used', ttsCost, 'usage-sub');
+            // ⚠ THE SPEECH TOTAL IS PER COMPANY, and with two services to choose from
+            // it can no longer be one line. The point of naming the company is that
+            // the user holds an account with it and gets a bill from it — so hearing
+            // through one service and speaking through the other (a perfectly sensible
+            // setup, since neither is cheaper at both) has to show as two bills, or
+            // the figure cannot be checked against either statement.
+            const nameOf = (p) => (p === 'azure' ? 'Microsoft Azure' : 'Deepgram');
+            const heard = sttSeconds > 0 ? `${Math.round(sttSeconds / 60)} min heard` : 'not used';
+            const spoken = ttsCharacters > 0 ? `${ttsCharacters.toLocaleString()} characters spoken` : 'not used';
+            if (nameOf(sttProviderNow) === nameOf(ttsProviderNow)) {
+                line(nameOf(sttProviderNow), '', sttCost + ttsCost);
+                line('Hearing', heard, sttCost, 'usage-sub');
+                line('Speaking', spoken, ttsCost, 'usage-sub');
+            } else {
+                line(nameOf(sttProviderNow), '', sttCost);
+                line('Hearing', heard, sttCost, 'usage-sub');
+                line(nameOf(ttsProviderNow), '', ttsCost);
+                line('Speaking', spoken, ttsCost, 'usage-sub');
+            }
         }
     }
 }
@@ -5918,7 +6034,16 @@ function openSettings() {
             if (!radio.checked) return;
             storage.saveSttProvider(radio.value);
             reflectSttProvider();
-            showDeepgramStatus('ok', 'Saved. Reload the app (About → Reload the app) to start using it.');
+            // The message goes beside the key that choice depends on, not always
+            // beside Deepgram's. A confirmation that appears next to a different
+            // service's key field is worse than none: it reads as though THAT key was
+            // what just changed.
+            const reload = 'Saved. Reload the app (About → Reload the app) to start using it.';
+            showDeepgramStatus(null, '');
+            showAzureStatus(null, '');
+            if (radio.value === 'azure') showAzureStatus('ok', reload);
+            else if (radio.value === 'deepgram') showDeepgramStatus('ok', reload);
+            else showDeepgramStatus('ok', reload);
         };
     });
     const pasteDeepgramBtn = document.getElementById('pasteDeepgramKeyBtn');
@@ -5949,13 +6074,72 @@ function openSettings() {
         };
     }
 
+    // --- Azure Speech key and region ---
+    //
+    // The region is stored plainly rather than through wireKeyField, because it is
+    // not a secret: it must survive a settings profile and a backup so a restored
+    // setup asks only for the key. Only the key is redacted and excluded.
+    const azureKeyInput = document.getElementById('azureKeyInput');
+    const azureRegionInput = document.getElementById('azureRegionInput');
+    wireKeyField(azureKeyInput, {
+        load: () => storage.loadAzureKey() || '',
+        save: (key) => storage.saveAzureKey(key),
+    });
+    if (azureRegionInput) {
+        azureRegionInput.value = storage.loadAzureRegion();
+        azureRegionInput.addEventListener('input', () => {
+            storage.saveAzureRegion(azureRegionInput.value);
+            showAzureStatus(null, '');
+        });
+        // Put the stored value back on blur, so a field left half-typed or emptied
+        // shows what is actually in force rather than what was abandoned. Blank means
+        // the default, and saying so beats an empty box the user has to guess about.
+        azureRegionInput.addEventListener('blur', () => {
+            azureRegionInput.value = storage.loadAzureRegion();
+        });
+    }
+    const pasteAzureBtn = document.getElementById('pasteAzureKeyBtn');
+    if (pasteAzureBtn) {
+        pasteAzureBtn.onclick = async () => {
+            try {
+                const text = (await navigator.clipboard.readText())?.trim();
+                if (!text) { showAzureStatus('warn', 'The clipboard is empty — copy your key first.'); return; }
+                setKeyFieldValue(azureKeyInput, text);
+                showAzureStatus(null, '');
+            } catch {
+                showAzureStatus('warn', 'Could not read the clipboard. Touch and hold the box above, then choose Paste.');
+            }
+        };
+    }
+    const testAzureBtn = document.getElementById('testAzureKeyBtn');
+    if (testAzureBtn) {
+        // ⚠ EXERCISES THE REQUEST THE APP ACTUALLY MAKES, not a cheaper proxy. Azure
+        // has a token endpoint that would check the key for free — and would also pass
+        // while the request the app makes is refused, which is exactly what happened
+        // on Ken's iPad with Deepgram in August 2026, where Test passed and Listen
+        // closed immediately. A diagnostic that does not exercise the failing path
+        // sends you looking in the wrong place. It submits half a second of silence,
+        // so it bills a fraction of a cent and transcribes nothing.
+        testAzureBtn.onclick = async () => {
+            const key = (keyFieldValue(azureKeyInput) ?? (storage.loadAzureKey() || '')).trim();
+            if (!key) { showAzureStatus('warn', 'Enter your key first, then tap Test.'); return; }
+            testAzureBtn.disabled = true;
+            showAzureStatus('checking', 'Checking your key…');
+            const res = await sttAzure.testKey(key, storage.loadAzureRegion());
+            testAzureBtn.disabled = false;
+            showAzureStatus(res.ok ? 'ok' : 'warn', res.message);
+        };
+    }
+
     // --- Deepgram voice (Aura) ---
     // Unlike the transcription provider, this one takes effect immediately: tts.js
     // routes per utterance rather than building a source once at startup, so there
     // is nothing to reload.
     const auraVoiceSelect = document.getElementById('auraVoiceSelect');
     const auraPartnerVoiceSelect = document.getElementById('auraPartnerVoiceSelect');
-    const fillAuraSelect = (select, selected, autoLabel) => {
+    // One filler for both paid services: the voice lists are the same shape, so the
+    // list to draw from is an argument rather than a second copy of this function.
+    const fillVoiceSelect = (select, voices, selected, autoLabel) => {
         if (!select) return;
         select.innerHTML = '';
         if (autoLabel) {
@@ -5964,7 +6148,7 @@ function openSettings() {
             auto.textContent = autoLabel;
             select.appendChild(auto);
         }
-        ttsDeepgram.VOICES.forEach((v) => {
+        voices.forEach((v) => {
             const opt = document.createElement('option');
             opt.value = v.id;
             opt.textContent = `${v.name} — ${v.detail}`;
@@ -5972,26 +6156,39 @@ function openSettings() {
             select.appendChild(opt);
         });
     };
+    const fillAuraSelect = (select, selected, autoLabel) =>
+        fillVoiceSelect(select, ttsDeepgram.VOICES, selected, autoLabel);
     // Swap BOTH voice pickers — the user's own and the Practice partner's — to the
     // chosen backend. The partner follows the same service rather than being a
     // third choice: mixing a device voice against a Deepgram one is a combination
     // nobody asked for, and it would double the pickers on screen again.
+    const azureVoiceSelect = document.getElementById('azureVoiceSelect');
+    const azurePartnerVoiceSelect = document.getElementById('azurePartnerVoiceSelect');
     const reflectTtsProvider = () => {
         const provider = storage.loadTtsProvider();
-        const aura = provider === 'deepgram';
         const radio = document.querySelector(`input[name="ttsProvider"][value="${provider}"]`);
         if (radio) radio.checked = true;
         const show = (id, on) => {
             const el = document.getElementById(id);
             if (el) el.hidden = !on;
         };
-        show('auraRow', aura);
-        show('auraPartnerRow', aura);
-        show('builtinVoiceRow', !aura);
-        show('builtinPartnerVoiceRow', !aura);
+        // Exactly ONE pair of pickers is on screen at a time, driven off the chosen
+        // provider rather than off a boolean per service — with three of them, a
+        // boolean each is how two end up visible together, which is what made the
+        // voice settings read as duplicated before this was collapsed.
+        show('builtinVoiceRow', provider === 'builtin');
+        show('builtinPartnerVoiceRow', provider === 'builtin');
+        show('auraRow', provider === 'deepgram');
+        show('auraPartnerRow', provider === 'deepgram');
+        show('azureVoiceRow', provider === 'azure');
+        show('azurePartnerRow', provider === 'azure');
     };
     fillAuraSelect(auraVoiceSelect, storage.loadAuraVoice() || ttsDeepgram.DEFAULT_VOICE);
     fillAuraSelect(auraPartnerVoiceSelect, storage.loadAuraPartnerVoice(), 'Auto (a voice that isn\'t yours)');
+    fillVoiceSelect(azureVoiceSelect, ttsAzure.VOICES,
+        storage.loadAzureVoice() || ttsAzure.DEFAULT_VOICE);
+    fillVoiceSelect(azurePartnerVoiceSelect, ttsAzure.VOICES,
+        storage.loadAzurePartnerVoice(), 'Auto (a voice that isn\'t yours)');
     reflectTtsProvider();
     document.querySelectorAll('input[name="ttsProvider"]').forEach((radio) => {
         radio.onchange = () => {
@@ -5999,13 +6196,32 @@ function openSettings() {
             storage.saveTtsProvider(radio.value);
             reflectTtsProvider();
             applyTtsProvider();
+            // Choosing a paid voice with no key is the commonest way to end up with a
+            // setting that looks applied and silently falls back on every utterance,
+            // so it says so at the moment of choosing rather than leaving it to be
+            // discovered mid-conversation.
+            showAuraStatus('own', null, '');
+            showAzureVoiceStatus('own', null, '');
             if (radio.value === 'deepgram' && !(storage.loadDeepgramKey() || '').trim()) {
                 showAuraStatus('own', 'warn', 'Add your Deepgram key above, then tap Test this voice.');
-            } else {
-                showAuraStatus('own', null, '');
+            } else if (radio.value === 'azure' && !(storage.loadAzureKey() || '').trim()) {
+                showAzureVoiceStatus('own', 'warn', 'Add your Azure Speech key above, then tap Test this voice.');
             }
         };
     });
+    if (azureVoiceSelect) {
+        azureVoiceSelect.onchange = () => {
+            storage.saveAzureVoice(azureVoiceSelect.value);
+            tts.setPaidVoice('azure', azureVoiceSelect.value);
+            showAzureVoiceStatus('own', null, '');
+        };
+    }
+    if (azurePartnerVoiceSelect) {
+        azurePartnerVoiceSelect.onchange = () => {
+            storage.saveAzurePartnerVoice(azurePartnerVoiceSelect.value);
+            showAzureVoiceStatus('partner', null, '');
+        };
+    }
     if (auraVoiceSelect) {
         auraVoiceSelect.onchange = () => {
             storage.saveAuraVoice(auraVoiceSelect.value);
@@ -6041,6 +6257,29 @@ function openSettings() {
         'This is how I will sound during our conversation.');
     wireAuraTest(document.getElementById('testAuraPartnerVoiceBtn'), 'partner',
         () => pickAuraPartnerVoice(auraPartnerVoiceSelect && auraPartnerVoiceSelect.value),
+        'Hello — in Practice Mode, this is the voice of the person you are talking to.');
+
+    // The same for Azure. Separate from wireAuraTest because the call takes a region
+    // as well as a key, and threading a maybe-region through one shared wrapper would
+    // make both harder to read than having two.
+    const wireAzureTest = (btn, which, getVoice, phrase) => {
+        if (!btn) return;
+        btn.onclick = async () => {
+            tts.unlockAudio();      // this tap is also what unlocks audio on iOS
+            const key = (keyFieldValue(azureKeyInput) ?? (storage.loadAzureKey() || '')).trim();
+            if (!key) { showAzureVoiceStatus(which, 'warn', 'Enter your Azure Speech key above first.'); return; }
+            btn.disabled = true;
+            showAzureVoiceStatus(which, 'checking', 'Speaking…');
+            const res = await tts.testAzureVoice(key, storage.loadAzureRegion(), getVoice(), phrase);
+            btn.disabled = false;
+            showAzureVoiceStatus(which, res.ok ? 'ok' : 'warn', res.message);
+        };
+    };
+    wireAzureTest(document.getElementById('testAzureVoiceBtn'), 'own',
+        () => (azureVoiceSelect && azureVoiceSelect.value) || ttsAzure.DEFAULT_VOICE,
+        'This is how I will sound during our conversation.');
+    wireAzureTest(document.getElementById('testAzurePartnerVoiceBtn'), 'partner',
+        () => pickAzurePartnerVoice(azurePartnerVoiceSelect && azurePartnerVoiceSelect.value),
         'Hello — in Practice Mode, this is the voice of the person you are talking to.');
 
     const showNoveltyInput = document.getElementById('showNoveltyVoicesInput');
