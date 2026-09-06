@@ -26,6 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- The Settings screen no longer has a separate "Minimum spacing" control. It did the same job as "Button spacing" — the app always used whichever of the two was larger — so there is now one control for the space between buttons, and it sets the space around the outside of the screen as well. If your minimum was set higher than your spacing, your spacing has been moved up to match, so nothing looks any different.
+- Buttons in Settings no longer take their size from the Express Panel. They were being sized from a different screen, which meant resizing your keyboard quietly changed them; they now use the app's standard button size. On a side keyboard they are slightly smaller than before, and still comfortably larger than they used to be.
+
 - Fixed: the buttons on the Express Panel and the keys on the on-screen keyboard now sit in exactly the same places. On most keyboard layouts the row holding the space bar did not quite line up between the two, so a keyguard cut for one was slightly out over the other.
 - Fixed: text too long for the space it is in is now shortened with a "..." on the end, on the Express Panel, on the response cards and on the command buttons when they are set to show words. Before, it was cut off mid-word with nothing to show that anything was missing, and a long phrase could stretch its own row taller than the rest of the Express Panel.
 - Fixed: with the command buttons set to show words, the word on the Listen button was larger than the words on the others, and could run over the edge of the button on a narrow keyboard dock.

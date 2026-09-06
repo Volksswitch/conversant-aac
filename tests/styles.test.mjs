@@ -68,22 +68,35 @@ test('braces balance', () => {
 test('the tokens the layout is built on are still defined', () => {
     // Each of these is load-bearing and each failed silently when its rule was
     // dropped: the layout still renders, just at the wrong size.
-    for (const decl of ['--ep-cell-w:', '--ep-cell-h:', '--ui-btn-min-w:', '--ui-btn-min-h:',
-                        '--app-margin:', '--dock-sep:', '--grid-gap:', '--btn-min-dim:']) {
+    for (const decl of ['--ep-cell-h:', '--app-margin:', '--dock-sep:',
+                        '--grid-gap:', '--btn-min-dim:']) {
         assert.ok(css.includes(decl), `${decl} is not declared anywhere in styles.css`);
     }
-    // --ep-cell-* must be defined for BOTH dock modes; one alone means the other
-    // silently falls back to the 0px fallback and every derived size collapses.
-    // Each mode has SEVERAL rules (--dock-w/-h is set in one of them), so this looks
-    // for a block that sets --ep-cell-*, not merely the first block for that selector.
+    // --ep-cell-h must be defined for BOTH dock modes; one alone means the other
+    // silently falls back and the compose icon collapses to its floor. Each mode has
+    // SEVERAL rules (--dock-w/-h is set in one of them), so this looks for a block
+    // that sets --ep-cell-h, not merely the first block for that selector.
     for (const mode of ['body.conv-bottom', 'body.conv-side']) {
         const blocks = [];
         for (let at = css.indexOf(`${mode} {`); at >= 0; at = css.indexOf(`${mode} {`, at + 1)) {
             blocks.push(css.slice(at, css.indexOf('}', at)));
         }
         assert.ok(blocks.length, `no "${mode} {" rule at all — did a malformed comment eat it?`);
-        assert.ok(blocks.some(b => /--ep-cell-[wh]:/.test(b)),
-            `no "${mode}" rule sets --ep-cell-* — Express-derived button sizing has silently collapsed to its floor`);
+        assert.ok(blocks.some(b => /--ep-cell-h:/.test(b)),
+            `no "${mode}" rule sets --ep-cell-h — the compose icon has silently collapsed to its floor`);
+    }
+});
+
+test('the removed sizing tokens have not crept back', () => {
+    // --ui-btn-min-w/h made every Settings button inherit a size from the Express
+    // Panel, and --gap-min was a second spacing control that only ever duplicated the
+    // first. Both were removed in September 2026 (see the notes in styles.css). A
+    // half-restored version of either is worse than either state: a token declared and
+    // read in one place while everything else has moved on is exactly the kind of
+    // silent size change this file exists to catch.
+    for (const gone of ['--ui-btn-min-w', '--ui-btn-min-h', '--gap-min', '--ep-cell-w']) {
+        assert.ok(!css.includes(gone),
+            `${gone} is back in styles.css — it was deliberately removed; see the note on --ep-cell-h`);
     }
 });
 

@@ -126,7 +126,6 @@
     "testAuraPartnerVoiceBtn": "Says a few words in the practice partner's Deepgram voice.",
     "buttonSizeSlider": "How big the buttons are. Bigger ones are easier to hit, but fewer of them fit on the screen.",
     "buttonGapSlider": "The space between the buttons. On a keyguard this is the width of the bars between the holes.",
-    "minGapSlider": "The smallest space allowed between buttons, however big you make them.",
     "resetSizingBtn": "Puts button size and spacing back to how they started. Screen edge margin is left alone.",
     "sideDockPositionToggle": "Which side the Express Panel and keyboard sit on, the left or the right.",
     "bottomLayoutSelect": "How the Express Panel and keyboard are laid out when they sit along the bottom.",

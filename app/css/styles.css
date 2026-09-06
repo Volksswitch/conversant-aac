@@ -218,7 +218,6 @@
        — inter-component spacing stays 1·gap, the dock's internal surround ½·gap.
        The outer-padding wiring (incl. insetting the fixed dock) lands with the
        min-gap slider in the deferred change-rules; at 0 it's flush/invisible. */
-    --gap-min: 0;
     /* Keyboard separation (Ken, June 30 2026): the gap BETWEEN the dock (keyboard
        / Express Panel) and the rest of the UI. Independent of --grid-gap (the
        inter-button gap). The dock keeps its footprint at the screen edge; this
@@ -1024,49 +1023,46 @@ body.conv-bottom #dockArea { width: 100%; height: var(--dock-h); flex: 0 0 var(-
 body.conv-side   { --dock-w: var(--conv-dock-w, 30vw); }
 body.conv-bottom { --dock-h: var(--conv-dock-h, 30vh); }
 
-/* --- The Express Panel button as the size reference for the rest of the UI ---
-   (Ken, August 2 2026: "I'd like the size of the buttons in the Express Panel to
-   drive the size of all other buttons in the UI - that's because the user has the
-   most control over an 'acceptable' button size in the Express Panel.")
-
-   A standard (single-span) Express cell, derived from exactly the vars the dock
-   grid is laid out from, so it cannot drift from what is actually on screen:
-     #expressPanel pads ½·gap all round (plus --safe-bottom at the foot), and
-     #epGrid / .ep-row separate cells by 1·gap, so along each axis the panel
-     spends (count × gap) in total and the rest is divided by count.
+/* --- The height of one Express Panel cell -------------------------------------
+   Derived from exactly the vars the dock grid is laid out from, so it cannot drift
+   from what is on screen:
+     #expressPanel pads half a gap all round (plus --safe-bottom at the foot), and
+     #epGrid / .ep-row separate cells by one gap, so along each axis the panel spends
+     (count x gap) in total and the rest is divided by count.
    Derived rather than measured on purpose: it is correct before the panel has
-   rendered, while the keyboard is covering it, and while Settings is open over
-   the top of it — none of which a getBoundingClientRect() could survive.
+   rendered, while the keyboard is covering it, and while Settings is open over the
+   top of it - none of which a getBoundingClientRect() could survive.
 
-   The unconstrained axis is the viewport LESS twice the screen edge margin, since
-   the dock is inset by it at both ends of that axis. */
+   ⚠ ITS ONE REMAINING CONSUMER IS THE COMPOSE ICON, which is sized as a share of its
+   own cell. It used to drive the minimum size of every button in SETTINGS as well -
+   Ken, August 2 2026: "the user has the most control over an 'acceptable' button size
+   in the Express Panel", so the size they had accepted there was inherited everywhere
+   else. Removed September 2026 (Ken: "I was never happy with this one"): with the
+   panel's borders draggable the user sets sizes by looking at them, so a size
+   inherited from another screen buys nothing - and it cost a coupling that made
+   dragging the keyboard's edge silently resize buttons on a screen you were not
+   looking at, plus a percentage cap and two exceptions that existed only to stop it
+   overflowing the Settings panel. Settings buttons now take the standing floor,
+   --btn-min-dim, like everything else.
+
+   The width is gone with it: nothing else ever used it. */
 body.conv-bottom {
-    --ep-cell-w: calc((100vw - 2 * var(--app-margin) - var(--kbd-cols, 9) * var(--grid-gap)) / var(--kbd-cols, 9));
     --ep-cell-h: calc((var(--dock-h) - var(--safe-bottom) - var(--kbd-rows, 4) * var(--grid-gap)) / var(--kbd-rows, 4));
 }
 body.conv-side {
-    --ep-cell-w: calc((var(--dock-w) - var(--kbd-cols, 5) * var(--grid-gap)) / var(--kbd-cols, 5));
     --ep-cell-h: calc((100vh - 2 * var(--app-margin) - var(--safe-bottom) - var(--kbd-rows, 7) * var(--grid-gap)) / var(--kbd-rows, 7));
-}
-
-/* 70%, not 100%, because an Express cell is also a function of how many keys the
-   chosen layout shows at once — a 3-column side layout has very wide cells that no
-   Settings button needs to match (Ken). --btn-min-dim stays the absolute floor via
-   max(): at the bottom-dock default a cell is 54px tall while the standing button
-   floor is 4rem, so 70% alone would make Settings buttons SMALLER than they are
-   today. The larger of the two always wins. The 0px fallbacks keep this valid
-   before the dock class is on <body>, where it reduces to the old behaviour. */
-body {
-    --ui-btn-min-w: max(var(--btn-min-dim), calc(0.7 * var(--ep-cell-w, 0px)));
-    --ui-btn-min-h: max(var(--btn-min-dim), calc(0.7 * var(--ep-cell-h, 0px)));
 }
 
 /* Outer padding around the cluster = min-gap; regions separated by 1·gap.
    NOTE: the inset from the physical SCREEN edge is a different control —
    "Screen edge margin" / --app-margin — applied to #conversationMain and the dock,
    so it moves the dock too. Keyboard separation stays purely the dock↔content gap. */
+/* The padding round the outside is the SAME gap as everywhere else. It used to come
+   from "Minimum spacing", which was removed - one number now sets every space in the
+   app, including this one, which is also what a keyguard wants: its bars all the
+   same width, the outer frame included. */
 body.conv-side #mainArea,
-body.conv-bottom #mainArea { padding: var(--gap-min); gap: var(--grid-gap); }
+body.conv-bottom #mainArea { padding: var(--grid-gap); gap: var(--grid-gap); }
 
 /* Vertical budget. SIDE: the transcript height is JS-computed (it yields as
    command/response buttons grow); command:response keep 1:6 of the rest (10:60
@@ -2355,8 +2351,8 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
 
 #settingsContent button:not(.slider-step),
 #settingsContent select {
-    min-height: var(--ui-btn-min-h);
-    min-width: max(var(--btn-min-dim), min(var(--ui-btn-min-w), 45%));
+    min-height: var(--btn-min-dim);
+    min-width: var(--btn-min-dim);
 }
 
 /* The − / + slider steppers are the one exception, and it is a geometric one, not
@@ -2365,7 +2361,7 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
    take the height floor and a square-ish minimum instead — still a far bigger
    target than the 2.6rem they used to be. */
 #settingsContent .slider-step {
-    min-height: var(--ui-btn-min-h);
+    min-height: var(--btn-min-dim);
     min-width: var(--btn-min-dim);
     width: var(--btn-min-dim);
 }
@@ -2400,13 +2396,15 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
 }
 
 /* The Express card's actions carry TEXT, so they take the height floor and size their
-   own width. They must NOT keep the Express-derived width, and the reason is a
-   subtlety worth knowing: that width is `min(--ui-btn-min-w, 45%)`, and a PERCENTAGE
-   cannot resolve while the browser is computing an intrinsic (max-content) size, so it
-   collapses to ~0 there and the button measures 56px — then resolves to 99.5px at
-   layout time. Any fixed-size flex container holding a percentage-capped child has
-   this hazard, which is why .ee-tools is allowed to wrap rather than being sized
-   once. */
+   own width.
+
+   ⚠ THE HAZARD THAT PUT THIS RULE HERE IS GONE BUT IS WORTH KEEPING WRITTEN DOWN,
+   because it will come back the moment anyone caps a width with a percentage. Settings
+   buttons used to be capped at `min(<a derived width>, 45%)`, and a PERCENTAGE cannot
+   resolve while the browser is working out an intrinsic (max-content) size - so it
+   collapsed to about zero there and the button measured 56px, then resolved to 99.5px
+   at layout time. Any fixed-size flex container holding a percentage-capped child has
+   that hazard, which is why .ee-tools is allowed to wrap rather than being sized once. */
 #expressEditor .ee-row .ee-tools button {
     min-width: var(--btn-min-dim);
     min-height: var(--btn-min-dim);
@@ -2862,16 +2860,19 @@ dialog::backdrop {
    user's place. Cheap to recover from for anyone, expensive for someone with limited
    motor control, which is the population this app is for.
 
-   SQUARE at the height floor, rather than also taking --ui-btn-min-w: they are icon
-   buttons, so square is the right shape (matching .icon-btn), and it keeps both of
-   them inside the title bar even when a wide side dock squeezes the Settings panel
-   down to a couple of hundred pixels. */
+   SQUARE at the standing button floor: they are icon buttons, so square is the right
+   shape (matching .icon-btn), and it keeps both of them inside the title bar even when
+   a wide side dock squeezes the Settings panel down to a couple of hundred pixels.
+   They were briefly larger than that, inheriting a size from the Express Panel; that
+   rule is gone (see the note on --ep-cell-h), so on a side dock these are 56px rather
+   than 72px - still well above the 34px they were before Ken asked for them to be
+   made bigger, and the same floor every other Settings button takes. */
 #settingsHeader #settingsHelpBtn,
 #settingsHeader #closeSettingsBtn {
-    min-height: var(--ui-btn-min-h);
-    min-width: var(--ui-btn-min-h);
-    width: var(--ui-btn-min-h);
-    height: var(--ui-btn-min-h);
+    min-height: var(--btn-min-dim);
+    min-width: var(--btn-min-dim);
+    width: var(--btn-min-dim);
+    height: var(--btn-min-dim);
     padding: 0;
     border: none;
     border-radius: 4px;

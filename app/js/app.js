@@ -388,6 +388,12 @@ function initApp() {
     // Stamp the error log with this build's version (Ken, July 2026).
     storage.setAppVersion(APP_VERSION);
 
+    // Carry a removed setting's value into the one that replaced it, BEFORE anything
+    // reads either. "Minimum spacing" floored the gap, so somebody who set it higher
+    // than Button spacing was getting it as their real gap - dropping it would have
+    // tightened every gap on their device with no warning.
+    storage.foldInLegacyMinGap();
+
     // Counting rides on the SAME switch as the weekly report, so a tester who turns
     // reporting off is not still having their taps written to disk. Set before the
     // first event below, or that one event escapes the setting.
@@ -3678,7 +3684,7 @@ function applyConversationDockClasses() {
 // default; its solver is the next step). Under-specified bits (freed-space
 // split, exact shrink curve, calibration of the slider's right end to the true
 // max-growth point) are reasonable choices here, to react to.
-const GAP_MAX_REM = 1.4, MINGAP_MAX_REM = 1.4;   // slider 0–100 → 0..max rem
+const GAP_MAX_REM = 1.4;          // slider 0-100 -> 0..max rem
 const DOCKSEP_MAX_REM = 4.0;      // keyboard-separation slider 0–100 → 0..4rem
 // Screen-edge-margin slider 0–100 → 0..3rem. Smaller ceiling than the others on
 // purpose: this one is subtracted from BOTH sides of BOTH axes, so at 3rem it
@@ -3770,11 +3776,10 @@ function applyButtonSizing() {
     root.setProperty('--app-margin', `${appMargin.toFixed(2)}px`);
     const VW = layoutVW() - 2 * appMargin, VH = layoutVH() - 2 * appMargin;
 
-    // Slider values → px. Effective gap = max(gap-size, min-gap) (min-gap is a
-    // one-way floor; lowering it leaves gap-size put — Ken #3).
-    const minGap = (lerp(storage.loadMinGapPos(), 0, MINGAP_MAX_REM)) * rem;
-    const gapSize = (lerp(storage.loadButtonGapPos(), 0, GAP_MAX_REM)) * rem;
-    let gap = Math.max(gapSize, minGap);
+    // ONE number for every gap in the app, including the one around the outside.
+    // "Minimum spacing" used to floor this and was removed - see
+    // storage.foldInLegacyMinGap for why it earned nothing.
+    let gap = (lerp(storage.loadButtonGapPos(), 0, GAP_MAX_REM)) * rem;
 
     // Button size: middle (50) = the % default; >50 grows, <50 shrinks.
     const growth = (storage.loadButtonSizePos() - 50) / 50;
@@ -3796,7 +3801,7 @@ function applyButtonSizing() {
             transcriptV = 0.30 * VH - growth * (0.30 * VH - minTranscript);
         } else if (growth < 0) {
             // SHRINK: regions stay default; buttons shrink, gap fills.
-            gap = Math.max(gap, minGap) + (-growth) * SHRINK_GAP_REM * rem;
+            gap += (-growth) * SHRINK_GAP_REM * rem;
         }
         root.setProperty('--conv-dock-w', `${Math.round(dockW)}px`);
         root.setProperty('--conv-transcript-v', `${Math.round(transcriptV)}px`);
@@ -3809,13 +3814,12 @@ function applyButtonSizing() {
             const maxDockH = Math.max(0.30 * VH, 0.60 * VH - minTranscript); // transcript→floor
             dockH = 0.30 * VH + growth * (maxDockH - 0.30 * VH);
         } else if (growth < 0) {
-            gap = Math.max(gap, minGap) + (-growth) * SHRINK_GAP_REM * rem;
+            gap += (-growth) * SHRINK_GAP_REM * rem;
         }
         root.setProperty('--conv-dock-h', `${Math.round(dockH)}px`);
     }
 
     root.setProperty('--grid-gap', `${gap.toFixed(2)}px`);
-    root.setProperty('--gap-min', `${minGap.toFixed(2)}px`);
     // Keyboard separation: gap between the dock and the rest of the UI (does not
     // touch the dock footprint, so the keyguard holes don't move).
     const dockSep = lerp(storage.loadDockSepPos(), 0, DOCKSEP_MAX_REM) * rem;
@@ -5297,13 +5301,11 @@ function openSettings() {
     // Button sizing sliders (unitless 0–100).
     const buttonSizeSlider = document.getElementById('buttonSizeSlider');
     const buttonGapSlider = document.getElementById('buttonGapSlider');
-    const minGapSlider = document.getElementById('minGapSlider');
     const dockSepSlider = document.getElementById('dockSepSlider');
     const appMarginSlider = document.getElementById('appMarginSlider');
     const transcriptSepSlider = document.getElementById('transcriptSepSlider');
     buttonSizeSlider.value = storage.loadButtonSizePos();
     buttonGapSlider.value = storage.loadButtonGapPos();
-    minGapSlider.value = storage.loadMinGapPos();
     dockSepSlider.value = storage.loadDockSepPos();
     appMarginSlider.value = storage.loadAppMarginPos();
     transcriptSepSlider.value = storage.loadTranscriptSepPos();
@@ -6019,22 +6021,7 @@ function openSettings() {
         applyButtonSizing();
     };
     buttonGapSlider.oninput = () => {
-        // Gap can't go below the minimum gap (clamp the slider up to it).
-        let v = Number(buttonGapSlider.value);
-        const mg = Number(minGapSlider.value);
-        if (v < mg) { v = mg; buttonGapSlider.value = String(mg); }
-        storage.saveButtonGapPos(v);
-        applyButtonSizing();
-    };
-    minGapSlider.oninput = () => {
-        const mg = Number(minGapSlider.value);
-        storage.saveMinGapPos(mg);
-        // Raising min-gap above the current gap pushes the gap up to match
-        // (one-way; lowering min-gap leaves the gap where it is — Ken #3).
-        if (Number(buttonGapSlider.value) < mg) {
-            buttonGapSlider.value = String(mg);
-            storage.saveButtonGapPos(mg);
-        }
+        storage.saveButtonGapPos(Number(buttonGapSlider.value));
         applyButtonSizing();
     };
     // Screen edge margin — holds the WHOLE app off the physical screen edges, the
@@ -6057,12 +6044,11 @@ function openSettings() {
         applyButtonSizing();
     };
 
-    // Reset button size / spacing / minimum gap to their defaults (Ken).
+    // Reset button size and spacing to their defaults (Ken).
     document.getElementById('resetSizingBtn').onclick = () => {
         storage.resetButtonSizing();
         buttonSizeSlider.value = String(storage.loadButtonSizePos());
         buttonGapSlider.value = String(storage.loadButtonGapPos());
-        minGapSlider.value = String(storage.loadMinGapPos());
         // dockSepSlider is intentionally left untouched — keyboard separation is
         // not part of the button/gap sizing the reset restores (Ken).
         applyButtonSizing();

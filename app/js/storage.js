@@ -1167,7 +1167,6 @@ export function saveDoubleTapMs(ms) {
 // Setup-tier, supporter-assisted. Defaults reproduce the historical look.
 const DEFAULT_BTN_SIZE_POS = 50;   // MIDDLE = the % default layout (Ken June 30 2026); R grows, L shrinks
 const DEFAULT_BTN_GAP_POS = 0;     // → gap 0 (flush by default)
-const DEFAULT_MIN_GAP_POS = 0;     // → min-gap 0 by default
 const DEFAULT_DOCK_SEP_POS = 0;    // → no gap between the dock (keyboard / Express Panel) and the rest of the UI
 const DEFAULT_TRANSCRIPT_SEP_POS = 0; // → no extra gap between the transcript and the command bar
 const DEFAULT_APP_MARGIN_POS = 0;  // → app fills the screen to its edges, as it always has
@@ -1195,14 +1194,30 @@ export function saveButtonGapPos(pos) {
     settings.buttonGapPos = clampPos(pos, DEFAULT_BTN_GAP_POS);
     saveSettings(settings);
 }
-export function loadMinGapPos() {
-    const s = loadSettings();
-    return s.minGapPos == null ? DEFAULT_MIN_GAP_POS : clampPos(s.minGapPos, DEFAULT_MIN_GAP_POS);
-}
-export function saveMinGapPos(pos) {
+// "Minimum spacing" was REMOVED (Ken, September 2026). It was a floor under the gap,
+// and it existed to stop the button-size slider's growth squeezing the bar between
+// keyguard holes below a usable width. Measured across its whole range: with Button
+// spacing already set, moving it changed the gap by nothing at all - the app used
+// whichever of the two was larger, so a user setting both was setting one thing
+// twice. Its only separate effect was the padding around the main area, which now
+// comes from the gap like every other space in the app.
+//
+// ⚠ THE FOLD IS NOT TIDINESS - WITHOUT IT SOMEBODY'S PANEL SILENTLY TIGHTENS. Anyone
+// whose minimum was set higher than their spacing was getting the minimum as their
+// real gap, so dropping the key would shrink every gap on their device with no
+// warning and no way to tell what had happened. Taking the larger of the two into
+// Button spacing reproduces exactly what they had. Runs once; the key is deleted, so
+// a later change to Button spacing is never overridden by a ghost.
+export function foldInLegacyMinGap() {
     const settings = loadSettings();
-    settings.minGapPos = clampPos(pos, DEFAULT_MIN_GAP_POS);
+    if (settings.minGapPos == null) return false;
+    const legacy = clampPos(settings.minGapPos, 0);
+    const current = settings.buttonGapPos == null
+        ? DEFAULT_BTN_GAP_POS : clampPos(settings.buttonGapPos, DEFAULT_BTN_GAP_POS);
+    delete settings.minGapPos;
+    if (legacy > current) settings.buttonGapPos = legacy;
     saveSettings(settings);
+    return legacy > current;
 }
 // Keyboard separation — the gap between the dock (keyboard / Express Panel) and
 // the rest of the UI (transcript / command bar / response palette, and the main
@@ -1264,7 +1279,7 @@ export function resetButtonSizing() {
     const settings = loadSettings();
     delete settings.buttonSizePos;
     delete settings.buttonGapPos;
-    delete settings.minGapPos;
+    delete settings.minGapPos;   // legacy - see foldInLegacyMinGap
     // NOTE: dockSepPos (keyboard separation) is deliberately NOT reset here — it's
     // an independent layout preference, not part of button sizing (Ken).
     saveSettings(settings);
