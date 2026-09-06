@@ -1,7 +1,10 @@
 <#
     Export a document to PDF beside itself, through Word.
 
-      powershell -File scripts/doc-generators/export-pdf.ps1 "Documents\A.docx" "Documents\B.docx"
+      powershell -ExecutionPolicy Bypass -File scripts/doc-generators/export-pdf.ps1 "Documents\A.docx"
+
+    The -ExecutionPolicy flag is not optional on this machine: without it the script is
+    refused before it runs, which reads as a broken script rather than a policy.
 
     WHY THIS EXISTS. Several documents ship as a .pdf next to the .docx - that is the
     copy a tester actually opens, because it needs no Word and looks the same on every
