@@ -4101,9 +4101,18 @@ label.radio-label input[type="radio"] {
     border-radius: 10px;
     padding: 1.5rem;
     max-width: 26rem;
-    width: auto;
-    height: auto;
-    /* Tall content scrolls inside the card instead of growing past the cleared box. */
+    /* ⚠ fit-content, NOT auto - and this is the whole reason the card used to run the
+       full height of the app (Ken, September 2026). The browser's own stylesheet gives
+       every <dialog> `width: fit-content; height: fit-content`, and that is what makes
+       the `inset` + `margin: auto` above CENTRE a card rather than stretch one. Writing
+       `auto` overrode it, and for an absolutely positioned box with BOTH top and bottom
+       set, `height: auto` does not mean "as tall as the content" - it means "as tall as
+       the space between them". So the card filled everything down to the keyboard.
+       It was hidden horizontally the whole time by `max-width` capping the same stretch
+       at 26rem; vertically nothing capped it but max-height, which it duly grew to. */
+    width: fit-content;
+    height: fit-content;
+    /* Tall content still scrolls inside the card rather than growing past the box. */
     max-height: calc(100dvh - 2 * var(--app-margin) - 1rem);
     overflow: auto;
     box-shadow: 0 12px 40px var(--backdrop);
@@ -4133,6 +4142,9 @@ body.conv-side-left  .danger-dialog { left:  calc(var(--app-margin) + var(--dock
    card is misplaced on exactly the layout that has least room. */
 .danger-dialog.has-preview {
     max-width: none;
+    /* This one is deliberately stretched to the width between the two edges below, so
+       it takes the width back off fit-content. Its HEIGHT still fits its content. */
+    width: auto;
     left: calc(var(--app-margin) + var(--settings-tabs-w));   /* the column's 1px border is inside its width */
     right: var(--app-margin);
 }

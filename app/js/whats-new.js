@@ -23,7 +23,7 @@ import * as platform from './platform.js';
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
   "0.10.3": [
-    "New: you can now resize the areas of the conversation screen by dragging the borders between them, instead of using a slider. Turn it on in Settings, under \"Resizing the screen areas\", and the borders between the transcript, the controls, the responses and the keyboard become draggable. Dragging a border resizes the area directly below it and leaves everything further down where it is; the transcript at the top gives or takes the space.",
+    "New: you can now resize the areas of the conversation screen by dragging the borders between them, instead of using a slider. Turn it on in Settings, on the \"Screen Layout\" tab (which used to be called \"Button Sizes\"), under \"Resizing the screen areas\", and the borders between the transcript, the controls, the responses and the keyboard become draggable. Dragging a border resizes the area directly below it and leaves everything further down where it is; the transcript at the top gives or takes the space.",
     "The borders are locked until you turn that on, so a stray touch cannot move them, and they cannot be dragged at all while a conversation is under way. There is a \"Put the layout back\" button beside the switch if you want to start again, and your layout is saved with your settings profile like everything else.",
     "Your existing settings carry over, including from a settings profile or a backup saved before this version: a button size you had set becomes the same layout you had, and a minimum spacing becomes your spacing. Nothing needs doing.",
     "The \"Button size\" slider has gone. Dragging the keyboard's border does what it used to do, and does it where you can see the result; the half of it that only widened the gaps is what \"Button spacing\" already does.",
@@ -31,6 +31,7 @@ const RELEASE_NOTES = {
     "Buttons in Settings no longer take their size from the Express Panel. They were being sized from a different screen, which meant resizing your keyboard quietly changed them; they now use the app's standard button size. On a side keyboard they are slightly smaller than before, and still comfortably larger than they used to be.",
     "Fixed: the buttons on the Express Panel and the keys on the on-screen keyboard now sit in exactly the same places. On most keyboard layouts the row holding the space bar did not quite line up between the two, so a keyguard cut for one was slightly out over the other.",
     "Fixed: text too long for the space it is in is now shortened with a \"...\" on the end, on the Express Panel, on the response cards and on the command buttons when they are set to show words. Before, it was cut off mid-word with nothing to show that anything was missing, and a long phrase could stretch its own row taller than the rest of the Express Panel.",
+    "Fixed: the warning boxes that ask you to confirm something ran the full height of the screen. They are now the size of what they say.",
     "Fixed: with the command buttons set to show words, the word on the Listen button was larger than the words on the others, and could run over the edge of the button on a narrow keyboard dock."
   ],
   "0.10.2": [

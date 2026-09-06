@@ -208,7 +208,7 @@
                 <div class="settings-tab" data-tab="aboutme">About Me</div>
                 <div class="settings-tab" data-tab="textsize">Text &amp; Color</div>
                 <div class="settings-tab" data-tab="speech">Speech</div>
-                <div class="settings-tab" data-tab="input">Button Sizes</div>
+                <div class="settings-tab" data-tab="input">Screen Layout</div>
                 <div class="settings-tab" data-tab="conversation">Conversation</div>
                 <div class="settings-tab" data-tab="placeholders">Placeholders</div>
                 <div class="settings-tab" data-tab="practice">Practice</div>
@@ -490,7 +490,26 @@
                     </div>
                 </div>
                 <div class="tab-panel" data-tab="input">
-                    <!-- A section holding three sub-sections AND a loose control. The
+                    <!-- ⚠ A SECTION OF ITS OWN, AND FIRST ON THE TAB (Ken, September
+                         2026). It was briefly nested inside "Button sizes and gaps",
+                         which said the wrong thing twice: resizing the screen areas is
+                         not a kind of button sizing, and under the sub-section idiom
+                         (Rule 18) a group at that indent reads as acting on its
+                         siblings - so it looked like another way to size buttons.
+                         It comes first because it is the bigger decision: how the
+                         screen is divided, before how far apart the buttons sit. That
+                         is also why the tab is called "Screen Layout" and no longer
+                         "Button Sizes", which by then named the one thing it did not
+                         contain. -->
+                    <div class="setting-group" data-help="layoutBorders">
+                        <label>Resizing the screen areas</label>
+                        <label class="checkbox-row">
+                            <input type="checkbox" id="layoutUnlockToggle">
+                            Let me drag the borders to resize
+                        </label>
+                        <button id="resetLayoutBtn" type="button" class="reset-sizing-btn">Put the layout back</button>
+                    </div>
+<!-- A section holding three sub-sections AND a loose control. The
                          Reset button is deliberately NOT a sub-section of its own (Ken,
                          August 11 2026): sitting at the same indent as the three
                          sliders is what says it acts on all of them, where a heading
@@ -506,21 +525,6 @@
                             </div>
                         </div>
                         <button id="resetSizingBtn" type="button" class="reset-sizing-btn">Reset spacing to default</button>
-                    </div>
-                    <!-- ⚠ A SECTION OF ITS OWN, NOT A SUB-SECTION OF THE ONE ABOVE. It
-                         was briefly nested inside "Button sizes and gaps", which said
-                         the wrong thing twice over: resizing the screen areas is not a
-                         kind of button sizing, and under the sub-section idiom (Rule 18)
-                         a group sitting at that indent reads as acting on its siblings -
-                         so it looked like another way to size buttons. It is a separate
-                         decision about the shape of the screen. -->
-                    <div class="setting-group" data-help="layoutBorders">
-                        <label>Resizing the screen areas</label>
-                        <label class="checkbox-row">
-                            <input type="checkbox" id="layoutUnlockToggle">
-                            Let me drag the borders to resize
-                        </label>
-                        <button id="resetLayoutBtn" type="button" class="reset-sizing-btn">Put the layout back</button>
                     </div>
                     <!-- Keyboard choice, where the dock sits, which side, and which
                          layout are ONE decision made in four parts (Ken, August 21 2026),
