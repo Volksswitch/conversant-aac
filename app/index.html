@@ -506,14 +506,21 @@
                             </div>
                         </div>
                         <button id="resetSizingBtn" type="button" class="reset-sizing-btn">Reset spacing to default</button>
-                        <div class="setting-group" data-help="layoutBorders">
-                            <label>Resizing the screen areas</label>
-                            <label class="checkbox-row">
-                                <input type="checkbox" id="layoutUnlockToggle">
-                                Let me drag the borders to resize
-                            </label>
-                            <button id="resetLayoutBtn" type="button" class="reset-sizing-btn">Put the layout back</button>
-                        </div>
+                    </div>
+                    <!-- ⚠ A SECTION OF ITS OWN, NOT A SUB-SECTION OF THE ONE ABOVE. It
+                         was briefly nested inside "Button sizes and gaps", which said
+                         the wrong thing twice over: resizing the screen areas is not a
+                         kind of button sizing, and under the sub-section idiom (Rule 18)
+                         a group sitting at that indent reads as acting on its siblings -
+                         so it looked like another way to size buttons. It is a separate
+                         decision about the shape of the screen. -->
+                    <div class="setting-group" data-help="layoutBorders">
+                        <label>Resizing the screen areas</label>
+                        <label class="checkbox-row">
+                            <input type="checkbox" id="layoutUnlockToggle">
+                            Let me drag the borders to resize
+                        </label>
+                        <button id="resetLayoutBtn" type="button" class="reset-sizing-btn">Put the layout back</button>
                     </div>
                     <!-- Keyboard choice, where the dock sits, which side, and which
                          layout are ONE decision made in four parts (Ken, August 21 2026),
