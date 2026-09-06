@@ -1368,7 +1368,7 @@ function startFreshListening() {
     // the turn just ended is closed off.
     metrics.paletteAbandoned('new turn');
     metrics.turnBoundary();
-    metrics.conversationStarted({ practice: practiceMode });
+    noteConversationStarted();
     currentPartnerText = '';
     currentPartnerUncertain = [];
     setOfferedChoices([]);   // a new partner turn — last turn's choices are gone
@@ -1649,7 +1649,7 @@ async function handleResponseSelected(response, index) {
     if (wasOpener && pendingNewConversation) {
         pendingNewConversation = false;
         await terminateConversation();
-        metrics.conversationStarted({ practice: practiceMode });
+        noteConversationStarted();
         // terminateConversation() resets the engine, so put it back into the opening
         // state the card was drawn from before the selection below consumes it.
         ui.showEngineState(engine.initiate({ partnerName: partnerLabel(activePartner) }));
@@ -3183,7 +3183,7 @@ async function speakAsUserTurn(historyText, spokenText = historyText, source = '
     // conversation-logic.captureAfterUserSpeaks. (Ken, August 7 2026.)
     if (opensConversation) {
         manualListenArmed = true;
-        metrics.conversationStarted({ practice: practiceMode });
+        noteConversationStarted();
     }
     const capture = convLogic.captureAfterUserSpeaks({
         opensConversation,
@@ -3886,6 +3886,30 @@ const GRIP_PX = 20;   // how close to a border counts as grabbing it
 
 function layoutDraggable() {
     return storage.loadLayoutUnlocked() && !realConversationInProgress();
+}
+
+/**
+ * A conversation has begun. The three places that can start one all say so through
+ * here, and metrics.conversationStarted is idempotent, so none of them has to know
+ * whether another got there first.
+ *
+ * ⚠ TALKING TO SOMEONE RE-LOCKS THE LAYOUT, and that is the point of having a hook
+ * here at all. Unlocking is something you DO to adjust the screen, not a state to
+ * leave the app in - the borders are dead during a real conversation anyway, so
+ * leaving the switch on only means it is still on tomorrow, when nobody is thinking
+ * about it and a stray drag is exactly what the lock exists to stop.
+ *
+ * Practice deliberately does NOT re-lock: that is where the adjusting is done, and
+ * re-locking after every rehearsal would make the one useful place to judge a layout
+ * cost a trip to Settings each time.
+ */
+function noteConversationStarted() {
+    metrics.conversationStarted({ practice: practiceMode });
+    if (practiceMode || !storage.loadLayoutUnlocked()) return;
+    storage.saveLayoutUnlocked(false);
+    refreshLayoutMode();
+    const toggle = document.getElementById('layoutUnlockToggle');
+    if (toggle) toggle.checked = false;
 }
 
 /**
