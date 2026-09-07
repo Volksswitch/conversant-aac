@@ -7,8 +7,9 @@ against the real Claude API. Built with Node's **built-in** test runner
 ## Running
 
 ```bash
-npm test            # Tiers 1 + 2 (deterministic). Tier 3 auto-skips if no key.
+npm test            # Tiers 1 + 2. Deterministic: Tier 3 does not run.
 npm run test:live   # Tier 3 only (needs an API key)
+CONVERSANT_LIVE=1 npm test   # everything, including Tier 3
 npm run test:watch  # re-run on file changes
 
 # coverage for the deterministic tiers:
@@ -59,7 +60,7 @@ path `"C:\Program Files\nodejs\node.exe" --test tests/`.
 |------|---------|----------------|----------------|
 | 1 — pure logic | `engine`, `stt`, `conversation-logic`, `worldview`, `relationships`, `control-phrases`, `placeholders`, `whats-new`, `prediction`, `keyboard-layouts`, `express-items`, `platform` `.test.mjs` | no | The Conversation Engine; the STT layer (checkpoint, echo filter, "app speaking" guard, restart/error); the generateOptions decision logic + silent-dead-end tripwires (`conversation-logic`); the three-level privacy withholding (`worldview`/`relationships`); the seeded-watermark reconciliation (`control-phrases`); placeholder sequencing/cap/gate; semver + notes (`whats-new`); word prediction; layout/symbols-page geometry; Express Panel item data; the measured per-platform capability verdicts and the warn-don't-block split (`platform`). |
 | 2 — data path | `llm.test.mjs` | no (fetch mocked) | `llm.js` parsing (`generateResponses`/`generateStatements`/`repairOptions`/`cleanupTranscript`/`repairSelf`) across structured, legacy-array, legacy-`options`, prose-wrapped, and malformed cases; request-body shaping (steer / avoid / perCategory / role mapping); and a mocked result flowing **through the engine** to a palette. |
-| 3 — live | `live.test.mjs` | **yes** | A curated set of real conversation openings hitting the actual model, asserting structural properties. The only tier that exercises real classification. Non-deterministic; a smoke test, not a gate. |
+| 3 — live | `live.test.mjs` | **yes** | A curated set of real conversation openings hitting the actual model, asserting structural properties. The only tier that exercises real classification. Non-deterministic; a smoke test, not a gate — and therefore **opt-in**, so that `npm test` is deterministic. |
 
 Coverage of the deterministic logic sits at ~80–100% line for every module above;
 the low-coverage remainder (`storage.js` file I/O, `tts.js` real speech, and the DOM
@@ -74,8 +75,17 @@ Tier 3 reads the key from, in order:
 2. a file named **`.anthropic-key`** at the repo root, containing just the key.
 
 Both are **gitignored** and are read only — the key is never printed or written by
-the tests. If neither is present, every Tier-3 scenario skips (so `npm test` still
-runs Tiers 1 and 2 unattended).
+the tests.
+
+⚠ **A key is no longer enough to make Tier 3 run, and that is the point.** It has to be
+asked for — `npm run test:live`, or `CONVERSANT_LIVE=1 npm test` for a full run. It used
+to run on any machine that had a key file, which made `npm test` non-deterministic on
+exactly the machines used to prepare a release: six real calls to a model, asserting on
+what the model chose to return. On September 6 2026 one run reported 770 of 771 with no
+way to tell which test, and it never recurred in seven further runs. **An unreproducible
+failure in a gate is worse than no gate**, because it teaches you to ignore the gate.
+
+Opting in without a key skips with a message rather than failing.
 
 Recommended: use a **dedicated, revocable** Anthropic key with a low spend limit
 for this — a full Tier-3 run is a handful of calls (a few cents).

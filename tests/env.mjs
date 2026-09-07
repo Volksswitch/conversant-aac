@@ -181,6 +181,37 @@ export function mockFetchFromDisk() {
 // --- API key for the live tier ----------------------------------------------
 // Order: ANTHROPIC_API_KEY env var, then a gitignored `.anthropic-key` file at the
 // repo root. Returns null when neither is present (the live tier then skips).
+/*
+ * Is the LIVE tier wanted on this run?
+ *
+ * ⚠ IT USED TO RUN WHENEVER A KEY FILE EXISTED, which made `npm test` — the ordinary
+ * pre-release check, and the thing RELEASING.md treats as a gate — non-deterministic
+ * on any machine set up to use it. Tier 3 makes six real calls to the model and
+ * asserts on what the model chose to return; its own header calls it "a smoke test,
+ * not a gate". So a release check could fail for reasons that have nothing to do with
+ * the release, which is exactly what happened on September 6 2026: one run reported
+ * 770 of 771 with no way to tell which test, and it never recurred in seven further
+ * runs. An unreproducible failure in a gate is worse than no gate, because it teaches
+ * you to ignore the gate.
+ *
+ * Now it is asked for explicitly. Two ways in, and both matter:
+ *
+ *   npm run test:live        — the ordinary route, and it needs no environment-variable
+ *                              syntax, which is why it is keyed off the npm script name
+ *                              rather than off a variable the caller has to set. Setting
+ *                              one differs between cmd, PowerShell and a POSIX shell,
+ *                              and this project runs in all three.
+ *   CONVERSANT_LIVE=1 npm test — the whole suite including live, for a release check or
+ *                              CI, where a single variable is easy to set.
+ *
+ * A key is still required on top of this: opting in without one skips, with a message
+ * saying so, rather than failing.
+ */
+export function liveTestsEnabled() {
+    if (process.env.CONVERSANT_LIVE && process.env.CONVERSANT_LIVE.trim()) return true;
+    return process.env.npm_lifecycle_event === 'test:live';
+}
+
 export function loadApiKey() {
     if (process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY.trim()) {
         return process.env.ANTHROPIC_API_KEY.trim();

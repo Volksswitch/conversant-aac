@@ -6,20 +6,29 @@
  * smoke test, not a gate: structural assertions, strict only where a property must
  * always hold (the bug scenario).
  *
- * Requires an Anthropic API key via the ANTHROPIC_API_KEY env var or a gitignored
- * `.anthropic-key` file at the repo root (see tests/README.md). With no key, every
- * scenario SKIPS — so `npm test` still runs Tiers 1 and 2 unattended.
+ * ⚠ OPT-IN, so that `npm test` is DETERMINISTIC (Ken, September 6 2026). Run it with
+ * `npm run test:live`, or include it in a full run with `CONVERSANT_LIVE=1 npm test`.
+ * It used to run on any machine that had a key file, which made the ordinary
+ * pre-release check non-deterministic — see liveTestsEnabled() in env.mjs for the
+ * failure that prompted this.
+ *
+ * Also requires an Anthropic API key, via the ANTHROPIC_API_KEY env var or a gitignored
+ * `.anthropic-key` file at the repo root (see tests/README.md). Opting in without a key
+ * skips with a message rather than failing.
  *
  * The key is read from the environment/file only and is NEVER printed or written
  * anywhere by these tests.
  */
-import { loadApiKey } from './env.mjs';
+import { loadApiKey, liveTestsEnabled } from './env.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as llm from '../app/js/llm.js';
 
-const KEY = loadApiKey();
-const skip = KEY ? false : 'no API key (set ANTHROPIC_API_KEY or add .anthropic-key) — Tier 3 skipped';
+const WANTED = liveTestsEnabled();
+const KEY = WANTED ? loadApiKey() : null;
+const skip = !WANTED
+    ? 'Tier 3 is opt-in — run `npm run test:live`, or `CONVERSANT_LIVE=1 npm test`'
+    : (KEY ? false : 'no API key (set ANTHROPIC_API_KEY or add .anthropic-key) — Tier 3 skipped');
 if (KEY) llm.setApiKey(KEY);
 const OPTS = { timeout: 45000 };   // real network latency
 

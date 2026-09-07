@@ -196,6 +196,13 @@ The ritual:
    `app/js/settings-help.js`. `npm test` fails when the two have drifted, so running
    the tests before the push catches a missed regeneration; this step is here so it
    does not depend on that.
+
+   **Also run `npm run test:live` before the push.** Tier 3 became opt-in on September
+   6 2026 so that `npm test` is deterministic (see `tests/README.md` for the failure
+   that prompted it) — which means it now runs only when somebody asks. It is the ONLY
+   tier that exercises the model's real classification, and the only one that would
+   have discovered the July 2026 silent stall, so a release is the moment it earns its
+   few cents. It is a smoke test, not a gate: read a failure, do not obey it.
 4. **Add the VERSION-HISTORY.md version-table row** for `<final>` (a one-line engineering
    summary — this table is released-versions-only).
 5. **Commit** the release (`app/js/app.js`, `app/sw.js`, `CHANGELOG.md`,
