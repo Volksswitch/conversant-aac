@@ -114,7 +114,7 @@ const HELP = {
     "azureKeyInput": "Paste your Azure Speech key here. It stays on this device and is never put into a backup.",
     "azureRegionInput": "The region your Azure account is in, such as eastus. A good key with the wrong region here is refused.",
     "pasteAzureKeyBtn": "Pastes an Azure Speech key you have already copied.",
-    "testAzureKeyBtn": "Checks your Azure key and region, and tells you whether they were accepted.",
+    "testAzureKeyBtn": "Checks your Azure Speech key and region, and tells you whether they were accepted.",
     "azureVoiceSelect": "Choose which Azure voice speaks as you.",
     "testAzureVoiceBtn": "Says a few words in the Azure voice you have chosen.",
     "azurePartnerVoiceSelect": "Choose the Azure voice for the person you practice with.",
@@ -132,7 +132,7 @@ const HELP = {
     "dataFolder": "The folder where your answers, your people, and your saved conversations are kept.",
     "settingsProfiles": "A saved copy of all your settings. With one saved you can put everything back after a reset, or set up another machine quickly.",
     "backupTransfer": "Puts everything about you into a single file, to keep somewhere safe or to move to another device.",
-    "deepgramKey": "One key for two paid extras: better hearing of the other person, and a much better speaking voice.",
+    "deepgramKey": "A paid service for hearing the other person and for speaking as you. It needs your Deepgram key.",
     "yourVoice": "The voice that speaks as you.",
     "listening": "How long a pause counts as the other person finishing, whether the microphone picks itself back up, and whether a chime sounds.",
     "buttonSizing": "How big every button in the app is and how much space sits between them. Changing these moves the holes in a keyguard.",
@@ -145,7 +145,7 @@ const HELP = {
     "practicePartnerVoice": "The voice used for the other person when you practice, so you can tell it apart from your own.",
     "appUpdates": "The app updates itself when a new version is ready. This is here for when you want it to check straight away.",
     "errorLog": "A record of anything that has gone wrong. It is what to send if you report a problem.",
-    "apiCost": "A rough estimate of what you have spent since the date shown, shown separately for Anthropic and for Deepgram.",
+    "apiCost": "A rough estimate of what you have spent since the date shown, listed separately for each company you use.",
     "reportProblem": "Write what went wrong in your own words, then tap Send. Everything technical is attached for you.",
     "usageSummary": "A plain summary of how much you have used the app, how often a suggestion fitted, and how long people waited.",
     "systemInfo": "Details about your device and settings, gathered for a problem report. Your keys are never included.",
@@ -164,7 +164,7 @@ const HELP = {
     "thinking": "The phrases it may say after that, if you are still choosing. One is picked at random.",
     "colorScheme": "Seven color schemes, from the usual look to bolder outlines, high contrast, dark, yellow on black, and one for color blindness.",
     "layoutBorders": "Unlock the borders between the transcript, the controls, the responses and the keyboard, then drag them to resize.",
-    "azureKey": "A second paid service for hearing and speaking. It needs your key and the region your account is in."
+    "azureKey": "A paid service for hearing the other person and for speaking as you. It needs your Azure Speech key and the region your account is in."
   }
 };
 // @@SETTINGS_HELP_END@@
