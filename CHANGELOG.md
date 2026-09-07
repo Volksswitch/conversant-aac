@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- The practice partner can no longer end up sounding exactly like you. If you set the partner to a particular voice and later choose that same voice for yourself, the partner quietly goes back to "Auto", which always picks a voice that isn't yours. If instead you deliberately choose your own voice for the partner, it is kept — it is your choice — and a line underneath tells you the two will sound the same.
+
 
 ## Version 0.10.5
 

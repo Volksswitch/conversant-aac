@@ -2085,6 +2085,66 @@ function pickPartnerVoice(chosen = storage.loadPartnerVoice()) {
     return pick ? pick.voiceURI : undefined;
 }
 
+/*
+ * ── The practice partner must not end up sounding exactly like the user ──────
+ *
+ * Both halves of this exist because both are reachable by going back and changing a
+ * setting, and a collision is SILENT: in Practice Mode you would hear yourself
+ * answering yourself, with nothing on screen saying why.
+ *
+ * ⚠ THE TWO DIRECTIONS ARE TREATED DIFFERENTLY ON PURPOSE (Ken, September 6 2026),
+ * and the rule is about whose decision it was:
+ *
+ *   Partner already set to Orion, then the user picks Orion as THEIR OWN voice.
+ *     The collision is a SIDE EFFECT of a decision about something else, so it is
+ *     repaired rather than announced: the partner drops back to Auto, which is
+ *     defined as "a voice that isn't yours" and therefore self-corrects. Not silent
+ *     in the way that matters — the picker visibly reads Auto afterwards.
+ *
+ *   Own voice already Orion, then the user goes to the partner picker and CHOOSES
+ *     Orion. That is a deliberate choice about this very setting, so it is kept and
+ *     the consequence is stated. Overriding it would be the app quietly refusing what
+ *     was just asked for, which is worse than a sentence of explanation.
+ */
+
+// The device voice the user actually speaks with. "Browser default" stores no URI, so
+// it has to be resolved the same way pickPartnerVoice resolves it — comparing against
+// an empty URI would match nothing and miss the collision entirely.
+function resolvedOwnDeviceVoice() {
+    const all = tts.getVoices();
+    if (!all.length) return null;
+    const ownURI = tts.getSelectedVoiceURI();
+    const own = all.find(v => v.voiceURI === ownURI) || all.find(v => v.default) || all[0];
+    return own ? own.voiceURI : null;
+}
+
+// The user changed their OWN voice. If the partner was explicitly set to that same
+// voice, release it back to Auto. Returns true when something was released, so the
+// caller can redraw its picker.
+function releasePartnerIfNowSameAsOwn(service, newOwnVoice) {
+    const slot = {
+        builtin:  { load: storage.loadPartnerVoice, save: storage.savePartnerVoice, empty: '' },
+        deepgram: { load: storage.loadAuraPartnerVoice, save: storage.saveAuraPartnerVoice, empty: null },
+        azure:    { load: storage.loadAzurePartnerVoice, save: storage.saveAzurePartnerVoice, empty: null },
+    }[service];
+    if (!slot) return false;
+    const partner = slot.load();
+    if (!partner || partner !== newOwnVoice) return false;   // Auto already self-corrects
+    slot.save(slot.empty);
+    return true;
+}
+
+// The user chose a PARTNER voice. If it is the voice they speak with, keep it and say
+// what it means. Returns the message, or '' when there is nothing to say.
+function partnerVoiceCollisionNote(service, chosenPartner) {
+    if (!chosenPartner) return '';                            // Auto cannot collide
+    const own = service === 'builtin' ? resolvedOwnDeviceVoice()
+              : service === 'azure'   ? (storage.loadAzureVoice() || ttsAzure.DEFAULT_VOICE)
+                                      : (storage.loadAuraVoice() || ttsDeepgram.DEFAULT_VOICE);
+    if (chosenPartner !== own) return '';
+    return 'That is the voice you speak with, so in Practice the other person will sound exactly like you.';
+}
+
 // Settings → Practice tab. Three states: practice already running (show which
 // scenario + the way out), no API key (practice needs the AI for BOTH the partner
 // and the response suggestions), or the scenario list.
@@ -5960,10 +6020,6 @@ function openSettings() {
         tts.speak('Hello — in Practice Mode, this is the voice of the person you are talking to.',
             { voiceURI: uri });
     };
-    // A changed selection makes any previously-reported Auto choice stale.
-    partnerVoiceEl.addEventListener('change', () => {
-        document.getElementById('partnerVoiceStatus').hidden = true;
-    });
 
     // No Save button (Ken, June 14 2026): every control applies AND persists
     // immediately, so Settings doubles as a live test bench (e.g. trying the
@@ -6334,12 +6390,19 @@ function openSettings() {
             storage.saveAzureVoice(azureVoiceSelect.value);
             tts.setPaidVoice('azure', azureVoiceSelect.value);
             showAzureVoiceStatus('own', null, '');
+            if (releasePartnerIfNowSameAsOwn('azure', azureVoiceSelect.value)) {
+                const cached = storage.loadAzureVoiceCatalog();
+                fillVoiceSelect(azurePartnerVoiceSelect, cached ? cached.voices : ttsAzure.VOICES,
+                    storage.loadAzurePartnerVoice(), AUTO_LABEL);
+                showAzureVoiceStatus('partner', null, '');
+            }
         };
     }
     if (azurePartnerVoiceSelect) {
         azurePartnerVoiceSelect.onchange = () => {
             storage.saveAzurePartnerVoice(azurePartnerVoiceSelect.value);
-            showAzureVoiceStatus('partner', null, '');
+            const note = partnerVoiceCollisionNote('azure', azurePartnerVoiceSelect.value);
+            showAzureVoiceStatus('partner', note ? 'warn' : null, note);
         };
     }
     if (auraVoiceSelect) {
@@ -6347,12 +6410,19 @@ function openSettings() {
             storage.saveAuraVoice(auraVoiceSelect.value);
             tts.setAuraModel(auraVoiceSelect.value);
             showAuraStatus('own', null, '');
+            // A partner set to this same voice is released back to Auto and the picker
+            // redrawn, so the change is visible where it happened.
+            if (releasePartnerIfNowSameAsOwn('deepgram', auraVoiceSelect.value)) {
+                fillAuraSelect(auraPartnerVoiceSelect, storage.loadAuraPartnerVoice(), AUTO_LABEL);
+                showAuraStatus('partner', null, '');
+            }
         };
     }
     if (auraPartnerVoiceSelect) {
         auraPartnerVoiceSelect.onchange = () => {
             storage.saveAuraPartnerVoice(auraPartnerVoiceSelect.value);
-            showAuraStatus('partner', null, '');
+            const note = partnerVoiceCollisionNote('deepgram', auraPartnerVoiceSelect.value);
+            showAuraStatus('partner', note ? 'warn' : null, note);
         };
     }
     // Test SPEAKS rather than just checking the key: a rejected key, a mistyped
@@ -6414,14 +6484,33 @@ function openSettings() {
         };
     }
 
+    // Writes the device partner-voice line, keeping its own "setting-hint" styling.
+    const showPartnerVoiceNote = (msg) => {
+        const el = document.getElementById('partnerVoiceStatus');
+        if (!el) return;
+        el.textContent = msg || '';
+        el.hidden = !msg;
+    };
+
     voiceSelect.onchange = () => {
         const voiceURI = voiceSelect.value || null;
         tts.setVoice(voiceURI);
         storage.saveVoiceURI(voiceURI);
+        // ⚠ RESOLVED, not raw: "Browser default" stores no URI, so the partner has to
+        // be compared against the voice that default actually resolves to.
+        if (releasePartnerIfNowSameAsOwn('builtin', resolvedOwnDeviceVoice())) {
+            populatePartnerVoiceSelect();
+            showPartnerVoiceNote('');
+        }
     };
     const partnerVoiceSelect = document.getElementById('partnerVoiceSelect');
     if (partnerVoiceSelect) {
-        partnerVoiceSelect.onchange = () => storage.savePartnerVoice(partnerVoiceSelect.value || '');
+        partnerVoiceSelect.onchange = () => {
+            storage.savePartnerVoice(partnerVoiceSelect.value || '');
+            // Also clears any stale line from a previous Auto report, which is what the
+            // listener this replaced used to do.
+            showPartnerVoiceNote(partnerVoiceCollisionNote('builtin', partnerVoiceSelect.value));
+        };
     }
     silenceThresholdInput.onchange = () => {
         const threshold = Number(silenceThresholdInput.value);
