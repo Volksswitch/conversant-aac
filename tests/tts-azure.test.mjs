@@ -246,3 +246,124 @@ test('the two paid voices keep separate settings', () => {
     assert.equal(tts.getPaidVoice('azure'), 'en-US-GuyNeural');
     assert.equal(tts.getAuraModel(), 'aura-2-orion-en', 'the Deepgram-shaped view still works');
 });
+
+/* --- the real catalog ----------------------------------------------------- */
+
+// One entry in the shape Azure's voices/list actually returns.
+const azVoice = (over = {}) => ({
+    ShortName: 'en-US-AvaMultilingualNeural',
+    DisplayName: 'Ava Multilingual',
+    Gender: 'Female',
+    Locale: 'en-US',
+    LocaleName: 'English (United States)',
+    VoiceType: 'Neural',
+    Status: 'GA',
+    ...over,
+});
+
+test('a catalog entry becomes a picker entry', () => {
+    const v = azure.normalizeVoice(azVoice());
+    assert.equal(v.id, 'en-US-AvaMultilingualNeural');
+    assert.equal(v.name, 'Ava Multilingual');
+    assert.equal(v.detail, 'Female · English (United States)');
+    assert.equal(v.locale, 'en-US');
+    assert.equal(v.preview, false);
+});
+
+test('retired non-neural voices are dropped', () => {
+    // Offering one is offering something that may stop working, which the user
+    // experiences as the app losing its voice rather than as a catalog change.
+    assert.equal(azure.normalizeVoice(azVoice({ VoiceType: 'Standard' })), null);
+    assert.equal(azure.normalizeVoice(azVoice({ ShortName: '' })), null);
+    assert.equal(azure.normalizeVoice(null), null);
+});
+
+test('a preview voice is kept but marked', () => {
+    // It can disappear between sessions, so the picker says so rather than letting a
+    // voice vanish with no explanation.
+    assert.equal(azure.normalizeVoice(azVoice({ Status: 'Preview' })).preview, true);
+});
+
+test('the hidden filter keeps English and drops everything else', () => {
+    const list = [
+        azVoice({ ShortName: 'en-GB-SoniaNeural', Locale: 'en-GB', DisplayName: 'Sonia' }),
+        azVoice({ ShortName: 'fr-FR-DeniseNeural', Locale: 'fr-FR', DisplayName: 'Denise' }),
+        azVoice({ ShortName: 'ja-JP-NanamiNeural', Locale: 'ja-JP', DisplayName: 'Nanami' }),
+        azVoice(),
+    ];
+    const out = azure.filterVoices(list);
+    assert.deepEqual(out.map((v) => v.locale), ['en-US', 'en-GB']);
+});
+
+test('American English sorts first, and the rest are kept rather than dropped', () => {
+    // Ken asked for English, American if possible. Ordering rather than excluding is
+    // what gets that without taking away the British, Australian, Canadian and Irish
+    // voices that already shipped — removing a voice somebody is using would be worse
+    // than a longer list.
+    const list = [
+        azVoice({ ShortName: 'en-AU-NatashaNeural', Locale: 'en-AU', DisplayName: 'Natasha' }),
+        azVoice({ ShortName: 'en-GB-SoniaNeural', Locale: 'en-GB', DisplayName: 'Sonia' }),
+        azVoice({ ShortName: 'en-US-GuyNeural', Locale: 'en-US', DisplayName: 'Guy' }),
+        azVoice({ ShortName: 'en-US-AnaNeural', Locale: 'en-US', DisplayName: 'Ana' }),
+    ];
+    const out = azure.filterVoices(list);
+    assert.deepEqual(out.map((v) => v.name), ['Ana', 'Guy', 'Natasha', 'Sonia']);
+    assert.equal(out[0].locale, 'en-US', 'American first');
+    assert.equal(out.length, 4, 'nothing English was dropped');
+});
+
+test('the catalog address is built from the region', () => {
+    assert.equal(azure.catalogUrl('westus2'),
+        'https://westus2.tts.speech.microsoft.com/cognitiveservices/voices/list');
+});
+
+test('fetching returns the filtered catalog and sends the key', async () => {
+    const realFetch = globalThis.fetch;
+    let seen = null;
+    globalThis.fetch = async (url, init) => {
+        seen = { url, init };
+        return { ok: true, status: 200, json: async () => [
+            azVoice(),
+            azVoice({ ShortName: 'de-DE-KatjaNeural', Locale: 'de-DE', DisplayName: 'Katja' }),
+        ] };
+    };
+    try {
+        const voices = await azure.fetchVoices('the-key', 'uksouth');
+        assert.match(seen.url, /^https:\/\/uksouth\./);
+        assert.equal(seen.init.headers['Ocp-Apim-Subscription-Key'], 'the-key');
+        assert.deepEqual(voices.map((v) => v.id), ['en-US-AvaMultilingualNeural']);
+    } finally {
+        globalThis.fetch = realFetch;
+    }
+});
+
+test('fetching THROWS rather than quietly returning the shipped handful', async () => {
+    // The caller has to be able to tell "this is the real catalog" from "this is the
+    // few we ship with" — in a picker those look identical and mean very different
+    // things when a voice the user expected is not in the list.
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = async () => ({ ok: false, status: 401 });
+    try {
+        await assert.rejects(() => azure.fetchVoices('bad', 'eastus'), /refused the key/);
+    } finally {
+        globalThis.fetch = realFetch;
+    }
+    globalThis.fetch = async () => ({ ok: true, status: 200, json: async () => [] });
+    try {
+        await assert.rejects(() => azure.fetchVoices('k', 'eastus'), /no English voices/);
+    } finally {
+        globalThis.fetch = realFetch;
+    }
+});
+
+test('fetching with no key fails before any request is made', async () => {
+    const realFetch = globalThis.fetch;
+    let called = false;
+    globalThis.fetch = async () => { called = true; return { ok: true, json: async () => [] }; };
+    try {
+        await assert.rejects(() => azure.fetchVoices('', 'eastus'), /No Azure Speech key/);
+        assert.equal(called, false, 'no pointless request went out');
+    } finally {
+        globalThis.fetch = realFetch;
+    }
+});

@@ -6027,6 +6027,10 @@ function openSettings() {
     wireKeyField(deepgramKeyInput, {
         load: () => storage.loadDeepgramKey() || '',
         save: (key) => storage.saveDeepgramKey(key),
+        // Typing a key is what makes the voices worth showing, so the pickers fill in
+        // as it is entered rather than on the next reload. Defined further down this
+        // function; it only ever runs from an event, so the order is fine.
+        onChange: () => refreshDeepgramVoices(),
     });
     reflectSttProvider();
     document.querySelectorAll('input[name="sttProvider"]').forEach((radio) => {
@@ -6084,12 +6088,24 @@ function openSettings() {
     wireKeyField(azureKeyInput, {
         load: () => storage.loadAzureKey() || '',
         save: (key) => storage.saveAzureKey(key),
+        onChange: () => {
+            // ⚠ THE CACHED CATALOG BELONGS TO THE OLD KEY. A different account can
+            // have a different list, so keeping it would show voices this key cannot
+            // use — which fails at the Test button rather than here, where the cause
+            // is no longer visible.
+            storage.clearAzureVoiceCatalog();
+            refreshAzureVoices({ force: true });
+        },
     });
     if (azureRegionInput) {
         azureRegionInput.value = storage.loadAzureRegion();
         azureRegionInput.addEventListener('input', () => {
             storage.saveAzureRegion(azureRegionInput.value);
             showAzureStatus(null, '');
+            // Which voices an account can use is a property of its region, so a region
+            // change invalidates the list just as a key change does.
+            storage.clearAzureVoiceCatalog();
+            refreshAzureVoices({ force: true });
         });
         // Put the stored value back on blur, so a field left half-typed or emptied
         // shows what is actually in force rather than what was abandoned. Blank means
@@ -6148,13 +6164,39 @@ function openSettings() {
             auto.textContent = autoLabel;
             select.appendChild(auto);
         }
-        voices.forEach((v) => {
+        // ⚠ A CHOSEN VOICE THAT IS NOT IN THE LIST IS STILL SHOWN, and this is the fix
+        // for a measured fault rather than a nicety. Without it the browser falls back
+        // to displaying the FIRST option while the app goes on speaking with the
+        // stored one — Settings and reality disagree silently, and the next touch of
+        // the picker overwrites the real choice with the one being displayed. It can
+        // happen whenever the catalog is narrower than it was: offline, a different
+        // key, or a voice Azure has retired.
+        const known = new Set(voices.map((v) => v.id));
+        const list = (selected && !known.has(selected))
+            ? [{ id: selected, name: selected, detail: 'not in this account’s list' }, ...voices]
+            : voices;
+        list.forEach((v) => {
             const opt = document.createElement('option');
             opt.value = v.id;
-            opt.textContent = `${v.name} — ${v.detail}`;
+            opt.textContent = v.preview ? `${v.name} — ${v.detail} (preview)` : `${v.name} — ${v.detail}`;
             if (v.id === selected) opt.selected = true;
             select.appendChild(opt);
         });
+    };
+
+    // A picker with nothing to offer yet. Both paid services get this until a key is
+    // entered (Ken, September 6 2026: "no need to populate the list until the user has
+    // provided a key (same for Deepgram)") — for Azure because the catalog genuinely
+    // cannot be fetched without one, and for Deepgram so the two behave the same way
+    // rather than one looking ready and the other not.
+    const showKeyNeeded = (select, service) => {
+        if (!select) return;
+        select.innerHTML = '';
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = `Add your ${service} key above to see the voices`;
+        select.appendChild(opt);
+        select.disabled = true;
     };
     const fillAuraSelect = (select, selected, autoLabel) =>
         fillVoiceSelect(select, ttsDeepgram.VOICES, selected, autoLabel);
@@ -6183,12 +6225,90 @@ function openSettings() {
         show('azureVoiceRow', provider === 'azure');
         show('azurePartnerRow', provider === 'azure');
     };
-    fillAuraSelect(auraVoiceSelect, storage.loadAuraVoice() || ttsDeepgram.DEFAULT_VOICE);
-    fillAuraSelect(auraPartnerVoiceSelect, storage.loadAuraPartnerVoice(), 'Auto (a voice that isn\'t yours)');
-    fillVoiceSelect(azureVoiceSelect, ttsAzure.VOICES,
-        storage.loadAzureVoice() || ttsAzure.DEFAULT_VOICE);
-    fillVoiceSelect(azurePartnerVoiceSelect, ttsAzure.VOICES,
-        storage.loadAzurePartnerVoice(), 'Auto (a voice that isn\'t yours)');
+    const AUTO_LABEL = 'Auto (a voice that isn\'t yours)';
+
+    // Deepgram: its catalog CANNOT be fetched from a browser — measured September 6
+    // 2026, its models endpoint is CORS-blocked (its own documentation says so, and
+    // the probe carried a known-blocked control, so a clean sweep could not have been
+    // mistaken for a probe that detects nothing). So the shipped list is the list; the
+    // only thing a key changes here is whether it is shown at all.
+    const refreshDeepgramVoices = () => {
+        if (!(storage.loadDeepgramKey() || '').trim()) {
+            showKeyNeeded(auraVoiceSelect, 'Deepgram');
+            showKeyNeeded(auraPartnerVoiceSelect, 'Deepgram');
+            return;
+        }
+        if (auraVoiceSelect) auraVoiceSelect.disabled = false;
+        if (auraPartnerVoiceSelect) auraPartnerVoiceSelect.disabled = false;
+        fillAuraSelect(auraVoiceSelect, storage.loadAuraVoice() || ttsDeepgram.DEFAULT_VOICE);
+        fillAuraSelect(auraPartnerVoiceSelect, storage.loadAuraPartnerVoice(), AUTO_LABEL);
+    };
+
+    /*
+     * Azure: fill from whatever we have, then fetch the real catalog if there is a key.
+     *
+     * ⚠ THE CACHE IS DRAWN FIRST AND THE FETCH ONLY REPLACES IT, rather than the picker
+     * sitting empty while the network is asked. Settings is opened to change one thing
+     * and closed again; a list that arrives after the user has looked away is a list
+     * they never saw.
+     *
+     * A failed fetch leaves whatever was already showing and says so on the status
+     * line, because falling silently back to the sixteen shipped voices is
+     * indistinguishable, in a picker, from that being all this account has.
+     */
+    let azureFetchInFlight = false;
+    const refreshAzureVoices = async ({ force = false } = {}) => {
+        const key = (storage.loadAzureKey() || '').trim();
+        if (!key) {
+            showKeyNeeded(azureVoiceSelect, 'Azure Speech');
+            showKeyNeeded(azurePartnerVoiceSelect, 'Azure Speech');
+            return;
+        }
+        if (azureVoiceSelect) azureVoiceSelect.disabled = false;
+        if (azurePartnerVoiceSelect) azurePartnerVoiceSelect.disabled = false;
+
+        const cached = storage.loadAzureVoiceCatalog();
+        const draw = (voices) => {
+            // ⚠ A VOICE NOBODY CHOSE IS NOT WORTH A WARNING, but one they DID choose is.
+            // Which voices an account can use varies by region, so the shipped default
+            // may genuinely be absent. When the user has never picked one, adopt the
+            // first voice this account actually has and save it, so the picker and the
+            // voice the app speaks with agree; when they HAVE picked one, keep showing
+            // it as "not in this account's list" rather than quietly moving them off
+            // the voice they chose.
+            let own = storage.loadAzureVoice();
+            if (!own) {
+                const known = voices.some((v) => v.id === ttsAzure.DEFAULT_VOICE);
+                own = known ? ttsAzure.DEFAULT_VOICE : (voices[0] && voices[0].id) || ttsAzure.DEFAULT_VOICE;
+                if (own !== ttsAzure.DEFAULT_VOICE) {
+                    storage.saveAzureVoice(own);
+                    tts.setPaidVoice('azure', own);
+                }
+            }
+            fillVoiceSelect(azureVoiceSelect, voices, own);
+            fillVoiceSelect(azurePartnerVoiceSelect, voices,
+                storage.loadAzurePartnerVoice(), AUTO_LABEL);
+        };
+        draw(cached ? cached.voices : ttsAzure.VOICES);
+        if (cached && !force) return;          // already have the real thing
+        if (azureFetchInFlight) return;
+
+        azureFetchInFlight = true;
+        try {
+            const voices = await ttsAzure.fetchVoices(key, storage.loadAzureRegion());
+            storage.saveAzureVoiceCatalog(voices);
+            draw(voices);
+            showAzureVoiceStatus('own', 'ok', `${voices.length} English voices available`);
+        } catch (err) {
+            showAzureVoiceStatus('own', 'warn',
+                `Showing a few voices only — the full list could not be loaded. ${(err && err.message) || ''}`.trim());
+        } finally {
+            azureFetchInFlight = false;
+        }
+    };
+
+    refreshDeepgramVoices();
+    refreshAzureVoices();
     reflectTtsProvider();
     document.querySelectorAll('input[name="ttsProvider"]').forEach((radio) => {
         radio.onchange = () => {

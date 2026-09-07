@@ -881,6 +881,48 @@ export function saveAzureRegion(region) {
     saveSettings(settings);
 }
 
+/*
+ * The Azure voice catalog, once fetched with the user's key.
+ *
+ * ⚠ ITS OWN localStorage KEY, DELIBERATELY NOT PART OF THE SETTINGS BUNDLE. Everything
+ * in `aac_settings` travels into settings profiles and backups, and a few hundred
+ * voice names is noise in a file whose job is to carry the user's choices — worse, a
+ * profile made on one account would then hand another account a catalog that is not
+ * theirs. This is a cache of what a service said, not a preference, so it stays on the
+ * device that asked.
+ *
+ * Kept only so the picker is populated instantly on the next launch and still works
+ * offline; a stale entry costs nothing, because the id the user chose keeps working
+ * whether or not the list is current.
+ */
+const AZURE_CATALOG_KEY = 'aac_azure_voices';
+
+export function loadAzureVoiceCatalog() {
+    try {
+        const raw = localStorage.getItem(AZURE_CATALOG_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed && parsed.voices) && parsed.voices.length ? parsed : null;
+    } catch {
+        return null;   // corrupt cache is the same as no cache: fetch again
+    }
+}
+
+export function saveAzureVoiceCatalog(voices) {
+    try {
+        localStorage.setItem(AZURE_CATALOG_KEY, JSON.stringify({
+            fetched: new Date().toISOString(),
+            voices,
+        }));
+    } catch {
+        /* out of room: the picker still works from what was fetched this session */
+    }
+}
+
+export function clearAzureVoiceCatalog() {
+    try { localStorage.removeItem(AZURE_CATALOG_KEY); } catch { /* nothing to clear */ }
+}
+
 // The Azure voice id (e.g. 'en-US-AvaMultilingualNeural'). Null means "use the
 // default". Kept separate from the Aura voice rather than sharing one "paid voice"
 // setting, so switching services back and forth does not lose the choice made in

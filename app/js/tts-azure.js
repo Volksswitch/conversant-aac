@@ -56,17 +56,24 @@ const SYNTH_TIMEOUT_MS = 6000;
 const MAX_CACHE_ENTRIES = 300;
 
 /*
- * The voices offered in Settings — a curated subset, not the full several hundred.
- * A picker is something a user with limited motor control has to scroll, so this
- * holds a spread of American voices plus the distinct accents, which is where the
- * real choice lies. Same reasoning, and roughly the same size, as the Aura list.
+ * The FALLBACK voices — a curated handful, used only until the real catalog has been
+ * fetched, and after that only if fetching fails.
  *
- * ⚠ THE FULL LIST IS FETCHABLE and deliberately is not fetched. The voices/list
- * endpoint needs the key and the network, so a picker built from it would be empty
- * offline, empty before a key is entered, and different on two devices — and the
- * user would have no way to tell which of those had happened. A static list is the
- * same everywhere and always there; the cost is that a new Azure voice needs a line
- * added here, which is a release, not an outage.
+ * ⚠ THIS LIST USED TO BE THE WHOLE OFFERING, AND THAT WAS WRONG (Ken, September 6
+ * 2026: the bench lists about 190 English voices and the picker showed 16). The
+ * reasoning for curating was that a long picker is a scroll, and scrolling is a real
+ * cost for limited motor control — but choosing a voice happens in SETTINGS, rarely,
+ * usually with a supporter helping, which is exactly where a longer list is
+ * affordable. A conversation-surface argument had been applied to a setup screen.
+ *
+ * ⚠ AND THE LOSS WAS SPECIFIC RATHER THAN GENERAL: every voice below is an adult, and
+ * Azure's catalog is the main reason to prefer Azure at all — the Speech Provider
+ * Guide calls it "the widest by a distance" and notes that documented child voices
+ * exist in it, against younger voices being "the nearest and most concrete need" in
+ * AAC. Hiding the catalog therefore hid the whole point of adding the service.
+ *
+ * Kept, rather than deleted, for the three moments there is no catalog to show: before
+ * a key is entered, offline, and when the fetch fails.
  */
 export const VOICES = [
     { id: 'en-US-AvaMultilingualNeural',    name: 'Ava',      detail: 'Female · American' },
@@ -92,6 +99,111 @@ export const DEFAULT_VOICE = VOICES[0].id;
 export function voiceLabel(id) {
     const v = VOICES.find((x) => x.id === id);
     return v ? `${v.name} — ${v.detail}` : id;
+}
+
+/* --- the real catalog ------------------------------------------------------
+ *
+ * Azure publishes what it can say, and it is browser-reachable: probed from a real
+ * origin September 6 2026 with a deliberately invalid key, it answered 401 with a
+ * response type of "cors", meaning the browser was allowed to read the reply and a
+ * real key will work. (Deepgram's equivalent is NOT reachable — measured in the same
+ * probe, against a known-blocked control, so the sweep can be trusted. That is why
+ * only this service gets a live list.)
+ */
+
+// ⚠ THE FILTER IS HIDDEN ON PURPOSE (Ken, September 6 2026: "You can hide the filter
+// for now and we can expose it later if there's a need"). It is a constant rather
+// than a control, so exposing it later means rendering these two values, not
+// rebuilding the picker.
+//
+// English, with American English FIRST rather than American English ONLY. Ken asked
+// for English and said American would be best if possible; ordering rather than
+// excluding gets that — the top of the list is American — without removing the
+// British, Australian, Canadian and Irish voices that already shipped in the fallback
+// list above, which would have taken a voice away from anyone already using one.
+// Tightening this to en-US only is a one-line change to PREFER_LOCALES/INCLUDE.
+export const VOICE_FILTER = {
+    include: /^en-/i,       // which locales appear at all
+    preferFirst: 'en-US',   // which locale sorts to the top
+};
+
+/*
+ * One entry from Azure's catalog, in the shape the picker uses.
+ *
+ * ⚠ NEURAL ONLY. Azure still lists retired "Standard" voices; offering one is offering
+ * something that may stop working, and the user would experience that as the app
+ * losing its voice rather than as a catalog change.
+ */
+export function normalizeVoice(v) {
+    if (!v || v.VoiceType !== 'Neural' || !v.ShortName) return null;
+    const name = v.DisplayName || v.LocalName || v.ShortName;
+    const gender = v.Gender ? `${v.Gender}` : '';
+    const where = v.LocaleName || v.Locale || '';
+    return {
+        id: v.ShortName,
+        name,
+        detail: [gender, where].filter(Boolean).join(' · '),
+        locale: v.Locale || '',
+        // Azure marks some voices Preview; they can disappear, so the picker says so
+        // rather than letting one vanish between sessions with no explanation.
+        preview: v.Status === 'Preview',
+    };
+}
+
+/*
+ * Apply the hidden filter and put the catalog in a useful order: American English
+ * first, then the other English locales, alphabetically by name within each. A
+ * catalog in the order the service happened to return it is a list nobody can scan.
+ */
+export function filterVoices(list, filter = VOICE_FILTER) {
+    const out = (list || [])
+        .map(normalizeVoice)
+        .filter((v) => v && filter.include.test(v.locale));
+    out.sort((a, b) => {
+        const ap = a.locale.toLowerCase() === filter.preferFirst.toLowerCase() ? 0 : 1;
+        const bp = b.locale.toLowerCase() === filter.preferFirst.toLowerCase() ? 0 : 1;
+        if (ap !== bp) return ap - bp;
+        if (a.locale !== b.locale) return a.locale.localeCompare(b.locale);
+        return a.name.localeCompare(b.name);
+    });
+    return out;
+}
+
+export function catalogUrl(region) {
+    return `https://${encodeURIComponent(region || DEFAULT_REGION)}.tts.speech.microsoft.com` +
+           `/cognitiveservices/voices/list`;
+}
+
+/*
+ * Fetch what this account can actually say. Returns the filtered, ordered list.
+ *
+ * Throws on failure rather than returning the fallback, so the caller can tell "we
+ * have the real catalog" from "we are showing the handful we ship with" — those look
+ * identical in a picker and mean very different things when a voice the user expected
+ * is not in it.
+ */
+export async function fetchVoices(key, region, timeoutMs = 10000) {
+    if (!key) throw new Error('No Azure Speech key is set.');
+    const where = (region || DEFAULT_REGION).trim();
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        const res = await fetch(catalogUrl(where), {
+            headers: { 'Ocp-Apim-Subscription-Key': key },
+            signal: controller.signal,
+        });
+        if (!res.ok) throw new Error(describeFailure(res.status, where));
+        const body = await res.json();
+        if (!Array.isArray(body)) throw new Error('The voice service sent an unreadable list of voices.');
+        const voices = filterVoices(body);
+        if (!voices.length) throw new Error('The voice service listed no English voices.');
+        return voices;
+    } catch (err) {
+        if (err && err.name === 'AbortError') throw new Error('The voice service took too long to answer.');
+        throw err;
+    } finally {
+        clearTimeout(timer);
+    }
 }
 
 /* --- pure helpers (unit-tested) ------------------------------------------- */
