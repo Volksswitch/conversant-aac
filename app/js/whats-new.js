@@ -22,6 +22,9 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.10.6": [
+    "The practice partner can no longer end up sounding exactly like you. If you set the partner to a particular voice and later choose that same voice for yourself, the partner quietly goes back to \"Auto\", which always picks a voice that isn't yours. If instead you deliberately choose your own voice for the partner, it is kept — it is your choice — and a line underneath tells you the two will sound the same."
+  ],
   "0.10.5": [
     "The list of paid voices now comes from your own account instead of a short built-in list. Once your Azure key is in, you can choose from every English voice your account offers — hundreds rather than sixteen — with the American ones at the top. Deepgram's list is unchanged at sixteen: its catalog cannot be read from inside a web page, so there is nothing to fetch.",
     "Both paid voice lists now stay empty until you have entered that service's key, because there is nothing to show you until then. The list appears as soon as the key is in, without reloading.",
