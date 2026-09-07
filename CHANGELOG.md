@@ -27,6 +27,13 @@ forgetting to tag one is only ever noise, never silence.
 ## Unreleased (next release)
 
 
+## Version 0.10.5
+
+- The list of paid voices now comes from your own account instead of a short built-in list. Once your Azure key is in, you can choose from every English voice your account offers — hundreds rather than sixteen — with the American ones at the top. Deepgram's list is unchanged at sixteen: its catalog cannot be read from inside a web page, so there is nothing to fetch.
+- Both paid voice lists now stay empty until you have entered that service's key, because there is nothing to show you until then. The list appears as soon as the key is in, without reloading.
+- If you are using a voice your account does not list — after changing your key or your region, say — the app carries on speaking with it and marks it in the list, rather than quietly moving you to a different voice.
+
+
 ## Version 0.10.4
 
 - New: Azure Speech is now offered alongside Deepgram, for both hearing the other person and speaking as you. You choose them separately, so you can hear through one service and speak through the other. Both are on Settings, on the "Speech" tab, and both still need only your own account — nothing goes through us.

@@ -22,6 +22,11 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.10.5": [
+    "The list of paid voices now comes from your own account instead of a short built-in list. Once your Azure key is in, you can choose from every English voice your account offers — hundreds rather than sixteen — with the American ones at the top. Deepgram's list is unchanged at sixteen: its catalog cannot be read from inside a web page, so there is nothing to fetch.",
+    "Both paid voice lists now stay empty until you have entered that service's key, because there is nothing to show you until then. The list appears as soon as the key is in, without reloading.",
+    "If you are using a voice your account does not list — after changing your key or your region, say — the app carries on speaking with it and marks it in the list, rather than quietly moving you to a different voice."
+  ],
   "0.10.4": [
     "New: Azure Speech is now offered alongside Deepgram, for both hearing the other person and speaking as you. You choose them separately, so you can hear through one service and speak through the other. Both are on Settings, on the \"Speech\" tab, and both still need only your own account — nothing goes through us.",
     "Which one is cheaper depends on how you use the app, and neither wins both halves. Azure speaks for about half what Deepgram charges and hears for about twice; Azure also gives a monthly free allowance that renews, where Deepgram gives a one-time credit. If you mostly want a better voice, Azure is likely to be cheaper, and may well be free.",
