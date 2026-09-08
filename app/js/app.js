@@ -1482,7 +1482,7 @@ function startFreshListening() {
 // 529 is Anthropic's overloaded, which is the same situation from the other side.
 function isRateLimit(err) {
     const m = (err && err.message) || '';
-    return /(429|529)/.test(m);
+    return /\b(429|529)\b/.test(m);
 }
 
 async function generateOptions(partnerText) {
