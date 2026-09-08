@@ -165,10 +165,17 @@ def t_sub_in_run_refuses_to_flatten_across_runs():
 
 
 def t_body_paragraphs_sees_inside_tables():
+    """The property is that a paragraph inside a table CELL is seen at all.
+
+    Deliberately asserted by looking for the cell's text rather than by comparing against
+    python-docx's document.paragraphs: that attribute is the very view which hides tables,
+    and check-docs.py rightly warns about any documentation script reading it. Proving the
+    point by naming the hidden paragraph is both the stronger test and the honest one.
+    """
     d = _doc_with_table()
     seen = [p.text for p in D.body_paragraphs(d)]
     assert 'Initial delay' in seen, 'table cells were skipped - the wrong index basis'
-    assert len(seen) > len(d.paragraphs), 'should see more than doc.paragraphs does'
+    assert 'An anchor paragraph for editing.' in seen, 'body paragraphs were skipped'
 
 
 def t_insert_para_refuses_inside_a_cell():

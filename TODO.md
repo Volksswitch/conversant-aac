@@ -75,14 +75,6 @@ the one that quietly waits forever.
 - **Why not yet:** already published; correcting a shipped note is Ken's call, and the
   manuals were worded to be correct regardless.
 
-### Architecture Overview still owes the deferring-option note
-- **Raised:** 2026-09-08 — the 0.10.6–0.10.9 sync was reverted when the document turned
-  out to be under review
-- **Wanted:** the response-palette section should record the deferring option ("give me a
-  second and I'll type it") — not a fifth slot but a property a card in any slot can
-  carry, the one option that does not close the open sequence, never placed first.
-- **Why not yet:** the document is now clear of review artifacts, so this can be synced.
-
 ---
 
 ## Done
@@ -93,3 +85,11 @@ the one that quietly waits forever.
   Overview: two sample conversations, one social and one at a pharmacy counter, with the
   mode noted in brackets. The section exists to make one point — the user never selects a
   mode, they choose what to say and the system follows.
+
+### Architecture Overview: the 0.10.6–0.10.9 sync
+- **Raised:** 2026-09-08 — reverted when the document turned out to be under review
+- **Done:** 2026-09-08 — synced once Ken cleared the review. Seven passages: the deferring
+  option; repair-of-self corrected to four operations plus the guess flag; the placeholder
+  ladder easing off; the honesty constraint, which the document had never carried; and the
+  Health & Safety module with conversation-authored questions.
+
