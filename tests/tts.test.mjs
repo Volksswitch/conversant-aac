@@ -126,3 +126,46 @@ test('the two same-named Apple voices produce distinguishable labels', () => {
     const enhanced = tts.voiceLabel(v('Ava', 'com.apple.voice.enhanced.en-US.Ava'));
     assert.notEqual(compact, enhanced);
 });
+
+/* ---------------------------------------------------------------------------
+ * The per-utterance voice override, which Practice Mode and the spoken Settings
+ * help both rely on.
+ *
+ * ⚠ WHY THIS IS TESTED AT ALL: the override used to be carried as two named fields
+ * and chosen with a two-way test — `provider === 'azure' ? opts.azureVoice :
+ * opts.auraModel`. That was right while there were two paid services and silently
+ * wrong the moment there were five: OpenAI, Google Cloud and ElevenLabs each fell to
+ * the ELSE branch and were handed a DEEPGRAM voice id, so every practice-partner line
+ * and every spoken help phrase on those three was refused and fell back to the device
+ * voice. Nothing errored; the app just stopped sounding like anyone but the device.
+ *
+ * The failure is invisible from inside a single service, which is why the check is
+ * that a service takes ITS OWN override and NEVER another's.
+ * ------------------------------------------------------------------------- */
+test('a per-utterance voice override reaches its own service and no other', () => {
+    const voiceFor = {
+        deepgram: 'aura-2-thalia-en',
+        azure: 'en-US-JennyNeural',
+        openai: 'sage',
+        google: 'en-GB-Neural2-A',
+        elevenlabs: 'VOICE-ID-XYZ',
+    };
+    for (const [service, expected] of Object.entries(voiceFor)) {
+        assert.equal(tts.voiceOverrideFor(service, { voiceFor }), expected,
+            `${service} must take its own override`);
+        for (const [other, wrong] of Object.entries(voiceFor)) {
+            if (other === service) continue;
+            assert.notEqual(tts.voiceOverrideFor(service, { voiceFor }), wrong,
+                `${service} must never be handed ${other}'s voice`);
+        }
+    }
+});
+
+test('a service with no override falls through to its own stored voice, never another\'s', () => {
+    // The unknown-service case, which is how the original bug arrived: an id nobody
+    // listed must resolve to nothing here rather than to whatever the else-branch held.
+    assert.equal(tts.voiceOverrideFor('openai', { voiceFor: { deepgram: 'aura-2-thalia-en' } }),
+        undefined, 'an absent override must not borrow another service\'s');
+    assert.equal(tts.voiceOverrideFor('openai', {}), undefined);
+    assert.equal(tts.voiceOverrideFor('openai'), undefined);
+});

@@ -134,7 +134,13 @@ const HELP = {
     "azureVoiceSelect": "Choose which Azure voice speaks as you.",
     "testAzureVoiceBtn": "Says a few words in the Azure voice you have chosen.",
     "azurePartnerVoiceSelect": "Choose the Azure voice for the person you practice with.",
-    "testAzurePartnerVoiceBtn": "Says a few words in the practice partner's Azure voice."
+    "testAzurePartnerVoiceBtn": "Says a few words in the practice partner's Azure voice.",
+    "openaiPartnerVoiceSelect": "Choose the OpenAI voice for the person you practice with.",
+    "testOpenaiPartnerVoiceBtn": "Says a few words in the practice partner's OpenAI voice.",
+    "googlePartnerVoiceSelect": "Choose the Google Cloud voice for the person you practice with.",
+    "testGooglePartnerVoiceBtn": "Says a few words in the practice partner's Google Cloud voice.",
+    "elevenlabsPartnerVoiceSelect": "Choose the ElevenLabs voice for the person you practice with.",
+    "testElevenlabsPartnerVoiceBtn": "Says a few words in the practice partner's ElevenLabs voice."
   },
   "radioGroups": {
     "sttProvider": "Who turns the other person's speech into words. Your browser does it free. Deepgram and Azure are paid, and work where the browser cannot.",

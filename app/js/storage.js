@@ -925,6 +925,21 @@ export function saveServiceVoice(id, voice) {
     saveSettings(settings);
 }
 
+/**
+ * The Practice partner's voice at a catalog service. Empty means "Auto" — pick one
+ * that is not the user's own — which is the state every service is put back into
+ * whenever the user changes which service they speak with.
+ */
+export function loadServicePartnerVoice(id) {
+    return loadSettings()[id + 'PartnerVoice'] || null;
+}
+
+export function saveServicePartnerVoice(id, voice) {
+    const settings = loadSettings();
+    settings[id + 'PartnerVoice'] = voice || null;
+    saveSettings(settings);
+}
+
 /** The model (OpenAI's tts model, ElevenLabs' model_id, Google's recognizer). */
 export function loadServiceModel(id) {
     return loadSettings()[id + 'Model'] || null;
@@ -986,6 +1001,36 @@ export function saveAzureVoiceCatalog(voices) {
 
 export function clearAzureVoiceCatalog() {
     try { localStorage.removeItem(AZURE_CATALOG_KEY); } catch { /* nothing to clear */ }
+}
+
+/*
+ * The same cache for a catalog service, keyed by its id.
+ *
+ * ⚠ IT IS NOT ONLY FOR THE PICKER, which is what the Azure one is for. "Auto" for the
+ * Practice partner means "a voice from this service that is not the one you speak
+ * with", and that has to be answerable OUTSIDE Settings, at the moment the partner
+ * speaks. Without the cache the only list available there is the built-in starter one —
+ * a single voice for ElevenLabs — so Auto would hand back the user's own voice and the
+ * partner would sound exactly like them.
+ */
+export function loadServiceVoiceCatalog(id) {
+    try {
+        const raw = localStorage.getItem(`aac_${id}_voices`);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed && parsed.voices) && parsed.voices.length ? parsed.voices : null;
+    } catch {
+        return null;
+    }
+}
+
+export function saveServiceVoiceCatalog(id, voices) {
+    try {
+        localStorage.setItem(`aac_${id}_voices`,
+            JSON.stringify({ fetched: new Date().toISOString(), voices }));
+    } catch {
+        /* out of room: the picker still works from what was fetched this session */
+    }
 }
 
 // The Azure voice id (e.g. 'en-US-AvaMultilingualNeural'). Null means "use the

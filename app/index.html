@@ -637,6 +637,39 @@
                             </div>
                             <p id="azurePartnerVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
                         </div>
+                        <!-- One partner picker per catalog service, so the rehearsal
+                             partner speaks through whichever service the user speaks
+                             through (Ken, September 8 2026: "Speaking voice and Practice
+                             voice are out of sync regarding service").
+
+                             This REPLACES the arrangement shipped in 0.10.10, which
+                             showed the DEVICE partner picker for these three on the
+                             reasoning that any device voice is audibly not-yours when
+                             your own is an OpenAI or ElevenLabs one. That is true and it
+                             is not what the panel reads as: it showed "ElevenLabs voice"
+                             above "Microsoft David", which looks like a setting that has
+                             not caught up rather than a decision. -->
+                        <div id="openaiPartnerRow" class="voice-row" hidden>
+                            <select id="openaiPartnerVoiceSelect" aria-label="Practice partner's OpenAI voice"></select>
+                            <div class="profiles-row profiles-actions">
+                                <button id="testOpenaiPartnerVoiceBtn" type="button">Test partner voice</button>
+                            </div>
+                            <p id="openaiPartnerVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
+                        </div>
+                        <div id="googlePartnerRow" class="voice-row" hidden>
+                            <select id="googlePartnerVoiceSelect" aria-label="Practice partner's Google Cloud voice"></select>
+                            <div class="profiles-row profiles-actions">
+                                <button id="testGooglePartnerVoiceBtn" type="button">Test partner voice</button>
+                            </div>
+                            <p id="googlePartnerVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
+                        </div>
+                        <div id="elevenlabsPartnerRow" class="voice-row" hidden>
+                            <select id="elevenlabsPartnerVoiceSelect" aria-label="Practice partner's ElevenLabs voice"></select>
+                            <div class="profiles-row profiles-actions">
+                                <button id="testElevenlabsPartnerVoiceBtn" type="button">Test partner voice</button>
+                            </div>
+                            <p id="elevenlabsPartnerVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
+                        </div>
                     </div>
                 </div>
                 <div class="tab-panel" data-tab="input">

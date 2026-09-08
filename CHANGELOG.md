@@ -26,6 +26,18 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- The practice partner's voice now always comes from the same service as your own
+  speaking voice. Choosing a service sets the partner to "Auto" — a voice from that
+  service that isn't the one you speak with — and you can change it from there. Before
+  this, picking an ElevenLabs voice for yourself left the practice partner showing one
+  of your device's own voices, which looked like a setting that hadn't caught up.
+- Fixed: with OpenAI, Google Cloud or ElevenLabs as your voice, the practice partner
+  and the spoken help in Settings were falling back to a device voice instead of
+  speaking through the service you chose.
+- Testing a key now also fetches the voices your account can actually use, and says
+  how many it found. If your key works but the list can't be loaded, it says that too
+  rather than leaving you with the standard voices and no explanation.
+
 
 ## Version 0.10.11
 

@@ -22,6 +22,11 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.10.12": [
+    "The practice partner's voice now always comes from the same service as your own speaking voice. Choosing a service sets the partner to \"Auto\" — a voice from that service that isn't the one you speak with — and you can change it from there. Before this, picking an ElevenLabs voice for yourself left the practice partner showing one of your device's own voices, which looked like a setting that hadn't caught up.",
+    "Fixed: with OpenAI, Google Cloud or ElevenLabs as your voice, the practice partner and the spoken help in Settings were falling back to a device voice instead of speaking through the service you chose.",
+    "Testing a key now also fetches the voices your account can actually use, and says how many it found. If your key works but the list can't be loaded, it says that too rather than leaving you with the standard voices and no explanation."
+  ],
   "0.10.11": [
     "The \"Test\" button beside each key on the Speech tab now does the same thing for every service: it quietly checks that the service accepts your key, without speaking and without costing anything. For OpenAI, Google Cloud and ElevenLabs it used to say a phrase out loud and charge you for it. To hear a voice, use the \"Test this voice\" button under the voice list — that is what it is for.",
     "Fixed: a saved key is shown shortened, like \"sk-ant-…4f2a\", and that shortened form was only being drawn in the even-width type it needs for four of the six boxes. All of them match now.",

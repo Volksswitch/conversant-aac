@@ -949,21 +949,45 @@ function pickAzurePartnerVoice(chosen = storage.loadAzurePartnerVoice()) {
     return other ? other.id : own;
 }
 
-// Everything that speaks AS SOMEONE OTHER THAN THE USER passes this: the Practice
-// Mode partner, the practice tour, and the spoken Settings help.
-//
-// ⚠ ALL THREE VOICES GO IN EVERY TIME, and that is the point rather than
-// belt-and-braces. tts.js ignores the ones that do not apply, so a caller never has
-// to know which service is in use — and the bug this prevents is one that has already
-// happened: spoken help passed only `voiceURI`, which the Deepgram backend ignores,
-// so a user on a paid voice heard the app explain itself in THEIR OWN voice.
-// Intelligible, and indistinguishable from themselves, which loses half the point.
+// The same rule again for a catalog service (OpenAI, Google Cloud, ElevenLabs): the
+// user's chosen partner voice, or the first in that service's list that is not the one
+// they speak with. Written as one function rather than three because these three DO
+// share a list shape — which is the whole claim of the catalog — where Deepgram's and
+// Azure's do not.
+function pickRestPartnerVoice(id, chosen = storage.loadServicePartnerVoice(id)) {
+    if (chosen) return chosen;
+    const provider = TTS_PROVIDERS[id];
+    if (!provider) return null;
+    const own = storage.loadServiceVoice(id) || provider.defaultVoice;
+    const list = (storage.loadServiceVoiceCatalog(id) || provider.voices || []);
+    const other = list.find((v) => v.id !== own);
+    return other ? other.id : own;
+}
+
+/*
+ * Everything that speaks AS SOMEONE OTHER THAN THE USER passes this: the Practice Mode
+ * partner, the practice tour, and the spoken Settings help.
+ *
+ * ⚠ EVERY SERVICE'S VOICE GOES IN EVERY TIME, and that is the point rather than
+ * belt-and-braces. tts.js takes the one that matches the service in use, so a caller
+ * never has to know which that is — and the bug this prevents has happened twice.
+ * Spoken help once passed only `voiceURI`, which the Deepgram backend ignores, so a
+ * user on a paid voice heard the app explain itself in THEIR OWN voice: intelligible,
+ * and indistinguishable from themselves, which loses half the point. Then the overrides
+ * were carried as two named fields, `auraModel` and `azureVoice`, and when three more
+ * services arrived they all fell to the Aura branch and were handed a Deepgram voice id.
+ *
+ * ⚠ SO IT IS A MAP KEYED BY SERVICE, and it must stay one. A named field per service is
+ * a thing to remember at every call site; a map keyed by the same id everything else
+ * uses cannot silently address the wrong service.
+ */
 function partnerVoiceOptions() {
-    return {
-        voiceURI: pickPartnerVoice(),
-        auraModel: pickAuraPartnerVoice(),
-        azureVoice: pickAzurePartnerVoice(),
+    const voiceFor = {
+        deepgram: pickAuraPartnerVoice(),
+        azure: pickAzurePartnerVoice(),
     };
+    for (const id of Object.keys(TTS_PROVIDERS)) voiceFor[id] = pickRestPartnerVoice(id);
+    return { voiceURI: pickPartnerVoice(), voiceFor };
 }
 
 function showApiKeyStatus(kind, msg) {
@@ -2216,7 +2240,11 @@ function releasePartnerIfNowSameAsOwn(service, newOwnVoice) {
         builtin:  { load: storage.loadPartnerVoice, save: storage.savePartnerVoice, empty: '' },
         deepgram: { load: storage.loadAuraPartnerVoice, save: storage.saveAuraPartnerVoice, empty: null },
         azure:    { load: storage.loadAzurePartnerVoice, save: storage.saveAzurePartnerVoice, empty: null },
-    }[service];
+    }[service] || (TTS_PROVIDERS[service] && {
+        load: () => storage.loadServicePartnerVoice(service),
+        save: (v) => storage.saveServicePartnerVoice(service, v),
+        empty: null,
+    });
     if (!slot) return false;
     const partner = slot.load();
     if (!partner || partner !== newOwnVoice) return false;   // Auto already self-corrects
@@ -2228,9 +2256,17 @@ function releasePartnerIfNowSameAsOwn(service, newOwnVoice) {
 // what it means. Returns the message, or '' when there is nothing to say.
 function partnerVoiceCollisionNote(service, chosenPartner) {
     if (!chosenPartner) return '';                            // Auto cannot collide
+    // ⚠ Looked up by service, never by an else-branch. The version this replaces read
+    // "azure ? ... : aura", so every catalog service was compared against a DEEPGRAM
+    // voice id and could never collide - the warning simply never appeared on three of
+    // the five. Same shape as the speak() routing and the cost rates.
     const own = service === 'builtin' ? resolvedOwnDeviceVoice()
-              : service === 'azure'   ? (storage.loadAzureVoice() || ttsAzure.DEFAULT_VOICE)
-                                      : (storage.loadAuraVoice() || ttsDeepgram.DEFAULT_VOICE);
+              : service === 'azure'    ? (storage.loadAzureVoice() || ttsAzure.DEFAULT_VOICE)
+              : service === 'deepgram' ? (storage.loadAuraVoice() || ttsDeepgram.DEFAULT_VOICE)
+              : TTS_PROVIDERS[service] ? (storage.loadServiceVoice(service)
+                                          || TTS_PROVIDERS[service].defaultVoice)
+                                       : null;
+    if (!own) return '';
     if (chosenPartner !== own) return '';
     return 'That is the voice you speak with, so in Practice the other person will sound exactly like you.';
 }
@@ -6389,31 +6425,30 @@ function openSettings() {
         // boolean each is how two end up visible together, which is what made the
         // voice settings read as duplicated before this was collapsed.
         show('builtinVoiceRow', provider === 'builtin');
-        // ⚠ THE DEVICE PARTNER VOICE ALSO COVERS THE CATALOG SERVICES, and without this
-        // the whole "Practice partner voice" section renders EMPTY when one of them is
-        // chosen — found in the browser, September 8 2026, and invisible from the code
-        // because each row hides itself correctly and nothing owns the total.
-        //
-        // Showing the device picker rather than building three more paid ones is a
-        // decision, not a shortcut. The practice partner needs two things: to be
-        // audibly NOT the user, and to be intelligible. When the user's own voice is an
-        // OpenAI, Google or ElevenLabs voice, EVERY device voice satisfies the first by
-        // construction — there is no collision to avoid — and pickPartnerVoice already
-        // excludes the novelty voices for the second. It also costs nothing, where a
-        // paid partner voice bills for words nobody outside a rehearsal ever hears.
-        // Reversible: if a paid partner voice is wanted, it is a row and a picker each.
-        show('builtinPartnerVoiceRow',
-             provider === 'builtin' || !!TTS_PROVIDERS[provider]);
+        // ⚠ THE PARTNER PICKER FOLLOWS THE SERVICE, ALWAYS — one row for the speaking
+        // voice and one for the partner, both belonging to the same service (Ken,
+        // September 8 2026). The section must never be empty and must never show a
+        // device voice under a paid heading; 0.10.10 did the second, which reads as a
+        // setting that has not caught up.
+        show('builtinPartnerVoiceRow', provider === 'builtin');
         show('auraRow', provider === 'deepgram');
         show('auraPartnerRow', provider === 'deepgram');
         show('azureVoiceRow', provider === 'azure');
         show('azurePartnerRow', provider === 'azure');
         // The catalog services (OpenAI, Google Cloud, ElevenLabs). Driven off the same
-        // provider value so exactly one picker is ever on screen, including when a
+        // provider value so exactly one pair is ever on screen, including when a
         // future service is added - this loop needs no edit for that.
-        for (const id of Object.keys(TTS_PROVIDERS)) show(id + 'VoiceRow', provider === id);
+        for (const id of Object.keys(TTS_PROVIDERS)) {
+            show(id + 'VoiceRow', provider === id);
+            show(id + 'PartnerRow', provider === id);
+        }
     };
     const AUTO_LABEL = 'Auto (a voice that isn\'t yours)';
+
+    // How to redraw each service's Practice-partner picker. Declared here, ahead of
+    // every registration below, because a `const` used before its declaration throws
+    // rather than reading undefined — see resetPartnerVoiceFor for what it is for.
+    const partnerRedraw = {};
 
     // Deepgram: its catalog CANNOT be fetched from a browser — measured September 6
     // 2026, its models endpoint is CORS-blocked (its own documentation says so, and
@@ -6431,6 +6466,15 @@ function openSettings() {
         fillAuraSelect(auraVoiceSelect, storage.loadAuraVoice() || ttsDeepgram.DEFAULT_VOICE);
         fillAuraSelect(auraPartnerVoiceSelect, storage.loadAuraPartnerVoice(), AUTO_LABEL);
     };
+    // Registered unconditionally, because refreshAuraVoices above returns early with no
+    // key and would leave the picker naming a voice the setting no longer holds.
+    partnerRedraw.deepgram = () =>
+        fillAuraSelect(auraPartnerVoiceSelect, storage.loadAuraPartnerVoice(), AUTO_LABEL);
+    partnerRedraw.azure = () => fillVoiceSelect(
+        azurePartnerVoiceSelect,
+        (storage.loadAzureVoiceCatalog() || {}).voices || ttsAzure.VOICES,
+        storage.loadAzurePartnerVoice(), AUTO_LABEL);
+    partnerRedraw.builtin = () => populatePartnerVoiceSelect();
 
     /*
      * Azure: fill from whatever we have, then fetch the real catalog if there is a key.
@@ -6498,10 +6542,50 @@ function openSettings() {
     refreshDeepgramVoices();
     refreshAzureVoices();
     reflectTtsProvider();
+    /*
+     * ⚠ CHANGING THE SPEAKING SERVICE PUTS THE PARTNER VOICE BACK TO AUTO, on the
+     * service just chosen (Ken, September 8 2026: "Whenever a user selects a service for
+     * their speaking voice, the practice partner voice should be set to 'Auto' on the
+     * selected service... There is no need to remember the user's previous practice
+     * partner voice choices").
+     *
+     * Auto is the only choice that is meaningful without knowing anything: it means
+     * "one from this service that is not the one you speak with", so it is right on
+     * arrival at a service the user has never opened. Carrying a remembered choice
+     * forward would restore a voice picked against a different own-voice, which can be
+     * the very voice they now speak with — the collision the picker warns about, handed
+     * to them silently.
+     *
+     * ⚠ IT CLEARS THE NEW SERVICE, NOT THE OLD ONE. Clearing what is being left behind
+     * would leave the arriving service showing whatever it held from months ago, which
+     * is the opposite of what was asked for and looks identical in the code.
+     */
+    /*
+     * ⚠ CLEARING THE SETTING IS ONLY HALF OF IT — THE PICKER HAS TO BE REDRAWN, and
+     * forgetting that is worse than not clearing at all: the stored voice reads Auto
+     * while the picker still names the old one, so the panel and the app disagree and
+     * the panel is the half the user believes.
+     *
+     * Found in the browser, twice, neither time by a test. Switching away from
+     * ElevenLabs and back left "Rachel" on screen against a stored Auto; and I then
+     * assumed Deepgram and Azure were already covered because they refill inside their
+     * own refresh — they are NOT, because that refresh RETURNS EARLY when there is no
+     * key, which is exactly the state someone switching between services to try them
+     * out is in. So every service registers, and none is assumed.
+     */
+    const resetPartnerVoiceFor = (service) => {
+        if (service === 'builtin') storage.savePartnerVoice('');
+        else if (service === 'deepgram') storage.saveAuraPartnerVoice(null);
+        else if (service === 'azure') storage.saveAzurePartnerVoice(null);
+        else if (TTS_PROVIDERS[service]) storage.saveServicePartnerVoice(service, null);
+        if (partnerRedraw[service]) partnerRedraw[service]();
+    };
+
     document.querySelectorAll('input[name="ttsProvider"]').forEach((radio) => {
         radio.onchange = () => {
             if (!radio.checked) return;
             storage.saveTtsProvider(radio.value);
+            resetPartnerVoiceFor(radio.value);
             reflectTtsProvider();
             applyTtsProvider();
             // Choosing a paid voice with no key is the commonest way to end up with a
@@ -6566,24 +6650,73 @@ function openSettings() {
             el.className = 'api-key-status' + (kind ? ' ' + kind : '');
         };
 
+        const partnerSelect = document.getElementById(id + 'PartnerVoiceSelect');
+        const showPartnerStatus = (kind, message) => {
+            const el = document.getElementById(id + 'PartnerVoiceStatus');
+            if (!el) return;
+            el.textContent = message || '';
+            el.hidden = !message;
+            el.className = 'api-key-status' + (kind ? ' ' + kind : '');
+        };
+
         // Fill from the built-in starter list first so the picker is never empty, then
-        // replace it with the account's own catalog once a key can fetch one.
+        // replace it with the account's own catalog once a key can fetch one. Both
+        // pickers are drawn from the SAME list — the partner speaks through the same
+        // service, so it can only offer the same voices.
         const fillFrom = (voices) => {
             fillVoiceSelect(voiceSelect, voices, storage.loadServiceVoice(id) || provider.defaultVoice);
+            fillVoiceSelect(partnerSelect, voices, storage.loadServicePartnerVoice(id), AUTO_LABEL);
+            // ⚠ AUTO CAN LAND ON THE USER'S OWN VOICE, and silently. It means "one from
+            // this service that is not yours", so where only one voice is known there is
+            // no other to take and the rehearsal partner ends up sounding exactly like
+            // the user. The picker warns when somebody CHOOSES that; Auto arriving at it
+            // unasked deserves the same sentence.
+            //
+            // Only once there IS a key, because that is when it is both true and
+            // actionable — before one, the shipped starter list is a placeholder and
+            // nothing on this tab works yet, so the warning would be noise on the
+            // ordinary path of someone who has just picked the service.
+            const note = (storage.loadServiceKey(id) || '').trim()
+                ? partnerVoiceCollisionNote(id, pickRestPartnerVoice(id)) : '';
+            showPartnerStatus(note ? 'warn' : null, note);
         };
-        fillFrom(provider.voices);
+        fillFrom(storage.loadServiceVoiceCatalog(id) || provider.voices);
+        // Redraw both pickers from whatever list is current — used when changing the
+        // speaking service puts this service's partner voice back to Auto.
+        partnerRedraw[id] = () => fillFrom(storage.loadServiceVoiceCatalog(id) || provider.voices);
 
+        /*
+         * Fetch the account's real voice list.
+         *
+         * ⚠ IT REPORTS WHAT HAPPENED rather than swallowing it, because it is a STEP OF
+         * THE KEY TEST and not a side effect of one (Ken, September 8 2026: "We've
+         * already decided that once the key has been provided (and tested), the app can
+         * retrieve the voice catalog. I'd suggest gathering the catalog be a step in the
+         * test process."). It used to swallow every failure on the reasoning that the
+         * starter list still works — which is true of the SPEAKING voice and false of
+         * the partner's: "Auto" means "one that is not yours", and ElevenLabs ships a
+         * single starter voice, so with no catalog Auto has nothing else to choose and
+         * the rehearsal partner sounds exactly like the user. A silent failure there
+         * produces a wrong voice, not a shorter list.
+         *
+         * Returns { ok, count, error } so the Test button can say so; still throws
+         * nothing, so the paths that call it in passing are unaffected.
+         */
         const refreshVoices = async () => {
-            if (!provider.catalog || !voiceSelect) return;   // OpenAI publishes no list
+            if (!provider.catalog || !voiceSelect) return { ok: true, count: 0, none: true };
             const key = (storage.loadServiceKey(id) || '').trim();
-            if (!key) return;
+            if (!key) return { ok: false, count: 0, error: 'no key' };
             try {
                 const voices = await ttsRest.fetchVoices(provider, key);
-                if (voices.length) fillFrom(voices);
-            } catch {
-                // A failed catalog fetch is not worth interrupting anyone for: the
-                // starter list still works, and the Test button reports a bad key with
-                // a message that actually explains it.
+                if (!voices.length) return { ok: false, count: 0, error: 'the list came back empty' };
+                // ⚠ CACHED, and not only so the picker fills instantly next launch.
+                // "Auto" for the partner has to be answerable OUTSIDE Settings, at the
+                // moment the partner speaks, and this is the only list available there.
+                storage.saveServiceVoiceCatalog(id, voices);
+                fillFrom(voices);
+                return { ok: true, count: voices.length };
+            } catch (err) {
+                return { ok: false, count: 0, error: (err && err.message) || 'the voice list could not be read' };
             }
         };
 
@@ -6643,11 +6776,26 @@ function openSettings() {
                 showStatus('checking', 'Checking your key…');
                 try {
                     await ttsRest.verifyKey(provider, key);
-                    showStatus('ok', `✓ Your ${provider.label} key is working`);
-                    // A key that has just been accepted is the moment to ask the account
-                    // what voices it actually has - otherwise the picker keeps offering
-                    // the built-in starter list until something else happens to refresh.
-                    refreshVoices();
+                    // ⚠ TWO STEPS, BOTH REPORTED: the key is accepted, then the account's
+                    // voice list is fetched. A key that has just been accepted is the one
+                    // moment we know we may ask, and the answer is what "Auto" for the
+                    // practice partner is chosen from - so a Test that stopped at "the
+                    // key works" would leave the partner picker holding a placeholder
+                    // roster while telling the user everything was fine.
+                    showStatus('checking', 'Key accepted — fetching your voices…');
+                    const list = await refreshVoices();
+                    if (list.none) {
+                        showStatus('ok', `✓ Your ${provider.label} key is working`);
+                    } else if (list.ok) {
+                        showStatus('ok', `✓ Your ${provider.label} key is working — `
+                            + `${list.count} voice${list.count === 1 ? '' : 's'} available`);
+                    } else {
+                        // The key IS good; say so, and do not let the second step's
+                        // failure read as a rejected key.
+                        showStatus('warn', `✓ Your ${provider.label} key is working, but the `
+                            + `voice list could not be loaded (${list.error}). The voices `
+                            + 'shown are the standard ones.');
+                    }
                 } catch (err) {
                     showStatus('warn', `✗ ${(err && err.message) || 'That key could not be checked.'}`);
                 } finally {
@@ -6671,11 +6819,44 @@ function openSettings() {
             };
         }
 
+        const testPartnerBtn = document.getElementById('test' + cap + 'PartnerVoiceBtn');
+        if (testPartnerBtn) {
+            testPartnerBtn.onclick = async () => {
+                const key = currentKey();
+                if (!key) { showPartnerStatus('warn', 'Enter your key first, then tap Test.'); return; }
+                testPartnerBtn.disabled = true;
+                showPartnerStatus('checking', 'Testing…');
+                // Resolves Auto exactly as the Practice partner will, so what is heard
+                // here is what will be heard there - the point of the button.
+                const voice = pickRestPartnerVoice(id, partnerSelect && partnerSelect.value);
+                const model = storage.loadServiceModel(id) || provider.defaultModel;
+                const res = await tts.testRestVoice(id, key, model, voice);
+                testPartnerBtn.disabled = false;
+                showPartnerStatus(res.ok ? 'ok' : 'warn', res.message);
+            };
+        }
+
         if (voiceSelect) {
             voiceSelect.onchange = () => {
                 storage.saveServiceVoice(id, voiceSelect.value);
                 tts.setPaidVoice(id, voiceSelect.value);
                 showVoiceStatus(null, '');
+                // If the partner was explicitly set to the voice the user has just
+                // taken for themselves, hand it back to Auto rather than letting the
+                // two silently become the same voice.
+                if (releasePartnerIfNowSameAsOwn(id, voiceSelect.value)) {
+                    fillVoiceSelect(partnerSelect,
+                        storage.loadServiceVoiceCatalog(id) || provider.voices, null, AUTO_LABEL);
+                    showPartnerStatus(null, '');
+                }
+            };
+        }
+
+        if (partnerSelect) {
+            partnerSelect.onchange = () => {
+                storage.saveServicePartnerVoice(id, partnerSelect.value);
+                const note = partnerVoiceCollisionNote(id, partnerSelect.value);
+                showPartnerStatus(note ? 'warn' : null, note);
             };
         }
 

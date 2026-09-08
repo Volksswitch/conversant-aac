@@ -118,6 +118,17 @@ export function getPaidVoice(name = provider) {
     return models[name] || null;
 }
 
+/**
+ * The caller's one-utterance voice override for a named service, if it gave one.
+ *
+ * Exported so it can be tested on its own: the routing it replaces was a two-way test
+ * that handed three services another service's voice id, and that fault is invisible
+ * from inside any single service. See the note at the call site in speak().
+ */
+export function voiceOverrideFor(service, opts = {}) {
+    return (opts.voiceFor && opts.voiceFor[service]) || undefined;
+}
+
 // Kept under the old names because the Deepgram wiring and its tests call them; they
 // are now the Deepgram-shaped view of the table above.
 export function setAuraModel(model) {
@@ -291,11 +302,23 @@ export function speak(text, opts = {}) {
         return speakBuiltin(said, opts, myToken);
     }
 
-    // Each caller may override the voice for one utterance — Practice Mode does, so
-    // the AI partner sounds distinct from the user whichever service is in use. The
-    // two overrides are named per service for the same reason the stored voices are:
-    // an Aura id handed to Azure is not a voice, it is a 400.
-    const model = (provider === 'azure' ? opts.azureVoice : opts.auraModel) || models[provider];
+    /*
+     * Each caller may override the voice for one utterance — Practice Mode does, so
+     * the AI partner sounds distinct from the user whichever service is in use. The
+     * overrides are named per service for the same reason the stored voices are: an
+     * Aura id handed to Azure is not a voice, it is a 400.
+     *
+     * ⚠ IT IS A LOOKUP BY SERVICE, NEVER A TWO-WAY TEST, and it used to be one:
+     * `provider === 'azure' ? opts.azureVoice : opts.auraModel`. That was correct
+     * while there were two paid services and silently wrong the moment there were
+     * five — OpenAI, Google Cloud and ElevenLabs each fell to the ELSE branch and were
+     * handed a DEEPGRAM voice id. Practice Mode and the spoken Settings help pass all
+     * the overrides on every utterance, so on those three services the partner's every
+     * line was refused and fell back to the device voice. Third instance of this exact
+     * shape after the provider whitelist and the cost rates; an unknown service must
+     * fall through to its own stored voice, never to another service's.
+     */
+    const model = voiceOverrideFor(provider, opts) || models[provider];
     lastUsed = { provider, voice: model };
     return paid.speak(said, { model })
         .then(() => {
