@@ -697,8 +697,8 @@ test('a response with no doubted words yields an empty list, never undefined', a
  * card the user would see.
  *
  * The wordings below are not invented: they are what the live model returned on
- * September 7 2026 when given "thnk you no" -- the case the beta reviewer reported
- * as a repair that made no sense.
+ * September 8 2026 when given "put me down for the erly one" -- damaged AND
+ * ambiguous, so it flags the repair as a guess.
  */
 const repairReply = (obj) => JSON.stringify(obj);
 
@@ -712,12 +712,12 @@ function inRepair(lastSaid) {
 }
 
 test('repair chain: a guessed rewording reaches the card marked as a guess', async () => {
-    mockFetch(repairReply({ rephrase: 'No thank you', expand: 'No thank you, I am all set.', guessed: true }));
-    inRepair('thnk you no');
-    const opts = await llm.repairOptions('thnk you no', [{ role: 'user', text: 'thnk you no' }]);
+    mockFetch(repairReply({ rephrase: 'Sign me up for the early one.', expand: 'Can you put me down for the early session?', guessed: true }));
+    inRepair('put me down for the erly one');
+    const opts = await llm.repairOptions('put me down for the erly one', [{ role: 'user', text: 'put me down for the erly one' }]);
     const snap = engine.setRepairOptions(opts);
     const rephrase = snap.palette.find(p => p.op === 'rephrase');
-    assert.equal(rephrase.text, 'No thank you');
+    assert.equal(rephrase.text, 'Sign me up for the early one.');
     assert.equal(rephrase.guessed, true, 'the guess survived every layer between the model and the card');
     assert.match(rephrase.hint, /best guess/i);
 });
@@ -741,14 +741,14 @@ test('repair chain: a reply with no guessed field behaves exactly as before', as
 
 test('the repair prompt asks the model to own up to guessing', async () => {
     mockFetch(repairReply({ rephrase: 'a', expand: 'b', guessed: false }));
-    await llm.repairOptions('thnk you no', []);
+    await llm.repairOptions('put me down for the erly one', []);
     const sys = sysText(getFetchCalls()[0]);
     assert.match(sys, /"guessed"/, 'the field is named');
     assert.match(sys, /never refuse/i, 'and it still has to produce both wordings');
 });
 
 test('a repair palette never leaves the fourth reserved cell empty', () => {
-    inRepair('thnk you no');
+    inRepair('put me down for the erly one');
     const palette = engine.getSnapshot().palette;
     assert.equal(palette.length, 4);
     // Every card must carry words that can actually be spoken the moment it is

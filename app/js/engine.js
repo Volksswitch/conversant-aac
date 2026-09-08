@@ -437,14 +437,20 @@ export function refreshPalette(responses) {
 // other palette, or for a wording that came back empty.
 //
 // ⚠ `guessed` IS THE MODEL SAYING IT HAD TO INFER WHAT THE USER MEANT, and it must
-// reach the card (Ken, September 7 2026). Measured against the live model: given
-// "thnk you no" it returns "No thank you", and given "asdf my meeting is on thurs"
-// it silently drops the junk. Both are plausible and neither is what the user
-// typed -- "thank you, no" and "no thank you" are opposite answers. So when it
-// guessed, the card says so, because the user is choosing under time pressure with
-// somebody waiting and has no other way to tell an inference from their own words.
-// This is the anti-fabrication rule applied to the user's OWN wording rather than
-// to facts about the world.
+// reach the card (Ken, September 7 2026). Measured against the live model: "put me
+// down for the erly one" comes back as "Sign me up for the early one" flagged as a
+// guess, and "asdf my meeting is on thurs" silently drops the junk. Those are
+// inferences, not the user's words, and the user is choosing under time pressure
+// with somebody waiting -- so the card has to say which is which. This is the
+// anti-fabrication rule applied to the user's OWN wording rather than to facts
+// about the world.
+//
+// ⚠ AN EARLIER VERSION OF THIS NOTE USED "thnk you no" AND WAS WRONG TWICE OVER
+// (Ken, September 8 2026). It claimed "thank you, no" and "no thank you" are
+// opposite answers: they are not, both decline. And re-measured after `guessed`
+// shipped, the model returns that one with guessed=FALSE, correctly -- it is
+// damaged but not ambiguous. So the example did not even demonstrate the feature.
+// When illustrating a guess, pick a case the model actually flags.
 export function setRepairOptions({ rephrase = '', expand = '', guessed = false } = {}) {
     for (const entry of state.palette) {
         if (entry.op === 'rephrase' && rephrase) {

@@ -128,15 +128,16 @@ const DEFAULT_RETRY_FOR_TESTS = [
 
 test('a GUESSED rewording says so on the card', () => {
     engine.reset();
-    engine.selectResponse({ slot: 'PREFERRED', text: 'thnk you no' });
+    engine.selectResponse({ slot: 'PREFERRED', text: 'put me down for the erly one' });
     engine.partnerSpeaking('Sorry, what?');
     engine.ingestClassification(
         { classification: { partner_action: 'OTHER', turn_status: 'COMPLETE', is_repair_initiator: true }, responses: [] },
         'Sorry, what?');
-    // The live model really does return "No thank you" for "thnk you no", which may
-    // be the opposite of what was meant. The user is choosing under time pressure
-    // and has no other way to tell an inference from their own words.
-    const s = engine.setRepairOptions({ rephrase: 'No thank you', expand: 'No thank you, I am all set.', guessed: true });
+    // Measured: the live model returns exactly this, flagged as a guess. "erly" is
+    // damaged AND ambiguous, so the wording offered is an inference rather than the
+    // user's own words - and they are choosing under time pressure with nothing else
+    // on screen to tell them which it is.
+    const s = engine.setRepairOptions({ rephrase: 'Sign me up for the early one.', expand: 'Can you put me down for the early session?', guessed: true });
     for (const op of ['rephrase', 'expand']) {
         const card = s.palette.find(p => p.op === op);
         assert.equal(card.guessed, true, `${op} is marked as a guess`);
