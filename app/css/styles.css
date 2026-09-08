@@ -925,11 +925,14 @@ body {
 .practice-cat { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--slot-initiative); font-weight: 700; }
 .practice-name { font-size: 1.15rem; font-weight: 700; color: var(--ink-strong); }
 .practice-desc { color: var(--ink-muted); }
+/* "End practice" keeps a color because it reports STATE - a rehearsal is running and
+   this is the way out of it - which Rule 6 says a latched control must show. The
+   add-a-key button beside it is an ordinary action and takes the standard look. */
 .practice-add-key, .practice-end {
     align-self: flex-start;
-    background: var(--accent); color: var(--ink-inverse); border: 2px solid var(--accent);
     padding: 0.5rem 1.2rem; border-radius: 8px; font-size: 1rem; cursor: pointer;
 }
+.practice-end { color: var(--ink-inverse); border: 2px solid var(--slot-dispreferred); }
 .practice-end { background: var(--slot-dispreferred); border-color: var(--slot-dispreferred); }
 
 /* Before Start, block interaction with the whole conversation surface and dim
@@ -2605,12 +2608,12 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
 .ee-tools .ee-del { color: var(--danger); border-color: var(--danger); }
 /* "Hear this phrase" — the same blue as About Me's "Speak my answer" and Sound
    Check's per-candidate speaker, so one look means one thing across every editor. */
-.ee-tools .ee-hear { background: var(--info-tint); border-color: var(--slot-initiative); color: var(--info); }
+/* The speak-aloud button: its label says what it does, so it needs no color. */
 /* Done closes the card, so it reads as the primary way out — and sits last, away from
    Delete, which is the one button here that cannot be undone. */
-.ee-tools .ee-done { background: var(--ok); color: var(--ink-inverse); border: none; font-weight: 600; }
+.ee-tools .ee-done { font-weight: 600; }
 .ee-tools .ee-done:hover { filter: brightness(1.1); }
-.ee-tools .ee-add { background: var(--accent); color: var(--ink-inverse); border: none; font-weight: 600; }
+.ee-tools .ee-add { font-weight: 600; }
 .ee-tools .ee-add:disabled { background: var(--ink-faint); }
 /* Button-color picker — pick by color, not by (meaningless) category name. */
 .ee-swatches { flex: 0 0 auto; display: flex; gap: 0.3rem; align-items: center; flex-wrap: wrap; }
@@ -2641,7 +2644,7 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
 }
 /* The four type buttons an undefined slot offers ("Not set yet — Phrase / Partner /
    Feeling / Place"). They sit in .ee-fields, so they wrap with everything else. */
-.ee-fields .ee-add { background: var(--accent); color: var(--ink-inverse); border: none; border-radius: 6px; padding: 0.4rem 0.7rem; font-weight: 600; cursor: pointer; }
+.ee-fields .ee-add { border-radius: 6px; padding: 0.4rem 0.7rem; font-weight: 600; cursor: pointer; }
 .ee-fields .ee-add:hover { filter: brightness(1.1); }
 
 /* Control-phrases editor (Settings → Controls) and the placeholder editor (Settings →
@@ -2658,7 +2661,7 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
 .cpe-section .ee-row { margin-top: 0.35rem; }
 .cpe-section .ee-row > input { flex: 1 1 auto; min-width: 0; padding: 0.4rem 0.5rem; border: 1px solid var(--edge); border-radius: 6px; font-size: 0.95rem; }
 #controlEditor .ee-add,
-#placeholderEditor .ee-add { margin-top: 0.45rem; background: var(--accent); color: var(--ink-inverse); border: none; border-radius: 6px; padding: 0.4rem 0.7rem; font-weight: 600; cursor: pointer; }
+#placeholderEditor .ee-add { margin-top: 0.45rem; border-radius: 6px; padding: 0.4rem 0.7rem; font-weight: 600; cursor: pointer; }
 #controlEditor .ee-add:hover,
 #placeholderEditor .ee-add:hover { filter: brightness(1.1); }
 #controlEditor .ee-reset,
@@ -3944,10 +3947,8 @@ label.radio-label input[type="radio"] {
     margin: 0 0 0.75rem;
 }
 
+/* An ordinary action inside a notice, not a colored call to action. */
 .wv-folder-prompt-btn {
-    background: var(--info);
-    color: var(--ink-inverse);
-    border: none;
     border-radius: 6px;
     padding: 0.7rem 1.1rem;
     font-size: 1rem;
@@ -4445,16 +4446,34 @@ body.conv-bottom     .danger-dialog {
     background: var(--surface-raised-alt);
 }
 
+/* ⚠ COLOR IN THE PANELS MEANS DANGER OR STATE - NEVER EMPHASIS (Ken, September 8 2026:
+   "why does the About Me tab have buttons with black and light blue backgrounds? ...
+   These kinds of differences make an app look a little amateurish").
+
+   Settings and About Me had grown FIVE button colors - gray, dark navy for "primary",
+   pale blue for "speak", green for "done", red for destructive - and the emphasis ones
+   were applied in some editors and not others, so they read as inconsistency rather than
+   as hierarchy. The Settings tabs' own actions have always been plain, and nothing there
+   is more primary than the button beside it: Load, Update and Delete are three equal
+   choices, and a card's Save is no more the point than the "Prefer not to say" next to
+   it.
+
+   ⚠ THE ACCENT FILL IS NOT DELETED FROM THE APP, and this is the distinction: the
+   CONVERSATION SURFACE keeps it, because there a primary action genuinely exists (Speak,
+   in the composer) and that surface has its own visual language - which is the second of
+   Section 13's two questions. What was wrong was spending it inside a settings panel.
+
+   What color still means here, both of which are worth a glance:
+     RED   - destructive, so it does not look like the button beside it
+     STATE - a chosen chip, a latched control (Rule 6)
+   Anything else is the standard button. */
 .wv-btn-primary {
-    background: var(--accent);
-    color: var(--ink-inverse);
+    /* Kept as a hook for markup and tests; no longer a different color. */
     border-color: var(--accent);
 }
 
 .wv-btn-speak {
-    background: var(--info-tint);
-    border-color: var(--slot-initiative);
-    color: var(--info);
+    /* Was a pale-blue tint; the label already says what it does. */
 }
 
 /* "How to say it" — a respelling for a name the voice gets wrong, with its own 🔊

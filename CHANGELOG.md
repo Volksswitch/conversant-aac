@@ -26,8 +26,12 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
-- The buttons and answer chips in About Me are now the same size as the rest of
-  Settings, rather than slightly smaller.
+- Settings has one kind of button again. About Me and the editors had grown black,
+  pale blue and green buttons alongside the ordinary ones, which made those screens
+  look like they belonged to a different app. Color there now means one of two
+  things: red for something that deletes, and a highlight for a setting that is
+  switched on. The buttons and answer chips in About Me are also the same size as
+  the rest of Settings now, rather than slightly smaller.
 
 - Settings looks like one panel again. Boxes of the same kind now use the same
   typeface, the same size and the same height, and buttons look like buttons

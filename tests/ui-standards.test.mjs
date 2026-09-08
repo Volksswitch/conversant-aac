@@ -76,12 +76,12 @@ const DELIBERATE = [
     ['.slider-step', ['fill', 'radius', 'size'],
      'the - and + steppers: square at the minimum dimension so two of them leave the slider '
      + 'room, and a deliberately larger glyph so the target reads at a glance'],
-    ['.ee-add, .wv-folder-prompt-btn, .practice-add-key, .wv-btn-primary', ['fill'],
-     'the primary action on the card: filled, because it is the one thing to do there'],
     ['.ee-del, .ee-reset, .wv-btn-danger, .wv-fact-del, .wv-entry-remove', ['fill'],
-     'destructive: a red border, so it does not look like the button beside it'],
-    ['.ee-hear, .wv-btn-speak', ['fill'],
-     'speak-this-aloud: tinted, because it produces sound rather than changing something'],
+     'destructive: a red border, so it does not look like the button beside it. This is the '
+     + 'ONLY thing color is spent on for an action in the panels'],
+    ['.practice-end', ['fill'],
+     'STATE, not emphasis: a rehearsal is running and this is the way out of it, which '
+     + 'Rule 6 says a latched control must show'],
     ['.wv-btn-link, .wv-back', ['fill'],
      'a link, not a button: transparent, because it navigates rather than acting'],
     ['.wv-chip, .wv-chip-on', ['fill', 'radius'],
