@@ -29,11 +29,20 @@ import path from 'node:path';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-// Text files git is actually tracking. Using git's own list means generated artifacts,
-// node_modules and the git-ignored .docx are all out of scope for free, and a new
-// directory is covered the moment it is committed rather than when someone remembers.
+// Text files git is tracking, PLUS new files not yet committed and not ignored.
+//
+// ⚠ THE SECOND HALF IS NOT AN EXTRA, IT IS THE HOLE THIS TEST FELL THROUGH. `git
+// ls-files` alone lists only what is already committed, so a BRAND NEW file — exactly
+// where a fresh mistake lives — was unguarded until after it had been committed, which
+// is one step too late to be useful. Found September 8 2026: three new speech modules
+// were written, one carried a raw NUL byte, and this test reported the repository clean.
+// `--others --exclude-standard` adds untracked-but-not-ignored files, so a file is
+// covered from the moment it exists.
 function trackedTextFiles() {
-    const out = execFileSync('git', ['ls-files', '-z'], { cwd: ROOT, encoding: 'utf8' });
+    const tracked = execFileSync('git', ['ls-files', '-z'], { cwd: ROOT, encoding: 'utf8' });
+    const fresh = execFileSync('git', ['ls-files', '--others', '--exclude-standard', '-z'],
+                               { cwd: ROOT, encoding: 'utf8' });
+    const out = tracked + fresh;
     const exts = new Set(['.mjs', '.js', '.py', '.json', '.md', '.html', '.css', '.ps1',
                           '.yml', '.yaml', '.txt', '.gs', '.sh', '.bat']);
     return out.split('\0')

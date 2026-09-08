@@ -33,6 +33,18 @@ forgetting to tag one is only ever noise, never silence.
   how they work has changed; there is simply one heading to open instead of two, which
   matters more as further services are added.
 
+- **Three more paid speech services: OpenAI, Google Cloud and ElevenLabs.** Each can
+  speak as you, and each can also hear the other person, so there are now six ways to
+  set up speech and you can mix them — hear through one service and speak through
+  another. Their keys go in the same **"Keys for paid services"** section as the others,
+  and each has a **Test** button that says a few words so you can hear the voice before
+  committing to it. OpenAI offers eleven voices; Google's and ElevenLabs' lists are
+  fetched from your own account once your key is in.
+- Choosing one of the three new services for **hearing** works a little differently from
+  Deepgram: they transcribe a phrase at a time rather than word by word, so what the
+  other person said appears when they pause rather than as they speak. The Speech
+  settings say so beside the choice.
+
 ## Version 0.10.9
 
 - The app now eases off on the phrases it says to hold your place. It speaks up

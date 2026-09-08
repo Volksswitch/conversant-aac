@@ -1,6 +1,8 @@
 import * as platform from './platform.js';
 import * as deepgram from './stt-deepgram.js';
 import * as azure from './stt-azure.js';
+import * as sttRest from './stt-rest.js';
+import { STT_PROVIDERS } from './speech-catalog.js';
 
 let recognition = null;
 // A non-browser capture backend (Deepgram or Azure), or null when using the built-in
@@ -376,8 +378,12 @@ function afterIngest(heardPartner, sawFinal) {
  * whichever service produced the words. A backend supplies text and nothing else.
  */
 export function init({ onResult, onSilence, onStatus, onPartnerSpeech, source,
-                       getDeepgramKey, getAzureKey, getAzureRegion, onBilled }) {
-    backend = (source === 'deepgram' || source === 'azure') ? source : 'browser';
+                       getDeepgramKey, getAzureKey, getAzureRegion, getRestKey,
+                       getRestModel, onBilled }) {
+    // 'browser' is anything not recognized, so an unknown source degrades to the free
+    // recognizer rather than to silence.
+    const isPaidSource = source === 'deepgram' || source === 'azure' || !!STT_PROVIDERS[source];
+    backend = isPaidSource ? source : 'browser';
     onTranscript = onResult;
     onSilencePeriod = onSilence;
     onStatusChange = onStatus;
@@ -387,7 +393,7 @@ export function init({ onResult, onSilence, onStatus, onPartnerSpeech, source,
     // back into is identical, so it is written once. Routing them separately is what
     // would let the echo filter or the checkpoint quietly apply to one and not the
     // other.
-    if (source === 'deepgram' || source === 'azure') {
+    if (isPaidSource) {
         const wiring = {
             onText: (text, isFinal) => { afterIngest(ingest(text, isFinal), !!isFinal); },
             onStatus: (status, detail) => {
@@ -396,13 +402,27 @@ export function init({ onResult, onSilence, onStatus, onPartnerSpeech, source,
             },
             onBilled,
         };
-        externalSource = source === 'deepgram'
-            ? deepgram.createSource({ getKey: getDeepgramKey || (() => ''), ...wiring })
-            : azure.createSource({
+        if (source === 'deepgram') {
+            externalSource = deepgram.createSource({
+                getKey: getDeepgramKey || (() => ''), ...wiring,
+            });
+        } else if (source === 'azure') {
+            externalSource = azure.createSource({
                 getKey: getAzureKey || (() => ''),
                 getRegion: getAzureRegion || (() => ''),
                 ...wiring,
             });
+        } else {
+            // A catalog service (OpenAI, Google Cloud, ElevenLabs). A phrase at a time
+            // rather than streaming - see stt-rest.js for why none of them can stream to
+            // a browser holding the user's own key.
+            externalSource = sttRest.createSource({
+                provider: STT_PROVIDERS[source],
+                getKey: getRestKey ? () => getRestKey(source) : (() => ''),
+                getModel: getRestModel ? () => getRestModel(source) : (() => ''),
+                ...wiring,
+            });
+        }
         return;
     }
 

@@ -486,6 +486,39 @@
                             </div>
                             <p id="azureKeyStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
                         </div>
+
+                        <div class="setting-item">
+                            <label for="openaiKeyInput">OpenAI</label>
+                            <div id="openaiKeyRow">
+                                <input type="text" id="openaiKeyInput" placeholder="Your OpenAI API key" autocomplete="off" spellcheck="false">
+                                <button id="pasteOpenaiKeyBtn" type="button" aria-label="Paste OpenAI key">Paste</button>
+                                <button id="testOpenaiKeyBtn" type="button">Test</button>
+                            </div>
+                            <p id="openaiKeyStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
+                        </div>
+
+                        <div class="setting-item">
+                            <label for="googleKeyInput">Google Cloud</label>
+                            <div id="googleKeyRow">
+                                <input type="text" id="googleKeyInput" placeholder="Your Google Cloud API key" autocomplete="off" spellcheck="false">
+                                <button id="pasteGoogleKeyBtn" type="button" aria-label="Paste Google Cloud key">Paste</button>
+                                <button id="testGoogleKeyBtn" type="button">Test</button>
+                            </div>
+                            <p id="googleKeyStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
+                        </div>
+
+                        <div class="setting-item">
+                            <label for="elevenlabsKeyInput">ElevenLabs</label>
+                            <!-- ElevenLabs identifies a voice by an id from their
+                                 library rather than by a name, so the picker below is
+                                 filled from the account once a key is in. -->
+                            <div id="elevenlabsKeyRow">
+                                <input type="text" id="elevenlabsKeyInput" placeholder="Your ElevenLabs API key" autocomplete="off" spellcheck="false">
+                                <button id="pasteElevenlabsKeyBtn" type="button" aria-label="Paste ElevenLabs key">Paste</button>
+                                <button id="testElevenlabsKeyBtn" type="button">Test</button>
+                            </div>
+                            <p id="elevenlabsKeyStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
+                        </div>
                     </div>
                     <!-- Hearing the other person. Built-in is free and works on
                          Windows; the paid backend exists for the platforms where the
@@ -500,7 +533,11 @@
                             <label class="radio-label"><input type="radio" name="sttProvider" value="builtin"> This browser's own (free)</label>
                             <label class="radio-label"><input type="radio" name="sttProvider" value="deepgram"> Deepgram transcription (paid)</label>
                             <label class="radio-label"><input type="radio" name="sttProvider" value="azure"> Azure transcription (paid)</label>
+                            <label class="radio-label"><input type="radio" name="sttProvider" value="openai"> OpenAI transcription (paid)</label>
+                            <label class="radio-label"><input type="radio" name="sttProvider" value="google"> Google Cloud transcription (paid)</label>
+                            <label class="radio-label"><input type="radio" name="sttProvider" value="elevenlabs"> ElevenLabs transcription (paid)</label>
                         </div>
+                        <p class="tab-intro">The last three send a phrase at a time rather than word by word, so the transcript fills in when the other person pauses rather than as they speak.</p>
                     </div>
                     <!-- The voice the app speaks WITH. The browser's own voices are
                          free and fine on Windows. On an iPad they are not: measured
@@ -514,6 +551,9 @@
                             <label class="radio-label"><input type="radio" name="ttsProvider" value="builtin"> This device's voices (free)</label>
                             <label class="radio-label"><input type="radio" name="ttsProvider" value="deepgram"> Deepgram voice (paid)</label>
                             <label class="radio-label"><input type="radio" name="ttsProvider" value="azure"> Azure voice (paid)</label>
+                            <label class="radio-label"><input type="radio" name="ttsProvider" value="openai"> OpenAI voice (paid)</label>
+                            <label class="radio-label"><input type="radio" name="ttsProvider" value="google"> Google Cloud voice (paid)</label>
+                            <label class="radio-label"><input type="radio" name="ttsProvider" value="elevenlabs"> ElevenLabs voice (paid)</label>
                         </div>
                         <!-- Only the picker for the chosen backend is shown. Showing
                              both at once is what made the voice settings read as
@@ -545,6 +585,30 @@
                                 <button id="testAzureVoiceBtn" type="button">Test this voice</button>
                             </div>
                             <p id="azureVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
+                        </div>
+                        <div id="openaiVoiceRow" hidden>
+                            <label for="openaiVoiceSelect">OpenAI voice</label>
+                            <select id="openaiVoiceSelect"></select>
+                            <div class="profiles-row profiles-actions">
+                                <button id="testOpenaiVoiceBtn" type="button">Test this voice</button>
+                            </div>
+                            <p id="openaiVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
+                        </div>
+                        <div id="googleVoiceRow" hidden>
+                            <label for="googleVoiceSelect">Google Cloud voice</label>
+                            <select id="googleVoiceSelect"></select>
+                            <div class="profiles-row profiles-actions">
+                                <button id="testGoogleVoiceBtn" type="button">Test this voice</button>
+                            </div>
+                            <p id="googleVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
+                        </div>
+                        <div id="elevenlabsVoiceRow" hidden>
+                            <label for="elevenlabsVoiceSelect">ElevenLabs voice</label>
+                            <select id="elevenlabsVoiceSelect"></select>
+                            <div class="profiles-row profiles-actions">
+                                <button id="testElevenlabsVoiceBtn" type="button">Test this voice</button>
+                            </div>
+                            <p id="elevenlabsVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
                         </div>
                     </div>
                     <div class="setting-group" data-help="practicePartnerVoice">

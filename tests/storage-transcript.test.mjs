@@ -347,9 +347,26 @@ test('NO API KEY reaches a settings profile, a backup, or a problem report', asy
     // checks, so a fourth credential is covered the moment it is added to that list —
     // which is the whole reason the list exists.
     await storage.restoreDataFolder();
-    storage.saveApiKey('sk-ant-secret');
-    storage.saveDeepgramKey('dg-secret');
-    storage.saveAzureKey('az-secret');
+    // Every secret gets a DISTINCT value, so a leak names which one leaked.
+    // ⚠ SET FROM storage.SECRET_KEYS ITSELF rather than from a hand-written list: the
+    // point of this test is that a new credential is covered the moment it joins that
+    // list, and a fixed list of three setters here would have quietly stopped covering
+    // the sixth. Adding a service means adding one line to SETTERS below, and the
+    // assertion at the end fails until you do.
+    const SETTERS = {
+        apiKey: (v) => storage.saveApiKey(v),
+        deepgramKey: (v) => storage.saveDeepgramKey(v),
+        azureKey: (v) => storage.saveAzureKey(v),
+        openaiKey: (v) => storage.saveServiceKey('openai', v),
+        googleKey: (v) => storage.saveServiceKey('google', v),
+        elevenlabsKey: (v) => storage.saveServiceKey('elevenlabs', v),
+    };
+    const secrets = {};
+    for (const k of storage.SECRET_KEYS) {
+        assert.ok(SETTERS[k], `no setter in this test for the secret "${k}" — add one`);
+        secrets[k] = `secret-value-for-${k}`;
+        SETTERS[k](secrets[k]);
+    }
     // The region is NOT a secret and must travel, so a restored setup asks only for
     // the key. Losing it would leave a good key pointed at the wrong service.
     storage.saveAzureRegion('westeurope');
@@ -367,7 +384,7 @@ test('NO API KEY reaches a settings profile, a backup, or a problem report', asy
     }
     // Belt and braces: the VALUES must not appear anywhere in the file, whatever key
     // they might have been stored under.
-    for (const secret of ['sk-ant-secret', 'dg-secret', 'az-secret']) {
+    for (const secret of Object.values(secrets)) {
         assert.equal(text.includes(secret), false, `the file must not contain ${secret}`);
     }
     assert.equal(saved.settings.azureRegion, 'westeurope', 'the region does travel');
@@ -381,7 +398,11 @@ test('NO API KEY reaches a settings profile, a backup, or a problem report', asy
     assert.equal(report.azureRegion, 'westeurope', 'but the region is reportable');
 
     // And a backup arriving from another device cannot plant a key on this one.
-    storage.applyPortableSettings({ azureKey: 'someone-elses-key', azureRegion: 'japaneast' });
-    assert.equal(storage.loadAzureKey(), 'az-secret', 'the local key is untouched');
+    storage.applyPortableSettings({ azureKey: 'someone-elses-key',
+                                    openaiKey: 'someone-elses-openai-key',
+                                    azureRegion: 'japaneast' });
+    assert.equal(storage.loadAzureKey(), secrets.azureKey, 'the local key is untouched');
+    assert.equal(storage.loadServiceKey('openai'), secrets.openaiKey,
+                 'a catalog service key is untouched too');
     assert.equal(storage.loadAzureRegion(), 'japaneast', 'but the region is adopted');
 });

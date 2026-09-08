@@ -452,7 +452,15 @@ const SETTINGS_DIR = 'settings';
 // cloud-synced folder, or into a problem report that gets mailed around. Neither
 // failure shows up anywhere: the app works perfectly with a key in a backup file.
 // A new credential goes in here and is covered by both.
-export const SECRET_KEYS = ['apiKey', 'deepgramKey', 'azureKey'];
+// ⚠ EVERY SERVICE KEY BELONGS HERE, and adding a service means adding its key in the
+// SAME change. This list is what keeps a key out of a settings profile, out of an
+// export, out of a backup and out of a problem report - four separate paths that all
+// read it - so a key omitted here is a key that quietly travels to somebody's cloud
+// drive. The catalog services (OpenAI, Google Cloud, ElevenLabs) were added September 8
+// 2026; their model and voice choices are NOT secret and travel normally, exactly as
+// Azure's region does.
+export const SECRET_KEYS = ['apiKey', 'deepgramKey', 'azureKey',
+                            'openaiKey', 'googleKey', 'elevenlabsKey'];
 
 const PROFILE_EXCLUDE = [...SECRET_KEYS, 'usageInputTokens', 'usageOutputTokens', 'usageCacheWriteTokens', 'usageCacheReadTokens', 'usageSttSeconds', 'usageTtsCharacters', 'usageSince', 'lastSeenVersion', 'activeSettingsProfile', 'installId', 'testerName', 'weeklySendLastAt', 'weeklyInfoHash', 'weeklyEndpoint', 'weeklyErrorMark'];
 
@@ -827,7 +835,12 @@ export function loadSttProvider() {
 // third service without touching both lines would therefore have looked like the
 // setting refusing to save, with nothing anywhere saying why. Adding a fourth now
 // means adding it here, once.
-const SPEECH_PROVIDERS = ['builtin', 'deepgram', 'azure'];
+// ⚠ A SERVICE MISSING FROM THIS LIST IS SILENTLY STORED AS 'builtin'. normalizeProvider
+// below falls back rather than throwing, which is right for a corrupted setting and
+// exactly wrong for a service somebody forgot to add: the radio button appears to work,
+// the choice is discarded on save, and the app goes on using the free voice. Found that
+// way when the catalog services were added, September 8 2026.
+const SPEECH_PROVIDERS = ['builtin', 'deepgram', 'azure', 'openai', 'google', 'elevenlabs'];
 
 function normalizeProvider(provider) {
     return SPEECH_PROVIDERS.includes(provider) ? provider : 'builtin';
@@ -868,6 +881,58 @@ export function loadAzureKey() {
 export function saveAzureKey(key) {
     const settings = loadSettings();
     settings.azureKey = key;
+    saveSettings(settings);
+}
+
+/*
+ * The catalog speech services (OpenAI, Google Cloud, ElevenLabs), September 8 2026.
+ *
+ * ONE PAIR OF ACCESSORS FOR ALL OF THEM rather than three pairs each: Ken expects more
+ * services, and a hand-written pair per vendor is six more functions every time. The id
+ * is the catalog id, so `openaiKey`, `googleKey`, `elevenlabsKey` are the stored names
+ * and each is listed in SECRET_KEYS above.
+ *
+ * ⚠ THE KEY NAME IS BUILT FROM THE ID, so an id that is not in SECRET_KEYS would store a
+ * key nothing excludes. loadServiceKey refuses an unknown id for exactly that reason -
+ * failing loudly beats writing a key into a file that gets synced.
+ */
+const SERVICE_KEY_NAMES = { openai: 'openaiKey', google: 'googleKey', elevenlabs: 'elevenlabsKey' };
+
+function serviceKeyName(id) {
+    const name = SERVICE_KEY_NAMES[id];
+    if (!name) throw new Error('unknown speech service: ' + id);
+    return name;
+}
+
+export function loadServiceKey(id) {
+    return loadSettings()[serviceKeyName(id)] || null;
+}
+
+export function saveServiceKey(id, key) {
+    const settings = loadSettings();
+    settings[serviceKeyName(id)] = key;
+    saveSettings(settings);
+}
+
+/** The chosen voice for a catalog service. Not secret; travels with a profile. */
+export function loadServiceVoice(id) {
+    return loadSettings()[id + 'Voice'] || null;
+}
+
+export function saveServiceVoice(id, voice) {
+    const settings = loadSettings();
+    settings[id + 'Voice'] = voice;
+    saveSettings(settings);
+}
+
+/** The model (OpenAI's tts model, ElevenLabs' model_id, Google's recognizer). */
+export function loadServiceModel(id) {
+    return loadSettings()[id + 'Model'] || null;
+}
+
+export function saveServiceModel(id, model) {
+    const settings = loadSettings();
+    settings[id + 'Model'] = model;
     saveSettings(settings);
 }
 

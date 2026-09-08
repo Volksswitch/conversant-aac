@@ -1,5 +1,7 @@
 import * as aura from './tts-deepgram.js';
 import * as azure from './tts-azure.js';
+import * as rest from './tts-rest.js';
+import { TTS_PROVIDERS } from './speech-catalog.js';
 
 const synth = window.speechSynthesis;
 let selectedVoiceURI = null;
@@ -32,6 +34,24 @@ let provider = 'builtin';
 // made in each.
 const models = { deepgram: aura.DEFAULT_VOICE, azure: azure.DEFAULT_VOICE };
 const backends = { deepgram: null, azure: null };
+// The REST services (OpenAI, Google Cloud, ElevenLabs) join the same two tables rather
+// than getting their own, so everything below - unlockAudio, the fallback, the speaking
+// broadcast - covers them without knowing they exist.
+for (const id of Object.keys(TTS_PROVIDERS)) {
+    models[id] = TTS_PROVIDERS[id].defaultVoice;
+    backends[id] = null;
+}
+
+// ⚠ EACH SERVICE HAS ITS OWN KEY, so one getKey cannot serve them all. The reader is
+// per provider and set alongside the provider choice; a backend reads through it on
+// every utterance, so changing a key never needs the backend rebuilding.
+const keyReaders = {};
+const modelReaders = {};
+
+export function setProviderCredentials(name, { getKey: gk, getModel: gm } = {}) {
+    if (gk) keyReaders[name] = gk;
+    if (gm) modelReaders[name] = gm;
+}
 // Reported when a paid voice fails and the browser voice speaks instead. The app
 // wires this to the error log, so a silent downgrade is still visible afterwards.
 let onFallback = null;
@@ -45,20 +65,33 @@ let getRegion = () => '';
 let onBilled = () => {};
 
 function isPaid(name) {
-    return name === 'deepgram' || name === 'azure';
+    return name === 'deepgram' || name === 'azure' || !!TTS_PROVIDERS[name];
 }
 
 // Build on first use, so a user who never chooses a paid voice never constructs one.
 function backendFor(name) {
     if (!isPaid(name)) return null;
     if (!backends[name]) {
-        backends[name] = name === 'deepgram'
-            ? aura.createVoice({ getKey: () => getKey(), onBilled: (n) => onBilled(n) })
-            : azure.createVoice({
+        if (name === 'deepgram') {
+            backends[name] = aura.createVoice({
+                getKey: () => getKey(), onBilled: (n) => onBilled(n),
+            });
+        } else if (name === 'azure') {
+            backends[name] = azure.createVoice({
                 getKey: () => getKey(),
                 getRegion: () => getRegion(),
                 onBilled: (n) => onBilled(n),
             });
+        } else {
+            // A catalog service. Its key reader is its own, falling back to the shared
+            // one so a caller that only ever set the current provider's key still works.
+            backends[name] = rest.createVoice({
+                provider: TTS_PROVIDERS[name],
+                getKey: () => (keyReaders[name] ? keyReaders[name]() : getKey()),
+                getModel: () => (modelReaders[name] ? modelReaders[name]() : ''),
+                onBilled: (n) => onBilled(n),
+            });
+        }
     }
     return backends[name];
 }
@@ -116,6 +149,26 @@ export function testAuraVoice(key, model, phrase = SAMPLE_PHRASE) {
 
 export function testAzureVoice(key, region, model, phrase = SAMPLE_PHRASE) {
     return backendFor('azure').test(key, region, model, phrase);
+}
+
+/*
+ * Test a catalog service (OpenAI, Google Cloud, ElevenLabs).
+ *
+ * ⚠ FOR THOSE THREE THIS IS THE ONLY PROOF THE PATH WORKS. Their request shapes come
+ * from the provider bench and, for ElevenLabs transcription, from documentation alone -
+ * nothing has been run against a real key from inside the app. It speaks rather than
+ * merely checking the key, because a rejected key, an unknown voice, an unknown model
+ * and a blocked audio context all fail differently.
+ */
+export function testRestVoice(name, key, model, voice, phrase = SAMPLE_PHRASE) {
+    const backend = backendFor(name);
+    if (!backend) return Promise.resolve({ ok: false, message: '✗ Unknown voice service.' });
+    return backend.test(key, model, voice, phrase);
+}
+
+/** Every paid voice service the app can use, for the Settings pickers. */
+export function paidVoiceServices() {
+    return ['deepgram', 'azure', ...Object.keys(TTS_PROVIDERS)];
 }
 
 // Speaking-state broadcast. Anything that needs to know when the app is

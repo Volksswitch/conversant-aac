@@ -36,6 +36,8 @@ import * as platform from './platform.js';
 import * as sttDeepgram from './stt-deepgram.js';
 import * as ttsDeepgram from './tts-deepgram.js';
 import * as ttsAzure from './tts-azure.js';
+import * as ttsRest from './tts-rest.js';
+import { TTS_PROVIDERS, STT_PROVIDERS } from './speech-catalog.js';
 import * as sttAzure from './stt-azure.js';
 import { confirmDanger } from './confirm-dialog.js';
 import * as helpMode from './help-mode.js';
@@ -487,6 +489,11 @@ function initApp() {
             getDeepgramKey: () => storage.loadDeepgramKey() || '',
             getAzureKey: () => storage.loadAzureKey() || '',
             getAzureRegion: () => storage.loadAzureRegion(),
+            // The catalog services each have their own key, so the reader takes the
+            // service id rather than there being one per vendor here.
+            getRestKey: (id) => storage.loadServiceKey(id) || '',
+            getRestModel: (id) => storage.loadServiceModel(id)
+                || (STT_PROVIDERS[id] && STT_PROVIDERS[id].defaultModel) || '',
             onBilled: handleSttBilled,
         });
     }
@@ -6359,11 +6366,29 @@ function openSettings() {
         // boolean each is how two end up visible together, which is what made the
         // voice settings read as duplicated before this was collapsed.
         show('builtinVoiceRow', provider === 'builtin');
-        show('builtinPartnerVoiceRow', provider === 'builtin');
+        // ⚠ THE DEVICE PARTNER VOICE ALSO COVERS THE CATALOG SERVICES, and without this
+        // the whole "Practice partner voice" section renders EMPTY when one of them is
+        // chosen — found in the browser, September 8 2026, and invisible from the code
+        // because each row hides itself correctly and nothing owns the total.
+        //
+        // Showing the device picker rather than building three more paid ones is a
+        // decision, not a shortcut. The practice partner needs two things: to be
+        // audibly NOT the user, and to be intelligible. When the user's own voice is an
+        // OpenAI, Google or ElevenLabs voice, EVERY device voice satisfies the first by
+        // construction — there is no collision to avoid — and pickPartnerVoice already
+        // excludes the novelty voices for the second. It also costs nothing, where a
+        // paid partner voice bills for words nobody outside a rehearsal ever hears.
+        // Reversible: if a paid partner voice is wanted, it is a row and a picker each.
+        show('builtinPartnerVoiceRow',
+             provider === 'builtin' || !!TTS_PROVIDERS[provider]);
         show('auraRow', provider === 'deepgram');
         show('auraPartnerRow', provider === 'deepgram');
         show('azureVoiceRow', provider === 'azure');
         show('azurePartnerRow', provider === 'azure');
+        // The catalog services (OpenAI, Google Cloud, ElevenLabs). Driven off the same
+        // provider value so exactly one picker is ever on screen, including when a
+        // future service is added - this loop needs no edit for that.
+        for (const id of Object.keys(TTS_PROVIDERS)) show(id + 'VoiceRow', provider === id);
     };
     const AUTO_LABEL = 'Auto (a voice that isn\'t yours)';
 
@@ -6482,6 +6507,126 @@ function openSettings() {
             }
         };
     }
+    /*
+     * ---- The catalog speech services: OpenAI, Google Cloud, ElevenLabs -------
+     *
+     * (Ken, September 8 2026.) Written as ONE loop rather than three copies of the
+     * Azure wiring above, because Ken expects more services and the only things that
+     * differ are the id and the label. Adding a fourth is a catalog entry, a key block
+     * in index.html and its spoken-help lines - no new code here.
+     *
+     * ⚠ NONE OF THIS HAS BEEN EXERCISED AGAINST A REAL KEY. There is no OpenAI, Google
+     * or ElevenLabs key on this machine, so every path below is built from the request
+     * shapes in prototypes/speech-providers.html (which Ken HAS run) and is unproven
+     * from inside the app. Each service's Test button is the confirmation, exactly as
+     * the Deepgram voice was settled by its Test button speaking on the iPad rather
+     * than by any amount of reading.
+     */
+    for (const id of Object.keys(TTS_PROVIDERS)) {
+        const provider = TTS_PROVIDERS[id];
+        const keyInput = document.getElementById(id + 'KeyInput');
+        const voiceSelect = document.getElementById(id + 'VoiceSelect');
+        const cap = id.charAt(0).toUpperCase() + id.slice(1);
+
+        const showStatus = (kind, message) => {
+            const el = document.getElementById(id + 'KeyStatus');
+            if (!el) return;
+            el.textContent = message || '';
+            el.hidden = !message;
+            el.className = 'api-key-status' + (kind ? ' ' + kind : '');
+        };
+        const showVoiceStatus = (kind, message) => {
+            const el = document.getElementById(id + 'VoiceStatus');
+            if (!el) return;
+            el.textContent = message || '';
+            el.hidden = !message;
+            el.className = 'api-key-status' + (kind ? ' ' + kind : '');
+        };
+
+        // Fill from the built-in starter list first so the picker is never empty, then
+        // replace it with the account's own catalog once a key can fetch one.
+        const fillFrom = (voices) => {
+            fillVoiceSelect(voiceSelect, voices, storage.loadServiceVoice(id) || provider.defaultVoice);
+        };
+        fillFrom(provider.voices);
+
+        const refreshVoices = async () => {
+            if (!provider.catalog || !voiceSelect) return;   // OpenAI publishes no list
+            const key = (storage.loadServiceKey(id) || '').trim();
+            if (!key) return;
+            try {
+                const voices = await ttsRest.fetchVoices(provider, key);
+                if (voices.length) fillFrom(voices);
+            } catch {
+                // A failed catalog fetch is not worth interrupting anyone for: the
+                // starter list still works, and the Test button reports a bad key with
+                // a message that actually explains it.
+            }
+        };
+
+        if (keyInput) {
+            wireKeyField(keyInput, {
+                load: () => storage.loadServiceKey(id) || '',
+                save: (key) => storage.saveServiceKey(id, key),
+                // ⚠ A DIFFERENT ACCOUNT HAS A DIFFERENT VOICE LIST, so the list is
+                // refetched on a key change. Keeping the old one would offer voices this
+                // key cannot use, which then fails at the Test button - a long way from
+                // where the cause is still visible.
+                onChange: () => { showStatus(null, ''); refreshVoices(); },
+            });
+        }
+
+        const pasteBtn = document.getElementById('paste' + cap + 'KeyBtn');
+        if (pasteBtn) {
+            pasteBtn.onclick = async () => {
+                try {
+                    const text = (await navigator.clipboard.readText() || '').trim();
+                    if (!text) { showStatus('warn', 'There was nothing to paste.'); return; }
+                    setKeyFieldValue(keyInput, text);
+                    storage.saveServiceKey(id, text);
+                    showStatus(null, '');
+                    refreshVoices();
+                } catch {
+                    showStatus('warn', 'This browser would not let the app read the clipboard.');
+                }
+            };
+        }
+
+        // Both Test buttons SPEAK. A rejected key, a voice the account cannot use, a
+        // model name the service does not know and a blocked audio context all fail
+        // differently, and hearing it is the only check that covers all four.
+        const runTest = async (report) => {
+            const key = (keyFieldValue(keyInput) ?? (storage.loadServiceKey(id) || '')).trim();
+            if (!key) { report('warn', 'Enter a key first.'); return; }
+            report(null, 'Testing…');
+            const voice = (voiceSelect && voiceSelect.value) || provider.defaultVoice;
+            const model = storage.loadServiceModel(id) || provider.defaultModel;
+            const res = await tts.testRestVoice(id, key, model, voice);
+            report(res.ok ? 'ok' : 'warn', res.message);
+        };
+        const testKeyBtn = document.getElementById('test' + cap + 'KeyBtn');
+        if (testKeyBtn) testKeyBtn.onclick = () => runTest(showStatus);
+        const testVoiceBtn = document.getElementById('test' + cap + 'VoiceBtn');
+        if (testVoiceBtn) testVoiceBtn.onclick = () => runTest(showVoiceStatus);
+
+        if (voiceSelect) {
+            voiceSelect.onchange = () => {
+                storage.saveServiceVoice(id, voiceSelect.value);
+                tts.setPaidVoice(id, voiceSelect.value);
+                showVoiceStatus(null, '');
+            };
+        }
+
+        // The key reader is per service, so tts.js reads the right one on every
+        // utterance rather than whichever was current when the backend was built.
+        tts.setProviderCredentials(id, {
+            getKey: () => storage.loadServiceKey(id) || '',
+            getModel: () => storage.loadServiceModel(id) || provider.defaultModel,
+        });
+        tts.setPaidVoice(id, storage.loadServiceVoice(id) || provider.defaultVoice);
+        refreshVoices();
+    }
+
     if (azurePartnerVoiceSelect) {
         azurePartnerVoiceSelect.onchange = () => {
             storage.saveAzurePartnerVoice(azurePartnerVoiceSelect.value);
