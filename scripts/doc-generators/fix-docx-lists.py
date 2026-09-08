@@ -73,6 +73,20 @@ def clone(numbering, num_id_val):
     new_id = str(max(int(n.get(W + 'numId')) for n in nums) + 1)
     new = copy.deepcopy(src)
     new.set(W + 'numId', new_id)
+    # A deep copy brings the source's w16cid:durableId with it, and that attribute is
+    # supposed to identify a numbering definition UNIQUELY. Cloning it produced files
+    # where 145 definitions shared 5 ids, and Word eventually refuses such a document
+    # outright - "the file appears to be corrupted", with the zip clean, every part
+    # parsing and every documentation rule passing. It is cumulative: each run of this
+    # script adds another generation, so a document survives until abruptly it does not
+    # (measured September 8 2026: 117 definitions opened, 145 did not).
+    #
+    # The attribute is an optional Word 2016 extension, so dropping it is safe - Word
+    # mints a fresh unique one on its next save. Repair existing files with
+    # fix-numbering-ids.py.
+    for attr in list(new.attrib):
+        if attr.endswith('}durableId'):
+            del new.attrib[attr]
     src.addnext(new)
     return new_id
 
