@@ -26,6 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+
+## Version 0.10.9
+
 - The app now eases off on the phrases it says to hold your place. It speaks up
   promptly at the start of a conversation, when the other person has not yet worked
   out that a pause means you are choosing, and then waits a little longer each
