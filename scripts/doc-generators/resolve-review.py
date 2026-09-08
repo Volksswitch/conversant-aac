@@ -41,11 +41,41 @@ def _comments_part(doc):
     return None
 
 
-def resolve(path, keep_changes=(), keep_comments=()):
+def resolve(path, keep_changes=(), keep_comments=(), dispositions=None,
+            require_disposition=True):
+    """`dispositions` maps comment id -> what was done with it. Every comment being
+    CLEARED must have one.
+
+    ⚠ THIS IS THE ANTI-CRACK (Ken, September 8 2026). A comment was once cleared with
+    the report "it's on the list" when there was no list. Forgetting would have been
+    better: it leaves the item visible, where a false assurance tells Ken it is held
+    somewhere and stops him tracking it himself. A comment may only be cleared by saying
+    what happened to it, and "recorded" must name a real place.
+    """
     doc = docx.Document(path)
     body = doc.element.body
     keep_comments = {str(c) for c in keep_comments}
+    dispositions = {str(k): v for k, v in (dispositions or {}).items()}
     report = {'accepted': 0, 'kept_changes': 0, 'cleared': 0, 'kept_comments': 0}
+
+    # ⚠ CHECKED FIRST, BEFORE ANYTHING IS REMOVED. The first version of this ran after
+    # the clearing loop, by which point there were no comment references left to object
+    # to, so it passed every time and refused nothing — a gate that looks present and is
+    # not. Refuse the whole pass rather than clear some and report the rest: a partial
+    # clear is the state nobody notices.
+    if require_disposition:
+        clearing = [ref.get(qn('w:id')) for ref in body.iter(qn('w:commentReference'))
+                    if ref.get(qn('w:id')) not in keep_comments]
+        missing = sorted(set(c for c in clearing if not dispositions.get(c)))
+        if missing:
+            raise SystemExit(
+                'refusing to clear comment(s) %s with no stated disposition.\n'
+                '  Say what happened to each:\n'
+                '    --done <id>:"acted on in this document"\n'
+                '    --recorded <id>:"TODO.md - <entry title>"\n'
+                '  "Recorded" must name a real place. If it is not written down, it is\n'
+                '  not recorded, and saying it is recorded is worse than forgetting.'
+                % ', '.join(missing))
 
     def keep_this(el):
         t = _text(el)
@@ -116,16 +146,20 @@ def main(argv):
     if not path:
         print(__doc__)
         return 2
-    keep_changes, keep_comments = [], []
+    keep_changes, keep_comments, dispositions = [], [], {}
     i = 0
     while i < len(argv):
         if argv[i] == '--keep-change':
             keep_changes.append(argv[i + 1]); i += 2
         elif argv[i] == '--keep-comment':
             keep_comments.append(argv[i + 1]); i += 2
+        elif argv[i] in ('--done', '--recorded'):
+            cid, _, why = argv[i + 1].partition(':')
+            dispositions[cid.strip()] = why.strip() or argv[i]
+            i += 2
         else:
             i += 1
-    r = resolve(path, keep_changes, keep_comments)
+    r = resolve(path, keep_changes, keep_comments, dispositions)
     print('  accepted %(accepted)d revision(s), kept %(kept_changes)d' % r)
     print('  cleared  %(cleared)d comment(s), kept %(kept_comments)d' % r)
     return 0

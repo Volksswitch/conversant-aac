@@ -203,6 +203,10 @@ def set_last_updated(doc, date_text):
             new = re.sub(r'Last updated [A-Z][a-z]+ \d{1,2}, \d{4}',
                          'Last updated ' + date_text, joined)
             if new == joined:
+                # Already carrying this date is a no-op, not a fault: a second pass over
+                # the same document in one day is normal and must not blow up.
+                if ('Last updated ' + date_text) in joined:
+                    return joined
                 raise LookupError('unexpected byline form: ' + joined)
             for extra in p.runs[1:]:
                 extra._element.getparent().remove(extra._element)
