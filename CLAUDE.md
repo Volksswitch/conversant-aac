@@ -1828,6 +1828,43 @@ standing rule about reporting what was actually exercised applies here as much a
 **Gate: before general release**, and it is a distinct piece of work from any sync - schedule
 it as its own pass, not as a longer "sync docs".
 
+## A document under review is NOT a candidate for syncing (Ken, September 8 2026)
+
+Ken: *"There also shouldn't be any MS Word tracking records in any docs when doc-sync is
+run. No 'added/deleted text' and no comments. If you encounter those artifacts it means
+that that document is not a candidate for synching."*
+
+**Tracked changes or comments mean STOP. Do not edit that document at all** — not the
+prose, not the byline, not a table row. Say so and move on to the others.
+
+**Check it before touching anything:**
+
+```
+python scripts/doc-tests/check-tracking-artifacts.py
+```
+
+It also runs inside `check docs`, which reports blocked documents FIRST, because their
+presence changes what the rest of the run means.
+
+**Why it is a hard stop and not a warning.** Tracked changes are Ken's decisions not yet
+accepted and comments are his instructions not yet acted on, so the document is mid-
+conversation. Editing underneath that mixes new prose into text nobody has reviewed,
+lets an accept-or-reject reflow the passage an automated edit was anchored to, and
+rewrites the very passage an open question is attached to.
+
+**⚠ AND IT IS EXACTLY HOW THE SEPTEMBER 8 CORRUPTION HAPPENED, which is what makes this
+rule load-bearing rather than tidy.** The Architecture Overview carried 27 revisions and
+14 comments. A helper appended a sentence by copying a paragraph's last run; that
+paragraph ended in a **comment anchor**; the copy duplicated it, and Word refused the
+file outright while the zip tested clean and every rule passed. **The corruption was the
+symptom — the cause was syncing a document that was still under review.** Had this rule
+been in force that morning, the document would never have been opened.
+
+**Clearing it is Ken's call, never an automated one.** Accepting his changes is accepting
+his decisions, and deleting a comment discards a question he asked. He does it in Word
+(Review > Accept All, then delete the comments), or asks for
+`scripts/doc-generators/accept-revisions.py`. **Do not run that script to unblock a sync.**
+
 ## Keeping product documents in sync — trigger phrase "sync docs" (Ken, July 8 2026)
 
 Product-document currency is tracked by [`DOC-SYNC.md`](DOC-SYNC.md) (any root document named `Conversant AAC *`, each stamped with the git commit it was last reviewed against — never file modification date, which a format-only edit would bump).

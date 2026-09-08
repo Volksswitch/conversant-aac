@@ -866,6 +866,22 @@ def main(argv):
 
     print('\n%s\n%d error(s), %d to review across %d document(s).'
           % ('-' * 70, totals['error'], totals['review'], len(paths)))
+    # ⚠ REPORTED FIRST, because it changes what the rest of the run MEANS. A document
+    # carrying tracked changes or comments is not a candidate for syncing at all (Ken,
+    # September 8 2026), so findings against it are findings against a document nobody
+    # should be editing - and the September 8 corruption was caused by exactly that:
+    # appending to a paragraph that ended in a comment anchor, in a document with 27
+    # unaccepted revisions in it.
+    blocked = tracking_artifacts(paths)
+    if blocked:
+        print()
+        print('%d document(s) are NOT CANDIDATES FOR SYNCING - still under review:'
+              % len(blocked))
+        for name, why in blocked:
+            print('    %-58s %s' % (name, why))
+        print('  Accept the changes and clear the comments first (Review > Accept All, '
+              'or accept-revisions.py).')
+
     # ⚠ RUN BEFORE THE WORD CHECK, because this is the EARLY WARNING for a fault the
     # Word check can only report once it is already fatal. Duplicated numbering ids
     # accumulate silently across sync passes and the document opens fine until abruptly
@@ -896,6 +912,31 @@ def main(argv):
     else:
         print('Word opens all %d.' % len(paths))
     return 1 if totals['error'] else 0
+
+
+def tracking_artifacts(paths):
+    """Documents carrying tracked changes or comments, which must not be synced.
+
+    Delegates to check-tracking-artifacts.py so the rule has ONE implementation - a
+    second copy here would drift from it, which is the failure this project keeps
+    paying for.
+    """
+    here = os.path.dirname(os.path.abspath(__file__))
+    mod = os.path.join(here, 'check-tracking-artifacts.py')
+    if not os.path.exists(mod):
+        return []
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('tracking_artifacts_rule', mod)
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    out = []
+    for p in paths:
+        try:
+            if m.blocked(p):
+                out.append((os.path.basename(p), m.describe(p)))
+        except Exception:
+            pass          # unreadable is the Word check's business, not this rule's
+    return out
 
 
 def numbering_dups(paths):
