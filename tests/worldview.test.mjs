@@ -491,3 +491,106 @@ test('trait descriptions are fragments that survive being joined', async () => {
         }
     }
 });
+
+/* --- Questions the conversations write themselves ----------------------------
+ *
+ * The hole this closes: About Me asks a fixed set of questions, and the set of facts
+ * a life requires is unbounded, so a fact with no matching question was noticed every
+ * conversation and could never be recorded. Adding more questions only moves the
+ * boundary; letting the conversation author the question closes it.
+ */
+test('a fact no question covers becomes an answerable question', async () => {
+    await wv.resetAll();
+    const opened = await wv.recordExtraGaps(
+        [{ name: 'insurance_number', question: 'What is your insurance number?' }], 'can I take your insurance?');
+    assert.equal(opened, 1);
+    const open = wv.listOpenExtras();
+    assert.equal(open.length, 1);
+    assert.equal(open[0].question, 'What is your insurance number?');
+    assert.equal(open[0].partnerText, 'can I take your insurance?', 'what was actually asked is kept');
+});
+
+test('the same question asked again bumps the count instead of adding a row', async () => {
+    await wv.resetAll();
+    await wv.recordExtraGaps([{ name: 'insurance_number', question: 'What is your insurance number?' }], 'a');
+    await wv.recordExtraGaps([{ name: 'Insurance Number', question: 'Your insurance number?' }], 'b');
+    const open = wv.listOpenExtras();
+    assert.equal(open.length, 1, 'one question, not two');
+    assert.equal(open[0].count, 2);
+});
+
+test('a name About Me already has a question for is refused', async () => {
+    await wv.resetAll();
+    // These belong on the ordinary path, where answering fills the real field.
+    await wv.recordExtraGaps([{ name: 'home_city', question: 'Where do you live?' }], 'x');
+    assert.deepEqual(wv.listAllExtras(), []);
+});
+
+test('half an entry is not an entry - a name with no question cannot be asked', async () => {
+    await wv.resetAll();
+    await wv.recordExtraGaps([{ name: 'ward' }, { question: 'Which ward?' }, {}], 'x');
+    assert.deepEqual(wv.listAllExtras(), []);
+});
+
+test('answering one takes it off the list and puts it in the profile - privately', async () => {
+    await wv.resetAll();
+    await wv.recordExtraGaps([{ name: 'insurance_number', question: 'What is your insurance number?' }], 'x');
+    await wv.setExtra('insurance_number', 'BCBS 4471');
+    assert.deepEqual(wv.listOpenExtras(), [], 'no longer waiting for an answer');
+    const block = wv.buildBlock();
+    assert.match(block, /BCBS 4471/, 'the AI now knows it');
+    // ALWAYS private: we did not author the question, so we do not know what the
+    // answer holds. It must never be volunteered.
+    const priv = block.slice(block.indexOf('do not volunteer them spontaneously'));
+    assert.match(priv, /BCBS 4471/, 'and it sits under the do-not-volunteer rule');
+});
+
+test('an answered question is never re-opened by another mention', async () => {
+    await wv.resetAll();
+    await wv.recordExtraGaps([{ name: 'insurance_number', question: 'What is your insurance number?' }], 'x');
+    await wv.setExtra('insurance_number', 'BCBS 4471');
+    await wv.recordExtraGaps([{ name: 'insurance_number', question: 'Insurance?' }], 'y');
+    assert.deepEqual(wv.listOpenExtras(), []);
+    assert.equal(wv.listAnsweredExtras()[0].value, 'BCBS 4471', 'and the answer is untouched');
+});
+
+test('"prefer not to say" sticks, and is reversible', async () => {
+    await wv.resetAll();
+    await wv.recordExtraGaps([{ name: 'ward', question: 'Which ward are you on?' }], 'x');
+    await wv.declineExtra('ward');
+    await wv.recordExtraGaps([{ name: 'ward', question: 'Which ward?' }], 'y');
+    assert.deepEqual(wv.listOpenExtras(), [], 'a declined question does not come back');
+    await wv.reopenExtra('ward');
+    assert.equal(wv.listOpenExtras().length, 1);
+});
+
+test('the names in use are offered to the AI, so it reuses instead of inventing', async () => {
+    await wv.resetAll();
+    await wv.recordExtraGaps([{ name: 'insurance_number', question: 'What is your insurance number?' }], 'x');
+    assert.deepEqual(wv.extraNames(), ['insurance_number']);
+});
+
+test('Restart clears them - the confirmation promises to delete every answer', async () => {
+    await wv.recordExtraGaps([{ name: 'ward', question: 'Which ward?' }], 'x');
+    await wv.setExtra('ward', 'St Anne');
+    await wv.resetAll();
+    assert.deepEqual(wv.listAllExtras(), []);
+});
+
+test('the Health & Safety questions exist, and are private by default', async () => {
+    // The hole the beta review actually hit: asked about allergies, the app had
+    // nowhere to have recorded them, so the same gap recurred at every appointment.
+    for (const key of ['health_allergies', 'health_meds', 'health_conditions',
+                       'health_diet', 'date_of_birth', 'emergency_contact']) {
+        const meta = wv.fieldMeta(key);
+        assert.ok(meta, `${key} is a question About Me asks`);
+        assert.equal(meta.defaultPrivacy, 'private', `${key} is not volunteered`);
+    }
+});
+
+test('an allergy on file is answered plainly; with none, nothing is claimed', async () => {
+    await wv.resetAll();
+    assert.doesNotMatch(wv.buildBlock(), /allerg/i, 'unanswered means the AI is told nothing');
+    await wv.setField('health_allergies', ['penicillin']);
+    assert.match(wv.buildBlock(), /penicillin/i);
+});

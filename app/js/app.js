@@ -1549,6 +1549,7 @@ async function generateOptions(partnerText) {
     // Inject the current worldview profile so the assistant speaks AS the user.
     // Rebuilt each turn so questionnaire edits take effect immediately.
     llm.setWorldviewBlock(worldview.buildBlock());
+    llm.setExtraNames(worldview.extraNames());
     llm.setRelationshipsBlock(relationships.buildBlock());
     // Omit the place they are standing in — buildHereBlock already carries it, with
     // the framing that fits being present rather than the "places I go" framing.
@@ -1665,6 +1666,14 @@ async function generateOptions(partnerText) {
         // next." Open gaps only; recordGaps drops answered/declined keys.
         if (result.missingFacts && result.missingFacts.length) {
             worldview.recordGaps(result.missingFacts, partnerText).catch(() => { /* non-fatal */ });
+        }
+        // And the ones About Me has no question for at all, which become questions of
+        // their own — the only way a fact outside our fixed set can ever be recorded.
+        // Reaches here from a PRACTICE conversation too (it runs this same path), so a
+        // rehearsal for an appointment finds out what the app does not know in time to
+        // fix it. See worldview.recordExtraGaps.
+        if (result.missingOther && result.missingOther.length) {
+            worldview.recordExtraGaps(result.missingOther, partnerText).catch(() => { /* non-fatal */ });
         }
     } catch (err) {
         if (token !== generationToken) return;
@@ -3007,6 +3016,7 @@ async function handleRegenerate() {
 
     const prior = lastPalette.map((m) => m.text).filter(Boolean);
     llm.setWorldviewBlock(worldview.buildBlock());
+    llm.setExtraNames(worldview.extraNames());
     llm.setRelationshipsBlock(relationships.buildBlock());
     // Omit the place they are standing in — buildHereBlock already carries it, with
     // the framing that fits being present rather than the "places I go" framing.
@@ -3105,6 +3115,7 @@ async function handleChoiceChip(chip) {
     activeSteer.focusChoice = pick;   // "New N" must keep answering with this choice
     renderExpressPanel();             // ...and the chip shows as chosen from this moment
     llm.setWorldviewBlock(worldview.buildBlock());
+    llm.setExtraNames(worldview.extraNames());
     llm.setRelationshipsBlock(relationships.buildBlock());
     // Omit the place they are standing in — buildHereBlock already carries it, with
     // the framing that fits being present rather than the "places I go" framing.
@@ -3181,6 +3192,7 @@ async function handleReframe() {
     placeholders.stop();
     ui.setPaletteBusy(true);   // the cards showing may be replaced — say so (Ken)
     llm.setWorldviewBlock(worldview.buildBlock());
+    llm.setExtraNames(worldview.extraNames());
     llm.setRelationshipsBlock(relationships.buildBlock());
     // Omit the place they are standing in — buildHereBlock already carries it, with
     // the framing that fits being present rather than the "places I go" framing.

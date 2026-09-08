@@ -187,6 +187,16 @@ export function setWorldviewKeys(keys) {
     worldviewKeys = Array.isArray(keys) ? keys.filter((k) => typeof k === 'string' && k) : [];
 }
 
+// Names of facts a previous conversation already asked for and About Me has no
+// built-in question for (worldview.extraNames()). Sent so the model REUSES one
+// rather than coining a synonym -- without it the same fact arrives as "insurance",
+// "insurer" and "my_insurance", which is three rows for one question and nothing can
+// merge them afterwards. Refreshed each turn, because the user's set grows.
+let extraNames = [];
+export function setExtraNames(names) {
+    extraNames = Array.isArray(names) ? names.filter((n) => typeof n === 'string' && n) : [];
+}
+
 // The compact relationship-graph text (relationships.buildBlock()). Set fresh
 // before each generation alongside the worldview block, so people edits take
 // effect immediately. Private people are already withheld by buildBlock.
@@ -423,6 +433,7 @@ Return ONLY a JSON object, no other text, with exactly this shape:
     // you were not given.
   ],
   "missing_facts": ["<key>", ...],
+  "missing_other": [{"name": "<short_snake_case_name>", "question": "<a plain question to put to the user>"}, ...],
   "heard_uncertain": ["<word>", ...]
 }
 
@@ -477,8 +488,13 @@ ${NO_VULGARITY}
 Get to the point: NO response may begin with an empty interjection — no "Ah", "Oh", "Um", "Er", "Well", "So", "Hmm", "You know" at the start. Open with the substance. (A meaningful softener on DISPREFERRED, like "I'd love to, but…", is fine; a bare interjection is not.)
 
 - "missing_facts": personal facts about the user you needed and were not given. Use [] if none. Always phrase responses around any missing fact — never output bracketed placeholders.
-  ⚠ USE ONLY THE KEYS LISTED BELOW, spelled exactly as they appear. Each one is a question the app can actually put to the user; anything else is discarded, so an invented key means the question is never asked and the same gap recurs every conversation. If the fact you were missing has no key in the list, return nothing for it rather than making a name up.${worldviewKeys.length ? `
-  The keys: ${worldviewKeys.join(', ')}.` : ''}
+  ⚠ USE ONLY THE KEYS LISTED BELOW, spelled exactly as they appear. Each one is a question the app can actually put to the user; anything else is discarded. If the fact you were missing has no key in the list, put it in "missing_other" instead — never invent a key.
+- "missing_other": facts you needed about the user that NO key in the list covers — an insurance number, a ward, a pet's name, whether they can manage stairs. The app cannot hold a question for everything a life requires, so this is how a question gets added: each entry becomes a row the user can answer, and their answer is then yours in later conversations. Give a short lowercase name and a plain, kind question addressed to the user ("What is your insurance number?"), not a restatement of what the partner said. Use [] when there is nothing.
+  ⚠ AT MOST TWO PER TURN, and only what THIS turn actually needed and could not answer. Three questions where the partner asked one thing is a wall of homework, and the user stops reading the list. If one question would cover it, ask one.
+  ⚠ THE SECOND LIST BELOW IS FOR THIS FIELD ONLY, NEVER FOR "missing_facts". Those are names earlier conversations already added; if one of them fits, repeat it here as the "name" and keep its question — do NOT coin a synonym ("insurance_provider" beside an existing "insurance_number" is two rows for one thing, and nothing can merge them afterwards). Putting one of those names in "missing_facts" discards it.
+  ⚠ ONLY USE A KEY FROM THE FIRST LIST IF IT GENUINELY COVERS THE FACT. A loose match is worse than none: it puts an unrelated question in front of the user and still leaves the real gap unrecorded. If nothing fits, this field is where it belongs.${worldviewKeys.length ? `
+  The keys: ${worldviewKeys.join(', ')}.` : ''}${extraNames.length ? `
+  Names already added from earlier conversations, reuse one if it fits: ${extraNames.join(', ')}.` : ''}
 - "heard_uncertain": words in the partner's MOST RECENT turn that you suspect the SPEECH RECOGNIZER got wrong. Copy them exactly as they appear in that turn. Use [] when nothing looks wrong.
   Flag any word that looks like a mis-recognition, whether or not you can work out what was meant. "see side" for "seaside" is a flag even though the meaning is obvious. So is a missing or added negative ("can" where the conversation calls for "can't"), a day, time or number that a similar-sounding one could just as easily have been, and a name that came out as an unrelated word.
   Do NOT flag ordinary informal speech, slang, contractions, filler, false starts, repetition, or a turn that is simply short or blunt. Those are how people talk, not recognition errors. Do NOT flag a word merely because you would have phrased it differently.
@@ -852,9 +868,15 @@ function parseGeneration(text) {
         // the number button doing nothing in 0.7.14. Nothing here needs the engine, so
         // it never goes near it.
         const heardUncertain = arr(parsed.heard_uncertain).map((w) => String(w).trim()).filter(Boolean);
+        // Facts no built-in question covers. Both halves are required: a name with no
+        // question cannot be put to the user, and a question with no name cannot be
+        // matched against what a later conversation asks for.
+        const missingOther = arr(parsed.missing_other)
+            .map((o) => ({ name: String((o && o.name) || '').trim(), question: String((o && o.question) || '').trim() }))
+            .filter((o) => o.name && o.question);
         // Preferred shape: typed responses.
         if (Array.isArray(parsed.responses)) {
-            return { classification, responses: parsed.responses, missingFacts: arr(parsed.missing_facts), heardUncertain };
+            return { classification, responses: parsed.responses, missingFacts: arr(parsed.missing_facts), missingOther, heardUncertain };
         }
         // Legacy {options:[...]}.
         if (Array.isArray(parsed.options)) {
@@ -862,6 +884,7 @@ function parseGeneration(text) {
                 classification,
                 responses: parsed.options.map((t, i) => ({ slot: SLOTS[i] || 'PREFERRED', text: String(t), hint: '' })),
                 missingFacts: arr(parsed.missing_facts),
+                missingOther,
                 heardUncertain,
             };
         }

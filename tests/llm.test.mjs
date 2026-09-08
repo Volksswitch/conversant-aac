@@ -757,3 +757,47 @@ test('a repair palette never leaves the fourth reserved cell empty', () => {
     assert.ok(palette.find(p => p.op === 'respeak').text.trim());
     assert.ok(palette.find(p => p.op === 'retry').text.trim());
 });
+
+/* --- A fact no question covers, from the model's reply to a stored question ----
+ *
+ * The cross-layer check: the reply goes in at the top, through the real parser and
+ * the real store, and what comes out is the row the user would see. Not each layer
+ * handed fabricated input.
+ */
+test('missing_other survives the parser and becomes a question the user can answer', async () => {
+    const wv = await import('../app/js/worldview.js');
+    await wv.resetAll();
+    mockFetch(JSON.stringify({
+        partner_action: 'QUESTION', turn_status: 'COMPLETE', is_repair_initiator: false,
+        offered_options: [], offered_range: null,
+        responses: [{ slot: 'PREFERRED', text: "I don't know, sorry." }],
+        missing_facts: ['home_city'],
+        missing_other: [{ name: 'insurance_number', question: 'What is your insurance number?' }],
+    }));
+    const r = await llm.generateResponses([{ role: 'partner', text: 'Can I take your insurance details?' }], {});
+    assert.deepEqual(r.missingFacts, ['home_city'], 'a real question still goes the ordinary way');
+    assert.deepEqual(r.missingOther, [{ name: 'insurance_number', question: 'What is your insurance number?' }]);
+
+    await wv.recordGaps(r.missingFacts, 'Can I take your insurance details?');
+    await wv.recordExtraGaps(r.missingOther, 'Can I take your insurance details?');
+    assert.deepEqual(wv.listGaps().map((g) => g.key), ['home_city']);
+    assert.equal(wv.listOpenExtras()[0].question, 'What is your insurance number?');
+});
+
+test('a reply with no missing_other behaves exactly as before', async () => {
+    mockFetch(structured);
+    const r = await llm.generateResponses([{ role: 'partner', text: 'How are you?' }], {});
+    assert.deepEqual(r.missingOther, []);
+});
+
+test('the prompt tells the model where a fact with no question goes', async () => {
+    llm.setWorldviewKeys(['home_city', 'occupation']);
+    llm.setExtraNames(['insurance_number']);
+    mockFetch(structured);
+    await llm.generateResponses([{ role: 'partner', text: 'Hi' }], {});
+    const sys = sysText(getFetchCalls()[0]);
+    assert.match(sys, /missing_other/, 'the field is named');
+    assert.match(sys, /home_city, occupation/, 'the real questions are listed');
+    assert.match(sys, /insurance_number/, 'and the names already in use, so it reuses one');
+    llm.setWorldviewKeys([]); llm.setExtraNames([]);
+});

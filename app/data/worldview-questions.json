@@ -257,6 +257,89 @@
       ]
     },
     {
+      "id": "A6",
+      "tier": "core",
+      "title": "Health & Safety",
+      "note": "Private by default — the assistant knows these but won't raise them on its own. It will offer one only if the person you're talking to asks, or if you ask for it yourself in \"In my own words\". Nothing is ever spoken until you tap it. Leaving one blank is fine: the assistant will say you don't know rather than guess, which is the safe answer.",
+      "fields": [
+        {
+          "key": "health_allergies",
+          "q": "Do you have any allergies?",
+          "type": "multi",
+          "options": [],
+          "fills": [
+            "allergy",
+            "allergies"
+          ],
+          "sensitive": true,
+          "defaultPrivacy": "private"
+        },
+        {
+          "key": "health_meds",
+          "q": "What medications do you take?",
+          "type": "multi",
+          "options": [],
+          "fills": [
+            "medication",
+            "medications",
+            "prescription"
+          ],
+          "sensitive": true,
+          "defaultPrivacy": "private"
+        },
+        {
+          "key": "health_conditions",
+          "q": "Are there health conditions a doctor or paramedic should know about?",
+          "type": "multi",
+          "options": [],
+          "fills": [
+            "condition",
+            "diagnosis",
+            "medical history"
+          ],
+          "sensitive": true,
+          "defaultPrivacy": "private"
+        },
+        {
+          "key": "health_diet",
+          "q": "Are there foods or drinks you can't have?",
+          "type": "multi",
+          "options": [],
+          "fills": [
+            "dietary restriction",
+            "food allergy"
+          ],
+          "sensitive": true,
+          "defaultPrivacy": "private"
+        },
+        {
+          "key": "date_of_birth",
+          "q": "What is your date of birth?",
+          "type": "text",
+          "options": [],
+          "fills": [
+            "date of birth",
+            "birthday",
+            "DOB"
+          ],
+          "sensitive": true,
+          "defaultPrivacy": "private"
+        },
+        {
+          "key": "emergency_contact",
+          "q": "Who should be contacted in an emergency, and how?",
+          "type": "text",
+          "options": [],
+          "fills": [
+            "emergency contact",
+            "next of kin"
+          ],
+          "sensitive": true,
+          "defaultPrivacy": "private"
+        }
+      ]
+    },
+    {
       "id": "C1",
       "tier": "interests",
       "title": "Favorites",

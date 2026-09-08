@@ -100,7 +100,11 @@ function defaultProfile() {
         updated: new Date().toISOString(),
         fields: {},
         privacy: {},   // per-field privacy overrides: key -> "private" | "shareable"
-        gaps: []       // [{ key, partnerText, count, lastSeen }]
+        gaps: [],      // [{ key, partnerText, count, lastSeen }]
+        // Facts real conversations asked for that About Me has NO question for.
+        // [{ name, question, value, state, count, lastSeen, partnerText }]
+        // See recordExtraGaps.
+        extras: []
     };
 }
 
@@ -125,7 +129,8 @@ function normalize(p) {
         updated: p.updated ?? base.updated,
         fields: p.fields ?? {},
         privacy: p.privacy ?? {},
-        gaps: Array.isArray(p.gaps) ? p.gaps : []
+        gaps: Array.isArray(p.gaps) ? p.gaps : [],
+        extras: Array.isArray(p.extras) ? p.extras.filter((e) => e && e.name) : []
     };
 }
 
@@ -272,6 +277,10 @@ export async function resetAll() {
     ensureLoaded();
     profile.fields = {};
     profile.privacy = {};
+    // Extras hold ANSWERS, and the confirmation promises to delete every answer.
+    // Gaps are deliberately kept: they are not answers, and after a reset every
+    // question they name is open again, so they are still true and still useful.
+    profile.extras = [];
     await save();
 }
 
@@ -339,6 +348,129 @@ function pruneGaps() {
     const before = profile.gaps.length;
     profile.gaps = profile.gaps.filter((g) => isKnownField(g.key));
     return profile.gaps.length !== before;
+}
+
+/* --- Questions the conversations wrote themselves ---------------------------
+ *
+ * ⚠ WHY THIS EXISTS AT ALL (Ken, September 7 2026). About Me asks a fixed set of
+ * questions we authored. The set of facts a LIFE requires is unbounded -- an
+ * insurance number, a ward, the dog's name, whether you can manage stairs -- so
+ * however many questions get added, the boundary only moves. Before this, a fact the
+ * AI needed and About Me had no question for was simply lost: the app noticed the
+ * hole every single time and the user could never fill it, so the same gap recurred
+ * for ever. That is a real hole rather than a rough edge, and adding more questions
+ * does not close it.
+ *
+ * So the conversations author the question. The AI reports what it was missing along
+ * with a plain wording for it, that becomes a row in "Questions worth answering", and
+ * the user's answer is kept here as a named fact they can see, edit and delete.
+ *
+ * ⚠ ANSWERED EXTRAS ARE PRIVATE, ALWAYS, and this is not a default to relax. We did
+ * not author the question, so we do not know what the answer contains -- it could be
+ * an insurance number as easily as a pet's name. They go into the profile under the
+ * do-not-volunteer rule: available the moment a partner asks, never offered up.
+ *
+ * ⚠ AND IT MUST SURFACE ON THE FIRST OCCURRENCE, not after a second. The case this
+ * is for is rehearsing an appointment that has not happened yet, and a rehearsal
+ * happens once. Waiting for a repeat would make it useless for exactly the use it
+ * was built for -- so dismissal is one tap instead.
+ */
+
+const extraName = (n) => String(n || '').trim().toLowerCase().replace(/\s+/g, '_').slice(0, 60);
+
+function findExtra(name) {
+    const n = extraName(name);
+    return ensureLoaded().extras.find((e) => extraName(e.name) === n) || null;
+}
+
+/**
+ * Record facts the AI needed for which About Me has no question.
+ * `items` = [{ name, question }]. Returns the number newly opened.
+ *
+ * ⚠ A NAME THAT IS ALREADY A REAL QUESTION IS REFUSED. Those belong on the ordinary
+ * path (recordGaps), where answering them fills the field the app already has; kept
+ * here they would be a second, invisible copy of a question About Me already asks.
+ */
+export async function recordExtraGaps(items, partnerText) {
+    ensureLoaded();
+    const now = new Date().toISOString();
+    let opened = 0, changed = false;
+    for (const item of items || []) {
+        const name = extraName(item && item.name);
+        const question = String((item && item.question) || '').trim();
+        if (!name || !question) continue;
+        if (fieldIndex && Object.prototype.hasOwnProperty.call(fieldIndex, name)) continue;
+        const existing = findExtra(name);
+        if (existing) {
+            // Never re-open something the user answered or told us to stop asking.
+            if (existing.state === 'open') { existing.count += 1; existing.lastSeen = now; changed = true; }
+            continue;
+        }
+        profile.extras.push({
+            name, question, value: null, state: 'open',
+            count: 1, lastSeen: now, partnerText: partnerText || '',
+        });
+        opened += 1; changed = true;
+    }
+    if (changed) await save();
+    return opened;
+}
+
+/** Questions from conversations still waiting for an answer, most-asked first. */
+export function listOpenExtras() {
+    return ensureLoaded().extras.filter((e) => e.state === 'open')
+        .sort((a, b) => b.count - a.count);
+}
+
+/** Every one of them, whatever their state — the editor needs the declined ones too. */
+export function listAllExtras() {
+    return [...ensureLoaded().extras];
+}
+
+/** Everything the user has actually answered this way. */
+export function listAnsweredExtras() {
+    return ensureLoaded().extras.filter((e) => e.state === 'answered' && e.value);
+}
+
+/**
+ * The names already in use, so the AI reuses one instead of inventing a synonym.
+ * Without it the same question arrives as "insurance", "insurer" and "my_insurance"
+ * -- three rows for one fact, which no de-duplication by name can merge.
+ */
+export function extraNames() {
+    return ensureLoaded().extras.map((e) => e.name);
+}
+
+export async function setExtra(name, value) {
+    const e = findExtra(name);
+    if (!e) return false;
+    e.value = value;
+    e.state = (value == null || String(value).trim() === '') ? 'open' : 'answered';
+    await save();
+    return true;
+}
+
+/** "Don't ask me this again" -- kept, so it cannot come back on the next mention. */
+export async function declineExtra(name) {
+    const e = findExtra(name);
+    if (!e) return false;
+    e.state = 'declined';
+    await save();
+    return true;
+}
+
+export async function reopenExtra(name) {
+    const e = findExtra(name);
+    if (!e) return false;
+    e.state = e.value ? 'answered' : 'open';
+    await save();
+    return true;
+}
+
+export async function removeExtra(name) {
+    const n = extraName(name);
+    ensureLoaded().extras = profile.extras.filter((e) => extraName(e.name) !== n);
+    await save();
 }
 
 /** Open gaps, most-asked first. */
@@ -656,6 +788,14 @@ export function buildBlock() {
                 }
             }
         }
+    }
+
+    // Facts the user answered to a question a conversation raised. ALWAYS private:
+    // we did not author the question, so we do not know what the answer holds -- an
+    // insurance number as easily as a pet's name. Available the moment a partner
+    // asks; never volunteered. See recordExtraGaps.
+    for (const e of listAnsweredExtras()) {
+        privateKnown.push(`- ${e.question.replace(/[?:]\s*$/, '')}: ${formatValue(e.value)}`);
     }
 
     if (!facts.length && !privateKnown.length && !phraseAround.size && !seek.length

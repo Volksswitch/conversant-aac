@@ -184,22 +184,132 @@ function renderGaps() {
         seen.add(g.key);
         items.push({ meta, count: g.count });
     }
-    if (!items.length) return;
+    // Facts About Me has no question for at all. These are the ones that used to be
+    // noticed every conversation and never recordable — see worldview.recordExtraGaps.
+    const extras = wv.listOpenExtras();
+    if (!items.length && !extras.length) return;
 
     contentEl.append(el('h3', { class: 'wv-section-title', text: 'Questions worth answering' }));
     contentEl.append(el('p', { class: 'wv-intro', text:
         'These came up in real conversations but I didn’t have the answer. Filling them in gives the biggest payoff.' }));
+    const timesText = (n) => (n > 1 ? `Came up ${n} times` : 'Came up once');
     for (const { meta, count } of items) {
-        const note = count > 1 ? `Came up ${count} times` : 'Came up once';
         contentEl.append(el('button', { class: 'wv-module-row',
             onclick: () => renderModule(meta.moduleId, meta.key) }, [
             el('div', { class: 'wv-module-main' }, [
                 el('div', { class: 'wv-module-title', text: meta.q }),
-                el('div', { class: 'wv-module-meta', text: `${note} · ${meta.moduleTitle}` })
+                el('div', { class: 'wv-module-meta', text: `${timesText(count)} · ${meta.moduleTitle}` })
             ]),
             el('div', { class: 'wv-chevron', text: '›' })
         ]));
     }
+    for (const e of extras) {
+        contentEl.append(el('button', { class: 'wv-module-row',
+            onclick: () => renderExtra(e.name) }, [
+            el('div', { class: 'wv-module-main' }, [
+                el('div', { class: 'wv-module-title', text: e.question }),
+                // Says where it came from, because unlike every other row on this
+                // screen the question was not one we wrote — the user should be able
+                // to see that a conversation raised it.
+                el('div', { class: 'wv-module-meta', text: `${timesText(e.count)} · from a conversation` })
+            ]),
+            el('div', { class: 'wv-chevron', text: '›' })
+        ]));
+    }
+}
+
+/* Every question the conversations have added, in one list. */
+function renderExtras() {
+    contentEl.scrollTop = 0;
+    contentEl.innerHTML = '';
+    showDockKeyboard();
+    contentEl.append(el('button', { class: 'wv-back', text: '‹ Back', onclick: renderHome }));
+    contentEl.append(el('h3', { class: 'wv-section-title', text: 'Other things about me' }));
+    contentEl.append(el('p', { class: 'wv-intro', text:
+        'These are not built-in questions — each one came up because somebody asked it in a conversation. '
+        + 'Your answers are kept private: the AI uses them for context but never raises them on its own.' }));
+    const all = wv.listAllExtras();
+    if (!all.length) {
+        contentEl.append(el('p', { class: 'wv-intro', text: 'Nothing yet.' }));
+        return;
+    }
+    for (const e of all) {
+        const meta = e.state === 'answered' && e.value ? formatValue(e.value)
+            : e.state === 'declined' ? 'Prefer not to say' : 'Not answered yet';
+        contentEl.append(el('button', { class: 'wv-module-row', onclick: () => renderExtra(e.name) }, [
+            el('div', { class: 'wv-module-main' }, [
+                el('div', { class: 'wv-module-title', text: e.question }),
+                el('div', { class: 'wv-module-meta', text: meta })
+            ]),
+            el('div', { class: 'wv-chevron', text: '›' })
+        ]));
+    }
+}
+
+/* One question a conversation raised, on its own page.
+ *
+ * Deliberately the same shape as an ordinary question card — same heading, same
+ * private notice, same Speak button, same "Prefer not to say" — because to the user
+ * it IS an ordinary question. The only difference on screen is the line saying where
+ * it came from, and Delete, which a built-in question does not have.
+ */
+function renderExtra(name) {
+    const e = wv.listAllExtras().find((x) => x.name === name);
+    if (!e) { renderHome(); return; }
+    contentEl.scrollTop = 0;
+    contentEl.innerHTML = '';
+    showDockKeyboard();
+
+    contentEl.append(el('button', { class: 'wv-back', text: '‹ Back', onclick: renderHome }));
+
+    const card = el('div', { class: 'wv-card' });
+    const head = el('div', { class: 'wv-card-head' }, [el('div', { class: 'wv-question', text: e.question })]);
+    if (e.state === 'answered') head.append(el('span', { class: 'wv-badge wv-badge-answered', text: '✓ Answered' }));
+    else if (e.state === 'declined') head.append(el('span', { class: 'wv-badge wv-badge-declined', text: 'Prefer not to say' }));
+    card.append(head);
+    card.append(el('p', { class: 'wv-module-meta', text: 'This came up in a conversation — it is not one of the built-in questions.' }));
+    // ALWAYS private: we did not write the question, so we do not know what the
+    // answer holds. Same wording as a built-in private field, which is the point.
+    card.append(el('p', { class: 'wv-private-note', text:
+        `🔒 The AI uses this for context but won't raise it on its own — only if they ask, or you ask for it in "In my own words".` }));
+
+    if (e.state === 'declined') {
+        card.append(el('div', { class: 'wv-actions' }, [
+            el('button', { class: 'wv-btn wv-btn-link', text: 'Undo — ask me this again',
+                onclick: async () => { await wv.reopenExtra(name); renderExtra(name); } })
+        ]));
+        contentEl.append(card);
+        return;
+    }
+
+    const input = el('input', { class: 'wv-text', type: 'text', value: e.value || '' });
+    input.addEventListener('change', () => wv.setExtra(name, input.value.trim()));
+    input.addEventListener('blur', () => wv.setExtra(name, input.value.trim()));
+    card.append(input);
+
+    const actions = el('div', { class: 'wv-actions' });
+    const speakBtn = el('button', { class: 'wv-btn wv-btn-speak', text: '🔊 Speak my answer',
+        onclick: () => { const v = input.value.trim(); if (v) speak(v); } });
+    if (!(e.value || '').trim()) speakBtn.setAttribute('disabled', 'true');
+    actions.append(speakBtn);
+    actions.append(el('button', { class: 'wv-btn wv-btn-link', text: 'Prefer not to say',
+        onclick: async () => { await wv.declineExtra(name); renderExtra(name); } }));
+    // Confirmed, because it is not a question we can put back — it only exists
+    // because a conversation raised it, and deleting loses the answer with it.
+    actions.append(el('button', { class: 'wv-btn wv-btn-link', text: 'Delete this question',
+        onclick: async () => {
+            const ok = await confirmDanger({
+                title: 'Delete this question?',
+                body: `“${e.question}” and any answer you gave will be removed. If it comes up in another conversation it may be added again.`,
+                confirmLabel: 'Delete it', cancelLabel: 'Keep it',
+            });
+            if (!ok) return;
+            await wv.removeExtra(name);
+            renderHome();
+        } }));
+    card.append(actions);
+    contentEl.append(card);
+    focusFirstField(card);
 }
 
 function renderHome() {
@@ -276,6 +386,22 @@ function renderHome() {
     // How I Sound — the voice layer. Not questionnaire Q&A either: the user is not
     // reporting facts about themselves, they are picking between wordings, and the
     // sentence they pick is the answer (Sounds Like Me, Phase 1).
+    // Questions the conversations added. Shown only once there are some, so a user
+    // who has never met one is not given a section that explains nothing.
+    const allExtras = wv.listAllExtras();
+    if (allExtras.length) {
+        const answeredExtras = allExtras.filter((e) => e.state === 'answered' && e.value).length;
+        contentEl.append(el('h3', { class: 'wv-section-title', text: 'Other things about me' }));
+        contentEl.append(el('button', { class: 'wv-module-row', onclick: renderExtras }, [
+            el('div', { class: 'wv-module-main' }, [
+                el('div', { class: 'wv-module-title', text: 'Questions that came up in conversations' }),
+                el('div', { class: 'wv-module-meta',
+                    text: `${answeredExtras} of ${allExtras.length} answered` })
+            ]),
+            el('div', { class: 'wv-chevron', text: '›' })
+        ]));
+    }
+
     contentEl.append(el('h3', { class: 'wv-section-title', text: 'How I sound' }));
     const answered = voiceProfile.answeredCount();
     const soundMeta = answered
