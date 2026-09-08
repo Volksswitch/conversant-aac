@@ -51,7 +51,7 @@
     "dataFolder": "The folder where your answers, your people, and your saved conversations are kept.",
     "settingsProfiles": "A saved copy of all your settings. With one saved you can put everything back after a reset, or set up another machine quickly.",
     "backupTransfer": "Puts everything about you into a single file, to keep somewhere safe or to move to another device.",
-    "deepgramKey": "A paid service for hearing the other person and for speaking as you. It needs your Deepgram key.",
+    "serviceKeys": "Where the keys go for the paid services that can hear the other person or speak as you. Each one needs its own account.",
     "yourVoice": "The voice that speaks as you.",
     "listening": "How long a pause counts as the other person finishing, whether the microphone picks itself back up, and whether a chime sounds.",
     "buttonSizing": "How big every button in the app is and how much space sits between them. Changing these moves the holes in a keyguard.",
@@ -83,8 +83,7 @@
     "acknowledgment": "The phrases it may say first, right after the other person stops talking. One is picked at random.",
     "thinking": "The phrases it may say after that, if you are still choosing. One is picked at random.",
     "colorScheme": "Seven color schemes, from the usual look to bolder outlines, high contrast, dark, yellow on black, and one for color blindness.",
-    "layoutBorders": "Unlock the borders between the transcript, the controls, the responses and the keyboard, then drag them to resize.",
-    "azureKey": "A paid service for hearing the other person and for speaking as you. It needs your Azure Speech key and the region your account is in."
+    "layoutBorders": "Unlock the borders between the transcript, the controls, the responses and the keyboard, then drag them to resize."
   },
   "radioGroups": {
     "sttProvider": "Who turns the other person's speech into words. Your browser does it free. Deepgram and Azure are paid, and work where the browser cannot.",

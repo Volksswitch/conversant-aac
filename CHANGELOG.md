@@ -26,6 +26,12 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- The Speech settings now keep all your paid-service keys in one place, under
+  **"Keys for paid services"**, instead of giving each service a section of its own.
+  Deepgram and Azure sit together there, each still with its own name, key box and
+  **Test** button — and Azure still has its region field beside its key. Nothing about
+  how they work has changed; there is simply one heading to open instead of two, which
+  matters more as further services are added.
 
 ## Version 0.10.9
 

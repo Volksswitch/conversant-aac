@@ -22,6 +22,9 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.10.10": [
+    "The Speech settings now keep all your paid-service keys in one place, under \"Keys for paid services\", instead of giving each service a section of its own. Deepgram and Azure sit together there, each still with its own name, key box and Test button — and Azure still has its region field beside its key. Nothing about how they work has changed; there is simply one heading to open instead of two, which matters more as further services are added."
+  ],
   "0.10.9": [
     "The app now eases off on the phrases it says to hold your place. It speaks up promptly at the start of a conversation, when the other person has not yet worked out that a pause means you are choosing, and then waits a little longer each exchange once they have. It never stops covering a genuinely long silence, and Hold on still says one whenever you want it. Set how quickly it eases off, or turn the easing off entirely, under Settings → Placeholders → Wait longer each exchange."
   ],
