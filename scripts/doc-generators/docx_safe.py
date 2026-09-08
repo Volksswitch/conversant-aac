@@ -295,9 +295,27 @@ def check_integrity(doc):
         if not _cells(tr):
             problems.append('an empty <w:tr>')
             break
+    # ⚠ THE GRID AND THE ROWS MUST AGREE, and nothing else notices when they do not.
+    # A <w:tbl> declares its columns ONCE in <w:tblGrid>; widening a table by adding a
+    # <w:tc> to every row without adding a <w:gridCol> leaves the two disagreeing.
+    # python-docx goes on reporting the OLD column count, so the table looks untouched
+    # from code, and Word lays the surplus column out by guesswork. Hit while adding the
+    # control-standards table to the UI Design document, September 8 2026 - every other
+    # check in this function passed the malformed table.
     for tbl in body.iter(qn('w:tbl')):
-        if not list(tbl.iterchildren(qn('w:tr'))):
+        rows = list(tbl.iterchildren(qn('w:tr')))
+        if not rows:
             problems.append('an empty <w:tbl>')
+            continue
+        grid = tbl.find(qn('w:tblGrid'))
+        declared = len(grid.findall(qn('w:gridCol'))) if grid is not None else 0
+        # A merged cell legitimately spans several grid columns, so the test is that no
+        # row claims MORE cells than the grid declares - not that they are equal.
+        widest = max(len(_cells(tr)) for tr in rows)
+        if declared and widest > declared:
+            problems.append(
+                'a table whose rows hold %d cells while its <w:tblGrid> declares %d '
+                'columns: add a <w:gridCol> when you add a cell' % (widest, declared))
             break
 
     # Duplicated identities - the class that caused both September 8 faults.
