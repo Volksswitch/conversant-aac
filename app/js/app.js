@@ -2012,6 +2012,13 @@ async function commitExchange(raw, userText, index, opts = {}) {
     setOfferedRange(null);
     clearTurnSteering();
     dropHeldForComposer();
+    // One more full exchange of how this device behaves has now played out in front
+    // of the other person, so the floor-holding phrases ease off a step (see the
+    // easing-off note in placeholders.js). It is counted HERE, at the one choke point
+    // every user turn passes through, and deliberately NOT at the silence checkpoint:
+    // a hesitant speaker produces several checkpoints inside one turn, so counting
+    // those would go quiet while they were still on their first sentence.
+    placeholders.noteExchange();
     if (raw) {
         // Updates the entry in place if it was already promoted by a mid-turn user
         // command (so it stays before that command), else appends it.
@@ -2486,6 +2493,9 @@ async function terminateConversation() {
     // (handleEndConversation) and nowhere else.
     // A new conversation gets its own start-of-listening cue, whichever mode.
     chime.resetConversation();
+    // ...and starts over at the user's initial delay, because the person in front of
+    // them has not yet learned what a pause on this device means (see placeholders.js).
+    placeholders.resetConversation();
     // Raises "it ended" only if one had actually begun — see conversationBoundary.
     metrics.conversationBoundary({ turns: conversationHistory.length, practice: practiceMode });
     manualListenArmed = false;
@@ -5710,6 +5720,7 @@ function openSettings() {
     const initialDelayInput = document.getElementById('initialDelayInput');
     const subsequentDelayInput = document.getElementById('subsequentDelayInput');
     const maxPlaceholdersInput = document.getElementById('maxPlaceholdersInput');
+    const placeholderEaseOffInput = document.getElementById('placeholderEaseOffInput');
     const responsesPerCategoryInput = document.getElementById('responsesPerCategoryInput');
     const colorSchemeInput = document.getElementById('colorSchemeInput');
     const cardTextModeInput = document.getElementById('cardTextModeInput');
@@ -5745,6 +5756,7 @@ function openSettings() {
     initialDelayInput.value = placeholderSettings.initialDelay;
     subsequentDelayInput.value = placeholderSettings.subsequentDelay;
     maxPlaceholdersInput.value = placeholderSettings.maxPlaceholders;
+    placeholderEaseOffInput.value = placeholderSettings.placeholderEaseOff;
     // Express Panel tap controls (no set selector — one list, always shown).
     const doubleTapMsSelect = document.getElementById('doubleTapMsSelect');
     const tapMode = storage.loadExpressTapMode();
@@ -6689,11 +6701,13 @@ function openSettings() {
     const persistPlaceholders = () => storage.savePlaceholderSettings(
         Number(initialDelayInput.value),
         Number(subsequentDelayInput.value),
-        Number(maxPlaceholdersInput.value)
+        Number(maxPlaceholdersInput.value),
+        Number(placeholderEaseOffInput.value)
     );
     initialDelayInput.onchange = persistPlaceholders;
     subsequentDelayInput.onchange = persistPlaceholders;
     maxPlaceholdersInput.onchange = persistPlaceholders;
+    placeholderEaseOffInput.onchange = persistPlaceholders;
 
     // Express Panel: persist + live-re-render the panel on any change.
     document.querySelectorAll('input[name="expressTapMode"]').forEach((radio) => {

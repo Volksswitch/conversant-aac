@@ -24,6 +24,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 beforeEach(() => {
     placeholders.stop();       // clear any timer from a prior test
     placeholders.setUserSpeakingGate(() => false);   // singleton — reset per test
+    placeholders.resetConversation();                // singleton — each test is a fresh conversation
     resetLocalStorage();
     resetSpoken();
 });
@@ -232,4 +233,92 @@ test('an emptied placeholder list leaves Hold on with nothing rather than crashi
     phrasePools.setPools({ acknowledgment: [], thinking: [] });
     assert.doesNotThrow(() => placeholders.phraseOnDemand());
     phrasePools.resetPools();
+});
+
+
+/* --- Easing off over a conversation (Ken, September 8 2026) -----------------------
+ *
+ * "It begins to sound overbearing after about the third time." The first placeholder
+ * of a turn is DELAYED a little further with each exchange already had, so quick turns
+ * fall quiet once the cards beat it while a genuinely long silence is still covered on
+ * exchange twelve. These drive the real module and read the real speech shim; the
+ * delays are fractional seconds so the whole set runs in about two seconds.
+ */
+
+// The load-bearing one: the wait actually grows, so a turn that spoke immediately at
+// the start of a conversation is still silent at that same moment later on.
+test('easing off: the first placeholder is delayed further with each exchange', async () => {
+    storage.savePlaceholderSettings(0.02, 5, 2, 0.1);
+    placeholders.arm();
+    await sleep(60);
+    assert.equal(spokenTexts.length, 1, 'exchange 0 speaks at the plain initial delay');
+
+    resetSpoken();
+    placeholders.noteExchange();
+    placeholders.noteExchange();          // delay is now 0.02 + 2 x 0.1 = 0.22s
+    placeholders.arm();
+    await sleep(120);
+    assert.equal(spokenTexts.length, 0, 'at 120ms it has not spoken — the wait grew');
+    await sleep(280);
+    assert.equal(spokenTexts.length, 1, 'but it still speaks: eased off, never removed');
+});
+
+// Without a ceiling the delay would run away over a long conversation and the
+// floor-holder would be gone for good, which is exactly what easing off is meant NOT
+// to do. Growth stops after four exchanges: 0.02 + 4 x 0.1 = 0.42s, not 0.02 + 12.
+test('easing off stops growing after the first few exchanges', async () => {
+    storage.savePlaceholderSettings(0.02, 5, 2, 0.1);
+    for (let i = 0; i < 12; i++) placeholders.noteExchange();
+    placeholders.arm();
+    await sleep(300);
+    assert.equal(spokenTexts.length, 0, 'still waiting at 300ms');
+    await sleep(350);
+    assert.equal(spokenTexts.length, 1, 'speaks at the capped delay, not 12 exchanges worth');
+});
+
+// A new conversation is a new person, who has learned nothing about this device yet.
+test('a new conversation starts over at the plain initial delay', async () => {
+    storage.savePlaceholderSettings(0.02, 5, 2, 0.1);
+    for (let i = 0; i < 4; i++) placeholders.noteExchange();
+    placeholders.resetConversation();
+    placeholders.arm();
+    await sleep(60);
+    assert.equal(spokenTexts.length, 1, 'back to speaking at the initial delay');
+});
+
+// "Never — same every time" has to reproduce the behaviour from before this existed,
+// exactly, however long the conversation runs.
+test('easing off set to 0 leaves the delay alone however many exchanges pass', async () => {
+    storage.savePlaceholderSettings(0.02, 5, 2, 0);
+    for (let i = 0; i < 10; i++) placeholders.noteExchange();
+    placeholders.arm();
+    await sleep(60);
+    assert.equal(spokenTexts.length, 1, 'unchanged: the user asked for the same delay every time');
+});
+
+// ⚠ THE TRAP THIS GUARDS: arm() runs at every pause in the other person's speech, and
+// at the 0.5s silence default one hesitant speaker produces several inside a single
+// turn. If easing off counted those, the app would fall silent while they were still
+// on their first sentence — the failure mode is invisible, because going quiet is what
+// the feature is supposed to do. An exchange is a COMMITTED USER TURN and nothing else.
+test('re-arming within one partner turn does not ease off', async () => {
+    storage.savePlaceholderSettings(0.02, 5, 2, 0.1);
+    for (let i = 0; i < 6; i++) placeholders.arm();   // six silence checkpoints, one turn
+    await sleep(60);
+    assert.equal(spokenTexts.length, 1, 'still the plain initial delay — no exchange has completed');
+});
+
+// The counting itself lives in app.js, which no test can load, so this is the
+// source-level tripwire for the link between the two layers.
+test('an exchange is counted at the commit choke point, not at the silence checkpoint', () => {
+    const at = appSource.indexOf('async function commitExchange(');
+    assert.ok(at > 0, 'commitExchange not found');
+    const body = appSource.slice(at, appSource.indexOf('\nasync function ', at + 10));
+    assert.ok(/placeholders\.noteExchange\(\);/.test(body),
+        'commitExchange must count the exchange — without it the app never eases off '
+        + 'and nothing reports that it did not');
+    assert.equal((appSource.match(/placeholders\.noteExchange\(\)/g) || []).length, 1,
+        'exactly one caller: a second one would ease off twice as fast, silently');
+    assert.ok(/placeholders\.resetConversation\(\);/.test(appSource),
+        'a conversation boundary must start the easing off over');
 });

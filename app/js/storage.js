@@ -2269,14 +2269,27 @@ export function loadPlaceholderSettings() {
         // hears at most one "I heard you" placeholder plus one "still thinking" placeholder
         // — two different roles, never two same-category placeholders back to back.
         // 0 = none (the user finds placeholders artificial/robotic); -1 = no limit.
-        maxPlaceholders: settings.maxPlaceholders ?? 2
+        maxPlaceholders: settings.maxPlaceholders ?? 2,
+        // Seconds added to the initial delay for each exchange already had in this
+        // conversation, so the app eases off rather than piping up every single time
+        // (Ken, September 8 2026: "it begins to sound overbearing after about the
+        // third time"). 0 = never change, which is how it behaved before this existed.
+        //
+        // Default 2 because the growth has to outrun the round-trip to do anything at
+        // all: a set of suggestions takes roughly 4-8 seconds, so at 2s a placeholder
+        // is certain on every turn, and only from the third exchange (2 -> 4 -> 6) does
+        // the wait pass the point where the cards usually arrive on their own.
+        placeholderEaseOff: settings.placeholderEaseOff ?? 2
     };
 }
 
-export function savePlaceholderSettings(initialDelay, subsequentDelay, maxPlaceholders) {
+export function savePlaceholderSettings(initialDelay, subsequentDelay, maxPlaceholders, placeholderEaseOff) {
     const settings = loadSettings();
     settings.initialDelay = initialDelay;
     settings.subsequentDelay = subsequentDelay;
     if (maxPlaceholders !== undefined) settings.maxPlaceholders = maxPlaceholders;
+    // Omitted keeps the stored value rather than resetting it, matching maxPlaceholders
+    // above: the three-argument form is used widely in the tests and must stay safe.
+    if (placeholderEaseOff !== undefined) settings.placeholderEaseOff = placeholderEaseOff;
     saveSettings(settings);
 }

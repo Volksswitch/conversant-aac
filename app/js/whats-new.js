@@ -22,6 +22,9 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.10.9": [
+    "The app now eases off on the phrases it says to hold your place. It speaks up promptly at the start of a conversation, when the other person has not yet worked out that a pause means you are choosing, and then waits a little longer each exchange once they have. It never stops covering a genuinely long silence, and Hold on still says one whenever you want it. Set how quickly it eases off, or turn the easing off entirely, under Settings → Placeholders → Wait longer each exchange."
+  ],
   "0.10.7": [
     "When someone asks you for something the app has not been told — your date of birth, your allergies, an address — it no longer makes one up. It used to: asked \"are you allergic to anything?\" with nothing on file, the top suggestion was \"No allergies.\" Now the first suggestion is a plain \"I don't know\", which is the honest answer and the one a nurse or a doctor can actually act on. If the fact IS in your About Me, it still answers straight away.",
     "There is a new kind of suggestion for those moments: \"Give me a second and I'll type it.\" It buys you a moment out loud, and — unlike every other suggestion — it does not close off what the other person asked. Their question stays open, so when you have typed your answer it goes back against the right question. It never appears in the first position, because the first suggestion is always one that settles the matter and lets the other person get on.",

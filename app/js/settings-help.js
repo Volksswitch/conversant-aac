@@ -78,6 +78,7 @@ const HELP = {
     "listenChimeInput": "Play a short tone when listening begins, so the other person knows the app is listening.",
     "initialDelayInput": "How long the app waits before saying something to hold your place while you choose.",
     "subsequentDelayInput": "How long before it says another one, if you are still choosing.",
+    "placeholderEaseOffInput": "Adds this much to the wait each exchange, so the app eases off once the other person has learned that a pause means you are choosing.",
     "maxPlaceholdersInput": "How many of those holding phrases it may say in one turn. Set it to none if you would rather it stayed quiet.",
     "doubleTapMsSelect": "How quickly the two taps have to follow one another to count as a double tap.",
     "appMarginSlider": "Moves the whole app in from the edges of the screen, so a keyguard fits inside a tight case opening.",

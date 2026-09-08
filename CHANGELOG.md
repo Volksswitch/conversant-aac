@@ -26,6 +26,13 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- The app now eases off on the phrases it says to hold your place. It speaks up
+  promptly at the start of a conversation, when the other person has not yet worked
+  out that a pause means you are choosing, and then waits a little longer each
+  exchange once they have. It never stops covering a genuinely long silence, and
+  **Hold on** still says one whenever you want it. Set how quickly it eases off, or
+  turn the easing off entirely, under **Settings → Placeholders → Wait longer each
+  exchange**.
 
 ## Version 0.10.7
 

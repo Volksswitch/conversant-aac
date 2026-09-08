@@ -54,6 +54,60 @@ let count = 0;               // placeholders spoken this window (for role + cap)
 let lastIndex = { acknowledgment: -1, thinking: -1 };
 let armTime = 0;             // when the partner stopped (initial-delay clock origin)
 let armed = false;           // arm() was called and start() hasn't consumed it
+let exchanges = 0;           // exchanges completed in THIS conversation (see easing off)
+
+/* Easing off over a conversation (Ken, September 8 2026).
+ *
+ * Ken: "I'm concerned about the use of placeholder phrases after EVERY partner
+ * turn. It begins to sound overbearing after about the third time."
+ *
+ * WHY EASING OFF IS RIGHT AND NOT JUST QUIETER: a placeholder does two jobs, and
+ * only one of them expires. Telling the other person "I heard you, I'm working on
+ * it" matters enormously in the first exchange or two, when they do not yet know
+ * that a pause means the user is choosing rather than that they did not hear or
+ * cannot answer. By the third exchange they have learned it, and saying it again
+ * is noise. HOLDING THE FLOOR through a genuinely long silence never expires. So
+ * the delay grows and the placeholder is never removed: a quick turn goes quiet
+ * because the cards arrive first, and an unusually long wait still gets covered,
+ * on exchange twelve as much as on exchange one.
+ *
+ * That is why the first placeholder is DELAYED rather than skipped, and why this
+ * was chosen over playing one at random with falling odds. A person can learn a
+ * rule and cannot learn a coin flip, so under randomness the very thing they are
+ * meant to learn never settles - and "sometimes it speaks and sometimes it does
+ * not" is a complaint nobody can explain afterwards, ourselves included.
+ *
+ * The growth stops after EASE_OFF_EXCHANGES so the delay cannot run away over a
+ * long conversation. Four because Ken's own observation is "about the third time",
+ * so being fully settled by the fourth or fifth exchange matches what he heard.
+ * At the defaults that is 2 -> 4 -> 6 -> 8 -> 10 -> 10 -> 10 seconds.
+ *
+ * ⚠ AN EXCHANGE IS A COMMITTED USER TURN, NOT A SILENCE CHECKPOINT, and getting
+ * that wrong would silence the ladder inside a single turn. arm() runs at every
+ * pause in the other person's speech, and at the 0.5s silence default one turn
+ * from a hesitant speaker produces several - so counting arm() calls would ease
+ * off to nothing while they were still on their first sentence. app.js calls
+ * noteExchange() from commitExchange(), the one choke point every user turn
+ * passes through, and resetConversation() beside chime.resetConversation().
+ */
+const EASE_OFF_EXCHANGES = 4;
+
+// A user turn was committed, so the other person has now seen one more full
+// exchange of how this device behaves.
+export function noteExchange() { exchanges++; }
+
+// A conversation ended or a new one started - the next person has learned nothing
+// yet, so the ladder starts over at the user's initial delay.
+export function resetConversation() { exchanges = 0; }
+
+// How long to wait before the FIRST placeholder of this turn. Deliberately not
+// clamped to an absolute ceiling: a user who has chosen both the longest start and
+// the steepest easing off has asked for the app to go quiet, and quietly disobeying
+// a setting is worse than obeying it - "Hold on" is always there to fire one by hand.
+function initialDelayFor({ initialDelay, placeholderEaseOff }) {
+    const step = Number(placeholderEaseOff) || 0;
+    return initialDelay + step * Math.min(exchanges, EASE_OFF_EXCHANGES);
+}
 // A gate the app sets so a placeholder never speaks OVER the user's own statement
 // (a spoken command / response / Express phrase). Pressing a speaking button must
 // abort placeholders instantly (Ken, July 2026) — this is the hard backstop even
@@ -157,11 +211,11 @@ export function arm() {
     armTime = Date.now();
     count = 0;
     lastIndex = { acknowledgment: -1, thinking: -1 };
-    const { initialDelay, maxPlaceholders } = storage.loadPlaceholderSettings();
+    const settings = storage.loadPlaceholderSettings();
     // 0 = the user wants no placeholders at all (they read as artificial).
-    if (maxPlaceholders === 0) { active = false; return; }
+    if (settings.maxPlaceholders === 0) { active = false; return; }
     active = true;
-    timer = setTimeout(speakNext, Math.max(0, initialDelay * 1000));
+    timer = setTimeout(speakNext, Math.max(0, initialDelayFor(settings) * 1000));
 }
 
 // Called once the classification is back and the turn warrants placeholders.
@@ -172,7 +226,8 @@ export function arm() {
 // because the defensive path below still has to work if start() is ever reached
 // without a preceding arm().
 export async function start() {
-    const { initialDelay, maxPlaceholders } = storage.loadPlaceholderSettings();
+    const settings = storage.loadPlaceholderSettings();
+    const { maxPlaceholders } = settings;
     // 0 = the user wants no placeholders at all (they read as artificial).
     if (maxPlaceholders === 0) { stop(); return; }
     if (active) { armed = false; return; }   // arm() is already driving the ladder
@@ -184,7 +239,7 @@ export async function start() {
     active = true;
     count = 0;
     lastIndex = { acknowledgment: -1, thinking: -1 };
-    timer = setTimeout(speakNext, Math.max(0, initialDelay * 1000 - (Date.now() - base)));
+    timer = setTimeout(speakNext, Math.max(0, initialDelayFor(settings) * 1000 - (Date.now() - base)));
 }
 
 export function stop() {
