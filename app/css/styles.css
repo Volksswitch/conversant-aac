@@ -824,7 +824,7 @@
    13.3px against the 14px of every button somebody sized, which is how the panel came to
    hold six sizes of one control — including a "Paste" button a point smaller than the
    five identical ones two tabs away. */
-:where(#settingsDialog, #worldviewScreen) :where(button, input, select, textarea) {
+:where(#settingsDialog) :where(button, input, select, textarea) {
     font-family: inherit;
     font-size: inherit;
 }
@@ -2426,7 +2426,7 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
    the blue speak buttons, the transparent title-bar icons, and everything that is a card
    rather than a button (a practice scenario, an About Me module row, an Express Panel
    preview cell) all declare their own and are untouched. */
-:where(#settingsDialog, #worldviewScreen) button {
+:where(#settingsDialog) button {
     background: var(--surface-raised-alt);
     color: var(--ink);
     border: 1px solid var(--edge);
@@ -4082,12 +4082,14 @@ label.radio-label input[type="radio"] {
     margin-bottom: 0.6rem;
 }
 
+/* An answer OPTION rather than an action: the pill shape is the idiom for "pick one of
+   these", so the radius is its own. The SIZE is not - it was 0.95rem, a shade smaller
+   than every other control in the panel for no reason anybody chose. */
 .wv-chip {
     background: var(--surface-raised-alt);
     border: 2px solid var(--edge);
     border-radius: 20px;
     padding: 0.45rem 0.9rem;
-    font-size: 0.95rem;
     cursor: pointer;
 }
 
@@ -4430,10 +4432,14 @@ body.conv-bottom     .danger-dialog {
     margin-top: 0.6rem;
 }
 
+/* ⚠ NO SIZE AND NO RADIUS OF ITS OWN. About Me is a Settings TAB, not the separate
+   screen it used to be, so its buttons sit one tab away from the panel's other buttons
+   and used to be visibly smaller and rounder than them - 13.9px at radius 6 against
+   14.6px at radius 4. Everything else here already matched the baseline exactly, so what
+   is left is padding, which the baseline also gives; the rule is kept because the
+   -primary / -speak / -link modifiers build on it. */
 .wv-btn {
-    border-radius: 6px;
     padding: 0.5rem 0.9rem;
-    font-size: 0.95rem;
     cursor: pointer;
     border: 1px solid var(--edge);
     background: var(--surface-raised-alt);

@@ -23,6 +23,7 @@ import * as platform from './platform.js';
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
   "0.10.12": [
+    "The buttons and answer chips in About Me are now the same size as the rest of Settings, rather than slightly smaller.",
     "Settings looks like one panel again. Boxes of the same kind now use the same typeface, the same size and the same height, and buttons look like buttons everywhere — several used to be plain white squares because nothing had styled them, which is why the profile and backup buttons stood out. The text boxes on the Express Panel and Keyboard tab are now the same height as the ones on the Speech tab, and the Anthropic key row on the General tab matches the five paid-service rows exactly.",
     "Every button that tries something out is now called \"Test\", whether it is checking a key or playing a voice. It used to be \"Test\", \"Test this voice\" or \"Test partner voice\" depending on where you were.",
     "The Backspace, Shift and Enter keys on the on-screen keyboard now tell a screen reader their names instead of reading out their symbols.",

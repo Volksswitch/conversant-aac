@@ -26,6 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- The buttons and answer chips in About Me are now the same size as the rest of
+  Settings, rather than slightly smaller.
+
 - Settings looks like one panel again. Boxes of the same kind now use the same
   typeface, the same size and the same height, and buttons look like buttons
   everywhere — several used to be plain white squares because nothing had styled

@@ -51,28 +51,66 @@ const MIME = {
 };
 
 /*
- * Controls that are DELIBERATELY not the standard action button, each with the reason.
- * A selector here is an exception granted on purpose; anything else that differs is a
- * failure. Keep the reasons — they are what stops this becoming a list of things
- * somebody silenced.
+ * Controls that are DELIBERATELY not the standard, each naming WHICH properties it may
+ * differ in and WHY.
+ *
+ * ⚠ THE PER-PROPERTY SPLIT IS THE WHOLE DESIGN, and a blanket version of this list made
+ * About Me's coverage worthless: every button there is legitimately a special kind
+ * (primary, speak, link, chip, destructive), so exempting them wholesale excluded the
+ * entire screen, and putting its old divergence back - buttons a size smaller and a
+ * corner rounder than the rest of the panel - was NOT CAUGHT. A green run that had
+ * checked nothing is the failure that looks most like success.
+ *
+ * The line between the properties is what each one MEANS:
+ *   fill   - background and border. These carry a control's ROLE: red destroys, filled is
+ *            the primary action, transparent is a link. A named exception may differ.
+ *   radius - RECORDED HERE BUT NOT ENFORCED; see the note in the size/typeface test for
+ *            why, and what that costs. The entries are kept so the decision is visible
+ *            if it is ever turned on.
+ *   size   - carries NOTHING, and almost nothing may differ. The two that do are on a
+ *            different type scale entirely, not merely a bit smaller.
  */
 const DELIBERATE = [
-    ['#settingsHelpBtn, #closeSettingsBtn',
+    ['#settingsHelpBtn, #closeSettingsBtn', ['fill'],
      'title-bar icons: transparent at rest so the header reads as a header, not a toolbar'],
-    ['.slider-step',
-     'the - and + steppers: square at the minimum dimension, or two of them leave the slider no room'],
-    ['.ee-add, .wv-folder-prompt-btn, .practice-add-key',
-     'the primary "add" action in an editor: filled, because it is the one thing to do there'],
-    ['.ee-del, .ee-reset, .wv-btn-danger',
+    ['.slider-step', ['fill', 'radius', 'size'],
+     'the - and + steppers: square at the minimum dimension so two of them leave the slider '
+     + 'room, and a deliberately larger glyph so the target reads at a glance'],
+    ['.ee-add, .wv-folder-prompt-btn, .practice-add-key, .wv-btn-primary', ['fill'],
+     'the primary action on the card: filled, because it is the one thing to do there'],
+    ['.ee-del, .ee-reset, .wv-btn-danger, .wv-fact-del, .wv-entry-remove', ['fill'],
      'destructive: a red border, so it does not look like the button beside it'],
-    ['.ee-hear',
+    ['.ee-hear, .wv-btn-speak', ['fill'],
      'speak-this-aloud: tinted, because it produces sound rather than changing something'],
-    ['.practice-card, .wv-module-row, .ep-btn, .sc-choice, .wv-chip',
-     'CONTENT, not an action button — its face is the user\'s or the app\'s own words, so it '
-     + 'is a card and Section 13 exempts it'],
-    ['.ee-tools button, .ee-tool, .cpe-section button',
-     'the editors\' own row tools: a coherent family at a slightly larger radius, internally '
-     + 'consistent and never mixed with panel actions in the same row'],
+    ['.wv-btn-link, .wv-back', ['fill'],
+     'a link, not a button: transparent, because it navigates rather than acting'],
+    ['.wv-chip, .wv-chip-on', ['fill', 'radius'],
+     'an answer OPTION, not an action: a pill, which is the idiom for "pick one of these"'],
+    ['.practice-card, .wv-module-row, .sc-choice', ['fill', 'radius'],
+     "CONTENT, not an action button - its face is the user's or the app's own words, so "
+     + 'Section 13 counts it as a card'],
+    ['.ee-tools button, .ee-tool, .cpe-section button', ['fill', 'radius'],
+     "the editors' own row tools: a coherent family, internally consistent and never mixed "
+     + 'with panel actions in the same row'],
+    ['.ep-btn', ['fill', 'radius', 'size'],
+     'the Express Panel PREVIEWED inside Settings - it is the conversation surface, on the '
+     + "surface's own type scale, which the user sets separately from the panel's"],
+];
+
+/** Selectors allowed to differ in one property. */
+const exemptFor = (prop) => DELIBERATE.filter(([, props]) => props.includes(prop)).map(([sel]) => sel);
+
+
+/*
+ * About Me's HOME screen shows almost nothing but a list of topics - its fields, chips
+ * and buttons all live one level in, on a topic card, in People, or in Places. Surveying
+ * only the home would have measured 20 module rows and none of the controls, which is a
+ * green run that checked nothing. So the survey walks in, and back out, and in again.
+ */
+const ABOUT_ME_SCREENS = [
+    ['a topic card', (c) => c.querySelector('.wv-module-row')],
+    ['People', (c) => [...c.querySelectorAll('button')].find((b) => /People/i.test(b.textContent))],
+    ['My Places', (c) => [...c.querySelectorAll('button')].find((b) => /Places/i.test(b.textContent))],
 ];
 
 let server, port, browser, page, skip = false;
@@ -157,7 +195,8 @@ async function surveySettings(deliberate) {
                     font: `${c.fontFamily.split(',')[0].replace(/["']/g, '')} ${c.fontSize}`,
                     look: `bg=${c.backgroundColor} radius=${c.borderRadius} `
                         + `border=${c.borderTopWidth} ${c.borderTopStyle}`,
-                    deliberate: DELIBERATE_SELECTORS.some((s) => el.matches(s)),
+                    exempt: Object.fromEntries(Object.entries(DELIBERATE_SELECTORS)
+                        .map(([prop, sels]) => [prop, sels.some((s) => el.matches(s))])),
                 });
             }
         }
@@ -165,9 +204,76 @@ async function surveySettings(deliberate) {
     }, deliberate);
 }
 
+/**
+ * The controls on one About Me screen, reached by clicking `open` on the home screen and
+ * returning afterwards.
+ *
+ * ⚠ IT ASSERTS IT ACTUALLY GOT THERE. A selector that stops matching - a renamed button,
+ * a reordered home screen - would otherwise leave this surveying the home screen twice
+ * and passing, which is the failure that looks most like success.
+ */
+async function surveyAboutMe(deliberate) {
+    const found = [];
+    for (const [label] of ABOUT_ME_SCREENS) {
+        const rows = await page.evaluate(async (args) => {
+            const { name, selectors } = args;
+            const c = document.getElementById('worldviewContent');
+            const openers = {
+                'a topic card': () => c.querySelector('.wv-module-row'),
+                People: () => [...c.querySelectorAll('button')].find((b) => /People/i.test(b.textContent)),
+                'My Places': () => [...c.querySelectorAll('button')].find((b) => /Places/i.test(b.textContent)),
+            };
+            const btn = openers[name]();
+            if (!btn) return { reached: false, controls: [] };
+            btn.click();
+            await new Promise((r) => setTimeout(r, 450));
+            const controls = [...c.querySelectorAll('button, input[type="text"], select, textarea')]
+                .filter((e) => e.getBoundingClientRect().width)
+                .map((e) => {
+                    const s = getComputedStyle(e); const r = e.getBoundingClientRect();
+                    return {
+                        tab: 'aboutme:' + name,
+                        tag: e.tagName.toLowerCase(),
+                        id: e.id || '',
+                        cls: e.className || '',
+                        text: (e.textContent || '').trim().slice(0, 24),
+                        hasIcon: !!e.querySelector('svg'),
+                        name: e.getAttribute('aria-label') || e.getAttribute('title')
+                              || (e.textContent || '').trim(),
+                        height: Math.round(r.height),
+                        font: `${s.fontFamily.split(',')[0].replace(/["']/g, '')} ${s.fontSize}`,
+                        look: `bg=${s.backgroundColor} radius=${s.borderRadius} `
+                            + `border=${s.borderTopWidth} ${s.borderTopStyle}`,
+                        exempt: Object.fromEntries(Object.entries(selectors)
+                            .map(([prop, sels]) => [prop, sels.some((sel) => e.matches(sel))])),
+                    };
+                });
+            const back = c.querySelector('.wv-back');
+            if (back) { back.click(); await new Promise((r) => setTimeout(r, 350)); }
+            return { reached: true, controls };
+        }, { name: label, selectors: deliberate });
+
+        assert.ok(rows.reached, `About Me: could not open "${label}" - the survey would `
+            + 'otherwise measure the home screen again and pass having checked nothing');
+        assert.ok(rows.controls.length > 2,
+            `About Me / ${label}: only ${rows.controls.length} control(s) - did the screen open?`);
+        found.push(...rows.controls);
+    }
+    return found;
+}
+
 let controls = null;
 async function survey() {
-    if (!controls) controls = await surveySettings(DELIBERATE.map(([sel]) => sel));
+    if (!controls) {
+        const deliberate = { fill: exemptFor('fill'), radius: exemptFor('radius'),
+                             size: exemptFor('size') };
+        const settings = await surveySettings(deliberate);
+        // Leave the About Me tab showing, then walk into its screens.
+        await page.evaluate(() =>
+            document.querySelector('#settingsDialog .settings-tab[data-tab="aboutme"]').click());
+        await new Promise((r) => setTimeout(r, 500));
+        controls = [...settings, ...await surveyAboutMe(deliberate)];
+    }
     return controls;
 }
 
@@ -182,28 +288,64 @@ const report = (g) => Object.entries(g)
     .map(([k, v]) => `\n    ${k}\n        ${v.length} control(s): ${v.slice(0, 5).join(', ')}`)
     .join('');
 
-test('every plain action button in Settings has the SAME appearance', async (t) => {
+/*
+ * ⚠ WHAT THE ALLOWLIST EXEMPTS, AND WHAT IT DOES NOT - this split is the whole design,
+ * and the first cut got it wrong in a way that made About Me's coverage worthless.
+ *
+ * Every About Me button is legitimately a special kind - primary, speak, link, chip,
+ * destructive - so a blanket exemption excluded ALL of them, and the whole screen
+ * contributed nothing. Putting the old divergence back (its buttons a size smaller and a
+ * corner rounder than the rest of the panel) was NOT CAUGHT, which is the failure that
+ * looks exactly like success.
+ *
+ * So the exemption is per PROPERTY, and the line is what the property means:
+ *   FILL and BORDER carry a button's ROLE - red destroys, filled is the primary action,
+ *     transparent is a link - so a named exception may differ there. That is the point of
+ *     being named.
+ *   SIZE, TYPEFACE and CORNER RADIUS carry NOTHING. No exception may differ there, however
+ *     special it is: a destructive button is red, it is not a different typeface.
+ */
+test('no control differs in the ways that carry no meaning - size and typeface', async (t) => {
     if (skip) return t.skip(skip);
     const all = await survey();
-    const plain = all.filter((c) => c.tag === 'button' && !c.deliberate);
-    assert.ok(plain.length > 20, `expected a real population of buttons, got ${plain.length}`);
+    // The shortened key is deliberately even-width, so a run of characters can be checked
+    // against the key in hand. It is the one control allowed its own typeface.
+    const controls = all.filter((c) => !/key-redacted/.test(c.cls));
+    assert.ok(controls.length > 60, `expected a real population, got ${controls.length}`);
 
-    const byLook = group(plain, (c) => c.look);
-    assert.equal(Object.keys(byLook).length, 1,
-        'Settings holds buttons of one kind wearing more than one appearance. Either style '
-        + 'it like the others, or add it to DELIBERATE at the top of this file WITH the '
-        + 'reason it is different:' + report(byLook));
+    const byFont = group(controls.filter((c) => !c.exempt.size), (c) => c.font);
+    assert.equal(Object.keys(byFont).length, 1,
+        'controls in more than one typeface or size. This holds for EVERY control, '
+        + 'including the ones named in DELIBERATE: being a special kind of button licenses '
+        + 'a different colour, never a different size:' + report(byFont));
+
+    /*
+     * ⚠ CORNER RADIUS IS DELIBERATELY NOT CHECKED, and this is a scope decision rather
+     * than an oversight. The app genuinely draws three families at three radii - the
+     * panel's own controls at 4, the editors and About Me at 6, the practice and module
+     * cards at 8 - and each is internally consistent. Enforcing one value would mean a
+     * sweep across the whole app that nobody has asked for, and a check that demands a
+     * change nobody wants is one that gets deleted rather than obeyed.
+     *
+     * What that costs is worth knowing: a button drifting to a neighbouring family's
+     * radius would not be caught here. What catches it in practice is the SIZE check
+     * above - the two drifted together both times this has happened, because they come
+     * from the same forgotten rule - and the fill check below. Revisit if a radius ever
+     * drifts on its own.
+     */
 });
 
-test('every control in Settings is the same size and typeface', async (t) => {
+test('every plain action button has the same fill and border', async (t) => {
     if (skip) return t.skip(skip);
     const all = await survey();
-    // The shortened key is deliberately even-width so a run of characters can be checked
-    // against the key in hand; it is the one text field allowed its own typeface.
-    const fields = all.filter((c) => c.tag !== 'button' && !/key-redacted/.test(c.cls));
-    const byFont = group(fields, (c) => c.font);
-    assert.equal(Object.keys(byFont).length, 1,
-        'fields and selects in more than one typeface or size:' + report(byFont));
+    const plain = all.filter((c) => c.tag === 'button' && !c.exempt.fill);
+    assert.ok(plain.length > 20, `expected a real population of buttons, got ${plain.length}`);
+
+    const byFill = group(plain, (c) => c.look.replace(/ radius=[^ ]+/, ''));
+    assert.equal(Object.keys(byFill).length, 1,
+        'Settings holds buttons of one kind wearing more than one appearance. Either style '
+        + 'it like the others, or add it to DELIBERATE at the top of this file WITH the '
+        + 'reason it is different:' + report(byFill));
 });
 
 test('a text field is as tall as the buttons beside it', async (t) => {
