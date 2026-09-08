@@ -3131,8 +3131,18 @@ dialog select {
  * makes a truncated paste invisible, which is exactly the mistake the Test button
  * had to exist to catch.
  */
-#apiKeyInput.key-redacted,
-#deepgramKeyInput.key-redacted {
+/* ⚠ AGAINST THE CLASS, NOT A LIST OF IDS - the third time this exact fault has shipped
+   in this section, after the credential rows and the voice pickers. It read
+   "#apiKeyInput.key-redacted, #deepgramKeyInput.key-redacted", so a stored key showed in
+   monospace for the two services somebody had listed and in the ordinary proportional
+   font for Azure, OpenAI, Google Cloud and ElevenLabs. Ken saw it at once: "the fonts
+   used in the 6 Keys for paid services boxes are not consistent."
+
+   It matters beyond tidiness. The redacted form is "sk-ant-…4f2a" - a run of characters
+   the reader is checking against the key they hold - and a proportional font is the
+   wrong tool for exactly that job. So the services missing from the list lost the
+   readability the rule exists to provide, silently. */
+.key-redacted {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     color: var(--ink-muted);
 }

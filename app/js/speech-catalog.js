@@ -66,6 +66,13 @@ export const TTS_PROVIDERS = {
             'Content-Type': 'application/json',
         }),
         body: ({ voice, text, model }) => json({ model, voice, input: text }),
+        // The key Test. Same host and the same Authorization header as the speech call,
+        // so it exercises the credential the app actually presents - it just asks for a
+        // list instead of audio, which costs nothing and says nothing aloud.
+        verify: {
+            url: () => 'https://api.openai.com/v1/models',
+            headers: ({ key }) => ({ Authorization: 'Bearer ' + key }),
+        },
         // A fixed roster: OpenAI publishes no voice-list endpoint, so there is nothing
         // to fetch and the list below IS the list.
         catalog: null,
@@ -109,6 +116,11 @@ export const TTS_PROVIDERS = {
             if (!j.audioContent) throw new Error('no audio came back');
             return base64ToBlob(j.audioContent, mimeType);
         },
+        // Same host and header as the synthesis call above; a listing rather than audio.
+        verify: {
+            url: () => 'https://texttospeech.googleapis.com/v1/voices',
+            headers: ({ key }) => ({ 'X-Goog-Api-Key': key }),
+        },
         catalog: {
             url: () => 'https://texttospeech.googleapis.com/v1/voices',
             headers: ({ key }) => ({ 'X-Goog-Api-Key': key }),
@@ -139,6 +151,11 @@ export const TTS_PROVIDERS = {
             + encodeURIComponent(voice),
         headers: ({ key }) => ({ 'xi-api-key': key, 'Content-Type': 'application/json' }),
         body: ({ text, model }) => json({ text, model_id: model }),
+        // Same host and header as the speech call; a listing rather than audio.
+        verify: {
+            url: () => 'https://api.elevenlabs.io/v1/voices',
+            headers: ({ key }) => ({ 'xi-api-key': key }),
+        },
         catalog: {
             url: () => 'https://api.elevenlabs.io/v1/voices',
             headers: ({ key }) => ({ 'xi-api-key': key }),

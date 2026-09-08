@@ -17,6 +17,7 @@ import assert from 'node:assert/strict';
 import { TTS_PROVIDERS, STT_PROVIDERS, languageOfGoogleVoice, describeFailure }
     from '../app/js/speech-catalog.js';
 import { transcribeClip } from '../app/js/stt-rest.js';
+import { verifyKey } from '../app/js/tts-rest.js';
 
 const KEY = 'test-key';
 
@@ -75,6 +76,49 @@ test('every voice list uses the shape the Settings picker reads', () => {
         }
         assert.ok(p.voices.some((v) => v.id === p.defaultVoice),
             `${id}: the default voice must be in the starter list`);
+    }
+});
+
+test('every voice provider can check a key without speaking', async () => {
+    // ⚠ THE KEY TEST MUST NOT SPEAK (Ken, September 8 2026). All three used to call the
+    // speaking test, so the button beside the key box said a phrase aloud and billed for
+    // it, while the same button beside Deepgram and Azure checked the key silently.
+    for (const [id, p] of Object.entries(TTS_PROVIDERS)) {
+        assert.ok(p.verify, `${id}: needs a way to check a key`);
+
+        const url = p.verify.url({ key: KEY });
+        assert.match(url, /^https:\/\//, `${id}: must be https`);
+        assert.ok(!url.includes(KEY), `${id}: the key must not be in the URL`);
+
+        // Same host as the speech call, so the credential being checked is the one the
+        // app actually presents. A check against some other host can pass while the
+        // request the app makes is refused - which is what made Deepgram's Test
+        // misleading on the iPad in August 2026.
+        assert.equal(new URL(url).host, new URL(p.url({ key: KEY, voice: p.defaultVoice })).host,
+            `${id}: the check must use the same host as the speech call`);
+
+        // ...and the same auth header, for the same reason.
+        const speak = p.headers({ key: KEY });
+        const check = p.verify.headers({ key: KEY });
+        const authName = Object.keys(speak).find((h) => String(speak[h]).includes(KEY));
+        assert.ok(check[authName] === speak[authName],
+            `${id}: the check must send the key the same way the speech call does`);
+    }
+});
+
+test('a refused key is reported as refused, and a dead network is not', async () => {
+    const p = TTS_PROVIDERS.openai;
+    const realFetch = globalThis.fetch;
+    try {
+        globalThis.fetch = async () => ({ ok: false, status: 401 });
+        await assert.rejects(() => verifyKey(p, KEY), /did not accept the key/);
+
+        // ⚠ A DROPPED CONNECTION MUST NEVER READ AS A BAD KEY. Telling somebody their
+        // key is wrong when the wifi is down costs them an hour making a new one.
+        globalThis.fetch = async () => { throw Object.assign(new Error('x'), { name: 'AbortError' }); };
+        await assert.rejects(() => verifyKey(p, KEY, 5), /took too long|connection dropped/);
+    } finally {
+        globalThis.fetch = realFetch;
     }
 });
 

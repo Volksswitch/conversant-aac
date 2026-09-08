@@ -26,6 +26,14 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- The "Test" button beside each key on the Speech tab now does the same thing for
+  every service: it quietly checks that the service accepts your key, without
+  speaking and without costing anything. For OpenAI, Google Cloud and ElevenLabs it
+  used to say a phrase out loud and charge you for it. To hear a voice, use the
+  "Test this voice" button under the voice list — that is what it is for.
+- Fixed: a saved key is shown shortened, like "sk-ant-…4f2a", and that shortened form
+  was only being drawn in the even-width type it needs for four of the six boxes.
+  All of them match now.
 - Fixed: if you speak or listen through OpenAI, Google Cloud or ElevenLabs, the
   spending estimate on the About tab was charging you Deepgram's rates and putting
   Deepgram's name beside the figure. It now names the company you actually hold the

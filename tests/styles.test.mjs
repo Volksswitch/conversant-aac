@@ -100,6 +100,38 @@ test('the removed sizing tokens have not crept back', () => {
     }
 });
 
+test('the credential rows are styled by class, never by a list of ids', () => {
+    // ⚠ THIS FAULT HAS SHIPPED THREE TIMES IN ONE SECTION, and each time it looked like
+    // harmless duplication rather than a bug: the rule existed only for the services
+    // somebody had remembered to list, so adding a service silently produced an
+    // unstyled one. The credential rows stacked vertically (September 8 2026); the
+    // voice pickers would have stayed on screen beside the one in use; and the redacted
+    // key showed in monospace for two services and the proportional font for four -
+    // "the fonts used in the 6 Keys for paid services boxes are not consistent."
+    //
+    // A service must be a block of markup and nothing else, so nothing here may key off
+    // a service's id. Adding one now fails the build instead of the eye.
+    // ⚠ COMMENTS ARE STRIPPED FIRST. Every one of these fixes explains itself by
+    // QUOTING the selector it replaced, so scanning the raw file makes the fix trip the
+    // guard that exists because of it - which is how this test failed on its first run.
+    const rules = css.replace(/\/\*[\s\S]*?\*\//g, '');
+
+    const services = ['deepgram', 'azure', 'openai', 'google', 'elevenlabs'];
+    // Azure's region box is genuinely per-service - it is narrower because a region name
+    // is about ten characters - so it is named here rather than being caught as a fault.
+    const allowed = ['#azureRegionRow'];
+    for (const svc of services) {
+        const named = rules.match(new RegExp(`#${svc}[A-Za-z]*`, 'gi')) || [];
+        for (const sel of named) {
+            assert.ok(allowed.includes(sel),
+                `${sel} is styled by id — style it against .key-row / .voice-row / `
+                + '.key-redacted instead, or the next service added will silently miss it');
+        }
+    }
+    assert.match(rules, /^\.key-redacted\s*\{/m,
+        'the redacted-key font must hang off the bare class');
+});
+
 test('a blank Express cell holds the same box as a button (keyguard alignment)', () => {
     // Under box-sizing: border-box a flex item's basis:0 is floored at its own
     // padding + border, so a blank cell WITHOUT them resolves narrower than the

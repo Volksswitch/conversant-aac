@@ -59,6 +59,48 @@ export function billableCharacters(text) {
 }
 
 /**
+ * The Settings key Test: does this service accept this key?
+ *
+ * ⚠ IT DOES NOT SPEAK, AND THAT IS THE POINT (Ken, September 8 2026: "the actions taken
+ * when pressing the Test button for each service are not consistent. Follow the Deepgram
+ * pattern for all services."). These three used to speak a phrase, where Deepgram's key
+ * Test opens its socket and closes it again and Azure's submits half a second of
+ * silence - so the same button next to five key boxes did two different things, one of
+ * which talked out loud and billed for the characters. The key box asks about the KEY;
+ * the voice picker's own "Test this voice" is where the full path is heard.
+ *
+ * ⚠ WHAT IT PROVES AND WHAT IT DOES NOT, stated because a diagnostic that overstates
+ * itself sends somebody looking in the wrong place - the lesson Azure's testKey comment
+ * records. It uses the SAME HOST and the SAME AUTH HEADER as the speech call, so a
+ * mistyped, revoked or wrong-service key is caught. It cannot catch a key that is valid
+ * but not permitted to reach audio - a scoped project key, or a Google key restricted to
+ * the wrong APIs. Only speaking settles that, which is what the voice Test is for.
+ */
+export async function verifyKey(provider, key, timeoutMs = 10000) {
+    if (!provider || !provider.verify) throw new Error('No way to check that key.');
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        const res = await fetch(provider.verify.url({ key }), {
+            headers: provider.verify.headers({ key }),
+            signal: controller.signal,
+        });
+        if (!res.ok) throw new Error(describeFailure(res.status, provider.label));
+    } catch (err) {
+        // An abort is our own timeout; a dropped connection looks identical to fetch.
+        // Name both rather than claiming to know which, and never report either as a
+        // bad key - telling somebody their key is wrong when the wifi is down costs
+        // them an hour making a new one.
+        if (err && err.name === 'AbortError') {
+            throw new Error(`${provider.label} took too long to answer, or the connection dropped.`);
+        }
+        throw err;
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+/**
  * Fetch the provider's real voice list, where it has one.
  *
  * Returns [] for a provider with no catalog endpoint (OpenAI publishes none), so a

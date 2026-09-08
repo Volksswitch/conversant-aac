@@ -6615,22 +6615,61 @@ function openSettings() {
             };
         }
 
-        // Both Test buttons SPEAK. A rejected key, a voice the account cannot use, a
-        // model name the service does not know and a blocked audio context all fail
-        // differently, and hearing it is the only check that covers all four.
-        const runTest = async (report) => {
-            const key = (keyFieldValue(keyInput) ?? (storage.loadServiceKey(id) || '')).trim();
-            if (!key) { report('warn', 'Enter a key first.'); return; }
-            report(null, 'Testing…');
-            const voice = (voiceSelect && voiceSelect.value) || provider.defaultVoice;
-            const model = storage.loadServiceModel(id) || provider.defaultModel;
-            const res = await tts.testRestVoice(id, key, model, voice);
-            report(res.ok ? 'ok' : 'warn', res.message);
-        };
+        /*
+         * ⚠ THE TWO TEST BUTTONS ASK DIFFERENT QUESTIONS, and they used to ask the same
+         * one (Ken, September 8 2026). Both called the speaking test, so the button
+         * beside the KEY box spoke a phrase out loud and billed for it, while the same
+         * button beside Deepgram's and Azure's key boxes checked the key silently. Five
+         * key boxes, one label, two behaviours.
+         *
+         * Now, and this IS the Deepgram arrangement rather than an imitation of it:
+         *   key box  -> "does this service accept this key?"  - silent, free
+         *   voice picker -> "does this voice work?"           - speaks, and must
+         *
+         * The voice Test has to speak, and the reasons are still the ones written down
+         * when it was built: a rejected key, a voice the account cannot use, a model
+         * name the service does not know and a blocked audio context all fail
+         * differently, and hearing it is the only check that covers all four.
+         */
+        const currentKey = () =>
+            (keyFieldValue(keyInput) ?? (storage.loadServiceKey(id) || '')).trim();
+
         const testKeyBtn = document.getElementById('test' + cap + 'KeyBtn');
-        if (testKeyBtn) testKeyBtn.onclick = () => runTest(showStatus);
+        if (testKeyBtn) {
+            testKeyBtn.onclick = async () => {
+                const key = currentKey();
+                if (!key) { showStatus('warn', 'Enter your key first, then tap Test.'); return; }
+                testKeyBtn.disabled = true;
+                showStatus('checking', 'Checking your key…');
+                try {
+                    await ttsRest.verifyKey(provider, key);
+                    showStatus('ok', `✓ Your ${provider.label} key is working`);
+                    // A key that has just been accepted is the moment to ask the account
+                    // what voices it actually has - otherwise the picker keeps offering
+                    // the built-in starter list until something else happens to refresh.
+                    refreshVoices();
+                } catch (err) {
+                    showStatus('warn', `✗ ${(err && err.message) || 'That key could not be checked.'}`);
+                } finally {
+                    testKeyBtn.disabled = false;
+                }
+            };
+        }
+
         const testVoiceBtn = document.getElementById('test' + cap + 'VoiceBtn');
-        if (testVoiceBtn) testVoiceBtn.onclick = () => runTest(showVoiceStatus);
+        if (testVoiceBtn) {
+            testVoiceBtn.onclick = async () => {
+                const key = currentKey();
+                if (!key) { showVoiceStatus('warn', 'Enter your key first, then tap Test.'); return; }
+                testVoiceBtn.disabled = true;
+                showVoiceStatus('checking', 'Testing…');
+                const voice = (voiceSelect && voiceSelect.value) || provider.defaultVoice;
+                const model = storage.loadServiceModel(id) || provider.defaultModel;
+                const res = await tts.testRestVoice(id, key, model, voice);
+                testVoiceBtn.disabled = false;
+                showVoiceStatus(res.ok ? 'ok' : 'warn', res.message);
+            };
+        }
 
         if (voiceSelect) {
             voiceSelect.onchange = () => {
