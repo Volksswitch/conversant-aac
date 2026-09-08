@@ -22,6 +22,9 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.10.11": [
+    "Fixed: if you speak or listen through OpenAI, Google Cloud or ElevenLabs, the spending estimate on the About tab was charging you Deepgram's rates and putting Deepgram's name beside the figure. It now names the company you actually hold the account with and uses that company's own prices."
+  ],
   "0.10.10": [
     "The Speech settings now keep all your paid-service keys in one place, under \"Keys for paid services\", instead of giving each service a section of its own. Deepgram and Azure sit together there, each still with its own name, key box and Test button — and Azure still has its region field beside its key. Nothing about how they work has changed; there is simply one heading to open instead of two, which matters more as further services are added.",
     "Three more paid speech services: OpenAI, Google Cloud and ElevenLabs. Each can speak as you, and each can also hear the other person, so there are now six ways to set up speech and you can mix them — hear through one service and speak through another. Their keys go in the same \"Keys for paid services\" section as the others, and each has a Test button that says a few words so you can hear the voice before committing to it. OpenAI offers eleven voices; Google's and ElevenLabs' lists are fetched from your own account once your key is in.",

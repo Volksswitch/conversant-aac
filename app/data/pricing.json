@@ -5,10 +5,20 @@
   "_cacheNote": "Prompt-cache multipliers on the input rate: a write costs 1.25x (5-minute TTL), a read 0.1x. Only the response-generation call is cached.",
   "cacheWriteMultiplier": 1.25,
   "cacheReadMultiplier": 0.1,
+  "lastVerified": "2026-09-08",
+
+  "_speechNote": "Per-service speech rates, looked up by service name: '<id>SttCostPerHour' and '<id>TtsCostPer1kChars'. A service missing from here is priced at zero, which reads visibly wrong; that is deliberate, because the previous arrangement priced an unknown service at Deepgram's rate and named it Deepgram. List prices, and the estimate ignores every free allowance, so a light user owes less than it says. Nobody wins both halves: the cheapest to speak with is not the cheapest to listen with.",
+
   "deepgramSttCostPerHour": 0.46,
   "deepgramTtsCostPer1kChars": 0.03,
-  "lastVerified": "2026-09-06",
-  "_speechNote": "Per-service speech rates. Neither service wins both halves: Azure hears at about twice Deepgram's price and speaks at about half it. List prices; the estimate ignores each service's free allowance, so a light user owes less.",
   "azureSttCostPerHour": 1.0,
-  "azureTtsCostPer1kChars": 0.016
+  "azureTtsCostPer1kChars": 0.016,
+  "openaiSttCostPerHour": 0.36,
+  "openaiTtsCostPer1kChars": 0.015,
+  "googleSttCostPerHour": 0.96,
+  "googleTtsCostPer1kChars": 0.016,
+  "elevenlabsSttCostPerHour": 0.4,
+  "elevenlabsTtsCostPer1kChars": 0.1,
+
+  "_estimatedRates": "Two of these are estimates rather than published per-unit prices, and are marked so they are not quoted as measured. OpenAI bills speech by token, not by character, so its speaking rate is derived. ElevenLabs sells by monthly credit bundle rather than per hour or per character, so both of its figures are the effective rate on a mid-tier plan with its default multilingual voice; a user on a different plan pays a different amount."
 }

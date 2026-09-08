@@ -26,6 +26,11 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Fixed: if you speak or listen through OpenAI, Google Cloud or ElevenLabs, the
+  spending estimate on the About tab was charging you Deepgram's rates and putting
+  Deepgram's name beside the figure. It now names the company you actually hold the
+  account with and uses that company's own prices.
+
 
 ## Version 0.10.10
 

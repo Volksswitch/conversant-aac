@@ -38,6 +38,18 @@ import * as ttsDeepgram from './tts-deepgram.js';
 import * as ttsAzure from './tts-azure.js';
 import * as ttsRest from './tts-rest.js';
 import { TTS_PROVIDERS, STT_PROVIDERS } from './speech-catalog.js';
+
+/*
+ * The company name shown beside a speech charge on the About tab — the one the user
+ * holds an account with and gets a bill from. Deepgram and Azure predate the catalog
+ * and are named here; the rest take the label the catalog already carries, so adding a
+ * service does not mean remembering to add its name in a second place.
+ */
+const SPEECH_COMPANY = {
+    deepgram: 'Deepgram',
+    azure: 'Microsoft Azure',
+    ...Object.fromEntries(Object.entries(TTS_PROVIDERS).map(([id, p]) => [id, p.label])),
+};
 import * as sttAzure from './stt-azure.js';
 import { confirmDanger } from './confirm-dialog.js';
 import * as helpMode from './help-mode.js';
@@ -5059,10 +5071,18 @@ async function updateUsageDisplay() {
     // be common — today it is a setup decision, made once.
     const sttProviderNow = storage.loadSttProvider();
     const ttsProviderNow = storage.loadTtsProvider();
-    const sttRate = sttProviderNow === 'azure'
-        ? (pricing.azureSttCostPerHour ?? 0) : (pricing.deepgramSttCostPerHour ?? 0);
-    const ttsRate = ttsProviderNow === 'azure'
-        ? (pricing.azureTtsCostPer1kChars ?? 0) : (pricing.deepgramTtsCostPer1kChars ?? 0);
+    // ⚠ LOOKED UP BY SERVICE NAME, NEVER BY A TWO-WAY TEST. These four lines used to
+    // read `x === 'azure' ? azureRate : deepgramRate`, which is the same silent-fallback
+    // shape as the provider whitelist in storage.js and it broke the same way the moment
+    // a third service existed: in 0.10.10 an OpenAI, Google or ElevenLabs voice was
+    // priced at DEEPGRAM'S rate and billed on screen under DEEPGRAM'S name. Nothing
+    // errored, and the only symptom was a number that quietly disagreed with the user's
+    // actual statement — in a product whose whole funding premise is "you pay only for
+    // what you use". A missing rate now reads as zero and an unknown service names
+    // itself, so a service somebody forgets to price is visibly wrong rather than
+    // invisibly attributed to another company.
+    const sttRate = pricing[`${sttProviderNow}SttCostPerHour`] ?? 0;
+    const ttsRate = pricing[`${ttsProviderNow}TtsCostPer1kChars`] ?? 0;
     const sttCost = (sttSeconds / 3600) * sttRate;
     const ttsCost = (ttsCharacters / 1000) * ttsRate;
     const aiCost = (usage.inputTokens * inputRate)
@@ -5143,7 +5163,10 @@ async function updateUsageDisplay() {
             // through one service and speaking through the other (a perfectly sensible
             // setup, since neither is cheaper at both) has to show as two bills, or
             // the figure cannot be checked against either statement.
-            const nameOf = (p) => (p === 'azure' ? 'Microsoft Azure' : 'Deepgram');
+            // The company the user actually holds an account with, so the figure can be
+            // checked against a statement. An unknown id shows itself rather than
+            // borrowing another company's name — see the rate lookup above.
+            const nameOf = (p) => SPEECH_COMPANY[p] || p;
             const heard = sttSeconds > 0 ? `${Math.round(sttSeconds / 60)} min heard` : 'not used';
             const spoken = ttsCharacters > 0 ? `${ttsCharacters.toLocaleString()} characters spoken` : 'not used';
             if (nameOf(sttProviderNow) === nameOf(ttsProviderNow)) {
