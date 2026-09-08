@@ -63,6 +63,15 @@ export const SLOT = {
     REPAIR_RESPEAK: 'REPAIR_RESPEAK',
     REPAIR_REPHRASE: 'REPAIR_REPHRASE',
     REPAIR_EXPAND: 'REPAIR_EXPAND',
+    // "Sorry, let me try that again." The one repair that is right whatever went
+    // wrong, and the reason it exists: the app CANNOT know why the partner did not
+    // understand. If they simply did not hear, re-speaking works. If the words
+    // themselves were wrong -- a typo in a turn the user typed -- re-speaking them
+    // is guaranteed to fail, and REPHRASE/EXPAND are only the model's guess at what
+    // was meant. This card buys the floor and hands the turn back to the user to
+    // retype, which is the only option that cannot be wrong. It also fills the
+    // fourth reserved cell, which used to sit empty in this mode.
+    REPAIR_RETRY: 'REPAIR_RETRY',
     // Conversation-level openers / wind-downs / closings (static for Phase 1;
     // configurable later). WIND_DOWN = "I'm ready to wrap up" (no goodbye yet);
     // CLOSING = the actual goodbye, offered after a wind-down.
@@ -78,7 +87,7 @@ export const SLOT = {
 
 const SLOT_PRIORITY = {
     PREFERRED: 1, DISPREFERRED: 2, INITIATIVE: 3, REPAIR: 4,
-    REPAIR_RESPEAK: 1, REPAIR_REPHRASE: 2, REPAIR_EXPAND: 3,
+    REPAIR_RESPEAK: 1, REPAIR_REPHRASE: 2, REPAIR_EXPAND: 3, REPAIR_RETRY: 4,
     OPENER: 1, WIND_DOWN: 1, CLOSING: 1, CLOSING_DECLINE: 2,
     // Every CHOICE shares one priority so the stable sort preserves the order the
     // partner offered them in; the fillers follow in usefulness order. Two
@@ -124,9 +133,29 @@ const DEFAULT_CLOSINGS = [
     'Goodbye!',
     'Catch you later.',
 ];
+// Mirrors control-phrases.js DEFAULTS.retry, so the engine still works standalone.
+const DEFAULT_RETRIES = [
+    'Sorry, let me try that again.',
+    'Let me say that another way.',
+    'Give me a second, I will redo that.',
+    'That did not come out right. One moment.',
+    'Let me start that over.',
+];
 let openers = DEFAULT_OPENERS.slice();
 let windDowns = DEFAULT_WIND_DOWNS.slice();
 let closings = DEFAULT_CLOSINGS.slice();
+let retries = DEFAULT_RETRIES.slice();
+// Which retry phrase was handed out last. ROTATION, not random: repair is
+// infrequent, so rotating makes every phrase reachable and keeps the engine's
+// tests deterministic, which a random pick would not.
+let retryIndex = -1;
+
+function nextRetry() {
+    const list = retries.filter((t) => (t || '').trim());
+    if (!list.length) return DEFAULT_RETRIES[0];
+    retryIndex = (retryIndex + 1) % list.length;
+    return list[retryIndex];
+}
 
 // Replace {name} with the active Partner's name; when there is no name, drop the
 // token AND an adjacent comma, repairing spacing/punctuation so the opener still
@@ -156,6 +185,7 @@ export function setConversationPhrases(p = {}) {
     if (Array.isArray(p.windDowns) && p.windDowns.length) windDowns = p.windDowns.slice();
     else if (Array.isArray(p.closers) && p.closers.length) windDowns = p.closers.slice();
     if (Array.isArray(p.closings) && p.closings.length) closings = p.closings.slice();
+    if (Array.isArray(p.retry) && p.retry.length) { retries = p.retry.slice(); retryIndex = -1; }
 }
 
 // --- ConversationState (design §3) ---
@@ -353,14 +383,36 @@ export function refreshPalette(responses) {
 // instead of a hint. Only touches the REPAIR_REPHRASE/REPAIR_EXPAND entries; once
 // their text is set they become instant (no post-tap round-trip). No-op for any
 // other palette, or for a wording that came back empty.
-export function setRepairOptions({ rephrase = '', expand = '' } = {}) {
+//
+// ⚠ `guessed` IS THE MODEL SAYING IT HAD TO INFER WHAT THE USER MEANT, and it must
+// reach the card (Ken, September 7 2026). Measured against the live model: given
+// "thnk you no" it returns "No thank you", and given "asdf my meeting is on thurs"
+// it silently drops the junk. Both are plausible and neither is what the user
+// typed -- "thank you, no" and "no thank you" are opposite answers. So when it
+// guessed, the card says so, because the user is choosing under time pressure with
+// somebody waiting and has no other way to tell an inference from their own words.
+// This is the anti-fabrication rule applied to the user's OWN wording rather than
+// to facts about the world.
+export function setRepairOptions({ rephrase = '', expand = '', guessed = false } = {}) {
     for (const entry of state.palette) {
-        if (entry.op === 'rephrase' && rephrase) { entry.text = rephrase; entry.latency = 'instant'; }
-        if (entry.op === 'expand' && expand) { entry.text = expand; entry.latency = 'instant'; }
+        if (entry.op === 'rephrase' && rephrase) {
+            entry.text = rephrase; entry.latency = 'instant';
+            if (guessed) { entry.guessed = true; entry.hint = 'My best guess'; }
+        }
+        if (entry.op === 'expand' && expand) {
+            entry.text = expand; entry.latency = 'instant';
+            if (guessed) { entry.guessed = true; entry.hint = 'My best guess, with more detail'; }
+        }
     }
     return getSnapshot();
 }
 
+// ⚠ FIXED ORDER, ALWAYS FOUR CARDS -- the order does NOT vary with how the user's
+// last turn was produced (Ken, September 7 2026). Leading with the retry when the
+// turn was typed was considered and rejected: the app cannot tell a typing mistake
+// from a partner who simply did not hear, so it would be guessing, and reordering
+// the cards between situations costs the motor-planning stability that makes a
+// palette fast to use. Every card is present every time; only their wording moves.
 function repairSelfPalette() {
     return [
         { slot: SLOT.REPAIR_RESPEAK, op: 'respeak', text: state.lastUserUtterance || '',
@@ -369,6 +421,10 @@ function repairSelfPalette() {
           priority: 2, latency: 'roundtrip' },
         { slot: SLOT.REPAIR_EXPAND, op: 'expand', text: '', hint: 'Explain it more',
           priority: 3, latency: 'roundtrip' },
+        // text === hint by construction, so this card never carries `has-hint` and
+        // can never come up blank under "short version only" (the standing rule).
+        (() => { const t = nextRetry(); return { slot: SLOT.REPAIR_RETRY, op: 'retry', text: t,
+          hint: t, priority: 4, latency: 'instant' }; })(),
     ];
 }
 

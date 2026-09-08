@@ -668,7 +668,9 @@ Return ONLY the new utterance text, nothing else.${buildProfileBlock()}${buildSi
 // Pre-generate BOTH repair-of-self rewordings in ONE call (Ken, July 8 2026), so
 // the Rephrase and Expand cards can show their real, immediately-speakable text
 // instead of a hint + a post-tap round-trip. Fired when the partner asks the user
-// to repeat ("What?"). Returns { rephrase, expand } (either '' if parsing failed).
+// to repeat ("What?"). Returns { rephrase, expand, guessed } -- the wordings '' if
+// parsing failed, and `guessed` saying the model had to infer what the user meant,
+// which the cards then show the user (see engine.setRepairOptions).
 // Re-speak needs no LLM (it's the user's last utterance verbatim), so it's not here.
 export async function repairOptions(lastUserUtterance, conversationHistory = []) {
     if (!apiKey) throw new Error('API key not set');
@@ -681,11 +683,13 @@ export async function repairOptions(lastUserUtterance, conversationHistory = [])
 - "rephrase": the same meaning, worded differently and possibly clearer. Same length or shorter.
 - "expand": the same point with a little more detail added, so it is clearer.
 
+Also report whether you had to GUESS. Set "guessed": true if the user's last utterance was damaged or unclear -- misspellings, missing or run-together words, letters typed by accident, a word that looks like the wrong word -- so that producing the two alternatives meant inferring what they probably meant rather than simply rewording what they plainly said. Set it false when their meaning was clear and you only changed the wording. Be honest rather than generous: the app shows the user that these two are a guess, and a guess presented as their own words is worse than no suggestion at all. Even when you guessed, still produce your best two alternatives -- never refuse.
+
 ${REWORD_ONLY}
 
 ${NO_VULGARITY}
 
-Return ONLY a JSON object, no other text: {"rephrase": "...", "expand": "..."}${buildProfileBlock()}${buildSituationBlock()}${contextLines ? '\n\nConversation so far:\n' + contextLines : ''}`;
+Return ONLY a JSON object, no other text: {"rephrase": "...", "expand": "...", "guessed": false}${buildProfileBlock()}${buildSituationBlock()}${contextLines ? '\n\nConversation so far:\n' + contextLines : ''}`;
 
     const response = await fetch(API_URL, {
         method: 'POST',
@@ -723,9 +727,12 @@ function parseRepairOptions(text) {
         return {
             rephrase: typeof parsed.rephrase === 'string' ? parsed.rephrase.trim() : '',
             expand: typeof parsed.expand === 'string' ? parsed.expand.trim() : '',
+            // Absent counts as NOT guessed, so an older or malformed reply reads as
+            // the app behaving exactly as it did before this field existed.
+            guessed: !!parsed.guessed,
         };
     }
-    return { rephrase: '', expand: '' };
+    return { rephrase: '', expand: '', guessed: false };
 }
 
 // Robustly parse the structured generation output. Tolerates a bare array or a

@@ -79,9 +79,83 @@ test('repair-initiator ("What?") → REPAIR_OF_SELF with respeak = last user utt
         'What?');
     assert.equal(s.mode, engine.MODE.REPAIR_OF_SELF);
     assert.equal(s.floor, engine.FLOOR.SELF);
-    assert.equal(s.palette.length, 3);
+    // Four cards, not three: the fourth is the "let me try that again" retry, which
+    // fills the reserved cell that used to sit empty in this mode.
+    assert.equal(s.palette.length, 4);
     const respeak = s.palette.find(p => p.op === 'respeak');
     assert.equal(respeak.text, 'I went to the market.');
+    const retry = s.palette.find(p => p.op === 'retry');
+    assert.ok(retry && retry.text.trim(), 'a retry card with real, speakable words');
+    // text === hint by construction, so the card can never come up blank under the
+    // "short version only" card-text setting -- the standing safety rule.
+    assert.equal(retry.hint, retry.text);
+});
+
+test('the retry card rotates its wording, so every phrase is reachable', () => {
+    const seen = new Set();
+    for (let i = 0; i < 3; i++) {
+        engine.reset();
+        engine.selectResponse({ slot: 'PREFERRED', text: 'I went to the market.' });
+        engine.partnerSpeaking('What?');
+        const s = engine.ingestClassification(
+            { classification: { partner_action: 'OTHER', turn_status: 'COMPLETE', is_repair_initiator: true }, responses: [] },
+            'What?');
+        seen.add(s.palette.find(p => p.op === 'retry').text);
+    }
+    assert.equal(seen.size, 3, 'three repairs in a row give three different phrases');
+});
+
+test('a user-edited retry phrase is the one that is used', () => {
+    engine.setConversationPhrases({ retry: ['Hang on, that came out wrong.'] });
+    engine.reset();
+    engine.selectResponse({ slot: 'PREFERRED', text: 'I went to the market.' });
+    engine.partnerSpeaking('What?');
+    const s = engine.ingestClassification(
+        { classification: { partner_action: 'OTHER', turn_status: 'COMPLETE', is_repair_initiator: true }, responses: [] },
+        'What?');
+    assert.equal(s.palette.find(p => p.op === 'retry').text, 'Hang on, that came out wrong.');
+    engine.setConversationPhrases({ retry: DEFAULT_RETRY_FOR_TESTS });
+});
+
+// Restores the shipped wording after the test above, so test order cannot matter.
+const DEFAULT_RETRY_FOR_TESTS = [
+    'Sorry, let me try that again.',
+    'Let me say that another way.',
+    'Give me a second, I will redo that.',
+    'That did not come out right. One moment.',
+    'Let me start that over.',
+];
+
+test('a GUESSED rewording says so on the card', () => {
+    engine.reset();
+    engine.selectResponse({ slot: 'PREFERRED', text: 'thnk you no' });
+    engine.partnerSpeaking('Sorry, what?');
+    engine.ingestClassification(
+        { classification: { partner_action: 'OTHER', turn_status: 'COMPLETE', is_repair_initiator: true }, responses: [] },
+        'Sorry, what?');
+    // The live model really does return "No thank you" for "thnk you no", which may
+    // be the opposite of what was meant. The user is choosing under time pressure
+    // and has no other way to tell an inference from their own words.
+    const s = engine.setRepairOptions({ rephrase: 'No thank you', expand: 'No thank you, I am all set.', guessed: true });
+    for (const op of ['rephrase', 'expand']) {
+        const card = s.palette.find(p => p.op === op);
+        assert.equal(card.guessed, true, `${op} is marked as a guess`);
+        assert.match(card.hint, /best guess/i, `${op} says so on its face`);
+    }
+    // The user's own words are never relabelled as a guess -- they are not one.
+    assert.ok(!s.palette.find(p => p.op === 'respeak').guessed);
+    assert.ok(!s.palette.find(p => p.op === 'retry').guessed);
+});
+
+test('an unguessed rewording keeps its ordinary label', () => {
+    engine.reset();
+    engine.selectResponse({ slot: 'PREFERRED', text: 'I went to the market.' });
+    engine.partnerSpeaking('What?');
+    engine.ingestClassification(
+        { classification: { partner_action: 'OTHER', turn_status: 'COMPLETE', is_repair_initiator: true }, responses: [] }, 'What?');
+    const s = engine.setRepairOptions({ rephrase: 'I was at the market.', expand: 'I went to buy fruit.' });
+    assert.ok(!s.palette.find(p => p.op === 'rephrase').guessed);
+    assert.equal(s.palette.find(p => p.op === 'rephrase').hint, 'Say it differently');
 });
 
 test('setRepairOptions fills the rephrase/expand cards and makes them instant', () => {

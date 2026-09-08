@@ -1075,8 +1075,19 @@ export function saveKeyboardMode(mode) {
 }
 
 // Which on-screen keyboard layout to use in each dock (ids from
-// keyboard-layouts.js — side: S1..S10, bottom: B1..B10) and which side the
-// side dock sits on ('left' | 'right'). Defaults: S1 / B1 / right.
+// keyboard-layouts.js — side: S1..S10, bottom: B1..B11) and which side the
+// side dock sits on ('left' | 'right'). Defaults: S1 / B11 / right.
+//
+// ⚠ THE BOTTOM DOCK DEFAULTS TO QWERTY (B11), NOT THE ALPHABET (Ken, September 7
+// 2026), on a speech therapist's argument during the beta review: the people this
+// app is for are overwhelmingly adults who typed on QWERTY for decades before an
+// injury or an illness took their speech, so an alphabetical grid makes the fastest
+// typists in the population slower. An alphabetical layout only wins for someone
+// who has scanned or eye-pointed for years, and every alphabetical layout is still
+// there to be chosen. The SIDE dock stays alphabetical (S1) because QWERTY does not
+// fit it: the dock's width is derived from the layout's column count, so twelve
+// columns would claim over half the screen to keep the keys usable -- see the note
+// in keyboard-layouts.js.
 export function loadSideLayout() {
     return loadSettings().sideLayout || 'S1';
 }
@@ -1088,7 +1099,7 @@ export function saveSideLayout(id) {
 }
 
 export function loadBottomLayout() {
-    return loadSettings().bottomLayout || 'B1';
+    return loadSettings().bottomLayout || 'B11';
 }
 
 export function saveBottomLayout(id) {

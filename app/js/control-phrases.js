@@ -14,6 +14,13 @@
  *                random with the placeholder no-repeat rule, so a partner who has
  *                to be asked twice in one conversation does not hear the identical
  *                sentence twice (Ken, August 29 2026).
+ *   - retry    : the phrases behind the "Let me try that again" repair card. Also
+ *                a LIST, picked with the no-repeat rule. Offered when the partner
+ *                did not understand the user, and it is the one repair that is
+ *                right whatever went wrong -- saying it again cannot help when the
+ *                words THEMSELVES were wrong (a typo in a composed turn), and the
+ *                reworded cards are only ever the model's guess at what was meant.
+ *                It buys the floor; the user then retypes.
  *   - openers  : the cards shown by "Start conversation" (templates; {name} is
  *                replaced with the active Partner's name, dropped when none)
  *   - windDowns: the cards shown by "Wind down" — signal an intent to end the
@@ -70,6 +77,17 @@ export const DEFAULTS = {
         "Hang on, there's something else.",
         'Before you head off, one more thing.',
         'Actually, can I say one more thing?',
+    ],
+    // Offered on every repair-of-self palette, in the fourth cell that used to sit
+    // empty. Must read as the user taking responsibility and buying a moment, NOT
+    // as an apology for existing, and must not presume WHY they were not understood
+    // -- the app does not know.
+    retry: [
+        'Sorry, let me try that again.',
+        'Let me say that another way.',
+        'Give me a second, I will redo that.',
+        'That did not come out right. One moment.',
+        'Let me start that over.',
     ],
     // {name} → the active Partner's name; dropped (with tidy punctuation) when
     // no Partner is active. Kept in sync with engine.js's inline fallback.
@@ -137,6 +155,7 @@ function normalize(value) {
         holdOn: str(v.holdOn, DEFAULTS.holdOn),
         pardon: listOrString(v.pardon, DEFAULTS.pardon),
         declineClosing: listOrString(v.declineClosing, DEFAULTS.declineClosing),
+        retry: list(v.retry, DEFAULTS.retry),
         openers: list(v.openers, DEFAULTS.openers),
         windDowns: list(v.windDowns, DEFAULTS.windDowns),
         closings: list(v.closings, DEFAULTS.closings),
@@ -150,6 +169,7 @@ function normalize(value) {
             closings: seededList(seeded.closings),
             pardon: seededList(seeded.pardon),
             declineClosing: seededList(seeded.declineClosing),
+            retry: seededList(seeded.retry),
         },
     };
 }
@@ -162,7 +182,7 @@ function normalize(value) {
 // `seeded` is new — appended once (unless already present) and recorded. There is
 // no cap on how many can be defined (only on how many the UI shows at once), so
 // appending is always safe. Returns true if anything changed (persist if so).
-const LIST_KEYS = ['openers', 'windDowns', 'closings', 'pardon', 'declineClosing'];
+const LIST_KEYS = ['openers', 'windDowns', 'closings', 'pardon', 'declineClosing', 'retry'];
 
 function mergeNewDefaults(p) {
     let changed = false;

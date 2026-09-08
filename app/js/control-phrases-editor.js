@@ -107,6 +107,7 @@ export function render() {
     // the person using it.
     container.append(
         listSection('“Ask them to repeat” phrases', 'pardon'),
+        listSection('“Let me try that again” phrases', 'retry'),
         listSection('Openers (Start conversation)', 'openers'),
         listSection('Wind-down statements (Wrap up)', 'windDowns'),
         listSection('Closings (goodbyes)', 'closings'),
@@ -118,7 +119,7 @@ export function render() {
     reset.addEventListener('click', async () => {
         const ok = await confirmDanger({
             title: 'Reset control phrases?',
-            body: 'This restores the default wording for Hold on, Pardon?, the openers, the wind-down statements and the closings. Your edits will be lost.',
+            body: 'This restores the default wording for every command phrase — asking them to repeat, trying again, the openers, the wind-down statements and the goodbyes. Your edits will be lost.',
             confirmLabel: 'Reset to default',
             cancelLabel: 'Keep mine',
         });
@@ -148,7 +149,7 @@ export function render() {
         const sel = `.ee-list`;
         const lists = container.querySelectorAll(sel);
         // The .ee-list order matches the order the sections are appended above.
-        const order = { pardon: 0, openers: 1, windDowns: 2, closings: 3, declineClosing: 4 };
+        const order = { pardon: 0, retry: 1, openers: 2, windDowns: 3, closings: 4, declineClosing: 5 };
         const idx = order[pendingFocus.key] ?? 0;
         const rows = lists[idx]?.querySelectorAll('.ee-row input');
         const inp = rows && rows[pendingFocus.index];

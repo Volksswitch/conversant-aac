@@ -175,6 +175,7 @@ const SLOT_META = {
     REPAIR_RESPEAK:  { badge: 'SAY AGAIN',    cls: 'slot-repair' },
     REPAIR_REPHRASE: { badge: 'REPHRASE',     cls: 'slot-repair' },
     REPAIR_EXPAND:   { badge: 'EXPLAIN MORE', cls: 'slot-repair' },
+    REPAIR_RETRY:    { badge: 'TRY AGAIN',    cls: 'slot-repair' },
     OPENER:          { badge: 'OPENER',       cls: 'slot-initiative' },
     // Wind-down and closing never appear together, so they share the slate
     // "persistent" hue (the wrapping-up family); position + timing distinguish them.
@@ -247,7 +248,12 @@ function buildResponseCard(response, index, onSelect, half) {
     card.type = 'button';
     card.className = `response-card ${meta.cls}${half ? ' response-card-half' : ''}`;
     // Category isn't shown visually, so name it in the accessible label only.
-    card.setAttribute('aria-label', `${meta.badge}: ${text}`);
+    // ⚠ A GUESSED REPAIR WORDING SAYS SO IN THE ACCESSIBLE NAME TOO. The hint span
+    // carrying "My best guess" is aria-hidden (it is a duplicate for a sighted
+    // reader), so without this a screen-reader user would be the only person not
+    // told that these words are the app's inference rather than their own.
+    const badge = response.guessed ? `${meta.badge}, my best guess` : meta.badge;
+    card.setAttribute('aria-label', `${badge}: ${text}`);
     // The model returns a short glanceable label ("hint") alongside the full wording.
     // BOTH are always put in the card and the setting decides which are visible
     // (see setCardTextMode) -- so the user's choice costs no round trip and cannot
@@ -334,7 +340,7 @@ export function showResponses(palette, onSelect) {
         }));
     } else {
         // Openers / closers / repair-of-self distribute across the fixed 4-cell
-        // footprint. A palette of four or fewer (repair-of-self = 3, a short
+        // footprint. A palette of four or fewer (repair-of-self = 4, a short
         // opener list) always shows one per cell. When it exceeds four (openers /
         // closers can be up to eight) the user's "responses per category" setting
         // decides: 1-card mode caps to four (one per cell); 8-card mode stacks TWO
@@ -1166,4 +1172,13 @@ export function getComposerText() {
 
 export function clearComposer() {
     document.getElementById('composerInput').value = '';
+}
+
+// Open the box with something already in it, caret at the end so the user can edit
+// rather than retype. Used by the "let me try that again" repair card.
+export function setComposerText(text) {
+    const el = document.getElementById('composerInput');
+    el.value = text || '';
+    const end = el.value.length;
+    try { el.setSelectionRange(end, end); } catch { /* not focused yet -- harmless */ }
 }

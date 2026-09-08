@@ -153,6 +153,15 @@ const B = {
   // so the letters are easy to find and never shift between rows; space is on the
   // bottom row. Each row sums to 12 units so the columns line up. Infrequent
   // special characters live on the shared symbols page (the 123 key).
+  // ⚠ THE DEFAULT BOTTOM LAYOUT (Ken, September 7 2026) -- see loadBottomLayout in
+  // storage.js for why. THERE IS DELIBERATELY NO SIDE-DOCK QWERTY: the side dock's
+  // width comes from --kbd-cols, so this layout's twelve columns would size the dock
+  // to roughly 55% of the screen to keep the keys at the user's chosen button size.
+  // A five-column SPLIT QWERTY (qwert / yuiop / asdfg / hjkl / zxcv / nm) would fit
+  // the existing grid exactly and was rejected: it keeps each row's letter order but
+  // loses the overall shape, which Ken judged as visually confusing as the alphabet
+  // and probably more so. A QWERTY typist on a side dock should move the keyboard to
+  // the bottom, where the real thing already works.
   B11: { name: 'Bottom Layout 11 (QWERTY)', dock: 'bottom', rows: [
     [C('q'), C('w'), C('e'), C('r'), C('t'), C('y'), C('u'), C('i'), C('o'), C('p'), BK(2)],
     [C('a'), C('s'), C('d'), C('f'), C('g'), C('h'), C('j'), C('k'), C('l'), SH(), EN(2)],

@@ -26,6 +26,11 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- The typing keyboard along the bottom of the screen now starts out as a normal QWERTY keyboard. Most people who use this app typed on QWERTY for years before they needed it, and hunting for letters in alphabetical order slows them down. Every alphabetical layout is still there under Settings, Buttons & Keyboard, if you prefer one. This changes the shape of the grid, so the Express Panel above the keyboard is laid out differently too — the same buttons, in three rows of twelve rather than four rows of nine.
+- When the other person did not catch what you said, there is now a fourth card: "Sorry, let me try that again." It says that out loud to buy you a moment, then reopens your typing with what you said already in the box, so you can fix a word rather than start over. It is the one choice that helps whatever went wrong — saying it again cannot help if a word came out wrong in the first place.
+- If the app had to guess what you meant, the two reworded cards now say so. When what you typed had a slip in it, the app works out what you probably meant, and it can get that wrong — "thnk you no" could be "no thank you" or "thank you, no", which are opposite answers. Those cards are now labeled "My best guess", so you can tell them apart from your own words before you say them.
+- You can change the wording of that "let me try that again" card under Settings, Commands, the way you already can for asking someone to repeat themselves.
+
 
 ## Version 0.10.6
 

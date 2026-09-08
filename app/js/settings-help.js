@@ -137,6 +137,7 @@ const HELP = {
     "listening": "How long a pause counts as the other person finishing, whether the microphone picks itself back up, and whether a chime sounds.",
     "buttonSizing": "How big every button in the app is and how much space sits between them. Changing these moves the holes in a keyguard.",
     "pardon": "The phrases the app picks from when you tap the button asking the other person to say that again.",
+    "retry": "Ways to say your last turn came out wrong. Choosing one buys you a moment and reopens your typing.",
     "openers": "The cards you get when you start a conversation, so you can open it your own way. Use name in braces where you want their name.",
     "windDowns": "The cards you get when you tap Wind down: ways to signal you are ready to finish, without saying goodbye yet.",
     "closings": "Your goodbyes. They appear after you wind down, and when the other person starts saying goodbye first.",

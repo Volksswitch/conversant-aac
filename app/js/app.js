@@ -1863,6 +1863,28 @@ async function handleRepairOfSelf(response) {
     generationToken++;
     stt.stopListening();
 
+    // "Sorry, let me try that again." -- the card that hands the turn back to the
+    // user instead of guessing at it. Its whole point is that it does NOT replace
+    // what the user said, so it deliberately does not go through the flow below:
+    //
+    //   - it does NOT call engine.completeRepairOfSelf, which would make the retry
+    //     phrase itself the user's last utterance -- the thing still being repaired
+    //     would be lost, and "Repeat what I said" would afterwards re-speak
+    //     "Sorry, let me try that again";
+    //   - it therefore leaves the repair palette up, so a user who changes their
+    //     mind mid-retype can still pick one of the other three;
+    //   - it preloads the composer with what they said, because retyping a whole
+    //     sentence to fix one word is the slowest path in the app.
+    if (response.op === 'retry') {
+        const phrase = (response.text || '').trim();
+        if (!phrase) return;
+        ui.setStatus('Speaking...');
+        await speakUserStatement(phrase);
+        logSpokenUserTurn(phrase);         // append AFTER speaking (Ken)
+        openComposer({ text: engine.getLastUserUtterance() });
+        return;
+    }
+
     let text = engine.getLastUserUtterance();
     if (!text) {
         ui.setStatus('Nothing to repeat yet');
@@ -2796,6 +2818,10 @@ function applyControlPhrases() {
         openers: merge(mine.openers, p.openers),
         windDowns: merge(mine.windDowns, p.windDowns),
         closings: merge(mine.closings, p.closings),
+        // The "let me try that again" repair card. Not merged with a partner's own
+        // phrases the way the openers are -- there is nothing partner-specific about
+        // admitting a turn came out wrong.
+        retry: p.retry,
     });
 }
 
@@ -3368,6 +3394,7 @@ function openComposer(opts = {}) {
     // the cards holds the floor with a phrase, and so does typing.
     ui.setPaletteBusy(false);
     ui.clearComposer();
+    if (opts.text) ui.setComposerText(opts.text);
     ui.showComposerOverlay();
     // Summon the keyboard explicitly rather than relying on the textarea's
     // focusin side effect — that event can be swallowed (e.g. after an Express

@@ -685,3 +685,75 @@ test('a response with no doubted words yields an empty list, never undefined', a
     const r = await llm.generateResponses([{ role: 'partner', text: 'Hi' }]);
     assert.deepEqual(r.heardUncertain, []);
 });
+
+/* --- Repair of self: the whole chain, in one test ---------------------------
+ *
+ * ⚠ THIS IS THE CROSS-LAYER CHECK, and it is the reason it takes the model's REPLY
+ * as its input instead of a hand-built object. The parser was tested by handing it
+ * JSON, the engine by handing it a result, and the renderer by handing it a card --
+ * and the number button still shipped announced and dead, because the one link
+ * nothing ran dropped the field in the middle. Here the reply goes in at the top,
+ * through the real repairOptions and the real engine, and what comes out is the
+ * card the user would see.
+ *
+ * The wordings below are not invented: they are what the live model returned on
+ * September 7 2026 when given "thnk you no" -- the case the beta reviewer reported
+ * as a repair that made no sense.
+ */
+const repairReply = (obj) => JSON.stringify(obj);
+
+function inRepair(lastSaid) {
+    engine.reset();
+    engine.selectResponse({ slot: 'PREFERRED', text: lastSaid });
+    engine.partnerSpeaking('Sorry, what?');
+    engine.ingestClassification(
+        { classification: { partner_action: 'OTHER', turn_status: 'COMPLETE', is_repair_initiator: true }, responses: [] },
+        'Sorry, what?');
+}
+
+test('repair chain: a guessed rewording reaches the card marked as a guess', async () => {
+    mockFetch(repairReply({ rephrase: 'No thank you', expand: 'No thank you, I am all set.', guessed: true }));
+    inRepair('thnk you no');
+    const opts = await llm.repairOptions('thnk you no', [{ role: 'user', text: 'thnk you no' }]);
+    const snap = engine.setRepairOptions(opts);
+    const rephrase = snap.palette.find(p => p.op === 'rephrase');
+    assert.equal(rephrase.text, 'No thank you');
+    assert.equal(rephrase.guessed, true, 'the guess survived every layer between the model and the card');
+    assert.match(rephrase.hint, /best guess/i);
+});
+
+test('repair chain: a confident rewording is NOT labelled a guess', async () => {
+    mockFetch(repairReply({ rephrase: 'I was at the market.', expand: 'I went to the market for fruit.', guessed: false }));
+    inRepair('I went to the market.');
+    const opts = await llm.repairOptions('I went to the market.', []);
+    const snap = engine.setRepairOptions(opts);
+    assert.ok(!snap.palette.find(p => p.op === 'rephrase').guessed);
+});
+
+test('repair chain: a reply with no guessed field behaves exactly as before', async () => {
+    mockFetch(repairReply({ rephrase: 'I was at the market.', expand: 'I went for fruit.' }));
+    inRepair('I went to the market.');
+    const opts = await llm.repairOptions('I went to the market.', []);
+    assert.equal(opts.guessed, false);
+    const snap = engine.setRepairOptions(opts);
+    assert.equal(snap.palette.find(p => p.op === 'rephrase').hint, 'Say it differently');
+});
+
+test('the repair prompt asks the model to own up to guessing', async () => {
+    mockFetch(repairReply({ rephrase: 'a', expand: 'b', guessed: false }));
+    await llm.repairOptions('thnk you no', []);
+    const sys = sysText(getFetchCalls()[0]);
+    assert.match(sys, /"guessed"/, 'the field is named');
+    assert.match(sys, /never refuse/i, 'and it still has to produce both wordings');
+});
+
+test('a repair palette never leaves the fourth reserved cell empty', () => {
+    inRepair('thnk you no');
+    const palette = engine.getSnapshot().palette;
+    assert.equal(palette.length, 4);
+    // Every card must carry words that can actually be spoken the moment it is
+    // tapped, or the round trip has not arrived yet. An empty cell is a response
+    // the user cannot make.
+    assert.ok(palette.find(p => p.op === 'respeak').text.trim());
+    assert.ok(palette.find(p => p.op === 'retry').text.trim());
+});
