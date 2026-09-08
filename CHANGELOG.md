@@ -26,6 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+
+## Version 0.10.7
+
 - When someone asks you for something the app has not been told — your date of birth, your allergies, an address — it no longer makes one up. It used to: asked "are you allergic to anything?" with nothing on file, the top suggestion was "No allergies." Now the first suggestion is a plain "I don't know", which is the honest answer and the one a nurse or a doctor can actually act on. If the fact IS in your About Me, it still answers straight away.
 - There is a new kind of suggestion for those moments: "Give me a second and I'll type it." It buys you a moment out loud, and — unlike every other suggestion — it does not close off what the other person asked. Their question stays open, so when you have typed your answer it goes back against the right question. It never appears in the first position, because the first suggestion is always one that settles the matter and lets the other person get on.
 - About Me has a new topic, **Health & Safety** — allergies, medications, conditions, foods you can't have, date of birth, and who to contact in an emergency. These are the things a doctor, a pharmacist or a paramedic asks for, and until now there was nowhere to put them, so the app could only ever say it didn't know. Like your contact details, they are private: the app knows them, never brings them up on its own, and offers one only when somebody asks or you ask for it yourself.
