@@ -23,6 +23,14 @@
 import { LAYOUTS, buildSymbolsPage, setRowColumns } from './keyboard-layouts.js';
 import * as prediction from './prediction.js';
 
+// The spoken name for each key that does something rather than types something. Only
+// these three have a glyph for a face; `space` and the page keys already read as words.
+const ACTION_NAMES = {
+    backspace: 'Backspace',
+    shift: 'Shift',
+    enter: 'Enter',
+};
+
 // Fields the app keyboard handles. Includes the Settings API-key field so the
 // Windows keyboard is suppressed there too and the app's own (side-docked)
 // keyboard is used instead (Ken, June 14 2026 — resolves the OS-vs-app keyboard
@@ -542,6 +550,13 @@ function renderRows() {
                 btn.dataset.action = cell.action;
                 btn.textContent = cell.label;
                 btn.classList.add('kbd-' + cell.action);
+                // ⚠ A NAMED KEY SAYS ITS NAME, NOT ITS GLYPH. The face is a symbol —
+                // ⌫, ⇧, ↵ — and with no accessible name a screen reader reads the
+                // symbol itself, so the three keys that do something rather than type
+                // something were the only ones on the keyboard that could not be
+                // identified by ear. Same rule as every other icon-only control: the
+                // visible face may be a glyph, the accessible name never is.
+                if (ACTION_NAMES[cell.action]) btn.setAttribute('aria-label', ACTION_NAMES[cell.action]);
             }
             rowEl.appendChild(btn);
         }

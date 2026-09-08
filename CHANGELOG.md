@@ -26,6 +26,16 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Settings looks like one panel again. Boxes of the same kind now use the same
+  typeface and buttons of the same kind the same size, wherever they are — the
+  Anthropic key row on the General tab now matches the five paid-service rows exactly,
+  and every "Test this voice" button is the same full-width, easy-to-hit target rather
+  than only two of the twelve.
+- The Backspace, Shift and Enter keys on the on-screen keyboard now tell a screen
+  reader their names instead of reading out their symbols.
+- Fixed: on a touch screen, the buttons on the start-up cards and on the red
+  "are you sure?" card stayed looking pressed after you tapped them.
+
 - The practice partner's voice now always comes from the same service as your own
   speaking voice. Choosing a service sets the partner to "Auto" — a voice from that
   service that isn't the one you speak with — and you can change it from there. Before

@@ -116,18 +116,31 @@ test('the credential rows are styled by class, never by a list of ids', () => {
     // guard that exists because of it - which is how this test failed on its first run.
     const rules = css.replace(/\/\*[\s\S]*?\*\//g, '');
 
-    const services = ['deepgram', 'azure', 'openai', 'google', 'elevenlabs'];
-    // Azure's region box is genuinely per-service - it is narrower because a region name
-    // is about ten characters - so it is named here rather than being caught as a fault.
-    const allowed = ['#azureRegionRow'];
-    for (const svc of services) {
-        const named = rules.match(new RegExp(`#${svc}[A-Za-z]*`, 'gi')) || [];
-        for (const sel of named) {
-            assert.ok(allowed.includes(sel),
-                `${sel} is styled by id — style it against .key-row / .voice-row / `
-                + '.key-redacted instead, or the next service added will silently miss it');
-        }
-    }
+    // ⚠ THE LIST USED TO BE THE FIVE SERVICE NAMES, AND THAT IS WHY IT MISSED ONE. The
+    // Anthropic key row is the same control — a key field, "Paste", "Test" — and it was
+    // styled by id under a name no service list contains, so it kept a Paste button a
+    // point smaller than every other one and a different background, and the guard
+    // written the day before said nothing. A rule that only covers the names somebody
+    // listed has the very defect it is checking for.
+    //
+    // So it now covers every id that names a CREDENTIAL OR VOICE CONTROL, whatever the
+    // service is called.
+    const idsInRules = rules.match(/#[A-Za-z][A-Za-z0-9_-]*/g) || [];
+    const credentialish = /(Key|Voice|Partner)(Row|Input|Btn|Select|Status)$|Row$/;
+    // Genuinely per-control, and named rather than pattern-matched so each is a decision:
+    //   azureRegionRow  - narrower, because a region name is about ten characters
+    //   apiKeyPrompt/folderPrompt - pre-start cards, not credential rows at all
+    const allowed = new Set(['#azureRegionRow', '#apiKeyPrompt', '#folderPrompt',
+                             '#folderPromptRow', '#storageDurabilityRow', '#dataFolderRow',
+                             '#usageBreakdown', '#errorLogActions', '#usageSummaryActions',
+                             '#systemInfoActions', '#problemReportActions', '#folderBackupRow']);
+    const offenders = [...new Set(idsInRules)]
+        .filter((id) => credentialish.test(id) && !allowed.has(id));
+    assert.deepEqual(offenders, [],
+        'these controls are styled by id: ' + offenders.join(', ')
+        + ' — style them against .key-row / .voice-row / .key-redacted instead. An id '
+        + 'list only reaches the controls somebody remembered, so the next one added '
+        + 'silently misses the rule; that has now happened four times in this section.');
     assert.match(rules, /^\.key-redacted\s*\{/m,
         'the redacted-key font must hang off the bare class');
 });

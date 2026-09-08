@@ -140,7 +140,12 @@
                 <button id="sayAgainBtn" type="button" class="cmd-btn">Repeat what I said</button>
                 <button id="holdOnBtn" type="button" class="cmd-btn">Hold on</button>
                 <button id="pardonBtn" type="button" class="cmd-btn">Ask them to repeat</button>
-                <button id="windDownBtn" type="button" class="cmd-btn">Wind down</button>
+                <!-- The face and the accessible name are both set at runtime (ui.js), so
+                     this text shows only if that never runs. It said "Wind down" for a
+                     fortnight after the button was renamed "Wrap up" — harmless while
+                     the app starts correctly, and the wrong word at the one moment
+                     somebody is looking at a half-started app. -->
+                <button id="windDownBtn" type="button" class="cmd-btn">Wrap up</button>
                 <button id="privacyBtn" type="button" class="cmd-btn" aria-pressed="false" aria-label="Don't save this conversation">Don't save</button>
                 <button id="settingsBtn" type="button" class="cmd-btn" aria-label="Settings">Settings</button>
             </div>
@@ -567,14 +572,14 @@
                                  because someone may actually want Whisper. -->
                             <label class="checkbox-label"><input type="checkbox" id="showNoveltyVoicesInput"> Show this device's joke voices (Bahh, Boing, Zarvox…)</label>
                             <div class="profiles-row profiles-actions">
-                                <button id="testVoiceBtn" type="button">Test</button>
+                                <button id="testVoiceBtn" type="button" class="voice-test-btn">Test</button>
                             </div>
                         </div>
                         <div id="auraRow" class="voice-row" hidden>
                             <label for="auraVoiceSelect">Deepgram voice</label>
                             <select id="auraVoiceSelect"></select>
                             <div class="profiles-row profiles-actions">
-                                <button id="testAuraVoiceBtn" type="button">Test this voice</button>
+                                <button id="testAuraVoiceBtn" type="button" class="voice-test-btn">Test this voice</button>
                             </div>
                             <p id="auraVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
                         </div>
@@ -582,7 +587,7 @@
                             <label for="azureVoiceSelect">Azure voice</label>
                             <select id="azureVoiceSelect"></select>
                             <div class="profiles-row profiles-actions">
-                                <button id="testAzureVoiceBtn" type="button">Test this voice</button>
+                                <button id="testAzureVoiceBtn" type="button" class="voice-test-btn">Test this voice</button>
                             </div>
                             <p id="azureVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
                         </div>
@@ -590,7 +595,7 @@
                             <label for="openaiVoiceSelect">OpenAI voice</label>
                             <select id="openaiVoiceSelect"></select>
                             <div class="profiles-row profiles-actions">
-                                <button id="testOpenaiVoiceBtn" type="button">Test this voice</button>
+                                <button id="testOpenaiVoiceBtn" type="button" class="voice-test-btn">Test this voice</button>
                             </div>
                             <p id="openaiVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
                         </div>
@@ -598,7 +603,7 @@
                             <label for="googleVoiceSelect">Google Cloud voice</label>
                             <select id="googleVoiceSelect"></select>
                             <div class="profiles-row profiles-actions">
-                                <button id="testGoogleVoiceBtn" type="button">Test this voice</button>
+                                <button id="testGoogleVoiceBtn" type="button" class="voice-test-btn">Test this voice</button>
                             </div>
                             <p id="googleVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
                         </div>
@@ -606,7 +611,7 @@
                             <label for="elevenlabsVoiceSelect">ElevenLabs voice</label>
                             <select id="elevenlabsVoiceSelect"></select>
                             <div class="profiles-row profiles-actions">
-                                <button id="testElevenlabsVoiceBtn" type="button">Test this voice</button>
+                                <button id="testElevenlabsVoiceBtn" type="button" class="voice-test-btn">Test this voice</button>
                             </div>
                             <p id="elevenlabsVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
                         </div>
@@ -616,7 +621,7 @@
                         <div id="builtinPartnerVoiceRow" class="voice-row">
                             <select id="partnerVoiceSelect" aria-label="Practice partner voice"></select>
                             <div class="profiles-row profiles-actions">
-                                <button id="testPartnerVoiceBtn" type="button">Test</button>
+                                <button id="testPartnerVoiceBtn" type="button" class="voice-test-btn">Test</button>
                             </div>
                             <!-- Names the voice Test actually used. Worth the line only for
                                  "Auto", where the choice is otherwise invisible — and it is the
@@ -626,14 +631,14 @@
                         <div id="auraPartnerRow" class="voice-row" hidden>
                             <select id="auraPartnerVoiceSelect" aria-label="Practice partner's Deepgram voice"></select>
                             <div class="profiles-row profiles-actions">
-                                <button id="testAuraPartnerVoiceBtn" type="button">Test partner voice</button>
+                                <button id="testAuraPartnerVoiceBtn" type="button" class="voice-test-btn">Test partner voice</button>
                             </div>
                             <p id="auraPartnerVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
                         </div>
                         <div id="azurePartnerRow" class="voice-row" hidden>
                             <select id="azurePartnerVoiceSelect" aria-label="Practice partner's Azure voice"></select>
                             <div class="profiles-row profiles-actions">
-                                <button id="testAzurePartnerVoiceBtn" type="button">Test partner voice</button>
+                                <button id="testAzurePartnerVoiceBtn" type="button" class="voice-test-btn">Test partner voice</button>
                             </div>
                             <p id="azurePartnerVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
                         </div>
@@ -652,21 +657,21 @@
                         <div id="openaiPartnerRow" class="voice-row" hidden>
                             <select id="openaiPartnerVoiceSelect" aria-label="Practice partner's OpenAI voice"></select>
                             <div class="profiles-row profiles-actions">
-                                <button id="testOpenaiPartnerVoiceBtn" type="button">Test partner voice</button>
+                                <button id="testOpenaiPartnerVoiceBtn" type="button" class="voice-test-btn">Test partner voice</button>
                             </div>
                             <p id="openaiPartnerVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
                         </div>
                         <div id="googlePartnerRow" class="voice-row" hidden>
                             <select id="googlePartnerVoiceSelect" aria-label="Practice partner's Google Cloud voice"></select>
                             <div class="profiles-row profiles-actions">
-                                <button id="testGooglePartnerVoiceBtn" type="button">Test partner voice</button>
+                                <button id="testGooglePartnerVoiceBtn" type="button" class="voice-test-btn">Test partner voice</button>
                             </div>
                             <p id="googlePartnerVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
                         </div>
                         <div id="elevenlabsPartnerRow" class="voice-row" hidden>
                             <select id="elevenlabsPartnerVoiceSelect" aria-label="Practice partner's ElevenLabs voice"></select>
                             <div class="profiles-row profiles-actions">
-                                <button id="testElevenlabsPartnerVoiceBtn" type="button">Test partner voice</button>
+                                <button id="testElevenlabsPartnerVoiceBtn" type="button" class="voice-test-btn">Test partner voice</button>
                             </div>
                             <p id="elevenlabsPartnerVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
                         </div>

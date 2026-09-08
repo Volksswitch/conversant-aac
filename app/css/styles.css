@@ -800,6 +800,35 @@
 }
 
 
+/* ⚠ A FORM CONTROL DOES NOT INHERIT THE PAGE FONT UNLESS TOLD TO, and this said so in
+   seven separate places — so every control anybody remembered was in the house font and
+   every one they did not was in the browser's, which is the same "whatever somebody
+   listed" shape as styling by id. The Express Panel editor's 58 text fields were built
+   at runtime and missed all seven, so that one tab was in a different font from the rest
+   of Settings (Ken, September 8 2026).
+
+   ⚠ SCOPED TO THE PANELS, NOT GLOBAL, AND THAT IS NOT CAUTION — a global version was
+   written first and it FAILED the layout test: a response card is a <button>, so it
+   changed font on the conversation surface and one card's text came out 189px wide in
+   188px of room, losing a word with no ellipsis. At default settings the surface
+   measured pixel-identical, which is exactly why the layout test exists and why the
+   browser check alone would have shipped it. The conversation surface has its own type
+   scale and is not the surface this finding was about.
+
+   `:where()` contributes NO specificity, so neither rule can outrank a deliberate
+   choice: the shortened key stays even-width, the monospace report views stay monospace,
+   and the slider steppers keep their larger glyph. They reach only controls that had
+   nothing at all — which is the whole population that was drifting.
+
+   One size, too: a button with no font-size of its own falls to the browser's default,
+   13.3px against the 14px of every button somebody sized, which is how the panel came to
+   hold six sizes of one control — including a "Paste" button a point smaller than the
+   five identical ones two tabs away. */
+:where(#settingsDialog, #worldviewScreen) :where(button, input, select, textarea) {
+    font-family: inherit;
+    font-size: inherit;
+}
+
 body {
     font-family: system-ui, -apple-system, sans-serif;
     background: var(--surface-page);
@@ -3191,36 +3220,21 @@ dialog select {
    a new service's picker would otherwise stay on screen next to the one in use. */
 .voice-row[hidden] { display: none; }
 
-#apiKeyRow #apiKeyInput {
-    /* The key is masked to dots, so it needs no room to read — keep it short so
-       the Paste button shows fully and the column isn't crowded (Ken). */
-    flex: 0 1 9rem;
-    width: auto;
-    min-width: 0;
-}
-#pasteApiKeyBtn {
-    flex: 0 0 auto;
-    padding: 0.5rem 0.9rem;
-    border-radius: 4px;
-    border: 1px solid var(--edge);
-    background: var(--surface-raised);
-    cursor: pointer;
-    font-size: 0.9rem;
-    white-space: nowrap;
-}
-#pasteApiKeyBtn:hover { background: var(--surface-panel); }
+/* ⚠ THE ANTHROPIC KEY ROW HAS NO RULES OF ITS OWN, and used to have five. It is the
+   same control as the five paid-service rows above — a key field, "Paste", "Test" —
+   and it carried `#apiKeyRow #apiKeyInput`, `#pasteApiKeyBtn` and `#testApiKeyBtn`,
+   which restated `.key-row` almost exactly and then disagreed with it in two ways
+   nobody chose: the Paste button was `font-size: 0.9rem` (12.6px against every other
+   Paste button's 13.3px) and both buttons took `--surface-raised` where the class uses
+   `--surface-raised-alt`.
 
-/* "Test" button beside the API key field — verifies the key against the API. */
-#testApiKeyBtn {
-    flex: 0 0 auto;
-    padding: 0.5rem 0.9rem;
-    border-radius: 4px;
-    border: 1px solid var(--edge);
-    background: var(--surface-raised);
-    cursor: pointer;
-}
-#testApiKeyBtn:hover { background: var(--surface-panel); }
-#testApiKeyBtn:disabled { opacity: 0.6; cursor: default; }
+   That is the fourth time this section has been styled by id, after the credential
+   rows, the voice pickers and the shortened-key font, and the reason is always the same:
+   restating a rule for one control reads as harmless duplication, and the copy drifts.
+   The one thing the id rules genuinely added — a disabled appearance for a Test button
+   mid-request — belongs on the class, since every service's Test now disables itself
+   while it checks. */
+.key-row button:disabled { opacity: 0.6; cursor: default; }
 
 /* Format-warning / verify-result line under the API key field (Ken, July 2026). */
 .api-key-status {
@@ -3292,25 +3306,23 @@ dialog select {
     background: var(--surface-raised); color: var(--warn-ink); border: 2px solid var(--slot-dispreferred);
     padding: 0.7rem 1.4rem; border-radius: 8px; font-size: 1rem; cursor: pointer;
 }
-#apiKeyPromptBtn:hover,
-#folderReconnectBtn:hover { background: var(--warn-tint); }
 /* Continue is the primary action — proceed into the app (the API key is optional). */
 .apikey-continue {
     background: var(--accent); color: var(--ink-inverse); border: none;
     padding: 0.7rem 1.4rem; border-radius: 8px; font-size: 1rem; cursor: pointer;
 }
-.apikey-continue:hover { background: var(--accent-hover); }
 
-/* Both voice Test buttons share one rule so they stay identical — the partner one
-   had no rule of its own and inherited the dialog's generic button sizing, which
-   rendered it much narrower than its twin directly above (Ken, July 31 2026).
+/* EVERY "Test this voice" button, on one class — twelve of them now, two of which used
+   to carry this rule by id while the other ten inherited the dialog's generic button
+   sizing. That is the same fault the rule was written to fix: the partner button had no
+   rule of its own and rendered much narrower than its twin directly above (Ken, July 31
+   2026), and adding paid services re-created it ten times over.
    FULL WIDTH, matching the select each one sits under: a narrow target is a real
    accessibility problem for users with limited motor control, not a cosmetic one,
    and the horizontal space is already spoken for by the select above. The height
    floor comes from the global --btn-min-dim rule, so both axes are now honest
    targets. */
-#testVoiceBtn,
-#testPartnerVoiceBtn {
+.voice-test-btn {
     display: block;
     width: 100%;
     margin-top: 0.4rem;
@@ -3344,12 +3356,15 @@ dialog select {
     font-weight: 600;
 }
 
+/* ⚠ NO FONT-SIZE HERE. A Settings action button takes the tab's one button size;
+   an ad-hoc shrink for a button that happens to sit in a tight row is how the
+   panel ended up with six sizes of the same control. Where a row is genuinely
+   short of width the fix is the row, not the button. */
 #pickFolderBtn {
     padding: 0.3rem 0.7rem;
     border-radius: 4px;
     border: 1px solid var(--edge);
     cursor: pointer;
-    font-size: 0.85rem;
     white-space: nowrap;
 }
 
@@ -3423,10 +3438,8 @@ dialog select {
     border-radius: 6px;
     background: var(--surface-raised);
     color: var(--ink-strong);
-    font-size: 0.9rem;
     cursor: pointer;
 }
-.reset-sizing-btn:hover { background: var(--surface-panel); }
 
 .switch {
     position: relative;
@@ -3573,7 +3586,6 @@ label.radio-label input[type="radio"] {
     border-radius: 4px;
     border: 1px solid var(--edge);
     cursor: pointer;
-    font-size: 0.85rem;
 }
 
 .about-license {
@@ -4267,14 +4279,6 @@ body.conv-bottom     .danger-dialog {
     color: var(--ink-inverse);
 }
 
-.danger-confirm:hover {
-    background: var(--danger-strong);
-}
-
-.danger-cancel:hover {
-    background: var(--surface-sunken);
-}
-
 /* --- "What's new" post-update notice (whats-new.js). Rendered as a card WITHIN the
    pre-start block, i.e. inside the Transcript control's footprint (Ken, July 4 2026).
    The transcript is a keyguard OPENING, so the whole notice — including its "Got it"
@@ -4354,10 +4358,6 @@ body.conv-bottom     .danger-dialog {
     background: var(--slot-initiative);
     border: 1px solid var(--slot-initiative);
     color: var(--ink-inverse);
-}
-
-#whatsNewPanel .whatsnew-ok:hover {
-    background: var(--info);
 }
 
 .wv-select {
@@ -4717,6 +4717,23 @@ body.conv-bottom     .danger-dialog {
     }
     .composer-btn:hover { background: var(--surface-panel); }
     .composer-btn-primary:hover { filter: brightness(1.1); background: var(--accent); }
+
+    /* ⚠ THESE ARE ON THE CONVERSATION SURFACE, not in Settings, and that is why they
+       are here. Rule 20's exemption covers Settings, About Me and the editors -
+       supporter-assisted overlays where a stuck tint is merely untidy. The pre-start
+       cards and the red confirmation card are neither: the target user taps them, in a
+       conversation, on a touch screen with no pointer to move away, so outside this
+       guard they keep their hover appearance until something else is tapped. On the
+       danger card that means a destructive button that looks armed after the dialog
+       has gone. */
+    #apiKeyPromptBtn:hover,
+    #folderReconnectBtn:hover { background: var(--warn-tint); }
+    .apikey-continue:hover { background: var(--accent-hover); }
+    .danger-confirm:hover { background: var(--danger-strong); }
+    .danger-cancel:hover { background: var(--surface-sunken); }
+    #whatsNewPanel .whatsnew-ok:hover { background: var(--info); }
+    .reset-sizing-btn:hover { background: var(--surface-panel); }
+    .key-row button:hover { background: var(--surface-panel); }
 }
 
 
