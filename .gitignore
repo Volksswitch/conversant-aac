@@ -84,3 +84,6 @@ deepgram-probe-audio/
 # The folder is where the reading tool looks first, so the ignore has to be here
 # rather than left to habit.
 Reports/
+
+# A Windows shortcut Ken keeps in the project folder; not project content.
+*.lnk
