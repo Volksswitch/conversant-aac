@@ -220,7 +220,27 @@ The ritual:
    ```bash
    grep -c 'â€\|â”\|Â\|Ã' app/js/app.js app/sw.js
    ```
-8. **Restamp any documents synced during the cycle.** `DOC-SYNC.md`'s `At commit` must
+8. **Ask whether the documents need a sync, and do NOT skip this because nothing feels doc-shaped:**
+
+   ```
+   python scripts/doc-tests/check-doc-currency.py
+   ```
+
+   It reads `DOC-SYNC.md` and reports any **reader-facing** document that has not been
+   reviewed since a release shipped, naming the versions it has missed. Green means the
+   manuals and the Product Overview describe the app that is now live.
+
+   **⚠ THIS EXISTS BECAUSE THREE RELEASES WENT OUT WITH NO DOCUMENT TOUCHED AND NOTHING
+   SAID SO (September 8 2026).** 0.10.6, 0.10.7 and 0.10.9 all shipped undocumented; the
+   whole of the 0.10.7 work - the honesty rule, the deferring option, Health & Safety,
+   conversation-authored questions, QWERTY by default, the fourth repair card, the "My
+   best guess" labels - was missing from all three User Manuals, and it was found only
+   because somebody ran a sync by hand and happened to read the stamps. The changes were
+   all recorded in `CHANGELOG.md` and `CLAUDE.md`; **what was missing was anyone asking
+   the question.** A red result is not automatically a sync - a release may genuinely not
+   touch a manual - but it must be answered rather than passed over.
+
+9. **Restamp any documents synced during the cycle.** `DOC-SYNC.md`'s `At commit` must
    name a commit that exists on `origin/main`, so anything reviewed against local-only
    commits is restamped at the release commit now. (See the ordering rule at the top of
    `DOC-SYNC.md`: reader-facing documents are best synced *after* the push, since until

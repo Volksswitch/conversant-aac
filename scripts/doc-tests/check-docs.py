@@ -866,6 +866,22 @@ def main(argv):
 
     print('\n%s\n%d error(s), %d to review across %d document(s).'
           % ('-' * 70, totals['error'], totals['review'], len(paths)))
+    # ⚠ RUN BEFORE THE WORD CHECK, because this is the EARLY WARNING for a fault the
+    # Word check can only report once it is already fatal. Duplicated numbering ids
+    # accumulate silently across sync passes and the document opens fine until abruptly
+    # it does not (measured September 8 2026: 117 numbering definitions opened, 145 did
+    # not, and thirteen documents were on the same path). Reported as REVIEW rather than
+    # an error: a document carrying duplicates is not yet wrong, it is on its way to
+    # being unopenable, and the repair is one command.
+    dup = numbering_dups(paths)
+    if dup:
+        print()
+        print('%d document(s) carry DUPLICATE NUMBERING IDS - not broken yet, but this is'
+              ' what makes Word refuse a file eventually:' % len(dup))
+        for name, total, distinct in dup:
+            print('    %-58s %d definitions, %d distinct id(s)' % (name, total, distinct))
+        print('  Repair: python scripts/doc-generators/fix-numbering-ids.py Documents/*.docx')
+
     # The last word, and it overrides everything above: a document Word will not open
     # is not clean with a caveat, it is broken, whatever the rules said.
     word_bad, why = (None, 'skipped') if ('--no-word' in argv) else word_opens(paths)
@@ -880,6 +896,36 @@ def main(argv):
     else:
         print('Word opens all %d.' % len(paths))
     return 1 if totals['error'] else 0
+
+
+def numbering_dups(paths):
+    """Documents whose numbering definitions share a w16cid:durableId.
+
+    That attribute is supposed to identify a numbering definition uniquely. A tool that
+    creates a new list by copying an existing <w:num> carries the id along with it, and
+    the duplication accumulates with every pass until Word refuses the file outright -
+    with the zip clean, every part parsed and every rule above green. Catching it here
+    means it is found while it is still a one-command repair rather than after a
+    document has become unopenable. See fix-numbering-ids.py.
+    """
+    import collections
+    import zipfile
+    out = []
+    for p in paths:
+        try:
+            with zipfile.ZipFile(p) as z:
+                if 'word/numbering.xml' not in z.namelist():
+                    continue
+                xml = z.read('word/numbering.xml').decode('utf8', 'replace')
+        except Exception:
+            continue          # a file we cannot read is the Word check's problem, not ours
+        ids = re.findall(r'<w:num[^>]*w16cid:durableId="(\d+)"', xml)
+        if not ids:
+            continue
+        c = collections.Counter(ids)
+        if max(c.values()) > 1:
+            out.append((os.path.basename(p), len(ids), len(c)))
+    return out
 
 
 def word_opens(paths):

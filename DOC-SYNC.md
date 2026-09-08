@@ -91,6 +91,26 @@ must not have.
   a local-only commit asserts currency against a history nobody else has. Where a sync
   had to run early, stamp it at the release commit once the push lands.
 
+## Nothing was asking whether a sync was due (September 8 2026)
+
+`python scripts/doc-tests/check-doc-currency.py` reads the table below and reports any
+**reader-facing** document not reviewed since a release shipped, naming the versions it
+has missed. It runs as a step of the release ritual, and it is the answer to a failure
+this file could describe but not detect.
+
+**Three releases went out with no document touched and nothing said so.** 0.10.6, 0.10.7
+and 0.10.9 all shipped undocumented; the whole of the 0.10.7 work was missing from all
+three User Manuals. **The changes were recorded correctly** - in `CHANGELOG.md` and in
+`CLAUDE.md` - so this is not the "miss a recording" frailty the purification pass is
+aimed at. It is simpler and worse: **the sync simply never ran, and no part of the
+process asked.**
+
+**Scoped to the four reader-facing documents on purpose.** Two dozen design records are
+permanently behind some release, and a check that is always red is one people learn to
+scroll past. A design record being older than the last release is usually correct; a
+manual being older than the last release means a tester is holding a description of a
+screen that no longer exists.
+
 **Trigger phrase (Ken):** **"sync docs"**, optionally naming documents — e.g. "sync
 docs", "sync docs Product Overview", "sync docs the two overviews and the user manual".
 
