@@ -26,39 +26,37 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
-- Settings has one kind of button again. About Me and the editors had grown black,
-  pale blue and green buttons alongside the ordinary ones, which made those screens
-  look like they belonged to a different app. Color there now means one of two
-  things: red for something that deletes, and a highlight for a setting that is
-  switched on. The buttons and answer chips in About Me are also the same size as
-  the rest of Settings now, rather than slightly smaller.
 
-- Settings looks like one panel again. Boxes of the same kind now use the same
-  typeface, the same size and the same height, and buttons look like buttons
-  everywhere — several used to be plain white squares because nothing had styled
-  them, which is why the profile and backup buttons stood out. The text boxes on the
-  Express Panel and Keyboard tab are now the same height as the ones on the Speech
-  tab, and the Anthropic key row on the General tab matches the five paid-service
-  rows exactly.
-- Every button that tries something out is now called "Test", whether it is checking
-  a key or playing a voice. It used to be "Test", "Test this voice" or "Test partner
-  voice" depending on where you were.
-- The Backspace, Shift and Enter keys on the on-screen keyboard now tell a screen
-  reader their names instead of reading out their symbols.
-- Fixed: on a touch screen, the buttons on the start-up cards and on the red
-  "are you sure?" card stayed looking pressed after you tapped them.
+## Version 0.10.12
 
+- Settings looks like one app again. Buttons of the same kind now look the same
+  wherever they are, boxes of the same kind use the same typeface and height, and a
+  button looks like a button — several used to be plain white squares because nothing
+  had styled them, which is why the profile and backup buttons stood out. About Me and
+  the editors had also grown black, pale blue and green buttons alongside the ordinary
+  ones, which made those screens look like they belonged somewhere else; color there
+  now means one of two things, red for something that deletes and a highlight for a
+  setting that is switched on. The text boxes on the Express Panel and Keyboard tab are
+  the same height as the ones on the Speech tab, and the Anthropic key row on the
+  General tab matches the five paid-service rows exactly.
 - The practice partner's voice now always comes from the same service as your own
   speaking voice. Choosing a service sets the partner to "Auto" — a voice from that
   service that isn't the one you speak with — and you can change it from there. Before
   this, picking an ElevenLabs voice for yourself left the practice partner showing one
   of your device's own voices, which looked like a setting that hadn't caught up.
+- Every button that tries something out is now called "Test", whether it is checking a
+  key or playing a voice. It used to be "Test", "Test this voice" or "Test partner
+  voice" depending on where you were.
+- Testing a key now also fetches the voices your account can actually use, and says how
+  many it found. If your key works but the list can't be loaded, it says that too,
+  rather than leaving you with the standard voices and no explanation.
+- The Backspace, Shift and Enter keys on the on-screen keyboard now tell a screen
+  reader their names instead of reading out their symbols.
 - Fixed: with OpenAI, Google Cloud or ElevenLabs as your voice, the practice partner
   and the spoken help in Settings were falling back to a device voice instead of
   speaking through the service you chose.
-- Testing a key now also fetches the voices your account can actually use, and says
-  how many it found. If your key works but the list can't be loaded, it says that too
-  rather than leaving you with the standard voices and no explanation.
+- Fixed: on a touch screen, the buttons on the start-up cards and on the red
+  "are you sure?" card stayed looking pressed after you tapped them.
 
 
 ## Version 0.10.11
