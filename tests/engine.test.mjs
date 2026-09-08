@@ -513,3 +513,63 @@ test('an ordinary turn carries no range', () => {
     }, 'how are you?');
     assert.equal(snap.lastClassification.offered_range, null);
 });
+
+/* --- A promise does not answer the question ---------------------------------
+ *
+ * Ken, September 7 2026: "The user makes a statement and it doesn't automatically
+ * hand the floor over to the partner. A promise is similar to a placeholder."
+ *
+ * Every one of the four slots is a way of ANSWERING, so selectResponse pops the
+ * partner's open question on the assumption that a spoken user turn discharges it.
+ * "Give me a second and I'll type it" does not: the partner still wants the fact
+ * and the user still owes it.
+ */
+test('a deferring response leaves the partner’s question standing', () => {
+    engine.reset();
+    engine.partnerSpeaking('Can I get a name for the order?');
+    engine.ingestClassification({
+        classification: { partner_action: 'QUESTION', turn_status: 'COMPLETE', is_repair_initiator: false },
+        responses: [
+            { slot: 'PREFERRED', text: "Give me a second and I'll type it.", defers: true },
+            { slot: 'DISPREFERRED', text: 'Just put whatever is easiest.' },
+            { slot: 'INITIATIVE', text: 'Could you call it out instead?' },
+            { slot: 'REPAIR', text: 'Sorry, what did you need?' },
+        ],
+    }, 'Can I get a name for the order?');
+
+    const before = engine.getSnapshot().sequenceStack.length;
+    assert.equal(before, 1, 'the partner opened a question');
+
+    const promise = engine.getSnapshot().palette.find(c => c.defers);
+    assert.ok(promise, 'the mark survived the engine option whitelist');
+
+    const after = engine.selectResponse(promise);
+    assert.equal(after.sequenceStack.length, 1, 'the question is still open - nothing was discharged');
+    assert.equal(after.floor, engine.FLOOR.SELF, 'the user still owes the answer');
+    assert.equal(after.lastUserUtterance, "Give me a second and I'll type it.",
+        'Repeat what I said re-speaks the promise');
+});
+
+test('an ordinary answer still closes the question', () => {
+    engine.reset();
+    engine.partnerSpeaking('Can I get a name for the order?');
+    engine.ingestClassification({
+        classification: { partner_action: 'QUESTION', turn_status: 'COMPLETE', is_repair_initiator: false },
+        responses: [{ slot: 'PREFERRED', text: 'Fred.' }],
+    }, 'Can I get a name for the order?');
+    const after = engine.selectResponse(engine.getSnapshot().palette[0]);
+    assert.equal(after.sequenceStack.length, 0, 'answering pops the question, as it always has');
+});
+
+test('the answer typed after a promise closes the question it deferred', () => {
+    engine.reset();
+    engine.partnerSpeaking('Can I get a name for the order?');
+    engine.ingestClassification({
+        classification: { partner_action: 'QUESTION', turn_status: 'COMPLETE', is_repair_initiator: false },
+        responses: [{ slot: 'PREFERRED', text: 'One moment.', defers: true }],
+    }, 'Can I get a name for the order?');
+    engine.selectResponse(engine.getSnapshot().palette[0]);
+    // What speakAsUserTurn does when they finally say it in their own words.
+    const after = engine.selectResponse({ text: 'Fred.' });
+    assert.equal(after.sequenceStack.length, 0, 'the question the promise deferred is now answered');
+});

@@ -364,6 +364,19 @@ function paletteFromResponses(responses) {
             latency: 'instant',
             format: m.format || null,
             trigger: m.trigger || null,
+            // ⚠ A SECOND WHITELIST, AND IT IS THE SAME TRAP AS ingestClassification's
+            // -- an option field the model returns and the parser passes through is
+            // DROPPED HERE unless it is named, with no error anywhere. The note about
+            // this sits on the classification one, which is not where a future session
+            // adding an option field will look. Add every new field here in the same
+            // change.
+            //
+            // `defers` says this option does NOT answer the partner's question -- it
+            // promises an answer and keeps the floor ("Give me a moment and I'll type
+            // it"). Without it reaching selectResponse the app would record the
+            // question as answered and hand the floor back, which is precisely what
+            // the user just said they were NOT doing.
+            defers: !!m.defers,
         }))
         .sort((a, b) => a.priority - b.priority);
 }
@@ -451,7 +464,38 @@ function closingPalette() {
 
 // A normal RESPONDING (or opener/closer) response was selected. Its SPP closes the
 // open partner FPP — pop it. Record lastUserUtterance for later self-repair.
+/**
+ * The user said something that does NOT answer the partner's question -- a promise
+ * to answer in a moment ("Give me a second and I'll type it").
+ *
+ * ⚠ THIS IS A CLASS THE ENGINE DID NOT MODEL, and it is worth stating why (Ken,
+ * September 7 2026). Every one of the four slots is a way of ANSWERING, so
+ * selectResponse pops the partner's open question on the reasonable assumption that
+ * a spoken user turn discharges it. A promise does not: the partner still wants the
+ * fact and the user still owes it. Popping it would file the conversation as having
+ * moved on from a question nobody answered.
+ *
+ * Ken's framing is the accurate one -- a promise is a placeholder with specific
+ * words -- and "Hold on" is the existing precedent: it speaks and touches the engine
+ * not at all. The one thing a promise needs that Hold on does not is to be RECORDED,
+ * because it carries a commitment the partner heard, and the next turn is generated
+ * against a history that has to contain it.
+ *
+ * So: the question stays on the stack, the floor stays with the user, and the mode
+ * is untouched. Only `lastUserUtterance` moves, so "Repeat what I said" re-speaks the
+ * promise rather than whatever preceded it.
+ */
+export function deferAnswer(text) {
+    if (text) state.lastUserUtterance = text;
+    state.floor = FLOOR.SELF;
+    return getSnapshot();
+}
+
 export function selectResponse(response) {
+    // A promise is not an answer -- it must not pop the question it defers. Callers
+    // route these to deferAnswer; this is the backstop, so a path that misses the
+    // branch degrades to "nothing was discharged" rather than to a silent close.
+    if (response && response.defers) return deferAnswer(response.text);
     state.lastUserUtterance = response.text;
     // The user is OPENING the conversation (selected an opener). They produced an
     // FPP (a greeting / pre-question) the partner is now expected to respond to,

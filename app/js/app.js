@@ -1705,6 +1705,32 @@ async function handleResponseSelected(response, index) {
     metrics.paletteTaken({ slot: response.slot || null, index, decideMs });
 
     placeholders.stop();
+
+    // ⚠ A PROMISE DOES NOT HAND THE FLOOR BACK (Ken, September 7 2026). "Give me a
+    // second and I'll type it" leaves the partner's question standing and the user
+    // still owing the answer, so this branch runs BEFORE the mic is stopped and the
+    // heard speech is consumed below. Everything it deliberately skips is a way of
+    // saying the turn is over:
+    //   - the partner's speech is NOT read out and cleared, so the answer the user
+    //     is about to type still commits against the question that prompted it;
+    //   - the recognizer keeps running and its buffer is left alone, because the
+    //     partner will very likely say "sure, take your time";
+    //   - commitExchange is NOT called -- there is no exchange yet;
+    //   - the cards stay up. The user's next move is to open the composer, and Ken's
+    //     call is that it stays a deliberate act rather than opening by itself.
+    // It IS recorded, unlike the "Hold on" placeholder it otherwise resembles: a
+    // promise is a commitment the partner heard, and the AI's next turn is written
+    // against a history that has to contain it.
+    if (response.defers) {
+        generationToken++;
+        ui.setPaletteBusy(false);
+        ui.setStatus('Speaking...');
+        await speakUserStatement(response.text);
+        logSpokenUserTurn(response.text);   // append AFTER speaking (Ken)
+        ui.showEngineState(engine.deferAnswer(response.text));
+        ui.setStatus('Say it in your own words when you are ready');
+        return;
+    }
     // The user has decided, so their choice beats any refresh still in flight:
     // abandon it and drop the "cards may change" cue now rather than when the
     // palette is cleared several awaits later (Ken, August 20 2026).
