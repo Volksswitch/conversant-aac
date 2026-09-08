@@ -573,3 +573,69 @@ test('the answer typed after a promise closes the question it deferred', () => {
     const after = engine.selectResponse({ text: 'Fred.' });
     assert.equal(after.sequenceStack.length, 0, 'the question the promise deferred is now answered');
 });
+
+/* --- A promise never takes the first cell ------------------------------------
+ *
+ * Ken, September 7 2026: the promise "is a 'promise' not an 'I don't know' so it
+ * shouldn't be in slot 1". PREFERRED must RESOLVE the turn; a promise settles
+ * nothing. Enforced in the engine because three prompt wordings could not hold it -
+ * the model put it first in six live runs out of eight anyway.
+ */
+const askedForAName = (responses) => {
+    engine.reset();
+    engine.partnerSpeaking('Can I get a name for the order?');
+    return engine.ingestClassification({
+        classification: { partner_action: 'QUESTION', turn_status: 'COMPLETE', is_repair_initiator: false },
+        responses,
+    }, 'Can I get a name for the order?').palette;
+};
+
+test('a promise offered first is swapped out of the first cell', () => {
+    const p = askedForAName([
+        { slot: 'PREFERRED', text: 'Give me a second.', defers: true },
+        { slot: 'DISPREFERRED', text: 'Just put whatever is easiest.' },
+        { slot: 'INITIATIVE', text: 'Could you call it out instead?' },
+        { slot: 'REPAIR', text: 'Sorry?' },
+    ]);
+    assert.equal(p[0].text, 'Just put whatever is easiest.', 'the option that settles the matter leads');
+    assert.ok(!p[0].defers);
+    assert.equal(p.find(c => c.defers).slot, 'DISPREFERRED', 'the promise kept its words and changed places');
+    assert.equal(p.length, 4, 'nothing was dropped');
+});
+
+test('it trades with DISPREFERRED, not INITIATIVE - both of those ANSWER', () => {
+    // Promoting INITIATIVE would put a second non-answer where the answer belongs.
+    const p = askedForAName([
+        { slot: 'PREFERRED', text: 'One moment.', defers: true },
+        { slot: 'DISPREFERRED', text: "I don't know." },
+        { slot: 'INITIATIVE', text: 'Why do you ask?' },
+    ]);
+    assert.equal(p[0].text, "I don't know.");
+});
+
+test('with no other answering option the promise falls back to INITIATIVE', () => {
+    const p = askedForAName([
+        { slot: 'PREFERRED', text: 'One moment.', defers: true },
+        { slot: 'INITIATIVE', text: 'Could you call it out instead?' },
+    ]);
+    assert.equal(p[0].text, 'Could you call it out instead?');
+    assert.equal(p.find(c => c.defers).slot, 'INITIATIVE');
+});
+
+test('a lone promise is kept - it beats an empty palette', () => {
+    const p = askedForAName([{ slot: 'PREFERRED', text: 'One moment.', defers: true }]);
+    assert.equal(p.length, 1);
+    assert.equal(p[0].slot, 'PREFERRED');
+    assert.equal(p[0].defers, true);
+});
+
+test('an ordinary palette is untouched', () => {
+    const p = askedForAName([
+        { slot: 'PREFERRED', text: 'Fred.' },
+        { slot: 'DISPREFERRED', text: "I'd rather not say." },
+        { slot: 'INITIATIVE', text: 'Why do you need it?' },
+        { slot: 'REPAIR', text: 'Sorry?' },
+    ]);
+    assert.deepEqual(p.map(c => c.slot), ['PREFERRED', 'DISPREFERRED', 'INITIATIVE', 'REPAIR']);
+    assert.equal(p[0].text, 'Fred.');
+});

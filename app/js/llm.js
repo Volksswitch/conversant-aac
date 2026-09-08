@@ -82,12 +82,14 @@ WHEN THEY ASK FOR SOMETHING ABOUT THE USER THAT YOU HAVE NOT BEEN GIVEN.
 Exception (1) covers what the profile actually contains. It is NOT permission to fill in the rest. A fact about this person's own life that is not in their profile and has not been said in this conversation is a fact you do not have, and inventing a plausible one -- an age, a date of birth, an address, an allergy, a medication, a phone number, a name -- is the most damaging thing you can do, because it is spoken in their voice to somebody who will act on it. "No allergies" said to a doctor is not a conversational slip.
 
 But a flat "I don't know" is usually wrong too, because they DO know -- it is their own life. What they lack is not the fact, it is the seconds. Typing it costs this person real time while somebody stands waiting, and handling that cost is exactly what the palette has to give them. Offer the moves a person in that chair actually makes:
-- SAY PLAINLY THAT THEY DO NOT KNOW. Whenever the user may not have this answer, PREFERRED -- the first option -- is a form of not knowing, and the plain form is best: "I don't know." / "I couldn't tell you." / "I don't know, sorry." Not knowing is itself an ANSWER, and the partner can ACT on it at once: look it up, take precautions, ask somebody who does know. Give the other options DIFFERENT ways of saying it rather than four wordings of one, and a softer form paired with an explicit admission of uncertainty is a legitimate one: "Not that I know of, but I could be wrong." "I don't think so, though don't take my word for it." What makes those safe is the second half -- WITHOUT it they are a flat claim (see the absence rule below) and must not be used.
-- PROMISE IT, and mark that option "defers": true. "One moment, I'll give you that." / "Give me a second and I'll type it." ONLY where the user certainly HAS the answer and the only obstacle is the seconds it takes to type: their own name, their address, their date of birth, their phone number, what they want to order. It is a real and important option -- often the one they want -- but it is NOT an answer, so it never leads where anything turns on the answer, and it does not appear at all where the user may simply not know.
+- SAY PLAINLY THAT THEY DO NOT KNOW. The plain form is best -- "I don't know." / "I'm not sure." / "I couldn't tell you." Not knowing is itself an ANSWER, and the partner can ACT on it at once: look it up, take precautions, ask somebody who does know. Give the other options DIFFERENT ways of saying it rather than four wordings of one, and a softer form paired with an explicit admission of uncertainty is a legitimate one: "Not that I know of, but I could be wrong." "I don't think so, though don't take my word for it." What makes those safe is the second half -- WITHOUT it they are a flat claim (see the absence rule below) and must not be used. ("I don't know" and "I'm not sure" are not quite the same thing -- the second concedes they may half-know it. With only four cells they are close enough to share one; the user reaches for the composer when the exact shade matters.)
+- PROMISE IT, and mark that option "defers": true. "One moment, I'll give you that." / "Give me a second and I'll type it." ONLY where the user certainly HAS the answer and the only obstacle is the seconds it takes to type: their own name, their address, their date of birth, their phone number, what they want to order. It is a real and important option -- often the one they want -- but it is NOT an answer, and it does not appear at all where the user may simply not know.
 
 The difference is worth getting right. A promise is a deferral: it leaves the partner holding the question until it arrives, and it may not. Asked about allergies, medication, a condition, or a family history, "I don't know" is both the honest answer and the safe one -- a clinician can work with it and can do nothing at all with a promise. Asked for a name for a coffee order, the promise is exactly right, because the user does know and the wait is the whole problem.
 
 "defers": true means "this option does not answer the question, it asks for a moment". Set it on the promise and on nothing else -- never on an actual answer, never on not knowing, never on a question back.
+
+(!) PREFERRED IS ALWAYS SOMETHING THAT ANSWERS, so a "defers" option is NEVER PREFERRED -- put it in one of the other cells. That first cell is the move that RESOLVES the turn and lets the partner get on, and a promise by definition does not: it leaves them holding the question. So PREFERRED is the fact itself when the profile has it; "I don't know" or "I'm not sure" when the user may not have it; and, where the detail genuinely does not matter, handing it over ("Just put whatever is easiest") -- because that settles the matter there and then, which a promise does not. Asked for a name for a coffee order the promise is a good and likely option, and it still does not go first.
 - HAND IT OVER, when nothing turns on the answer: "Just make one up." / "Put whatever's easiest." A name on a coffee cup does not matter and both of them know it.
 - SAY SO PLAINLY, when they genuinely do not know it.
 - ASK WHETHER THEY ALREADY HAVE IT -- as a QUESTION, never as a statement. "Do you have a file on me?" / "Is it on the card I gave you?" (!) "It should be in my file" and "my wife has it" are NOT safe fallbacks: they are claims about the world you were not given, in the same class as inventing the fact itself. You do not know that a file exists -- at a first appointment there is none -- nor what is in it, nor who else holds the answer. Ask; do not assert.
@@ -169,6 +171,20 @@ export async function testApiKey(key) {
 // sole personalization channel now that the interim name/about fields are gone.
 export function setWorldviewBlock(text) {
     worldviewBlock = (text || '').trim();
+}
+
+// Every question key About Me actually has (worldview.fieldKeys()).
+//
+// ⚠ WITHOUT THIS THE GAPS FEATURE LEAKS SILENTLY. The prompt asks for "missing_facts"
+// as snake_case keys; given only three examples the model INVENTS the rest, and a
+// name that does not match a real question is stored and then dropped when
+// "Questions worth answering" is drawn -- so the record says the gap was captured and
+// the user never sees it. It also logs one question repeatedly under different
+// invented names, which no de-duplication can merge. Naming the real set closes both.
+// It goes in the CACHED half of the prompt, so it is paid for once per conversation.
+let worldviewKeys = [];
+export function setWorldviewKeys(keys) {
+    worldviewKeys = Array.isArray(keys) ? keys.filter((k) => typeof k === 'string' && k) : [];
 }
 
 // The compact relationship-graph text (relationships.buildBlock()). Set fresh
@@ -447,9 +463,9 @@ Every one of these needs the same natural "text" plus a short "hint" (a few word
 
 Responses — the four structural slots below apply when "offered_options" is EMPTY (for a closed set, use the CHOICE shape above instead). ALWAYS return all four — even if the turn seems to trail off, is short, or contains filler/disfluencies; the ONLY time you return "responses": [] is when is_repair_initiator is true:
 - "hint" is a short glanceable label naming the response (a few words), not a truncation of "text".
-- PREFERRED: the most likely thing THIS user would say, delivered plainly, no hedging.
+- PREFERRED: the most likely thing THIS user would say, delivered plainly, no hedging. IT MUST RESOLVE THE TURN -- it is the option that answers and lets the partner get on. So an option carrying "defers" (a promise to answer in a moment) can NEVER be PREFERRED, however natural it sounds: it settles nothing and leaves the partner holding the question. Put the promise in DISPREFERRED or INITIATIVE and give PREFERRED something that actually finishes the exchange -- the fact itself, "I don't know" / "I'm not sure", or handing the detail over ("Just put whatever is easiest").
 - DISPREFERRED: a properly formed reluctant / declining / disagreeing reply — a brief MEANINGFUL softener that carries content ("I'd love to, but…", "I wish I could —"), the declination, and a short account/reason. Never a bare "No." Keep the account GENERAL or grounded in the profile — do not invent a specific excuse (a named appointment, a concrete prior plan) the user may not actually have; "I'm pretty wiped today" or "it's not really my thing" are safe, "I have a dentist appointment at 3" is fabricated.
-- INITIATIVE: a response that stops the user being purely responsive — a counter-offer, a return question, or a topic expansion. Vary its grammatical format (conditional / declarative / interrogative) from the other responses.
+- INITIATIVE: a response that stops the user being purely responsive — a counter-offer, a return question, a topic expansion, or a promise to supply something in a moment ("defers").  Vary its grammatical format (conditional / declarative / interrogative) from the other responses.
 - REPAIR: a clarification request on the PARTNER's turn — open-class ("Sorry?") when overall confidence is low, restricted ("Dinner where?") when a specific span is uncertain.
 
 User is leading: if the engine context has "user_holds_floor_to_lead": true, the partner has just RESPONDED to something the USER initiated (an opener or pre-question such as "Can I ask you something?"). The user now holds the floor to LEAD — do NOT generate replies as if answering the partner. Treat the partner's reply, even a short one ("sure", "go ahead", "of course", "any time"), as a go-ahead, not as a question to the user. Generate responses that let the user CONTINUE and lead: PREFERRED advances what the user wanted to say or asks their actual question; INITIATIVE offers a topic or question to raise; DISPREFERRED can gracefully back off ("Actually, never mind"); REPAIR stays a clarification on the partner only if their reply was unclear.
@@ -460,7 +476,9 @@ ${NO_VULGARITY}
 
 Get to the point: NO response may begin with an empty interjection — no "Ah", "Oh", "Um", "Er", "Well", "So", "Hmm", "You know" at the start. Open with the substance. (A meaningful softener on DISPREFERRED, like "I'd love to, but…", is fine; a bare interjection is not.)
 
-- "missing_facts": lowercase snake_case keys for personal facts about the user you needed but were not given (e.g. "home_city", "fav_team", "occupation"). Use [] if none. Always phrase responses around any missing fact — never output bracketed placeholders.
+- "missing_facts": personal facts about the user you needed and were not given. Use [] if none. Always phrase responses around any missing fact — never output bracketed placeholders.
+  ⚠ USE ONLY THE KEYS LISTED BELOW, spelled exactly as they appear. Each one is a question the app can actually put to the user; anything else is discarded, so an invented key means the question is never asked and the same gap recurs every conversation. If the fact you were missing has no key in the list, return nothing for it rather than making a name up.${worldviewKeys.length ? `
+  The keys: ${worldviewKeys.join(', ')}.` : ''}
 - "heard_uncertain": words in the partner's MOST RECENT turn that you suspect the SPEECH RECOGNIZER got wrong. Copy them exactly as they appear in that turn. Use [] when nothing looks wrong.
   Flag any word that looks like a mis-recognition, whether or not you can work out what was meant. "see side" for "seaside" is a flag even though the meaning is obvious. So is a missing or added negative ("can" where the conversation calls for "can't"), a day, time or number that a similar-sounding one could just as easily have been, and a name that came out as an unrelated word.
   Do NOT flag ordinary informal speech, slang, contractions, filler, false starts, repetition, or a turn that is simply short or blunt. Those are how people talk, not recognition errors. Do NOT flag a word merely because you would have phrased it differently.

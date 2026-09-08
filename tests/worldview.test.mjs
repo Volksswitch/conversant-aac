@@ -74,13 +74,45 @@ test('decline is reversible without data loss (value withheld while declined, re
 
 test('gaps: recordGaps logs only genuine open gaps; answering clears them', async () => {
     await wv.clearGaps();
-    await wv.recordGaps(['fav_food', shareableKey], 'what do you like to eat?');
+    await wv.recordGaps(['fav_foods', shareableKey], 'what do you like to eat?');
     // The already-answerable key should not be logged as a gap once answered.
     await wv.setField(shareableKey, 'pizza');
     await wv.recordGaps([shareableKey], 'x');
     const gaps = wv.listGaps().map((g) => g.key);
-    assert.ok(gaps.includes('fav_food'), 'the real gap is recorded');
+    assert.ok(gaps.includes('fav_foods'), 'the real gap is recorded');
     assert.ok(!gaps.includes(shareableKey), 'an answered field is not an open gap');
+});
+
+/* --- A gap must name a question that exists ----------------------------------
+ *
+ * Ken asked, September 7 2026, whether the holes the AI notices reliably reach
+ * "Questions worth answering". They did not: the model was never given the list of
+ * real questions, so it invented key names, and an invented one was stored and then
+ * dropped in silence when the list was drawn.
+ *
+ * ⚠ THE TEST ABOVE WAS ITSELF AN INSTANCE, which is the best argument for the guard:
+ * it used "fav_food" for a year. The real key is "fav_foods". A plausible near-miss
+ * is exactly what this fails on, and exactly what a model produces.
+ */
+test('a key that names no real question is refused', async () => {
+    await wv.clearGaps();
+    await wv.recordGaps(['fav_food', 'allergies', 'where_i_live'], 'invented names');
+    assert.deepEqual(wv.listGaps(), [], 'none of them is a question About Me asks');
+});
+
+test('a real key alongside invented ones still gets through', async () => {
+    await wv.clearGaps();
+    await wv.recordGaps(['where_i_live', 'home_city', 'allergies'], 'mixed');
+    assert.deepEqual(wv.listGaps().map((g) => g.key), ['home_city']);
+});
+
+test('the same question asked twice is one entry with a count, not two', async () => {
+    await wv.clearGaps();
+    await wv.recordGaps(['fav_team'], 'who do you support?');
+    await wv.recordGaps(['fav_team'], 'are you a fan?');
+    const gaps = wv.listGaps();
+    assert.equal(gaps.length, 1, 'not recorded twice');
+    assert.equal(gaps[0].count, 2, 'it counts how often it came up');
 });
 
 // --- directive fields (August 7 2026) ----------------------------------------

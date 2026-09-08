@@ -354,7 +354,7 @@ export function ingestClassification(result, partnerText) {
 // REPAIR-OF-SELF rephrase/expand carry a round-trip (latency class, §2).
 function paletteFromResponses(responses) {
     if (!Array.isArray(responses)) return [];
-    return responses
+    const list = responses
         .filter(m => m && m.slot && typeof m.text === 'string' && m.text.trim())
         .map(m => ({
             slot: m.slot,
@@ -379,6 +379,45 @@ function paletteFromResponses(responses) {
             defers: !!m.defers,
         }))
         .sort((a, b) => a.priority - b.priority);
+    return demotePromise(list);
+}
+
+/**
+ * A promise never occupies the first cell (Ken, September 7 2026).
+ *
+ * ⚠ THIS IS ENFORCED HERE BECAUSE THE PROMPT COULD NOT HOLD IT. Three wordings were
+ * tried, including stating it inside PREFERRED's own definition, and the model put
+ * "Give me a second and I'll type it" first in six runs out of eight anyway -- it is
+ * a genuinely natural thing to say, and that prior beats an instruction. Where a
+ * constraint is structural rather than a matter of wording, assert it in code.
+ *
+ * The rule: PREFERRED must RESOLVE the turn -- it is the option that answers and lets
+ * the partner get on. A promise settles nothing and leaves them holding the question,
+ * so however natural it sounds it cannot be the first card. The fix is a swap of the
+ * two entries' slots, so each card keeps its own label and simply changes places.
+ *
+ * ⚠ IT SWAPS WITH DISPREFERRED FIRST, NOT INITIATIVE, and the order matters. PREFERRED
+ * and DISPREFERRED are both second-pair-parts -- they ANSWER, one affiliatively and one
+ * not -- while INITIATIVE by definition does not (it is a counter-offer or a question
+ * back). Promoting INITIATIVE would put a second non-answer where the answer belongs:
+ * measured, it led with "Could you call it out instead?" while "Just put whatever is
+ * easiest" -- the option that actually settles the matter -- sat in the second cell.
+ *
+ * If PREFERRED is the ONLY option, it stays: a promise beats an empty palette.
+ */
+function demotePromise(list) {
+    const first = list.find((m) => m.slot === 'PREFERRED');
+    if (!first || !first.defers) return list;
+    const target = ['DISPREFERRED', 'INITIATIVE']
+        .map((slot) => list.find((m) => m.slot === slot && !m.defers))
+        .find(Boolean);
+    if (!target) return list;
+    const swap = target.slot;
+    target.slot = first.slot;
+    target.priority = SLOT_PRIORITY[target.slot] ?? 99;
+    first.slot = swap;
+    first.priority = SLOT_PRIORITY[first.slot] ?? 99;
+    return list.sort((a, b) => a.priority - b.priority);
 }
 
 // Replace the current response palette WITHOUT touching the sequence stack, mode,

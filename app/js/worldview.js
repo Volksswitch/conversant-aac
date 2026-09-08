@@ -58,6 +58,36 @@ export function getRegistry() {
     return registry;
 }
 
+/**
+ * Every question key About Me actually has.
+ *
+ * ⚠ THE MODEL HAS TO BE GIVEN THIS OR THE WHOLE GAPS FEATURE LEAKS (Ken asked,
+ * September 7 2026). The generation prompt used to request "lowercase snake_case
+ * keys" with three examples and nothing else, so the model INVENTED the names. A gap
+ * only ever reaches "Questions worth answering" if its name happens to match one of
+ * these exactly, and an invented one was stored and then silently dropped at display
+ * time -- the record said the gap was captured and the user never saw it. It also
+ * meant one question could be logged several times under different invented names
+ * ("home_city", "city", "where_i_live"), which no amount of de-duplicating by name
+ * can merge. Naming the real set closes all of that at once, and it sits in the
+ * CACHED part of the prompt, so it costs nothing after a conversation's first call.
+ */
+export function fieldKeys() {
+    return fieldIndex ? Object.keys(fieldIndex) : [];
+}
+
+/**
+ * Is this a question About Me actually asks?
+ *
+ * Returns true when the registry has not loaded, deliberately: this gates what gets
+ * RECORDED, and refusing everything because a fetch has not finished yet would throw
+ * away real gaps. A stray key surviving that window is harmless -- pruneGaps clears
+ * it on the next load.
+ */
+function isKnownField(key) {
+    return !fieldIndex || Object.prototype.hasOwnProperty.call(fieldIndex, key);
+}
+
 export function fieldMeta(key) {
     return fieldIndex ? fieldIndex[key] || null : null;
 }
@@ -112,7 +142,13 @@ export async function load() {
     }
     if (!loaded) loaded = readCache();
     profile = loaded ? normalize(loaded) : defaultProfile();
+    // Clear gaps naming questions that do not exist -- see pruneGaps. Only writes
+    // when something actually went, so a clean profile costs one array filter.
+    const pruned = pruneGaps();
     writeCache(profile);
+    // Persist the prune, but never let a failed write stop the app starting -- a
+    // stale entry on disk is invisible either way and will be pruned again next time.
+    if (pruned) save().catch(() => { /* best-effort */ });
     return profile;
 }
 
@@ -269,6 +305,13 @@ export async function recordGaps(missingFacts, partnerText) {
     const now = new Date().toISOString();
     let changed = false;
     for (const key of missingFacts || []) {
+        // ⚠ A KEY THAT IS NOT A REAL QUESTION MUST NOT BE STORED, and the reason is
+        // that it can never leave: getState() reports any unknown key as 'unanswered',
+        // so it passes the filter below forever, and nothing can ever answer a
+        // question that does not exist -- clearGapEntry only fires when a real field
+        // is answered or declined. Left in, these accumulate in the user's file
+        // permanently while being invisible on screen.
+        if (!isKnownField(key)) continue;
         if (getState(key) !== 'unanswered') continue;
         const existing = profile.gaps.find((g) => g.key === key);
         if (existing) {
@@ -281,6 +324,21 @@ export async function recordGaps(missingFacts, partnerText) {
         changed = true;
     }
     if (changed) await save();
+}
+
+/**
+ * Drop stored gaps that name no real question. Returns true if anything went.
+ *
+ * Existing files carry these from before the model was told the valid names, and
+ * they are unreachable in both directions -- never shown, never clearable. Runs once
+ * per load rather than on a schedule, and only writes when it actually removed
+ * something, so an already-clean profile costs nothing.
+ */
+function pruneGaps() {
+    if (!profile || !fieldIndex) return false;
+    const before = profile.gaps.length;
+    profile.gaps = profile.gaps.filter((g) => isKnownField(g.key));
+    return profile.gaps.length !== before;
 }
 
 /** Open gaps, most-asked first. */

@@ -729,7 +729,14 @@ function initApp() {
     // profile block even before the user opens "About Me". The data folder
     // isn't restored until Start, so this first load uses the localStorage
     // cache; handleStart() reloads from the folder once it's granted.
-    worldview.loadRegistry().catch(() => { /* registry optional at startup */ });
+    // ⚠ THE KEY LIST IS SET FROM HERE, NOT BESIDE EACH setWorldviewBlock CALL. The
+    // blocks are refreshed every turn because the user's ANSWERS change; the set of
+    // QUESTIONS is static for a release, so it is set once, when the registry lands.
+    // Without it the model invents key names and every gap it reports is discarded
+    // in silence -- see setWorldviewKeys.
+    worldview.loadRegistry()
+        .then(() => llm.setWorldviewKeys(worldview.fieldKeys()))
+        .catch(() => { /* registry optional at startup */ });
     worldview.load().catch(() => { /* falls back to empty profile */ });
     // Relationship graph (people/edges) — its own model + file. Loaded here from
     // the cache; handleStart() reloads from the folder and runs the one-time
