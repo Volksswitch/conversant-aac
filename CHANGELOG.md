@@ -26,6 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+
+## Version 0.10.11
+
 - The "Test" button beside each key on the Speech tab now does the same thing for
   every service: it quietly checks that the service accepts your key, without
   speaking and without costing anything. For OpenAI, Google Cloud and ElevenLabs it
