@@ -157,48 +157,61 @@ export function setNowPlaying(text) {
     scrollLogToBottom();
 }
 
-// --- Region B: the response palette as triple-coded cards (UI-Design.docx §4).
-// Each card carries: slot badge (text), slot color (border + badge), the
-// glanceable hint (primary reading target), the full utterance (smaller), an
-// optional format tag, and a latency dot (filled = instant, hollow = a
-// generation round-trip on selection). Position + color + badge = triple coding,
-// so meaning never rests on color alone. ---
+// --- Region B: the response palette (UI-Design.docx §4).
+// Each card carries: slot color (a tinted fill and a hued left border), the
+// glanceable hint (primary reading target) and the full utterance.
+//
+// CODED BY POSITION AND COLOR — the category is NOT written on the card, and the
+// badge that used to name it is gone (Ken, September 8 2026: "The badges are
+// unnecessary and should be eliminated"). It had stopped being visible long
+// before that, surviving only in the accessible name, so the visible coding had
+// been position + color for some time and the "triple coding" description had
+// drifted from the app. What the old rule existed to guarantee is unchanged and
+// still holds: MEANING NEVER RESTS ON COLOR ALONE, because the four categories
+// sit in fixed positions a user learns. The color-blind scheme additionally codes
+// the category by the left bar's STYLE, which is what carries it where color
+// cannot (see tests/color-blind.test.mjs).
+//
+// ⚠ IF THE APP IS EVER EXTENDED TO NON-SPEAKING BLIND USERS, this is the decision
+// to reopen: with position and color both unavailable, the category would need
+// naming again in the accessible name. Ken judged that unlikely and the badge not
+// worth carrying for it in the meantime.
 
-// slot enum → { badge label, css class, friendly aria name }. Covers the four
-// RESPONDING slots plus the repair-of-self ops and the opener/closer palettes
-// the engine also emits, so every response the engine can produce renders.
+// slot enum → { css class }. Covers the four RESPONDING slots plus the
+// repair-of-self ops and the opener/closer palettes the engine also emits, so
+// every response the engine can produce renders.
 const SLOT_META = {
-    PREFERRED:       { badge: 'PREFERRED',    cls: 'slot-preferred' },
-    DISPREFERRED:    { badge: 'DISPREFERRED', cls: 'slot-dispreferred' },
-    INITIATIVE:      { badge: 'INITIATIVE',   cls: 'slot-initiative' },
-    REPAIR:          { badge: 'REPAIR',       cls: 'slot-repair' },
-    REPAIR_RESPEAK:  { badge: 'SAY AGAIN',    cls: 'slot-repair' },
-    REPAIR_REPHRASE: { badge: 'REPHRASE',     cls: 'slot-repair' },
-    REPAIR_EXPAND:   { badge: 'EXPLAIN MORE', cls: 'slot-repair' },
-    REPAIR_RETRY:    { badge: 'TRY AGAIN',    cls: 'slot-repair' },
-    OPENER:          { badge: 'OPENER',       cls: 'slot-initiative' },
+    PREFERRED:       { cls: 'slot-preferred' },
+    DISPREFERRED:    { cls: 'slot-dispreferred' },
+    INITIATIVE:      { cls: 'slot-initiative' },
+    REPAIR:          { cls: 'slot-repair' },
+    REPAIR_RESPEAK:  { cls: 'slot-repair' },
+    REPAIR_REPHRASE: { cls: 'slot-repair' },
+    REPAIR_EXPAND:   { cls: 'slot-repair' },
+    REPAIR_RETRY:    { cls: 'slot-repair' },
+    OPENER:          { cls: 'slot-initiative' },
     // Wind-down and closing never appear together, so they share the slate
     // "persistent" hue (the wrapping-up family); position + timing distinguish them.
-    WIND_DOWN:       { badge: 'WIND DOWN',    cls: 'slot-persistent' },
-    CLOSING:         { badge: 'CLOSING',      cls: 'slot-persistent' },
+    WIND_DOWN:       { cls: 'slot-persistent' },
+    CLOSING:         { cls: 'slot-persistent' },
     // Declining the partner's closing is an INITIATIVE move — the user is seizing
     // the floor rather than winding up — so it takes the initiative blue and reads
     // apart from the slate goodbyes it sits beside.
-    CLOSING_DECLINE: { badge: 'ONE MORE THING', cls: 'slot-initiative' },
+    CLOSING_DECLINE: { cls: 'slot-initiative' },
     // Lead statements from Reframe-to-steer (the user holds the floor and wants to
     // take the conversation somewhere) — initiative-colored, one per cell.
-    STATEMENT:       { badge: 'STATEMENT',    cls: 'slot-initiative' },
+    STATEMENT:       { cls: 'slot-initiative' },
     // Closed-set turns: one card per alternative the partner offered, plus an
     // escape hatch. The choices are all straightforward answers, so they take the
     // preferred hue; the "none of these / in between" card takes the dispreferred
     // amber, which is what it is. Being outside CATEGORY_SLOTS, they lay out one
     // per cell like the openers rather than grouping into the four categories.
-    CHOICE:          { badge: 'CHOICE',       cls: 'slot-preferred' },
+    CHOICE:          { cls: 'slot-preferred' },
     // The free-cell fillers keep the hue of the structural move they stand in for,
     // so the colors mean the same thing on a closed-set turn as on any other.
-    CHOICE_OTHER:    { badge: 'SOMETHING ELSE', cls: 'slot-dispreferred' },
-    CHOICE_ASK:      { badge: 'ASK THEM',     cls: 'slot-initiative' },
-    CHOICE_REPAIR:   { badge: 'SAY AGAIN',    cls: 'slot-repair' },
+    CHOICE_OTHER:    { cls: 'slot-dispreferred' },
+    CHOICE_ASK:      { cls: 'slot-initiative' },
+    CHOICE_REPAIR:   { cls: 'slot-repair' },
 };
 
 // The response footprint is a fixed RESERVED grid of 4 CELLS (Rule 1) — 2×2 with
@@ -239,7 +252,7 @@ export function setCardTextMode(mode) {
 // every card is spoken instantly, so the latency dot is gone too. `half` shrinks
 // the text for a 2-up (stacked) category cell.
 function buildResponseCard(response, index, onSelect, half) {
-    const meta = SLOT_META[response.slot] || { badge: response.slot, cls: 'slot-persistent' };
+    const meta = SLOT_META[response.slot] || { cls: 'slot-persistent' };
     const roundtrip = response.latency === 'roundtrip';
     // Round-trip responses (rephrase/expand) have no text yet → show their hint label.
     const text = (response.text && response.text.trim()) ? response.text : (response.hint || '');
@@ -247,13 +260,15 @@ function buildResponseCard(response, index, onSelect, half) {
     const card = document.createElement('button');
     card.type = 'button';
     card.className = `response-card ${meta.cls}${half ? ' response-card-half' : ''}`;
-    // Category isn't shown visually, so name it in the accessible label only.
-    // ⚠ A GUESSED REPAIR WORDING SAYS SO IN THE ACCESSIBLE NAME TOO. The hint span
-    // carrying "My best guess" is aria-hidden (it is a duplicate for a sighted
-    // reader), so without this a screen-reader user would be the only person not
-    // told that these words are the app's inference rather than their own.
-    const badge = response.guessed ? `${meta.badge}, my best guess` : meta.badge;
-    card.setAttribute('aria-label', `${badge}: ${text}`);
+    // The accessible name is the FULL wording, whatever the card-text setting has
+    // on screen, because the full wording is what will actually be spoken.
+    //
+    // The category is deliberately NOT named here any more (Ken, September 8 2026).
+    // ⚠ BUT "my best guess" IS KEPT, and it is not a badge: it warns that these
+    // words are the app's inference rather than the user's own. The hint span
+    // carrying it is aria-hidden as a duplicate for a sighted reader, so this is
+    // the only channel that has it.
+    card.setAttribute('aria-label', response.guessed ? `My best guess: ${text}` : text);
     // The model returns a short glanceable label ("hint") alongside the full wording.
     // BOTH are always put in the card and the setting decides which are visible
     // (see setCardTextMode) -- so the user's choice costs no round trip and cannot

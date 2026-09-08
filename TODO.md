@@ -59,15 +59,6 @@ the one that quietly waits forever.
   count it in the weekly report. No user-facing error text — Ken's standing position.
 - **Why not yet:** not seen in the field yet; it is instrumentation, not a defect.
 
-### CLAUDE.md says "triple coding" where the app now has two visible codings
-- **Raised:** 2026-09-08 — found while reviewing Ken's Architecture Overview corrections
-- **Wanted:** the UI rule says slot identity is position + colour + text badge. The badge
-  is real but reaches only the accessible name (`ui.js`: "Category isn't shown visually"),
-  so what a sighted user gets is position + colour. Correct the rule, keeping the
-  "never colour alone" requirement it exists to protect.
-- **Why not yet:** it is a wording fix to a settled rule, not a behavior change, and it
-  wants Ken's eye on whether the badge should become visible instead.
-
 ### The 0.10.7 release note misstates the Express Panel grid
 - **Raised:** 2026-09-08 — found while syncing the manuals
 - **Wanted:** the note says "three rows of twelve rather than four rows of nine". The
@@ -92,4 +83,15 @@ the one that quietly waits forever.
   option; repair-of-self corrected to four operations plus the guess flag; the placeholder
   ladder easing off; the honesty constraint, which the document had never carried; and the
   Health & Safety module with conversation-authored questions.
+
+### The triple-coding rule, and the badges themselves
+- **Raised:** 2026-09-08 — found while reviewing Ken's Architecture Overview corrections
+- **Done:** 2026-09-08 — Ken's call was to eliminate the badges rather than reword around
+  them: *"The badges are unnecessary and should be eliminated. If we ever extend the tool
+  to support non-speaking blind individuals, we can reconsider but I don't see that ever
+  happening."* Removed from `ui.js` (the accessible name is now the full wording alone),
+  the dead CSS deleted, and the rule reworded in CLAUDE.md to position + colour with the
+  reopening condition recorded. "My best guess" was kept — it is a warning about the
+  words' provenance, not a category label. The Architecture Overview and Configuration
+  Model were corrected; UI-Design already said "double-coded" and needed nothing.
 

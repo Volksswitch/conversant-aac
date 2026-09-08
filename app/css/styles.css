@@ -28,17 +28,20 @@
     font-size: clamp(14px, 1.6vmin + 1.8px, 24px);
 }
 
-/* --- Design tokens (UI-Design.docx §10). Slot colors carry response identity as
-   one leg of the triple coding (position + color + text badge); never the only
-   cue. Transcript-state colors match §6. Tinted fills are pale; the border and
-   badge carry the hue. --- */
+/* --- Design tokens (UI-Design.docx §10). Slot colors carry response identity
+   alongside fixed POSITION; never the only cue. (The text badge that was once the
+   third leg is gone -- Ken, September 8 2026 -- but the rule it protected stands:
+   the four categories sit in fixed positions, and the color-blind scheme codes
+   them by the left bar's style as well.) Transcript-state colors match §6.
+   Tinted fills are pale; the border carries the hue. --- */
 :root {
     --slot-preferred: #2E7D32;     /* green  */
     /* Amber -- warm, not red: declining is normal. Darkened a shade from #B26A00
-       (Ken, September 3 2026): the slot badge puts WHITE text on this colour, and
-       at the old value that pair measured 4.24:1 against the 4.5 needed. Nothing
-       was checking the badge, which is why it stood for a year; the theme tests
-       check it now. */
+       (Ken, September 3 2026) because WHITE text sits on this colour and at the old
+       value that pair measured 4.24:1 against the 4.5 needed. ⚠ KEEP IT: the slot
+       badge it was originally darkened for is gone, but the pair is still live on
+       the "End practice" button, and the mode chip puts white on three of the other
+       slot colours. The theme tests check all of them. */
     --slot-dispreferred: #A86300;
     --slot-initiative: #1565C0;    /* blue — also the RESPONDING mode chip */
     --slot-repair: #6A1B9A;        /* purple */
@@ -1812,7 +1815,7 @@ body.conv-bottom .palette-grid {
     }
 }
 
-/* The response card (§4). Slot color: tinted fill, hued left border + badge. */
+/* The response card (§4). Slot color: tinted fill and a hued left border. */
 .response-card {
     display: flex;
     flex-direction: column;
@@ -1838,16 +1841,6 @@ body.conv-bottom .palette-grid {
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
-}
-
-/* Slot badge — the text leg of the triple coding. */
-.response-badge {
-    font-size: 0.68rem;
-    font-weight: 800;
-    letter-spacing: 0.05em;
-    color: var(--ink-inverse);
-    border-radius: 4px;
-    padding: 0.15rem 0.45rem;
 }
 
 /* Latency dot — filled = speaks instantly; hollow = a generation round-trip on
@@ -2035,21 +2028,13 @@ body.conv-bottom .palette-grid {
 .slot-repair       { border-left-color: var(--slot-repair);       background: var(--slot-repair-tint); }
 .slot-persistent   { border-left-color: var(--slot-persistent); }
 
-.slot-preferred .response-badge,
-.slot-preferred .response-latency    { color: var(--slot-preferred); }
-.slot-preferred .response-badge      { background: var(--slot-preferred); color: var(--ink-inverse); }
-.slot-dispreferred .response-badge,
-.slot-dispreferred .response-latency { color: var(--slot-dispreferred); }
-.slot-dispreferred .response-badge   { background: var(--slot-dispreferred); color: var(--ink-inverse); }
-.slot-initiative .response-badge,
-.slot-initiative .response-latency   { color: var(--slot-initiative); }
-.slot-initiative .response-badge     { background: var(--slot-initiative); color: var(--ink-inverse); }
-.slot-repair .response-badge,
-.slot-repair .response-latency       { color: var(--slot-repair); }
-.slot-repair .response-badge         { background: var(--slot-repair); color: var(--ink-inverse); }
-.slot-persistent .response-badge,
-.slot-persistent .response-latency   { color: var(--slot-persistent); }
-.slot-persistent .response-badge     { background: var(--slot-persistent); color: var(--ink-inverse); }
+/* The per-slot rules for the response BADGE and the LATENCY DOT are gone with the
+   elements themselves. The latency dot was dropped earlier (every card speaks
+   instantly); the badge on September 8 2026 (Ken: "The badges are unnecessary").
+   Nothing renders either class, so these were styling elements that do not exist.
+   ⚠ The slot colours themselves are still very much live -- the card's left border
+   above, the mode chip, and the End practice button -- so removing this block
+   changes no pixel, which was verified rather than assumed. */
 
 /* --- The colour-blind scheme codes the category by the left bar's STYLE as well as
    its colour, and this is NOT belt-and-braces -- it is what makes the scheme work.

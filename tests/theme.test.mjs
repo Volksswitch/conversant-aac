@@ -185,14 +185,22 @@ const PAIRS = [
     ['the initiative bar', 'slot-initiative', 'slot-initiative-tint', 3],
     ['the repair bar', 'slot-repair', 'slot-repair-tint', 3],
     ['a command button outline', 'slot-persistent', 'surface-page', 3],
-    // The slot badge — the TEXT leg of the triple coding, so it has to be read.
-    // Nothing checked this pair until September 3 2026, and the dispreferred amber
+    // WHITE TEXT ON A SLOT COLOUR. These were added for the response-card badge,
+    // which has since been removed (Ken, September 8 2026) — but the pairs are STILL
+    // LIVE and the rows must stay: the mode chip puts ink-inverse on persistent,
+    // initiative and repair, and the "End practice" button puts it on dispreferred.
+    // Nothing checked any of this until September 3 2026, and the dispreferred amber
     // had been sitting at 4.24:1 the whole time.
-    ['the preferred badge', 'ink-inverse', 'slot-preferred', 4.5],
-    ['the dispreferred badge', 'ink-inverse', 'slot-dispreferred', 4.5],
-    ['the initiative badge', 'ink-inverse', 'slot-initiative', 4.5],
-    ['the repair badge', 'ink-inverse', 'slot-repair', 4.5],
-    ['a persistent badge', 'ink-inverse', 'slot-persistent', 4.5],
+    //
+    // ⚠ The PREFERRED row has no consumer today. It is kept deliberately so the four
+    // slot hues stay interchangeable for this purpose — a scheme that made green
+    // unusable under white text would be a trap for the next thing that needs it,
+    // and the row costs nothing.
+    ['white text on preferred', 'ink-inverse', 'slot-preferred', 4.5],
+    ['white text on dispreferred (the End practice button)', 'ink-inverse', 'slot-dispreferred', 4.5],
+    ['white text on initiative (the mode chip)', 'ink-inverse', 'slot-initiative', 4.5],
+    ['white text on repair (the mode chip)', 'ink-inverse', 'slot-repair', 4.5],
+    ['white text on persistent (the mode chip)', 'ink-inverse', 'slot-persistent', 4.5],
     ['the Always band outline', 'band-always', 'band-always-tint', 3],
     ['the Context band outline', 'band-context', 'band-context-tint', 3],
     ['the Flex band outline', 'band-flex', 'band-flex-tint', 3],
