@@ -23,7 +23,8 @@ import * as platform from './platform.js';
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
   "0.10.12": [
-    "Settings looks like one panel again. Boxes of the same kind now use the same typeface and buttons of the same kind the same size, wherever they are — the Anthropic key row on the General tab now matches the five paid-service rows exactly, and every \"Test this voice\" button is the same full-width, easy-to-hit target rather than only two of the twelve.",
+    "Settings looks like one panel again. Boxes of the same kind now use the same typeface, the same size and the same height, and buttons look like buttons everywhere — several used to be plain white squares because nothing had styled them, which is why the profile and backup buttons stood out. The text boxes on the Express Panel and Keyboard tab are now the same height as the ones on the Speech tab, and the Anthropic key row on the General tab matches the five paid-service rows exactly.",
+    "Every button that tries something out is now called \"Test\", whether it is checking a key or playing a voice. It used to be \"Test\", \"Test this voice\" or \"Test partner voice\" depending on where you were.",
     "The Backspace, Shift and Enter keys on the on-screen keyboard now tell a screen reader their names instead of reading out their symbols.",
     "Fixed: on a touch screen, the buttons on the start-up cards and on the red \"are you sure?\" card stayed looking pressed after you tapped them.",
     "The practice partner's voice now always comes from the same service as your own speaking voice. Choosing a service sets the partner to \"Auto\" — a voice from that service that isn't the one you speak with — and you can change it from there. Before this, picking an ElevenLabs voice for yourself left the practice partner showing one of your device's own voices, which looked like a setting that hadn't caught up.",

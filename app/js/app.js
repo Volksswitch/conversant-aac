@@ -6595,9 +6595,9 @@ function openSettings() {
             showAuraStatus('own', null, '');
             showAzureVoiceStatus('own', null, '');
             if (radio.value === 'deepgram' && !(storage.loadDeepgramKey() || '').trim()) {
-                showAuraStatus('own', 'warn', 'Add your Deepgram key above, then tap Test this voice.');
+                showAuraStatus('own', 'warn', 'Add your Deepgram key above, then tap Test.');
             } else if (radio.value === 'azure' && !(storage.loadAzureKey() || '').trim()) {
-                showAzureVoiceStatus('own', 'warn', 'Add your Azure Speech key above, then tap Test this voice.');
+                showAzureVoiceStatus('own', 'warn', 'Add your Azure Speech key above, then tap Test.');
             }
         };
     });

@@ -2412,14 +2412,45 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
 
    Text inputs are deliberately NOT here: `color-scheme` already gives them a proper
    dark field, which is exactly what that property is for. --- */
+/* ⚠ AND IT SETS THE WHOLE APPEARANCE, NOT JUST THE FILL. It used to set background and
+   color only, so a button nobody had styled kept the BROWSER'S square 2px outset border
+   and read as a box rather than a button — "some have rounded corners and grey
+   backgrounds, others are sharp corners with white backgrounds... it should be clear
+   when a button is a button" (Ken, September 8 2026). The profile buttons, Export,
+   Import and the Express editor's tools were all in that state.
+
+   The look is the one the Paste and Test buttons already had, which is the one Ken
+   pointed at as correct: a soft-grey fill so it stands off the panel, a real border, and
+   a small radius. `:where()` keeps it at zero specificity, so every button that HAS
+   chosen an appearance still wins — the dark "add" buttons, the red destructive ones,
+   the blue speak buttons, the transparent title-bar icons, and everything that is a card
+   rather than a button (a practice scenario, an About Me module row, an Express Panel
+   preview cell) all declare their own and are untouched. */
 :where(#settingsDialog, #worldviewScreen) button {
-    background: var(--surface-raised);
+    background: var(--surface-raised-alt);
     color: var(--ink);
+    border: 1px solid var(--edge);
+    border-radius: 4px;
+    padding: 0.5rem 0.9rem;
+    cursor: pointer;
 }
 
+/* ⚠ INPUTS ARE IN THIS LIST NOW. Buttons and selects took the floor and text fields did
+   not, so a field sat 37px tall beside a 58px button in the same row, and the editors'
+   fields — which set their own smaller padding — were shorter still: "similar text entry
+   fields on the Express Panel and Keyboard tab that look shorter in height than the text
+   entry fields on the Speech tab" (Ken, September 8 2026). A field is a touch target
+   like anything else, and for this population a short one is harder to hit, not tidier.
+   min-width is deliberately NOT applied to inputs: several are sized to their content
+   (the Azure region box is about ten characters) and a square floor would stretch them. */
+#settingsContent button:not(.slider-step),
+#settingsContent select,
+#settingsContent input[type="text"],
+#settingsContent input[type="password"] {
+    min-height: var(--btn-min-dim);
+}
 #settingsContent button:not(.slider-step),
 #settingsContent select {
-    min-height: var(--btn-min-dim);
     min-width: var(--btn-min-dim);
 }
 
@@ -3431,14 +3462,12 @@ dialog select {
 .slider-step:active { transform: translateY(1px); }
 
 /* "Reset buttons and gaps to default" — a quiet full-width action. */
+/* Full width is the only thing this needs to say: a quiet, panel-wide action. Fill,
+   border and radius come from the Settings button baseline, so it looks like the
+   buttons around it instead of being the one plain action still painted white. */
 .reset-sizing-btn {
     width: 100%;
-    padding: 0.45rem 0.7rem;
-    border: 1px solid var(--edge);
-    border-radius: 6px;
-    background: var(--surface-raised);
     color: var(--ink-strong);
-    cursor: pointer;
 }
 
 .switch {
