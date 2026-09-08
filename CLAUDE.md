@@ -1865,6 +1865,53 @@ his decisions, and deleting a comment discards a question he asked. He does it i
 (Review > Accept All, then delete the comments), or asks for
 `scripts/doc-generators/accept-revisions.py`. **Do not run that script to unblock a sync.**
 
+## Working through a document's comments and corrections (Ken, September 8 2026)
+
+The companion to the blocking rule above. A document under review is not a candidate for
+syncing — but it must not sit blocked forever either, so this is how it gets unblocked,
+**cooperatively**. Ken: *"I want you to review the document comments and corrections.
+Accept all corrections for me unless you disagree with the change. Then I want you to act
+on the comments unless you disagree with the suggestion. Tell me which changes/suggestions
+you disagree with and why. We will decide on those items together. When done with this
+exercise there should be no more corrections or comments remaining in the document."*
+
+**The process, in order:**
+
+1. **Read everything first, and change nothing.** `python
+   scripts/doc-generators/review-report.py "<file.docx>"` lists every tracked change and
+   every comment **with the text it is attached to** — a revision without its sentence
+   cannot be judged, and a comment without its passage means nothing.
+2. **Check each item against the CODE, not against the document.** This is the step that
+   earns the exercise: several of Ken's marks are questions about whether the document is
+   still TRUE, and the answer is in the app. On the Architecture Overview this settled
+   three items in three different directions — one of his deletions was right and I would
+   have wrongly defended it, one of his questions was right and the sentence was false, and
+   one of his instructions conflicted with what the app actually does.
+3. **Accept every correction you agree with. Act on every comment you agree with.**
+4. **DISAGREE OUT LOUD, AND LEAVE THOSE ITEMS IN THE DOCUMENT.** A disagreement is not a
+   veto and not a thing to quietly apply anyway: state what it is, why, and what the app
+   actually does, then leave the change unaccepted and the comment in place so it is still
+   in front of Ken when he decides. **Deleting a comment you disagreed with would discard
+   the question.**
+5. **Remove only what is settled.** Accepted changes and acted-on comments come out;
+   everything awaiting Ken stays. The document should end the pass carrying exactly the
+   open items and nothing else.
+6. **A comment aimed at a DIFFERENT document is acted on by recording it**, not by editing
+   here — then its comment is cleared like any other.
+7. **Sync only after the document is clear.** Until then it is still blocked.
+
+**⚠ NEVER run `accept-revisions.py` to clear the way.** It accepts everything wholesale,
+which is precisely the judgment this exercise exists to apply, and it would silently
+adopt the items still awaiting a decision.
+
+**⚠ AND THE FINDING THAT MAKES STEP 2 NON-NEGOTIABLE: a correction can be right for a
+reason neither party has stated.** Ken deleted "slot badge +" from the description of the
+response cards' triple coding. I was ready to defend it — CLAUDE.md says slot identity is
+position + color + text badge. The code says `Category isn't shown visually, so name it in
+the accessible label only`: the badge is real but reaches only a screen reader, so the
+VISIBLE coding is position + color and his deletion was correct. **Checking the code found
+a drift in CLAUDE.md as well as in the document.**
+
 ## Keeping product documents in sync — trigger phrase "sync docs" (Ken, July 8 2026)
 
 Product-document currency is tracked by [`DOC-SYNC.md`](DOC-SYNC.md) (any root document named `Conversant AAC *`, each stamped with the git commit it was last reviewed against — never file modification date, which a format-only edit would bump).
