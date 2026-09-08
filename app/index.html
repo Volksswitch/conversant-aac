@@ -222,7 +222,7 @@
                 <div class="tab-panel active" data-tab="general">
                     <div class="setting-group" data-help="apiKey">
                         <label for="apiKeyInput">API Key</label>
-                        <div id="apiKeyRow">
+                        <div id="apiKeyRow" class="key-row">
                             <input type="text" id="apiKeyInput" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
                             <button id="pasteApiKeyBtn" type="button" aria-label="Paste API key">Paste</button>
                             <button id="testApiKeyBtn" type="button">Test</button>
@@ -434,7 +434,7 @@
 
                         <div class="setting-item">
                             <label for="deepgramKeyInput">Deepgram</label>
-                            <div id="deepgramKeyRow">
+                            <div id="deepgramKeyRow" class="key-row">
                                 <input type="text" id="deepgramKeyInput" placeholder="Your Deepgram API key" autocomplete="off" spellcheck="false">
                                 <button id="pasteDeepgramKeyBtn" type="button" aria-label="Paste Deepgram key">Paste</button>
                                 <button id="testDeepgramKeyBtn" type="button">Test</button>
@@ -456,12 +456,12 @@
                              quotes it back, and why every error message here names it. -->
                         <div class="setting-item">
                             <label for="azureKeyInput">Azure Speech</label>
-                            <div id="azureKeyRow">
+                            <div id="azureKeyRow" class="key-row">
                                 <input type="text" id="azureKeyInput" placeholder="Your Azure Speech key" autocomplete="off" spellcheck="false">
                                 <button id="pasteAzureKeyBtn" type="button" aria-label="Paste Azure Speech key">Paste</button>
                                 <button id="testAzureKeyBtn" type="button">Test</button>
                             </div>
-                            <div id="azureRegionRow">
+                            <div id="azureRegionRow" class="key-row">
                                 <label for="azureRegionInput">Region</label>
                                 <!-- A list of suggestions rather than a closed menu:
                                      Azure has dozens of regions and adds more, so a
@@ -489,7 +489,7 @@
 
                         <div class="setting-item">
                             <label for="openaiKeyInput">OpenAI</label>
-                            <div id="openaiKeyRow">
+                            <div id="openaiKeyRow" class="key-row">
                                 <input type="text" id="openaiKeyInput" placeholder="Your OpenAI API key" autocomplete="off" spellcheck="false">
                                 <button id="pasteOpenaiKeyBtn" type="button" aria-label="Paste OpenAI key">Paste</button>
                                 <button id="testOpenaiKeyBtn" type="button">Test</button>
@@ -499,7 +499,7 @@
 
                         <div class="setting-item">
                             <label for="googleKeyInput">Google Cloud</label>
-                            <div id="googleKeyRow">
+                            <div id="googleKeyRow" class="key-row">
                                 <input type="text" id="googleKeyInput" placeholder="Your Google Cloud API key" autocomplete="off" spellcheck="false">
                                 <button id="pasteGoogleKeyBtn" type="button" aria-label="Paste Google Cloud key">Paste</button>
                                 <button id="testGoogleKeyBtn" type="button">Test</button>
@@ -512,7 +512,7 @@
                             <!-- ElevenLabs identifies a voice by an id from their
                                  library rather than by a name, so the picker below is
                                  filled from the account once a key is in. -->
-                            <div id="elevenlabsKeyRow">
+                            <div id="elevenlabsKeyRow" class="key-row">
                                 <input type="text" id="elevenlabsKeyInput" placeholder="Your ElevenLabs API key" autocomplete="off" spellcheck="false">
                                 <button id="pasteElevenlabsKeyBtn" type="button" aria-label="Paste ElevenLabs key">Paste</button>
                                 <button id="testElevenlabsKeyBtn" type="button">Test</button>
@@ -558,7 +558,7 @@
                         <!-- Only the picker for the chosen backend is shown. Showing
                              both at once is what made the voice settings read as
                              duplicated. -->
-                        <div id="builtinVoiceRow">
+                        <div id="builtinVoiceRow" class="voice-row">
                             <label for="voiceSelect">Voice</label>
                             <select id="voiceSelect"></select>
                             <!-- This device's joke voices are hidden by default: on an
@@ -570,7 +570,7 @@
                                 <button id="testVoiceBtn" type="button">Test</button>
                             </div>
                         </div>
-                        <div id="auraRow" hidden>
+                        <div id="auraRow" class="voice-row" hidden>
                             <label for="auraVoiceSelect">Deepgram voice</label>
                             <select id="auraVoiceSelect"></select>
                             <div class="profiles-row profiles-actions">
@@ -578,7 +578,7 @@
                             </div>
                             <p id="auraVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
                         </div>
-                        <div id="azureVoiceRow" hidden>
+                        <div id="azureVoiceRow" class="voice-row" hidden>
                             <label for="azureVoiceSelect">Azure voice</label>
                             <select id="azureVoiceSelect"></select>
                             <div class="profiles-row profiles-actions">
@@ -586,7 +586,7 @@
                             </div>
                             <p id="azureVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
                         </div>
-                        <div id="openaiVoiceRow" hidden>
+                        <div id="openaiVoiceRow" class="voice-row" hidden>
                             <label for="openaiVoiceSelect">OpenAI voice</label>
                             <select id="openaiVoiceSelect"></select>
                             <div class="profiles-row profiles-actions">
@@ -594,7 +594,7 @@
                             </div>
                             <p id="openaiVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
                         </div>
-                        <div id="googleVoiceRow" hidden>
+                        <div id="googleVoiceRow" class="voice-row" hidden>
                             <label for="googleVoiceSelect">Google Cloud voice</label>
                             <select id="googleVoiceSelect"></select>
                             <div class="profiles-row profiles-actions">
@@ -602,7 +602,7 @@
                             </div>
                             <p id="googleVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
                         </div>
-                        <div id="elevenlabsVoiceRow" hidden>
+                        <div id="elevenlabsVoiceRow" class="voice-row" hidden>
                             <label for="elevenlabsVoiceSelect">ElevenLabs voice</label>
                             <select id="elevenlabsVoiceSelect"></select>
                             <div class="profiles-row profiles-actions">
@@ -613,7 +613,7 @@
                     </div>
                     <div class="setting-group" data-help="practicePartnerVoice">
                         <label>Practice partner voice</label>
-                        <div id="builtinPartnerVoiceRow">
+                        <div id="builtinPartnerVoiceRow" class="voice-row">
                             <select id="partnerVoiceSelect" aria-label="Practice partner voice"></select>
                             <div class="profiles-row profiles-actions">
                                 <button id="testPartnerVoiceBtn" type="button">Test</button>
@@ -623,14 +623,14 @@
                                  default, so it is the case most likely to surprise. -->
                             <p class="setting-hint" id="partnerVoiceStatus" hidden></p>
                         </div>
-                        <div id="auraPartnerRow" hidden>
+                        <div id="auraPartnerRow" class="voice-row" hidden>
                             <select id="auraPartnerVoiceSelect" aria-label="Practice partner's Deepgram voice"></select>
                             <div class="profiles-row profiles-actions">
                                 <button id="testAuraPartnerVoiceBtn" type="button">Test partner voice</button>
                             </div>
                             <p id="auraPartnerVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
                         </div>
-                        <div id="azurePartnerRow" hidden>
+                        <div id="azurePartnerRow" class="voice-row" hidden>
                             <select id="azurePartnerVoiceSelect" aria-label="Practice partner's Azure voice"></select>
                             <div class="profiles-row profiles-actions">
                                 <button id="testAzurePartnerVoiceBtn" type="button">Test partner voice</button>
