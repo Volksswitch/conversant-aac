@@ -26,6 +26,17 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Importing a backup now holds the screen while it works, and counts its way through
+  so you can see it is still going. On a tablet a large restore takes a while, and the
+  small "Importing…" line under the button was easy to miss — it looked as though the
+  app had frozen. Nothing else can be tapped until it finishes, which also fixes the
+  real damage: pressing the restore button again part-way through could leave the
+  backup not imported at all.
+- When it finishes, the app asks you to restart it rather than restarting on its own,
+  so you know the import worked and you choose when it happens. If a settings file
+  brought in a profile renamed to avoid replacing one of yours, that is said here too.
+
+
 
 ## Version 0.10.13
 

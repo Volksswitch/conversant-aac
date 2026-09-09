@@ -51,7 +51,7 @@ const SPEECH_COMPANY = {
     ...Object.fromEntries(Object.entries(TTS_PROVIDERS).map(([id, p]) => [id, p.label])),
 };
 import * as sttAzure from './stt-azure.js';
-import { confirmDanger } from './confirm-dialog.js';
+import { confirmDanger, showBusy, showNotice } from './confirm-dialog.js';
 import * as helpMode from './help-mode.js';
 import * as usageSummary from './usage-summary.js';
 import * as diagnostics from './diagnostics.js';
@@ -5509,6 +5509,27 @@ async function sendProblemReport() {
 // where the data folder is private to the browser, it is the ONLY way to back up
 // or move data — and the safety net for the measured fact that a browser tab is
 // refused persistent storage, so site data can be evicted after 7 days of non-use.
+// ⚠ ONE IMPORT AT A TIME, AND THIS IS A DATA-INTEGRITY GUARD RATHER THAN TIDINESS
+// (Ken, September 9 2026, on an Android tablet). A restore that looks stuck invites a
+// second press; two imports then race, and the first one's reload lands in the middle
+// of the second's writes - which is how his restore ended up writing nothing at all.
+// The busy modal makes the second press impossible, and this makes it harmless even if
+// some path ever gets past the modal.
+let importInProgress = false;
+
+// The second of the pair. The app used to reload on its own the moment a restore
+// finished, which on a slow device is indistinguishable from the crash the user was
+// already afraid of. Now they are told, and they start it.
+async function offerRestart(what) {
+    await showNotice({
+        title: 'Restart to finish',
+        body: `Your ${what} ${what === 'settings' ? 'have' : 'has'} been imported. ` +
+              'Conversant AAC needs to restart to use it. Nothing else will change.',
+        buttonLabel: 'Restart now',
+    });
+    location.reload();
+}
+
 function setBackupStatus(msg) {
     const el = document.getElementById('backupStatus');
     if (el) el.textContent = msg || '';
@@ -5518,6 +5539,7 @@ function setBackupStatus(msg) {
 // or the file picker. Both routes must confirm identically, because both replace
 // everything; keeping one implementation is what guarantees that.
 async function importPackageText(text, sourceLabel) {
+    if (importInProgress) return;
     let pkg;
     try {
         pkg = dataTransfer.parsePackage(text);
@@ -5539,15 +5561,29 @@ async function importPackageText(text, sourceLabel) {
         return;
     }
     setBackupStatus('Importing…');
+    importInProgress = true;
+    const busy = showBusy({
+        title: 'Please wait until the import completes',
+        body: 'Your backup is being restored. This can take a while on a tablet, ' +
+              'especially with a lot of saved conversations. Do not close the app.',
+    });
     try {
-        const restored = await dataTransfer.applyPackage(pkg);
+        const restored = await dataTransfer.applyPackage(pkg, ({ done, total }) => {
+            busy.update(total ? `Restored ${done} of ${total} items…` : '');
+        });
         if (restored.failed.length) {
             storage.logError('import', 'partial restore, failed: ' + restored.failed.join(', '));
         }
-        location.reload();      // re-read every store exactly as at startup
+        busy.close();
+        await offerRestart('data');
     } catch (err) {
         storage.logError('import', err.message || String(err));
         setBackupStatus('Import failed: ' + (err.message || 'unknown error'));
+    } finally {
+        // Closed here as well as on the happy path: a modal nobody can dismiss must
+        // never be able to outlive the job it belongs to.
+        busy.close();
+        importInProgress = false;
     }
 }
 
@@ -5661,6 +5697,7 @@ function setSettingsBackupStatus(msg) {
 // or the file picker. Both routes confirm identically because both replace every
 // setting; one implementation is what guarantees that.
 async function importSettingsText(text, sourceLabel) {
+    if (importInProgress) return;
     let pkg;
     try {
         pkg = dataTransfer.parseSettingsPackage(text);
@@ -5683,6 +5720,11 @@ async function importSettingsText(text, sourceLabel) {
         return;
     }
     setSettingsBackupStatus('Importing…');
+    importInProgress = true;
+    const busy = showBusy({
+        title: 'Please wait until the import completes',
+        body: 'Your settings are being restored. Do not close the app.',
+    });
     try {
         const done = await dataTransfer.applySettingsPackage(pkg);
         // ⚠ A file with profiles in it, restored onto a device with no data folder,
@@ -5692,14 +5734,11 @@ async function importSettingsText(text, sourceLabel) {
         // A clash renames rather than overwrites, and the user is told which - a
         // profile quietly appearing under a name they did not choose is worse than
         // one extra sentence.
-        if (done.renamed && done.renamed.length) {
-            const list = done.renamed.map((e) => `"${e.requested}" came in as "${e.written}"`).join('; ');
-            setSettingsBackupStatus(
-                `Settings imported. You already had ${done.renamed.length === 1 ? 'a profile' : 'profiles'} ` +
-                `with the same name, so nothing of yours was replaced: ${list}. Reloading…`);
-            setTimeout(() => location.reload(), 2500);
-            return;
-        }
+        busy.close();
+        // A file with profiles in it, restored onto a device with no data folder,
+        // writes none of them - and "settings imported" alone would leave the user
+        // thinking their backup was faulty. Say it, and do NOT restart, so the message
+        // survives long enough to be read.
         if (done.profilesInFile && !done.profiles.length) {
             setSettingsBackupStatus(
                 `Settings imported, but the ${done.profilesInFile} saved profile` +
@@ -5707,10 +5746,30 @@ async function importSettingsText(text, sourceLabel) {
                 'they need a data folder. Choose one above, then import again.');
             return;
         }
-        location.reload();      // re-read every setting exactly as at startup
+        // A clash renames rather than overwrites, and the user is told which - a
+        // profile quietly appearing under a name they did not choose is worse than
+        // one extra sentence. Said on the restart card so it cannot be missed, rather
+        // than in a status line the restart is about to wipe away.
+        if (done.renamed && done.renamed.length) {
+            const list = done.renamed.map((e) => `"${e.requested}" came in as "${e.written}"`).join('; ');
+            await showNotice({
+                title: 'Restart to finish',
+                body: 'Your settings have been imported. You already had ' +
+                      `${done.renamed.length === 1 ? 'a profile' : 'profiles'} with the same name, ` +
+                      `so nothing of yours was replaced: ${list}. ` +
+                      'Conversant AAC needs to restart to use the new settings.',
+                buttonLabel: 'Restart now',
+            });
+            location.reload();
+            return;
+        }
+        await offerRestart('settings');
     } catch (err) {
         storage.logError('import settings', err.message || String(err));
         setSettingsBackupStatus('Import failed: ' + (err.message || 'unknown error'));
+    } finally {
+        busy.close();
+        importInProgress = false;
     }
 }
 

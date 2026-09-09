@@ -95,3 +95,107 @@ export function confirmDanger({
         cancelBtn.focus();
     });
 }
+
+/* ── Two modals for a long, uninterruptible job (Ken, September 9 2026) ──────
+ *
+ * FROM THE FIELD, on an Android tablet: *"The Android is very slow. The tab showed
+ * 'Importing...' below the Restore selected backup button. It was easy to miss and
+ * because the restore takes so long it can look like a hung app which lead me to try
+ * other approaches like pressing the restore button instead. This resulted in the data
+ * not being imported at all."*
+ *
+ * ⚠ THE SECOND SENTENCE IS THE BUG AND THE FIRST IS ONLY THE CAUSE. A status line on
+ * the panel leaves every control live, so a restore that looks stuck invites a second
+ * press — and a second import racing the first, with the first's reload landing in the
+ * middle of it, is how a restore ends up writing nothing at all. A modal is not a
+ * politer status line here: it is what makes the second press impossible.
+ *
+ * So `showBusy` has NO buttons, refuses Escape and ignores a backdrop click. It is the
+ * one dialog in this app that the user cannot dismiss, which is only defensible because
+ * every caller closes it in a `finally`.
+ */
+function neutralCard(title) {
+    const dlg = document.createElement('dialog');
+    dlg.className = 'danger-dialog neutral-dialog';
+    const head = document.createElement('div');
+    head.className = 'danger-head';
+    const h = document.createElement('h2');
+    h.className = 'danger-title';
+    h.textContent = title;
+    head.append(h);
+    const p = document.createElement('p');
+    p.className = 'danger-body';
+    dlg.append(head, p);
+    return { dlg, p };
+}
+
+/* A modal that cannot be dismissed, for work that must not be interrupted.
+ * Returns { update(text), close() }. ALWAYS close it in a finally. */
+export function showBusy({ title = 'Please wait', body = '' } = {}) {
+    const { dlg, p } = neutralCard(title);
+    p.textContent = body;
+
+    // The progress line. Kept separate from the body so an update replaces the count
+    // and never the explanation of what is happening.
+    const prog = document.createElement('p');
+    prog.className = 'busy-progress';
+    prog.setAttribute('role', 'status');
+    prog.setAttribute('aria-live', 'polite');
+    dlg.append(prog);
+
+    const block = (e) => e.preventDefault();
+    dlg.addEventListener('cancel', block);          // Escape
+    dlg.addEventListener('click', block);           // backdrop
+
+    document.body.append(dlg);
+    dlg.showModal();
+
+    let open = true;
+    return {
+        update(text) { if (open) prog.textContent = text || ''; },
+        close() {
+            if (!open) return;
+            open = false;
+            try { dlg.close(); } catch { /* already closing */ }
+            dlg.remove();
+        },
+    };
+}
+
+/* A modal with ONE button and no way past it. Used to tell the user the app is about
+ * to restart and make them the one who starts it — the restart used to happen on its
+ * own, which on a slow device is indistinguishable from the crash they were already
+ * worried about. Resolves when the button is pressed. */
+export function showNotice({ title = '', body = '', buttonLabel = 'OK' } = {}) {
+    return new Promise((resolve) => {
+        const { dlg, p } = neutralCard(title);
+        p.textContent = body;
+
+        const actions = document.createElement('div');
+        actions.className = 'danger-actions';
+        const btn = document.createElement('button');
+        btn.className = 'danger-confirm neutral-confirm';
+        btn.textContent = buttonLabel;
+        actions.append(btn);
+        dlg.append(actions);
+
+        let settled = false;
+        const done = () => {
+            if (settled) return;
+            settled = true;
+            try { dlg.close(); } catch { /* already closing */ }
+            dlg.remove();
+            resolve();
+        };
+        btn.addEventListener('click', done);
+        // Escape and the backdrop do NOT dismiss: there is one way on from here, and
+        // it is the button. Anything else leaves the app running on data it has
+        // already replaced underneath itself.
+        dlg.addEventListener('cancel', (e) => e.preventDefault());
+        dlg.addEventListener('click', (e) => { if (e.target === dlg) e.preventDefault(); });
+
+        document.body.append(dlg);
+        dlg.showModal();
+        btn.focus();
+    });
+}

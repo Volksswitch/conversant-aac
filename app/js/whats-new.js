@@ -22,6 +22,10 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.10.14": [
+    "Importing a backup now holds the screen while it works, and counts its way through so you can see it is still going. On a tablet a large restore takes a while, and the small \"Importing…\" line under the button was easy to miss — it looked as though the app had frozen. Nothing else can be tapped until it finishes, which also fixes the real damage: pressing the restore button again part-way through could leave the backup not imported at all.",
+    "When it finishes, the app asks you to restart it rather than restarting on its own, so you know the import worked and you choose when it happens. If a settings file brought in a profile renamed to avoid replacing one of yours, that is said here too."
+  ],
   "0.10.13": [
     "Your data and your settings now back up as two separate files. \"Export my data\" saves your answers, people, places, buttons and conversations, and no longer includes your settings. Settings have their own \"Export my settings\" button beside it. The reason is moving to a second device: your answers belong on any device you use, but the layout, button sizes and chosen voice suit the device they were set up on, and carrying them onto a differently shaped screen makes it worse rather than better. Move whichever you want, separately.",
     "The settings file takes your saved profiles with it — all of them, plus a note of which one you are using — so importing it on another device puts your profiles back and picks up on the one you were on. Before this they were in neither backup, which on an iPad meant they had no way off the device at all.",

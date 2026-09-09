@@ -413,8 +413,20 @@ export function parsePackage(text) {
 // each store so the result survives the reload the caller performs afterwards.
 // Returns what was actually restored, so the caller can report it honestly rather
 // than claiming success for pieces that failed.
-export async function applyPackage(pkg) {
+// `onProgress({ done, total, label })` is called as it goes. It exists because on a
+// slow device (Ken's Android tablet, September 9 2026) a restore of several hundred
+// conversations takes long enough to look like a crash, and a caller that can only say
+// "Importing..." cannot tell the user the difference between working and hung. A count
+// that visibly climbs can.
+export async function applyPackage(pkg, onProgress) {
     const restored = { files: [], conversations: 0, failed: [] };
+    const convos = Array.isArray(pkg.conversations) ? pkg.conversations : [];
+    const total = DATA_FILES.filter((e) => pkg.data[e.file] !== undefined).length + convos.length;
+    let done = 0;
+    const step = (label) => {
+        done += 1;
+        if (onProgress) { try { onProgress({ done, total, label }); } catch { /* never let reporting break the restore */ } }
+    };
 
     for (const entry of DATA_FILES) {
         const value = pkg.data[entry.file];
@@ -430,16 +442,16 @@ export async function applyPackage(pkg) {
             await storage.writeFile(entry.file, text);   // no-op without a data folder
         } catch { /* cache write already succeeded; folder is best-effort */ }
         restored.files.push(entry.label);
+        step(entry.label);
     }
 
     // Deliberately NOT applying pkg.settings, even when a version-1 file has them.
     // Importing data must never rearrange the screen underneath somebody.
 
-    if (Array.isArray(pkg.conversations)) {
-        for (const c of pkg.conversations) {
-            if (!c || !c.id) continue;
-            if (await storage.writeConversationLog(c.id, c.data)) restored.conversations++;
-        }
+    for (const c of convos) {
+        if (!c || !c.id) { step('conversations'); continue; }
+        if (await storage.writeConversationLog(c.id, c.data)) restored.conversations++;
+        step('conversations');
     }
 
     return restored;
