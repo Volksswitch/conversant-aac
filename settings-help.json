@@ -109,6 +109,8 @@
         "exportSettingsBtn": "Saves your settings into their own file, to move to another device of the same kind. No keys are ever included.",
         "importSettingsBtn": "Loads settings from a file you choose, replacing every setting here. Your data and your keys are left alone.",
         "importSettingsFile": "Choose the settings file you want to load.",
+        "settingsBackupFileSelect": "Pick which saved settings file you want to go back to.",
+        "restoreSettingsBackupBtn": "Puts back the settings from the file chosen above, replacing the ones here now.",
         "importDataFile": "Choose the backup file you want to load.",
         "backupFileSelect": "Choose one of the backups the app has already made for you.",
         "restoreBackupBtn": "Puts everything back from the backup you chose. This replaces what is on this device now.",

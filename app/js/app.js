@@ -5565,7 +5565,10 @@ async function renderBackupList() {
         return;
     }
     row.hidden = false;
-    const backups = await storage.listBackups();
+    // Both kinds live in the same folder, so this list drops the settings ones —
+    // they have their own list below. Anything unrecognized stays HERE rather than
+    // vanishing: see isDataBackupName for why that asymmetry is deliberate.
+    const backups = (await storage.listBackups()).filter((b) => dataTransfer.isDataBackupName(b.name));
     if (!backups.length) {
         select.innerHTML = '<option value="">— No backups in your data folder yet —</option>';
         select.disabled = true;
@@ -5645,9 +5648,77 @@ function wireBackupControls() {
 // Separate from the data backup above because the two answer different questions:
 // the data is WHO THE USER IS and travels to any device, the settings are HOW THIS
 // SCREEN IS LAID OUT and only usefully travel to a device of the same shape.
+//
+// They are STORED the same way though — into the data folder when there is one,
+// out by the share sheet only where there is not. A person who backs up looks in
+// one place for what they saved (Ken).
 function setSettingsBackupStatus(msg) {
     const el = document.getElementById('settingsBackupStatus');
     if (el) el.textContent = msg || '';
+}
+
+// Restore settings from the text of a file, wherever it came from — the folder list
+// or the file picker. Both routes confirm identically because both replace every
+// setting; one implementation is what guarantees that.
+async function importSettingsText(text, sourceLabel) {
+    let pkg;
+    try {
+        pkg = dataTransfer.parseSettingsPackage(text);
+    } catch (err) {
+        setSettingsBackupStatus(err.message);
+        return;
+    }
+    // Replacing every setting rearranges the whole screen, which is squarely the
+    // "significant work" bar — so it confirms through the red danger card exactly
+    // as the data import does, and shows what is in the file first.
+    const when = pkg.exportedAt ? new Date(pkg.exportedAt).toLocaleString() : 'an unknown date';
+    if (!(await confirmDanger({
+        title: 'Replace your settings with this file?',
+        body: `${sourceLabel ? sourceLabel + '\n\n' : ''}Saved on ${when} and contains:\n\n• ` +
+              dataTransfer.summarizeSettings(pkg).join('\n• ') +
+              '\n\nThis REPLACES every setting on this device, including the layout, button sizes and the chosen voice. Your data and your keys are left alone. The app will reload afterwards.',
+        confirmLabel: 'Replace my settings',
+    }))) {
+        setSettingsBackupStatus('Import canceled — nothing was changed.');
+        return;
+    }
+    setSettingsBackupStatus('Importing…');
+    try {
+        dataTransfer.applySettingsPackage(pkg);
+        location.reload();      // re-read every setting exactly as at startup
+    } catch (err) {
+        storage.logError('import settings', err.message || String(err));
+        setSettingsBackupStatus('Import failed: ' + (err.message || 'unknown error'));
+    }
+}
+
+// The settings backups in <data folder>/backups/. Same folder as the data backups,
+// told apart by filename — see isSettingsBackupName.
+async function renderSettingsBackupList() {
+    const row = document.getElementById('folderSettingsBackupRow');
+    const select = document.getElementById('settingsBackupFileSelect');
+    const restoreBtn = document.getElementById('restoreSettingsBackupBtn');
+    if (!row || !select || !restoreBtn) return;
+
+    if (!storage.hasVisibleDataFolder()) {
+        row.hidden = true;
+        return;
+    }
+    row.hidden = false;
+    const all = await storage.listBackups();
+    const backups = all.filter((b) => dataTransfer.isSettingsBackupName(b.name));
+    if (!backups.length) {
+        select.innerHTML = '<option value="">— No settings backups in your data folder yet —</option>';
+        select.disabled = true;
+        restoreBtn.disabled = true;
+        return;
+    }
+    select.disabled = false;
+    restoreBtn.disabled = false;
+    select.innerHTML = backups.map((b) => {
+        const when = b.savedAt ? new Date(b.savedAt).toLocaleString() : 'unknown date';
+        return `<option value="${b.name}">${when} — ${b.name} (${b.sizeKB} KB)</option>`;
+    }).join('');
 }
 
 function wireSettingsFileControls() {
@@ -5656,16 +5727,37 @@ function wireSettingsFileControls() {
     const fileInput = document.getElementById('importSettingsFile');
     if (!exportBtn || !importBtn || !fileInput) return;
 
-    // Always a download, never a write into the data folder — the folder route for
-    // settings already exists above and is better named: "Settings profiles".
-    exportBtn.onclick = () => {
+    exportBtn.onclick = async () => {
+        setSettingsBackupStatus('Saving your settings…');
         try {
-            const pkg = dataTransfer.downloadSettingsPackage(APP_VERSION);
-            setSettingsBackupStatus('Exported: ' + dataTransfer.summarizeSettings(pkg).join(' · '));
+            // Same rule as the data backup beside it: into the folder where there is
+            // one, out by the download/share path where there is not.
+            if (storage.hasVisibleDataFolder()) {
+                const { pkg, path } = await dataTransfer.saveSettingsPackageToFolder(APP_VERSION);
+                await renderSettingsBackupList();
+                setSettingsBackupStatus(`Saved to your data folder as ${path} — ` +
+                                        dataTransfer.summarizeSettings(pkg).join(' · '));
+            } else {
+                const pkg = dataTransfer.downloadSettingsPackage(APP_VERSION);
+                setSettingsBackupStatus('Exported: ' + dataTransfer.summarizeSettings(pkg).join(' · '));
+            }
         } catch (err) {
             storage.logError('export settings', err.message || String(err));
-            setSettingsBackupStatus('Could not export your settings: ' + (err.message || 'unknown error'));
+            setSettingsBackupStatus('Could not save your settings: ' + (err.message || 'unknown error'));
         }
+    };
+
+    document.getElementById('restoreSettingsBackupBtn').onclick = async () => {
+        const name = document.getElementById('settingsBackupFileSelect').value;
+        if (!name) return;
+        setSettingsBackupStatus('Reading…');
+        const text = await storage.readBackup(name);
+        if (text === null) {
+            setSettingsBackupStatus('Could not read that file — it may have been moved or deleted.');
+            await renderSettingsBackupList();
+            return;
+        }
+        await importSettingsText(text, `From your data folder: ${name}`);
     };
 
     // The picker needs a real user gesture, so the button just opens it; the work
@@ -5679,38 +5771,11 @@ function wireSettingsFileControls() {
     fileInput.onchange = async () => {
         const file = fileInput.files && fileInput.files[0];
         if (!file) return;
-        let pkg;
-        try {
-            pkg = dataTransfer.parseSettingsPackage(await file.text());
-        } catch (err) {
-            setSettingsBackupStatus(err.message);
-            return;
-        }
-        // Replacing every setting rearranges the whole screen, which is squarely the
-        // "significant work" bar — so it confirms through the red danger card exactly
-        // as the data import does, and shows what is in the file first.
-        const when = pkg.exportedAt ? new Date(pkg.exportedAt).toLocaleString() : 'an unknown date';
-        if (!(await confirmDanger({
-            title: 'Replace your settings with this file?',
-            body: `From the file ${file.name}\n\nSaved on ${when} and contains:\n\n• ` +
-                  dataTransfer.summarizeSettings(pkg).join('\n• ') +
-                  '\n\nThis REPLACES every setting on this device, including the layout, button sizes and the chosen voice. Your data and your keys are left alone. The app will reload afterwards.',
-            confirmLabel: 'Replace my settings',
-        }))) {
-            setSettingsBackupStatus('Import canceled — nothing was changed.');
-            return;
-        }
-        setSettingsBackupStatus('Importing…');
-        try {
-            dataTransfer.applySettingsPackage(pkg);
-            location.reload();      // re-read every setting exactly as at startup
-        } catch (err) {
-            storage.logError('import settings', err.message || String(err));
-            setSettingsBackupStatus('Import failed: ' + (err.message || 'unknown error'));
-        }
+        await importSettingsText(await file.text(), `From the file ${file.name}`);
     };
-}
 
+    renderSettingsBackupList();
+}
 async function renderSettingsProfiles() {
     const select = document.getElementById('settingsProfileSelect');
     const loadBtn = document.getElementById('loadSettingsProfileBtn');

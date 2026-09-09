@@ -129,7 +129,7 @@ test('each importer refuses the other one\'s file, and says which it got', async
     const settingsFile = JSON.stringify(dt.buildSettingsPackage('9.9.9'));
 
     assert.throws(() => dt.parseSettingsPackage(dataFile), /data backup, not a settings file/);
-    assert.throws(() => dt.parsePackage(settingsFile), /not a Conversant backup/);
+    assert.throws(() => dt.parsePackage(settingsFile), /not a Conversant data backup/);
 });
 
 test('a newer file is refused rather than half-read', () => {
@@ -139,8 +139,21 @@ test('a newer file is refused rather than half-read', () => {
     assert.throws(() => dt.parseSettingsPackage(JSON.stringify(pkg)), /newer version/);
 });
 
+test('the folder list keeps OLD backups visible and files nothing wrongly', () => {
+    // Both kinds share <data folder>/backups/, so the lists are split by name.
+    assert.ok(dt.isSettingsBackupName('conversant-settings-2026-09-09-1432.json'));
+    assert.ok(!dt.isDataBackupName('conversant-settings-2026-09-09-1432.json'));
+
+    assert.ok(dt.isDataBackupName('conversant-data-2026-09-09-1432.json'));
+    // ⚠ THE ONE THAT MATTERS: every backup made before September 9 2026 is named
+    // this way, and it must not disappear from the list that restores it.
+    assert.ok(dt.isDataBackupName('conversant-backup-2026-07-30-1432.json'));
+    // A file the user renamed themselves stays reachable rather than vanishing.
+    assert.ok(dt.isDataBackupName('my old phone.json'));
+});
+
 test('the two files are named differently enough to tell apart in a folder', () => {
     const when = new Date(2026, 8, 9, 14, 32);
-    assert.equal(dt.suggestedFilename(when), 'conversant-backup-2026-09-09-1432.json');
+    assert.equal(dt.suggestedFilename(when), 'conversant-data-2026-09-09-1432.json');
     assert.equal(dt.suggestedSettingsFilename(when), 'conversant-settings-2026-09-09-1432.json');
 });

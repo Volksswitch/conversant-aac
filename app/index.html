@@ -331,6 +331,17 @@
                                 <button id="importSettingsBtn" type="button">Import settings…</button>
                                 <input id="importSettingsFile" type="file" accept="application/json,.json" hidden>
                             </div>
+                            <!-- Settings backups sitting in the data folder, mirroring the
+                                 data list above. Same folder, filtered by filename. Hidden
+                                 where there is no folder the user can put a file into. -->
+                            <div id="folderSettingsBackupRow" hidden>
+                                <select id="settingsBackupFileSelect" aria-label="Settings backups in your data folder">
+                                    <option value="">— No settings backups in your data folder yet —</option>
+                                </select>
+                                <div class="profiles-row profiles-actions">
+                                    <button id="restoreSettingsBackupBtn" type="button">Restore selected settings</button>
+                                </div>
+                            </div>
                             <p class="setting-hint" id="settingsBackupStatus" role="status" aria-live="polite"></p>
                         </div>
                     </div>

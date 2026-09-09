@@ -8,9 +8,16 @@
  *
  * ORDER IS NOT PRIORITY HERE, unlike the openers and goodbyes. A phrase is picked
  * at random from its pool (avoiding whatever was said last), so moving a row up
- * makes it no likelier to be heard. The arrows are for grouping and reading, and
- * the tab says so — a user who expects "first in the list is said first" would
- * otherwise spend effort on an ordering that does nothing.
+ * makes it no likelier to be heard.
+ *
+ * ⚠ SO THERE ARE NO REORDER ARROWS, AND THIS REVERSES THE ORIGINAL BUILD (Ken,
+ * September 9 2026). They were kept on the reasoning that they were "for grouping
+ * and reading" while the tab intro explained order does nothing. Ken, seeing both:
+ * the intro says the order does not decide what gets said, and a button that
+ * reorders the list contradicts it. A control the user must be talked out of
+ * believing is worse than no control - they either spend effort on an ordering
+ * that achieves nothing, or they conclude the explanation is wrong. Do not add
+ * them back without changing how a phrase is chosen.
  *
  * Each row carries a speaker. The whole point of a placeholder is how it SOUNDS
  * coming out of this user's voice a second after the other person stops talking,
@@ -58,7 +65,7 @@ function textInput(value, placeholder, oninput) {
     return inp;
 }
 
-// One pool: rows of text + 🔊 ↑ ↓ ✕, plus Add.
+// One pool: rows of text + 🔊 ✕, plus Add. No reorder - see the header.
 function poolSection(title, key) {
     const sec = document.createElement('div');
     sec.className = 'setting-group cpe-section';
@@ -91,10 +98,6 @@ function poolSection(title, key) {
             const said = (row.querySelector('input')?.value || '').trim();
             if (said) tts.speak(said);
         });
-        const up = mkBtn('↑', '', 'Move up'); up.disabled = i === 0;
-        up.addEventListener('click', () => { [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]]; commit(true); });
-        const down = mkBtn('↓', '', 'Move down'); down.disabled = i === arr.length - 1;
-        down.addEventListener('click', () => { [arr[i + 1], arr[i]] = [arr[i], arr[i + 1]]; commit(true); });
         // Never leave a pool empty. An empty pool is not "no placeholders" — that is
         // what "Maximum per turn: 0" is for, and it is the honest way to say it.
         // Emptying the list instead would fall back to the other pool at speaking
@@ -102,7 +105,7 @@ function poolSection(title, key) {
         const del = mkBtn('✕', 'ee-del', 'Delete');
         del.disabled = arr.length <= 1;
         del.addEventListener('click', () => { arr.splice(i, 1); commit(true); });
-        tools.append(hear, up, down, del);
+        tools.append(hear, del);
         row.appendChild(tools);
         list.appendChild(row);
     });

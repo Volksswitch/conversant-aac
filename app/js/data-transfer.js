@@ -152,12 +152,41 @@ export function summarize(pkg) {
 
 function pad(n) { return String(n).padStart(2, '0'); }
 
-// "conversant-backup-2026-07-30-1432.json" — sorts chronologically in the Files
+// "conversant-data-2026-07-30-1432.json" — sorts chronologically in the Files
 // app, which is where these land on an iPad.
+//
+// ⚠ "data", NOT "backup" (Ken, September 9 2026): *"conversant-backup should be
+// conversant-data since conversant-settings is also a backup."* Both files are
+// backups, so the word did not tell them apart and the pair read as though the
+// settings file were something lesser. Ken accepted the break with older filenames
+// up front - and nothing actually breaks, because an import is validated by the
+// `kind` INSIDE the file and never by its name. The folder list keeps older files
+// visible by treating everything that is not a settings file as data - see below.
 export function suggestedFilename(now = new Date()) {
-    return 'conversant-backup-' +
+    return 'conversant-data-' +
         now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) +
         '-' + pad(now.getHours()) + pad(now.getMinutes()) + '.json';
+}
+
+// Which files in <data folder>/backups/ belong to which list. Name-based, because
+// the alternative is opening every file in the folder just to draw a dropdown, and
+// a data package carries every saved conversation.
+//
+// ⚠ ONLY THE SETTINGS PREFIX IS MATCHED, AND EVERYTHING ELSE COUNTS AS DATA. That
+// asymmetry is the whole design. Matching a list of data prefixes instead would
+// hide two kinds of file: every backup made before September 9 2026, which is named
+// "conversant-backup-", and any file the user renamed themselves. A backup that
+// exists and cannot be seen is the failure worth avoiding; a file in the wrong list
+// costs nothing, because restore validates the `kind` INSIDE the file and refuses
+// with a legible message.
+const SETTINGS_PREFIX = 'conversant-settings-';
+
+export function isSettingsBackupName(name) {
+    return String(name || '').toLowerCase().startsWith(SETTINGS_PREFIX);
+}
+
+export function isDataBackupName(name) {
+    return !isSettingsBackupName(name);
 }
 
 // Hand a file to the user through the browser's own download path. On iPadOS this
@@ -212,11 +241,18 @@ export async function savePackageToFolder(appVersion) {
 // per-account, it is the one thing in the app that costs real money if it leaks, and
 // this file is made to be emailed and copied between machines.
 //
-// It always DOWNLOADS rather than writing into the data folder, unlike the data
-// backup. The folder route for settings already exists and is better: named settings
-// profiles live in <data folder>/settings/ and can be reloaded by name. This file is
-// for the case profiles cannot reach - another device, or a tablet where the folder
-// is invisible.
+// ⚠ IT GOES WHERE THE DATA BACKUP GOES - into the data folder when there is one,
+// and out by the download/share sheet only where there is not (Ken, September 9
+// 2026): *"all backups should be written to the data folder with the exception of
+// those installations where one cannot create a data folder."* An earlier cut always
+// downloaded this one, reasoning that named settings profiles already cover the
+// folder. That was wrong on the user's terms rather than the code's: a person who
+// backs up looks in ONE place for what they saved, and having half their backups in
+// the data folder and half in Downloads is a filing system nobody asked for.
+//
+// Profiles are still a different thing and both are worth having - a profile is a
+// NAMED configuration you switch between deliberately, a settings backup is a dated
+// snapshot you restore after something went wrong.
 export function buildSettingsPackage(appVersion) {
     return {
         kind: SETTINGS_KIND,
@@ -239,6 +275,14 @@ export function downloadSettingsPackage(appVersion) {
     const pkg = buildSettingsPackage(appVersion);
     downloadText(suggestedSettingsFilename(), JSON.stringify(pkg, null, 2));
     return pkg;
+}
+
+// Into <data folder>/backups/, beside the data backups. Same folder on purpose:
+// one place to look for anything you saved.
+export async function saveSettingsPackageToFolder(appVersion) {
+    const pkg = buildSettingsPackage(appVersion);
+    const path = await storage.saveBackup(suggestedSettingsFilename(), JSON.stringify(pkg, null, 2));
+    return { pkg, path };
 }
 
 // What the user is about to overwrite. Settings are a flat bundle with no natural
@@ -303,7 +347,7 @@ export function parsePackage(text) {
         throw new Error('That file is not a Conversant backup.');
     }
     if (pkg.kind !== PACKAGE_KIND) {
-        throw new Error('That file is not a Conversant backup. Look for a file named conversant-backup-….json');
+        throw new Error('That file is not a Conversant data backup. Look for a file named conversant-data-….json');
     }
     if (typeof pkg.packageVersion !== 'number' || pkg.packageVersion > PACKAGE_VERSION) {
         throw new Error('That backup was made by a newer version of Conversant. Update the app first, then import it.');

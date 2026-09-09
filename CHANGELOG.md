@@ -43,6 +43,18 @@ forgetting to tag one is only ever noise, never silence.
   inside it and they are deliberately ignored — the app tells you so rather than
   quietly skipping them.
 - The section is now called "Data and settings backup"; it was "Backup & transfer".
+- Both kinds of backup are saved to the same place: your data folder, where you can
+  see them, alongside each other. Only where the app cannot make a data folder — an
+  iPad, or before you have chosen one — does a backup leave through the save sheet
+  instead. Each has its own list of what is already saved, so you can put either one
+  back without hunting for a file.
+- A data backup is now named "conversant-data-…" rather than "conversant-backup-…",
+  since the settings file is a backup too and the old name did not tell them apart.
+  Backups you already have keep their old name, still appear in the list, and still
+  restore normally.
+- On the Placeholders tab, the up and down arrows beside each phrase are gone. The
+  app picks one at random, so moving a phrase up never made it likelier to be said —
+  the buttons invited effort that changed nothing.
 
 
 ## Version 0.10.12
