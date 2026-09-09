@@ -70,6 +70,27 @@ document up and diff it against what the script would produce before regeneratin
 `generate-beta-test-plan-doc.js` carries this warning in its own header for exactly that
 reason.
 
+## Drawing ids
+
+`fix-drawing-ids.py` gives every picture in a document its own id.
+
+```bash
+python scripts/doc-generators/fix-drawing-ids.py --check Documents/*.docx
+python scripts/doc-generators/fix-drawing-ids.py "Documents/One File.docx"
+```
+
+**Run it after regenerating any document that has figures.** The docx library's
+`ImageRun` emits `id="1"` for every image and no generator sets it, so a freshly
+generated document with more than one figure starts life duplicating them - the
+same class of fault as a duplicated comment reference, and `docx_safe.save()`
+refuses to write it.
+
+**⚠ A CLEAN SURVEY DOES NOT MEAN THE GENERATORS ARE FIXED.** Word silently
+renumbers these on save, so only documents nobody has hand-saved stay dirty - the
+Architecture Overview has nine figures and is clean for that reason alone. Word
+opening a file is likewise no evidence: both dirty documents opened fine and
+passed every rule.
+
 ## File dates in Explorer
 
 `stamp-doc-dates.py` makes a document's modification date agree with its own
