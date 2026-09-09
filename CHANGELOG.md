@@ -26,6 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+
+## Version 0.10.15
+
 - Back to one backup. "Export everything" saves your answers, people, places, buttons,
   phrases, conversations, settings and saved profiles into a single file, and one
   "Import from a file…" brings it all back. The separate settings export is gone: it
