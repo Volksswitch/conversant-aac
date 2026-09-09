@@ -5532,7 +5532,7 @@ async function importPackageText(text, sourceLabel) {
         title: 'Replace everything with this backup?',
         body: `${sourceLabel ? sourceLabel + '\n\n' : ''}This backup was made on ${when} and contains:\n\n• ` +
               dataTransfer.summarize(pkg).join('\n• ') +
-              `\n\nImporting REPLACES what is on this device — your current About Me answers, people, Express Panel, starters and settings will be overwritten. Your API key is left alone. The app will reload afterwards.`,
+              `\n\nImporting REPLACES the data on this device — your current About Me answers, people, Express Panel and starters will be overwritten. Your settings and your keys are left exactly as they are. The app will reload afterwards.`,
         confirmLabel: 'Replace my data',
     }))) {
         setBackupStatus('Import canceled — nothing was changed.');
@@ -5637,7 +5637,78 @@ function wireBackupControls() {
         await importPackageText(await file.text(), `From the file ${file.name}`);
     };
 
+    wireSettingsFileControls();
     renderBackupList();
+}
+
+// --- Settings as their own file (Ken, September 9 2026) ---
+// Separate from the data backup above because the two answer different questions:
+// the data is WHO THE USER IS and travels to any device, the settings are HOW THIS
+// SCREEN IS LAID OUT and only usefully travel to a device of the same shape.
+function setSettingsBackupStatus(msg) {
+    const el = document.getElementById('settingsBackupStatus');
+    if (el) el.textContent = msg || '';
+}
+
+function wireSettingsFileControls() {
+    const exportBtn = document.getElementById('exportSettingsBtn');
+    const importBtn = document.getElementById('importSettingsBtn');
+    const fileInput = document.getElementById('importSettingsFile');
+    if (!exportBtn || !importBtn || !fileInput) return;
+
+    // Always a download, never a write into the data folder — the folder route for
+    // settings already exists above and is better named: "Settings profiles".
+    exportBtn.onclick = () => {
+        try {
+            const pkg = dataTransfer.downloadSettingsPackage(APP_VERSION);
+            setSettingsBackupStatus('Exported: ' + dataTransfer.summarizeSettings(pkg).join(' · '));
+        } catch (err) {
+            storage.logError('export settings', err.message || String(err));
+            setSettingsBackupStatus('Could not export your settings: ' + (err.message || 'unknown error'));
+        }
+    };
+
+    // The picker needs a real user gesture, so the button just opens it; the work
+    // happens on change. Same shape as the data import beside it.
+    importBtn.onclick = () => {
+        setSettingsBackupStatus('');
+        fileInput.value = '';       // so re-picking the SAME file still fires change
+        fileInput.click();
+    };
+
+    fileInput.onchange = async () => {
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) return;
+        let pkg;
+        try {
+            pkg = dataTransfer.parseSettingsPackage(await file.text());
+        } catch (err) {
+            setSettingsBackupStatus(err.message);
+            return;
+        }
+        // Replacing every setting rearranges the whole screen, which is squarely the
+        // "significant work" bar — so it confirms through the red danger card exactly
+        // as the data import does, and shows what is in the file first.
+        const when = pkg.exportedAt ? new Date(pkg.exportedAt).toLocaleString() : 'an unknown date';
+        if (!(await confirmDanger({
+            title: 'Replace your settings with this file?',
+            body: `From the file ${file.name}\n\nSaved on ${when} and contains:\n\n• ` +
+                  dataTransfer.summarizeSettings(pkg).join('\n• ') +
+                  '\n\nThis REPLACES every setting on this device, including the layout, button sizes and the chosen voice. Your data and your keys are left alone. The app will reload afterwards.',
+            confirmLabel: 'Replace my settings',
+        }))) {
+            setSettingsBackupStatus('Import canceled — nothing was changed.');
+            return;
+        }
+        setSettingsBackupStatus('Importing…');
+        try {
+            dataTransfer.applySettingsPackage(pkg);
+            location.reload();      // re-read every setting exactly as at startup
+        } catch (err) {
+            storage.logError('import settings', err.message || String(err));
+            setSettingsBackupStatus('Import failed: ' + (err.message || 'unknown error'));
+        }
+    };
 }
 
 async function renderSettingsProfiles() {

@@ -290,23 +290,49 @@
                          is the ONLY way to back up or move data at all. Import
                          replaces everything, so it is danger-confirmed. -->
                     <div class="setting-group" id="backupGroup" data-help="backupTransfer">
-                        <label>Backup &amp; transfer</label>
-                        <div class="profiles-row">
-                            <button id="exportDataBtn" type="button">Export my data</button>
-                            <button id="importDataBtn" type="button">Import from a file…</button>
-                            <input id="importDataFile" type="file" accept="application/json,.json" hidden>
-                        </div>
-                        <!-- Backups found in the data folder. Hidden where there is
-                             no folder the user can put a file into. -->
-                        <div id="folderBackupRow" hidden>
-                            <select id="backupFileSelect" aria-label="Backups in your data folder">
-                                <option value="">— No backups in your data folder yet —</option>
-                            </select>
-                            <div class="profiles-row profiles-actions">
-                                <button id="restoreBackupBtn" type="button">Restore selected backup</button>
+                        <label>Data and settings backup</label>
+
+                        <!-- TWO .setting-item blocks under ONE heading, deliberately not
+                             two nested .setting-group sub-sections: a nested group becomes
+                             its own collapsible header (Rule 18), and this is the same
+                             shape as "Keys for paid services" (Rule 18b) - several like
+                             things that belong under one heading because the user comes
+                             here for one job, backing up. -->
+                        <div class="setting-item">
+                            <label>Your data</label>
+                            <div class="profiles-row">
+                                <button id="exportDataBtn" type="button">Export my data</button>
+                                <button id="importDataBtn" type="button">Import from a file…</button>
+                                <input id="importDataFile" type="file" accept="application/json,.json" hidden>
                             </div>
+                            <!-- Backups found in the data folder. Hidden where there is
+                                 no folder the user can put a file into. -->
+                            <div id="folderBackupRow" hidden>
+                                <select id="backupFileSelect" aria-label="Backups in your data folder">
+                                    <option value="">— No backups in your data folder yet —</option>
+                                </select>
+                                <div class="profiles-row profiles-actions">
+                                    <button id="restoreBackupBtn" type="button">Restore selected backup</button>
+                                </div>
+                            </div>
+                            <p class="setting-hint" id="backupStatus" role="status" aria-live="polite"></p>
                         </div>
-                        <p class="setting-hint" id="backupStatus" role="status" aria-live="polite"></p>
+
+                        <!-- Settings move as their OWN file (Ken, September 9 2026), so
+                             that moving your answers to a different-shaped device does not
+                             also move that device's layout onto it. It always downloads
+                             rather than writing into the data folder: the folder route for
+                             settings already exists and is better named - it is the
+                             "Settings profiles" section above. -->
+                        <div class="setting-item">
+                            <label>Your settings</label>
+                            <div class="profiles-row">
+                                <button id="exportSettingsBtn" type="button">Export my settings</button>
+                                <button id="importSettingsBtn" type="button">Import settings…</button>
+                                <input id="importSettingsFile" type="file" accept="application/json,.json" hidden>
+                            </div>
+                            <p class="setting-hint" id="settingsBackupStatus" role="status" aria-live="polite"></p>
+                        </div>
                     </div>
                     <!-- Use the whole screen. Default ON. Setup-tier in effect (it
                          moves every keyguard hole), but it lives here rather than on

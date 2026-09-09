@@ -26,6 +26,24 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Your data and your settings now back up as two separate files. "Export my data"
+  saves your answers, people, places, buttons and conversations, and no longer
+  includes your settings. Settings have their own "Export my settings" button beside
+  it. The reason is moving to a second device: your answers belong on any device you
+  use, but the layout, button sizes and chosen voice suit the device they were set up
+  on, and carrying them onto a differently shaped screen makes it worse rather than
+  better. Move whichever you want, separately.
+- Neither file ever contains a key — not the Anthropic key and not any of the paid
+  speech service keys. That was already true of a data backup and is now true of the
+  settings file as well, which matters because a settings file is the one you are
+  likely to email to yourself.
+- Importing data no longer changes any of your settings, and importing settings no
+  longer touches your data. Each says plainly what it is about to replace before it
+  does it. If you restore a backup made before this release, it still has settings
+  inside it and they are deliberately ignored — the app tells you so rather than
+  quietly skipping them.
+- The section is now called "Data and settings backup"; it was "Backup & transfer".
+
 
 ## Version 0.10.12
 

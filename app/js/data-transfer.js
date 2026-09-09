@@ -20,16 +20,32 @@
  * None of this is iPad-only: this is the mechanism the long-planned cross-device
  * transfer feature has always needed on Windows too.
  *
- * WHAT TRAVELS: the five user-owned data files, the portable settings, and the
- * conversation logs. WHAT DOES NOT: the API key and the machine-local counters —
- * storage.getPortableSettings() applies the same exclusion the named-profile
- * feature uses, so a backup file can never carry the plaintext key (SEC-6).
+ * WHAT TRAVELS: the user-owned data files and the conversation logs. WHAT DOES
+ * NOT: the SETTINGS, and with them every key.
+ *
+ * ⚠ SETTINGS CAME OUT OF THE DATA PACKAGE ON SEPTEMBER 9 2026 (Ken): *"if I want to
+ * put Conversant on another device I will want to move my data but not necessarily
+ * my settings (unless it's the same kind of device). That can be a separate transfer
+ * and import."* That is the whole reason they are two files now, and it is a real
+ * distinction rather than tidiness: WHO YOU ARE is portable to anything, while HOW
+ * THE SCREEN IS LAID OUT is a property of a particular device. Dock side, button
+ * size, gaps, keyboard layout and the chosen voice are all answers to "what is this
+ * machine", so carrying them onto a phone-sized tablet actively makes it worse.
+ *
+ * Settings travel by their own file instead - buildSettingsPackage below. Both are
+ * exports, neither can carry a key, and the user chooses which to move.
  */
 
 import * as storage from './storage.js';
 
 export const PACKAGE_KIND = 'conversant-aac-backup';
-export const PACKAGE_VERSION = 1;
+// 2 since September 9 2026: a package no longer carries a `settings` block. A
+// version-1 file still imports - its settings are simply ignored, and summarize()
+// says so rather than dropping them silently.
+export const PACKAGE_VERSION = 2;
+
+export const SETTINGS_KIND = 'conversant-aac-settings';
+export const SETTINGS_VERSION = 1;
 
 // The user-owned data files. Each has a data-folder file (source of truth) and a
 // localStorage write-through cache (same-machine mirror / no-folder stopgap), so
@@ -85,7 +101,9 @@ export async function buildPackage(appVersion) {
         packageVersion: PACKAGE_VERSION,
         appVersion: appVersion || '',
         exportedAt: new Date().toISOString(),
-        settings: storage.getPortableSettings(),
+        // No `settings` key by design - see the header. Do not reinstate it "for
+        // completeness": it is what made moving your answers onto a different-shaped
+        // device also move that device's layout onto it.
         data,
         conversations,
     };
@@ -121,8 +139,14 @@ export function summarize(pkg) {
     }
     const convos = (pkg && Array.isArray(pkg.conversations)) ? pkg.conversations.length : 0;
     lines.push(`${convos} saved conversation${convos === 1 ? '' : 's'}`);
-    const settingCount = pkg && pkg.settings ? Object.keys(pkg.settings).length : 0;
-    lines.push(`${settingCount} setting${settingCount === 1 ? '' : 's'} (your API key is never included)`);
+    // A version-1 file carries settings and this app will not restore them. Saying
+    // so is the point: silently ignoring part of a file the user is looking at is
+    // how somebody concludes the import half-worked.
+    const carried = pkg && pkg.settings ? Object.keys(pkg.settings).length : 0;
+    if (carried) {
+        lines.push(`${carried} setting${carried === 1 ? '' : 's'} in this older backup — NOT restored; ` +
+                   'settings now move by their own file');
+    }
     return lines;
 }
 
@@ -174,6 +198,97 @@ export async function savePackageToFolder(appVersion) {
     return { pkg, path };
 }
 
+// --- Settings, as their own file (Ken, September 9 2026) ---
+//
+// The companion to the data package above, and deliberately a SEPARATE file: data
+// moves to any device, settings move only to one of the same shape.
+//
+// ⚠ IT CANNOT CARRY A KEY, AND THAT IS ENFORCED IN storage.js RATHER THAN HERE.
+// getPortableSettings() drops everything in PROFILE_EXCLUDE, which begins with all
+// six SECRET_KEYS - the Anthropic key and the five paid speech keys - and
+// applyPortableSettings() drops them again on the way back in. So the guarantee
+// holds at BOTH ends and does not depend on this module remembering: a hand-edited
+// file with a key pasted into it still cannot install one. A key is per-device and
+// per-account, it is the one thing in the app that costs real money if it leaks, and
+// this file is made to be emailed and copied between machines.
+//
+// It always DOWNLOADS rather than writing into the data folder, unlike the data
+// backup. The folder route for settings already exists and is better: named settings
+// profiles live in <data folder>/settings/ and can be reloaded by name. This file is
+// for the case profiles cannot reach - another device, or a tablet where the folder
+// is invisible.
+export function buildSettingsPackage(appVersion) {
+    return {
+        kind: SETTINGS_KIND,
+        packageVersion: SETTINGS_VERSION,
+        appVersion: appVersion || '',
+        exportedAt: new Date().toISOString(),
+        settings: storage.getPortableSettings(),
+    };
+}
+
+// "conversant-settings-2026-09-09-1432.json" - a different stem from the data
+// backup on purpose, so the two are told apart in a Downloads list at a glance.
+export function suggestedSettingsFilename(now = new Date()) {
+    return 'conversant-settings-' +
+        now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) +
+        '-' + pad(now.getHours()) + pad(now.getMinutes()) + '.json';
+}
+
+export function downloadSettingsPackage(appVersion) {
+    const pkg = buildSettingsPackage(appVersion);
+    downloadText(suggestedSettingsFilename(), JSON.stringify(pkg, null, 2));
+    return pkg;
+}
+
+// What the user is about to overwrite. Settings are a flat bundle with no natural
+// groupings, so the honest summary is a count plus the promise about keys.
+export function summarizeSettings(pkg) {
+    const n = pkg && pkg.settings ? Object.keys(pkg.settings).length : 0;
+    return [
+        `${n} setting${n === 1 ? '' : 's'}`,
+        'No keys — an exported settings file never contains one',
+    ];
+}
+
+// ⚠ THE TWO FILES MUST NOT BE INTERCHANGEABLE, and each error says which file the
+// user actually picked rather than a generic refusal. Handing the data importer a
+// settings file is the obvious mistake once there are two, and "that is not a
+// backup" would leave them with no idea what they had done wrong.
+export function parseSettingsPackage(text) {
+    let pkg;
+    try {
+        pkg = JSON.parse(text);
+    } catch {
+        throw new Error('That file is not a Conversant settings file — it is not readable as JSON.');
+    }
+    if (!pkg || typeof pkg !== 'object' || Array.isArray(pkg)) {
+        throw new Error('That file is not a Conversant settings file.');
+    }
+    if (pkg.kind === PACKAGE_KIND) {
+        throw new Error('That is a data backup, not a settings file. Use "Import from a file…" above it.');
+    }
+    if (pkg.kind !== SETTINGS_KIND) {
+        throw new Error('That file is not a Conversant settings file. Look for one named conversant-settings-….json');
+    }
+    if (typeof pkg.packageVersion !== 'number' || pkg.packageVersion > SETTINGS_VERSION) {
+        throw new Error('That settings file was made by a newer version of Conversant. Update the app first, then import it.');
+    }
+    if (!pkg.settings || typeof pkg.settings !== 'object') {
+        throw new Error('That settings file looks damaged — it has no settings in it.');
+    }
+    return pkg;
+}
+
+// Apply them. DESTRUCTIVE - the caller confirms first. Returns how many were taken,
+// counted AFTER the exclusion so the number reported is the number that landed.
+export function applySettingsPackage(pkg) {
+    const before = storage.getPortableSettings();
+    storage.applyPortableSettings(pkg.settings);
+    const after = storage.getPortableSettings();
+    return { count: Object.keys(after).length, changed: JSON.stringify(before) !== JSON.stringify(after) };
+}
+
 // Validate and parse. Throws a user-facing message — this is the one place a user
 // can hand the app an arbitrary file, so the failure has to be legible rather than
 // a raw JSON error.
@@ -205,7 +320,7 @@ export function parsePackage(text) {
 // Returns what was actually restored, so the caller can report it honestly rather
 // than claiming success for pieces that failed.
 export async function applyPackage(pkg) {
-    const restored = { files: [], conversations: 0, settings: false, failed: [] };
+    const restored = { files: [], conversations: 0, failed: [] };
 
     for (const entry of DATA_FILES) {
         const value = pkg.data[entry.file];
@@ -223,10 +338,8 @@ export async function applyPackage(pkg) {
         restored.files.push(entry.label);
     }
 
-    if (pkg.settings && typeof pkg.settings === 'object') {
-        storage.applyPortableSettings(pkg.settings);
-        restored.settings = true;
-    }
+    // Deliberately NOT applying pkg.settings, even when a version-1 file has them.
+    // Importing data must never rearrange the screen underneath somebody.
 
     if (Array.isArray(pkg.conversations)) {
         for (const c of pkg.conversations) {
