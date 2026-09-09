@@ -1280,27 +1280,20 @@ body.conv-bottom #responsesSection {
 }
 
 /* --- WHILE THE LAYOUT IS UNLOCKED (Ken, September 2026) ----------------------
-   No handles. Ken's reasoning: a handle is only there to say which borders move, and
-   somebody who has deliberately unlocked the layout already expects the major borders
-   to be draggable - on a mouse the cursor says so, and on a touch screen there is
-   nothing to aim at anyway because the whole border is live.
+   THE CIRCLES ARE THE ONLY SIGN THAT THE MODE IS ON, and there is deliberately nothing
+   else. An earlier version also drew a coloured line along each movable border, back
+   when there was nothing to see at all; Ken had both on screen together and asked for
+   the lines gone. They were answering a question the circles answer better - the line
+   says a border can move, the circle says so AND is the thing you grab - so keeping
+   both left the screen marked up twice for one fact.
 
-   What IS needed is a sign that the mode is on at all, or the user has no way to tell
-   an unlocked screen from a locked one. That is a colour on the borders themselves.
+   ⚠ DO NOT PUT A BORDER MARKING BACK. If a future change makes the mode hard to
+   recognise, the answer is the circles, not a second signal beside them.
 
-   ⚠ PAINT ONLY - NOTHING HERE MAY TAKE SPACE. An outline that took a pixel would
+   ⚠ AND WHATEVER IS ADDED HERE MUST TAKE NO SPACE. A marking a pixel wide would
    change the layout the moment the mode was entered, which is absurd for a mode whose
-   whole job is judging that layout; it would also move every keyguard hole. So this is
-   an inset box-shadow, which is drawn inside the element and occupies nothing.
-   Measured: every region rect identical locked and unlocked. */
-body.layout-unlocked #transcriptSection,
-body.layout-unlocked #listenControls,
-body.layout-unlocked #responsesSection {
-    box-shadow: inset 0 -3px 0 0 var(--accent);
-}
-body.layout-unlocked.conv-side #dockArea { box-shadow: inset 3px 0 0 0 var(--accent); }
-body.layout-unlocked.conv-side-left #dockArea { box-shadow: inset -3px 0 0 0 var(--accent); }
-body.layout-unlocked.conv-bottom #dockArea { box-shadow: inset 0 3px 0 0 var(--accent); }
+   whole job is judging that layout, and it would move every keyguard hole. The circles
+   sit above the page rather than in it, so they cost nothing. */
 
 /* The cursor is set in JS as the pointer crosses a border (app.js onLayoutHover) -
    it cannot be a CSS rule, because a border is a LINE between two regions rather than
