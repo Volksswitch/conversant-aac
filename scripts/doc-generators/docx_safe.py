@@ -200,7 +200,13 @@ def set_last_updated(doc, date_text):
     for p in body_paragraphs(doc):
         if 'Last updated' in p.text:
             joined = ''.join(r.text for r in p.runs)
-            new = re.sub(r'Last updated [A-Z][a-z]+ \d{1,2}, \d{4}',
+            # The day and its comma are OPTIONAL because four older reference
+            # documents carry a MONTH-ONLY byline - "Last updated July 2026". They got
+            # it from a pass on August 31 2026 that gave every document a byline,
+            # taking the creation month from the page footer because it was the only
+            # date available. Refusing them would mean the one helper that sets a
+            # byline cannot fix the only bylines that are actually wrong.
+            new = re.sub(r'Last updated [A-Z][a-z]+ (?:\d{1,2},? )?\d{4}',
                          'Last updated ' + date_text, joined)
             if new == joined:
                 # Already carrying this date is a no-op, not a fault: a second pass over
