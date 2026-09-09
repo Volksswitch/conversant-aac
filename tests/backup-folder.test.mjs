@@ -241,10 +241,100 @@ test('an unsaved tweak survives the round trip rather than being reverted', asyn
     storage.applyPortableSettings({ voiceURI: 'Zarvox' });
     await dt.applySettingsPackage(dt.parseSettingsPackage(JSON.stringify(pkg)));
 
-    // The device comes back exactly as it was, tweak included, with the profile
-    // still marked current - NOT reverted to what "Ken iPad" holds.
+    // The device comes back exactly as it was, tweak included - NOT reverted to what
+    // "Ken iPad" holds. That is the point of this test.
     assert.equal(storage.getPortableSettings().voiceURI, 'Moira');
-    assert.equal(storage.loadActiveSettingsProfile(), 'Ken iPad');
+    // "Ken iPad" already existed here, so the incoming one arrived as "Ken iPad (2)"
+    // and the current-profile marker followed it. Pointing at the local "Ken iPad"
+    // would be pointing at a different configuration that happens to share a name.
+    assert.equal(storage.loadActiveSettingsProfile(), 'Ken iPad (2)');
+});
+
+test('a name collision renames the incoming profile and replaces nothing', async () => {
+    for (const n of await storage.listSettingsProfiles()) await storage.deleteSettingsProfile(n);
+    // What THIS device already has under that name.
+    storage.applyPortableSettings({ keyboardDock: 'side', voiceURI: 'MINE' });
+    await storage.saveSettingsProfile('Ken iPad');
+    await storage.saveSettingsProfile('Only Here');
+
+    const incoming = {
+        kind: 'conversant-aac-settings', packageVersion: 2, appVersion: 'x',
+        exportedAt: new Date().toISOString(),
+        settings: { keyboardDock: 'bottom', voiceURI: 'THEIRS' },
+        profiles: [
+            { name: 'Ken iPad', settings: { keyboardDock: 'bottom', voiceURI: 'THEIRS' } },
+            { name: 'Brand New', settings: { keyboardDock: 'side', voiceURI: 'NEW' } },
+        ],
+        activeProfile: 'Ken iPad',
+    };
+    const done = await dt.applySettingsPackage(dt.parseSettingsPackage(JSON.stringify(incoming)));
+
+    assert.deepEqual((await storage.listSettingsProfiles()).sort(),
+                     ['Brand New', 'Ken iPad', 'Ken iPad (2)', 'Only Here'].sort());
+    // MINE is untouched — the whole point.
+    await storage.applySettingsProfile('Ken iPad');
+    assert.equal(storage.getPortableSettings().voiceURI, 'MINE');
+    await storage.applySettingsProfile('Ken iPad (2)');
+    assert.equal(storage.getPortableSettings().voiceURI, 'THEIRS');
+
+    // Only the clashing one is renamed, and the caller is told so it can say so.
+    assert.deepEqual(done.renamed, [{ requested: 'Ken iPad', written: 'Ken iPad (2)' }]);
+    assert.equal(done.activeProfile, 'Ken iPad (2)');
+});
+
+test('a second collision counts on to (3) rather than colliding again', async () => {
+    const incoming = {
+        kind: 'conversant-aac-settings', packageVersion: 2, appVersion: 'x',
+        exportedAt: new Date().toISOString(), settings: {},
+        profiles: [{ name: 'Ken iPad', settings: { voiceURI: 'THIRD' } }],
+        activeProfile: 'Ken iPad',
+    };
+    const done = await dt.applySettingsPackage(dt.parseSettingsPackage(JSON.stringify(incoming)));
+    assert.deepEqual(done.renamed, [{ requested: 'Ken iPad', written: 'Ken iPad (3)' }]);
+    // The parentheses survive the name sanitizer, which used to strip them and would
+    // have turned this into "Ken iPad 3" — a name that reads as one the user chose.
+    assert.ok((await storage.listSettingsProfiles()).includes('Ken iPad (3)'));
+});
+
+test('two profiles sharing a name inside ONE file still separate', async () => {
+    for (const n of await storage.listSettingsProfiles()) await storage.deleteSettingsProfile(n);
+    const incoming = {
+        kind: 'conversant-aac-settings', packageVersion: 2, appVersion: 'x',
+        exportedAt: new Date().toISOString(), settings: {},
+        profiles: [
+            { name: 'Twin', settings: { voiceURI: 'A' } },
+            { name: 'Twin', settings: { voiceURI: 'B' } },
+        ],
+        activeProfile: '',
+    };
+    await dt.applySettingsPackage(dt.parseSettingsPackage(JSON.stringify(incoming)));
+    assert.deepEqual((await storage.listSettingsProfiles()).sort(), ['Twin', 'Twin (2)']);
+    await storage.applySettingsProfile('Twin');
+    assert.equal(storage.getPortableSettings().voiceURI, 'A');
+    await storage.applySettingsProfile('Twin (2)');
+    assert.equal(storage.getPortableSettings().voiceURI, 'B');
+});
+
+test('unsaved changes to the current profile are detectable before an export', async () => {
+    for (const n of await storage.listSettingsProfiles()) await storage.deleteSettingsProfile(n);
+    storage.applyPortableSettings({ keyboardDock: 'side', voiceURI: 'Daniel' });
+    await storage.saveSettingsProfile('Desk');
+    storage.saveActiveSettingsProfile('Desk');
+
+    // Nothing touched yet.
+    assert.deepEqual(await storage.activeProfileUnsaved(), { name: 'Desk', differs: false });
+
+    // One slider moved and not saved — this is what the export prompt asks about.
+    storage.applyPortableSettings({ ...storage.getPortableSettings(), voiceURI: 'Moira' });
+    assert.deepEqual(await storage.activeProfileUnsaved(), { name: 'Desk', differs: true });
+
+    // Saving it settles the question rather than leaving it asked every time.
+    await storage.saveSettingsProfile('Desk');
+    assert.deepEqual(await storage.activeProfileUnsaved(), { name: 'Desk', differs: false });
+
+    // And with no profile in use there is nothing to offer.
+    storage.saveActiveSettingsProfile('');
+    assert.deepEqual(await storage.activeProfileUnsaved(), { name: '', differs: false });
 });
 
 test('a profile in the file cannot smuggle in a key', async () => {

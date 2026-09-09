@@ -495,8 +495,13 @@ export function saveActiveSettingsProfile(name) {
 
 // Filesystem-safe profile name — no path separators, bounded length. Used as-is for
 // the <name>.json filename and shown in the picker.
+//
+// ⚠ PARENTHESES ARE ALLOWED (Ken, September 9 2026) because an import renames a
+// clashing profile to "Ken iPad (2)". Stripping them turned that into "Ken iPad 2",
+// which reads like a name the user chose rather than one the app had to invent. They
+// are legal in a filename on every platform this app runs on.
 function sanitizeProfileName(name) {
-    return String(name || '').trim().replace(/[^A-Za-z0-9 _-]/g, '').replace(/\s+/g, ' ').slice(0, 60);
+    return String(name || '').trim().replace(/[^A-Za-z0-9 _\-()]/g, '').replace(/\s+/g, ' ').slice(0, 60);
 }
 
 async function getSettingsDir(create) {
@@ -627,17 +632,33 @@ export async function exportSettingsProfiles() {
     return out;
 }
 
-// Write profiles back. Returns the names actually written; [] where there is no
-// data folder to write them into, which the caller must REPORT rather than swallow -
-// the user would otherwise believe their profiles came back.
+// Write profiles back. Returns [{ requested, written }] for each one that landed;
+// [] where there is no data folder to write them into, which the caller must REPORT
+// rather than swallow - the user would otherwise believe their profiles came back.
+//
+// ⚠ A NAME COLLISION RENAMES THE INCOMING ONE, IT DOES NOT OVERWRITE (Ken,
+// September 9 2026): *"append a '(n)' to the settings name and continue."* The first
+// build overwrote silently, which walked straight past the safeguard the app already
+// has everywhere else - saving over a profile by hand puts up the red "Overwrite that
+// profile?" card - and destroyed a named configuration the user had built. Renaming
+// loses nothing and needs no question, so an import stays one decision.
+//
+// ⚠ THE FREE NAME IS SOUGHT AGAINST THE FOLDER AS IT GROWS, so two profiles in the
+// same file sharing a name also separate rather than one silently eating the other.
 export async function importSettingsProfiles(profiles) {
     if (!Array.isArray(profiles) || !profiles.length) return [];
     const dir = await getSettingsDir(true);
     if (!dir) return [];
+    const taken = new Set((await listSettingsProfiles()).map((n) => n.toLowerCase()));
     const written = [];
     for (const p of profiles) {
-        const clean = sanitizeProfileName(p && p.name);
-        if (!clean) continue;
+        const wanted = sanitizeProfileName(p && p.name);
+        if (!wanted) continue;
+        // "Ken iPad" -> "Ken iPad (2)" -> "Ken iPad (3)" ... The existing one is
+        // effectively (1), so the first copy is (2).
+        let clean = wanted;
+        for (let n = 2; taken.has(clean.toLowerCase()); n++) clean = `${wanted} (${n})`;
+        taken.add(clean.toLowerCase());
         const settings = {};
         for (const [k, v] of Object.entries((p && p.settings) || {})) {
             if (!PROFILE_EXCLUDE.includes(k)) settings[k] = v;
@@ -652,10 +673,36 @@ export async function importSettingsProfiles(profiles) {
                 settings,
             }, null, 2));
             await w.close();
-            written.push(clean);
+            written.push({ requested: wanted, written: clean });
         } catch { /* one bad profile must not abandon the rest */ }
     }
     return written;
+}
+
+// Has the user changed anything since they last saved the profile they are on?
+// Returns { name, differs } — name is '' when no profile is current, in which case
+// there is nothing to offer to update.
+//
+// ⚠ COMPARED KEY BY KEY ON A SORTED LIST, not by JSON.stringify of each object: two
+// bundles holding identical values in a different insertion order stringify
+// differently, and this would then claim unsaved changes on every single export.
+export async function activeProfileUnsaved() {
+    const name = loadActiveSettingsProfile();
+    if (!name) return { name: '', differs: false };
+    const dir = await getSettingsDir(false);
+    if (!dir) return { name, differs: false };
+    let saved;
+    try {
+        const fh = await dir.getFileHandle(`${sanitizeProfileName(name)}.json`);
+        saved = JSON.parse(await (await fh.getFile()).text());
+    } catch {
+        return { name, differs: false };     // no file to be out of step with
+    }
+    const a = (saved && saved.settings) || {};
+    const b = exportSettingsBundle();
+    const keys = [...new Set([...Object.keys(a), ...Object.keys(b)])].sort();
+    const differs = keys.some((k) => JSON.stringify(a[k]) !== JSON.stringify(b[k]));
+    return { name, differs };
 }
 
 export async function deleteSettingsProfile(name) {

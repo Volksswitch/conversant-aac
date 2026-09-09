@@ -357,22 +357,28 @@ export async function applySettingsPackage(pkg) {
     const before = storage.getPortableSettings();
     storage.applyPortableSettings(pkg.settings);
 
-    const restoredProfiles = await storage.importSettingsProfiles(pkg.profiles);
+    // [{ requested, written }] — the two differ where a name already existed here.
+    const landed = await storage.importSettingsProfiles(pkg.profiles);
+
+    // ⚠ FOLLOW THE RENAME. Where the incoming active profile clashed it was written
+    // under a new name, and marking the REQUESTED name current would point the picker
+    // at this device's own profile of that name — a different configuration that
+    // happens to share a title, which is the one outcome the rename exists to avoid.
+    const activeEntry = landed.find((e) => e.requested === pkg.activeProfile);
 
     // Set AFTER applyPortableSettings: activeSettingsProfile is in PROFILE_EXCLUDE,
     // so that call deliberately preserves THIS machine's value and ignores the
     // incoming one. Only set it to a profile that actually landed, or the picker
     // would point at a name with no file behind it.
-    if (pkg.activeProfile && restoredProfiles.includes(pkg.activeProfile)) {
-        storage.saveActiveSettingsProfile(pkg.activeProfile);
-    }
+    if (activeEntry) storage.saveActiveSettingsProfile(activeEntry.written);
 
     const after = storage.getPortableSettings();
     return {
         count: Object.keys(after).length,
-        profiles: restoredProfiles,
+        profiles: landed.map((e) => e.written),
+        renamed: landed.filter((e) => e.requested !== e.written),
         profilesInFile: Array.isArray(pkg.profiles) ? pkg.profiles.length : 0,
-        activeProfile: restoredProfiles.includes(pkg.activeProfile) ? pkg.activeProfile : '',
+        activeProfile: activeEntry ? activeEntry.written : '',
         changed: JSON.stringify(before) !== JSON.stringify(after),
     };
 }

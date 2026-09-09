@@ -37,6 +37,15 @@ forgetting to tag one is only ever noise, never silence.
   of which one you are using — so importing it on another device puts your profiles
   back and picks up on the one you were on. Before this they were in neither backup,
   which on an iPad meant they had no way off the device at all.
+- When you export your settings, if you have changed something since you last
+  saved the profile you are using, the app offers to save those changes into it
+  first. Say yes and your backup and your profile agree; say no and your changes
+  are still in the backup while the profile stays as it was.
+- Importing settings never replaces a profile you already have. If the file
+  contains a profile with the same name as one of yours, it comes in as
+  “Ken iPad (2)”, and the app tells you it did that. Both are kept, so nothing you
+  built is lost, and if the renamed one was the profile in use it is the one
+  selected afterwards.
 - Neither file ever contains a key — not the Anthropic key and not any of the paid
   speech service keys. That was already true of a data backup and is now true of the
   settings file as well, which matters because a settings file is the one you are

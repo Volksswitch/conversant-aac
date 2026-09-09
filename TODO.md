@@ -37,6 +37,22 @@ the one that quietly waits forever.
 
 ## Open
 
+### The three User Manuals: the two backup files, and the profile rename
+- **Raised:** 2026-09-09 — Ken, on the backup split: *"That behavior gets documented."*
+- **Wanted:** all three manuals describe a single "Backup & transfer" section that no
+  longer exists. They need: the section's new name, "Data and settings backup"; that data
+  and settings are now two separate files and why (data goes to any device, settings only
+  to one of the same shape); that a data backup is now named `conversant-data-…`; that
+  both are written into the data folder where there is one and only leave by the save
+  sheet where there is not; that a settings file carries every saved profile and which one
+  is in use; that exporting offers to save unsaved changes into the current profile first;
+  and — the one Ken named explicitly — **that importing a profile whose name you already
+  use brings it in as "Ken iPad (2)" rather than replacing yours.**
+- **Why not now:** the manuals are reader-facing and are synced at release by the standing
+  process, and this cycle (0.10.13) has not shipped. Doing it now would date the documents
+  ahead of the app. It is listed here because the rename in particular is behaviour a user
+  will meet and cannot guess.
+
 ### Product Overview: the AI vendor's safety rules, and the distress case
 - **Raised:** 2026-08-30 — CLAUDE.md, "A speech-to-speech model CANNOT be used here"
 - **Wanted:** a paragraph beside *Not a Smart Speaker* saying the vendor's safety rules

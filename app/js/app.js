@@ -5689,6 +5689,17 @@ async function importSettingsText(text, sourceLabel) {
         // writes none of them - and "settings imported" alone would leave the user
         // thinking their backup was faulty. Say it, and do NOT reload, so the message
         // survives long enough to be read.
+        // A clash renames rather than overwrites, and the user is told which - a
+        // profile quietly appearing under a name they did not choose is worse than
+        // one extra sentence.
+        if (done.renamed && done.renamed.length) {
+            const list = done.renamed.map((e) => `"${e.requested}" came in as "${e.written}"`).join('; ');
+            setSettingsBackupStatus(
+                `Settings imported. You already had ${done.renamed.length === 1 ? 'a profile' : 'profiles'} ` +
+                `with the same name, so nothing of yours was replaced: ${list}. Reloading…`);
+            setTimeout(() => location.reload(), 2500);
+            return;
+        }
         if (done.profilesInFile && !done.profiles.length) {
             setSettingsBackupStatus(
                 `Settings imported, but the ${done.profilesInFile} saved profile` +
@@ -5739,6 +5750,41 @@ function wireSettingsFileControls() {
     if (!exportBtn || !importBtn || !fileInput) return;
 
     exportBtn.onclick = async () => {
+        // ⚠ OFFER TO FOLD UNSAVED CHANGES INTO THE CURRENT PROFILE FIRST (Ken,
+        // September 9 2026). Expected behaviour: "I save settings, I make a change, I
+        // save settings again - I would expect this step to save the change made to
+        // the current profile."
+        //
+        // It also removes the one ambiguity the file otherwise carries. A settings
+        // file holds both the values in EFFECT and each saved profile; those disagree
+        // exactly when the user tweaked something without saving, and then "restore"
+        // has two defensible meanings. Asking here makes them agree before the file is
+        // written, so the question mostly stops arising.
+        //
+        // Silent where there is nothing to ask about: no profile in use, no data
+        // folder, or nothing changed since it was saved.
+        try {
+            const { name, differs } = await storage.activeProfileUnsaved();
+            if (differs) {
+                if (await confirmDanger({
+                    title: 'Save your changes into this profile first?',
+                    body: `You have changed some settings since you last saved the profile "${name}".
+
+` +
+                          'Saving them into it first means the backup and the profile agree. ' +
+                          'Exporting without saving keeps your changes in the backup, but the ' +
+                          `profile "${name}" stays as it was.`,
+                    confirmLabel: 'Save, then export',
+                    cancelLabel: 'Export without saving',
+                })) {
+                    await storage.saveSettingsProfile(name);
+                }
+            }
+        } catch (err) {
+            // Never let this stop the export - the backup is the point, and a profile
+            // that could not be updated is a smaller problem than no backup at all.
+            storage.logError('export settings', 'profile update skipped: ' + (err.message || String(err)));
+        }
         setSettingsBackupStatus('Saving your settings…');
         try {
             // Same rule as the data backup beside it: into the folder where there is
