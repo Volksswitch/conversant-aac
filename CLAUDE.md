@@ -1997,6 +1997,14 @@ a drift in CLAUDE.md as well as in the document.**
 
 Product-document currency is tracked by [`DOC-SYNC.md`](DOC-SYNC.md) (any root document named `Conversant AAC *`, each stamped with the git commit it was last reviewed against — never file modification date, which a format-only edit would bump).
 
+**⚠ A DOC SYNC IS INDEPENDENT OF A RELEASE, AND THE REASON IS THAT A RELEASE IS OFTEN A TEST BUILD (Ken, September 9 2026).** *"Sometimes I have to see a public release of the app in order to test it - as I do in the case of these data migration features. I may or may not think the feature is complete and will need to come back for more work and another bump. Today was a perfect example. Performing a doc sync before a feature is complete is a waste of time and tokens."*
+
+**A version number is not a statement that a feature is finished.** Ken releases to get the app onto a real device, looks at it, and comes back. So "it shipped" is the wrong trigger for documenting it; "Ken says it is settled" is the right one, and only he knows which release that was. **Never sync because a release happened, and never offer to because a currency check went red** - the check was removed from the release ritual for exactly this reason (see RELEASING.md step 8).
+
+**⚠ SEPTEMBER 9 2026 IS THE WORKED EXAMPLE, AND IT COST REAL DAMAGE RATHER THAN ONLY TOKENS.** The backup feature shipped three times in one day - a two-file split, then the import modals, then one file again - and the documents were synced after each. Two of the three passes described a design that no longer exists. **Worse than waste: the 0.10.13 pass took two design records that were CORRECT and made them WRONG**, and neither was caught at 0.10.15 because they are not reader-facing. The Architecture Overview said Export writes "a single file", which was true, was changed to "two files, data and settings", and is true again now; the Express Panel Design's note on what a restore replaces was edited the same way. **A document left alone through all three releases would have needed no work and would have been right at the end of the day.**
+
+**The rule that follows: when a feature is visibly in flux, the cheapest and most accurate thing a document can do is nothing.** Wait for the design to stop moving.
+
 **Trigger phrase (Ken only): "sync docs"**, optionally followed by which documents (names or keywords). Examples: **"sync docs"** (every row not marked `✓ current` in DOC-SYNC.md), **"sync docs Product Overview"**, **"sync docs the two overviews and the user manual"**. This runs the workflow below.
 
 **Workflow for each named document `X` (in order):**

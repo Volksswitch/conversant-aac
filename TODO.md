@@ -37,6 +37,23 @@ the one that quietly waits forever.
 
 ## Open
 
+### Two design records left WRONG by the September 9 backup churn
+- **Raised:** 2026-09-09 — found while working out why doc syncs must not follow releases.
+- **What is wrong:** the **Architecture Overview** says Export/Import "writes what the user
+  owns into two files, data and settings, kept apart because the data belongs on any device
+  while the settings describe one" — false since 0.10.15, which put it back to one file.
+  **Express Panel Design** says "restoring a data backup replaces About Me, people, places
+  and the panel together" — a restore now replaces the settings too, and there is no "data
+  backup" distinct from a backup.
+- **⚠ BOTH WERE CORRECT UNTIL I EDITED THEM.** The Architecture Overview said "a single
+  file", which is true again today. The 0.10.13 sync made two right documents wrong, and
+  0.10.15 did not catch them because neither is reader-facing.
+- **Why not now:** Ken is testing the migration features and has said he may come back for
+  more work on them. Editing a third time on a design that may move again is the exact
+  mistake this entry exists to record. Fix at the next sync, once he says the feature is
+  settled — and check whether simply reverting to the pre-0.10.13 wording is right, since
+  for the Architecture Overview it already is.
+
 ### Product Overview: the AI vendor's safety rules, and the distress case
 - **Raised:** 2026-08-30 — CLAUDE.md, "A speech-to-speech model CANNOT be used here"
 - **Wanted:** a paragraph beside *Not a Smart Speaker* saying the vendor's safety rules
