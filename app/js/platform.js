@@ -248,3 +248,63 @@ export function describe() {
             : 'no speech recognition in this browser');
     return bits.join(' · ');
 }
+
+/*
+ * A signature of the things that CONSTRAIN settings, for deciding at import time
+ * whether a backup came off this kind of device (Ken, September 9 2026).
+ *
+ * WHY THIS SHAPE. Ken's design collapses the two backup files into one and filters at
+ * IMPORT instead of at export, and the argument for it is the reason this function
+ * exists: at export nobody knows where the file is going, so any split makes the user
+ * guess the destination. At import the app knows both sides — and this is the "both
+ * sides" half.
+ *
+ * ⚠ THE SCREEN COMES FROM `screen`, NOT THE LAYOUT VIEWPORT, and that is the whole
+ * reason this is usable on a desktop. The viewport changes every time somebody resizes
+ * the window, so a viewport-based signature would report the SAME machine as a
+ * different device between two exports an hour apart. The display does not move.
+ * (And not devicePixelRatio: it moves with zoom — see the July 31 2026 finding.)
+ *
+ * ⚠ THE SHELL IS PART OF THE OS AXIS, not a detail. On an iPad a Home Screen app and a
+ * Safari tab differ in a way that decides whether the free recognizer works at all
+ * (measured July 30 2026), so a backup crossing between them is crossing a real
+ * capability boundary even though the OS is identical.
+ *
+ * Deliberately NOT a unique machine id. The question is "is this the same KIND of
+ * device", so two identical Surfaces read the same and settings move between them
+ * whole, which is what somebody with two identical devices would expect.
+ */
+export function deviceSignature() {
+    let w = 0, h = 0;
+    try {
+        if (typeof screen !== 'undefined' && screen) {
+            w = Math.round(screen.width || 0);
+            h = Math.round(screen.height || 0);
+        }
+    } catch { /* no screen object — leave zeros, which compare equal to other zeros */ }
+    return {
+        os: isIOS() ? 'ios' : isAndroid() ? 'android' : 'desktop',
+        // 'app' (installed / Home Screen) or 'tab'.
+        shell: isStandalone() ? 'app' : 'tab',
+        screen: w && h ? `${w}x${h}` : '',
+    };
+}
+
+/*
+ * How a backup's origin compares with here. Two axes because Ken's own two examples
+ * are two axes: the OS decides folder rules, keyboard options and which speech
+ * services work; the SCREEN decides the keyguard.
+ *
+ * An absent or unreadable signature counts as different on BOTH axes. That is the safe
+ * direction: it means an older file holds back the few device-bound settings rather
+ * than applying a value from a machine nobody can identify.
+ */
+export function compareDevice(sig, here = deviceSignature()) {
+    const ok = sig && typeof sig === 'object';
+    return {
+        sameOs: !!ok && sig.os === here.os && sig.shell === here.shell,
+        // An empty screen on either side is not a match: unknown is not the same as equal.
+        sameScreen: !!ok && !!sig.screen && !!here.screen && sig.screen === here.screen,
+        known: !!ok && !!sig.os,
+    };
+}

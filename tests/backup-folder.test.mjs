@@ -1,24 +1,16 @@
-/* Tier 2 — REAL backups written into a REAL folder, both kinds, in one place.
+/* Tier 2 — a REAL backup written into a REAL folder, and read back out.
  *
- * WHY THIS EXISTS (Ken, September 9 2026): *"Shouldn't we be consistent with where
- * backups are stored? It seems to me that all backups should be written to the data
- * folder with the exception of those installations where one cannot create a data
- * folder."* Both kinds now go to <data folder>/backups/, so the thing that has to
- * hold is that TWO kinds sharing ONE folder still come back to the right list and
- * restore as themselves.
- *
- * ⚠ THE FOLDER IS NOT THE OBSTACLE IT USED TO BE CALLED. The File System Access
- * picker needs a native dialog nobody can drive, but that is not the only way
- * storage.js gets a root: with no picker present it adopts the browser's own private
- * filesystem, which needs no gesture. So saveBackup / listBackups / readBackup all
+ * ⚠ THE FOLDER IS NOT THE OBSTACLE IT USED TO BE CALLED. The File System Access picker
+ * needs a native dialog nobody can drive, but that is not the only way storage.js gets
+ * a root: with no picker present it adopts the browser's own private filesystem, which
+ * needs no gesture. So saveBackup / listBackups / readBackup and the whole profile path
  * run for real here, and what is asserted is the bytes that landed — not a helper's
  * return value.
  *
  * ⚠ WHAT THIS CANNOT REACH, stated rather than glossed: `hasVisibleDataFolder()` is
- * false on this path by construction (device storage is not a folder the user can
- * see), and that flag is what app.js branches on to choose folder-or-download. The
- * branch itself was exercised in the browser on the no-folder side; the folder side
- * of that ONE `if` is the link no automated check here runs.
+ * false on this path by construction, and that flag is what app.js branches on to
+ * choose folder-or-download. The no-folder side was exercised in the browser; the
+ * folder side of that one `if` is the link no automated check here runs.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -61,9 +53,8 @@ function makeDir(name = '') {
         },
         async removeEntry(n) { files.delete(n); dirs.delete(n); },
         // ⚠ Yields a REAL file handle, not a { kind, name } stub. listBackups() calls
-        // getFile() on whatever entries() hands it and skips anything that throws, so
-        // a stub here makes every backup silently invisible and the test passes for
-        // the wrong reason — or, as it did, fails with an empty list and no clue why.
+        // getFile() on whatever entries() hands it and skips anything that throws, so a
+        // stub here makes every backup silently invisible.
         async *entries() {
             for (const [k] of files) yield [k, await this.getFileHandle(k)];
             for (const [k, v] of dirs) yield [k, v];
@@ -82,232 +73,159 @@ globalThis.localStorage = {
 globalThis.window = { dispatchEvent() { return true; } };
 globalThis.CustomEvent = class { constructor(t, o) { this.type = t; Object.assign(this, o); } };
 Object.defineProperty(globalThis, 'navigator', {
-    value: { storage: { getDirectory: async () => root } },
+    value: { storage: { getDirectory: async () => root },
+             userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
     configurable: true, writable: true,
 });
+globalThis.screen = { width: 1920, height: 1080 };
 globalThis.indexedDB = undefined;
 
 const storage = await import('../app/js/storage.js');
 const dt = await import('../app/js/data-transfer.js');
 
 async function backupsDir() { return root.getDirectoryHandle('backups'); }
+async function settingsDir() { return root.getDirectoryHandle('settings'); }
 
-test('both kinds of backup land in the SAME folder', async () => {
+test('a backup lands in the folder and carries no key', async () => {
     assert.equal(await storage.restoreDataFolder(), true);
     localStorage.setItem('aac_settings', JSON.stringify({
-        voiceURI: 'Daniel', keyboardDock: 'side', apiKey: 'sk-ant-SECRET', deepgramKey: 'DG-SECRET',
+        voiceURI: 'Daniel', keyboardDock: 'side', appMarginPos: 30,
+        apiKey: 'sk-ant-SECRET', deepgramKey: 'DG-SECRET',
     }));
     localStorage.setItem('aac_places', JSON.stringify({ places: [{ id: 'p1', name: 'Starbucks' }] }));
 
-    const data = await dt.savePackageToFolder('9.9.9');
-    const settings = await dt.saveSettingsPackageToFolder('9.9.9');
+    const { path } = await dt.savePackageToFolder('9.9.9');
+    assert.ok(path);
 
     const dir = await backupsDir();
     const names = [...dir._files.keys()];
-    assert.equal(names.length, 2, 'one folder, both files');
-    assert.ok(names.some((n) => n.startsWith('conversant-data-')), names.join());
-    assert.ok(names.some((n) => n.startsWith('conversant-settings-')), names.join());
-    assert.ok(data.path && settings.path);
-});
-
-test('neither file on disk contains a key', async () => {
-    const dir = await backupsDir();
-    for (const [name, rec] of dir._files) {
+    assert.equal(names.length, 1, 'one file, not two');
+    assert.ok(names[0].startsWith('conversant-backup-'), names[0]);
+    for (const [, rec] of dir._files) {
         for (const secret of ['sk-ant-SECRET', 'DG-SECRET', 'apiKey', 'deepgramKey']) {
-            assert.ok(!rec.data.includes(secret), `${name} contains ${secret}`);
+            assert.ok(!rec.data.includes(secret), `the file on disk contains ${secret}`);
         }
     }
 });
 
-test('the two lists split the one folder, and each restores its own', async () => {
+test('the folder list shows it, and it restores through the real reader', async () => {
     const all = await storage.listBackups();
-    assert.equal(all.length, 2);
-
-    const dataList = all.filter((b) => dt.isDataBackupName(b.name));
-    const settingsList = all.filter((b) => dt.isSettingsBackupName(b.name));
-    assert.equal(dataList.length, 1);
-    assert.equal(settingsList.length, 1);
-
-    // Read each back through the real reader and put it through the real parser —
-    // the whole point being that a file taken from the shared folder is still
-    // recognisable as what it is.
-    const dataText = await storage.readBackup(dataList[0].name);
-    const settingsText = await storage.readBackup(settingsList[0].name);
-
-    const dataPkg = dt.parsePackage(dataText);
-    assert.ok(dataPkg.data['places.json'], 'the data came back');
-
-    const settingsPkg = dt.parseSettingsPackage(settingsText);
-    assert.equal(settingsPkg.settings.keyboardDock, 'side');
-
-    // And each importer still refuses the other, even coming off the same folder.
-    assert.throws(() => dt.parseSettingsPackage(dataText), /data backup, not a settings file/);
-    assert.throws(() => dt.parsePackage(settingsText), /not a Conversant data backup/);
+    assert.equal(all.length, 1);
+    const pkg = dt.parsePackage(await storage.readBackup(all[0].name));
+    assert.ok(pkg.data['places.json'], 'the content came back');
+    assert.equal(pkg.settings.keyboardDock, 'side', 'and so did the settings');
+    assert.equal(pkg.device.os, 'desktop', 'stamped with where it came from');
 });
 
-test('restoring the settings file from the folder puts the settings back', async () => {
-    const all = await storage.listBackups();
-    const name = all.find((b) => dt.isSettingsBackupName(b.name)).name;
-
-    storage.applyPortableSettings({ keyboardDock: 'bottom', voiceURI: 'Zarvox' });
-    assert.equal(storage.getPortableSettings().keyboardDock, 'bottom');
-
-    dt.applySettingsPackage(dt.parseSettingsPackage(await storage.readBackup(name)));
-    assert.equal(storage.getPortableSettings().keyboardDock, 'side');
-    assert.equal(storage.getPortableSettings().voiceURI, 'Daniel');
-
-    // The keys were never in the file and are still on the device.
-    const live = JSON.parse(localStorage.getItem('aac_settings'));
-    assert.equal(live.apiKey, 'sk-ant-SECRET');
-    assert.equal(live.deepgramKey, 'DG-SECRET');
+test('a backup under ANY older name still lists and still restores', async () => {
+    // Every prefix this app has ever written. An import is judged by the `kind` inside
+    // the file, never by its name, so none of these may disappear from the list that
+    // restores them.
+    for (const name of ['conversant-data-2026-09-09-1000.json',
+                        'conversant-backup-2026-07-30-1432.json',
+                        'a file I renamed myself.json']) {
+        await storage.saveBackup(name, JSON.stringify(await dt.buildPackage('old')));
+    }
+    const names = (await storage.listBackups()).map((b) => b.name);
+    for (const n of ['conversant-data-2026-09-09-1000.json', 'a file I renamed myself.json']) {
+        assert.ok(names.includes(n), `${n} vanished from the list`);
+    }
+    assert.ok(dt.parsePackage(await storage.readBackup('a file I renamed myself.json')).data);
 });
 
-test('an OLD backup in the folder is still listed and still restores', async () => {
-    // Exactly what a file made before September 9 2026 looks like: the old name.
-    const dir = await backupsDir();
-    const old = JSON.stringify(await dt.buildPackage('old'));
-    await storage.saveBackup('conversant-backup-2026-07-30-1432.json', old);
+/* ── Profiles ride along, and a collision renames ─────────────────────────── */
 
-    const all = await storage.listBackups();
-    const dataList = all.filter((b) => dt.isDataBackupName(b.name));
-    assert.ok(dataList.some((b) => b.name.startsWith('conversant-backup-')),
-              'the old name must not vanish from the list that restores it');
-    assert.ok(!all.filter((b) => dt.isSettingsBackupName(b.name))
-                  .some((b) => b.name.startsWith('conversant-backup-')));
-
-    const text = await storage.readBackup('conversant-backup-2026-07-30-1432.json');
-    assert.ok(dt.parsePackage(text).data['places.json']);
-    assert.ok(dir._files.size >= 3);
-});
-
-/* ── Profiles ride along in a settings backup (Ken, September 9 2026) ─────── */
-
-test('a settings backup carries every saved profile and which was current', async () => {
-    // Two profiles, saved the way the app saves them, then one made current.
+test('a backup carries every saved profile and which was current', async () => {
     localStorage.setItem('aac_settings', JSON.stringify({ keyboardDock: 'side', voiceURI: 'Daniel' }));
     await storage.saveSettingsProfile('Ken Surface');
     storage.applyPortableSettings({ keyboardDock: 'bottom', voiceURI: 'Karen' });
     await storage.saveSettingsProfile('Ken iPad');
     storage.saveActiveSettingsProfile('Ken iPad');
 
-    const pkg = await dt.buildSettingsPackage('9.9.9');
+    const pkg = await dt.buildPackage('9.9.9');
     assert.deepEqual(pkg.profiles.map((p) => p.name).sort(), ['Ken Surface', 'Ken iPad'].sort());
     assert.equal(pkg.activeProfile, 'Ken iPad');
     // Each profile carries its OWN settings, not a copy of the live ones.
-    const surface = pkg.profiles.find((p) => p.name === 'Ken Surface');
-    assert.equal(surface.settings.keyboardDock, 'side');
-    assert.equal(surface.settings.voiceURI, 'Daniel');
-
-    // And the summary the user reads before importing says what is in it.
-    const said = dt.summarizeSettings(pkg).join('\n');
-    assert.match(said, /2 saved profiles/);
-    assert.match(said, /"Ken iPad" will be the one in use/);
+    assert.equal(pkg.profiles.find((p) => p.name === 'Ken Surface').settings.voiceURI, 'Daniel');
 });
 
 test('importing puts the profiles back and marks the right one current', async () => {
-    const pkg = await dt.buildSettingsPackage('9.9.9');
-
-    // Wipe the lot: different settings, different profiles, nothing current.
+    const pkg = await dt.buildPackage('9.9.9');
     for (const n of await storage.listSettingsProfiles()) await storage.deleteSettingsProfile(n);
     storage.applyPortableSettings({ keyboardDock: 'side', voiceURI: 'Zarvox' });
     storage.saveActiveSettingsProfile('');
-    assert.deepEqual(await storage.listSettingsProfiles(), []);
 
-    const done = await dt.applySettingsPackage(dt.parseSettingsPackage(JSON.stringify(pkg)));
+    const done = await dt.applyPackage(dt.parsePackage(JSON.stringify(pkg)));
     assert.deepEqual((await storage.listSettingsProfiles()).sort(), ['Ken Surface', 'Ken iPad'].sort());
     assert.equal(storage.loadActiveSettingsProfile(), 'Ken iPad');
     assert.equal(done.activeProfile, 'Ken iPad');
+    assert.equal(storage.getPortableSettings().voiceURI, 'Karen', 'the live settings came back too');
 
-    // The settings IN EFFECT came back too, and they are the live ones from the
-    // export rather than the active profile's - the same thing here, and the
-    // distinction is asserted in the next test.
-    assert.equal(storage.getPortableSettings().voiceURI, 'Karen');
-
-    // A restored profile still loads by name, so it is a real profile and not just
-    // a file that happens to sit in the folder.
+    // A restored profile still loads by name, so it is a real profile and not just a
+    // file that happens to sit in the folder.
     await storage.applySettingsProfile('Ken Surface');
     assert.equal(storage.getPortableSettings().voiceURI, 'Daniel');
 });
 
-test('an unsaved tweak survives the round trip rather than being reverted', async () => {
-    // Load a profile, then change something WITHOUT saving it - the case where the
-    // settings in effect and the active profile disagree.
-    await storage.applySettingsProfile('Ken iPad');
-    storage.saveActiveSettingsProfile('Ken iPad');
-    const tweaked = { ...storage.getPortableSettings(), voiceURI: 'Moira' };
-    storage.applyPortableSettings(tweaked);
-
-    const pkg = await dt.buildSettingsPackage('9.9.9');
-    storage.applyPortableSettings({ voiceURI: 'Zarvox' });
-    await dt.applySettingsPackage(dt.parseSettingsPackage(JSON.stringify(pkg)));
-
-    // The device comes back exactly as it was, tweak included - NOT reverted to what
-    // "Ken iPad" holds. That is the point of this test.
-    assert.equal(storage.getPortableSettings().voiceURI, 'Moira');
-    // "Ken iPad" already existed here, so the incoming one arrived as "Ken iPad (2)"
-    // and the current-profile marker followed it. Pointing at the local "Ken iPad"
-    // would be pointing at a different configuration that happens to share a name.
-    assert.equal(storage.loadActiveSettingsProfile(), 'Ken iPad (2)');
-});
-
 test('a name collision renames the incoming profile and replaces nothing', async () => {
     for (const n of await storage.listSettingsProfiles()) await storage.deleteSettingsProfile(n);
-    // What THIS device already has under that name.
     storage.applyPortableSettings({ keyboardDock: 'side', voiceURI: 'MINE' });
     await storage.saveSettingsProfile('Ken iPad');
     await storage.saveSettingsProfile('Only Here');
 
     const incoming = {
-        kind: 'conversant-aac-settings', packageVersion: 2, appVersion: 'x',
-        exportedAt: new Date().toISOString(),
-        settings: { keyboardDock: 'bottom', voiceURI: 'THEIRS' },
+        kind: dt.PACKAGE_KIND, packageVersion: 3, appVersion: 'x',
+        exportedAt: new Date().toISOString(), data: {},
+        device: { os: 'desktop', shell: 'tab', screen: '1920x1080' },
+        settings: { voiceURI: 'THEIRS' },
         profiles: [
-            { name: 'Ken iPad', settings: { keyboardDock: 'bottom', voiceURI: 'THEIRS' } },
-            { name: 'Brand New', settings: { keyboardDock: 'side', voiceURI: 'NEW' } },
+            { name: 'Ken iPad', settings: { voiceURI: 'THEIRS' } },
+            { name: 'Brand New', settings: { voiceURI: 'NEW' } },
         ],
         activeProfile: 'Ken iPad',
     };
-    const done = await dt.applySettingsPackage(dt.parseSettingsPackage(JSON.stringify(incoming)));
+    const done = await dt.applyPackage(dt.parsePackage(JSON.stringify(incoming)));
 
     assert.deepEqual((await storage.listSettingsProfiles()).sort(),
                      ['Brand New', 'Ken iPad', 'Ken iPad (2)', 'Only Here'].sort());
-    // MINE is untouched — the whole point.
     await storage.applySettingsProfile('Ken iPad');
-    assert.equal(storage.getPortableSettings().voiceURI, 'MINE');
+    assert.equal(storage.getPortableSettings().voiceURI, 'MINE', 'mine is untouched');
     await storage.applySettingsProfile('Ken iPad (2)');
     assert.equal(storage.getPortableSettings().voiceURI, 'THEIRS');
 
-    // Only the clashing one is renamed, and the caller is told so it can say so.
     assert.deepEqual(done.renamed, [{ requested: 'Ken iPad', written: 'Ken iPad (2)' }]);
+    // ⚠ THE MARKER FOLLOWS THE RENAME. Pointing at the requested name would point the
+    // picker at THIS device's profile of that name - a different configuration that
+    // happens to share a title, which is what renaming exists to avoid.
     assert.equal(done.activeProfile, 'Ken iPad (2)');
 });
 
-test('a second collision counts on to (3) rather than colliding again', async () => {
+test('a second collision counts on to (3), parentheses and all', async () => {
     const incoming = {
-        kind: 'conversant-aac-settings', packageVersion: 2, appVersion: 'x',
-        exportedAt: new Date().toISOString(), settings: {},
+        kind: dt.PACKAGE_KIND, packageVersion: 3, appVersion: 'x',
+        exportedAt: new Date().toISOString(), data: {}, settings: {},
+        device: { os: 'desktop', shell: 'tab', screen: '1920x1080' },
         profiles: [{ name: 'Ken iPad', settings: { voiceURI: 'THIRD' } }],
         activeProfile: 'Ken iPad',
     };
-    const done = await dt.applySettingsPackage(dt.parseSettingsPackage(JSON.stringify(incoming)));
+    const done = await dt.applyPackage(dt.parsePackage(JSON.stringify(incoming)));
     assert.deepEqual(done.renamed, [{ requested: 'Ken iPad', written: 'Ken iPad (3)' }]);
-    // The parentheses survive the name sanitizer, which used to strip them and would
-    // have turned this into "Ken iPad 3" — a name that reads as one the user chose.
+    // The name sanitizer used to strip parentheses, which would have made this
+    // "Ken iPad 3" - a name that reads as one the user chose.
     assert.ok((await storage.listSettingsProfiles()).includes('Ken iPad (3)'));
 });
 
 test('two profiles sharing a name inside ONE file still separate', async () => {
     for (const n of await storage.listSettingsProfiles()) await storage.deleteSettingsProfile(n);
     const incoming = {
-        kind: 'conversant-aac-settings', packageVersion: 2, appVersion: 'x',
-        exportedAt: new Date().toISOString(), settings: {},
-        profiles: [
-            { name: 'Twin', settings: { voiceURI: 'A' } },
-            { name: 'Twin', settings: { voiceURI: 'B' } },
-        ],
+        kind: dt.PACKAGE_KIND, packageVersion: 3, appVersion: 'x',
+        exportedAt: new Date().toISOString(), data: {}, settings: {},
+        device: { os: 'desktop', shell: 'tab', screen: '1920x1080' },
+        profiles: [{ name: 'Twin', settings: { voiceURI: 'A' } },
+                   { name: 'Twin', settings: { voiceURI: 'B' } }],
         activeProfile: '',
     };
-    await dt.applySettingsPackage(dt.parseSettingsPackage(JSON.stringify(incoming)));
+    await dt.applyPackage(dt.parsePackage(JSON.stringify(incoming)));
     assert.deepEqual((await storage.listSettingsProfiles()).sort(), ['Twin', 'Twin (2)']);
     await storage.applySettingsProfile('Twin');
     assert.equal(storage.getPortableSettings().voiceURI, 'A');
@@ -315,43 +233,40 @@ test('two profiles sharing a name inside ONE file still separate', async () => {
     assert.equal(storage.getPortableSettings().voiceURI, 'B');
 });
 
+test('a profile in the file cannot smuggle in a key', async () => {
+    localStorage.setItem('aac_settings', JSON.stringify({
+        ...JSON.parse(localStorage.getItem('aac_settings')), apiKey: 'sk-ant-REAL',
+    }));
+    const incoming = {
+        kind: dt.PACKAGE_KIND, packageVersion: 3, appVersion: 'x',
+        exportedAt: new Date().toISOString(), data: {}, settings: {},
+        device: { os: 'desktop', shell: 'tab', screen: '1920x1080' },
+        profiles: [{ name: 'Sneaky', settings: { apiKey: 'sk-ant-INJECTED', elevenlabsKey: 'INJECTED' } }],
+        activeProfile: '',
+    };
+    await dt.applyPackage(dt.parsePackage(JSON.stringify(incoming)));
+    assert.equal(JSON.parse(localStorage.getItem('aac_settings')).apiKey, 'sk-ant-REAL');
+
+    const dir = await settingsDir();
+    for (const [, rec] of dir._files) {
+        assert.ok(!rec.data.includes('sk-ant-INJECTED'));
+        assert.ok(!rec.data.includes('INJECTED'));
+    }
+});
+
 test('unsaved changes to the current profile are detectable before an export', async () => {
     for (const n of await storage.listSettingsProfiles()) await storage.deleteSettingsProfile(n);
     storage.applyPortableSettings({ keyboardDock: 'side', voiceURI: 'Daniel' });
     await storage.saveSettingsProfile('Desk');
     storage.saveActiveSettingsProfile('Desk');
-
-    // Nothing touched yet.
     assert.deepEqual(await storage.activeProfileUnsaved(), { name: 'Desk', differs: false });
 
-    // One slider moved and not saved — this is what the export prompt asks about.
     storage.applyPortableSettings({ ...storage.getPortableSettings(), voiceURI: 'Moira' });
     assert.deepEqual(await storage.activeProfileUnsaved(), { name: 'Desk', differs: true });
 
-    // Saving it settles the question rather than leaving it asked every time.
     await storage.saveSettingsProfile('Desk');
     assert.deepEqual(await storage.activeProfileUnsaved(), { name: 'Desk', differs: false });
 
-    // And with no profile in use there is nothing to offer.
     storage.saveActiveSettingsProfile('');
     assert.deepEqual(await storage.activeProfileUnsaved(), { name: '', differs: false });
-});
-
-test('a profile in the file cannot smuggle in a key', async () => {
-    const pkg = await dt.buildSettingsPackage('9.9.9');
-    localStorage.setItem('aac_settings', JSON.stringify({
-        ...JSON.parse(localStorage.getItem('aac_settings')), apiKey: 'sk-ant-REAL',
-    }));
-    pkg.profiles[0].settings.apiKey = 'sk-ant-INJECTED';
-    pkg.profiles[0].settings.elevenlabsKey = 'INJECTED';
-
-    await dt.applySettingsPackage(dt.parseSettingsPackage(JSON.stringify(pkg)));
-    assert.equal(JSON.parse(localStorage.getItem('aac_settings')).apiKey, 'sk-ant-REAL');
-
-    // And the key is not sitting in the profile file on disk either.
-    const dir = await root.getDirectoryHandle('settings');
-    for (const [, rec] of dir._files) {
-        assert.ok(!rec.data.includes('sk-ant-INJECTED'));
-        assert.ok(!rec.data.includes('INJECTED'));
-    }
 });

@@ -26,6 +26,23 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Back to one backup. "Export everything" saves your answers, people, places, buttons,
+  phrases, conversations, settings and saved profiles into a single file, and one
+  "Import from a file…" brings it all back. The separate settings export is gone: it
+  turned out almost nothing genuinely needs holding back, so asking you to manage two
+  files was asking you to solve a problem that was not there.
+- What little does need holding back is now decided when you import, not when you
+  export — because only then does the app know what kind of device it is arriving on.
+  Bring a backup to a different kind of device and four settings stay as they are here:
+  on-screen or physical keyboard, how the app hears the other person, use the whole
+  screen, and the screen edge margin. Bring it to the same kind of device and
+  everything comes across. Either way the app tells you which, if any, stayed behind.
+- Your answers, people, places, buttons, phrases and conversations always come across
+  in full, whatever device the backup came from. Nothing you wrote is ever held back.
+- A backup is named "conversant-backup-…" again, and every file the app has ever
+  written still restores — including ones you have renamed yourself.
+
+
 
 ## Version 0.10.14
 

@@ -20,34 +20,77 @@
  * None of this is iPad-only: this is the mechanism the long-planned cross-device
  * transfer feature has always needed on Windows too.
  *
- * WHAT TRAVELS: the user-owned data files and the conversation logs. WHAT DOES
- * NOT: the SETTINGS, and with them every key.
+ * WHAT TRAVELS: everything — the user-owned data files, the conversation logs, the
+ * settings, and every saved settings profile. WHAT DOES NOT: the six keys.
  *
- * ⚠ SETTINGS CAME OUT OF THE DATA PACKAGE ON SEPTEMBER 9 2026 (Ken): *"if I want to
- * put Conversant on another device I will want to move my data but not necessarily
- * my settings (unless it's the same kind of device). That can be a separate transfer
- * and import."* That is the whole reason they are two files now, and it is a real
- * distinction rather than tidiness: WHO YOU ARE is portable to anything, while HOW
- * THE SCREEN IS LAID OUT is a property of a particular device. Dock side, button
- * size, gaps, keyboard layout and the chosen voice are all answers to "what is this
- * machine", so carrying them onto a phone-sized tablet actively makes it worse.
+ * ⚠ ONE FILE, FILTERED AT IMPORT — AND THIS REPLACES THE TWO-FILE SPLIT OF EARLIER THE
+ * SAME DAY (Ken, September 9 2026). The split was built on the belief that settings
+ * would be WRONG on another device. Working through all 44 of them killed that: every
+ * one is a picker, slider, checkbox or radio reachable without typing, so a wrong value
+ * costs one adjustment, and the single real trap (full screen on an iPad) is already
+ * refused in code. Ken: *"there aren't many things that can't travel - and they're
+ * primarily OS related."*
  *
- * Settings travel by their own file instead - buildSettingsPackage below. Both are
- * exports, neither can carry a key, and the user chooses which to move.
+ * ⚠ SO THE DECISION MOVED TO WHERE THE INFORMATION IS. At EXPORT nobody knows where the
+ * file is going, so a split forces the user to guess the destination at the moment they
+ * are least able to. At IMPORT the app knows both sides — what the file came off and
+ * what this machine is — so it can hold back the handful of settings that are genuinely
+ * bound to a device and apply everything else. Two files asked the user a question the
+ * app is better placed to answer.
+ *
+ * ⚠ THE CONTENT ALWAYS TRAVELS WHOLE. Ken's phrasing was that data is "a subset of
+ * settings"; About Me answers, people, places, the panel's words and the conversations
+ * are not settings at all, so the filter applies to the SETTINGS half only. Nothing the
+ * user wrote is ever held back.
  */
 
 import * as storage from './storage.js';
+import * as platform from './platform.js';
 
 export const PACKAGE_KIND = 'conversant-aac-backup';
-// 2 since September 9 2026: a package no longer carries a `settings` block. A
-// version-1 file still imports - its settings are simply ignored, and summarize()
-// says so rather than dropping them silently.
-export const PACKAGE_VERSION = 2;
+// 3: one file again, carrying content AND settings AND every saved profile, with a
+// device signature so the import can decide what applies here. 1 and 2 still import
+// (see parsePackage) - 2 is the short-lived data-only shape, 1 the original.
+export const PACKAGE_VERSION = 3;
 
+// The separate settings file, which existed for part of one day. Still READ so that
+// anyone who made one can restore it; never written any more.
 export const SETTINGS_KIND = 'conversant-aac-settings';
-// 2 since September 9 2026: the file carries the saved PROFILES and which one was
-// current, not just the settings in effect.
 export const SETTINGS_VERSION = 2;
+
+/* ── What does not survive a change of device ─────────────────────────────────
+ *
+ * Both lists are deliberately TINY, and that is the finding rather than an oversight:
+ * of 44 travelling settings only these four are bound to the machine. Everything else
+ * is the person's, and travels.
+ *
+ * Each entry carries the reason, because a list of names rots into a list nobody dares
+ * change. Add to it only when a setting would be WRONG on the other device - not merely
+ * different, and not merely something you might want to re-tune.
+ */
+
+// Held back when the OS or the shell differs.
+export const OS_BOUND = {
+    // Whether a physical keyboard is attached is a fact about the hardware.
+    keyboardMode: 'on-screen or physical keyboard',
+    // ⚠ MEASURED, July 30 2026: the free recognizer delivers NOTHING in an iPad Home
+    // Screen app. Carrying "use the browser's own listening" there lands somebody on a
+    // device that cannot hear a word — the one place where a setting Ken rightly calls
+    // operational is also OS-bound.
+    sttProvider: 'how the app hears the other person',
+    // The Fullscreen API is refused on iOS and the control is hidden there, so this is
+    // already harmless — held back for honesty rather than safety.
+    fullscreen: 'use the whole screen',
+};
+
+// Held back when the screen differs.
+export const SCREEN_BOUND = {
+    // ⚠ THE CLEAREST CASE IN THE APP, and the one that proves "proportional" is not the
+    // test: the value IS proportional and would render fine anywhere, but it exists to
+    // clear the lip of a case opening on one particular device (Rule 16). A keyguard is
+    // cut for one screen.
+    appMarginPos: 'screen edge margin',
+};
 
 // The user-owned data files. Each has a data-folder file (source of truth) and a
 // localStorage write-through cache (same-machine mirror / no-folder stopgap), so
@@ -103,9 +146,14 @@ export async function buildPackage(appVersion) {
         packageVersion: PACKAGE_VERSION,
         appVersion: appVersion || '',
         exportedAt: new Date().toISOString(),
-        // No `settings` key by design - see the header. Do not reinstate it "for
-        // completeness": it is what made moving your answers onto a different-shaped
-        // device also move that device's layout onto it.
+        // What kind of device this came off, so the import can decide what applies
+        // there. In the file's HEADER rather than inside `settings`: it is a fact about
+        // the file, and putting it in the bundle would make it a travelling setting that
+        // then has to be excluded again.
+        device: platform.deviceSignature(),
+        settings: storage.getPortableSettings(),
+        profiles: await storage.exportSettingsProfiles(),
+        activeProfile: storage.loadActiveSettingsProfile(),
         data,
         conversations,
     };
@@ -141,54 +189,31 @@ export function summarize(pkg) {
     }
     const convos = (pkg && Array.isArray(pkg.conversations)) ? pkg.conversations.length : 0;
     lines.push(`${convos} saved conversation${convos === 1 ? '' : 's'}`);
-    // A version-1 file carries settings and this app will not restore them. Saying
-    // so is the point: silently ignoring part of a file the user is looking at is
-    // how somebody concludes the import half-worked.
-    const carried = pkg && pkg.settings ? Object.keys(pkg.settings).length : 0;
-    if (carried) {
-        lines.push(`${carried} setting${carried === 1 ? '' : 's'} in this older backup — NOT restored; ` +
-                   'settings now move by their own file');
+    const settingCount = pkg && pkg.settings ? Object.keys(pkg.settings).length : 0;
+    if (settingCount) lines.push(`${settingCount} setting${settingCount === 1 ? '' : 's'}`);
+    const profiles = (pkg && Array.isArray(pkg.profiles)) ? pkg.profiles : [];
+    if (profiles.length) {
+        lines.push(`${profiles.length} saved profile${profiles.length === 1 ? '' : 's'}: ` +
+                   profiles.map((x) => x.name).join(', '));
     }
+    lines.push('No keys — a backup never contains one');
     return lines;
 }
 
 function pad(n) { return String(n).padStart(2, '0'); }
 
-// "conversant-data-2026-07-30-1432.json" — sorts chronologically in the Files
+// "conversant-backup-2026-09-09-1432.json" — sorts chronologically in the Files
 // app, which is where these land on an iPad.
 //
-// ⚠ "data", NOT "backup" (Ken, September 9 2026): *"conversant-backup should be
-// conversant-data since conversant-settings is also a backup."* Both files are
-// backups, so the word did not tell them apart and the pair read as though the
-// settings file were something lesser. Ken accepted the break with older filenames
-// up front - and nothing actually breaks, because an import is validated by the
-// `kind` INSIDE the file and never by its name. The folder list keeps older files
-// visible by treating everything that is not a settings file as data - see below.
+// ⚠ BACK TO "backup" (September 9 2026, later the same day). It became
+// "conversant-data-" while there were two files and the word did not tell them apart.
+// There is one again and it holds everything, so "backup" is the true word. Nothing
+// breaks either way: an import is validated by the `kind` INSIDE the file, never by its
+// name, so every prefix this app has ever written still restores and still lists.
 export function suggestedFilename(now = new Date()) {
-    return 'conversant-data-' +
+    return 'conversant-backup-' +
         now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) +
         '-' + pad(now.getHours()) + pad(now.getMinutes()) + '.json';
-}
-
-// Which files in <data folder>/backups/ belong to which list. Name-based, because
-// the alternative is opening every file in the folder just to draw a dropdown, and
-// a data package carries every saved conversation.
-//
-// ⚠ ONLY THE SETTINGS PREFIX IS MATCHED, AND EVERYTHING ELSE COUNTS AS DATA. That
-// asymmetry is the whole design. Matching a list of data prefixes instead would
-// hide two kinds of file: every backup made before September 9 2026, which is named
-// "conversant-backup-", and any file the user renamed themselves. A backup that
-// exists and cannot be seen is the failure worth avoiding; a file in the wrong list
-// costs nothing, because restore validates the `kind` INSIDE the file and refuses
-// with a legible message.
-const SETTINGS_PREFIX = 'conversant-settings-';
-
-export function isSettingsBackupName(name) {
-    return String(name || '').toLowerCase().startsWith(SETTINGS_PREFIX);
-}
-
-export function isDataBackupName(name) {
-    return !isSettingsBackupName(name);
 }
 
 // Hand a file to the user through the browser's own download path. On iPadOS this
@@ -229,158 +254,28 @@ export async function savePackageToFolder(appVersion) {
     return { pkg, path };
 }
 
-// --- Settings, as their own file (Ken, September 9 2026) ---
-//
-// The companion to the data package above, and deliberately a SEPARATE file: data
-// moves to any device, settings move only to one of the same shape.
-//
-// ⚠ IT CANNOT CARRY A KEY, AND THAT IS ENFORCED IN storage.js RATHER THAN HERE.
-// getPortableSettings() drops everything in PROFILE_EXCLUDE, which begins with all
-// six SECRET_KEYS - the Anthropic key and the five paid speech keys - and
-// applyPortableSettings() drops them again on the way back in. So the guarantee
-// holds at BOTH ends and does not depend on this module remembering: a hand-edited
-// file with a key pasted into it still cannot install one. A key is per-device and
-// per-account, it is the one thing in the app that costs real money if it leaks, and
-// this file is made to be emailed and copied between machines.
-//
-// ⚠ IT GOES WHERE THE DATA BACKUP GOES - into the data folder when there is one,
-// and out by the download/share sheet only where there is not (Ken, September 9
-// 2026): *"all backups should be written to the data folder with the exception of
-// those installations where one cannot create a data folder."* An earlier cut always
-// downloaded this one, reasoning that named settings profiles already cover the
-// folder. That was wrong on the user's terms rather than the code's: a person who
-// backs up looks in ONE place for what they saved, and having half their backups in
-// the data folder and half in Downloads is a filing system nobody asked for.
-//
-// Profiles are still a different thing and both are worth having - a profile is a
-// NAMED configuration you switch between deliberately, a settings backup is a dated
-// snapshot you restore after something went wrong.
-export async function buildSettingsPackage(appVersion) {
-    return {
-        kind: SETTINGS_KIND,
-        packageVersion: SETTINGS_VERSION,
-        appVersion: appVersion || '',
-        exportedAt: new Date().toISOString(),
-        // What is in effect right now.
-        settings: storage.getPortableSettings(),
-        // Every saved profile, and which one the picker was showing (Ken, September
-        // 9 2026). Reading them needs the folder, so this is async now.
-        profiles: await storage.exportSettingsProfiles(),
-        activeProfile: storage.loadActiveSettingsProfile(),
-    };
-}
-
-// "conversant-settings-2026-09-09-1432.json" - a different stem from the data
-// backup on purpose, so the two are told apart in a Downloads list at a glance.
-export function suggestedSettingsFilename(now = new Date()) {
-    return 'conversant-settings-' +
-        now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) +
-        '-' + pad(now.getHours()) + pad(now.getMinutes()) + '.json';
-}
-
-export async function downloadSettingsPackage(appVersion) {
-    const pkg = await buildSettingsPackage(appVersion);
-    downloadText(suggestedSettingsFilename(), JSON.stringify(pkg, null, 2));
-    return pkg;
-}
-
-// Into <data folder>/backups/, beside the data backups. Same folder on purpose:
-// one place to look for anything you saved.
-export async function saveSettingsPackageToFolder(appVersion) {
-    const pkg = await buildSettingsPackage(appVersion);
-    const path = await storage.saveBackup(suggestedSettingsFilename(), JSON.stringify(pkg, null, 2));
-    return { pkg, path };
-}
-
-// What the user is about to overwrite. Settings are a flat bundle with no natural
-// groupings, so the honest summary is a count plus the promise about keys.
-export function summarizeSettings(pkg) {
-    const n = pkg && pkg.settings ? Object.keys(pkg.settings).length : 0;
-    const lines = [`${n} setting${n === 1 ? '' : 's'} in effect`];
-    const profiles = (pkg && Array.isArray(pkg.profiles)) ? pkg.profiles : [];
-    if (profiles.length) {
-        const names = profiles.map((p) => p.name).join(', ');
-        lines.push(`${profiles.length} saved profile${profiles.length === 1 ? '' : 's'}: ${names}`);
+/* Which of a package's settings apply on THIS device.
+ *
+ * Returns { settings, heldBack: [{ key, label, why }] } - the caller REPORTS heldBack
+ * rather than swallowing it. A setting silently not arriving is the failure this whole
+ * design exists to avoid; being told "your screen edge margin stayed behind because this
+ * is a different screen" is the point of filtering here rather than at export.
+ */
+export function settingsForThisDevice(pkg, here) {
+    const incoming = (pkg && pkg.settings) || {};
+    const comparison = platform.compareDevice(pkg && pkg.device, here || platform.deviceSignature());
+    const settings = {};
+    const heldBack = [];
+    for (const [k, v] of Object.entries(incoming)) {
+        if (!comparison.sameOs && OS_BOUND[k]) {
+            heldBack.push({ key: k, label: OS_BOUND[k], why: 'os' });
+        } else if (!comparison.sameScreen && SCREEN_BOUND[k]) {
+            heldBack.push({ key: k, label: SCREEN_BOUND[k], why: 'screen' });
+        } else {
+            settings[k] = v;
+        }
     }
-    // Named only when it is one of the profiles in the file, so the line can never
-    // promise to select something that is not there to select.
-    if (pkg && pkg.activeProfile && profiles.some((p) => p.name === pkg.activeProfile)) {
-        lines.push(`"${pkg.activeProfile}" will be the one in use`);
-    }
-    lines.push('No keys — an exported settings file never contains one');
-    return lines;
-}
-
-// ⚠ THE TWO FILES MUST NOT BE INTERCHANGEABLE, and each error says which file the
-// user actually picked rather than a generic refusal. Handing the data importer a
-// settings file is the obvious mistake once there are two, and "that is not a
-// backup" would leave them with no idea what they had done wrong.
-export function parseSettingsPackage(text) {
-    let pkg;
-    try {
-        pkg = JSON.parse(text);
-    } catch {
-        throw new Error('That file is not a Conversant settings file — it is not readable as JSON.');
-    }
-    if (!pkg || typeof pkg !== 'object' || Array.isArray(pkg)) {
-        throw new Error('That file is not a Conversant settings file.');
-    }
-    if (pkg.kind === PACKAGE_KIND) {
-        throw new Error('That is a data backup, not a settings file. Use "Import from a file…" above it.');
-    }
-    if (pkg.kind !== SETTINGS_KIND) {
-        throw new Error('That file is not a Conversant settings file. Look for one named conversant-settings-….json');
-    }
-    if (typeof pkg.packageVersion !== 'number' || pkg.packageVersion > SETTINGS_VERSION) {
-        throw new Error('That settings file was made by a newer version of Conversant. Update the app first, then import it.');
-    }
-    if (!pkg.settings || typeof pkg.settings !== 'object') {
-        throw new Error('That settings file looks damaged — it has no settings in it.');
-    }
-    return pkg;
-}
-
-// Apply them. DESTRUCTIVE - the caller confirms first. Returns how many were taken,
-// counted AFTER the exclusion so the number reported is the number that landed.
-// ⚠ THE SETTINGS IN EFFECT ARE APPLIED, NOT THE ACTIVE PROFILE'S. They are the same
-// thing whenever the user had not tweaked anything since loading that profile, which
-// is the ordinary case. Where they differ - a slider moved and not saved - applying
-// the LIVE settings reproduces the device exactly as it was at export, while loading
-// the profile would throw that tweak away. The profile is still marked as the one in
-// use, so it is selected in the picker and one tap re-loads it.
-//
-// ⚠ PROFILES NEED A DATA FOLDER, and where there is none they are silently
-// unwritable - so the count comes back and the caller must SAY so. A user told
-// "settings imported" who then finds no profiles would reasonably think the backup
-// was faulty.
-export async function applySettingsPackage(pkg) {
-    const before = storage.getPortableSettings();
-    storage.applyPortableSettings(pkg.settings);
-
-    // [{ requested, written }] — the two differ where a name already existed here.
-    const landed = await storage.importSettingsProfiles(pkg.profiles);
-
-    // ⚠ FOLLOW THE RENAME. Where the incoming active profile clashed it was written
-    // under a new name, and marking the REQUESTED name current would point the picker
-    // at this device's own profile of that name — a different configuration that
-    // happens to share a title, which is the one outcome the rename exists to avoid.
-    const activeEntry = landed.find((e) => e.requested === pkg.activeProfile);
-
-    // Set AFTER applyPortableSettings: activeSettingsProfile is in PROFILE_EXCLUDE,
-    // so that call deliberately preserves THIS machine's value and ignores the
-    // incoming one. Only set it to a profile that actually landed, or the picker
-    // would point at a name with no file behind it.
-    if (activeEntry) storage.saveActiveSettingsProfile(activeEntry.written);
-
-    const after = storage.getPortableSettings();
-    return {
-        count: Object.keys(after).length,
-        profiles: landed.map((e) => e.written),
-        renamed: landed.filter((e) => e.requested !== e.written),
-        profilesInFile: Array.isArray(pkg.profiles) ? pkg.profiles.length : 0,
-        activeProfile: activeEntry ? activeEntry.written : '',
-        changed: JSON.stringify(before) !== JSON.stringify(after),
-    };
+    return { settings, heldBack, comparison };
 }
 
 // Validate and parse. Throws a user-facing message — this is the one place a user
@@ -396,14 +291,35 @@ export function parsePackage(text) {
     if (!pkg || typeof pkg !== 'object' || Array.isArray(pkg)) {
         throw new Error('That file is not a Conversant backup.');
     }
-    if (pkg.kind !== PACKAGE_KIND) {
-        throw new Error('That file is not a Conversant data backup. Look for a file named conversant-data-….json');
+    // ⚠ ONE IMPORT BUTTON NOW ACCEPTS EVERY FILE THE APP HAS EVER WRITTEN: the combined
+    // backup, the data-only one from earlier today, the original, and the settings-only
+    // one that existed for part of a day. A user should never have to know which era
+    // their file came from, and the alternative is a legible file being refused by the
+    // only button that could have read it.
+    const isSettingsOnly = pkg.kind === SETTINGS_KIND;
+    if (pkg.kind !== PACKAGE_KIND && !isSettingsOnly) {
+        throw new Error('That file is not a Conversant backup. Look for a file named conversant-backup-….json');
     }
-    if (typeof pkg.packageVersion !== 'number' || pkg.packageVersion > PACKAGE_VERSION) {
+    const ceiling = isSettingsOnly ? SETTINGS_VERSION : PACKAGE_VERSION;
+    if (typeof pkg.packageVersion !== 'number' || pkg.packageVersion > ceiling) {
         throw new Error('That backup was made by a newer version of Conversant. Update the app first, then import it.');
     }
-    if (!pkg.data || typeof pkg.data !== 'object') {
+    // A settings-only file has no data section and must not be judged for lacking one.
+    if (!isSettingsOnly && (!pkg.data || typeof pkg.data !== 'object')) {
         throw new Error('That backup looks damaged — it has no data section.');
+    }
+    if (isSettingsOnly && (!pkg.settings || typeof pkg.settings !== 'object')) {
+        throw new Error('That backup looks damaged — it has no settings in it.');
+    }
+    // Normalized so every caller downstream sees one shape.
+    if (isSettingsOnly) pkg.data = pkg.data || {};
+    // ⚠ A VERSION-1 FILE'S SETTINGS ARE STILL IGNORED. They were exported when the app
+    // had no device signature, so there is no way to know whether they belong here, and
+    // guessing would apply another machine's layout unasked. Marked rather than deleted
+    // so summarize() can say so.
+    if (!isSettingsOnly && pkg.packageVersion < 2 && pkg.settings) {
+        pkg.legacySettings = pkg.settings;
+        delete pkg.settings;
     }
     return pkg;
 }
@@ -419,7 +335,11 @@ export function parsePackage(text) {
 // "Importing..." cannot tell the user the difference between working and hung. A count
 // that visibly climbs can.
 export async function applyPackage(pkg, onProgress) {
-    const restored = { files: [], conversations: 0, failed: [] };
+    const restored = {
+        files: [], conversations: 0, failed: [],
+        settings: 0, heldBack: [], profiles: [], renamed: [], profilesInFile: 0, activeProfile: '',
+        legacySettings: pkg.legacySettings ? Object.keys(pkg.legacySettings).length : 0,
+    };
     const convos = Array.isArray(pkg.conversations) ? pkg.conversations : [];
     const total = DATA_FILES.filter((e) => pkg.data[e.file] !== undefined).length + convos.length;
     let done = 0;
@@ -445,8 +365,36 @@ export async function applyPackage(pkg, onProgress) {
         step(entry.label);
     }
 
-    // Deliberately NOT applying pkg.settings, even when a version-1 file has them.
-    // Importing data must never rearrange the screen underneath somebody.
+    // The settings, minus whatever is bound to a device this is not. Applied AFTER the
+    // content so a failure part-way leaves the words in place rather than the layout.
+    const { settings, heldBack, comparison } = settingsForThisDevice(pkg, undefined);
+    if (pkg.settings) {
+        // ⚠ HELD BACK MEANS "KEEP THIS DEVICE'S VALUE", NOT "RESET IT" — and it takes
+        // this line to be true, because applyPortableSettings REPLACES the whole
+        // portable subset rather than merging into it. Leaving a held-back key out of
+        // the object therefore deletes it and falls back to the default, so the restart
+        // card's "left as they are here" was a plain untruth. Found by reading the
+        // stored settings after a real cross-device import, not by any test.
+        const mine = storage.getPortableSettings();
+        for (const h of heldBack) {
+            if (mine[h.key] !== undefined) settings[h.key] = mine[h.key];
+        }
+        storage.applyPortableSettings(settings);
+        restored.settings = Object.keys(settings).length;
+        restored.heldBack = heldBack;
+        restored.comparison = comparison;
+    }
+
+    // [{ requested, written }] — the two differ where a name already existed here.
+    const landed = await storage.importSettingsProfiles(pkg.profiles);
+    restored.profiles = landed.map((e) => e.written);
+    restored.renamed = landed.filter((e) => e.requested !== e.written);
+    restored.profilesInFile = Array.isArray(pkg.profiles) ? pkg.profiles.length : 0;
+    // ⚠ FOLLOW THE RENAME: marking the requested name current would point the picker at
+    // THIS device's own profile of that name, a different configuration sharing a title.
+    const activeEntry = landed.find((e) => e.requested === pkg.activeProfile);
+    if (activeEntry) storage.saveActiveSettingsProfile(activeEntry.written);
+    restored.activeProfile = activeEntry ? activeEntry.written : '';
 
     for (const c of convos) {
         if (!c || !c.id) { step('conversations'); continue; }

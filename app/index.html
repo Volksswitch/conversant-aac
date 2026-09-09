@@ -299,9 +299,8 @@
                              things that belong under one heading because the user comes
                              here for one job, backing up. -->
                         <div class="setting-item">
-                            <label>Your data</label>
                             <div class="profiles-row">
-                                <button id="exportDataBtn" type="button">Export my data</button>
+                                <button id="exportDataBtn" type="button">Export everything</button>
                                 <button id="importDataBtn" type="button">Import from a file…</button>
                                 <input id="importDataFile" type="file" accept="application/json,.json" hidden>
                             </div>
@@ -318,32 +317,6 @@
                             <p class="setting-hint" id="backupStatus" role="status" aria-live="polite"></p>
                         </div>
 
-                        <!-- Settings move as their OWN file (Ken, September 9 2026), so
-                             that moving your answers to a different-shaped device does not
-                             also move that device's layout onto it. It always downloads
-                             rather than writing into the data folder: the folder route for
-                             settings already exists and is better named - it is the
-                             "Settings profiles" section above. -->
-                        <div class="setting-item">
-                            <label>Your settings</label>
-                            <div class="profiles-row">
-                                <button id="exportSettingsBtn" type="button">Export my settings</button>
-                                <button id="importSettingsBtn" type="button">Import settings…</button>
-                                <input id="importSettingsFile" type="file" accept="application/json,.json" hidden>
-                            </div>
-                            <!-- Settings backups sitting in the data folder, mirroring the
-                                 data list above. Same folder, filtered by filename. Hidden
-                                 where there is no folder the user can put a file into. -->
-                            <div id="folderSettingsBackupRow" hidden>
-                                <select id="settingsBackupFileSelect" aria-label="Settings backups in your data folder">
-                                    <option value="">— No settings backups in your data folder yet —</option>
-                                </select>
-                                <div class="profiles-row profiles-actions">
-                                    <button id="restoreSettingsBackupBtn" type="button">Restore selected settings</button>
-                                </div>
-                            </div>
-                            <p class="setting-hint" id="settingsBackupStatus" role="status" aria-live="polite"></p>
-                        </div>
                     </div>
                     <!-- Use the whole screen. Default ON. Setup-tier in effect (it
                          moves every keyguard hole), but it lives here rather than on

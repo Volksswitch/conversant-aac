@@ -5520,13 +5520,33 @@ let importInProgress = false;
 // The second of the pair. The app used to reload on its own the moment a restore
 // finished, which on a slow device is indistinguishable from the crash the user was
 // already afraid of. Now they are told, and they start it.
-async function offerRestart(what) {
-    await showNotice({
-        title: 'Restart to finish',
-        body: `Your ${what} ${what === 'settings' ? 'have' : 'has'} been imported. ` +
-              'Conversant AAC needs to restart to use it. Nothing else will change.',
-        buttonLabel: 'Restart now',
-    });
+async function offerRestart(what, done) {
+    const bits = [`Your ${what} has been imported.`];
+    // ⚠ SAY WHAT DID NOT COME ACROSS. Filtering at import only beats asking the user to
+    // split the file themselves if the app then TELLS them what it decided - a setting
+    // that silently fails to arrive is the exact failure this design replaced.
+    if (done && done.heldBack && done.heldBack.length) {
+        const names = done.heldBack.map((h) => h.label).join(', ');
+        const axis = done.heldBack.some((h) => h.why === 'os') ? 'kind of device' : 'screen';
+        bits.push(`This is a different ${axis}, so ` +
+                  `${done.heldBack.length === 1 ? 'one setting was' : 'some settings were'} ` +
+                  `left as they are here: ${names}.`);
+    }
+    if (done && done.renamed && done.renamed.length) {
+        bits.push('You already had ' + (done.renamed.length === 1 ? 'a profile' : 'profiles') +
+                  ' with the same name, so nothing of yours was replaced: ' +
+                  done.renamed.map((e) => `"${e.requested}" came in as "${e.written}"`).join('; ') + '.');
+    }
+    if (done && done.legacySettings) {
+        bits.push('This backup predates the app recording which device it came from, so its ' +
+                  `${done.legacySettings} settings were not applied.`);
+    }
+    if (done && done.profilesInFile && !done.profiles.length) {
+        bits.push(`The ${done.profilesInFile} saved profile${done.profilesInFile === 1 ? '' : 's'} in it ` +
+                  'could not be restored: they need a data folder.');
+    }
+    bits.push('Conversant AAC needs to restart to use it.');
+    await showNotice({ title: 'Restart to finish', body: bits.join(' '), buttonLabel: 'Restart now' });
     location.reload();
 }
 
@@ -5554,7 +5574,7 @@ async function importPackageText(text, sourceLabel) {
         title: 'Replace everything with this backup?',
         body: `${sourceLabel ? sourceLabel + '\n\n' : ''}This backup was made on ${when} and contains:\n\n• ` +
               dataTransfer.summarize(pkg).join('\n• ') +
-              `\n\nImporting REPLACES the data on this device — your current About Me answers, people, Express Panel and starters will be overwritten. Your settings and your keys are left exactly as they are. The app will reload afterwards.`,
+              `\n\nImporting REPLACES what is on this device — your About Me answers, people, Express Panel, starters, settings and saved profiles. Your keys are left exactly as they are, and anything that belongs to the other device, like the screen edge margin, stays behind. The app will ask you to restart afterwards.`,
         confirmLabel: 'Replace my data',
     }))) {
         setBackupStatus('Import canceled — nothing was changed.');
@@ -5568,14 +5588,14 @@ async function importPackageText(text, sourceLabel) {
               'especially with a lot of saved conversations. Do not close the app.',
     });
     try {
-        const restored = await dataTransfer.applyPackage(pkg, ({ done, total }) => {
-            busy.update(total ? `Restored ${done} of ${total} items…` : '');
+        const done = await dataTransfer.applyPackage(pkg, (p) => {
+            busy.update(p.total ? `Restored ${p.done} of ${p.total} items…` : '');
         });
-        if (restored.failed.length) {
-            storage.logError('import', 'partial restore, failed: ' + restored.failed.join(', '));
+        if (done.failed.length) {
+            storage.logError('import', 'partial restore, failed: ' + done.failed.join(', '));
         }
         busy.close();
-        await offerRestart('data');
+        await offerRestart('backup', done);
     } catch (err) {
         storage.logError('import', err.message || String(err));
         setBackupStatus('Import failed: ' + (err.message || 'unknown error'));
@@ -5601,10 +5621,10 @@ async function renderBackupList() {
         return;
     }
     row.hidden = false;
-    // Both kinds live in the same folder, so this list drops the settings ones —
-    // they have their own list below. Anything unrecognized stays HERE rather than
-    // vanishing: see isDataBackupName for why that asymmetry is deliberate.
-    const backups = (await storage.listBackups()).filter((b) => dataTransfer.isDataBackupName(b.name));
+    // Every .json in the folder, whatever its name. One kind of file again, and an
+    // import validates the `kind` inside it - so a stray file can be picked and refused
+    // legibly, which is better than a backup that exists and cannot be seen.
+    const backups = await storage.listBackups();
     if (!backups.length) {
         select.innerHTML = '<option value="">— No backups in your data folder yet —</option>';
         select.disabled = true;
@@ -5676,222 +5696,9 @@ function wireBackupControls() {
         await importPackageText(await file.text(), `From the file ${file.name}`);
     };
 
-    wireSettingsFileControls();
     renderBackupList();
 }
 
-// --- Settings as their own file (Ken, September 9 2026) ---
-// Separate from the data backup above because the two answer different questions:
-// the data is WHO THE USER IS and travels to any device, the settings are HOW THIS
-// SCREEN IS LAID OUT and only usefully travel to a device of the same shape.
-//
-// They are STORED the same way though — into the data folder when there is one,
-// out by the share sheet only where there is not. A person who backs up looks in
-// one place for what they saved (Ken).
-function setSettingsBackupStatus(msg) {
-    const el = document.getElementById('settingsBackupStatus');
-    if (el) el.textContent = msg || '';
-}
-
-// Restore settings from the text of a file, wherever it came from — the folder list
-// or the file picker. Both routes confirm identically because both replace every
-// setting; one implementation is what guarantees that.
-async function importSettingsText(text, sourceLabel) {
-    if (importInProgress) return;
-    let pkg;
-    try {
-        pkg = dataTransfer.parseSettingsPackage(text);
-    } catch (err) {
-        setSettingsBackupStatus(err.message);
-        return;
-    }
-    // Replacing every setting rearranges the whole screen, which is squarely the
-    // "significant work" bar — so it confirms through the red danger card exactly
-    // as the data import does, and shows what is in the file first.
-    const when = pkg.exportedAt ? new Date(pkg.exportedAt).toLocaleString() : 'an unknown date';
-    if (!(await confirmDanger({
-        title: 'Replace your settings with this file?',
-        body: `${sourceLabel ? sourceLabel + '\n\n' : ''}Saved on ${when} and contains:\n\n• ` +
-              dataTransfer.summarizeSettings(pkg).join('\n• ') +
-              '\n\nThis REPLACES every setting on this device, including the layout, button sizes and the chosen voice. Your data and your keys are left alone. The app will reload afterwards.',
-        confirmLabel: 'Replace my settings',
-    }))) {
-        setSettingsBackupStatus('Import canceled — nothing was changed.');
-        return;
-    }
-    setSettingsBackupStatus('Importing…');
-    importInProgress = true;
-    const busy = showBusy({
-        title: 'Please wait until the import completes',
-        body: 'Your settings are being restored. Do not close the app.',
-    });
-    try {
-        const done = await dataTransfer.applySettingsPackage(pkg);
-        // ⚠ A file with profiles in it, restored onto a device with no data folder,
-        // writes none of them - and "settings imported" alone would leave the user
-        // thinking their backup was faulty. Say it, and do NOT reload, so the message
-        // survives long enough to be read.
-        // A clash renames rather than overwrites, and the user is told which - a
-        // profile quietly appearing under a name they did not choose is worse than
-        // one extra sentence.
-        busy.close();
-        // A file with profiles in it, restored onto a device with no data folder,
-        // writes none of them - and "settings imported" alone would leave the user
-        // thinking their backup was faulty. Say it, and do NOT restart, so the message
-        // survives long enough to be read.
-        if (done.profilesInFile && !done.profiles.length) {
-            setSettingsBackupStatus(
-                `Settings imported, but the ${done.profilesInFile} saved profile` +
-                `${done.profilesInFile === 1 ? '' : 's'} in this file could not be: ` +
-                'they need a data folder. Choose one above, then import again.');
-            return;
-        }
-        // A clash renames rather than overwrites, and the user is told which - a
-        // profile quietly appearing under a name they did not choose is worse than
-        // one extra sentence. Said on the restart card so it cannot be missed, rather
-        // than in a status line the restart is about to wipe away.
-        if (done.renamed && done.renamed.length) {
-            const list = done.renamed.map((e) => `"${e.requested}" came in as "${e.written}"`).join('; ');
-            await showNotice({
-                title: 'Restart to finish',
-                body: 'Your settings have been imported. You already had ' +
-                      `${done.renamed.length === 1 ? 'a profile' : 'profiles'} with the same name, ` +
-                      `so nothing of yours was replaced: ${list}. ` +
-                      'Conversant AAC needs to restart to use the new settings.',
-                buttonLabel: 'Restart now',
-            });
-            location.reload();
-            return;
-        }
-        await offerRestart('settings');
-    } catch (err) {
-        storage.logError('import settings', err.message || String(err));
-        setSettingsBackupStatus('Import failed: ' + (err.message || 'unknown error'));
-    } finally {
-        busy.close();
-        importInProgress = false;
-    }
-}
-
-// The settings backups in <data folder>/backups/. Same folder as the data backups,
-// told apart by filename — see isSettingsBackupName.
-async function renderSettingsBackupList() {
-    const row = document.getElementById('folderSettingsBackupRow');
-    const select = document.getElementById('settingsBackupFileSelect');
-    const restoreBtn = document.getElementById('restoreSettingsBackupBtn');
-    if (!row || !select || !restoreBtn) return;
-
-    if (!storage.hasVisibleDataFolder()) {
-        row.hidden = true;
-        return;
-    }
-    row.hidden = false;
-    const all = await storage.listBackups();
-    const backups = all.filter((b) => dataTransfer.isSettingsBackupName(b.name));
-    if (!backups.length) {
-        select.innerHTML = '<option value="">— No settings backups in your data folder yet —</option>';
-        select.disabled = true;
-        restoreBtn.disabled = true;
-        return;
-    }
-    select.disabled = false;
-    restoreBtn.disabled = false;
-    select.innerHTML = backups.map((b) => {
-        const when = b.savedAt ? new Date(b.savedAt).toLocaleString() : 'unknown date';
-        return `<option value="${b.name}">${when} — ${b.name} (${b.sizeKB} KB)</option>`;
-    }).join('');
-}
-
-function wireSettingsFileControls() {
-    const exportBtn = document.getElementById('exportSettingsBtn');
-    const importBtn = document.getElementById('importSettingsBtn');
-    const fileInput = document.getElementById('importSettingsFile');
-    if (!exportBtn || !importBtn || !fileInput) return;
-
-    exportBtn.onclick = async () => {
-        // ⚠ OFFER TO FOLD UNSAVED CHANGES INTO THE CURRENT PROFILE FIRST (Ken,
-        // September 9 2026). Expected behaviour: "I save settings, I make a change, I
-        // save settings again - I would expect this step to save the change made to
-        // the current profile."
-        //
-        // It also removes the one ambiguity the file otherwise carries. A settings
-        // file holds both the values in EFFECT and each saved profile; those disagree
-        // exactly when the user tweaked something without saving, and then "restore"
-        // has two defensible meanings. Asking here makes them agree before the file is
-        // written, so the question mostly stops arising.
-        //
-        // Silent where there is nothing to ask about: no profile in use, no data
-        // folder, or nothing changed since it was saved.
-        try {
-            const { name, differs } = await storage.activeProfileUnsaved();
-            if (differs) {
-                if (await confirmDanger({
-                    title: 'Save your changes into this profile first?',
-                    body: `You have changed some settings since you last saved the profile "${name}".
-
-` +
-                          'Saving them into it first means the backup and the profile agree. ' +
-                          'Exporting without saving keeps your changes in the backup, but the ' +
-                          `profile "${name}" stays as it was.`,
-                    confirmLabel: 'Save, then export',
-                    cancelLabel: 'Export without saving',
-                })) {
-                    await storage.saveSettingsProfile(name);
-                }
-            }
-        } catch (err) {
-            // Never let this stop the export - the backup is the point, and a profile
-            // that could not be updated is a smaller problem than no backup at all.
-            storage.logError('export settings', 'profile update skipped: ' + (err.message || String(err)));
-        }
-        setSettingsBackupStatus('Saving your settings…');
-        try {
-            // Same rule as the data backup beside it: into the folder where there is
-            // one, out by the download/share path where there is not.
-            if (storage.hasVisibleDataFolder()) {
-                const { pkg, path } = await dataTransfer.saveSettingsPackageToFolder(APP_VERSION);
-                await renderSettingsBackupList();
-                setSettingsBackupStatus(`Saved to your data folder as ${path} — ` +
-                                        dataTransfer.summarizeSettings(pkg).join(' · '));
-            } else {
-                const pkg = await dataTransfer.downloadSettingsPackage(APP_VERSION);
-                setSettingsBackupStatus('Exported: ' + dataTransfer.summarizeSettings(pkg).join(' · '));
-            }
-        } catch (err) {
-            storage.logError('export settings', err.message || String(err));
-            setSettingsBackupStatus('Could not save your settings: ' + (err.message || 'unknown error'));
-        }
-    };
-
-    document.getElementById('restoreSettingsBackupBtn').onclick = async () => {
-        const name = document.getElementById('settingsBackupFileSelect').value;
-        if (!name) return;
-        setSettingsBackupStatus('Reading…');
-        const text = await storage.readBackup(name);
-        if (text === null) {
-            setSettingsBackupStatus('Could not read that file — it may have been moved or deleted.');
-            await renderSettingsBackupList();
-            return;
-        }
-        await importSettingsText(text, `From your data folder: ${name}`);
-    };
-
-    // The picker needs a real user gesture, so the button just opens it; the work
-    // happens on change. Same shape as the data import beside it.
-    importBtn.onclick = () => {
-        setSettingsBackupStatus('');
-        fileInput.value = '';       // so re-picking the SAME file still fires change
-        fileInput.click();
-    };
-
-    fileInput.onchange = async () => {
-        const file = fileInput.files && fileInput.files[0];
-        if (!file) return;
-        await importSettingsText(await file.text(), `From the file ${file.name}`);
-    };
-
-    renderSettingsBackupList();
-}
 async function renderSettingsProfiles() {
     const select = document.getElementById('settingsProfileSelect');
     const loadBtn = document.getElementById('loadSettingsProfileBtn');
