@@ -1859,6 +1859,45 @@ standing rule about reporting what was actually exercised applies here as much a
 **Gate: before general release**, and it is a distinct piece of work from any sync - schedule
 it as its own pass, not as a longer "sync docs".
 
+## WHEN KEN EDITS A DOCUMENT, HIS CHANGES ARE THE DOCUMENT (Ken, September 9 2026)
+
+Ken: *"If I work in a document, I want those changes to be considered 'golden'... consider
+the changes to be part of the base document. Don't ignore them. They can be changed later
+based on a change in the app or a change in plans."*
+
+**The document as it stands on disk is the source of truth, whoever last typed in it.** A
+sentence Ken wrote and a sentence a sync pass wrote have exactly the same standing: both
+are simply the document.
+
+**⚠ THIS CUTS BOTH WAYS, AND THE SECOND HALF IS THE ONE THAT WAS ABOUT TO BE GOT WRONG.**
+Asked what "golden" meant, the first reading taken here was *protect Ken's paragraphs -
+mark them untouchable so no pass can overwrite them.* **Ken corrected it, and his
+correction is the rule:** frozen is not the same as authoritative. A paragraph nobody may
+revise because of who wrote it becomes a stale sentence with a guard around it, which is
+the *same* failure as discarding it - the document stops matching the app either way.
+
+So there are two things to not do, and naming only one of them is how the other happens:
+
+- **NEVER revert or re-word his edit because it is not how a past pass phrased it.** It is
+  not a deviation from our version; there is no our version. This is the same principle
+  that retired the Architecture Overview generator (*"the `.docx` is the source of truth"*)
+  and that keeps the Known Issues page as the only copy - a second, remembered version of a
+  document is always the stale one, and it is destructive precisely when it looks tidy.
+- **NEVER leave his edit standing once it has stopped being true.** It updates on exactly
+  the grounds anything else does: **the app changed, or the plan changed.** Those are the
+  only two grounds - "it reads better my way" is not one of them.
+
+**THE PRACTICAL INSTRUCTION, and it is where a pass actually goes wrong: READ THE
+DOCUMENT, NOT THE NOTES ABOUT IT.** `DOC-SYNC.md` records what a past pass *did*; it is
+history and it can be behind. The `.docx` is what the document *says*. Any pass that
+decides what to change by consulting its own prior notes will silently ignore every edit
+Ken made in between - which is the failure this entry exists to prevent, and it leaves no
+trace, because the notes and the pass agree with each other perfectly.
+
+**Applies to every route his changes arrive by** - typing in Word, accepting his own
+tracked changes, or a comment acted on under the review workflow below. Once the change is
+in the file it is the document; there is nothing further to mark, preserve, or work around.
+
 ## A document under review is NOT a candidate for syncing (Ken, September 8 2026)
 
 Ken: *"There also shouldn't be any MS Word tracking records in any docs when doc-sync is
