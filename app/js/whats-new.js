@@ -23,7 +23,7 @@ import * as platform from './platform.js';
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
   "0.10.17": [
-    "When you tick \"Let me drag the borders to resize\", three colored circles now appear on the borders you can move — one on each, in the middle of its length. Drag a circle and the border follows it. They are big enough to grab with a finger, so you no longer have to land on the thin line itself, and pressing one can no longer set off the button underneath. The circles are now the only marking while the box is ticked — the colored lines along the borders have gone, since a circle says the same thing and is also the thing you take hold of. The circles disappear as soon as you untick the box or start a conversation."
+    "When you tick \"Let me drag the borders to resize\", three colored circles now appear on the borders you can move — one on each, in the middle of its length. Drag a circle and the border follows it. They are big enough to grab with a finger, so you no longer have to land on the thin line itself, and pressing one can no longer set off the button underneath. The circles are now the only marking while the box is ticked — the colored lines along the borders have gone, since a circle says the same thing and is also the thing you take hold of. The circles disappear as soon as you untick the box or start a conversation, and they are hidden while the Settings panel is open, since it covers the screen they would be adjusting."
   ],
   "0.10.16": [
     "The backup section is now called \"Settings backup\", with \"Backup settings\" and \"Import settings…\".",

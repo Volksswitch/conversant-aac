@@ -1354,6 +1354,22 @@ body.conv-bottom #responsesSection {
     cursor: grab;
 }
 body.layout-unlocked .layout-handle { display: block; }
+
+/* ⚠ NOT WHILE SETTINGS IS OPEN (Ken, September 2026). The panel covers the screen it
+   would be adjusting, so at best only some of the circles are reachable - and WHICH ones
+   depends on which side the keyboard is docked, since the panel is inset to clear the
+   dock. A control that is present, useless, and differently useless depending on a
+   setting is worse than one that is simply absent.
+
+   ⚠ IT READS THE DIALOG'S OWN `open`, DELIBERATELY, RATHER THAN A CLASS SET WHEN
+   SETTINGS OPENS. Settings is closed from several places - the X, Escape, saving, and
+   starting a Practice scenario - so a flag would have to be cleared at every one of
+   them, and the one that got missed would leave the circles hidden with nothing on
+   screen explaining why. Asking the dialog cannot go stale.
+
+   Where :has() is unsupported the circles simply stay visible, which is what they did
+   before - so the fallback is the old behaviour rather than a broken one. */
+body:has(#settingsDialog[open]) .layout-handle { display: none; }
 .layout-handle.dragging { cursor: grabbing; }
 /* ⚠ THE ONE BEING DRAGGED RISES ABOVE THE OTHERS (Ken): two borders can sit closer
    together than 10mm - a thin command bar puts two of them within a few millimetres -
