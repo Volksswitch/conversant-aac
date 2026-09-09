@@ -240,20 +240,35 @@ The ritual:
    the question.** A red result is not automatically a sync - a release may genuinely not
    touch a manual - but it must be answered rather than passed over.
 
-   **⚠ A PUSH IN STEP 9 CARRIES THE PRE-BUMP WITH IT, AND THIS ORDER IS WHAT CAUSES
-   IT (September 9 2026).** Step 7 commits the pre-bump locally and says not to push it;
-   step 9 restamps `DOC-SYNC.md`, which has to BE pushed. By then the pre-bump is sitting
-   unpushed in front of the restamp and goes along for the ride — so the live app ends up
-   reporting the NEXT version with THIS release's notes. It happened on 0.10.13: public
-   went out as 0.10.14 and had to be put back.
+   **⚠ ANSWERING IS NOT DOING, AND CONFLATING THEM IS WHAT BROKE THE RITUAL TWICE ON
+   September 9 2026.** This step asks a QUESTION. Acting on the answer - running a sync,
+   editing documents, pushing the result - is separate work at a time of Ken's choosing,
+   and it was his standing practice long before this step existed: bump several times,
+   then sync at a strategic point. **A red result is a visible debt, not a task for that
+   moment.**
 
-   **So when a document is synced after the release, push the doc commit BEFORE
-   pre-bumping** — or check what is actually going out (`git log origin/main..HEAD`)
-   before any push that follows a release. The harm is small (the notes are keyed by
-   version, so users still saw the right ones) but it destroys the one thing the pre-bump
-   exists for: telling a dev build from the public one at a glance in Settings → About.
+   **⚠ KEN'S CORRECTION, and it is the rule now: THE PRE-BUMP IS INDEPENDENT OF THE
+   STATE OF ANY DOCUMENT** (*"The pre-bump of the dev software should be independent of
+   the state of any docs and shouldn't force a review of the docs"*). It had briefly
+   become dependent, and the dependency was invented rather than real: a doc sync
+   produces a commit, I chose to PUSH that commit inside the release window, and a push
+   that follows the pre-bump carries the pre-bump with it - which is how 0.10.14 reached
+   users reporting the next version. The cure I first wrote ("sync the docs before
+   pre-bumping") accepted the false premise and baked the coupling in.
 
-9. **Restamp any documents synced during the cycle.** `DOC-SYNC.md`'s `At commit` must
+9. **THE PRE-BUMP ENDS THE RITUAL. Nothing after it is pushed until the next release.**
+   That one rule removes the whole problem: a doc sync, a restamp, or any other work
+   done afterwards simply rides out with the next release, by which time the pre-bumped
+   number is the released one and carries no surprise. **`DOC-SYNC.md` never needs
+   pushing promptly** - it is a tracking file, nothing deploys from it, and its ordering
+   rule constrains the commit it NAMES (the release, already on `origin/main`), not when
+   the file itself travels.
+
+   If a push after the pre-bump is genuinely unavoidable, check what is actually going
+   out first (`git log origin/main..HEAD`) - but the answer is almost always to let it
+   wait.
+
+   **Restamp any documents synced during the cycle.** `DOC-SYNC.md`'s `At commit` must
    name a commit that exists on `origin/main`, so anything reviewed against local-only
    commits is restamped at the release commit now. (See the ordering rule at the top of
    `DOC-SYNC.md`: reader-facing documents are best synced *after* the push, since until
