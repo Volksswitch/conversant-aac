@@ -26,6 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+
+## Version 0.10.14
+
 - Importing a backup now holds the screen while it works, and counts its way through
   so you can see it is still going. On a tablet a large restore takes a while, and the
   small "Importing…" line under the button was easy to miss — it looked as though the
