@@ -1297,8 +1297,14 @@ body.conv-bottom #responsesSection {
 
 /* The cursor is set in JS as the pointer crosses a border (app.js onLayoutHover) -
    it cannot be a CSS rule, because a border is a LINE between two regions rather than
-   an element of its own. Touch gets nothing from this and needs nothing: the border is
-   live along its whole length, so there is no small target to find. */
+   an element of its own.
+
+   ⚠ THIS USED TO SAY "touch gets nothing from this and needs nothing: the border is
+   live along its whole length, so there is no small target to find." THAT PREMISE WAS
+   WRONG AND IT COST A REAL FAILURE. Length was never the problem; THICKNESS was - the
+   grab zone is 20 CSS px, about 5mm, which Ken could not hit with a finger without
+   setting off a button. Touch is answered by the circles, and a cursor is the only thing
+   this rule was ever about. */
 
 /* ⚠ THERE ARE NO DRAG ELEMENTS. A first version laid an invisible strip over each
    border; strips sit above everything, so they swallow taps, and they only knew a
