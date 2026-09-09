@@ -26,6 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+
+## Version 0.10.13
+
 - Your data and your settings now back up as two separate files. "Export my data"
   saves your answers, people, places, buttons and conversations, and no longer
   includes your settings. Settings have their own "Export my settings" button beside
