@@ -70,6 +70,28 @@ document up and diff it against what the script would produce before regeneratin
 `generate-beta-test-plan-doc.js` carries this warning in its own header for exactly that
 reason.
 
+## File dates in Explorer
+
+`stamp-doc-dates.py` makes a document's modification date agree with its own
+"Last updated" byline, so Explorer answers "when was this last updated?" without
+anybody opening Word.
+
+```bash
+python scripts/doc-generators/stamp-doc-dates.py            # what is out of step
+python scripts/doc-generators/stamp-doc-dates.py --apply    # set them
+```
+
+**Run it at the END of a sync**, after `check docs`. It is a step of the sync
+workflow rather than a one-off repair, because the thing that breaks the dates is
+our own bulk passes: any script that rewrites a file bumps its date whether or not
+it changed anything a reader would notice. When this was written, 11 of 32
+documents were out of step, the worst by 52 days, and ten of them sat in clusters
+sharing a timestamp to the second.
+
+**The byline wins where the two disagree**, and the date only ever moves backwards.
+The reasoning, and the one case where its answer is wrong, are in the script's own
+header and in CLAUDE.md step 4c.
+
 ## Figures
 
 `capture-diagrams.js` and `capture-engine-diagrams.js` screenshot the two HTML files
