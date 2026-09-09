@@ -37,6 +37,48 @@ the one that quietly waits forever.
 
 ## Open
 
+### ONE backup, filtered at IMPORT by a device signature (Ken, September 9 2026)
+- **Ken's proposal, superseding the two-file split:** *"The more that can go as data... the
+  less there's a need for separate settings vs data backup features. It also argues for
+  settings profiles to capture everything on that device... data is that subset of settings
+  that aren't OS dependent and is a virtual, not a physical concept... only those settings
+  that aren't OS dependent are then imported on the new machine. How does a machine know
+  that it is a 'new' machine for the import step. I don't know... keyguard properties don't
+  need to travel to a new device type. Do you record in settings the device type associated
+  with the settings?"*
+- **⚠ THE DECISIVE ARGUMENT FOR IT, and it is worth stating because it is not the obvious
+  one: THE CLASSIFICATION BELONGS AT IMPORT, NOT EXPORT.** At export time nobody knows where
+  the file is going, so any split forces the user to guess the destination. At import time
+  the app knows both sides. Two files ask the user a question the app is better placed to
+  answer.
+- **The app CAN tell, and already computes most of it.** `platform.describe()` yields OS
+  family, browser shell, Home Screen app vs tab, and speech availability. Missing for this
+  purpose: **screen dimensions**, which are what the keyguard turns on. Signature = OS family
+  + standalone/tab + folder-picker present + layout viewport size.
+- **Record it in the FILE/PROFILE HEADER, not in the settings bundle.** Profiles already
+  carry `name` / `savedAt` / `version`; `device` belongs beside them. Putting it inside
+  settings means it becomes a travelling setting that then has to be excluded again - the
+  PROFILE_EXCLUDE dance, for a value that is a fact about the file rather than a preference.
+- **Two axes fall out, matching Ken's own two examples:** OS (folder rules, keyboard mode,
+  which speech services work) and SCREEN (keyguard). So three tiers, not a yes/no: same
+  signature -> everything; same OS, different screen -> hold back the screen-geometry set;
+  different OS -> also hold back the OS set.
+- **⚠ THE HOLD-BACK LIST IS ABOUT THREE ITEMS**, which cuts both ways: the mechanism is
+  cheap and low-risk, and it is fair to ask whether it earns itself against simply importing
+  everything and letting the user adjust. The answer is probably that the value is in the app
+  being able to SAY what it kept and what it did not, which for this population is worth more
+  than the three taps.
+- **⚠ A GAP IN THE FORMULATION TO CLOSE FIRST: "data is a subset of settings" leaves out the
+  actual content.** About Me answers, people, places, the panel's words, phrases and
+  conversations are not settings at all. So the backup is content PLUS settings, and the
+  import filter applies only to the settings half; content always travels whole.
+- **⚠ ONE GENUINE TENSION with Ken's earlier call that service choice is operational:** on an
+  iPad Home Screen the free recognizer delivers nothing (measured, July 30 2026), so
+  travelling "use the browser's own listening" there lands someone on a device that cannot
+  hear. It is visible and fixable, but it is the clearest candidate for the OS hold-back set.
+- **Why not now:** Ken has not chosen between this and the two-file split, and this supersedes
+  work already shipped in 0.10.13, so it needs his decision before anything moves.
+
 ### What is a SETTING and what is DATA — a rule, and the re-filing it implies
 - **Raised:** 2026-09-09 — Ken, after importing data onto his Android tablet: *"I expected
   my Express Panel buttons to be part of that import. I didn't expect my Band sizes to come
