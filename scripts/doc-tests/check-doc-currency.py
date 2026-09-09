@@ -35,11 +35,21 @@ ROW = re.compile(r'^\|\s*(?P<doc>[^|]+?\.docx)\s*\|\s*(?P<status>[^|]*?)\s*\|'
 # is looking at, so only these four are wrong in a way that reaches a person. The rest
 # are counted, not listed, and CLAUDE.md's planned purification pass is the answer to
 # the deeper question of whether they are still true.
+#
+# ⚠ BACKUP COMPATIBILITY WAS ADDED ON September 9 2026 (Ken: "reclassify Backup
+# Compatibility as reader-facing"), AFTER BEING MISSED TWICE FOR WANT OF IT. It reads
+# like a manual - written for a user moving between devices, in the second person, with
+# menu paths - and it is the first thing somebody opens before trusting a backup. But it
+# was filed as a design record, so this check reported it current while it said "there
+# is one backup format" three releases after there were two. Both times it was found by
+# a hand sweep instead. **The test for this list is who the document is written FOR, not
+# where it happens to sit in the tracker.**
 READER_FACING = (
     'Conversant AAC Product Overview.docx',
     'Conversant AAC User Manual (Windows Chromebook Mac).docx',
     'Conversant AAC User Manual (iPad).docx',
     'Conversant AAC User Manual (Android).docx',
+    'Conversant AAC Backup Compatibility.docx',
 )
 
 

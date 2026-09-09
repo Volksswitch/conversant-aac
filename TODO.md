@@ -37,6 +37,38 @@ the one that quietly waits forever.
 
 ## Open
 
+### What is a SETTING and what is DATA — a rule, and the re-filing it implies
+- **Raised:** 2026-09-09 — Ken, after importing data onto his Android tablet: *"I expected
+  my Express Panel buttons to be part of that import. I didn't expect my Band sizes to come
+  across... Maybe we need to think about what is a setting and what is data. It might be
+  easiest to come up with a rule that defines a 'setting'. I think it should be something
+  that is uniquely impacted by the device screen size. These can be second order like
+  keyboard layout > express panel band size."*
+- **Confirmed empirically, and it is wrong in BOTH directions.** Band sizes live inside
+  `express-panel.json`, which is a DATA file, so they travelled — exactly what he saw. And
+  `contextMark`, which is purely the LOOK of the Context band, lives in settings, so it does
+  not travel. Today the split is by which STORE a value happens to sit in, not by what it
+  means.
+- **The rule's shape is right; "screen size" is too narrow, and his own manual proves it.**
+  The Backup Compatibility document lists four things a user must set up again on a new
+  device — the API key, the voice, on-screen vs physical keyboard, and how the app hears the
+  other person. **Not one of them is screen-size dependent**, so under the literal rule all
+  four become data and all four travel wrongly: a voice that is not installed, a keyboard
+  mode wrong for the hardware, a transcription service that does not work on that device.
+- **Proposed instead: is it a property of the DEVICE or of the PERSON?** Screen size is the
+  biggest case but not the only one; installed voices, an attached keyboard and which speech
+  services work there are the rest. Ken's second-order clause is kept and is the sharp part
+  (keyboard layout > band size).
+- **Roughly 18 of 49 portable settings are operational** and would move to data under that
+  rule — placeholder timings and the ease-off, silence period, tap mode and double-tap
+  interval, colour scheme, the band mark, cards per category, chime, auto-relisten.
+- **Why not now:** it is a decision Ken has not made yet, and the cheap implementation is
+  worth stating before anyone starts: split by KEY at export time rather than moving values
+  between stores. One settings store stays; the data file carries the operational subset and
+  the settings file the device subset. No storage migration, no new files, and reversible.
+  Band sizes are the one genuine move, out of `express-panel.json` and into the settings
+  file.
+
 ### Product Overview: the AI vendor's safety rules, and the distress case
 - **Raised:** 2026-08-30 — CLAUDE.md, "A speech-to-speech model CANNOT be used here"
 - **Wanted:** a paragraph beside *Not a Smart Speaker* saying the vendor's safety rules
