@@ -54,6 +54,36 @@ the one that quietly waits forever.
   settled — and check whether simply reverting to the pre-0.10.13 wording is right, since
   for the Architecture Overview it already is.
 
+### The layout borders cannot be grabbed with a finger
+- **Raised:** 2026-09-09 — Ken, on small touch-screen devices: *"it was impossible to grab
+  the divider at the bottom of the command bar with a finger without invoking a button. The
+  line at the left of the right side express panel has the same problem."*
+- **Measured cause:** the grab zone is `GRIP_PX = 20` tested as ±10px, so **20 CSS px, about
+  5mm** — roughly HALF a fingertip contact patch, and about a fifth of the minimum touch
+  target both Apple (44pt) and Google (48dp) publish. A press 11px from the border reaches
+  the button instead.
+- **⚠ THE STRUCTURAL REASON IT IS THIN, which is what a naive fix would miss: the buttons
+  stay LIVE while the layout is unlocked.** `layout-dragging` kills pointer events only once
+  a drag has been claimed. So the app is serving two gestures on the same pixels, and the
+  grip must stay narrow or it would eat presses meant for buttons. **Widening it alone just
+  moves the failure to the other side.**
+- **⚠ AND THE COMMENT IN styles.css STATES THE WRONG PREMISE OUT LOUD:** *"Touch gets
+  nothing from this and needs nothing: the border is live along its whole length, so there is
+  no small target to find."* Length was never the problem; THICKNESS is. Fix that comment
+  with the code.
+- **⚠ THE DEEPER POINT: A DRAG IS THE WRONG PRIMITIVE FOR THIS POPULATION AT ALL.** It needs
+  sustained contact plus controlled movement, which is among the hardest gestures for someone
+  with limited motor control - the reason the double-tap safeguard exists. So a bigger target
+  helps the people who can already drag and still excludes the ones who cannot. Any fix should
+  offer a discrete alternative (tap a border to select it, then large nudge buttons), not just
+  a fatter grab zone.
+- **Proposed shape:** an explicit "Adjust layout" mode in which the conversation surface goes
+  inert (the precedent exists - `main.disabled { pointer-events: none }` for the pre-start
+  state, and Rule 8's modal-assets-over-inert-elements), each border draws a real handle of at
+  least 48px, and the handle can be dragged OR tapped-then-nudged. Done exits.
+- **Why not now:** Ken asked what a better mechanism would be, not for one to be built, and
+  the choice between a mode, Settings sliders and nudge-only is his.
+
 ### Product Overview: the AI vendor's safety rules, and the distress case
 - **Raised:** 2026-08-30 — CLAUDE.md, "A speech-to-speech model CANNOT be used here"
 - **Wanted:** a paragraph beside *Not a Smart Speaker* saying the vendor's safety rules
