@@ -5516,6 +5516,11 @@ async function sendProblemReport() {
 // The busy modal makes the second press impossible, and this makes it harmless even if
 // some path ever gets past the modal.
 let importInProgress = false;
+let exportInProgress = false;
+
+// The backups directory, read when the list renders so the import button can hand it
+// to the file picker without spending the tap. null where there is no folder.
+let primedBackupsDir = null;
 
 // The second of the pair. The app used to reload on its own the moment a restore
 // finished, which on a slow device is indistinguishable from the crash the user was
@@ -5621,6 +5626,8 @@ async function renderBackupList() {
         return;
     }
     row.hidden = false;
+    // Primed for the file picker - see the import button.
+    try { primedBackupsDir = await storage.getBackupsDirHandle(); } catch { primedBackupsDir = null; }
     // Every .json in the folder, whatever its name. One kind of file again, and an
     // import validates the `kind` inside it - so a stray file can be picked and refused
     // legibly, which is better than a backup that exists and cannot be seen.
@@ -5647,25 +5654,75 @@ async function renderBackupList() {
 function wireBackupControls() {
     const fileInput = document.getElementById('importDataFile');
 
+    // ⚠ AN EXPORT GETS THE SAME PAIR OF CARDS AS AN IMPORT (Ken, September 9 2026:
+    // "Exporting settings is very slow on an Android tablet. We need a similar pop-up on
+    // the export side"). A backup with hundreds of saved conversations is mostly READING
+    // them, which on a tablet takes long enough to look like a crash — the same failure
+    // that cost him an import, arriving from the other direction. So: a chance to cancel
+    // before it starts, a count while it runs, and a card at the end saying where it
+    // went, because the status line under the button is what proved easy to miss.
     document.getElementById('exportDataBtn').onclick = async () => {
+        if (exportInProgress) return;
+        const toFolder = storage.hasVisibleDataFolder();
+        if (!(await confirmDanger({
+            title: 'Back up your settings?',
+            body: 'Everything on this device goes into one file: your answers, the people ' +
+                  'and places you have entered, your buttons and phrases, your saved ' +
+                  'conversations, your settings and your saved profiles. Your keys are ' +
+                  'never included.\n\nThis can take a while on a tablet, especially with a ' +
+                  'lot of saved conversations.' +
+                  (toFolder ? '\n\nIt will be saved into your data folder.'
+                            : '\n\nYou will be asked where to save it.'),
+            confirmLabel: 'Back up now',
+            cancelLabel: 'Not now',
+        }))) {
+            setBackupStatus('');
+            return;
+        }
+
+        exportInProgress = true;
         setBackupStatus('Preparing your backup…');
+        const busy = showBusy({
+            title: 'Preparing your backup',
+            body: 'Collecting everything on this device. Do not close the app.',
+        });
+        const onProgress = ({ done, total, label }) => {
+            busy.update(total ? `Collecting ${label} — ${done} of ${total}…` : '');
+        };
         try {
-            // Where the user picked a real folder, the backup goes IN it — beside
-            // the data it protects. Otherwise (a tablet's private storage, or no
-            // folder at all) it leaves by the download/share path, which is then
-            // the only way to get a file out of the app.
-            if (storage.hasVisibleDataFolder()) {
-                const { pkg, path } = await dataTransfer.savePackageToFolder(APP_VERSION);
+            // Where the user picked a real folder, the backup goes IN it — beside the data
+            // it protects. Otherwise (a tablet's private storage, or no folder at all) it
+            // leaves by the download/share path, which is then the only way out.
+            let where;
+            let pkg;
+            if (toFolder) {
+                const r = await dataTransfer.savePackageToFolder(APP_VERSION, onProgress);
+                pkg = r.pkg;
                 await renderBackupList();
-                setBackupStatus(`Saved to your data folder as ${path} — ` +
+                where = `It is in your data folder, as ${r.path}.`;
+                setBackupStatus(`Saved to your data folder as ${r.path} — ` +
                                 dataTransfer.summarize(pkg).join(' · '));
             } else {
-                const pkg = await dataTransfer.downloadPackage(APP_VERSION);
+                busy.update('Saving…');
+                pkg = await dataTransfer.downloadPackage(APP_VERSION, onProgress);
+                where = 'Your browser is saving it now — keep it somewhere that is not only ' +
+                        'on this device.';
                 setBackupStatus('Exported: ' + dataTransfer.summarize(pkg).join(' · '));
             }
+            busy.close();
+            await showNotice({
+                title: 'Backup finished',
+                body: `${where}\n\nIt contains:\n\n• ` + dataTransfer.summarize(pkg).join('\n• '),
+                buttonLabel: 'Done',
+            });
         } catch (err) {
             storage.logError('export', err.message || String(err));
             setBackupStatus('Could not build the backup: ' + (err.message || 'unknown error'));
+        } finally {
+            // Closed here as well as on the happy path: a card nobody can dismiss must
+            // never outlive the job it belongs to.
+            busy.close();
+            exportInProgress = false;
         }
     };
 
@@ -5684,8 +5741,33 @@ function wireBackupControls() {
 
     // The picker needs a real user gesture, so the button just opens it; the work
     // happens on change.
-    document.getElementById('importDataBtn').onclick = () => {
+    //
+    // ⚠ WHERE THE BROWSER HAS A REAL PICKER, IT OPENS IN THE BACKUPS FOLDER (Ken,
+    // September 9 2026) — which is where every backup this app writes already goes, so
+    // the file is in front of the user instead of several folders away. The handle is
+    // read when the LIST renders, never here: showOpenFilePicker needs the browser to
+    // still count the tap as recent, and awaiting anything first spends it. Same rule as
+    // the data-folder permission request and the fullscreen request.
+    //
+    // The hidden <input> stays the fallback and is the only route on an iPad, which has
+    // no showOpenFilePicker at all.
+    document.getElementById('importDataBtn').onclick = async () => {
         setBackupStatus('');
+        if (window.showOpenFilePicker && primedBackupsDir) {
+            try {
+                const [handle] = await window.showOpenFilePicker({
+                    startIn: primedBackupsDir,
+                    types: [{ description: 'Conversant backup', accept: { 'application/json': ['.json'] } }],
+                    multiple: false,
+                });
+                const file = await handle.getFile();
+                await importPackageText(await file.text(), `From the file ${file.name}`);
+            } catch {
+                // The user closed the picker, or the browser refused it. Neither is an
+                // error worth reporting, and the plain input is still there.
+            }
+            return;
+        }
         fileInput.value = '';       // so re-picking the SAME file still fires change
         fileInput.click();
     };

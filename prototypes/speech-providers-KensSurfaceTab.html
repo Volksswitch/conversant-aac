@@ -1,0 +1,2019 @@
+<!doctype html>
+<!--
+  Speech provider bench - THROWAWAY PROTOTYPE (September 2 2026)
+
+  Deliberately NOT in app/, so it is never deployed and never becomes something that
+  has to be maintained. Open it directly in a browser; there is nothing to build and
+  nothing to install. It needs an internet connection and, for the hearing tests, a
+  microphone.
+
+  WHY IT EXISTS. Conversant reaches a speech service DIRECTLY FROM THE BROWSER with
+  the user's own key, because the project runs no server of its own. Until now we
+  believed Deepgram was the only affordable service that permitted that. Probing on
+  September 2 2026 showed otherwise - OpenAI, ElevenLabs, Cartesia, Google and Azure
+  all answered a browser request - so this bench exists to take the next step the
+  probe could not: hear the voices, read the transcripts, and compare them on the
+  same words and the same recording.
+
+  SPEAKING AND HEARING ARE TESTED SEPARATELY, because they are separate decisions.
+  A service can be right for one and wrong for the other, and on most platforms
+  hearing is already free and built in while the voice is the thing worth paying for.
+
+  ONE RECORDING GOES TO EVERY HEARING SERVICE. Recording separately for each would
+  compare the rooms and the way the sentence happened to be said, not the services.
+  The same is true of the speaking test: one sentence, every voice.
+
+  WHAT IT MEASURES, and the limit is worth knowing. It reports whether a service can
+  be reached, whether it produced anything, and how long that took. The timing is
+  "how long until the whole clip had arrived", not the smallest possible delay - a
+  real implementation would start playing the first part while the rest was still
+  coming. So treat the times as a rough ranking, not a specification.
+
+  KEYS. Everything typed here is stored only in this browser, on this machine, and is
+  sent only to the service it belongs to. Nothing reaches Volksswitch. Even so, do not
+  hand this file to anyone with your keys still in it - use "Forget all keys" first.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Speech provider bench - prototype</title>
+<style>
+  :root{
+    --ink:#222; --dim:#666; --line:#d9d9d9; --bg:#fafafa; --card:#fff;
+    --blue:#1F4E79; --good:#1B5E20; --bad:#B71C1C; --warn:#8a6d00;
+    --chip:#eef2f7;
+  }
+  *{box-sizing:border-box}
+  body{font:15px/1.5 Arial,Helvetica,sans-serif;margin:0;padding:16px 22px;
+       background:var(--bg);color:var(--ink)}
+  h1{font-size:21px;margin:0 0 4px;color:var(--blue)}
+  h2{font-size:17px;margin:26px 0 8px;color:var(--blue);
+     border-bottom:2px solid var(--line);padding-bottom:4px}
+  h3{font-size:14px;margin:14px 0 6px;color:var(--blue)}
+  p.lede{color:var(--dim);margin:0 0 14px;max-width:940px}
+  .note{background:#fffbe6;border:1px solid #e6d68a;border-radius:6px;
+        padding:9px 12px;margin:10px 0;max-width:940px;font-size:13.5px}
+  .note strong{color:var(--warn)}
+  button{font:inherit;padding:7px 13px;border:1px solid #b9c2cc;background:#fff;
+         border-radius:6px;cursor:pointer}
+  button:hover:not(:disabled){background:#f0f4f8}
+  button:disabled{opacity:.45;cursor:default}
+  button.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+  button.primary:hover:not(:disabled){background:#2a5f8f}
+  button.rec{background:var(--bad);color:#fff;border-color:var(--bad)}
+  input[type=text],input[type=password],textarea{
+    font:inherit;padding:6px 8px;border:1px solid #b9c2cc;border-radius:5px;
+    background:#fff;color:var(--ink)}
+  textarea{width:100%;max-width:940px;min-height:70px;resize:vertical}
+  table{border-collapse:collapse;width:100%;max-width:1060px;margin:8px 0;
+        background:var(--card)}
+  th,td{border:1px solid var(--line);padding:7px 9px;text-align:left;
+        vertical-align:top;font-size:13.5px}
+  th{background:var(--chip);font-weight:bold}
+  td.num{white-space:nowrap;text-align:right}
+  .ok{color:var(--good);font-weight:bold}
+  .fail{color:var(--bad);font-weight:bold}
+  .pending{color:var(--dim)}
+  .keys{background:var(--card);border:1px solid var(--line);border-radius:8px;
+        padding:12px 14px;max-width:1060px}
+  .keyrow{display:flex;gap:10px;align-items:center;margin:7px 0;flex-wrap:wrap}
+  .keyrow label{width:130px;font-weight:bold;font-size:13.5px}
+  .keyrow input[type=password]{flex:1;min-width:250px}
+  .keyrow input.small{width:120px}
+  .hint{color:var(--dim);font-size:12.5px}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0}
+  fieldset{border:1px solid var(--line);border-radius:8px;background:var(--card);
+           max-width:1060px;margin:10px 0;padding:10px 14px}
+  legend{font-weight:bold;color:var(--blue);padding:0 6px;font-size:14px}
+  .provgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));
+            gap:10px}
+  .prov{border:1px solid var(--line);border-radius:6px;padding:9px 11px}
+  .prov h4{margin:0 0 6px;font-size:13.5px}
+  .prov label.pick{font-weight:bold}
+  .prov .cfg{display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap}
+  .prov .cfg input{width:100%;font-size:13px}
+  .prov .cfg select{width:100%;font:inherit;font-size:13px;padding:5px 6px;
+                    border:1px solid #b9c2cc;border-radius:5px;background:#fff}
+  .prov .voicerow{display:flex;gap:6px;align-items:center;margin-top:6px}
+  .prov .voicerow select{flex:1;min-width:0}
+  .prov .voicerow button{padding:5px 9px;font-size:12.5px;white-space:nowrap}
+  .prov .vstatus{font-size:12px;color:var(--dim);margin-top:3px;min-height:15px}
+  .transcript{white-space:pre-wrap;font-size:13.5px}
+  code{background:var(--chip);padding:1px 4px;border-radius:3px;font-size:12.5px}
+  .timer{font-variant-numeric:tabular-nums;font-weight:bold;color:var(--bad)}
+</style>
+</head>
+<body>
+
+<h1>Speech provider bench</h1>
+<p class="lede">
+  Compare the services Conversant AAC could use to <strong>speak</strong> and to
+  <strong>hear</strong>, on the same sentence and the same recording. Everything here
+  runs in this page and talks to each service directly, exactly the way the app does.
+  Speaking and hearing are tested separately because they are separate decisions.
+</p>
+
+<div class="note">
+  <strong>About your keys.</strong> They are kept only in this browser on this machine,
+  and each one is sent only to the service it belongs to. Nothing is sent to
+  Volksswitch. Before sharing this file with anyone, press <em>Forget all keys</em>.
+</div>
+
+<!-- ===================== THIS MACHINE ===================== -->
+<h2>1. This machine</h2>
+<p class="lede">
+  Two things about the machine in front of you decide more than any choice of service.
+  The <strong>graphics hardware</strong> is why the on-device engines are much faster on
+  some machines than others - the reason is almost never the model, it is whether the
+  browser will let the page use it, and that is reported here rather than left to be
+  guessed at from a slow result. The <strong>round trip to each service</strong> is what
+  is paid on every turn of every conversation, and it belongs to the connection rather
+  than to the machine: the same tablet on a wired network, on Wi-Fi and on cellular will
+  give three different answers. Everything free to check is done as the page opens;
+  anything that costs data waits for the button.
+</p>
+
+<table id="machineTable">
+  <thead><tr><th>What</th><th>On this machine</th></tr></thead>
+  <tbody id="machineBody"></tbody>
+</table>
+
+<div class="row">
+  <label for="pathChoice">Path for the on-device engines</label>
+  <select id="pathChoice">
+    <option value="auto">Let this machine decide</option>
+    <option value="fast">Force the fast path (graphics hardware, full-detail weights)</option>
+    <option value="slow">Force the fallback path (smaller weights, no graphics hardware)</option>
+  </select>
+  <span class="hint" id="pathHint"></span>
+</div>
+
+<div class="row">
+  <button id="netBtn">Measure the round trip to each service</button>
+  <button id="copyMachine">Copy this report</button>
+  <span class="hint" id="netHint">A handful of tiny requests, no key needed and nothing
+    uploaded. Worth running again on every connection you will really use.</span>
+</div>
+
+<!-- ===================== KEYS ===================== -->
+<h2>2. Keys</h2>
+<p class="lede">
+  Fill in only the services you want to try. A blank key simply means that service is
+  skipped. The sign-up steps for each one are in the accompanying write-up.
+</p>
+
+<div class="keys">
+  <div class="keyrow">
+    <label for="k_deepgram">Deepgram</label>
+    <input type="password" id="k_deepgram" placeholder="Deepgram API key" autocomplete="off">
+  </div>
+  <div class="keyrow">
+    <label for="k_azure">Azure Speech</label>
+    <input type="password" id="k_azure" placeholder="Azure Speech key" autocomplete="off">
+    <input type="text" id="k_azure_region" class="small" placeholder="region" value="eastus">
+    <span class="hint">the region is part of the address, for example <code>eastus</code></span>
+  </div>
+  <div class="keyrow">
+    <label for="k_openai">OpenAI</label>
+    <input type="password" id="k_openai" placeholder="OpenAI API key" autocomplete="off">
+  </div>
+  <div class="keyrow">
+    <label for="k_eleven">ElevenLabs</label>
+    <input type="password" id="k_eleven" placeholder="ElevenLabs API key" autocomplete="off">
+  </div>
+  <div class="keyrow">
+    <label for="k_cartesia">Cartesia</label>
+    <input type="password" id="k_cartesia" placeholder="Cartesia API key" autocomplete="off">
+  </div>
+  <div class="keyrow">
+    <label for="k_google">Google Cloud</label>
+    <input type="password" id="k_google" placeholder="Google Cloud API key" autocomplete="off">
+  </div>
+  <div class="row">
+    <button id="forgetKeys">Forget all keys</button>
+    <span class="hint" id="keyStatus"></span>
+  </div>
+</div>
+
+<!-- ===================== REACHABILITY ===================== -->
+<h2>3. Can a browser reach them at all?</h2>
+<p class="lede">
+  The question the whole architecture turns on. Each service is asked a question with a
+  deliberately wrong key: a plain refusal means the door is open and only the key was
+  bad, which is what we need. <em>No key of yours is used</em> - with one exception.
+  Deepgram is reached over a different kind of connection whose failures a browser
+  cannot tell apart, so that row is checked with your real Deepgram key if you have
+  entered one, and otherwise reports that it cannot tell.
+</p>
+<div class="row">
+  <button class="primary" id="reachBtn">Check reachability</button>
+  <span class="hint">Takes a few seconds. Safe to run any time.</span>
+</div>
+<table id="reachTable" hidden>
+  <thead><tr><th>Service</th><th>Result</th><th>What came back</th></tr></thead>
+  <tbody></tbody>
+</table>
+
+<!-- ===================== SPEAKING ===================== -->
+<h2>4. Speaking - how the voices sound</h2>
+<p class="lede">
+  One sentence, every voice you have a key for. Press a <em>Play</em> button to hear a
+  voice again once it has been fetched.
+</p>
+
+<textarea id="ttsText">Are you wearing a tie tonight? I thought we might walk down to the diner after.</textarea>
+
+<p class="lede">
+  <strong>Testing a respelling?</strong> Put the same sentence in the second box with the
+  name spelled the way it should sound - &ldquo;Volksswitch&rdquo; as
+  &ldquo;Folks-switch&rdquo;. Each voice then says both, one straight after the other, so
+  they can be judged against each other rather than from memory. Leave it empty and
+  nothing changes. Two things to listen for: whether the respelling was needed at all -
+  some voices get a name right unaided, and repairing what is not broken can only make it
+  worse - and what it cost, because a hyphen can buy the right sounds and put a pause in
+  the middle of the name.
+</p>
+
+<textarea id="ttsText2" placeholder="Optional - the same sentence, respelled"></textarea>
+
+<fieldset>
+  <legend>Voices to try</legend>
+  <div class="provgrid" id="ttsProviders"></div>
+</fieldset>
+
+<div class="row">
+  <button class="primary" id="ttsRun">Speak it with every voice</button>
+  <button id="ttsStop">Stop</button>
+  <span class="hint" id="ttsStatus"></span>
+</div>
+
+<table id="ttsTable" hidden>
+  <thead><tr><th>Voice</th><th>Result</th><th class="num">First sound</th><th class="num">All of it</th><th>Play</th><th>Detail</th></tr></thead>
+  <tbody></tbody>
+</table>
+
+<div class="note">
+  <strong>How to read the two times.</strong> <em>First sound</em> is how long before any
+  audio exists to play; <em>all of it</em> is how long before the whole sentence has
+  arrived. For every voice here except one those are the same number, because the
+  service does the work and then hands over a finished file. <strong>Deepgram is the
+  exception</strong> - it sends the audio as it makes it, so it starts in a fraction of a
+  second and the rest streams in behind. Judged on the total alone it looks like the
+  slowest voice on this page; judged on when a person would first hear something, it is
+  among the quickest.
+  <br><br>
+  <strong>Why Deepgram's file is so much bigger.</strong> Its streaming connection sends
+  uncompressed audio and will not accept anything else - asking for a compressed format
+  is refused outright (tested, September 2026). The others are asked for a compressed
+  file, which is around a sixth of the size. So on a slow connection some of Deepgram's
+  total is simply carrying more data, and the gap between its two columns will widen as
+  the connection gets worse.
+</div>
+
+<!-- ===================== HEARING ===================== -->
+<h2>5. Hearing - how well they transcribe</h2>
+<p class="lede">
+  Record yourself once, then send that same recording to every service. Say something
+  a communication partner might say, and include a name or a place if you want to see
+  where the services differ - that is usually where they do.
+</p>
+
+<div class="note" id="micWarning" hidden>
+  <strong>The microphone will not work on this page.</strong> A browser only offers it
+  to a page served over <code>https</code> (or from <code>localhost</code>), and this one
+  was opened another way - most likely straight from a file. The speaking tests above are
+  unaffected. To test hearing, put this file somewhere it can be served over https and
+  open it from there.
+</div>
+
+<div class="row">
+  <button class="rec" id="recBtn">Start recording</button>
+  <span class="timer" id="recTimer"></span>
+  <span class="hint" id="recStatus">No recording yet.</span>
+</div>
+<div class="row" id="playbackRow" hidden>
+  <button id="playClip">Play my recording</button>
+  <span class="hint" id="clipInfo"></span>
+</div>
+
+<fieldset>
+  <legend>Services to try</legend>
+  <div class="provgrid" id="sttProviders"></div>
+</fieldset>
+
+<div class="row">
+  <button class="primary" id="sttRun" disabled>Transcribe with every service</button>
+  <span class="hint" id="sttStatus">Record something first.</span>
+</div>
+
+<table id="sttTable" hidden>
+  <thead><tr><th>Service</th><th>Result</th><th class="num">Time</th>
+      <th class="num">Against the clip</th><th>What it heard</th></tr></thead>
+  <tbody></tbody>
+</table>
+<div class="note">
+  <strong>Every service is asked for its most readable form</strong> - punctuation,
+  capitals, and numbers written as digits - because that is what a reader would actually
+  see. It has to be said because it is not what any of them do by default: some punctuate
+  unasked and some do not, so a transcript that arrives as one unbroken run of words is
+  usually the request's fault rather than the service's.
+</div>
+
+<div class="note" id="sttRatioNote" hidden>
+  <strong>How to read &ldquo;against the clip&rdquo;.</strong> It is the time taken divided by
+  the length of what you recorded. <em>For the on-device engine this is close to the real
+  thing:</em> it cannot start until you stop talking, so 0.2&times; means a ten-second
+  sentence leaves about two seconds of silence before any words appear.
+  <em>For the services it is not</em> - in a real conversation the app keeps a connection
+  open and they transcribe while the other person is still speaking, so their true wait is
+  the tail end of that, not what is shown here. This bench sends all of them a finished
+  recording, which is fair for comparing accuracy and flatters nobody equally on time.
+</div>
+
+<script>
+/* ============================================================================
+   Small helpers
+   ========================================================================== */
+const $ = (id) => document.getElementById(id);
+const KEY_FIELDS = ['k_deepgram','k_azure','k_azure_region','k_openai','k_eleven',
+                    'k_cartesia','k_google'];
+const STORE = 'vs_speech_bench_keys';
+
+function loadKeys() {
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(STORE)) || {}; } catch { saved = {}; }
+  for (const id of KEY_FIELDS) if (saved[id] != null) $(id).value = saved[id];
+  reflectKeyStatus();
+}
+function saveKeys() {
+  const out = {};
+  for (const id of KEY_FIELDS) out[id] = $(id).value;
+  try { localStorage.setItem(STORE, JSON.stringify(out)); } catch {}
+  reflectKeyStatus();
+}
+function reflectKeyStatus() {
+  const n = ['k_deepgram','k_azure','k_openai','k_eleven','k_cartesia','k_google']
+    .filter((id) => $(id).value.trim()).length;
+  $('keyStatus').textContent = n
+    ? `${n} key${n === 1 ? '' : 's'} stored in this browser.`
+    : 'No keys stored.';
+}
+for (const id of KEY_FIELDS) $(id).addEventListener('input', saveKeys);
+$('forgetKeys').addEventListener('click', () => {
+  for (const id of KEY_FIELDS) $(id).value = '';
+  $('k_azure_region').value = 'eastus';
+  try { localStorage.removeItem(STORE); } catch {}
+  reflectKeyStatus();
+});
+const key = (id) => $(id).value.trim();
+
+// A single shared audio context, created on the first real tap so the browser
+// does not refuse it.
+let ctx = null;
+function audioCtx() {
+  if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+  if (ctx.state === 'suspended') ctx.resume();
+  return ctx;
+}
+
+function cell(text, cls) {
+  const td = document.createElement('td');
+  if (cls) td.className = cls;
+  td.textContent = text;
+  return td;
+}
+function ms(t) { return t == null ? '' : (t / 1000).toFixed(2) + ' s'; }
+
+/* ============================================================================
+   2. Reachability - the probe, built in so it can be re-run whenever a vendor
+   changes their mind. Uses a deliberately invalid key on purpose.
+   ========================================================================== */
+const FAKE = 'not-a-real-key-capability-probe';
+
+const REACH = [
+  ['Deepgram (speaking)', 'wss://api.deepgram.com/v1/speak?model=aura-2-thalia-en'
+      + '&encoding=linear16&sample_rate=24000', 'ws'],
+  ['Deepgram (hearing)', 'wss://api.deepgram.com/v1/listen?encoding=linear16'
+      + '&sample_rate=16000', 'ws'],
+  ['Azure Speech', 'https://eastus.api.cognitive.microsoft.com/sts/v1.0/issueToken',
+      'fetch', { method: 'POST', headers: { 'Ocp-Apim-Subscription-Key': FAKE } }],
+  ['OpenAI', 'https://api.openai.com/v1/audio/speech', 'fetch',
+      { method: 'POST', headers: { Authorization: 'Bearer ' + FAKE,
+        'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'tts-1', input: 'hi', voice: 'alloy' }) }],
+  ['ElevenLabs', 'https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM',
+      'fetch', { method: 'POST', headers: { 'xi-api-key': FAKE,
+        'Content-Type': 'application/json' }, body: JSON.stringify({ text: 'hi' }) }],
+  ['Cartesia', 'https://api.cartesia.ai/tts/bytes', 'fetch',
+      { method: 'POST', headers: { 'X-API-Key': FAKE, 'Cartesia-Version': '2024-06-10',
+        'Content-Type': 'application/json' },
+        body: JSON.stringify({ model_id: 'sonic-2', transcript: 'hi' }) }],
+  ['Google Cloud', 'https://texttospeech.googleapis.com/v1/text:synthesize?key=' + FAKE,
+      'fetch', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input: { text: 'hi' },
+          voice: { languageCode: 'en-US' },
+          audioConfig: { audioEncoding: 'MP3' } }) }],
+  // The CONTROL. This one is expected to fail, and if it ever stops failing the
+  // probe has stopped being able to detect a block - which would make every other
+  // row meaningless. Never remove it.
+  ['AssemblyAI (control - should fail)',
+      'https://api.assemblyai.com/v2/realtime/token', 'fetch',
+      { method: 'POST', headers: { Authorization: FAKE,
+        'Content-Type': 'application/json' },
+        body: JSON.stringify({ expires_in: 60 }) }],
+];
+
+/*
+ * (!) A WEBSOCKET CANNOT BE PROBED WITH A WRONG KEY, and getting this wrong is worse
+ * than not checking at all. A browser is never told why a websocket handshake failed
+ * - it reports code 1006 for "refused your key" and 1006 for "no such service", with
+ * nothing to tell them apart. A first version of this bench used a fake key here and
+ * confidently reported Deepgram as BLOCKED, which is the one service we know works.
+ *
+ * So the only honest websocket check is a REAL connection with a REAL key: if it
+ * opens, the door is open. With no key entered we say we cannot tell, rather than
+ * guessing and being wrong.
+ */
+function probeSocket(url, realKey) {
+  if (!realKey) {
+    return Promise.resolve({ skip: true,
+      detail: 'needs a real key - a refused key and a blocked connection look '
+            + 'identical to a browser' });
+  }
+  return new Promise((resolve) => {
+    let ws, settled = false;
+    const done = (r) => { if (!settled) { settled = true; resolve(r); } };
+    try { ws = new WebSocket(url, ['token', realKey]); }
+    catch (e) { return done({ ok: false, detail: 'could not open: ' + e.message }); }
+    const t = setTimeout(() => { try { ws.close(); } catch {}
+      done({ ok: false, detail: 'no answer within 8 seconds' }); }, 8000);
+    ws.onopen = () => { clearTimeout(t); try { ws.close(); } catch {}
+      done({ ok: true, detail: 'connection accepted with your key' }); };
+    ws.onclose = (e) => { clearTimeout(t);
+      done({ ok: false, detail: 'closed with code ' + e.code
+        + ' - the key was refused, or the service could not be reached' }); };
+    ws.onerror = () => { /* onclose follows */ };
+  });
+}
+
+async function probeFetch(url, init) {
+  try {
+    const r = await fetch(url, init);
+    let body = '';
+    try { body = (await r.text()).slice(0, 140).replace(/\s+/g, ' '); } catch {}
+    return { ok: true, detail: 'HTTP ' + r.status + (body ? ' - ' + body : '') };
+  } catch (e) {
+    return { ok: false, detail: 'blocked - ' + e.message };
+  }
+}
+
+$('reachBtn').addEventListener('click', async () => {
+  const table = $('reachTable'), body = table.querySelector('tbody');
+  body.textContent = ''; table.hidden = false;
+  $('reachBtn').disabled = true;
+  for (const [name, url, kind, init] of REACH) {
+    const tr = document.createElement('tr');
+    tr.appendChild(cell(name));
+    const res = cell('checking...', 'pending'); tr.appendChild(res);
+    const det = cell(''); tr.appendChild(det);
+    body.appendChild(tr);
+    const r = kind === 'ws' ? await probeSocket(url, key('k_deepgram'))
+                            : await probeFetch(url, init);
+    if (r.skip) {
+      res.textContent = 'cannot tell'; res.className = 'pending';
+      det.textContent = r.detail;
+      continue;
+    }
+    const control = name.indexOf('control') !== -1;
+    // For the control, FAILING is the correct outcome, so say so plainly rather
+    // than painting it red and inviting someone to "fix" it.
+    res.textContent = control
+      ? (r.ok ? 'unexpected - see note' : 'blocked, as expected')
+      : (r.ok ? 'reachable' : 'blocked');
+    res.className = control ? (r.ok ? 'fail' : 'ok') : (r.ok ? 'ok' : 'fail');
+    det.textContent = r.detail;
+  }
+  $('reachBtn').disabled = false;
+});
+
+/* ============================================================================
+   Voice lists.
+
+   (!) FOUR OF THE SIX WILL HAND A BROWSER THEIR LIVE LIST, TWO WILL NOT, and that
+   is measured rather than assumed (September 2 2026). Azure, ElevenLabs, Cartesia
+   and Google all answered a browser request for their voice list. Deepgram's ordinary
+   web address refuses browser calls outright - the very reason the app talks to it
+   over a streaming connection instead - and OpenAI publishes no list endpoint at all.
+   So those two carry a built-in list, and the rest are fetched with your key.
+
+   (!) THE BUILT-IN LISTS ARE THE ONES WE WOULD ACTUALLY SHIP, not every id that might
+   exist. Inventing plausible-looking ids would produce failures that look like bugs in
+   the bench, so anything not listed is reached through "Other" instead.
+   ========================================================================== */
+
+// Deepgram Aura-2 - the same curated set the app offers in Settings.
+const DG_VOICES = [
+  ['aura-2-thalia-en', 'Thalia - female, American'],
+  ['aura-2-andromeda-en', 'Andromeda - female, American'],
+  ['aura-2-helena-en', 'Helena - female, American'],
+  ['aura-2-aurora-en', 'Aurora - female, American'],
+  ['aura-2-luna-en', 'Luna - female, American'],
+  ['aura-2-cordelia-en', 'Cordelia - female, American'],
+  ['aura-2-apollo-en', 'Apollo - male, American'],
+  ['aura-2-arcas-en', 'Arcas - male, American'],
+  ['aura-2-aries-en', 'Aries - male, American'],
+  ['aura-2-orion-en', 'Orion - male, American'],
+  ['aura-2-atlas-en', 'Atlas - male, American'],
+  ['aura-2-zeus-en', 'Zeus - male, American'],
+  ['aura-2-pandora-en', 'Pandora - female, British'],
+  ['aura-2-draco-en', 'Draco - male, British'],
+  ['aura-2-theia-en', 'Theia - female, Australian'],
+  ['aura-2-hyperion-en', 'Hyperion - male, Australian'],
+];
+
+// OpenAI publishes a short fixed set and no endpoint to read it from.
+const OA_VOICES = [
+  ['alloy', 'Alloy'], ['ash', 'Ash'], ['ballad', 'Ballad'], ['coral', 'Coral'],
+  ['echo', 'Echo'], ['fable', 'Fable'], ['nova', 'Nova'], ['onyx', 'Onyx'],
+  ['sage', 'Sage'], ['shimmer', 'Shimmer'], ['verse', 'Verse'],
+];
+
+// Keeps a 500-entry picker down to the ones a user here would actually pick. The
+// checkbox beside each picker turns it off.
+function englishOnly(lang) {
+  return !lang || /^en/i.test(lang);
+}
+
+/* ============================================================================
+   ON THE DEVICE - no company, no key, no bill.
+
+   (!) THIS IS THE ONE OPTION THAT SENDS NOTHING ANYWHERE. Everything else on this
+   page hands the words to somebody. These two download a model once and then run in
+   this browser, so the partner's speech never leaves the machine - which removes the
+   whole retention question rather than answering it.
+
+   (!) THE FIRST RUN IS A BIG DOWNLOAD AND THAT IS WHY THEY ARE OFF BY DEFAULT.
+   Hundreds of megabytes, once, cached by the browser afterwards. Nobody should hit
+   that by pressing a button labelled "speak it with every voice", so these two are
+   the only entries that start unticked, and the download is announced before it
+   starts rather than reported after.
+
+   (!) WHAT IS BEING MEASURED HERE IS NOT COMPARABLE TO THE REST ON TIMING. A service
+   answers over the network with somebody else's hardware doing the work; this does
+   the work on the machine in front of you, and the first call also pays for loading
+   the model into memory. Judge these on how they SOUND and on what they GET RIGHT.
+   ========================================================================== */
+
+// Loaded once and kept. `import()` of an address is cached by the browser, and the
+// model weights are cached too, so a second run in the same session is immediate.
+const local = { tts: null, stt: null };
+
+const LOCAL_TTS_MODEL = 'onnx-community/Kokoro-82M-v1.0-ONNX';
+// Named here as well as in the hearing section, so section 1 can report the size of
+// the download before that section has been built.
+const LOCAL_STT_MODEL = 'onnx-community/whisper-base';
+
+// Read out of the library itself rather than invented - a wrong voice id here would
+// fail in a way that looks like the engine being broken.
+const LOCAL_VOICES = [
+  ['af_heart', 'Heart - female, American'], ['af_alloy', 'Alloy - female, American'],
+  ['af_aoede', 'Aoede - female, American'], ['af_bella', 'Bella - female, American'],
+  ['af_jessica', 'Jessica - female, American'], ['af_kore', 'Kore - female, American'],
+  ['af_nicole', 'Nicole - female, American'], ['af_nova', 'Nova - female, American'],
+  ['af_river', 'River - female, American'], ['af_sarah', 'Sarah - female, American'],
+  ['af_sky', 'Sky - female, American'],
+  ['am_adam', 'Adam - male, American'], ['am_echo', 'Echo - male, American'],
+  ['am_eric', 'Eric - male, American'], ['am_fenrir', 'Fenrir - male, American'],
+  ['am_liam', 'Liam - male, American'], ['am_michael', 'Michael - male, American'],
+  ['am_onyx', 'Onyx - male, American'], ['am_puck', 'Puck - male, American'],
+  ['am_santa', 'Santa - male, American'],
+  ['bf_emma', 'Emma - female, British'], ['bf_isabella', 'Isabella - female, British'],
+  ['bf_alice', 'Alice - female, British'], ['bf_lily', 'Lily - female, British'],
+  ['bm_george', 'George - male, British'], ['bm_lewis', 'Lewis - male, British'],
+  ['bm_daniel', 'Daniel - male, British'], ['bm_fable', 'Fable - male, British'],
+];
+
+// One place to report a long download, so both engines behave the same way.
+// (!) PROGRESS GOES WHERE IT WAS ASKED FOR. It used to go to one span in the SPEAKING
+// section whichever model was downloading, so fetching the hearing model reported its
+// progress under the voices - in a section the reader was not looking at.
+function localProgress(el) {
+  return (p) => {
+    if (!el || !p || p.status !== 'progress' || !p.total) return;
+    const pct = Math.round((p.loaded / p.total) * 100);
+    el.textContent = `Downloading ${p.file || 'the model'} - ${pct}%`;
+  };
+}
+
+/* WebGPU where it exists AND CAN ACTUALLY BE USED, otherwise the slower path that
+ * works everywhere.
+ *
+ * (!) THE REPORT IN SECTION 1 AND THE ENGINES MUST NEVER DISAGREE, so they read the
+ * same probe rather than each asking the question their own way. A panel that says
+ * "fast path in use" over an engine that quietly chose the slow one is worse than no
+ * panel: it makes a slow result look like the model's fault. Hence one function, its
+ * answer remembered, and the dtype rule kept beside it instead of repeated at each
+ * loader.
+ *
+ * (!) AN ADAPTER IS NOT A WORKING GPU, AND THE DIFFERENCE COST A ROUND OF TESTING.
+ * On an iPad (iPadOS 26.6, Safari 26.6, Sept 2026) this page reported the fast path
+ * granted, and the speaking engine then refused to load with "Failed to get GPU
+ * adapter". Asking for an adapter is the cheap half of the question; the half that
+ * decides whether an engine can run is whether a DEVICE can be made from it. So one
+ * is made here and thrown away again. This matters twice over: a wrong answer does
+ * not merely mislabel the row, it makes the page choose the LARGEST weights, which is
+ * the thing a tablet then runs out of memory on.
+ *
+ * (!) AND THE PROBE MUST HAND THE HARDWARE BACK. An adapter that has produced a device
+ * is spent, and not every browser will hand out a second one - so a probe that keeps
+ * what it asked for is capable of causing the very failure it reports. Destroy the
+ * device, drop the adapter, ask for nothing more.
+ *
+ * (!) SPEED IS STILL NOT PROVEN BY ANY OF THIS. All it settles is which path the
+ * engines can take.
+ */
+
+// Which path to use, when the machine is not the one deciding. Kept in its own
+// storage key rather than with the API keys, because "Forget keys" must not quietly
+// put a tablet back on the path that crashed it - and because the way this is found
+// out IS a crash, so the choice has to survive the page dying.
+const PATH_STORE = 'vs_speech_bench_path';
+let pathChoice = 'auto';
+try { pathChoice = localStorage.getItem(PATH_STORE) || 'auto'; } catch {}
+
+let gpuProbe = null;
+async function probeGraphics() {
+  if (gpuProbe) return gpuProbe;
+  const out = { supported: !!navigator.gpu, granted: false, info: null, reason: '' };
+  if (!out.supported) {
+    out.reason = 'this browser does not offer WebGPU at all';
+  } else {
+    let adapter = null;
+    try { adapter = await navigator.gpu.requestAdapter(); }
+    catch (e) { out.reason = 'asking for the graphics hardware failed: ' + e; }
+    if (adapter) {
+      // Chrome moved this from a method to a property; take whichever exists, and
+      // treat its absence as "granted but unnamed" rather than as a failure.
+      try {
+        out.info = adapter.info
+          || (adapter.requestAdapterInfo ? await adapter.requestAdapterInfo() : null);
+      } catch { /* naming it is a nicety; the grant is the finding */ }
+      let device = null;
+      try { device = await adapter.requestDevice(); }
+      catch (e) {
+        out.reason = 'the browser named the graphics hardware but would not open it '
+          + 'for this page (' + (e && e.message ? e.message : e) + ') - so an engine '
+          + 'asking for it would fail the same way';
+      }
+      if (device) {
+        out.granted = true;
+        try { device.destroy(); } catch { /* handing it back is best effort */ }
+      }
+    } else if (!out.reason) {
+      out.reason = 'the browser offers WebGPU but would not grant this page an adapter '
+        + 'on this machine - usually the driver, the hardware, or a browser policy';
+    }
+  }
+  gpuProbe = out;
+  applyPathChoice();
+  return out;
+}
+
+// The hardware answer and the choice made about it are two different things, and only
+// this function joins them. fp32 is the full-detail weights the fast path wants; q8 is
+// the same models squeezed down, several times smaller both to download and to hold in
+// memory while running.
+function applyPathChoice() {
+  if (!gpuProbe) return;
+  const fast = pathChoice === 'fast' || (pathChoice === 'auto' && gpuProbe.granted);
+  gpuProbe.forced = pathChoice !== 'auto';
+  gpuProbe.device = fast ? 'webgpu' : 'wasm';
+  gpuProbe.dtype = fast ? 'fp32' : 'q8';
+}
+async function localDevice() { return (await probeGraphics()).device; }
+async function localDtype() { return (await probeGraphics()).dtype; }
+
+/* ============================================================================
+   SECTION 1 - what this machine is, and what its connection is like
+
+   Two questions, and they are asked very differently on purpose.
+
+   (!) THE GRAPHICS QUESTION IS FREE, SO IT IS ANSWERED WITHOUT BEING ASKED. It costs
+   nothing but a call, and without it a slow on-device result is unreadable - you cannot
+   tell a slow machine from a fast machine that was refused its graphics hardware. That
+   refusal is common, silent, and the largest single factor in the numbers further down
+   this page.
+
+   (!) THE NETWORK QUESTION COSTS DATA, SO IT IS BEHIND A BUTTON. Measuring a connection
+   means using it, this page may well be opened on a tablet on somebody's data plan, and
+   a few megabytes spent without asking is exactly the kind of surprise the download
+   consent further down exists to avoid. Same principle, applied twice.
+   ========================================================================== */
+
+// The file this machine would actually fetch, so the size and the estimate are about
+// this machine rather than about an average one. The fast path uses full-precision
+// weights and is several times larger - which is worth seeing, because the machine that
+// downloads the most is the one that will then be quickest.
+const HF_TTS = 'https://huggingface.co/' + LOCAL_TTS_MODEL + '/resolve/main/';
+const HF_STT = 'https://huggingface.co/' + LOCAL_STT_MODEL + '/resolve/main/';
+const modelFileFor = (dtype) => dtype === 'fp32' ? 'onnx/model.onnx' : 'onnx/model_quantized.onnx';
+// The hearing model is two files - an encoder that listens and a decoder that turns
+// what it heard into words - and both are fetched, so both count.
+const sttModelFiles = (dtype) => (dtype === 'fp32'
+  ? ['onnx/encoder_model.onnx', 'onnx/decoder_model_merged.onnx']
+  : ['onnx/encoder_model_quantized.onnx', 'onnx/decoder_model_merged_quantized.onnx']
+).map((f) => HF_STT + f);
+
+// Remembered so the download button can say how big the thing it is offering actually
+// is, instead of "a few hundred megabytes".
+const modelBytes = { tts: 0, stt: 0 };
+
+// The two on-device cards, and whether their model is here yet. Declared with the sizes
+// rather than beside the cards themselves, because the size report reaches for them and
+// runs before the cards are built.
+const localCards = { tts: null, stt: null };
+const localReady = { tts: false, stt: false };
+
+async function reportModelSize(which, label, urls, dtype) {
+  try {
+    const sizes = await Promise.all(urls.map(async (u) => {
+      const r = await fetch(u, { method: 'HEAD' });
+      return Number(r.headers.get('content-length')) || 0;
+    }));
+    const total = sizes.reduce((a, b) => a + b, 0);
+    if (!total) throw new Error('no size returned');
+    modelBytes[which] = total;
+    refreshLocalCard(which);          // the button quotes this, and may already be drawn
+    machineRow('model_' + which, label, mbytes(total)
+      + (urls.length > 1 ? ' in ' + urls.length + ' files' : '')
+      + (dtype === 'fp32'
+          ? ' - the fast path uses full-detail weights'
+          : ' - the fallback path uses squeezed-down weights'));
+  } catch {
+    machineRow('model_' + which, label,
+      'could not be asked - no connection, or the model host is unreachable');
+  }
+}
+
+const machineRows = new Map();
+function machineRow(id, label, value) {
+  let tr = machineRows.get(id);
+  if (!tr) {
+    tr = document.createElement('tr');
+    tr.appendChild(document.createElement('td'));
+    tr.appendChild(document.createElement('td'));
+    tr.cells[0].textContent = label;
+    machineRows.set(id, tr);
+    $('machineBody').appendChild(tr);
+  }
+  tr.cells[1].textContent = value;
+  return tr;
+}
+
+// (!) ROWS COME OFF AGAIN AS WELL AS ON. The path can now be changed after the table
+// is drawn, and a row that only makes sense on one path would otherwise stay behind
+// and contradict the path row above it.
+function removeMachineRow(id) {
+  const tr = machineRows.get(id);
+  if (tr) { tr.remove(); machineRows.delete(id); }
+}
+
+const mbytes = (bytes) => (bytes / 1048576).toFixed(0) + ' MB';
+
+async function reportMachine() {
+  const g = await probeGraphics();
+
+  machineRow('gpu', 'Graphics hardware', g.granted
+    ? 'Granted to this page' + (g.info && (g.info.vendor || g.info.description)
+        ? ' - ' + [g.info.vendor, g.info.architecture, g.info.description]
+            .filter(Boolean).join(', ')
+        : '')
+    : 'Not available - ' + g.reason);
+
+  machineRow('path', 'Path the on-device engines will take',
+    (g.device === 'webgpu'
+      ? 'WebGPU, the fast path, with full-detail weights'
+      : 'The fallback path, which works everywhere, is slower, and uses squeezed-down '
+        + 'weights that are several times smaller to download and to hold in memory')
+    + (g.forced ? ' - chosen by hand below, not by this machine' : ''));
+
+  // (!) THE FAST PATH'S COST IS MEMORY, NOT DOWNLOAD, and that is the part that kills a
+  // tablet. A model needs several times its file size in working memory once it is
+  // actually running, which is why the crashes seen on both an Android tablet and an
+  // iPad happened at the moment of speaking or transcribing rather than while
+  // downloading. Reported where it can be read before the download is agreed to.
+  if (navigator.deviceMemory) {
+    machineRow('ram', 'Memory the browser admits to',
+      navigator.deviceMemory + ' GB or more - a rounded figure, and the whole browser '
+      + 'shares it');
+  }
+
+  machineRow('cores', 'Processor cores the browser admits to',
+    navigator.hardwareConcurrency ? String(navigator.hardwareConcurrency) : 'not reported');
+
+  // (!) ONLY MEANINGFUL ON THE FALLBACK PATH, and it is a genuine handicap rather than a
+  // detail: without these two headers a browser withholds shared memory, so the fallback
+  // runs on ONE core however many the machine has. A slow result measured that way is not
+  // the model's true speed, and concluding "too slow for a tablet" from it would be the
+  // wrong lesson drawn from a handicapped measurement.
+  if (g.device !== 'webgpu') {
+    machineRow('threads', 'Can the fallback path use several cores?', crossOriginIsolated
+      ? 'Yes'
+      : 'No - this page is not served with the two headers a browser wants before it '
+        + 'shares memory between cores, so the fallback is running on one. Times below '
+        + 'are a floor, not the best this machine can do.');
+  } else {
+    removeMachineRow('threads');
+  }
+
+  try {
+    const q = await navigator.storage.estimate();
+    if (q && q.quota) {
+      const persisted = navigator.storage.persisted ? await navigator.storage.persisted() : false;
+      machineRow('storage', 'Storage the browser offers',
+        (q.quota / 1073741824).toFixed(1) + ' GB'
+        + (persisted ? ', and it has agreed to keep it' : ', not yet marked as kept'));
+    }
+  } catch { /* not every browser answers, and the page works without it */ }
+
+  // (!) SPEAKING AND HEARING ARE TWO SEPARATE DOWNLOADS, FROM TWO DIFFERENT PROJECTS,
+  // and reporting only the first understates what somebody using both will pay by
+  // roughly another half. They are cached independently, so turning one on costs
+  // nothing toward the other and either can be used alone - which is the reason to
+  // report them as two figures rather than one total.
+  //
+  // Asked of the real files rather than remembered, because these models are
+  // re-published and a number written down here would go quietly stale. The hearing
+  // model arrives in two pieces: one that listens and one that turns what it heard
+  // into words.
+  await reportModelSize('tts', 'One-time download - the speaking model',
+    [HF_TTS + modelFileFor(g.dtype)], g.dtype);
+  await reportModelSize('stt', 'One-time download - the hearing model',
+    sttModelFiles(g.dtype), g.dtype);
+
+  // (!) LABELLED A GUESS, BECAUSE IT IS ONE. The browser's own figure is a rolling
+  // estimate rounded into buckets, and some browsers offer it and others do not. It sits
+  // beside the measurement rather than instead of it.
+  const c = navigator.connection;
+  if (c && (c.effectiveType || c.downlink)) {
+    machineRow('netguess', "The browser's own guess at the connection",
+      [c.effectiveType, c.downlink ? c.downlink + ' Mbps' : null,
+       c.rtt ? c.rtt + ' ms round trip' : null, c.saveData ? 'data saver on' : null]
+        .filter(Boolean).join(', ') + ' - a rounded guess, not a measurement');
+  }
+}
+
+/* (!) THE NUMBER THAT MATTERS IS THE ROUND TRIP TO EACH SERVICE, NOT DOWNLOAD SPEED.
+ * A first-run model download is large but happens once, so how long it takes changes
+ * nothing about living with the app. What is paid on EVERY turn of EVERY conversation
+ * is the travel time to whichever service is speaking or hearing - and that is the
+ * thing this app spends its whole design fighting, because a partner will not wait.
+ *
+ * (!) AND IT IS A PROPERTY OF THE CONNECTION, NOT OF THE MACHINE. The same tablet on
+ * a wired network, on Wi-Fi, and on cellular will give three different answers, and
+ * cellular is usually several times the worst. So this is worth running again on each
+ * connection somebody will really use, rather than once at a desk.
+ *
+ * (!) WHAT IT IS NOT: the app's response time. This is travel only - the request is
+ * deliberately refused, so no service does any work for it. The whole wait is that plus
+ * however long the service then takes to speak or transcribe, which sections 4 and 5
+ * measure for real once there are keys. Separating the two is the point: a slow total
+ * with a fast round trip is the service's doing, and a slow round trip is the network's.
+ */
+
+// The same hosts the app really talks to. Deepgram is asked over https rather than over
+// the websocket it uses in earnest - same host, same handshake, so the same travel time,
+// and a websocket cannot be timed cleanly with a wrong key (see the note on the
+// reachability probe). The refusals are deliberate; no key of yours is used.
+function latencyTargets() {
+  const region = key('k_azure_region') || 'eastus';
+  return [
+    ['Deepgram', 'https://api.deepgram.com/v1/speak?model=aura-2-thalia-en',
+      { method: 'POST', headers: { Authorization: 'Token ' + FAKE,
+        'Content-Type': 'application/json' }, body: JSON.stringify({ text: 'hi' }) }],
+    ['Azure Speech (' + region + ')',
+      'https://' + region + '.api.cognitive.microsoft.com/sts/v1.0/issueToken',
+      { method: 'POST', headers: { 'Ocp-Apim-Subscription-Key': FAKE } }],
+    ['OpenAI', 'https://api.openai.com/v1/audio/speech',
+      { method: 'POST', headers: { Authorization: 'Bearer ' + FAKE,
+        'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'tts-1', input: 'hi', voice: 'alloy' }) }],
+    ['ElevenLabs', 'https://api.elevenlabs.io/v1/voices',
+      { headers: { 'xi-api-key': FAKE } }],
+    ['Cartesia', 'https://api.cartesia.ai/voices?limit=1',
+      { headers: { 'X-API-Key': FAKE, 'Cartesia-Version': '2024-06-10' } }],
+    ['Google Cloud', 'https://texttospeech.googleapis.com/v1/voices?key=' + FAKE, {}],
+  ];
+}
+
+// (!) THE FIRST CALL AND THE ONES AFTER IT ARE DIFFERENT QUESTIONS, so both are kept.
+// The first pays for finding the host and setting up an encrypted connection; the rest
+// reuse it. In a real conversation the app pays the first once and the rest on every
+// turn, so the repeated figure is the one that describes living with it - and a large
+// gap between the two is itself worth seeing, because it says the setup is the
+// expensive part on this connection.
+async function timeOne(url, init) {
+  const t0 = performance.now();
+  try {
+    await fetch(url, Object.assign({ cache: 'no-store' }, init));
+  } catch (e) {
+    return null;                       // blocked or offline; the caller says so
+  }
+  return performance.now() - t0;
+}
+
+async function measureRoundTrips() {
+  const btn = $('netBtn');
+  btn.disabled = true;
+  $('netHint').textContent = 'Measuring...';
+  try {
+    for (const [name, url, init] of latencyTargets()) {
+      machineRow('rt_' + name, 'Round trip - ' + name, 'measuring...');
+      const cold = await timeOne(url, init);
+      if (cold === null) {
+        machineRow('rt_' + name, 'Round trip - ' + name,
+          'no answer - offline, or this service is blocked here');
+        continue;
+      }
+      const warm = [];
+      for (let i = 0; i < 3; i++) {
+        const t = await timeOne(url, init);
+        if (t !== null) warm.push(t);
+      }
+      warm.sort((a, b) => a - b);
+      const median = warm.length ? warm[Math.floor(warm.length / 2)] : null;
+      machineRow('rt_' + name, 'Round trip - ' + name,
+        (median === null ? Math.round(cold) + ' ms'
+          : Math.round(median) + ' ms once connected')
+        + ' (first call ' + Math.round(cold) + ' ms)');
+    }
+    $('netHint').textContent = 'Travel time only - the services refused these on purpose '
+      + 'and did no work. Run it again on Wi-Fi, on cellular and on a wired network: the '
+      + 'numbers will differ, and that difference is the point. Changing the Azure region '
+      + 'above and measuring again adds a row rather than replacing one, so two regions '
+      + 'can be compared side by side.';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// The report is only useful if it can leave the machine it describes.
+function copyMachineReport() {
+  const lines = [...$('machineBody').rows]
+    .map((r) => r.cells[0].textContent + ': ' + r.cells[1].textContent);
+  lines.push('Browser: ' + navigator.userAgent);
+  lines.push('Screen: ' + screen.width + ' x ' + screen.height
+    + ' at ' + window.devicePixelRatio + 'x');
+  lines.push('Page: ' + location.href.split('?')[0]);
+  const text = 'Speech bench - this machine\n\n' + lines.join('\n');
+  const done = () => { $('netHint').textContent = 'Report copied. Paste it wherever it is wanted.'; };
+
+  // (!) TWO WAYS OF COPYING, AND THE OLD ONE IS THE FALLBACK RATHER THAN THE OTHER WAY
+  // ROUND. The modern call is cleaner and is also refused in more situations than one
+  // would expect - an unfocused window, a browser policy, older Safari - and it is
+  // refused SILENTLY, as a rejected promise. The older way is governed by none of that.
+  // A report that cannot leave the machine it describes is the one thing this button
+  // must not do.
+  navigator.clipboard.writeText(text).then(done).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch { ok = false; }
+    ta.remove();
+    if (ok) done();
+    else $('netHint').textContent = 'This browser would not let the page copy. '
+      + 'Select the table and copy it by hand.';
+  });
+}
+
+/* (!) THE CHOICE IS OFFERED BECAUSE THE AUTOMATIC ANSWER CAN STILL BE WRONG, and the
+ * way that is discovered is the browser dying - on both an Android tablet and an iPad
+ * (Sept 2026) the engines crashed the page at the moment of speaking or transcribing.
+ * Proving the graphics device above removes one cause of that; it cannot remove the
+ * other, which is simply that full-detail weights need more memory than a tablet has.
+ * Forcing the fallback path is the way to find out which of the two it was, and it has
+ * to be reachable without any of the on-device engines having run.
+ *
+ * (!) SWITCHING PATHS MEANS DIFFERENT FILES, so everything downstream is reset: the
+ * sizes, whether the model counts as already here, and any engine already built. A
+ * model downloaded on one path is not the model the other path loads.
+ */
+function pathHintText() {
+  if (pathChoice === 'auto') {
+    return 'Changed only to answer a question. The fallback path is much slower but '
+      + 'asks for far less memory, so it is what to try when an engine crashes the page.';
+  }
+  return pathChoice === 'fast'
+    ? 'Forced. If the page dies when an engine runs, this is the setting to change.'
+    : 'Forced to the slower, smaller path. Different files, so a model fetched on the '
+      + 'fast path will be downloaded again.';
+}
+
+$('pathChoice').value = pathChoice;
+$('pathHint').textContent = pathHintText();
+$('pathChoice').addEventListener('change', async () => {
+  pathChoice = $('pathChoice').value;
+  try { localStorage.setItem(PATH_STORE, pathChoice); } catch {}
+  applyPathChoice();
+  $('pathHint').textContent = pathHintText();
+  local.tts = null;
+  local.stt = null;
+  localReady.tts = false;
+  localReady.stt = false;
+  modelBytes.tts = 0;
+  modelBytes.stt = 0;
+  await refreshLocalCard('tts');
+  await refreshLocalCard('stt');
+  await reportMachine();
+});
+
+$('netBtn').addEventListener('click', measureRoundTrips);
+$('copyMachine').addEventListener('click', copyMachineReport);
+reportMachine();
+
+async function loadLocalTts(statusEl) {
+  if (local.tts) return local.tts;
+  const device = await localDevice();
+  if (statusEl) statusEl.textContent = `Starting the download (${device})...`;
+  const { KokoroTTS } = await import('https://cdn.jsdelivr.net/npm/kokoro-js@1.2.1/+esm');
+  local.tts = await KokoroTTS.from_pretrained(LOCAL_TTS_MODEL, {
+    dtype: await localDtype(),
+    device,
+    progress_callback: localProgress(statusEl),
+  });
+  if (statusEl) statusEl.textContent = `Ready (${device}), and kept by the browser.`;
+  return local.tts;
+}
+
+async function loadLocalStt(modelId, statusEl) {
+  if (local.stt && local.stt.id === modelId) return local.stt.fn;
+  const device = await localDevice();
+  if (statusEl) statusEl.textContent = `Starting the download (${device})...`;
+  const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.6/+esm');
+  const fn = await pipeline('automatic-speech-recognition', modelId, {
+    dtype: await localDtype(),
+    device,
+    progress_callback: localProgress(statusEl),
+  });
+  local.stt = { id: modelId, fn };
+  if (statusEl) statusEl.textContent = `Ready (${device}), and kept by the browser.`;
+  return fn;
+}
+
+// (!) ASKED BEFORE THE DOWNLOAD, NOT AFTER. Several hundred megabytes arriving
+// unannounced on a tablet is the kind of surprise that makes somebody distrust a
+// tool. Answered once per page.
+
+const VOICE_FETCHERS = {
+  az: async () => {
+    const region = key('k_azure_region') || 'eastus';
+    const r = await fetch('https://' + region + '.tts.speech.microsoft.com/cognitiveservices/voices/list',
+      { headers: { 'Ocp-Apim-Subscription-Key': key('k_azure') } });
+    if (!r.ok) throw new Error(await describe(r));
+    return (await r.json()).map((v) => ({
+      id: v.ShortName,
+      label: (v.DisplayName || v.ShortName) + ' - ' + (v.Gender || '').toLowerCase()
+             + ', ' + (v.Locale || '') + (v.VoiceType === 'Neural' ? '' : ' (' + v.VoiceType + ')'),
+      lang: v.Locale,
+    }));
+  },
+  el: async () => {
+    const r = await fetch('https://api.elevenlabs.io/v1/voices',
+      { headers: { 'xi-api-key': key('k_eleven') } });
+    if (!r.ok) throw new Error(await describe(r));
+    return (await r.json()).voices.map((v) => ({
+      id: v.voice_id,
+      label: v.name + (v.labels && v.labels.accent ? ' - ' + v.labels.accent : ''),
+      lang: (v.labels && v.labels.language) || 'en',
+    }));
+  },
+  ca: async () => {
+    const r = await fetch('https://api.cartesia.ai/voices?limit=100',
+      { headers: { 'X-API-Key': key('k_cartesia'), 'Cartesia-Version': '2024-06-10' } });
+    if (!r.ok) throw new Error(await describe(r));
+    const j = await r.json();
+    const list = Array.isArray(j) ? j : (j.data || []);
+    return list.map((v) => ({ id: v.id, label: v.name + (v.description ? ' - ' + String(v.description).slice(0, 40) : ''),
+                              lang: v.language || 'en' }));
+  },
+  go: async () => {
+    const r = await fetch('https://texttospeech.googleapis.com/v1/voices?key='
+                          + encodeURIComponent(key('k_google')));
+    if (!r.ok) throw new Error(await describe(r));
+    return (await r.json()).voices.map((v) => ({
+      id: v.name,
+      label: v.name + ' - ' + String(v.ssmlGender || '').toLowerCase(),
+      lang: (v.languageCodes || [])[0],
+    }));
+  },
+};
+
+/* ============================================================================
+   3. Speaking
+   Each entry knows how to turn text into playable audio. They all return
+   { blob } or throw with a readable message.
+   ========================================================================== */
+const TTS = [
+  {
+    id: 'dg', name: 'Deepgram Aura', needs: 'k_deepgram',
+    cfg: [{ id: 'dg_voice', label: 'voice', value: 'aura-2-thalia-en',
+            kind: 'voice', builtin: DG_VOICES }],
+    // Deepgram's ordinary web address refuses browser calls, which is why the app
+    // uses their streaming connection instead. Same approach here.
+    run: async (c, text, onFirst) => {
+      const k = key('k_deepgram');
+      // mip_opt_out keeps what is sent out of Deepgram's training data - the same
+      // parameter the app sends on every Deepgram request.
+      const url = 'wss://api.deepgram.com/v1/speak?model=' + encodeURIComponent(c.dg_voice)
+                + '&encoding=linear16&sample_rate=24000&mip_opt_out=true';
+      const chunks = await new Promise((resolve, reject) => {
+        const ws = new WebSocket(url, ['token', k]);
+        ws.binaryType = 'arraybuffer';
+        const got = [];
+        const t = setTimeout(() => { try { ws.close(); } catch {}
+          reject(new Error('no answer within 15 seconds')); }, 15000);
+        ws.onopen = () => {
+          ws.send(JSON.stringify({ type: 'Speak', text: text }));
+          ws.send(JSON.stringify({ type: 'Flush' }));
+        };
+        ws.onmessage = (e) => {
+          if (typeof e.data === 'string') {
+            let m; try { m = JSON.parse(e.data); } catch { return; }
+            if (m.type === 'Flushed') { clearTimeout(t); try { ws.close(); } catch {}
+              resolve(got); }
+            else if (m.type === 'Warning') { clearTimeout(t);
+              reject(new Error(m.description || 'the service reported a problem')); }
+            return;
+          }
+          if (!got.length && onFirst) onFirst();   // audio is arriving; see the note
+          got.push(e.data);
+        };
+        ws.onerror = () => { clearTimeout(t);
+          reject(new Error('the connection was refused - check the key')); };
+        ws.onclose = (e) => { clearTimeout(t);
+          if (!got.length) reject(new Error('connection closed, code ' + e.code)); };
+      });
+      return { pcm: chunks, rate: 24000 };
+    },
+  },
+  {
+    id: 'local', name: 'On this device (no key, no bill)', local: true,
+    cfg: [{ id: 'local_voice', label: 'voice', value: 'af_heart',
+            kind: 'voice', builtin: LOCAL_VOICES }],
+    run: async (c, text) => {
+      if (!localReady.tts) throw new Error('the speaking model has not been downloaded yet - use the button on this card');
+      const tts = await loadLocalTts(localCards.tts && localCards.tts.status);
+      const audio = await tts.generate(text, { voice: c.local_voice });
+      return { blob: audio.toBlob() };
+    },
+  },
+  {
+    id: 'az', name: 'Azure Speech', needs: 'k_azure',
+    cfg: [{ id: 'az_voice', label: 'voice', value: 'en-US-JennyNeural',
+            kind: 'voice', builtin: [['en-US-JennyNeural', 'Jenny - female, en-US']],
+            fetch: 'az' }],
+    run: async (c, text) => {
+      const region = key('k_azure_region') || 'eastus';
+      const ssml = '<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis"'
+        + ' xml:lang="en-US"><voice name="' + c.az_voice + '">'
+        + escapeXml(text) + '</voice></speak>';
+      const r = await fetch('https://' + region + '.tts.speech.microsoft.com/cognitiveservices/v1', {
+        method: 'POST',
+        headers: { 'Ocp-Apim-Subscription-Key': key('k_azure'),
+                   'Content-Type': 'application/ssml+xml',
+                   'X-Microsoft-OutputFormat': 'audio-24khz-48kbitrate-mono-mp3' },
+        body: ssml,
+      });
+      if (!r.ok) throw new Error(await describe(r));
+      return { blob: await r.blob() };
+    },
+  },
+  {
+    id: 'oa', name: 'OpenAI', needs: 'k_openai',
+    cfg: [{ id: 'oa_voice', label: 'voice', value: 'alloy',
+            kind: 'voice', builtin: OA_VOICES },
+          { id: 'oa_model', label: 'model', value: 'gpt-4o-mini-tts' }],
+    run: async (c, text) => {
+      const r = await fetch('https://api.openai.com/v1/audio/speech', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + key('k_openai'),
+                   'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: c.oa_model, voice: c.oa_voice,
+                               input: text }),
+      });
+      if (!r.ok) throw new Error(await describe(r));
+      return { blob: await r.blob() };
+    },
+  },
+  {
+    id: 'el', name: 'ElevenLabs', needs: 'k_eleven',
+    cfg: [{ id: 'el_voice', label: 'voice', value: '21m00Tcm4TlvDq8ikWAM',
+            kind: 'voice',
+            builtin: [['21m00Tcm4TlvDq8ikWAM', 'Rachel - a library voice, needs a paid plan']],
+            fetch: 'el' },
+          { id: 'el_model', label: 'model', value: 'eleven_multilingual_v2' }],
+    run: async (c, text) => {
+      const r = await fetch('https://api.elevenlabs.io/v1/text-to-speech/'
+                            + encodeURIComponent(c.el_voice), {
+        method: 'POST',
+        headers: { 'xi-api-key': key('k_eleven'), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: text, model_id: c.el_model }),
+      });
+      if (!r.ok) throw new Error(await describe(r));
+      return { blob: await r.blob() };
+    },
+  },
+  {
+    id: 'ca', name: 'Cartesia', needs: 'k_cartesia',
+    cfg: [{ id: 'ca_voice', label: 'voice', value: '',
+            kind: 'voice', builtin: [], fetch: 'ca' },
+          { id: 'ca_model', label: 'model', value: 'sonic-2' }],
+    run: async (c, text) => {
+      if (!c.ca_voice) throw new Error('Cartesia needs a voice id - copy one from '
+        + 'their voice library and paste it above.');
+      const r = await fetch('https://api.cartesia.ai/tts/bytes', {
+        method: 'POST',
+        headers: { 'X-API-Key': key('k_cartesia'), 'Cartesia-Version': '2024-06-10',
+                   'Content-Type': 'application/json' },
+        body: JSON.stringify({ model_id: c.ca_model, transcript: text,
+          voice: { mode: 'id', id: c.ca_voice }, language: 'en',
+          output_format: { container: 'wav', encoding: 'pcm_s16le', sample_rate: 24000 } }),
+      });
+      if (!r.ok) throw new Error(await describe(r));
+      return { blob: await r.blob() };
+    },
+  },
+  {
+    id: 'go', name: 'Google Cloud', needs: 'k_google',
+    cfg: [{ id: 'go_voice', label: 'voice', value: 'en-US-Neural2-F',
+            kind: 'voice', builtin: [['en-US-Neural2-F', 'Neural2-F - female, en-US']],
+            fetch: 'go' }],
+    run: async (c, text) => {
+      const r = await fetch('https://texttospeech.googleapis.com/v1/text:synthesize?key='
+                            + encodeURIComponent(key('k_google')), {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input: { text: text },
+          voice: { languageCode: 'en-US', name: c.go_voice },
+          audioConfig: { audioEncoding: 'MP3' } }),
+      });
+      if (!r.ok) throw new Error(await describe(r));
+      const j = await r.json();
+      if (!j.audioContent) throw new Error('no audio came back');
+      return { blob: b64ToBlob(j.audioContent, 'audio/mpeg') };
+    },
+  },
+];
+
+function escapeXml(s) {
+  return String(s).replace(/[<>&'"]/g, (ch) => ({ '<': '&lt;', '>': '&gt;',
+    '&': '&amp;', "'": '&apos;', '"': '&quot;' }[ch]));
+}
+// Say what the number MEANS before quoting it. Several of these services answer a
+// refused key with an empty body, so a bare "HTTP 401" was the whole message.
+async function describe(r) {
+  let body = '';
+  try { body = (await r.text()).slice(0, 200).replace(/\s+/g, ' '); } catch {}
+  // (!) A REFUSAL AND A MISSING PERMISSION NEED DIFFERENT FIXES, and they share a
+  // status code. "The key was refused" sends you off to make a new key; the actual
+  // repair is to edit the one you have and grant it the permission it names. The
+  // body is what distinguishes them - the number never can.
+  const plain = (r.status === 401 || r.status === 403)
+        && /missing_permissions|missing the permission|insufficient scope/i.test(body)
+      ? 'the key is valid but lacks a permission it needs - edit the key where you '
+        + 'created it and grant the one named below, rather than making a new one'
+      : r.status === 401 || r.status === 403
+      ? 'the key was refused'
+      : r.status === 404 ? 'not found - check the voice or the region'
+      // (!) 429 IS TWO DIFFERENT THINGS AND THEY NEED DIFFERENT ANSWERS. OpenAI
+      // returns it for "this account has no credit" as well as for genuine rate
+      // limiting, and calling the first one "too many requests" sends you looking
+      // for a traffic problem when the answer is to put money on the account.
+      : r.status === 429 ? (/insufficient_quota|billing|exceeded your current quota/i.test(body)
+            ? 'this account has no credit for the API - paying anything, even the $5 minimum, turns it on'
+            : 'too many requests just now - wait a moment and try again')
+      : r.status === 402 ? (/paid_plan_required|library voices/i.test(body)
+            ? 'this voice needs a paid plan - press Load voices and pick one from '
+              + 'your own account instead, which a free plan can use'
+            : 'this plan does not cover that')
+      : r.status >= 500 ? 'the service had a problem'
+      // (!) GOOGLE REPORTS A BAD KEY AS A BAD REQUEST, not as a refusal, so it lands
+      // here rather than in the 401 case above. Worth naming, because it also rules
+      // things OUT: this is the key STRING not being recognized, never a restriction.
+      // A key blocked by its restrictions comes back 403 and says referrer or API.
+      : /API_KEY_INVALID|API key not valid/i.test(body)
+            ? 'the key string was not recognized - check the whole key was copied, and '
+              + 'note a brand new key can take a minute or two to start working. This is '
+              + 'not a restrictions problem; those are refused differently'
+      : 'the request was rejected';
+  return plain + ' (HTTP ' + r.status + ')' + (body ? ' - ' + body : '');
+}
+function b64ToBlob(b64, type) {
+  const bin = atob(b64);
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return new Blob([arr], { type });
+}
+// Deepgram hands back bare samples with no file header, so wrap them in one.
+function pcmToWavBlob(chunks, rate) {
+  let total = 0;
+  for (const c of chunks) total += c.byteLength;
+  const out = new Uint8Array(44 + total);
+  const dv = new DataView(out.buffer);
+  const str = (o, s) => { for (let i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)); };
+  str(0, 'RIFF'); dv.setUint32(4, 36 + total, true); str(8, 'WAVE');
+  str(12, 'fmt '); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true);
+  dv.setUint16(22, 1, true); dv.setUint32(24, rate, true);
+  dv.setUint32(28, rate * 2, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
+  str(36, 'data'); dv.setUint32(40, total, true);
+  let at = 44;
+  for (const c of chunks) { out.set(new Uint8Array(c), at); at += c.byteLength; }
+  return new Blob([out], { type: 'audio/wav' });
+}
+
+/* ============================================================================
+   Downloading the on-device models, deliberately
+
+   (!) THE BOX IS DISABLED UNTIL THE MODEL IS HERE, which is the honest state: an
+   engine with no model cannot speak or hear, and letting it be ticked only moves the
+   discovery of that to the middle of a run. The button beside it says what will be
+   fetched and how big it is, so the decision is made once, in the open, by somebody
+   who meant to make it.
+
+   (!) ALREADY DOWNLOADED IS A DIFFERENT STATE FROM NOT YET, and the browser can be
+   asked rather than guessed at. The model files are kept in the browser's own cache
+   between visits, so a returning visitor should find the box live and no download
+   offered - not be invited to fetch 88 MB they already have.
+   ========================================================================== */
+
+const localModelUrls = (which, dtype) => which === 'tts'
+  ? [HF_TTS + modelFileFor(dtype)]
+  : sttModelFiles(dtype);
+
+// caches.match searches every cache the origin has, which is what we want: the two
+// libraries name their caches differently and neither name is ours to rely on.
+async function isModelCached(urls) {
+  if (!window.caches || !caches.match) return false;
+  try {
+    for (const u of urls) {
+      if (!(await caches.match(u))) return false;
+    }
+    return true;
+  } catch { return false; }
+}
+
+async function refreshLocalCard(which) {
+  const c = localCards[which];
+  if (!c) return;
+  const noun = which === 'tts' ? 'speaking' : 'hearing';
+  const g = await probeGraphics();
+  const cached = localReady[which] || await isModelCached(localModelUrls(which, g.dtype));
+  if (cached) {
+    localReady[which] = true;
+    c.cb.disabled = false;
+    c.btn.hidden = true;
+    c.status.textContent = 'The ' + noun + ' model is on this machine already.';
+    return;
+  }
+  const bytes = modelBytes[which];
+  c.btn.hidden = false;
+  c.btn.disabled = false;
+  c.btn.textContent = 'Download the ' + noun + ' model'
+    + (bytes ? ' (' + mbytes(bytes) + ')' : '');
+  // Unchecked as well as disabled: a disabled box keeps whatever tick it had, so
+  // switching paths would otherwise leave an engine selected for a run whose model is
+  // no longer the one on this machine.
+  c.cb.disabled = true;
+  c.cb.checked = false;
+  c.status.textContent = 'Downloaded once and kept by the browser. Until then this '
+    + 'engine cannot be tried.';
+}
+
+async function downloadLocalModel(which) {
+  const c = localCards[which];
+  const noun = which === 'tts' ? 'speaking' : 'hearing';
+  c.btn.disabled = true;
+
+  // (!) SAY IT BEFORE, NOT AFTER. A browser that cannot keep the file will fetch it
+  // again on every visit, which reads as the engine being slow rather than as storage
+  // being full - so the warning belongs beside the button that starts the download.
+  try {
+    const q = await navigator.storage.estimate();
+    if (q && q.quota && modelBytes[which] && q.quota < modelBytes[which] * 2) {
+      c.status.textContent = 'Warning: this browser offers only about '
+        + Math.round(q.quota / 1048576) + ' MB of storage, so it may not be able to keep '
+        + 'the model. Downloading anyway.';
+    }
+  } catch { /* not every browser answers; the download stands without it */ }
+
+  try {
+    if (which === 'tts') await loadLocalTts(c.status);
+    else await loadLocalStt($('locals_model') ? $('locals_model').value.trim()
+      : LOCAL_STT_MODEL, c.status);
+    localReady[which] = true;
+    // Pressing Download is asking to use it, so it is switched on rather than left
+    // for a second decision.
+    c.cb.checked = true;
+    await refreshLocalCard(which);
+  } catch (e) {
+    c.btn.disabled = false;
+    const msg = (e && e.message ? e.message : String(e));
+    // (!) NAME THE REMEDY, because this failure reads as the model being broken when it
+    // is almost always the path. A graphics-shaped complaint here means the engine
+    // could not get the hardware this page said was available - the fallback path
+    // needs none of it.
+    const gpuish = /gpu|webgpu|adapter|device/i.test(msg);
+    c.status.textContent = 'The download failed: ' + msg
+      + (gpuish && (await probeGraphics()).device === 'webgpu'
+          ? ' - this is the graphics hardware, not the model. Set the path above to '
+            + 'the fallback and try again; it is slower but needs none of it.'
+          : '');
+  }
+}
+
+function buildProviderCards(list, host, prefix) {
+  host.textContent = '';
+  for (const p of list) {
+    const card = document.createElement('div');
+    card.className = 'prov';
+    const h = document.createElement('h4');
+    const lab = document.createElement('label');
+    lab.className = 'pick';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.id = prefix + '_on_' + p.id;
+    // The local engines start OFF: their first run is a large download, and nobody
+    // should trigger that by pressing a button about voices.
+    cb.checked = !p.local;
+    lab.appendChild(cb);
+    lab.appendChild(document.createTextNode(' ' + p.name));
+    h.appendChild(lab);
+    card.appendChild(h);
+    for (const f of (p.cfg || [])) {
+      if (f.kind === 'voice') { card.appendChild(buildVoicePicker(f)); continue; }
+      const wrap = document.createElement('div');
+      wrap.className = 'cfg';
+      const l = document.createElement('span');
+      l.className = 'hint'; l.textContent = f.label;
+      const inp = document.createElement('input');
+      inp.type = 'text'; inp.id = f.id; inp.value = f.value;
+      inp.placeholder = f.label;
+      wrap.appendChild(l); wrap.appendChild(inp);
+      card.appendChild(wrap);
+    }
+    // (!) THE DOWNLOAD IS ITS OWN BUTTON, AND THE BOX STAYS OFF UNTIL IT IS DONE.
+    // It used to happen as a side effect of pressing "Speak it with every voice",
+    // which meant the only way to fetch the model was to ask for something else and
+    // wait - and the one control that says what is about to happen was a dialog that
+    // interrupted a run already under way. An explicit button, labelled with the real
+    // size, IS the consent: nobody presses "Download the speaking model (88 MB)" by
+    // accident, and nothing large starts without it.
+    if (p.local) {
+      const which = prefix === 'tts' ? 'tts' : 'stt';
+      const row = document.createElement('div');
+      row.className = 'row';
+      const btn = document.createElement('button');
+      const status = document.createElement('span');
+      status.className = 'hint';
+      status.id = prefix + '_dlstatus';
+      row.appendChild(btn); row.appendChild(status);
+      card.appendChild(row);
+
+      const n = document.createElement('div');
+      n.className = 'hint';
+      n.textContent = 'Runs here. Nothing is sent anywhere, and there is nothing to pay.';
+      card.appendChild(n);
+
+      cb.disabled = true;
+      localCards[which] = { cb, btn, status, prefix };
+      btn.addEventListener('click', () => downloadLocalModel(which));
+      refreshLocalCard(which);
+    }
+    host.appendChild(card);
+  }
+}
+
+/*
+ * A voice picker: a list you choose from, rather than an id you have to know.
+ *
+ * (!) "OTHER" IS NOT DECORATION. The built-in lists hold only the ids we are sure of,
+ * and a provider's real catalog is bigger, so there has to be a way to reach a voice
+ * the list does not name. It is also the escape hatch when a live list will not load.
+ */
+const OTHER = '__other__';
+
+function fillVoiceSelect(sel, entries, keep) {
+  sel.textContent = '';
+  for (const e of entries) {
+    const o = document.createElement('option');
+    o.value = e[0]; o.textContent = e[1];
+    sel.appendChild(o);
+  }
+  const o = document.createElement('option');
+  o.value = OTHER; o.textContent = 'Other - type an id';
+  sel.appendChild(o);
+  if (keep && entries.some((e) => e[0] === keep)) sel.value = keep;
+}
+
+// A picker with five hundred entries in it is not a picker, so the live lists are
+// filtered to English unless the box beside them is unticked.
+function renderVoices(sel, box, f) {
+  const enOnly = document.getElementById(f.id + '_en');
+  const list = box._all.filter((v) => (enOnly && !enOnly.checked) || englishOnly(v.lang));
+  fillVoiceSelect(sel, list.map((v) => [v.id, v.label]), sel.value);
+  return list.length;
+}
+
+function buildVoicePicker(f) {
+  const box = document.createElement('div');
+
+  const row = document.createElement('div');
+  row.className = 'voicerow';
+  const sel = document.createElement('select');
+  sel.id = f.id + '_sel';
+  fillVoiceSelect(sel, f.builtin || [], f.value);
+  row.appendChild(sel);
+
+  const status = document.createElement('div');
+  status.className = 'vstatus';
+
+  // The typed id, shown only when the list cannot name the voice.
+  const other = document.createElement('input');
+  other.type = 'text'; other.id = f.id; other.placeholder = 'voice id';
+  other.value = (f.builtin || []).some((e) => e[0] === f.value) ? '' : (f.value || '');
+  if (!(f.builtin || []).length) sel.value = OTHER;
+  const syncOther = () => { other.hidden = sel.value !== OTHER; };
+  syncOther();
+  sel.addEventListener('change', syncOther);
+
+  if (f.fetch) {
+    const btn = document.createElement('button');
+    btn.textContent = 'Load voices';
+    btn.addEventListener('click', async () => {
+      if (!key(TTS.find((x) => x.cfg && x.cfg.some((c) => c.id === f.id)).needs)) {
+        status.textContent = 'enter the key first';
+        return;
+      }
+      btn.disabled = true; status.textContent = 'loading...';
+      try {
+        box._all = await VOICE_FETCHERS[f.fetch]();
+        status.textContent = renderVoices(sel, box, f) + ' of ' + box._all.length + ' voices';
+      } catch (e) {
+        status.textContent = e.message;
+      }
+      btn.disabled = false; syncOther();
+    });
+    row.appendChild(btn);
+  }
+  box.appendChild(row);
+
+  if (f.fetch) {
+    const lab = document.createElement('label');
+    lab.className = 'hint';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.checked = true; cb.id = f.id + '_en';
+    cb.addEventListener('change', () => {
+      if (!box._all) return;
+      status.textContent = renderVoices(sel, box, f) + ' of ' + box._all.length + ' voices';
+      syncOther();
+    });
+    lab.appendChild(cb);
+    lab.appendChild(document.createTextNode(' English only'));
+    box.appendChild(lab);
+  }
+
+  box.appendChild(status);
+  box.appendChild(other);
+  return box;
+}
+
+// What the runner uses: the typed id when "Other" is chosen, the picked one otherwise.
+function voiceValue(fieldId) {
+  const sel = document.getElementById(fieldId + '_sel');
+  const other = document.getElementById(fieldId);
+  if (!sel) return other ? other.value.trim() : '';
+  return sel.value === OTHER ? (other ? other.value.trim() : '') : sel.value;
+}
+
+buildProviderCards(TTS, $('ttsProviders'), 'tts');
+
+let currentAudio = null;
+/*
+ * (!) ONE AUDIO ELEMENT, UNLOCKED DURING A REAL TAP, REUSED FOREVER AFTER.
+ *
+ * iOS will not let a page play sound unless the play came from a tap, and a tap's
+ * permission is spent at the first `await`. Every clip here arrives AFTER an await -
+ * the service has to answer first - so a fresh `new Audio()` played at that point is
+ * refused on an iPad. A single element that was played once during the tap stays
+ * playable, so swapping its src later works.
+ *
+ * The old code also swallowed the refusal, which is the worst version of this: on an
+ * iPad the row would say "spoke", the timing would look fine, and no sound would come
+ * out, with nothing anywhere saying why.
+ */
+let player = null;
+const SILENCE = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9'
+              + 'AAACABAAZGF0YQAAAAA=';
+
+function unlockPlayback() {
+  if (player) return;
+  player = new Audio();
+  player.src = SILENCE;
+  // Refusal here is not fatal - it only means playback may need its own tap later.
+  player.play().then(() => player.pause()).catch(() => {});
+}
+
+function playBlob(blob, onBlocked) {
+  if (!player) player = new Audio();          // never unlocked; may still work off iOS
+  try { player.pause(); } catch { /* nothing playing */ }
+  if (player.src && player.src.startsWith('blob:')) URL.revokeObjectURL(player.src);
+  player.src = URL.createObjectURL(blob);
+  currentAudio = player;
+  player.play().catch((e) => {
+    // Say so rather than looking like silence from the service.
+    if (onBlocked) onBlocked(e && e.name === 'NotAllowedError'
+      ? 'the browser would not play it without a tap - press Play on the row'
+      : 'could not play the audio: ' + (e && e.message));
+  });
+  return player;
+}
+
+$('ttsStop').addEventListener('click', () => {
+  if (currentAudio) { try { currentAudio.pause(); } catch {} }
+});
+
+// (!) A PAIR HAS TO BE HEARD BACK TO BACK OR IT IS NOT A COMPARISON. Judging a
+// respelling means holding two deliveries of the same sentence side by side, and a
+// person cannot do that across a gap of several seconds and five other voices. So when
+// the second box is filled every voice says both, one immediately after the other, and
+// the two rows sit together in the table.
+function playSequence(blobs, onBlocked) {
+  let i = 0;
+  const next = () => {
+    if (i >= blobs.length) return;
+    const el = playBlob(blobs[i++], onBlocked);
+    if (!el) return;
+    el.addEventListener('ended', next, { once: true });
+  };
+  next();
+}
+
+$('ttsRun').addEventListener('click', async () => {
+  audioCtx();                       // unlock audio inside this real tap
+  unlockPlayback();                 // and the element that will play the clips
+  const table = $('ttsTable'), body = table.querySelector('tbody');
+  body.textContent = ''; table.hidden = false;
+  $('ttsRun').disabled = true;
+
+  // One variant normally; two when a respelling is being tested. The label is only
+  // shown in the second case, so an ordinary run looks exactly as it always did.
+  const respelled = $('ttsText2').value.trim();
+  const variants = respelled
+    ? [{ label: 'as written', text: $('ttsText').value },
+       { label: 'respelled', text: respelled }]
+    : [{ label: '', text: $('ttsText').value }];
+
+  const chosen = TTS.filter((p) => $('tts_on_' + p.id).checked);
+  let done = 0, played = false;
+  for (const p of chosen) {
+    const heard = [];
+    for (const v of variants) {
+      const tr = document.createElement('tr');
+      tr.appendChild(cell(p.name + (v.label ? ' - ' + v.label : '')));
+      const res = cell('working...', 'pending'); tr.appendChild(res);
+      const first = cell('', 'num'); tr.appendChild(first);
+      const tm = cell('', 'num'); tr.appendChild(tm);
+      const playCell = document.createElement('td'); tr.appendChild(playCell);
+      const det = cell(''); tr.appendChild(det);
+      body.appendChild(tr);
+
+      if (!p.local && !key(p.needs)) {
+        res.textContent = 'skipped'; res.className = 'pending';
+        det.textContent = 'no key entered';
+        continue;
+      }
+      const cfg = {};
+      for (const f of (p.cfg || [])) {
+        cfg[f.id] = f.kind === 'voice' ? voiceValue(f.id) : $(f.id).value.trim();
+      }
+      // (!) TWO TIMES, BECAUSE FOR A STREAMING SERVICE THEY ARE NOTHING ALIKE AND ONLY
+      // ONE OF THEM IS WHAT A PERSON WOULD FEEL. Deepgram sends the audio as it makes
+      // it, so its first sound arrives in a fraction of a second while the whole file
+      // takes seconds. Every other service here hands over a finished file, so its two
+      // figures are the same by definition. Reporting only the total made Deepgram look
+      // like the slowest voice on the page when it is among the quickest to start.
+      let firstMs = null;
+      const t0 = performance.now();
+      try {
+        const r = await p.run(cfg, v.text, () => {
+          if (firstMs === null) firstMs = performance.now() - t0;
+        });
+        const blob = r.blob || pcmToWavBlob(r.pcm, r.rate);
+        const took = performance.now() - t0;
+        res.textContent = 'spoke'; res.className = 'ok';
+        first.textContent = ms(firstMs === null ? took : firstMs);
+        tm.textContent = ms(took);
+        const b = document.createElement('button');
+        b.textContent = 'Play';
+        b.addEventListener('click', () => playBlob(blob));
+        playCell.appendChild(b);
+        det.textContent = Math.round(blob.size / 1024) + ' KB';
+        heard.push(blob);
+        done++;
+      } catch (e) {
+        res.textContent = 'failed'; res.className = 'fail';
+        if (firstMs !== null) first.textContent = ms(firstMs);
+        tm.textContent = ms(performance.now() - t0);
+        det.textContent = e.message;
+      }
+    }
+    // The first voice to produce anything plays itself, as it always has - and now
+    // plays the pair rather than half of it.
+    if (heard.length && !played) {
+      played = true;
+      playSequence(heard, (why) => { $('ttsStatus').textContent = why; });
+    }
+  }
+  $('ttsRun').disabled = false;
+  $('ttsStatus').textContent = done
+    ? (respelled
+        ? 'Each voice said both. Press Play on any row to hear one again.'
+        : 'Press Play on any row to hear it again.')
+    : 'Nothing was spoken - check the keys and the detail column.';
+});
+
+/* ============================================================================
+   4. Hearing
+   Record once as plain 16 kHz samples, so every service gets identical audio
+   and we can hand it over either as a file or as a stream.
+   ========================================================================== */
+const REC_RATE = 16000;
+let recStream = null, recNode = null, recSource = null, recBuf = [], recording = false;
+let clipPcm = null, clipWav = null, recStart = 0, timerId = null;
+
+function downsample(input, from, to) {
+  if (to === from) return Float32Array.from(input);
+  const ratio = from / to;
+  const out = new Float32Array(Math.floor(input.length / ratio));
+  for (let i = 0; i < out.length; i++) {
+    const start = Math.floor(i * ratio), end = Math.min(input.length, Math.floor((i + 1) * ratio));
+    let sum = 0, n = 0;
+    for (let j = start; j < end; j++) { sum += input[j]; n++; }
+    out[i] = n ? sum / n : 0;
+  }
+  return out;
+}
+function floatToPcm16(f32) {
+  const out = new Int16Array(f32.length);
+  for (let i = 0; i < f32.length; i++) {
+    const s = Math.max(-1, Math.min(1, f32[i]));
+    out[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+  }
+  return out;
+}
+
+async function startRecording() {
+  try {
+    recStream = await navigator.mediaDevices.getUserMedia({ audio: {
+      echoCancellation: true, noiseSuppression: true } });
+  } catch (e) {
+    $('recStatus').textContent = 'The microphone was refused: ' + e.message;
+    return;
+  }
+  const c = audioCtx();
+  recSource = c.createMediaStreamSource(recStream);
+  recNode = c.createScriptProcessor(4096, 1, 1);
+  recBuf = [];
+  recNode.onaudioprocess = (e) => {
+    if (!recording) return;
+    recBuf.push(downsample(e.inputBuffer.getChannelData(0), c.sampleRate, REC_RATE));
+  };
+  recSource.connect(recNode);
+  recNode.connect(c.destination);   // required for the callback to fire in some browsers
+  recording = true;
+  recStart = performance.now();
+  $('recBtn').textContent = 'Stop recording';
+  $('recStatus').textContent = 'Listening...';
+  timerId = setInterval(() => {
+    $('recTimer').textContent = ((performance.now() - recStart) / 1000).toFixed(1) + 's';
+  }, 100);
+}
+
+function stopRecording() {
+  recording = false;
+  clearInterval(timerId); timerId = null;
+  try { recNode.disconnect(); recSource.disconnect(); } catch {}
+  try { recStream.getTracks().forEach((t) => t.stop()); } catch {}
+  let total = 0;
+  for (const b of recBuf) total += b.length;
+  const all = new Float32Array(total);
+  let at = 0;
+  for (const b of recBuf) { all.set(b, at); at += b.length; }
+  clipPcm = floatToPcm16(all);
+  clipWav = pcmToWavBlob([clipPcm.buffer], REC_RATE);
+  const secs = total / REC_RATE;
+  $('recBtn').textContent = 'Start recording';
+  $('recStatus').textContent = 'Recorded.';
+  $('clipInfo').textContent = secs.toFixed(1) + ' seconds, '
+    + Math.round(clipWav.size / 1024) + ' KB'
+    + ' - the "against the clip" column below is measured against this';
+  $('playbackRow').hidden = false;
+  $('sttRun').disabled = total === 0;
+  $('sttStatus').textContent = total ? 'Ready.' : 'Nothing was recorded - try again.';
+}
+
+// (!) A FILE OPENED DIRECTLY IS NOT A SECURE PAGE, and the microphone is refused
+// without one. Worth saying up front rather than after a permission error, because the
+// bench is meant to be opened by double-clicking it - which is exactly the case that
+// cannot record.
+if (!window.isSecureContext) {
+  $('micWarning').hidden = false;
+  $('recStatus').textContent = 'Recording needs the page served over https.';
+}
+
+$('recBtn').addEventListener('click', () => {
+  if (recording) stopRecording(); else startRecording();
+});
+$('playClip').addEventListener('click', () => { if (clipWav) playBlob(clipWav); });
+
+const STT = [
+  {
+    id: 'dg', name: 'Deepgram', needs: 'k_deepgram',
+    cfg: [{ id: 'dgs_model', label: 'model', value: 'nova-3' }],
+    run: async (c) => new Promise((resolve, reject) => {
+      // (!) THE SAME FORM THE APP ASKS FOR, and the same form the others return.
+      // smart_format adds the number, date and time formatting that Azure's DisplayText
+      // does by default - so without it Deepgram was being judged on plainer output than
+      // its neighbours, for no reason but the shape of this line.
+      const url = 'wss://api.deepgram.com/v1/listen?encoding=linear16&sample_rate='
+        + REC_RATE + '&channels=1&punctuate=true&smart_format=true&mip_opt_out=true&model='
+        + encodeURIComponent(c.dgs_model);
+      const ws = new WebSocket(url, ['token', key('k_deepgram')]);
+      ws.binaryType = 'arraybuffer';
+      let text = '';
+      const t = setTimeout(() => { try { ws.close(); } catch {}
+        reject(new Error('no answer within 20 seconds')); }, 20000);
+      ws.onopen = () => {
+        const bytes = new Uint8Array(clipPcm.buffer);
+        for (let i = 0; i < bytes.length; i += 8000) ws.send(bytes.slice(i, i + 8000));
+        ws.send(JSON.stringify({ type: 'CloseStream' }));
+      };
+      ws.onmessage = (e) => {
+        if (typeof e.data !== 'string') return;
+        let m; try { m = JSON.parse(e.data); } catch { return; }
+        const alt = m.channel && m.channel.alternatives && m.channel.alternatives[0];
+        if (alt && m.is_final && alt.transcript) text += (text ? ' ' : '') + alt.transcript;
+        if (m.type === 'Metadata') { clearTimeout(t); try { ws.close(); } catch {}
+          resolve(text); }
+      };
+      ws.onerror = () => { clearTimeout(t);
+        reject(new Error('the connection was refused - check the key')); };
+      ws.onclose = () => { clearTimeout(t); resolve(text); };
+    }),
+  },
+  {
+    id: 'local', name: 'On this device (no key, no bill)', local: true,
+    cfg: [{ id: 'locals_model', label: 'model', value: LOCAL_STT_MODEL }],
+    run: async (c) => {
+      if (!localReady.stt) throw new Error('the hearing model has not been downloaded yet - use the button on this card');
+      const fn = await loadLocalStt(c.locals_model, localCards.stt && localCards.stt.status);
+      // Whisper wants plain 16 kHz mono samples, which is exactly what was recorded.
+      const f32 = new Float32Array(clipPcm.length);
+      for (let i = 0; i < clipPcm.length; i++) f32[i] = clipPcm[i] / 32768;
+      const out = await fn(f32);
+      return (out && out.text) || '';
+    },
+  },
+  {
+    id: 'az', name: 'Azure Speech', needs: 'k_azure',
+    cfg: [{ id: 'azs_lang', label: 'language', value: 'en-US' }],
+    run: async (c) => {
+      const region = key('k_azure_region') || 'eastus';
+      const url = 'https://' + region + '.stt.speech.microsoft.com/speech/recognition/'
+        + 'conversation/cognitiveservices/v1?language=' + encodeURIComponent(c.azs_lang);
+      const r = await fetch(url, {
+        method: 'POST',
+        headers: { 'Ocp-Apim-Subscription-Key': key('k_azure'),
+          'Content-Type': 'audio/wav; codecs=audio/pcm; samplerate=' + REC_RATE,
+          Accept: 'application/json' },
+        body: clipWav,
+      });
+      if (!r.ok) throw new Error(await describe(r));
+      const j = await r.json();
+      if (j.RecognitionStatus && j.RecognitionStatus !== 'Success') {
+        throw new Error('the service reported: ' + j.RecognitionStatus);
+      }
+      return j.DisplayText || '';
+    },
+  },
+  {
+    id: 'oa', name: 'OpenAI', needs: 'k_openai',
+    cfg: [{ id: 'oas_model', label: 'model', value: 'gpt-4o-transcribe' }],
+    run: async (c) => {
+      const fd = new FormData();
+      fd.append('file', clipWav, 'clip.wav');
+      fd.append('model', c.oas_model);
+      const r = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + key('k_openai') },
+        body: fd,
+      });
+      if (!r.ok) throw new Error(await describe(r));
+      const j = await r.json();
+      return j.text || '';
+    },
+  },
+  {
+    id: 'go', name: 'Google Cloud', needs: 'k_google',
+    cfg: [{ id: 'gos_model', label: 'model', value: 'latest_long' }],
+    run: async (c) => {
+      const b64 = await blobToBase64(clipWav);
+      const r = await fetch('https://speech.googleapis.com/v1/speech:recognize?key='
+                            + encodeURIComponent(key('k_google')), {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          // (!) GOOGLE PUNCTUATES ONLY WHEN ASKED. The default is off, so without this
+          // line the transcript comes back as one unbroken run of words while every
+          // other service here returns sentences - which looks like Google being worse
+          // and is us asking it for something different. Switching it on also
+          // capitalizes after a period or a question mark.
+          config: { encoding: 'LINEAR16', sampleRateHertz: REC_RATE,
+                    languageCode: 'en-US', model: c.gos_model,
+                    enableAutomaticPunctuation: true },
+          audio: { content: b64 } }),
+      });
+      if (!r.ok) throw new Error(await describe(r));
+      const j = await r.json();
+      if (!j.results) return '';
+      return j.results.map((x) => x.alternatives[0].transcript).join(' ');
+    },
+  },
+];
+buildProviderCards(STT, $('sttProviders'), 'stt');
+
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(String(fr.result).split(',')[1]);
+    fr.onerror = () => reject(new Error('could not read the recording'));
+    fr.readAsDataURL(blob);
+  });
+}
+
+$('sttRun').addEventListener('click', async () => {
+  const table = $('sttTable'), body = table.querySelector('tbody');
+  body.textContent = ''; table.hidden = false;
+  $('sttRatioNote').hidden = false;
+  $('sttRun').disabled = true;
+  for (const p of STT.filter((x) => $('stt_on_' + x.id).checked)) {
+    const tr = document.createElement('tr');
+    tr.appendChild(cell(p.name));
+    const res = cell('working...', 'pending'); tr.appendChild(res);
+    const tm = cell('', 'num'); tr.appendChild(tm);
+    const rf = cell('', 'num'); tr.appendChild(rf);
+    const out = cell('', 'transcript'); tr.appendChild(out);
+    body.appendChild(tr);
+
+    if (!p.local && !key(p.needs)) {
+      res.textContent = 'skipped'; res.className = 'pending';
+      out.textContent = 'no key entered';
+      continue;
+    }
+    const cfg = {};
+    for (const f of (p.cfg || [])) {
+      cfg[f.id] = f.kind === 'voice' ? voiceValue(f.id) : $(f.id).value.trim();
+    }
+    const t0 = performance.now();
+    try {
+      const text = await p.run(cfg);
+      const took = performance.now() - t0;
+      tm.textContent = ms(took);
+      // Against the length of the recording, which is the number that says whether a
+      // local engine could keep up: it cannot begin until the talking stops, so this
+      // ratio IS roughly the silence a listener would sit through.
+      const clipMs = (clipPcm.length / REC_RATE) * 1000;
+      if (clipMs > 0) rf.textContent = (took / clipMs).toFixed(2) + '\u00d7';
+      if (text && text.trim()) {
+        res.textContent = 'heard'; res.className = 'ok';
+        out.textContent = text.trim();
+      } else {
+        // Reaching the service and hearing nothing is a different outcome from
+        // failing to reach it, and they must not look the same.
+        res.textContent = 'heard nothing'; res.className = 'fail';
+        out.textContent = 'the service answered but returned no words';
+      }
+    } catch (e) {
+      res.textContent = 'failed'; res.className = 'fail';
+      tm.textContent = ms(performance.now() - t0);
+      out.textContent = e.message;
+    }
+  }
+  $('sttRun').disabled = false;
+});
+
+loadKeys();
+</script>
+</body>
+</html>

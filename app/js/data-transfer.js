@@ -130,16 +130,30 @@ async function readOne(entry) {
 // Assemble the whole package. Missing pieces are simply absent rather than null,
 // so an import can tell "the user had no relationships" from "this key was never
 // part of the package format".
-export async function buildPackage(appVersion) {
+// `onProgress({ done, total, label })` as it reads. Ken, September 9 2026: "Exporting
+// settings is very slow on an Android tablet" - and a backup with hundreds of saved
+// conversations is mostly the READING, so an export needs the same visible progress an
+// import already has, for the same reason: a card that never changes is indistinguishable
+// from a crash.
+export async function buildPackage(appVersion, onProgress) {
     const data = {};
+    let done = 0;
+    // The files, plus one step for the conversations and one for the settings.
+    const total = DATA_FILES.length + 2;
+    const step = (label) => {
+        done += 1;
+        if (onProgress) { try { onProgress({ done, total, label }); } catch { /* never let reporting break an export */ } }
+    };
     for (const entry of DATA_FILES) {
         const value = await readOne(entry);
         if (value !== null && value !== undefined) data[entry.file] = value;
+        step(entry.label);
     }
     let conversations = [];
     try {
         conversations = await storage.listConversationLogs();
     } catch { /* no folder, or unreadable — export the rest anyway */ }
+    step('saved conversations');
 
     return {
         kind: PACKAGE_KIND,
@@ -152,11 +166,19 @@ export async function buildPackage(appVersion) {
         // then has to be excluded again.
         device: platform.deviceSignature(),
         settings: storage.getPortableSettings(),
-        profiles: await storage.exportSettingsProfiles(),
+        profiles: await profilesThenStep(step),
         activeProfile: storage.loadActiveSettingsProfile(),
         data,
         conversations,
     };
+}
+
+// Reads the profiles and counts that as the last step. A named helper only so the
+// object literal above stays readable.
+async function profilesThenStep(step) {
+    const out = await storage.exportSettingsProfiles();
+    step('settings and profiles');
+    return out;
 }
 
 // Plain-language counts for the confirmation dialogs, so the user can see what
@@ -237,8 +259,8 @@ export function downloadText(filename, text, mime = 'application/json') {
 
 // Trigger a download of the package. On iPadOS this opens the share/save sheet and
 // the file lands in Files, which is what makes the data user-visible again.
-export async function downloadPackage(appVersion) {
-    const pkg = await buildPackage(appVersion);
+export async function downloadPackage(appVersion, onProgress) {
+    const pkg = await buildPackage(appVersion, onProgress);
     downloadText(suggestedFilename(), JSON.stringify(pkg, null, 2));
     return pkg;
 }
@@ -248,8 +270,8 @@ export async function downloadPackage(appVersion) {
 // beside the data it protects, in the folder they already sync and copy, rather
 // than in the browser's Downloads. Returns the path written so the caller can say
 // where it went. The download path above remains the ONLY route on a tablet.
-export async function savePackageToFolder(appVersion) {
-    const pkg = await buildPackage(appVersion);
+export async function savePackageToFolder(appVersion, onProgress) {
+    const pkg = await buildPackage(appVersion, onProgress);
     const path = await storage.saveBackup(suggestedFilename(), JSON.stringify(pkg, null, 2));
     return { pkg, path };
 }

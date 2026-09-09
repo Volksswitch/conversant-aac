@@ -26,6 +26,16 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- The backup section is now called "Settings backup", with "Backup settings" and
+  "Import settings…".
+- Backing up now asks first, and shows its progress. On a tablet, collecting hundreds
+  of saved conversations takes long enough that a silent wait looks like a crash — the
+  same problem the import side already had. You get a chance to say "not now", a count
+  while it works, and a card at the end telling you where the file went.
+- On a computer, "Import settings…" opens the file dialog in your backups folder, where
+  the app puts them, instead of wherever the browser last happened to be.
+
+
 
 ## Version 0.10.15
 

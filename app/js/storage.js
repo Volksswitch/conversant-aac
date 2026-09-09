@@ -862,6 +862,20 @@ export async function listBackups() {
     return out;
 }
 
+/* The backups directory itself, for a file picker to open IN (Ken, September 9 2026:
+ * "when I click import settings, the file open dialog should start in the backups
+ * folder"). null where there is none.
+ *
+ * ⚠ THE CALLER MUST FETCH THIS BEFORE THE CLICK, NOT DURING IT. showOpenFilePicker
+ * needs the browser to still count a tap as recent, and awaiting anything first spends
+ * that - the same rule that governs the data-folder permission request and the
+ * fullscreen request. So the handle is primed when the list renders and read
+ * synchronously at click time.
+ */
+export async function getBackupsDirHandle() {
+    return getBackupsDir(false);
+}
+
 export async function readBackup(name) {
     const dir = await getBackupsDir(false);
     if (!dir) return null;
