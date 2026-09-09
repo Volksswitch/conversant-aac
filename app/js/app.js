@@ -5684,7 +5684,18 @@ async function importSettingsText(text, sourceLabel) {
     }
     setSettingsBackupStatus('Importing…');
     try {
-        dataTransfer.applySettingsPackage(pkg);
+        const done = await dataTransfer.applySettingsPackage(pkg);
+        // ⚠ A file with profiles in it, restored onto a device with no data folder,
+        // writes none of them - and "settings imported" alone would leave the user
+        // thinking their backup was faulty. Say it, and do NOT reload, so the message
+        // survives long enough to be read.
+        if (done.profilesInFile && !done.profiles.length) {
+            setSettingsBackupStatus(
+                `Settings imported, but the ${done.profilesInFile} saved profile` +
+                `${done.profilesInFile === 1 ? '' : 's'} in this file could not be: ` +
+                'they need a data folder. Choose one above, then import again.');
+            return;
+        }
         location.reload();      // re-read every setting exactly as at startup
     } catch (err) {
         storage.logError('import settings', err.message || String(err));
@@ -5738,7 +5749,7 @@ function wireSettingsFileControls() {
                 setSettingsBackupStatus(`Saved to your data folder as ${path} — ` +
                                         dataTransfer.summarizeSettings(pkg).join(' · '));
             } else {
-                const pkg = dataTransfer.downloadSettingsPackage(APP_VERSION);
+                const pkg = await dataTransfer.downloadSettingsPackage(APP_VERSION);
                 setSettingsBackupStatus('Exported: ' + dataTransfer.summarizeSettings(pkg).join(' · '));
             }
         } catch (err) {

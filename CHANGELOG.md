@@ -33,6 +33,10 @@ forgetting to tag one is only ever noise, never silence.
   use, but the layout, button sizes and chosen voice suit the device they were set up
   on, and carrying them onto a differently shaped screen makes it worse rather than
   better. Move whichever you want, separately.
+- The settings file takes your saved profiles with it — all of them, plus a note
+  of which one you are using — so importing it on another device puts your profiles
+  back and picks up on the one you were on. Before this they were in neither backup,
+  which on an iPad meant they had no way off the device at all.
 - Neither file ever contains a key — not the Anthropic key and not any of the paid
   speech service keys. That was already true of a data backup and is now true of the
   settings file as well, which matters because a settings file is the one you are

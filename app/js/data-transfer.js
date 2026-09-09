@@ -45,7 +45,9 @@ export const PACKAGE_KIND = 'conversant-aac-backup';
 export const PACKAGE_VERSION = 2;
 
 export const SETTINGS_KIND = 'conversant-aac-settings';
-export const SETTINGS_VERSION = 1;
+// 2 since September 9 2026: the file carries the saved PROFILES and which one was
+// current, not just the settings in effect.
+export const SETTINGS_VERSION = 2;
 
 // The user-owned data files. Each has a data-folder file (source of truth) and a
 // localStorage write-through cache (same-machine mirror / no-folder stopgap), so
@@ -253,13 +255,18 @@ export async function savePackageToFolder(appVersion) {
 // Profiles are still a different thing and both are worth having - a profile is a
 // NAMED configuration you switch between deliberately, a settings backup is a dated
 // snapshot you restore after something went wrong.
-export function buildSettingsPackage(appVersion) {
+export async function buildSettingsPackage(appVersion) {
     return {
         kind: SETTINGS_KIND,
         packageVersion: SETTINGS_VERSION,
         appVersion: appVersion || '',
         exportedAt: new Date().toISOString(),
+        // What is in effect right now.
         settings: storage.getPortableSettings(),
+        // Every saved profile, and which one the picker was showing (Ken, September
+        // 9 2026). Reading them needs the folder, so this is async now.
+        profiles: await storage.exportSettingsProfiles(),
+        activeProfile: storage.loadActiveSettingsProfile(),
     };
 }
 
@@ -271,8 +278,8 @@ export function suggestedSettingsFilename(now = new Date()) {
         '-' + pad(now.getHours()) + pad(now.getMinutes()) + '.json';
 }
 
-export function downloadSettingsPackage(appVersion) {
-    const pkg = buildSettingsPackage(appVersion);
+export async function downloadSettingsPackage(appVersion) {
+    const pkg = await buildSettingsPackage(appVersion);
     downloadText(suggestedSettingsFilename(), JSON.stringify(pkg, null, 2));
     return pkg;
 }
@@ -280,7 +287,7 @@ export function downloadSettingsPackage(appVersion) {
 // Into <data folder>/backups/, beside the data backups. Same folder on purpose:
 // one place to look for anything you saved.
 export async function saveSettingsPackageToFolder(appVersion) {
-    const pkg = buildSettingsPackage(appVersion);
+    const pkg = await buildSettingsPackage(appVersion);
     const path = await storage.saveBackup(suggestedSettingsFilename(), JSON.stringify(pkg, null, 2));
     return { pkg, path };
 }
@@ -289,10 +296,19 @@ export async function saveSettingsPackageToFolder(appVersion) {
 // groupings, so the honest summary is a count plus the promise about keys.
 export function summarizeSettings(pkg) {
     const n = pkg && pkg.settings ? Object.keys(pkg.settings).length : 0;
-    return [
-        `${n} setting${n === 1 ? '' : 's'}`,
-        'No keys — an exported settings file never contains one',
-    ];
+    const lines = [`${n} setting${n === 1 ? '' : 's'} in effect`];
+    const profiles = (pkg && Array.isArray(pkg.profiles)) ? pkg.profiles : [];
+    if (profiles.length) {
+        const names = profiles.map((p) => p.name).join(', ');
+        lines.push(`${profiles.length} saved profile${profiles.length === 1 ? '' : 's'}: ${names}`);
+    }
+    // Named only when it is one of the profiles in the file, so the line can never
+    // promise to select something that is not there to select.
+    if (pkg && pkg.activeProfile && profiles.some((p) => p.name === pkg.activeProfile)) {
+        lines.push(`"${pkg.activeProfile}" will be the one in use`);
+    }
+    lines.push('No keys — an exported settings file never contains one');
+    return lines;
 }
 
 // ⚠ THE TWO FILES MUST NOT BE INTERCHANGEABLE, and each error says which file the
@@ -326,11 +342,39 @@ export function parseSettingsPackage(text) {
 
 // Apply them. DESTRUCTIVE - the caller confirms first. Returns how many were taken,
 // counted AFTER the exclusion so the number reported is the number that landed.
-export function applySettingsPackage(pkg) {
+// ⚠ THE SETTINGS IN EFFECT ARE APPLIED, NOT THE ACTIVE PROFILE'S. They are the same
+// thing whenever the user had not tweaked anything since loading that profile, which
+// is the ordinary case. Where they differ - a slider moved and not saved - applying
+// the LIVE settings reproduces the device exactly as it was at export, while loading
+// the profile would throw that tweak away. The profile is still marked as the one in
+// use, so it is selected in the picker and one tap re-loads it.
+//
+// ⚠ PROFILES NEED A DATA FOLDER, and where there is none they are silently
+// unwritable - so the count comes back and the caller must SAY so. A user told
+// "settings imported" who then finds no profiles would reasonably think the backup
+// was faulty.
+export async function applySettingsPackage(pkg) {
     const before = storage.getPortableSettings();
     storage.applyPortableSettings(pkg.settings);
+
+    const restoredProfiles = await storage.importSettingsProfiles(pkg.profiles);
+
+    // Set AFTER applyPortableSettings: activeSettingsProfile is in PROFILE_EXCLUDE,
+    // so that call deliberately preserves THIS machine's value and ignores the
+    // incoming one. Only set it to a profile that actually landed, or the picker
+    // would point at a name with no file behind it.
+    if (pkg.activeProfile && restoredProfiles.includes(pkg.activeProfile)) {
+        storage.saveActiveSettingsProfile(pkg.activeProfile);
+    }
+
     const after = storage.getPortableSettings();
-    return { count: Object.keys(after).length, changed: JSON.stringify(before) !== JSON.stringify(after) };
+    return {
+        count: Object.keys(after).length,
+        profiles: restoredProfiles,
+        profilesInFile: Array.isArray(pkg.profiles) ? pkg.profiles.length : 0,
+        activeProfile: restoredProfiles.includes(pkg.activeProfile) ? pkg.activeProfile : '',
+        changed: JSON.stringify(before) !== JSON.stringify(after),
+    };
 }
 
 // Validate and parse. Throws a user-facing message — this is the one place a user

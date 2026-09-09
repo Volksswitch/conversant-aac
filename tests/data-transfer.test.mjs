@@ -65,7 +65,7 @@ test('a data export carries the data and NOT the settings', async () => {
 test('NEITHER file can carry a key, however the settings were stored', async () => {
     seed();
     const data = JSON.stringify(await dt.buildPackage('9.9.9'));
-    const settings = JSON.stringify(dt.buildSettingsPackage('9.9.9'));
+    const settings = JSON.stringify(await dt.buildSettingsPackage('9.9.9'));
     for (const k of EVERY_KEY) {
         assert.ok(!data.includes(k), `data export names ${k}`);
         assert.ok(!data.includes('secret-' + k), `data export leaks the ${k} value`);
@@ -76,7 +76,7 @@ test('NEITHER file can carry a key, however the settings were stored', async () 
 
 test('a settings export round-trips the real settings and restores them', async () => {
     seed();
-    const pkg = dt.buildSettingsPackage('9.9.9');
+    const pkg = await dt.buildSettingsPackage('9.9.9');
     assert.equal(pkg.kind, dt.SETTINGS_KIND);
     assert.equal(pkg.settings.keyboardDock, 'side');
     assert.equal(pkg.settings.buttonGapPos, 70);
@@ -86,18 +86,18 @@ test('a settings export round-trips the real settings and restores them', async 
     assert.equal(storage.getPortableSettings().keyboardDock, 'bottom');
 
     const reparsed = dt.parseSettingsPackage(JSON.stringify(pkg));
-    dt.applySettingsPackage(reparsed);
+    await dt.applySettingsPackage(reparsed);
     assert.equal(storage.getPortableSettings().keyboardDock, 'side', 'the setting came back');
     assert.equal(storage.getPortableSettings().buttonGapPos, 70);
 });
 
-test('a settings file cannot install a key even if one is pasted into it', () => {
+test('a settings file cannot install a key even if one is pasted into it', async () => {
     seed();
-    const pkg = dt.buildSettingsPackage('9.9.9');
+    const pkg = await dt.buildSettingsPackage('9.9.9');
     // Somebody hand-edits the file, or an older/hostile file arrives with keys in it.
     pkg.settings.apiKey = 'sk-ant-injected';
     pkg.settings.deepgramKey = 'injected';
-    dt.applySettingsPackage(dt.parseSettingsPackage(JSON.stringify(pkg)));
+    await dt.applySettingsPackage(dt.parseSettingsPackage(JSON.stringify(pkg)));
     const live = JSON.parse(localStorage.getItem('aac_settings'));
     assert.equal(live.apiKey, 'secret-apiKey', 'the real key is untouched');
     assert.equal(live.deegramKey, undefined);
@@ -126,15 +126,15 @@ test('importing DATA never touches settings, not even from an old file that has 
 test('each importer refuses the other one\'s file, and says which it got', async () => {
     seed();
     const dataFile = JSON.stringify(await dt.buildPackage('9.9.9'));
-    const settingsFile = JSON.stringify(dt.buildSettingsPackage('9.9.9'));
+    const settingsFile = JSON.stringify(await dt.buildSettingsPackage('9.9.9'));
 
     assert.throws(() => dt.parseSettingsPackage(dataFile), /data backup, not a settings file/);
     assert.throws(() => dt.parsePackage(settingsFile), /not a Conversant data backup/);
 });
 
-test('a newer file is refused rather than half-read', () => {
+test('a newer file is refused rather than half-read', async () => {
     seed();
-    const pkg = dt.buildSettingsPackage('9.9.9');
+    const pkg = await dt.buildSettingsPackage('9.9.9');
     pkg.packageVersion = dt.SETTINGS_VERSION + 1;
     assert.throws(() => dt.parseSettingsPackage(JSON.stringify(pkg)), /newer version/);
 });

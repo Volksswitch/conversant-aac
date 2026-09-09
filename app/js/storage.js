@@ -591,6 +591,73 @@ export async function applySettingsProfile(name) {
     return clean;
 }
 
+// --- Profiles in a settings backup (Ken, September 9 2026) ---
+//
+// *"include every profile in the settings backup including what profile is current
+// so that profile can automatically be loaded when the settings file is imported."*
+//
+// WHY IT MATTERED: a settings backup used to carry only the settings in EFFECT, so
+// saved profiles were in neither backup. On a computer that is survivable, because
+// they are files in the data folder and a folder copy takes them. On an iPad the
+// data folder is invisible and evictable, so the profiles somebody set up once were
+// the one thing with no way out of the device at all.
+//
+// ⚠ THE KEY FILTER IS APPLIED AGAIN HERE, ON BOTH SIDES, even though every profile
+// this app writes went through exportSettingsBundle() already and cannot contain a
+// key. A profile is a FILE, and a file can be hand-edited or arrive from somewhere
+// else - so the export re-filters rather than trusting what is on disk, and the
+// import re-filters rather than trusting the file. Same both-ends rule as
+// getPortableSettings / applyPortableSettings, and for the same reason: the
+// guarantee must not depend on every writer having been careful.
+export async function exportSettingsProfiles() {
+    const out = [];
+    for (const name of await listSettingsProfiles()) {
+        const dir = await getSettingsDir(false);
+        if (!dir) break;
+        try {
+            const fh = await dir.getFileHandle(`${name}.json`);
+            const payload = JSON.parse(await (await fh.getFile()).text());
+            const settings = {};
+            for (const [k, v] of Object.entries((payload && payload.settings) || {})) {
+                if (!PROFILE_EXCLUDE.includes(k)) settings[k] = v;
+            }
+            out.push({ name, savedAt: payload?.savedAt || '', version: payload?.version || '', settings });
+        } catch { /* skip an unreadable profile rather than failing the whole export */ }
+    }
+    return out;
+}
+
+// Write profiles back. Returns the names actually written; [] where there is no
+// data folder to write them into, which the caller must REPORT rather than swallow -
+// the user would otherwise believe their profiles came back.
+export async function importSettingsProfiles(profiles) {
+    if (!Array.isArray(profiles) || !profiles.length) return [];
+    const dir = await getSettingsDir(true);
+    if (!dir) return [];
+    const written = [];
+    for (const p of profiles) {
+        const clean = sanitizeProfileName(p && p.name);
+        if (!clean) continue;
+        const settings = {};
+        for (const [k, v] of Object.entries((p && p.settings) || {})) {
+            if (!PROFILE_EXCLUDE.includes(k)) settings[k] = v;
+        }
+        try {
+            const fh = await dir.getFileHandle(`${clean}.json`, { create: true });
+            const w = await fh.createWritable();
+            await w.write(JSON.stringify({
+                name: clean,
+                savedAt: p.savedAt || new Date().toISOString(),
+                version: p.version || appVersion,
+                settings,
+            }, null, 2));
+            await w.close();
+            written.push(clean);
+        } catch { /* one bad profile must not abandon the rest */ }
+    }
+    return written;
+}
+
 export async function deleteSettingsProfile(name) {
     const clean = sanitizeProfileName(name);
     const dir = await getSettingsDir(false);

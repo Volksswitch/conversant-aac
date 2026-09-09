@@ -179,3 +179,89 @@ test('an OLD backup in the folder is still listed and still restores', async () 
     assert.ok(dt.parsePackage(text).data['places.json']);
     assert.ok(dir._files.size >= 3);
 });
+
+/* ── Profiles ride along in a settings backup (Ken, September 9 2026) ─────── */
+
+test('a settings backup carries every saved profile and which was current', async () => {
+    // Two profiles, saved the way the app saves them, then one made current.
+    localStorage.setItem('aac_settings', JSON.stringify({ keyboardDock: 'side', voiceURI: 'Daniel' }));
+    await storage.saveSettingsProfile('Ken Surface');
+    storage.applyPortableSettings({ keyboardDock: 'bottom', voiceURI: 'Karen' });
+    await storage.saveSettingsProfile('Ken iPad');
+    storage.saveActiveSettingsProfile('Ken iPad');
+
+    const pkg = await dt.buildSettingsPackage('9.9.9');
+    assert.deepEqual(pkg.profiles.map((p) => p.name).sort(), ['Ken Surface', 'Ken iPad'].sort());
+    assert.equal(pkg.activeProfile, 'Ken iPad');
+    // Each profile carries its OWN settings, not a copy of the live ones.
+    const surface = pkg.profiles.find((p) => p.name === 'Ken Surface');
+    assert.equal(surface.settings.keyboardDock, 'side');
+    assert.equal(surface.settings.voiceURI, 'Daniel');
+
+    // And the summary the user reads before importing says what is in it.
+    const said = dt.summarizeSettings(pkg).join('\n');
+    assert.match(said, /2 saved profiles/);
+    assert.match(said, /"Ken iPad" will be the one in use/);
+});
+
+test('importing puts the profiles back and marks the right one current', async () => {
+    const pkg = await dt.buildSettingsPackage('9.9.9');
+
+    // Wipe the lot: different settings, different profiles, nothing current.
+    for (const n of await storage.listSettingsProfiles()) await storage.deleteSettingsProfile(n);
+    storage.applyPortableSettings({ keyboardDock: 'side', voiceURI: 'Zarvox' });
+    storage.saveActiveSettingsProfile('');
+    assert.deepEqual(await storage.listSettingsProfiles(), []);
+
+    const done = await dt.applySettingsPackage(dt.parseSettingsPackage(JSON.stringify(pkg)));
+    assert.deepEqual((await storage.listSettingsProfiles()).sort(), ['Ken Surface', 'Ken iPad'].sort());
+    assert.equal(storage.loadActiveSettingsProfile(), 'Ken iPad');
+    assert.equal(done.activeProfile, 'Ken iPad');
+
+    // The settings IN EFFECT came back too, and they are the live ones from the
+    // export rather than the active profile's - the same thing here, and the
+    // distinction is asserted in the next test.
+    assert.equal(storage.getPortableSettings().voiceURI, 'Karen');
+
+    // A restored profile still loads by name, so it is a real profile and not just
+    // a file that happens to sit in the folder.
+    await storage.applySettingsProfile('Ken Surface');
+    assert.equal(storage.getPortableSettings().voiceURI, 'Daniel');
+});
+
+test('an unsaved tweak survives the round trip rather than being reverted', async () => {
+    // Load a profile, then change something WITHOUT saving it - the case where the
+    // settings in effect and the active profile disagree.
+    await storage.applySettingsProfile('Ken iPad');
+    storage.saveActiveSettingsProfile('Ken iPad');
+    const tweaked = { ...storage.getPortableSettings(), voiceURI: 'Moira' };
+    storage.applyPortableSettings(tweaked);
+
+    const pkg = await dt.buildSettingsPackage('9.9.9');
+    storage.applyPortableSettings({ voiceURI: 'Zarvox' });
+    await dt.applySettingsPackage(dt.parseSettingsPackage(JSON.stringify(pkg)));
+
+    // The device comes back exactly as it was, tweak included, with the profile
+    // still marked current - NOT reverted to what "Ken iPad" holds.
+    assert.equal(storage.getPortableSettings().voiceURI, 'Moira');
+    assert.equal(storage.loadActiveSettingsProfile(), 'Ken iPad');
+});
+
+test('a profile in the file cannot smuggle in a key', async () => {
+    const pkg = await dt.buildSettingsPackage('9.9.9');
+    localStorage.setItem('aac_settings', JSON.stringify({
+        ...JSON.parse(localStorage.getItem('aac_settings')), apiKey: 'sk-ant-REAL',
+    }));
+    pkg.profiles[0].settings.apiKey = 'sk-ant-INJECTED';
+    pkg.profiles[0].settings.elevenlabsKey = 'INJECTED';
+
+    await dt.applySettingsPackage(dt.parseSettingsPackage(JSON.stringify(pkg)));
+    assert.equal(JSON.parse(localStorage.getItem('aac_settings')).apiKey, 'sk-ant-REAL');
+
+    // And the key is not sitting in the profile file on disk either.
+    const dir = await root.getDirectoryHandle('settings');
+    for (const [, rec] of dir._files) {
+        assert.ok(!rec.data.includes('sk-ant-INJECTED'));
+        assert.ok(!rec.data.includes('INJECTED'));
+    }
+});
