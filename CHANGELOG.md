@@ -26,6 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+
+## Version 0.10.16
+
 - The backup section is now called "Settings backup", with "Backup settings" and
   "Import settings…".
 - Backing up now asks first, and shows its progress. On a tablet, collecting hundreds
