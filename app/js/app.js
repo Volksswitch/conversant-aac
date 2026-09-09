@@ -643,6 +643,7 @@ function initApp() {
     // Settings and were added again every time they did.
     document.addEventListener('pointerdown', onLayoutPointerDown, true);
     document.addEventListener('pointermove', onLayoutHover);
+    wireLayoutHandles();
     refreshLayoutMode();
     // Entering or leaving fullscreen changes whether a title-bar offset exists at
     // all, so the keyguard field has to follow it — including when the user leaves
@@ -4110,6 +4111,8 @@ function applyButtonSizing() {
     else root.setProperty('--conv-dock-h', Math.round(r.dock * VH) + 'px');
 
     root.setProperty('--grid-gap', gap.toFixed(2) + 'px');
+    // The handles follow the borders they sit on - see positionLayoutHandles.
+    positionLayoutHandles();
     // Keyboard separation: the gap between the dock and the rest of the UI. It does
     // NOT touch the dock's footprint, so it moves no keyguard hole.
     const dockSep = lerp(storage.loadDockSepPos(), 0, DOCKSEP_MAX_REM) * rem;
@@ -4215,6 +4218,7 @@ function realConversationInProgress() {
 // what actually decides - so a stale class costs nothing but a line in the wrong place.
 function refreshLayoutMode() {
     document.body.classList.toggle('layout-unlocked', layoutDraggable());
+    positionLayoutHandles();
 }
 
 // Which border, if any, is under this point. Returns null for everything else, which
@@ -4248,6 +4252,116 @@ function borderUnder(x, y) {
     return null;
 }
 
+/* ── The three layout handles ────────────────────────────────────────────────
+ *
+ * Ken, September 9 2026, after trying to adjust the layout on a small touch screen:
+ * "it was impossible to grab the divider at the bottom of the command bar with a
+ * finger without invoking a button." Measured: the grab zone is 20 CSS px, about 5mm -
+ * half a fingertip, and a fifth of the minimum touch target Apple and Google publish.
+ *
+ * ⚠ AND WIDENING IT WOULD HAVE MOVED THE FAILURE RATHER THAN FIXING IT. The buttons
+ * stay live while the layout is unlocked, so the app serves two gestures on the same
+ * pixels; a fatter invisible zone would start eating presses meant for buttons. A
+ * circle solves both halves at once - it is a target in its own right, so it can be
+ * finger-sized without stealing anything from the button beside it.
+ *
+ * Where each circle goes is computed from the SAME measurements borderUnder() uses, so
+ * the visible handle and the invisible grab zone can never drift apart.
+ */
+function handleEls() {
+    return {
+        command: document.getElementById('layoutHandleCommand'),
+        response: document.getElementById('layoutHandleResponse'),
+        dock: document.getElementById('layoutHandleDock'),
+    };
+}
+
+/* Centre points for the three borders, keyed by the region each resizes - or null when
+ * the screen is not laid out yet. Mirrors borderUnder(): a horizontal border sits at
+ * the TOP of the region it resizes and runs across the column it divides; the dock's
+ * own edge is whichever side the dock is on. */
+function borderCentres() {
+    const dock = storage.loadKeyboardDock() === 'side' ? 'side' : 'bottom';
+    const r = {
+        transcript: boxOf('#transcriptSection'),
+        command: boxOf('#listenControls'),
+        response: boxOf('#responsesSection'),
+        dock: boxOf('#dockArea'),
+    };
+    if (!r.transcript || !r.command || !r.response || !r.dock) return null;
+
+    const out = {};
+    for (const border of convLayout.borders(dock)) {
+        if (border.axis === 'x') {
+            const edge = storage.loadSideDockPosition() === 'left' ? r.dock.right : r.dock.left;
+            // Centred along the border's LENGTH, which for the dock edge is its height.
+            out[border.resizes] = { x: edge, y: (r.dock.top + r.dock.bottom) / 2 };
+            continue;
+        }
+        const below = border.resizes === 'command' ? r.command
+            : border.resizes === 'response' ? r.response : r.dock;
+        const span = dock === 'side' ? r.command : r.dock;
+        out[border.resizes] = { x: (span.left + span.right) / 2, y: below.top };
+    }
+    return out;
+}
+
+/* Put each circle on its border. Called from applyButtonSizing (so it follows a
+ * resize, a settings change and every step of a drag) and from refreshLayoutMode. */
+function positionLayoutHandles() {
+    const els = handleEls();
+    if (!els.command || !els.response || !els.dock) return;
+    if (!layoutDraggable()) return;      // hidden by CSS; nothing to place
+    const centres = borderCentres();
+    if (!centres) return;
+    for (const key of ['command', 'response', 'dock']) {
+        const c = centres[key];
+        const el = els[key];
+        if (!c || !el) continue;
+        // left/top are the CENTRE: the element's negative margin takes back half its
+        // own size, so this needs no knowledge of how big 10mm turns out to be.
+        el.style.left = Math.round(c.x) + 'px';
+        el.style.top = Math.round(c.y) + 'px';
+    }
+}
+
+/* A press on a circle starts a drag of its border. Separate from onLayoutPointerDown,
+ * which finds a border by PROXIMITY - here the element already says which one. */
+function onHandlePointerDown(e) {
+    if (e.button != null && e.button !== 0) return;
+    if (!layoutDraggable()) return;
+    const el = e.currentTarget;
+    const dock = storage.loadKeyboardDock() === 'side' ? 'side' : 'bottom';
+    const key = el.id === 'layoutHandleCommand' ? 'command'
+        : el.id === 'layoutHandleResponse' ? 'response' : 'dock';
+    const border = convLayout.borders(dock).find((b) => b.resizes === key);
+    if (!border) return;
+
+    layoutDrag = { border: border.id, resizes: border.resizes };
+    document.body.classList.add('layout-dragging');
+    // ⚠ THE GRABBED CIRCLE RISES ABOVE THE OTHERS (Ken). Two borders can sit closer
+    // together than 10mm - a thin command bar puts two within a few millimetres - and
+    // the circles then overlap. Without this the user can be dragging one while looking
+    // at another, which reads as the handle not working.
+    for (const other of Object.values(handleEls())) other && other.classList.remove('dragging');
+    el.classList.add('dragging');
+    e.preventDefault();
+    e.stopPropagation();
+    window.addEventListener('pointermove', onLayoutDrag);
+    window.addEventListener('pointerup', endLayoutDrag);
+    window.addEventListener('pointercancel', endLayoutDrag);
+}
+
+function wireLayoutHandles() {
+    for (const el of Object.values(handleEls())) {
+        // ⚠ NOT capture-phase and NOT on document: the circle IS the target, so the
+        // press reaches it directly. body.layout-dragging kills pointer events on
+        // everything while a drag runs, which is why the handle needs no guard of its
+        // own against the card underneath.
+        if (el) el.addEventListener('pointerdown', onHandlePointerDown);
+    }
+}
+
 function boxOf(sel) {
     const n = document.querySelector(sel);
     if (!n) return null;
@@ -4262,6 +4376,13 @@ let layoutDrag = null;
 // the thing the user means.
 function onLayoutPointerDown(e) {
     if (e.button != null && e.button !== 0) return;
+    // ⚠ A HANDLE OWNS ITS OWN PRESS. This listener is capture-phase ON DOCUMENT, so it
+    // runs BEFORE the circle's own listener and its stopPropagation would keep that
+    // listener from ever firing - which silently cost the z-order raise while the drag
+    // itself appeared to work, because a press in the middle of a circle is also within
+    // the old proximity zone. Found by driving it in the browser; no test would have
+    // seen it, since the border moved correctly either way.
+    if (e.target && e.target.classList && e.target.classList.contains('layout-handle')) return;
     const border = borderUnder(e.clientX, e.clientY);
     if (!border) return;
     layoutDrag = { border: border.id, resizes: border.resizes };
@@ -4317,6 +4438,7 @@ function clamp01(n) { return Math.max(0, Math.min(1, n)); }
 function endLayoutDrag() {
     layoutDrag = null;
     document.body.classList.remove('layout-dragging');
+    for (const el of Object.values(handleEls())) el && el.classList.remove('dragging');
     document.body.style.cursor = '';
     window.removeEventListener('pointermove', onLayoutDrag);
     window.removeEventListener('pointerup', endLayoutDrag);

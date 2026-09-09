@@ -74,7 +74,15 @@
                          app was wiring itself up, which otherwise leaves dead
                          controls and no explanation — and on an iPad there is no
                          console to open. See reportStartupFailure in app.js. -->
-                    <div id="startupError" hidden>
+                    <!-- The three layout handles. Present always, shown only by body.layout-unlocked,
+         which is what makes them incapable of going stale - see styles.css. Positioned
+         by app.js positionLayoutHandles(). aria-hidden: a screen-reader user is not
+         dragging circles, and the borders are not content. -->
+    <div id="layoutHandleCommand"  class="layout-handle" data-border="transcriptCommand" aria-hidden="true"></div>
+    <div id="layoutHandleResponse" class="layout-handle" data-border="commandResponse"  aria-hidden="true"></div>
+    <div id="layoutHandleDock"     class="layout-handle" data-border="dock"             aria-hidden="true"></div>
+
+    <div id="startupError" hidden>
                         <p class="apikey-prompt-title">The app didn't start up properly.</p>
                         <p class="setting-hint" id="startupErrorDetail"></p>
                         <p class="setting-hint">Settings → About → Reload the app is worth trying first. If it keeps happening, this text is the bug report.</p>

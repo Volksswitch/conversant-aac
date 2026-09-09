@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- When you tick "Let me drag the borders to resize", three colored circles now appear on the borders you can move — one on each, in the middle of its length. Drag a circle and the border follows it. They are big enough to grab with a finger, so you no longer have to land on the thin line itself, and pressing one can no longer set off the button underneath. The circles disappear as soon as you untick the box or start a conversation.
+
 
 ## Version 0.10.16
 

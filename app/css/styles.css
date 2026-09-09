@@ -45,6 +45,27 @@
     --slot-dispreferred: #A86300;
     --slot-initiative: #1565C0;    /* blue — also the RESPONDING mode chip */
     --slot-repair: #6A1B9A;        /* purple */
+
+    /* The three layout handles - the circles that appear over the movable borders while
+       the layout is unlocked (Ken, September 9 2026). Named for the region each border
+       RESIZES, which is what the border does, rather than for the colour it happens to
+       be. Okabe-Ito blue / vermillion / yellow, adapted per scheme: a trio
+       chosen because it stays separable under EVERY kind of colour blindness,
+       measured in tests/color-blind.test.mjs rather than assumed.
+
+       The trio differs in LIGHTNESS as well as hue, and that is the load-bearing half:
+       hue alone cannot do it. A purple collapses toward the blue under protanopia and a
+       bluish-green collapses toward it under tritanopia - both were tried and both were
+       measured failing. Lightness is the one axis every kind keeps. So in the schemes
+       that must stay dark on a white page, the yellow is the LIGHTEST of the three
+       rather than the darkest: darkening it to match its neighbours put it back on top
+       of the vermillion under deuteranopia.
+
+       They do not carry meaning ALONE - each circle sits on its own border, so position
+       is the primary channel and colour tells them apart at a glance. */
+    --handle-command: #0072B2;
+    --handle-response: #D55E00;
+    --handle-dock: #F0E442;
     --slot-persistent: #455A64;    /* slate — quiet, recognized by position */
 
     --slot-preferred-tint: #eef6ef;
@@ -307,6 +328,27 @@
     --slot-dispreferred: #A86300;
     --slot-initiative: #1565C0;
     --slot-repair: #6A1B9A;
+
+    /* The three layout handles - the circles that appear over the movable borders while
+       the layout is unlocked (Ken, September 9 2026). Named for the region each border
+       RESIZES, which is what the border does, rather than for the colour it happens to
+       be. Okabe-Ito blue / vermillion / yellow, adapted per scheme: a trio
+       chosen because it stays separable under EVERY kind of colour blindness,
+       measured in tests/color-blind.test.mjs rather than assumed.
+
+       The trio differs in LIGHTNESS as well as hue, and that is the load-bearing half:
+       hue alone cannot do it. A purple collapses toward the blue under protanopia and a
+       bluish-green collapses toward it under tritanopia - both were tried and both were
+       measured failing. Lightness is the one axis every kind keeps. So in the schemes
+       that must stay dark on a white page, the yellow is the LIGHTEST of the three
+       rather than the darkest: darkening it to match its neighbours put it back on top
+       of the vermillion under deuteranopia.
+
+       They do not carry meaning ALONE - each circle sits on its own border, so position
+       is the primary channel and colour tells them apart at a glance. */
+    --handle-command: #0072B2;
+    --handle-response: #D55E00;
+    --handle-dock: #F0E442;
     --slot-persistent: #455A64;
     --slot-preferred-tint: #d9ead9;
     --slot-dispreferred-tint: #f4e3c8;
@@ -389,6 +431,27 @@
     --slot-dispreferred: #6f4400;
     --slot-initiative: #003d99;
     --slot-repair: #5a0a7a;
+
+    /* The three layout handles - the circles that appear over the movable borders while
+       the layout is unlocked (Ken, September 9 2026). Named for the region each border
+       RESIZES, which is what the border does, rather than for the colour it happens to
+       be. Okabe-Ito blue / vermillion / yellow, adapted per scheme: a trio
+       chosen because it stays separable under EVERY kind of colour blindness,
+       measured in tests/color-blind.test.mjs rather than assumed.
+
+       The trio differs in LIGHTNESS as well as hue, and that is the load-bearing half:
+       hue alone cannot do it. A purple collapses toward the blue under protanopia and a
+       bluish-green collapses toward it under tritanopia - both were tried and both were
+       measured failing. Lightness is the one axis every kind keeps. So in the schemes
+       that must stay dark on a white page, the yellow is the LIGHTEST of the three
+       rather than the darkest: darkening it to match its neighbours put it back on top
+       of the vermillion under deuteranopia.
+
+       They do not carry meaning ALONE - each circle sits on its own border, so position
+       is the primary channel and colour tells them apart at a glance. */
+    --handle-command: #004C80;
+    --handle-response: #8F3F00;
+    --handle-dock: #A88600;
     --slot-persistent: #000000;
     --slot-preferred-tint: #ffffff;
     --slot-dispreferred-tint: #ffffff;
@@ -468,6 +531,27 @@
     --slot-dispreferred: #e0a53a;
     --slot-initiative: #6faae4;
     --slot-repair: #c08ee0;
+
+    /* The three layout handles - the circles that appear over the movable borders while
+       the layout is unlocked (Ken, September 9 2026). Named for the region each border
+       RESIZES, which is what the border does, rather than for the colour it happens to
+       be. Okabe-Ito blue / vermillion / yellow, adapted per scheme: a trio
+       chosen because it stays separable under EVERY kind of colour blindness,
+       measured in tests/color-blind.test.mjs rather than assumed.
+
+       The trio differs in LIGHTNESS as well as hue, and that is the load-bearing half:
+       hue alone cannot do it. A purple collapses toward the blue under protanopia and a
+       bluish-green collapses toward it under tritanopia - both were tried and both were
+       measured failing. Lightness is the one axis every kind keeps. So in the schemes
+       that must stay dark on a white page, the yellow is the LIGHTEST of the three
+       rather than the darkest: darkening it to match its neighbours put it back on top
+       of the vermillion under deuteranopia.
+
+       They do not carry meaning ALONE - each circle sits on its own border, so position
+       is the primary channel and colour tells them apart at a glance. */
+    --handle-command: #56B4E9;
+    --handle-response: #E8823C;
+    --handle-dock: #F5E663;
     --slot-persistent: #9aa7b3;
     --slot-preferred-tint: #1b2a1e;
     --slot-dispreferred-tint: #2e2517;
@@ -550,6 +634,27 @@
     --slot-dispreferred: #ffd24d;
     --slot-initiative: #82b1ff;
     --slot-repair: #e0a0ff;
+
+    /* The three layout handles - the circles that appear over the movable borders while
+       the layout is unlocked (Ken, September 9 2026). Named for the region each border
+       RESIZES, which is what the border does, rather than for the colour it happens to
+       be. Okabe-Ito blue / vermillion / yellow, adapted per scheme: a trio
+       chosen because it stays separable under EVERY kind of colour blindness,
+       measured in tests/color-blind.test.mjs rather than assumed.
+
+       The trio differs in LIGHTNESS as well as hue, and that is the load-bearing half:
+       hue alone cannot do it. A purple collapses toward the blue under protanopia and a
+       bluish-green collapses toward it under tritanopia - both were tried and both were
+       measured failing. Lightness is the one axis every kind keeps. So in the schemes
+       that must stay dark on a white page, the yellow is the LIGHTEST of the three
+       rather than the darkest: darkening it to match its neighbours put it back on top
+       of the vermillion under deuteranopia.
+
+       They do not carry meaning ALONE - each circle sits on its own border, so position
+       is the primary channel and colour tells them apart at a glance. */
+    --handle-command: #7FD4FF;
+    --handle-response: #FFA35C;
+    --handle-dock: #FFF07A;
     --slot-persistent: #ffffff;
     --slot-preferred-tint: #000000;
     --slot-dispreferred-tint: #000000;
@@ -634,6 +739,27 @@
     --slot-dispreferred: #ffd400;
     --slot-initiative: #7fd4ff;
     --slot-repair: #e0a0ff;
+
+    /* The three layout handles - the circles that appear over the movable borders while
+       the layout is unlocked (Ken, September 9 2026). Named for the region each border
+       RESIZES, which is what the border does, rather than for the colour it happens to
+       be. Okabe-Ito blue / vermillion / yellow, adapted per scheme: a trio
+       chosen because it stays separable under EVERY kind of colour blindness,
+       measured in tests/color-blind.test.mjs rather than assumed.
+
+       The trio differs in LIGHTNESS as well as hue, and that is the load-bearing half:
+       hue alone cannot do it. A purple collapses toward the blue under protanopia and a
+       bluish-green collapses toward it under tritanopia - both were tried and both were
+       measured failing. Lightness is the one axis every kind keeps. So in the schemes
+       that must stay dark on a white page, the yellow is the LIGHTEST of the three
+       rather than the darkest: darkening it to match its neighbours put it back on top
+       of the vermillion under deuteranopia.
+
+       They do not carry meaning ALONE - each circle sits on its own border, so position
+       is the primary channel and colour tells them apart at a glance. */
+    --handle-command: #7FD4FF;
+    --handle-response: #FFA35C;
+    --handle-dock: #FFF07A;
     --slot-persistent: #ffd400;
     --slot-preferred-tint: #000000;
     --slot-dispreferred-tint: #000000;
@@ -726,6 +852,27 @@
     --slot-dispreferred: #B85A08;
     --slot-initiative: #12509E;
     --slot-repair: #9B2D74;
+
+    /* The three layout handles - the circles that appear over the movable borders while
+       the layout is unlocked (Ken, September 9 2026). Named for the region each border
+       RESIZES, which is what the border does, rather than for the colour it happens to
+       be. Okabe-Ito blue / vermillion / yellow, adapted per scheme: a trio
+       chosen because it stays separable under EVERY kind of colour blindness,
+       measured in tests/color-blind.test.mjs rather than assumed.
+
+       The trio differs in LIGHTNESS as well as hue, and that is the load-bearing half:
+       hue alone cannot do it. A purple collapses toward the blue under protanopia and a
+       bluish-green collapses toward it under tritanopia - both were tried and both were
+       measured failing. Lightness is the one axis every kind keeps. So in the schemes
+       that must stay dark on a white page, the yellow is the LIGHTEST of the three
+       rather than the darkest: darkening it to match its neighbours put it back on top
+       of the vermillion under deuteranopia.
+
+       They do not carry meaning ALONE - each circle sits on its own border, so position
+       is the primary channel and colour tells them apart at a glance. */
+    --handle-command: #0072B2;
+    --handle-response: #D55E00;
+    --handle-dock: #F0E442;
     --slot-persistent: #455A64;
     --slot-preferred-tint: #e6f0e9;
     --slot-dispreferred-tint: #fbeee3;
@@ -1167,6 +1314,64 @@ body.layout-unlocked.conv-bottom #dockArea { box-shadow: inset 0 3px 0 0 var(--a
 
    While a border is being dragged nothing else may react to the pointer - a drag that
    ends over a response card must not also tap it. */
+/* ── The layout handles (Ken, September 9 2026) ──────────────────────────────
+ *
+ * *"three ~10mm circles appear centered over the movable borders and centered along
+ * their length... three different, contrasting colors... They sit at the top of the
+ * z-order."*
+ *
+ * ⚠ WHY ELEMENTS ARE BACK, when the note above says there are none. That note is about
+ * INVISIBLE FULL-LENGTH STRIPS, and both of its objections are answered here rather
+ * than ignored. A strip swallowed taps along a whole edge; a circle covers 10mm and
+ * only while the layout is unlocked. And a strip could go stale because something had
+ * to remember to rebuild it; these are shown by `body.layout-unlocked` alone - the mode
+ * IS the class, toggled by refreshLayoutMode, which a conversation starting already
+ * calls. There is nothing to remember.
+ *
+ * ⚠ THE MEASURED REASON THEY EXIST: the grab zone was 20 CSS px, about 5mm - half a
+ * fingertip, and a fifth of the minimum touch target Apple and Google both publish. The
+ * old comment said touch "needs nothing" because the border is live along its whole
+ * LENGTH; length was never the problem, thickness was.
+ *
+ * 10mm is written as 10mm on purpose. A CSS millimetre is defined against the reference
+ * pixel, so it is the same physical size on any screen - which is the whole point of a
+ * finger-sized target, and something a px value cannot promise. */
+.layout-handle {
+    position: fixed;
+    width: 10mm;
+    height: 10mm;
+    margin: -5mm 0 0 -5mm;      /* so left/top are the CENTRE of the circle */
+    border-radius: 50%;
+    /* TWO rings, and the outer one is doing accessibility work rather than decoration.
+       The inner ring is the page colour, so the circle reads as a circle whether it sits
+       on a card, on the dock or on the transcript. But a pale fill - the yellow, in the
+       light schemes - would then be a pale disc with a white ring on a white page, i.e.
+       a touch target with no boundary at all. The outer hairline is --edge-strong, which
+       Rule 22 guarantees clears 3:1 against EVERY surface in the app, so the circle has
+       an outline whatever its own fill happens to be. */
+    border: 2px solid var(--surface-raised);
+    box-shadow: 0 0 0 1px var(--edge-strong), 0 2px 6px var(--backdrop);
+    /* Above everything on the conversation surface. Dialogs are unaffected: showModal
+       puts them in the browser's top layer, which no z-index can reach. */
+    z-index: 900;
+    display: none;
+    /* The handle is dragged, so the browser must not claim the gesture for scrolling.
+       Same reason the keyboard's drag handle carries it. */
+    touch-action: none;
+    cursor: grab;
+}
+body.layout-unlocked .layout-handle { display: block; }
+.layout-handle.dragging { cursor: grabbing; }
+/* ⚠ THE ONE BEING DRAGGED RISES ABOVE THE OTHERS (Ken): two borders can sit closer
+   together than 10mm - a thin command bar puts two of them within a few millimetres -
+   and then the circles overlap. Whichever was grabbed must be the one on top, or the
+   user appears to be dragging a circle that is not moving. */
+.layout-handle.dragging { z-index: 901; }
+
+#layoutHandleCommand  { background: var(--handle-command); }
+#layoutHandleResponse { background: var(--handle-response); }
+#layoutHandleDock     { background: var(--handle-dock); }
+
 body.layout-dragging * { pointer-events: none !important; }
 body.layout-dragging { user-select: none; }
 

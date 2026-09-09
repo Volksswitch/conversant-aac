@@ -196,3 +196,45 @@ test('the bar style is scoped to the CARD, not to the slot class', () => {
         }
     }
 });
+
+/* ── The three layout handles ────────────────────────────────────────────────
+ *
+ * Ken asked for "three different, contrasting colors" on the circles that appear over
+ * the movable borders. Contrast between three colours is the one claim that cannot be
+ * checked by looking, so it is simulated and scored here like the response slots.
+ *
+ * ⚠ THE BAR IS LOWER THAN THE SLOTS' 25 ON PURPOSE, AND THE REASON IS THE DESIGN
+ * RATHER THAN A CONCESSION: a handle does not carry meaning by colour ALONE. Each
+ * circle sits on its own border, so POSITION is the primary channel and the colour only
+ * has to tell them apart at a glance. The slots are held higher because a response card
+ * can be read on colour before position is learned.
+ */
+const HANDLES = ['handle-command', 'handle-response', 'handle-dock'];
+
+function closestHandlePair(palette, kind) {
+    let worst = { d: Infinity, a: '', b: '' };
+    for (let i = 0; i < HANDLES.length; i++) {
+        for (let j = i + 1; j < HANDLES.length; j++) {
+            const d = distance(palette[HANDLES[i]], palette[HANDLES[j]], kind);
+            if (d < worst.d) worst = { d, a: HANDLES[i], b: HANDLES[j] };
+        }
+    }
+    return worst;
+}
+
+test('the three layout handles stay apart in EVERY scheme, for every kind', () => {
+    const schemes = [...css.matchAll(/:root\[data-theme="([a-z-]+)"\]\s*\{/g)].map(m => m[1]);
+    const palettes = [['default', lightPalette()],
+                      ...new Set(schemes)].map(x => Array.isArray(x) ? x : [x, paletteOf(`:root[data-theme="${x}"]`)]);
+
+    for (const [name, palette] of palettes) {
+        for (const h of HANDLES) {
+            assert.ok(palette[h], `"${name}" has no value for --${h}`);
+        }
+        for (const kind of ['protanopia', 'deuteranopia', 'tritanopia']) {
+            const { d, a, b } = closestHandlePair(palette, kind);
+            assert.ok(d >= 15,
+                `in "${name}" under ${kind} the closest handles are ${d.toFixed(1)} apart (${a} vs ${b}); 15 is the bar`);
+        }
+    }
+});

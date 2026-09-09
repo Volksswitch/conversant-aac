@@ -22,6 +22,9 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.10.17": [
+    "When you tick \"Let me drag the borders to resize\", three colored circles now appear on the borders you can move — one on each, in the middle of its length. Drag a circle and the border follows it. They are big enough to grab with a finger, so you no longer have to land on the thin line itself, and pressing one can no longer set off the button underneath. The circles disappear as soon as you untick the box or start a conversation."
+  ],
   "0.10.16": [
     "The backup section is now called \"Settings backup\", with \"Backup settings\" and \"Import settings…\".",
     "Backing up now asks first, and shows its progress. On a tablet, collecting hundreds of saved conversations takes long enough that a silent wait looks like a crash — the same problem the import side already had. You get a chance to say \"not now\", a count while it works, and a card at the end telling you where the file went.",
