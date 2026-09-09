@@ -59,7 +59,29 @@ the one that quietly waits forever.
   biggest case but not the only one; installed voices, an attached keyboard and which speech
   services work there are the rest. Ken's second-order clause is kept and is the sharp part
   (keyboard layout > band size).
-- **Roughly 18 of 49 portable settings are operational** and would move to data under that
+- **⚠ SEPT 9, LATER: THE SAFETY ARGUMENT COLLAPSED, and Ken got there first** (*"I'm
+  beginning to think that there aren't many things that can't travel - and they're
+  primarily OS related"*). Applying his easier test - can it be easily tuned? - to all 44
+  stored settings, **nothing is genuinely non-travelable.** Every one is a picker, slider,
+  checkbox or radio reachable from Settings without typing, so a wrong value costs one
+  adjustment. The one true trap, full screen on an iPad, is ALREADY guarded in code (the
+  request returns early on iOS and the control is hidden), so even that travels harmlessly.
+  What is excluded from both files is excluded for OTHER reasons entirely: the six keys for
+  secrecy, and installId / testerName / usage counters / lastSeenVersion as per-device
+  bookkeeping.
+- **⚠ SO THE SPLIT CANNOT BE JUSTIFIED ON SAFETY, and that reopens what the two files are
+  FOR.** The remaining justification is CHOICE - Ken's original words were *"not necessarily
+  my settings"*, which is a want, not a risk. Under choice the natural line is **"my words"
+  vs "my setup"**: data is who you are and what you say (About Me, people, places, panel
+  CONTENT, phrases, conversations), settings is how the app is arranged and behaves (layout,
+  sizes, timings, colours, band sizes). **That line puts band sizes in SETTINGS, which is the
+  opposite of where "easily tuned" puts them and is what Ken's original complaint asked for**
+  - the two axes genuinely disagree and he has now argued both. Recommend the words/setup
+  line, because it is the one a user can predict from the two button names.
+- **⚠ CORRECTION to an earlier claim in this entry: storage permission, quota and usage are
+  NOT stored settings.** They are fields on a status object a regex picked up. Nothing about
+  device storage travels today, so there is no bug there to fix.
+- **Roughly 18 of 44 portable settings are operational** and would move to data under that
   rule — placeholder timings and the ease-off, silence period, tap mode and double-tap
   interval, colour scheme, the band mark, cards per category, chime, auto-relisten.
 - **Why not now:** it is a decision Ken has not made yet, and the cheap implementation is
