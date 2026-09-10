@@ -7,7 +7,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseCsv, readReports, byInstall, gatherErrors, classifyTester, versionAtLeast } from '../scripts/beta-eval/load.mjs';
-import { tally, addTallies, ratios, groupBy, dimensionsOf, silentTesters, errorRollup } from '../scripts/beta-eval/aggregate.mjs';
+import { tally, addTallies, ratios, groupBy, dimensionsOf, keyboardOf, generationMs, decideMs, spread,
+         silentTesters, errorRollup } from '../scripts/beta-eval/aggregate.mjs';
 import { render } from '../scripts/beta-eval/render.mjs';
 
 const cell = (o) => '"' + JSON.stringify(o).replace(/"/g, '""') + '"';
@@ -220,4 +221,120 @@ test('version comparison is by number, not by text', () => {
     assert.equal(versionAtLeast('0.7.12', '0.7.11'), true);
     assert.equal(versionAtLeast('0.7.9', '0.7.11'), false, '9 is not later than 11');
     assert.equal(versionAtLeast('0.8.0', '0.7.11'), true);
+});
+
+test('which keyboard they type on: an absent setting is physical, a missing block is unknown', () => {
+    // The distinction is the whole subtlety. loadKeyboardMode returns physical for
+    // anything that is not exactly 'onscreen', so a tester who never opened that
+    // setting IS a physical-keyboard user - and that is most people. Counting them as
+    // unknown would leave the question unanswered for the majority case.
+    assert.equal(keyboardOf({ settings: {} }), 'physical');
+    assert.equal(keyboardOf({ settings: { keyboardMode: 'physical' } }), 'physical');
+    assert.equal(keyboardOf({ settings: { keyboardMode: 'onscreen' } }), 'on-screen');
+    // Genuinely unknown: system information is only sent when it changes, so a device
+    // can report for months with no settings block attached at all.
+    assert.equal(keyboardOf(null), 'unknown');
+    assert.equal(keyboardOf({}), 'unknown');
+    assert.equal(dimensionsOf({}).keyboard, 'unknown');
+});
+
+test('the two halves of the wait are read out of the report, each from its own source', () => {
+    const t = {
+        usage: { decideMsMedian: 7800, decideSamples: 40 },
+        events: { timings: { 'generation.ms': { n: 120, median: 4200, max: 9000 } }, totals: {} },
+    };
+    assert.equal(generationMs(t), 4200);
+    assert.equal(decideMs(t), 7800);
+    // Both were shipped in every report and read by nothing, so absent must read as
+    // absent rather than as zero - a zero would print as an impossibly fast app.
+    assert.equal(generationMs({ usage: {}, events: { totals: {} } }), null);
+    assert.equal(decideMs({ usage: {}, events: { totals: {} } }), null);
+    assert.equal(generationMs({}), null);
+    assert.equal(decideMs({}), null);
+});
+
+test('the medians are ranged and the sample counts behind them are summed', () => {
+    const mk = (gen, genN, dec, decN) => ({
+        usage: { decideMsMedian: dec, decideSamples: decN },
+        events: { timings: { 'generation.ms': { n: genN, median: gen } }, totals: {} },
+    });
+    const testers = [mk(3000, 100, 5000, 30), mk(6000, 50, 9000, 20)];
+    const totals = addTallies(testers.map(tally));
+    // Counts pool; medians do not, so they are reported as a range instead.
+    assert.equal(totals.genSamples, 150);
+    assert.equal(totals.decideSamples, 50);
+    const gen = spread(testers, generationMs);
+    assert.deepEqual([gen.low, gen.high, gen.n], [3000, 6000, 2]);
+});
+
+test('the wait section prints both halves and refuses to present them as a split', () => {
+    const t = shell({
+        usage: { conversations: 5, userTurns: 50, fromCard: 30, respondSamples: 40, respondOver4s: 10,
+                 decideMsMedian: 7800, decideSamples: 40 },
+        events: { timings: { 'generation.ms': { n: 120, median: 4200 } }, totals: {} },
+    });
+    const text = render({ testers: [t], excluded: [], unnamed: [], problems: [], broken: [] });
+    assert.match(text, /WHERE THE WAIT GOES/);
+    assert.match(text, /Asking the AI, to suggestions\s+4\.2s/);
+    assert.match(text, /Reading them and choosing one\s+7\.8s/);
+    assert.match(text, /120 request\(s\)/);
+    assert.match(text, /40 turn\(s\)/);
+    // The load-bearing warning: 4.2 + 7.8 is not the wait. The two sit on different
+    // denominators, and a reader who adds them optimizes whichever half looks bigger.
+    assert.match(text, /do not add up to the whole wait/);
+    assert.match(text, /only for turns where a card was actually taken/);
+    // And that the second figure cannot be split into reading versus choosing.
+    assert.match(text, /nothing in between/);
+});
+
+test('nothing reported is said to be nothing reported, never a fast app', () => {
+    const t = shell({ usage: { conversations: 5, userTurns: 50, fromCard: 30 }, events: { totals: {} } });
+    const text = render({ testers: [t], excluded: [], unnamed: [], problems: [], broken: [] });
+    assert.match(text, /not reported yet/);
+    // Silence must not read as speed: an empty timing means nobody has reported one.
+    assert.match(text, /not that the app/);
+    assert.match(text, /is fast/);
+});
+
+test('the keyboard split appears as a setup, so it says how many people and how they fared', () => {
+    const mk = (name, mode, turns, card) => ({
+        name, usage: { userTurns: turns, fromCard: card }, events: { totals: {} },
+        systemInfo: { platform: { summary: 'Chromium' }, speech: {}, settings: { keyboardMode: mode } },
+    });
+    const testers = [mk('Amy', 'onscreen', 100, 50), mk('Bo', 'physical', 100, 70), mk('Cy', 'physical', 200, 40)];
+    const groups = groupBy(testers, t => dimensionsOf(t).keyboard);
+    const onscreen = groups.find(g => g.key === 'on-screen');
+    const physical = groups.find(g => g.key === 'physical');
+    assert.equal(onscreen.totals.testers, 1);
+    assert.equal(physical.totals.testers, 2);
+    assert.equal(physical.totals.userTurns, 300);
+    const text = render({ testers: testers.map(t => shell(t)), excluded: [], unnamed: [], problems: [], broken: [] });
+    assert.match(text, /Keyboard they type on/);
+    assert.match(text, /on-screen/);
+});
+
+test('the timing keys are the ones the app actually emits', () => {
+    // metrics.tally buckets a duration under `<event>.<field>`, so the stat is
+    // 'generation.ms' and not 'generation'. The obvious name reads as no data at all
+    // and would have printed "not reported yet" for ever. Verified against a real
+    // snapshot from the running app; pinned here so it cannot drift back.
+    assert.equal(generationMs({ events: { timings: { 'generation.ms': { median: 4200 } } } }), 4200);
+    assert.equal(generationMs({ events: { timings: { generation: { median: 4200 } } } }), null);
+    // Reading and choosing prefers the conversation logs, so that it is measured over
+    // the same turns as the four-second figure it sits beside.
+    assert.equal(decideMs({ usage: { decideMsMedian: 5000 },
+        events: { timings: { 'card_selected.decideMs': { median: 9000 } } } }), 5000);
+    assert.equal(decideMs({ events: { timings: { 'card_selected.decideMs': { median: 9000 } } } }), 9000);
+});
+
+test('the "older build" caveat fires on an old version and not on a current one', () => {
+    // It used to be a regex pinned to 0.7.x, so every version from 0.8 onward tripped
+    // it and the caveat showed for everybody. A caveat that is always on is one people
+    // learn to scroll past, which costs the reader the one time it matters.
+    const mk = (v) => shell({ appVersion: v, usage: { conversations: 5, userTurns: 50, fromCard: 30 } });
+    const of = (v) => render({ testers: [mk(v)], excluded: [], unnamed: [], problems: [], broken: [] });
+    assert.ok(!of('0.10.18').includes('Still on an older build'), 'a current build is not stale');
+    assert.ok(!of('0.8.0').includes('Still on an older build'), '0.8 is newer than 0.7.11, not older');
+    assert.ok(of('0.7.10').includes('Still on an older build'), 'a genuinely older build is flagged');
+    assert.ok(of('0.6.5').includes('Still on an older build'));
 });

@@ -3250,6 +3250,32 @@ feeling, the partner's offered choices, and the number button).
   the same asking move one turn later, plus a card naming the user's own preferences
   **in preference order** — which the profile may not currently store.
 
+**⚠ WHAT PUTS A BUTTON IN A BAND IS HOW ITS CONTENT IS DETERMINED — NOT WHETHER IT
+SPEAKS (Ken, September 10 2026, overruling me).** Asked where a conversation-goal
+button belongs, I reasoned that Context is the band of buttons that never speak, so a
+non-speaking goal button goes there. **That is a property of the Context band's
+contents mistaken for the rule that fills it.** Ken: *"Goals are context dependent and
+therefore can't go in the context band. Once I choose who I'm talking with in the
+context band, only then can the goals be displayed. This is the typical behavior of the
+flex band."*
+- **The rule, and it is the one to reason from:** **Always** never changes; **Context**
+  is where the user SUPPLIES the dimensions (who, where, how I feel); **Flex** holds
+  content that is a FUNCTION of those dimensions. Anything derived from a selection is
+  Flex, whatever it does when tapped.
+- **⚠ AND THE SAFETY ARGUMENT RUNS THE OTHER WAY TOO. Ken: *"The issue that they don't
+  speak is not a danger, it's a no-op."*** The property being protected is that a
+  mis-hit must never say something irreversible. A button that cannot speak fails that
+  test in the SAFE direction — a stray tap costs a set of cards and a round trip and
+  reaches nobody. **So "it does not speak" is never itself a reason to move a button out
+  of a speaking band.** The exposure is the reverse mis-hit: aiming at a non-speaking
+  button, missing, and hitting a phrase that speaks — which is an argument about
+  ADJACENCY, answered by grouping such buttons at one end of the band, not about which
+  band they are in.
+- **A second kind in a band needs the band's own differentiator, not a new marker**
+  (Ken). The Context band already has a user-selectable "Telling buttons apart" setting
+  because it holds three kinds against one background; the Flex band has one background
+  only because it holds one kind, so that setting generalizes to it unchanged.
+
 **The full write-up, with four figures, is
 [Conversant AAC Express Panel Design.docx](Documents/) (generator
 `scripts/doc-generators/generate-express-panel-design-doc.js`, figures from

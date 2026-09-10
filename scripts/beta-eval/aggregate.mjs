@@ -44,7 +44,27 @@ export function dimensionsOf(t) {
         hearing: speech.sttProvider || 'unknown',
         voice: speech.ttsProvider || 'unknown',
         version: t.appVersion || 'unknown',
+        keyboard: keyboardOf(info),
     };
+}
+
+/* WHICH KEYBOARD THEY TYPE ON (Ken asked, September 10 2026: "how many people are
+ * using the on-screen keyboard vs. device keyboard").
+ *
+ * (!) AN ABSENT SETTING IS A REAL ANSWER AND NOT A MISSING ONE, which is the whole
+ * subtlety here. `loadKeyboardMode` returns 'physical' for anything that is not
+ * exactly 'onscreen', so a tester who has never opened that setting IS a physical
+ * keyboard user and must be counted as one - otherwise the default case, which is
+ * most people, reads as unknown and the question goes unanswered.
+ *
+ * What genuinely IS unknown is a device whose settings block never arrived: system
+ * information is only sent when it changes, so a device can report for months
+ * without one. Those two cases are indistinguishable if you only look at the key,
+ * so the block's own presence is what separates them. */
+export function keyboardOf(info) {
+    const settings = info && info.settings;
+    if (!settings || typeof settings !== 'object') return 'unknown';
+    return settings.keyboardMode === 'onscreen' ? 'on-screen' : 'physical';
 }
 
 /* The countable facts from one tester, reduced to the handful that pool. */
@@ -68,8 +88,73 @@ export function tally(t) {
         conversationsStarted: num(ev.conversation_started),
         rateLimited: num(ev.rate_limited),
         voiceFellBack: num(u.voiceFellBack),
+        // Sample counts for the two halves of the wait. The MEDIANS cannot be pooled
+        // (see the rule at the top) but the counts behind them can, and without them
+        // a range of medians says nothing about how much evidence is under it.
+        genSamples: num(((t.events || {}).timings || {})['generation.ms']?.n),
+        decideSamples: num(u.decideSamples)
+            || num(((t.events || {}).timings || {})['card_selected.decideMs']?.n),
         errors: (t.errors || []).length,
     };
+}
+
+/* THE TWO HALVES OF THE WAIT, and they are the answer to two different questions.
+ *
+ * "Replies that took over 4s" is the WHOLE wait, measured from the saved
+ * conversations: the other person stops talking, and some time later the user speaks.
+ * That is the founding problem and it is the number to read. But it says nothing
+ * about WHERE the time went, and the two places it can go want opposite fixes:
+ *
+ *   generation  - asking the AI and getting suggestions back. Ours to make faster.
+ *   decide      - the cards appearing, then being read and chosen between. The
+ *                 person, not the machine. Faster would mean fewer or shorter cards.
+ *
+ * (!) THEY DO NOT ADD UP TO THE WHOLE WAIT AND MUST NEVER BE PRESENTED AS IF THEY
+ * DID. Three reasons, and each one alone is enough: the whole wait also contains the
+ * silence period and the lag before the recognizer delivers the last words at all;
+ * a turn can generate several times as the other person pauses and resumes, so there
+ * is no single generation to attribute; and DECIDE ONLY EXISTS WHERE A CARD WAS
+ * TAKEN, because it is measured from the cards appearing to the tap. A turn the user
+ * typed instead has a whole wait and no decide time, so the two have different
+ * denominators. Reading them as a decomposition would quietly under-count the wait
+ * and invite optimizing the wrong half.
+ *
+ * (!) READING AND CHOOSING CANNOT BE SPLIT, and that is a property of the measure
+ * rather than a gap in it: one number spans the cards appearing and the tap landing,
+ * with nothing in between to mark the moment reading stopped. Naming it for both is
+ * the honest form; a "reading time" would be an invention.
+ */
+/* (!) THE TIMING KEY IS 'generation.ms', NOT 'generation', and reading the obvious
+ * name is a silent failure rather than an error. metrics.tally buckets a duration
+ * under `<event>.<field>` because one event can carry more than one timing, so the
+ * stat lives beside a COUNT of the same name in a different block. Look up the wrong
+ * key and `spread` gets nothing, the section prints "not reported yet", and it does
+ * so for ever - reading exactly like an app that has never been slow.
+ *
+ * Found by emitting a real generation event in the running app and reading the real
+ * snapshot back, which is the only thing that could have found it: every unit test
+ * here builds its own report, so all of them agreed with the wrong key. */
+const TIMING = { generation: 'generation.ms', decide: 'card_selected.decideMs' };
+
+export function timingStat(t, name) {
+    const st = ((t.events || {}).timings || {})[name];
+    return st && Number.isFinite(st.median) ? st : null;
+}
+
+export function generationMs(t) {
+    const st = timingStat(t, TIMING.generation);
+    return st ? st.median : null;
+}
+/* Reading and choosing has TWO sources, and the conversation logs are preferred.
+ * `usage.decideMsMedian` comes from the saved conversations, which is the same source
+ * as the four-second figure - so the two are measured over the same turns and can be
+ * read beside each other. The metrics timing is the same quantity gathered another
+ * way, and it stands in when a device has reported events but no usage block. */
+export function decideMs(t) {
+    const u = t.usage || {};
+    if (Number.isFinite(u.decideMsMedian)) return u.decideMsMedian;
+    const st = timingStat(t, TIMING.decide);
+    return st ? st.median : null;
 }
 
 export function addTallies(list) {

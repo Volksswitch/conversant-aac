@@ -56,98 +56,89 @@ the one that quietly waits forever.
   is nothing to add a second goal to. Standing relationship goals remain the smallest
   first build, and this says what shape that build takes when it happens.
 
-### Conversation goals as steering buttons in the Express Panel
+### Conversation goals as steering buttons in the FLEX band
 - **Raised:** 2026-09-10 - Ken: "treat conversation goals as 'reframe' buttons that can
   appear in the express panel when the combination of dimensional values match - flex
   panel non-speaking buttons(?)"
 - **Wanted:** a goal becomes a one-tap button that re-generates the response cards
-  around it, surfacing when the current partner and place match the goal's dimensions.
-  It says nothing aloud; it steers.
-- **What it lands on:** the Reframe seam is already built and already used this way
-  twice - the closed-set choice chips and the number pad both re-generate without
-  speaking. So the mechanism exists; what is new is the trigger being a stored goal
-  rather than something the partner just said.
-- **⚠ Ken's own question mark is the right one to answer first, and the band design
-  answers it: a non-speaking button belongs in CONTEXT, not FLEX.** The organizing rule
-  of the three bands is speaking versus influencing - Flex holds phrases that are
-  spoken, Context holds the buttons that never speak - and the whole safety argument for
-  that split is that a mis-hit in the Context band can never say something irreversible.
-  A goal button never speaks, so putting it in Flex would break the one rule that makes
-  the panel explainable in a sentence. It also inherits the Context band's existing
-  answer for transient buttons: they arrive at the far end and push nobody around.
+  around it, appearing when the selected partner and place match the goal's dimensions.
+  It says nothing aloud; it steers. **In the FLEX band, marked so it cannot be mistaken
+  for a phrase that speaks.**
+- **⚠ I ARGUED FOR THE CONTEXT BAND AND KEN OVERRULED IT. He is right, and the error is
+  worth keeping because it is easy to repeat: I had the band rule backwards.** I took
+  "Context holds the buttons that never speak" as the DEFINITION of the band, and
+  reasoned from it that a non-speaking button must go there. Non-speaking is a PROPERTY
+  of the Context band's contents, not what puts them in it. **What actually separates
+  the bands is how their content is DETERMINED:** Always never changes; Context is where
+  the user SUPPLIES the dimensions (who, where, how I feel); Flex holds content that is
+  a FUNCTION of those dimensions. A goal only exists once a partner is chosen, so it is
+  derived, so it is Flex - by exactly the same mechanism as a situational phrase. Ken:
+  "Goals are context dependent and therefore can't go in the context band."
+- **⚠ AND THE SAFETY ARGUMENT WAS THE WRONG WAY ROUND TOO. Ken: "The issue that they
+  don't speak is not a danger, it's a no-op."** The property being protected is that a
+  mis-hit must not say something irreversible. A goal button cannot speak, so a mis-hit
+  on it costs a set of cards and a round trip, and nothing that reaches the other
+  person. **A non-speaking button in a speaking band is the SAFE direction of the
+  mistake**, which I had counted as the risky one.
+- **The decoration is Ken's and it reuses a solved problem:** the Context band already
+  has a user-selectable "Telling buttons apart" setting, because it holds three kinds in
+  one background. The Flex band has one background today because it holds one kind;
+  adding a second kind is precisely the condition that made that setting necessary, so
+  it generalizes rather than needing a new marker.
+- **⚠ THE ONE RESIDUAL, raised once: the mis-hit that matters is the REVERSE one.**
+  Aiming at a goal button and missing lands on a neighbouring phrase, which speaks. So
+  the exposure is not the goal buttons themselves but what sits beside them.
+  **Recommendation: group them at one end of the Flex band** so their neighbours are
+  mostly each other - the same answer the choice chips already use in the Context band.
+  That leaves one real question for the build: the Flex band is filled most-specific
+  first from four ordered lists, so a grouped run of goal buttons needs its own
+  allocation within the band rather than competing for cells with phrases.
 - **Why not yet:** it depends on the entry above (there are no goals to surface) and on
-  the three-band panel, which is designed and not built. It also needs the "which scope
-  am I editing" hazard settled, since a goal button is a fourth kind of Context button.
-
-### The keyboard question: nothing reads the answer we already collect
-- **Raised:** 2026-09-10 - Ken: "how many people are using the on-screen keyboard vs.
-  device keyboard"
-- **Where it stands:** the answer is arriving and nobody is reading it. Every weekly
-  report carries the whole settings bundle in `systemInfo` via
-  `storage.reportableSettings()`, `keyboardMode` included. But `scripts/beta-eval`
-  reads **no settings at all** - `aggregate.mjs` touches `events.totals` and nothing
-  else - so the number is in the Sheet and never comes out.
-- **Wanted:** a line in the configuration grouping of "evaluate beta", counting testers
-  by `keyboardMode`. Absent means physical, which is the default, so a tester who never
-  touched it still counts correctly.
-- **Why not yet:** it is a reader change rather than a collection change, and it is
-  worth doing in one pass with the timing item below, which is the same gap.
-
-### The generation-timing question: collected, shipped, never summarized
-- **Raised:** 2026-09-10 - Ken: "are we collecting and summarizing in reporting the time
-  from AI prompt to return of response options?"
-- **Where it stands:** **collecting yes, summarizing no.** `app.js` emits
-  `EV.GENERATION` with the round-trip in milliseconds on every successful generation,
-  and because it carries an `ms` key `metrics.js` keeps it as a timing sample and
-  computes a median. That median rides every weekly report inside `events.timings`. And
-  `scripts/beta-eval/aggregate.mjs` reads `t.events.totals` only - **`timings` is never
-  touched by anything**, so the number has been collected and shipped and read by
-  nobody.
-- **⚠ The figure the report DOES print is a different quantity, and confusing the two
-  would answer the question wrongly.** "Replies that took over 4s" is measured from the
-  saved conversations: it is the whole wait from the other person pausing to the user
-  speaking, so it includes reading the cards and choosing between them. The AI round
-  trip is one part of it. Both are worth having and they must not be presented as the
-  same thing.
-- **Wanted:** the generation median in the "evaluate beta" summary, next to the
-  four-second figure and labelled as the AI's share of it. `GENERATION_SUPERSEDED` and
-  `GENERATION_FAILED` are collected the same way and deserve the same treatment - a
-  superseded generation is the cost of the short silence period, which is a number Ken
-  has already asked to watch.
-- **Why not yet:** same reader change as the item above; do them together.
-
-### Product Overview: the AI vendor's safety rules, and the distress case
-- **Raised:** 2026-08-30 — CLAUDE.md, "A speech-to-speech model CANNOT be used here"
-- **Wanted:** a paragraph beside *Not a Smart Speaker* saying the vendor's safety rules
-  apply and cannot be switched off by the app, and that the app's own honesty rule is
-  stricter and applies first.
-- **Why not yet:** the paragraph about a user needing to say something bleak must NOT be
-  written until the live-model testing below has actually been run — the honest position
-  today is that it has not been measured.
-
-### Test distress-shaped turns against the live model
-- **Raised:** 2026-08-30 — CLAUDE.md, Open Questions
-- **Wanted:** a dozen partner turns inviting a distressed reply, run against the real
-  model, checking the cards are usable and in the user's voice rather than deflections.
-  The measure is whether the user can SAY the thing.
-- **Why not yet:** beta-gated. It also gates the Product Overview paragraph above.
-
-### Tell an AI refusal apart from a network failure
-- **Raised:** 2026-08-30 — CLAUDE.md, Open Questions
-- **Wanted:** read the response's stop reason, log a refusal as its own kind of error, and
-  count it in the weekly report. No user-facing error text — Ken's standing position.
-- **Why not yet:** not seen in the field yet; it is instrumentation, not a defect.
-
-### The 0.10.7 release note misstates the Express Panel grid
-- **Raised:** 2026-09-08 — found while syncing the manuals
-- **Wanted:** the note says "three rows of twelve rather than four rows of nine". The
-  QWERTY default is three rows of ELEVEN, and the layout it replaced was 9/9/9/6.
-- **Why not yet:** already published; correcting a shipped note is Ken's call, and the
-  manuals were worded to be correct regardless.
+  the three-band panel, which is designed and not built.
 
 ---
 
 ## Done
+
+### The keyboard and generation-timing questions - both were collected and unread
+- **Raised:** 2026-09-10 - Ken asked two questions: "how many people are using the
+  on-screen keyboard vs. device keyboard" and "are we collecting and summarizing in
+  reporting the time from AI prompt to return of response options?"
+- **The answer to both was the same and it was half good: collecting yes, reading no.**
+  Every weekly report already carried the settings bundle (keyboardMode included) and
+  the AI round trip as a timing with a median. `scripts/beta-eval` read neither - its
+  aggregation touched `events.totals` and nothing else, and no settings at all. So the
+  numbers had been arriving in the Sheet for months and coming back out never.
+- **Done:** 2026-09-10, plus the third measure Ken asked for in the same breath. A new
+  "WHERE THE WAIT GOES" section prints the AI round trip and reading-and-choosing as
+  ranges across testers with the sample counts behind them, and "Keyboard they type on"
+  joined the setup groupings, which answers the headcount and gets the turn-level
+  comparison free.
+- **⚠ THE BUG THIS PASS PRODUCED AND THEN CAUGHT IS THE PART WORTH KEEPING, because it
+  is the cross-layer rule paying for itself inside one afternoon.** The reader looked up
+  `events.timings.generation`. **The real key is `generation.ms`** - a duration is
+  bucketed under `<event>.<field>`, since one event can carry several timings. Reading
+  the obvious name is not an error: `spread` gets nothing, the section prints "not
+  reported yet", and it does so for ever, reading exactly like an app that has never
+  been slow. **Six unit tests agreed with the wrong key, because every one of them built
+  its own report.** It was found by emitting a real generation event in the running app
+  and reading the real snapshot back. The tests now use the real key and one pins it.
+- **⚠ AND A SECOND FAULT FELL OUT OF RUNNING IT: the "still on an older build" caveat
+  had rotted into always-true.** It was a regex pinned to `0.7.x`, so every version from
+  0.8 onward failed it and the warning fired for every tester on a current build. It now
+  uses `versionAtLeast`, which is the tested comparison and cannot rot. **A caveat that
+  is always showing is one people learn to scroll past**, which costs the reader the one
+  occasion it means something - the same reasoning that keeps the check-docs allowlist
+  honest.
+- **What the section refuses to do, and it is load-bearing:** the two figures are NOT
+  presented as a split of the wait. They sit on different denominators (reading-and-
+  choosing exists only where a card was taken, so a typed reply has a wait and no
+  reading time), a single turn can ask the AI several times, and neither contains the
+  silence period or the recognizer's own lag. A reader who adds them under-counts the
+  wait and then optimizes whichever half looks larger. A test fails if the warning goes.
+- **Reading and choosing cannot be separated** - one number runs from the cards
+  appearing to the tap landing, with nothing marking where reading stopped. Naming it
+  for both is the honest form, and it is what Ken asked for.
 
 ### The layout borders cannot be grabbed with a finger
 - **Raised:** 2026-09-09 - Ken, on small touch-screen devices.

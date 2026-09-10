@@ -16,7 +16,14 @@
  * ends in a verdict has overrun its evidence.
  */
 import { tally, addTallies, ratios, groupBy, dimensionsOf, spread,
-         silentTesters, retentionGrid, errorRollup } from './aggregate.mjs';
+         generationMs, decideMs, silentTesters, retentionGrid, errorRollup } from './aggregate.mjs';
+import { versionAtLeast } from './load.mjs';
+
+/* The release where a report's figures took their current meaning: 0.7.11 is when a
+ * report began carrying only the errors NEW since the last one, so anything older
+ * counts them differently. Named rather than inlined, because the last version of
+ * this check was a regex that silently stopped matching once the app reached 0.8. */
+const FIGURES_CHANGED_IN = '0.7.11';
 
 const pct = (r) => (r === null || r === undefined ? '--' : `${Math.round(r * 100)}%`);
 const s1 = (ms) => (ms === null || ms === undefined ? '--' : `${(ms / 1000).toFixed(1)}s`);
@@ -68,6 +75,7 @@ export function render({ testers, excluded, unnamed, problems, broken, asOf = Da
     if (totals.rateLimited) L.push(`  (!) The AI refused ${totals.rateLimited} request(s) for being asked too often.`);
     if (totals.voiceFellBack) L.push(`  (!) The paid voice dropped to the device voice ${totals.voiceFellBack} time(s).`);
 
+    whereTheWaitGoes(L, testers, totals, r);
     perTester(L, testers);
     byConfiguration(L, testers);
     retention(L, testers);
@@ -77,6 +85,58 @@ export function render({ testers, excluded, unnamed, problems, broken, asOf = Da
     questions(L, testers, totals, r);
     L.push('');
     return L.join("\n");
+}
+
+/* WHERE THE WAIT GOES - the two halves of it, printed as ranges.
+ *
+ * The share of replies over four seconds says HOW OFTEN the other person waited too
+ * long. It does not say where the time went, and the two places it can go want
+ * opposite fixes: the AI round trip is ours to make faster, and reading-and-choosing
+ * is the person. Both were being collected and shipped in every report and read by
+ * nothing (Ken asked, September 10 2026).
+ *
+ * (!) RANGES, NOT POOLED MIDDLES - the arithmetic rule at the top of aggregate.mjs.
+ * A report carries each tester's middle value, and middles cannot be combined into a
+ * middle. The sample counts underneath DO pool, and they are what says whether a
+ * range is worth reading at all.
+ *
+ * (!) AND THE SECTION SAYS OUT LOUD THAT THE TWO DO NOT ADD UP TO THE WHOLE WAIT.
+ * They are two components of it, on different denominators, with the silence period
+ * and the recognizer's own lag unaccounted for in both - see the long note in
+ * aggregate.mjs. A reader who adds them will under-count the wait and then optimize
+ * whichever half looks larger. */
+function whereTheWaitGoes(L, testers, totals, r) {
+    section(L, 'WHERE THE WAIT GOES');
+    L.push(`  Of the replies that were timed, ${pct(r.overFour)} took more than four seconds.`);
+    L.push('  These are the two halves of that wait, each a range across testers:');
+    L.push('');
+    const gen = spread(testers, generationMs);
+    const dec = spread(testers, decideMs);
+    L.push(`  Asking the AI, to suggestions      `
+        + (gen ? `${s1(gen.low)} to ${s1(gen.high)}   (middle tester ${s1(gen.middle)}, ${gen.n} tester(s), ${totals.genSamples} request(s))`
+               : 'not reported yet'));
+    L.push(`  Reading them and choosing one      `
+        + (dec ? `${s1(dec.low)} to ${s1(dec.high)}   (middle tester ${s1(dec.middle)}, ${dec.n} tester(s), ${totals.decideSamples} turn(s))`
+               : 'not reported yet'));
+    L.push('');
+    L.push('  The first is ours to make faster. The second is the person reading, and');
+    L.push('  would only come down by offering fewer or shorter cards.');
+    L.push('');
+    L.push('  (!) They do not add up to the whole wait, and adding them would under-count');
+    L.push('  it. The wait also holds the silence period and the delay before the last');
+    L.push('  words arrive from the recognizer at all; a single turn can ask the AI');
+    L.push('  several times as the other person pauses and resumes; and the second figure');
+    L.push('  exists only for turns where a card was actually taken, so a typed reply has');
+    L.push('  a wait and no reading time. Read them as two components, never as a split.');
+    L.push('');
+    L.push('  Reading and choosing cannot be separated from each other either: the number');
+    L.push('  runs from the cards appearing to the tap landing, and nothing in between');
+    L.push('  marks the moment reading stopped.');
+    if (!gen && !dec) {
+        L.push('');
+        L.push('  Nothing here yet means no report has carried a timing - not that the app');
+        L.push('  is fast. Check that the testers listed above are on a current build.');
+    }
 }
 
 /* One block per tester. Never an average of them: with five people a percentage is
@@ -106,6 +166,10 @@ function byConfiguration(L, testers) {
         ['What hears them', t => dimensionsOf(t).hearing],
         ['What speaks for them', t => dimensionsOf(t).voice],
         ['App version', t => dimensionsOf(t).version],
+        // Answers "how many people use the on-screen keyboard" by tester count, and
+        // gets the turn-level comparison for free. An absent setting means physical,
+        // which is the default and most people - see keyboardOf.
+        ['Keyboard they type on', t => dimensionsOf(t).keyboard],
     ];
     for (const [label, keyFn] of dims) {
         const groups = groupBy(testers, keyFn);
@@ -188,7 +252,12 @@ function problemsBlock(L, problems) {
  * wrong thing, is not decidable from any of this. */
 function limits(L, testers) {
     section(L, 'WHAT NOT TO READ TOO HARD');
-    const stale = testers.filter(t => !/^0\.7\.(1[1-9]|[2-9]\d)/.test(String(t.appVersion || '')));
+    // (!) THIS WAS A REGEX PINNED TO 0.7.x AND IT HAD ROTTED INTO ALWAYS TRUE: it
+    // matched only 0.7.11 and up, so every version from 0.8 onward failed it and the
+    // warning fired for EVERY tester on a current build. A caveat that is always
+    // showing is one people learn to scroll past, which costs the reader the one time
+    // it means something. `versionAtLeast` is the tested comparison and does not rot.
+    const stale = testers.filter(t => !versionAtLeast(t.appVersion, FIGURES_CHANGED_IN));
     if (stale.length) {
         L.push('  Still on an older build, so their figures are the older kind and some of');
         L.push('  what they report may already be fixed:');
