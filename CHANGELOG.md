@@ -26,6 +26,17 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- You can now record **more than one thing you want from a relationship**, in your own
+  order of importance, and they have their own section. In About Me, open a person and
+  the first section is "What I want from this relationship": pick from the list, or type
+  your own, and each one appears numbered with buttons to move it up or down or take it
+  off. The order matters — the app tells the AI your goals most important first, and that
+  the earlier ones win where two of them pull in different directions. Before this you
+  could record only one, and it was a single dropdown buried in "How I talk with them"
+  alongside everything else. Anything you had already set is carried over as the first
+  goal in the list, and none of these are ever mentioned out loud — they only steer which
+  wording the app suggests.
+
 
 ## Version 0.10.18
 

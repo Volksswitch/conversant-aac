@@ -9,7 +9,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
     REGISTER_DIMENSIONS, RELATIONSHIP_GOALS,
-    registerClauses, goalText, isEmptyProfile
+    registerClauses, goalText, goalTexts, goalLabel, isEmptyProfile
 } from '../app/js/partner-profile.js';
 
 test('an empty or neutral register yields no clauses', () => {
@@ -64,10 +64,49 @@ test('goalText resolves a menu id and passes free text through', () => {
 
 test('isEmptyProfile is true only when nothing would reach the prompt', () => {
     assert.equal(isEmptyProfile(null), true);
-    assert.equal(isEmptyProfile({ register: {}, goal: null, note: '', openers: [] }), true);
+    assert.equal(isEmptyProfile({ register: {}, goals: [], note: '', openers: [] }), true);
     assert.equal(isEmptyProfile({ register: { formality: 'relaxed' } }), false);
-    assert.equal(isEmptyProfile({ goal: { id: 'connect' } }), false);
+    assert.equal(isEmptyProfile({ goals: [{ id: 'connect' }] }), false);
     assert.equal(isEmptyProfile({ note: 'keep it light' }), false);
     assert.equal(isEmptyProfile({ openers: ['Hi Mum'] }), false);
     assert.equal(isEmptyProfile({ note: '   ' }), true, 'whitespace is not content');
+});
+
+
+test('goalTexts keeps the user order, drops nothing real and nothing twice', () => {
+    assert.deepEqual(goalTexts([{ id: 'repair' }, { id: 'upbeat' }]),
+        ['Repair things between us', 'Be upbeat with them']);
+    // A stale id from an older release resolves to nothing and must not leave a gap.
+    assert.deepEqual(goalTexts([{ id: 'gone' }, { id: 'connect' }]),
+        ['Stay connected and catch up']);
+    assert.deepEqual(goalTexts([{ id: 'connect' }, { id: 'connect' }]),
+        ['Stay connected and catch up']);
+    assert.deepEqual(goalTexts([]), []);
+    // The legacy single-goal shape, so no caller has to know which release wrote it.
+    assert.deepEqual(goalTexts({ id: 'help' }), ['Ask for help']);
+    assert.deepEqual(goalTexts(null), []);
+});
+
+test('every goal has a short -ing label for a button face', () => {
+    // The face is a REMINDER, not a quotation - nothing is spoken - so it can be
+    // short, and it must be, because a side-dock cell is about nine characters wide.
+    for (const g of RELATIONSHIP_GOALS) {
+        assert.ok(g.label, `${g.id} has no label`);
+        assert.ok(g.label.length <= 16, `${g.id}'s label is too long for a cell: ${g.label}`);
+        // -ing form, so a goal cannot read as something to say out loud in a band
+        // where most buttons speak. "Their people" is the one deliberate exception:
+        // there is no natural gerund for supporting someone's other relationships.
+        if (g.id !== 'their_people') {
+            assert.match(g.label, /ing\b/, `${g.id}'s label is not in the -ing form: ${g.label}`);
+        }
+    }
+});
+
+test('goalLabel falls back to the full wording for a typed goal', () => {
+    // A typed goal has no label until the user gives it one, and their own words
+    // truncated beat an empty button.
+    assert.equal(goalLabel({ id: 'repair' }), 'Making peace');
+    assert.equal(goalLabel({ id: '', text: 'Stop arguing about the car' }),
+        'Stop arguing about the car');
+    assert.equal(goalLabel(null), '');
 });

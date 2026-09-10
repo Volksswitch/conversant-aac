@@ -20,7 +20,7 @@ import * as rel from './relationships.js';
 import * as places from './places.js';
 import * as voiceProfile from './voice.js';
 import { SOUND_CHECK_ITEMS, VERDICT, questionFor } from './sound-check-items.js';
-import { REGISTER_DIMENSIONS, RELATIONSHIP_GOALS } from './partner-profile.js';
+import { REGISTER_DIMENSIONS, RELATIONSHIP_GOALS, goalText } from './partner-profile.js';
 import * as voiceHarvest from './voice-harvest.js';
 import * as controlPhrases from './control-phrases.js';
 import * as placeholderPhrases from './placeholder-phrases.js';
@@ -801,27 +801,99 @@ function buildPartnerProfileSection(existing) {
         ]);
     });
 
-    // Standing relationship goal — what they want from the relationship over time,
+    // Standing relationship goals — what they want from the relationship over time,
     // not from one conversation. Curated menu plus free text (Ken, June 15 2026):
     // fast to pick, which matters for this user, but still their own words if none
     // of the twelve fit.
-    const goalSelect = el('select', { class: 'wv-select' });
-    goalSelect.append(el('option', { value: '' }, 'No particular goal'));
-    for (const g of RELATIONSHIP_GOALS) goalSelect.append(el('option', { value: g.id }, g.text));
-    goalSelect.append(el('option', { value: OTHER }, 'Something else…'));
-    const goalOther = el('input', { type: 'text', class: 'wv-text', placeholder: 'What you want from this relationship' });
-    const goalOtherWrap = el('div', { class: 'wv-rel-other' }, [goalOther]);
-    const syncGoal = () => { goalOtherWrap.style.display = goalSelect.value === OTHER ? '' : 'none'; };
-    goalSelect.addEventListener('change', syncGoal);
-    if (saved && saved.goal) {
-        if (saved.goal.id && RELATIONSHIP_GOALS.some((g) => g.id === saved.goal.id)) {
-            goalSelect.value = saved.goal.id;
-        } else if (saved.goal.text) {
-            goalSelect.value = OTHER;
-            goalOther.value = saved.goal.text;
+    //
+    // AN ORDERED LIST, because several may be active at once and the user's order is
+    // the only statement of which matters more (Ken, September 10 2026). There is no
+    // primary-versus-constraint kind: every goal is the same kind of thing.
+    //
+    // ⚠ A LIST EDITOR HERE, AND A TEXTAREA FOR THE PHRASES BELOW, WHICH LOOKS
+    // INCONSISTENT AND IS NOT. The phrases are free text, so one per line gives add,
+    // remove and reorder for nothing. A goal is a MENU pick — chosen from twelve,
+    // fast, which is the whole reason the menu exists for this user — and a textarea
+    // would throw the menu away. So the weight of add/move/remove is earned here and
+    // is not earned there.
+    let goals = saved && Array.isArray(saved.goals) ? saved.goals.map((g) => ({ ...g })) : [];
+    const goalList = el('div', { class: 'wv-goal-list' });
+
+    const goalAdd = el('select', { class: 'wv-select' });
+    const fillAdd = () => {
+        goalAdd.textContent = '';
+        goalAdd.append(el('option', { value: '' }, 'Add a goal…'));
+        for (const g of RELATIONSHIP_GOALS) {
+            // Already chosen? Leave it out rather than showing it and refusing: an
+            // option that does nothing when picked reads as the control being broken.
+            if (goals.some((x) => x.id === g.id)) continue;
+            goalAdd.append(el('option', { value: g.id }, g.text));
         }
-    }
-    syncGoal();
+        goalAdd.append(el('option', { value: OTHER }, 'Something else…'));
+    };
+
+    const goalOther = el('input', { type: 'text', class: 'wv-text',
+        placeholder: 'What you want from this relationship' });
+    const goalOtherAdd = el('button', { type: 'button', class: 'wv-btn' }, 'Add');
+    const goalOtherWrap = el('div', { class: 'wv-rel-other' }, [goalOther, goalOtherAdd]);
+    const syncOther = () => { goalOtherWrap.style.display = goalAdd.value === OTHER ? '' : 'none'; };
+
+    const renderGoals = () => {
+        goalList.textContent = '';
+        goals.forEach((g, i) => {
+            const up = el('button', { type: 'button', class: 'wv-icon-btn',
+                'aria-label': 'Move up' }, '↑');
+            const down = el('button', { type: 'button', class: 'wv-icon-btn',
+                'aria-label': 'Move down' }, '↓');
+            const del = el('button', { type: 'button', class: 'wv-icon-btn',
+                'aria-label': 'Remove this goal' }, '✕');
+            // Disabled at the ends rather than a no-op: a button that does nothing
+            // when pressed is indistinguishable from one that is not working.
+            if (i === 0) up.disabled = true;
+            if (i === goals.length - 1) down.disabled = true;
+            up.addEventListener('click', () => {
+                [goals[i - 1], goals[i]] = [goals[i], goals[i - 1]];
+                renderGoals();
+            });
+            down.addEventListener('click', () => {
+                [goals[i + 1], goals[i]] = [goals[i], goals[i + 1]];
+                renderGoals();
+            });
+            del.addEventListener('click', () => {
+                goals.splice(i, 1);
+                fillAdd(); syncOther(); renderGoals();
+            });
+            goalList.append(el('div', { class: 'wv-goal-row' }, [
+                // The number is what makes the order visible as an order. Without it
+                // this is a list whose sequence the user cannot see the point of.
+                el('span', { class: 'wv-goal-rank', 'aria-hidden': 'true', text: (i + 1) + '.' }),
+                el('span', { class: 'wv-goal-text', text: goalText(g) }),
+                up, down, del
+            ]));
+        });
+    };
+
+    const addGoal = (g) => {
+        goals.push(g);
+        goalAdd.value = '';
+        fillAdd(); syncOther(); renderGoals();
+    };
+    goalAdd.addEventListener('change', () => {
+        const v = goalAdd.value;
+        if (!v) return;
+        if (v === OTHER) { syncOther(); goalOther.focus(); return; }
+        addGoal({ id: v });
+    });
+    goalOtherAdd.addEventListener('click', () => {
+        const t = goalOther.value.trim();
+        if (!t) return;
+        goalOther.value = '';
+        addGoal({ id: '', text: t });
+    });
+
+    fillAdd();
+    syncOther();
+    renderGoals();
 
     const noteIn = el('input', { type: 'text', class: 'wv-text',
         placeholder: 'Anything else about how you talk with them (optional)',
@@ -855,19 +927,46 @@ function buildPartnerProfileSection(existing) {
     // NO SECOND LINE explaining what is inside (Ken, August 11 2026): that is
     // per-control help text on screen, which Rule 14 sends to the manuals, and the
     // spoken "?" is what says what a section is for.
+    // ⚠ GOALS GET THEIR OWN SECTION (Ken, September 10 2026: "Conversational goals are
+    // now buried in the 'How I talk to them' section. I'd like you to raise the
+    // visibility of goals to its own section").
+    //
+    // They had been one control among ten inside a closed disclosure, which put the
+    // one thing that steers WHAT the user says behind the same triangle as the things
+    // that steer how it is worded. Making it a list of its own made that worse rather
+    // than better: it grew from a single dropdown to a list with its own buttons,
+    // deeper inside a section about something else.
+    //
+    // TITLED FOR THE RELATIONSHIP, NOT FOR "GOALS", and the reason is a distinction
+    // worth keeping visible: what is built here is the STANDING goal - what the user
+    // wants from knowing this person over time. The per-conversation goal is a
+    // separate, unbuilt thing that will want its own control, and a section called
+    // "My goals" would leave no room to tell them apart.
+    const goalsNode = el('details', { class: 'wv-partner-profile' }, [
+        el('summary', { class: 'wv-disclosure' }, [
+            el('span', { class: 'wv-disclosure-mark', 'aria-hidden': 'true', text: '›' }),
+            el('span', { class: 'wv-disclosure-title', text: 'What I want from this relationship' }),
+        ]),
+        goalList, goalAdd, goalOtherWrap
+    ]);
+
     const node = el('details', { class: 'wv-partner-profile' }, [
         el('summary', { class: 'wv-disclosure' }, [
             el('span', { class: 'wv-disclosure-mark', 'aria-hidden': 'true', text: '›' }),
             el('span', { class: 'wv-disclosure-title', text: 'How I talk with them' }),
         ]),
         el('div', { class: 'wv-dim-grid' }, dimRows),
-        goalSelect, goalOtherWrap, noteIn,
+        noteIn,
         openersIn, windIn, closeIn
     ]);
 
-    // Open it on edit when there is something in it, so a saved profile is not
-    // invisible behind a closed triangle.
-    if (saved && (Object.keys(saved.register).length || saved.goal || saved.note ||
+    // Open on edit when there is something inside, so a saved profile is not invisible
+    // behind a closed triangle. Judged PER SECTION now that there are two: opening the
+    // wording section because a goal is set would put the user in front of the wrong
+    // controls, and leaving the goals section shut because only wording is set would
+    // hide the goals again.
+    if (saved && saved.goals.length) goalsNode.open = true;
+    if (saved && (Object.keys(saved.register).length || saved.note ||
         saved.openers.length || saved.windDowns.length || saved.closings.length)) {
         node.open = true;
     }
@@ -875,16 +974,13 @@ function buildPartnerProfileSection(existing) {
     const read = () => {
         const register = {};
         for (const [key, sel] of dimSelects) if (sel.value) register[key] = sel.value;
-        const goalId = goalSelect.value;
-        let goal = null;
-        if (goalId === OTHER) {
-            const t = goalOther.value.trim();
-            if (t) goal = { id: '', text: t };
-        } else if (goalId) {
-            goal = { id: goalId };
-        }
+        // A goal typed but not added is taken anyway, at the end. Losing something
+        // the user has visibly typed because they did not press the right button is
+        // the worse failure of the two.
+        const pending = goalOther.value.trim();
+        const out = pending ? goals.concat([{ id: '', text: pending }]) : goals.slice();
         return {
-            register, goal,
+            register, goals: out,
             note: noteIn.value.trim(),
             openers: splitLines(openersIn.value),
             windDowns: splitLines(windIn.value),
@@ -892,7 +988,7 @@ function buildPartnerProfileSection(existing) {
         };
     };
 
-    return { node, read };
+    return { goalsNode, node, read };
 }
 
 // Edit form for an existing person, or the blank "add someone" form when
@@ -998,7 +1094,7 @@ function buildPersonForm(existing) {
     // never a question about which name it applies to.
     card.append(el('div', { class: 'wv-person-fields' },
         [nameIn, namePron.row, nicknameIn, nickPron.row, relSelect, otherWrap, aboutIn, livesRow, privRow]));
-    card.append(profile.node);
+    card.append(profile.goalsNode, profile.node);
 
     const save = el('button', { class: 'wv-btn wv-btn-primary', text: existing ? 'Save' : 'Add person',
         onclick: async () => {

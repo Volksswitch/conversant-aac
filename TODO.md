@@ -89,7 +89,7 @@ the one that quietly waits forever.
 - **Still open, and Ken's:** whether a goal can attach to a KIND of relationship ("with
   anyone in authority I want to seem capable") rather than only a named person.
 
-### Several conversation goals per partner, as a PRIORITIZED list
+### Several conversation goals per partner, as a PRIORITIZED list - BUILT 2026-09-10
 - **Raised:** 2026-09-10 - Ken, twice: first "make it possible to add multiple
   conversational goals for a partner", then the refinement "consider making
   conversational goals per person a prioritized list".
@@ -138,10 +138,29 @@ the one that quietly waits forever.
   merely added, and nothing on the button said which kind it was. Every goal button now
   toggles independently, which is learnable. **The grouping-within-the-run fix proposed
   for that problem is no longer needed** - the run is simply the user's own order.
-- **Why not yet:** the Goals subsystem is not built at all - all three layers
-  (disposition, standing relationship goal, conversation goal) are design only. There
-  is nothing to add a second goal to. Standing relationship goals remain the smallest
-  first build, and this says what shape that build takes when it happens.
+- **BUILT 2026-09-10.** The stored single goal became an ordered list, migrated ON READ
+  so a profile nobody edits keeps its goal (doing it on write would have hidden the goal
+  until the next time the user happened to open that person's form), with the legacy key
+  removed on the next save so a stale value cannot outlive what replaced it. Duplicates
+  are dropped. The order is sent to the AI and NAMED as importance, with the earlier
+  goals winning a conflict - without that the ordering would have been decorative. A
+  single goal still reads as one goal rather than as a numbered list of one.
+- **AND GOALS GOT THEIR OWN SECTION (Ken, the same day): "Conversational goals are now
+  buried in the 'How I talk to them' section. I'd like you to raise the visibility of
+  goals to its own section."** He is right, and growing it from a dropdown into a list
+  had made it worse rather than better - the one control that steers WHAT the user says
+  sat deeper inside a section about how it is worded. It is now the FIRST section,
+  "What I want from this relationship", and the two sections open independently on edit:
+  opening the wording section because a goal is set would put the user in front of the
+  wrong controls. **Titled for the relationship rather than "goals"** so there is room to
+  tell it apart from the per-conversation goal, which is still unbuilt.
+- **⚠ STILL NOT BUILT, and it is the piece the labels were authored for: the button face.**
+  Every one of the twelve now carries a short -ing label and nothing displays it yet - the
+  Flex-band buttons are the consumer. A TYPED goal has no label at all and falls back to
+  its full wording, which will truncate; giving the user a label box is work for a face
+  they cannot yet see, so it belongs with the button build, not before it.
+- **Why the rest is not yet built:** the per-conversation layer is the large remaining
+  piece and needs its own pass.
 
 ### Conversation goals as steering buttons in the FLEX band
 - **Raised:** 2026-09-10 - Ken: "treat conversation goals as 'reframe' buttons that can

@@ -23,7 +23,7 @@
  */
 
 import { readFile, writeFile, hasDataFolder } from './storage.js';
-import { registerClauses, goalText } from './partner-profile.js';
+import { registerClauses, goalTexts } from './partner-profile.js';
 
 const FILE = 'relationships.json';
 const CACHE_KEY = 'aac_relationships';
@@ -253,7 +253,26 @@ export function count() {
 // on the guardian-approval question, and until that is settled the prompt's blanket
 // no-vulgarity rule stands (Ken, August 3 2026). The seam is this same object.
 
-const PROFILE_KEYS = ['register', 'goal', 'note', 'openers', 'windDowns', 'closings'];
+// `goals` is an ORDERED LIST, most important to the user first (Ken, September 10
+// 2026). It replaced a single `goal`, and the legacy key is still READ so a profile
+// written by an earlier release keeps its goal; it is removed on the next save.
+const PROFILE_KEYS = ['register', 'goals', 'note', 'openers', 'windDowns', 'closings'];
+
+/**
+ * Normalize either stored shape into the ordered list.
+ *
+ * ⚠ MIGRATED ON READ, NOT ON A SAVE, so a profile nobody edits keeps working. Doing
+ * it only on write would mean a user's goal silently vanished from the prompt until
+ * the next time they happened to open that person's form.
+ */
+function readGoals(attrs) {
+    const a = attrs || {};
+    if (Array.isArray(a.goals)) {
+        return a.goals.filter((g) => g && (g.id || g.text)).map((g) => ({ ...g }));
+    }
+    if (a.goal && (a.goal.id || a.goal.text)) return [{ ...a.goal }];
+    return [];
+}
 
 /**
  * The me->person edge, created on demand. A person can exist with no relationship
@@ -277,7 +296,7 @@ export function getPartnerProfile(personId) {
     const a = (edge && edge.attrs) || {};
     return {
         register: { ...(a.register || {}) },
-        goal: a.goal ? { ...a.goal } : null,
+        goals: readGoals(a),
         note: a.note || '',
         openers: Array.isArray(a.openers) ? a.openers.slice() : [],
         windDowns: Array.isArray(a.windDowns) ? a.windDowns.slice() : [],
@@ -299,8 +318,23 @@ export async function setPartnerProfile(personId, patch = {}) {
             const reg = {};
             for (const [k, val] of Object.entries(v || {})) if (val) reg[k] = val;
             edge.attrs.register = reg;
-        } else if (key === 'goal') {
-            edge.attrs.goal = v && (v.id || v.text) ? { ...v } : null;
+        } else if (key === 'goals') {
+            // Order is the user's statement of importance, so it is preserved
+            // exactly. Duplicates are dropped: the same goal twice would spend
+            // prompt space saying one thing two ways.
+            const seen = new Set();
+            const list = [];
+            for (const g of (Array.isArray(v) ? v : (v ? [v] : []))) {
+                if (!g || !(g.id || g.text)) continue;
+                const key2 = g.id || ('text:' + String(g.text).trim().toLowerCase());
+                if (seen.has(key2)) continue;
+                seen.add(key2);
+                list.push(g.id ? { id: g.id } : { id: '', text: String(g.text).trim() });
+            }
+            edge.attrs.goals = list;
+            // The legacy single-goal key goes now that the list is authoritative;
+            // leaving both would let a stale value outlive the goal it replaced.
+            delete edge.attrs.goal;
         } else if (key === 'note') {
             edge.attrs.note = (v || '').trim();
         } else {
@@ -406,17 +440,32 @@ export function buildPartnerBlock(personId, label = '') {
 
     const profile = getPartnerProfile(personId);
     const clauses = registerClauses(profile.register);
-    const goal = goalText(profile.goal);
+    const goals = goalTexts(profile.goals);
     const note = (profile.note || '').trim();
-    if (!clauses.length && !goal && !note) return '';
+    if (!clauses.length && !goals.length && !note) return '';
 
     const lines = [`How this user speaks WITH ${name}. This shapes the WORDING of your suggestions only — none of it is a topic to raise.`];
 
     if (clauses.length) {
         lines.push(`Talking with ${name}, this user is ${clauses.join('; ')}. Match that, relative to how you would otherwise write for them.`);
     }
-    if (goal) {
-        lines.push(`Over time, what this user wants from their relationship with ${name} is: ${goal}. Let that steer which of several possible responses feels right — never mention it, and never suggest a response that is ABOUT it unless the partner raises it first.`);
+    if (goals.length) {
+        // ⚠ THE ORDER IS SENT AND IS NAMED AS IMPORTANCE. With no primary-versus-
+        // constraint distinction (Ken, September 10 2026) the user's ordering is the
+        // ONLY thing saying one goal matters more than another, so handing the list
+        // over unordered would make that ordering purely cosmetic and leave the model
+        // weighting three goals equally.
+        //
+        // The guard is unchanged and is the load-bearing part: a goal is a reason to
+        // choose warmer wording and would be a catastrophe read as an instruction to
+        // raise the subject. Stated before the content and again after it.
+        const list = goals.length === 1
+            ? goals[0]
+            : goals.map((g, i) => `(${i + 1}) ${g}`).join(' ');
+        const preamble = goals.length === 1
+            ? `Over time, what this user wants from their relationship with ${name} is: ${list}.`
+            : `Over time, what this user wants from their relationship with ${name}, in their own order of importance and most important first: ${list}. Let the earlier ones win where they pull against a later one.`;
+        lines.push(`${preamble} Let ${goals.length === 1 ? 'that' : 'those'} steer which of several possible responses feels right — never mention ${goals.length === 1 ? 'it' : 'any of them'}, and never suggest a response that is ABOUT ${goals.length === 1 ? 'it' : 'one of them'} unless the partner raises it first.`);
     }
     if (note) {
         // The user's own words about the relationship, so they outrank the menu

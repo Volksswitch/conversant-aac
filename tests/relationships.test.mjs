@@ -78,7 +78,7 @@ test('register, goal and note reach the partner block, stated assertively', asyn
     const id = await rel.addPerson({ name: 'Mary', nickname: 'Mum', relationship: 'mother' });
     await rel.setPartnerProfile(id, {
         register: { formality: 'relaxed', warmth: 'warmer' },
-        goal: { id: 'connect' },
+        goals: [{ id: 'connect' }],
         note: 'She worries, so I keep it light.'
     });
     const block = rel.buildPartnerBlock(id);
@@ -97,15 +97,94 @@ test('register, goal and note reach the partner block, stated assertively', asyn
 // wording, never become the subject.
 test('the partner block says it shapes wording and is not a topic', async () => {
     const id = await rel.addPerson({ name: 'Mary', relationship: 'mother' });
-    await rel.setPartnerProfile(id, { goal: { id: 'repair' } });
+    await rel.setPartnerProfile(id, { goals: [{ id: 'repair' }] });
     const block = rel.buildPartnerBlock(id);
     assert.match(block, /topic to raise/i, 'the purpose is stated before the content');
     assert.match(block, /never mention it/i, 'and again on the goal itself');
 });
 
+test('several goals reach the prompt IN ORDER, named as importance', async () => {
+    // With no primary-versus-constraint kind (Ken, September 10 2026) the user's order
+    // is the ONLY thing saying one goal matters more than another, so an unordered
+    // hand-off would make the ordering they were asked to do purely cosmetic.
+    const id = await rel.addPerson({ name: 'Mary', relationship: 'mother' });
+    await rel.setPartnerProfile(id, {
+        goals: [{ id: 'repair' }, { id: 'upbeat' }, { id: '', text: 'Stop arguing about the car' }]
+    });
+    const block = rel.buildPartnerBlock(id);
+    const at = (t) => block.indexOf(t);
+    assert.ok(at('Repair things between us') < at('Be upbeat with them'),
+        'the first goal comes first');
+    assert.ok(at('Be upbeat with them') < at('Stop arguing about the car'),
+        'and a typed goal keeps its place in the order');
+    assert.match(block, /most important first/i, 'the order is NAMED as importance');
+    assert.match(block, /\(1\) Repair things between us/, 'and is numbered, not just sequenced');
+    // The guard has to survive the plural, which is the whole risk of this change: a
+    // goal is a reason to choose warmer wording and a catastrophe read as a subject.
+    assert.match(block, /topic to raise/i);
+    assert.match(block, /never mention any of them/i);
+});
+
+test('one goal still reads as one goal, not as a list of one', async () => {
+    // A numbered list of a single item reads as a fragment of something larger and
+    // invites the model to wonder what the other goals were.
+    const id = await rel.addPerson({ name: 'Mary', relationship: 'mother' });
+    await rel.setPartnerProfile(id, { goals: [{ id: 'connect' }] });
+    const block = rel.buildPartnerBlock(id);
+    assert.match(block, /is: Stay connected and catch up\./);
+    assert.ok(!block.includes('(1)'), 'no numbering for a single goal');
+    assert.match(block, /never mention it/i, 'and the singular guard');
+});
+
+test('a profile written by an older release keeps its goal', async () => {
+    // Migrated ON READ, not on a save: doing it on write would mean the goal silently
+    // vanished from the prompt until the next time the user happened to open the form.
+    const id = await rel.addPerson({ name: 'Mary', relationship: 'mother' });
+    const graph = JSON.parse(localStorage.getItem('aac_relationships'));
+    const edge = graph.edges.find((e) => e.from === 'me' && e.to === id);
+    edge.attrs = { goal: { id: 'repair' } };          // the shape 0.10.18 and earlier wrote
+    localStorage.setItem('aac_relationships', JSON.stringify(graph));
+    await rel.load();
+    assert.deepEqual(rel.getPartnerProfile(id).goals, [{ id: 'repair' }]);
+    assert.match(rel.buildPartnerBlock(id), /Repair things between us/);
+});
+
+test('the legacy single goal is dropped once the list is authoritative', async () => {
+    // Leaving both keys would let a stale value outlive the goal that replaced it.
+    const id = await rel.addPerson({ name: 'Mary', relationship: 'mother' });
+    const graph = JSON.parse(localStorage.getItem('aac_relationships'));
+    const edge = graph.edges.find((e) => e.from === 'me' && e.to === id);
+    edge.attrs = { goal: { id: 'repair' } };
+    localStorage.setItem('aac_relationships', JSON.stringify(graph));
+    await rel.load();
+    await rel.setPartnerProfile(id, { goals: [{ id: 'connect' }] });
+    const after = JSON.parse(localStorage.getItem('aac_relationships'));
+    const e2 = after.edges.find((x) => x.from === 'me' && x.to === id);
+    assert.equal(e2.attrs.goal, undefined, 'the old key is gone');
+    assert.deepEqual(e2.attrs.goals, [{ id: 'connect' }]);
+});
+
+test('the same goal twice is stored once', async () => {
+    // Two copies would spend prompt space saying one thing two ways.
+    const id = await rel.addPerson({ name: 'Mary', relationship: 'mother' });
+    await rel.setPartnerProfile(id, {
+        goals: [{ id: 'connect' }, { id: 'connect' },
+                { id: '', text: 'Stop arguing' }, { id: '', text: '  stop ARGUING  ' }]
+    });
+    assert.deepEqual(rel.getPartnerProfile(id).goals,
+        [{ id: 'connect' }, { id: '', text: 'Stop arguing' }]);
+});
+
+test('no goals means no goal sentence at all', async () => {
+    // An untouched person must cost zero tokens and exert zero influence.
+    const id = await rel.addPerson({ name: 'Mary', relationship: 'mother' });
+    await rel.setPartnerProfile(id, { goals: [] });
+    assert.equal(rel.buildPartnerBlock(id), '');
+});
+
 test('a free-text goal is carried as written', async () => {
     const id = await rel.addPerson({ name: 'Mary', relationship: 'mother' });
-    await rel.setPartnerProfile(id, { goal: { id: '', text: 'Stop arguing about the car' } });
+    await rel.setPartnerProfile(id, { goals: [{ id: '', text: 'Stop arguing about the car' }] });
     assert.match(rel.buildPartnerBlock(id), /Stop arguing about the car/);
 });
 

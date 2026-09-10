@@ -84,22 +84,47 @@ export const REGISTER_DIMENSIONS = [
  * List C is offered ONLY here: "maintain" presupposes an existing relationship, so
  * it is meaningless for the arbitrary partner that the per-conversation goal
  * control will serve. That control, when it is built, offers List A alone.
+ *
+ * ⚠ ALL GOALS ARE EQUIVALENT, AND THAT IS A DECISION (Ken, September 10 2026).
+ * There is no primary-versus-constraint distinction and no type field: several may
+ * be active at once and the USER'S ORDER is the only statement of relative
+ * importance. Ken: "the primary goal versus constraints distinction is
+ * overengineered and will be difficult for users to set up" — it asked the user to
+ * sort their own goals into categories from the literature, which is exactly why
+ * fixed roles were rejected for the Express Panel bands, and the answer is the same
+ * one: the user orders their own list.
+ *
+ * AND THE DISTINCTION IS NOT LOST BY DROPPING IT — it is already in the WORDS. A
+ * model given "Making peace, Being upbeat" reads the first as the aim and the second
+ * as the manner, because that is what the language means. A type field would have
+ * restated the label and charged the user for saying it.
+ *
+ * `label` IS THE BUTTON FACE, in the -ing form, and both halves of that are
+ * deliberate (Ken, September 10 2026). Short, because a goal button's face is a
+ * REMINDER RATHER THAN A QUOTATION: every other button in the Flex band shows the
+ * words that will be spoken, so its face has to BE them, while a goal button speaks
+ * nothing and only has to be enough to recognize which of your own goals it is. A
+ * side-dock cell is about 77px wide — eight or nine characters — so the full wording
+ * would truncate to the point where two goals look alike. And -ing because "Get
+ * help" on a button, in a band where most buttons do speak, invites the user to
+ * believe they have just said it; nobody utters "Getting help", so the grammar
+ * itself carries intent rather than speech, at no cost in space.
  */
 export const RELATIONSHIP_GOALS = [
     // List A — what the user typically wants OUT of talking with them
-    { id: 'connect', text: 'Stay connected and catch up' },
-    { id: 'information', text: 'Get information or advice' },
-    { id: 'help', text: 'Ask for help' },
-    { id: 'share', text: 'Share news and feelings' },
-    { id: 'plans', text: 'Make plans together' },
-    { id: 'repair', text: 'Repair things between us' },
-    { id: 'sociable', text: 'Just be sociable, no agenda' },
+    { id: 'connect', text: 'Stay connected and catch up', label: 'Catching up' },
+    { id: 'information', text: 'Get information or advice', label: 'Finding out' },
+    { id: 'help', text: 'Ask for help', label: 'Getting help' },
+    { id: 'share', text: 'Share news and feelings', label: 'Telling them' },
+    { id: 'plans', text: 'Make plans together', label: 'Making plans' },
+    { id: 'repair', text: 'Repair things between us', label: 'Making peace' },
+    { id: 'sociable', text: 'Just be sociable, no agenda', label: 'Just chatting' },
     // List C — relational maintenance, standing attributes of the relationship
-    { id: 'upbeat', text: 'Be upbeat with them' },
-    { id: 'open', text: 'Talk openly about our relationship' },
-    { id: 'reassure', text: 'Reassure them I am committed' },
-    { id: 'together', text: 'Do things together' },
-    { id: 'their_people', text: 'Support their other relationships' }
+    { id: 'upbeat', text: 'Be upbeat with them', label: 'Being upbeat' },
+    { id: 'open', text: 'Talk openly about our relationship', label: 'Talking about us' },
+    { id: 'reassure', text: 'Reassure them I am committed', label: 'Reassuring them' },
+    { id: 'together', text: 'Do things together', label: 'Spending time' },
+    { id: 'their_people', text: 'Support their other relationships', label: 'Their people' }
 ];
 
 /** Look up a goal's display text; free-text goals carry their own. */
@@ -108,6 +133,37 @@ export function goalText(goal) {
     if (goal.text) return goal.text;
     const found = RELATIONSHIP_GOALS.find((g) => g.id === goal.id);
     return found ? found.text : '';
+}
+
+/**
+ * A goal's SHORT face, for a button. Falls back to the full wording, which is the
+ * honest failure: a typed goal has no label until the user gives it one, and showing
+ * their own words truncated is better than showing nothing.
+ */
+export function goalLabel(goal) {
+    if (!goal) return '';
+    const found = RELATIONSHIP_GOALS.find((g) => g.id === goal.id);
+    if (found && found.label) return found.label;
+    return goalText(goal);
+}
+
+/**
+ * The goals that would actually reach the prompt, IN THE USER'S ORDER, as display
+ * strings. Anything that resolves to nothing is dropped and duplicates are removed:
+ * a stale id from an older release, or the same goal added twice, would otherwise
+ * spend prompt space saying nothing or saying one thing twice.
+ *
+ * Accepts the legacy single-goal shape as well, so every caller can be handed either
+ * and none of them has to know which release wrote the file.
+ */
+export function goalTexts(goals) {
+    const list = Array.isArray(goals) ? goals : (goals ? [goals] : []);
+    const out = [];
+    for (const g of list) {
+        const t = goalText(g);
+        if (t && !out.includes(t)) out.push(t);
+    }
+    return out;
 }
 
 /**
@@ -131,7 +187,7 @@ export function registerClauses(register) {
 export function isEmptyProfile(profile) {
     if (!profile) return true;
     const hasRegister = registerClauses(profile.register).length > 0;
-    const hasGoal = !!goalText(profile.goal);
+    const hasGoal = goalTexts(profile.goals !== undefined ? profile.goals : profile.goal).length > 0;
     const hasNote = !!(profile.note && profile.note.trim());
     const hasPhrases = !!(
         (profile.openers && profile.openers.length) ||

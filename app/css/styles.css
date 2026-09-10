@@ -4012,6 +4012,68 @@ label.radio-label input[type="radio"] {
     gap: 0.5rem;
 }
 
+/* Standing relationship goals: an ordered list (Ken, September 10 2026).
+   ⚠ THE NUMBER IS NOT DECORATION. With no primary-versus-constraint kind, the user's
+   ORDER is the only thing saying one goal matters more than another - so if the
+   sequence is not visible as a sequence, the ordering they were asked to do has no
+   apparent point. Hidden from a screen reader, which gets the order from the list
+   itself and would only hear the number twice. */
+.wv-goal-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.wv-goal-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.wv-goal-rank {
+    flex: 0 0 1.4rem;
+    text-align: right;
+    color: var(--ink-muted);
+}
+
+.wv-goal-text {
+    flex: 1 1 auto;
+    min-width: 0;                /* so a long goal shrinks instead of pushing the
+                                    buttons out of the card - a flex item's floor is
+                                    its content width until this is set */
+}
+
+/* The free-text row: a field and its Add button side by side. It carried no rule at
+   all before, so the button sat under the field on its own line. */
+.wv-rel-other {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.wv-rel-other .wv-text {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* Move up / move down / remove. Square, and at the standing minimum touch size -
+   these are in a supporter-assisted overlay rather than on the keyguard-backed
+   conversation surface, but they are still the smallest targets in the form. */
+.wv-icon-btn {
+    flex: 0 0 auto;
+    min-width: var(--btn-min-dim);
+    min-height: var(--btn-min-dim);
+    cursor: pointer;
+    border: 1px solid var(--edge);
+    background: var(--surface-raised-alt);
+    color: var(--ink);
+}
+
+.wv-icon-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
 .wv-dim-label {
     flex: 0 0 7.5rem;
 }
