@@ -103,38 +103,41 @@ the one that quietly waits forever.
   answer Ken already gave for the Express Panel Flex band**, where roles were killed in
   favor of the user ordering each list by how likely they are to want it. So the app
   never adjudicates between goals; it takes them in the order the user put them.
-- **⚠ SEVERAL GOALS AT ONCE IS A DIFFERENT QUESTION FROM SEVERAL GOALS ON A LIST, and
-  Ken raised it: "Is it reasonable to have multiple goals in a conversation at the same
-  time - talk about an argument last night but preserve the relationship at the same
-  time?"** Yes, and his own example names the structure rather than a difficulty: those
-  are a PRIMARY goal and a CONSTRAINT on how it is pursued, which is Dillard's
-  Goals-Plans-Action distinction already recorded as the basis of the three-layer model.
-  They do not compete, they compose - which is why the recorded design has three lists
-  and not one. "Talk about the argument" is List A; "preserve the relationship" is List
-  B or C.
-- **So the rule that falls out, matching Ken's own pharmacy line: ONE PRIMARY GOAL AT A
-  TIME, SEVERAL CONSTRAINTS AT ONCE.** Two primaries genuinely do conflict ("ask for
-  help" and "make plans" pull the turn apart) and take the same one-per-dimension rule as
-  place. Constraints do not, and holding two or three is the ordinary case.
-- **⚠ AND A COST THIS CREATES, now that setting a context value re-asks the AI: setting
-  three constraints in a row is three round trips, two of them thrown away.**
-- **⚠ I FIRST WROTE THAT THE ANSWER WAS TO "LET THEM FINISH CHOOSING BEFORE ASKING", AND
-  KEN ASKED THE OBVIOUS QUESTION: how do you know when they have finished? YOU DO NOT,
-  AND THE PROJECT HAS ALREADY DECIDED NOT TO GUESS AT THIS SHAPE OF QUESTION.** It is the
-  same problem as end-of-utterance detection, settled July 10 2026: the app stopped trying
-  to know when the other person's turn was complete, because the judgment was unreliable
-  and the right owner of it is the user. "Has the user finished choosing goals" is that
-  question again in a new coat - a pause means "done" and "thinking about the next one"
-  equally, and there is no signal that separates them.
-- **So the answer is the same one: do not guess. Ask on every tap and let the newest
-  answer win.** That is what the code does, and the waste is now COUNTED
-  (`generation_superseded` with its timing) rather than estimated - measured in the
-  running app at three taps in a run producing three requests, two discarded. So if this
-  ever matters it will show up as a number.
-- **A debounce is the tempting fix and it is the wrong trade**, for the reason recorded
-  against the silence period: it would guess that a few hundred milliseconds of no
-  tapping means finished, and it would delay the COMMON case (one tap) to save tokens in
-  the rare one, in a product whose whole purpose is getting suggestions up faster.
+- **⚠ DECIDED (Ken, 2026-09-10): ALL GOALS ARE EQUIVALENT. No primary-versus-constraint
+  distinction. Several may be checked at once, and the user's ORDER is the only statement
+  of relative importance.** This REVERSES the one-primary-plus-constraints rule proposed
+  earlier the same day. Ken: *"I think the primary goal versus constraints distinction is
+  overengineered and will be difficult for users to set up."*
+- **⚠ HE IS RIGHT, AND IT IS THE SECOND TIME THE SAME MISTAKE HAS BEEN CAUGHT - which is
+  what makes this worth recording as a pattern rather than a preference. IT ASKED THE USER
+  TO SORT THEIR OWN GOALS INTO CATEGORIES SOMEBODY ELSE INVENTED** (Dillard's primary and
+  secondary goals). **That is precisely why ROLES were killed in the Express Panel bands**
+  - a fixed role per position asked the user to think in our taxonomy, and the replacement
+  was the user ordering their own list by how likely they were to want it. Same fault, same
+  fix, one design layer up. **Watch for it wherever a piece of literature has furnished a
+  useful distinction: the distinction can be true and still not belong in front of the
+  user.**
+- **AND THE DISTINCTION IS NOT LOST BY DROPPING IT, which is the part that makes this
+  safe rather than merely simpler: it is already in the WORDS.** A model given "Making
+  peace, Being upbeat" reads the first as the aim and the second as the manner, because
+  that is what the language means - so nothing has to carry it in the data. A type field
+  would have re-stated what the label already says, and charged the user for saying it.
+- **⚠ WHAT THIS SHIFTS ONTO THE ORDER, and it is a build requirement rather than a
+  nicety: the ORDER MUST REACH THE AI, most important first.** With no primary there is
+  nothing else that says one goal matters more than another, so an unordered hand-off
+  would make the ordering Ken asked for purely cosmetic and leave the model weighting
+  three goals equally.
+- **The cost, stated once and accepted: nothing now prevents two goals that pull opposite
+  ways** ("Getting help" and "Just chatting" both checked). Under the abandoned rule one
+  primary prevented it by construction. It is VISIBLE (both carry a checkmark) and
+  RECOVERABLE (uncheck one), which is the property that matters, and it is consistent with
+  how the app treats every other thing the user asserts about themselves - take them at
+  their word. Do not re-add a structure to prevent it.
+- **It also removes the problem the abandoned rule created:** with two kinds of goal,
+  tapping a second primary would silently uncheck the first while a second constraint
+  merely added, and nothing on the button said which kind it was. Every goal button now
+  toggles independently, which is learnable. **The grouping-within-the-run fix proposed
+  for that problem is no longer needed** - the run is simply the user's own order.
 - **Why not yet:** the Goals subsystem is not built at all - all three layers
   (disposition, standing relationship goal, conversation goal) are design only. There
   is nothing to add a second goal to. Standing relationship goals remain the smallest
@@ -146,8 +149,32 @@ the one that quietly waits forever.
   panel non-speaking buttons(?)"
 - **Wanted:** a goal becomes a one-tap button that re-generates the response cards
   around it, appearing when the selected partner and place match the goal's dimensions.
-  It says nothing aloud; it steers. **In the FLEX band, marked so it cannot be mistaken
-  for a phrase that speaks.**
+  It says nothing aloud; it steers. **In the FLEX band, first, marked so it cannot be
+  mistaken for a phrase that speaks.**
+- **⚠ LABELING - DECIDED (Ken, 2026-09-10): every goal carries a SHORT LABEL, in the
+  -ING FORM, and the user can change it.** Catching up, Finding out, Getting help,
+  Telling them, Making plans, Making peace, Just chatting, Being upbeat, Talking about
+  us, Reassuring them, Spending time, Their people.
+- **THE REASON IT CAN BE SHORT AT ALL, and it is the whole argument: a goal button's
+  face is a REMINDER, NOT A QUOTATION.** Every other button in the Flex band shows the
+  words that will be spoken, so its face has to BE those words, which is why a long
+  phrase truncates and why that is tolerable. A goal button speaks nothing, so its face
+  only has to be enough for the user to recognize which of their own two or three goals
+  it is - which also makes the USER the right author of it.
+- **Truncation is not an option, measured rather than assumed:** the binding case is a
+  side dock, where a cell is about 77px wide - eight or nine characters. "Support their
+  other relationships" and "Reassure them I am committed" both become "Suppo.../Reassu..."
+  and two different goals end up looking alike.
+- **WHY THE -ING FORM EARNS ITS ODDNESS: it stops a goal reading as something to say.**
+  "Get help" on a button, in a band where most buttons speak, invites the user to think
+  they have just said it - and the cost of that confusion is believing you have spoken
+  when you have not. Nobody utters "Getting help", so the grammar itself carries intent
+  rather than speech, at no cost in space and without spending the one mark that
+  separates goals from phrases.
+- **A typed goal MUST supply its own label**, or it arrives with nothing to put on the
+  button. Two of the twelve ("Spending time", "Their people") are the weak ones, which
+  is itself an argument for the label being editable - the user has better words for
+  their own relationships than we do.
 - **⚠ I ARGUED FOR THE CONTEXT BAND AND KEN OVERRULED IT. He is right, and the error is
   worth keeping because it is easy to repeat: I had the band rule backwards.** I took
   "Context holds the buttons that never speak" as the DEFINITION of the band, and
