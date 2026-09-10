@@ -406,3 +406,40 @@ test('NO API KEY reaches a settings profile, a backup, or a problem report', asy
                  'a catalog service key is untouched too');
     assert.equal(storage.loadAzureRegion(), 'japaneast', 'but the region is adopted');
 });
+
+test('the goals in force are written onto a user turn, and none is written as null', async () => {
+    // ⚠ THE FAULT THIS GUARDS IS SILENT AND SHIPPED ONCE (Ken, September 10 2026): a
+    // goal he had switched on before starting never appeared in the suggestions, and
+    // the conversation file could not say whether it had been in force, because every
+    // turn stamped who / how they felt / where they were and NOT what they were aiming
+    // for. logUserResponse's signature is a whitelist, so the stamp app.js builds is
+    // dropped here unless this list names it - the app carries on working perfectly
+    // and the record is simply missing the one field the question needed.
+    storage.resetConversationId();
+    storage.setConversationSaving(true);
+    await storage.startConversationLog();
+    const id = storage.getConversationId();
+
+    const aiming = [
+        { id: 'plans', text: 'Make plans together', source: 'partner' },
+        { id: 'text:make breakfast together', text: 'Make breakfast together', source: 'general' },
+    ];
+    await storage.logUserResponse({
+        selectedText: 'How about we make breakfast together?',
+        selectedIndex: 0, allOptions: ['How about we make breakfast together?'],
+        partner: { id: 'p1', label: 'Mom' }, goals: aiming,
+    });
+    // A turn with nothing switched on must stay null rather than an empty list, so a
+    // reader can tell "no goals" from "goals were never recorded on this build".
+    await storage.logUserResponse({
+        selectedText: 'Sounds good.', selectedIndex: 0, allOptions: ['Sounds good.'],
+        partner: { id: 'p1', label: 'Mom' },
+    });
+
+    const data = await readLog(id);
+    const turns = data.exchanges.filter((e) => e.role === 'user');
+    assert.equal(turns.length, 2);
+    assert.deepEqual(turns[0].goals, aiming,
+        'the goals reached disk, in order, with their text and where each came from');
+    assert.equal(turns[1].goals, null, 'no goals switched on stays null, not []');
+});

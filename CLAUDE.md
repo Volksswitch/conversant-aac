@@ -2656,6 +2656,53 @@ the moment — instead of making the user pre-configure for their worst partner.
 - **Sequence it behind the checkpoint metrics**, for the same reason: if real conversations
   turn out to produce few multi-checkpoint turns, the feature has nothing to correct.
 
+## THE TRANSCRIPT NOW RECORDS WHICH GOALS WERE IN FORCE (Ken, September 10 2026), BUILT
+
+Ken switched two goals on before starting a conversation, one of them never appeared in
+the suggestions, and he asked *"I thought you could see when goals were introduced in the
+conversation transcript..."* **He was right to expect it and it was not there.** Every
+turn stamped who he was talking to, how he felt and where he was - and **the one
+influencer a user can change several times inside a single exchange was the one not
+recorded.** So from the file there was no way to say whether a goal was in force when a
+set of cards was written, which is the first question anybody asks when a goal appears
+not to have worked.
+
+**⚠ IT WAS DROPPED TWICE OVER, and the second drop is the trap CLAUDE.md already
+warns about: `storage.logUserResponse`'s signature is a WHITELIST.** Even once app.js
+built the stamp, a field that list does not name is discarded there, silently, with the
+app working perfectly. **Adding anything to a turn means adding it in BOTH places in one
+edit.** Guarded now by a test in `tests/storage-transcript.test.mjs` that drives the real
+storage layer and reads the bytes back - mutation-checked: removing `goals` from the
+signature fails it.
+
+- **`null` when none are on**, like the other three, so a reader can tell *no goals* from
+  *this build never recorded them*. Purely additive; no existing reader changes.
+- **Each entry keeps `text` as well as `id`** - the text is what actually reached the
+  model, which is the thing a review needs - plus `source`, so a goal that vanished at a
+  change of partner can be told from one the user switched off.
+
+**⚠ WHAT THE INVESTIGATION RULED OUT, so it is not re-chased from scratch.** Three
+things were measured rather than reasoned about, and all three are innocent:
+- **The prompt wording is not the cause.** The situation block's guard reads *"never
+  suggest a response that is ABOUT one of them unless the partner raises it first"*, which
+  looks exactly like the thing that would suppress a goal - and against the live model,
+  with his own standing-goals block included, the shipped wording produced the goal's
+  subject in **3 of 3 runs**. A candidate rewrite scored the same. **The obvious suspect
+  was wrong and a fix would have been change for its own sake.**
+- **A CONTROL is what makes that worth anything:** with no goals in the block the subject
+  appeared in 0 runs. So the block demonstrably drives it.
+- **His data is correct** - both goals resolve, including the typed one, and the person is
+  the right one (the goals sit on *Elena*, whose nickname is *Mom*, which is the label the
+  panel and the log show).
+
+**⚠ AND THE SECOND GAP THE SAME QUESTION EXPOSED, not yet closed: A SET OF CARDS
+NOBODY PICKED FROM IS NEVER RECORDED.** `allOptions` is written on the USER's turn, so
+the suggestions for the last partner turn of that conversation - the exact set he was
+looking at - do not exist anywhere. **The turn a user abandons is the turn most worth
+reading**, which is what the unbuilt `palette_shown` / `palette_abandoned` events under
+Beta instrumentation are for. Until they exist, a complaint about a set of cards can only
+be settled by reproducing it.
+
 ## The saved transcript does NOT preserve the pause structure (found August 21 2026)
 
 Ken asked whether the transcript records partial partner speech, so a reader can see

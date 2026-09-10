@@ -2118,10 +2118,11 @@ async function commitExchange(raw, userText, index, opts = {}) {
         // storage.logUserResponse. null when no cards were showing.
         decideMs,
         // Stamp the situation at this turn (who, how the user felt, where they
-        // were) — each null when its toggle is off.
+        // were, what they were aiming for) — each null when its toggle is off.
         partner: partnerStamp(),
         feeling: feelingStamp(),
         place: placeStamp(),
+        goals: goalStamp(),
     };
 
     if (raw) {
@@ -4044,6 +4045,33 @@ function partnerStamp() {
 function feelingStamp() {
     if (!activeFeeling || !activeFeeling.text) return null;
     return { id: activeFeeling.id || null, text: activeFeeling.text };
+}
+/**
+ * WHAT THE USER WAS AIMING FOR on this turn - which goals were switched on, in the
+ * order they reached the AI, each with where it came from.
+ *
+ * ⚠ THIS WAS MISSING AND IT MADE A REAL QUESTION UNANSWERABLE (Ken, September 10
+ * 2026, on a conversation where a goal he had switched on before starting never
+ * appeared in the suggestions: *"I thought you could see when goals were introduced
+ * in the conversation transcript..."*). He was right to expect it. Every turn stamped
+ * who, how the user felt and where they were, and **the one influencer the user can
+ * change several times in one exchange was the one not recorded** - so from the file
+ * there was no way to tell whether a goal was in force when a set of cards was
+ * written, which is the first thing anybody asks when a goal appears not to have
+ * worked. Partner, feeling and place each got a stamp when they were built; goals
+ * shipped without one, and nothing noticed because nothing reads these fields yet.
+ *
+ * `null` when none are on, exactly like the other three, so a turn with no goals
+ * costs nothing. Purely ADDITIVE - no existing reader of a conversation file changes.
+ */
+function goalStamp() {
+    const on = goalButtons().filter((g) => activeGoals.has(g.id));
+    if (!on.length) return null;
+    // `text` is what actually reached the model, which is the thing a review needs;
+    // `id` joins back to the twelve, or is the text key for one the user typed; and
+    // `source` is which of the three lists it came from, so a goal that vanished at
+    // a partner change can be told from one the user switched off.
+    return on.map((g) => ({ id: g.id, text: g.text, source: g.source || 'general' }));
 }
 // Where the turn happened. Keeps the stable placeId (when the Express item points at
 // a recorded place) so a reviewed conversation can join back to My Places, plus the

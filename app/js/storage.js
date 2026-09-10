@@ -2035,7 +2035,7 @@ export async function finalizePartnerTurn(handle, { rawTranscript, cleanedTransc
     await flushLog();
 }
 
-export async function logUserResponse({ selectedText, spokenText = null, ttsUsed = null, selectedIndex, allOptions, selectedSlot = null, source = null, decideMs = null, partner = null, feeling = null, place = null }) {
+export async function logUserResponse({ selectedText, spokenText = null, ttsUsed = null, selectedIndex, allOptions, selectedSlot = null, source = null, decideMs = null, partner = null, feeling = null, place = null, goals = null }) {
     if (!conversationSaving) return; // private conversation — nothing is written
     // Start the log lazily if this user turn is the FIRST turn of the conversation
     // — an opener (Start conversation) or an Express-panel phrase takes the floor
@@ -2110,7 +2110,15 @@ export async function logUserResponse({ selectedText, spokenText = null, ttsUsed
         decideMs,
         partner,           // who the user was talking with, or null
         feeling,           // how the user felt at this turn, or null
-        place              // where the user was at this turn, or null
+        place,             // where the user was at this turn, or null
+        // WHICH GOALS WERE SWITCHED ON, in the order they reached the AI, or null.
+        //
+        // ⚠ THIS SIGNATURE IS A WHITELIST, WHICH IS EXACTLY THE TRAP CLAUDE.md
+        // WARNS ABOUT: a field the caller passes and this list does not name is
+        // dropped here, silently, with the app still working perfectly. The goal
+        // stamp was written in app.js and would have gone straight in the bin. When
+        // adding anything to a turn, add it in BOTH places in the same edit.
+        goals
     });
     await flushLog();
 }
