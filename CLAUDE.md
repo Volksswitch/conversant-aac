@@ -972,7 +972,22 @@ Ken: *"Add support for 'My Places' to the Worldview model. For each place add 'f
 
 **Known limitation, existing behavior not a regression:** the Express Panel maps items 1:1 onto the layout's cells, so a place **appended** to a full default list (33 items, 33 cells) overflows and never renders. Use the row's **＋** insert button to place it within the grid. This has been true of every item type since v0.5.0; it is only more noticeable here because a new place is the first thing a user adds after the panel is already full.
 
-## Conversation & Relationship Goals — three-layer model (design recorded June 15 2026; NOT built)
+## Conversation & Relationship Goals — three-layer model
+
+**⚠ THE FULL ACCOUNT IS NOW A DOCUMENT: [`Conversant AAC Conversation Goals.docx`](Documents/)**
+(September 10 2026, generator `generate-conversation-goals-doc.js`, tracked in DOC-SYNC).
+Ken went looking for one and found only this section plus Section 7 of "Reframe:
+Academic Foundations". **Read the document before re-opening any goals question** - it
+carries the premise and how well the literature supports it, the three layers, the three
+sources, and a table of every place the app departs from the published accounts. The
+entries below are the decision record and stay; the document is where the reasoning is
+laid out for a reader.
+
+**⚠ TWO LAYERS ARE NOW BUILT (September 10 2026), so the "NOT built" in the old heading is
+gone:** the standing relationship goal, and the per-conversation goal from three ranked
+sources. See "GOAL BUTTONS ARE BUILT" and "THE PER-CONVERSATION GOAL LAYER IS BUILT"
+under the Express Panel section above for the mechanics. **What follows is the June and
+July 2026 design record, with the parts Ken later reversed marked.**
 
 **Ken's insight (June 15 2026):** everyone has goals for every conversation — consciously or not — from "maintain the connection with this person" to "steer the conversation toward X." Goals should be a first-class input to generation. The key framing: **"relationship goals" is really *three distinct things on three time horizons*,** and they map to three different stores — lumping them together is what makes it hard.
 
@@ -1008,6 +1023,17 @@ Ken: *"Add support for 'My Places' to the Worldview model. For each place add 'f
 **Related reference doc:** `Reframe-Concepts-for-AAC-Architecture.docx` (July 13 2026) — the academic grounding for *redirect* generally (Goffman's footing, SFL register theory, Appraisal Theory, pragmatics/politeness). Its curated-menu-plus-free-text reasoning (Section 5) is the same reasoning already applied to the "Expression format" decision above; its 7-category redirect taxonomy is a candidate source list for the conversation-goal menu's options, alongside the "stay close / be understood / …" set already chosen. **Section 7 of that document (added July 13 2026) grounds this section directly:** Dillard's Goals-Plans-Action model (primary vs. secondary goals) and Canary & Stafford's Relational Maintenance Theory, mapped explicitly onto this three-layer model — see the concrete organizational structure below, which builds on that grounding.
 
 **Concrete organizational structure — proposed July 13 2026 (Ken + Claude; not yet built).** A specific plan for what the curated menus contain and where the controls live, worked out in conversation and building on the Dillard/Canary & Stafford grounding above.
+
+**⚠ SUPERSEDED IN ONE RESPECT, AND IT IS THE STRUCTURAL ONE: THE THREE LISTS BELOW BECAME
+ONE (Ken, September 10 2026).** *"I think the primary goal versus constraints distinction
+is overengineered and will be difficult for users to set up. Lets treat all goals as
+equivalent (with ordering) and allow multiple goals to be checked at a time."* List A
+(Dillard's primary goals) and List C (Canary & Stafford's maintenance strategies) were
+merged into the twelve `RELATIONSHIP_GOALS` and List B's stance modifiers were dropped as
+a separate kind. **The CONTENT of A and C survives; what is gone is the requirement that
+the user sort their own goals into the theory's categories** - which is the same fault
+that killed a fixed role per Express Panel position. The reasoning, and what it costs, is
+Section 6.1 of the Conversation Goals document. Everything else below still holds.
 
 - **Shared vocabulary — three curated lists, no free text as the primary input.** Constraint (Ken): the target user can only speak in general/generic terms about a goal, whether the partner is a stranger or someone well known.
   - **List A — primary conversation goal** (Dillard's primary-goal categories; generic across any partner, known or arbitrary): Stay connected / catch up · Get information or advice · Ask for help · Share news or feelings · Make plans together · Repair something · Ask for something specific · Just be sociable, no agenda.

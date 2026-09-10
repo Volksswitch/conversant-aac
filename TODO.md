@@ -190,6 +190,12 @@ the one that quietly waits forever.
   one-shot Reframe today and is not kept. **Why not now: it needs a fourth control on the
   composer**, which changes the geometry of a modal that shares the keyguard grid - a UI
   decision on the keyguard-backed surface, and Ken's to make rather than mine.
+- **THE DOCUMENT EXISTS NOW (2026-09-10): `Conversant AAC Conversation Goals.docx`.** Ken
+  asked for it on finding there was none. It records the premise, the three layers, the
+  three sources, and - the part he specifically asked for - what we are NOT doing and why,
+  including the primary-versus-constraining-goal split and where all of it departs from
+  the literature. **Any future goals work should read it first**, and Section 9 of it is
+  the open list, kept in step with the entries here.
 - **Also still unbuilt:** the active goal stamped onto each saved turn (so a reviewed
   conversation says what the user was aiming for), and a ceiling on how many Flex
   positions goals may take before situational phrases start falling off.
