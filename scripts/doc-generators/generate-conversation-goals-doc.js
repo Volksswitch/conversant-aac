@@ -322,18 +322,17 @@ const doc = new Document({
             emptyPara(),
 
             heading2("8.5  Where a goal appears on screen"),
-            para("Goals appear as buttons in the Express Panel's Flex band — the part of the panel whose contents depend on who and where the user has said they are. They take the leading positions there, ahead of situational phrases, because a goal that will not fit cannot steer anything while a phrase that will not fit can still be typed."),
+            para("Goals appear as buttons in the Express Panel's Flex band — the part of the panel whose contents depend on who and where the user has said they are. They take the leading positions there, ahead of situational phrases, because a goal that will not fit cannot steer anything while a phrase that will not fit can still be typed. As everywhere on the panel, a higher-priority button pushes a lower-priority one off the end of the band when there is not room for both. In the Flex band the order is goals, then phrases for this person or place, then Always phrases, so goals are never held back to make room for phrases."),
             boldPara("They are in that band because of how their content is decided, not because of what they do when tapped. ", "The obvious reading is that a goal button never speaks, so it belongs with the other non-speaking buttons; that mistakes a property of those buttons for the rule that groups them. Which goals exist at all depends on which person was chosen, which makes goals a function of that choice rather than part of it."),
             para("A goal button is marked so it can be told apart from the phrases beside it, using the same setting the user has already chosen for telling the other kinds of button apart. A second, separate marker would be one more thing to learn for no gain."),
             boldPara("One consequence to know about: with the panel as it ships, the Flex band has no room, so no goal button appears until the user gives it one. ", "That is deliberate — nothing grows on its own, and the Express Panel settings say how many goal buttons are waiting for space."),
+            para("Every saved turn records which goals were switched on at the time, with each goal's wording and whether it came from the person, the place or the general list, so looking back at a conversation shows what the user was aiming for."),
             emptyPara(),
 
             // ===== 9 =====
             heading1("9.  Still Open"),
             bullet("A goal typed for one conversation only, kept for the rest of it (Section 6.5). The clearest gap.", "open"),
             bullet("Goals attached to a kind of relationship rather than a named person (Section 6.3).", "open"),
-            bullet("Stamping the goals that were in force onto each saved turn, so that reviewing a past conversation can show what the user was aiming for at the time.", "open"),
-            bullet("A limit on how many Flex positions goals may take before situational phrases start dropping off the end.", "open"),
             bullet("Whether any of this is discoverable. Nothing in the app tells a user that goals exist; they find the list in About Me or they do not. This is the question most worth putting to the speech and language therapists.", "open"),
             emptyPara(),
 
