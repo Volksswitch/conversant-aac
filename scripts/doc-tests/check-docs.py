@@ -391,6 +391,17 @@ def l1_spelling(doc):
               for r in CONV['properNounExemptions']]
     pairs = CONV['britishSpellings'] + CONV['britishVocabulary']
     out = []
+    # PHRASES first, and they are the half that catches a British word which is also a
+    # good American word. A one-word list cannot ban "tick" while "the next tick" and
+    # "a ticket" are correct; "tick the box" has no American reading. Whitespace is
+    # flexible so a phrase wrapped across a line still matches.
+    for brit, amer in CONV.get('britishPhrases', []):
+        pat = r'\b%s\b' % re.sub(r'\s+', r'\\s+', re.escape(brit))
+        for p_, m in _hits(doc, pat):
+            if any(x.search(p_.text) for x in exempt):
+                continue
+            out.append(F('"%s" -> "%s"' % (re.sub(r'\s+', ' ', m.group(0)), amer),
+                         p_.i, snip(p_.text)))
     for brit, amer in pairs:
         if brit.endswith('e'):
             alts = ['%s(?:s|d)?' % brit, '%s(?:ing|ed|es)' % brit[:-1]]

@@ -46,6 +46,7 @@ const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const CONVENTIONS = JSON.parse(readFileSync(join(root, 'writing-conventions.json'), 'utf8'));
 const BRITISH = CONVENTIONS.britishSpellings;
 const BRITISH_WORDS = CONVENTIONS.britishVocabulary;
+const BRITISH_PHRASES = CONVENTIONS.britishPhrases || [];
 const PROPER_NOUNS = CONVENTIONS.properNounExemptions.map((r) => new RegExp(r.source, r.flags));
 
 // ⚠ THE INFLECTION THAT NEEDS ITS OWN ALTERNATIVE: a stem ending in -e DROPS it before
@@ -58,6 +59,35 @@ const alternatives = ALL.flatMap(([brit]) =>
     brit.endsWith('e') ? [`${brit}(?:s|d)?`, `${brit.slice(0, -1)}(?:ing|ed|es)`]
                        : [`${brit}(?:s|es|d|ed|ing|ful|ly)?`]);
 const rx = new RegExp(`\\b(?:${alternatives.join('|')})\\b`, 'gi');
+
+/* PHRASES, matched separately, and the reason is the whole point of having them.
+ *
+ * Vocabulary looked mostly unautomatable because the list held single WORDS, and most
+ * British words are also good American words with another meaning -- "tick" cannot be
+ * banned while "the next tick" and "a ticket" are both correct. IN A PHRASE THE
+ * AMBIGUITY COLLAPSES: "tick the box" has no American reading and "the next tick" does
+ * not match it. So a multi-word entry is decidable where a one-word entry is not, and
+ * that is what makes this half enforceable at all.
+ *
+ * (!) AND IT MATTERS MORE THAN A MISSPELLING (Ken, September 10 2026): "colour" is
+ * merely wrong and the reader still knows what is meant, whereas "tick the box" when
+ * the screen shows a checkbox names an action the user cannot find. A spelling error
+ * looks foreign; a vocabulary error MISLEADS.
+ *
+ * Whitespace is flexible so a phrase broken across a line still matches -- which is
+ * where one would otherwise hide, since this project's prose wraps at 90 columns. */
+const phraseRx = BRITISH_PHRASES.length
+    ? new RegExp(`\\b(?:${BRITISH_PHRASES.map(([b]) => b.replace(/\\s+/g, '\\\\s+')).join('|')})\\b`, 'gi')
+    : null;
+const AMERICAN_PHRASE = new Map(BRITISH_PHRASES.map(([b, a]) => [b.toLowerCase(), a]));
+
+function findPhrases(text, where) {
+    if (!phraseRx) return [];
+    return [...text.matchAll(phraseRx)].map((m) => {
+        const key = m[0].toLowerCase().replace(/\\s+/g, ' ');
+        return `${where}: "${m[0].replace(/\\s+/g, ' ')}" -> "${AMERICAN_PHRASE.get(key) || '(American form)'}"`;
+    });
+}
 
 /** The American form of a matched word, keeping whatever ending it was found with. */
 function americanFor(word) {
@@ -73,10 +103,34 @@ function americanFor(word) {
     return '(American form)';
 }
 
+/* VOCABULARY AND PHRASES ONLY, for the project records (Ken, September 10 2026).
+ *
+ * (!) WHY NOT THE SPELLING LIST TOO, stated so the boundary is a decision and not a
+ * gap: CLAUDE.md and TODO.md are where the convention is WRITTEN DOWN, so they quote
+ * its own forbidden words as examples -- "colour", "centre", "practise", "cancelled"
+ * all appear there on purpose, in the rule that bans them. Scanning those files for
+ * the spelling list would be mostly self-reference, and a check that is always red is
+ * one people learn to scroll past. A British PHRASE, or a word with no American
+ * reading at all, has no innocent reason to be in either file.
+ *
+ * They are scanned because Ken re-reads them, and because the vocabulary half is the
+ * half that misleads rather than merely looking foreign. */
+function findVocabulary(text, where) {
+    let t = text;
+    for (const p of PROPER_NOUNS) t = t.replace(p, '');
+    const words = BRITISH_WORDS.flatMap(([brit]) =>
+        brit.endsWith('e') ? [`${brit}(?:s|d)?`, `${brit.slice(0, -1)}(?:ing|ed|es)`]
+                           : [`${brit}(?:s|es|d|ed|ing|ful|ly)?`]);
+    const wordRx = new RegExp(`\\b(?:${words.join('|')})\\b`, 'gi');
+    return [...t.matchAll(wordRx)].map((m) => `${where}: "${m[0]}" -> "${americanFor(m[0])}"`)
+        .concat(findPhrases(t, where));
+}
+
 function findBritish(text, where) {
     let t = text;
     for (const p of PROPER_NOUNS) t = t.replace(p, '');
-    return [...t.matchAll(rx)].map((m) => `${where}: "${m[0]}" -> "${americanFor(m[0])}"`);
+    return [...t.matchAll(rx)].map((m) => `${where}: "${m[0]}" -> "${americanFor(m[0])}"`)
+        .concat(findPhrases(t, where));
 }
 
 // --- pulling the user-visible text out of each kind of file --------------------------
@@ -208,4 +262,46 @@ test('the detector leaves American words, and proper nouns, alone', () => {
         + 'the color, gray, practice, center, license to speak, '
         + 'CALL Centre, University of Edinburgh';
     assert.deepEqual(findBritish(fine, 'x'), []);
+});
+
+/* The convention's OWN SECTION in CLAUDE.md, cut out before scanning.
+ *
+ * (!) A RULE THAT DOCUMENTS BANNED WORDS CONTAINS THEM, unavoidably: the section says
+ * "say check a box, not tick", which needs both words to be worth reading. Exempting
+ * each quoted example by phrase would grow a list for ever and would slowly exempt
+ * those words everywhere else too. So the BLOCK is cut instead - one stated boundary
+ * that does not grow, and every other part of the file is still checked.
+ *
+ * (!) IT FAILS LOUDLY IF THE MARKERS MOVE, rather than silently scanning nothing or
+ * silently scanning everything. Someone rewriting that section gets one clear failure
+ * naming the marker, which is a ten-second fix; the alternatives are a check that
+ * quietly stopped covering the file, or a wall of self-references that trains people
+ * to ignore it. */
+const RULE_BLOCK_START = 'IT IS AMERICAN ENGLISH, NOT AMERICAN SPELLING';
+const RULE_BLOCK_END = 'Read the sentence before changing the word.';
+
+function withoutTheRuleItself(text, where) {
+    const a = text.indexOf(RULE_BLOCK_START);
+    const b = text.indexOf(RULE_BLOCK_END);
+    assert.ok(a !== -1, `${where}: the writing-convention block's start marker has moved. `
+        + `Update RULE_BLOCK_START in this test to match, or the section's own examples `
+        + `will be reported as errors.`);
+    assert.ok(b > a, `${where}: the writing-convention block's end marker has moved. `
+        + `Update RULE_BLOCK_END in this test.`);
+    return text.slice(0, a) + text.slice(b + RULE_BLOCK_END.length);
+}
+
+test('the project records carry no British vocabulary', () => {
+    // CLAUDE.md and TODO.md are read by Ken, so a British word that MISLEADS matters
+    // there as much as in the app. Vocabulary and phrases only -- see findVocabulary
+    // for why the spelling list is deliberately not applied to these two files.
+    let hits = [];
+    for (const f of ['CLAUDE.md', 'TODO.md']) {
+        let text = readFileSync(join(root, f), 'utf8');
+        if (f === 'CLAUDE.md') text = withoutTheRuleItself(text, f);
+        hits = hits.concat(findVocabulary(text, f));
+    }
+    assert.deepEqual(hits, [],
+        `\nBritish vocabulary in the project records. These are words or phrases with no\n`
+        + `American reading, so none of them is the rule quoting its own examples.\n${hits.join('\n')}\n`);
 });
