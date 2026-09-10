@@ -107,8 +107,7 @@ the one that quietly waits forever.
   List B, the how-I-want-to-come-across options, which was designed and never written;
   the Flex-band buttons; goals that come from a PLACE rather than a person (a place can
   hold one as a fact today, and nothing treats it as a goal); the active goal stamped
-  onto each saved turn, which is a small fix and a real gap for reliving a conversation;
-  and Reframe's sticky version, which IS a conversation goal and was deferred here.
+  onto each saved turn (built in 0.11.1); and Reframe's sticky version, which IS a conversation goal and was deferred here.
 - **Still open, and Ken's:** whether a goal can attach to a KIND of relationship ("with
   anyone in authority I want to seem capable") rather than only a named person.
 
@@ -219,9 +218,11 @@ the one that quietly waits forever.
   including the primary-versus-constraining-goal split and where all of it departs from
   the literature. **Any future goals work should read it first**, and Section 9 of it is
   the open list, kept in step with the entries here.
-- **Also still unbuilt:** the active goal stamped onto each saved turn (so a reviewed
-  conversation says what the user was aiming for), and a ceiling on how many Flex
-  positions goals may take before situational phrases start falling off.
+- **Also still unbuilt:** a ceiling on how many Flex positions goals may take before
+  situational phrases start falling off.
+- **BUILT in 0.11.1 (2026-09-10): the goals in force are saved with every turn**, so a
+  reviewed conversation says what the user was aiming for. Each saved goal keeps its
+  wording and which of the three sources it came from.
 
 ### Conversation goals as steering buttons in the FLEX band
 - **Raised:** 2026-09-10 - Ken: "treat conversation goals as 'reframe' buttons that can
