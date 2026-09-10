@@ -87,9 +87,24 @@ the one that quietly waits forever.
   help" and "make plans" pull the turn apart) and take the same one-per-dimension rule as
   place. Constraints do not, and holding two or three is the ordinary case.
 - **⚠ AND A COST THIS CREATES, now that setting a context value re-asks the AI: setting
-  three constraints in a row is three round trips.** Not a reason to refuse it - watch
-  whether it happens, and if it does the answer is to settle the set before asking rather
-  than to limit the count.
+  three constraints in a row is three round trips, two of them thrown away.**
+- **⚠ I FIRST WROTE THAT THE ANSWER WAS TO "LET THEM FINISH CHOOSING BEFORE ASKING", AND
+  KEN ASKED THE OBVIOUS QUESTION: how do you know when they have finished? YOU DO NOT,
+  AND THE PROJECT HAS ALREADY DECIDED NOT TO GUESS AT THIS SHAPE OF QUESTION.** It is the
+  same problem as end-of-utterance detection, settled July 10 2026: the app stopped trying
+  to know when the other person's turn was complete, because the judgment was unreliable
+  and the right owner of it is the user. "Has the user finished choosing goals" is that
+  question again in a new coat - a pause means "done" and "thinking about the next one"
+  equally, and there is no signal that separates them.
+- **So the answer is the same one: do not guess. Ask on every tap and let the newest
+  answer win.** That is what the code does, and the waste is now COUNTED
+  (`generation_superseded` with its timing) rather than estimated - measured in the
+  running app at three taps in a run producing three requests, two discarded. So if this
+  ever matters it will show up as a number.
+- **A debounce is the tempting fix and it is the wrong trade**, for the reason recorded
+  against the silence period: it would guess that a few hundred milliseconds of no
+  tapping means finished, and it would delay the COMMON case (one tap) to save tokens in
+  the rare one, in a product whose whole purpose is getting suggestions up faster.
 - **Why not yet:** the Goals subsystem is not built at all - all three layers
   (disposition, standing relationship goal, conversation goal) are design only. There
   is nothing to add a second goal to. Standing relationship goals remain the smallest

@@ -3970,6 +3970,7 @@ async function refreshForContextChange() {
     if (!currentPartnerText || !lastPalette.length) return false;
 
     const token = ++generationToken;
+    const startedAt = Date.now();
     ui.setPaletteBusy(true);   // the cards showing may be replaced - say so (Ken)
     llm.setWorldviewBlock(worldview.buildBlock());
     llm.setExtraNames(worldview.extraNames());
@@ -3986,7 +3987,18 @@ async function refreshForContextChange() {
             focusChoice: activeSteer.focusChoice || undefined,
             steer: activeSteer.steer || undefined,
         });
-        if (token !== generationToken) return true;   // superseded - a newer ask owns the cards
+        if (token !== generationToken) {
+            // BILLED AND DISCARDED, and this is the number that answers "how do you
+            // know when they have finished choosing" (Ken, September 10 2026). The
+            // answer is that you cannot, so this path does not try: it asks on every
+            // tap and the newest answer wins, exactly as every silence checkpoint has
+            // since July 10 2026. Setting three values in a run therefore throws two
+            // round trips away - counted here rather than guessed at, so if it turns
+            // out to happen it is a measured cost and not a hunch.
+            metrics.event(metrics.EV.GENERATION_SUPERSEDED, { ms: Date.now() - startedAt });
+            return true;
+        }
+        metrics.event(metrics.EV.GENERATION, { ms: Date.now() - startedAt });
         const snap = engine.refreshPalette(result.responses);
         ui.showEngineState(snap);
         lastPalette = snap.palette;
@@ -3994,6 +4006,7 @@ async function refreshForContextChange() {
         ui.setStatus('Select a response');
     } catch (err) {
         if (token !== generationToken) return true;
+        metrics.event(metrics.EV.GENERATION_FAILED, { reason: isRateLimit(err) ? 'rate_limit' : 'error' });
         storage.logError('contextRefresh', err.message);
         // No error card: the cards already showing are still perfectly usable, they
         // simply have not taken the new value into account. Replacing them with an
