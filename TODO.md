@@ -88,11 +88,17 @@ the one that quietly waits forever.
 - **⚠ THE ONE RESIDUAL, raised once: the mis-hit that matters is the REVERSE one.**
   Aiming at a goal button and missing lands on a neighbouring phrase, which speaks. So
   the exposure is not the goal buttons themselves but what sits beside them.
-  **Recommendation: group them at one end of the Flex band** so their neighbours are
-  mostly each other - the same answer the choice chips already use in the Context band.
-  That leaves one real question for the build: the Flex band is filled most-specific
-  first from four ordered lists, so a grouped run of goal buttons needs its own
-  allocation within the band rather than competing for cells with phrases.
+  **DECIDED (Ken, September 10 2026): the goals go FIRST in the Flex band.** So they
+  are grouped, which is what limits the exposure, and they take the positions the user
+  learns best rather than the leftovers - right for the thing that steers the whole
+  turn. It also means the phrases below them shift by however many goals are showing,
+  which is the weaker half of Spatial Stability and explicitly subordinate to putting a
+  quick path to a response in front of the user.
+  **The one thing the build must still settle: the Flex band is filled most-specific
+  first from four ordered lists, so a leading run of goal buttons needs its own
+  allocation** - otherwise a partner with several goals and several phrases silently
+  pushes the phrases off the end, which is the failure the editor's insert rules exist
+  to prevent elsewhere.
 - **Why not yet:** it depends on the entry above (there are no goals to surface) and on
   the three-band panel, which is designed and not built.
 
