@@ -23,6 +23,9 @@ import * as platform from './platform.js';
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
   "0.11.1": [
+    "Saved conversations now record every set of suggestions the app offered you, not only the ones you picked from - and how each set ended, whether you chose a card, asked for different options, typed your own words, or the other person carried on talking. Until now a set you turned away from was thrown away, so the sets that were no use to you left no trace.",
+    "Saved conversations also record which goals you had switched on for each turn, alongside who you were talking to, how you felt and where you were.",
+    "Neither is recorded for a conversation you asked the app not to save.",
     "Your goals, and everything else about a person or a place, now save as you change them. Adding a goal saves it straight away, and so does moving one, removing one, or typing a short label for it. The \"Save\" button at the foot of those forms is now \"Done\" and simply takes you back to the list.",
     "Fixed: a goal you added to a person or a place looked saved and was not. It appeared in the list with a number beside it, but nothing was written until you found the \"Save\" button below the next section and pressed it - and there was nothing on screen to tell you that.",
     "The \"Goals For Any Conversation\" screen no longer has a \"Save\" button either. It tells you it saved instead."

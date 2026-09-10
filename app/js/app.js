@@ -1779,7 +1779,7 @@ async function handleResponseSelected(response, index) {
     // Stop the deliberation clock before anything else happens in here — speaking
     // takes a second or more, so a reading time taken after it would be wrong by the
     // length of the sentence.
-    const decideMs = noteUserAction('card');
+    const decideMs = noteUserAction('card', index);
     metrics.paletteTaken({ slot: response.slot || null, index, decideMs });
 
     placeholders.stop();
@@ -2769,7 +2769,17 @@ function noteCardsShown(cards, kind) {
 
 // Stop the clock and report it, once. Returns the span in milliseconds, or null when
 // no cards were showing or the span has already been taken for this palette.
-function noteUserAction(kind) {
+function noteUserAction(kind, selectedIndex = null) {
+    // ⚠ THE OUTCOME IS RECORDED HERE BECAUSE THIS IS ALREADY THE ONE PLACE EVERY
+    // USER ACTION REPORTS ITSELF - eleven callers, each naming what it was. Writing
+    // it at those eleven sites instead would mean the twelfth, added later, silently
+    // records a rejected set with no reason attached, which is most of its value.
+    //
+    // Guarded by the same decideTaken flag as the clock: one outcome per set, and
+    // whichever action came first is the one that ended it.
+    if (cardsShownAt && !decideTaken) {
+        storage.finalizeOffer({ outcome: kind, selectedIndex, shownMs: shownSpanMs() });
+    }
     if (!cardsShownAt || decideTaken) return null;
     decideTaken = true;
     const ms = Date.now() - cardsShownAt;
@@ -2793,6 +2803,12 @@ function noteUserAction(kind) {
  * looking at. Every path that empties the panel has to say so.
  */
 function clearPalette() {
+    // Emptied rather than replaced - the conversation ended, or the cards-per-category
+    // setting changed under them. Recorded as its own outcome so it is not confused
+    // with a set the other person talked over.
+    if (storage.hasPendingOffer()) {
+        storage.finalizeOffer({ outcome: 'cleared', shownMs: shownSpanMs() });
+    }
     ui.clearResponseOptions();
     shownCards = { cards: [], kind: 'none' };
 }
@@ -2810,7 +2826,26 @@ function showPalette(cards, kind = 'ai') {
     // thought of leaves the button lit with nothing behind it. The cancel press clears
     // the backout itself BEFORE calling this, so restoring cannot re-trip it.
     if (kind !== 'windDown' && kind !== 'opener') overlayClearLatch();
+    // ⚠ THE SET BEING REPLACED IS FINALIZED FIRST, and this is the case that made
+    // recording offers worth building: a reprompt replaces a set with NO user action
+    // at all, so nothing else in the app is in a position to say it happened. On one
+    // real tester's twenty minutes that was 47% of every set she was ever shown.
+    // Done here rather than at the call sites because there are eight of them and
+    // instrumenting eight is how one gets missed.
+    if (storage.hasPendingOffer()) {
+        storage.finalizeOffer({ outcome: 'superseded', shownMs: shownSpanMs() });
+    }
+    storage.logOffer({ kind, options: cards });
     noteCardsShown(cards, kind);
+}
+
+// How long the set now going away had been on screen. Null when the clock was never
+// started, and capped for the same reason noteUserAction caps: a span of hours is
+// somebody who walked away, and recording it would wreck any median built on it.
+function shownSpanMs() {
+    if (!cardsShownAt) return null;
+    const ms = Date.now() - cardsShownAt;
+    return (ms < 0 || ms > 10 * 60 * 1000) ? null : ms;
 }
 
 // Render a predefined static palette (opener/windDown/closing), optionally
@@ -6244,6 +6279,12 @@ function setProfileStatus(msg) {
 function transcriptLine(ex) {
     if (ex.role === 'partner') return `  partner: ${ex.cleanedTranscript || ex.rawTranscript || ''}`;
     if (ex.role === 'error') return `  [error: ${ex.context || ''}] ${ex.message || ''}`;
+    // A set of cards and how it ended. Shown in a problem report because a set the
+    // user turned away from is usually the thing they are writing in about.
+    if (ex.role === 'offer') {
+        const what = (ex.options || []).map((o) => `${o.slot || '?'}: ${o.text}`).join(' | ');
+        return `  [offered ${ex.kind || 'ai'} -> ${ex.outcome || 'unfinished'}] ${what}`;
+    }
     return `  user: ${ex.selectedText || ''}`;
 }
 

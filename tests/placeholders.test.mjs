@@ -322,3 +322,30 @@ test('an exchange is counted at the commit choke point, not at the silence check
     assert.ok(/placeholders\.resetConversation\(\);/.test(appSource),
         'a conversation boundary must start the easing off over');
 });
+
+/* SOURCE-LEVEL GUARDS on the offer record, because the decisions live in app.js and
+ * no test can load it (see the note at the top of this file for why that is where
+ * such guards go).
+ *
+ * ⚠ THE FAILURE THESE CATCH IS THE ONE THAT ALREADY HAPPENED ONCE: the goal stamp was
+ * designed, the storage layer was ready for it, and app.js never passed it - so the
+ * app worked perfectly and the record was simply missing. Losing either of these
+ * calls does exactly that to the offer record, silently.
+ */
+test('showPalette records the set of cards, and finalizes the one it replaces', () => {
+    const fn = appSource.slice(appSource.indexOf('function showPalette('));
+    const body = fn.slice(0, fn.indexOf('\n}\n'));
+    assert.match(body, /storage\.logOffer\(/,
+        'every set shown must be recorded - showPalette is the only choke point that sees them all');
+    assert.match(body, /storage\.finalizeOffer\(\{ outcome: 'superseded'/,
+        'the set being replaced is finalized here, because a reprompt replaces it with '
+        + 'no user action and nothing else is in a position to notice');
+});
+
+test('noteUserAction records HOW the user ended the set', () => {
+    const fn = appSource.slice(appSource.indexOf('function noteUserAction('));
+    const body = fn.slice(0, fn.indexOf('\n}\n'));
+    assert.match(body, /storage\.finalizeOffer\(\{ outcome: kind/,
+        'the outcome is taken from the label the caller already passes - an offer '
+        + 'without its outcome is much weaker evidence');
+});

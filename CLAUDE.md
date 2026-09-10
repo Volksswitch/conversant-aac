@@ -2656,6 +2656,62 @@ the moment — instead of making the user pre-configure for their worst partner.
 - **Sequence it behind the checkpoint metrics**, for the same reason: if real conversations
   turn out to produce few multi-checkpoint turns, the feature has nothing to correct.
 
+## EVERY SET OF CARDS IS RECORDED, NOT ONLY THE ONES PICKED FROM (Ken, September 10 2026), BUILT
+
+Ken, having given up on a set that never offered what he wanted: *"it does raise the
+question of whether offered cards should be recorded even if none of them are selected. I
+think they should."* And then, more strongly: *"If I ask for 4 more, it's important to
+know what I was offered that made me request more. If I turn to 'in my own words', what
+had I received that made me demure."*
+
+**⚠ THE RECORD WAS BIASED IN THE ONE DIRECTION THAT MATTERS, and that is the argument
+to reach for if this is ever questioned on file-size grounds.** A set the user picked
+from was saved with all its options in `allOptions`; a set that FAILED was thrown away.
+So the rejected-option corpus - which this file elsewhere calls the most valuable
+qualitative asset of the whole beta - contained **only the successes**, and the failures,
+the only ones that say what to fix, were gone. Measured on one real tester's twenty
+minutes: **47% of sets were replaced before she touched anything**, so nearly half of
+everything the app had ever suggested was never written down.
+
+**⚠ AND AN OFFER WITHOUT ITS OUTCOME IS MUCH WEAKER EVIDENCE.** "Four cards nobody
+chose" could be the partner talking again, the user pressing New N, or the user giving up
+and typing - three findings that call for opposite fixes. So the outcome is part of the
+record: `card` (with which index) / `regenerate` / `composer` / `express` / `command` /
+`choice chip` / `reframe` / `superseded` / `cleared`.
+
+**IT COST TWO TOUCH POINTS BECAUSE BOTH CHOKE POINTS ALREADY EXISTED**, and finding them
+is most of the design:
+- **`showPalette`** is the one place every set reaches the screen, and it already knew it
+  (`shownCards`, `noteCardsShown`). It finalizes the set being replaced as `superseded`
+  and records the new one. **This is where the 47% case is caught** - a reprompt replaces
+  a set with NO user action at all, so nothing else in the app is in a position to notice.
+- **`noteUserAction(kind)`** is the one place every user action already reports itself,
+  with a label, guarded against double-counting. The outcome is taken from that label.
+  **Eleven callers; writing it at each of them means the twelfth, added later, silently
+  records a rejected set with no reason attached** - which is most of its value.
+
+- **`allOptions` on the user turn is DELIBERATELY left in place.** One home would be
+  tidier and would break the summary and the report tooling for the sake of tidiness -
+  and a shape that differs depending on whether the user chose is exactly what makes a
+  later analysis quietly wrong. The offer entry is the uniform record; the duplication
+  stays.
+- **`role: 'offer'`, interleaved in `exchanges` in time order**, like an error entry.
+  Safe because every reader filters POSITIVELY by role (checked: `usage-summary.js` and
+  the report tooling). A problem report renders them, since a set the user turned away
+  from is usually what they are writing in about.
+- **Honors "Don't save this conversation"** - a rejected set is still four sentences about
+  a private conversation. Tested.
+- **Lazily starts the log**, like `logUserResponse`, because a set of cards can be the
+  first thing in a conversation: the openers are offered before anybody has said a word,
+  and they are the set most likely to be rejected.
+
+**⚠ THE app.js HALF CANNOT BE UNIT-TESTED, so it is guarded at SOURCE level** in
+`tests/placeholders.test.mjs`, which is where such guards already live. **The failure
+they catch is the one that had just happened**: the goal stamp was designed, storage was
+ready for it, and app.js never passed it - so the app worked perfectly and the record was
+simply missing. Both guards mutation-checked. The storage half is driven end to end
+against real storage and the bytes are read back.
+
 ## THE TRANSCRIPT NOW RECORDS WHICH GOALS WERE IN FORCE (Ken, September 10 2026), BUILT
 
 Ken switched two goals on before starting a conversation, one of them never appeared in

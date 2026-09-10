@@ -443,3 +443,63 @@ test('the goals in force are written onto a user turn, and none is written as nu
         'the goals reached disk, in order, with their text and where each came from');
     assert.equal(turns[1].goals, null, 'no goals switched on stays null, not []');
 });
+
+test('a set of cards nobody picked from is still written, with how it ended', async () => {
+    // ⚠ THE BIAS THIS REMOVES (Ken, September 10 2026): a set the user picked from was
+    // saved with all its options; a set that FAILED was thrown away. So the corpus for
+    // judging suggestion quality held only the successes. His two cases are the
+    // sharpest form of it - pressing "New 4" and turning to "In my own words" are the
+    // user saying the set was not good enough, and we kept the complaint and binned
+    // the evidence.
+    storage.resetConversationId();
+    storage.setConversationSaving(true);
+    await storage.startConversationLog();
+    const id = storage.getConversationId();
+
+    const set = (a, b) => ([{ slot: 'PREFERRED', text: a }, { slot: 'DISPREFERRED', text: b }]);
+
+    // Offered, then the user asked for different options.
+    await storage.logOffer({ kind: 'ai', options: set('Lunch somewhere?', 'Not today.') });
+    await storage.finalizeOffer({ outcome: 'regenerate', shownMs: 4200 });
+    // Offered again, and this time the other person carried on talking.
+    await storage.logOffer({ kind: 'ai', options: set('Sounds good.', 'I would rather not.') });
+    await storage.finalizeOffer({ outcome: 'superseded', shownMs: 900 });
+    // Offered a third time and taken.
+    await storage.logOffer({ kind: 'ai', options: set('Breakfast together?', 'Maybe not.') });
+    await storage.finalizeOffer({ outcome: 'card', selectedIndex: 0, shownMs: 7800 });
+
+    const data = await readLog(id);
+    const offers = data.exchanges.filter((e) => e.role === 'offer');
+    assert.equal(offers.length, 3, 'every set reached disk, not just the one taken');
+    assert.deepEqual(offers.map((o) => o.outcome), ['regenerate', 'superseded', 'card'],
+        'each carries HOW it ended - an offer without that is much weaker evidence');
+    assert.equal(offers[0].options[0].text, 'Lunch somewhere?',
+        'the words the user rejected are on disk, which is the whole point');
+    assert.equal(offers[0].options[0].slot, 'PREFERRED',
+        'and the slot, since "which kind got rejected" is its own question');
+    assert.equal(offers[2].selectedIndex, 0, 'the taken one says which');
+    assert.equal(offers[0].selectedIndex, null, 'and a rejected one says none');
+    assert.equal(offers[1].shownMs, 900, 'how long it was up survives');
+
+    // Time order: an offer sits before whatever followed it, like an error entry.
+    const roles = data.exchanges.map((e) => e.role);
+    assert.deepEqual(roles, ['offer', 'offer', 'offer'], 'interleaved in the exchanges array');
+});
+
+test('"Don\'t save this conversation" stops offers being written too', async () => {
+    // The promise both manuals make covers what was SUGGESTED as well as what was said
+    // - a rejected set is still four sentences about a private conversation.
+    storage.resetConversationId();
+    storage.setConversationSaving(true);
+    await storage.startConversationLog();
+    const id = storage.getConversationId();
+    storage.setConversationSaving(false);
+
+    await storage.logOffer({ kind: 'ai', options: [{ slot: 'PREFERRED', text: 'Nothing private here.' }] });
+    await storage.finalizeOffer({ outcome: 'superseded' });
+
+    const data = await readLog(id);
+    assert.equal(data.exchanges.filter((e) => e.role === 'offer').length, 0,
+        'no offer is written for a conversation the user asked not to save');
+    storage.setConversationSaving(true);
+});

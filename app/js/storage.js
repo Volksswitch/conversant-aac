@@ -1923,6 +1923,7 @@ export function resetConversationId() {
     currentLogHandle = null;
     currentLogName = null;
     pendingPartnerTurn = null;
+    pendingOffer = null;
 }
 
 async function getConversationsDir() {
@@ -1970,6 +1971,9 @@ export async function startConversationLog() {
         exchanges: []
     };
     pendingPartnerTurn = null;
+    // Dropped with the partner pointer, or a finalize arriving after a new
+    // conversation began would patch an entry belonging to the old file.
+    pendingOffer = null;
 
     currentLogHandle = await dir.getFileHandle(currentLogName, { create: true });
     await flushLog();
@@ -2008,6 +2012,78 @@ export async function logPartnerInterim({ rawTranscript, partner = null }) {
 // Detach the current pending partner turn (if any) and stop tracking it, so a new
 // partner turn appends a fresh entry rather than overwriting this one. Returns the
 // detached turn object (an opaque handle for finalizePartnerTurn), or null.
+/* EVERY SET OF CARDS THE APP OFFERED, whether or not the user took one of them
+ * (Ken, September 10 2026: *"If I ask for 4 more, it's important to know what I was
+ * offered that made me request more. If I turn to 'in my own words', what had I
+ * received that made me demure."*).
+ *
+ * ⚠ WITHOUT THIS THE RECORD IS BIASED IN THE ONE DIRECTION THAT MATTERS. A set the
+ * user picked from was saved with all its options, in `allOptions` on their turn; a
+ * set that FAILED was thrown away. So the corpus being accumulated to judge
+ * suggestion quality held only the successes, and the failures - the only ones that
+ * say what to fix - were gone. On one real tester's twenty minutes **47% of sets were
+ * replaced before she touched anything**, so nearly half of everything the app had
+ * ever suggested was never written down at all.
+ *
+ * ⚠ AND AN OFFER WITHOUT ITS OUTCOME IS MUCH WEAKER EVIDENCE, which is why the
+ * outcome is part of the record rather than inferred later. "Four cards nobody chose"
+ * could be the partner talking again, the user pressing New N, or the user giving up
+ * and typing - and those call for opposite fixes.
+ *
+ * Interleaved into `exchanges` in time order, like an error entry, under
+ * `role: 'offer'`. Every reader filters positively by role, so this is additive.
+ *
+ * `allOptions` on the user's turn is DELIBERATELY left in place rather than replaced.
+ * It would be tidier to have one home for this, and it would break the summary and
+ * the report tooling that read it today for the sake of tidiness - and a shape that
+ * differs depending on whether the user chose is exactly what makes a later analysis
+ * quietly wrong. So the offer entry is the uniform record and the duplication stays.
+ */
+let pendingOffer = null;
+
+export async function logOffer({ kind = 'ai', options = [] }) {
+    if (!conversationSaving) return null;   // private conversation - nothing is written
+    // A set of cards can be the FIRST thing in a conversation: the openers behind
+    // Start conversation are offered before anybody has said a word. Lazily starting
+    // matches logUserResponse, and without it the one set most likely to be rejected
+    // - the openers - is the one set never recorded.
+    if (!currentLogData) await startConversationLog();
+    if (!currentLogData) return null;
+    const entry = {
+        timestamp: new Date().toISOString(),
+        role: 'offer',
+        kind,                    // ai | opener | windDown | closing | repair | ...
+        // Slot as well as text: the slot IS the category, and "which kind of card got
+        // rejected" is a different question from "which words did".
+        options: (options || []).map((c) => ({
+            slot: (c && c.slot) || null,
+            text: (c && c.text) || '',
+        })),
+        outcome: null,           // filled in by finalizeOffer when the set goes away
+        selectedIndex: null,
+        shownMs: null,
+    };
+    currentLogData.exchanges.push(entry);
+    pendingOffer = entry;
+    await flushLog();
+    return entry;
+}
+
+/* How the set on screen went away. Patched IN PLACE so the offer keeps its position
+ * before whatever followed it - the same arrangement as finalizePartnerTurn, and for
+ * the same reason: the file has to read in the order things happened. */
+export async function finalizeOffer({ outcome, selectedIndex = null, shownMs = null }) {
+    if (!pendingOffer) return;
+    const entry = pendingOffer;
+    pendingOffer = null;
+    entry.outcome = outcome || 'superseded';
+    if (selectedIndex !== null && selectedIndex !== undefined) entry.selectedIndex = selectedIndex;
+    if (shownMs !== null && shownMs !== undefined) entry.shownMs = shownMs;
+    await flushLog();
+}
+
+export function hasPendingOffer() { return !!pendingOffer; }
+
 export function detachPendingPartnerTurn() {
     const t = pendingPartnerTurn;
     pendingPartnerTurn = null;
