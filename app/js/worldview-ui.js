@@ -814,12 +814,23 @@ const OTHER = '__other__';
  * the menu exists for this user - and a textarea would throw the menu away. So the
  * weight of add/move/remove is earned here and is not earned there.
  *
- * Returns { node, read }. `read()` is deliberately NOT a live model: the caller decides
- * when the list is committed, because two of the three callers sit inside a form with a
- * Save button and a Cancel beside it.
+ * Returns { node, read }. `read()` builds the list on demand; `opts.onChange` is how a
+ * caller COMMITS it, and every caller now passes one.
+ *
+ * ⚠ ADDING A GOAL MUST SAVE IT, because the row that appears looks saved (Ken,
+ * September 10 2026: *"I add several goals and those should automatically save as I add
+ * them"*). A goal arrives as a numbered entry in a list - which is the appearance of a
+ * list you have added to - and it used to live only in this object until somebody
+ * pressed a Save button further down the form. **The button's position was the smaller
+ * half of that fault**: pinned at the top it would still have left the screen saying
+ * "added" about something that was not, which is a false affordance rather than a
+ * discovery problem, and no placement fixes a false affordance.
  */
 function buildGoalEditor(saved, opts = {}) {
     const placeholder = opts.placeholder || 'What you want';
+    // Every mutation goes through this, so a caller wires ONE callback rather than
+    // six - and a seventh kind of mutation added later cannot forget to save.
+    const changed = () => { if (opts.onChange) opts.onChange(); };
     let goals = Array.isArray(saved) ? saved.map((g) => ({ ...g })) : [];
     const goalList = el('div', { class: 'wv-goal-list' });
 
@@ -856,15 +867,15 @@ function buildGoalEditor(saved, opts = {}) {
             if (i === goals.length - 1) down.disabled = true;
             up.addEventListener('click', () => {
                 [goals[i - 1], goals[i]] = [goals[i], goals[i - 1]];
-                renderGoals();
+                renderGoals(); changed();
             });
             down.addEventListener('click', () => {
                 [goals[i + 1], goals[i]] = [goals[i], goals[i + 1]];
-                renderGoals();
+                renderGoals(); changed();
             });
             del.addEventListener('click', () => {
                 goals.splice(i, 1);
-                fillAdd(); syncOther(); renderGoals();
+                fillAdd(); syncOther(); renderGoals(); changed();
             });
             const cells = [
                 // The number is what makes the order visible as an order. Without it
@@ -889,6 +900,11 @@ function buildGoalEditor(saved, opts = {}) {
                     placeholder: 'Button label', 'aria-label': 'Short label for this goal\'s button' });
                 face.value = g.label || '';
                 face.addEventListener('input', () => { g.label = face.value; });
+                // Committed when the field is LEFT, not on every keystroke: this is
+                // the one control here that is typed rather than picked, and writing
+                // the whole graph per character would be a file write per character.
+                // Done commits as well, so a label typed and never blurred still lands.
+                face.addEventListener('change', changed);
                 cells.push(face);
             }
             cells.push(up, down, del);
@@ -899,7 +915,7 @@ function buildGoalEditor(saved, opts = {}) {
     const addGoal = (g) => {
         goals.push(g);
         goalAdd.value = '';
-        fillAdd(); syncOther(); renderGoals();
+        fillAdd(); syncOther(); renderGoals(); changed();
     };
     goalAdd.addEventListener('change', () => {
         const v = goalAdd.value;
@@ -931,8 +947,11 @@ function buildGoalEditor(saved, opts = {}) {
     };
 }
 
-function buildPartnerProfileSection(existing) {
+function buildPartnerProfileSection(existing, opts = {}) {
     const saved = existing ? rel.getPartnerProfile(existing.id) : null;
+    // As above: one callback for the whole section. A select or a checkbox commits the
+    // moment it changes; anything typed commits when the field is left.
+    const changed = () => { if (opts.onChange) opts.onChange(); };
 
     // Register: one select per dimension, each relative to the user's own baseline.
     // "Same as usual" is the default and emits nothing at all downstream.
@@ -943,6 +962,7 @@ function buildPartnerProfileSection(existing) {
         sel.append(el('option', { value: dim.low.value }, dim.low.label));
         sel.append(el('option', { value: dim.high.value }, dim.high.label));
         if (saved && saved.register && saved.register[dim.key]) sel.value = saved.register[dim.key];
+        sel.addEventListener('change', changed);
         dimSelects.set(dim.key, sel);
         return el('label', { class: 'wv-dim-row' }, [
             el('span', { class: 'wv-dim-label', text: dim.label }), sel
@@ -954,11 +974,13 @@ function buildPartnerProfileSection(existing) {
     // a goal list is kept (a place, and the general list) - see buildGoalEditor.
     const goalEd = buildGoalEditor(saved && saved.goals, {
         placeholder: 'What you want from this relationship',
+        onChange: changed,
     });
 
     const noteIn = el('input', { type: 'text', class: 'wv-text',
         placeholder: 'Anything else about how you talk with them (optional)',
         value: saved ? saved.note : '' });
+    noteIn.addEventListener('change', changed);
 
     // Their own starters and closings. One per line rather than a full list editor:
     // these ADD to the global lists and are usually one or two phrases, so the
@@ -974,6 +996,7 @@ function buildPartnerProfileSection(existing) {
     const closeIn = el('textarea', { class: 'wv-text wv-phrase-lines', rows: '2',
         placeholder: 'Goodbyes for them — one per line' });
     closeIn.value = saved ? linesOf(saved.closings) : '';
+    for (const box of [openersIn, windIn, closeIn]) box.addEventListener('change', changed);
 
     const splitLines = (v) => v.split('\n').map((s) => s.trim()).filter(Boolean);
 
@@ -1144,7 +1167,56 @@ function buildPersonForm(existing) {
         privCheck, el('span', { text: 'Private — AI knows but won\'t bring them up unprompted' })
     ]);
 
-    const profile = buildPartnerProfileSection(existing);
+    /**
+     * EDITING AN EXISTING PERSON SAVES AS YOU GO; ADDING ONE STILL HAS A BUTTON
+     * (Ken, September 10 2026: *"why is there a Save button at all"*).
+     *
+     * The button existed because ONE form serves both jobs, and on the create path
+     * there is genuinely nothing to write into until the record exists. That reason
+     * belongs to the create path and was only ever BORROWED by the edit path, which
+     * is where it stopped being a reason - so the edit path gives it back.
+     *
+     * ⚠ WHAT IS GIVEN UP, STATED ONCE: Cancel. On an edit it used to discard
+     * everything typed, and it cannot survive saving as you go. Judged worth it
+     * because the rest of the app already works this way - the Express Panel editor
+     * commits on every keystroke and offers Done, and every About Me card saves
+     * itself - so this makes People and Places agree with the app instead of being
+     * the two screens that do not. The edits are also trivially redone, and the one
+     * genuinely destructive action here (Remove person) still asks first.
+     *
+     * ⚠ AND THE ONE THING AUTO-SAVE MUST NOT DO: blank a name. Walking away from an
+     * emptied name box would otherwise erase it, which is deleting a person's
+     * identity by accident. A rename still works, because the new name commits when
+     * it is typed; deleting a person is what Remove is for.
+     */
+    async function commitNow() {
+        if (!existing) return;
+        const name = nameIn.value.trim();
+        const relationship = getRelationship();
+        if (!name && !relationship) return;   // nothing to save yet
+        await rel.updatePerson(existing.id, {
+            name: name || existing.name,
+            relationship,
+            about: aboutIn.value.trim(),
+            nickname: nicknameIn.value.trim(),
+            pronunciation: namePron.inp.value.trim(),
+            nicknamePronunciation: nickPron.inp.value.trim(),
+            livesWithMe: livesCheck.checked,
+            isPrivate: privCheck.checked
+        });
+        await rel.setPartnerProfile(existing.id, profile.read());
+    }
+
+    const profile = buildPartnerProfileSection(existing, { onChange: commitNow });
+
+    // Discrete controls commit at once; typed fields commit when they are left. Done
+    // commits again, so nothing typed and never blurred is lost either way.
+    if (existing) {
+        for (const box of [nameIn, nicknameIn, aboutIn, otherIn, namePron.inp, nickPron.inp]) {
+            box.addEventListener('change', commitNow);
+        }
+        for (const c of [relSelect, livesCheck, privCheck]) c.addEventListener('change', commitNow);
+    }
 
     // Each "how to say it" sits directly under the field it corrects, so there is
     // never a question about which name it applies to.
@@ -1152,46 +1224,39 @@ function buildPersonForm(existing) {
         [nameIn, namePron.row, nicknameIn, nickPron.row, relSelect, otherWrap, aboutIn, livesRow, privRow]));
     card.append(profile.goalsNode, profile.node);
 
-    const save = el('button', { class: 'wv-btn wv-btn-primary', text: existing ? 'Save' : 'Add person',
+    const save = el('button', { class: 'wv-btn wv-btn-primary', text: existing ? 'Done' : 'Add person',
         onclick: async () => {
+            if (existing) {
+                await commitNow();
+                renderPeople();
+                return;
+            }
             const name = nameIn.value.trim();
             const relationship = getRelationship();
             if (!name && !relationship) return;   // nothing to save
-            let id;
-            if (existing) {
-                id = existing.id;
-                await rel.updatePerson(id, {
-                    name, relationship,
-                    about: aboutIn.value.trim(),
-                    nickname: nicknameIn.value.trim(),
-                    pronunciation: namePron.inp.value.trim(),
-                    nicknamePronunciation: nickPron.inp.value.trim(),
-                    livesWithMe: livesCheck.checked,
-                    isPrivate: privCheck.checked
-                });
-            } else {
-                // A new person has no id until they exist, so the profile is written
-                // second — the section is read from the DOM either way, so nothing
-                // typed into it is lost by the ordering.
-                id = await rel.addPerson({
-                    name, relationship,
-                    about: aboutIn.value.trim(),
-                    nickname: nicknameIn.value.trim(),
-                    pronunciation: namePron.inp.value.trim(),
-                    nicknamePronunciation: nickPron.inp.value.trim(),
-                    livesWithMe: livesCheck.checked,
-                    isPrivate: privCheck.checked
-                });
-            }
+            // A new person has no id until they exist, so the profile is written
+            // second — the section is read from the DOM either way, so nothing
+            // typed into it is lost by the ordering.
+            const id = await rel.addPerson({
+                name, relationship,
+                about: aboutIn.value.trim(),
+                nickname: nicknameIn.value.trim(),
+                pronunciation: namePron.inp.value.trim(),
+                nicknamePronunciation: nickPron.inp.value.trim(),
+                livesWithMe: livesCheck.checked,
+                isPrivate: privCheck.checked
+            });
             await rel.setPartnerProfile(id, profile.read());
             renderPeople();
         } });
 
-    const actions = el('div', { class: 'wv-actions' }, [save]);
-    if (existing) {
-        actions.append(el('button', { class: 'wv-btn wv-btn-link', text: 'Cancel', onclick: () => renderPeople() }));
-    }
-    card.append(actions);
+    // NO CANCEL ON EITHER PATH NOW. On an edit there is nothing left for it to
+    // discard, and a Cancel that cannot undo anything is worse than none - it
+    // promises a way back that does not exist. And it does not move to the create
+    // form: that one is a permanent blank form at the foot of the list rather than
+    // something you enter, so there is nothing to cancel out of - which is why it
+    // never had one.
+    card.append(el('div', { class: 'wv-actions' }, [save]));
     return card;
 }
 
@@ -1233,17 +1298,19 @@ function renderGeneralGoals() {
         + 'suggests responses with that goal in mind. Nothing here is ever said out loud.' }));
 
     const card = el('div', { class: 'wv-card' });
+    // ⚠ THE COMMENT ABOVE SAID THIS ALREADY AND THE CODE DID NOT: there was a Save
+    // button here, on a screen the comment itself says has nothing for one to belong
+    // to. Now it does what it always claimed - and the status line stays, because with
+    // no button to press it is the only thing that says the goal was kept.
+    const status = el('div', { class: 'wv-module-meta', 'aria-live': 'polite' });
     const ed = buildGoalEditor(rel.getGeneralGoals(), {
         placeholder: 'What you want out of a conversation',
-    });
-    card.append(ed.node);
-    const status = el('div', { class: 'wv-module-meta', 'aria-live': 'polite' });
-    card.append(el('div', { class: 'wv-actions' }, [
-        el('button', { class: 'wv-btn wv-btn-primary', text: 'Save', onclick: async () => {
+        onChange: async () => {
             await rel.setGeneralGoals(ed.read());
             status.textContent = 'Saved.';
-        } })
-    ]));
+        },
+    });
+    card.append(ed.node);
     card.append(status);
     contentEl.append(card);
 }
@@ -1380,7 +1447,13 @@ function buildPlaceForm(existing) {
                 placeholder: 'Is (e.g. mocha latte)', value: f.value });
             const del = el('button', { class: 'wv-fact-del', text: '✕',
                 'aria-label': 'Remove this fact', title: 'Remove this fact',
-                onclick: () => { syncDraft(); draft.splice(i, 1); if (!draft.length) draft.push({ key: '', value: '' }); renderFacts(); } });
+                onclick: async () => {
+                    syncDraft(); draft.splice(i, 1);
+                    if (!draft.length) draft.push({ key: '', value: '' });
+                    renderFacts(); await commitPlaceNow();
+                } });
+            // Typed, so committed when the field is left rather than per character.
+            if (existing) for (const b of [keyIn, valIn]) b.addEventListener('change', commitPlaceNow);
             factsWrap.append(el('div', { class: 'wv-fact-row' }, [keyIn, valIn, del]));
         });
     };
@@ -1397,8 +1470,26 @@ function buildPlaceForm(existing) {
     //
     // Collapsed, like the per-partner profile and for the same reason: it is optional
     // depth on a form somebody may only want to put a name into.
+    // Saved as it is edited, exactly as a person is - see the long note on
+    // commitNow in buildPersonForm for why, and for what that gives up.
+    async function commitPlaceNow() {
+        if (!existing) return;
+        syncDraft();
+        const name = nameIn.value.trim();
+        await places.updatePlace(existing.id, {
+            // A place with no name cannot be shown or referred to, so an emptied box
+            // keeps the name it had rather than erasing it. Renaming still works.
+            name: name || existing.name,
+            pronunciation: pronIn.value.trim(),
+            facts: draft,
+            goals: goalEd.read(),
+            isPrivate: privCheck.checked
+        });
+    }
+
     const goalEd = buildGoalEditor(existing && existing.goals, {
         placeholder: 'What you are usually here to do',
+        onChange: commitPlaceNow,
     });
     const goalsNode = el('details', { class: 'wv-partner-profile' }, [
         el('summary', { class: 'wv-disclosure' }, [
@@ -1419,27 +1510,34 @@ function buildPlaceForm(existing) {
     card.append(el('div', { class: 'wv-person-fields' },
         [nameIn, pronRow, factsWrap, addFact, goalsNode, privRow]));
 
-    const save = el('button', { class: 'wv-btn wv-btn-primary', text: existing ? 'Save' : 'Add place',
+    if (existing) {
+        for (const box of [nameIn, pronIn]) box.addEventListener('change', commitPlaceNow);
+        privCheck.addEventListener('change', commitPlaceNow);
+    }
+
+    const save = el('button', { class: 'wv-btn wv-btn-primary', text: existing ? 'Done' : 'Add place',
         onclick: async () => {
+            if (existing) {
+                await commitPlaceNow();
+                renderPlaces();
+                return;
+            }
             syncDraft();
             const name = nameIn.value.trim();
             if (!name) return;   // a place with no name can't be shown or referred to
-            const facts = draft;  // places.js drops the blank rows
-            const pronunciation = pronIn.value.trim();
-            const goals = goalEd.read();
-            if (existing) {
-                await places.updatePlace(existing.id, { name, pronunciation, facts, goals, isPrivate: privCheck.checked });
-            } else {
-                await places.addPlace({ name, pronunciation, facts, goals, isPrivate: privCheck.checked });
-            }
+            await places.addPlace({
+                name,
+                pronunciation: pronIn.value.trim(),
+                facts: draft,          // places.js drops the blank rows
+                goals: goalEd.read(),
+                isPrivate: privCheck.checked
+            });
             renderPlaces();
         } });
 
-    const actions = el('div', { class: 'wv-actions' }, [save]);
-    if (existing) {
-        actions.append(el('button', { class: 'wv-btn wv-btn-link', text: 'Cancel', onclick: () => renderPlaces() }));
-    }
-    card.append(actions);
+    // See buildPersonForm: nothing left for a Cancel to discard on an edit, and the
+    // create form is the permanent blank one at the foot of the list.
+    card.append(el('div', { class: 'wv-actions' }, [save]));
     return card;
 }
 

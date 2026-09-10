@@ -22,6 +22,11 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.11.1": [
+    "Your goals, and everything else about a person or a place, now save as you change them. Adding a goal saves it straight away, and so does moving one, removing one, or typing a short label for it. The \"Save\" button at the foot of those forms is now \"Done\" and simply takes you back to the list.",
+    "Fixed: a goal you added to a person or a place looked saved and was not. It appeared in the list with a number beside it, but nothing was written until you found the \"Save\" button below the next section and pressed it - and there was nothing on screen to tell you that.",
+    "The \"Goals For Any Conversation\" screen no longer has a \"Save\" button either. It tells you it saved instead."
+  ],
   "0.11.0": [
     "A goal can now come from a place, or from anywhere at all. Goal buttons used to appear only for someone you had added in About Me, which left out most of the conversations you have at a counter. Now they come from three lists, and the panel shows them in this order: what you want from the person you picked, what you come to the place you picked to do, and then your general goals — the ones you can switch on with anyone, anywhere. A goal that is in two of those lists shows once. A place's goals are set in About Me → My Places under \"What I come here to do\"; the general ones in the new About Me → Goals For Any Conversation.",
     "Goals now expire with whatever they belonged to. Change who you are talking with and that person's goals switch off; say you are somewhere else and that place's goals switch off. A general goal stays on until the conversation ends, because it was never about who you were with or where you were.",

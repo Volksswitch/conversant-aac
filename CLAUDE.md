@@ -973,6 +973,60 @@ Ken: *"Add support for 'My Places' to the Worldview model. For each place add 'f
 
 **Known limitation, existing behavior not a regression:** the Express Panel maps items 1:1 onto the layout's cells, so a place **appended** to a full default list (33 items, 33 cells) overflows and never renders. Use the row's **＋** insert button to place it within the grid. This has been true of every item type since v0.5.0; it is only more noticeable here because a new place is the first thing a user adds after the panel is already full.
 
+## A LIST THAT SHOWS AN ITEM AS ADDED HAS PROMISED IT IS SAVED (Ken, September 10 2026), BUILT
+
+Ken added a goal to a person, went to look for the button on the Express Panel, and it
+was not there. *"The Save button was below the next section so it didn't occur to me to
+tap it. Generally, why is there a Save button at all. I add several goals and those
+should automatically save as I add them."*
+
+**⚠ THE BUTTON'S POSITION WAS THE SMALLER HALF OF THE FAULT, and treating it as the
+whole fault is the mistake to avoid here.** A goal arrives in the editor as a numbered
+row - *1. Make plans together* - which is the appearance of a list you have added to.
+Nothing on screen said it was provisional. **So pinning Save at the top would have left
+the screen still saying "added" about something that was not**: a false affordance
+rather than a discovery problem, and no placement fixes a false affordance. Generalize
+it: **if a control shows an item as being in a list, the item is in the list.**
+
+**WHY THE BUTTON WAS THERE AT ALL, since the answer is what decides the fix: ONE form
+serves two jobs.** On the create path there is genuinely nothing to write into until the
+record exists, so a button is unavoidable. **That reason belongs to the create path and
+was only ever BORROWED by the edit path**, which is where it stops being a reason. So the
+split is by job rather than by field: **an existing person or place saves as you go and
+ends in Done; a new one still ends in "Add person" / "Add place".**
+
+- **Discrete controls commit at once** (a goal added, moved or removed; a select; a
+  checkbox); **anything typed commits when the field is LEFT**, not per keystroke -
+  writing the whole graph per character would be a file write per character. **Done
+  commits again**, so a label typed and never blurred still lands.
+- **ONE callback per editor, not one per mutation** (`opts.onChange` on
+  `buildGoalEditor`, and the same on `buildPartnerProfileSection`). Six call sites would
+  mean a seventh kind of mutation added later can forget to save - which is the shape of
+  the bug being fixed.
+- **⚠ AUTO-SAVE MUST NOT BE ABLE TO BLANK A NAME.** Walking away from an emptied name
+  box would erase it, which is deleting a person's identity by accident and in the one
+  direction nothing else in the app allows. An empty box keeps the name it had; a rename
+  still works, because the new name commits when it is typed. **Deleting a person is what
+  Remove is for, and that still asks first.**
+- **⚠ WHAT IS GIVEN UP, STATED ONCE: Cancel, on the edit path.** It used to discard
+  everything typed and cannot survive saving as you go. Judged worth it because **the
+  rest of the app already works this way** - the Express Panel editor commits on every
+  keystroke and offers Done, and every About Me card saves itself - so this makes People
+  and Places agree with the app instead of being the two screens that do not. **And it
+  does NOT move to the create form**: that one is a permanent blank form at the foot of
+  the list rather than something you enter, so there is nothing to cancel out of, which
+  is why it never had one.
+- **The general-goals screen's own comment already claimed it saved on every change and
+  the code had a Save button.** Now it does what it said; the status line stays, because
+  with no button to press it is the only thing that says the goal was kept.
+
+**Verified by driving the real app** rather than by tests alone, since the fault was
+entirely in what reached storage: a goal added, moved, removed and typed each landed in
+`aac_relationships` with no button pressed, a place's goal the same, the name survived
+being blanked on both forms, the create path still wrote nothing until "Add person" and
+then wrote the person *and* her goal, and the new goal appeared on the Express Panel as
+a button. 908 tests, 902 pass, 6 skipped.
+
 ## Conversation & Relationship Goals — three-layer model
 
 **⚠ THE FULL ACCOUNT IS NOW A DOCUMENT: [`Conversant AAC Conversation Goals.docx`](Documents/)**

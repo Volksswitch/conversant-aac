@@ -26,6 +26,10 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Your goals, and everything else about a person or a place, now save as you change them. Adding a goal saves it straight away, and so does moving one, removing one, or typing a short label for it. The "Save" button at the foot of those forms is now "Done" and simply takes you back to the list.
+- Fixed: a goal you added to a person or a place looked saved and was not. It appeared in the list with a number beside it, but nothing was written until you found the "Save" button below the next section and pressed it - and there was nothing on screen to tell you that.
+- The "Goals For Any Conversation" screen no longer has a "Save" button either. It tells you it saved instead.
+
 ## Version 0.11.0
 
 - **A goal can now come from a place, or from anywhere at all.** Goal buttons used to
