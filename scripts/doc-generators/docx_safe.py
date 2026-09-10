@@ -280,6 +280,31 @@ def insert_row_after(doc, after_first_cell_text, values, second_cell_startswith=
     return new
 
 
+def delete_row(doc, first_cell_text, second_cell_startswith=None):
+    """Remove a whole table row.
+
+    THE ROW, NEVER THE CELL'S PARAGRAPHS, which is the whole reason this lives here
+    rather than being written afresh each time. A settings entry in the manuals is a
+    row of two cells; deleting the paragraph that is a cell's only child leaves an
+    empty <w:tc>, and Word refuses a document containing one while every parser
+    forgives it. `save()` catches that, but a helper that cannot make the mistake is
+    better than a gate that reports it.
+
+    Used when a setting MOVES to another tab: the manuals document settings under the
+    tab they live on, so a row left behind sends the reader to a tab where the setting
+    is not - which is worse than saying nothing, because they will not know to look
+    anywhere else.
+    """
+    tbl, tr = find_row(doc, first_cell_text, second_cell_startswith)
+    remaining = [x for x in tbl.iterchildren(qn('w:tr')) if x is not tr]
+    if not remaining:
+        raise ValueError('refusing to delete the last row of a table: %r '
+                         '(an empty <w:tbl> is invalid, so delete the table instead)'
+                         % first_cell_text)
+    tbl.remove(tr)
+    return tr
+
+
 # ---------------------------------------------------------------------------
 # The gate
 # ---------------------------------------------------------------------------

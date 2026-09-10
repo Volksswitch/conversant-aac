@@ -137,6 +137,31 @@ def t_insert_row_after_adds_a_row_not_a_paragraph():
     assert not D.check_integrity(d), D.check_integrity(d)
 
 
+def t_delete_row_removes_the_row_and_leaves_no_empty_cell():
+    # A setting that MOVES to another tab has to leave its old table, and the wrong
+    # way to do it -- deleting the paragraph inside each cell -- leaves an empty
+    # <w:tc> that Word refuses while every parser forgives it.
+    d = _doc_with_table()
+    before = len(d.tables[0].rows)
+    D.delete_row(d, 'Subsequent delay')
+    assert len(d.tables[0].rows) == before - 1, 'the row is still there'
+    assert 'Subsequent delay' not in [d.tables[0].cell(r, 0).text
+                                      for r in range(len(d.tables[0].rows))]
+    assert not D.check_integrity(d), D.check_integrity(d)
+
+
+def t_delete_row_refuses_to_empty_a_table():
+    # An empty <w:tbl> is invalid too, so the last row is not ours to remove.
+    d = _doc_with_table()
+    for r in list(d.tables[0].rows)[1:]:
+        D.delete_row(d, d.tables[0].cell(1, 0).text)
+    try:
+        D.delete_row(d, d.tables[0].cell(0, 0).text)
+    except ValueError:
+        return
+    assert False, 'deleting the last row of a table was allowed'
+
+
 def t_ambiguous_row_is_refused_not_guessed():
     d = _doc_with_table()
     D.insert_row_after(d, 'Subsequent delay', ['Initial delay', 'A second one.'])
