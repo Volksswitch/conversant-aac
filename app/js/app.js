@@ -3930,11 +3930,85 @@ function placeStamp() {
     return { id: activePlace.placeId || null, label };
 }
 
+/* A Context-band value was SET mid-conversation, so re-ask with it (Ken, September
+ * 10 2026: "if the conversation is in progress and the user taps a person or place, a
+ * second round-trip is initiated").
+ *
+ * WHY THIS EXISTS: until now all three toggles only took effect at the NEXT
+ * generation, which in practice means the next time the other person pauses. So a
+ * user who realized mid-turn that they had never said who they were talking to
+ * tapped them and the four cards in front of them were still the ones written for
+ * nobody in particular. Nothing said so, and the only way to pick up the new value
+ * was to know that "New N" would.
+ *
+ * SETTING ONLY, NEVER CLEARING, and that is a decision rather than a shortcut.
+ * Clearing a value says "stop taking this into account", which is not a request for
+ * new suggestions, and paying for a round trip because the user turned something OFF
+ * would be the one case where a tap costs money for nothing they asked for.
+ *
+ * NO `avoid`, WHICH IS THE OPPOSITE OF WHAT "New N" PASSES. Regenerate means "give me
+ * different words", so it lists the current cards to steer away from. This means
+ * "reconsider with this in mind", and the best answer may well be the same sentence -
+ * telling the model to avoid it would force a worse one for no reason.
+ *
+ * IT CARRIES THE TURN'S STEERING. Without that, telling the app where you are would
+ * silently discard the choice chip you tapped or the guidance you typed - the exact
+ * defect recorded for "New N" in v0.5.98, arriving by a new route.
+ *
+ * AND IT DELIBERATELY DOES NOT TOUCH THE PLACEHOLDER LADDER, unlike regenerate.
+ * Placeholders are gated by partner silence and terminated by USER SPEECH, and a
+ * context tap says nothing: the other person is still waiting, and this round trip is
+ * four to eight seconds of exactly the silence the ladder exists to fill. Nothing here
+ * arms a new one either, so leaving it alone is a true no-op - the ladder already
+ * running simply continues.
+ */
+async function refreshForContextChange() {
+    // A static palette (openers, wind-downs, goodbyes) is not AI-generated, so
+    // replacing it with response cards would answer a question nobody asked - the
+    // user is mid-wind-down and would suddenly be offered replies.
+    if (currentStatic.kind) return false;
+    if (!currentPartnerText || !lastPalette.length) return false;
+
+    const token = ++generationToken;
+    ui.setPaletteBusy(true);   // the cards showing may be replaced - say so (Ken)
+    llm.setWorldviewBlock(worldview.buildBlock());
+    llm.setExtraNames(worldview.extraNames());
+    llm.setRelationshipsBlock(relationships.buildBlock());
+    // Omit the place they are standing in - buildHereBlock already carries it, with
+    // the framing that fits being present rather than the "places I go" framing.
+    llm.setPlacesBlock(places.buildBlock(activePlace && activePlace.placeId));
+    llm.setSituationBlock(buildSituationBlock());
+    llm.setVoiceBlock(voiceBlockText());
+    const history = [...conversationHistory, { role: 'partner', text: currentPartnerText }];
+    try {
+        const result = await llm.generateResponses(history, engine.buildRequestContext(), {
+            perCategory: storage.loadResponsesPerCategory(),
+            focusChoice: activeSteer.focusChoice || undefined,
+            steer: activeSteer.steer || undefined,
+        });
+        if (token !== generationToken) return true;   // superseded - a newer ask owns the cards
+        const snap = engine.refreshPalette(result.responses);
+        ui.showEngineState(snap);
+        lastPalette = snap.palette;
+        showPalette(snap.palette);
+        ui.setStatus('Select a response');
+    } catch (err) {
+        if (token !== generationToken) return true;
+        storage.logError('contextRefresh', err.message);
+        // No error card: the cards already showing are still perfectly usable, they
+        // simply have not taken the new value into account. Replacing them with an
+        // error would take the suggestions away to report a refresh that failed.
+        ui.setPaletteBusy(false);
+        ui.setStatus('Select a response');
+    }
+    return true;
+}
+
 // Partner toggle: one active at a time. Tapping the active one turns it off;
 // tapping another switches. Re-renders the panel to reflect the selection. The
 // effect is applied at conversation open (personalized openers) and each turn
 // (situation block) — no immediate generation needed here.
-function handleTogglePartner(item) {
+async function handleTogglePartner(item) {
     if (editedInSettings(item)) return;
     activePartner = (activePartner && activePartner.id === item.id) ? null : item;
     renderExpressPanel();
@@ -3943,24 +4017,37 @@ function handleTogglePartner(item) {
     // their phrases, clearing one has to take them back out again.
     applyControlPhrases();
     ui.setStatus(activePartner ? `Talking with ${partnerLabel(activePartner)}` : 'Partner cleared');
+    await noteContextSet('partner', !!activePartner);
 }
 
 // Feeling toggle: one active at a time, same on/off/switch behavior.
-function handleToggleFeeling(item) {
+async function handleToggleFeeling(item) {
     if (editedInSettings(item)) return;
     activeFeeling = (activeFeeling && activeFeeling.id === item.id) ? null : item;
     renderExpressPanel();
     ui.setStatus(activeFeeling ? `Feeling ${activeFeeling.text.toLowerCase()}` : 'Feeling cleared');
+    await noteContextSet('feeling', !!activeFeeling);
 }
 
-// Place toggle: one active at a time, same on/off/switch behavior. Like Partner,
-// the effect is applied at the next generation (situation block) — no round-trip is
-// fired here, so tapping where you are never costs a token or interrupts a turn.
-function handleTogglePlace(item) {
+// Place toggle: one active at a time, same on/off/switch behavior.
+async function handleTogglePlace(item) {
     if (editedInSettings(item)) return;
     activePlace = (activePlace && activePlace.id === item.id) ? null : item;
     renderExpressPanel();
     ui.setStatus(activePlace ? `At ${activePlace.name}` : 'Place cleared');
+    await noteContextSet('place', !!activePlace);
+}
+
+// One place all three toggles end, so the "set, not cleared" rule and the counting
+// cannot drift apart between them - three copies of a condition is how one of them
+// ends up saying something different by accident.
+async function noteContextSet(kind, wasSet) {
+    metrics.event(metrics.EV.CONTEXT_SET, { kind });
+    if (!wasSet) return;
+    // A SECOND EVENT, not a field on the first: only the event NAME reaches the
+    // weekly totals, so a `refreshed: true` field would be dropped and the ratio
+    // could never be read. See the note beside CONTEXT_REFRESH in metrics.js.
+    if (await refreshForContextChange()) metrics.event(metrics.EV.CONTEXT_REFRESH, { kind });
 }
 
 // Body classes that place the dock area (Express Panel / keyboard) on the

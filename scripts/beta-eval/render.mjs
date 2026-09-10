@@ -69,6 +69,10 @@ export function render({ testers, excluded, unnamed, problems, broken, asOf = Da
     L.push(`  Suggestions shown then ignored  ${pct(r.abandoned)}  (${totals.palettesAbandoned} of ${totals.palettesShown})`);
     L.push(`  Asked for different suggestions ${(r.regeneratesPerTurn ?? 0).toFixed(2)} times per reply`);
     L.push(`  Opened the app and started      ${pct(r.startedPerOpen)}  (${totals.conversationsStarted} of ${totals.appOpens} opens)`);
+    if (totals.contextSets) {
+        L.push(`  Said who/where/how mid-chat      ${pct(r.contextCostsARoundTrip)}  `
+            + `(${totals.contextRefreshes} of ${totals.contextSets} taps re-asked the AI)`);
+    }
     L.push('');
     L.push('  These five combine honestly across people because each is a count divided');
     L.push('  by a count. Typical waits do not - see the last section.');

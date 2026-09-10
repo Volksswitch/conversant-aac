@@ -26,6 +26,16 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Telling the app who you are with, where you are, or how you feel now takes effect
+  straight away. Before, tapping one of those buttons part-way through a conversation
+  only changed the suggestions you got the *next* time the other person paused, so the
+  four suggestions in front of you were still the ones written before you said
+  anything. Now, if there are suggestions on screen, they are replaced with ones that
+  take the new information into account. Turning one of those buttons *off* does not
+  do this, since that is not a request for new suggestions. Nothing changes before a
+  conversation starts, and nothing changes while you are being offered ways to start
+  or finish a conversation.
+
 - "Tapping to speak" has moved from the Conversation tab to the "Express Panel and
   Keyboard" tab. Both of its settings — whether one tap or two is needed to speak a
   phrase, and how long you have between the two taps — only ever applied to the

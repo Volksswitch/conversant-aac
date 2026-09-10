@@ -86,6 +86,8 @@ export function tally(t) {
         regenerates: num(ev.regenerate),
         appOpens: num(ev.app_opened),
         conversationsStarted: num(ev.conversation_started),
+        contextSets: num(ev.context_set),
+        contextRefreshes: num(ev.context_refresh),
         rateLimited: num(ev.rate_limited),
         voiceFellBack: num(u.voiceFellBack),
         // Sample counts for the two halves of the wait. The MEDIANS cannot be pooled
@@ -179,6 +181,10 @@ export function ratios(t) {
         abandoned: ratio(t.palettesAbandoned, t.palettesShown),
         regeneratesPerTurn: ratio(t.regenerates, t.userTurns),
         startedPerOpen: ratio(t.conversationsStarted, t.appOpens),
+        // Of the times somebody told the app who they are with, where they are or
+        // how they feel, how often that came mid-conversation and so cost a round
+        // trip. Two counts, because a boolean field never reaches the totals.
+        contextCostsARoundTrip: ratio(t.contextRefreshes, t.contextSets),
     };
 }
 

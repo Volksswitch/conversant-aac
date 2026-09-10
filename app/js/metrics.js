@@ -71,6 +71,16 @@ export const EV = {
     // seconds and tapped a card". Both are reading load; only one is a success.
     DECIDE: 'decide',                       // { kind, ms }
     REGENERATE: 'regenerate',
+    // A Context-band button was tapped: who they are with, how they feel, where they
+    // are. TWO NAMES RATHER THAN ONE EVENT WITH A FLAG, because only the NAME is
+    // counted: tally() increments day.c[name] and puts nothing but durations in
+    // day.t, so a boolean field survives redaction and is then dropped, reaching the
+    // in-memory ring for a problem report and never the weekly totals. So the ratio
+    // that matters - how often telling the app something mid-conversation costs a
+    // round trip - is context_refresh over context_set. Same reason GENERATION,
+    // GENERATION_SUPERSEDED and GENERATION_FAILED are three names.
+    CONTEXT_SET: 'context_set',             // { kind }
+    CONTEXT_REFRESH: 'context_refresh',     // { kind } — it also re-asked the AI
     REFRAME: 'reframe',
     CHOICE_CHIP: 'choice_chip',
     // Saying it another way

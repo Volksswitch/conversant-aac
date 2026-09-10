@@ -338,3 +338,21 @@ test('the "older build" caveat fires on an old version and not on a current one'
     assert.ok(of('0.7.10').includes('Still on an older build'), 'a genuinely older build is flagged');
     assert.ok(of('0.6.5').includes('Still on an older build'));
 });
+
+test('a context tap that re-asked the AI is counted separately from one that did not', () => {
+    // Two event NAMES rather than one with a flag, because only the name reaches the
+    // totals: tally() counts by name and keeps nothing but durations, so a
+    // `refreshed: true` field is redacted through and then dropped. Found by reading
+    // a real snapshot back out of the running app.
+    const t = shell({
+        usage: { conversations: 5, userTurns: 50, fromCard: 30 },
+        events: { totals: { context_set: 8, context_refresh: 2 } },
+    });
+    const c = tally(t);
+    assert.equal(c.contextSets, 8);
+    assert.equal(c.contextRefreshes, 2);
+    assert.equal(Math.round(ratios(c).contextCostsARoundTrip * 100), 25);
+    const text = render({ testers: [t], excluded: [], unnamed: [], problems: [], broken: [] });
+    assert.match(text, /Said who\/where\/how mid-chat/);
+    assert.match(text, /2 of 8 taps re-asked the AI/);
+});
