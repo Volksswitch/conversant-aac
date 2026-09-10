@@ -383,6 +383,22 @@ function renderHome() {
         el('div', { class: 'wv-chevron', text: '›' })
     ]));
 
+    // Goals for any conversation - the third source of a conversation goal, after the
+    // person and the place. Its own row rather than a section of People or Places,
+    // because it is precisely the list that belongs to NEITHER of them.
+    contentEl.append(el('h3', { class: 'wv-section-title', text: 'Goals' }));
+    const ng = rel.getGeneralGoals().length;
+    const goalsMeta = ng
+        ? `${ng} ${ng === 1 ? 'goal' : 'goals'} you can switch on with anyone`
+        : 'Goals you can switch on with anyone, anywhere';
+    contentEl.append(el('button', { class: 'wv-module-row', onclick: renderGeneralGoals }, [
+        el('div', { class: 'wv-module-main' }, [
+            el('div', { class: 'wv-module-title', text: 'Goals For Any Conversation' }),
+            el('div', { class: 'wv-module-meta', text: goalsMeta })
+        ]),
+        el('div', { class: 'wv-chevron', text: '›' })
+    ]));
+
     // How I Sound — the voice layer. Not questionnaire Q&A either: the user is not
     // reporting facts about themselves, they are picking between wordings, and the
     // sentence they pick is the answer (Sounds Like Me, Phase 1).
@@ -783,40 +799,28 @@ const OTHER = '__other__';
  * Returns { node, read } — `read` is called by the form's Save so the profile is
  * written in the same action, including for a person who does not exist yet.
  */
-function buildPartnerProfileSection(existing) {
-    const saved = existing ? rel.getPartnerProfile(existing.id) : null;
-
-    // Register: one select per dimension, each relative to the user's own baseline.
-    // "Same as usual" is the default and emits nothing at all downstream.
-    const dimSelects = new Map();
-    const dimRows = REGISTER_DIMENSIONS.map((dim) => {
-        const sel = el('select', { class: 'wv-select wv-dim-select' });
-        sel.append(el('option', { value: '' }, 'Same as usual'));
-        sel.append(el('option', { value: dim.low.value }, dim.low.label));
-        sel.append(el('option', { value: dim.high.value }, dim.high.label));
-        if (saved && saved.register && saved.register[dim.key]) sel.value = saved.register[dim.key];
-        dimSelects.set(dim.key, sel);
-        return el('label', { class: 'wv-dim-row' }, [
-            el('span', { class: 'wv-dim-label', text: dim.label }), sel
-        ]);
-    });
-
-    // Standing relationship goals — what they want from the relationship over time,
-    // not from one conversation. Curated menu plus free text (Ken, June 15 2026):
-    // fast to pick, which matters for this user, but still their own words if none
-    // of the twelve fit.
-    //
-    // AN ORDERED LIST, because several may be active at once and the user's order is
-    // the only statement of which matters more (Ken, September 10 2026). There is no
-    // primary-versus-constraint kind: every goal is the same kind of thing.
-    //
-    // ⚠ A LIST EDITOR HERE, AND A TEXTAREA FOR THE PHRASES BELOW, WHICH LOOKS
-    // INCONSISTENT AND IS NOT. The phrases are free text, so one per line gives add,
-    // remove and reorder for nothing. A goal is a MENU pick — chosen from twelve,
-    // fast, which is the whole reason the menu exists for this user — and a textarea
-    // would throw the menu away. So the weight of add/move/remove is earned here and
-    // is not earned there.
-    let goals = saved && Array.isArray(saved.goals) ? saved.goals.map((g) => ({ ...g })) : [];
+/**
+ * THE GOAL LIST EDITOR, shared by the three places a goal list is kept: a person
+ * (About Me → People), a place (My Places) and the general list (About Me → Goals).
+ *
+ * One editor because they are one kind of thing. Every goal is equivalent, ordered by
+ * the user, and more than one can be switched on at once (Ken, September 10 2026) - so
+ * there is nothing about a person's goals that makes them edited differently from a
+ * place's, and three copies of an add/reorder/remove list would drift.
+ *
+ * ⚠ A LIST EDITOR HERE, AND A TEXTAREA FOR THE PHRASE LISTS, WHICH LOOKS INCONSISTENT
+ * AND IS NOT. Phrases are free text, so one per line gives add, remove and reorder for
+ * nothing. A goal is a MENU pick - chosen from twelve, fast, which is the whole reason
+ * the menu exists for this user - and a textarea would throw the menu away. So the
+ * weight of add/move/remove is earned here and is not earned there.
+ *
+ * Returns { node, read }. `read()` is deliberately NOT a live model: the caller decides
+ * when the list is committed, because two of the three callers sit inside a form with a
+ * Save button and a Cancel beside it.
+ */
+function buildGoalEditor(saved, opts = {}) {
+    const placeholder = opts.placeholder || 'What you want';
+    let goals = Array.isArray(saved) ? saved.map((g) => ({ ...g })) : [];
     const goalList = el('div', { class: 'wv-goal-list' });
 
     const goalAdd = el('select', { class: 'wv-select' });
@@ -832,8 +836,7 @@ function buildPartnerProfileSection(existing) {
         goalAdd.append(el('option', { value: OTHER }, 'Something else…'));
     };
 
-    const goalOther = el('input', { type: 'text', class: 'wv-text',
-        placeholder: 'What you want from this relationship' });
+    const goalOther = el('input', { type: 'text', class: 'wv-text', placeholder });
     const goalOtherAdd = el('button', { type: 'button', class: 'wv-btn' }, 'Add');
     const goalOtherWrap = el('div', { class: 'wv-rel-other' }, [goalOther, goalOtherAdd]);
     const syncOther = () => { goalOtherWrap.style.display = goalAdd.value === OTHER ? '' : 'none'; };
@@ -915,6 +918,44 @@ function buildPartnerProfileSection(existing) {
     syncOther();
     renderGoals();
 
+    return {
+        node: el('div', { class: 'wv-goal-editor' }, [goalList, goalAdd, goalOtherWrap]),
+        count: () => goals.length,
+        read: () => {
+            // A goal typed but not added is taken anyway, at the end. Losing something
+            // the user has visibly typed because they did not press the right button is
+            // the worse failure of the two.
+            const pending = goalOther.value.trim();
+            return pending ? goals.concat([{ id: '', text: pending }]) : goals.slice();
+        },
+    };
+}
+
+function buildPartnerProfileSection(existing) {
+    const saved = existing ? rel.getPartnerProfile(existing.id) : null;
+
+    // Register: one select per dimension, each relative to the user's own baseline.
+    // "Same as usual" is the default and emits nothing at all downstream.
+    const dimSelects = new Map();
+    const dimRows = REGISTER_DIMENSIONS.map((dim) => {
+        const sel = el('select', { class: 'wv-select wv-dim-select' });
+        sel.append(el('option', { value: '' }, 'Same as usual'));
+        sel.append(el('option', { value: dim.low.value }, dim.low.label));
+        sel.append(el('option', { value: dim.high.value }, dim.high.label));
+        if (saved && saved.register && saved.register[dim.key]) sel.value = saved.register[dim.key];
+        dimSelects.set(dim.key, sel);
+        return el('label', { class: 'wv-dim-row' }, [
+            el('span', { class: 'wv-dim-label', text: dim.label }), sel
+        ]);
+    });
+
+    // Standing relationship goals — what they want from the relationship over time,
+    // not from one conversation. The list editor is shared with the other two places
+    // a goal list is kept (a place, and the general list) - see buildGoalEditor.
+    const goalEd = buildGoalEditor(saved && saved.goals, {
+        placeholder: 'What you want from this relationship',
+    });
+
     const noteIn = el('input', { type: 'text', class: 'wv-text',
         placeholder: 'Anything else about how you talk with them (optional)',
         value: saved ? saved.note : '' });
@@ -967,7 +1008,7 @@ function buildPartnerProfileSection(existing) {
             el('span', { class: 'wv-disclosure-mark', 'aria-hidden': 'true', text: '›' }),
             el('span', { class: 'wv-disclosure-title', text: 'What I want from this relationship' }),
         ]),
-        goalList, goalAdd, goalOtherWrap
+        goalEd.node
     ]);
 
     const node = el('details', { class: 'wv-partner-profile' }, [
@@ -994,13 +1035,8 @@ function buildPartnerProfileSection(existing) {
     const read = () => {
         const register = {};
         for (const [key, sel] of dimSelects) if (sel.value) register[key] = sel.value;
-        // A goal typed but not added is taken anyway, at the end. Losing something
-        // the user has visibly typed because they did not press the right button is
-        // the worse failure of the two.
-        const pending = goalOther.value.trim();
-        const out = pending ? goals.concat([{ id: '', text: pending }]) : goals.slice();
         return {
-            register, goals: out,
+            register, goals: goalEd.read(),
             note: noteIn.value.trim(),
             openers: splitLines(openersIn.value),
             windDowns: splitLines(windIn.value),
@@ -1174,6 +1210,44 @@ const FACT_SUGGESTIONS = [
     'People I know there', 'What I do there', 'Best time to go', 'Parking', 'Notes'
 ];
 
+/**
+ * THE GENERAL GOAL LIST - goals the user can switch on with anyone, anywhere.
+ *
+ * The third source of a conversation goal, and the one neither the person nor the
+ * place can supply: somebody the user has never met, a counter they will not see
+ * again, or simply what they came to this conversation to do. Without it, a goal
+ * button could only ever appear for a person already in About Me - which leaves the
+ * transactional half of the user's life, the half this app was built to widen, with
+ * no way to say what the exchange is for.
+ *
+ * Saved on every change rather than behind a Save button, because there is no other
+ * field on this screen for a Save button to belong to.
+ */
+function renderGeneralGoals() {
+    contentEl.innerHTML = '';
+    contentEl.append(el('button', { class: 'wv-back', text: '‹ All topics', onclick: renderHome }));
+    contentEl.append(el('h3', { class: 'wv-page-title', text: 'Goals For Any Conversation' }));
+    contentEl.append(el('p', { class: 'wv-intro', text:
+        'These appear as buttons in the Express Panel whichever person or place you '
+        + 'have picked - or none at all. Tap one during a conversation and the app '
+        + 'suggests responses with that goal in mind. Nothing here is ever said out loud.' }));
+
+    const card = el('div', { class: 'wv-card' });
+    const ed = buildGoalEditor(rel.getGeneralGoals(), {
+        placeholder: 'What you want out of a conversation',
+    });
+    card.append(ed.node);
+    const status = el('div', { class: 'wv-module-meta', 'aria-live': 'polite' });
+    card.append(el('div', { class: 'wv-actions' }, [
+        el('button', { class: 'wv-btn wv-btn-primary', text: 'Save', onclick: async () => {
+            await rel.setGeneralGoals(ed.read());
+            status.textContent = 'Saved.';
+        } })
+    ]));
+    card.append(status);
+    contentEl.append(card);
+}
+
 function renderPlaces(editingId = null) {
     contentEl.innerHTML = '';
 
@@ -1316,6 +1390,25 @@ function buildPlaceForm(existing) {
         onclick: () => { syncDraft(); draft.push({ key: '', value: '' }); renderFacts();
             factsWrap.querySelector('.wv-fact-row:last-child .wv-fact-key-input')?.focus(); } });
 
+    // WHAT THIS VISIT IS FOR - the transactional half of the conversation-goal layer.
+    // At a pharmacy, a clinic or a counter the other person is present as a ROLE
+    // rather than as somebody the user knows, so the goal comes from what the place is
+    // for and there is no relationship to hang it on (Ken + Claude, August 5 2026).
+    //
+    // Collapsed, like the per-partner profile and for the same reason: it is optional
+    // depth on a form somebody may only want to put a name into.
+    const goalEd = buildGoalEditor(existing && existing.goals, {
+        placeholder: 'What you are usually here to do',
+    });
+    const goalsNode = el('details', { class: 'wv-partner-profile' }, [
+        el('summary', { class: 'wv-disclosure' }, [
+            el('span', { class: 'wv-disclosure-mark', 'aria-hidden': 'true', text: '›' }),
+            el('span', { class: 'wv-disclosure-title', text: 'What I come here to do' }),
+        ]),
+        goalEd.node
+    ]);
+    if (existing && existing.goals && existing.goals.length) goalsNode.open = true;
+
     const privId = 'wvplacepriv-' + (existing ? existing.id : 'new');
     const privCheck = el('input', { type: 'checkbox', id: privId });
     if (existing && existing.private) privCheck.checked = true;
@@ -1323,7 +1416,8 @@ function buildPlaceForm(existing) {
         privCheck, el('span', { text: 'Private — AI knows but won\'t bring it up unprompted' })
     ]);
 
-    card.append(el('div', { class: 'wv-person-fields' }, [nameIn, pronRow, factsWrap, addFact, privRow]));
+    card.append(el('div', { class: 'wv-person-fields' },
+        [nameIn, pronRow, factsWrap, addFact, goalsNode, privRow]));
 
     const save = el('button', { class: 'wv-btn wv-btn-primary', text: existing ? 'Save' : 'Add place',
         onclick: async () => {
@@ -1332,10 +1426,11 @@ function buildPlaceForm(existing) {
             if (!name) return;   // a place with no name can't be shown or referred to
             const facts = draft;  // places.js drops the blank rows
             const pronunciation = pronIn.value.trim();
+            const goals = goalEd.read();
             if (existing) {
-                await places.updatePlace(existing.id, { name, pronunciation, facts, isPrivate: privCheck.checked });
+                await places.updatePlace(existing.id, { name, pronunciation, facts, goals, isPrivate: privCheck.checked });
             } else {
-                await places.addPlace({ name, pronunciation, facts, isPrivate: privCheck.checked });
+                await places.addPlace({ name, pronunciation, facts, goals, isPrivate: privCheck.checked });
             }
             renderPlaces();
         } });

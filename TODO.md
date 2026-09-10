@@ -169,10 +169,30 @@ the one that quietly waits forever.
   settings for most people to make the connection."* The Express Panel tab's own status
   line says how many goal buttons have no room, which is where somebody sizing the bands
   is already looking.
-- **Why the rest is not yet built:** the per-conversation layer is the large remaining
-  piece and needs its own pass. Also unbuilt: goals sourced from a PLACE, the active goal
-  stamped onto each saved turn, and a ceiling on how many Flex positions goals may take
-  before phrases start falling off.
+- **THE PER-CONVERSATION LAYER IS BUILT (2026-09-10, Ken: "build the goal layer").**
+  Goal buttons come from three ranked sources - this person, this place, then a general
+  list - deduped, most specific first. The general list is what makes the layer real: a
+  goal button could previously only appear for somebody already in About Me, which left
+  the transactional half of the user's life with no way to say what the exchange was for.
+  Each source expires with the thing it belonged to; a general goal lasts the conversation.
+- **⚠ THE JULY 2026 START-FLOW GOAL PICKER WAS NOT BUILT, AND DELIBERATELY NOT.** That
+  design (a goal page in the Start-conversation flow, plus a Goal chip in the transcript
+  header) predates the Express Panel bands and rests on a premise Ken has since reversed:
+  it said goals should NOT be Express Panel toggles because the panel's real estate is
+  scarce, and on 2026-09-10 he put them in the Flex band. Its own note anticipated this -
+  *"a place- or person-scoped framing chip IS a one-tap conversation goal for that
+  context... the Start-flow Goal picker may end up needed only for the third source"* -
+  and the general list is that third source. **Reopen only if a tester cannot find where
+  to set a goal**, which is the failure a Start-flow page would fix and the panel might not.
+- **⚠ STILL NOT BUILT: a goal typed for THIS conversation only** - the sticky version of
+  Reframe that CLAUDE.md defers to the goals subsystem. A general goal covers a recurring
+  agenda; a genuinely novel one ("I need to tell them what the consultant said") is
+  one-shot Reframe today and is not kept. **Why not now: it needs a fourth control on the
+  composer**, which changes the geometry of a modal that shares the keyguard grid - a UI
+  decision on the keyguard-backed surface, and Ken's to make rather than mine.
+- **Also still unbuilt:** the active goal stamped onto each saved turn (so a reviewed
+  conversation says what the user was aiming for), and a ceiling on how many Flex
+  positions goals may take before situational phrases start falling off.
 
 ### Conversation goals as steering buttons in the FLEX band
 - **Raised:** 2026-09-10 - Ken: "treat conversation goals as 'reframe' buttons that can

@@ -207,3 +207,51 @@ test('⚠ THE RESPELLING NEVER REACHES THE MODEL, in either block', async () => 
         assert.doesNotMatch(block, /Folks-switch/, `${what} must not send the respelling`);
     }
 });
+
+// --- goals for being HERE (Ken, September 10 2026) --------------------------------
+
+test('a place keeps an ordered goal list, and a menu goal stores only its id', async () => {
+    const id = await places.addPlace({ name: 'Pharmacy', goals: [
+        { id: 'help' },
+        { id: '', text: 'Pick up my prescription', label: 'Prescription' },
+    ] });
+    assert.deepEqual(places.getPlace(id).goals, [
+        { id: 'help' },
+        { id: '', text: 'Pick up my prescription', label: 'Prescription' },
+    ]);
+});
+
+test("a place's goals survive a reload, which is the only proof that matters", async () => {
+    const id = await places.addPlace({ name: 'Pharmacy',
+        goals: [{ id: '', text: 'Pick up my prescription' }] });
+    await places.load();
+    assert.deepEqual(places.getPlace(id).goals, [{ id: '', text: 'Pick up my prescription' }]);
+});
+
+test('a place with no goals has an empty list, never undefined', async () => {
+    const id = await places.addPlace({ name: 'Home' });
+    assert.deepEqual(places.getPlace(id).goals, []);
+    await places.load();
+    assert.deepEqual(places.getPlace(id).goals, []);
+});
+
+test("a place's goals are NOT sent as standing context - they are a menu", async () => {
+    // A place's goals are alternatives (pick up the prescription OR ask about the
+    // bill), never a set of things the user wants all at once. Only the ones tapped
+    // reach the prompt, through the situation block.
+    const id = await places.addPlace({ name: 'Pharmacy',
+        goals: [{ id: '', text: 'Pick up my prescription' }] });
+    assert.doesNotMatch(places.buildBlock(), /prescription/i);
+    assert.doesNotMatch(places.buildHereBlock(id), /prescription/i);
+});
+
+test('⚠ A PLACE RESPELLING SURVIVES A RELOAD (it did not, and nothing said so)', async () => {
+    // normalizePlace rebuilds the record field by field and `pronunciation` was not
+    // among them, so a respelling lasted the session it was typed in and was gone by
+    // the next launch. The test above this one round-tripped through addPlace and
+    // getPlace WITHOUT a reload - the fabricated-input trap: every layer was right and
+    // the path was never run.
+    const id = await places.addPlace({ name: 'Volksswitch', pronunciation: 'Folks-switch' });
+    await places.load();
+    assert.equal(places.getPlace(id).pronunciation, 'Folks-switch');
+});

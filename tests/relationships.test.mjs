@@ -10,8 +10,9 @@ import assert from 'node:assert/strict';
 import * as rel from '../app/js/relationships.js';
 import { goalItems } from '../app/js/partner-profile.js';
 import { composePanel } from '../app/js/express-bands.js';
+import * as pl from '../app/js/places.js';
 
-beforeEach(async () => { resetLocalStorage(); await rel.load(); });
+beforeEach(async () => { resetLocalStorage(); await rel.load(); await pl.load(); });
 
 test('an empty graph injects no block', () => {
     assert.equal(rel.buildBlock(), '');
@@ -341,4 +342,93 @@ test('displayName falls back to the caller\'s own word for an unknown person', (
     assert.equal(rel.displayName(null, 'Coach'), 'Coach');
     assert.equal(rel.displayName('no-such-id', 'Coach'), 'Coach');
     assert.equal(rel.displayName('no-such-id'), '');
+});
+
+// --- the general goal list (Ken, September 10 2026: "build the goal layer") --------
+
+test('general goals round-trip in the user order and survive a reload', async () => {
+    await rel.setGeneralGoals([
+        { id: 'help' },
+        { id: '', text: 'Tell them what happened', label: 'What happened' },
+    ]);
+    await rel.load();
+    assert.deepEqual(rel.getGeneralGoals(), [
+        { id: 'help' },
+        { id: '', text: 'Tell them what happened', label: 'What happened' },
+    ]);
+});
+
+test('general goals are cleaned the same way a person\'s are', async () => {
+    await rel.setGeneralGoals([
+        { id: 'help' }, { id: 'help' },            // the same goal twice
+        { id: '', text: '  Ask for a hand  ' },     // untrimmed
+        { id: '', text: 'ask for A HAND' },         // the same words again
+        { id: '', text: '' },                       // nothing at all
+    ]);
+    assert.deepEqual(rel.getGeneralGoals(), [
+        { id: 'help' }, { id: '', text: 'Ask for a hand' },
+    ]);
+});
+
+test('⚠ GENERAL GOALS ARE A MENU AND REACH NO STANDING BLOCK', async () => {
+    // The difference from a PERSON's goals, and the reason both are correct. A
+    // partner's goals are true all the time, so they are sent whether or not they are
+    // switched on. These are a list of things the user SOMETIMES wants; sending all of
+    // them would tell the model to pursue every one at once.
+    await rel.setGeneralGoals([{ id: '', text: 'Tell them what happened' }]);
+    assert.doesNotMatch(rel.buildBlock(), /what happened/i);
+    const id = await rel.addPerson({ name: 'Mary', relationship: 'mother' });
+    assert.doesNotMatch(rel.buildPartnerBlock(id), /what happened/i);
+});
+
+test('About Me Restart clears the general goals too', async () => {
+    await rel.setGeneralGoals([{ id: 'help' }]);
+    await rel.resetAll();
+    assert.deepEqual(rel.getGeneralGoals(), []);
+});
+
+// ⚠ ONE CHECK ACROSS EVERY LAYER OF THE GOAL LAYER (the standing rule). The three
+// sources are separately correct above and that proves nothing about the feature: the
+// panel would look finished with the wrong goals on it, or the same goal twice. This
+// drives the real chain - three real stores, the real builder, the real band
+// arithmetic - and asserts the ranking and the de-duplication that only appear when
+// all three are present at once.
+test('person, place and general goals reach the panel ranked, and a shared goal once', async () => {
+    const mary = await rel.addPerson({ name: 'Mary', relationship: 'mother' });
+    await rel.setPartnerProfile(mary, { goals: [{ id: 'repair' }, { id: 'help' }] });
+    await rel.setGeneralGoals([
+        { id: 'help' },                                  // ALSO Mary's - must show once
+        { id: '', text: 'Tell them what happened' },
+    ]);
+    const pharmacy = await pl.addPlace({ name: 'Pharmacy',
+        goals: [{ id: '', text: 'Pick up my prescription' }] });
+
+    // What app.js's goalButtons does, in the same order, from the same three readers.
+    const out = [];
+    const seen = new Set();
+    const take = (list, source) => {
+        for (const it of goalItems(list)) {
+            if (seen.has(it.id)) continue;
+            seen.add(it.id);
+            out.push({ ...it, source });
+        }
+    };
+    take(rel.getPartnerProfile(mary).goals, 'partner');
+    take(pl.getPlace(pharmacy).goals, 'place');
+    take(rel.getGeneralGoals(), 'general');
+
+    assert.deepEqual(out.map((g) => [g.text, g.source]), [
+        ['Repair things between us', 'partner'],
+        ['Ask for help', 'partner'],                     // the MORE SPECIFIC source wins
+        ['Pick up my prescription', 'place'],
+        ['Tell them what happened', 'general'],
+    ]);
+
+    const grid = [['x', 'x', 'x', 'x'], ['x', 'x', 'x', 'x'], ['x', 'x', 'x', 'x']];
+    const panel = composePanel(grid, {
+        sizes: { shape: 'counts', context: 4, flex: 4 }, always: [], context: [], flex: {},
+    }, { partnerId: mary, placeId: pharmacy, goals: out });
+    const flexAt = panel.bands.indexOf('flex');
+    assert.deepEqual(panel.items.slice(flexAt).map((x) => x.text), out.map((g) => g.text));
+    assert.equal(panel.unreachable.goals, 0);
 });

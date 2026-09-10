@@ -23,7 +23,7 @@
  */
 
 import { readFile, writeFile, hasDataFolder } from './storage.js';
-import { registerClauses, goalTexts, goalKey } from './partner-profile.js';
+import { registerClauses, goalTexts, goalKey, normalizeGoals } from './partner-profile.js';
 
 const FILE = 'relationships.json';
 const CACHE_KEY = 'aac_relationships';
@@ -38,7 +38,20 @@ function defaultGraph() {
         version: 1,
         updated: new Date().toISOString(),
         people: [],
-        edges: []
+        edges: [],
+        // GOALS THE USER CAN SWITCH ON WITH ANYONE, ANYWHERE (Ken, September 10 2026:
+        // "build the goal layer"). The third source of a conversation goal, and the
+        // one neither the person nor the place can supply - somebody the user has
+        // never met, a counter they will not see again, or simply what they came to
+        // this conversation to do.
+        //
+        // ⚠ THESE ARE A MENU, NOT STANDING CONTEXT, and that is the difference from a
+        // PARTNER's goals. A partner's reach the prompt whether or not they are
+        // switched on, because "what I want from knowing this person" is true all the
+        // time. These reach it only when tapped: a list of things the user sometimes
+        // wants is not a list of things they always want, and sending all of them
+        // would tell the model to pursue every one of them at once.
+        goals: []
     };
 }
 
@@ -48,7 +61,8 @@ function normalize(g) {
         version: g.version ?? base.version,
         updated: g.updated ?? base.updated,
         people: Array.isArray(g.people) ? g.people : [],
-        edges: Array.isArray(g.edges) ? g.edges : []
+        edges: Array.isArray(g.edges) ? g.edges : [],
+        goals: normalizeGoals(g.goals)
     };
 }
 
@@ -233,6 +247,24 @@ export async function resetAll() {
     const g = ensureLoaded();
     g.people = [];
     g.edges = [];
+    g.goals = [];
+    await save();
+}
+
+/**
+ * The goals that apply with anyone, anywhere - the general list.
+ *
+ * Kept on the graph ROOT rather than in a file of its own: it needs no new store,
+ * and it travels with the export, the import, the backup and About Me's Restart
+ * without any of those having to learn about it.
+ */
+export function getGeneralGoals() {
+    return ensureLoaded().goals.map((g) => ({ ...g }));
+}
+
+export async function setGeneralGoals(list) {
+    const g = ensureLoaded();
+    g.goals = normalizeGoals(list);
     await save();
 }
 

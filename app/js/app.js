@@ -204,18 +204,22 @@ let activePartner = null;
 let activeFeeling = null;
 let activePlace = null;
 
-// The GOALS switched on for this conversation, by goal key (partner-profile.goalKey).
+// The GOALS switched on for this conversation - goal key -> which list it came from.
 //
-// A SET, NOT ONE VALUE, and that is Ken's decision rather than a convenience (Ken,
-// September 10 2026): every goal is the same kind of thing, they are ordered rather
-// than typed, and more than one can be in force at once - "talk about last night's
-// argument" and "keep the relationship" is a normal pair, and one value could not
-// say it.
+// SEVERAL AT ONCE, NOT ONE VALUE, and that is Ken's decision rather than a
+// convenience (Ken, September 10 2026): every goal is the same kind of thing, they
+// are ordered rather than typed, and more than one can be in force at once - "talk
+// about last night's argument" and "keep the relationship" is a normal pair, and one
+// value could not say it.
 //
-// A goal belongs to a PERSON, so this is emptied whenever the active partner
-// changes: goals switched on for one person would otherwise still be steering the
-// AI while a different person's buttons were on screen, with nothing lit to say so.
-let activeGoals = new Set();
+// ⚠ THE SOURCE IS STORED WITH THE KEY BECAUSE THE THREE SOURCES EXPIRE AT DIFFERENT
+// MOMENTS, and a plain set could not express that. A goal taken from a PERSON's list
+// belongs to that person, so switching partner drops it - otherwise it goes on
+// steering the AI while somebody else's buttons are on screen with nothing lit to say
+// so. A goal taken from a PLACE's list dies the same way when the place changes. A
+// GENERAL goal belongs to the conversation and survives both, because it was never
+// about who or where: it is what the user came to this conversation to do.
+let activeGoals = new Map();
 
 // Conversation privacy (Ken, July 2026): when true, the current conversation is
 // NOT written to the data folder — the user may want a conversation that can't be
@@ -3422,8 +3426,10 @@ async function handleEndConversation() {
 function clearInfluencers() {
     activePartner = null;
     activeFeeling = null;
-    // Goals go with the partner - see handleTogglePartner. A conversation goal is
-    // a property OF the conversation in any case, so it cannot outlive it.
+    // EVERY goal goes, whichever list it came from. A conversation goal is a property
+    // OF the conversation by definition, so it cannot outlive it - which is also why
+    // the general list is the only one of the three that survives a change of partner
+    // or place: it belongs to this conversation rather than to who or where.
     activeGoals.clear();
     renderExpressPanel();
     // Drop the cleared partner's own starters and closings back out of the engine,
@@ -3733,18 +3739,69 @@ function partnerLabel(item) {
 }
 
 /**
- * The goal buttons for whoever is currently selected, in the user's own order of
- * importance - which is the only thing that says one goal matters more than another,
- * since there is no primary-versus-constraint kind (Ken, September 10 2026).
+ * THE CONVERSATION GOALS ON OFFER RIGHT NOW - three ranked sources, most specific
+ * first, exactly as the Flex band's phrases are filled (Ken, September 10 2026:
+ * "build the goal layer").
  *
- * Read from About Me on every render rather than copied onto the panel, so a goal
- * added, reordered or removed there is right on the panel at once. Empty for nobody
- * selected, and empty for a free-typed partner button: goals live on the me->person
- * edge, so a partner who is not a person in the graph has nowhere to keep one.
+ *   1. THIS PERSON   what the user wants from knowing them, from About Me -> People
+ *   2. THIS PLACE    what they come here to do, from My Places
+ *   3. ANYONE        the general list, from About Me -> Goals
+ *
+ * ⚠ WHY THE PERSON AND THE PLACE SUPPLY DIFFERENT GOALS RATHER THAN COMPETING (Ken +
+ * Claude, August 5 2026, and it is the point that makes three sources coherent rather
+ * than redundant). Talking to your sister, the goal comes from her and the setting is
+ * incidental. At a pharmacy the other person is often a stranger you will never see
+ * again, and the goal comes from what the place is FOR. The place decides the goal
+ * precisely when it decides the partner's ROLE rather than their IDENTITY - which is
+ * this project's own founding distinction, transactional against interactional talk.
+ * So the pharmacist you happen to know contributes BOTH: their goals and the
+ * pharmacy's, in that order. A "person outranks place" precedence rule is the obvious
+ * first answer and is wrong for exactly that case.
+ *
+ * ⚠ AND THE THIRD SOURCE IS THE ONE THAT CANNOT BE INFERRED, which is why it exists
+ * at all: what the user came to THIS conversation to do. Without it a goal button
+ * could only appear for somebody already in About Me, leaving the transactional half
+ * of their life - the half this app was built to widen - with no way to say what the
+ * exchange is for.
+ *
+ * Read fresh on every render rather than copied onto the panel, so a goal added,
+ * reordered or removed in About Me is right on the panel at once. A goal in two lists
+ * is shown ONCE, at its best position, and keeps the MORE SPECIFIC source: the panel
+ * is short of positions, and a goal lit as this person's should expire with them.
  */
 function goalButtons() {
-    if (!activePartner || !activePartner.personId) return [];
-    return goalItems(relationships.getPartnerProfile(activePartner.personId).goals);
+    const out = [];
+    const seen = new Set();
+    const take = (list, source) => {
+        for (const item of goalItems(list)) {
+            if (seen.has(item.id)) continue;
+            seen.add(item.id);
+            out.push({ ...item, source });
+        }
+    };
+    // A free-typed partner button has no personId, so it has no edge to keep a goal
+    // on - it contributes nothing rather than falling back to somebody else's list.
+    if (activePartner && activePartner.personId) {
+        take(relationships.getPartnerProfile(activePartner.personId).goals, 'partner');
+    }
+    if (activePlace && activePlace.placeId) {
+        const here = places.getPlace(activePlace.placeId);
+        take(here && here.goals, 'place');
+    }
+    take(relationships.getGeneralGoals(), 'general');
+    return out;
+}
+
+/**
+ * Drop the goals that belonged to a source the user has just changed.
+ *
+ * Called on a partner or place change rather than clearing everything, because a
+ * general goal was never about who or where - taking it away because the user
+ * corrected which place they are at would discard the one goal they set deliberately
+ * for this conversation.
+ */
+function dropGoalsFrom(source) {
+    for (const [key, from] of [...activeGoals]) if (from === source) activeGoals.delete(key);
 }
 
 function composedPanel() {
@@ -3846,7 +3903,7 @@ function renderExpressPanel() {
         // Which goals are in force. Derived from the live set on every render, so a
         // lit button cannot disagree with what is actually being sent to the AI -
         // the same reasoning as activeChoice above.
-        activeGoalIds: [...activeGoals],
+        activeGoalIds: [...activeGoals.keys()],
         onToggleGoal: handleToggleGoal,
         activeFeelingId: activeFeeling ? activeFeeling.id : null,
         activePlaceId: activePlace ? activePlace.id : null,
@@ -4092,11 +4149,10 @@ async function refreshForContextChange() {
 async function handleTogglePartner(item) {
     if (editedInSettings(item)) return;
     activePartner = (activePartner && activePartner.id === item.id) ? null : item;
-    // A goal belongs to the person it was set for, so switching or clearing the
-    // partner drops every one that was in force. Without this, goals recorded for
-    // one person would go on steering the AI while another person's buttons - or
-    // none at all - were on screen.
-    activeGoals.clear();
+    // A goal taken from THIS person's list belongs to them, so switching or clearing
+    // the partner drops it. A general goal survives: it was never about who the user
+    // is talking to.
+    dropGoalsFrom('partner');
     renderExpressPanel();
     // Re-merge their own starters and closings into the engine's static palettes.
     // Switching partner has to re-run this in both directions — selecting one adds
@@ -4139,7 +4195,8 @@ async function handleToggleGoal(item) {
     // edit, which says the wrong thing rather than nothing.
     if (expressPanelInSettings) return;
     const on = !activeGoals.has(item.id);
-    if (on) activeGoals.add(item.id); else activeGoals.delete(item.id);
+    if (on) activeGoals.set(item.id, item.source || 'general');
+    else activeGoals.delete(item.id);
     renderExpressPanel();
     ui.setStatus(on ? `Aiming for: ${item.text}` : `No longer aiming for: ${item.text}`);
     await noteContextSet('goal', on);
@@ -4149,6 +4206,9 @@ async function handleToggleGoal(item) {
 async function handleTogglePlace(item) {
     if (editedInSettings(item)) return;
     activePlace = (activePlace && activePlace.id === item.id) ? null : item;
+    // Same rule as the partner's, for the same reason: "pick up my prescription"
+    // stops being the goal the moment the user says they are somewhere else.
+    dropGoalsFrom('place');
     renderExpressPanel();
     ui.setStatus(activePlace ? `At ${activePlace.name}` : 'Place cleared');
     await noteContextSet('place', !!activePlace);

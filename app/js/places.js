@@ -45,6 +45,7 @@
  */
 
 import { readFile, writeFile, hasDataFolder } from './storage.js';
+import { normalizeGoals } from './partner-profile.js';
 
 const FILE = 'places.json';
 const CACHE_KEY = 'aac_places';
@@ -64,6 +65,16 @@ function defaultModel() {
 // Keep only well-formed fact rows. A fact with no key is a blank editor row, not
 // data; a fact with a key but no value IS kept, because "Wi-Fi password: (blank)"
 // is a legitimate thing to have started recording.
+// Goals for being HERE - what this visit is for. The transactional half of the
+// conversation-goal layer: at a pharmacy, a clinic or a counter the other person is
+// present as a ROLE rather than as somebody the user knows, so the goal comes from
+// what the place is for and there is no relationship to hang it on (Ken + Claude,
+// August 5 2026 - the person and the place populate DIFFERENT goal sources, so they
+// compose rather than compete).
+//
+// A MENU, NOT STANDING CONTEXT, exactly as the general list is: a place's goals are
+// alternatives (pick up the prescription OR ask about the bill), never a set of
+// things the user wants all at once, so only the ones tapped reach the prompt.
 function normalizeFacts(facts) {
     if (!Array.isArray(facts)) return [];
     return facts
@@ -76,8 +87,17 @@ function normalizePlace(p) {
     return {
         id: p.id,
         name: String(p.name ?? '').trim(),
+        // ⚠ THE RESPELLING WAS BEING DROPPED ON EVERY LOAD, and nothing said so
+        // (found September 10 2026). This function rebuilds the record field by
+        // field, and `pronunciation` was not among them - so a place's respelling
+        // survived the session it was typed in and was gone by the next launch. The
+        // test that covers it round-tripped through addPlace and getPlace WITHOUT a
+        // reload, which is the fabricated-input trap: every layer was right and the
+        // path was never run.
+        pronunciation: String(p.pronunciation ?? '').trim(),
         private: !!p.private,
-        facts: normalizeFacts(p.facts)
+        facts: normalizeFacts(p.facts),
+        goals: normalizeGoals(p.goals)
     };
 }
 
@@ -165,7 +185,8 @@ export function listPlaces() {
         // and it would appear on screen in place of the real name.
         pronunciation: p.pronunciation || '',
         private: !!p.private,
-        facts: p.facts.map((f) => ({ ...f }))
+        facts: p.facts.map((f) => ({ ...f })),
+        goals: (p.goals || []).map((g) => ({ ...g }))
     }));
 }
 
@@ -173,7 +194,7 @@ export function getPlace(id) {
     return listPlaces().find((p) => p.id === id) || null;
 }
 
-export async function addPlace({ name = '', pronunciation = '', facts = [], isPrivate = false } = {}) {
+export async function addPlace({ name = '', pronunciation = '', facts = [], goals = [], isPrivate = false } = {}) {
     const m = ensureLoaded();
     const id = newId();
     m.places.push({
@@ -181,19 +202,21 @@ export async function addPlace({ name = '', pronunciation = '', facts = [], isPr
         name: (name || '').trim(),
         pronunciation: (pronunciation || '').trim(),
         private: !!isPrivate,
-        facts: normalizeFacts(facts)
+        facts: normalizeFacts(facts),
+        goals: normalizeGoals(goals)
     });
     await save();
     return id;
 }
 
-export async function updatePlace(id, { name, pronunciation, facts, isPrivate } = {}) {
+export async function updatePlace(id, { name, pronunciation, facts, goals, isPrivate } = {}) {
     const m = ensureLoaded();
     const p = m.places.find((x) => x.id === id);
     if (!p) return;
     if (name !== undefined) p.name = (name || '').trim();
     if (pronunciation !== undefined) p.pronunciation = (pronunciation || '').trim();
     if (facts !== undefined) p.facts = normalizeFacts(facts);
+    if (goals !== undefined) p.goals = normalizeGoals(goals);
     if (isPrivate !== undefined) p.private = !!isPrivate;
     await save();
 }

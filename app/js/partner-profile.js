@@ -175,6 +175,27 @@ export function goalKey(goal) {
  * nothing, what counts as a duplicate and what a face falls back to already live in
  * this module, and a second copy of them would drift from the prompt's copy.
  */
+export function normalizeGoals(goals) {
+    const list = Array.isArray(goals) ? goals : (goals ? [goals] : []);
+    const seen = new Set();
+    const out = [];
+    for (const g of list) {
+        if (!g || !(g.id || g.text)) continue;
+        const key = goalKey(g);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        // A MENU goal stores its id and nothing else, so a later rewording of the
+        // twelve reaches it. A TYPED goal stores its words and, if the user gave it
+        // one, the short face its Express Panel button carries.
+        if (g.id) { out.push({ id: g.id }); continue; }
+        const one = { id: '', text: String(g.text).trim() };
+        const label = String(g.label || '').trim();
+        if (label) one.label = label;
+        out.push(one);
+    }
+    return out;
+}
+
 export function goalItems(goals) {
     const list = Array.isArray(goals) ? goals : (goals ? [goals] : []);
     const out = [];

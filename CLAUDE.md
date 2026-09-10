@@ -3319,6 +3319,53 @@ beside them is unmarked, because with two kinds marking one is enough.
   never part of a goal's identity** (`goalKey`): renaming a button must not turn the goal
   it is switched on for into a different goal.
 
+**THE PER-CONVERSATION GOAL LAYER IS BUILT (September 10 2026, Ken: "build the goal
+layer").** Goal buttons come from **three ranked sources, most specific first** -
+`goalButtons()` in app.js - deduped, exactly as the Flex band's phrases are filled:
+**this person** (About Me -> People), **this place** (My Places), then a **general list**
+(About Me -> Goals For Any Conversation).
+- **THE GENERAL LIST IS WHAT MAKES THE LAYER REAL, and it is the piece to protect.** A
+  goal button could previously only appear for somebody already in About Me, which left
+  the transactional half of the user's life - the half this app exists to widen - with no
+  way to say what the exchange is for. It is also the only one of the three that can carry
+  *what the user came to this conversation to do*, which neither the person nor the place
+  can be asked to know.
+- **⚠ THE PERSON AND THE PLACE SUPPLY DIFFERENT GOALS RATHER THAN COMPETING**, which is
+  the August 5 2026 finding made concrete. **A "person outranks place" precedence rule is
+  the obvious first answer and is wrong**: the pharmacist you happen to know contributes
+  their goals AND the pharmacy's, because the place decides the goal precisely when it
+  decides the partner's ROLE rather than their IDENTITY.
+- **⚠ THE THREE SOURCES EXPIRE AT DIFFERENT MOMENTS, so `activeGoals` is a Map of key to
+  source rather than a set.** Changing partner drops the partner-sourced goals, changing
+  place drops the place-sourced ones, and a general goal survives both until the
+  conversation ends - it was never about who or where. Clearing everything on a partner
+  change would discard the one goal the user set deliberately for this conversation.
+- **⚠ A PERSON'S GOALS ARE STANDING CONTEXT; A PLACE'S AND THE GENERAL LIST ARE A MENU.**
+  A partner's reach the prompt whether or not they are switched on (`buildPartnerBlock`),
+  because "what I want from knowing this person" is true all the time. The other two reach
+  it only when tapped: a place's goals are alternatives (pick up the prescription OR ask
+  about the bill), and a list of things the user *sometimes* wants is not a list of things
+  they always want. Sending all of them would tell the model to pursue every one at once.
+  Guarded by tests in both models.
+- **The general list lives on the relationships graph ROOT** (`goals`), not in a file of
+  its own: it needs no new store and travels with the export, the import, the backup and
+  About Me's Restart without any of those learning about it.
+- **ONE list editor for all three** (`buildGoalEditor` in worldview-ui.js). They are one
+  kind of thing - equivalent, ordered, several switchable at once - so nothing about a
+  person's goals makes them edited differently from a place's, and three copies of an
+  add/reorder/remove list would drift.
+- **⚠ THE JULY 2026 START-FLOW GOAL PICKER WAS DELIBERATELY NOT BUILT.** It rests on a
+  premise Ken reversed: it said goals should NOT be Express Panel toggles because the
+  panel's real estate is scarce, and he then put them in the Flex band. Its own note
+  anticipated the outcome - the panel covers person and place, and the general list covers
+  the third source. **Reopen only if a tester cannot find where to set a goal.**
+- **Found in passing and fixed: a PLACE's respelling was dropped on every load.**
+  `normalizePlace` rebuilds the record field by field and `pronunciation` was not among
+  them, so it survived the session it was typed in and was gone by the next launch. **The
+  test that covered it round-tripped through `addPlace` and `getPlace` with no reload** -
+  the fabricated-input trap in its purest form: every layer correct, the path never run.
+  Both new guards were mutation-checked.
+
 **The full write-up, with four figures, is
 [Conversant AAC Express Panel Design.docx](Documents/) (generator
 `scripts/doc-generators/generate-express-panel-design-doc.js`, figures from
