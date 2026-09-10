@@ -553,7 +553,15 @@ function initApp() {
     // they are scheduled on timers, aborted by the partner resuming, and capped by a
     // setting, so how many a partner really hears per turn is not derivable from the
     // settings or from the saved conversation.
-    placeholders.setOnSpoken(({ n }) => metrics.event(metrics.EV.PLACEHOLDER_SPOKEN, { n }));
+    placeholders.setOnSpoken(({ n, text }) => {
+        metrics.event(metrics.EV.PLACEHOLDER_SPOKEN, { n });
+        // The words as well as the count: the partner heard this sentence in the
+        // user's voice, so a record without it is a record of a conversation with
+        // the app's own speech edited out.
+        storage.logPlaceholder({ text, n, ttsUsed: tts.lastVoiceUsed() });
+    });
+    // What was selected when a conversation begins - see storage.setContextProvider.
+    storage.setContextProvider(contextSnapshot);
 
     // Tell the STT layer what the app is speaking so it can discard its own TTS
     // echo (placeholder ladder, prompts) instead of mistaking it for the partner and
@@ -1776,6 +1784,21 @@ async function handleResponseSelected(response, index) {
     const wasClosing = response.slot === 'CLOSING';
     const wasDecline = response.slot === engine.SLOT.CLOSING_DECLINE;
 
+    // ⚠ WHAT WAS ACTUALLY ON SCREEN, captured HERE rather than read from a global
+    // later (Ken found this in his own transcript, September 10 2026: a wind-down and
+    // a goodbye he had chosen were both logged with the options and the CATEGORY of an
+    // earlier AI set - "See you later!" recorded as an INITIATIVE).
+    //
+    // The cause: `lastPalette` is only ever assigned from an AI generation, and a
+    // static palette - openers, wind-downs, goodbyes, the repair options - never
+    // touches it. So every selection from one of those recorded the stale AI set
+    // beside it. **That corrupts the category-selection distribution, which is one of
+    // the two headline beta measures**, by filing closings as INITIATIVE.
+    //
+    // `shownCards` is the record `showPalette` already keeps of what is on the panel,
+    // for exactly this class of reason. Read at the tap, not at commit time, because
+    // several paths between here and there replace or clear the panel.
+    const shownAtTap = (shownCards.cards || []).slice();
     // Stop the deliberation clock before anything else happens in here — speaking
     // takes a second or more, so a reading time taken after it would be wrong by the
     // length of the sentence.
@@ -1867,7 +1890,7 @@ async function handleResponseSelected(response, index) {
     // the statement isn't shown as pre-text — it appears once it has been said.
     engine.selectResponse(response);
     ui.showEngineState(engine.getSnapshot());
-    await commitExchange(raw, response.text, index, { decideMs });
+    await commitExchange(raw, response.text, index, { decideMs, chosenFrom: shownAtTap });
 
     if (wasDecline) {
         // The user held the partner back, so the conversation is open again: leave
@@ -2066,6 +2089,7 @@ function spokenFormFor(displayText, spokenOverride) {
 }
 
 async function commitExchange(raw, userText, index, opts = {}) {
+    const chosenFrom = opts.chosenFrom || null;
     const { spokenText = null, decideMs = null } = opts;
     // The user has taken the floor, so the partner's turn — and any choices it put
     // on the table, and any steering of it — is done. Shared by every path that
@@ -2099,7 +2123,10 @@ async function commitExchange(raw, userText, index, opts = {}) {
         // Only a palette selection (index >= 0) has a meaningful "all options"
         // list; a free-composed utterance (index -1) was not picked from a
         // palette, so don't log the (possibly stale) last palette against it.
-        allOptions: index >= 0 ? lastPalette.map(m => m.text).filter(Boolean) : [],
+        // The palette the user actually chose from, passed in by the caller. Falls
+        // back to lastPalette only for a caller that does not know (none today with
+        // index >= 0) - kept so a future caller degrades rather than logging nothing.
+        allOptions: index >= 0 ? (chosenFrom || lastPalette).map(m => m.text).filter(Boolean) : [],
         // WHICH KIND of response was chosen — the CA category, not its position
         // (Ken, August 7 2026). Position carries category on a static layout, but a
         // position alone cannot be read back as a category later, because the
@@ -2109,7 +2136,7 @@ async function commitExchange(raw, userText, index, opts = {}) {
         // This is what makes "is every category earning its cell?" answerable — a
         // category never selected across a whole beta is a design finding, and
         // heavy REPAIR use means something upstream is failing.
-        selectedSlot: index >= 0 ? (lastPalette[index] && lastPalette[index].slot) || null : null,
+        selectedSlot: index >= 0 ? ((chosenFrom || lastPalette)[index] || {}).slot || null : null,
         // 'card' when the user tapped one of the AI's suggestions. index < 0 reaches
         // here from repair-of-self and other non-palette commits, which are our words
         // rather than theirs — see the source field in storage.logUserResponse.
@@ -2923,7 +2950,7 @@ function showConversationPalette(palette, statusMsg) {
  * - you finish with one person and turn to another - so the fix must not remove it.
  */
 function handleInitiate() {
-    noteUserAction('command');
+    noteUserAction('start conversation');
     placeholders.stop();
     if (paletteOverlay && paletteOverlay.which === 'opener') {
         metrics.event(metrics.EV.COMMAND_BAR, { button: 'start conversation cancel' });
@@ -3014,7 +3041,7 @@ function logSpokenUserTurn(text) {
 
 // Say again — re-speak the user's last utterance verbatim. Instant, no LLM.
 async function handleSayAgain() {
-    noteUserAction('command');
+    noteUserAction('say again');
     metrics.event(metrics.EV.COMMAND_BAR, { button: 'say again' });
     const text = engine.getLastUserUtterance();
     if (!text) { ui.setStatus('Nothing to repeat yet'); return; }
@@ -3029,7 +3056,7 @@ async function handleSayAgain() {
 
 // Hold on — manually fire a floor-holding statement. Instant.
 async function handleHoldOn() {
-    noteUserAction('command');
+    noteUserAction('hold on');
     metrics.event(metrics.EV.COMMAND_BAR, { button: 'hold on' });
     abortPlaceholders();   // instant abort + no in-flight generation restart (options kept)
     // ⚠ THIS IS A PLACEHOLDER THE USER FIRES THEMSELVES, drawn from the same list the
@@ -3076,7 +3103,7 @@ async function handleHoldOn() {
 // v0.5.87 "appends to it" behavior, which mis-merged two partner statements and put
 // the re-speak before the pardon). The AI still sees everything as ordered turns.
 async function handlePardon() {
-    noteUserAction('command');
+    noteUserAction('ask them to repeat');
     metrics.event(metrics.EV.COMMAND_BAR, { button: 'ask them to repeat' });
     metrics.paletteAbandoned('pardon');
     placeholders.stop();
@@ -3388,7 +3415,7 @@ async function handleReframe() {
 // press meaning "show me different goodbyes", so there was no press left over to mean
 // "I did not mean to do this". Nothing is spoken by either press.
 function handleWindDown() {
-    noteUserAction('command');
+    noteUserAction('wrap up');
     placeholders.stop();
     if (paletteOverlay && paletteOverlay.which === 'wrapUp') {
         metrics.event(metrics.EV.COMMAND_BAR, { button: 'wrap up cancel' });
@@ -4099,6 +4126,18 @@ function feelingStamp() {
  * `null` when none are on, exactly like the other three, so a turn with no goals
  * costs nothing. Purely ADDITIVE - no existing reader of a conversation file changes.
  */
+/* The situation as it stands, for the context entries in the conversation file. Built
+ * from the same four stamps a turn uses, so the two can never disagree about what was
+ * selected - which is the whole reason a turn's stamps were factored out as functions. */
+function contextSnapshot() {
+    return {
+        partner: partnerStamp(),
+        feeling: feelingStamp(),
+        place: placeStamp(),
+        goals: goalStamp(),
+    };
+}
+
 function goalStamp() {
     const on = goalButtons().filter((g) => activeGoals.has(g.id));
     if (!on.length) return null;
@@ -4221,6 +4260,7 @@ async function handleTogglePartner(item) {
     // Switching partner has to re-run this in both directions — selecting one adds
     // their phrases, clearing one has to take them back out again.
     applyControlPhrases();
+    storage.logContext('partner');
     ui.setStatus(activePartner ? `Talking with ${partnerLabel(activePartner)}` : 'Partner cleared');
     await noteContextSet('partner', !!activePartner);
 }
@@ -4230,6 +4270,7 @@ async function handleToggleFeeling(item) {
     if (editedInSettings(item)) return;
     activeFeeling = (activeFeeling && activeFeeling.id === item.id) ? null : item;
     renderExpressPanel();
+    storage.logContext('feeling');
     ui.setStatus(activeFeeling ? `Feeling ${activeFeeling.text.toLowerCase()}` : 'Feeling cleared');
     await noteContextSet('feeling', !!activeFeeling);
 }
@@ -4261,6 +4302,7 @@ async function handleToggleGoal(item) {
     if (on) activeGoals.set(item.id, item.source || 'general');
     else activeGoals.delete(item.id);
     renderExpressPanel();
+    storage.logContext('goal');
     ui.setStatus(on ? `Aiming for: ${item.text}` : `No longer aiming for: ${item.text}`);
     await noteContextSet('goal', on);
 }
@@ -4273,6 +4315,7 @@ async function handleTogglePlace(item) {
     // stops being the goal the moment the user says they are somewhere else.
     dropGoalsFrom('place');
     renderExpressPanel();
+    storage.logContext('place');
     ui.setStatus(activePlace ? `At ${activePlace.name}` : 'Place cleared');
     await noteContextSet('place', !!activePlace);
 }
@@ -6281,6 +6324,15 @@ function transcriptLine(ex) {
     if (ex.role === 'error') return `  [error: ${ex.context || ''}] ${ex.message || ''}`;
     // A set of cards and how it ended. Shown in a problem report because a set the
     // user turned away from is usually the thing they are writing in about.
+    if (ex.role === 'placeholder') return `  [app said] ${ex.text || ''}`;
+    if (ex.role === 'context') {
+        const bits = [];
+        if (ex.partner) bits.push(`with ${ex.partner.label}`);
+        if (ex.place) bits.push(`at ${ex.place.label}`);
+        if (ex.feeling) bits.push(`feeling ${ex.feeling.text}`);
+        if (ex.goals) bits.push(`aiming for ${ex.goals.map((g) => g.text).join(', ')}`);
+        return `  [context ${ex.trigger || ''}] ${bits.join('; ') || 'nothing selected'}`;
+    }
     if (ex.role === 'offer') {
         const what = (ex.options || []).map((o) => `${o.slot || '?'}: ${o.text}`).join(' | ');
         return `  [offered ${ex.kind || 'ai'} -> ${ex.outcome || 'unfinished'}] ${what}`;

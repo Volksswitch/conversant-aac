@@ -272,7 +272,12 @@ async function speakNext() {
         : pick(pools.thinking, 'thinking');
     count++;
     if (phrase) {
-        try { onSpoken({ n: count }); } catch { /* reporting must never stop the phrase */ }
+        // ⚠ THE TEXT GOES WITH IT, not only the count. This is a sentence said ALOUD
+        // in the user's own voice, which the other person heard - so a record of the
+        // conversation that leaves it out is a record with the app's own speech missing
+        // from it (Ken, September 10 2026, asking whether a conversation can be
+        // recreated to the second). The count alone could never do that.
+        try { onSpoken({ n: count, text: phrase }); } catch { /* reporting must never stop the phrase */ }
         await tts.speak(phrase);
     }
     if (!active) return;

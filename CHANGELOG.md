@@ -28,7 +28,10 @@ forgetting to tag one is only ever noise, never silence.
 
 - Saved conversations now record every set of suggestions the app offered you, not only the ones you picked from - and how each set ended, whether you chose a card, asked for different options, typed your own words, or the other person carried on talking. Until now a set you turned away from was thrown away, so the sets that were no use to you left no trace.
 - Saved conversations also record which goals you had switched on for each turn, alongside who you were talking to, how you felt and where you were.
-- Neither is recorded for a conversation you asked the app not to save.
+- A saved conversation now begins with what you had already selected - the person, the place, how you felt, your goals - recorded as of the moment you pressed Listen or Start conversation, and every later change to any of them is recorded when you make it.
+- The floor-holding phrases the app says while you are choosing ("I'm thinking about that.") are now in the record too. They are spoken aloud in your voice and the other person hears them, so a saved conversation was missing part of what was actually said.
+- Fixed: choosing a wind-down statement or a goodbye recorded the wrong thing - it saved the suggestions from an earlier point in the conversation, and filed the goodbye under the wrong kind of response.
+- None of this is recorded for a conversation you asked the app not to save.
 
 - Your goals, and everything else about a person or a place, now save as you change them. Adding a goal saves it straight away, and so does moving one, removing one, or typing a short label for it. The "Save" button at the foot of those forms is now "Done" and simply takes you back to the list.
 - Fixed: a goal you added to a person or a place looked saved and was not. It appeared in the list with a number beside it, but nothing was written until you found the "Save" button below the next section and pressed it - and there was nothing on screen to tell you that.

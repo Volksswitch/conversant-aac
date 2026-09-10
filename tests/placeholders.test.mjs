@@ -349,3 +349,52 @@ test('noteUserAction records HOW the user ended the set', () => {
         'the outcome is taken from the label the caller already passes - an offer '
         + 'without its outcome is much weaker evidence');
 });
+
+test('the app records the words of every placeholder it speaks, not just a count', () => {
+    // ⚠ The hook existed and carried only `n`, so the sentences the partner actually
+    // heard were counted and never written down. Guarded at source because the wiring
+    // lives in app.js, which no test can load.
+    // A fixed window rather than the first '});' - the metrics call inside it ends
+    // with one, so searching for the closer finds the wrong brace.
+    const i = appSource.indexOf('placeholders.setOnSpoken(');
+    const body = appSource.slice(i, i + 900);
+    assert.match(body, /storage\.logPlaceholder\(\{ text/,
+        'the words go into the conversation record, not only the metric');
+});
+
+test('the context provider is registered, so time zero carries what was selected', () => {
+    assert.match(appSource, /storage\.setContextProvider\(contextSnapshot\)/,
+        'without this a conversation begins with no record of what was already selected');
+});
+
+test('every context toggle records the change as its own event', () => {
+    for (const trigger of ['partner', 'place', 'feeling', 'goal']) {
+        assert.ok(appSource.includes(`storage.logContext('${trigger}')`),
+            `a ${trigger} change must be recorded at the moment it happens`);
+    }
+});
+
+test('a command button records WHICH button, not just "a command"', () => {
+    // 'command' covered five different buttons, so the record could say a set of cards
+    // was ended by a command bar press and not which one - and "wrap up" versus "ask
+    // them to repeat" are completely different findings.
+    assert.ok(!appSource.includes("noteUserAction('command')"),
+        'the generic label is gone');
+    for (const label of ['start conversation', 'say again', 'hold on', 'ask them to repeat', 'wrap up']) {
+        assert.ok(appSource.includes(`noteUserAction('${label}')`), `${label} names itself`);
+    }
+});
+
+test('a card selection records the palette it was ACTUALLY chosen from', () => {
+    // ⚠ lastPalette is only ever assigned from an AI generation, so a wind-down or a
+    // goodbye was logged with the options and the CATEGORY of an earlier AI set - Ken
+    // found "See you later!" recorded as an INITIATIVE in his own transcript. That
+    // corrupts the category-selection distribution, one of the two headline measures.
+    assert.match(appSource, /const shownAtTap = \(shownCards\.cards \|\| \[\]\)\.slice\(\);/,
+        'what was on screen is captured at the tap');
+    assert.match(appSource, /chosenFrom: shownAtTap/, 'and passed to the commit');
+    assert.match(appSource, /allOptions: index >= 0 \? \(chosenFrom \|\| lastPalette\)/,
+        'the options logged are the ones that were showing');
+    assert.match(appSource, /selectedSlot: index >= 0 \? \(\(chosenFrom \|\| lastPalette\)\[index\] \|\| \{\}\)\.slot/,
+        'and so is the category');
+});

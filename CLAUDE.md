@@ -2656,6 +2656,74 @@ the moment — instead of making the user pre-configure for their worst partner.
 - **Sequence it behind the checkpoint metrics**, for the same reason: if real conversations
   turn out to produce few multi-checkpoint turns, the feature has nothing to correct.
 
+## THE STANDARD FOR THE RECORD IS "CAN IT BE RECREATED TO THE SECOND" (Ken, September 10 2026)
+
+Ken, mid-way through the recording work: *"As you work through the changes I'd like you to
+ask yourself whether you can recreate the conversation and actions within the app down to
+the second with the data you record."* **That is the standard the conversation file is
+held to from now on, and it is a much better test than "does playback need this?"** -
+which is the question I had offered him, and which invites answering feature by feature
+instead of auditing the whole record. Applying it to one of his own transcripts found
+three holes in ten minutes, one of them serious.
+
+**⚠ TIME ZERO IS THE LISTEN OR START-CONVERSATION PRESS, and anything selected before it
+is recorded as if selected simultaneously with the start (Ken).** That rule is what makes
+the timing unambiguous - a partner tapped while the app sat idle has no meaningful
+timestamp of its own, and inventing one would be worse than collapsing it. It is also why
+the snapshot is pushed by `startConversationLog` itself through a registered provider
+rather than at the call sites: a conversation can be born from the Listen press, the
+openers being offered, or the first user turn, so wiring it at those three means the
+fourth added later has no context entry and nothing says so.
+
+**WHAT THE FILE CAN NOW RECONSTRUCT:** time zero and the state it began in; every context
+change at the moment it happened, each entry carrying the FULL state so a reader never
+accumulates; every set of cards, when it appeared, how long it was up and how it ended;
+which card was taken, its position and its category; what the user said, in which voice,
+with the respelling actually used; what the partner said as it accumulated, with which
+recognizer; what the app said aloud to hold the floor; which command button was pressed;
+and errors, interleaved in time order.
+
+**⚠ WHAT IT STILL CANNOT, named rather than glossed - the standing rule about reporting
+which link was not exercised applies to records as much as to tests:**
+- **When the microphone went on and off.** A Listen press is not an event in the file.
+  Partly inferable (auto-resume follows a turn) and not reliably. **Cheap to close.**
+- **When a generation was REQUESTED** as against when its cards arrived, so the wait
+  cannot be split into the silence period plus the AI round trip - which is exactly the
+  split the four-second problem needs. **Cheap to close.**
+- **When the partner actually started and stopped speaking.** Structural: the recognizer
+  reports after the fact and the browser exposes no audio timing at all (see the entry on
+  every timer starting from the app's idea of the pause). Only Deepgram could answer it,
+  from word timestamps.
+- **The composer's inside.** Opening it is captured as an offer outcome; typing,
+  cancelling and the Reframe text are not, so a compose the user abandoned leaves no
+  trace.
+
+**THREE FINDINGS FROM THE AUDIT, in order of how much they mattered:**
+1. **⚠ THE APP'S OWN SPEECH WAS MISSING ENTIRELY.** Placeholders are spoken in the
+   USER'S OWN VOICE and the other person hears them, and nothing wrote them down - so a
+   replay built from the file was **silent exactly where the app had been talking.** The
+   hook existed (`setOnSpoken`) and carried only a count. Recorded as `role: 'placeholder'`
+   and deliberately NOT as a user turn: a user turn is the user saying something on
+   purpose, and collapsing the two would put words in their mouth in the very record meant
+   to show what they said.
+2. **A card selection recorded the palette it was NOT chosen from.** `lastPalette` is only
+   ever assigned from an AI generation, so every selection from a static palette - openers,
+   wind-downs, goodbyes, repair - was logged with the stale AI set beside it. Ken's own
+   transcript has **"See you later!" filed as an INITIATIVE**. That corrupts the
+   category-selection distribution, one of the two headline beta measures. Fixed by
+   capturing `shownCards` AT THE TAP and passing it to the commit - `showPalette` already
+   kept that record, for exactly this class of reason.
+3. **"command" named five different buttons.** An offer ended by a command bar press could
+   not say which, and *wrap up* against *ask them to repeat* are completely different
+   findings. Each now names itself.
+
+**⚠ AND THE PATTERN ACROSS ALL THREE, worth more than any of them: every one was a choke
+point that already existed and was already carrying part of the answer.** `setOnSpoken`
+had the count but not the words; `shownCards` had the palette but nothing read it;
+`noteUserAction` had a label but a generic one. **Look for the existing choke point before
+adding a new one** - all three fixes were a few lines because of it, and the alternative
+each time was instrumenting five to eleven call sites.
+
 ## EVERY SET OF CARDS IS RECORDED, NOT ONLY THE ONES PICKED FROM (Ken, September 10 2026), BUILT
 
 Ken, having given up on a set that never offered what he wanted: *"it does raise the

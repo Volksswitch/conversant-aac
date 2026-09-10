@@ -1976,6 +1976,11 @@ export async function startConversationLog() {
     pendingOffer = null;
 
     currentLogHandle = await dir.getFileHandle(currentLogName, { create: true });
+    // TIME ZERO. Whatever was selected before the user pressed Listen or Start
+    // conversation is recorded here, as if it had been selected at the same moment -
+    // which is Ken's rule and is why a pre-conversation tap needs no timestamp of
+    // its own. Pushed before the flush so the file never exists without it.
+    await pushContext('start');
     await flushLog();
     return currentLogName;
 }
@@ -2012,6 +2017,75 @@ export async function logPartnerInterim({ rawTranscript, partner = null }) {
 // Detach the current pending partner turn (if any) and stop tracking it, so a new
 // partner turn appends a fresh entry rather than overwriting this one. Returns the
 // detached turn object (an opaque handle for finalizePartnerTurn), or null.
+/* WHAT WAS SELECTED, AT TIME ZERO AND WHENEVER IT CHANGES (Ken, September 10 2026).
+ *
+ * His rule, and it is what makes the timing unambiguous: **time zero is when Listen or
+ * Start conversation is pressed, and anything selected BEFORE that is recorded as if it
+ * had been selected simultaneously with the conversation starting.** So a partner tapped
+ * while the app sat idle needs no timestamp of its own - it is simply part of the state
+ * the conversation began in.
+ *
+ * ⚠ THE SNAPSHOT IS PUSHED BY startConversationLog ITSELF, through a provider the app
+ * registers, and that is not indirection for its own sake: a conversation can be created
+ * by any of three things - the Listen press, the openers being offered, or the first user
+ * turn - so wiring it at those call sites means the one added next has no context entry
+ * and nothing says so. Doing it where the log is BORN makes it entry number one of every
+ * conversation by construction.
+ *
+ * Each entry carries the FULL state rather than the delta, so a reader never has to
+ * accumulate - the same reason the offer record carries its own options.
+ */
+let contextProvider = null;
+export function setContextProvider(fn) { contextProvider = fn; }
+
+export async function logContext(trigger) {
+    if (!conversationSaving) return;
+    if (!currentLogData) return;   // no conversation yet: the snapshot at time zero will carry it
+    await pushContext(trigger);
+}
+
+async function pushContext(trigger) {
+    if (!contextProvider) return;
+    let snap = null;
+    try { snap = contextProvider(); } catch { return; }
+    if (!snap) return;
+    currentLogData.exchanges.push({
+        timestamp: new Date().toISOString(),
+        role: 'context',
+        trigger,                 // start | partner | place | feeling | goal
+        partner: snap.partner || null,
+        feeling: snap.feeling || null,
+        place: snap.place || null,
+        goals: snap.goals || null,
+    });
+    await flushLog();
+}
+
+/* A sentence the APP said aloud that is not a turn - today the floor-holding
+ * placeholders ("I'm thinking about that.").
+ *
+ * ⚠ IT WAS MISSING ENTIRELY, and it is the most serious hole in the record: the app
+ * speaks these in the USER'S OWN VOICE and the other person hears them, so a replay
+ * built from this file was silent exactly where the app had been talking. Everything
+ * else the app says is already a user turn; these were the one kind that never was.
+ *
+ * NOT `role: 'user'`, deliberately: a user turn is the user saying something on
+ * purpose, and a placeholder is the app holding the floor for them. Collapsing the two
+ * would put words in their mouth in the very record meant to show what they said.
+ */
+export async function logPlaceholder({ text, n = null, ttsUsed = null }) {
+    if (!conversationSaving) return;
+    if (!currentLogData) return;
+    currentLogData.exchanges.push({
+        timestamp: new Date().toISOString(),
+        role: 'placeholder',
+        text: text || '',
+        n,                       // which one of the turn's ladder this was
+        tts: ttsUsed ? { provider: ttsUsed.provider || null, voice: ttsUsed.voice || null } : null,
+    });
+    await flushLog();
+}
+
 /* EVERY SET OF CARDS THE APP OFFERED, whether or not the user took one of them
  * (Ken, September 10 2026: *"If I ask for 4 more, it's important to know what I was
  * offered that made me request more. If I turn to 'in my own words', what had I

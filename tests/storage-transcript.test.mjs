@@ -503,3 +503,79 @@ test('"Don\'t save this conversation" stops offers being written too', async () 
         'no offer is written for a conversation the user asked not to save');
     storage.setConversationSaving(true);
 });
+
+test('time zero carries whatever was already selected, and later changes are their own events', async () => {
+    // ⚠ KEN'S RULE (September 10 2026): *"time zero is when the listen button or the
+    // start conversation button is pressed. Any context selected prior to that is
+    // simply recorded as if it had been selected simultaneously with the conversation
+    // starting buttons."* So a partner tapped while the app sat idle needs no timestamp
+    // of its own - it is part of the state the conversation began in.
+    let live = { partner: { id: 'p1', label: 'Mom' }, feeling: null, place: null, goals: null };
+    storage.setContextProvider(() => live);
+    storage.resetConversationId();
+    storage.setConversationSaving(true);
+    await storage.startConversationLog();
+    const id = storage.getConversationId();
+
+    // Mid-conversation the user says how they feel, then switches a goal on.
+    live = { ...live, feeling: { id: 'f1', text: 'Happy' } };
+    await storage.logContext('feeling');
+    live = { ...live, goals: [{ id: 'plans', text: 'Make plans together', source: 'partner' }] };
+    await storage.logContext('goal');
+
+    const data = await readLog(id);
+    const ctx = data.exchanges.filter((e) => e.role === 'context');
+    assert.equal(data.exchanges[0].role, 'context',
+        'the snapshot is entry ONE of the conversation, whatever created the log');
+    assert.equal(ctx[0].trigger, 'start');
+    assert.equal(ctx[0].partner.label, 'Mom',
+        'selected before time zero, recorded as if selected with the start');
+    assert.deepEqual(ctx.map((c) => c.trigger), ['start', 'feeling', 'goal']);
+    assert.equal(ctx[2].partner.label, 'Mom',
+        'each entry carries the FULL state, so a reader never accumulates');
+    assert.equal(ctx[2].goals[0].id, 'plans');
+    storage.setContextProvider(null);
+});
+
+test('a placeholder the app spoke aloud is in the record', async () => {
+    // ⚠ THE MOST SERIOUS HOLE FOUND WHILE AUDITING "can this be recreated to the
+    // second": the app says these in the USER'S OWN voice and the other person hears
+    // them, and nothing wrote them down - so a replay was silent exactly where the app
+    // had been talking.
+    storage.setContextProvider(null);
+    storage.resetConversationId();
+    storage.setConversationSaving(true);
+    await storage.startConversationLog();
+    const id = storage.getConversationId();
+
+    await storage.logPlaceholder({ text: "I'm thinking about that.", n: 1, ttsUsed: { provider: 'browser', voice: null } });
+    await storage.logPlaceholder({ text: 'Working that out.', n: 2 });
+
+    const data = await readLog(id);
+    const said = data.exchanges.filter((e) => e.role === 'placeholder');
+    assert.deepEqual(said.map((x) => x.text), ["I'm thinking about that.", 'Working that out.']);
+    assert.equal(said[0].n, 1, 'which rung of the ladder it was');
+    assert.equal(said[0].tts.provider, 'browser', 'and in which voice it was actually said');
+    assert.equal(said[1].tts, null, 'null rather than invented when the caller did not know');
+    // NOT a user turn: a placeholder is the app holding the floor, not the user
+    // choosing to say something.
+    assert.equal(data.exchanges.filter((e) => e.role === 'user').length, 0);
+});
+
+test('a private conversation records no context and no placeholder', async () => {
+    storage.setContextProvider(() => ({ partner: { id: 'p1', label: 'Mom' } }));
+    storage.resetConversationId();
+    storage.setConversationSaving(true);
+    await storage.startConversationLog();
+    const id = storage.getConversationId();
+    storage.setConversationSaving(false);
+    await storage.logContext('partner');
+    await storage.logPlaceholder({ text: 'I am thinking about that.' });
+    const data = await readLog(id);
+    assert.equal(data.exchanges.filter((e) => e.role === 'placeholder').length, 0);
+    // The time-zero snapshot was written while saving was still on, so only the
+    // mid-conversation one is refused - which is the correct behaviour.
+    assert.equal(data.exchanges.filter((e) => e.role === 'context').length, 1);
+    storage.setConversationSaving(true);
+    storage.setContextProvider(null);
+});
