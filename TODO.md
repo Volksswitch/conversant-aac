@@ -218,8 +218,11 @@ the one that quietly waits forever.
   including the primary-versus-constraining-goal split and where all of it departs from
   the literature. **Any future goals work should read it first**, and Section 9 of it is
   the open list, kept in step with the entries here.
-- **Also still unbuilt:** a ceiling on how many Flex positions goals may take before
-  situational phrases start falling off.
+- **NOT A GAP - no ceiling on goal buttons (Ken, 2026-09-10): *"Like always, priority
+  buttons push non-priority buttons off of the end of bands. The flex priorities are:
+  goals, dimension-specific phrases, then Always phrases. Nothing has changed."*** Goals
+  taking Flex positions and pushing phrases off the end is the band working as designed,
+  not a failure to guard against. Earlier entries here that called it one were wrong.
 - **BUILT in 0.11.1 (2026-09-10): the goals in force are saved with every turn**, so a
   reviewed conversation says what the user was aiming for. Each saved goal keeps its
   wording and which of the three sources it came from.
@@ -286,11 +289,10 @@ the one that quietly waits forever.
   turn. It also means the phrases below them shift by however many goals are showing,
   which is the weaker half of Spatial Stability and explicitly subordinate to putting a
   quick path to a response in front of the user.
-  **The one thing the build must still settle: the Flex band is filled most-specific
-  first from four ordered lists, so a leading run of goal buttons needs its own
-  allocation** - otherwise a partner with several goals and several phrases silently
-  pushes the phrases off the end, which is the failure the editor's insert rules exist
-  to prevent elsewhere.
+  **No separate allocation is needed (Ken, 2026-09-10):** as in every band, priority
+  buttons push lower-priority ones off the end, and the Flex order is goals, then
+  dimension-specific phrases, then Always phrases. A partner with several goals pushing
+  phrases off the end is that rule working, not a failure.
 - **Why not yet:** it depends on the entry above (there are no goals to surface) and on
   the three-band panel, which is designed and not built.
 
