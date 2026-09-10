@@ -487,6 +487,14 @@
         [
             "at the weekend",
             "on the weekend"
+        ],
+        [
+            "tick mark",
+            "check mark"
+        ],
+        [
+            "tick marks",
+            "check marks"
         ]
     ],
     "properNounExemptions": [
