@@ -398,3 +398,31 @@ test('a card selection records the palette it was ACTUALLY chosen from', () => {
     assert.match(appSource, /selectedSlot: index >= 0 \? \(\(chosenFrom \|\| lastPalette\)\[index\] \|\| \{\}\)\.slot/,
         'and so is the category');
 });
+
+test('the microphone going on or off is recorded from the state, not the button', () => {
+    // The button is set directly from several paths that open no microphone at all -
+    // practice mode cues the AI partner with it - so recording from the button would
+    // log listening that never happened.
+    const i = appSource.indexOf('function handleSttStatus(');
+    const body = appSource.slice(i, i + 2600);
+    assert.match(body, /if \(isListening !== was\) storage\.logEvent\(isListening \? 'listen on' : 'listen off'\)/,
+        'recorded off the was/is comparison this function already keeps');
+});
+
+test('the request moment is recorded through one hook, and each caller says why', () => {
+    assert.match(appSource, /llm\.setOnRequest\(\(\{ reason \}\) => storage\.logEvent\('generation requested'/,
+        'one hook, so a sixth caller added later is recorded with a null reason rather '
+        + 'than being silent');
+    for (const reason of ['reprompt', 'regenerate', 'choice chip', 'reframe', 'context change']) {
+        assert.ok(appSource.includes(`reason: '${reason}'`), `${reason} names itself`);
+    }
+});
+
+test('the composer records opening, canceling WITH the words, and the steer', () => {
+    assert.match(appSource, /storage\.logEvent\('composer opened'\)/);
+    assert.match(appSource, /storage\.logEvent\('composer canceled', \{ text:/,
+        'the abandoned prose is the point - it says what the user was trying to say '
+        + 'when no card could say it');
+    assert.match(appSource, /storage\.logEvent\('reframe', \{ text: steer\.trim\(\) \}\)/,
+        'recorded where the steer is taken, so both Reframe branches are covered once');
+});

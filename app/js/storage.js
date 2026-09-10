@@ -2017,6 +2017,34 @@ export async function logPartnerInterim({ rawTranscript, partner = null }) {
 // Detach the current pending partner turn (if any) and stop tracking it, so a new
 // partner turn appends a fresh entry rather than overwriting this one. Returns the
 // detached turn object (an opaque handle for finalizePartnerTurn), or null.
+/* ANYTHING ELSE THAT HAPPENED, at the moment it happened.
+ *
+ * ⚠ ONE ENTRY TYPE RATHER THAN A ROLE PER GESTURE, and that is a deliberate stop on
+ * a slide that had already started: context, offer and placeholder each earned a role of
+ * their own because each has real structure, and the microphone going on does not. A
+ * role per gesture means the file sprouts a shape for every button ever added, and every
+ * reader has to learn them.
+ *
+ * ⚠ THE STANDING PRINCIPLE THIS SERVES (Ken, September 10 2026): *"I'd rather have it
+ * available than assume that it isn't and will never be important."* Said of the replay
+ * feature, and it settles the DEFAULT for every future question of this kind - record it
+ * unless there is a reason not to, rather than leaving it out until somebody proves a
+ * need. The reasons not to are the ones already written down: a third party's speech
+ * never leaves the device automatically, and nothing at all is written for a conversation
+ * the user asked not to save.
+ */
+export async function logEvent(kind, extra = {}) {
+    if (!conversationSaving) return;
+    if (!currentLogData) return;
+    currentLogData.exchanges.push({
+        timestamp: new Date().toISOString(),
+        role: 'event',
+        kind,
+        ...extra,
+    });
+    await flushLog();
+}
+
 /* WHAT WAS SELECTED, AT TIME ZERO AND WHENEVER IT CHANGES (Ken, September 10 2026).
  *
  * His rule, and it is what makes the timing unambiguous: **time zero is when Listen or

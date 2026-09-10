@@ -560,6 +560,8 @@ function initApp() {
         // the app's own speech edited out.
         storage.logPlaceholder({ text, n, ttsUsed: tts.lastVoiceUsed() });
     });
+    // When a set of cards was ASKED for - see llm.setOnRequest for why it is a hook.
+    llm.setOnRequest(({ reason }) => storage.logEvent('generation requested', { reason }));
     // What was selected when a conversation begins - see storage.setContextProvider.
     storage.setContextProvider(contextSnapshot);
 
@@ -1143,6 +1145,13 @@ function handleSttStatus(status, detail) {
     // into the end of the conversation.
     else if (status === 'warning') { /* recoverable: keep listening */ }
     else storage.logError('stt-status', `unknown status "${status}"`);
+    // ⚠ THE MICROPHONE GOING ON OR OFF IS A USER-VISIBLE EVENT AND WAS NOT RECORDED.
+    // Recorded HERE, off the was/is comparison this function already keeps, because it
+    // is the only place that knows whether capture actually changed - the button is set
+    // directly from several other paths (practice mode cues the AI partner with it and
+    // opens no microphone at all), so recording from the button would log listening
+    // that never happened.
+    if (isListening !== was) storage.logEvent(isListening ? 'listen on' : 'listen off');
     ui.setListenButtonState(isListening);
 
     if (status === 'error') {
@@ -1630,7 +1639,7 @@ async function generateOptions(partnerText) {
     const startedAt = Date.now();
     try {
         const requestContext = engine.buildRequestContext();
-        const result = await llm.generateResponses(history, requestContext, { perCategory: storage.loadResponsesPerCategory() });
+        const result = await llm.generateResponses(history, requestContext, { reason: 'reprompt', perCategory: storage.loadResponsesPerCategory() });
         if (token !== generationToken) {
             // Superseded by a later pause. Since July 10 2026 every pause regenerates
             // for the same partner turn and the newest wins, so this work was BILLED
@@ -3176,7 +3185,7 @@ async function handleRegenerate() {
         // Carry this turn's steering through — otherwise "New N" silently discards
         // the choice the user tapped (or the guidance they typed) and comes back
         // with the unsteered palette.
-        const result = await llm.generateResponses(history, engine.buildRequestContext(), {
+        const result = await llm.generateResponses(history, engine.buildRequestContext(), { reason: 'regenerate',
             avoid: prior,
             perCategory: storage.loadResponsesPerCategory(),
             focusChoice: activeSteer.focusChoice || undefined,
@@ -3273,7 +3282,7 @@ async function handleChoiceChip(chip) {
     ui.setStatus(`Building responses around "${pick}"...`);
     const history = [...conversationHistory, { role: 'partner', text: currentPartnerText }];
     try {
-        const result = await llm.generateResponses(history, engine.buildRequestContext(), {
+        const result = await llm.generateResponses(history, engine.buildRequestContext(), { reason: 'choice chip',
             focusChoice: pick,
             perCategory: storage.loadResponsesPerCategory(),
         });
@@ -3297,6 +3306,13 @@ async function handleReframe() {
     metrics.event(metrics.EV.REFRAME);
     keyboard.acceptPendingGhost(); // fold a showing word-prediction ghost into the text first
     const steer = ui.getComposerText();
+    // ⚠ THE WORDS THE USER TYPED TO STEER, not merely that they steered. This is the
+    // user's own prose and it is the one thing in the file that says what they wanted
+    // said when none of the cards said it - which makes it both the best voice evidence
+    // the app collects and the sharpest statement of what the suggestions missed.
+    // Recorded here rather than in either branch below, so reworking the cards and
+    // leading with statements are both covered by one line.
+    if (steer && steer.trim()) storage.logEvent('reframe', { text: steer.trim() });
     // Clicking any of the three buttons dismisses the modal (Ken). Capture the
     // steer first, then close.
     ui.clearComposer();
@@ -3361,7 +3377,7 @@ async function handleReframe() {
         activeSteer.steer = steer;
         const history = [...conversationHistory, { role: 'partner', text: currentPartnerText }];
         try {
-            const result = await llm.generateResponses(history, engine.buildRequestContext(), { steer, perCategory: storage.loadResponsesPerCategory() });
+            const result = await llm.generateResponses(history, engine.buildRequestContext(), { reason: 'reframe', steer, perCategory: storage.loadResponsesPerCategory() });
             if (token !== generationToken) return; // superseded
             const snap = engine.refreshPalette(result.responses);
             ui.showEngineState(snap);
@@ -3567,6 +3583,7 @@ async function speakAsUserTurn(historyText, spokenText = historyText, source = '
 // Open the modal: show the input box overlay over the reserved response
 // footprint (base UI not blurred) and bring up the keyboard in the dock region.
 function openComposer(opts = {}) {
+    storage.logEvent('composer opened');
     // Opening the box stops the clock even if nothing is ever said from it — the user
     // has finished reading and decided against the cards at this moment, not at the
     // moment they finish typing, which can be a minute later.
@@ -3664,6 +3681,12 @@ function handleCancelComposed() {
     // Opened and then thought better of it. Worth its own count: a composer opened
     // and abandoned is a user who could not say what they meant either way.
     metrics.event(metrics.EV.COMPOSER_CANCELLED);
+    // ⚠ WITH THE TEXT THEY ABANDONED (Ken, September 10 2026: *"If we capture opening
+    // the composer we should capture canceling and the reframe text"*). The words are
+    // the point rather than the count: this is the user's OWN prose, which is the
+    // scarcest and most valuable voice evidence in the app, and an abandoned attempt
+    // says what they were trying to say when the cards could not say it.
+    storage.logEvent('composer canceled', { text: ui.getComposerText() || '' });
     ui.clearComposer();
     closeComposer();
     // Nothing was said and the partner's turn is still live, so if the partner spoke
@@ -4209,7 +4232,7 @@ async function refreshForContextChange() {
     llm.setVoiceBlock(voiceBlockText());
     const history = [...conversationHistory, { role: 'partner', text: currentPartnerText }];
     try {
-        const result = await llm.generateResponses(history, engine.buildRequestContext(), {
+        const result = await llm.generateResponses(history, engine.buildRequestContext(), { reason: 'context change',
             perCategory: storage.loadResponsesPerCategory(),
             focusChoice: activeSteer.focusChoice || undefined,
             steer: activeSteer.steer || undefined,

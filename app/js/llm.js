@@ -346,8 +346,25 @@ function trackUsage(data) {
 // wants the four structural responses built around THAT alternative, so it
 // deliberately overrides the closed-set rule (which would otherwise re-detect the
 // menu and return the choice cards again).
+/* WHEN A SET OF CARDS WAS ASKED FOR, as against when it arrived.
+ *
+ * The offer record says when cards appeared; without this the wait between the other
+ * person's words landing and suggestions being on screen cannot be split into the
+ * silence period and the AI round trip - which is exactly the split the four-second
+ * problem needs, since one of those is a setting and the other is the network.
+ *
+ * A HOOK rather than a call at each of the five call sites, for the reason that keeps
+ * proving itself: the sixth added later is still recorded, with `reason` merely null
+ * instead of being silent.
+ */
+let onRequest = null;
+export function setOnRequest(fn) { onRequest = fn; }
+
 export async function generateResponses(conversationHistory, context = {}, opts = {}) {
     if (!apiKey) throw new Error('API key not set');
+    // Reported BEFORE the prompt is built, so the timestamp is the moment the app
+    // decided to ask rather than the moment it finished preparing.
+    if (onRequest) { try { onRequest({ reason: opts.reason || null }); } catch { /* never break generation */ } }
 
     const avoidBlock = (Array.isArray(opts.avoid) && opts.avoid.length)
         ? `\n\nThe user found the previous options not quite right and asked for a different set. Produce a meaningfully DIFFERENT palette — take a different angle, tone, or content; do not just reword these. Previous options to avoid repeating:\n${opts.avoid.map((t) => `- ${t}`).join('\n')}`

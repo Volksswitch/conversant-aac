@@ -579,3 +579,50 @@ test('a private conversation records no context and no placeholder', async () =>
     storage.setConversationSaving(true);
     storage.setContextProvider(null);
 });
+
+test('the microphone, the request moment and the composer are all in the record', async () => {
+    // ⚠ KEN'S PRINCIPLE, and it is the reason these are recorded at all rather than
+    // waiting for somebody to prove a need (September 10 2026): *"I'd rather have it
+    // available than assume that it isn't and will never be important."* Said of the
+    // replay feature, and it settles the default for every question of this kind.
+    storage.setContextProvider(null);
+    storage.resetConversationId();
+    storage.setConversationSaving(true);
+    await storage.startConversationLog();
+    const id = storage.getConversationId();
+
+    await storage.logEvent('listen on');
+    await storage.logEvent('generation requested', { reason: 'reprompt' });
+    await storage.logEvent('composer opened');
+    await storage.logEvent('composer canceled', { text: 'i wanted to say something else' });
+    await storage.logEvent('reframe', { text: 'mention that I am lactose intolerant' });
+    await storage.logEvent('listen off');
+
+    const data = await readLog(id);
+    const ev = data.exchanges.filter((e) => e.role === 'event');
+    assert.deepEqual(ev.map((e) => e.kind),
+        ['listen on', 'generation requested', 'composer opened', 'composer canceled',
+            'reframe', 'listen off'],
+        'one entry type for all of them - a role per gesture would make the file sprout '
+        + 'a shape for every button ever added');
+    assert.equal(ev[1].reason, 'reprompt',
+        'WHY a set was asked for, so the wait can be split into the silence period and '
+        + 'the round trip');
+    assert.equal(ev[3].text, 'i wanted to say something else',
+        'the words abandoned, not just that the composer was canceled');
+    assert.equal(ev[4].text, 'mention that I am lactose intolerant',
+        'and the steer itself - the sharpest statement of what the cards missed');
+});
+
+test('a private conversation records no events either', async () => {
+    storage.setContextProvider(null);
+    storage.resetConversationId();
+    storage.setConversationSaving(true);
+    await storage.startConversationLog();
+    const id = storage.getConversationId();
+    storage.setConversationSaving(false);
+    await storage.logEvent('reframe', { text: 'nothing private here' });
+    const data = await readLog(id);
+    assert.equal(data.exchanges.filter((e) => e.role === 'event').length, 0);
+    storage.setConversationSaving(true);
+});

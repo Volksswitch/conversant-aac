@@ -2683,20 +2683,42 @@ with the respelling actually used; what the partner said as it accumulated, with
 recognizer; what the app said aloud to hold the floor; which command button was pressed;
 and errors, interleaved in time order.
 
-**⚠ WHAT IT STILL CANNOT, named rather than glossed - the standing rule about reporting
-which link was not exercised applies to records as much as to tests:**
-- **When the microphone went on and off.** A Listen press is not an event in the file.
-  Partly inferable (auto-resume follows a turn) and not reliably. **Cheap to close.**
-- **When a generation was REQUESTED** as against when its cards arrived, so the wait
-  cannot be split into the silence period plus the AI round trip - which is exactly the
-  split the four-second problem needs. **Cheap to close.**
-- **When the partner actually started and stopped speaking.** Structural: the recognizer
-  reports after the fact and the browser exposes no audio timing at all (see the entry on
-  every timer starting from the app's idea of the pause). Only Deepgram could answer it,
-  from word timestamps.
-- **The composer's inside.** Opening it is captured as an offer outcome; typing,
-  cancelling and the Reframe text are not, so a compose the user abandoned leaves no
-  trace.
+**⚠ THE DEFAULT IS NOW TO RECORD IT (Ken, September 10 2026): *"I'd rather have it
+available than assume that it isn't and will never be important."*** Said of the replay
+feature, when I had offered him the weaker question of whether playback needed a
+particular field. **It settles every future question of this kind: record it unless
+there is a reason not to, rather than leaving it out until somebody proves a need.** The
+reasons not to are the ones already written down and they are unchanged - a third party's
+speech never leaves the device automatically, and nothing at all is written for a
+conversation the user asked not to save.
+
+**THREE OF THE FOUR GAPS ARE NOW CLOSED, at his direction:**
+- **The microphone going on and off.** Recorded off the was/is comparison
+  `handleSttStatus` already keeps, because it is the only place that knows whether
+  capture really changed - the button is set directly from several paths that open no
+  microphone at all (practice mode cues the AI partner with it), so recording from the
+  button would log listening that never happened.
+- **When a set of cards was REQUESTED**, with WHY - reprompt / regenerate / choice chip /
+  reframe / context change. A hook on `llm.generateResponses` rather than a call at each
+  of the five sites, so the sixth added later is recorded with a null reason instead of
+  being silent. This is the split the four-second problem needs: the wait divides into
+  the silence period and the round trip, one a setting and the other the network.
+- **The composer, all of it** (Ken: *"If we capture opening the composer we should capture
+  canceling and the reframe text"*). Opening, canceling **with the words abandoned**, and
+  the Reframe text itself. The prose is the point rather than the count: it is the user's
+  OWN writing, the scarcest voice evidence the app collects, and the sharpest statement of
+  what the suggestions missed. Recorded where the steer is taken, so both Reframe branches
+  are covered by one line.
+- **A general `role: 'event'` carries all three, deliberately NOT a role per gesture.**
+  Context, offer and placeholder each earned their own because each has real structure;
+  the microphone going on does not. A role per gesture means the file sprouts a shape for
+  every button ever added and every reader has to learn them.
+
+**⚠ WHAT REMAINS, and it is the one that cannot be bought: WHEN THE PARTNER ACTUALLY
+STARTED AND STOPPED SPEAKING.** Structural - the recognizer reports after the fact and
+the browser exposes no audio timing at all (see the entry on every timer starting from
+the app's idea of the pause). Only the paid recognizer could answer it, from word
+timestamps.
 
 **THREE FINDINGS FROM THE AUDIT, in order of how much they mattered:**
 1. **⚠ THE APP'S OWN SPEECH WAS MISSING ENTIRELY.** Placeholders are spoken in the
