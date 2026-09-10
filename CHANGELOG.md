@@ -26,6 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+
+## Version 0.10.18
+
 - Telling the app who you are with, where you are, or how you feel now takes effect
   straight away. Before, tapping one of those buttons part-way through a conversation
   only changed the suggestions you got the *next* time the other person paused, so the
