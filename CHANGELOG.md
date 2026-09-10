@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.11.1
+
 - Saved conversations now record every set of suggestions the app offered you, not only the ones you picked from - and how each set ended, whether you chose a card, asked for different options, typed your own words, or the other person carried on talking. Until now a set you turned away from was thrown away, so the sets that were no use to you left no trace.
 - Saved conversations also record which goals you had switched on for each turn, alongside who you were talking to, how you felt and where you were.
 - A saved conversation now begins with what you had already selected - the person, the place, how you felt, your goals - recorded as of the moment you pressed Listen or Start conversation, and every later change to any of them is recorded when you make it.
