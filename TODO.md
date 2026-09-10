@@ -59,6 +59,36 @@ the one that quietly waits forever.
   apart" decoration is being extended anyway; drawing it before that means drawing it
   twice.
 
+### Goals: two decisions closed, and what is left to build
+- **Raised:** 2026-09-10 - Ken, asked what goals work remains.
+- **ALREADY BUILT, so a future session does not start from zero:** the STANDING goal per
+  person shipped in August 2026 - one goal from a menu of twelve or typed, held on the
+  me-to-person edge, reaching the prompt with the never-mention guard. The bottom layer
+  (how you generally are with people) is Tier B of About Me and is also built. **What is
+  missing is the TOP layer, the goal for THIS conversation, and nothing of it exists.**
+- **DECIDED (Ken, 2026-09-10): the user sets a goal; the app never suggests one.** Closes
+  open sub-question 2 of the June 15 2026 model. Stated as "for now", so it is a default
+  rather than a principle - but nothing may infer a goal from the partner, the place or
+  the history until Ken reopens it.
+- **⚠ DECIDED (Ken, 2026-09-10): THE JULY 13 2026 PLACEMENT DECISION IS SUPERSEDED. It
+  said goals must deliberately NOT be Express Panel buttons** (the reasoning: a goal is
+  set once per conversation, and panel space belongs to what is touched constantly).
+  **Ken: "The July decision is ancient to say the least. It predates the banding of the
+  Express Panel."** Correct, and it is the banding specifically that voids it: the old
+  argument was about spending scarce high-frequency real estate, and the Flex band is
+  precisely the space that fills itself from the situation rather than being spent. So
+  goal buttons live in the Flex band, first, and **the Start-flow picker and header chip
+  proposed in July are no longer the plan** - do not build them from that entry.
+- **Still to build, in dependency order:** several goals per person as an ordered list
+  (the storage holds exactly one today); the per-conversation goal in full, including
+  List B, the how-I-want-to-come-across options, which was designed and never written;
+  the Flex-band buttons; goals that come from a PLACE rather than a person (a place can
+  hold one as a fact today, and nothing treats it as a goal); the active goal stamped
+  onto each saved turn, which is a small fix and a real gap for reliving a conversation;
+  and Reframe's sticky version, which IS a conversation goal and was deferred here.
+- **Still open, and Ken's:** whether a goal can attach to a KIND of relationship ("with
+  anyone in authority I want to seem capable") rather than only a named person.
+
 ### Several conversation goals per partner, as a PRIORITIZED list
 - **Raised:** 2026-09-10 - Ken, twice: first "make it possible to add multiple
   conversational goals for a partner", then the refinement "consider making
