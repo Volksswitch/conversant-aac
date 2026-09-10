@@ -37,6 +37,29 @@ the one that quietly waits forever.
 
 ## Open
 
+### A problem report shows the new record entries as blank "user:" lines
+- **Raised:** 2026-09-10 - found during the 0.11.1 "sync docs" pass, while checking what
+  a problem report prints so the manuals could describe it accurately.
+- **The fault:** 0.11.1 added `role: 'event'` entries to saved conversations (microphone
+  on and off, when suggestions were asked for and why, the composer opened, canceled with
+  its text, and Reframe text). `transcriptLine()` in `app/js/app.js` handles partner,
+  error, placeholder, context and offer, and sends anything else to its last line, which
+  prints `user:` followed by `selectedText`. An event has no `selectedText`, so each one
+  prints as the user saying nothing. **A tester's report can therefore show several
+  empty turns by the user that never happened** - exactly the kind of misreading a
+  report exists to prevent.
+- **Wanted:** an `event` branch that prints a short bracketed line (e.g. mic on,
+  asked for suggestions: reprompt, composer canceled), and a fallback for an unknown
+  role that is anything other than a fake user line, so the next new role cannot do
+  this again.
+- **One decision to make while building it:** whether a report should show the words
+  typed in the composer, including canceled text. The tester sees the whole report
+  before it is sent, so it is not a hidden disclosure, but it is the user's own
+  unsent writing and deserves a deliberate choice rather than a default.
+- **Why not now:** found in a documents pass, which does not change app code. It reached
+  testers in 0.11.1, so it gets a changelog bullet when fixed. A one-click task was also
+  offered for it in that session.
+
 ### How a Context-band button shows what it is doing: standing versus one-shot
 - **Raised:** 2026-09-10 - Ken: "Context should carry and hold a checkmark until tapped
   again, or a different element of the same dimension is tapped. For now, you can't be
