@@ -9,7 +9,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
     REGISTER_DIMENSIONS, RELATIONSHIP_GOALS,
-    registerClauses, goalText, goalTexts, goalLabel, isEmptyProfile
+    registerClauses, goalText, goalTexts, goalLabel, goalKey, goalItems, isEmptyProfile
 } from '../app/js/partner-profile.js';
 
 test('an empty or neutral register yields no clauses', () => {
@@ -109,4 +109,45 @@ test('goalLabel falls back to the full wording for a typed goal', () => {
     assert.equal(goalLabel({ id: '', text: 'Stop arguing about the car' }),
         'Stop arguing about the car');
     assert.equal(goalLabel(null), '');
+});
+
+test('a goal is identified by its id, or by its wording - never by its label', () => {
+    // A label is a face the user can rewrite. If it were part of the identity,
+    // renaming a button would turn the goal it is switched on for into a different
+    // goal, and the button would go dark for no reason the user could see.
+    assert.equal(goalKey({ id: 'repair' }), 'repair');
+    assert.equal(goalKey({ id: '', text: 'Stop Arguing ' }), 'text:stop arguing');
+    assert.equal(goalKey({ id: '', text: 'Stop arguing', label: 'Car' }), 'text:stop arguing');
+    assert.equal(goalKey(null), '');
+});
+
+test('a typed label wins over the goal wording as a button face', () => {
+    // The fallback is the whole sentence, which an Express Panel cell cannot hold -
+    // a three-column side dock cell is about nine characters wide.
+    assert.equal(goalLabel({ id: '', text: 'Stop arguing about the car' }),
+        'Stop arguing about the car');
+    assert.equal(goalLabel({ id: '', text: 'Stop arguing about the car', label: 'The car' }),
+        'The car');
+    // A menu goal carries its own label in code, so a stored one would let a user
+    // rename something already named and freeze it against a later rewording.
+    assert.equal(goalLabel({ id: 'repair' }), 'Making peace');
+});
+
+test('goalItems gives one button per goal, in the user order, with a face and the wording', () => {
+    const items = goalItems([{ id: 'repair' }, { id: '', text: 'Stop arguing', label: 'The car' }]);
+    assert.deepEqual(items, [
+        { type: 'goal', id: 'repair', label: 'Making peace', text: 'Repair things between us' },
+        { type: 'goal', id: 'text:stop arguing', label: 'The car', text: 'Stop arguing' },
+    ]);
+});
+
+test('goalItems refuses a goal with nothing behind it', () => {
+    // A stale id from an older release resolves to no wording. A button for it would
+    // be a face that steers the AI with nothing at all.
+    assert.deepEqual(goalItems([{ id: 'gone-in-a-later-release' }]), []);
+    assert.deepEqual(goalItems([{ id: 'repair' }, { id: 'repair' }]).length, 1);
+    assert.deepEqual(goalItems([]), []);
+    assert.deepEqual(goalItems(null), []);
+    // The legacy single-goal shape, so no caller needs to know which release wrote it.
+    assert.equal(goalItems({ id: 'help' })[0].label, 'Getting help');
 });

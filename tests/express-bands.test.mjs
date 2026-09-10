@@ -332,3 +332,73 @@ test('a real composed panel places choice buttons only on the cells it reserved'
     // And the reservation the user can SEE is the reservation that gets used.
     assert.deepEqual(choiceCells(panel.choiceSlots, 4), panel.choiceSlots);
 });
+
+// --- GOAL BUTTONS (Ken, September 10 2026) ----------------------------------------
+// Goals take the LEADING Flex positions. They are Flex rather than Context because
+// the band is decided by how the content is DETERMINED - which goals exist depends on
+// which partner was chosen - and not by whether the button speaks, which is the
+// reading Ken had to correct once already.
+
+const goals = (...faces) => faces.map((f) => ({ type: 'goal', id: f, label: f, text: f + ' fully' }));
+
+test('goals lead the Flex band, ahead of every situational phrase', () => {
+    const c = bands.composePanel(GRID, {
+        sizes: { shape: 'counts', context: 4, flex: 4 },
+        always: [], context: [],
+        flex: { [bands.flexKey('mom', null)]: phrases('Mom one', 'Mom two') },
+    }, { partnerId: 'mom', goals: goals('Making peace', 'Being upbeat') });
+    const flexCells = c.items.slice(8);
+    assert.deepEqual(flexCells.map((x) => x && x.label || x && x.text),
+        ['Making peace', 'Being upbeat', 'Mom one', 'Mom two']);
+    assert.deepEqual(c.bands.slice(8), ['flex', 'flex', 'flex', 'flex']);
+});
+
+test('a goal outranks a situational phrase for the last position', () => {
+    // A goal that does not fit cannot steer anything; a phrase that does not fit can
+    // still be typed. So when the band is short, the goal is the one that stays.
+    const c = bands.composePanel(GRID, {
+        sizes: { shape: 'counts', context: 4, flex: 2 },
+        always: [], context: [],
+        flex: { [bands.flexKey('mom', null)]: phrases('Mom one', 'Mom two') },
+    }, { partnerId: 'mom', goals: goals('Making peace') });
+    assert.deepEqual(c.items.slice(10).map((x) => x.label || x.text), ['Making peace', 'Mom one']);
+});
+
+test('a goal that will not fit is REPORTED, not silently dropped', () => {
+    // The shipped default is no Flex band at all, so this is the ordinary state for
+    // anybody who has not sized one - which is deliberate (Ken: leave it as is, no
+    // auto-growing), and is exactly why the editor has to say so.
+    const c = bands.composePanel(GRID, {
+        sizes: { shape: 'counts', context: 4, flex: 0 }, always: [], context: [], flex: {},
+    }, { goals: goals('Making peace', 'Being upbeat') });
+    assert.equal(c.counts.flex, 0);
+    assert.equal(c.unreachable.goals, 2);
+    assert.ok(!c.items.some((x) => x && x.type === 'goal'), 'and none of them is drawn');
+});
+
+test('an Always surplus still queues BEHIND both goals and phrases', () => {
+    // The overflow direction Ken corrected once: an Always phrase with no room takes
+    // only genuinely spare Flex positions and can never displace anything.
+    const c = bands.composePanel(GRID, {
+        sizes: { shape: 'counts', context: 4, flex: 3 },
+        always: phrases('A1', 'A2', 'A3', 'A4', 'A5', 'A6'),   // 5 fit, 1 spills
+        context: [],
+        flex: { [bands.flexKey(null, null)]: phrases('General') },
+    }, { goals: goals('Making peace') });
+    assert.deepEqual(c.items.slice(9).map((x) => x.label || x.text),
+        ['Making peace', 'General', 'A6']);
+    assert.equal(c.fromAlwaysSurplus, 1, 'counted as surplus, not as a phrase');
+});
+
+test('no goals changes nothing about the Flex band', () => {
+    const model = {
+        sizes: { shape: 'counts', context: 4, flex: 2 },
+        always: [], context: [],
+        flex: { [bands.flexKey(null, null)]: phrases('One', 'Two') },
+    };
+    const without = bands.composePanel(GRID, model, {});
+    const empty = bands.composePanel(GRID, model, { goals: [] });
+    assert.deepEqual(without.items.slice(10).map((x) => x.text), ['One', 'Two']);
+    assert.deepEqual(empty.items.slice(10).map((x) => x.text), ['One', 'Two']);
+    assert.equal(empty.unreachable.goals, 0);
+});

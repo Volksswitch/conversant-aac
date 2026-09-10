@@ -11,7 +11,8 @@
  *   ALWAYS   the words that never change, first so nothing above can shift them
  *   CONTEXT  the buttons that never SPEAK — partner, place, feeling, and whatever the
  *            partner has just put on the table
- *   FLEX     phrases suited to the partner and place currently selected
+ *   FLEX     what the partner and place currently selected imply - the goals the
+ *            user has for this relationship first, then phrases suited to them
  *
  * SIZING (Ken, August 23 2026). The user sets CONTEXT and FLEX; ALWAYS takes the
  * remainder. That way an untouched panel — no Flex band, a small Context band — is
@@ -232,10 +233,26 @@ export function composePanel(layoutRows, model = {}, situation = {}) {
     const alwaysShown = always.slice(0, plan.alwaysN);
     const alwaysSurplus = always.slice(plan.alwaysN);
 
-    const flex = flexFill(model.flex || {}, situation.partnerId, situation.placeId, plan.flexN);
+    // GOALS TAKE THE LEADING FLEX POSITIONS, ahead of every situational phrase (Ken,
+    // September 10 2026).
+    //
+    // ⚠ THE BAND IS DECIDED BY HOW THE CONTENT IS DETERMINED, NOT BY WHETHER THE
+    // BUTTON SPEAKS - which is the rule Ken had to correct once already. A goal
+    // button says nothing when tapped, so the obvious reading is that it belongs
+    // with the other non-speaking buttons in the Context band. It does not: the
+    // Context band is where the user SUPPLIES the dimensions (who, where, how I
+    // feel), and Flex is everything that is a FUNCTION of them. Which goals exist at
+    // all depends on which partner was chosen, so they are Flex.
+    //
+    // FIRST WITHIN THE BAND because they are the most specific thing in it - they
+    // belong to this one person - and because a goal not reachable is a goal that
+    // cannot steer anything, where a phrase not reachable can still be typed.
+    const goals = (situation.goals || []).filter(Boolean).slice(0, plan.flexN);
+    const flexRoom = Math.max(0, plan.flexN - goals.length);
+    const flex = flexFill(model.flex || {}, situation.partnerId, situation.placeId, flexRoom);
     // ...and only then, into whatever the situational lists did not claim.
-    const spare = Math.max(0, plan.flexN - flex.length);
-    const flexCells = flex.concat(alwaysSurplus.slice(0, spare));
+    const spare = Math.max(0, flexRoom - flex.length);
+    const flexCells = goals.concat(flex, alwaysSurplus.slice(0, spare));
 
     const items = new Array(plan.total);
     let a = 0; let c = 0; let f = 0;
@@ -263,8 +280,15 @@ export function composePanel(layoutRows, model = {}, situation = {}) {
         unreachable: {
             always: Math.max(0, alwaysSurplus.length - spare),
             context: Math.max(0, context.length - plan.contextN),
+            // A goal with no Flex position to stand on. Reported for the same reason
+            // the other two are: the user finds out when they set the band size, not
+            // weeks later when they wonder why a goal they recorded never appears.
+            // NOTE the shipped default is NO Flex band at all, so this is the ordinary
+            // state for anybody who has not sized one - which is deliberate (Ken,
+            // September 10 2026: leave it as is, no auto-growing).
+            goals: Math.max(0, (situation.goals || []).filter(Boolean).length - goals.length),
         },
-        fromAlwaysSurplus: Math.max(0, flexCells.length - flex.length),
+        fromAlwaysSurplus: Math.max(0, flexCells.length - goals.length - flex.length),
     };
 }
 

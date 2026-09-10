@@ -3283,6 +3283,42 @@ flex band."*
   because it holds three kinds against one background; the Flex band has one background
   only because it holds one kind, so that setting generalizes to it unchanged.
 
+**GOAL BUTTONS ARE BUILT (September 10 2026).** The standing goals recorded for the
+active partner take the LEADING Flex positions in the user's own priority order, marked
+with an arrow by whichever "Telling buttons apart" setting is in force; the phrase
+beside them is unmarked, because with two kinds marking one is enough.
+- **A tap re-asks the AI on the SAME seam a Context tap uses** (`refreshForContextChange`),
+  and the goal reaches the model through the **uncached tail** of the prompt, never the
+  cached prefix - measured, because putting it in the head would discard a ~29,000-byte
+  cache entry on every tap.
+- **SWITCHING ON re-asks; switching OFF does not**, the same rule and the same reason as
+  the Context band: "stop taking this into account" is not a request for new suggestions,
+  and it is the one case where a tap would cost money for nothing the user asked for.
+- **Several are on at once and each latches independently** (Ken: all goals equivalent,
+  ordered, more than one checkable). **Emptied whenever the partner changes**, because a
+  goal belongs to the person it was set for - otherwise goals for one person go on
+  steering the AI while another person's buttons are on screen with nothing lit to say so.
+- **⚠ THE GUARD IS REPEATED IN THE SITUATION BLOCK rather than left to the standing
+  partner block, and neither is redundant.** The standing block says what the user wants
+  from the relationship over TIME; the situation block says which of those they are
+  pursuing RIGHT NOW. Both must carry "shapes the wording, never a topic to raise": a
+  goal like *repair things between us* turned into an opening line is the failure.
+- **WITH THE SHIPPED DEFAULTS NOTHING SHOWS - the Flex band is zero rows - and that is
+  Ken's decision, not a gap:** no auto-growing, and no explanatory note in About Me
+  (*"This administration is too far from the express panel settings for most people to
+  make the connection"*). The Express Panel tab's status line reports how many goal
+  buttons have no room, which is where somebody sizing the bands is already looking.
+- **A goal tap in SETTINGS does nothing, and deliberately not through `editedInSettings`**
+  like the other three. Those select the tapped button for editing because they are items
+  in the panel's own lists; a goal is not - it comes from About Me and its position comes
+  from the order there - so that path marked the cell "being edited" with no editor row
+  behind it.
+- **A TYPED goal carries an optional `label`** - the short face, since the fallback is its
+  whole sentence and a three-column side-dock cell is about nine characters wide. The
+  twelve menu goals store none, so a later rewording still reaches them. **The label is
+  never part of a goal's identity** (`goalKey`): renaming a button must not turn the goal
+  it is switched on for into a different goal.
+
 **The full write-up, with four figures, is
 [Conversant AAC Express Panel Design.docx](Documents/) (generator
 `scripts/doc-generators/generate-express-panel-design-doc.js`, figures from

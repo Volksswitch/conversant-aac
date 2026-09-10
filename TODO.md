@@ -154,13 +154,25 @@ the one that quietly waits forever.
   opening the wording section because a goal is set would put the user in front of the
   wrong controls. **Titled for the relationship rather than "goals"** so there is room to
   tell it apart from the per-conversation goal, which is still unbuilt.
-- **⚠ STILL NOT BUILT, and it is the piece the labels were authored for: the button face.**
-  Every one of the twelve now carries a short -ing label and nothing displays it yet - the
-  Flex-band buttons are the consumer. A TYPED goal has no label at all and falls back to
-  its full wording, which will truncate; giving the user a label box is work for a face
-  they cannot yet see, so it belongs with the button build, not before it.
+- **THE BUTTON FACE IS BUILT TOO (2026-09-10, the same day).** Goals claim the LEADING
+  Flex positions, in the user's priority order, from the active partner; they never
+  speak; tapping one re-asks the AI on the same seam a Context tap uses; each latches
+  independently and several can be on at once. A typed goal's row in About Me gained the
+  **Button label** box the twelve did not need.
+- **⚠ THE BAND IS FLEX, NOT CONTEXT, and Ken had to correct that reading once:** the band
+  is decided by how a button's content is DETERMINED, not by whether it speaks. Which
+  goals exist at all depends on which partner was chosen, so goals are a function of the
+  Context band rather than part of it. Recorded in CLAUDE.md under the Express Panel.
+- **⚠ WITH THE SHIPPED DEFAULTS NOTHING SHOWS, and that is Ken's decision (option 1,
+  "leave as is"): no auto-growing the Flex band, and no note in About Me pointing at the
+  Express Panel settings** - *"This administration is too far from the express panel
+  settings for most people to make the connection."* The Express Panel tab's own status
+  line says how many goal buttons have no room, which is where somebody sizing the bands
+  is already looking.
 - **Why the rest is not yet built:** the per-conversation layer is the large remaining
-  piece and needs its own pass.
+  piece and needs its own pass. Also unbuilt: goals sourced from a PLACE, the active goal
+  stamped onto each saved turn, and a ceiling on how many Flex positions goals may take
+  before phrases start falling off.
 
 ### Conversation goals as steering buttons in the FLEX band
 - **Raised:** 2026-09-10 - Ken: "treat conversation goals as 'reframe' buttons that can

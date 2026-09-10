@@ -8,6 +8,7 @@ import * as engine from './engine.js';
 import * as convLogic from './conversation-logic.js';
 import * as worldview from './worldview.js';
 import * as relationships from './relationships.js';
+import { goalItems } from './partner-profile.js';
 import * as places from './places.js';
 import * as worldviewUI from './worldview-ui.js';
 import * as keyboard from './keyboard.js';
@@ -202,6 +203,19 @@ let manualListenArmed = false;
 let activePartner = null;
 let activeFeeling = null;
 let activePlace = null;
+
+// The GOALS switched on for this conversation, by goal key (partner-profile.goalKey).
+//
+// A SET, NOT ONE VALUE, and that is Ken's decision rather than a convenience (Ken,
+// September 10 2026): every goal is the same kind of thing, they are ordered rather
+// than typed, and more than one can be in force at once - "talk about last night's
+// argument" and "keep the relationship" is a normal pair, and one value could not
+// say it.
+//
+// A goal belongs to a PERSON, so this is emptied whenever the active partner
+// changes: goals switched on for one person would otherwise still be steering the
+// AI while a different person's buttons were on screen, with nothing lit to say so.
+let activeGoals = new Set();
 
 // Conversation privacy (Ken, July 2026): when true, the current conversation is
 // NOT written to the data folder — the user may want a conversation that can't be
@@ -3408,6 +3422,9 @@ async function handleEndConversation() {
 function clearInfluencers() {
     activePartner = null;
     activeFeeling = null;
+    // Goals go with the partner - see handleTogglePartner. A conversation goal is
+    // a property OF the conversation in any case, so it cannot outlive it.
+    activeGoals.clear();
     renderExpressPanel();
     // Drop the cleared partner's own starters and closings back out of the engine,
     // or the next conversation opens with the last person's phrases still on page 1.
@@ -3715,10 +3732,26 @@ function partnerLabel(item) {
     return relationships.displayName(item.personId, item.nickname || item.name);
 }
 
+/**
+ * The goal buttons for whoever is currently selected, in the user's own order of
+ * importance - which is the only thing that says one goal matters more than another,
+ * since there is no primary-versus-constraint kind (Ken, September 10 2026).
+ *
+ * Read from About Me on every render rather than copied onto the panel, so a goal
+ * added, reordered or removed there is right on the panel at once. Empty for nobody
+ * selected, and empty for a free-typed partner button: goals live on the me->person
+ * edge, so a partner who is not a person in the graph has nowhere to keep one.
+ */
+function goalButtons() {
+    if (!activePartner || !activePartner.personId) return [];
+    return goalItems(relationships.getPartnerProfile(activePartner.personId).goals);
+}
+
 function composedPanel() {
     const composed = expressBands.composePanel(expressLayoutRows(), expressPanel.getModel(), {
         partnerId: activePartner ? (activePartner.personId || activePartner.id) : null,
         placeId: activePlace ? (activePlace.placeId || activePlace.id) : null,
+        goals: goalButtons(),
     });
     // Resolve each partner button's face HERE, on the way to the renderer, because the
     // renderer is deliberately ignorant of the relationship graph and must stay so.
@@ -3763,6 +3796,12 @@ function reflectBandSizes() {
     if (composed.unreachable.context) {
         bits.push(`${composed.unreachable.context} Context button(s) do not fit.`);
     }
+    if (composed.unreachable.goals) {
+        // The shipped default has no Flex band at all, so this is what a user sees
+        // the first time they record a goal - which is the honest answer rather than
+        // growing the band for them (Ken, September 10 2026: leave it as is).
+        bits.push(`${composed.unreachable.goals} goal button(s) have no room in the Flex band.`);
+    }
     if (composed.fromAlwaysSurplus) {
         bits.push(`${composed.fromAlwaysSurplus} Always phrase(s) are filling spare room at the end of the Flex band.`);
     }
@@ -3804,6 +3843,11 @@ function renderExpressPanel() {
         // turn boundaries where clearTurnSteering drops it.
         activeChoice: activeSteer.focusChoice,
         activePartnerId: activePartner ? activePartner.id : null,
+        // Which goals are in force. Derived from the live set on every render, so a
+        // lit button cannot disagree with what is actually being sent to the AI -
+        // the same reasoning as activeChoice above.
+        activeGoalIds: [...activeGoals],
+        onToggleGoal: handleToggleGoal,
         activeFeelingId: activeFeeling ? activeFeeling.id : null,
         activePlaceId: activePlace ? activePlace.id : null,
         // The double-tap safeguard guards SPEAKING: it exists so a stray touch cannot
@@ -3881,6 +3925,30 @@ function buildSituationBlock() {
             const how = relationships.buildPartnerBlock(activePartner.personId, label);
             if (how) lines.push(how);
         }
+    }
+    // WHAT THE USER IS AIMING FOR in this exchange - the goals they have switched on
+    // for this person, in their own order of importance (Ken, September 10 2026).
+    //
+    // ⚠ THIS IS NOT A DUPLICATE OF THE STANDING GOALS in buildPartnerBlock, and the
+    // difference is the whole point of the buttons. That block says what the user
+    // wants from the relationship over TIME; this says which of those they are
+    // pursuing RIGHT NOW, so a person with four recorded goals is not asking the AI
+    // to weigh all four in every exchange.
+    //
+    // ⚠ AND THE GUARD IS REPEATED HERE ON PURPOSE, not left to the standing block.
+    // A goal is a reason to choose warmer or plainer wording and a catastrophe read
+    // as a subject to raise: "repair things between us" turned into an opening line
+    // is the failure this sentence exists to prevent. The standing block carries its
+    // own copy for its own text; neither is redundant.
+    const goalsNow = goalButtons().filter((g) => activeGoals.has(g.id));
+    if (goalsNow.length) {
+        const list = goalsNow.length === 1
+            ? goalsNow[0].text
+            : goalsNow.map((g, i) => `(${i + 1}) ${g.text}`).join(' ');
+        const many = goalsNow.length > 1;
+        lines.push(`Right now the user is trying to ${many
+            ? `achieve these things in this conversation, most important first: ${list}. Let the earlier ones win where they pull against a later one.`
+            : `achieve this in this conversation: ${list}.`} Let ${many ? 'them' : 'it'} shape WHICH of several possible responses you suggest and how they are worded - ${many ? 'none of them is' : 'it is not'} a topic to raise, so never state ${many ? 'any of them' : 'it'} and never suggest a response that is ABOUT ${many ? 'one of them' : 'it'} unless the partner raises it first.`);
     }
     if (activeFeeling && activeFeeling.text) {
         lines.push(`The user is currently feeling ${activeFeeling.text.toLowerCase()}. Let this color the tone of the suggested responses, while keeping them authentic to the user.`);
@@ -4024,6 +4092,11 @@ async function refreshForContextChange() {
 async function handleTogglePartner(item) {
     if (editedInSettings(item)) return;
     activePartner = (activePartner && activePartner.id === item.id) ? null : item;
+    // A goal belongs to the person it was set for, so switching or clearing the
+    // partner drops every one that was in force. Without this, goals recorded for
+    // one person would go on steering the AI while another person's buttons - or
+    // none at all - were on screen.
+    activeGoals.clear();
     renderExpressPanel();
     // Re-merge their own starters and closings into the engine's static palettes.
     // Switching partner has to re-run this in both directions — selecting one adds
@@ -4040,6 +4113,36 @@ async function handleToggleFeeling(item) {
     renderExpressPanel();
     ui.setStatus(activeFeeling ? `Feeling ${activeFeeling.text.toLowerCase()}` : 'Feeling cleared');
     await noteContextSet('feeling', !!activeFeeling);
+}
+
+/**
+ * Goal toggle. UNLIKE the other three, several can be on at once, so this is a set
+ * rather than a single value and tapping one never turns another off.
+ *
+ * It does NOT speak - the button is a reframer - so it is single-tap whatever the
+ * tap-mode setting says, and a mis-tap costs a round trip rather than a sentence
+ * said aloud that cannot be taken back.
+ *
+ * Switching one ON re-asks the AI with it in mind; switching one off does not,
+ * which is the same rule the Context band follows and for the same reason: "stop
+ * taking this into account" is not a request for new suggestions, and paying for a
+ * round trip because the user turned something OFF is the one case where a tap
+ * would cost money for nothing they asked for.
+ */
+async function handleToggleGoal(item) {
+    // ⚠ IN SETTINGS A GOAL BUTTON DOES NOTHING, and that is deliberately NOT the
+    // editedInSettings path the other three take. Those select the tapped button for
+    // editing, which works because they ARE items in the panel's own lists. A goal is
+    // not: it comes from About Me, and its position comes from the order the goals
+    // are in there. Routing it through editedInSettings marked the cell as "being
+    // edited" while no editor row existed for it - a ring on a button nobody can
+    // edit, which says the wrong thing rather than nothing.
+    if (expressPanelInSettings) return;
+    const on = !activeGoals.has(item.id);
+    if (on) activeGoals.add(item.id); else activeGoals.delete(item.id);
+    renderExpressPanel();
+    ui.setStatus(on ? `Aiming for: ${item.text}` : `No longer aiming for: ${item.text}`);
+    await noteContextSet('goal', on);
 }
 
 // Place toggle: one active at a time, same on/off/switch behavior.

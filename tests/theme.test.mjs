@@ -207,6 +207,7 @@ const PAIRS = [
     ['the partner mark', 'infl-partner', 'band-context-tint', 3],
     ['the feeling mark', 'infl-feeling', 'band-context-tint', 3],
     ['the place mark', 'infl-place', 'band-context-tint', 3],
+    ['the goal mark', 'goal', 'band-flex-tint', 3],
     ['a choice button on the dock', 'choice', 'surface-sunken', 3],
     ['a danger fill on a card', 'danger', 'surface-raised', 3],
     ['a warning fill on a card', 'warn', 'surface-raised', 3],

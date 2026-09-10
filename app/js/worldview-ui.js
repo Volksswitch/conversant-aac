@@ -863,13 +863,33 @@ function buildPartnerProfileSection(existing) {
                 goals.splice(i, 1);
                 fillAdd(); syncOther(); renderGoals();
             });
-            goalList.append(el('div', { class: 'wv-goal-row' }, [
+            const cells = [
                 // The number is what makes the order visible as an order. Without it
                 // this is a list whose sequence the user cannot see the point of.
                 el('span', { class: 'wv-goal-rank', 'aria-hidden': 'true', text: (i + 1) + '.' }),
                 el('span', { class: 'wv-goal-text', text: goalText(g) }),
-                up, down, del
-            ]));
+            ];
+            // A BUTTON FACE, AND ONLY FOR A GOAL THE USER TYPED. The twelve carry
+            // their own short label in code, so asking for one would be asking the
+            // user to rename something already named - and a wording change in a
+            // later release would never reach a name they had typed over it.
+            //
+            // A typed goal has no label at all, and the face falls back to the whole
+            // sentence, which an Express Panel cell cannot hold: on a three-column
+            // side dock a cell is about nine characters wide. So this is the box that
+            // makes a typed goal usable as a button rather than as an ellipsis.
+            //
+            // Committed on every keystroke and NOT re-rendered, so the field keeps
+            // focus while it is typed in - the same arrangement as the phrase fields.
+            if (!g.id) {
+                const face = el('input', { type: 'text', class: 'wv-text wv-goal-label',
+                    placeholder: 'Button label', 'aria-label': 'Short label for this goal\'s button' });
+                face.value = g.label || '';
+                face.addEventListener('input', () => { g.label = face.value; });
+                cells.push(face);
+            }
+            cells.push(up, down, del);
+            goalList.append(el('div', { class: 'wv-goal-row' }, cells));
         });
     };
 

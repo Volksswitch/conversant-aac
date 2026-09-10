@@ -26,6 +26,19 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- **Your goals for a person are now buttons on the Express Panel.** Pick who you are
+  talking with, and the goals you recorded for them in About Me appear at the front of
+  the Flex band, in the order you put them in. Tapping one says nothing out loud — it
+  asks the AI for a fresh set of suggestions with that goal in mind, and the button
+  stays lit for as long as it is in force. You can have more than one on at once, and
+  turning one off does not ask again. Goal buttons carry a small arrow so they are
+  tellable from the phrases beside them, using whatever "Telling buttons apart" setting
+  you already chose for the Context band. If you typed a goal in your own words, its
+  row in About Me now has a **Button label** box for the short version to show on the
+  button — the twelve ready-made goals already have one. Goals only appear if your Flex
+  band has room for them: if it has none, the Express Panel tab says how many are
+  waiting, and you make room by giving the Flex band a row or two.
+
 - You can now record **more than one thing you want from a relationship**, in your own
   order of importance, and they have their own section. In About Me, open a person and
   the first section is "What I want from this relationship": pick from the list, or type

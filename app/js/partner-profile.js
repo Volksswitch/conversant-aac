@@ -142,9 +142,53 @@ export function goalText(goal) {
  */
 export function goalLabel(goal) {
     if (!goal) return '';
+    // A LABEL THE USER TYPED WINS OVER EVERYTHING ELSE (Ken, September 10 2026). It
+    // only ever exists on a TYPED goal - the twelve carry their own - and it exists
+    // because the fallback on the last line is the goal's full wording, which on a
+    // three-column side dock is several words too long for one cell.
+    if (goal.label && String(goal.label).trim()) return String(goal.label).trim();
     const found = RELATIONSHIP_GOALS.find((g) => g.id === goal.id);
     if (found && found.label) return found.label;
     return goalText(goal);
+}
+
+/**
+ * How a goal is IDENTIFIED - one place, because two are how a stored goal and a lit
+ * button end up disagreeing about whether they are the same goal.
+ *
+ * A menu goal is its id; a typed goal is its wording, folded to lower case so the
+ * same words typed twice are the same goal. Deliberately NOT the label: a label is
+ * a face the user can rewrite, and renaming a button must not turn the goal it is
+ * switched on for into a different goal.
+ */
+export function goalKey(goal) {
+    if (!goal) return '';
+    return goal.id || ('text:' + String(goal.text || '').trim().toLowerCase());
+}
+
+/**
+ * The goals as EXPRESS PANEL BUTTONS, in the user's own order of importance.
+ *
+ * One item per goal carrying the three things a button needs and nothing else: a
+ * stable key to switch on, a short face, and the full wording that goes to the AI.
+ * Built here rather than in the panel because the rules about what resolves to
+ * nothing, what counts as a duplicate and what a face falls back to already live in
+ * this module, and a second copy of them would drift from the prompt's copy.
+ */
+export function goalItems(goals) {
+    const list = Array.isArray(goals) ? goals : (goals ? [goals] : []);
+    const out = [];
+    const seen = new Set();
+    for (const g of list) {
+        const text = goalText(g);
+        const key = goalKey(g);
+        // A stale id from an older release resolves to no wording. It must not become
+        // a button: a face with nothing behind it would steer the AI with nothing.
+        if (!text || !key || seen.has(key)) continue;
+        seen.add(key);
+        out.push({ type: 'goal', id: key, label: goalLabel(g), text });
+    }
+    return out;
 }
 
 /**

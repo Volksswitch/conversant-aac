@@ -23,7 +23,7 @@
  */
 
 import { readFile, writeFile, hasDataFolder } from './storage.js';
-import { registerClauses, goalTexts } from './partner-profile.js';
+import { registerClauses, goalTexts, goalKey } from './partner-profile.js';
 
 const FILE = 'relationships.json';
 const CACHE_KEY = 'aac_relationships';
@@ -270,6 +270,9 @@ function readGoals(attrs) {
     if (Array.isArray(a.goals)) {
         return a.goals.filter((g) => g && (g.id || g.text)).map((g) => ({ ...g }));
     }
+    // (A typed goal may also carry a `label` - the short face for its Express Panel
+    // button. Spread above rather than named, so a field added later survives a read
+    // without this function having to learn about it.)
     if (a.goal && (a.goal.id || a.goal.text)) return [{ ...a.goal }];
     return [];
 }
@@ -326,10 +329,20 @@ export async function setPartnerProfile(personId, patch = {}) {
             const list = [];
             for (const g of (Array.isArray(v) ? v : (v ? [v] : []))) {
                 if (!g || !(g.id || g.text)) continue;
-                const key2 = g.id || ('text:' + String(g.text).trim().toLowerCase());
+                const key2 = goalKey(g);
                 if (seen.has(key2)) continue;
                 seen.add(key2);
-                list.push(g.id ? { id: g.id } : { id: '', text: String(g.text).trim() });
+                // A TYPED goal keeps its `label` if the user gave it one - the short
+                // face for its Express Panel button, which its full wording is too
+                // long to be. The twelve menu goals carry their own label in code and
+                // store nothing, so a wording change in a later release reaches them.
+                if (g.id) list.push({ id: g.id });
+                else {
+                    const one = { id: '', text: String(g.text).trim() };
+                    const label = String(g.label || '').trim();
+                    if (label) one.label = label;
+                    list.push(one);
+                }
             }
             edge.attrs.goals = list;
             // The legacy single-goal key goes now that the list is authoritative;

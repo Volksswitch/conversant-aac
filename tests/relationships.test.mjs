@@ -8,6 +8,8 @@ import { resetLocalStorage } from './env.mjs';
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import * as rel from '../app/js/relationships.js';
+import { goalItems } from '../app/js/partner-profile.js';
+import { composePanel } from '../app/js/express-bands.js';
 
 beforeEach(async () => { resetLocalStorage(); await rel.load(); });
 
@@ -180,6 +182,55 @@ test('no goals means no goal sentence at all', async () => {
     const id = await rel.addPerson({ name: 'Mary', relationship: 'mother' });
     await rel.setPartnerProfile(id, { goals: [] });
     assert.equal(rel.buildPartnerBlock(id), '');
+});
+
+test("a typed goal's button label survives a save; a menu goal stores none", async () => {
+    // The label is the short face its Express Panel button carries. The twelve menu
+    // goals carry theirs in code so a later rewording reaches them; a typed goal has
+    // nothing else to fall back on but its whole sentence.
+    const id = await rel.addPerson({ name: 'Mary', relationship: 'mother' });
+    await rel.setPartnerProfile(id, { goals: [
+        { id: 'repair', label: 'ignore me' },
+        { id: '', text: 'Stop arguing about the car', label: '  The car  ' },
+    ] });
+    const stored = JSON.parse(localStorage.getItem('aac_relationships'))
+        .edges.find((e) => e.from === 'me' && e.to === id).attrs.goals;
+    assert.deepEqual(stored, [
+        { id: 'repair' },
+        { id: '', text: 'Stop arguing about the car', label: 'The car' },
+    ]);
+    // And the label never reaches the AI: the prompt gets the goal, not its button.
+    const block = rel.buildPartnerBlock(id);
+    assert.match(block, /Stop arguing about the car/);
+    assert.doesNotMatch(block, /The car\b(?! )/);
+});
+
+// ⚠ ONE CHECK THAT CROSSES EVERY LAYER (the standing rule). Each of the three pieces
+// above proves its own link and none of them proves the feature: the panel would look
+// finished with the goal buttons landing nowhere. This drives the real chain - a goal
+// saved through the real writer, read back through the real reader, turned into
+// buttons by the real builder, laid out by the real band arithmetic.
+test('a goal recorded in About Me reaches the leading Flex cells of the real panel', async () => {
+    const id = await rel.addPerson({ name: 'Mary', relationship: 'mother' });
+    await rel.setPartnerProfile(id, { goals: [
+        { id: 'repair' },
+        { id: '', text: 'Stop arguing about the car', label: 'The car' },
+    ] });
+
+    const items = goalItems(rel.getPartnerProfile(id).goals);
+    const grid = [['x', 'x', 'x', 'x'], ['x', 'x', 'x', 'x'], ['x', 'x', 'x', 'x']];
+    const panel = composePanel(grid, {
+        sizes: { shape: 'counts', context: 4, flex: 4 },
+        always: [], context: [], flex: {},
+    }, { partnerId: id, goals: items });
+
+    const flexAt = panel.bands.indexOf('flex');
+    assert.ok(flexAt >= 0, 'there is a Flex band to land in');
+    assert.equal(panel.items[flexAt].type, 'goal');
+    assert.equal(panel.items[flexAt].label, 'Making peace', 'the menu goal wears its own face');
+    assert.equal(panel.items[flexAt].text, 'Repair things between us', 'and carries the wording');
+    assert.equal(panel.items[flexAt + 1].label, 'The car', 'the typed goal wears the typed face');
+    assert.equal(panel.unreachable.goals, 0);
 });
 
 test('a free-text goal is carried as written', async () => {

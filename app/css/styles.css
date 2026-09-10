@@ -198,6 +198,7 @@
     --infl-place-tint: #f9fbe7;
     --choice: #2E7D32;
     --choice-tint: #e8f5e9;
+    --goal: #4527A0;
 
     /* Shadows, washes and the press shade. A shadow is a dark smudge on a light
        theme and has to get DEEPER, not lighter, on a dark one -- a light shadow
@@ -406,6 +407,7 @@
     --infl-place-tint: #eef0d4;
     --choice: #2E7D32;
     --choice-tint: #d9ead9;
+    --goal: #4527A0;
     --shadow: rgba(0, 0, 0, 0.16);
     --shadow-soft: rgba(0, 0, 0, 0.10);
     --shadow-strong: rgba(0, 0, 0, 0.30);
@@ -509,6 +511,7 @@
     --infl-place-tint: #ffffff;
     --choice: #0a5c12;
     --choice-tint: #ffffff;
+    --goal: #33107a;
     --shadow: rgba(0, 0, 0, 0.45);
     --shadow-soft: rgba(0, 0, 0, 0.30);
     --shadow-strong: rgba(0, 0, 0, 0.60);
@@ -610,6 +613,7 @@
     --infl-place-tint: #262712;
     --choice: #6cc47a;
     --choice-tint: #1b2a1e;
+    --goal: #b39ddb;
     --shadow: rgba(0, 0, 0, 0.55);
     --shadow-soft: rgba(0, 0, 0, 0.40);
     --shadow-strong: rgba(0, 0, 0, 0.70);
@@ -712,6 +716,7 @@
     --infl-place-tint: #000000;
     --choice: #69f0ae;
     --choice-tint: #000000;
+    --goal: #d1b3ff;
     --shadow: rgba(0, 0, 0, 0.7);
     --shadow-soft: rgba(0, 0, 0, 0.5);
     --shadow-strong: rgba(0, 0, 0, 0.85);
@@ -817,6 +822,7 @@
     --infl-place-tint: #000000;
     --choice: #b6f05c;
     --choice-tint: #000000;
+    --goal: #c8b8ff;
     --shadow: rgba(0, 0, 0, 0.7);
     --shadow-soft: rgba(0, 0, 0, 0.5);
     --shadow-strong: rgba(0, 0, 0, 0.85);
@@ -930,6 +936,7 @@
     --infl-place-tint: #f4f0dc;
     --choice: #1B6E3C;
     --choice-tint: #e6f0e9;
+    --goal: #7B3294;
     --shadow: rgba(0, 0, 0, 0.16);
     --shadow-soft: rgba(0, 0, 0, 0.10);
     --shadow-strong: rgba(0, 0, 0, 0.30);
@@ -2405,6 +2412,33 @@ body.conv-bottom .palette-grid {
 .ep-mark-shape .ep-btn.ep-partner .ep-text::before { content: '\25CF\2009'; font-size: 0.92em; }
 .ep-mark-shape .ep-btn.ep-place   .ep-text::before { content: '\25B2\2009'; font-size: 1em; }
 .ep-mark-shape .ep-btn.ep-feeling .ep-text::before { content: '\25A0\2009'; font-size: 0.86em; }
+
+/* ⚠ THE FLEX BAND NOW HOLDS TWO KINDS, AND IT IS TOLD APART BY THE SAME SETTING AS
+   THE CONTEXT BAND'S THREE (Ken, September 10 2026: "A second kind in a band needs
+   the band's own differentiator, not a new marker"). A goal button sits among phrases
+   that SPEAK and says nothing itself, so the difference has to be visible - and it is
+   the same question the Context band already asked, so answering it a second way
+   would be one more thing to learn for no gain. The phrase stays unmarked: with two
+   kinds, marking one of them is enough, and the phrase is the ordinary case.
+   Every one of these changes colour or which EDGE carries the bar - never the total
+   border width, so no cell measures differently and no keyguard hole moves. */
+.ep-mark-color .ep-btn.ep-goal { border-left-color: var(--ep-color); }
+.ep-mark-thick .ep-btn.ep-goal { border-left-width: 10px; }
+.ep-mark-side  .ep-btn.ep-goal { border-left-width: 1px; border-right-width: 5px; }
+/* An ARROW, because a goal is the one button on the panel that points the
+   conversation somewhere rather than saying something. Distinct at small sizes from
+   the three Context shapes, which differ by outline rather than by direction. */
+.ep-mark-shape .ep-btn.ep-goal .ep-text::before { content: '\2192\2009'; font-weight: 800; }
+
+/* Switched ON: a solid fill in the band's colour, exactly as a selected Context
+   button gets. The ring and check from .ep-btn.ep-on carry it as well, and the fill
+   is what makes "this goal is in force" readable across the panel rather than only
+   on the button being looked at (Rule 6). Falls back to the goal's own colour for a
+   goal drawn outside a band, which cannot happen today and costs nothing to allow. */
+.ep-btn.ep-goal.ep-on {
+    background: var(--band-color, var(--ep-color));
+    color: var(--ink-inverse);
+}
 
 /* An undefined position still reads as part of its band, which is what makes the
    Context band's floor of four tolerable: four reserved outlines rather than four
@@ -4034,6 +4068,14 @@ label.radio-label input[type="radio"] {
     flex: 0 0 1.4rem;
     text-align: right;
     color: var(--ink-muted);
+}
+
+/* The short face a typed goal's Express Panel button will carry. Narrow and allowed
+   to shrink, so on a squeezed Settings column it gives way before the goal's own
+   wording does - the wording is what the row is about. */
+.wv-goal-label {
+    flex: 0 1 7rem;
+    min-width: 0;
 }
 
 .wv-goal-text {

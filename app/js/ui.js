@@ -503,7 +503,15 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         // fill - the space is spoken for, and a panel that says so reads as finished
         // rather than half set up (Ken, August 23 2026).
         choiceSlots = [],
+        // The goal buttons currently switched on, by goal key. A LIST rather than one
+        // value, because several goals can be in force at once (Ken, September 10
+        // 2026: all goals are equivalent, ordered, and more than one may be checked)
+        // - "talk about last night's argument" and "keep the relationship" are a
+        // normal pair, and a single-value control could not express it.
+        activeGoalIds = [],
+        onToggleGoal,
     } = opts;
+    const goalOn = new Set(activeGoalIds || []);
     const choiceSlotAt = new Map(choiceSlots.map((cellIndex, n) => [cellIndex, n + 1]));
     epGrid.classList.remove('ep-mark-color', 'ep-mark-thick', 'ep-mark-side', 'ep-mark-shape');
     epGrid.classList.add('ep-mark-' + (['color', 'thick', 'side', 'shape'].includes(contextMark) ? contextMark : 'shape'));
@@ -573,6 +581,32 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
             b.setAttribute('aria-pressed', String(item.id === activeFeelingId));
             b.innerHTML = `<span class="ep-text">${escapeHtml(item.text)}</span>`;
             b.addEventListener('click', () => onToggleFeeling && onToggleFeeling(item));
+            return b;
+        }
+        if (item.type === 'goal') {
+            // A GOAL: what the user wants out of talking with this person. It does
+            // NOT speak - it re-asks the AI with that goal in mind - which is why it
+            // is single-tap whatever the tap-mode setting says: the double-tap
+            // safeguard exists so a stray touch cannot say something irreversible
+            // aloud, and a mis-tap here costs a round trip that reaches nobody.
+            //
+            // It sits in the Flex band among buttons that DO speak, so it has to be
+            // tellable apart from them. It is marked by the SAME setting that tells
+            // the Context band's three kinds apart (.ep-goal, see the .ep-mark-*
+            // rules): the question is the same question, so a second, separate marker
+            // for it would be one more thing to understand for no gain (Ken).
+            const on = goalOn.has(item.id);
+            const label = item.label || item.text || 'Goal';
+            setColor(b, 'var(--goal)', 'var(--goal-tint)');
+            b.classList.add('ep-goal');
+            if (on) b.classList.add('ep-on');
+            // The tooltip and the spoken name carry the FULL wording, because the
+            // face is a short reminder and on its own may not say which goal it is.
+            b.title = `${item.text} - rebuilds the response cards with this in mind`;
+            b.setAttribute('aria-label', `Goal: ${item.text}${on ? ' (on)' : ''}`);
+            b.setAttribute('aria-pressed', String(on));
+            b.innerHTML = `<span class="ep-text">${escapeHtml(label)}</span>`;
+            b.addEventListener('click', () => onToggleGoal && onToggleGoal(item));
             return b;
         }
         // phrase. Its color comes from the BAND it is in (set by the caller on the
