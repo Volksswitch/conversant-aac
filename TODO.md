@@ -37,6 +37,85 @@ the one that quietly waits forever.
 
 ## Open
 
+### Several conversation goals per partner, as a PRIORITIZED list
+- **Raised:** 2026-09-10 - Ken, twice: first "make it possible to add multiple
+  conversational goals for a partner", then the refinement "consider making
+  conversational goals per person a prioritized list".
+- **Wanted:** a standing relationship goal stops being one value on the me-to-person
+  edge and becomes an ordered list, most wanted first.
+- **Why the ordering matters more than the count**, and this is the part that makes it
+  a decision rather than a schema change: the Goals design in CLAUDE.md left "single vs
+  multiple goals per layer" open and settled on single as the v1 default. Allowing
+  several immediately raises "which one wins when they pull in opposite directions",
+  and a priority order is the answer that needs no new machinery - **it is the same
+  answer Ken already gave for the Express Panel Flex band**, where roles were killed in
+  favor of the user ordering each list by how likely they are to want it. So the app
+  never adjudicates between goals; it takes them in the order the user put them.
+- **Why not yet:** the Goals subsystem is not built at all - all three layers
+  (disposition, standing relationship goal, conversation goal) are design only. There
+  is nothing to add a second goal to. Standing relationship goals remain the smallest
+  first build, and this says what shape that build takes when it happens.
+
+### Conversation goals as steering buttons in the Express Panel
+- **Raised:** 2026-09-10 - Ken: "treat conversation goals as 'reframe' buttons that can
+  appear in the express panel when the combination of dimensional values match - flex
+  panel non-speaking buttons(?)"
+- **Wanted:** a goal becomes a one-tap button that re-generates the response cards
+  around it, surfacing when the current partner and place match the goal's dimensions.
+  It says nothing aloud; it steers.
+- **What it lands on:** the Reframe seam is already built and already used this way
+  twice - the closed-set choice chips and the number pad both re-generate without
+  speaking. So the mechanism exists; what is new is the trigger being a stored goal
+  rather than something the partner just said.
+- **⚠ Ken's own question mark is the right one to answer first, and the band design
+  answers it: a non-speaking button belongs in CONTEXT, not FLEX.** The organizing rule
+  of the three bands is speaking versus influencing - Flex holds phrases that are
+  spoken, Context holds the buttons that never speak - and the whole safety argument for
+  that split is that a mis-hit in the Context band can never say something irreversible.
+  A goal button never speaks, so putting it in Flex would break the one rule that makes
+  the panel explainable in a sentence. It also inherits the Context band's existing
+  answer for transient buttons: they arrive at the far end and push nobody around.
+- **Why not yet:** it depends on the entry above (there are no goals to surface) and on
+  the three-band panel, which is designed and not built. It also needs the "which scope
+  am I editing" hazard settled, since a goal button is a fourth kind of Context button.
+
+### The keyboard question: nothing reads the answer we already collect
+- **Raised:** 2026-09-10 - Ken: "how many people are using the on-screen keyboard vs.
+  device keyboard"
+- **Where it stands:** the answer is arriving and nobody is reading it. Every weekly
+  report carries the whole settings bundle in `systemInfo` via
+  `storage.reportableSettings()`, `keyboardMode` included. But `scripts/beta-eval`
+  reads **no settings at all** - `aggregate.mjs` touches `events.totals` and nothing
+  else - so the number is in the Sheet and never comes out.
+- **Wanted:** a line in the configuration grouping of "evaluate beta", counting testers
+  by `keyboardMode`. Absent means physical, which is the default, so a tester who never
+  touched it still counts correctly.
+- **Why not yet:** it is a reader change rather than a collection change, and it is
+  worth doing in one pass with the timing item below, which is the same gap.
+
+### The generation-timing question: collected, shipped, never summarized
+- **Raised:** 2026-09-10 - Ken: "are we collecting and summarizing in reporting the time
+  from AI prompt to return of response options?"
+- **Where it stands:** **collecting yes, summarizing no.** `app.js` emits
+  `EV.GENERATION` with the round-trip in milliseconds on every successful generation,
+  and because it carries an `ms` key `metrics.js` keeps it as a timing sample and
+  computes a median. That median rides every weekly report inside `events.timings`. And
+  `scripts/beta-eval/aggregate.mjs` reads `t.events.totals` only - **`timings` is never
+  touched by anything**, so the number has been collected and shipped and read by
+  nobody.
+- **⚠ The figure the report DOES print is a different quantity, and confusing the two
+  would answer the question wrongly.** "Replies that took over 4s" is measured from the
+  saved conversations: it is the whole wait from the other person pausing to the user
+  speaking, so it includes reading the cards and choosing between them. The AI round
+  trip is one part of it. Both are worth having and they must not be presented as the
+  same thing.
+- **Wanted:** the generation median in the "evaluate beta" summary, next to the
+  four-second figure and labelled as the AI's share of it. `GENERATION_SUPERSEDED` and
+  `GENERATION_FAILED` are collected the same way and deserve the same treatment - a
+  superseded generation is the cost of the short silence period, which is a number Ken
+  has already asked to watch.
+- **Why not yet:** same reader change as the item above; do them together.
+
 ### Product Overview: the AI vendor's safety rules, and the distress case
 - **Raised:** 2026-08-30 — CLAUDE.md, "A speech-to-speech model CANNOT be used here"
 - **Wanted:** a paragraph beside *Not a Smart Speaker* saying the vendor's safety rules
