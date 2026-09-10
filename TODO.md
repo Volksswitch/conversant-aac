@@ -37,6 +37,28 @@ the one that quietly waits forever.
 
 ## Open
 
+### How a Context-band button shows what it is doing: standing versus one-shot
+- **Raised:** 2026-09-10 - Ken: "Context should carry and hold a checkmark until tapped
+  again, or a different element of the same dimension is tapped. For now, you can't be
+  located at the pharmacy and at school at the same time."
+- **Wanted:** an explicit held checkmark on an active context button, rather than only
+  the lit "selected" background it carries today. One active per dimension, which is
+  already the behavior in code (tap again clears, tapping another switches).
+- **⚠ THE CONFLICT TO SETTLE BEFORE DRAWING ANYTHING, because it makes one mark mean two
+  lifetimes: the app ALREADY has a checked-looking button that does not stand.** A tapped
+  choice chip shows as selected while its steering is in effect and is cleared at the
+  turn boundary, and the number button is the same shape. So if a checkmark means "true
+  until you change it" on a place, and the chip beside it wears the same mark for one
+  turn, the mark stops carrying the one thing it was added to say.
+- **The distinction is already half-drawn and worth finishing:** the transient buttons
+  have a dashed border to read as temporary, the standing ones do not. So the shape of
+  the answer is a solid check for standing and the dashed treatment alone for
+  this-turn-only - nothing new invented, one existing difference made to carry the
+  meaning.
+- **Why not yet:** it belongs with the three-band build, where the "Telling buttons
+  apart" decoration is being extended anyway; drawing it before that means drawing it
+  twice.
+
 ### Several conversation goals per partner, as a PRIORITIZED list
 - **Raised:** 2026-09-10 - Ken, twice: first "make it possible to add multiple
   conversational goals for a partner", then the refinement "consider making
@@ -51,6 +73,23 @@ the one that quietly waits forever.
   answer Ken already gave for the Express Panel Flex band**, where roles were killed in
   favor of the user ordering each list by how likely they are to want it. So the app
   never adjudicates between goals; it takes them in the order the user put them.
+- **⚠ SEVERAL GOALS AT ONCE IS A DIFFERENT QUESTION FROM SEVERAL GOALS ON A LIST, and
+  Ken raised it: "Is it reasonable to have multiple goals in a conversation at the same
+  time - talk about an argument last night but preserve the relationship at the same
+  time?"** Yes, and his own example names the structure rather than a difficulty: those
+  are a PRIMARY goal and a CONSTRAINT on how it is pursued, which is Dillard's
+  Goals-Plans-Action distinction already recorded as the basis of the three-layer model.
+  They do not compete, they compose - which is why the recorded design has three lists
+  and not one. "Talk about the argument" is List A; "preserve the relationship" is List
+  B or C.
+- **So the rule that falls out, matching Ken's own pharmacy line: ONE PRIMARY GOAL AT A
+  TIME, SEVERAL CONSTRAINTS AT ONCE.** Two primaries genuinely do conflict ("ask for
+  help" and "make plans" pull the turn apart) and take the same one-per-dimension rule as
+  place. Constraints do not, and holding two or three is the ordinary case.
+- **⚠ AND A COST THIS CREATES, now that setting a context value re-asks the AI: setting
+  three constraints in a row is three round trips.** Not a reason to refuse it - watch
+  whether it happens, and if it does the answer is to settle the set before asking rather
+  than to limit the count.
 - **Why not yet:** the Goals subsystem is not built at all - all three layers
   (disposition, standing relationship goal, conversation goal) are design only. There
   is nothing to add a second goal to. Standing relationship goals remain the smallest
