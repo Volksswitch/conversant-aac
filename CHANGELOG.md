@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.11.0
+
 - **A goal can now come from a place, or from anywhere at all.** Goal buttons used to
   appear only for someone you had added in About Me, which left out most of the
   conversations you have at a counter. Now they come from three lists, and the panel
