@@ -37,6 +37,89 @@ the one that quietly waits forever.
 
 ## Open
 
+### Six items from the "I, Robot?" ultra-personalized AAC paper
+- **Raised:** 2026-09-10 - Ken asked for a review of Weinberg et al., *"I, Robot? Exploring
+  Ultra-Personalized AI-Powered AAC; an Autoethnographic Account"* (Cornell Tech, arXiv
+  2509.13671), and then for all six findings to go on this list. The source is in
+  `Other/Docs and URLs to Review/`. **Read the paper with its limits in mind:** one user,
+  who types fast with minor motor impairment, mostly SHOWS his screen rather than having
+  the device speak, and whose system only completed his sentences, with no partner speech
+  and no conversation history. The identity and privacy findings transfer; the usage
+  numbers mostly do not.
+
+#### 1. Let a user take a sentence out of what the voice learns from
+- **The finding:** knowing his words would train the AI made the author hold back
+  swearing, gossip and dark jokes within two weeks. Once he went back to a plain notes
+  app to complain about a neighbor, so nothing would be kept.
+- **Why it applies:** Phases 2 and 3 of `Conversant AAC Sounds Like Me.docx` learn the
+  voice from the user's own composed words. Expect the same holding back once users know.
+- **Wanted:** a way to remove a single sentence from voice evidence after the fact,
+  without discarding the whole conversation ("Don't save this conversation" is all or
+  nothing, and is decided before the words are said).
+- **Why not now:** the voice harvesting it protects has not been built. Build the two
+  together.
+
+#### 2. The "well-behaved" voice - corroboration, no new build
+- **The finding:** filtering his swearing and dark humor out of the training data left an
+  AI that reflected only the polite part of him. His answer was to type those remarks
+  himself.
+- **Why it applies:** the no-vulgarity rule and the humor guards narrow the voice the same
+  way, and the escape hatch is "In my own words", which is the slowest path in the app.
+- **Wanted:** treat this as further evidence that composition speed is a DEPENDENCY of the
+  voice layer (already recorded in CLAUDE.md under the Cyrano problem), and weigh it when
+  the per-partner vulgarity permission is eventually designed.
+- **Why not now:** nothing to build on its own; it reinforces existing entries.
+
+#### 3. Edit a suggested card before it is spoken
+- **The finding:** the author called accepting only PART of a suggestion the most
+  important control he had.
+- **Why it applies:** in Conversant a card is all or nothing - speak it as written, or
+  type from scratch. Verified 2026-09-10: the only path that opens "In my own words"
+  pre-filled is the retype option after a partner asks the user to repeat.
+- **Wanted:** a way to open a card's wording in "In my own words" to change it before
+  speaking. **The design question to settle first:** the gesture. A second action on a
+  card is a new gesture on the keyguard-backed conversation surface, which is exactly the
+  kind of change the project has kept off that surface (the tap-to-define and Express
+  Panel long-press discussions). Options to weigh include a composer control that pulls in
+  the last card shown, which adds nothing to the cards themselves.
+- **Why not now:** needs Ken's call on the gesture before anything is drawn.
+
+#### 4. Partners wondering whether it is the user or the AI talking
+- **The finding:** a friend told the author, "since you started using your new app, I am
+  always thinking if you or AI is talking to me."
+- **Why it applies:** field evidence for the Cyrano risk recorded in CLAUDE.md, and it
+  bears on the printed "This device listens and speaks for me" partner card (SEC-7):
+  disclosing that a device speaks may make partners doubt what they hear.
+- **Wanted:** ask testers' communication partners about this directly during the beta, and
+  revisit the partner card's wording in light of what they say.
+- **Why not now:** it is a beta interview question and a wording review, not a build.
+
+#### 5. A short, regular check-in for testers
+- **The finding:** every three days the author answered a few questions - how helpful the
+  suggestions were, how much control he felt over his voice that day, whether anything
+  felt too personal, whether anything unexpected came up.
+- **⚠ CORRECTED BY KEN when this was proposed:** the review said nothing in our
+  instrumentation would catch an AI that keeps bringing up someone's religion. **That was
+  wrong - a problem report captures it, along with the supporting data needed to
+  investigate it in full.** So the check-in is NOT the route for a specific incident a
+  tester notices.
+- **What it adds, narrowed accordingly:** the gradual judgments a tester would not think to
+  file as a problem - whether the app sounds like them, and how much control over their
+  own voice they feel, tracked over weeks.
+- **Wanted:** fold a few such questions into the Beta Test Plan (for example, alongside the
+  existing interviews). No app code.
+- **Why not now:** it is a Beta Test Plan edit, done in a documents pass.
+
+#### 6. Mixing languages within a sentence
+- **The finding:** the AI followed the author's Spanish-English mixing and Argentine slang,
+  and he counted it among the things he valued most.
+- **Why it applies:** the future non-English support entry under Open Questions in
+  CLAUDE.md treats language as ONE setting. A bilingual user needs both at once - in the
+  recognizer, the voice, the AI's instructions and word prediction.
+- **Wanted:** add code-switching to that entry, so it is designed in when language support
+  is scoped rather than discovered afterward.
+- **Why not now:** non-English support is not scoped yet.
+
 ### A problem report shows the new record entries as blank "user:" lines
 - **Raised:** 2026-09-10 - found during the 0.11.1 "sync docs" pass, while checking what
   a problem report prints so the manuals could describe it accurately.
