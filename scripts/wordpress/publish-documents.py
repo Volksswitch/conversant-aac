@@ -23,9 +23,10 @@ saved only after the page write succeeded.
 
 Credentials: .wordpress-credentials at the project root (git-ignored).
 """
-import base64, datetime, html, importlib.util, json, os, re, subprocess, sys, urllib.error, urllib.request
+import datetime, html, importlib.util, json, os, re, subprocess, sys
 
-ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+from wp import ROOT, call
+
 LIST = os.path.join(os.path.dirname(__file__), 'user-documents.json')
 DOCS = os.path.join(ROOT, 'Documents')
 EXPORT = os.path.join(ROOT, 'scripts', 'doc-generators', 'export-pdf.ps1')
@@ -33,26 +34,6 @@ EXPORT = os.path.join(ROOT, 'scripts', 'doc-generators', 'export-pdf.ps1')
 spec = importlib.util.spec_from_file_location('stamp', os.path.join(ROOT, 'scripts', 'doc-generators', 'stamp-doc-dates.py'))
 stamp = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(stamp)
-
-creds = json.load(open(os.path.join(ROOT, '.wordpress-credentials'), encoding='utf-8'))
-API = creds['site'].rstrip('/')
-AUTH = 'Basic ' + base64.b64encode(f"{creds['username']}:{creds['applicationPassword']}".encode()).decode()
-
-
-def call(method, path, body=None, headers=None):
-    # The host's firewall (Mod_Security) answers 406 to Python's default User-Agent.
-    h = {'Authorization': AUTH, 'User-Agent': 'ConversantDocsPublisher/1.0'}
-    if isinstance(body, (dict, list)):
-        body = json.dumps(body).encode('utf-8')
-        h['Content-Type'] = 'application/json'
-    h.update(headers or {})
-    req = urllib.request.Request(API + path, data=body, headers=h, method=method)
-    try:
-        with urllib.request.urlopen(req, timeout=180) as r:
-            return json.load(r)
-    except urllib.error.HTTPError as e:
-        raise SystemExit(f'WordPress refused {method} {path}: {e.code} {e.read()[:300]!r}')
-
 
 def long_date(d):
     return f'{d:%B} {d.day}, {d.year}'
