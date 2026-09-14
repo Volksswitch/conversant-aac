@@ -107,3 +107,44 @@ test('a saved scenario reaches the partner request with its details and mood', a
     assert.match(sys, /half paying attention/);
     assert.match(sys, /mean the USER, never you/);
 });
+
+test('a voice is kept per speech service; an empty choice is not stored; a copy keeps it', async () => {
+    const id = await library.copyScenario(doctor());
+    await library.updateScenario(id, { voices: { deepgram: 'aura-2-helena-en', azure: '' } });
+    await library.load();
+    assert.deepEqual(library.getScenario(id).voices, { deepgram: 'aura-2-helena-en' });
+    const again = await library.copyScenario(library.getScenario(id));
+    assert.deepEqual(library.getScenario(again).voices, { deepgram: 'aura-2-helena-en' });
+});
+
+test('a scenario started from a person carries their words and stays linked to them', async () => {
+    const s = library.scenarioFromPerson({ id: 'p1', name: 'Elena', nickname: 'Mom', relationship: 'Mother', about: 'Worries about me.' });
+    assert.equal(s.title, 'Talking with Mom');
+    assert.equal(s.personId, 'p1');
+    assert.match(s.partnerPersona, /Elena, my mother\. Worries about me\./);
+    const id = await library.addScenario(s);
+    await library.load();
+    assert.equal(library.getScenario(id).personId, 'p1');
+    assert.equal(library.scenarioFromPerson(null), null);
+});
+
+test('parseOpeners accepts an array, an object, or prose around them', () => {
+    assert.deepEqual(library.parseOpeners('["Hi.", " ", "Can we talk?"]'), ['Hi.', 'Can we talk?']);
+    assert.deepEqual(library.parseOpeners('Sure: {"openers":["One."]}'), ['One.']);
+    assert.deepEqual(library.parseOpeners('Here you go ["A", "B"] thanks'), ['A', 'B']);
+    assert.deepEqual(library.parseOpeners('nothing'), []);
+});
+
+test('opening lines are requested with the saved scenario and come back as a list', async () => {
+    const id = await library.addScenario({ title: 'Telling Sarah', partnerPersona: 'Sarah, my girlfriend.', opensWith: 'user', details: 'We live together.' });
+    await library.load();
+    llm.setApiKey('sk-ant-test');
+    mockFetch('["Sarah, can we sit down for a minute?", "There is something I need to talk about."]');
+    const lines = await llm.generatePracticeOpeners(library.getScenario(id));
+    assert.equal(lines.length, 2);
+    const sys = getFetchCalls().at(-1).body.system;
+    const text = typeof sys === 'string' ? sys : sys.map(b => b.text).join('');
+    assert.match(text, /Sarah, my girlfriend\./);
+    assert.match(text, /We live together\./);
+    assert.match(text, /No vulgarity/);
+});

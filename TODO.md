@@ -37,22 +37,6 @@ the one that quietly waits forever.
 
 ## Open
 
-### Practice scenarios: the parts of the document not yet built
-- **Raised:** 2026-09-13 - Ken asked for the app to support making a scenario your own
-  and building a new one, per `Documents/Conversant AAC Practice Scenarios.docx`. That
-  was built (copy, details, how they are behaving, describe-in-a-sentence, blank form,
-  delete). Three things the document describes were NOT built:
-  1. **A voice per scenario** (section 3). Every scenario still uses the general practice
-     voice. Needs a voice stored per scenario for each of the six speech services.
-  2. **Starting a scenario from a person in About Me** (section 2). Today the person is
-     described again in the scenario.
-  3. **Openers suited to a scenario the user opens** (section 7.2). "Who speaks first: I
-     do" works, but Start conversation offers the ordinary openers, which suit a breakup
-     or a hearing poorly.
-- **Why not now:** each is its own piece of work, and the three that make a scenario
-  personal were the ones asked for. The document's status box still says the feature is
-  unbuilt; that wording is Ken's call at the next doc sync.
-
 ### Six items from the "I, Robot?" ultra-personalized AAC paper
 - **Raised:** 2026-09-10 - Ken asked for a review of Weinberg et al., *"I, Robot? Exploring
   Ultra-Personalized AI-Powered AAC; an Autoethnographic Account"* (Cornell Tech, arXiv

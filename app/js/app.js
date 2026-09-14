@@ -123,6 +123,9 @@ let lastPalette = [];
 // the listen/response/teardown paths fork to the practice equivalents below.
 let practiceMode = false;
 let practiceScenario = null;
+// Opening lines the AI wrote for a practice scenario the user opens. Put ahead of the
+// ordinary openers by applyControlPhrases; emptied when the practice ends.
+let practiceOpeners = [];
 // The controls tour's position, when the chosen "scenario" is the tour (it carries
 // `steps` instead of a partnerPersona). Null in every other practice session and in
 // every real conversation.
@@ -1013,13 +1016,36 @@ function pickRestPartnerVoice(id, chosen = storage.loadServicePartnerVoice(id)) 
  * a thing to remember at every call site; a map keyed by the same id everything else
  * uses cannot silently address the wrong service.
  */
-function partnerVoiceOptions() {
+function partnerVoiceOptions(scenario = null) {
     const voiceFor = {
         deepgram: pickAuraPartnerVoice(),
         azure: pickAzurePartnerVoice(),
     };
     for (const id of Object.keys(TTS_PROVIDERS)) voiceFor[id] = pickRestPartnerVoice(id);
-    return { voiceURI: pickPartnerVoice(), voiceFor };
+    // A practice scenario's own voice replaces the general practice voice for the
+    // service it was chosen on (Practice Scenarios document, section 3). Only the
+    // practice partner passes a scenario: spoken help and the tour keep the general
+    // voice, which is what the document promises.
+    const own = (scenario && scenario.voices) || {};
+    for (const [service, id] of Object.entries(own)) {
+        if (id && service !== 'builtin') voiceFor[service] = id;
+    }
+    return { voiceURI: own.builtin || pickPartnerVoice(), voiceFor };
+}
+
+// The voices a practice scenario can be given: those of the service the user speaks
+// with right now, drawn from the same lists the Speech tab's pickers use.
+function practiceVoiceChoices() {
+    const service = storage.loadTtsProvider();
+    const named = (v) => [v.id, v.detail ? `${v.name} — ${v.detail}` : (v.name || v.id)];
+    if (service === 'deepgram') return { service, options: ttsDeepgram.VOICES.map(named) };
+    if (service === 'azure') return { service, options: ttsAzure.VOICES.map(named) };
+    if (TTS_PROVIDERS[service]) {
+        const p = TTS_PROVIDERS[service];
+        return { service, options: (storage.loadServiceVoiceCatalog(service) || p.voices || []).map(named) };
+    }
+    return { service: 'builtin',
+        options: tts.usableVoices(storage.loadShowNoveltyVoices()).map((v) => [v.voiceURI, tts.voiceLabel(v)]) };
 }
 
 function showApiKeyStatus(kind, msg) {
@@ -2349,6 +2375,9 @@ function renderPracticePanel() {
                 document.getElementById('settingsDialog').close();
             },
             onGoToKey: () => activateSettingsTab(document.querySelector('#settingsTabs .settings-tab[data-tab="general"]'), true),
+            voiceChoices: () => practiceVoiceChoices(),
+            hearVoice: (service, id) => tts.speak('Hello. This is how I will sound when you practice.',
+                partnerVoiceOptions({ voices: id ? { [service]: id } : {} })),
         });
         practiceEditorReady = true;
     }
@@ -2369,6 +2398,30 @@ async function startPractice(scenario) {
     hostExpressPanel(false);       // the panel must not close inside the dialog
     document.getElementById('settingsDialog').close();
     await terminateConversation(); // fresh conversation state + log (keeps practiceMode)
+    // Set AFTER the teardown, which clears the partner. A scenario started from someone
+    // in About Me makes that person the active partner, so "how I talk with them" and
+    // their goals shape the suggestions exactly as in a real conversation. The id is
+    // not an Express Panel button's, so no button lights: the person may have none.
+    const person = scenario.personId ? relationships.getPerson(scenario.personId) : null;
+    if (person) {
+        activePartner = { id: `practice:${person.id}`, type: 'partner', personId: person.id,
+                          name: person.name, nickname: person.nickname };
+        renderExpressPanel();
+    }
+    practiceOpeners = [];
+    applyControlPhrases();
+    // A conversation the user opens gets opening lines written for it. Fetched in the
+    // background: until they arrive, Start conversation offers the ordinary openers,
+    // which still work.
+    if (!isTour && scenario.opensWith === 'user') {
+        llm.generatePracticeOpeners(scenario, storage.loadResponsesPerCategory?.() === 2 ? 8 : 4)
+            .then((lines) => {
+                if (!practiceMode || practiceScenario !== scenario) return;
+                practiceOpeners = lines;
+                applyControlPhrases();
+            })
+            .catch((e) => storage.logError('practice-openers', e.message || String(e)));
+    }
     isListening = false;
     manualListenArmed = false;
     ui.setListenButtonState(false);
@@ -2414,7 +2467,7 @@ async function advancePracticePartner() {
     // practice, so there's no echo to filter.
     // Both voices are passed; tts.js uses whichever matches the active provider, so
     // the partner stays distinct from the user on either one.
-    await tts.speak(line, partnerVoiceOptions());
+    await tts.speak(line, partnerVoiceOptions(practiceScenario));
     if (token !== generationToken || !practiceMode) return;
     // Feed the spoken line through the normal pipeline (logs the partner turn,
     // updates the engine, generates the user's response palette). Mic-free.
@@ -2967,7 +3020,9 @@ function applyControlPhrases() {
     };
 
     engine.setConversationPhrases({
-        openers: merge(mine.openers, p.openers),
+        // A practice scenario's own opening lines come first of all: they are about
+        // this particular conversation, which neither list below can be.
+        openers: merge([...practiceOpeners, ...clean(mine.openers)], p.openers),
         windDowns: merge(mine.windDowns, p.windDowns),
         closings: merge(mine.closings, p.closings),
         // The "let me try that again" repair card. Not merged with a partner's own
@@ -3419,6 +3474,7 @@ async function handleEndConversation() {
     // to real-conversation behavior.
     practiceMode = false;
     practiceScenario = null;
+    practiceOpeners = [];
     // The session is over, so the tour is too — this is the ONLY place it is cleared
     // (see the note in terminateConversation for why it cannot be done there).
     tour = null;

@@ -52,11 +52,31 @@ function defaultModel() {
 
 function str(v) { return String(v ?? '').trim(); }
 
+// The scenario's own voice, one choice PER SPEECH SERVICE (document section 3). Keyed by
+// service because a voice id only means something to the service that issued it, and
+// a user who switches service must not have the doctor handed a meaningless id. An
+// empty choice is not stored: it means "use the general practice voice".
+function normalizeVoices(v) {
+    const out = {};
+    if (v && typeof v === 'object') {
+        for (const [service, id] of Object.entries(v)) {
+            const clean = str(id);
+            if (clean) out[service] = clean;
+        }
+    }
+    return out;
+}
+
 function normalizeScenario(s) {
     const behavior = BEHAVIORS.some((b) => b.id === s.behavior) ? s.behavior : 'warm';
     return {
         id: s.id,
         basedOn: s.basedOn || null,
+        // A person from About Me this scenario is about (document section 2). While
+        // practicing, that person is the active partner, so "how I talk with them" and
+        // their goals apply exactly as they would in a real conversation.
+        personId: s.personId ? String(s.personId) : null,
+        voices: normalizeVoices(s.voices),
         category: CATEGORIES.includes(s.category) ? s.category : 'Personal',
         title: str(s.title),
         description: str(s.description),
@@ -170,7 +190,46 @@ export async function copyScenario(source) {
         behavior: source.behavior || 'warm',
         behaviorText: source.behaviorText || '',
         details: source.details || '',
+        personId: source.personId || null,
+        voices: source.voices || {},
     });
+}
+
+/**
+ * "Start from someone in About Me". Fills the form from what the user already wrote,
+ * so the same person is not described twice; everything stays editable, and editing
+ * it here never touches About Me. Pure, so it is testable without a graph.
+ */
+export function scenarioFromPerson(person) {
+    if (!person) return null;
+    const label = str(person.nickname) || str(person.name);
+    const rel = str(person.relationship);
+    const persona = [
+        rel ? `${str(person.name)}, my ${rel.toLowerCase()}.` : `${str(person.name)}.`,
+        str(person.about),
+    ].filter(Boolean).join(' ');
+    return normalizeScenario({
+        id: null,
+        personId: person.id,
+        title: `Talking with ${label}`,
+        category: 'Personal',
+        description: rel ? `A conversation with my ${rel.toLowerCase()}.` : '',
+        partnerPersona: persona,
+        register: 'a conversation between two people who know each other',
+        behavior: 'warm',
+    });
+}
+
+/** The AI's suggested opening lines, as a clean list. Tolerates prose around the JSON. */
+export function parseOpeners(text) {
+    let parsed = null;
+    try { parsed = JSON.parse(text); } catch {
+        const m = String(text || '').match(/\[[\s\S]*\]/);
+        if (m) { try { parsed = JSON.parse(m[0]); } catch { /* fall through */ } }
+    }
+    if (parsed && !Array.isArray(parsed) && Array.isArray(parsed.openers)) parsed = parsed.openers;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((o) => str(typeof o === 'string' ? o : o && o.text)).filter(Boolean).slice(0, 8);
 }
 
 /**

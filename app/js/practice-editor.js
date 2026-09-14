@@ -20,6 +20,7 @@ import * as library from './practice-library.js';
 import { SCENARIOS as BUILT_IN } from './practice-scenarios.js';
 import * as llm from './llm.js';
 import { confirmDanger } from './confirm-dialog.js';
+import * as relationships from './relationships.js';
 
 let container = null;
 let hooks = {};
@@ -182,6 +183,25 @@ function renderList() {
         writeBtn,
         button('Fill it in yourself', () => goTo({ mode: 'create', draft: library.emptyScenario() })),
     ]), note);
+
+    // Starting from someone already in About Me, so the same person is not described
+    // twice. Offered only when there is somebody to start from.
+    const people = relationships.listPeople().filter((p) => p.name);
+    if (people.length) {
+        const pg = helpGroup(container, 'practicePerson', 'Someone from About Me');
+        const who = el('select');
+        for (const p of people) {
+            who.appendChild(el('option', { value: p.id, text: p.relationship ? `${p.name} (${p.relationship})` : p.name }));
+        }
+        pg.append(who, el('div', { class: 'practice-tools' }, [
+            button('Start from this person', async () => {
+                const draft = library.scenarioFromPerson(relationships.getPerson(who.value));
+                if (!draft) return;
+                const id = await library.addScenario(draft);
+                goTo({ mode: 'edit', id });
+            }),
+        ]));
+    }
 }
 
 // The form. `creating` is the blank-form path; otherwise `scenario` is stored and every
@@ -220,6 +240,11 @@ function renderForm(scenario, creating) {
     };
 
     container.appendChild(el('h3', { class: 'practice-title', text: creating ? 'A new scenario' : 'Make it your own' }));
+    const linked = draft.personId ? relationships.getPerson(draft.personId) : null;
+    if (linked) {
+        container.appendChild(el('p', { class: 'setting-status practice-status',
+            text: `This is ${linked.nickname || linked.name} from About Me. While you practice, how you talk with them is used too.` }));
+    }
 
     textField('practiceName', 'Name', 'title');
     selectField('practiceKind', 'Kind', 'category', library.CATEGORIES.map((c) => [c, c]));
@@ -238,6 +263,25 @@ function renderForm(scenario, creating) {
     custom.addEventListener('input', () => { draft.behaviorText = custom.value; });
     custom.addEventListener('change', () => save({ behaviorText: custom.value }));
     behaviorGroup.appendChild(custom);
+
+    // Their voice, for the speech service in use now (document section 3). Leaving it on
+    // the general practice voice stores nothing, so Speech settings keep governing it.
+    const vc = hooks.voiceChoices ? hooks.voiceChoices() : null;
+    if (vc) {
+        const g = helpGroup(container, 'practiceVoice', 'Their voice');
+        const sel = el('select');
+        sel.appendChild(el('option', { value: '', text: 'The general practice voice' }));
+        for (const [value, label] of vc.options) sel.appendChild(el('option', { value, text: label }));
+        sel.value = (draft.voices || {})[vc.service] || '';
+        sel.addEventListener('change', () => {
+            const voices = { ...(draft.voices || {}) };
+            if (sel.value) voices[vc.service] = sel.value; else delete voices[vc.service];
+            save({ voices });
+        });
+        g.append(sel, el('div', { class: 'practice-tools' }, [
+            button('Hear it', () => hooks.hearVoice && hooks.hearVoice(vc.service, sel.value)),
+        ]));
+    }
 
     textField('practiceDetails', 'Details for this practice', 'details', true,
         'Dr. Alvarez, my rheumatologist. I am there about my right knee, which has been worse since March. I want to ask about changing the medication because it makes me tired all day.');

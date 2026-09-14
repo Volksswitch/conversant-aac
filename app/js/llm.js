@@ -1,5 +1,5 @@
 const API_URL = 'https://api.anthropic.com/v1/messages';
-import { buildPartnerBrief, parseDraft, CATEGORIES } from './practice-library.js';
+import { buildPartnerBrief, buildUserSideBlock, parseDraft, parseOpeners, CATEGORIES } from './practice-library.js';
 
 const MODEL = 'claude-sonnet-4-6';
 
@@ -668,6 +668,47 @@ Return ONLY a JSON object, no other text:
     const data = await response.json();
     trackUsage(data);
     return parseDraft(data.content[0].text.trim(), sentence);
+}
+
+// Opening lines for a practice scenario the USER opens (Practice Scenarios document,
+// section 7.2): "the app offers you ways to start rather than waiting for her to
+// speak, which is the hard part of this particular conversation." The ordinary
+// openers ("Hey, got a minute?") are generic by design and fit a breakup or a hearing
+// badly, so these go ahead of them on the Start conversation palette.
+export async function generatePracticeOpeners(scenario, count = 4) {
+    if (!apiKey) throw new Error('API key not set');
+    const n = count === 8 ? 8 : 4;
+    const systemPrompt = `You are an AAC assistant speaking AS a non-speaking user, in their own voice, never as a helpful assistant. The user is about to PRACTICE a conversation they have to open themselves.
+
+The conversation: ${scenario.title}${scenario.register ? ` (${scenario.register})` : ''}.
+The other person: ${scenario.partnerPersona}
+(In that description "I", "me", "my" and "you" all mean the user.)
+${buildUserSideBlock(scenario)}
+
+Write ${n} different ways the user could START this conversation — the very first thing they say. Vary them: some gentle lead-ins that ease toward the subject, some that raise it directly. Each is one short, speakable sentence or two. Use only facts given above; invent nothing about the user's life, and add no facts from your own knowledge.
+
+Return ONLY a JSON array of strings, no other text.${buildProfileBlock()}${buildSituationBlock()}
+
+${NO_VULGARITY}`;
+
+    const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({ model: MODEL, max_tokens: 400, system: systemPrompt,
+            messages: [{ role: 'user', content: '(Write the opening lines.)' }] })
+    });
+    if (!response.ok) {
+        const err = await response.text();
+        throw new Error(`API error ${response.status}: ${err}`);
+    }
+    const data = await response.json();
+    trackUsage(data);
+    return parseOpeners(data.content[0].text.trim());
 }
 
 // Reframe-to-lead (Ken): the user HOLDS THE FLOOR (they just responded, or the

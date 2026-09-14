@@ -197,7 +197,9 @@ const HELP = {
     "practicePersona": "Who the other person is: who they are to you, what they want, and how they normally come across.",
     "practiceRegister": "A few words on the tone, such as a relaxed chat or a formal hearing.",
     "practiceBehavior": "How the other person is behaving when the conversation starts. They still react to what you say.",
-    "practiceDetails": "Facts for this practice, like names and what happened. The other person knows them, and your suggested replies can use them."
+    "practiceDetails": "Facts for this practice, like names and what happened. The other person knows them, and your suggested replies can use them.",
+    "practiceVoice": "The voice this person speaks in when you practice. Leave it on the general practice voice to use the one from the Speech settings.",
+    "practicePerson": "Start a scenario from someone you added in About Me. While you practice, how you talk with them is used too."
   }
 };
 // @@SETTINGS_HELP_END@@

@@ -27,6 +27,9 @@ forgetting to tag one is only ever noise, never silence.
 ## Unreleased (next release)
 
 - **Make a practice scenario your own, or build one for a conversation coming up.** On the Practice tab in Settings, any scenario can be copied and changed: say who the other person is, add details like names and what happened, and choose how they are behaving, from warm and easy to angry with you. The details are treated as true, so your suggested replies can use them. To start a new one, describe the conversation in a sentence and the app writes it for you, or fill in a blank form. Your scenarios are saved with your other data, and can be deleted when the occasion has passed.
+- **Give each practice scenario its own voice.** Set the doctor's voice once and the doctor sounds like that every time. Leave it alone and the general practice voice is used, as before.
+- **Start a practice scenario from someone in About Me.** The form fills in from what you already wrote about them, and while you practice, how you talk with that person shapes your suggested replies.
+- **Ways to start when you speak first.** In a practice where you open the conversation, Start conversation now offers opening lines written for that conversation, ahead of your usual ones.
 
 ## Version 0.11.1
 
