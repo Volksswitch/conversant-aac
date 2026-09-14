@@ -432,3 +432,18 @@ test('person, place and general goals reach the panel ranked, and a shared goal 
     assert.deepEqual(panel.items.slice(flexAt).map((x) => x.text), out.map((g) => g.text));
     assert.equal(panel.unreachable.goals, 0);
 });
+
+test('a person\'s topics are split on commas, survive a reload, and reach the partner block', async () => {
+    const id = await rel.addPerson({ name: 'Elena', nickname: 'Mom', relationship: 'Mother',
+        topicsWelcome: 'gardening, the grandkids, Gardening', topicsAvoid: 'my job search' });
+    await rel.load();
+    const p = rel.getPerson(id);
+    assert.deepEqual(p.topicsWelcome, ['gardening', 'the grandkids']);
+    assert.deepEqual(p.topicsAvoid, ['my job search']);
+    const block = rel.buildPartnerBlock(id);
+    assert.match(block, /likes to talk about with Mom: gardening, the grandkids/);
+    assert.match(block, /rather not talk about with Mom: my job search\. Never raise/);
+    assert.doesNotMatch(block, /WORDING of your suggestions only/, 'no profile, so no wording-only header over the topics');
+    await rel.updatePerson(id, { topicsAvoid: '' });
+    assert.doesNotMatch(rel.buildPartnerBlock(id), /rather not talk about/);
+});

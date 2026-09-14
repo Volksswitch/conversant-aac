@@ -1153,6 +1153,14 @@ function buildPersonForm(existing) {
     const aboutIn = el('input', { type: 'text', class: 'wv-text', placeholder: 'Anything worth knowing (optional)',
         value: existing ? existing.about : '' });
 
+    // Comma-separated, like About Me's own two topic questions (Ken, September 13 2026).
+    const topicsWelcomeIn = el('input', { type: 'text', class: 'wv-text',
+        placeholder: 'Topics I\'d like to talk about (separate with commas)',
+        value: existing ? (existing.topicsWelcome || []).join(', ') : '' });
+    const topicsAvoidIn = el('input', { type: 'text', class: 'wv-text',
+        placeholder: 'Topics to avoid (separate with commas)',
+        value: existing ? (existing.topicsAvoid || []).join(', ') : '' });
+
     const livesId = 'wvlives-' + (existing ? existing.id : 'new');
     const livesCheck = el('input', { type: 'checkbox', id: livesId });
     if (existing && existing.livesWithMe) livesCheck.checked = true;
@@ -1202,7 +1210,9 @@ function buildPersonForm(existing) {
             pronunciation: namePron.inp.value.trim(),
             nicknamePronunciation: nickPron.inp.value.trim(),
             livesWithMe: livesCheck.checked,
-            isPrivate: privCheck.checked
+            isPrivate: privCheck.checked,
+            topicsWelcome: topicsWelcomeIn.value,
+            topicsAvoid: topicsAvoidIn.value
         });
         await rel.setPartnerProfile(existing.id, profile.read());
     }
@@ -1212,7 +1222,7 @@ function buildPersonForm(existing) {
     // Discrete controls commit at once; typed fields commit when they are left. Done
     // commits again, so nothing typed and never blurred is lost either way.
     if (existing) {
-        for (const box of [nameIn, nicknameIn, aboutIn, otherIn, namePron.inp, nickPron.inp]) {
+        for (const box of [nameIn, nicknameIn, aboutIn, otherIn, namePron.inp, nickPron.inp, topicsWelcomeIn, topicsAvoidIn]) {
             box.addEventListener('change', commitNow);
         }
         for (const c of [relSelect, livesCheck, privCheck]) c.addEventListener('change', commitNow);
@@ -1221,7 +1231,7 @@ function buildPersonForm(existing) {
     // Each "how to say it" sits directly under the field it corrects, so there is
     // never a question about which name it applies to.
     card.append(el('div', { class: 'wv-person-fields' },
-        [nameIn, namePron.row, nicknameIn, nickPron.row, relSelect, otherWrap, aboutIn, livesRow, privRow]));
+        [nameIn, namePron.row, nicknameIn, nickPron.row, relSelect, otherWrap, aboutIn, topicsWelcomeIn, topicsAvoidIn, livesRow, privRow]));
     card.append(profile.goalsNode, profile.node);
 
     const save = el('button', { class: 'wv-btn wv-btn-primary', text: existing ? 'Done' : 'Add person',
@@ -1244,7 +1254,9 @@ function buildPersonForm(existing) {
                 pronunciation: namePron.inp.value.trim(),
                 nicknamePronunciation: nickPron.inp.value.trim(),
                 livesWithMe: livesCheck.checked,
-                isPrivate: privCheck.checked
+                isPrivate: privCheck.checked,
+                topicsWelcome: topicsWelcomeIn.value,
+                topicsAvoid: topicsAvoidIn.value
             });
             await rel.setPartnerProfile(id, profile.read());
             renderPeople();
@@ -1459,6 +1471,14 @@ function buildPlaceForm(existing) {
     };
     renderFacts();
 
+    // Comma-separated, like About Me's own two topic questions (Ken, September 13 2026).
+    const placeTopicsWelcomeIn = el('input', { type: 'text', class: 'wv-text',
+        placeholder: 'Topics I\'d like to talk about (separate with commas)',
+        value: existing ? (existing.topicsWelcome || []).join(', ') : '' });
+    const placeTopicsAvoidIn = el('input', { type: 'text', class: 'wv-text',
+        placeholder: 'Topics to avoid (separate with commas)',
+        value: existing ? (existing.topicsAvoid || []).join(', ') : '' });
+
     const addFact = el('button', { class: 'wv-btn wv-btn-link', text: '+ Add a fact',
         onclick: () => { syncDraft(); draft.push({ key: '', value: '' }); renderFacts();
             factsWrap.querySelector('.wv-fact-row:last-child .wv-fact-key-input')?.focus(); } });
@@ -1483,7 +1503,9 @@ function buildPlaceForm(existing) {
             pronunciation: pronIn.value.trim(),
             facts: draft,
             goals: goalEd.read(),
-            isPrivate: privCheck.checked
+            isPrivate: privCheck.checked,
+            topicsWelcome: placeTopicsWelcomeIn.value,
+            topicsAvoid: placeTopicsAvoidIn.value
         });
     }
 
@@ -1508,10 +1530,10 @@ function buildPlaceForm(existing) {
     ]);
 
     card.append(el('div', { class: 'wv-person-fields' },
-        [nameIn, pronRow, factsWrap, addFact, goalsNode, privRow]));
+        [nameIn, pronRow, factsWrap, addFact, placeTopicsWelcomeIn, placeTopicsAvoidIn, goalsNode, privRow]));
 
     if (existing) {
-        for (const box of [nameIn, pronIn]) box.addEventListener('change', commitPlaceNow);
+        for (const box of [nameIn, pronIn, placeTopicsWelcomeIn, placeTopicsAvoidIn]) box.addEventListener('change', commitPlaceNow);
         privCheck.addEventListener('change', commitPlaceNow);
     }
 
@@ -1530,7 +1552,9 @@ function buildPlaceForm(existing) {
                 pronunciation: pronIn.value.trim(),
                 facts: draft,          // places.js drops the blank rows
                 goals: goalEd.read(),
-                isPrivate: privCheck.checked
+                isPrivate: privCheck.checked,
+                topicsWelcome: placeTopicsWelcomeIn.value,
+                topicsAvoid: placeTopicsAvoidIn.value
             });
             renderPlaces();
         } });

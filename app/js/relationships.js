@@ -164,6 +164,10 @@ export function listPeople() {
             relationship: edge ? edge.type : '',
             about: (p.attrs && p.attrs.about) || '',
             livesWithMe: !!(p.attrs && p.attrs.livesWithMe),
+            // What the user likes to talk about WITH this person, and what they would
+            // rather not. Sent only while this person is the active partner.
+            topicsWelcome: normalizeTopics(p.attrs && p.attrs.topicsWelcome),
+            topicsAvoid: normalizeTopics(p.attrs && p.attrs.topicsAvoid),
             // How the NAME should be said, when the voice gets it wrong — a respelling
             // like "Shiv-awn" for Siobhan (measured to work on Aura-2, August 8 2026).
             // ⚠ SPEAK-TIME ONLY. These must never reach the LLM (see buildBlock): a
@@ -183,9 +187,12 @@ export function getPerson(id) {
     return listPeople().find((p) => p.id === id) || null;
 }
 
+import { normalizeTopics, topicLines } from './partner-profile.js';
+
 export async function addPerson({ name, relationship = '', about = '', nickname = '',
                                   pronunciation = '', nicknamePronunciation = '',
-                                  livesWithMe = false, isPrivate = false } = {}) {
+                                  livesWithMe = false, isPrivate = false,
+                                  topicsWelcome = [], topicsAvoid = [] } = {}) {
     const g = ensureLoaded();
     const id = newId();
     g.people.push({
@@ -194,7 +201,9 @@ export async function addPerson({ name, relationship = '', about = '', nickname 
             about: (about || '').trim(), nickname: (nickname || '').trim(),
             pronunciation: (pronunciation || '').trim(),
             nicknamePronunciation: (nicknamePronunciation || '').trim(),
-            livesWithMe: !!livesWithMe
+            livesWithMe: !!livesWithMe,
+            topicsWelcome: normalizeTopics(topicsWelcome),
+            topicsAvoid: normalizeTopics(topicsAvoid)
         }
     });
     if ((relationship || '').trim()) {
@@ -206,7 +215,7 @@ export async function addPerson({ name, relationship = '', about = '', nickname 
 
 export async function updatePerson(id, { name, relationship, about, nickname,
                                          pronunciation, nicknamePronunciation,
-                                         livesWithMe, isPrivate } = {}) {
+                                         livesWithMe, isPrivate, topicsWelcome, topicsAvoid } = {}) {
     const g = ensureLoaded();
     const p = g.people.find((x) => x.id === id);
     if (!p) return;
@@ -216,6 +225,8 @@ export async function updatePerson(id, { name, relationship, about, nickname,
     if (pronunciation !== undefined) { p.attrs = p.attrs || {}; p.attrs.pronunciation = (pronunciation || '').trim(); }
     if (nicknamePronunciation !== undefined) { p.attrs = p.attrs || {}; p.attrs.nicknamePronunciation = (nicknamePronunciation || '').trim(); }
     if (livesWithMe !== undefined) { p.attrs = p.attrs || {}; p.attrs.livesWithMe = !!livesWithMe; }
+    if (topicsWelcome !== undefined) { p.attrs = p.attrs || {}; p.attrs.topicsWelcome = normalizeTopics(topicsWelcome); }
+    if (topicsAvoid !== undefined) { p.attrs = p.attrs || {}; p.attrs.topicsAvoid = normalizeTopics(topicsAvoid); }
     if (isPrivate !== undefined) p.private = !!isPrivate;
     if (relationship !== undefined) {
         const edge = meEdge(id);
@@ -487,9 +498,15 @@ export function buildPartnerBlock(personId, label = '') {
     const clauses = registerClauses(profile.register);
     const goals = goalTexts(profile.goals);
     const note = (profile.note || '').trim();
-    if (!clauses.length && !goals.length && !note) return '';
+    // Topics are the one part of this block that IS about subject matter, so they are
+    // kept out from under the "wording only" header and follow it on their own.
+    const topics = topicLines(person.topicsWelcome, person.topicsAvoid, `with ${name}`);
+    if (!clauses.length && !goals.length && !note && !topics.length) return '';
 
-    const lines = [`How this user speaks WITH ${name}. This shapes the WORDING of your suggestions only — none of it is a topic to raise.`];
+    const lines = [];
+    if (clauses.length || goals.length || note) {
+        lines.push(`How this user speaks WITH ${name}. This shapes the WORDING of your suggestions only — none of it is a topic to raise.`);
+    }
 
     if (clauses.length) {
         lines.push(`Talking with ${name}, this user is ${clauses.join('; ')}. Match that, relative to how you would otherwise write for them.`);
@@ -518,6 +535,7 @@ export function buildPartnerBlock(personId, label = '') {
         // actually wanted to say.
         lines.push(`In the user's own words about talking with ${name}: "${note}" Treat this as authoritative — it is the user's own description and it overrides the general guidance above where they conflict.`);
     }
+    lines.push(...topics);
 
     return lines.join('\n');
 }

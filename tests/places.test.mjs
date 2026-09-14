@@ -255,3 +255,14 @@ test('⚠ A PLACE RESPELLING SURVIVES A RELOAD (it did not, and nothing said so)
     await places.load();
     assert.equal(places.getPlace(id).pronunciation, 'Folks-switch');
 });
+
+test('a place\'s topics are split on commas, survive a reload, and reach the here block', async () => {
+    const id = await places.addPlace({ name: 'Pulp Comics', topicsWelcome: 'new releases, board games', topicsAvoid: 'money' });
+    await places.load();
+    assert.deepEqual(places.getPlace(id).topicsWelcome, ['new releases', 'board games']);
+    const here = places.buildHereBlock(id);
+    assert.match(here, /likes to talk about at Pulp Comics: new releases, board games/);
+    assert.match(here, /rather not talk about at Pulp Comics: money\. Never raise/);
+    await places.updatePlace(id, { topicsWelcome: [] });
+    assert.doesNotMatch(places.buildHereBlock(id), /likes to talk about/);
+});

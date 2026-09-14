@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- **Topics for a person or a place.** In About Me, each person in People in Your Life and each place in My Places now has "Topics I'd like to talk about" and "Topics to avoid". Separate topics with commas, just like the topic questions elsewhere in About Me. While you are talking with that person, or are at that place, your suggested replies lean toward the first list and never raise the second on their own.
+
 - **Make a practice scenario your own, or build one for a conversation coming up.** On the Practice tab in Settings, any scenario can be copied and changed: say who the other person is, add details like names and what happened, and choose how they are behaving, from warm and easy to angry with you. The details are treated as true, so your suggested replies can use them. To start a new one, describe the conversation in a sentence and the app writes it for you, or fill in a blank form. Your scenarios are saved with your other data, and can be deleted when the occasion has passed.
 - **Give each practice scenario its own voice.** Set the doctor's voice once and the doctor sounds like that every time. Leave it alone and the general practice voice is used, as before.
 - **Start a practice scenario from someone in About Me.** The form fills in from what you already wrote about them, and while you practice, how you talk with that person shapes your suggested replies.

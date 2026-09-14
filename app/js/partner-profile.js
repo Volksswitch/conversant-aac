@@ -261,3 +261,42 @@ export function isEmptyProfile(profile) {
     );
     return !hasRegister && !hasGoal && !hasNote && !hasPhrases;
 }
+
+/**
+ * TOPICS FOR A PERSON OR A PLACE (Ken, September 13 2026): "Topics I'd like to talk
+ * about" and "Topics to avoid", as comma-separated lists like About Me's own two topic
+ * questions. Stored as an array; a string is split on commas, so a form can hand over
+ * exactly what was typed. Duplicates are dropped case-insensitively.
+ */
+export function normalizeTopics(value) {
+    const parts = Array.isArray(value) ? value : String(value ?? '').split(',');
+    const out = [];
+    const seen = new Set();
+    for (const p of parts) {
+        const t = String(p ?? '').trim();
+        if (!t || seen.has(t.toLowerCase())) continue;
+        seen.add(t.toLowerCase());
+        out.push(t);
+    }
+    return out;
+}
+
+/**
+ * The prompt lines for those two lists, scoped to one person or one place (`where` is
+ * "with Mom" or "at Pulp Comics"). Worded to match About Me's topics_welcome and
+ * topics_avoid (worldview.js), so the model reads a per-person avoid list exactly as it
+ * reads the general one: a rule about its OWN suggestions, never an absolute ban - the
+ * user may raise the subject themselves.
+ */
+export function topicLines(welcome, avoid, where) {
+    const lines = [];
+    const w = normalizeTopics(welcome);
+    const a = normalizeTopics(avoid);
+    if (w.length) {
+        lines.push(`Topics this user likes to talk about ${where}: ${w.join(', ')}. These are good ground for an INITIATIVE response when the conversation is open.`);
+    }
+    if (a.length) {
+        lines.push(`Topics this user would rather not talk about ${where}: ${a.join(', ')}. Never raise any of it on your own initiative. If the partner brings it up, do not volunteer detail, and make sure one of the responses you offer lets the user move the conversation on. If the user steers you to it themselves, follow them.`);
+    }
+    return lines;
+}

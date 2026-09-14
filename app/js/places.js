@@ -45,7 +45,7 @@
  */
 
 import { readFile, writeFile, hasDataFolder } from './storage.js';
-import { normalizeGoals } from './partner-profile.js';
+import { normalizeGoals, normalizeTopics, topicLines } from './partner-profile.js';
 
 const FILE = 'places.json';
 const CACHE_KEY = 'aac_places';
@@ -97,7 +97,9 @@ function normalizePlace(p) {
         pronunciation: String(p.pronunciation ?? '').trim(),
         private: !!p.private,
         facts: normalizeFacts(p.facts),
-        goals: normalizeGoals(p.goals)
+        goals: normalizeGoals(p.goals),
+        topicsWelcome: normalizeTopics(p.topicsWelcome),
+        topicsAvoid: normalizeTopics(p.topicsAvoid)
     };
 }
 
@@ -186,7 +188,9 @@ export function listPlaces() {
         pronunciation: p.pronunciation || '',
         private: !!p.private,
         facts: p.facts.map((f) => ({ ...f })),
-        goals: (p.goals || []).map((g) => ({ ...g }))
+        goals: (p.goals || []).map((g) => ({ ...g })),
+        topicsWelcome: [...(p.topicsWelcome || [])],
+        topicsAvoid: [...(p.topicsAvoid || [])]
     }));
 }
 
@@ -194,7 +198,8 @@ export function getPlace(id) {
     return listPlaces().find((p) => p.id === id) || null;
 }
 
-export async function addPlace({ name = '', pronunciation = '', facts = [], goals = [], isPrivate = false } = {}) {
+export async function addPlace({ name = '', pronunciation = '', facts = [], goals = [], isPrivate = false,
+                                 topicsWelcome = [], topicsAvoid = [] } = {}) {
     const m = ensureLoaded();
     const id = newId();
     m.places.push({
@@ -203,13 +208,15 @@ export async function addPlace({ name = '', pronunciation = '', facts = [], goal
         pronunciation: (pronunciation || '').trim(),
         private: !!isPrivate,
         facts: normalizeFacts(facts),
-        goals: normalizeGoals(goals)
+        goals: normalizeGoals(goals),
+        topicsWelcome: normalizeTopics(topicsWelcome),
+        topicsAvoid: normalizeTopics(topicsAvoid)
     });
     await save();
     return id;
 }
 
-export async function updatePlace(id, { name, pronunciation, facts, goals, isPrivate } = {}) {
+export async function updatePlace(id, { name, pronunciation, facts, goals, isPrivate, topicsWelcome, topicsAvoid } = {}) {
     const m = ensureLoaded();
     const p = m.places.find((x) => x.id === id);
     if (!p) return;
@@ -218,6 +225,8 @@ export async function updatePlace(id, { name, pronunciation, facts, goals, isPri
     if (facts !== undefined) p.facts = normalizeFacts(facts);
     if (goals !== undefined) p.goals = normalizeGoals(goals);
     if (isPrivate !== undefined) p.private = !!isPrivate;
+    if (topicsWelcome !== undefined) p.topicsWelcome = normalizeTopics(topicsWelcome);
+    if (topicsAvoid !== undefined) p.topicsAvoid = normalizeTopics(topicsAvoid);
     await save();
 }
 
@@ -315,6 +324,7 @@ export function buildHereBlock(id) {
         `What this place is for SHOULD inform your suggestions: what someone would plausibly say standing here, and what the partner is likely getting at. What it must not do is become the topic on its own — that comes from what the partner actually said.`,
     ];
     if (facts) lines.push(`What you know about ${p.name} — ${facts}. These are for UNDERSTANDING the situation, not for saying: they let a response be specific and competent here. Do not announce them back, and never treat this place as somewhere the user visits or remembers ("what did you find here last Saturday?") — they are standing in it right now, so anything that amounts to describing being here is already obvious to everyone present.`);
+    lines.push(...topicLines(p.topicsWelcome, p.topicsAvoid, `at ${p.name}`));
     if (p.private) lines.push(`Do not name ${p.name} on your own initiative — only if the partner asks where the user is, or the user's own typed guidance tells you to.`);
     return lines.join(' ');
 }
