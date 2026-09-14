@@ -37,6 +37,23 @@ the one that quietly waits forever.
 
 ## Open
 
+### Azure "quota tier" upgrade: confirm the speech free plan survives, then fix the guide if not
+- **Raised:** 2026-09-14 - Microsoft emailed the first beta tester's Azure subscription
+  (bt1@volksswitch.org) saying it will be moved from the Free quota Tier to Tier 1 in three
+  days unless opted out. Ken chose to let it upgrade.
+- **What is wanted:** a few days after the upgrade (around 2026-09-17 or later), open the
+  speech resource on that subscription in the Azure portal and confirm its pricing tier
+  still reads **Free (F0)**, and that the free monthly allowance (500,000 characters of
+  voice, 5 hours of transcription) is still being applied. If it has changed, or if
+  Microsoft now steers new accounts to Tier 1 rather than F0, update the Azure sign-up
+  steps in `Documents/Conversant AAC Speech Provider Guide.docx` (and the three User
+  Manuals wherever they name F0) so testers and users request the right thing.
+- **What we believe, and why it needs checking:** Microsoft's own quotas page describes the
+  tiers as request-rate limits for its AI models, not pricing, and Conversant does not use
+  those models. But one answer on Microsoft's help forum claims Tier 1 ends free
+  allowances. Unverified either way.
+- **Why not now:** the upgrade has not happened yet, so there is nothing to look at.
+
 ### Six items from the "I, Robot?" ultra-personalized AAC paper
 - **Raised:** 2026-09-10 - Ken asked for a review of Weinberg et al., *"I, Robot? Exploring
   Ultra-Personalized AI-Powered AAC; an Autoethnographic Account"* (Cornell Tech, arXiv
