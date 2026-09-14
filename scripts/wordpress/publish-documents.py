@@ -79,10 +79,16 @@ def main():
             if r.returncode != 0:
                 raise SystemExit(f'PDF export failed for {d["file"]}; nothing has been published.')
             pdf = os.path.splitext(path)[0] + '.pdf'
+            # ⚠ A FORM UPLOAD, NOT A RAW BODY. The host's firewall answers 406 to a raw
+            # upload with a Content-Disposition header (measured Sep 14 2026, with every
+            # User-Agent and filename form tried) and lets multipart/form-data through.
+            boundary = 'ConversantBoundary7f3a9c'
             with open(pdf, 'rb') as f:
-                media = call('POST', '/wp/v2/media', f.read(), {
-                    'Content-Type': 'application/pdf',
-                    'Content-Disposition': f'attachment; filename="{pdf_name(d["file"])}"'})
+                body = (f'--{boundary}\r\nContent-Disposition: form-data; name="file"; '
+                        f'filename="{pdf_name(d["file"])}"\r\nContent-Type: application/pdf\r\n\r\n'
+                        ).encode() + f.read() + f'\r\n--{boundary}--\r\n'.encode()
+            media = call('POST', '/wp/v2/media', body,
+                         {'Content-Type': f'multipart/form-data; boundary={boundary}'})
             call('POST', f'/wp/v2/media/{media["id"]}', {
                 'title': 'Conversant AAC ' + d['title'], 'media_folder': [cfg['mediaFolder']]})
             if d.get('mediaId'):
