@@ -76,7 +76,7 @@ const DELIBERATE = [
     ['.slider-step', ['fill', 'radius', 'size'],
      'the - and + steppers: square at the minimum dimension so two of them leave the slider '
      + 'room, and a deliberately larger glyph so the target reads at a glance'],
-    ['.ee-del, .ee-reset, .wv-btn-danger, .wv-fact-del, .wv-entry-remove', ['fill'],
+    ['.ee-del, .ee-reset, .wv-btn-danger, .wv-fact-del, .wv-entry-remove, .practice-delete', ['fill'],
      'destructive: a red border, so it does not look like the button beside it. This is the '
      + 'ONLY thing color is spent on for an action in the panels'],
     ['.practice-end', ['fill'],

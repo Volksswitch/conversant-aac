@@ -1,4 +1,6 @@
 const API_URL = 'https://api.anthropic.com/v1/messages';
+import { buildPartnerBrief, parseDraft, CATEGORIES } from './practice-library.js';
+
 const MODEL = 'claude-sonnet-4-6';
 
 /*
@@ -573,9 +575,16 @@ ${JSON.stringify(context)}${avoidBlock}${steerBlock}${focusBlock}`;
 export async function generatePartnerUtterance(scenario, conversationHistory = []) {
     if (!apiKey) throw new Error('API key not set');
 
-    const systemPrompt = `You are role-playing a communication partner so a non-speaking AAC user can PRACTICE having a conversation. ${scenario.partnerPersona}
+    // The persona may be the user's own writing ("Sarah, my girlfriend…"), so the model
+    // is told whose "I" and "you" those are before it reads it.
+    const systemPrompt = `You are role-playing a communication partner so a non-speaking AAC user can PRACTICE having a conversation.
 
-The register is: ${scenario.register}.
+The person you are playing: ${scenario.partnerPersona}
+(This description was written by or for the user, so "I", "me", "my" and "you" in it all mean the USER, never you.)
+
+The register is: ${scenario.register || 'an ordinary conversation'}.
+
+${buildPartnerBrief(scenario)}
 
 Produce ONLY your next spoken line, as the partner — the exact words you would say out loud. Rules:
 - One short, natural turn (usually one or two sentences). It is spoken aloud, so keep it easy to follow.
@@ -619,6 +628,46 @@ ${NO_VULGARITY}`;
     // Strip a stray wrapping pair of quotes the model sometimes adds.
     line = line.replace(/^["'“”']+/, '').replace(/["'“”']+$/, '').trim();
     return line;
+}
+
+// "Describe it in a sentence" (Practice Scenarios document, section 6.1): turn one
+// plain sentence into a full scenario the user then edits. Returns a scenario-shaped
+// object, or null when the reply could not be used. A starting point, never a
+// finished thing — so nothing here is saved; the caller does that.
+export async function draftScenario(sentence) {
+    if (!apiKey) throw new Error('API key not set');
+    const systemPrompt = `A non-speaking AAC user wants to rehearse a real conversation that is coming up. They described it in one sentence. Write a practice scenario from it.
+
+Return ONLY a JSON object, no other text:
+{"title": "...", "category": "...", "description": "...", "opensWith": "partner" or "user", "partnerPersona": "...", "register": "...", "behavior": "...", "details": "..."}
+
+- title: a short name the user will recognize, at most 6 words.
+- category: exactly one of ${CATEGORIES.join(', ')}.
+- description: one short line.
+- opensWith: "user" when the user is the one who has to raise the subject (giving news, asking for something, ending something); otherwise "partner".
+- partnerPersona: 2-4 plain sentences describing the other person — who they are to the user, what they want from this conversation, how they normally come across. Write "you" for the user.
+- register: a few words on the tone of the encounter.
+- behavior: how they are when the conversation OPENS, exactly one of warm, businesslike, distracted, skeptical, dismissive, hurt, angry. Choose how they will be before any news is given, not the mood the news may cause.
+- details: the specific facts from the sentence (names, what happened, why), in plain sentences. Invent NOTHING the sentence does not say; leave it empty if there are none.`;
+
+    const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({ model: MODEL, max_tokens: 700, system: systemPrompt,
+            messages: [{ role: 'user', content: sentence }] })
+    });
+    if (!response.ok) {
+        const err = await response.text();
+        throw new Error(`API error ${response.status}: ${err}`);
+    }
+    const data = await response.json();
+    trackUsage(data);
+    return parseDraft(data.content[0].text.trim(), sentence);
 }
 
 // Reframe-to-lead (Ken): the user HOLDS THE FLOOR (they just responded, or the

@@ -62,6 +62,7 @@ function runtimeSectionKeys() {
     const sources = [
         ['control-phrases-editor.js', /(?:single|list)Section\([^,]+,\s*'([^']+)'\)/g],
         ['placeholder-editor.js', /poolSection\([^,]+,\s*'([^']+)'\)/g],
+        ['practice-editor.js', /(?:helpGroup\([^,]+,|textField\(|selectField\()\s*'([^']+)'/g],
     ];
     return sources.flatMap(([file, re]) => {
         const src = readFileSync(join(root, 'app', 'js', file), 'utf8');

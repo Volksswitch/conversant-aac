@@ -5,9 +5,9 @@
 // responses exactly as in a real conversation — the microphone is bypassed, so the
 // loop can be rehearsed in acoustically clean conditions before a real conversation.
 //
-// This is the bundled STARTER set (one per §8 category). Custom, user-authored
-// scenarios are a later increment (they'll move to a data-folder file with the
-// "file in folder wins" reconciliation, like the other user-owned sets).
+// This is the bundled STARTER set (one per §8 category). They are never edited: the
+// user makes a COPY and edits that (practice-library.js), so these stay a reliable
+// starting point.
 //
 // Each scenario:
 //   id            — stable key
@@ -18,8 +18,9 @@
 //                   All starter scenarios open with the partner, so the single
 //                   Start-Listening-as-partner-cue flow is uniform. ('user' opens
 //                   are a later addition.)
-//   partnerPersona — the system-prompt description of WHO the partner is, their
-//                    goal, and their tone. Drives llm.generatePartnerUtterance.
+//   partnerPersona — a plain description of WHO the partner is, their goal and their
+//                    tone, written with "you" meaning the USER, because a copy puts it
+//                    in front of them to edit. Drives llm.generatePartnerUtterance.
 //   register      — the interactional norm set (§8: scenarios set register explicitly).
 
 import { TOUR_STEPS } from './practice-tour.js';
@@ -48,7 +49,8 @@ export const SCENARIOS = [
         title: 'Ordering at a coffee shop',
         description: 'A friendly barista takes your order.',
         opensWith: 'partner',
-        partnerPersona: 'You are a warm, upbeat barista at a small coffee shop. The user is a customer who just walked up to the counter. Greet them, take their order, and ask the normal follow-ups (size, hot or iced, for here or to go, anything else). Keep your turns short and natural, one or two sentences. Do not rush; let the customer lead the pace.',
+        partnerPersona: 'A warm, upbeat barista at a small coffee shop. You are a customer who just walked up to the counter. They greet you, take your order, and ask the normal follow-ups (size, hot or iced, for here or to go, anything else). They keep their turns short and let you set the pace.',
+        behavior: 'warm',
         register: 'casual, friendly service encounter',
     },
     {
@@ -57,7 +59,8 @@ export const SCENARIOS = [
         title: 'Meeting a new colleague',
         description: 'Someone new introduces themselves at work.',
         opensWith: 'partner',
-        partnerPersona: 'You are a friendly new colleague meeting the user for the first time at their workplace. Introduce yourself, make light small talk (how long they have worked here, what they do, plans for the weekend). Be warm and easygoing. Keep turns short and give the user room to reply.',
+        partnerPersona: 'A friendly new colleague meeting you for the first time at work. They introduce themselves and make light small talk (how long you have worked here, what you do, plans for the weekend). Warm and easygoing, with short turns that leave you room to reply.',
+        behavior: 'warm',
         register: 'friendly, informal workplace small talk',
     },
     {
@@ -66,7 +69,8 @@ export const SCENARIOS = [
         title: 'A visit to the doctor',
         description: 'A doctor asks about how you have been feeling.',
         opensWith: 'partner',
-        partnerPersona: 'You are a kind, unhurried family doctor. The user is your patient at a routine visit. Ask how they have been feeling, follow up gently on what they say (when it started, how bad it is, anything that helps), and be reassuring. Ask one thing at a time. Keep turns short and never lecture.',
+        partnerPersona: 'A kind, unhurried family doctor. You are their patient at a routine visit. They ask how you have been feeling, follow up gently on what you say (when it started, how bad it is, anything that helps), and are reassuring. They ask one thing at a time and never lecture.',
+        behavior: 'warm',
         register: 'calm, respectful medical consultation',
     },
     {
@@ -75,7 +79,8 @@ export const SCENARIOS = [
         title: 'Catching up with a friend',
         description: 'A good friend wants to hear how you have been.',
         opensWith: 'partner',
-        partnerPersona: 'You are a close, caring friend the user has not seen in a while. Greet them warmly, ask how they have been, and react with genuine interest to whatever they share (follow up, laugh, sympathize). Share a little about yourself too. Keep it relaxed and personal, short turns.',
+        partnerPersona: 'A close, caring friend you have not seen in a while. They greet you warmly, ask how you have been, and react with genuine interest to whatever you share. They share a little about themselves too. Relaxed and personal, with short turns.',
+        behavior: 'warm',
         register: 'warm, close, personal catch-up',
     },
     {
@@ -84,7 +89,8 @@ export const SCENARIOS = [
         title: 'A job interview',
         description: 'An interviewer asks about you and your experience.',
         opensWith: 'partner',
-        partnerPersona: 'You are a polite, professional hiring manager interviewing the user for a job. Welcome them, then ask standard interview questions one at a time (tell me about yourself, why this role, a strength, a time you solved a problem). Be encouraging and give them time. Keep your turns concise.',
+        partnerPersona: 'A polite, professional hiring manager interviewing you for a job. They welcome you, then ask standard interview questions one at a time (tell me about yourself, why this role, a strength, a time you solved a problem). Encouraging, patient, and concise.',
+        behavior: 'warm',
         register: 'polite, professional interview',
     },
 ];

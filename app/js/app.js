@@ -32,6 +32,8 @@ import * as whatsNew from './whats-new.js';
 import * as chime from './chime.js';
 import * as practiceScenarios from './practice-scenarios.js';
 import * as practiceTour from './practice-tour.js';
+import * as practiceLibrary from './practice-library.js';
+import * as practiceEditor from './practice-editor.js';
 import * as dataTransfer from './data-transfer.js';
 import * as platform from './platform.js';
 import * as sttDeepgram from './stt-deepgram.js';
@@ -792,6 +794,7 @@ function initApp() {
     relationships.load().catch(() => { /* falls back to empty graph */ });
     // My Places (places + their facts) — its own model + file, same lifecycle.
     places.load().catch(() => { /* falls back to no places */ });
+    practiceLibrary.load().catch(() => { /* falls back to the built-in scenarios only */ });
     voiceProfile.load().catch(() => { /* falls back to no voice data */ });
     // Express Panel items — its own model + file. Loaded from cache now; the
     // folder copy (source of truth) is adopted in handleStart once granted.
@@ -1282,6 +1285,8 @@ async function warmUpStorage() {
     // Same for My Places.
     try { await places.load(); } catch { /* keep cached/empty places */ }
     try { await places.syncToFolder(); } catch { /* best-effort */ }
+    try { await practiceLibrary.load(); } catch { /* keep cached/empty scenarios */ }
+    try { await practiceLibrary.syncToFolder(); } catch { /* best-effort */ }
     try { await voiceProfile.load(); } catch { /* keep cached/empty voice data */ }
     try { await voiceProfile.syncToFolder(); } catch { /* best-effort */ }
     // Same for the Express Panel items (adopt the folder copy, else promote cache).
@@ -2327,82 +2332,29 @@ function partnerVoiceCollisionNote(service, chosenPartner) {
     return 'That is the voice you speak with, so in Practice the other person will sound exactly like you.';
 }
 
-// Settings → Practice tab. Three states: practice already running (show which
-// scenario + the way out), no API key (practice needs the AI for BOTH the partner
-// and the response suggestions), or the scenario list.
+// Settings → Practice tab: the scenario list, the editor for the user's own scenarios,
+// or — while practicing — the way out. Built in practice-editor.js.
+let practiceEditorReady = false;
 function renderPracticePanel() {
-    const panel = document.getElementById('practicePanel');
-    panel.textContent = '';
-
-    if (practiceMode && practiceScenario) {
-        const now = document.createElement('p');
-        now.className = 'practice-active';
-        now.textContent = `Practicing: ${practiceScenario.title}`;
-        const endBtn = mkButton('End practice', 'practice-end', async () => {
-            await endPractice();
-            renderPracticePanel();
-            hostExpressPanel(false);   // the panel must not close inside the dialog
-            document.getElementById('settingsDialog').close();
+    if (!practiceEditorReady) {
+        practiceEditor.init(document.getElementById('practicePanel'), {
+            isPracticing: () => !!(practiceMode && practiceScenario),
+            currentTitle: () => (practiceScenario ? practiceScenario.title : ''),
+            hasKey: () => !!(storage.loadApiKey() || '').trim(),
+            onStart: (scenario) => startPractice(scenario),
+            onEnd: async () => {
+                await endPractice();
+                renderPracticePanel();
+                hostExpressPanel(false);   // the panel must not close inside the dialog
+                document.getElementById('settingsDialog').close();
+            },
+            onGoToKey: () => activateSettingsTab(document.querySelector('#settingsTabs .settings-tab[data-tab="general"]'), true),
         });
-        panel.append(now, endBtn);
-        return;
+        practiceEditorReady = true;
     }
-
-    // ⚠ THE KEY GATE IS PER-SCENARIO, NOT PER-TAB, AND THAT IS THE WHOLE POINT OF THE
-    // TOUR. A conversational scenario needs the AI for both the partner and the
-    // response suggestions; the controls tour is scripted and needs neither. Gating
-    // the tab would have hidden the tour from exactly the person it is for — someone
-    // on their first day whose key is not working yet, looking at a screen of
-    // unlabelled icons. So the notice still appears, and the tour is offered under it.
-    const hasKey = !!(storage.loadApiKey() || '').trim();
-    if (!hasKey) {
-        const msg = document.createElement('p');
-        msg.className = 'practice-note';
-        msg.textContent = 'Practicing a conversation needs a Claude API key — the AI plays the other person and suggests your responses. Add one on the General tab, then come back. The tour of the buttons below works without one.';
-        const goBtn = mkButton('Go to the General tab', 'practice-add-key', () => {
-            activateSettingsTab(document.querySelector('#settingsTabs .settings-tab[data-tab="general"]'), true);
-        });
-        panel.append(msg, goBtn);
-    }
-
-    const title = document.createElement('h3');
-    title.className = 'practice-title';
-    title.textContent = hasKey ? 'Choose something to practice' : 'What you can do without a key';
-    panel.appendChild(title);
-
-    const list = document.createElement('div');
-    list.className = 'practice-list';
-    const offered = hasKey
-        ? practiceScenarios.SCENARIOS
-        : practiceScenarios.SCENARIOS.filter((s) => Array.isArray(s.steps) && s.steps.length);
-    for (const scenario of offered) {
-        const card = document.createElement('button');
-        card.type = 'button';
-        card.className = 'practice-card';
-        const cat = document.createElement('span');
-        cat.className = 'practice-cat';
-        cat.textContent = scenario.category;
-        const name = document.createElement('span');
-        name.className = 'practice-name';
-        name.textContent = scenario.title;
-        const desc = document.createElement('span');
-        desc.className = 'practice-desc';
-        desc.textContent = scenario.description;
-        card.append(cat, name, desc);
-        card.addEventListener('click', () => startPractice(scenario));
-        list.appendChild(card);
-    }
-    panel.appendChild(list);
+    practiceEditor.render();
 }
 
-function mkButton(label, cls, onClick) {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = cls;
-    b.textContent = label;
-    b.addEventListener('click', onClick);
-    return b;
-}
 
 // Enter Practice Mode with the chosen scenario: close Settings, start a fresh
 // conversation on the real conversation screen, and wait for the user to tap Start
@@ -2421,7 +2373,9 @@ async function startPractice(scenario) {
     manualListenArmed = false;
     ui.setListenButtonState(false);
     applyListenAvailability();   // practice needs no mic — re-enable Listen if capture is unavailable
-    ui.setStatus(`Practice: ${scenario.title}. Tap Start Listening to hear the other person.`);
+    ui.setStatus(scenario.opensWith === 'user'
+        ? `Practice: ${scenario.title}. You speak first — tap Start conversation.`
+        : `Practice: ${scenario.title}. Tap Start Listening to hear the other person.`);
     // Set here, after the teardown above, so choosing a conversational scenario also
     // clears a tour left running from a previous one.
     tour = isTour ? practiceTour.createTour(scenario.steps) : null;
@@ -4051,6 +4005,10 @@ function buildSituationBlock() {
     // the USER's suggested responses to the same setting.
     if (practiceMode && practiceScenario) {
         lines.push(`This is a PRACTICE role-play. The situation is: ${practiceScenario.title} (${practiceScenario.register}). Keep every suggested response realistic and appropriate to THIS setting — only refer to things that would actually make sense here.`);
+        // The user's own details and the partner's mood, from a scenario they made their
+        // own. Empty for a plain built-in, so those behave exactly as before.
+        const mine = practiceLibrary.buildUserSideBlock(practiceScenario);
+        if (mine) lines.push(mine);
     }
     // WHO the user is talking to — the stand-in for the Phase-2 face/voice
     // recognition we do not have yet. Like the place button this is situational
@@ -5493,6 +5451,7 @@ async function adoptDataFolder() {
     try { await worldview.syncToFolder(); } catch { /* best-effort */ }
     try { await relationships.syncToFolder(); } catch { /* best-effort */ }
     try { await places.syncToFolder(); } catch { /* best-effort */ }
+    try { await practiceLibrary.syncToFolder(); } catch { /* best-effort */ }
     try { await voiceProfile.syncToFolder(); } catch { /* best-effort */ }
     try { await expressPanel.syncToFolder(); } catch { /* best-effort */ }
     renderExpressPanel();

@@ -186,7 +186,18 @@ const HELP = {
     "acknowledgment": "The phrases it may say first, right after the other person stops talking. One is picked at random.",
     "thinking": "The phrases it may say after that, if you are still choosing. One is picked at random.",
     "colorScheme": "Seven color schemes, from the usual look to bolder outlines, high contrast, dark, yellow on black, and one for color blindness.",
-    "layoutBorders": "Unlock the borders between the transcript, the controls, the responses and the keyboard, then drag them to resize."
+    "layoutBorders": "Unlock the borders between the transcript, the controls, the responses and the keyboard, then drag them to resize.",
+    "practiceBuiltIn": "The scenarios that came with the app. Tap one to practice it, or make a copy to change it into your own.",
+    "practiceYours": "Scenarios you made. Tap one to practice it, or edit, copy or delete it.",
+    "practiceNew": "Make a new scenario. Describe the conversation in a sentence and the app writes it for you, or fill in a blank form.",
+    "practiceName": "What this scenario is called on your list.",
+    "practiceKind": "What kind of conversation this is, so you can find it.",
+    "practiceSummary": "A short line under the name, to tell your scenarios apart.",
+    "practiceOpens": "Whether the other person speaks first, or you do.",
+    "practicePersona": "Who the other person is: who they are to you, what they want, and how they normally come across.",
+    "practiceRegister": "A few words on the tone, such as a relaxed chat or a formal hearing.",
+    "practiceBehavior": "How the other person is behaving when the conversation starts. They still react to what you say.",
+    "practiceDetails": "Facts for this practice, like names and what happened. The other person knows them, and your suggested replies can use them."
   }
 };
 // @@SETTINGS_HELP_END@@

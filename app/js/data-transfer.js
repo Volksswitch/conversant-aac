@@ -101,6 +101,7 @@ const DATA_FILES = [
     { file: 'worldview.json',       cache: 'aac_worldview',       label: 'About Me answers' },
     { file: 'relationships.json',   cache: 'aac_relationships',   label: 'People and relationships' },
     { file: 'places.json',          cache: 'aac_places',          label: 'My Places' },
+    { file: 'practice-scenarios.json', cache: 'aac_practice_scenarios', label: 'Your practice scenarios' },
     { file: 'control-phrases.json', cache: 'aac_control_phrases', label: 'Starters and control phrases' },
     { file: 'placeholders.json',    cache: 'aac_placeholders',     label: 'Placeholder phrases' },
     { file: 'express-panel.json',   cache: 'aac_express_items',   label: 'Express Panel items' },

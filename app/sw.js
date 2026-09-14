@@ -55,6 +55,8 @@ const SHELL = [
   './js/chime.js',
   './js/practice-scenarios.js',
   './js/practice-tour.js',
+  './js/practice-library.js',
+  './js/practice-editor.js',
   './js/engine.js',
   './js/conversation-logic.js',
   './js/conv-layout.js',

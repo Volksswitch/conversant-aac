@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- **Make a practice scenario your own, or build one for a conversation coming up.** On the Practice tab in Settings, any scenario can be copied and changed: say who the other person is, add details like names and what happened, and choose how they are behaving, from warm and easy to angry with you. The details are treated as true, so your suggested replies can use them. To start a new one, describe the conversation in a sentence and the app writes it for you, or fill in a blank form. Your scenarios are saved with your other data, and can be deleted when the occasion has passed.
+
 ## Version 0.11.1
 
 - Saved conversations now record every set of suggestions the app offered you, not only the ones you picked from - and how each set ended, whether you chose a card, asked for different options, typed your own words, or the other person carried on talking. Until now a set you turned away from was thrown away, so the sets that were no use to you left no trace.

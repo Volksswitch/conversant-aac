@@ -1079,6 +1079,13 @@ body {
 .practice-cat { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--slot-initiative); font-weight: 700; }
 .practice-name { font-size: 1.15rem; font-weight: 700; color: var(--ink-strong); }
 .practice-desc { color: var(--ink-muted); }
+/* A scenario card with its own actions beside it (Make a copy / Edit / Delete), and the
+   editor for the user's own scenarios. */
+.practice-group { display: flex; flex-direction: column; gap: 0.4rem; }
+.practice-row { display: flex; flex-direction: column; gap: 0.35rem; }
+.practice-tools { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.practice-form-tools { margin-top: 0.4rem; }
+.practice-delete { color: var(--danger); border-color: var(--danger); }
 /* "End practice" keeps a color because it reports STATE - a rehearsal is running and
    this is the way out of it - which Rule 6 says a latched control must show. The
    add-a-key button beside it is an ordinary action and takes the standard look. */
