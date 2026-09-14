@@ -70,6 +70,14 @@ tests/.anthropic-key*
 *openai*key*
 *oai-key*
 
+# WordPress application password for the "Claude" editor account on volksswitch.org,
+# used to maintain the documents list and Known Issues pages. Revocable from that
+# user's profile screen. Wide patterns for the same reason as the keys above.
+.wordpress-credentials
+.wordpress-credentials.*
+*wordpress*cred*
+*wp-cred*
+
 # Audio written by scripts/test-openai-speech.mjs so the voice can be listened to.
 scripts/hello.mp3
 deepgram-probe-audio/

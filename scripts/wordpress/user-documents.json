@@ -1,0 +1,70 @@
+{
+  "_about": "The user-facing documents published on https://volksswitch.org/index.php/conversant-documents/ - in the order they appear there. Maintained by scripts/wordpress/publish-documents.py; add or remove an entry to change what is published. 'date', 'mediaId' and 'url' record what is live now and are written by the script. Do not edit those three by hand.",
+  "page": "conversant-documents",
+  "mediaFolder": 103,
+  "documents": [
+    {
+      "file": "Conversant AAC Beta Test Plan.docx",
+      "title": "Beta Test Plan",
+      "date": "2026-09-06",
+      "mediaId": 23635,
+      "url": "https://volksswitch.org/wp-content/uploads/2026/09/Conversant-AAC-Beta-Test-Plan-1.pdf"
+    },
+    {
+      "file": "Conversant AAC Product Overview.docx",
+      "title": "Product Overview",
+      "date": "2026-09-13",
+      "mediaId": 23574,
+      "url": "https://volksswitch.org/wp-content/uploads/2026/08/Conversant-AAC-Product-Overview-1.pdf"
+    },
+    {
+      "file": "Conversant AAC User Manual (Windows Chromebook Mac).docx",
+      "title": "User Manual (Windows, Mac, Chromebook)",
+      "date": "2026-09-13",
+      "mediaId": 23634,
+      "url": "https://volksswitch.org/wp-content/uploads/2026/09/Conversant-AAC-User-Manual-Windows-Chromebook-Mac.pdf"
+    },
+    {
+      "file": "Conversant AAC User Manual (iPad).docx",
+      "title": "User Manual (iPad)",
+      "date": "2026-09-13",
+      "mediaId": 23637,
+      "url": "https://volksswitch.org/wp-content/uploads/2026/09/Conversant-AAC-User-Manual-iPad.pdf"
+    },
+    {
+      "file": "Conversant AAC User Manual (Android).docx",
+      "title": "User Manual (Android)",
+      "date": "2026-09-13",
+      "mediaId": 23636,
+      "url": "https://volksswitch.org/wp-content/uploads/2026/09/Conversant-AAC-User-Manual-Android.pdf"
+    },
+    {
+      "file": "Conversant AAC Practice Mode.docx",
+      "title": "Practice Mode",
+      "date": "2026-09-13",
+      "mediaId": 23501,
+      "url": "https://volksswitch.org/wp-content/uploads/2026/08/Conversant-AAC-Practice-Mode-1.pdf"
+    },
+    {
+      "file": "Conversant AAC Keeping Costs Down.docx",
+      "title": "Keeping Costs Down",
+      "date": "2026-09-06",
+      "mediaId": 23577,
+      "url": "https://volksswitch.org/wp-content/uploads/2026/08/Conversant-AAC-Keeping-Costs-Down-1.pdf"
+    },
+    {
+      "file": "Conversant AAC Keyboard Layout Options.docx",
+      "title": "On-Screen Keyboard Layout Options",
+      "date": "2026-07-27",
+      "mediaId": 23505,
+      "url": "https://volksswitch.org/wp-content/uploads/2026/08/On-Screen-Keyboard-Layout-Options.pdf"
+    },
+    {
+      "file": "Conversant AAC Your Security and Privacy.docx",
+      "title": "Your Security and Privacy",
+      "date": "2026-09-10",
+      "mediaId": 23639,
+      "url": "https://volksswitch.org/wp-content/uploads/2026/09/Conversant-AAC-Your-Security-and-Privacy-1.pdf"
+    }
+  ]
+}
