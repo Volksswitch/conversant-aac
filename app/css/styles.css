@@ -5141,6 +5141,15 @@ body.conv-bottom     .danger-dialog {
         outline-offset: -1px;
     }
     .ep-btn.ep-imow:hover { background: var(--accent-hover); color: var(--ink-inverse); outline-color: var(--accent-hover); }
+    /* More / Close and a PLAYING sound button carry white text on a solid band fill, so
+       the plain-surface hover above turned them into what looked like an empty button
+       (Ken, September 14 2026). They stay filled, a shade darker. */
+    .ep-btn.ep-more:hover,
+    .ep-btn.ep-audio.ep-on:hover {
+        background: color-mix(in srgb, var(--band-color, var(--edge-strong)) 82%, var(--shade));
+        color: var(--ink-inverse);
+        outline-color: var(--band-color, var(--edge-strong));
+    }
     .ep-btn.ep-choice:hover,
     .ep-btn.ep-partner:hover,
     .ep-btn.ep-feeling:hover {
