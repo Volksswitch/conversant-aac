@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.12.0
+
 - When an Express Panel band has more buttons than room, its last spot becomes a
   **More** button. Tap it to see the rest; on the last set it reads **Close**, which
   puts the panel back as it was. Tapping any other button except "Hold on" does the

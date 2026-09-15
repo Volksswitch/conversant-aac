@@ -22,6 +22,13 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.12.0": [
+    "When an Express Panel band has more buttons than room, its last spot becomes a More button. Tap it to see the rest; on the last set it reads Close, which puts the panel back as it was. Tapping any other button except \"Hold on\" does the same. More follows your single-tap or double-tap setting.",
+    "A new setting, \"Tapping More shows the rest\", on the Express Panel tab chooses whether the rest appear in that band only or across the whole panel.",
+    "A partner, place, feeling or goal you switch on now moves to the front of its band so it is always in view, and goes back to its usual spot when you switch it off.",
+    "Always phrases that don't fit no longer spill into the Flex band. Reach them with the Always band's More button instead.",
+    "Sound buttons. The Always and Flex bands can now hold a button that plays a recording: your own recorded voice, someone else's voice, or a sound or music. Add one on the Express Panel tab with Add a sound, then choose an MP3 or M4A file (up to 10 MB). A tap plays it and mutes the microphone; a second tap stops it and the microphone comes back. The conversation shows what was played, and the sounds are included in your backups so they move to another device with everything else. A sound needs a data folder to be kept in."
+  ],
   "0.11.2": [
     "Topics for a person or a place. In About Me, each person in People in Your Life and each place in My Places now has \"Topics I'd like to talk about\" and \"Topics to avoid\". Separate topics with commas, just like the topic questions elsewhere in About Me. While you are talking with that person, or are at that place, your suggested replies lean toward the first list and never raise the second on their own.",
     "Make a practice scenario your own, or build one for a conversation coming up. On the Practice tab in Settings, any scenario can be copied and changed: say who the other person is, add details like names and what happened, and choose how they are behaving, from warm and easy to angry with you. The details are treated as true, so your suggested replies can use them. To start a new one, describe the conversation in a sentence and the app writes it for you, or fill in a blank form. Your scenarios are saved with your other data, and can be deleted when the occasion has passed.",
