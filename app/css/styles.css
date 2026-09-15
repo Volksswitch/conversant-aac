@@ -2482,7 +2482,9 @@ body.conv-bottom .palette-grid {
    file button keeps the width of its own words. Squeezed, "Choose a file" broke over two
    lines and the text ran past the button's edge (Ken, September 14 2026). */
 #expressEditor .ee-row.ee-audio-row { flex-wrap: wrap; }
-#expressEditor .ee-audio-row .ee-add { flex: 0 0 auto; width: auto; max-width: 100%; white-space: nowrap; }
+/* No percentage cap on the button: see the hazard recorded at `#expressEditor .ee-row
+   .ee-tools button`. The row wraps, so the button never needs one. */
+#expressEditor .ee-audio-row .ee-add { flex: 0 0 auto; width: auto; white-space: nowrap; }
 
 .ep-btn.ep-undefined.ep-band-always,
 .ep-btn.ep-undefined.ep-band-context,
