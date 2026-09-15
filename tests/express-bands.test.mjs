@@ -5,8 +5,8 @@
  * incidentally:
  *   - the user sets Context and Flex; ALWAYS is the remainder
  *   - the Context floor of four applies even when the user has filled nothing
- *   - an Always phrase with no room queues LAST in the Flex band and can never
- *     displace a situational phrase (I had this backwards; Ken caught it)
+ *   - a band with more entries than positions gives its last position to More, which
+ *     pages the band in place; nothing spills into another band (September 14 2026)
  *   - the four situational lists fill most-specific-first, and a phrase in two of
  *     them is shown once
  */
@@ -90,36 +90,77 @@ test('with no partner and no place the general list is what fills the band', () 
     assert.deepEqual(bands.flexFill(flex, null, null, 10).map((x) => x.text), ['Anyone']);
 });
 
-// ⚠ THE ONE I GOT BACKWARDS. Ken: "Those displaced always phrases can flow into the
-// Flex region but only at the end and only if there's space. They don't displace
-// situational ones."
-test('Always overflow takes only spare room at the END of the Flex band', () => {
-    const model = {
-        sizes: { shape: 'counts', context: 4, flex: 4 },
-        always: phrases('a1', 'a2', 'a3', 'a4', 'a5', 'a6'),   // 6 into a band of 4
-        context: [],
-        flex: { [bands.flexKey(bands.ANYONE, bands.ANYPLACE)]: phrases('g1') },
-    };
-    const c = bands.composePanel(GRID, model, {});
-    assert.equal(c.counts.always, 4, 'Context 4 + Flex 4 leaves 4');
-    const flexCells = c.items.slice(8).map((x) => x && x.text);
-    assert.deepEqual(flexCells, ['g1', 'a5', 'a6', undefined],
-        'the situational phrase keeps the front; the surplus queues behind it');
-    assert.equal(c.fromAlwaysSurplus, 2);
+// --- THE MORE BUTTON (Ken, September 14 2026) --------------------------------------
+// Replaces the old rule that queued surplus Always phrases at the end of the Flex band.
+
+// Array.from, not .map: a position with nothing in it is a HOLE, which .map skips.
+const texts = (c, from, to) => Array.from(c.items.slice(from, to), (x) => x && (x.label || x.text));
+const alwaysModel = (n) => ({
+    sizes: { shape: 'counts', context: 4, flex: 4 },
+    always: phrases(...Array.from({ length: n }, (_, i) => 'a' + (i + 1))),
+    context: [],
+    flex: { [bands.flexKey(bands.ANYONE, bands.ANYPLACE)]: phrases('g1') },
 });
 
-test('a full Flex band leaves the Always surplus nowhere to go, and says so', () => {
-    const model = {
-        sizes: { shape: 'counts', context: 4, flex: 4 },
-        always: phrases('a1', 'a2', 'a3', 'a4', 'a5', 'a6'),
-        context: [],
-        flex: { [bands.flexKey(bands.ANYONE, bands.ANYPLACE)]: phrases('g1', 'g2', 'g3', 'g4') },
-    };
-    const c = bands.composePanel(GRID, model, {});
-    assert.deepEqual(c.items.slice(8).map((x) => x.text), ['g1', 'g2', 'g3', 'g4'],
-        'a situational phrase is NEVER displaced by an Always phrase');
-    assert.equal(c.unreachable.always, 2, 'and the editor is told, rather than hiding it');
-    assert.equal(c.fromAlwaysSurplus, 0);
+test('Always phrases NEVER spill into the Flex band any more', () => {
+    const c = bands.composePanel(GRID, alwaysModel(6), {});
+    assert.deepEqual(texts(c, 8, 12), ['g1', undefined, undefined, undefined]);
+    assert.equal(c.fromAlwaysSurplus, undefined, 'the old surplus count is gone');
+});
+
+test('a band that fits exactly has no More button', () => {
+    const c = bands.composePanel(GRID, alwaysModel(4), {});
+    assert.deepEqual(c.more, []);
+    assert.deepEqual(texts(c, 0, 4), ['a1', 'a2', 'a3', 'a4']);
+});
+
+test('one entry too many puts More in the band\'s LAST position', () => {
+    const c = bands.composePanel(GRID, alwaysModel(5), {});
+    assert.deepEqual(c.more, [{ index: 3, band: 'always', page: 0, label: 'More' }]);
+    assert.deepEqual(texts(c, 0, 4), ['a1', 'a2', 'a3', undefined]);
+    assert.equal(c.firstPage.always, 3);
+    assert.equal(c.behindMore.always, 2);
+    assert.equal(c.unreachable.always, 0, 'nothing is unreachable any more');
+});
+
+test('More pages the band in place, and reads Close on the last set', () => {
+    const model = alwaysModel(8);   // 3 per page: a1-a3, a4-a6, a7-a8
+    const p1 = bands.composePanel(GRID, model, { paging: { band: 'always', page: 1 } });
+    assert.deepEqual(texts(p1, 0, 3), ['a4', 'a5', 'a6']);
+    assert.equal(p1.more[0].label, 'More');
+    assert.equal(p1.more[0].index, 3, 'the button never moves');
+    const p2 = bands.composePanel(GRID, model, { paging: { band: 'always', page: 2 } });
+    assert.deepEqual(texts(p2, 0, 3), ['a7', 'a8', undefined]);
+    assert.equal(p2.more[0].label, 'Close');
+    assert.deepEqual(texts(p2, 8, 9), ['g1'], 'the other bands are untouched');
+});
+
+test('a page past the end is clamped to the last one', () => {
+    const c = bands.composePanel(GRID, alwaysModel(8), { paging: { band: 'always', page: 9 } });
+    assert.deepEqual(c.paging, { band: 'always', page: 2, last: 2 });
+});
+
+test('the whole-panel scope fills every position but More with the band\'s extras', () => {
+    const model = alwaysModel(20);   // page 0 shows 3; later pages show 11 (12 minus More)
+    const c = bands.composePanel(GRID, model, { paging: { band: 'always', page: 1, scope: 'panel' } });
+    assert.deepEqual(texts(c, 0, 3), ['a4', 'a5', 'a6']);
+    assert.equal(c.items[3], undefined, 'the More position itself holds no entry');
+    assert.deepEqual(texts(c, 4, 12), ['a7', 'a8', 'a9', 'a10', 'a11', 'a12', 'a13', 'a14']);
+    assert.ok(c.bands.every((b) => b === 'always'), 'the extras keep their own band color');
+    assert.deepEqual(c.more.map((m) => [m.index, m.label]), [[3, 'More']]);
+    const last = bands.composePanel(GRID, model, { paging: { band: 'always', page: 2, scope: 'panel' } });
+    assert.deepEqual(texts(last, 0, 3), ['a15', 'a16', 'a17']);
+    assert.equal(last.more[0].label, 'Close');
+});
+
+test('a switched-on button moves to the front and goes back when switched off', () => {
+    const feelings = ['Happy', 'Sad', 'Tired', 'Calm', 'Bored', 'Proud']
+        .map((t) => ({ id: t, type: 'feeling', text: t }));
+    const model = { sizes: { shape: 'counts', context: 4, flex: 0 }, always: [], context: feelings, flex: {} };
+    const on = bands.composePanel(GRID, model, { litIds: ['Proud'] });
+    assert.deepEqual(texts(on, 8, 11), ['Proud', 'Happy', 'Sad']);
+    const off = bands.composePanel(GRID, model, { litIds: [] });
+    assert.deepEqual(texts(off, 8, 11), ['Happy', 'Sad', 'Tired']);
 });
 
 test('growing the Context band never moves an Always button that is still showing', () => {
@@ -130,8 +171,9 @@ test('growing the Context band never moves an Always button that is still showin
     });
     const small = bands.composePanel(GRID, model(4), {});
     const big = bands.composePanel(GRID, model(6), {});
-    // The band ends sooner; the buttons that remain are exactly where they were.
-    assert.deepEqual(small.items.slice(0, 6).map((x) => x.text), big.items.slice(0, 6).map((x) => x.text));
+    // The band ends sooner; the buttons that remain are exactly where they were. (With
+    // Context 6 the Always band is six positions for eight phrases, so the sixth is More.)
+    assert.deepEqual(small.items.slice(0, 5).map((x) => x.text), big.items.slice(0, 5).map((x) => x.text));
     assert.equal(big.counts.always, 6);
 });
 
@@ -185,9 +227,10 @@ test('a wide row keeps every position the row gives it', () => {
         always: [], context: phrases('c1', 'c2', 'c3', 'c4', 'c5', 'c6').map((p) => ({ ...p, type: 'feeling' })),
         flex: {},
     }, {});
-    assert.deepEqual(composed.items.slice(27).map((x) => x && x.text),
-        ['c1', 'c2', 'c3', 'c4', 'c5'], 'the first five show');
-    assert.equal(composed.unreachable.context, 1, 'and the sixth is reported, not silently dropped');
+    assert.deepEqual(Array.from(composed.items.slice(27), (x) => x && x.text),
+        ['c1', 'c2', 'c3', 'c4', undefined], 'the first four show, and More takes the fifth');
+    assert.equal(composed.behindMore.context, 2, 'the rest are behind More, not lost');
+    assert.equal(composed.unreachable.context, 0);
 });
 
 // ⚠ KEN'S CASE, August 23 2026, from a real session: Side Layout 8 with the Context
@@ -209,10 +252,10 @@ test('a one-row band landing on a row with no positions is still given four', ()
         sizes: { shape: 'rows', contextRows: 1, flexRows: 0 },
         always: [], context: feelings, flex: {},
     }, {});
-    const shown = composed.items.filter((x, i) => composed.bands[i] === 'context').map((x) => x && x.text);
-    assert.deepEqual(shown, ['Happy', 'Sad', 'Stressed', 'Curious'],
-        'the first four show rather than none');
-    assert.equal(composed.unreachable.context, 2);
+    const shown = composed.bands.flatMap((b, i) => (b === 'context' ? [composed.items[i] && composed.items[i].text] : []));
+    assert.deepEqual(shown, ['Happy', 'Sad', 'Stressed', undefined],
+        'three show rather than none, and More takes the fourth');
+    assert.equal(composed.behindMore.context, 3);
 });
 
 test('the rescued cells come from Always, never from Flex', () => {
@@ -353,15 +396,16 @@ test('goals lead the Flex band, ahead of every situational phrase', () => {
     assert.deepEqual(c.bands.slice(8), ['flex', 'flex', 'flex', 'flex']);
 });
 
-test('a goal outranks a situational phrase for the last position', () => {
+test('a goal outranks a situational phrase for the first page', () => {
     // A goal that does not fit cannot steer anything; a phrase that does not fit can
-    // still be typed. So when the band is short, the goal is the one that stays.
+    // still be typed. So when the band is short, the goal is the one that stays up front.
     const c = bands.composePanel(GRID, {
         sizes: { shape: 'counts', context: 4, flex: 2 },
         always: [], context: [],
         flex: { [bands.flexKey('mom', null)]: phrases('Mom one', 'Mom two') },
     }, { partnerId: 'mom', goals: goals('Making peace') });
-    assert.deepEqual(c.items.slice(10).map((x) => x.label || x.text), ['Making peace', 'Mom one']);
+    assert.deepEqual(Array.from(c.items.slice(10), (x) => x && (x.label || x.text)), ['Making peace', undefined]);
+    assert.equal(c.more[0].index, 11);
 });
 
 test('a goal that will not fit is REPORTED, not silently dropped', () => {
@@ -376,18 +420,14 @@ test('a goal that will not fit is REPORTED, not silently dropped', () => {
     assert.ok(!c.items.some((x) => x && x.type === 'goal'), 'and none of them is drawn');
 });
 
-test('an Always surplus still queues BEHIND both goals and phrases', () => {
-    // The overflow direction Ken corrected once: an Always phrase with no room takes
-    // only genuinely spare Flex positions and can never displace anything.
+test('a switched-on goal moves to the front of the goals', () => {
     const c = bands.composePanel(GRID, {
         sizes: { shape: 'counts', context: 4, flex: 3 },
-        always: phrases('A1', 'A2', 'A3', 'A4', 'A5', 'A6'),   // 5 fit, 1 spills
-        context: [],
+        always: [], context: [],
         flex: { [bands.flexKey(null, null)]: phrases('General') },
-    }, { goals: goals('Making peace') });
-    assert.deepEqual(c.items.slice(9).map((x) => x.label || x.text),
-        ['Making peace', 'General', 'A6']);
-    assert.equal(c.fromAlwaysSurplus, 1, 'counted as surplus, not as a phrase');
+    }, { goals: goals('Making peace', 'Being upbeat'), litIds: ['Being upbeat'] });
+    assert.deepEqual(c.items.slice(9).map((x) => x && (x.label || x.text)),
+        ['Being upbeat', 'Making peace', 'General']);
 });
 
 test('no goals changes nothing about the Flex band', () => {

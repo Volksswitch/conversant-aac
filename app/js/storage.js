@@ -1500,6 +1500,19 @@ export function saveExpressTapMode(mode) {
     saveSettings(settings);
 }
 
+// What an Express Panel More button replaces (Ken, September 14 2026): 'band' shows
+// the band's next entries in that band's own positions; 'panel' uses every position on
+// the panel except the compose key. Default 'band', the smaller change.
+export function loadExpressMoreScope() {
+    return loadSettings().expressMoreScope === 'panel' ? 'panel' : 'band';
+}
+
+export function saveExpressMoreScope(scope) {
+    const settings = loadSettings();
+    settings.expressMoreScope = scope === 'panel' ? 'panel' : 'band';
+    saveSettings(settings);
+}
+
 // How the three kinds of Context button are told apart inside the band's shared
 // background: 'color' (the left bar's hue alone), 'thick' (its width), 'side'
 // (which edge it sits on) or 'shape' (a small mark before the label).

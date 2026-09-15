@@ -137,13 +137,15 @@ test('the whole chain runs: bytes on disk to the cells of the panel', async () =
 
     assert.deepEqual(composed.counts, { always: 4, context: 4, flex: 4 });
 
-    const text = composed.items.map((x) => (x ? (x.text || x.name) : null));
-    assert.deepEqual(text.slice(0, 4), ['Yes', 'No', 'Help', 'Wait'],
-        'the Always band, in the order it was written');
+    // Array.from, not .map: an empty position is a hole, which .map would leave as one.
+    const text = Array.from(composed.items, (x) => (x ? (x.text || x.name) : null));
+    assert.deepEqual(text.slice(0, 4), ['Yes', 'No', 'Help', null],
+        'the Always band in the order it was written, its last position given to More');
+    assert.deepEqual(composed.more.map((m) => [m.index, m.label]), [[3, 'More']]);
     assert.deepEqual(text.slice(4, 8), ['Mom', 'Tired', null, null],
         'the Context band, sorted into partners then feelings, with the floor reserved');
-    assert.deepEqual(text.slice(8), ['How is your shoulder?', 'Surplus one', 'Surplus two', null],
-        'the partner phrase first; the Always surplus behind it, never in front');
+    assert.deepEqual(text.slice(8), ['How is your shoulder?', null, null, null],
+        'the partner phrase; Always phrases never spill into the Flex band');
 
     // And the model really came from the file rather than from a default.
     assert.equal(model.flex['mom|anyplace'][0].text, 'How is your shoulder?');

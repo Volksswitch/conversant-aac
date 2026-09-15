@@ -366,9 +366,12 @@ function toolbar(band, extra) {
  * is not showing now. The user finds this out at the moment they add the phrase,
  * which is not the same moment as noticing it later while changing the layout.
  */
-function cutLine(hidden, what) {
+function cutLine(hidden, what, paged) {
     if (hidden <= 0) return null;
-    return el('p', 'ee-cut', `${hidden} ${what}${hidden === 1 ? ' below this point is' : 's below this point are'} not showing — the panel has run out of room.`);
+    const tail = paged
+        ? 'reached with the More button.'
+        : 'not showing — the band is too small for a More button.';
+    return el('p', 'ee-cut', `${hidden} ${what}${hidden === 1 ? ' below this point is' : 's below this point are'} ${tail}`);
 }
 
 function alwaysSection(composed) {
@@ -380,8 +383,8 @@ function alwaysSection(composed) {
         const list = el('div', 'ee-list');
         const items = bandList('always');
         items.forEach((it, i) => {
-            if (i === composed.counts.always) {
-                const cut = cutLine(items.length - composed.counts.always, 'phrase');
+            if (i === composed.firstPage.always) {
+                const cut = cutLine(items.length - composed.firstPage.always, 'phrase', composed.behindMore.always > 0);
                 if (cut) list.appendChild(cut);
             }
             list.appendChild(phraseRow('always', it));
@@ -488,8 +491,8 @@ function contextSection(composed) {
         const list = el('div', 'ee-list');
         const items = bandList('context');
         items.forEach((it, i) => {
-            if (i === composed.counts.context) {
-                const cut = cutLine(items.length - composed.counts.context, 'button');
+            if (i === composed.firstPage.context) {
+                const cut = cutLine(items.length - composed.firstPage.context, 'button', composed.behindMore.context > 0);
                 if (cut) list.appendChild(cut);
             }
             list.appendChild(contextRow(it));

@@ -2457,6 +2457,16 @@ body.conv-bottom .palette-grid {
    deliberate 3.7:1, and a reserved cell nobody can see is the exact failure the
    base rule was written to stop. 65% is the weakest mix that clears 3:1 for all
    three bands (the Flex green is the binding one at 3.12:1). */
+/* THE MORE / CLOSE BUTTON (Ken, September 14 2026): bold, on a solid fill of its band's
+   own dark color. Paint only - no padding, border width or margin - so its box is a
+   defined button's box and no keyguard hole moves. */
+.ep-btn.ep-more {
+    background: var(--band-color, var(--edge-strong));
+    border-color: var(--band-color, var(--edge-strong));
+    color: var(--ink-inverse);
+}
+.ep-btn.ep-more .ep-text { font-weight: 800; }
+
 .ep-btn.ep-undefined.ep-band-always,
 .ep-btn.ep-undefined.ep-band-context,
 .ep-btn.ep-undefined.ep-band-flex {

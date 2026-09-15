@@ -654,6 +654,25 @@ function initApp() {
     ui.onInitiateClick(whileComposerClosed(handleInitiate));
     ui.onSayAgainClick(whileComposerClosed(handleSayAgain));
     ui.onHoldOnClick(handleHoldOn);
+    // ANY TAP ON A BUTTON PUTS A PAGED EXPRESS PANEL BACK, EXCEPT "HOLD ON" AND MORE
+    // ITSELF (Ken, September 14 2026). One listener in the capture phase rather than a
+    // line in every handler, so a button added later obeys the rule without anyone
+    // remembering it. The redraw waits a turn so the tapped button's own handler runs
+    // against the panel it was tapped on.
+    // Two deliberate exceptions besides those: taps inside Settings (paging there is for
+    // reaching buttons to edit, and leaving Settings resets it anyway), and the ARMING tap
+    // on a phrase in double-tap mode, which has not spoken yet - the phrase handler
+    // resets when it actually speaks.
+    document.addEventListener('click', (e) => {
+        if (!expressPaging) return;
+        const btn = e.target && e.target.closest ? e.target.closest('button') : null;
+        if (!btn) return;
+        if (btn.classList.contains('ep-more') || btn.id === 'holdOnBtn') return;
+        if (btn.closest('#settingsDialog')) return;
+        if (btn.classList.contains('ep-phrase') && storage.loadExpressTapMode() === 'double') return;
+        resetExpressPaging();
+        setTimeout(renderExpressPanel, 0);
+    }, true);
     ui.onPardonClick(whileComposerClosed(handlePardon));
     ui.onWindDownClick(whileComposerClosed(handleWindDown));
     ui.onEndConversationClick(whileComposerClosed(handleEndConversation));
@@ -3747,6 +3766,7 @@ let expressPanelInSettings = false;
 // tab the user is looking straight at the panel they are editing, so it must be
 // tappable; everywhere else it goes back to the dock.
 function hostExpressPanel(inSettings) {
+    resetExpressPaging();
     expressPanelInSettings = !!inSettings;
     ui.setExpressPanelHost(inSettings ? document.getElementById('settingsDialog') : null);
     // The single choke point for "the panel is no longer being edited": every path
@@ -3900,12 +3920,52 @@ function dropGoalsFrom(source) {
     for (const [key, from] of [...activeGoals]) if (from === source) activeGoals.delete(key);
 }
 
+/*
+ * WHICH BAND THE MORE BUTTON HAS PAGED, AND HOW FAR (Ken, September 14 2026).
+ * { band, page } or null. Page 0 is the panel as it normally is, so null and page 0
+ * mean the same thing. It is not saved anywhere: a fresh launch starts on the first set.
+ *
+ * WHAT PUTS IT BACK: tapping Close, and tapping ANY other button in the app except
+ * "Hold on" (Ken). Choices arriving from the partner put it back too, because they
+ * cover the Context band's More button. Opening or closing Settings does as well, so
+ * the set being edited and the set used in conversation cannot leak into each other.
+ */
+let expressPaging = null;
+
+function resetExpressPaging() {
+    if (!expressPaging) return false;
+    expressPaging = null;
+    return true;
+}
+
+function handleExpressMore(m) {
+    if (!m) return;
+    if (m.label === 'Close') expressPaging = null;
+    else if (expressPaging && expressPaging.band === m.band) expressPaging = { band: m.band, page: expressPaging.page + 1 };
+    else expressPaging = { band: m.band, page: 1 };
+    renderExpressPanel();
+}
+
 function composedPanel() {
     const composed = expressBands.composePanel(expressLayoutRows(), expressPanel.getModel(), {
         partnerId: activePartner ? (activePartner.personId || activePartner.id) : null,
         placeId: activePlace ? (activePlace.placeId || activePlace.id) : null,
         goals: goalButtons(),
+        // Switched-on buttons go to the front of their band so they are always in view,
+        // and back to their own place when switched off (Ken, September 14 2026).
+        litIds: [
+            activePartner && activePartner.id,
+            activePlace && activePlace.id,
+            activeFeeling && activeFeeling.id,
+            ...activeGoals.keys(),
+        ].filter(Boolean),
+        paging: expressPaging ? { ...expressPaging, scope: storage.loadExpressMoreScope() } : null,
     });
+    // Keep the request in step with what could actually be shown - a band that shrank or
+    // a list that got shorter must not leave a page nothing can draw.
+    if (expressPaging) {
+        expressPaging = composed.paging ? { band: composed.paging.band, page: composed.paging.page } : null;
+    }
     // Resolve each partner button's face HERE, on the way to the renderer, because the
     // renderer is deliberately ignorant of the relationship graph and must stay so.
     // This is also what carries the answer to the toggle handler, since the item the
@@ -3955,17 +4015,25 @@ function reflectBandSizes() {
         // growing the band for them (Ken, September 10 2026: leave it as is).
         bits.push(`${composed.unreachable.goals} goal button(s) have no room in the Flex band.`);
     }
-    if (composed.fromAlwaysSurplus) {
-        bits.push(`${composed.fromAlwaysSurplus} Always phrase(s) are filling spare room at the end of the Flex band.`);
+    for (const [band, name] of [['always', 'Always'], ['context', 'Context'], ['flex', 'Flex']]) {
+        const n = composed.behindMore[band];
+        if (n) bits.push(`${n} ${name} button(s) are reached with the More button.`);
     }
+    const scopeSel = document.getElementById('moreScopeSelect');
+    if (scopeSel) scopeSel.value = storage.loadExpressMoreScope();
     const status = document.getElementById('bandSizeStatus');
     if (status) status.textContent = bits.join(' ');
 }
 
 function renderExpressPanel() {
     applyButtonSizing();   // the active layout may have changed → refresh --kbd-rows/--kbd-cols
+    // The partner's choices cover the Context band's More button, so a paged panel goes
+    // back to its first set the moment they arrive (Ken, September 14 2026).
+    if (currentPartnerText && (offeredChoices.length || offeredRange)) resetExpressPaging();
     const composed = composedPanel();
     ui.renderExpressPanel(expressLayoutRows(), composed.items, {
+        moreCells: composed.more,
+        onMore: handleExpressMore,
         // One background color per band, so which band a button is in is readable at a
         // glance without reading the button (Ken, August 22 2026). This replaces the
         // per-phrase color the user used to pick: color now carries a meaning.
@@ -4903,6 +4971,9 @@ function initSliderSteppers() {
 // Routed through the shared speak-as-a-turn path.
 async function handleSpeakExpressItem(phrase) {
     if (editedInSettings(phrase)) return;
+    // In double-tap mode the general "any tap goes back" rule deliberately lets the
+    // arming tap through, so the phrase that actually speaks puts the panel back here.
+    if (resetExpressPaging()) renderExpressPanel();
     await speakAsUserTurn(phrase.text, phrase.speak || phrase.text, 'express');
 }
 
@@ -7822,6 +7893,15 @@ function openSettings() {
         storage.saveContextMark(contextMarkSelect.value);
         renderExpressPanel();
     };
+    const moreScopeSelect = document.getElementById('moreScopeSelect');
+    if (moreScopeSelect) {
+        moreScopeSelect.value = storage.loadExpressMoreScope();
+        moreScopeSelect.onchange = () => {
+            storage.saveExpressMoreScope(moreScopeSelect.value);
+            resetExpressPaging();
+            renderExpressPanel();
+        };
+    }
 
     // Button sizing — apply live as the slider drags (oninput) so the change is
     // visible immediately (incl. the keyboard preview on this tab), persisting as

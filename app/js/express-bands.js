@@ -20,12 +20,21 @@
  * zero is legitimate, because a panel given over entirely to steering the AI is an
  * important panel, and the phrases are not lost in any case (see the overflow rule).
  *
- * ⚠ THE OVERFLOW RULE, AND THE DIRECTION MATTERS — I had it backwards once and Ken
- * caught it. An Always phrase with no room in its own band queues at the very END of
- * the Flex band, behind everything the partner and the place supplied. It takes only
- * genuinely spare positions. It can NEVER displace a situational phrase. So growing
- * the Context band shortens Always from its bottom, and the surplus shows up only
- * where the situational lists left room — or not at all, which the editor says.
+ * OVERFLOW IS A "More" BUTTON IN THE BAND ITSELF (Ken, September 14 2026). This
+ * REPLACES the August 23 rule that queued surplus Always phrases at the end of the
+ * Flex band. A band holding more entries than it has positions gives its LAST position
+ * to More; tapping it shows the band's next entries, the button never moves, and on the
+ * last set it reads Close. Every entry in a band of two or more positions is therefore
+ * reachable, and an Always phrase never appears outside the Always band.
+ *
+ * A setting decides what More replaces: only that band's positions, or every position
+ * on the panel except the compose key. Either way nothing about the GRID changes, so
+ * no keyguard hole moves - only what sits behind the holes.
+ *
+ * A SWITCHED-ON BUTTON ALWAYS SHOWS (Ken): a lit partner, place, feeling or goal is
+ * moved to the front of its band, and returns to its own place in the user's order
+ * when switched off. Otherwise a lit button could sit on a later page, still steering
+ * the AI with nothing on screen saying so.
  *
  * THE CONTEXT BAND'S FLOOR OF FOUR IS UNCONDITIONAL, including for a user who has
  * defined no context buttons at all. If the band could collapse when empty, a menu
@@ -228,10 +237,7 @@ export function flexFill(flexLists, partnerId, placeId, room) {
 export function composePanel(layoutRows, model = {}, situation = {}) {
     const plan = bandPlan(layoutRows, model.sizes || DEFAULT_SIZES);
     const always = (model.always || []).filter(Boolean);
-    const context = (model.context || []).filter(Boolean);
-
-    const alwaysShown = always.slice(0, plan.alwaysN);
-    const alwaysSurplus = always.slice(plan.alwaysN);
+    const context = litFirst((model.context || []).filter(Boolean), situation.litIds);
 
     // GOALS TAKE THE LEADING FLEX POSITIONS, ahead of every situational phrase (Ken,
     // September 10 2026).
@@ -247,20 +253,79 @@ export function composePanel(layoutRows, model = {}, situation = {}) {
     // FIRST WITHIN THE BAND because they are the most specific thing in it - they
     // belong to this one person - and because a goal not reachable is a goal that
     // cannot steer anything, where a phrase not reachable can still be typed.
-    const goals = (situation.goals || []).filter(Boolean).slice(0, plan.flexN);
-    const flexRoom = Math.max(0, plan.flexN - goals.length);
-    const flex = flexFill(model.flex || {}, situation.partnerId, situation.placeId, flexRoom);
-    // ...and only then, into whatever the situational lists did not claim.
-    const spare = Math.max(0, flexRoom - flex.length);
-    const flexCells = goals.concat(flex, alwaysSurplus.slice(0, spare));
+    const allGoals = litFirst((situation.goals || []).filter(Boolean), situation.litIds);
+    const flex = flexFill(model.flex || {}, situation.partnerId, situation.placeId, Infinity);
+    const lists = {
+        [BAND.ALWAYS]: always,
+        [BAND.CONTEXT]: context,
+        [BAND.FLEX]: allGoals.concat(flex),
+    };
+
+    const positions = { [BAND.ALWAYS]: [], [BAND.CONTEXT]: [], [BAND.FLEX]: [] };
+    for (let i = 0; i < plan.total; i++) positions[plan.bands[i]].push(i);
 
     const items = new Array(plan.total);
-    let a = 0; let c = 0; let f = 0;
-    for (let i = 0; i < plan.total; i++) {
-        if (plan.bands[i] === BAND.ALWAYS) items[i] = alwaysShown[a++];
-        else if (plan.bands[i] === BAND.CONTEXT) items[i] = context[c++];
-        else items[i] = flexCells[f++];
+    const bandsOut = plan.bands.slice();
+    const more = [];
+    const firstPage = {};
+    const behindMore = {};
+    const unreachableOf = {};
+    const lastPageOf = {};
+
+    // Which band is paged, and how far. Anything else about paging is clamped here so a
+    // stale request (the band shrank, or its list got shorter) can never draw past the end.
+    const req = situation.paging || null;
+    const scope = req && req.scope === 'panel' ? 'panel' : 'band';
+
+    for (const band of [BAND.ALWAYS, BAND.CONTEXT, BAND.FLEX]) {
+        const P = positions[band];
+        const L = lists[band];
+        const n = P.length;
+        // More needs a position to stand on AND at least one to show beside it, so a
+        // band of one position cannot page: its extras are genuinely unreachable.
+        if (L.length <= n || n < 2) {
+            P.forEach((cell, k) => { items[cell] = L[k]; });
+            firstPage[band] = Math.min(n, L.length);
+            behindMore[band] = 0;
+            unreachableOf[band] = Math.max(0, L.length - n);
+            continue;
+        }
+        const per = n - 1;
+        firstPage[band] = per;
+        behindMore[band] = L.length - per;
+        unreachableOf[band] = 0;
+        const lastBandPage = Math.ceil(L.length / per) - 1;
+        const lastPanelPage = Math.ceil((L.length - per) / Math.max(1, plan.total - 1));
+        lastPageOf[band] = scope === 'panel' ? lastPanelPage : lastBandPage;
+        let page = req && req.band === band ? Math.max(0, Math.round(+req.page || 0)) : 0;
+        page = Math.min(page, lastPageOf[band]);
+        const moreAt = P[n - 1];
+        // The band's own positions: page 0 always, and every page under the band scope.
+        const start = scope === 'band' ? page * per : 0;
+        for (let k = 0; k < per; k++) items[P[k]] = L[start + k];
+        more.push({ index: moreAt, band, page, label: page >= lastPageOf[band] ? 'Close' : 'More' });
     }
+
+    // THE WHOLE-PANEL SCOPE: on a page past the first, every position except the tapped
+    // More button shows this band's next entries, in reading order. The extras keep
+    // their own band's color wherever they land, so they still say what they are; the
+    // other bands' More buttons are covered for as long as this set is up.
+    let paged = null;
+    for (const m of more) if (m.page > 0) paged = m;
+    if (paged && scope === 'panel') {
+        const L = lists[paged.band];
+        const per0 = positions[paged.band].length - 1;
+        const perP = plan.total - 1;
+        const offset = per0 + (paged.page - 1) * perP;
+        let k = 0;
+        for (let i = 0; i < plan.total; i++) {
+            if (i === paged.index) continue;
+            items[i] = L[offset + k++];
+            bandsOut[i] = paged.band;
+        }
+        more.splice(0, more.length, paged);
+    }
+
     // WHICH CELLS THE PARTNER'S CHOICES WILL LAND ON: the last four of the Context band
     // (they take the far end - see the design). Reported so an EMPTY one can say what it
     // is for rather than looking like a cell somebody forgot to fill. Only the last four,
@@ -270,26 +335,46 @@ export function composePanel(layoutRows, model = {}, situation = {}) {
     for (let i = 0; i < plan.total; i++) if (plan.bands[i] === BAND.CONTEXT) ctxIdx.push(i);
     const choiceSlots = ctxIdx.slice(Math.max(0, ctxIdx.length - CONTEXT_FLOOR));
 
+    const goalsShownOrPaged = plan.flexN >= 2 ? allGoals.length : Math.min(allGoals.length, plan.flexN);
     return {
         items,
-        bands: plan.bands,
+        bands: bandsOut,
         choiceSlots,
         counts: { always: plan.alwaysN, context: plan.contextN, flex: plan.flexN },
-        // What did not fit anywhere. The editor says so rather than hiding it: the user
-        // finds out when they add the phrase, not weeks later.
+        // The More (or Close) buttons to draw, one per band that overflows - or only the
+        // paged band's while the whole-panel scope has taken the panel over.
+        more,
+        // The page actually shown, after clamping, so the caller can keep its request
+        // in step: { band, page, last } or null when nothing is paged.
+        paging: paged ? { band: paged.band, page: paged.page, last: lastPageOf[paged.band] } : null,
+        // How many entries each band shows before its More button, and how many sit
+        // behind it. The editor draws its dividing line from the first.
+        firstPage,
+        behindMore,
+        // What cannot be reached at all - only possible in a band too small for a More
+        // button. The editor says so rather than hiding it.
         unreachable: {
-            always: Math.max(0, alwaysSurplus.length - spare),
-            context: Math.max(0, context.length - plan.contextN),
+            always: unreachableOf[BAND.ALWAYS],
+            context: unreachableOf[BAND.CONTEXT],
             // A goal with no Flex position to stand on. Reported for the same reason
             // the other two are: the user finds out when they set the band size, not
             // weeks later when they wonder why a goal they recorded never appears.
             // NOTE the shipped default is NO Flex band at all, so this is the ordinary
             // state for anybody who has not sized one - which is deliberate (Ken,
             // September 10 2026: leave it as is, no auto-growing).
-            goals: Math.max(0, (situation.goals || []).filter(Boolean).length - goals.length),
+            goals: Math.max(0, allGoals.length - goalsShownOrPaged),
         },
-        fromAlwaysSurplus: Math.max(0, flexCells.length - goals.length - flex.length),
     };
+}
+
+/**
+ * Switched-on buttons first, everything else in the user's own order. Stable, so a
+ * button switched off goes straight back to where it was in the priority.
+ */
+export function litFirst(list, litIds) {
+    const lit = new Set((litIds || []).filter(Boolean));
+    if (!lit.size) return list;
+    return list.filter((x) => lit.has(x && x.id)).concat(list.filter((x) => !lit.has(x && x.id)));
 }
 
 /**

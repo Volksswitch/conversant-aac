@@ -510,7 +510,12 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         // normal pair, and a single-value control could not express it.
         activeGoalIds = [],
         onToggleGoal,
+        // The More / Close buttons, one per band that has more entries than positions
+        // (express-bands.composePanel): { index, band, label }. Tapping one calls onMore.
+        moreCells = [],
+        onMore,
     } = opts;
+    const moreAt = new Map((moreCells || []).map((m) => [m.index, m]));
     const goalOn = new Set(activeGoalIds || []);
     const choiceSlotAt = new Map(choiceSlots.map((cellIndex, n) => [cellIndex, n + 1]));
     epGrid.classList.remove('ep-mark-color', 'ep-mark-thick', 'ep-mark-side', 'ep-mark-shape');
@@ -614,6 +619,10 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         // makes the three readable at a glance, and it is why the swatches left the
         // editor. `categories` is still accepted so nothing that passes it breaks.
         void categories;
+        // Marked so a tap on a phrase can be told apart from a tap on a toggle: in
+        // double-tap mode the first tap only arms it, and must not send a paged band
+        // back to its first set before the second tap arrives.
+        b.classList.add('ep-phrase');
         b.title = item.text;
         b.setAttribute('aria-label', item.text);
         b.innerHTML = `<span class="ep-text">${escapeHtml(item.text)}</span>`;
@@ -659,6 +668,27 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         // around the chosen alternative, so a mis-tap costs a round-trip, not a
         // wrong thing said aloud. The double-tap safeguard guards SPEAKING.
         b.addEventListener('click', () => onChoiceChip && onChoiceChip(chip));
+        return b;
+    };
+
+    // MORE / CLOSE (Ken, September 14 2026). An .ep-btn like every other cell, so its
+    // box is identical and no keyguard hole moves. It follows the phrase tap setting,
+    // because a stray tap on it replaces what is on the panel.
+    const buildMoreCell = (m, span) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'ep-btn ep-more';
+        b.style.gridColumn = `span ${span}`;
+        const closing = m.label === 'Close';
+        b.title = closing ? 'Put the panel back as it was' : 'Show more buttons';
+        b.setAttribute('aria-label', closing ? 'Close, put the panel back as it was' : 'More buttons');
+        b.innerHTML = `<span class="ep-text">${escapeHtml(m.label)}</span>`;
+        b.addEventListener('click', () => {
+            if (tapMode === 'double') {
+                if (armedBtn === b) { disarm(); onMore && onMore(m); }
+                else { disarm(); armedBtn = b; b.classList.add('ep-armed'); armTimer = setTimeout(disarm, doubleTapMs); }
+            } else { onMore && onMore(m); }
+        });
         return b;
     };
 
@@ -756,6 +786,15 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
             const choice = choiceAt.get(index);
             if (choice) {
                 rowEl.appendChild(buildChoiceCell(choice, span));
+                return;
+            }
+            // More sits under the choices, not over them (Ken): while the partner's
+            // alternatives are up they cover it, and it comes back when they go.
+            const m = moreAt.get(index);
+            if (m) {
+                const moreEl = buildMoreCell(m, span);
+                if (bands[index]) moreEl.classList.add('ep-band-' + bands[index]);
+                rowEl.appendChild(moreEl);
                 return;
             }
             // Two cases render as an undefined cell: an explicit 'empty' item (a

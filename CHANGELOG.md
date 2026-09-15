@@ -26,6 +26,17 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- When an Express Panel band has more buttons than room, its last spot becomes a
+  **More** button. Tap it to see the rest; on the last set it reads **Close**, which
+  puts the panel back as it was. Tapping any other button except "Hold on" does the
+  same. More follows your single-tap or double-tap setting.
+- A new setting, "Tapping More shows the rest", on the Express Panel tab chooses
+  whether the rest appear in that band only or across the whole panel.
+- A partner, place, feeling or goal you switch on now moves to the front of its band
+  so it is always in view, and goes back to its usual spot when you switch it off.
+- Always phrases that don't fit no longer spill into the Flex band. Reach them with
+  the Always band's More button instead.
+
 ## Version 0.11.2
 
 - **Topics for a person or a place.** In About Me, each person in People in Your Life and each place in My Places now has "Topics I'd like to talk about" and "Topics to avoid". Separate topics with commas, just like the topic questions elsewhere in About Me. While you are talking with that person, or are at that place, your suggested replies lean toward the first list and never raise the second on their own.

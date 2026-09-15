@@ -3412,7 +3412,43 @@ Announce the replacement in the release notes: the panel visibly changes under s
 
 ---
 
+## A band that overflows gets a MORE button (DECIDED + BUILT Ken, September 14 2026)
+
+**This SUPERSEDES the "no folders or pages" entry below in one respect: a band may now
+page its own overflow.** Everything else in that entry still holds - no folders, no
+button that opens another set of buttons chosen by topic, no hierarchy.
+
+- **A band holding more entries than positions gives its LAST position to More** - bold,
+  on a solid fill of the band's own dark color. Tapping it shows the band's next entries;
+  **the button never moves**; on the last set it reads **Close**, which restores the panel.
+  More and Close follow the "Speaking an Express Panel phrase" single/double-tap setting.
+- **Setting "Tapping More shows the rest"** (Express Panel & Keyboard tab,
+  `expressMoreScope`, default `band`): the rest appear in that band's own positions, or
+  across every position except "In my own words" (extras keep their own band's color).
+- **ANY BUTTON TAP PUTS IT BACK, EXCEPT "Hold on" (Ken).** One capture-phase listener in
+  `app.js`, so a button added later obeys the rule without anyone remembering it. Two
+  deliberate exceptions: taps inside Settings (paging there is for reaching buttons to
+  edit, and leaving Settings resets it), and the ARMING tap on a phrase in double-tap
+  mode, which has not spoken yet - the phrase handler resets when it actually speaks.
+  **This is what answers the "stranded on page two" risk** the older entry raised.
+- **The partner's offered choices COVER the Context band's More** (Ken), and their
+  arrival resets any paging.
+- **A SWITCHED-ON button always shows** (Ken): a lit partner, place, feeling or goal moves
+  to the front of its band and returns to its own place in the order when switched off.
+  Accepted cost: buttons move when toggled. Otherwise a lit button could sit on a later
+  page, steering the AI with nothing on screen saying so.
+- **The old overflow rule is GONE**: Always phrases never spill into the Flex band.
+- **A band of ONE position cannot page** (More needs a neighbor to show anything), so
+  only there is an entry genuinely unreachable, and the editor still says so.
+- **Paint only**: More is an `.ep-btn` with color rules, so no keyguard hole moves.
+  Measured in the preview: the More button's position was identical on every page.
+- **Not yet in the documents:** both User Manuals and the Express Panel Design document
+  still describe the spill-into-Flex rule. Left for the next "sync docs".
+
 ## The Express Panel has NO folders or pages (DECIDED Ken, August 22 2026)
+
+**⚠ PARTLY SUPERSEDED September 14 2026 - bands now page their own overflow with a More
+button. See the entry above; the arguments against folders below still stand.**
 
 Asked by an outside reviewer whether a panel button could reveal *other* buttons -
 pages, folders, or a place to keep the overflow. **The answer is no: no folders, no
@@ -3499,11 +3535,10 @@ feeling, the partner's offered choices, and the number button).
 - **SIZING: the user sets CONTEXT and FLEX; ALWAYS takes the remainder** (Ken, August 23
   2026). Default Flex 0 and a small Context, so an untouched panel is almost exactly
   today's. **Always has NO floor — zero is legitimate**: a panel given over to steering
-  the AI is an important panel. **An Always phrase with no room queues at the very END of
-  the Flex band and only takes genuinely spare positions — it can NEVER displace a
-  situational phrase** (Ken corrected me on this; I had it backwards). So growing Context
-  shortens Always from its bottom, the remaining Always buttons never move, and the
-  surplus shows only where the situational lists left room.
+  the AI is an important panel. ~~An Always phrase with no room queues at the very END of
+  the Flex band~~ **REPLACED September 14 2026: surplus stays in its own band behind a
+  More button** (see "A band that overflows gets a MORE button"). Growing Context still
+  shortens Always from its bottom, and the remaining Always buttons never move.
 - **The Flex band is filled by FOUR situational lists, most specific first**: this partner
   in this place, this partner anywhere, anyone in this place, then the general set. All
   four are made by one mechanism — pick a partner and a place from two lists that also
