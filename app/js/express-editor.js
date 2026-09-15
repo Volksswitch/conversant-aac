@@ -295,6 +295,8 @@ function phraseRow(band, item) {
  * played, and a recording of somebody else must never be filed as the user speaking.
  */
 let previewAudio = null;
+// The data folder's audio folder, read when the editor renders - see chooseAudioFile.
+let primedAudioDir = null;
 
 function audioRow(band, item) {
     const row = el('div', 'ee-row ee-audio-row');
@@ -329,13 +331,7 @@ function audioRow(band, item) {
         ? `Sound file: ${item.fileName || item.file}`
         : 'No sound file yet. Choose an MP3 or M4A file, up to 10 MB.');
 
-    const picker = document.createElement('input');
-    picker.type = 'file';
-    picker.accept = '.mp3,.m4a,audio/mpeg,audio/mp4';
-    picker.hidden = true;
-    picker.addEventListener('change', async () => {
-        const file = picker.files && picker.files[0];
-        picker.value = '';
+    const useFile = async (file) => {
         const check = checkAudioFile(file);
         if (!check.ok) { status.textContent = check.reason; return; }
         if (!storage.hasDataFolder()) {
@@ -357,9 +353,41 @@ function audioRow(band, item) {
         save(patch);
         if (old && old !== name) storage.deleteAudioFile(old).catch(() => {});
         render();
+    };
+
+    // The ordinary file chooser: the only route on an iPad, and the fallback elsewhere.
+    const picker = document.createElement('input');
+    picker.type = 'file';
+    picker.accept = '.mp3,.m4a,audio/mpeg,audio/mp4';
+    picker.hidden = true;
+    picker.addEventListener('change', () => {
+        const file = picker.files && picker.files[0];
+        picker.value = '';
+        useFile(file);
     });
     row.appendChild(picker);
-    row.appendChild(mkBtn('Choose a file', 'ee-add', () => picker.click(), 'Choose the sound file this button plays'));
+
+    // ⚠ WHERE THE BROWSER HAS A REAL PICKER, IT OPENS IN THE AUDIO FOLDER (Ken, September
+    // 14 2026), exactly as the backup import opens in the backups folder. The folder is
+    // read when the editor renders, never here: the picker needs the browser to still
+    // count the tap as recent, and waiting on anything first spends it.
+    row.appendChild(mkBtn('Choose a file', 'ee-add', async () => {
+        if (window.showOpenFilePicker && primedAudioDir) {
+            try {
+                const [handle] = await window.showOpenFilePicker({
+                    startIn: primedAudioDir,
+                    types: [{ description: 'Sound files', accept: { 'audio/mpeg': ['.mp3'], 'audio/mp4': ['.m4a'] } }],
+                    multiple: false,
+                });
+                await useFile(await handle.getFile());
+            } catch (e) {
+                // Cancelling the picker is not an error worth reporting.
+                if (e && e.name !== 'AbortError') status.textContent = `That file could not be opened: ${e.message || e}`;
+            }
+            return;
+        }
+        picker.click();
+    }, 'Choose the sound file this button plays'));
 
     // Hear it here. Plays and stops without touching the microphone: this is Settings,
     // not a conversation.
@@ -675,6 +703,8 @@ function scopeSelect(options, current, onPick) {
 
 export function render() {
     if (!container) return;
+    // Primed for the "Choose a file" picker, which must open without waiting on anything.
+    storage.getAudioDirHandle().then((h) => { primedAudioDir = h; }).catch(() => { primedAudioDir = null; });
     container.innerHTML = '';
     const composed = composePanel(layoutRowsFn(), expressPanel.getModel(),
         { partnerId: null, placeId: null });

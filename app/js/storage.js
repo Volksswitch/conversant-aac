@@ -904,6 +904,12 @@ async function getAudioDir(create) {
     }
 }
 
+/* The audio folder itself, for a file picker to open IN (Ken, September 14 2026), like
+ * getBackupsDirHandle. The caller must fetch it BEFORE the tap - see that function. */
+export async function getAudioDirHandle() {
+    return getAudioDir(true);
+}
+
 export async function writeAudioFile(name, blob) {
     const dir = await getAudioDir(true);
     if (!dir) throw new Error('Choose a data folder first. A sound needs somewhere to be kept.');

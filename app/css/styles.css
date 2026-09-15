@@ -2478,6 +2478,11 @@ body.conv-bottom .palette-grid {
 }
 .ep-btn.ep-audio-missing .ep-text { font-style: italic; }
 #expressEditor .ee-audio-status { flex: 1 1 100%; font-size: 0.85rem; color: var(--ink-muted); margin: 0; }
+/* A sound row holds more than a phrase row, so it WRAPS rather than squeezing - and the
+   file button keeps the width of its own words. Squeezed, "Choose a file" broke over two
+   lines and the text ran past the button's edge (Ken, September 14 2026). */
+#expressEditor .ee-row.ee-audio-row { flex-wrap: wrap; }
+#expressEditor .ee-audio-row .ee-add { flex: 0 0 auto; width: auto; max-width: 100%; white-space: nowrap; }
 
 .ep-btn.ep-undefined.ep-band-always,
 .ep-btn.ep-undefined.ep-band-context,
