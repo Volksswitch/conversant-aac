@@ -37,6 +37,16 @@ the one that quietly waits forever.
 
 ## Open
 
+### The iPad and Android manuals carry the Windows manual's page header
+- **Raised:** 2026-09-15 - found while checking table borders. The running header at the
+  top of every page of `Conversant AAC User Manual (iPad).docx` and
+  `Conversant AAC User Manual (Android).docx` reads "Conversant AAC - User Manual (Windows,
+  Chromebook, Mac)". Left over from both being created by copying the Windows manual, and
+  it is in the PDFs on the website.
+- **What is wanted:** correct each header to name its own device, then republish the two
+  PDFs.
+- **Why not now:** found in passing during the border change; not yet raised with Ken.
+
 ### Azure "quota tier" upgrade: confirm the speech free plan survives, then fix the guide if not
 - **Raised:** 2026-09-14 - Microsoft emailed the first beta tester's Azure subscription
   (bt1@volksswitch.org) saying it will be moved from the Free quota Tier to Tier 1 in three

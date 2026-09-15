@@ -55,6 +55,13 @@ FIRST_COL_SIZE = '22'          # half-points, so 11pt
 # place to change.
 TABLE_TEXT_SIZE = '22'         # half-points, so 11pt - both columns
 
+# BORDERS ARE 1pt, NOT 0.5pt (Ken, September 15 2026). At half a point a border is under
+# one screen pixel at normal zoom, and Word draws the first column's pale fill as strips
+# butting against each line - so a PDF viewer rounding to whole pixels lets the fill win
+# and the row lines in the first column vanish. The PDF was correct; only its display
+# broke. Measured: the same table at 1pt keeps every line at 96 dpi.
+BORDER_SIZE = '8'              # eighths of a point, so 1pt
+
 
 def import_style(doc, source_path):
     """Copy the style definition out of `source_path` into `doc`, if it is not there.
@@ -101,6 +108,13 @@ def fix_style(doc):
         if sz is not None and sz.get(W + 'val') != FIRST_COL_SIZE:
             changed.append('size %s -> %s' % (sz.get(W + 'val'), FIRST_COL_SIZE))
             sz.set(W + 'val', FIRST_COL_SIZE)
+
+    borders = style.find(W + 'tblPr/' + W + 'tblBorders')
+    if borders is not None:
+        for edge in borders:
+            if edge.get(W + 'sz') != BORDER_SIZE:
+                changed.append('border %s %s -> %s' % (edge.tag[len(W):], edge.get(W + 'sz'), BORDER_SIZE))
+                edge.set(W + 'sz', BORDER_SIZE)
 
     # The base run properties govern every cell, so this is what gives the body column a
     # size of its own instead of leaving it to the document default.
@@ -167,6 +181,14 @@ def fix_tables(doc):
         if b is not None:
             pr.remove(b)
             notes.append('direct borders removed')
+        # Per-cell borders override the style too, and several documents carried them
+        # (1/8pt gray on every cell of the manuals' tables) - found when the September 15
+        # 2026 switch to 1pt borders did nothing to those tables.
+        cell_borders = [tb for tb in tbl.iter(W + 'tcBorders')]
+        for tb in cell_borders:
+            tb.getparent().remove(tb)
+        if cell_borders:
+            notes.append('%d cell border override(s) removed' % len(cell_borders))
 
         # ⚠ THE FIRST-COLUMN FORMATTING IS ONLY RIGHT FOR A TWO-COLUMN TABLE, where
         # column one is the label being defined. The other shapes in this manual would
