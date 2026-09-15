@@ -3445,6 +3445,14 @@ and a sound or music. [express-audio.js](app/js/express-audio.js) holds the rule
   write is refused on import, since a backup can come from anywhere.
 - **MP3 and M4A only, up to 10 MB, checked when the file is ADDED** - never discovered at
   playback mid-conversation - because other formats do not play on an iPad.
+  **The 10 MB is a judgment, not a platform limit, and Ken confirmed it per file (September
+  14 2026):** about eight to ten minutes of MP3, enough for a song, while keeping a backup
+  movable - clips ride inside it as text, a third larger than the file. A limit on the TOTAL
+  across all sounds was offered and not chosen; reopen it if long music turns out to be
+  common and backups get unwieldy.
+- **The "what kind of recording" question STAYS (Ken)**, even though few users will have
+  their own recorded voice. It decides what the AI is told and keeps the record honest, and
+  its default ("a sound or music") costs a user who never records nothing.
 - **⚠ THE CLIP IS READ INTO MEMORY WHEN THE PANEL IS DRAWN, NOT ON THE TAP.** An iPad only
   lets a page start sound while it still counts a tap as recent, and reading the file
   first can spend that. Nothing in the tap path may wait before `play()`. **Unverified on
