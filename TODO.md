@@ -45,7 +45,8 @@ the one that quietly waits forever.
   it is in the PDFs on the website.
 - **What is wanted:** correct each header to name its own device, then republish the two
   PDFs.
-- **Why not now:** found in passing during the border change; not yet raised with Ken.
+- **DONE 2026-09-15:** headers now read "(iPad)" and "(Android)"; both PDFs republished
+  with the 1pt-border change.
 
 ### Azure "quota tier" upgrade: confirm the speech free plan survives, then fix the guide if not
 - **Raised:** 2026-09-14 - Microsoft emailed the first beta tester's Azure subscription
