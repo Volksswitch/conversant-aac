@@ -760,6 +760,9 @@ export function applyPortableSettings(incoming) {
 // is still the user's job — but now it is a file they can see in order to copy.
 const BACKUP_DIR = 'backups';
 const CONVERSATIONS_DIR = 'conversations';
+// The clips behind Express Panel sound buttons (Ken, September 14 2026), one file per
+// button, named by express-audio.audioFileName.
+const AUDIO_DIR = 'audio';
 
 /* THE THREE SUBFOLDERS ARE CREATED WHEN THE FOLDER IS CONNECTED, not when something
  * first needs one (Ken, August 31 2026).
@@ -779,7 +782,7 @@ const CONVERSATIONS_DIR = 'conversations';
  * Failure is deliberately silent. A folder granted read-only, or holding a FILE of
  * the same name, must not stop the app connecting to it - the app worked without
  * these folders before and still does. */
-const DATA_SUBFOLDERS = [SETTINGS_DIR, CONVERSATIONS_DIR, BACKUP_DIR];
+const DATA_SUBFOLDERS = [SETTINGS_DIR, CONVERSATIONS_DIR, BACKUP_DIR, AUDIO_DIR];
 
 async function ensureDataSubfolders() {
     if (!dirHandle) return;
@@ -885,6 +888,64 @@ export async function readBackup(name) {
     } catch {
         return null;
     }
+}
+
+// --- Sound-button clips (Ken, September 14 2026) ---------------------------------
+// Binary files, so they bypass readFile/writeFile, which are text. Without a data
+// folder there is nowhere to keep one: a write throws with a message the editor shows,
+// and a read returns null.
+
+async function getAudioDir(create) {
+    if (!dirHandle) return null;
+    try {
+        return await dirHandle.getDirectoryHandle(AUDIO_DIR, { create: !!create });
+    } catch {
+        return null;
+    }
+}
+
+export async function writeAudioFile(name, blob) {
+    const dir = await getAudioDir(true);
+    if (!dir) throw new Error('Choose a data folder first. A sound needs somewhere to be kept.');
+    const fh = await dir.getFileHandle(name, { create: true });
+    const w = await fh.createWritable();
+    await w.write(blob);
+    await w.close();
+    return true;
+}
+
+export async function readAudioFile(name) {
+    const dir = await getAudioDir(false);
+    if (!dir || !name) return null;
+    try {
+        return await (await dir.getFileHandle(name)).getFile();
+    } catch {
+        return null;
+    }
+}
+
+export async function deleteAudioFile(name) {
+    const dir = await getAudioDir(false);
+    if (!dir || !name) return;
+    try { await dir.removeEntry(name); } catch { /* already gone */ }
+}
+
+// Every clip in the folder, as [{ name, file }], for a backup.
+export async function listAudioFiles() {
+    const dir = await getAudioDir(false);
+    if (!dir) return [];
+    const out = [];
+    try {
+        for await (const [entryName, handle] of dir.entries()) {
+            if (handle.kind !== 'file') continue;
+            try {
+                const fh = await dir.getFileHandle(entryName);
+                out.push({ name: entryName, file: await fh.getFile() });
+            } catch { /* skip an unreadable clip rather than failing the whole backup */ }
+        }
+    } catch { /* no audio folder yet */ }
+    out.sort((a, b) => a.name.localeCompare(b.name));
+    return out;
 }
 
 // Every saved conversation, as [{ id, data }]. Returns [] with no data folder.
@@ -2226,7 +2287,7 @@ export async function finalizePartnerTurn(handle, { rawTranscript, cleanedTransc
     await flushLog();
 }
 
-export async function logUserResponse({ selectedText, spokenText = null, ttsUsed = null, selectedIndex, allOptions, selectedSlot = null, source = null, decideMs = null, partner = null, feeling = null, place = null, goals = null }) {
+export async function logUserResponse({ selectedText, spokenText = null, ttsUsed = null, selectedIndex, allOptions, selectedSlot = null, source = null, decideMs = null, partner = null, feeling = null, place = null, goals = null, audio = null }) {
     if (!conversationSaving) return; // private conversation — nothing is written
     // Start the log lazily if this user turn is the FIRST turn of the conversation
     // — an opener (Start conversation) or an Express-panel phrase takes the floor
@@ -2309,7 +2370,12 @@ export async function logUserResponse({ selectedText, spokenText = null, ttsUsed
         // dropped here, silently, with the app still working perfectly. The goal
         // stamp was written in app.js and would have gone straight in the bin. When
         // adding anything to a turn, add it in BOTH places in the same edit.
-        goals
+        goals,
+        // A SOUND BUTTON PLAYED instead of words spoken (September 14 2026):
+        // { file, label, kind: 'mine'|'other'|'sound', stopped }, or null. `stopped` is
+        // true when the user cut it short with a second tap. selectedText carries what
+        // the AI was told ("played a sound: ..."), so a replay can find the clip here.
+        audio,
     });
     await flushLog();
 }

@@ -2467,6 +2467,18 @@ body.conv-bottom .palette-grid {
 }
 .ep-btn.ep-more .ep-text { font-weight: 800; }
 
+/* A SOUND BUTTON (September 14 2026). A music note before the label says it plays a
+   recording rather than speaking. While it plays it shows as ON, which is also how the
+   user finds the button that stops it. A button with no file yet is set in italics.
+   Paint only, as every panel cell must be. */
+.ep-btn.ep-audio .ep-text::before { content: "\266A\00a0"; }
+.ep-btn.ep-audio.ep-on {
+    background: var(--band-color, var(--edge-strong));
+    color: var(--ink-inverse);
+}
+.ep-btn.ep-audio-missing .ep-text { font-style: italic; }
+#expressEditor .ee-audio-status { flex: 1 1 100%; font-size: 0.85rem; color: var(--ink-muted); margin: 0; }
+
 .ep-btn.ep-undefined.ep-band-always,
 .ep-btn.ep-undefined.ep-band-context,
 .ep-btn.ep-undefined.ep-band-flex {

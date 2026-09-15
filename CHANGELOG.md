@@ -36,6 +36,13 @@ forgetting to tag one is only ever noise, never silence.
   so it is always in view, and goes back to its usual spot when you switch it off.
 - Always phrases that don't fit no longer spill into the Flex band. Reach them with
   the Always band's More button instead.
+- **Sound buttons.** The Always and Flex bands can now hold a button that plays a
+  recording: your own recorded voice, someone else's voice, or a sound or music. Add
+  one on the Express Panel tab with **Add a sound**, then choose an MP3 or M4A file
+  (up to 10 MB). A tap plays it and mutes the microphone; a second tap stops it and
+  the microphone comes back. The conversation shows what was played, and the sounds
+  are included in your backups so they move to another device with everything else.
+  A sound needs a data folder to be kept in.
 
 ## Version 0.11.2
 

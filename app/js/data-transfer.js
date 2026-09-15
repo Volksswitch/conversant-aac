@@ -46,6 +46,7 @@
 
 import * as storage from './storage.js';
 import * as platform from './platform.js';
+import { isSafeAudioName, mimeForName, blobToBase64, base64ToBlob } from './express-audio.js';
 
 export const PACKAGE_KIND = 'conversant-aac-backup';
 // 3: one file again, carrying content AND settings AND every saved profile, with a
@@ -139,8 +140,8 @@ async function readOne(entry) {
 export async function buildPackage(appVersion, onProgress) {
     const data = {};
     let done = 0;
-    // The files, plus one step for the conversations and one for the settings.
-    const total = DATA_FILES.length + 2;
+    // The files, plus one step each for the conversations, the sounds and the settings.
+    const total = DATA_FILES.length + 3;
     const step = (label) => {
         done += 1;
         if (onProgress) { try { onProgress({ done, total, label }); } catch { /* never let reporting break an export */ } }
@@ -155,6 +156,19 @@ export async function buildPackage(appVersion, onProgress) {
         conversations = await storage.listConversationLogs();
     } catch { /* no folder, or unreadable — export the rest anyway */ }
     step('saved conversations');
+
+    // THE SOUND-BUTTON CLIPS TRAVEL IN THE BACKUP (Ken, September 14 2026: "I'd prefer
+    // that these files get copied easily from device to device"). A backup is one text
+    // file, so each clip goes in as text. It makes a backup with sounds in it larger,
+    // which is accepted for now and can be revisited if it becomes a problem.
+    const audio = [];
+    try {
+        for (const { name, file } of await storage.listAudioFiles()) {
+            if (!isSafeAudioName(name)) continue;
+            audio.push({ name, type: file.type || mimeForName(name), data: await blobToBase64(file) });
+        }
+    } catch { /* no folder, or unreadable — export the rest anyway */ }
+    step('sound files');
 
     return {
         kind: PACKAGE_KIND,
@@ -171,6 +185,7 @@ export async function buildPackage(appVersion, onProgress) {
         activeProfile: storage.loadActiveSettingsProfile(),
         data,
         conversations,
+        audio,
     };
 }
 
@@ -212,6 +227,8 @@ export function summarize(pkg) {
     }
     const convos = (pkg && Array.isArray(pkg.conversations)) ? pkg.conversations.length : 0;
     lines.push(`${convos} saved conversation${convos === 1 ? '' : 's'}`);
+    const sounds = (pkg && Array.isArray(pkg.audio)) ? pkg.audio.length : 0;
+    if (sounds) lines.push(`${sounds} sound file${sounds === 1 ? '' : 's'}`);
     const settingCount = pkg && pkg.settings ? Object.keys(pkg.settings).length : 0;
     if (settingCount) lines.push(`${settingCount} setting${settingCount === 1 ? '' : 's'}`);
     const profiles = (pkg && Array.isArray(pkg.profiles)) ? pkg.profiles : [];
@@ -363,8 +380,10 @@ export async function applyPackage(pkg, onProgress) {
         settings: 0, heldBack: [], profiles: [], renamed: [], profilesInFile: 0, activeProfile: '',
         legacySettings: pkg.legacySettings ? Object.keys(pkg.legacySettings).length : 0,
     };
+    restored.audio = 0;
     const convos = Array.isArray(pkg.conversations) ? pkg.conversations : [];
-    const total = DATA_FILES.filter((e) => pkg.data[e.file] !== undefined).length + convos.length;
+    const sounds = Array.isArray(pkg.audio) ? pkg.audio : [];
+    const total = DATA_FILES.filter((e) => pkg.data[e.file] !== undefined).length + convos.length + sounds.length;
     let done = 0;
     const step = (label) => {
         done += 1;
@@ -424,6 +443,20 @@ export async function applyPackage(pkg, onProgress) {
         if (await storage.writeConversationLog(c.id, c.data)) restored.conversations++;
         step('conversations');
     }
+
+    // The clips, back into the audio folder. A name we did not write ourselves is
+    // refused, since a backup is a file somebody could hand the app from anywhere.
+    let soundFailed = false;
+    for (const s of sounds) {
+        if (s && isSafeAudioName(s.name) && typeof s.data === 'string') {
+            try {
+                await storage.writeAudioFile(s.name, base64ToBlob(s.data, s.type || mimeForName(s.name)));
+                restored.audio++;
+            } catch { soundFailed = true; }
+        }
+        step('sound files');
+    }
+    if (soundFailed) restored.failed.push('Sound files');
 
     return restored;
 }

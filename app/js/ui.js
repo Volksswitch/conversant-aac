@@ -514,6 +514,9 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         // (express-bands.composePanel): { index, band, label }. Tapping one calls onMore.
         moreCells = [],
         onMore,
+        // Sound buttons: which one is playing right now (shown ON), and what a tap does.
+        playingAudioId = null,
+        onPlayAudio,
     } = opts;
     const moreAt = new Map((moreCells || []).map((m) => [m.index, m]));
     const goalOn = new Set(activeGoalIds || []);
@@ -612,6 +615,27 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
             b.setAttribute('aria-pressed', String(on));
             b.innerHTML = `<span class="ep-text">${escapeHtml(label)}</span>`;
             b.addEventListener('click', () => onToggleGoal && onToggleGoal(item));
+            return b;
+        }
+        if (item.type === 'audio') {
+            // A SOUND BUTTON (September 14 2026). Starting it follows the phrase tap
+            // setting, because it makes a sound the other person hears. STOPPING it is
+            // always one tap: it cannot say anything, and a second tap has to work for
+            // somebody who needs it to stop now.
+            const playing = !!playingAudioId && item.id === playingAudioId;
+            const label = String(item.label || '').trim() || 'Sound';
+            b.classList.add('ep-phrase', 'ep-audio');
+            if (playing) b.classList.add('ep-on');
+            if (!item.file) b.classList.add('ep-audio-missing');
+            b.title = playing ? `Stop ${label}` : `Play ${label}`;
+            b.setAttribute('aria-label', playing ? `Stop playing ${label}` : `Play ${label}`);
+            b.setAttribute('aria-pressed', String(playing));
+            b.innerHTML = `<span class="ep-text">${escapeHtml(label)}</span>`;
+            b.addEventListener('click', () => {
+                if (playing || tapMode !== 'double') { disarm(); onPlayAudio && onPlayAudio(item); return; }
+                if (armedBtn === b) { disarm(); onPlayAudio && onPlayAudio(item); }
+                else { disarm(); armedBtn = b; b.classList.add('ep-armed'); armTimer = setTimeout(disarm, doubleTapMs); }
+            });
             return b;
         }
         // phrase. Its color comes from the BAND it is in (set by the caller on the

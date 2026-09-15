@@ -3412,6 +3412,46 @@ Announce the replacement in the release notes: the panel visibly changes under s
 
 ---
 
+## SOUND buttons on the Express Panel (DECIDED + BUILT Ken, September 14 2026)
+
+An SLP asked for a panel button that plays an audio file. **All three kinds of recording
+are in scope**: the user's own recorded voice (message banking), somebody else's voice,
+and a sound or music. [express-audio.js](app/js/express-audio.js) holds the rules.
+
+- **Always and Flex bands only.** The Context band describes the conversation; a sound
+  is something the other person hears, so it sits with the phrases.
+- **⚠ A tap MUTES THE MICROPHONE, and that is a real mute, NOT "the app is talking"
+  (Ken).** While the app speaks the microphone stays on and only ignores what matches
+  the words it said. A recording has no words the app knows, so under that arrangement
+  the clip would be transcribed as the partner and answered by the AI. **A second tap
+  stops the clip and listening comes back as it was** before the sound. Stopping is always
+  one tap whatever the double-tap setting, because stopping cannot say anything.
+- **Holding phrases stay quiet during playback** (the same gate that protects the user's
+  own speech), and **ending a conversation under a playing clip drops the turn** rather
+  than recording it into a conversation that is over.
+- **The KIND is asked per button, and it is what keeps the record honest**: the record
+  and the AI get "(played my recorded message: X)", "(played a recording of someone
+  else: X)" or "(played a sound: X)". A recording of somebody else is never filed as the
+  user speaking. The user turn carries `source: 'audio'` and an `audio` field
+  (`{file, label, kind, stopped}`), added to the `logUserResponse` whitelist in the same edit.
+- **Files live in an `audio` subfolder of the data folder** (Ken), created on connect with
+  the other three. One file per button, named with a fresh stamp so choosing a new file
+  never leaves stale audio cached; deleting the button deletes its file. **Without a data
+  folder there is nowhere to keep one**, so on a computer with no folder chosen the editor
+  asks for one, as backups already do.
+- **Clips TRAVEL IN THE BACKUP (Ken: "I'd prefer that these files get copied easily from
+  device to device")**, as text inside the one backup file. That makes such a backup
+  larger; accepted for now, to revisit if it becomes a problem. A name the app did not
+  write is refused on import, since a backup can come from anywhere.
+- **MP3 and M4A only, up to 10 MB, checked when the file is ADDED** - never discovered at
+  playback mid-conversation - because other formats do not play on an iPad.
+- **⚠ THE CLIP IS READ INTO MEMORY WHEN THE PANEL IS DRAWN, NOT ON THE TAP.** An iPad only
+  lets a page start sound while it still counts a tap as recent, and reading the file
+  first can spend that. Nothing in the tap path may wait before `play()`. **Unverified on
+  an iPad.**
+- **Not built:** recording a clip inside the app (a second feature with its own screens).
+- **Not yet in the documents:** both User Manuals and the Express Panel Design document.
+
 ## A band that overflows gets a MORE button (DECIDED + BUILT Ken, September 14 2026)
 
 **This SUPERSEDES the "no folders or pages" entry below in one respect: a band may now

@@ -19,6 +19,7 @@ import * as expressItems from './express-items.js';
 import * as pronunciation from './pronunciation.js';
 import * as expressPanel from './express-panel.js';
 import * as expressBands from './express-bands.js';
+import * as expressAudio from './express-audio.js';
 // Named voiceProfile, not voice: app.js already uses `voice` as the loop variable
 // for a SpeechSynthesisVoice in the two TTS pickers, and a module shadowed inside
 // those callbacks would fail silently rather than loudly.
@@ -2176,8 +2177,11 @@ async function commitExchange(raw, userText, index, opts = {}) {
 
     const userLog = {
         selectedText: userText,
-        spokenText: spokenFormFor(userText, spokenText),
-        ttsUsed: tts.lastVoiceUsed(),
+        // A sound button played a recording: nothing was synthesized, so neither the
+        // spoken form nor the voice applies (September 14 2026).
+        spokenText: opts.audio ? null : spokenFormFor(userText, spokenText),
+        ttsUsed: opts.audio ? null : tts.lastVoiceUsed(),
+        audio: opts.audio || null,
         selectedIndex: index,
         // Only a palette selection (index >= 0) has a meaningful "all options"
         // list; a free-composed utterance (index -1) was not picked from a
@@ -2199,7 +2203,7 @@ async function commitExchange(raw, userText, index, opts = {}) {
         // 'card' when the user tapped one of the AI's suggestions. index < 0 reaches
         // here from repair-of-self and other non-palette commits, which are our words
         // rather than theirs — see the source field in storage.logUserResponse.
-        source: index >= 0 ? 'card' : 'control',
+        source: opts.audio ? 'audio' : (index >= 0 ? 'card' : 'control'),
         // How long the cards were up before the user acted — see the field note in
         // storage.logUserResponse. null when no cards were showing.
         decideMs,
@@ -2620,6 +2624,7 @@ function practiceResumeOrIdle() {
 // CLEAR the conversation window (transcript history) and ALL cards, and reset the
 // engine to STANDBY. Shared by End conversation and Start conversation.
 async function terminateConversation() {
+    stopExpressAudio({ abort: true });
     placeholders.stop();
     tts.cancel();
     // ⚠ THE TOUR IS DELIBERATELY NOT CLEARED HERE, and the first cut got this wrong.
@@ -4031,9 +4036,12 @@ function renderExpressPanel() {
     // back to its first set the moment they arrive (Ken, September 14 2026).
     if (currentPartnerText && (offeredChoices.length || offeredRange)) resetExpressPaging();
     const composed = composedPanel();
+    primeExpressAudio(composed.items);
     ui.renderExpressPanel(expressLayoutRows(), composed.items, {
         moreCells: composed.more,
         onMore: handleExpressMore,
+        playingAudioId: audioPlayer ? audioPlayer.item.id : null,
+        onPlayAudio: handlePlayAudioItem,
         // One background color per band, so which band a button is in is readable at a
         // glance without reading the button (Ken, August 22 2026). This replaces the
         // per-phrase color the user used to pick: color now carries a meaning.
@@ -4975,6 +4983,141 @@ async function handleSpeakExpressItem(phrase) {
     // arming tap through, so the phrase that actually speaks puts the panel back here.
     if (resetExpressPaging()) renderExpressPanel();
     await speakAsUserTurn(phrase.text, phrase.speak || phrase.text, 'express');
+}
+
+// --- Sound buttons (Ken, September 14 2026) ------------------------------------
+/*
+ * A tap plays the clip and MUTES THE MICROPHONE; a second tap stops it and the
+ * microphone comes back as it was. Holding phrases stay quiet while it plays, and the
+ * conversation record and the AI are told what was played.
+ *
+ * ⚠ A REAL MUTE, NOT "THE APP IS TALKING". While the app speaks, the microphone stays
+ * on and only ignores what it hears, so the other person can talk over a placeholder.
+ * That cannot work for a recording: the app ignores its own speech by matching the
+ * words it knows it said, and it has no words for a song or somebody else's voice, so
+ * the clip would be written down as the other person talking and answered by the AI.
+ *
+ * ⚠ THE CLIP IS LOADED BEFORE THE TAP, NOT DURING IT. An iPad only lets a page start
+ * sound while it still counts a tap as recent, and waiting for the file to be read
+ * first can spend that. So every sound on the panel is read into memory when the
+ * panel is drawn, and the tap plays it at once.
+ */
+const audioUrls = new Map();   // stored clip name -> object URL, or null while loading
+let audioPlayer = null;        // { item, el, finish(stopped) } while a clip plays
+
+function primeExpressAudio(items) {
+    for (const item of items || []) {
+        if (!item || item.type !== 'audio' || !item.file || audioUrls.has(item.file)) continue;
+        audioUrls.set(item.file, null);
+        storage.readAudioFile(item.file)
+            .then((blob) => {
+                if (blob) audioUrls.set(item.file, URL.createObjectURL(blob));
+                else audioUrls.delete(item.file);
+            })
+            .catch(() => audioUrls.delete(item.file));
+    }
+}
+
+// `abort` is for the conversation ending under the clip: it stops the sound AND drops
+// the turn, so a half-played clip is never recorded into a conversation that is over.
+function stopExpressAudio({ abort = false } = {}) {
+    if (!audioPlayer) return;
+    if (abort) audioPlayer.aborted = true;
+    try { audioPlayer.el.pause(); } catch { /* already stopped */ }
+    audioPlayer.finish(true);
+}
+
+function handlePlayAudioItem(item) {
+    if (editedInSettings(item)) return;
+    // The second tap on the playing button stops it; the listening comes back in
+    // playAudioTurn, where the first tap is still waiting for the clip to end.
+    if (audioPlayer && audioPlayer.item.id === item.id) { stopExpressAudio(); return; }
+    if (audioPlayer) stopExpressAudio();
+    if (!item.file) return;
+    resetExpressPaging();
+    playAudioTurn(item);
+}
+
+// Plays the clip. Resolves { played, stopped }. Nothing in here may wait before
+// play() is called, or an iPad refuses to start the sound.
+async function playClip(item) {
+    let url = audioUrls.get(item.file);
+    if (!url) {
+        const blob = await storage.readAudioFile(item.file);
+        if (!blob) return { played: false, why: 'the sound file is missing from the data folder' };
+        url = URL.createObjectURL(blob);
+        audioUrls.set(item.file, url);
+    }
+    const el = new Audio(url);
+    let finish = () => {};
+    const ended = new Promise((resolve) => { finish = resolve; });
+    el.onended = () => finish(false);
+    el.onerror = () => finish(true);
+    audioPlayer = { item, el, finish };
+    speakingUserStatement = true;   // holding phrases wait, as they do for speech
+    renderExpressPanel();           // the button shows as playing
+    try {
+        await el.play();
+    } catch (err) {
+        audioPlayer = null;
+        speakingUserStatement = false;
+        renderExpressPanel();
+        return { played: false, why: (err && err.message) || String(err) };
+    }
+    const stopped = await ended;
+    const aborted = !!(audioPlayer && audioPlayer.aborted);
+    audioPlayer = null;
+    speakingUserStatement = false;
+    renderExpressPanel();
+    return { played: true, stopped: !!stopped, aborted };
+}
+
+async function playAudioTurn(item) {
+    // Everything up to play() is immediate - see playClip.
+    const wasListening = isListening;
+    const opensConversation = conversationHistory.length === 0;
+    const raw = heardPartnerText();
+    stt.stopListening();   // the mute
+    const result = await playClip(item);
+    if (!result.played) {
+        storage.logError('express-audio', `A sound button could not play: ${result.why}`);
+        if (wasListening && !practiceMode) resumePartnerCapture();
+        return;
+    }
+    if (result.aborted) return;   // the conversation ended under it - see stopExpressAudio
+
+    // It played, so the user has taken the floor exactly as a spoken phrase does.
+    noteUserAction('express');
+    metrics.paletteAbandoned('express sound');
+    metrics.event(metrics.EV.EXPRESS_PHRASE);
+    placeholders.stop();
+    generationToken++;
+    ui.setPaletteBusy(false);
+    currentPartnerText = '';
+    currentPartnerUncertain = [];
+    clearPalette();
+
+    const text = expressAudio.transcriptText(item);
+    engine.selectResponse({ text });
+    ui.showEngineState(engine.getSnapshot());
+    await commitExchange(raw, text, -1, {
+        audio: { file: item.file, label: item.label || '', kind: item.kind || 'sound', stopped: result.stopped },
+    });
+
+    if (opensConversation) {
+        manualListenArmed = true;
+        noteConversationStarted();
+    }
+    if (practiceMode) { resumeOrIdle(); return; }
+    // The unmute: listening comes back as it was before the sound.
+    if (wasListening) { startFreshListening(); return; }
+    const capture = convLogic.captureAfterUserSpeaks({
+        opensConversation,
+        armed: manualListenArmed,
+        autoResume: storage.loadAutoRelisten(),
+    });
+    if (capture) startFreshListening();
+    else resumeOrIdle();
 }
 
 // --- Settings dialog ---

@@ -76,7 +76,8 @@ function normalize(raw) {
     const flex = {};
     for (const [key, list] of Object.entries(raw.flex || {})) {
         if (!Array.isArray(list)) continue;
-        flex[key] = ensureOrigin(ensureIds(list.filter((x) => x && x.type === 'phrase')));
+        // Sound buttons live in the Flex band too (September 14 2026).
+        flex[key] = ensureOrigin(ensureIds(list.filter((x) => x && (x.type === 'phrase' || x.type === 'audio'))));
     }
     // The one-shot seed revision. A panel that started from an older shipped Always
     // set takes the current one; the Context band comes with it ONLY if the user has

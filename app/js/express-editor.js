@@ -33,6 +33,10 @@ import {
 import { confirmDanger } from './confirm-dialog.js';
 import { makeCollapsible } from './sections.js';
 import * as tts from './tts.js';
+import * as storage from './storage.js';
+import {
+    AUDIO_KIND, AUDIO_KIND_LABELS, checkAudioFile, audioFileName,
+} from './express-audio.js';
 
 let container = null;
 let onChangeCb = null;
@@ -135,6 +139,17 @@ function addPhrase(band) {
     }
 }
 
+// A sound button, Always or Flex only. Added with no file: the row asks for one.
+function addAudio(band) {
+    const list = bandList(band).slice();
+    const item = { id: makeId(), type: 'audio', label: '', kind: AUDIO_KIND.SOUND };
+    const at = list.findIndex((x) => x.id === pickedId);
+    if (at >= 0) list.splice(at + 1, 0, item); else list.push(item);
+    pickedId = item.id;
+    saveBand(band, list);
+    render();
+}
+
 function addContext(type) {
     const list = bandList('context').slice();
     const item = type === 'partner' ? { id: makeId(), type: 'partner', name: '' }
@@ -172,9 +187,11 @@ async function removePicked(band) {
         body: `"${label}" will be removed, and every button after it moves up one place.`,
         confirmLabel: 'Delete it',
     }))) return;
-    list.splice(i, 1);
+    const [gone] = list.splice(i, 1);
     pickedId = null;
     saveBand(band, list);
+    // A sound button's clip goes with it, or the folder fills with files nothing plays.
+    if (gone && gone.type === 'audio' && gone.file) storage.deleteAudioFile(gone.file).catch(() => {});
     render();
 }
 
@@ -269,6 +286,105 @@ function phraseRow(band, item) {
         const said = (inputs[1] && inputs[1].value.trim()) || (inputs[0] && inputs[0].value.trim());
         if (said) tts.speak(said);
     }, 'Hear this phrase'));
+    return row;
+}
+
+/**
+ * A sound button's row: its label, what kind of recording it is, the file, and a
+ * button to hear it. The kind is asked because the conversation record says what was
+ * played, and a recording of somebody else must never be filed as the user speaking.
+ */
+let previewAudio = null;
+
+function audioRow(band, item) {
+    const row = el('div', 'ee-row ee-audio-row');
+    if (item.id === pickedId) row.classList.add('ee-row-picked');
+    row.addEventListener('pointerdown', () => markPicked(row, item.id));
+
+    const save = (patch) => {
+        const list = bandList(band).slice();
+        const at = list.findIndex((x) => x.id === item.id);
+        if (at < 0) return null;
+        list[at] = { ...list[at], ...patch };
+        saveBand(band, list);
+        return list[at];
+    };
+
+    row.appendChild(textInput(item.label, 'What the button says', (v) => save({ label: v })));
+
+    const kind = document.createElement('select');
+    kind.className = 'ee-name-select';
+    kind.setAttribute('aria-label', 'What kind of recording this is');
+    for (const [value, text] of Object.entries(AUDIO_KIND_LABELS)) {
+        const o = document.createElement('option');
+        o.value = value;
+        o.textContent = text;
+        if ((item.kind || AUDIO_KIND.SOUND) === value) o.selected = true;
+        kind.appendChild(o);
+    }
+    kind.addEventListener('change', () => save({ kind: kind.value }));
+    row.appendChild(kind);
+
+    const status = el('p', 'ee-audio-status', item.file
+        ? `Sound file: ${item.fileName || item.file}`
+        : 'No sound file yet. Choose an MP3 or M4A file, up to 10 MB.');
+
+    const picker = document.createElement('input');
+    picker.type = 'file';
+    picker.accept = '.mp3,.m4a,audio/mpeg,audio/mp4';
+    picker.hidden = true;
+    picker.addEventListener('change', async () => {
+        const file = picker.files && picker.files[0];
+        picker.value = '';
+        const check = checkAudioFile(file);
+        if (!check.ok) { status.textContent = check.reason; return; }
+        if (!storage.hasDataFolder()) {
+            status.textContent = 'Choose a data folder first, on the General tab. A sound needs somewhere to be kept.';
+            return;
+        }
+        const name = audioFileName(item.id, check.ext);
+        try {
+            await storage.writeAudioFile(name, file);
+        } catch (e) {
+            status.textContent = `That file could not be saved: ${e.message || e}`;
+            return;
+        }
+        const list = bandList(band);
+        const current = list.find((x) => x.id === item.id) || item;
+        const old = current.file;
+        const patch = { file: name, fileName: file.name };
+        if (!String(current.label || '').trim()) patch.label = file.name.replace(/\.[^.]+$/, '');
+        save(patch);
+        if (old && old !== name) storage.deleteAudioFile(old).catch(() => {});
+        render();
+    });
+    row.appendChild(picker);
+    row.appendChild(mkBtn('Choose a file', 'ee-add', () => picker.click(), 'Choose the sound file this button plays'));
+
+    // Hear it here. Plays and stops without touching the microphone: this is Settings,
+    // not a conversation.
+    row.appendChild(mkBtn('🔊', 'ee-hear', async () => {
+        if (previewAudio) {
+            const wasThis = previewAudio.id === item.id;
+            try { previewAudio.el.pause(); } catch { /* ignore */ }
+            URL.revokeObjectURL(previewAudio.url);
+            previewAudio = null;
+            if (wasThis) return;
+        }
+        const current = bandList(band).find((x) => x.id === item.id) || item;
+        if (!current.file) { status.textContent = 'Choose a sound file first.'; return; }
+        const blob = await storage.readAudioFile(current.file);
+        if (!blob) { status.textContent = 'The sound file is missing from the data folder.'; return; }
+        const url = URL.createObjectURL(blob);
+        const player = new Audio(url);
+        previewAudio = { id: item.id, el: player, url };
+        player.onended = () => {
+            if (previewAudio && previewAudio.el === player) { URL.revokeObjectURL(url); previewAudio = null; }
+        };
+        player.play().catch((e) => { status.textContent = `It would not play: ${e.message || e}`; });
+    }, 'Hear this sound, or stop it'));
+
+    row.appendChild(status);
     return row;
 }
 
@@ -378,6 +494,7 @@ function alwaysSection(composed) {
     return section('always', 'Always — the words that never move', (body) => {
         body.appendChild(toolbar('always', [
             mkBtn('Add a phrase', 'ee-add', () => addPhrase('always')),
+            mkBtn('Add a sound', 'ee-add', () => addAudio('always')),
             mkBtn('Reset to the app’s phrases', 'ee-reset', resetAlways),
         ]));
         const list = el('div', 'ee-list');
@@ -387,7 +504,7 @@ function alwaysSection(composed) {
                 const cut = cutLine(items.length - composed.firstPage.always, 'phrase', composed.behindMore.always > 0);
                 if (cut) list.appendChild(cut);
             }
-            list.appendChild(phraseRow('always', it));
+            list.appendChild(it.type === 'audio' ? audioRow('always', it) : phraseRow('always', it));
         });
         if (!items.length) list.appendChild(el('p', 'ee-empty', 'No phrases yet.'));
         body.appendChild(list);
@@ -454,10 +571,11 @@ function flexSection(composed) {
 
         body.appendChild(toolbar('flex', [
             mkBtn('Add a phrase', 'ee-add', () => addPhrase('flex')),
+            mkBtn('Add a sound', 'ee-add', () => addAudio('flex')),
         ]));
         const list = el('div', 'ee-list');
         const items = bandList('flex');
-        items.forEach((it) => list.appendChild(phraseRow('flex', it)));
+        items.forEach((it) => list.appendChild(it.type === 'audio' ? audioRow('flex', it) : phraseRow('flex', it)));
         if (!items.length) {
             list.appendChild(el('p', 'ee-empty',
                 'No phrases for this situation yet. Whatever you do not fill is taken from the more general lists.'));

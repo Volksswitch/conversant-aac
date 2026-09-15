@@ -77,6 +77,7 @@ const SHELL = [
   './js/express-items.js',
   './js/express-panel.js',
   './js/express-bands.js',
+  './js/express-audio.js',
   './js/data-transfer.js',
   './js/tts-deepgram.js',
   './js/tts-azure.js',

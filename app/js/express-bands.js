@@ -212,7 +212,11 @@ export function flexFill(flexLists, partnerId, placeId, room) {
     const take = (key, source) => {
         for (const item of (flexLists && flexLists[key]) || []) {
             if (out.length >= room) return;
-            const word = String(item && item.text || '').trim().toLowerCase();
+            // A sound button has no words, so it is told apart by its clip - two sounds
+            // with the same label are still two different sounds.
+            const word = item && item.type === 'audio'
+                ? 'audio:' + (item.file || item.id || '')
+                : String(item && item.text || '').trim().toLowerCase();
             if (!word || seen.has(word)) continue;
             seen.add(word);
             out.push({ ...item, source });
