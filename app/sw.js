@@ -18,12 +18,12 @@
 // (and stable) cache name for local development.
 const CACHE_VERSION = 'aac-v0.12.1-@@BUILD@@';
 // Cache Storage is scoped to the ORIGIN, not the path, and activate() below
-// deletes every cache that is not this one. Two Conversant deployments on the same
-// GitHub Pages origin (/conversant-aac/ and the /conversant-aac-ipad/ trial) would
-// therefore delete each other's shell every time the user switched between them —
-// self-healing, since fetch is network-first, but it would look like a bug and
-// would break offline start for whichever was used last. Including the scope's own
-// path segment gives each deployment its own cache namespace.
+// deletes every cache that is not this one. Any two Conversant deployments sharing
+// an origin under different paths would therefore delete each other's shell every
+// time the user switched between them — self-healing, since fetch is network-first,
+// but it would look like a bug and would break offline start for whichever was used
+// last. There is only one deployment today; including the scope's own path segment
+// keeps that safe if a second one (e.g. a staging channel) is ever added.
 const SCOPE_TAG = (() => {
     try {
         const seg = new URL(self.registration.scope).pathname.split('/').filter(Boolean).pop();
