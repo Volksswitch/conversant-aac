@@ -1,0 +1,91 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "Conversant AAC: creates ONE free-tier (F0) Azure Speech service for speaking and hearing, in a resource group named conversant-speech-<region>, in the Region chosen on the form, and shows the key and region to paste into Conversant. Azure allows one free speech service per region; if this fails saying one exists, pick another Region. Conversant never sees your Azure password or card; only the key you paste in is stored, on your own device."
+  },
+  "parameters": {},
+  "variables": {
+    "groupName": "[concat('conversant-speech-', deployment().location)]",
+    "speechName": "[concat('conversant-speech-', deployment().location)]",
+    "speechRegion": "[deployment().location]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2022-09-01",
+      "name": "[variables('groupName')]",
+      "location": "[variables('speechRegion')]"
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "conversant-speech-setup",
+      "resourceGroup": "[variables('groupName')]",
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', variables('groupName'))]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "parameters": {
+          "speechName": {
+            "value": "[variables('speechName')]"
+          },
+          "speechRegion": {
+            "value": "[variables('speechRegion')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "speechName": {
+              "type": "string"
+            },
+            "speechRegion": {
+              "type": "string"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.CognitiveServices/accounts",
+              "apiVersion": "2023-05-01",
+              "name": "[parameters('speechName')]",
+              "location": "[parameters('speechRegion')]",
+              "kind": "SpeechServices",
+              "sku": {
+                "name": "F0"
+              },
+              "properties": {
+                "publicNetworkAccess": "Enabled"
+              }
+            }
+          ],
+          "outputs": {
+            "key": {
+              "type": "string",
+              "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', parameters('speechName')), '2023-05-01').key1]"
+            },
+            "region": {
+              "type": "string",
+              "value": "[parameters('speechRegion')]"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "conversantKey": {
+      "type": "string",
+      "value": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, variables('groupName')), 'Microsoft.Resources/deployments', 'conversant-speech-setup'), '2022-09-01').outputs.key.value]"
+    },
+    "conversantRegion": {
+      "type": "string",
+      "value": "[variables('speechRegion')]"
+    }
+  }
+}

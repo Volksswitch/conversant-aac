@@ -1,0 +1,1 @@
+https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fgist.githubusercontent.com%2FVolksswitch%2F9a7345de22bb73e708519b52ab891bfa%2Fraw%2Fazure-speech-free.json

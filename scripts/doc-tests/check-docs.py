@@ -313,6 +313,47 @@ def s12_caption_has_figure(doc):
     return out
 
 
+def _table_root(doc):
+    from lxml import etree
+    return etree.fromstring(doc.zip.read('word/document.xml'))
+
+
+@rule('S13', 'A table row never splits across a page',
+      'Half a row at the foot of one page and the rest at the top of the next reads as '
+      'two rows, and the reader loses which answer belongs to which question (Ken, '
+      'September 19 2026). Every row carries "do not break across pages" (cantSplit).')
+def s13_rows_whole(doc):
+    out = []
+    for n, tbl in enumerate(_table_root(doc).iter(W + 'tbl')):
+        rows = tbl.findall(W + 'tr')
+        bad = [r for r in rows
+               if r.find(W + 'trPr') is None or r.find(W + 'trPr').find(W + 'cantSplit') is None]
+        if bad:
+            out.append(F('table %d: %d of %d row(s) may break across a page'
+                         % (n + 1, len(bad), len(rows))))
+    return out
+
+
+@rule('S14', 'A table header stays with the rows under it',
+      'A header row alone at the foot of a page is a heading with nothing under it - the '
+      'table-sized version of S3 (Ken, September 19 2026). Every paragraph in the first '
+      'row is set to keep with the next, which is what holds the row to the next one. '
+      'Checked on the paragraph itself, not through its style: a style that keeps with '
+      'next would be reported here, which is the safe direction to be wrong in.')
+def s14_header_kept(doc):
+    out = []
+    for n, tbl in enumerate(_table_root(doc).iter(W + 'tbl')):
+        rows = tbl.findall(W + 'tr')
+        if len(rows) < 2:
+            continue
+        paras = list(rows[0].iter(W + 'p'))
+        loose = [p for p in paras
+                 if p.find(W + 'pPr') is None or p.find(W + 'pPr').find(W + 'keepNext') is None]
+        if loose:
+            out.append(F('table %d: the header row is not held to the rows under it' % (n + 1)))
+    return out
+
+
 @rule('S8', 'The footer carries "Page m of n"', 'House convention since June 2026.')
 def s8_pages(doc):
     f = doc.footers

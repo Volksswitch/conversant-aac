@@ -1550,6 +1550,12 @@ speech-to-speech vendor whose components can be used separately, i.e. as a plain
 recognizer and a plain voice. That is just another provider for the adapter, and is
 already covered by the provider survey above.)*
 
+## Sign-up help must say plainly: Conversant never sees passwords or cards (Ken, September 19 2026)
+
+Ken: *"What ever we do, it needs to be clear that Conversant doesn't see or have access to the user's passwords or credit cards. The only thing that Conversant stores is the API key(s)."* This binds **every** piece of sign-up help — the guide, in-app guidance, set-up links (e.g. `setup/azure-speech-free.json`, the pre-filled Azure "create my free speech service" link, in trial September 2026), and any future "sign in with Microsoft"-style automation. The password and card are typed only into the provider's own site; Conversant receives only the key the user pastes, and keeps it on the device. Any design that would let Conversant touch a password or card, even in passing, is out — say so rather than build it. **Say "credit card", never just "card", in anything user-facing** (Ken, September 19 2026 — "the card" read as ambiguous). **User-facing documents no longer reference "the bench"** (the speech-providers prototype page).
+
+Context: Ken's experience is that signing up for speech services is **by far the hardest part of setting up Conversant** — the providers assume B2B staff, not members of the public. The friction-reduction plan (September 19 2026): ask first whether the user needs any account at all; recommend one service rather than six; pre-filled Azure set-up link; test a pasted key immediately and explain failures in plain words; set up on a laptop and hand the key to the iPad; never go mute when a key fails. The Azure link is being trialled first because it decides whether Azure can honestly be the single recommendation.
+
 ## Five paid speech services, and the catalog that makes a sixth cheap (Ken, September 8 2026)
 
 Ken: *"Now add support for OpenAI, Google Cloud, and Eleven Labs (voices and where possible transcription services as well)."* All three do **both** halves. Six ways to set up speech now, mixable — hear through one service and speak through another.
