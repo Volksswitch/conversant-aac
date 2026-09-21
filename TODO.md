@@ -37,6 +37,96 @@ the one that quietly waits forever.
 
 ## Open
 
+### Check that OpenAI, Google Cloud and ElevenLabs hearing are really used where hearing must be paid for
+- **Raised:** 2026-09-21 - noticed while making Azure the Recommended service. When the app
+  starts, the part that decides whether a paid hearing service is in use only looks for a
+  Deepgram or an Azure key. Someone who chose OpenAI, Google Cloud or ElevenLabs for hearing
+  may be treated as though they chose the free listening. On a computer that may not matter,
+  but on an installed iPad or on Android the app might then say it cannot hear, or
+  use the wrong one. Not confirmed; it may be handled somewhere else.
+- **What is wanted:** read the start-up path end to end, and if it is a real fault, try
+  each of the three on an installed iPad or Android with a real key.
+- **Why not now:** outside the Recommended/order change being made, and it needs a real key
+  for each service to confirm.
+
+### Speech Provider Guide and Azure set-up: the 19 September change list
+- **Raised:** 2026-09-19 - assembled over the Azure pricing review and Ken's fresh-account
+  Azure trial (a session run from the keyguard folder). **It was kept only in that
+  session's temporary folder and never reached this file** - found and moved here
+  2026-09-21, copied verbatim below.
+- **What is wanted:** the items below. Items 3, 13 and 14 are already standing rules in
+  `CLAUDE.md`; item 9 corrects something the guide gets wrong today on the recommended
+  (Azure) path.
+- **Why not now:** it was waiting on the SLP's view of the Azure-only proposal. That is
+  settled differently now - on 2026-09-21 Ken chose to make Azure the *Recommended* service
+  rather than the only one - so these are unblocked, and are Ken's call on timing.
+
+1. Azure speaking price: $16 -> $15 per 1M characters (section 3 table). $15 in every
+   commercial region since Feb 2024; only US Gov regions differ ($18.75). Update
+   "read on September 2 2026" to September 19 2026.
+2. Add note on Azure free-tier (F0) throttling: speaking capped at 20 requests per
+   minute, listening at 1 conversation at a time; neither can be raised. A burst of
+   pre-fetched phrases could be refused and look like a bad key. Paid (S0): 30/second.
+3. State plainly (section 2, "What a key is"): Conversant never sees or has access to
+   your password or credit card - those are typed only into the provider's own site.
+   The only thing Conversant stores is the API key(s), on your own device.
+   (Current text says Volksswitch never sees the key - true, but silent on passwords/cards.)
+4. Guide, Azure sign-up steps: replace the manual portal steps with the set-up link
+   (sign in -> pick Region -> Review + create -> Create -> Outputs -> copy key and region).
+   "Next" and "Review + create" go to the same place; tell people to press Review + create.
+   Leave the Subscription name as Azure gives it.
+5. Guide, new "Removing it" steps, as easy as setting up: (a) remove the speech service =
+   delete the conversant-speech-<region> resource group; (b) close the Azure account
+   entirely = cancel the subscription. Mention the deleted-service waiting period.
+6. Guide, Azure sign-up: say you need a Microsoft account; if you use Windows or Outlook
+   you probably have one, and if not, your ordinary email (Gmail etc.) becomes one during
+   sign-up.
+7. Guide, Azure sign-up: cutting Microsoft's promotional email - uncheck the offers box
+   during sign-up; use the unsubscribe link ("stop all") on the first one; billing,
+   security and retirement notices keep coming and should. WORDING TO CONFIRM FROM
+   KEN'S FRESH-ACCOUNT TRIAL (was the box there, was it pre-ticked, was "stop all" offered).
+8. Guide + wherever the app shows the set-up link: the Azure sign-up (phone, card,
+   agreement) must be FINISHED first. A Microsoft account alone can open the portal and the
+   form, but the Subscription box is then empty and Region says "Loading..." forever, with
+   no explanation. Say: "If the Subscription box is empty, you haven't finished signing up
+   for Azure - go to azure.microsoft.com/free." (Found in Ken's fresh-account trial.)
+9. Guide, CORRECTION: the ordinary Azure free trial DISABLES the whole subscription after
+   30 days (or when the $200 credit is used) unless upgraded to pay-as-you-go - and the F0
+   speech service stops with it (Microsoft Learn, "Avoid charges with your Azure free
+   account"). The guide's "survives after the introductory credit expires" is only true
+   after that upgrade. Recommend signing up DIRECTLY for pay-as-you-go
+   (azure.microsoft.com/pricing/purchase-options/pay-as-you-go): no 30-day cutoff, F0 still
+   free. Also: check the beta testers' accounts - Ken's shows "Upgrade", i.e. still a trial.
+
+10. Guide, Azure steps: the sign-up button is called "Pay as you go". Where to click in Azure
+    is inconsistent (sometimes a row in a table, sometimes a tab) - use pictures, dated, and
+    prefer DIRECT LINKS to the exact page (e.g. the resource-groups list) so there is less
+    to click through and less to break when Microsoft redesigns.
+11. Guide: after sign-up Azure shows a "Mandatory Azure MFA" pop-up. Say it can be closed;
+    it concerns developer tools, and a Conversant key is unaffected by it.
+12. Guide, "Removing it": there is no single "Azure account" to close. Microsoft account =
+    who you are; billing account = who pays (holds the credit card); subscription = where
+    services live and charges are made. Cancelling the subscription is enough to be sure of
+    no charges; removing the credit card and closing the Microsoft account are optional.
+13. Everywhere: say "credit card", never just "card" (Ken, 19 Sep 2026).
+14. Everywhere user-facing: no references to "the bench".
+
+(The Azure-only draft for SLP review is now `Documents/Conversant AAC Azure-Only Speech Proposal (draft for SLP review).docx`; the online draft was deleted.)
+
+## App changes (Conversant), not the guide
+A. Settings > Speech > Azure Region: make it a plain text box with a Paste button (today it
+   is a text box with a suggestion list, which looks and behaves like a menu - on an iPad
+   especially). Test must be unavailable until both key and region are filled in.
+B. Azure set-up as two buttons in Conversant: Step 1 "Sign up with Microsoft" (opens
+   Microsoft's pay-as-you-go sign-up in a new tab; creates the Microsoft account too),
+   Step 2 "Create my free speech service" (the set-up link). Conversant stays open between
+   them. To test first: can Microsoft's sign-up be made to land on the form directly?
+C. Key-test failure messages: after the Azure service was deleted, Test said "The
+   transcription service refused the key - check the key, and that the region is "eastus"."
+   That points the user at a typing mistake. Add the other real causes in plain words: the
+   speech service was deleted, or the Azure account was cancelled or switched off (e.g. an
+   un-upgraded free trial after 30 days).
+
 ### The iPad and Android manuals carry the Windows manual's page header
 - **Raised:** 2026-09-15 - found while checking table borders. The running header at the
   top of every page of `Conversant AAC User Manual (iPad).docx` and

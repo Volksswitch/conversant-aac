@@ -177,7 +177,8 @@ test('Android needs the paid transcription - but the control stays live', async 
     // built-in recognizer genuinely works - poorly - so a user evaluating the app
     // before paying for a second service must still be able to try it.
     assert.equal(s.apiPresent, true, 'the button must stay live');
-    assert.match(s.remedy, /Deepgram/, 'it has to say WHICH service, not just "a paid one"');
+    // Azure, the Recommended service (Ken, September 21 2026).
+    assert.match(s.remedy, /Azure/, 'it has to say WHICH service, not just "a paid one"');
     assert.match(s.reason + s.remedy, /Settings/, 'and where to put the key');
 });
 

@@ -159,8 +159,10 @@ export function speechRecognitionSupport() {
             usable: false,
             apiPresent: true,
             reason: 'On Android, hearing the other person needs the paid transcription service.',
-            remedy: 'Add a Deepgram key in Settings, under Speech, and choose it for hearing '
-                + 'the other person. Without it the built-in listening still works, but it '
+            // Names Azure because it is the Recommended service (Ken, September 21
+            // 2026); any of the paid services works here.
+            remedy: 'Add an Azure Speech key (the recommended service) in Settings, under '
+                + 'Speech, and choose it for hearing the other person. Without it the built-in listening still works, but it '
                 + 'drops words and the device plays a tone of its own each time it restarts.',
         };
     }

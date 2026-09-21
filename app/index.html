@@ -417,7 +417,7 @@
                 <!-- Speech: everything about how the app HEARS and SPEAKS, in one
                      place. The two choices are independent — you can hear through
                      one service and speak through the other — and both draw on the
-                     single Deepgram key at the top, which is why the key is stated
+                     service keys at the top, which is why the keys are stated
                      once, up front, rather than tucked inside either choice. -->
                 <div class="tab-panel" data-tab="speech">
                     <!-- ONE SECTION FOR EVERY PAID SERVICE'S CREDENTIALS, not a
@@ -447,17 +447,15 @@
                     <div class="setting-group" data-help="serviceKeys">
                         <label>Keys for paid services</label>
 
-                        <div class="setting-item">
-                            <label for="deepgramKeyInput">Deepgram</label>
-                            <div id="deepgramKeyRow" class="key-row">
-                                <input type="text" id="deepgramKeyInput" placeholder="Your Deepgram API key" autocomplete="off" spellcheck="false">
-                                <button id="pasteDeepgramKeyBtn" type="button" aria-label="Paste Deepgram key">Paste</button>
-                                <button id="testDeepgramKeyBtn" type="button">Test</button>
-                            </div>
-                            <p id="deepgramKeyStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
-                        </div>
+                        <!-- AZURE IS FIRST AND LABELED "(Recommended)" (Ken, September 21
+                             2026). He chose to recommend it rather than make it the only
+                             service. The order of the services here, and in both radio
+                             lists below, is his: Azure, OpenAI, Google Cloud, Deepgram,
+                             ElevenLabs - with "this device" still first and still the
+                             default in the radio lists. Keep the three lists in step.
+                             The Speech Provider Guide uses the same order.
 
-                        <!-- Shown alongside Deepgram rather than instead of it: neither
+                             Shown alongside Deepgram rather than instead of it: neither
                              one wins both halves. Azure speaks at about half Deepgram's
                              price and hears at about twice it, and its free allowance
                              renews every month where Deepgram's credit is one-time - so
@@ -470,7 +468,7 @@
                              key would be - which is why it has its own field, why Test
                              quotes it back, and why every error message here names it. -->
                         <div class="setting-item">
-                            <label for="azureKeyInput">Azure Speech</label>
+                            <label for="azureKeyInput">Azure Speech (Recommended)</label>
                             <div id="azureKeyRow" class="key-row">
                                 <input type="text" id="azureKeyInput" placeholder="Your Azure Speech key" autocomplete="off" spellcheck="false">
                                 <button id="pasteAzureKeyBtn" type="button" aria-label="Paste Azure Speech key">Paste</button>
@@ -523,6 +521,16 @@
                         </div>
 
                         <div class="setting-item">
+                            <label for="deepgramKeyInput">Deepgram</label>
+                            <div id="deepgramKeyRow" class="key-row">
+                                <input type="text" id="deepgramKeyInput" placeholder="Your Deepgram API key" autocomplete="off" spellcheck="false">
+                                <button id="pasteDeepgramKeyBtn" type="button" aria-label="Paste Deepgram key">Paste</button>
+                                <button id="testDeepgramKeyBtn" type="button">Test</button>
+                            </div>
+                            <p id="deepgramKeyStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
+                        </div>
+
+                        <div class="setting-item">
                             <label for="elevenlabsKeyInput">ElevenLabs</label>
                             <!-- ElevenLabs identifies a voice by an id from their
                                  library rather than by a name, so the picker below is
@@ -546,10 +554,10 @@
                              them, so it had no layout of its own. -->
                         <div class="radio-row">
                             <label class="radio-label"><input type="radio" name="sttProvider" value="builtin"> This browser's own (free)</label>
-                            <label class="radio-label"><input type="radio" name="sttProvider" value="deepgram"> Deepgram transcription (paid)</label>
                             <label class="radio-label"><input type="radio" name="sttProvider" value="azure"> Azure transcription (paid)</label>
                             <label class="radio-label"><input type="radio" name="sttProvider" value="openai"> OpenAI transcription (paid)</label>
                             <label class="radio-label"><input type="radio" name="sttProvider" value="google"> Google Cloud transcription (paid)</label>
+                            <label class="radio-label"><input type="radio" name="sttProvider" value="deepgram"> Deepgram transcription (paid)</label>
                             <label class="radio-label"><input type="radio" name="sttProvider" value="elevenlabs"> ElevenLabs transcription (paid)</label>
                         </div>
                         <p class="tab-intro">Every paid choice except Deepgram sends a phrase at a time rather than word by word, so the transcript fills in when the other person pauses rather than as they speak.</p>
@@ -564,10 +572,10 @@
                         <label>Your speaking voice</label>
                         <div class="radio-row">
                             <label class="radio-label"><input type="radio" name="ttsProvider" value="builtin"> This device's voices (free)</label>
-                            <label class="radio-label"><input type="radio" name="ttsProvider" value="deepgram"> Deepgram voice (paid)</label>
                             <label class="radio-label"><input type="radio" name="ttsProvider" value="azure"> Azure voice (paid)</label>
                             <label class="radio-label"><input type="radio" name="ttsProvider" value="openai"> OpenAI voice (paid)</label>
                             <label class="radio-label"><input type="radio" name="ttsProvider" value="google"> Google Cloud voice (paid)</label>
+                            <label class="radio-label"><input type="radio" name="ttsProvider" value="deepgram"> Deepgram voice (paid)</label>
                             <label class="radio-label"><input type="radio" name="ttsProvider" value="elevenlabs"> ElevenLabs voice (paid)</label>
                         </div>
                         <!-- Only the picker for the chosen backend is shown. Showing

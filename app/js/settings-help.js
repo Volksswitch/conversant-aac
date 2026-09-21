@@ -144,8 +144,8 @@ const HELP = {
     "testElevenlabsPartnerVoiceBtn": "Says a few words in the practice partner's ElevenLabs voice."
   },
   "radioGroups": {
-    "sttProvider": "Who turns the other person's speech into words. Your browser does it free. Deepgram and Azure are paid, and work where the browser cannot.",
-    "ttsProvider": "Which voice speaks for you. This device's own voices are free. A Deepgram or Azure voice is paid and usually sounds far better.",
+    "sttProvider": "Who turns the other person's speech into words. Your browser does it free. The paid services work where the browser cannot. Azure is the one we recommend.",
+    "ttsProvider": "Which voice speaks for you. This device's own voices are free. A paid voice usually sounds far better. Azure is the one we recommend.",
     "keyboardMode": "Whether you type on a keyboard you plug in, or on the app's own keyboard on the screen.",
     "keyboardDock": "Whether the Express Panel and keyboard sit along the bottom of the screen, or down one side.",
     "expressTapMode": "Whether one tap speaks an Express Panel button, or two are needed so you cannot set it off by accident."

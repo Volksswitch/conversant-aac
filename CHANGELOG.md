@@ -26,6 +26,11 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Settings, Speech tab: Azure Speech is now the recommended paid speech service. It is
+  listed first and marked "(Recommended)", followed by OpenAI, Google Cloud, Deepgram and
+  ElevenLabs. The free choice, this device, is still first and is still where the app
+  starts, and anyone already using another service does not need to change anything.
+
 ## Version 0.12.0
 
 - When an Express Panel band has more buttons than room, its last spot becomes a
