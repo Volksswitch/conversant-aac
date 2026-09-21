@@ -1556,6 +1556,14 @@ Ken: *"What ever we do, it needs to be clear that Conversant doesn't see or have
 
 Context: Ken's experience is that signing up for speech services is **by far the hardest part of setting up Conversant** — the providers assume B2B staff, not members of the public. The friction-reduction plan (September 19 2026): ask first whether the user needs any account at all; recommend one service rather than six; pre-filled Azure set-up link; test a pasted key immediately and explain failures in plain words; set up on a laptop and hand the key to the iPad; never go mute when a key fails. The Azure link is being trialled first because it decides whether Azure can honestly be the single recommendation.
 
+## Azure is the RECOMMENDED speech service, not the only one (Ken, September 21 2026)
+
+Ken considered supporting only Azure (the SLP-review draft, `Documents/Conversant AAC Azure-Only Speech Proposal (draft for SLP review).docx`) and decided instead to **recommend** it. **The order everywhere - Settings and every document - is: Azure (labeled "(Recommended)"), OpenAI, Google Cloud, Deepgram, ElevenLabs.** In Settings, "This device" stays first in both the hearing and speaking lists and stays the default. Services the app does not offer (Cartesia, the downloaded on-device models) are not in the user documents. Ranked tables in the Speech Provider Guide keep their ranking order; lists and descriptions use Ken's order.
+
+- **The step-by-step choosing** (does this setup need a paid service at all; is the device voice good enough; if anything is needed, Azure; the other four only for a stated reason) is in section 9 of the Speech Provider Guide, and a short version is section 2.4 of each User Manual, pointing to the guide.
+- **Android needs a paid service to HEAR** (Ken, August 31 2026, recorded in `platform.js`). The guide had said Android hears free; corrected September 21 2026. Hearing is free only on Windows, Chromebook, Mac and an iPad in Safari.
+- **Azure sign-up is pay-as-you-go, never the free trial**: the trial switches the whole subscription off after 30 days, taking the free (F0) speech service with it. Proven on a brand-new account, September 19 2026.
+
 ## Five paid speech services, and the catalog that makes a sixth cheap (Ken, September 8 2026)
 
 Ken: *"Now add support for OpenAI, Google Cloud, and Eleven Labs (voices and where possible transcription services as well)."* All three do **both** halves. Six ways to set up speech now, mixable — hear through one service and speak through another.

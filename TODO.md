@@ -113,6 +113,15 @@ the one that quietly waits forever.
 
 (The Azure-only draft for SLP review is now `Documents/Conversant AAC Azure-Only Speech Proposal (draft for SLP review).docx`; the online draft was deleted.)
 
+- **DONE 2026-09-21 - items 1-14 (the guide):** all applied to the Speech Provider Guide;
+  the Azure price correction (1.5 cents per 1,000 characters) also went into the three User
+  Manuals. Two judgment calls: item 7 is written as "if the form asks... leave it unchecked",
+  because the fresh-account trial never confirmed the box or the "stop all" option; item 10's
+  pictures are left for Ken, who is reviewing the guide to insert screenshots from his run.
+  Direct links are used for the set-up link and the resource-group list. The testing page is
+  no longer mentioned; section 7 now tells people to compare voices inside Conversant.
+- **STILL OPEN - items A-C below (the app).**
+
 ## App changes (Conversant), not the guide
 A. Settings > Speech > Azure Region: make it a plain text box with a Paste button (today it
    is a text box with a suggestion list, which looks and behaves like a menu - on an iPad
