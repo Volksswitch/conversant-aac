@@ -124,8 +124,9 @@ the one that quietly waits forever.
   button, beside the key (Ken: "to the right of the Azure Speech box"), and Test is
   unavailable until both are filled in; the silent "eastus" default no longer shows in the
   box (an existing Azure user without a stored region gets "eastus" written down, so
-  nothing breaks). B - the two buttons open Microsoft's pay-as-you-go sign-up and the
-  set-up link in new tabs. C - the refusal message names a deleted service and a
+  nothing breaks). B - three buttons (Ken, 2026-09-21: nobody starts with an Azure
+  account, so the question is whether they have a MICROSOFT account): Microsoft account
+  sign-up, pay-as-you-go Azure sign-up, and the set-up link, each in a new tab. C - the refusal message names a deleted service and a
   canceled or switched-off subscription.
 - **STILL OPEN from B:** whether Microsoft's sign-up can be made to land directly on the
   set-up form when it finishes. Not tried; it would need a fresh-account run.

@@ -3540,6 +3540,19 @@ dialog select {
 /* A row with more in it than one key (Azure: key, Paste, region, Paste, Test) may run
    onto a second line on a narrow screen rather than squeezing every box to nothing. */
 .key-row.wrap { flex-wrap: wrap; }
+/* A field whose label sits above it (the Azure region), inside a row of boxes and
+   buttons: the row aligns to the bottom so every box and button still share a line. */
+.key-row.align-end { align-items: flex-end; }
+.key-row .region-field { display: flex; flex-direction: column; gap: 0.2rem; flex: 0 1 7rem; min-width: 0; }
+.key-row .region-field .region-input { flex: none; width: 100%; }
+.key-row .key-field { flex: 0 1 9rem; }
+/* A box and its Paste button wrap as ONE unit on a narrow screen - a Paste button
+   stranded on the next line reads as belonging to whatever is beside it there. */
+.key-row .field-group { display: flex; align-items: flex-end; gap: 0.5rem; min-width: 0; flex: 0 1 auto; }
+/* Long button labels (the Azure set-up steps) wrap inside the button rather than
+   pushing it off the side of a phone screen. */
+.key-row.wrap button { white-space: normal; max-width: 100%; text-align: center; }
+.key-row .region-field input[type="text"] { flex: none; width: 100%; }
 
 /* The per-backend voice pickers on the Speech tab. `hidden` alone loses to the
    surrounding layout rules, so it is stated - and stated ONCE, against the class, for

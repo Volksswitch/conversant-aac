@@ -7288,7 +7288,7 @@ function openSettings() {
     }
     reflectAzureTestAvailability();
 
-    // The two-step Azure set-up (Ken, September 19 2026). Each opens Microsoft's own
+    // The Azure set-up steps (Ken, September 19 and 21 2026). Each opens Microsoft's own
     // site in a new tab, so Conversant stays where the user left it; the password and
     // the credit card are typed only there. Step 1 is the PAY-AS-YOU-GO sign-up on
     // purpose - the free trial switches the whole subscription off after 30 days,
@@ -7296,11 +7296,15 @@ function openSettings() {
     // Azure's form for a free-tier speech service; its template lives in
     // setup/azure-speech-free.json and is served from a GitHub gist (the link is also
     // recorded in setup/azure-speech-free-LINK.txt).
+    // Step 1: Microsoft's own account sign-up, for someone with no Microsoft account.
+    const MICROSOFT_ACCOUNT_URL = 'https://signup.live.com/';
     const AZURE_SIGN_UP_URL = 'https://azure.microsoft.com/pricing/purchase-options/pay-as-you-go';
     const AZURE_SETUP_URL = 'https://portal.azure.com/#create/Microsoft.Template/uri/'
         + 'https%3A%2F%2Fgist.githubusercontent.com%2FVolksswitch%2F9a7345de22bb73e708519b52ab891bfa'
         + '%2Fraw%2Fazure-speech-free.json';
     const openInNewTab = (url) => window.open(url, '_blank', 'noopener');
+    const azureMsAccountBtn = document.getElementById('azureMsAccountBtn');
+    if (azureMsAccountBtn) azureMsAccountBtn.onclick = () => openInNewTab(MICROSOFT_ACCOUNT_URL);
     const azureSignUpBtn = document.getElementById('azureSignUpBtn');
     if (azureSignUpBtn) azureSignUpBtn.onclick = () => openInNewTab(AZURE_SIGN_UP_URL);
     const azureCreateServiceBtn = document.getElementById('azureCreateServiceBtn');

@@ -478,29 +478,43 @@
                                  suggestion list, which Chrome draws as a dropdown and which behaved like a
                                  menu, worst of all on an iPad - the wrong control for a value the set-up link
                                  hands the user to copy. -->
-                            <div id="azureKeyRow" class="key-row wrap">
-                                <input type="text" id="azureKeyInput" placeholder="Your Azure Speech key" autocomplete="off" spellcheck="false">
-                                <button id="pasteAzureKeyBtn" type="button" aria-label="Paste Azure Speech key">Paste</button>
-                                <label for="azureRegionInput">Region</label>
-                                <input type="text" id="azureRegionInput" class="region-input" placeholder="e.g. eastus" autocomplete="off" spellcheck="false">
-                                <button id="pasteAzureRegionBtn" type="button" aria-label="Paste Azure region">Paste</button>
+                            <div id="azureKeyRow" class="key-row wrap align-end">
+                                <div class="field-group">
+                                    <div class="region-field key-field">
+                                        <label for="azureKeyInput">Key</label>
+                                        <input type="text" id="azureKeyInput" placeholder="Your Azure Speech key" autocomplete="off" spellcheck="false">
+                                    </div>
+                                    <button id="pasteAzureKeyBtn" type="button" aria-label="Paste Azure Speech key">Paste</button>
+                                </div>
+                                <div class="field-group">
+                                    <!-- The label sits ABOVE the box (Ken, September 21 2026), so the row keeps its
+                                         line of boxes and buttons; the row aligns to the bottom to allow for it. The
+                                         key box gets a matching caption, or it sits under an empty band. -->
+                                    <div class="region-field">
+                                        <label for="azureRegionInput">Region</label>
+                                        <input type="text" id="azureRegionInput" class="region-input" placeholder="e.g. eastus" autocomplete="off" spellcheck="false">
+                                    </div>
+                                    <button id="pasteAzureRegionBtn" type="button" aria-label="Paste Azure region">Paste</button>
+                                </div>
                                 <button id="testAzureKeyBtn" type="button">Test</button>
                             </div>
                             <p id="azureKeyStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
-                            <!-- THE TWO-STEP AZURE SET-UP (Ken, September 19 2026). Azure's own sign-up is the
-                                 only Azure administration a user should see: step 1 is Microsoft's
-                                 pay-as-you-go sign-up (never the free trial, which switches the whole
-                                 subscription off after 30 days and the free speech service with it); step 2
-                                 is the set-up link, a form that creates the free speech service. Both open in
-                                 a new tab so Conversant stays where the user left it. Conversant never sees
-                                 the password or the credit card - those are typed only into Microsoft's site.
-                                 Proven end to end on a brand-new account, September 19 2026. -->
-                            <p class="setting-hint">No Azure account yet? Do these in order. Each opens Microsoft's own site in a new tab; Conversant never sees your password or credit card.</p>
+                            <!-- THE AZURE SET-UP STEPS (Ken, September 19 and 21 2026). Microsoft's own pages
+                                 are the only Azure administration a user should see, each in a new tab so
+                                 Conversant stays where they left it. NOBODY STARTS WITH AN AZURE ACCOUNT, so
+                                 the question is whether they have a MICROSOFT account (many do, through
+                                 Windows, Outlook or Xbox): step 1 creates one; step 2 is the PAY-AS-YOU-GO
+                                 Azure sign-up (never the free trial, which switches the whole subscription off
+                                 after 30 days and the free speech service with it); step 3 is the set-up link,
+                                 a form that creates the free speech service. Conversant never sees the password
+                                 or the credit card. Proven end to end on a brand-new account, September 19 2026. -->
+                            <p class="setting-hint">Do you have a Microsoft account? If not, start with step 1; otherwise start with step 2. Each step opens Microsoft's own site in a new tab. Conversant never sees your password or credit card.</p>
                             <div class="key-row wrap">
-                                <button id="azureSignUpBtn" type="button">1. Sign up with Microsoft</button>
-                                <button id="azureCreateServiceBtn" type="button">2. Create my free speech service</button>
+                                <button id="azureMsAccountBtn" type="button">1. Create Microsoft Account</button>
+                                <button id="azureSignUpBtn" type="button">2. Create a “Pay as you Go” Azure account</button>
+                                <button id="azureCreateServiceBtn" type="button">3. Create my free speech service</button>
                             </div>
-                            <p class="setting-hint">In step 1 choose “Pay as you go”, not the free trial. In step 2, if the Subscription box is empty, step 1 is not finished. When step 2 says it is complete, choose Outputs and copy conversantKey and conversantRegion into the boxes above.</p>
+                            <p class="setting-hint">In step 2, press “Pay as you go”, not “Try Azure for free” or “Start free”: the free trial switches everything off after 30 days. In step 3, sign in with the same Microsoft account; if the Subscription box is empty, step 2 is not finished. When step 3 says it is complete, choose Outputs and copy conversantKey and conversantRegion into the boxes above.</p>
                         </div>
 
                         <div class="setting-item">
