@@ -7202,21 +7202,40 @@ function openSettings() {
             refreshAzureVoices({ force: true });
         },
     });
+    // Someone who set Azure up before the region had to be entered was running on the
+    // silent "eastus" default. Write that down as their region, so the box shows what
+    // is actually in force and Test stays available to them - a region box that went
+    // blank on an upgrade would read as a setting that had been lost.
+    if (!storage.loadAzureRegionSetting() && (storage.loadAzureKey() || '').trim()) {
+        storage.saveAzureRegion('eastus');
+    }
+    const testAzureBtn = document.getElementById('testAzureKeyBtn');
+    let azureTestRunning = false;
+    // Test only once BOTH boxes hold something (Ken, September 19 2026). A key tried
+    // against an assumed region is refused exactly like a bad key, which sends the
+    // user to re-copy a key that was fine.
+    const reflectAzureTestAvailability = () => {
+        if (!testAzureBtn) return;
+        const ready = !!(storage.loadAzureKey() || '').trim() && !!storage.loadAzureRegionSetting();
+        testAzureBtn.disabled = azureTestRunning || !ready;
+        testAzureBtn.title = ready ? '' : 'Enter both the key and the region first.';
+    };
+    azureKeyInput?.addEventListener('input', reflectAzureTestAvailability);
     if (azureRegionInput) {
-        azureRegionInput.value = storage.loadAzureRegion();
+        azureRegionInput.value = storage.loadAzureRegionSetting();
         azureRegionInput.addEventListener('input', () => {
             storage.saveAzureRegion(azureRegionInput.value);
             showAzureStatus(null, '');
+            reflectAzureTestAvailability();
             // Which voices an account can use is a property of its region, so a region
             // change invalidates the list just as a key change does.
             storage.clearAzureVoiceCatalog();
             refreshAzureVoices({ force: true });
         });
-        // Put the stored value back on blur, so a field left half-typed or emptied
-        // shows what is actually in force rather than what was abandoned. Blank means
-        // the default, and saying so beats an empty box the user has to guess about.
+        // Show the stored form on blur - "(US) East US" becomes "eastus" - so the box
+        // says exactly what the app will use.
         azureRegionInput.addEventListener('blur', () => {
-            azureRegionInput.value = storage.loadAzureRegion();
+            azureRegionInput.value = storage.loadAzureRegionSetting();
         });
     }
     const pasteAzureBtn = document.getElementById('pasteAzureKeyBtn');
@@ -7228,11 +7247,24 @@ function openSettings() {
                 setKeyFieldValue(azureKeyInput, text);
                 showAzureStatus(null, '');
             } catch {
-                showAzureStatus('warn', 'Could not read the clipboard. Touch and hold the box above, then choose Paste.');
+                showAzureStatus('warn', 'Could not read the clipboard. Touch and hold the key box, then choose Paste.');
             }
         };
     }
-    const testAzureBtn = document.getElementById('testAzureKeyBtn');
+    const pasteAzureRegionBtn = document.getElementById('pasteAzureRegionBtn');
+    if (pasteAzureRegionBtn && azureRegionInput) {
+        pasteAzureRegionBtn.onclick = async () => {
+            try {
+                const text = (await navigator.clipboard.readText())?.trim();
+                if (!text) { showAzureStatus('warn', 'The clipboard is empty — copy the region first.'); return; }
+                azureRegionInput.value = text;
+                azureRegionInput.dispatchEvent(new Event('input', { bubbles: true }));
+                azureRegionInput.value = storage.loadAzureRegionSetting();
+            } catch {
+                showAzureStatus('warn', 'Could not read the clipboard. Touch and hold the region box, then choose Paste.');
+            }
+        };
+    }
     if (testAzureBtn) {
         // ⚠ EXERCISES THE REQUEST THE APP ACTUALLY MAKES, not a cheaper proxy. Azure
         // has a token endpoint that would check the key for free — and would also pass
@@ -7243,14 +7275,36 @@ function openSettings() {
         // so it bills a fraction of a cent and transcribes nothing.
         testAzureBtn.onclick = async () => {
             const key = (keyFieldValue(azureKeyInput) ?? (storage.loadAzureKey() || '')).trim();
-            if (!key) { showAzureStatus('warn', 'Enter your key first, then tap Test.'); return; }
-            testAzureBtn.disabled = true;
+            const region = storage.loadAzureRegionSetting();
+            if (!key || !region) { showAzureStatus('warn', 'Enter both the key and the region, then tap Test.'); return; }
+            azureTestRunning = true;
+            reflectAzureTestAvailability();
             showAzureStatus('checking', 'Checking your key…');
-            const res = await sttAzure.testKey(key, storage.loadAzureRegion());
-            testAzureBtn.disabled = false;
+            const res = await sttAzure.testKey(key, region);
+            azureTestRunning = false;
+            reflectAzureTestAvailability();
             showAzureStatus(res.ok ? 'ok' : 'warn', res.message);
         };
     }
+    reflectAzureTestAvailability();
+
+    // The two-step Azure set-up (Ken, September 19 2026). Each opens Microsoft's own
+    // site in a new tab, so Conversant stays where the user left it; the password and
+    // the credit card are typed only there. Step 1 is the PAY-AS-YOU-GO sign-up on
+    // purpose - the free trial switches the whole subscription off after 30 days,
+    // taking the free speech service with it. Step 2 is the set-up link, which fills in
+    // Azure's form for a free-tier speech service; its template lives in
+    // setup/azure-speech-free.json and is served from a GitHub gist (the link is also
+    // recorded in setup/azure-speech-free-LINK.txt).
+    const AZURE_SIGN_UP_URL = 'https://azure.microsoft.com/pricing/purchase-options/pay-as-you-go';
+    const AZURE_SETUP_URL = 'https://portal.azure.com/#create/Microsoft.Template/uri/'
+        + 'https%3A%2F%2Fgist.githubusercontent.com%2FVolksswitch%2F9a7345de22bb73e708519b52ab891bfa'
+        + '%2Fraw%2Fazure-speech-free.json';
+    const openInNewTab = (url) => window.open(url, '_blank', 'noopener');
+    const azureSignUpBtn = document.getElementById('azureSignUpBtn');
+    if (azureSignUpBtn) azureSignUpBtn.onclick = () => openInNewTab(AZURE_SIGN_UP_URL);
+    const azureCreateServiceBtn = document.getElementById('azureCreateServiceBtn');
+    if (azureCreateServiceBtn) azureCreateServiceBtn.onclick = () => openInNewTab(AZURE_SETUP_URL);
 
     // --- Deepgram voice (Aura) ---
     // Unlike the transcription provider, this one takes effect immediately: tts.js

@@ -3536,7 +3536,10 @@ dialog select {
 .key-row label { flex: 0 0 auto; }
 /* Shorter than a key: a region name is about ten characters, and a box sized for a key
    would suggest something longer is expected. */
-#azureRegionRow input[type="text"] { flex: 0 1 7rem; }
+.key-row .region-input { flex: 0 1 7rem; }
+/* A row with more in it than one key (Azure: key, Paste, region, Paste, Test) may run
+   onto a second line on a narrow screen rather than squeezing every box to nothing. */
+.key-row.wrap { flex-wrap: wrap; }
 
 /* The per-backend voice pickers on the Speech tab. `hidden` alone loses to the
    surrounding layout rules, so it is stated - and stated ONCE, against the class, for

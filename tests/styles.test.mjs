@@ -128,9 +128,8 @@ test('the credential rows are styled by class, never by a list of ids', () => {
     const idsInRules = rules.match(/#[A-Za-z][A-Za-z0-9_-]*/g) || [];
     const credentialish = /(Key|Voice|Partner)(Row|Input|Btn|Select|Status)$|Row$/;
     // Genuinely per-control, and named rather than pattern-matched so each is a decision:
-    //   azureRegionRow  - narrower, because a region name is about ten characters
     //   apiKeyPrompt/folderPrompt - pre-start cards, not credential rows at all
-    const allowed = new Set(['#azureRegionRow', '#apiKeyPrompt', '#folderPrompt',
+    const allowed = new Set(['#apiKeyPrompt', '#folderPrompt',
                              '#folderPromptRow', '#storageDurabilityRow', '#dataFolderRow',
                              '#usageBreakdown', '#errorLogActions', '#usageSummaryActions',
                              '#systemInfoActions', '#problemReportActions', '#folderBackupRow']);

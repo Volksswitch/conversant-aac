@@ -30,6 +30,16 @@ forgetting to tag one is only ever noise, never silence.
   listed first and marked "(Recommended)", followed by OpenAI, Google Cloud, Deepgram and
   ElevenLabs. The free choice, this device, is still first and is still where the app
   starts, and anyone already using another service does not need to change anything.
+- Setting up Azure is easier. Two new buttons under the Azure key, "1. Sign up with
+  Microsoft" and "2. Create my free speech service", open Microsoft's own pages in order
+  and create a free Azure speech service for you. Conversant never sees your password or
+  credit card.
+- The Azure Region box now sits beside the key, is a plain box with its own Paste button,
+  and accepts the region however you copy it (for example "(US) East US" becomes
+  "eastus"). Test works once both the key and the region are filled in.
+- When Azure refuses a key, the message now also says the speech service may have been
+  deleted or the Azure subscription canceled or switched off, not only that the key or
+  region may be mistyped.
 
 ## Version 0.12.0
 

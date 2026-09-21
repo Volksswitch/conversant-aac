@@ -166,7 +166,16 @@ export function encodeWav(pcm16, sampleRate = TARGET_RATE) {
  */
 export function describeFailure(status, region) {
     if (status === 401 || status === 403) {
-        return `The transcription service refused the key — check the key, and that the region is "${region}".`;
+        // ⚠ NOT ONLY A TYPING MISTAKE (Ken's fresh-account trial, September 19 2026).
+        // After the speech service was deleted, this said "check the key", which sent
+        // him hunting a typo. Azure answers the same way when the service no longer
+        // exists, or the subscription was canceled or switched off - e.g. a free trial
+        // that lapsed after 30 days - and those are the cases a user meets without
+        // knowing why. The region stays named: it is still the likeliest mistake.
+        return `The transcription service refused the key. Check that the key and the region ("${region}") `
+            + 'were copied correctly. If they were, the Azure speech service may have been deleted, '
+            + 'or the Azure subscription canceled or switched off - for example a free trial '
+            + 'that ended after 30 days.';
     }
     if (status === 400) return 'The transcription service rejected the audio.';
     if (status === 429) return 'The transcription service is rate limiting — wait a moment and try again.';

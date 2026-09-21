@@ -120,7 +120,15 @@ the one that quietly waits forever.
   pictures are left for Ken, who is reviewing the guide to insert screenshots from his run.
   Direct links are used for the set-up link and the resource-group list. The testing page is
   no longer mentioned; section 7 now tells people to compare voices inside Conversant.
-- **STILL OPEN - items A-C below (the app).**
+- **DONE 2026-09-21 - items A-C (the app):** A - the Region box is a plain box with a Paste
+  button, beside the key (Ken: "to the right of the Azure Speech box"), and Test is
+  unavailable until both are filled in; the silent "eastus" default no longer shows in the
+  box (an existing Azure user without a stored region gets "eastus" written down, so
+  nothing breaks). B - the two buttons open Microsoft's pay-as-you-go sign-up and the
+  set-up link in new tabs. C - the refusal message names a deleted service and a
+  canceled or switched-off subscription.
+- **STILL OPEN from B:** whether Microsoft's sign-up can be made to land directly on the
+  set-up form when it finishes. Not tried; it would need a fresh-account run.
 
 ## App changes (Conversant), not the guide
 A. Settings > Speech > Azure Region: make it a plain text box with a Paste button (today it

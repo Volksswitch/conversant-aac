@@ -1150,9 +1150,32 @@ export function loadAzureRegion() {
     return loadSettings().azureRegion || 'eastus';
 }
 
+/*
+ * What the user actually entered, with NO fallback - for the Settings box and for
+ * deciding whether Test is available (Ken, September 19 2026: Test "shouldn't be
+ * possible until both boxes are populated"). loadAzureRegion() above keeps its
+ * eastus fallback for the running app, so nothing that already works changes.
+ *
+ * ⚠ The box used to show "eastus" when nothing had been entered, which made it look
+ * chosen when it was only assumed. The set-up link lets a user pick any region, and a
+ * good key with the wrong region is refused exactly like a bad key.
+ */
+export function loadAzureRegionSetting() {
+    return loadSettings().azureRegion || '';
+}
+
+/*
+ * Accepts the forms a user is likely to paste: "eastus" (what the set-up link's
+ * Outputs give), "East US", or Azure's display form "(US) East US". Azure's own
+ * region names are lower case with no spaces.
+ */
+export function normalizeAzureRegion(region) {
+    return (region || '').trim().replace(/^\([^)]*\)\s*/, '').replace(/\s+/g, '').toLowerCase();
+}
+
 export function saveAzureRegion(region) {
     const settings = loadSettings();
-    settings.azureRegion = (region || '').trim() || 'eastus';
+    settings.azureRegion = normalizeAzureRegion(region);
     saveSettings(settings);
 }
 

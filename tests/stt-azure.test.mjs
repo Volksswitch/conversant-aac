@@ -337,3 +337,23 @@ test('starting with no key reports it and does not open the microphone', async (
     assert.equal(await src.start(), false);
     assert.deepEqual(statuses, [['error', 'no-key']]);
 });
+
+test('a refusal also names the causes that are not typing mistakes', () => {
+    // Ken's fresh-account trial (September 19 2026): after the speech service was
+    // deleted, "check the key" sent him hunting a typo. Azure refuses the same way when
+    // the service is gone or the subscription was canceled or switched off.
+    const msg = azure.describeFailure(401, 'eastus');
+    assert.match(msg, /refused the key/);
+    assert.match(msg, /deleted/);
+    assert.match(msg, /canceled or switched off/);
+    assert.match(msg, /free trial/);
+});
+
+test('a pasted region is reduced to the form Azure uses', async () => {
+    const { normalizeAzureRegion } = await import('../app/js/storage.js');
+    assert.equal(normalizeAzureRegion('eastus'), 'eastus');
+    assert.equal(normalizeAzureRegion('  westus2 '), 'westus2');
+    assert.equal(normalizeAzureRegion('East US'), 'eastus');
+    assert.equal(normalizeAzureRegion('(US) East US 2'), 'eastus2');
+    assert.equal(normalizeAzureRegion(''), '');
+});
