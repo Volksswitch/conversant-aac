@@ -47,7 +47,10 @@ the one that quietly waits forever.
 - **What is wanted:** Ken's decision on the beta speech arrangement (tester signs up for
   Azure themselves with the three buttons, or Volksswitch obtains the key), then rewrite those
   passages to match.
-- **Why not now:** the arrangement is Ken's call.
+- **DONE 2026-09-21:** Ken decided Volksswitch obtains each tester's Anthropic key and any
+  speech key is arranged offline between him and the tester. The plan now names no speech
+  service: it says who needs one, points to section 1 of the guide, and says to talk to us
+  first. A duplicated half-sentence in set-up step 2 went with the rewrite.
 
 ### Internal design documents still refer to "Ken"
 - **Raised:** 2026-09-21 - Ken's rule: in documents he is "the project" or "Volksswitch".
