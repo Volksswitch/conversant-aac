@@ -37,6 +37,30 @@ the one that quietly waits forever.
 
 ## Open
 
+### Beta Test Plan still tells testers to get a free Deepgram account for speech
+- **Raised:** 2026-09-21 - found while applying the public-release documents rule. Its
+  "What you need" and set-up steps say to create a free Deepgram account for the voice, and
+  to leave hearing on the free option everywhere except an installed iPad.
+- **Why it is wrong now:** Azure is the Recommended service (2026-09-21), and Android needs a
+  paid service to hear (Ken, 2026-08-31). Volksswitch has also not committed to paying for
+  speech services in the beta; it MAY obtain a speech key for a tester.
+- **What is wanted:** Ken's decision on the beta speech arrangement (tester signs up for
+  Azure themselves with the three buttons, or Volksswitch obtains the key), then rewrite those
+  passages to match.
+- **Why not now:** the arrangement is Ken's call.
+
+### Internal design documents still refer to "Ken"
+- **Raised:** 2026-09-21 - Ken's rule: in documents he is "the project" or "Volksswitch".
+  The published documents are done. Still carrying "Ken" (count): Architecture Overview (2),
+  Azure-Only Speech Proposal (1), Conversation Goals (6), Express Panel Design (5),
+  Measurement Plan (5, plus 4 beta/payment lines), Sounds Like Me (10), Strategic Assessment
+  (2, plus 1), UI-Design (1), Voice Files (2), Weekly Report Handling (1, plus 1),
+  Worldview Implementation Plan (5).
+- **What is wanted:** replace with "the project"/"Volksswitch" - but most are decision
+  attributions ("Ken decided..."), where a mechanical swap reads badly and loses who made the
+  call. Needs a per-sentence pass.
+- **Why not now:** none of these is published, and Ken asked about the published documents first.
+
 ### Check that OpenAI, Google Cloud and ElevenLabs hearing are really used where hearing must be paid for
 - **Raised:** 2026-09-21 - noticed while making Azure the Recommended service. When the app
   starts, the part that decides whether a paid hearing service is in use only looks for a

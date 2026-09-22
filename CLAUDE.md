@@ -1550,6 +1550,14 @@ speech-to-speech vendor whose components can be used separately, i.e. as a plain
 recognizer and a plain voice. That is just another provider for the adapter, and is
 already covered by the provider survey above.)*
 
+## Documents are written for PUBLIC RELEASE; only the Beta Test Plan describes the beta (Ken, September 21 2026)
+
+**In every document, Ken is "the project" or "Volksswitch", never "Ken".** And **every document except the Beta Test Plan is written as if the app were already publicly released**: every user has their own accounts and pays their own charges, and Volksswitch pays nothing for anyone. The Beta Test Plan is the one place that describes beta arrangements.
+
+- **What the beta actually is, so it is described correctly there:** Volksswitch pays for the **AI** key. It has **not** committed to paying for **speech** services. It **may** obtain a speech key for a tester, and if it does, Volksswitch sees that key and pays that bill. Speech keys and the AI key are different keys and must never be run together.
+- **The User Manuals MAY carry brief beta caveats**, but each must be short and plainly marked as a beta note, so all of them can be found and removed before general release. No other document carries them.
+- **Why:** the documents outlive the beta. A sentence saying the project pays the bills is false for every public user, and one saying Volksswitch never sees a key is false for a beta tester whose key Volksswitch obtained. Writing for the public release, with beta notes only where they can be found and deleted, keeps both true.
+
 ## Sign-up help must say plainly: Conversant never sees passwords or cards (Ken, September 19 2026)
 
 Ken: *"What ever we do, it needs to be clear that Conversant doesn't see or have access to the user's passwords or credit cards. The only thing that Conversant stores is the API key(s)."* This binds **every** piece of sign-up help — the guide, in-app guidance, set-up links (e.g. `setup/azure-speech-free.json`, the pre-filled Azure "create my free speech service" link, in trial September 2026), and any future "sign in with Microsoft"-style automation. The password and card are typed only into the provider's own site; Conversant receives only the key the user pastes, and keeps it on the device. Any design that would let Conversant touch a password or card, even in passing, is out — say so rather than build it. **Say "credit card", never just "card", in anything user-facing** (Ken, September 19 2026 — "the card" read as ambiguous). **User-facing documents no longer reference "the bench"** (the speech-providers prototype page).
