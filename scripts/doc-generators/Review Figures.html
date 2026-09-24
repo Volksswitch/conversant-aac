@@ -1,0 +1,205 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Conversation review figures</title>
+<style>
+ body{font:14px/1.45 Arial,Helvetica,sans-serif;color:#222;background:#fff;margin:0;padding:20px}
+ .fig{background:#fff;padding:16px 18px;width:820px;box-sizing:border-box}
+ h3{font-size:14px;color:#1F4E79;margin:0 0 10px}
+ .cap{font-size:12px;color:#555;margin:10px 0 0}
+ .screen{border:1px solid #90A4AE;border-radius:6px;background:#fff;overflow:hidden}
+ .tabbar{display:flex;gap:0;background:#ECEFF1;border-bottom:1px solid #90A4AE}
+ .tab{font-size:11.5px;padding:7px 11px;color:#455A64;border-right:1px solid #CFD8DC}
+ .tab.on{background:#fff;color:#1F4E79;font-weight:bold;border-bottom:2px solid #1F4E79}
+ .body{padding:12px 14px}
+
+ /* figure 1 - the list */
+ .lhdr{display:grid;grid-template-columns:150px 92px 104px 122px 1fr;gap:8px;font-size:10.5px;
+       color:#546E7A;font-weight:bold;padding:0 8px 5px}
+ .lrow{display:grid;grid-template-columns:150px 92px 104px 122px 1fr;gap:8px;font-size:11.5px;
+       padding:8px;border:1px solid #CFD8DC;border-radius:4px;margin-bottom:5px;align-items:center}
+ .lrow .st{font-size:10.5px}
+ .flag{color:#A86300;font-weight:bold}
+ .done{color:#2E7D32}
+ .part{color:#1F4E79}
+ .none{color:#78909C}
+ .prac{background:#F3F6F8}
+
+ /* figure 2 - one moment */
+ .said{background:#ECEFF1;border-left:4px solid #546E7A;padding:8px 10px;border-radius:4px;
+       font-size:12px;margin-bottom:10px}
+ .cards{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+ .card{border:1px solid #CFD8DC;border-radius:5px;padding:8px 10px;font-size:11.5px;min-height:46px;
+       box-sizing:border-box}
+ .card .hint{display:block;font-size:10px;color:#546E7A;margin-bottom:3px}
+ .c-pref{border-left:6px solid #2E7D32;background:#F1F8E9}
+ .c-disp{border-left:6px solid #A86300;background:#FFF8E1}
+ .c-init{border-left:6px solid #1565C0;background:#E8F0FE}
+ .c-rep{border-left:6px solid #6A1B9A;background:#F3E5F5}
+ .taken{outline:2px solid #2E7D32;outline-offset:1px}
+ .tookit{font-size:10px;color:#2E7D32;font-weight:bold;display:block;margin-top:4px}
+ .ask{font-size:12px;color:#263238;margin:12px 0 7px;font-weight:bold}
+ .btns{display:flex;gap:7px;flex-wrap:wrap}
+ .btn{font-size:11px;border:1px solid #90A4AE;border-radius:4px;padding:7px 11px;background:#fff;color:#37474F}
+ .btn.sel{background:#1F4E79;color:#fff;border-color:#1F4E79;font-weight:bold}
+ .typebox{border:1px solid #90A4AE;border-radius:4px;padding:9px 10px;font-size:11.5px;color:#263238;
+          margin-top:9px;background:#FFFDF6}
+ .tblabel{font-size:10.5px;color:#546E7A;display:block;margin-bottom:4px}
+ .cursor{color:#90A4AE}
+
+ /* figure 3 - playback */
+ .tl{border-left:2px solid #CFD8DC;margin-left:52px;padding-left:14px}
+ .ev{position:relative;font-size:11.5px;padding:5px 0}
+ .ev .t{position:absolute;left:-118px;width:52px;text-align:right;color:#78909C;font-size:10.5px;top:6px}
+ .ev .who{font-weight:bold}
+ .p-partner{color:#37474F}
+ .p-app{color:#6A1B9A;font-style:italic}
+ .p-cards{color:#1565C0}
+ .p-you{color:#2E7D32}
+ .gap{margin:4px 0 4px -14px;padding:5px 10px;background:#FFF8E1;border:1px dashed #A86300;
+      border-radius:4px;font-size:10.5px;color:#8A5200;display:inline-block}
+ .transport{display:flex;gap:8px;align-items:center;margin-top:12px;padding-top:10px;border-top:1px solid #ECEFF1}
+ .scrub{flex:1;height:6px;background:#CFD8DC;border-radius:3px;position:relative}
+ .scrub i{position:absolute;left:0;top:0;bottom:0;width:38%;background:#1F4E79;border-radius:3px}
+
+ /* figure 4 - confirmation */
+ .conf{border:2px solid #1F4E79;border-radius:6px;padding:12px 14px;background:#F7FAFC}
+ .conf h4{font-size:12.5px;color:#1F4E79;margin:0 0 8px}
+ .quoted{font-size:12px;background:#fff;border:1px solid #CFD8DC;border-radius:4px;padding:8px 10px;
+         margin-bottom:11px;color:#263238}
+ .opt{display:flex;gap:8px;align-items:flex-start;font-size:11.5px;padding:6px 0;color:#263238}
+ .box{border:1.5px solid #546E7A;width:13px;height:13px;border-radius:2px;flex:none;margin-top:1px;
+      text-align:center;line-height:12px;font-size:10px;color:#fff}
+ .box.on{background:#2E7D32;border-color:#2E7D32}
+ .sub{margin:5px 0 0 21px;font-size:11px;color:#455A64}
+ .radio{display:inline-block;border:1.5px solid #546E7A;width:11px;height:11px;border-radius:50%;
+        margin-right:4px;vertical-align:-1px}
+ .radio.on{border-color:#1F4E79;background:radial-gradient(#1F4E79 0 45%,#fff 50%)}
+ .rgrp{margin-left:14px}
+ .actions{display:flex;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid #DDE5EA}
+</style></head><body>
+
+<!-- ============ FIGURE 1 ============ -->
+<div class="fig" id="f1">
+<h3>Getting in: the list of conversations</h3>
+<div class="screen">
+ <div class="tabbar">
+  <div class="tab">General</div><div class="tab">Conversation</div><div class="tab">Speech</div>
+  <div class="tab">Express Panel</div><div class="tab">Practice</div><div class="tab on">Review</div>
+  <div class="tab">About</div>
+ </div>
+ <div class="body">
+  <div class="lhdr"><div>When</div><div>Who</div><div>Where</div><div>How long</div><div>Where you got to</div></div>
+
+  <div class="lrow">
+   <div>Tue Sep 22, 2:14 pm</div><div>Mom</div><div>Home</div><div>12 min, 9 replies</div>
+   <div class="st"><span class="flag">3 moments you asked for something else</span> &middot; <span class="none">not looked at</span></div>
+  </div>
+
+  <div class="lrow">
+   <div>Mon Sep 21, 9:40 am</div><div>Dr Ruiz</div><div>The clinic</div><div>6 min, 4 replies</div>
+   <div class="st"><span class="done">finished</span></div>
+  </div>
+
+  <div class="lrow">
+   <div>Sun Sep 20, 6:05 pm</div><div>Marcus</div><div>The diner</div><div>21 min, 17 replies</div>
+   <div class="st"><span class="part">part way through &mdash; 7 of 17 left</span></div>
+  </div>
+
+  <div class="lrow prac">
+   <div>Sat Sep 19, 11:00 am</div><div>Practice</div><div>Ordering coffee</div><div>5 min, 6 replies</div>
+   <div class="st"><span class="none">not looked at</span></div>
+  </div>
+ </div>
+</div>
+<p class="cap"><b>Every conversation is listed, newest first, and the user picks.</b> Nothing is required and nothing expires.
+The app marks the moments where the user themselves asked for something different at the time, but that is a hint on the row,
+not a filter the user has to accept. Practice conversations sit in the same list.
+<b>Where you got to</b> is remembered for each conversation, so a session can be left half done.</p>
+</div>
+
+<!-- ============ FIGURE 2 ============ -->
+<div class="fig" id="f2">
+<h3>Looking at one moment</h3>
+<div class="screen"><div class="body">
+ <div class="said"><b>Mom said:</b> &ldquo;We were thinking of driving up to see you on Sunday &mdash; does that work?&rdquo;</div>
+
+ <div class="cards">
+  <div class="card c-pref taken"><span class="hint">Sunday&rsquo;s fine</span>Sunday works, come on up.<span class="tookit">you said this</span></div>
+  <div class="card c-disp"><span class="hint">Not Sunday</span>I&rsquo;d love to, but Sunday isn&rsquo;t great for me.</div>
+  <div class="card c-init"><span class="hint">Saturday instead?</span>Could we make it Saturday instead?</div>
+  <div class="card c-rep"><span class="hint">Which Sunday?</span>Sorry &mdash; which Sunday do you mean?</div>
+ </div>
+
+ <div class="ask">Was that what you wanted to say?</div>
+ <div class="btns">
+  <div class="btn">Yes, that was right</div>
+  <div class="btn sel">It was the closest of the four</div>
+  <div class="btn">None of them</div>
+ </div>
+
+ <div class="typebox">
+  <span class="tblabel">What would you rather have said?</span>
+  I&rsquo;d rather you came here &mdash; my back has been rough this week.<span class="cursor">|</span>
+ </div>
+ <div class="btns" style="margin-top:9px">
+  <div class="btn">Hear it</div><div class="btn sel">Keep it</div><div class="btn">Skip this one</div>
+ </div>
+</div></div>
+<p class="cap"><b>Only the card the user actually considered is ever judged.</b> Asking for a score on all four would mean
+rating two cards that were never in the running, because the four are deliberately different kinds of reply and most turns
+only have one or two live candidates. Which card was closest is itself worth knowing: someone who keeps saying the declining
+card was nearest, while speaking the agreeable one, has a wording problem rather than a category problem.
+<b>Typing what they would rather have said is the main thing on this screen</b>, not a fallback.</p>
+</div>
+
+<!-- ============ FIGURE 3 ============ -->
+<div class="fig" id="f3">
+<h3>Playing it back at the speed it happened</h3>
+<div class="screen"><div class="body">
+ <div class="tl">
+  <div class="ev"><span class="t">0:00</span><span class="who p-partner">Mom:</span> <span class="p-partner">&ldquo;We were thinking of driving up to see you on Sunday &mdash; does that work?&rdquo;</span></div>
+  <div class="ev"><span class="t">0:04</span><span class="p-app">the app said &ldquo;I&rsquo;m thinking about that.&rdquo;</span></div>
+  <div class="ev"><span class="t">0:07</span><span class="p-cards">four suggestions appeared</span></div>
+  <div class="ev"><span class="t">0:13</span><span class="who p-you">You:</span> <span class="p-you">&ldquo;Sunday works, come on up.&rdquo;</span></div>
+  <div class="gap">13 seconds between Mom finishing and you answering &mdash; 7 of them before anything was on screen</div>
+  <div class="ev"><span class="t">0:16</span><span class="who p-partner">Mom:</span> <span class="p-partner">&ldquo;Lovely. What time suits you?&rdquo;</span></div>
+ </div>
+ <div class="transport">
+  <div class="btn">Pause</div>
+  <div class="scrub"><i></i></div>
+  <div class="btn">Say something about this moment</div>
+ </div>
+</div></div>
+<p class="cap"><b>A silence cannot be felt by reading a transcript.</b> Played at the speed it happened, the pause the other
+person sat through is the thing the user notices first, and it is the one part of the experience no written record conveys.
+<b>It is a reconstruction, not a recording.</b> The other person&rsquo;s voice was never kept, so their words are spoken by a
+substitute voice; and the app only knows when their words arrived from the transcription service, not when they stopped
+speaking, so a replayed silence is if anything <i>shorter</i> than the real one. Playing it aloud can be turned off, leaving
+the same walk-through with the clock running and the gaps opening up on screen.</p>
+</div>
+
+<!-- ============ FIGURE 4 ============ -->
+<div class="fig" id="f4">
+<h3>Nothing changes without being asked</h3>
+<div class="screen"><div class="body">
+ <div class="conf">
+  <h4>Shall I keep anything from that?</h4>
+  <div class="quoted">&ldquo;I&rsquo;d rather you came here &mdash; my back has been rough this week.&rdquo;</div>
+
+  <div class="opt"><span class="box on">&#10003;</span><span>Remember this as an example of how I want to sound</span></div>
+
+  <div class="opt"><span class="box"></span><span>Put &ldquo;My back has been rough this week&rdquo; on my buttons</span></div>
+  <div class="sub rgrp"><span class="radio"></span>for anyone &nbsp;&nbsp; <span class="radio on"></span>only when I am talking with Mom</div>
+
+  <div class="opt"><span class="box"></span><span>Add to About Me: my back gives me trouble</span></div>
+
+  <div class="actions"><div class="btn sel">Done</div><div class="btn">Keep nothing</div></div>
+ </div>
+</div></div>
+<p class="cap"><b>Review proposes; the user decides.</b> Adding a button without asking would move every button after it, and
+button positions are learned by hand as much as by eye &mdash; the one thing the layout rules protect hardest. The choice
+between <i>for anyone</i> and <i>only with this person</i> is put at the moment it can actually be answered, because the
+person is right there in the record. <b>Most moments produce none of these</b>, and that is a normal outcome: much of what
+someone wishes they had said depended on something in their head that morning, which is nothing the app could have known.
+The sentence is still kept.</p>
+</div>
+
+</body></html>

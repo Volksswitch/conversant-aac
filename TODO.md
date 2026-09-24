@@ -544,6 +544,44 @@ C. Key-test failure messages: after the Azure service was deleted, Test said "Th
 
 ---
 
+### Practice debrief: the app talks through how a rehearsal went
+- **Raised:** 2026-09-23 - Ken, during the conversation-review design discussion. He
+  asked whether there is value in the app "teaching" the user, especially in practice.
+  Answer: yes, and my earlier "the app must never grade the user" was too absolute.
+- **The distinction that makes it safe, and it must survive into the build:** feedback
+  about the EXCHANGE ("that reply was short enough it could read as curt") is about
+  words and is legitimate. A verdict on the PERSON ("you come across as abrupt"), a
+  score, a grade, or a progress chart is not, and stays out permanently.
+- **Wanted:** at the end of a practice conversation, the practice partner offers to talk
+  through how it went. Rehearsal with no debrief is half a feature, and practice is the
+  right home - no real person, nothing at stake, and the whole purpose is to improve.
+- **The rule for the rest of the app:** never volunteered in a real conversation,
+  offered in practice, available anywhere the user asks for it. Refusing feedback the
+  user has asked for is its own kind of paternalism.
+- **Also settled in the same discussion, so it is not re-argued:** the "it is moot
+  because the AI only offers safe options" escape does NOT hold. The app offers a way to
+  decline, offers humor where the profile allows it, and nothing checks that a
+  suggestion suits the moment. A card can land badly.
+- **Why not now:** it depends on the conversation-review playback screen, which is not
+  built, and the wider review design is still being settled with Ken.
+
+### An SLP authoring practice conversations for a client to exercise
+- **Raised:** 2026-09-23 - Ken, relaying an SLP who wants to create practice
+  conversations for an autistic client to work through, and to review the results.
+- **Why it matters more than it looks:** a practice conversation has NO third-party
+  privacy problem - the other party is the app - so it is freely shareable with a
+  clinician, where a real conversation carries the words of someone who never agreed to
+  be reviewed. That makes practice the natural first home for clinician review, and it
+  comes with a named clinician who has asked for it.
+- **Wanted, and it is two separate things:** (a) an SLP can write a practice scenario -
+  who the partner is, what they want, how they open - where today the scenario library
+  is bundled and custom-scenario editing is deferred; and (b) a way to hand that
+  scenario to a client's device, and the finished conversation back.
+- **Why not now:** it needs the custom-scenario editor that Practice Mode deliberately
+  deferred at its first build, and the sharing half overlaps the export work. Raised as
+  a real request from a real clinician rather than a hypothesis, so it should not sit
+  behind a general "custom scenarios someday" note.
+
 ## Done
 
 ### The keyboard and generation-timing questions - both were collected and unread
