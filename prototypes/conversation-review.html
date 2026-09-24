@@ -193,6 +193,15 @@
   .cmd.on .ic,.cmd.on .lb{color:#fff}
   .tcards{flex:1 1 auto;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;
           gap:7px;padding:9px 11px;min-height:0}
+  /* the response region carries the "New 4" button in the app, so it carries it here.
+     Reserved whether or not it is marked, so the cards above never change size. */
+  .tnew{flex:0 0 auto;padding:0 11px 9px;display:flex}
+  .newbtn{flex:1 1 auto;height:30px;border:1px solid #B0BEC5;border-radius:5px;background:#fff;
+          font:inherit;font-size:12px;color:#37474F;cursor:pointer;display:flex;
+          align-items:center;justify-content:center;gap:7px}
+  .newbtn:hover{border-color:var(--brand)}
+  .newbtn.want{background:#E8F0FE;border-color:var(--init);color:#0d3f7a;font-weight:bold}
+  .newbtn .wantmk{font-size:8px}
   .tcard{border:1px solid var(--line-soft);border-radius:6px;padding:7px 9px;font-size:13px;
          text-align:left;font-family:inherit;color:inherit;background:#fff;cursor:pointer;
          overflow-y:auto;min-height:0;display:block;width:100%;line-height:1.4}
@@ -233,6 +242,22 @@
               flex-direction:column;gap:1px}
   .usedmk{font-size:8px;font-weight:bold;color:var(--pref);text-transform:uppercase;
           letter-spacing:.04em;line-height:1}
+  /* a SECOND mark, and a different one: green is what happened, blue is what the user
+     now says they would rather have said. Both can sit on the panel at once, on
+     different buttons, exactly as they can on two cards. */
+  .dcell.want{background:#E8F0FE;border-color:var(--init);color:#0d3f7a;font-weight:bold;
+              flex-direction:column;gap:1px}
+  .wantmk{font-size:8px;font-weight:bold;color:var(--init);text-transform:uppercase;
+          letter-spacing:.04em;line-height:1}
+  .dcell[data-cell]{cursor:pointer}
+  .dcell[data-cell]:hover{border-color:var(--brand)}
+  /* the influencer buttons read as a different kind of thing in the app, and must here */
+  .dcell.ep-context{background:#FBF7F2;color:#6d4c41}
+  .dcell.ep-compose{background:#FAFAFA;color:#455A64;font-style:italic}
+  .dcell.ctx{background:#FFF3E0;border-color:var(--warn);color:#6b3d00;font-weight:bold;
+             flex-direction:column;gap:1px}
+  .ctxmk{font-size:7.5px;font-weight:bold;color:var(--warn);text-transform:uppercase;
+         letter-spacing:.03em;line-height:1}
   .dlab{font-size:9.5px;color:var(--muted);text-align:center;padding:2px 0 4px}
 
   /* the conversation pane inside the tablet */
@@ -841,7 +866,7 @@ function barHTML(st){
        + cmdBtn('play',  '▶‖', 'Play it back', {on: !!st.playing})
        + cmdBtn('wback', w[0],     'Word back',   {off: !st.editing})
        + cmdBtn('wfwd',  w[1],     'Word on',     {off: !st.editing})
-       + cmdBtn('undo',  '↺', 'Put it back', {off: !st.dirty})
+       + cmdBtn('undo',  '↺', 'Undo',        {off: !st.dirty})
        + cmdBtn('own',   '✎', 'My own words',{off: !st.cards, on: !!st.own})
        + cmdBtn('hear',  '♪', 'Hear it',     {off: !st.editing && !st.own})
        + cmdBtn('settings', '⚙', 'Settings', {title: 'Settings - and the way back out of review'});
@@ -849,16 +874,33 @@ function barHTML(st){
 
 /* The dock. The same three-column grid whichever is showing, which is the whole
    reason one keyguard covers both. */
-var EP_PHRASES = ['Yes','No','Thank you','Hello','Goodbye','Please','I need help','Wait a moment',
-                  'I agree','Not sure','Later','Sorry','I like that','Too much','I am tired',
-                  'Say more','Mom','The clinic','Happy','Tired','Frustrated','My own words'];
+/* The panel holds three kinds of thing and they answer three different questions in
+   review, so the mock has to distinguish them rather than treating every cell as a
+   phrase (Ken, September 24 2026 - the panel has to be fully usable here).
+     phrase  - "I would rather have said this"
+     context - "I should have told it this first" (who I was with, where, how I felt).
+               These never speak, so several can be marked at once, and they are a
+               different answer from what the user would have SAID.
+     compose - "I would have typed it myself", the same as the command-strip button. */
+var EP_ITEMS = [
+  {t:'phrase', x:'Yes'},      {t:'phrase', x:'No'},        {t:'phrase', x:'Thank you'},
+  {t:'phrase', x:'Hello'},    {t:'phrase', x:'Goodbye'},   {t:'phrase', x:'Please'},
+  {t:'phrase', x:'I need help'}, {t:'phrase', x:'Wait a moment'}, {t:'phrase', x:'I agree'},
+  {t:'phrase', x:'Not sure'}, {t:'phrase', x:'Later'},     {t:'phrase', x:'Sorry'},
+  {t:'phrase', x:'I like that'}, {t:'phrase', x:'Too much'}, {t:'phrase', x:'I am tired'},
+  {t:'phrase', x:'Say more'},
+  {t:'context', k:'partner', x:'Mom'}, {t:'context', k:'place', x:'The clinic'},
+  {t:'context', k:'feeling', x:'Happy'}, {t:'context', k:'feeling', x:'Tired'},
+  {t:'context', k:'feeling', x:'Frustrated'},
+  {t:'compose', x:'My own words'}
+];
 /* `lit` is the phrase button a turn was spoken from. A user turn records where it came
    from - a card, a panel button, the typing box, one of the command phrases - and if it
    came from the panel there is NO card to mark, so the four on screen are the suggestions
    that were ignored. Lighting the button is the only way to show what actually happened,
    and it is the reason the panel is worth drawing in review at all. It is a mark, not a
    control: tapping a phrase speaks it, and nothing in review may speak by accident. */
-function dockHTML(kb, lit){
+function dockHTML(kb, lit, want, live){
   var h = '<div class="dgrid">';
   if(kb){
     var keys = ['q','w','e','r','t','y','u','i','o','p','a','s','d','f','g','h','j','k','l',
@@ -868,10 +910,23 @@ function dockHTML(kb, lit){
     });
   } else {
     for(var i=0;i<32;i++){
-      var t = EP_PHRASES[i] || '';
-      var used = (lit && t === lit);
-      h += '<div class="dcell' + (t ? '' : ' dim') + (used ? ' used' : '') + '">'
-         + esc(t) + (used ? '<span class="usedmk">you tapped this</span>' : '') + '</div>';
+      var it = EP_ITEMS[i];
+      if(!it){ h += '<div class="dcell dim"></div>'; continue; }
+      var t = it.x;
+      var used = !!(lit && t === lit);
+      var pref = !!(want && want.pick === t);
+      var ctx  = !!(want && want.ctx && want.ctx.indexOf(t) >= 0);
+      var tip  = it.t === 'context' ? 'tap if the app should have known this'
+               : it.t === 'compose' ? 'tap if you would rather have typed it yourself'
+                                    : 'tap if you would rather have said this';
+      h += '<div class="dcell ep-' + it.t + (used ? ' used' : '') + (pref ? ' want' : '')
+         + (ctx ? ' ctx' : '') + '"'
+         + (live ? ' data-cell="' + esc(t) + '" data-kind="' + it.t + '" title="' + tip + '"' : '')
+         + '>' + esc(t)
+         + (used ? '<span class="usedmk">you tapped this</span>' : '')
+         + (pref ? '<span class="wantmk">rather this</span>' : '')
+         + (ctx  ? '<span class="ctxmk">should have known</span>' : '')
+         + '</div>';
     }
   }
   h += '</div><div class="dlab">' + (kb ? 'the keyboard' : 'the phrase panel') + '</div>';
@@ -888,14 +943,15 @@ function wireBar(root, handlers){
   });
 }
 
-function tabletHTML(pane, bar, cards, kb, lit){
+function tabletHTML(pane, bar, cards, kb, lit, want, live, newBtn){
   return '<div class="tablet">'
        +   '<div class="tmain">'
        +     '<div class="tpane">' + pane + '</div>'
        +     '<div class="tbar">' + bar + '</div>'
        +     '<div class="tcards">' + cards + '</div>'
+       +     '<div class="tnew">' + (newBtn || '') + '</div>'
        +   '</div>'
-       +   '<div class="tdock">' + dockHTML(kb, lit) + '</div>'
+       +   '<div class="tdock">' + dockHTML(kb, lit, want, live) + '</div>'
        + '</div>';
 }
 
@@ -1138,7 +1194,8 @@ function renderStep(){
   $('stage').innerHTML = tabletHTML(
     conversationPaneHTML(stepAt, {wait:true}),
     barHTML({prev:stepAt>0, next:stepAt<MOMENTS.length-1, cards:false}),
-    cards, false, litPhrase(m));
+    cards, false, litPhrase(m), null, false,
+    '<div class="newbtn" style="opacity:.45">↻ New 4</div>');
   var root = $('stage');
   wireBar(root, {
     prev: function(){ if(stepAt>0){ stepAt--; renderStep(); } },
@@ -1279,7 +1336,7 @@ function saveEdit(){
    wanted. */
 function refreshUndo(){
   var V = verdicts[momentAt] || {};
-  var dirty = !!(V.text && V.text !== V.seed) || !!V.own || !!V.heardNote;
+  var dirty = canUndo();
   var b = document.querySelector('#moment .tbar .cmd:nth-child(6)');
   if(!b) return;
   if(dirty){
@@ -1291,10 +1348,30 @@ function refreshUndo(){
     b.removeAttribute('data-cmd');
   }
 }
+/* ⚠ IT IS A REAL UNDO, NOT A CLEAR, AND THE NAME IS THE REASON (Ken, September 24 2026:
+   if it is undo, call it undo). It used to wipe everything said about the moment while
+   being labelled "put it back", which is fine after changing one word on a card and
+   destructive after writing a sentence - one press and the sentence was gone. It now
+   steps back one action at a time, so pressing it repeatedly still reaches an untouched
+   moment and no single press can lose more than the last thing done.
+
+   A snapshot is taken before each DISCRETE action and once when an edit begins, never on
+   every keystroke: undo has to step back a word, not a letter, or it stops being usable
+   with the two word buttons. */
+var undoStacks = {};
+function snapshot(){
+  var st = undoStacks[momentAt] = undoStacks[momentAt] || [];
+  st.push(JSON.stringify(verdicts[momentAt] || {}));
+  if(st.length > 40) st.shift();
+}
+function canUndo(){ return !!(undoStacks[momentAt] && undoStacks[momentAt].length); }
 function undoMoment(){
-  /* the only control on the screen that takes anything away, so it is one press
-     and it puts back exactly what was there before the user touched it */
-  ed = null; verdicts[momentAt] = {}; saveVerdicts(); renderMoment();
+  var st = undoStacks[momentAt];
+  if(!st || !st.length) return;
+  try { verdicts[momentAt] = JSON.parse(st.pop()); } catch(e) { verdicts[momentAt] = {}; }
+  /* an edit in progress belongs to the state being stepped out of */
+  ed = null;
+  saveVerdicts(); renderMoment();
 }
 
 function renderMoment(){
@@ -1316,8 +1393,11 @@ function renderMoment(){
   $('moment').innerHTML = tabletHTML(pane, barHTML({
     prev: momentAt > 0, next: momentAt < MOMENTS.length - 1,
     cards: true, editing: !!ed, own: !!V.own,
-    dirty: !!(V.text && V.text !== V.seed) || !!V.own || !!V.heardNote
-  }), cards, !!ed, litPhrase(m));
+    dirty: canUndo()
+  }), cards, !!ed, litPhrase(m),
+     { pick: V.preferPhrase || null, ctx: V.context || [] }, !ed,
+     '<button class="newbtn' + (V.wantMore ? ' want' : '') + '" data-new="1">↻ New 4'
+       + (V.wantMore ? '<span class="wantmk">you would have asked for these</span>' : '') + '</button>');
 
   var root = $('moment');
 
@@ -1329,8 +1409,10 @@ function renderMoment(){
     wfwd:  function(){ if(ed) moveWord(1, renderMoment); },
     undo: undoMoment,
     own: function(){
+      snapshot();
+      V.wantMore = false; V.preferPhrase = undefined;
       V.own = !V.own;
-      if(V.own){ V.j = 'none'; V.closer = -1; V.text = ''; V.seed = undefined; startEdit('card', -1, ''); }
+      if(V.own){ V.j = 'none'; V.closer = -1; V.preferPhrase = undefined; V.text = ''; V.seed = undefined; startEdit('card', -1, ''); }
       else { ed = null; V.j = undefined; }
       saveVerdicts(); renderMoment();
     },
@@ -1342,7 +1424,10 @@ function renderMoment(){
   Array.prototype.forEach.call(root.querySelectorAll('[data-card]'), function(el){
     el.onclick = function(){
       var i = +el.getAttribute('data-card');
+      snapshot();
       V.own = false;
+      V.preferPhrase = undefined;
+      V.wantMore = false;
       V.closer = i;
       V.seed = list[i].text;
       if(V.text === undefined || V.text === '') V.text = list[i].text;
@@ -1352,6 +1437,53 @@ function renderMoment(){
     };
   });
 
+  /* ⚠ ONE ANSWER PER MOMENT, AND THERE ARE NOW FIVE WAYS TO GIVE IT: a card, a phrase
+     from the panel, the typing box, "New 4", or nothing. They all answer the same
+     question - what would you have done instead - so choosing one clears the others, or
+     a moment could carry two contradictory answers and neither would mean anything.
+
+     CONTEXT BUTTONS ARE NOT ONE OF THE FIVE. Marking "Tired" says what the app should
+     have KNOWN, not what the user would have SAID, so it sits alongside any of them and
+     several can be marked at once - exactly as several can be switched on in a real
+     conversation. */
+  function clearAnswer(){
+    V.preferPhrase = undefined; V.closer = -1; V.own = false; V.wantMore = false;
+    V.text = undefined; V.seed = undefined; ed = null;
+  }
+
+  Array.prototype.forEach.call(root.querySelectorAll('[data-cell]'), function(el){
+    el.onclick = function(){
+      var t = el.getAttribute('data-cell'), kind = el.getAttribute('data-kind');
+      snapshot();
+      if(kind === 'context'){
+        V.context = V.context || [];
+        var at = V.context.indexOf(t);
+        if(at >= 0) V.context.splice(at, 1); else V.context.push(t);
+      } else if(kind === 'compose'){
+        clearAnswer(); V.own = true; V.j = 'none'; V.text = ''; startEdit('card', -1, '');
+      } else if(V.preferPhrase === t){
+        clearAnswer(); V.j = undefined;
+      } else {
+        clearAnswer(); V.preferPhrase = t; V.j = 'phrase';
+      }
+      saveVerdicts(); renderMoment();
+    };
+  });
+
+  var nb = root.querySelector('[data-new]');
+  if(nb) nb.onclick = function(){
+    /* ⚠ IT MARKS, IT DOES NOT GENERATE (Ken, September 24 2026). Pressing it in review
+       says "I would have asked for a different set", which is a real answer and a
+       different one from "I would rather have said X" - it means none of these were
+       close and the user could not name what was missing. Actually producing four new
+       suggestions would spend money, invent a set that never existed, and leave the
+       record showing something the conversation never contained. */
+    snapshot();
+    if(V.wantMore){ V.wantMore = false; V.j = undefined; }
+    else { clearAnswer(); V.wantMore = true; V.j = 'wanted more'; }
+    saveVerdicts(); renderMoment();
+  };
+
   var heardEl = root.querySelector('[data-heard]');
   if(heardEl) heardEl.onclick = function(e){
     e.stopPropagation();
@@ -1360,6 +1492,7 @@ function renderMoment(){
           + 'microphone and nothing can have been misheard. This tap does nothing here.');
       return;
     }
+    snapshot();
     V.misheard = true;
     startEdit('heard', -1, V.heardNote || m.partner);
     saveVerdicts(); renderMoment();
@@ -1380,6 +1513,23 @@ function renderMoment(){
           + 'Anything written here still counts as an example of how you want to sound, and can '
           + 'still go on your buttons; a <i>fact</i> taken out of it is asked about first, because '
           + 'the situation was made up (see the next screen).</p>';
+  }
+  if(V.wantMore){
+    hint += '<p style="color:var(--init)"><b>Noted:</b> you would have asked for a different set '
+          + 'of suggestions. That is a different answer from naming one you would rather have said '
+          + '— it means none of these were close and you could not say what was missing. Nothing '
+          + 'was generated: review marks what you would have done, it does not do it.</p>';
+  }
+  if(V.context && V.context.length){
+    hint += '<p style="color:var(--warn)"><b>Noted:</b> the app should have known '
+          + esc(V.context.join(', ')) + '. That is about what it knew rather than what you would '
+          + 'have said, so it stands alongside whichever answer you gave.</p>';
+  }
+  if(V.preferPhrase){
+    hint += '<p style="color:var(--init)"><b>Noted:</b> you would rather have tapped “'
+          + esc(V.preferPhrase) + '”, a phrase you already have. That is worth knowing on its '
+          + 'own — it says the suggestions crowded out something the user owns, and it tells the '
+          + 'AI a phrase exists that it should leave room for.</p>';
   }
   if(m.flag) hint += '<p><span class="flag">Flagged:</span> ' + esc(m.flag) + '</p>';
   if(m.hintText) hint += '<p><b>About this moment:</b> ' + esc(m.hintText) + '</p>';
@@ -1509,6 +1659,13 @@ function gather(){
                 : (v.text === v.seed)    ? 'left the prefilled card unchanged'
                                          : 'edited the prefilled card';
         bits.push(how + ': "' + v.text.trim() + '"');
+      }
+      if(v.preferPhrase){
+        bits.push('would rather have tapped the panel button "' + v.preferPhrase + '"');
+      }
+      if(v.wantMore) bits.push('would have asked for a different set of suggestions');
+      if(v.context && v.context.length){
+        bits.push('says the app should have known: ' + v.context.join(', '));
       }
       if(v.misheard){
         bits.push('flagged a mishearing'
