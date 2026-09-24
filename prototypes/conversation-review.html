@@ -478,7 +478,11 @@ var MOMENTS = [
     ],
     took: -1,
     composed: "Some of those crackers, if you're going by the store.",
-    wait: 30, flag: "gave up and typed instead"
+    wait: 30, flag: "gave up and typed instead",
+    hintText: "In this made-up conversation she said “soup” and the app wrote down “soap”. "
+            + "Nothing on this screen knows that — only the user does, from having been there. So the app "
+            + "cannot point the mishearing out, and it cannot offer the button only where it went wrong: the "
+            + "button is on every moment, and what you write is shown as YOUR note, never as the record."
   },
   {
     partner: "All right, I should get going. See you Sunday.",
@@ -607,6 +611,19 @@ function cardHTML(c, i, opts){
        + '<span class="hint">'+esc(c.hint)+'</span>'+esc(c.text) + marks
        + '</button>';
 }
+/* The only correction that may ever appear beside a partner line is one the USER made,
+   and it is attributed to them. The app has no way of knowing it misheard somebody - if
+   it did, it would have written the right word down in the first place. */
+function noteHTML(i){
+  var v = verdicts[i];
+  if(!v || !v.misheard) return '';
+  return '<span class="heardwrong">You marked this as misheard'
+       + (v.heardNote && v.heardNote.trim()
+           ? ' — your note: &ldquo;' + esc(v.heardNote.trim()) + '&rdquo;'
+           : '.')
+       + '</span>';
+}
+
 function cardsHTML(list, opts){
   return '<div class="cards">' + list.map(function(c,i){
     return cardHTML(c, i, opts);
@@ -646,7 +663,7 @@ function renderStep(){
   var m = MOMENTS[stepAt];
   var h = '<div class="quiet" style="margin-bottom:8px">Moment '+(stepAt+1)+' of '+MOMENTS.length+'</div>'
         + '<div class="said"><b>Mom said:</b> “'+esc(m.partner)+'”'
-        + (m.reallySaid ? '<span class="heardwrong">The app heard this wrong. She actually said &ldquo;soup&rdquo;.</span>' : '')
+        + noteHTML(stepAt)
         + '</div>'
         + cardsHTML(m.usedSecondSet ? m.cards2 : m.cards, {took:m.took, closer:-1, clickable:false});
   if(m.took < 0){
@@ -670,7 +687,7 @@ function renderRead(){
     if(e.k==='partner'){
       var m = MOMENTS[e.m];
       h += '<div class="b-meta">Mom</div><div class="bubble b-them">“'+esc(m.partner)+'”'
-         + (m.reallySaid ? '<span class="heardwrong">heard wrong — she said &ldquo;soup&rdquo;</span>' : '')
+         + noteHTML(e.m)
          + '</div>';
     } else if(e.k==='you'){
       var mm = MOMENTS[e.m];
@@ -797,7 +814,7 @@ function renderMoment(){
     h += '<p class="quiet" style="margin:0 0 9px"><span class="flag">Flagged:</span> '+esc(m.flag)+'</p>';
   }
   h += '<div class="said"><b>Mom said:</b> “'+esc(m.partner)+'”'
-     + (m.reallySaid ? '<span class="heardwrong">The app wrote down &ldquo;soap&rdquo;. She said &ldquo;soup&rdquo;.</span>' : '')
+     + noteHTML(momentAt)
      + '</div>';
 
   if(m.usedSecondSet){
@@ -871,13 +888,23 @@ function renderMoment(){
        + '</div>';
   }
 
-  if(m.reallySaid){
-    h += '<div class="btnrow" style="margin-top:14px">'
-       +   '<button class="btn small'+(v.misheard?' on':'')+'" id="misheard">The app got her words wrong here</button>'
-       + '</div>'
-       + '<p class="quiet" style="margin-top:6px">This does not change the record — it puts a note '
-       + 'beside it. There is nothing here for the user to fix; it tells us where the listening struggles.</p>';
+  /* Offered on EVERY moment, not only the one we know is wrong - the app cannot know
+     which line it got wrong, so it cannot choose where to offer the button. */
+  h += '<div class="btnrow" style="margin-top:14px">'
+     +   '<button class="btn small'+(v.misheard?' on':'')+'" id="misheard">'
+     +     (v.misheard ? 'Marked as misheard' : 'The app got her words wrong here')
+     +   '</button>'
+     + '</div>';
+  if(v.misheard){
+    h += '<div style="margin-top:9px">'
+       +   '<label class="tl" for="heard'+momentAt+'">What did she actually say? (you can leave this blank)</label>'
+       +   '<textarea id="heard'+momentAt+'" rows="2" placeholder="Only if you remember — it helps us work out which words the listening struggles with.">'
+       +   esc(v.heardNote || '') + '</textarea>'
+       + '</div>';
   }
+  h += '<p class="quiet" style="margin-top:6px">This does not change the record — it puts a note '
+     + 'beside it, marked as yours. There is nothing here for the user to fix; it tells us where the '
+     + 'listening struggles.</p>';
 
   if(m.hintText){
     h += '<p class="quiet" style="margin-top:14px;padding-top:10px;border-top:1px dashed var(--line-soft)">'
@@ -962,6 +989,12 @@ function renderMoment(){
     V.text = V.cleared; V.seed = V.cleared; V.cleared = undefined;
     verdicts[momentAt] = V; saveVerdicts(); renderMoment();
   };
+  var hb = $('heard'+momentAt);
+  if(hb) hb.addEventListener('input', function(){
+    verdicts[momentAt] = verdicts[momentAt] || {};
+    verdicts[momentAt].heardNote = hb.value;
+    saveVerdicts();
+  });
   if($('misheard')) $('misheard').onclick = function(){
     verdicts[momentAt] = verdicts[momentAt] || {};
     verdicts[momentAt].misheard = !verdicts[momentAt].misheard;
@@ -1061,7 +1094,10 @@ function gather(){
                                          : 'edited the prefilled card';
         bits.push(how + ': "' + v.text.trim() + '"');
       }
-      if(v.misheard) bits.push('flagged a mishearing');
+      if(v.misheard){
+        bits.push('flagged a mishearing'
+          + (v.heardNote && v.heardNote.trim() ? ' (said she actually said: "' + v.heardNote.trim() + '")' : ''));
+      }
       if(bits.length) L.push('  Moment ' + (Number(k)+1) + ': ' + bits.join('; '));
     });
     L.push('');
