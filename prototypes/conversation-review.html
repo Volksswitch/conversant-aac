@@ -865,8 +865,8 @@ function cmdBtn(id, ic, lb, o){
 /* The nine, in order. `st` says which are live right now. */
 function barHTML(st){
   var w = wordIcons();
-  return cmdBtn('prev',  '◀', 'Previous',    {off: !st.prev})
-       + cmdBtn('next',  '▶', 'Next',        {off: !st.next})
+  return cmdBtn('prev',  '◀', 'Previous Turn', {off: !st.prev})
+       + cmdBtn('next',  '▶', 'Next Turn',     {off: !st.next})
        + cmdBtn('play',  '▶‖', 'Play it back', {on: !!st.playing})
        + cmdBtn('wback', w[0],     'Previous Word', {off: !st.editing})
        + cmdBtn('wfwd',  w[1],     'Next Word',     {off: !st.editing})
