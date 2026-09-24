@@ -1038,8 +1038,17 @@ function scrollPaneToCurrent(root){
      offsetTop is a page-level number - it read in the thousands and scrolled the pane to
      the very bottom every time, which looked exactly like the outline being on the wrong
      exchange. */
-  var delta = now.getBoundingClientRect().top - pane.getBoundingClientRect().top;
-  pane.scrollTop = Math.max(0, pane.scrollTop + delta - pane.clientHeight / 3);
+  var marks = root.querySelectorAll('.cnow');
+  var last  = marks[marks.length - 1];
+  var pr    = pane.getBoundingClientRect();
+  var top   = pane.scrollTop + (now.getBoundingClientRect().top - pr.top);
+  var want  = Math.max(0, top - 24);
+  /* both halves of the exchange have to be visible. Putting the first line a third of
+     the way down looked tidy and cut the user's own reply in half, which reads as a
+     rendering fault rather than as scrolling. */
+  var bottom = pane.scrollTop + (last.getBoundingClientRect().bottom - pr.top);
+  if(bottom - want > pane.clientHeight) want = bottom - pane.clientHeight + 10;
+  pane.scrollTop = Math.max(0, Math.min(want, top - 8));
 }
 
 /* ====================== screen 2: moving through it ====================== */
