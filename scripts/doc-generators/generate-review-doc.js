@@ -265,6 +265,8 @@ const doc = new Document({
             boldPara("There is nothing for the user to fix here, and the screen should not pretend otherwise. ", "A mishearing is handled while it happens, by asking the other person to repeat themselves. Afterwards it is a report, not a correction."),
             boldPara("⚠ The app cannot point a mishearing out, and the screen must never look as though it could. ", "If it knew the word was wrong it would have written the right one down. So nothing is marked until the user marks it, the control is offered on every moment rather than only on the ones that went wrong, and whatever they write appears beside the line labeled as theirs. A screen that showed the correction before they made it would be claiming knowledge the app does not have, and would quietly teach the user that the app catches its own mistakes."),
             boldPara("They may also say what the other person actually said, and it is optional. ", "That one word is the most useful thing in the whole report for us — it is the difference between knowing that transcription struggles and knowing which sounds it struggles with. It is asked for after the flag rather than instead of it, because somebody who only remembers that a line was wrong should still be able to say so."),
+            boldPara("That box starts out holding what the app heard, so a mishearing is a one-word edit. ", "The alternative is retyping a whole sentence to change a single sound, which nobody will do twice — and this is a correction we actively want, so the cost of making it has to be close to nothing."),
+            boldPara("⚠ Nothing the app says about a partner may guess at their gender. ", "The app records who the user was talking with, so its own labels use that person's name — \"What did Mom actually say?\", \"Mom waited twelve seconds\" — and where no name is known it says \"the other person\". This is not only a matter of courtesy: a pronoun the app picked is a fact it invented about somebody who never told it anything, in a product whose central discipline is never putting words or facts into anybody's mouth."),
             emptyPara(),
 
             // ===== 7 =====
@@ -288,7 +290,7 @@ const doc = new Document({
                     ["“This one was right”, or a sentence they typed", "Kept as an example of how they want to sound", "Suggestions gradually read more like them"],
                     ["A fact the app did not have — they love iced tea, their sister lives nearby", "“About Me”, the notes about that person, or the details of that place", "The AI can use it from then on"],
                     ["A phrase they keep reaching for", "A button on the Express Panel, for everyone or for one person", "One tap instead of typing it again"],
-                    ["“It got her words wrong”", "A comment beside the record, and a report to us", "Nothing for them; it tells us where transcription struggles"],
+                    ["“It wrote down the wrong words”", "A comment beside the record, and a report to us", "Nothing for them; it tells us where transcription struggles"],
                     ["“It was too slow”, or a silence they could hear was too long", "A setting", "The timing changes"],
                     ["“Nothing was wrong — I just wanted to say something else”", "Nothing is fixed. The sentence is still kept.", "Only the voice examples"]
                 ],

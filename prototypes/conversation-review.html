@@ -366,7 +366,7 @@ which is the point of showing it to you now rather than later.</p>
         <td style="padding:7px 9px;border:1px solid var(--line-soft)">About Me, the notes about that person, or the details of that place</td></tr>
     <tr><td style="padding:7px 9px;border:1px solid var(--line-soft)">A phrase they keep reaching for</td>
         <td style="padding:7px 9px;border:1px solid var(--line-soft)">A button, for everyone or for one person</td></tr>
-    <tr><td style="padding:7px 9px;border:1px solid var(--line-soft)">&ldquo;It got her words wrong&rdquo;</td>
+    <tr><td style="padding:7px 9px;border:1px solid var(--line-soft)">&ldquo;It wrote down the wrong words&rdquo;</td>
         <td style="padding:7px 9px;border:1px solid var(--line-soft)">A note beside the record. Nothing for them to fix; it tells us where the listening struggles</td></tr>
     <tr><td style="padding:7px 9px;border:1px solid var(--line-soft)">&ldquo;It was too slow&rdquo;</td>
         <td style="padding:7px 9px;border:1px solid var(--line-soft)">A setting they can change</td></tr>
@@ -416,6 +416,10 @@ which is the point of showing it to you now rather than later.</p>
    and typed, a mishearing, a turn where Mom put choices on the table, and a
    closing. Times are seconds from the start.
    ====================================================================== */
+
+var PARTNER = 'Mom';   /* the app records who the conversation was with, so its own
+                          labels use the name - a pronoun in app chrome would be
+                          guessing at a partner's gender, which it has no business doing */
 
 var MOMENTS = [
   {
@@ -479,7 +483,7 @@ var MOMENTS = [
     took: -1,
     composed: "Some of those crackers, if you're going by the store.",
     wait: 30, flag: "gave up and typed instead",
-    hintText: "In this made-up conversation she said “soup” and the app wrote down “soap”. "
+    hintText: "In this made-up conversation Mom said “soup” and the app wrote down “soap”. "
             + "Nothing on this screen knows that — only the user does, from having been there. So the app "
             + "cannot point the mishearing out, and it cannot offer the button only where it went wrong: the "
             + "button is on every moment, and what you write is shown as YOUR note, never as the record."
@@ -619,7 +623,7 @@ function noteHTML(i){
   if(!v || !v.misheard) return '';
   return '<span class="heardwrong">You marked this as misheard'
        + (v.heardNote && v.heardNote.trim()
-           ? ' — your note: &ldquo;' + esc(v.heardNote.trim()) + '&rdquo;'
+           ? '. You say it was: &ldquo;' + esc(v.heardNote.trim()) + '&rdquo;'
            : '.')
        + '</span>';
 }
@@ -653,7 +657,7 @@ function setMode(m){
   } else {
     $('modeNote').innerHTML = '<b>Playing it back.</b> Roughly two minutes at the real speed. '
       + '<b>It is a reconstruction, not a recording:</b> the other person’s voice was never kept, '
-      + 'and the app only knows when her words reached it, not when she stopped speaking — so the '
+      + 'and the app only knows when their words reached it, not when they stopped speaking — so the '
       + 'silences shown here are, if anything, shorter than the real ones were.';
     renderPlay();
   }
@@ -770,7 +774,7 @@ function drawTimeline(){
   var live = $('liveWait');
   if(live){
     live.innerHTML = (!answered && lastPartnerT !== null && playing)
-      ? '<div class="waiting">she has been waiting <span class="n">'
+      ? '<div class="waiting">'+PARTNER+' has been waiting <span class="n">'
         + Math.floor(playT - lastPartnerT) + '</span> seconds…</div>'
       : '';
   }
@@ -792,7 +796,7 @@ function eventHTML(e){
   var said = m.took < 0 ? m.composed : (m.usedSecondSet ? m.cards2 : m.cards)[m.took].text;
   var waited = lastPartnerT === null ? 0 : Math.round(e.t - lastPartnerT);
   answered = true;
-  return '<div class="waiting">she waited <span class="n">'+waited+'</span> seconds</div>'
+  return '<div class="waiting">'+PARTNER+' waited <span class="n">'+waited+'</span> seconds</div>'
        + row(e.t, '<span class="e-you"><b>You:</b> “'+esc(said)+'”</span>');
 }
 
@@ -868,7 +872,7 @@ function renderMoment(){
     var none = (v.j === 'none');
     h += '<div style="margin-top:12px">'
        +   '<label class="tl" for="pref'+momentAt+'">'
-       +     (none   ? 'Then say it in your own words. What did you want to tell her?'
+       +     (none   ? 'Then say it in your own words. What did you want to tell '+PARTNER+'?'
        :     seeded  ? 'Change this into what you would rather have said'
                      : 'What would you rather have said?')
        +   '</label>'
@@ -892,13 +896,13 @@ function renderMoment(){
      which line it got wrong, so it cannot choose where to offer the button. */
   h += '<div class="btnrow" style="margin-top:14px">'
      +   '<button class="btn small'+(v.misheard?' on':'')+'" id="misheard">'
-     +     (v.misheard ? 'Marked as misheard' : 'The app got her words wrong here')
+     +     (v.misheard ? 'Marked as misheard' : 'The app wrote down the wrong words here')
      +   '</button>'
      + '</div>';
   if(v.misheard){
     h += '<div style="margin-top:9px">'
-       +   '<label class="tl" for="heard'+momentAt+'">What did she actually say? (you can leave this blank)</label>'
-       +   '<textarea id="heard'+momentAt+'" rows="2" placeholder="Only if you remember — it helps us work out which words the listening struggles with.">'
+       +   '<label class="tl" for="heard'+momentAt+'">What did '+PARTNER+' actually say? (you can leave this blank, if you want)</label>'
+       +   '<textarea id="heard'+momentAt+'" rows="2" placeholder="Change the part that came out wrong.">'
        +   esc(v.heardNote || '') + '</textarea>'
        + '</div>';
   }
@@ -997,7 +1001,12 @@ function renderMoment(){
   });
   if($('misheard')) $('misheard').onclick = function(){
     verdicts[momentAt] = verdicts[momentAt] || {};
-    verdicts[momentAt].misheard = !verdicts[momentAt].misheard;
+    var V = verdicts[momentAt];
+    V.misheard = !V.misheard;
+    /* Start them from what the app HEARD, so correcting one word is an edit rather than
+       retyping the sentence (Ken, September 23 2026). Never overwritten once they have
+       touched it, and not re-seeded if they un-flag and flag again. */
+    if(V.misheard && V.heardNote === undefined) V.heardNote = m.partner;
     saveVerdicts(); renderMoment();
   };
 }
@@ -1096,7 +1105,7 @@ function gather(){
       }
       if(v.misheard){
         bits.push('flagged a mishearing'
-          + (v.heardNote && v.heardNote.trim() ? ' (said she actually said: "' + v.heardNote.trim() + '")' : ''));
+          + (v.heardNote && v.heardNote.trim() ? ' (what was actually said: "' + v.heardNote.trim() + '")' : ''));
       }
       if(bits.length) L.push('  Moment ' + (Number(k)+1) + ': ' + bits.join('; '));
     });
