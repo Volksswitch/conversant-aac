@@ -254,6 +254,10 @@
   /* the influencer buttons read as a different kind of thing in the app, and must here */
   .dcell.ep-context{background:#FBF7F2;color:#6d4c41}
   .dcell.ep-compose{background:#FAFAFA;color:#455A64;font-style:italic}
+  .dcell.ep-flex{background:#F2F7F4;color:#2f5d46}
+  .dcell.ep-flex.empty-flex{background:#F7F9F8;border-style:dashed;color:#B0BEC5}
+  .dcell.ep-audio{font-style:italic}
+  .dcell.ep-audio::before{content:'♪ '}
   .dcell.ctx{background:#FFF3E0;border-color:var(--warn);color:#6b3d00;font-weight:bold;
              flex-direction:column;gap:1px}
   .ctxmk{font-size:7.5px;font-weight:bold;color:var(--warn);text-transform:uppercase;
@@ -874,32 +878,53 @@ function barHTML(st){
 
 /* The dock. The same three-column grid whichever is showing, which is the whole
    reason one keyguard covers both. */
-/* The panel holds three kinds of thing and they answer three different questions in
-   review, so the mock has to distinguish them rather than treating every cell as a
-   phrase (Ken, September 24 2026 - the panel has to be fully usable here).
-     phrase  - "I would rather have said this"
-     context - "I should have told it this first" (who I was with, where, how I felt).
-               These never speak, so several can be marked at once, and they are a
-               different answer from what the user would have SAID.
-     compose - "I would have typed it myself", the same as the command-strip button. */
-var EP_ITEMS = [
-  {t:'phrase', x:'Yes'},      {t:'phrase', x:'No'},        {t:'phrase', x:'Thank you'},
-  {t:'phrase', x:'Hello'},    {t:'phrase', x:'Goodbye'},   {t:'phrase', x:'Please'},
-  {t:'phrase', x:'I need help'}, {t:'phrase', x:'Wait a moment'}, {t:'phrase', x:'I agree'},
-  {t:'phrase', x:'Not sure'}, {t:'phrase', x:'Later'},     {t:'phrase', x:'Sorry'},
-  {t:'phrase', x:'I like that'}, {t:'phrase', x:'Too much'}, {t:'phrase', x:'I am tired'},
-  {t:'phrase', x:'Say more'},
-  {t:'context', k:'partner', x:'Mom'}, {t:'context', k:'place', x:'The clinic'},
-  {t:'context', k:'feeling', x:'Happy'}, {t:'context', k:'feeling', x:'Tired'},
-  {t:'context', k:'feeling', x:'Frustrated'},
-  {t:'compose', x:'My own words'}
+/* ---------------------------------------------------------------------------
+   THE PANEL HAS THREE BANDS, AND THE MIDDLE ONE IS A FUNCTION OF THE OTHERS.
+
+   ALWAYS  - never changes.
+   FLEX    - the phrases and sounds that suit this partner and this place. It is
+             EMPTY until a partner or a place is switched on, and its contents
+             change with them.
+   CONTEXT - the buttons that never speak: who I am with, where I am, how I feel.
+
+   ⚠ WHY THIS MATTERS IN REVIEW (Ken, September 24 2026). Marking a context
+   button was described as saying only "the app should have known this". That is
+   wrong whenever the user then takes a phrase or a sound out of the Flex band,
+   because THAT PHRASE ONLY EXISTS BECAUSE THE CONTEXT BUTTON IS ON. The two are
+   one answer in two steps - "I would have said I was with Mom, and then tapped
+   this" - and reporting them as separate marks loses the thing that connects
+   them. So a Flex answer records what had to be switched on to reach it.
+   --------------------------------------------------------------------------- */
+var EP_ALWAYS = ['Yes','No','Thank you','Hello','Goodbye','Please','I need help',
+                 'Wait a moment','I agree','Not sure','Later','Sorry','I like that',
+                 'Too much','I am tired','Say more','That is funny'];
+var EP_COMPOSE = 'My own words';
+var EP_CONTEXT = [
+  {k:'partner', x:'Mom'}, {k:'partner', x:'Marcus'}, {k:'partner', x:'Dr. Ruiz'},
+  {k:'place',   x:'Home'}, {k:'place',  x:'The clinic'},
+  {k:'feeling', x:'Happy'}, {k:'feeling', x:'Tired'}, {k:'feeling', x:'Frustrated'}
 ];
-/* `lit` is the phrase button a turn was spoken from. A user turn records where it came
-   from - a card, a panel button, the typing box, one of the command phrases - and if it
-   came from the panel there is NO card to mark, so the four on screen are the suggestions
-   that were ignored. Lighting the button is the only way to show what actually happened,
-   and it is the reason the panel is worth drawing in review at all. It is a mark, not a
-   control: tapping a phrase speaks it, and nothing in review may speak by accident. */
+/* what the Flex band fills with, most specific first, exactly as the app does */
+var EP_FLEX = {
+  'Mom':        [{x:'Say hi to Dad'}, {x:"My back's bad today"}, {x:'Love you'},
+                 {x:'our song', audio:true}],
+  'Marcus':     [{x:'Same time next week?'}, {x:'Your round'}],
+  'Dr. Ruiz':   [{x:"It's my back again"}, {x:'Can you write that down?'}],
+  'Home':       [{x:"I'll be in my room"}],
+  'The clinic': [{x:'Can you write that down?'}, {x:'I need to sit down'}]
+};
+var FLEX_SLOTS = 6;
+
+function flexFor(on){
+  var out = [], seen = {};
+  (on || []).forEach(function(label){
+    (EP_FLEX[label] || []).forEach(function(it){
+      if(!seen[it.x]){ seen[it.x] = 1; out.push(it); }
+    });
+  });
+  return out.slice(0, FLEX_SLOTS);
+}
+
 function dockHTML(kb, lit, want, live){
   var h = '<div class="dgrid">';
   if(kb){
@@ -908,28 +933,55 @@ function dockHTML(kb, lit, want, live){
     keys.forEach(function(k){
       h += '<div class="dcell key">' + esc(k === 'space' ? '␣' : k) + '</div>';
     });
-  } else {
-    for(var i=0;i<32;i++){
-      var it = EP_ITEMS[i];
-      if(!it){ h += '<div class="dcell dim"></div>'; continue; }
-      var t = it.x;
-      var used = !!(lit && t === lit);
-      var pref = !!(want && want.pick === t);
-      var ctx  = !!(want && want.ctx && want.ctx.indexOf(t) >= 0);
-      var tip  = it.t === 'context' ? 'tap if the app should have known this'
-               : it.t === 'compose' ? 'tap if you would rather have typed it yourself'
-                                    : 'tap if you would rather have said this';
-      h += '<div class="dcell ep-' + it.t + (used ? ' used' : '') + (pref ? ' want' : '')
-         + (ctx ? ' ctx' : '') + '"'
-         + (live ? ' data-cell="' + esc(t) + '" data-kind="' + it.t + '" title="' + tip + '"' : '')
-         + '>' + esc(t)
+    h += '</div><div class="dlab">the keyboard</div>';
+    return h;
+  }
+
+  want = want || {};
+  var on   = want.ctx || [];
+  var flex = flexFor(on);
+
+  function cell(t, kind, cls, extra){
+    var used = !!(lit && t === lit);
+    var pref = !!(want.pick === t);
+    var mark = !!(kind === 'context' && on.indexOf(t) >= 0);
+    return '<div class="dcell ' + cls + (used ? ' used' : '') + (pref ? ' want' : '')
+         + (mark ? ' ctx' : '') + '"'
+         + (live && t ? ' data-cell="' + esc(t) + '" data-kind="' + kind + '"'
+                      + ' title="' + esc(extra || '') + '"' : '')
+         + '>' + esc(t || '')
          + (used ? '<span class="usedmk">you tapped this</span>' : '')
          + (pref ? '<span class="wantmk">rather this</span>' : '')
-         + (ctx  ? '<span class="ctxmk">should have known</span>' : '')
+         + (mark ? '<span class="ctxmk">would have been on</span>' : '')
          + '</div>';
-    }
   }
-  h += '</div><div class="dlab">' + (kb ? 'the keyboard' : 'the phrase panel') + '</div>';
+
+  EP_ALWAYS.forEach(function(t){
+    h += cell(t, 'phrase', 'ep-always', 'tap if you would rather have said this');
+  });
+  h += cell(EP_COMPOSE, 'compose', 'ep-compose', 'tap if you would rather have typed it yourself');
+
+  /* THE FLEX BAND KEEPS ITS SLOTS WHETHER OR NOT ANYTHING FILLS THEM. It is empty
+     until a partner or a place is switched on - which is the point being shown - but
+     the cells have to stay where they are, or switching one on would move every
+     button below it. */
+  for(var f = 0; f < FLEX_SLOTS; f++){
+    var it = flex[f];
+    if(!it){ h += '<div class="dcell ep-flex empty-flex"></div>'; continue; }
+    h += cell(it.x, it.audio ? 'audio' : 'flexphrase', 'ep-flex' + (it.audio ? ' ep-audio' : ''),
+              it.audio ? 'tap if you would rather have played this'
+                       : 'tap if you would rather have said this');
+  }
+
+  EP_CONTEXT.forEach(function(c){
+    h += cell(c.x, 'context', 'ep-context', 'tap if you would have had this switched on');
+  });
+
+  h += '</div>'
+     + '<div class="dlab">the phrase panel'
+     + (on.length ? ' — the middle band is what &ldquo;' + esc(on.join('&rdquo; and &ldquo;'))
+                    + '&rdquo; puts there' : ' — the middle band fills when a person or place is on')
+     + '</div>';
   return h;
 }
 
@@ -1447,7 +1499,8 @@ function renderMoment(){
      several can be marked at once - exactly as several can be switched on in a real
      conversation. */
   function clearAnswer(){
-    V.preferPhrase = undefined; V.closer = -1; V.own = false; V.wantMore = false;
+    V.preferPhrase = undefined; V.preferAudio = undefined; V.preferNeeded = undefined;
+    V.closer = -1; V.own = false; V.wantMore = false;
     V.text = undefined; V.seed = undefined; ed = null;
   }
 
@@ -1459,12 +1512,27 @@ function renderMoment(){
         V.context = V.context || [];
         var at = V.context.indexOf(t);
         if(at >= 0) V.context.splice(at, 1); else V.context.push(t);
+        /* switching one off can empty the band the chosen phrase came out of, and an
+           answer pointing at a button that is no longer there means nothing */
+        if(V.preferNeeded){
+          var still = flexFor(V.context).some(function(it){ return it.x === V.preferPhrase; });
+          if(!still){ V.preferPhrase = undefined; V.preferAudio = undefined;
+                      V.preferNeeded = undefined; V.j = undefined; }
+        }
       } else if(kind === 'compose'){
         clearAnswer(); V.own = true; V.j = 'none'; V.text = ''; startEdit('card', -1, '');
       } else if(V.preferPhrase === t){
         clearAnswer(); V.j = undefined;
       } else {
-        clearAnswer(); V.preferPhrase = t; V.j = 'phrase';
+        var needed = (kind === 'flexphrase' || kind === 'audio') ? (V.context || []).slice() : null;
+        clearAnswer();
+        V.preferPhrase = t;
+        V.preferAudio = (kind === 'audio') || undefined;
+        /* WHAT HAD TO BE SWITCHED ON TO REACH IT. A Flex phrase only exists because a
+           person or a place is on, so the answer is the pair - recording the phrase
+           alone would name a button that is not on the panel by default. */
+        V.preferNeeded = (needed && needed.length) ? needed : undefined;
+        V.j = 'phrase';
       }
       saveVerdicts(); renderMoment();
     };
@@ -1520,12 +1588,21 @@ function renderMoment(){
           + '— it means none of these were close and you could not say what was missing. Nothing '
           + 'was generated: review marks what you would have done, it does not do it.</p>';
   }
-  if(V.context && V.context.length){
-    hint += '<p style="color:var(--warn)"><b>Noted:</b> the app should have known '
-          + esc(V.context.join(', ')) + '. That is about what it knew rather than what you would '
-          + 'have said, so it stands alongside whichever answer you gave.</p>';
+  if(V.context && V.context.length && !V.preferNeeded){
+    hint += '<p style="color:var(--warn)"><b>Noted:</b> you would have had '
+          + esc(V.context.join(', ')) + ' switched on. On its own that is about what the app '
+          + 'knew rather than what you would have said, so it stands alongside whichever answer '
+          + 'you gave.</p>';
   }
-  if(V.preferPhrase){
+  if(V.preferNeeded){
+    hint += '<p style="color:var(--init)"><b>Noted, and it is one answer in two steps:</b> you '
+          + 'would have switched on ' + esc(V.preferNeeded.join(' and ')) + ', and then '
+          + (V.preferAudio ? 'played “' : 'tapped “') + esc(V.preferPhrase) + '”. That '
+          + (V.preferAudio ? 'sound' : 'phrase') + ' is only on the panel because '
+          + esc(V.preferNeeded.join(' and ')) + ' is on, so the two are recorded together — the '
+          + 'phrase on its own would name a button that is not normally there.</p>';
+  }
+  if(V.preferPhrase && !V.preferNeeded){
     hint += '<p style="color:var(--init)"><b>Noted:</b> you would rather have tapped “'
           + esc(V.preferPhrase) + '”, a phrase you already have. That is worth knowing on its '
           + 'own — it says the suggestions crowded out something the user owns, and it tells the '
@@ -1661,11 +1738,13 @@ function gather(){
         bits.push(how + ': "' + v.text.trim() + '"');
       }
       if(v.preferPhrase){
-        bits.push('would rather have tapped the panel button "' + v.preferPhrase + '"');
+        bits.push('would rather have ' + (v.preferAudio ? 'played' : 'tapped') + ' the panel button "'
+          + v.preferPhrase + '"'
+          + (v.preferNeeded ? ' (which needs ' + v.preferNeeded.join(' and ') + ' switched on)' : ''));
       }
       if(v.wantMore) bits.push('would have asked for a different set of suggestions');
-      if(v.context && v.context.length){
-        bits.push('says the app should have known: ' + v.context.join(', '));
+      if(v.context && v.context.length && !v.preferNeeded){
+        bits.push('would have had these switched on: ' + v.context.join(', '));
       }
       if(v.misheard){
         bits.push('flagged a mishearing'

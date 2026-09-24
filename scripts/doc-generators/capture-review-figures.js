@@ -51,11 +51,13 @@ const PROTO = path.resolve(__dirname, '..', '..', 'prototypes', 'conversation-re
         await page.evaluate(() => { ed = null; verdicts = {}; momentAt = 4; renderMoment(); });
     });
 
-    // 4  the other ways of saying what they would have done instead
+    // 4  one answer in two steps - switch a person on, then take a phrase that only
+    //    exists because they are on
     await shot(4, '#moment', async () => {
+        const tap = t => page.evaluate(x => { document.querySelector('#moment [data-cell="' + x + '"]').click(); }, t);
         await page.evaluate(() => { ed = null; verdicts = {}; undoStacks = {}; momentAt = 1; renderMoment(); });
-        await page.evaluate(() => { document.querySelector('#moment [data-new]').click(); });
-        await page.evaluate(() => { document.querySelector('#moment [data-cell="Tired"]').click(); });
+        await tap('Mom');
+        await tap("My back's bad today");
     });
 
     // 5  a card being rewritten in place, with one word highlighted and the keyboard up
