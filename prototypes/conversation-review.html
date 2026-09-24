@@ -423,15 +423,15 @@ var MOMENTS = [
     cards: [
       {s:'pref', hint:"Good, busy",       text:"Pretty good, thanks — busy though."},
       {s:'disp', hint:"Not great",        text:"Honestly, not my best week."},
-      {s:'init', hint:"Better now",       text:"Better now that you've called."},
+      {s:'init', hint:"Better now",       text:"Better now that you're here."},
       {s:'rep',  hint:"Say again?",       text:"Sorry — could you say that again?"}
     ],
     took: 0, wait: 12, flag: null
   },
   {
-    partner: "We were thinking of driving up to see you on Sunday — does that work?",
+    partner: "We were wondering if you could come to us on Sunday — does that work?",
     cards: [
-      {s:'pref', hint:"Sunday's fine",      text:"Sunday works, come on up."},
+      {s:'pref', hint:"Sunday's fine",      text:"Sunday works, I'll come to you."},
       {s:'disp', hint:"Not Sunday",         text:"I'd love to, but Sunday isn't great for me."},
       {s:'init', hint:"Saturday instead?",  text:"Could we make it Saturday instead?"},
       {s:'rep',  hint:"Which Sunday?",      text:"Sorry — which Sunday do you mean?"}
@@ -456,10 +456,10 @@ var MOMENTS = [
     took: 0, usedSecondSet: true, wait: 21, flag: "asked for different suggestions"
   },
   {
-    partner: "Shall I bring lunch, or would you rather go out?",
+    partner: "Shall I cook, or would you rather go out?",
     closedSet: true,
     cards: [
-      {s:'pref', hint:"Bring lunch",  text:"Bring lunch — that would be lovely."},
+      {s:'pref', hint:"You cook",    text:"Cooking at yours would be lovely."},
       {s:'pref', hint:"Go out",       text:"Let's go out, my treat."},
       {s:'disp', hint:"Neither",      text:"Actually, I'd rather just have coffee."},
       {s:'init', hint:"You pick",     text:"Whichever is easier for you."}
@@ -468,8 +468,8 @@ var MOMENTS = [
     hintText: "When the other person puts choices on the table, the four suggestions become those choices instead of the usual four kinds of reply."
   },
   {
-    partner: "I'll bring that soap you like. Anything else you need?",
-    reallySaid: "I'll bring that soup you like. Anything else you need?",
+    partner: "I'll make that soap you like. Anything else you need?",
+    reallySaid: "I'll make that soup you like. Anything else you need?",
     cards: [
       {s:'pref', hint:"Nothing, thanks", text:"That's plenty, thank you."},
       {s:'disp', hint:"Don't bother",    text:"Please don't go to any trouble."},
@@ -481,7 +481,7 @@ var MOMENTS = [
     wait: 30, flag: "gave up and typed instead"
   },
   {
-    partner: "All right, I'll let you go. See you Sunday.",
+    partner: "All right, I should get going. See you Sunday.",
     closing: true,
     cards: [
       {s:'slate', hint:"See you Sunday", text:"See you Sunday. Love you."},
