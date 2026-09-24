@@ -378,8 +378,8 @@ which is the point of showing it to you now rather than later.</p>
 <!-- ============================== SEND ============================== -->
 <div class="sheet center">
   <h2>When you are done</h2>
-  <p class="quiet">This gathers everything you wrote into one block of text. Copy it and email it to
-  <b>volksswitch@gmail.com</b>. Nothing is sent by this page.</p>
+  <p class="quiet">This gathers everything you wrote into one block of text. Copy it and paste it
+  into a reply to whoever sent you this page. Nothing is sent by the page itself.</p>
   <button class="bigbtn" id="gather">Gather everything I wrote</button>
   <span id="okmsg" class="okmsg"></span>
   <textarea id="out" class="out" placeholder="Your answers will appear here." spellcheck="false"></textarea>
@@ -954,7 +954,7 @@ function copyAll(){
   var ok = false;
   try{ ok = document.execCommand('copy'); }catch(e){ ok = false; }
   $('okmsg').textContent = ok
-    ? 'Copied. Paste it into an email to volksswitch@gmail.com.'
+    ? 'Copied. Paste it into your reply.'
     : 'This browser would not let the page copy. Select the text below and copy it by hand.';
 }
 
