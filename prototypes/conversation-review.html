@@ -375,14 +375,14 @@ which is the point of showing it to you now rather than later.</p>
   question. <b>Is reviewing a rehearsal worth having, or would a client only ever want to look at
   real conversations?</b></div>
 
-  <p class="quiet" style="margin-top:12px">The app knows which moments the user themselves
+  <p class="quiet" style="margin-top:12px">The app knows which turns the user themselves
   asked for something different at the time &mdash; where they pressed for other suggestions, or
   gave up and typed instead &mdash; so it can say so on the row. It is a hint, not a filter:
-  <b>the app cannot know which moment actually mattered to them</b>, and it should not pretend to.</p>
+  <b>the app cannot know which turn actually mattered to them</b>, and it should not pretend to.</p>
 
   <div class="cbox">
     <label for="c1">Your comments on this screen</label>
-    <textarea id="c1" rows="3" placeholder="Would someone find their way here? Is the right information on a row? Does the highlighting of difficult moments help, or does it steer them?"></textarea>
+    <textarea id="c1" rows="3" placeholder="Would someone find their way here? Is the right information on a row? Does the highlighting of difficult turns help, or does it steer them?"></textarea>
   </div>
 </div>
 
@@ -397,9 +397,9 @@ which is the point of showing it to you now rather than later.</p>
   own layout would need its own keyguard.</p>
 
   <div class="note"><b>Two of the three ways through turned out to be one.</b> We had been treating
-  &ldquo;step through it one moment at a time&rdquo; and &ldquo;read the whole thing&rdquo; as
+  &ldquo;step through it one turn at a time&rdquo; and &ldquo;read the whole thing&rdquo; as
   separate features. On this screen they are not: the whole conversation sits in the pane at the top
-  with the exchange you are on outlined, so the two moment buttons move the outline and
+  with the exchange you are on outlined, so the two turn buttons move the outline and
   <b>tapping any line moves it straight there</b>. Scrolling to the part you remember and stepping
   through one at a time are the same screen.
   <br><br>
@@ -426,7 +426,7 @@ which is the point of showing it to you now rather than later.</p>
 <div class="sheet">
   <p class="step">Screen 3 of 4 &mdash; the one we most need answered</p>
   <h2>Saying what you would rather have said</h2>
-  <p>Here is the moment the user wants to talk about. The conversation is in the pane at the top with
+  <p>Here is the turn the user wants to talk about. The conversation is in the pane at the top with
   that exchange outlined; the four suggestions are below, exactly as they appeared.
   <b>Tapping the card you would have wanted rewrites it in place</b> &mdash; there is no separate
   writing box, because the sentence and the card are the same thing.</p>
@@ -448,7 +448,7 @@ which is the point of showing it to you now rather than later.</p>
   which is worth knowing on its own, because under a four-second clock people take the first card
   that will do. Change the words &mdash; close, but here is how you would have put it. Press
   &ldquo;my own words&rdquo; &mdash; none of them were any use. Walk past without touching anything
-  and nothing is recorded, which is how skipping a moment stays different from approving it.</div>
+  and nothing is recorded, which is how skipping a turn stays different from approving it.</div>
 
   <div class="note"><b>One highlighted word is the cursor.</b> A text cursor is a one-pixel line
   between two letters &mdash; hard to see and hard to hit. So instead there is always exactly one
@@ -470,7 +470,7 @@ which is the point of showing it to you now rather than later.</p>
     <button class="btn small" id="vPrac">a rehearsal</button>
   </div>
 
-  <div id="moment"></div>
+  <div id="turnScreen"></div>
 
   <p class="quiet" style="margin-top:10px">This page is running in a browser, so type with your own
   keyboard. On the device the keyboard fills the panel down the side, on the very same grid as the
@@ -479,9 +479,9 @@ which is the point of showing it to you now rather than later.</p>
   <div id="mHint" class="quiet" style="margin-top:10px"></div>
 
   <div class="btnrow">
-    <button class="btn small" id="prevM">&larr; Previous moment</button>
+    <button class="btn small" id="prevM">&larr; Previous turn</button>
     <span class="quiet" id="mCount" style="align-self:center"></span>
-    <button class="btn small" id="nextM">Next moment &rarr;</button>
+    <button class="btn small" id="nextM">Next turn &rarr;</button>
   </div>
 
   <div class="cbox">
@@ -585,7 +585,7 @@ var PARTNER = 'Mom';   /* the app records who the conversation was with, so its 
                           labels use the name - a pronoun in app chrome would be
                           guessing at a partner's gender, which it has no business doing */
 
-var MOMENTS = [
+var TURNS = [
   {
     partner: "Hi, honey. How was your week?",
     cards: [
@@ -666,7 +666,7 @@ var MOMENTS = [
     hintText: "In this made-up conversation Mom said “soup” and the app wrote down “soap”. "
             + "Nothing on this screen knows that — only the user does, from having been there. So the app "
             + "cannot point the mishearing out, and it cannot offer the button only where it went wrong: the "
-            + "button is on every moment, and what you write is shown as YOUR note, never as the record."
+            + "button is on every turn, and what you write is shown as YOUR note, never as the record."
   },
   {
     partner: "All right, I should get going. See you Sunday.",
@@ -713,7 +713,7 @@ var DURATION = 130;
    may be learned from them differs (see the note on this screen). */
 var CONVS = [
   {when:"Tue Sep 22, 2:14 pm", who:"Mom",      where:"Home",          len:"12 min, 6 replies",
-   state:'<span class="flag">2 moments you asked for something else</span> &middot; <span class="nope">not looked at</span>', live:true},
+   state:'<span class="flag">2 turns you asked for something else</span> &middot; <span class="nope">not looked at</span>', live:true},
   {when:"Mon Sep 21, 9:40 am", who:"Dr. Ruiz", where:"The clinic",    len:"6 min, 4 replies",
    state:'<span class="done">finished</span>'},
   {when:"Sun Sep 20, 6:05 pm", who:"Marcus",   where:"The diner",     len:"21 min, 17 replies",
@@ -740,7 +740,7 @@ var QUESTIONS = [
   {id:'q5', h:"How many of their conversations would a client realistically review?",
    why:"The design assumes most are never opened. That assumption should be checked rather than hoped for.",
    opts:["Nearly all","The ones that went badly","One now and then","Essentially none"]},
-  {id:'q6', h:"Does the app flagging its own difficult moments help, or does it steer them?",
+  {id:'q6', h:"Does the app flagging its own difficult turns help, or does it steer them?",
    why:"It is the app saying where it thinks it did badly. That could be useful, or it could push attention away from what actually mattered to the user.",
    opts:["Helps","Helps if it is clearly optional","Steers them too much","No view"]},
   {id:'q7', h:"Should review ever summarize — how a week went, how often suggestions were used?",
@@ -1145,7 +1145,7 @@ function saidBy(m){
 function conversationPaneHTML(cur, opts){
   opts = opts || {};
   var h = '';
-  MOMENTS.forEach(function(m, i){
+  TURNS.forEach(function(m, i){
     var v = verdicts[i] || {};
     var here = (i === cur);
     var mine = v.misheard
@@ -1159,7 +1159,7 @@ function conversationPaneHTML(cur, opts){
          + '<span class="cthem' + (here ? ' cnow' : '') + '" data-goto="' + i + '"'
          + (here && opts.correctable
               ? ' data-heard="1" title="tap again to correct what was written down"'
-              : ' title="tap to go to this moment"')
+              : ' title="tap to go to this turn"')
          + '>“' + esc(m.partner) + '”' + mine + '</span></div>';
     }
     if(here && opts.wait){
@@ -1171,7 +1171,7 @@ function conversationPaneHTML(cur, opts){
     h += '<div class="cline" style="text-align:right"><div class="cwho">You'
        + esc(cameFrom(m)) + '</div>'
        + '<span class="cyou' + (here ? ' cnow' : '') + '" data-goto="' + i + '"'
-       + ' title="tap to go to this moment">“' + esc(saidBy(m)) + '”</span></div>';
+       + ' title="tap to go to this turn">“' + esc(saidBy(m)) + '”</span></div>';
     if(here && opts.own){
       h += '<div class="cline" style="text-align:right"><div class="cwho">what you would rather have said</div>'
          + '<span class="cyou" style="background:#FFFDF0;border-color:var(--init)">' + wordsHTML() + '</span></div>';
@@ -1220,7 +1220,7 @@ function setMode(m){
   stopPlay();
   if(m !== 'play'){
     $('modeNote').innerHTML = '<b>Moving through it.</b> The whole conversation is in the pane at '
-      + 'the top and the exchange you are on is outlined. The two moment buttons move the outline, '
+      + 'the top and the exchange you are on is outlined. The two turn buttons move the outline, '
       + 'and tapping any other line moves it straight there — so scrolling to a part you '
       + 'remember and stepping through one at a time are the same screen, not two features. What it '
       + 'loses is the timing: nothing here says that the second reply took eighteen seconds to arrive.';
@@ -1238,26 +1238,26 @@ function setMode(m){
 }
 
 function renderStep(){
-  var m = MOMENTS[stepAt];
+  var m = TURNS[stepAt];
   var list = m.usedSecondSet ? m.cards2 : m.cards;
   var cards = list.map(function(c,i){
     return tcardHTML(c, i, {took:m.took, closer:-1, editing:-1});
   }).join('');
   $('stage').innerHTML = tabletHTML(
     conversationPaneHTML(stepAt, {wait:true}),
-    barHTML({prev:stepAt>0, next:stepAt<MOMENTS.length-1, cards:false}),
+    barHTML({prev:stepAt>0, next:stepAt<TURNS.length-1, cards:false}),
     cards, false, litPhrase(m), null, false,
     '<div class="newbtn" style="opacity:.45">↻ New 4</div>');
   var root = $('stage');
   wireBar(root, {
     prev: function(){ if(stepAt>0){ stepAt--; renderStep(); } },
-    next: function(){ if(stepAt<MOMENTS.length-1){ stepAt++; renderStep(); } },
+    next: function(){ if(stepAt<TURNS.length-1){ stepAt++; renderStep(); } },
     play: function(){ setMode('play'); },
     settings: leaveAlert
   });
   wireGoto(root, stepAt, function(i){ stepAt = i; renderStep(); });
   Array.prototype.forEach.call(root.querySelectorAll('[data-card]'), function(el){
-    el.onclick = function(){ ed = null; momentAt = stepAt; renderMoment(); $('moment').scrollIntoView({block:'center'}); };
+    el.onclick = function(){ ed = null; turnAt = stepAt; renderTurn(); $('turnScreen').scrollIntoView({block:'center'}); };
   });
   scrollPaneToCurrent(root);
 }
@@ -1340,7 +1340,7 @@ function drawTimeline(){
 function paintPlayCards(mi, second){
   var box = $('stage').querySelector('.tcards');
   if(!box) return;
-  var m = MOMENTS[mi];
+  var m = TURNS[mi];
   box.innerHTML = (second ? m.cards2 : m.cards).map(function(c,i){
     return tcardHTML(c, i, {took:-1, closer:-1, editing:-1});
   }).join('');
@@ -1351,13 +1351,13 @@ function eventHTML(e){
   if(e.k === 'partner'){
     lastPartnerT = e.t; answered = false;
     return '<div class="cline"><div class="cwho">' + stamp + esc(PARTNER) + '</div>'
-         + '<span class="cthem">“' + esc(MOMENTS[e.m].partner) + '”</span></div>';
+         + '<span class="cthem">“' + esc(TURNS[e.m].partner) + '”</span></div>';
   }
   if(e.k === 'app')    return '<div class="cappsaid">' + stamp + 'the app said “' + esc(e.text) + '”</div>';
   if(e.k === 'cards'){ paintPlayCards(e.m, false); return '<div class="cappsaid" style="color:var(--init)">' + stamp + 'four suggestions appeared</div>'; }
   if(e.k === 'cards2'){ paintPlayCards(e.m, true); return '<div class="cappsaid" style="color:var(--init)">' + stamp + 'four different suggestions appeared</div>'; }
   if(e.k === 'act')    return '<div class="cappsaid" style="color:var(--warn)">' + stamp + esc(e.text) + '</div>';
-  var m = MOMENTS[e.m];
+  var m = TURNS[e.m];
   var waited = lastPartnerT === null ? 0 : Math.round(e.t - lastPartnerT);
   answered = true;
   return '<div class="cwait">' + esc(PARTNER) + ' waited <span class="n">' + waited + '</span> seconds</div>'
@@ -1365,13 +1365,13 @@ function eventHTML(e){
        + '<span class="cyou">“' + esc(saidBy(m)) + '”</span></div>';
 }
 
-/* ====================== screen 3: one moment ====================== */
-var momentAt = 1;                  /* start on the Sunday one - it is the interesting case */
-var verdicts = {};                 /* what the reviewer did, per moment */
+/* ====================== screen 3: one turn ====================== */
+var turnAt = 1;                  /* start on the Sunday one - it is the interesting case */
+var verdicts = {};                 /* what the reviewer did, per turn */
 
 function saveEdit(){
   if(!ed) return;
-  var V = verdicts[momentAt] = verdicts[momentAt] || {};
+  var V = verdicts[turnAt] = verdicts[turnAt] || {};
   if(ed.kind === 'card'){
     V.text = edText();
     if(V.text !== V.seed) V.j = 'closest';
@@ -1387,63 +1387,63 @@ function saveEdit(){
    updated on its own. It was sitting greyed out during the only moment it is
    wanted. */
 function refreshUndo(){
-  var V = verdicts[momentAt] || {};
+  var V = verdicts[turnAt] || {};
   var dirty = canUndo();
-  var b = document.querySelector('#moment .tbar .cmd:nth-child(6)');
+  var b = document.querySelector('#turnScreen .tbar .cmd:nth-child(6)');
   if(!b) return;
   if(dirty){
     b.removeAttribute('disabled');
     b.setAttribute('data-cmd','undo');
-    b.onclick = undoMoment;
+    b.onclick = undoTurn;
   } else {
     b.setAttribute('disabled','');
     b.removeAttribute('data-cmd');
   }
 }
 /* ⚠ IT IS A REAL UNDO, NOT A CLEAR, AND THE NAME IS THE REASON (Ken, September 24 2026:
-   if it is undo, call it undo). It used to wipe everything said about the moment while
+   if it is undo, call it undo). It used to wipe everything said about the turn while
    being labelled "put it back", which is fine after changing one word on a card and
    destructive after writing a sentence - one press and the sentence was gone. It now
    steps back one action at a time, so pressing it repeatedly still reaches an untouched
-   moment and no single press can lose more than the last thing done.
+   turn and no single press can lose more than the last thing done.
 
    A snapshot is taken before each DISCRETE action and once when an edit begins, never on
    every keystroke: undo has to step back a word, not a letter, or it stops being usable
    with the two word buttons. */
 var undoStacks = {};
 function snapshot(){
-  var st = undoStacks[momentAt] = undoStacks[momentAt] || [];
-  st.push(JSON.stringify(verdicts[momentAt] || {}));
+  var st = undoStacks[turnAt] = undoStacks[turnAt] || [];
+  st.push(JSON.stringify(verdicts[turnAt] || {}));
   if(st.length > 40) st.shift();
 }
-function canUndo(){ return !!(undoStacks[momentAt] && undoStacks[momentAt].length); }
-function undoMoment(){
-  var st = undoStacks[momentAt];
+function canUndo(){ return !!(undoStacks[turnAt] && undoStacks[turnAt].length); }
+function undoTurn(){
+  var st = undoStacks[turnAt];
   if(!st || !st.length) return;
-  try { verdicts[momentAt] = JSON.parse(st.pop()); } catch(e) { verdicts[momentAt] = {}; }
+  try { verdicts[turnAt] = JSON.parse(st.pop()); } catch(e) { verdicts[turnAt] = {}; }
   /* an edit in progress belongs to the state being stepped out of */
   ed = null;
-  saveVerdicts(); renderMoment();
+  saveVerdicts(); renderTurn();
 }
 
-function renderMoment(){
-  var m = MOMENTS[momentAt];
-  var V = verdicts[momentAt] = verdicts[momentAt] || {};
+function renderTurn(){
+  var m = TURNS[turnAt];
+  var V = verdicts[turnAt] = verdicts[turnAt] || {};
   var list = m.usedSecondSet ? m.cards2 : m.cards;
 
   var editingCard  = (ed && ed.kind === 'card') ? ed.ci : -1;
   var editingHeard = !!(ed && ed.kind === 'heard');
   var closer = (V.closer === undefined) ? -1 : V.closer;
 
-  var pane = conversationPaneHTML(momentAt, {
+  var pane = conversationPaneHTML(turnAt, {
     wait:true, correctable:true, editHeard:editingHeard, own:!!V.own
   });
   var cards = V.own ? emptyCardsHTML(4) : list.map(function(c,i){
     return tcardHTML(c, i, {took:m.took, closer:closer, editing:editingCard});
   }).join('');
 
-  $('moment').innerHTML = tabletHTML(pane, barHTML({
-    prev: momentAt > 0, next: momentAt < MOMENTS.length - 1,
+  $('turnScreen').innerHTML = tabletHTML(pane, barHTML({
+    prev: turnAt > 0, next: turnAt < TURNS.length - 1,
     cards: true, editing: !!ed, own: !!V.own,
     dirty: canUndo()
   }), cards, !!ed, litPhrase(m),
@@ -1451,22 +1451,22 @@ function renderMoment(){
      '<button class="newbtn' + (V.wantMore ? ' want' : '') + '" data-new="1">↻ New 4'
        + (V.wantMore ? '<span class="wantmk">you would have asked for these</span>' : '') + '</button>');
 
-  var root = $('moment');
+  var root = $('turnScreen');
 
   wireBar(root, {
-    prev: function(){ ed = null; if(momentAt>0){ momentAt--; renderMoment(); } },
-    next: function(){ ed = null; if(momentAt<MOMENTS.length-1){ momentAt++; renderMoment(); } },
+    prev: function(){ ed = null; if(turnAt>0){ turnAt--; renderTurn(); } },
+    next: function(){ ed = null; if(turnAt<TURNS.length-1){ turnAt++; renderTurn(); } },
     play: function(){ setMode('play'); $('stage').scrollIntoView({block:'center'}); },
-    wback: function(){ if(ed) moveWord(-1, renderMoment); },
-    wfwd:  function(){ if(ed) moveWord(1, renderMoment); },
-    undo: undoMoment,
+    wback: function(){ if(ed) moveWord(-1, renderTurn); },
+    wfwd:  function(){ if(ed) moveWord(1, renderTurn); },
+    undo: undoTurn,
     own: function(){
       snapshot();
       V.wantMore = false; V.preferPhrase = undefined;
       V.own = !V.own;
       if(V.own){ V.j = 'none'; V.closer = -1; V.preferPhrase = undefined; V.text = ''; V.seed = undefined; startEdit('card', -1, ''); }
       else { ed = null; V.j = undefined; }
-      saveVerdicts(); renderMoment();
+      saveVerdicts(); renderTurn();
     },
     hear: function(){ speak(edText() || V.text || ''); },
     settings: leaveAlert
@@ -1485,14 +1485,14 @@ function renderMoment(){
       if(V.text === undefined || V.text === '') V.text = list[i].text;
       V.j = (V.text !== V.seed) ? 'closest' : (i === m.took ? 'right' : 'better card');
       startEdit('card', i, V.text);
-      saveVerdicts(); renderMoment();
+      saveVerdicts(); renderTurn();
     };
   });
 
   /* ⚠ ONE ANSWER PER MOMENT, AND THERE ARE NOW FIVE WAYS TO GIVE IT: a card, a phrase
      from the panel, the typing box, "New 4", or nothing. They all answer the same
      question - what would you have done instead - so choosing one clears the others, or
-     a moment could carry two contradictory answers and neither would mean anything.
+     a turn could carry two contradictory answers and neither would mean anything.
 
      CONTEXT BUTTONS ARE NOT ONE OF THE FIVE. Marking "Tired" says what the app should
      have KNOWN, not what the user would have SAID, so it sits alongside any of them and
@@ -1534,7 +1534,7 @@ function renderMoment(){
         V.preferNeeded = (needed && needed.length) ? needed : undefined;
         V.j = 'phrase';
       }
-      saveVerdicts(); renderMoment();
+      saveVerdicts(); renderTurn();
     };
   });
 
@@ -1549,7 +1549,7 @@ function renderMoment(){
     snapshot();
     if(V.wantMore){ V.wantMore = false; V.j = undefined; }
     else { clearAnswer(); V.wantMore = true; V.j = 'wanted more'; }
-    saveVerdicts(); renderMoment();
+    saveVerdicts(); renderTurn();
   };
 
   var heardEl = root.querySelector('[data-heard]');
@@ -1563,14 +1563,14 @@ function renderMoment(){
     snapshot();
     V.misheard = true;
     startEdit('heard', -1, V.heardNote || m.partner);
-    saveVerdicts(); renderMoment();
+    saveVerdicts(); renderTurn();
   };
 
-  wireGoto(root, momentAt, function(i){ ed = null; momentAt = i; renderMoment(); });
-  wireWords(root, renderMoment);
+  wireGoto(root, turnAt, function(i){ ed = null; turnAt = i; renderTurn(); });
+  wireWords(root, renderTurn);
   scrollPaneToCurrent(root);
 
-  $('mCount').textContent = 'Moment ' + (momentAt+1) + ' of ' + MOMENTS.length;
+  $('mCount').textContent = 'Turn ' + (turnAt+1) + ' of ' + TURNS.length;
 
   /* the explanation lives OUTSIDE the tablet - it is us talking to a reviewer,
      not anything the app would ever show */
@@ -1609,7 +1609,7 @@ function renderMoment(){
           + 'AI a phrase exists that it should leave room for.</p>';
   }
   if(m.flag) hint += '<p><span class="flag">Flagged:</span> ' + esc(m.flag) + '</p>';
-  if(m.hintText) hint += '<p><b>About this moment:</b> ' + esc(m.hintText) + '</p>';
+  if(m.hintText) hint += '<p><b>About this turn:</b> ' + esc(m.hintText) + '</p>';
   if(closer >= 0 && m.took >= 0 && closer !== m.took){
     hint += '<p style="color:var(--warn)"><b>Noted:</b> a different card would have suited you '
           + 'better than the one you used. That is worth knowing on its own — it usually means '
@@ -1617,7 +1617,7 @@ function renderMoment(){
   }
   if(V.text && V.seed !== undefined && V.text !== V.seed){
     hint += '<p style="color:var(--pref)"><b>Kept:</b> “' + esc(V.text) + '”. In the app '
-          + 'you would be asked, on leaving this moment, whether to keep any of it — see the '
+          + 'you would be asked, on leaving this turn, whether to keep any of it — see the '
           + 'next screen.</p>';
     $('confQuote').innerHTML = '“' + esc(V.text) + '”';
   }
@@ -1692,7 +1692,7 @@ function gather(){
   var screens = [
     ['Screen 1 - finding the conversation', 'c1'],
     ['Screen 2 - three ways through',       'c2'],
-    ['Screen 3 - looking at one moment',    'c3'],
+    ['Screen 3 - looking at one turn',    'c3'],
     ['Screen 4 - what comes of it',         'c4']
   ];
   screens.forEach(function(s){
@@ -1725,7 +1725,7 @@ function gather(){
       var v = verdicts[k];
       var bits = [];
       if(v.j) bits.push('marked "' + v.j + '"');
-      var mm = MOMENTS[k];
+      var mm = TURNS[k];
       if(v.closer !== undefined && v.closer >= 0 && v.closer !== mm.took){
         bits.push('said card ' + (mm.took + 1) + ' but marked card ' + (v.closer + 1) + ' as closer');
       }
@@ -1750,7 +1750,7 @@ function gather(){
         bits.push('flagged a mishearing'
           + (v.heardNote && v.heardNote.trim() ? ' (what was actually said: "' + v.heardNote.trim() + '")' : ''));
       }
-      if(bits.length) L.push('  Moment ' + (Number(k)+1) + ': ' + bits.join('; '));
+      if(bits.length) L.push('  Turn ' + (Number(k)+1) + ': ' + bits.join('; '));
     });
     L.push('');
   }
@@ -1775,20 +1775,20 @@ function copyAll(){
 try{ verdicts = JSON.parse(load('verdicts') || '{}') || {}; }catch(e){ verdicts = {}; }
 renderList();
 setMode('step');
-renderMoment();
+renderTurn();
 renderQuestions();
 renderConf();
 ['who','c1','c2','c3','c4'].forEach(function(id){ wireField($(id)); });
 
 $('mStep').onclick = function(){ setMode('step'); };
 $('mPlay').onclick = function(){ setMode('play'); };
-$('prevM').onclick = function(){ ed = null; if(momentAt>0){ momentAt--; renderMoment(); } };
-$('nextM').onclick = function(){ ed = null; if(momentAt<MOMENTS.length-1){ momentAt++; renderMoment(); } };
+$('prevM').onclick = function(){ ed = null; if(turnAt>0){ turnAt--; renderTurn(); } };
+$('nextM').onclick = function(){ ed = null; if(turnAt<TURNS.length-1){ turnAt++; renderTurn(); } };
 /* both open questions are switchable on the page rather than described */
-$('icA').onclick = function(){ ICONSET='A'; $('icA').classList.add('on'); $('icB').classList.remove('on'); renderMoment(); };
-$('icB').onclick = function(){ ICONSET='B'; $('icB').classList.add('on'); $('icA').classList.remove('on'); renderMoment(); };
-$('vReal').onclick = function(){ PRACTICE_VIEW=false; $('vReal').classList.add('on'); $('vPrac').classList.remove('on'); renderMoment(); renderConf(); };
-$('vPrac').onclick = function(){ PRACTICE_VIEW=true;  $('vPrac').classList.add('on'); $('vReal').classList.remove('on'); renderMoment(); renderConf(); };
+$('icA').onclick = function(){ ICONSET='A'; $('icA').classList.add('on'); $('icB').classList.remove('on'); renderTurn(); };
+$('icB').onclick = function(){ ICONSET='B'; $('icB').classList.add('on'); $('icA').classList.remove('on'); renderTurn(); };
+$('vReal').onclick = function(){ PRACTICE_VIEW=false; $('vReal').classList.add('on'); $('vPrac').classList.remove('on'); renderTurn(); renderConf(); };
+$('vPrac').onclick = function(){ PRACTICE_VIEW=true;  $('vPrac').classList.add('on'); $('vReal').classList.remove('on'); renderTurn(); renderConf(); };
 $('gather').onclick = gather;
 $('copyAll').onclick = copyAll;
 </script>

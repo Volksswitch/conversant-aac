@@ -42,37 +42,37 @@ const PROTO = path.resolve(__dirname, '..', '..', 'prototypes', 'conversation-re
     await shot(1, '.sheet:nth-of-type(2) .device');
 
     // 2  the review screen at rest, on the conversation layout
-    await shot(2, '#moment', async () => {
-        await page.evaluate(() => { ed = null; verdicts = {}; momentAt = 1; renderMoment(); });
+    await shot(2, '#turnScreen', async () => {
+        await page.evaluate(() => { ed = null; verdicts = {}; turnAt = 1; renderTurn(); });
     });
 
     // 3  a turn the user spoke from their own panel - no card to mark, so the button is lit
-    await shot(3, '#moment', async () => {
-        await page.evaluate(() => { ed = null; verdicts = {}; momentAt = 4; renderMoment(); });
+    await shot(3, '#turnScreen', async () => {
+        await page.evaluate(() => { ed = null; verdicts = {}; turnAt = 4; renderTurn(); });
     });
 
     // 4  one answer in two steps - switch a person on, then take a phrase that only
     //    exists because they are on
-    await shot(4, '#moment', async () => {
-        const tap = t => page.evaluate(x => { document.querySelector('#moment [data-cell="' + x + '"]').click(); }, t);
-        await page.evaluate(() => { ed = null; verdicts = {}; undoStacks = {}; momentAt = 1; renderMoment(); });
+    await shot(4, '#turnScreen', async () => {
+        const tap = t => page.evaluate(x => { document.querySelector('#turnScreen [data-cell="' + x + '"]').click(); }, t);
+        await page.evaluate(() => { ed = null; verdicts = {}; undoStacks = {}; turnAt = 1; renderTurn(); });
         await tap('Mom');
         await tap("My back's bad today");
     });
 
     // 5  a card being rewritten in place, with one word highlighted and the keyboard up
-    await shot(5, '#moment', async () => {
-        await page.evaluate(() => { ed = null; verdicts = {}; momentAt = 1; renderMoment(); });
-        await page.click('#moment .tcards > *:nth-child(2)');
-        await page.click('#moment .tbar [data-cmd="wfwd"]');
-        await page.click('#moment .tbar [data-cmd="wfwd"]');
-        await page.type('#moment #winp', 'difficult');
+    await shot(5, '#turnScreen', async () => {
+        await page.evaluate(() => { ed = null; verdicts = {}; turnAt = 1; renderTurn(); });
+        await page.click('#turnScreen .tcards > *:nth-child(2)');
+        await page.click('#turnScreen .tbar [data-cmd="wfwd"]');
+        await page.click('#turnScreen .tbar [data-cmd="wfwd"]');
+        await page.type('#turnScreen #winp', 'difficult');
     });
 
     // 6  correcting what the app wrote down, on the other person's own line
-    await shot(6, '#moment', async () => {
-        await page.evaluate(() => { ed = null; verdicts = {}; momentAt = 1; renderMoment(); });
-        await page.evaluate(() => { document.querySelector('#moment [data-heard]').click(); });
+    await shot(6, '#turnScreen', async () => {
+        await page.evaluate(() => { ed = null; verdicts = {}; turnAt = 1; renderTurn(); });
+        await page.evaluate(() => { document.querySelector('#turnScreen [data-heard]').click(); });
     });
 
     // 7  played back at the real speed, with the wait counting up
