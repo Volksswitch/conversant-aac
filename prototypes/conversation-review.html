@@ -9,7 +9,7 @@
   Deliberately NOT in app/, so it is never deployed and never becomes something that
   has to be maintained. Open it directly in a browser; there is nothing to install.
 
-  WHAT IT IS ACTUALLY FOR - the seven questions at the foot of the page. Everything
+  WHAT IT IS ACTUALLY FOR - the seven questions at the bottom of the page. Everything
   above them exists so that those can be answered by somebody who has touched the
   thing rather than read about it. The single biggest one is which way through a
   conversation should be the normal one, which is why all three are live here.
@@ -216,7 +216,7 @@ which is the point of showing it to you now rather than later.</p>
   <p><b>What would help most.</b> Click through the four screens below and write down anything
   at all in the comment box under each one &mdash; including &ldquo;this would never work&rdquo;
   and &ldquo;I do not understand what this is for&rdquo;. Then answer as many of the seven
-  questions at the foot of the page as you have patience for. At the very bottom is a button
+  questions at the bottom of the page as you have patience for. At the very bottom is a button
   that gathers everything you wrote into one block of text for you to copy into an email.</p>
 
   <p class="quiet">Nothing you type leaves this page. It is kept in your own browser so you can
@@ -336,7 +336,7 @@ which is the point of showing it to you now rather than later.</p>
 
   <div class="device"><div class="screen">
     <div class="conf">
-      <h4>Shall I keep anything from that?</h4>
+      <h4>Want me to keep any of this?</h4>
       <div class="quoted" id="confQuote">&ldquo;I&rsquo;d rather you came here &mdash; my back has been rough this week.&rdquo;</div>
 
       <label class="opt"><input type="checkbox" id="k1" checked>
@@ -419,7 +419,7 @@ which is the point of showing it to you now rather than later.</p>
 
 var MOMENTS = [
   {
-    partner: "Hi, honey. How has your week been?",
+    partner: "Hi, honey. How was your week?",
     cards: [
       {s:'pref', hint:"Good, busy",       text:"Pretty good, thanks — busy though."},
       {s:'disp', hint:"Not great",        text:"Honestly, not my best week."},
@@ -429,9 +429,9 @@ var MOMENTS = [
     took: 0, wait: 12, flag: null
   },
   {
-    partner: "We were wondering if you could come to us on Sunday — does that work?",
+    partner: "We were wondering if you could come over on Sunday — does that work?",
     cards: [
-      {s:'pref', hint:"Sunday's fine",      text:"Sunday works, I'll come to you."},
+      {s:'pref', hint:"Sunday's fine",      text:"Sunday works, I'll come over."},
       {s:'disp', hint:"Not Sunday",         text:"I'd love to, but Sunday isn't great for me."},
       {s:'init', hint:"Saturday instead?",  text:"Could we make it Saturday instead?"},
       {s:'rep',  hint:"Which Sunday?",      text:"Sorry — which Sunday do you mean?"}
@@ -440,26 +440,26 @@ var MOMENTS = [
     hintText: "This is the one to try the buttons on. The user said yes to Sunday — but what they wanted to say was that their back has been bad and they would rather not travel."
   },
   {
-    partner: "Lovely. What time suits you?",
+    partner: "Great. What time works for you?",
     cards: [
       {s:'pref', hint:"Whenever",      text:"Any time is fine by me."},
-      {s:'disp', hint:"Not early",     text:"Not first thing, if that's all right."},
+      {s:'disp', hint:"Not early",     text:"Not first thing, if that's okay."},
       {s:'init', hint:"After lunch?",  text:"Would after lunch work for you?"},
       {s:'rep',  hint:"Which day?",    text:"Sorry — we're talking about Sunday?"}
     ],
     cards2: [
       {s:'pref', hint:"Early afternoon", text:"Early afternoon is best."},
       {s:'disp', hint:"Depends",         text:"It depends how the morning goes."},
-      {s:'init', hint:"You choose",      text:"Whatever suits you — you're the one driving."},
+      {s:'init', hint:"You choose",      text:"Whatever works for you — you're the one driving."},
       {s:'rep',  hint:"How long?",       text:"How long will you be staying?"}
     ],
     took: 0, usedSecondSet: true, wait: 21, flag: "asked for different suggestions"
   },
   {
-    partner: "Shall I cook, or would you rather go out?",
+    partner: "Do you want me to cook, or would you rather go out?",
     closedSet: true,
     cards: [
-      {s:'pref', hint:"You cook",    text:"Cooking at yours would be lovely."},
+      {s:'pref', hint:"You cook",    text:"Your cooking sounds great."},
       {s:'pref', hint:"Go out",       text:"Let's go out, my treat."},
       {s:'disp', hint:"Neither",      text:"Actually, I'd rather just have coffee."},
       {s:'init', hint:"You pick",     text:"Whichever is easier for you."}
@@ -477,7 +477,7 @@ var MOMENTS = [
       {s:'rep',  hint:"Soap?",           text:"Sorry — soap?"}
     ],
     took: -1,
-    composed: "Some of those crackers, if you're passing the store.",
+    composed: "Some of those crackers, if you're going by the store.",
     wait: 30, flag: "gave up and typed instead"
   },
   {
