@@ -99,6 +99,11 @@
   .s-rep {border-left:6px solid var(--rep);background:var(--rep-bg)}
   .s-slate{border-left:6px solid var(--slate);background:var(--slate-bg)}
   .tookit{display:block;font-size:11.5px;color:var(--pref);font-weight:bold;margin-top:5px}
+  /* The judgment mark is deliberately NOT the same treatment as "you said this" -
+     one is what happened, the other is what the user now thinks, and they can sit
+     on different cards at the same time. */
+  .closest{display:block;font-size:11.5px;color:var(--brand);font-weight:bold;margin-top:5px}
+  .rcard.closer{box-shadow:0 0 0 2px var(--brand)}
 
   .btn{font:inherit;font-size:14px;border:1px solid #90A4AE;border-radius:5px;padding:8px 13px;
        background:#fff;color:#37474F;cursor:pointer}
@@ -292,6 +297,18 @@ which is the point of showing it to you now rather than later.</p>
   would mean rating two the user never considered. So we ask only about the one that was closest.
   <b>Is that the right call?</b></div>
 
+  <div class="note"><b>The card they used may not be the one that would have suited them.</b>
+  Under a four-second clock people take the first one that will do. So every card can be tapped, and
+  tapping one means &ldquo;that is the one that came closest to what I wanted&rdquo; &mdash; which may
+  well not be the one they said. When the two marks land on different cards, that is a finding on its
+  own: usually a card worded badly, or no time to read down to it.
+  <br><br>
+  <b>And the writing box starts out filled in.</b> It arrives holding the words of whichever card is
+  marked closest, so they change a few of them rather than writing from nothing &mdash; the slowest
+  thing anybody does on this device. Press &ldquo;None of them&rdquo; and it starts empty instead,
+  because nudging somebody toward wording they have just rejected would be worse than a blank box.
+  <b>Do either of these help, or do they stop the user saying what they really meant?</b></div>
+
   <div class="device">
     <div class="screen" id="moment"></div>
   </div>
@@ -304,7 +321,7 @@ which is the point of showing it to you now rather than later.</p>
 
   <div class="cbox">
     <label for="c3">Your comments on this screen</label>
-    <textarea id="c3" rows="4" placeholder="Is the question clear? Would a client type a whole sentence here? Is asking about only the closest card right, or should they mark each one?"></textarea>
+    <textarea id="c3" rows="4" placeholder="Is the question clear? Would a client type a whole sentence here? Is it obvious that the cards can be tapped? Does a box that starts out filled in help, or does it put words in their mouth?"></textarea>
   </div>
 </div>
 
@@ -516,7 +533,7 @@ var QUESTIONS = [
    why:"Stepping is quick. Reading it all lets someone go straight to the part they remember. Playing it back is the only way to feel how long the silences were.",
    opts:["Step through it","Read it all","Play it back","All three, with a choice","None of them work"]},
   {id:'q2', h:"Would a client really write a whole sentence in review?",
-   why:"The argument for it is that nobody is waiting, so there is no time pressure. The argument against is that typing is tiring whether or not anyone is waiting.",
+   why:"Nobody is waiting, and the box starts out holding the words they actually said, so it is an edit rather than a blank page. Against that, typing is tiring whether or not anyone is waiting - and a client who only tweaks what we handed them is telling us less about how they would put it.",
    opts:["Yes, readily","Some would","Only with help","Very unlikely"]},
   {id:'q3', h:"Is “none of these were right” worth collecting when no sentence follows it?",
    why:"It tells us something across many users and does nothing at all for the individual who said it.",
@@ -576,17 +593,23 @@ function renderList(){
 }
 
 /* ====================== card rendering (shared) ====================== */
-function cardHTML(c, chosen, clickable){
-  return '<button class="rcard s-'+c.s+(chosen?' chosen':'')+'"'
-       + (clickable?'':' disabled')
-       + ' data-t="'+esc(c.text)+'">'
-       + '<span class="hint">'+esc(c.hint)+'</span>'+esc(c.text)
-       + (chosen?'<span class="tookit">you said this</span>':'')
+/* A card can carry TWO different marks, and the whole point is that they can land on
+   different cards: "you said this" is history, "closest to what you meant" is the
+   judgment being made now. Under a four-second clock the two often will not agree. */
+function cardHTML(c, i, opts){
+  var spoke  = (i === opts.took);
+  var closer = (i === opts.closer);
+  var cls = 'rcard s-' + c.s + (spoke ? ' chosen' : '') + (closer ? ' closer' : '');
+  var marks = '';
+  if(spoke)  marks += '<span class="tookit">you said this</span>';
+  if(closer) marks += '<span class="closest">closest to what you meant</span>';
+  return '<button class="'+cls+'"'+(opts.clickable ? ' data-card="'+i+'"' : ' disabled')+'>'
+       + '<span class="hint">'+esc(c.hint)+'</span>'+esc(c.text) + marks
        + '</button>';
 }
-function cardsHTML(list, took, clickable){
+function cardsHTML(list, opts){
   return '<div class="cards">' + list.map(function(c,i){
-    return cardHTML(c, i===took, clickable);
+    return cardHTML(c, i, opts);
   }).join('') + '</div>';
 }
 
@@ -625,7 +648,7 @@ function renderStep(){
         + '<div class="said"><b>Mom said:</b> “'+esc(m.partner)+'”'
         + (m.reallySaid ? '<span class="heardwrong">The app heard this wrong. She actually said &ldquo;soup&rdquo;.</span>' : '')
         + '</div>'
-        + cardsHTML(m.usedSecondSet ? m.cards2 : m.cards, m.took, false);
+        + cardsHTML(m.usedSecondSet ? m.cards2 : m.cards, {took:m.took, closer:-1, clickable:false});
   if(m.took < 0){
     h += '<p class="quiet" style="margin-top:9px"><b>You used none of them.</b> You opened the typing '
        + 'box and wrote: “'+esc(m.composed)+'”</p>';
@@ -780,14 +803,35 @@ function renderMoment(){
   if(m.usedSecondSet){
     h += '<p class="quiet" style="margin:0 0 7px">You asked for different suggestions. These are the ones you ended up with.</p>';
   }
-  h += cardsHTML(list, m.took, false);
+  /* Which card was closest defaults to the one they actually spoke, and they can move
+     it. The default is only a starting point: the card that would have served them best
+     is not always the one they grabbed in four seconds. */
+  var closer = (v.closer === undefined) ? m.took : v.closer;
+  h += cardsHTML(list, {took:m.took, closer:(v.j==='none' ? -1 : closer), clickable:true});
 
   if(m.took < 0){
     h += '<p class="quiet" style="margin-top:9px"><b>You used none of them</b> — you typed '
        + '“'+esc(m.composed)+'” instead.</p>';
   }
+  h += '<p class="quiet" style="margin-top:9px">'
+     + (m.took < 0 ? 'Tap whichever one came closest to what you wanted to say.'
+                   : 'Tap a different one if it would have suited you better than the one you used.')
+     + '</p>';
 
-  h += '<div class="ask">'+(m.took<0 ? 'Was any of them close?' : 'Was that what you wanted to say?')+'</div>'
+  /* Saying one card and marking another is a finding in itself, so it is named on
+     screen rather than only recorded. */
+  if(m.took >= 0 && closer >= 0 && closer !== m.took && v.j !== 'none'){
+    h += '<p class="quiet" style="color:var(--warn);margin-top:4px"><b>Noted:</b> a different '
+       + 'card would have suited you better than the one you used. That is worth knowing on its '
+       + 'own — it usually means a card was worded badly, or that there was no time to read '
+       + 'down to it.</p>';
+  }
+
+  var subject = (closer >= 0 && closer !== m.took) ? 'that one' : 'it';
+  h += '<div class="ask">'
+     +   (closer < 0 ? 'Was any of them close?'
+                     : 'Would ' + subject + ' have been what you wanted to say?')
+     + '</div>'
      + '<div class="btnrow">'
      +   '<button class="btn'+(v.j==='right'?' on':'')+'" data-j="right">Yes, that was right</button>'
      +   '<button class="btn'+(v.j==='closest'?' on':'')+'" data-j="closest">It was the closest of the four</button>'
@@ -795,9 +839,18 @@ function renderMoment(){
      + '</div>';
 
   if(v.j === 'closest' || v.j === 'none'){
+    /* PREFILLED from the card that was closest, so the user edits rather than composes
+       (Ken, September 23 2026). Writing from blank is the slowest thing in the app and
+       effort is the binding constraint; changing two words is not.
+       Only for "closest" - if none of them were close, starting them from one would
+       push them toward wording they have just said was wrong. */
+    var seeded = v.seed !== undefined && v.seed !== '';
     h += '<div style="margin-top:12px">'
-       +   '<label class="tl" for="pref'+momentAt+'">What would you rather have said?</label>'
-       +   '<textarea class="typed" id="pref'+momentAt+'" rows="2" placeholder="Type it here — there is no hurry, nobody is waiting.">'
+       +   '<label class="tl" for="pref'+momentAt+'">'
+       +     (seeded ? 'Change this into what you would rather have said'
+                     : 'What would you rather have said?')
+       +   '</label>'
+       +   '<textarea class="typed" id="pref'+momentAt+'" rows="3" placeholder="Type it here — there is no hurry, nobody is waiting.">'
        +   esc(v.text || '') + '</textarea>'
        +   '<div class="btnrow">'
        +     '<button class="btn" id="hearIt">Hear it</button>'
@@ -823,11 +876,40 @@ function renderMoment(){
   $('moment').innerHTML = h;
   $('mCount').textContent = 'Moment ' + (momentAt+1) + ' of ' + MOMENTS.length;
 
+  Array.prototype.forEach.call($('moment').querySelectorAll('[data-card]'), function(b){
+    b.onclick = function(){
+      var i = +b.getAttribute('data-card');
+      verdicts[momentAt] = verdicts[momentAt] || {};
+      var V = verdicts[momentAt];
+      V.closer = i;
+      if(V.j === 'none') V.j = undefined;      /* they have just pointed at one */
+      /* Re-seed only if the box still holds exactly what we put there. Anything the
+         user has actually written is never overwritten by a change of mind here. */
+      if(V.text === undefined || (V.seed !== undefined && V.text === V.seed)){
+        if(V.j === 'closest'){ V.text = list[i].text; V.seed = V.text; }
+      }
+      saveVerdicts(); renderMoment();
+    };
+  });
+
   Array.prototype.forEach.call($('moment').querySelectorAll('[data-j]'), function(b){
     b.onclick = function(){
+      var j = b.getAttribute('data-j');
       verdicts[momentAt] = verdicts[momentAt] || {};
-      verdicts[momentAt].j = b.getAttribute('data-j');
+      var V = verdicts[momentAt];
+      var justSeeded = false;
+      V.j = j;
+      /* Seed ONLY when the box has never been touched, so switching between the two
+         buttons can never throw away something the user has already written. */
+      var pick = (V.closer === undefined) ? m.took : V.closer;
+      if(j === 'closest' && V.text === undefined && pick >= 0){
+        V.text = list[pick].text;
+        V.seed = V.text;          /* kept so we can tell an edit from a fresh sentence */
+        justSeeded = true;
+      }
       saveVerdicts(); renderMoment();
+      var box = $('pref'+momentAt);
+      if(justSeeded && box){ box.focus(); box.setSelectionRange(box.value.length, box.value.length); }
     };
   });
   var ta = $('pref'+momentAt);
@@ -935,7 +1017,18 @@ function gather(){
       var v = verdicts[k];
       var bits = [];
       if(v.j) bits.push('marked "' + v.j + '"');
-      if(v.text && v.text.trim()) bits.push('wrote: "' + v.text.trim() + '"');
+      var mm = MOMENTS[k];
+      if(v.closer !== undefined && v.closer >= 0 && v.closer !== mm.took){
+        bits.push('said card ' + (mm.took + 1) + ' but marked card ' + (v.closer + 1) + ' as closer');
+      }
+      if(v.text && v.text.trim()){
+        /* Whether they edited the suggestion we handed them or wrote from blank is the
+           thing we most want to know about the prefilled box. */
+        var how = (v.seed === undefined) ? 'wrote from blank'
+                : (v.text === v.seed)    ? 'left the prefilled card unchanged'
+                                         : 'edited the prefilled card';
+        bits.push(how + ': "' + v.text.trim() + '"');
+      }
       if(v.misheard) bits.push('flagged a mishearing');
       if(bits.length) L.push('  Moment ' + (Number(k)+1) + ': ' + bits.join('; '));
     });
