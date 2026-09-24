@@ -868,8 +868,8 @@ function barHTML(st){
   return cmdBtn('prev',  '◀', 'Previous',    {off: !st.prev})
        + cmdBtn('next',  '▶', 'Next',        {off: !st.next})
        + cmdBtn('play',  '▶‖', 'Play it back', {on: !!st.playing})
-       + cmdBtn('wback', w[0],     'Word back',   {off: !st.editing})
-       + cmdBtn('wfwd',  w[1],     'Word on',     {off: !st.editing})
+       + cmdBtn('wback', w[0],     'Previous Word', {off: !st.editing})
+       + cmdBtn('wfwd',  w[1],     'Next Word',     {off: !st.editing})
        + cmdBtn('undo',  '↺', 'Undo',        {off: !st.dirty})
        + cmdBtn('own',   '✎', 'My own words',{off: !st.cards, on: !!st.own})
        + cmdBtn('hear',  '♪', 'Hear it',     {off: !st.editing && !st.own})
@@ -908,7 +908,7 @@ var EP_CONTEXT = [
 var EP_FLEX = {
   'Mom':        [{x:'Say hi to Dad'}, {x:"My back's bad today"}, {x:'Love you'},
                  {x:'our song', audio:true}],
-  'Marcus':     [{x:'Same time next week?'}, {x:'Your round'}],
+  'Marcus':     [{x:'Same time next week?'}, {x:'Your turn to buy'}],
   'Dr. Ruiz':   [{x:"It's my back again"}, {x:'Can you write that down?'}],
   'Home':       [{x:"I'll be in my room"}],
   'The clinic': [{x:'Can you write that down?'}, {x:'I need to sit down'}]
