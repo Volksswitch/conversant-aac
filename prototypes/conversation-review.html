@@ -807,7 +807,10 @@ function renderMoment(){
      it. The default is only a starting point: the card that would have served them best
      is not always the one they grabbed in four seconds. */
   var closer = (v.closer === undefined) ? m.took : v.closer;
-  h += cardsHTML(list, {took:m.took, closer:(v.j==='none' ? -1 : closer), clickable:true});
+  /* Saying "none of them" takes the mark off every card, so the question that follows
+     must stop referring to one. Both the cards and the wording read the same value. */
+  if(v.j === 'none') closer = -1;
+  h += cardsHTML(list, {took:m.took, closer:closer, clickable:true});
 
   if(m.took < 0){
     h += '<p class="quiet" style="margin-top:9px"><b>You used none of them</b> — you typed '
@@ -845,18 +848,26 @@ function renderMoment(){
        Only for "closest" - if none of them were close, starting them from one would
        push them toward wording they have just said was wrong. */
     var seeded = v.seed !== undefined && v.seed !== '';
+    var none = (v.j === 'none');
     h += '<div style="margin-top:12px">'
        +   '<label class="tl" for="pref'+momentAt+'">'
-       +     (seeded ? 'Change this into what you would rather have said'
+       +     (none   ? 'Then say it in your own words. What did you want to tell her?'
+       :     seeded  ? 'Change this into what you would rather have said'
                      : 'What would you rather have said?')
        +   '</label>'
-       +   '<textarea class="typed" id="pref'+momentAt+'" rows="3" placeholder="Type it here — there is no hurry, nobody is waiting.">'
-       +   esc(v.text || '') + '</textarea>'
+       +   '<textarea class="typed" id="pref'+momentAt+'" rows="3" placeholder="'
+       +     (none ? 'Whatever you would have said if you had had all the time in the world.'
+                   : 'Type it here — there is no hurry, nobody is waiting.')
+       +   '">' + esc(v.text || '') + '</textarea>'
        +   '<div class="btnrow">'
        +     '<button class="btn" id="hearIt">Hear it</button>'
        +     '<button class="btn on" id="keepIt">Keep it</button>'
        +     '<button class="btn" id="skipIt">Skip this one</button>'
        +   '</div>'
+       +   (v.cleared && !(v.text || '')
+            ? '<p class="quiet" style="margin-top:7px">Cleared the card’s wording. '
+              + '<button class="markit" id="unclear">Put it back</button></p>'
+            : '')
        + '</div>';
   }
 
@@ -901,6 +912,16 @@ function renderMoment(){
       V.j = j;
       /* Seed ONLY when the box has never been touched, so switching between the two
          buttons can never throw away something the user has already written. */
+      /* "None of them" empties the box, so the user writes their own sentence instead of
+         being steered by wording they have just said was wrong (Ken, September 23 2026).
+         Only wording that CAME FROM A CARD is cleared - something they wrote from a blank
+         box is theirs and is left alone. What is cleared is recoverable in one tap, since
+         this is the only control on the screen that takes anything away. */
+      if(j === 'none' && V.seed !== undefined){
+        if(V.text) V.cleared = V.text;
+        V.text = undefined;
+        V.seed = undefined;
+      }
       var pick = (V.closer === undefined) ? m.took : V.closer;
       if(j === 'closest' && V.text === undefined && pick >= 0){
         V.text = list[pick].text;
@@ -909,7 +930,10 @@ function renderMoment(){
       }
       saveVerdicts(); renderMoment();
       var box = $('pref'+momentAt);
-      if(justSeeded && box){ box.focus(); box.setSelectionRange(box.value.length, box.value.length); }
+      if(box && (justSeeded || j === 'none')){
+        box.focus();
+        box.setSelectionRange(box.value.length, box.value.length);
+      }
     };
   });
   var ta = $('pref'+momentAt);
@@ -929,6 +953,14 @@ function renderMoment(){
   };
   if($('skipIt')) $('skipIt').onclick = function(){
     if(momentAt < MOMENTS.length-1){ momentAt++; renderMoment(); }
+  };
+  if($('unclear')) $('unclear').onclick = function(){
+    var V = verdicts[momentAt] || {};
+    /* Putting it back restores its PROVENANCE too. The words still came from a card, so
+       pressing "None of them" again must be able to clear them again, and the gathered
+       report must not call them something the user wrote. */
+    V.text = V.cleared; V.seed = V.cleared; V.cleared = undefined;
+    verdicts[momentAt] = V; saveVerdicts(); renderMoment();
   };
   if($('misheard')) $('misheard').onclick = function(){
     verdicts[momentAt] = verdicts[momentAt] || {};
