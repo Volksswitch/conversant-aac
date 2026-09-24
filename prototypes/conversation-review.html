@@ -217,12 +217,22 @@
      which is the whole reason one keyguard covers both */
   .tdock{flex:0 0 29%;border-left:1px solid var(--line);background:#ECEFF1;padding:5px;
          display:flex;flex-direction:column;min-width:0}
-  .dgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;flex:1 1 auto;min-height:0}
+  /* ⚠ EQUAL ROWS, NOT ROWS SIZED TO THEIR CONTENTS. The panel is a fixed grid in the app,
+     and here it has to be one too: the first cut let a row grow to fit the "you tapped
+     this" mark, which pushed every button below it down by 17px. A mark on a button is
+     not allowed to move the buttons. */
+  .dgrid{display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:1fr;gap:3px;
+         flex:1 1 auto;min-height:0}
   .dcell{border:1px solid #CFD8DC;border-radius:4px;background:#fff;font-size:9px;color:#546E7A;
          display:flex;align-items:center;justify-content:center;text-align:center;padding:1px;
          overflow:hidden;line-height:1.1}
   .dcell.key{font-size:13px;color:#263238}
   .dcell.dim{background:#F4F6F7;color:#B0BEC5}
+  /* paint only - the cell keeps its box, so nothing in the panel moves */
+  .dcell.used{background:var(--pref-bg);border-color:var(--pref);color:#1b5e20;font-weight:bold;
+              flex-direction:column;gap:1px}
+  .usedmk{font-size:8px;font-weight:bold;color:var(--pref);text-transform:uppercase;
+          letter-spacing:.04em;line-height:1}
   .dlab{font-size:9.5px;color:var(--muted);text-align:center;padding:2px 0 4px}
 
   /* the conversation pane inside the tablet */
@@ -597,6 +607,22 @@ var MOMENTS = [
     hintText: "When the other person puts choices on the table, the four suggestions become those choices instead of the usual four kinds of reply."
   },
   {
+    partner: "I'll bring dessert, then.",
+    cards: [
+      {s:'pref', hint:"Sounds good",   text:"That would be great, thank you."},
+      {s:'disp', hint:"No need",       text:"You really don't have to."},
+      {s:'init', hint:"Something else",text:"Could you bring those pictures instead?"},
+      {s:'rep',  hint:"Dessert?",      text:"Sorry — bring what?"}
+    ],
+    took: -1, source: 'express', expressPhrase: 'Thank you',
+    composed: "Thank you",
+    wait: 4, flag: null,
+    hintText: "The user answered by tapping a phrase on their own panel rather than using a "
+            + "suggestion. The app records where every turn came from, so review can show it: the "
+            + "button is lit in the panel down the side, and none of the four cards is marked, "
+            + "because none of them was used."
+  },
+  {
     partner: "I'll make that soap you like. Anything else you need?",
     reallySaid: "I'll make that soup you like. Anything else you need?",
     cards: [
@@ -641,14 +667,16 @@ var EVENTS = [
 
   {t:61,  k:'partner', m:3}, {t:65, k:'cards', m:3}, {t:70, k:'you', m:3},
 
-  {t:73,  k:'partner', m:4}, {t:78, k:'app', text:"I'm thinking about that."},
-  {t:81,  k:'act',     text:"you opened the typing box"},
-  {t:91,  k:'app',     text:"Still working on that one."},
-  {t:103, k:'you',     m:4},
+  {t:73,  k:'partner', m:4}, {t:77, k:'cards', m:4}, {t:77, k:'you', m:4},
 
-  {t:107, k:'partner', m:5}, {t:111, k:'cards', m:5}, {t:115, k:'you', m:5}
+  {t:82,  k:'partner', m:5}, {t:87, k:'app', text:"I'm thinking about that."},
+  {t:90,  k:'act',     text:"you opened the typing box"},
+  {t:100, k:'app',     text:"Still working on that one."},
+  {t:112, k:'you',     m:5},
+
+  {t:116, k:'partner', m:6}, {t:120, k:'cards', m:6}, {t:124, k:'you', m:6}
 ];
-var DURATION = 120;
+var DURATION = 130;
 
 /* A rehearsal is saved with its scenario name, so the list can already tell the two
    apart with nothing new stored. It has to SAY so: a rehearsal and a real conversation
@@ -824,7 +852,13 @@ function barHTML(st){
 var EP_PHRASES = ['Yes','No','Thank you','Hello','Goodbye','Please','I need help','Wait a moment',
                   'I agree','Not sure','Later','Sorry','I like that','Too much','I am tired',
                   'Say more','Mom','The clinic','Happy','Tired','Frustrated','My own words'];
-function dockHTML(kb){
+/* `lit` is the phrase button a turn was spoken from. A user turn records where it came
+   from - a card, a panel button, the typing box, one of the command phrases - and if it
+   came from the panel there is NO card to mark, so the four on screen are the suggestions
+   that were ignored. Lighting the button is the only way to show what actually happened,
+   and it is the reason the panel is worth drawing in review at all. It is a mark, not a
+   control: tapping a phrase speaks it, and nothing in review may speak by accident. */
+function dockHTML(kb, lit){
   var h = '<div class="dgrid">';
   if(kb){
     var keys = ['q','w','e','r','t','y','u','i','o','p','a','s','d','f','g','h','j','k','l',
@@ -835,7 +869,9 @@ function dockHTML(kb){
   } else {
     for(var i=0;i<32;i++){
       var t = EP_PHRASES[i] || '';
-      h += '<div class="dcell' + (t ? '' : ' dim') + '">' + esc(t) + '</div>';
+      var used = (lit && t === lit);
+      h += '<div class="dcell' + (t ? '' : ' dim') + (used ? ' used' : '') + '">'
+         + esc(t) + (used ? '<span class="usedmk">you tapped this</span>' : '') + '</div>';
     }
   }
   h += '</div><div class="dlab">' + (kb ? 'the keyboard' : 'the phrase panel') + '</div>';
@@ -852,14 +888,14 @@ function wireBar(root, handlers){
   });
 }
 
-function tabletHTML(pane, bar, cards, kb){
+function tabletHTML(pane, bar, cards, kb, lit){
   return '<div class="tablet">'
        +   '<div class="tmain">'
        +     '<div class="tpane">' + pane + '</div>'
        +     '<div class="tbar">' + bar + '</div>'
        +     '<div class="tcards">' + cards + '</div>'
        +   '</div>'
-       +   '<div class="tdock">' + dockHTML(kb) + '</div>'
+       +   '<div class="tdock">' + dockHTML(kb, lit) + '</div>'
        + '</div>';
 }
 
@@ -980,6 +1016,20 @@ function moveWord(d, after){
    to correct. The correction never replaces the record - it sits under the line,
    marked as the user's.
    --------------------------------------------------------------------------- */
+/* Where a turn came from, in the user's own terms. A card needs no label - the card is
+   marked - but every other route does, or a turn the app did not suggest reads as one it
+   did. */
+function cameFrom(m){
+  if(m.took >= 0) return '';
+  if(m.source === 'express') return ' — tapped a button on your panel';
+  return ' — typed it yourself';
+}
+
+/* only while the panel is the thing on show - during an edit the keyboard has the dock */
+function litPhrase(m){
+  return (m.took < 0 && m.source === 'express') ? m.expressPhrase : null;
+}
+
 function saidBy(m){
   return m.took < 0 ? m.composed : (m.usedSecondSet ? m.cards2 : m.cards)[m.took].text;
 }
@@ -1011,7 +1061,7 @@ function conversationPaneHTML(cur, opts){
       h += '<div class="cappsaid" style="color:var(--warn)">you asked for different suggestions</div>';
     }
     h += '<div class="cline" style="text-align:right"><div class="cwho">You'
-       + (m.took < 0 ? ' — typed it yourself' : '') + '</div>'
+       + esc(cameFrom(m)) + '</div>'
        + '<span class="cyou' + (here ? ' cnow' : '') + '" data-goto="' + i + '"'
        + ' title="tap to go to this moment">“' + esc(saidBy(m)) + '”</span></div>';
     if(here && opts.own){
@@ -1088,7 +1138,7 @@ function renderStep(){
   $('stage').innerHTML = tabletHTML(
     conversationPaneHTML(stepAt, {wait:true}),
     barHTML({prev:stepAt>0, next:stepAt<MOMENTS.length-1, cards:false}),
-    cards, false);
+    cards, false, litPhrase(m));
   var root = $('stage');
   wireBar(root, {
     prev: function(){ if(stepAt>0){ stepAt--; renderStep(); } },
@@ -1267,7 +1317,7 @@ function renderMoment(){
     prev: momentAt > 0, next: momentAt < MOMENTS.length - 1,
     cards: true, editing: !!ed, own: !!V.own,
     dirty: !!(V.text && V.text !== V.seed) || !!V.own || !!V.heardNote
-  }), cards, !!ed);
+  }), cards, !!ed, litPhrase(m));
 
   var root = $('moment');
 

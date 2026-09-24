@@ -1,4 +1,4 @@
-/* Renders the conversation-review figures (rv-fig1..6.png) for the review document.
+/* Renders the conversation-review figures (rv-fig1..7.png) for the review document.
  *
  * ⚠ THEY ARE CAPTURED FROM THE PROTOTYPE ITSELF - prototypes/conversation-review.html -
  * and no longer from a separate drawing. There used to be a "Review Figures.html" beside
@@ -46,22 +46,28 @@ const PROTO = path.resolve(__dirname, '..', '..', 'prototypes', 'conversation-re
         await page.evaluate(() => { ed = null; verdicts = {}; momentAt = 1; renderMoment(); });
     });
 
-    // 3  a card being rewritten in place, with one word highlighted and the keyboard up
+    // 3  a turn the user spoke from their own panel - no card to mark, so the button is lit
     await shot(3, '#moment', async () => {
+        await page.evaluate(() => { ed = null; verdicts = {}; momentAt = 4; renderMoment(); });
+    });
+
+    // 4  a card being rewritten in place, with one word highlighted and the keyboard up
+    await shot(4, '#moment', async () => {
+        await page.evaluate(() => { ed = null; verdicts = {}; momentAt = 1; renderMoment(); });
         await page.click('#moment .tcards > *:nth-child(2)');
         await page.click('#moment .tbar [data-cmd="wfwd"]');
         await page.click('#moment .tbar [data-cmd="wfwd"]');
         await page.type('#moment #winp', 'difficult');
     });
 
-    // 4  correcting what the app wrote down, on the other person's own line
-    await shot(4, '#moment', async () => {
+    // 5  correcting what the app wrote down, on the other person's own line
+    await shot(5, '#moment', async () => {
         await page.evaluate(() => { ed = null; verdicts = {}; momentAt = 1; renderMoment(); });
         await page.evaluate(() => { document.querySelector('#moment [data-heard]').click(); });
     });
 
-    // 5  played back at the real speed, with the wait counting up
-    await shot(5, '#stage', async () => {
+    // 6  played back at the real speed, with the wait counting up
+    await shot(6, '#stage', async () => {
         await page.evaluate(() => { setMode('play'); });
         await page.evaluate(() => { document.getElementById('pPlay').click(); });
         await new Promise(r => setTimeout(r, 400));
@@ -69,8 +75,8 @@ const PROTO = path.resolve(__dirname, '..', '..', 'prototypes', 'conversation-re
         await new Promise(r => setTimeout(r, 400));
     });
 
-    // 6  what comes of it - review offers, the user decides
-    await shot(6, '.sheet:nth-of-type(5) .device', async () => {
+    // 7  what comes of it - review offers, the user decides
+    await shot(7, '.sheet:nth-of-type(5) .device', async () => {
         await page.evaluate(() => { PRACTICE_VIEW = false; renderConf(); });
     });
 
