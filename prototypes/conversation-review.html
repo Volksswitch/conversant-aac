@@ -75,6 +75,9 @@
   .lrow.sel{border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)}
   .st{font-size:12px}
   .flag{color:var(--warn);font-weight:bold}
+  .ptag{display:inline-block;font-size:10px;font-weight:bold;letter-spacing:.06em;text-transform:uppercase;
+        color:#4a2352;background:#F3E5F5;border:1px solid #e3cdea;border-radius:9px;padding:1px 7px}
+  .lrow.prac{background:#FCFAFD}
   .done{color:var(--pref)} .part{color:var(--brand)} .nope{color:var(--faint)}
   @media (max-width:760px){
     .lhdr{display:none}
@@ -164,6 +167,79 @@
   .sub{margin:2px 0 4px 26px;font-size:13.5px;color:var(--muted)}
   .sub label{margin-right:14px;cursor:pointer}
 
+  /* ---- the tablet, laid out like the real conversation screen -------------
+     Review reuses the conversation screen rather than inventing a screen of its
+     own (Ken, September 24 2026). Same four card positions, same nine command
+     buttons, same dock - so ONE keyguard still fits and nothing the user has
+     learned by hand has moved. Shown here with a side dock, where the four cards
+     sit two by two.
+     THE CARD NEVER CHANGES SIZE. The grid rows are fixed and a long sentence
+     scrolls inside the card. It must not shrink the type instead - the text size
+     is the user's own setting and an edit box is the worst place to override it. */
+  .tablet{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;
+          background:#fff;height:450px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+  .tmain{flex:1 1 auto;display:flex;flex-direction:column;min-width:0}
+  .tpane{flex:0 0 33%;overflow-y:auto;padding:9px 11px;font-size:13px;background:#FAFCFD;
+         border-bottom:1px solid var(--line-soft)}
+  .tbar{display:flex;gap:3px;padding:4px;background:#ECEFF1;border-bottom:1px solid var(--line-soft)}
+  .cmd{flex:1 1 0;min-width:0;height:46px;border:1px solid #B0BEC5;border-radius:5px;background:#fff;
+       display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+       font:inherit;color:#37474F;cursor:pointer;padding:2px;overflow:hidden}
+  .cmd .ic{font-size:15px;line-height:1}
+  .cmd .lb{font-size:8.5px;line-height:1.05;text-align:center;color:var(--muted)}
+  .cmd:hover{border-color:var(--brand)}
+  .cmd[disabled]{opacity:.32;cursor:default}
+  .cmd.on{background:var(--brand);border-color:var(--brand)}
+  .cmd.on .ic,.cmd.on .lb{color:#fff}
+  .tcards{flex:1 1 auto;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;
+          gap:7px;padding:9px 11px;min-height:0}
+  .tcard{border:1px solid var(--line-soft);border-radius:6px;padding:7px 9px;font-size:13px;
+         text-align:left;font-family:inherit;color:inherit;background:#fff;cursor:pointer;
+         overflow-y:auto;min-height:0;display:block;width:100%;line-height:1.4}
+  .tcard:hover{box-shadow:0 0 0 2px rgba(31,78,121,.22)}
+  .tcard.chosen{outline:2px solid var(--pref);outline-offset:-2px}
+  .tcard.closer{box-shadow:0 0 0 2px var(--brand) inset}
+  .tcard .hint{display:block;font-size:10.5px;color:var(--muted);margin-bottom:2px}
+  .tcard .mk{display:block;font-size:10.5px;font-weight:bold;margin-top:4px}
+  .tcard .mk.said{color:var(--pref)} .tcard .mk.near{color:var(--brand)}
+  .tcard.editing{background:#FFFDF0;box-shadow:0 0 0 2px var(--init) inset}
+  .tcard.empty{background:#FCFDFD;border-style:dashed;cursor:default}
+
+  /* one highlighted word IS the cursor - see the note on screen 3 */
+  .w{border-radius:3px;padding:0 1px;cursor:pointer}
+  .w:hover{background:#DCEBF7}
+  .w.sel{background:var(--init);color:#fff}
+  .w.hole{display:inline-block;min-width:14px;border-bottom:2px solid var(--disp)}
+  .winp{font:inherit;font-size:13px;border:none;background:#FFF59D;color:var(--ink);
+        outline:2px solid var(--init);border-radius:3px;padding:0 2px;min-width:3ch}
+
+  /* the dock: the phrase panel at rest, the keyboard while editing - same grid,
+     which is the whole reason one keyguard covers both */
+  .tdock{flex:0 0 29%;border-left:1px solid var(--line);background:#ECEFF1;padding:5px;
+         display:flex;flex-direction:column;min-width:0}
+  .dgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;flex:1 1 auto;min-height:0}
+  .dcell{border:1px solid #CFD8DC;border-radius:4px;background:#fff;font-size:9px;color:#546E7A;
+         display:flex;align-items:center;justify-content:center;text-align:center;padding:1px;
+         overflow:hidden;line-height:1.1}
+  .dcell.key{font-size:13px;color:#263238}
+  .dcell.dim{background:#F4F6F7;color:#B0BEC5}
+  .dlab{font-size:9.5px;color:var(--muted);text-align:center;padding:2px 0 4px}
+
+  /* the conversation pane inside the tablet */
+  .cline{margin:0 0 7px}
+  .cwho{font-size:10.5px;color:var(--faint);margin:0 0 1px}
+  .cthem{background:var(--slate-bg);border:1px solid var(--line-soft);border-radius:9px;
+          padding:5px 9px;display:inline-block;max-width:92%;cursor:pointer}
+  .cyou{background:var(--pref-bg);border:1px solid #cfe3c4;border-radius:9px;padding:5px 9px;
+        display:inline-block;max-width:92%;margin-left:auto}
+  .cappsaid{color:var(--rep);font-style:italic;font-size:12px;margin:0 0 7px}
+  .cwait{display:inline-block;background:#FFF8E1;border:1px dashed var(--disp);border-radius:5px;
+         padding:2px 8px;font-size:11.5px;color:var(--warn);margin:0 0 7px}
+  .cwait .n{font-weight:bold;font-variant-numeric:tabular-nums}
+  .cnow{outline:2px solid var(--brand);outline-offset:2px;border-radius:9px}
+  .cmine{display:block;font-size:11px;color:var(--warn);margin-top:3px}
+  .ct{color:var(--faint);font-size:10.5px;font-variant-numeric:tabular-nums;margin-right:5px}
+
   /* ---- comment boxes ----------------------------------------------------- */
   .cbox{margin:18px 0 0;padding:14px 0 0;border-top:1px dashed var(--line)}
   .cbox label{display:block;font-size:13.5px;color:var(--brand);font-weight:bold;margin:0 0 6px}
@@ -246,6 +322,20 @@ which is the point of showing it to you now rather than later.</p>
     </div>
   </div>
 
+  <div class="note" style="margin-top:14px"><b>Rehearsals are in the list too, and are marked.</b>
+  A rehearsal is in some ways the better thing to review: it can be run <i>again</i>, so
+  &ldquo;here is what I would rather have said&rdquo; has somewhere to go, where a real conversation
+  happened once. Nobody was let down by a poor reply either, which makes it easier to go back over.
+  And it is the natural place for a clinician who wrote the scenario to sit down with the client.
+  <br><br>
+  <b>Two things work differently there.</b> There is no microphone in a rehearsal &mdash; the app
+  speaks the other person's lines &mdash; so nothing can have been misheard, and that option is not
+  offered. And the situation was made up, so a <i>fact</i> the user writes may have been invented to
+  fit it: the app asks whether it is true of them or just part of the scenario, rather than assuming
+  either way. How they want to <i>sound</i>, and a phrase for their buttons, carry over without a
+  question. <b>Is reviewing a rehearsal worth having, or would a client only ever want to look at
+  real conversations?</b></div>
+
   <p class="quiet" style="margin-top:12px">The app knows which moments the user themselves
   asked for something different at the time &mdash; where they pressed for other suggestions, or
   gave up and typed instead &mdash; so it can say so on the row. It is a hint, not a filter:
@@ -259,59 +349,95 @@ which is the point of showing it to you now rather than later.</p>
 
 <!-- ============================== SCREEN 2 ============================== -->
 <div class="sheet">
-  <p class="step">Screen 2 of 4 &mdash; the question we most need answered</p>
-  <h2>Three ways through the same conversation</h2>
-  <p>We genuinely do not know which of these should be the normal way in. <b>Please try all three</b>,
-  and tell us which one you would put in front of a client &mdash; and whether the other two are worth
-  building at all.</p>
+  <p class="step">Screen 2 of 4</p>
+  <h2>Review happens on the conversation screen itself</h2>
+  <p>This is not a separate part of the app. It is the screen the user already knows &mdash; the
+  same four card positions, the same nine buttons along the middle, the same panel down the side
+  &mdash; doing a different job. That matters more than it sounds: many of these users have a
+  plastic keyguard over the screen with a hole cut for every button, and a review screen with its
+  own layout would need its own keyguard.</p>
 
-  <div class="btnrow" role="group" aria-label="Choose a way through">
-    <button class="btn on" id="mStep">Step through it</button>
-    <button class="btn" id="mRead">Read it all</button>
+  <div class="note"><b>Two of the three ways through turned out to be one.</b> We had been treating
+  &ldquo;step through it one moment at a time&rdquo; and &ldquo;read the whole thing&rdquo; as
+  separate features. On this screen they are not: the whole conversation sits in the pane at the top
+  with the exchange you are on outlined, so the two moment buttons move the outline and
+  <b>tapping any line moves it straight there</b>. Scrolling to the part you remember and stepping
+  through one at a time are the same screen.
+  <br><br>
+  So only one of the three is genuinely separate work: <b>playing it back at the real speed</b>,
+  filling that same pane in time with a clock. It is the only way to feel how long the silences
+  were, and the only one we would have to build on purpose. <b>Is it worth it?</b></div>
+
+  <div class="btnrow" role="group" aria-label="Try both">
+    <button class="btn on" id="mStep">Move through it</button>
     <button class="btn" id="mPlay">Play it back</button>
   </div>
 
-  <div class="device" style="margin-top:12px">
-    <div class="screen" id="stage"></div>
-  </div>
+  <div id="stage" style="margin-top:12px"></div>
 
   <div id="modeNote" class="quiet" style="margin-top:12px"></div>
 
   <div class="cbox">
-    <label for="c2">Your comments on these three</label>
-    <textarea id="c2" rows="4" placeholder="Which one would you use? Is playing it back at the real speed worth it, or just slow? Would a client sit through two minutes of it?"></textarea>
+    <label for="c2">Your comments on this screen</label>
+    <textarea id="c2" rows="4" placeholder="Does reusing the conversation screen help or confuse? Is tapping a line to jump to it obvious enough? Is playing it back at the real speed worth it, or just slow? Would a client sit through two minutes of it?"></textarea>
   </div>
 </div>
 
 <!-- ============================== SCREEN 3 ============================== -->
 <div class="sheet">
-  <p class="step">Screen 3 of 4</p>
-  <h2>Looking at one moment</h2>
-  <p>This is the heart of it. The user sees what was said to them, the four suggestions exactly as
-  they appeared, and which one they used. Then two short questions &mdash; and a box where they can
-  write what they would rather have said.</p>
+  <p class="step">Screen 3 of 4 &mdash; the one we most need answered</p>
+  <h2>Saying what you would rather have said</h2>
+  <p>Here is the moment the user wants to talk about. The conversation is in the pane at the top with
+  that exchange outlined; the four suggestions are below, exactly as they appeared.
+  <b>Tapping the card you would have wanted rewrites it in place</b> &mdash; there is no separate
+  writing box, because the sentence and the card are the same thing.</p>
 
-  <div class="note"><b>Why we do not ask them to score all four.</b> The four suggestions are four
-  different kinds of reply on purpose &mdash; agreeing, declining, changing direction, asking for
-  clarification &mdash; so on most turns only one or two were ever real candidates. Scoring all four
-  would mean rating two the user never considered. So we ask only about the one that was closest.
-  <b>Is that the right call?</b></div>
+  <div class="note"><b>You leave review the way you leave a practice session &mdash; the Settings
+  button.</b> Review lives on a Settings tab beside Practice, so the button that took you in takes
+  you back out, and it stays in the same place it occupies during a real conversation. It is the
+  only one of the nine that means the same thing in both, so it is the only one that keeps its
+  position. Nothing has to be saved first; what you write is kept as you write it.</div>
 
-  <div class="note"><b>The card they used may not be the one that would have suited them.</b>
-  Under a four-second clock people take the first one that will do. So every card can be tapped, and
-  tapping one means &ldquo;that is the one that came closest to what I wanted&rdquo; &mdash; which may
-  well not be the one they said. When the two marks land on different cards, that is a finding on its
-  own: usually a card worded badly, or no time to read down to it.
+  <div class="note"><b>The whole screen is one rule: tap the thing you want to say something about.</b>
+  Tap a line from another part of the conversation and you go there. Tap the other person's line on
+  the exchange you are already on and you can correct the words the app wrote down. Tap a card and it
+  becomes yours to change. Nothing else has to be learned, and there is no room on this screen for a
+  question with three buttons under it anyway.
   <br><br>
-  <b>And the writing box starts out filled in.</b> It arrives holding the words of whichever card is
-  marked closest, so they change a few of them rather than writing from nothing &mdash; the slowest
-  thing anybody does on this device. Press &ldquo;None of them&rdquo; and it starts empty instead,
-  because nudging somebody toward wording they have just rejected would be worse than a blank box.
-  <b>Do either of these help, or do they stop the user saying what they really meant?</b></div>
+  <b>What a tap on a card means is read from what you do next.</b> Tap the card you used and leave it
+  alone &mdash; that one was right. Tap a different one &mdash; that one would have suited you better,
+  which is worth knowing on its own, because under a four-second clock people take the first card
+  that will do. Change the words &mdash; close, but here is how you would have put it. Press
+  &ldquo;my own words&rdquo; &mdash; none of them were any use. Walk past without touching anything
+  and nothing is recorded, which is how skipping a moment stays different from approving it.</div>
 
-  <div class="device">
-    <div class="screen" id="moment"></div>
+  <div class="note"><b>One highlighted word is the cursor.</b> A text cursor is a one-pixel line
+  between two letters &mdash; hard to see and hard to hit. So instead there is always exactly one
+  highlighted word: the two word buttons move it, tapping a word moves it straight there, typing
+  replaces it, and backspace takes it out and leaves the gap. Three words is three presses of
+  backspace.
+  <br><br>
+  <b>We are not sure about the two icons</b> &mdash; use the switch below to see both, and tell us
+  whether either one says &ldquo;a word at a time&rdquo; without being explained.
+  <b>And we are not sure tapping a word is within reach for everyone</b>, which is why the buttons
+  exist as well and the tap is only ever a shortcut.</div>
+
+  <div class="btnrow" style="margin-bottom:10px">
+    <span class="quiet" style="align-self:center">Word buttons:</span>
+    <button class="btn small on" id="icA">&#9664;&#9644;&nbsp; &#9644;&#9654;</button>
+    <button class="btn small" id="icB">&laquo;&nbsp; &raquo;</button>
+    <span class="quiet" style="align-self:center;margin-left:14px">Show it as:</span>
+    <button class="btn small on" id="vReal">a real conversation</button>
+    <button class="btn small" id="vPrac">a rehearsal</button>
   </div>
+
+  <div id="moment"></div>
+
+  <p class="quiet" style="margin-top:10px">This page is running in a browser, so type with your own
+  keyboard. On the device the keyboard fills the panel down the side, on the very same grid as the
+  phrase buttons it replaces &mdash; which is what lets one keyguard cover both.</p>
+
+  <div id="mHint" class="quiet" style="margin-top:10px"></div>
 
   <div class="btnrow">
     <button class="btn small" id="prevM">&larr; Previous moment</button>
@@ -321,7 +447,7 @@ which is the point of showing it to you now rather than later.</p>
 
   <div class="cbox">
     <label for="c3">Your comments on this screen</label>
-    <textarea id="c3" rows="4" placeholder="Is the question clear? Would a client type a whole sentence here? Is it obvious that the cards can be tapped? Does a box that starts out filled in help, or does it put words in their mouth?"></textarea>
+    <textarea id="c3" rows="4" placeholder="Is it obvious that the cards can be tapped? Does rewriting the card in place read better than a separate box? Is it clear how to tell the app it wrote down the wrong words? Could a client move a highlighted word around?"></textarea>
   </div>
 </div>
 
@@ -349,8 +475,7 @@ which is the point of showing it to you now rather than later.</p>
         <label><input type="radio" name="scope" value="mom" checked> only when I am talking with Mom</label>
       </div>
 
-      <label class="opt"><input type="checkbox" id="k3">
-        <span>Add to About Me: my back gives me trouble</span></label>
+      <div id="factOpt"></div>
 
       <div class="btnrow"><button class="btn on">Done</button><button class="btn">Keep nothing</button></div>
     </div>
@@ -525,6 +650,10 @@ var EVENTS = [
 ];
 var DURATION = 120;
 
+/* A rehearsal is saved with its scenario name, so the list can already tell the two
+   apart with nothing new stored. It has to SAY so: a rehearsal and a real conversation
+   with somebody's mother are different things to sit down and go back over, and what
+   may be learned from them differs (see the note on this screen). */
 var CONVS = [
   {when:"Tue Sep 22, 2:14 pm", who:"Mom",      where:"Home",          len:"12 min, 6 replies",
    state:'<span class="flag">2 moments you asked for something else</span> &middot; <span class="nope">not looked at</span>', live:true},
@@ -532,14 +661,16 @@ var CONVS = [
    state:'<span class="done">finished</span>'},
   {when:"Sun Sep 20, 6:05 pm", who:"Marcus",   where:"The diner",     len:"21 min, 17 replies",
    state:'<span class="part">part way through — 7 of 17 left</span>'},
-  {when:"Sat Sep 19, 11:00 am", who:"Practice", where:"Ordering coffee", len:"5 min, 6 replies",
-   state:'<span class="nope">not looked at</span>'}
+  {when:"Mon Sep 21, 8:15 am", who:"Ordering coffee", where:"Practice", len:"5 min, 6 replies",
+   practice:true, state:'<span class="part">part way through &mdash; 4 of 6 left</span>'},
+  {when:"Sat Sep 19, 11:00 am", who:"Asking for help", where:"Practice", len:"4 min, 5 replies",
+   practice:true, state:'<span class="nope">not looked at</span>'}
 ];
 
 var QUESTIONS = [
-  {id:'q1', h:"Which way through a conversation should be the normal one?",
-   why:"Stepping is quick. Reading it all lets someone go straight to the part they remember. Playing it back is the only way to feel how long the silences were.",
-   opts:["Step through it","Read it all","Play it back","All three, with a choice","None of them work"]},
+  {id:'q1', h:"Is playing a conversation back at the real speed worth building?",
+   why:"Moving through it and scrolling to the part you remember turned out to be the same screen, so they cost nothing extra. Playing it back is the only one that is separate work - and the only way to feel how long the silences were, which is a thing a client cannot be told.",
+   opts:["Yes, it is the point of review","Worth having, not essential","Not worth the effort","No view"]},
   {id:'q2', h:"Would a client really write a whole sentence in review?",
    why:"Nobody is waiting, and the box starts out holding the words they actually said, so it is an edit rather than a blank page. Against that, typing is tiring whether or not anyone is waiting - and a client who only tweaks what we handed them is telling us less about how they would put it.",
    opts:["Yes, readily","Some would","Only with help","Very unlikely"]},
@@ -580,8 +711,9 @@ function wireField(el){
 function renderList(){
   var h = '';
   CONVS.forEach(function(c,i){
-    h += '<button class="lrow' + (i===0?' sel':'') + '" data-i="'+i+'">'
-       +   '<div><b>'+esc(c.when)+'</b></div><div>'+esc(c.who)+'</div>'
+    h += '<button class="lrow' + (i===0?' sel':'') + (c.practice?' prac':'') + '" data-i="'+i+'">'
+       +   '<div><b>'+esc(c.when)+'</b></div>'
+       +   '<div>'+(c.practice?'<span class="ptag">practice</span> ':'')+esc(c.who)+'</div>'
        +   '<div>'+esc(c.where)+'</div><div>'+esc(c.len)+'</div>'
        +   '<div class="st">'+c.state+'</div>'
        + '</button>';
@@ -592,7 +724,7 @@ function renderList(){
       Array.prototype.forEach.call($('convList').children, function(x){ x.classList.remove('sel'); });
       b.classList.add('sel');
       if(b.getAttribute('data-i') !== '0'){
-        alert('Only the conversation with Mom is filled in for this sketch. The others are there to show what the list would look like.');
+        alert('Only the conversation with Mom is filled in for this sketch. The others are there to show what the list would look like, and which of them are rehearsals.');
       } else {
         document.getElementById('stage').scrollIntoView({block:'center'});
       }
@@ -634,99 +766,353 @@ function cardsHTML(list, opts){
   }).join('') + '</div>';
 }
 
-/* ====================== screen 2: three ways through ====================== */
+/* ======================================================================
+   THE TABLET FRAME
+
+   Review reuses the conversation screen rather than inventing one (Ken,
+   September 24 2026). Drawn here with a SIDE DOCK: the four cards two by two,
+   the nine command buttons in a strip above them, the dock down the right
+   holding the phrase panel at rest and the keyboard while editing.
+
+   Two properties are load-bearing and are why it is drawn this way:
+     - the four card boxes NEVER CHANGE SIZE, so a long sentence scrolls inside
+       a card and the type is never shrunk. The text size is the user's setting
+       and an edit box is the worst possible place to override it.
+     - SETTINGS KEEPS ITS USUAL LAST POSITION. It is the one button that means
+       the same thing in review as in a real conversation - it is how you leave,
+       exactly as it is how you leave a practice session - so it is the one
+       button that must not move (Ken, September 24 2026).
+   ====================================================================== */
+
+/* Reviewing a REHEARSAL differs, and the switch on screen 3 shows how. There is
+   no microphone in practice - the app speaks the other person's lines - so
+   nothing can have been misheard. And the scenario is made up, so a fact taken
+   out of it may have been invented to fit the situation: the app ASKS whether it
+   is true of them or part of the scenario rather than assuming either way
+   (Ken, September 24 2026). Style and phrases carry over without a question. */
+var PRACTICE_VIEW = false;
+
+var ICONSET = 'A';   /* which pair of word-button icons is being shown */
+function wordIcons(){
+  return ICONSET === 'A' ? ['◀▬', '▬▶'] : ['«', '»'];
+}
+
+function cmdBtn(id, ic, lb, o){
+  o = o || {};
+  return '<button class="cmd' + (o.on ? ' on' : '') + '"'
+       + (o.off ? ' disabled' : ' data-cmd="' + id + '"')
+       + ' title="' + esc(o.title || lb) + '">'
+       + '<span class="ic">' + ic + '</span><span class="lb">' + esc(lb) + '</span></button>';
+}
+
+/* The nine, in order. `st` says which are live right now. */
+function barHTML(st){
+  var w = wordIcons();
+  return cmdBtn('prev',  '◀', 'Previous',    {off: !st.prev})
+       + cmdBtn('next',  '▶', 'Next',        {off: !st.next})
+       + cmdBtn('play',  '▶‖', 'Play it back', {on: !!st.playing})
+       + cmdBtn('wback', w[0],     'Word back',   {off: !st.editing})
+       + cmdBtn('wfwd',  w[1],     'Word on',     {off: !st.editing})
+       + cmdBtn('undo',  '↺', 'Put it back', {off: !st.dirty})
+       + cmdBtn('own',   '✎', 'My own words',{off: !st.cards, on: !!st.own})
+       + cmdBtn('hear',  '♪', 'Hear it',     {off: !st.editing && !st.own})
+       + cmdBtn('settings', '⚙', 'Settings', {title: 'Settings - and the way back out of review'});
+}
+
+/* The dock. The same three-column grid whichever is showing, which is the whole
+   reason one keyguard covers both. */
+var EP_PHRASES = ['Yes','No','Thank you','Hello','Goodbye','Please','I need help','Wait a moment',
+                  'I agree','Not sure','Later','Sorry','I like that','Too much','I am tired',
+                  'Say more','Mom','The clinic','Happy','Tired','Frustrated','My own words'];
+function dockHTML(kb){
+  var h = '<div class="dgrid">';
+  if(kb){
+    var keys = ['q','w','e','r','t','y','u','i','o','p','a','s','d','f','g','h','j','k','l',
+                'z','x','c','v','b','n','m',"'",'⇧','⌫','space','.','↵'];
+    keys.forEach(function(k){
+      h += '<div class="dcell key">' + esc(k === 'space' ? '␣' : k) + '</div>';
+    });
+  } else {
+    for(var i=0;i<32;i++){
+      var t = EP_PHRASES[i] || '';
+      h += '<div class="dcell' + (t ? '' : ' dim') + '">' + esc(t) + '</div>';
+    }
+  }
+  h += '</div><div class="dlab">' + (kb ? 'the keyboard' : 'the phrase panel') + '</div>';
+  return h;
+}
+
+/* One handler for the whole strip, so a button nobody wired simply does nothing
+   rather than throwing - the bar is the same nine everywhere and not every
+   screen uses all of them. */
+function wireBar(root, handlers){
+  Array.prototype.forEach.call(root.querySelectorAll('[data-cmd]'), function(b){
+    var k = b.getAttribute('data-cmd');
+    b.onclick = function(){ if(handlers[k]) handlers[k](); };
+  });
+}
+
+function tabletHTML(pane, bar, cards, kb){
+  return '<div class="tablet">'
+       +   '<div class="tmain">'
+       +     '<div class="tpane">' + pane + '</div>'
+       +     '<div class="tbar">' + bar + '</div>'
+       +     '<div class="tcards">' + cards + '</div>'
+       +   '</div>'
+       +   '<div class="tdock">' + dockHTML(kb) + '</div>'
+       + '</div>';
+}
+
+/* ---- the four card boxes ---------------------------------------------------
+   A card can carry TWO marks and the point is that they can land on different
+   cards: "you said this" is history, "closest to what you meant" is the
+   judgment being made now. Under a four-second clock the two often disagree. */
+function tcardHTML(c, i, o){
+  var cls = 'tcard s-' + c.s
+          + (i === o.took    ? ' chosen'  : '')
+          + (i === o.closer  ? ' closer'  : '')
+          + (i === o.editing ? ' editing' : '');
+  var body = (i === o.editing) ? wordsHTML() : esc(c.text);
+  var mk = '';
+  if(i === o.took)   mk += '<span class="mk mk-said">you said this</span>';
+  if(i === o.closer && i !== o.editing) mk += '<span class="mk mk-near">closest to what you meant</span>';
+  if(i === o.editing) mk += '<span class="mk mk-near">your words now</span>';
+  return '<div class="' + cls + '" data-card="' + i + '" role="button" tabindex="0">'
+       + '<span class="hint">' + esc(c.hint) + '</span>' + body + mk + '</div>';
+}
+function emptyCardsHTML(n){
+  var h = '';
+  for(var i=0;i<(n||4);i++) h += '<div class="tcard empty"></div>';
+  return h;
+}
+
+/* ======================================================================
+   EDITING: ONE HIGHLIGHTED WORD IS THE CURSOR
+
+   A text cursor is a one-pixel line between two letters - hard to see, hard to
+   hit, and ambiguous at a glance. So there is always exactly one highlighted
+   word instead. The two command buttons move it, tapping a word moves it
+   straight there, typing replaces it, and backspace empties it and leaves the
+   gap highlighted - so three words is three presses, going the way backspace
+   already goes.
+
+   A removed word becomes an EMPTY SLOT rather than disappearing, and that is
+   what makes the next press safe: after any backspace the highlight is sitting
+   on a hole, so typing puts something in rather than overwriting a word the
+   user wanted to keep. Empty slots collapse when the text is read back.
+   ====================================================================== */
+var ed = null;   /* {kind:'card'|'heard', ci:Number, words:[String], sel:Number, fresh:Bool} */
+
+function startEdit(kind, ci, text){
+  ed = { kind:kind, ci:ci, words:String(text).split(/\s+/).filter(Boolean), sel:0, fresh:true };
+  if(!ed.words.length) ed.words = [''];
+}
+function edText(){ return ed ? ed.words.filter(function(w){ return w !== ''; }).join(' ') : ''; }
+
+function wordsHTML(){
+  if(!ed) return '';
+  return ed.words.map(function(w, i){
+    if(i === ed.sel){
+      return '<input class="winp" id="winp" value="' + esc(w) + '" size="' + Math.max(3, w.length) + '">';
+    }
+    return '<span class="w' + (w === '' ? ' hole' : '') + '" data-w="' + i + '">' + esc(w) + '</span>';
+  }).join(' ');
+}
+
+function wireWords(root, after){
+  Array.prototype.forEach.call(root.querySelectorAll('[data-w]'), function(el){
+    el.onclick = function(e){
+      e.stopPropagation();
+      ed.sel = +el.getAttribute('data-w'); ed.fresh = true; after();
+    };
+  });
+  var inp = root.querySelector('#winp');
+  if(!inp) return;
+  inp.focus();
+  inp.setSelectionRange(inp.value.length, inp.value.length);
+  inp.oninput = function(){
+    ed.words[ed.sel] = inp.value.trim();
+    ed.fresh = false;
+    inp.size = Math.max(3, inp.value.length);
+    saveEdit();
+  };
+  inp.onkeydown = function(e){
+    /* the first printable key on an untouched word replaces it, the way typing
+       over a selection does everywhere else */
+    if(ed.fresh && e.key.length === 1 && !e.ctrlKey && !e.metaKey){
+      ed.words[ed.sel] = ''; inp.value = ''; ed.fresh = false;
+      return;
+    }
+    if(e.key === 'Backspace' && (ed.fresh || inp.value === '')){
+      e.preventDefault();
+      if(ed.words[ed.sel] !== ''){ ed.words[ed.sel] = ''; }
+      else if(ed.sel > 0){ ed.sel--; ed.words[ed.sel] = ''; }
+      ed.fresh = true; saveEdit(); after();
+      return;
+    }
+    if(e.key === ' ' || e.key === 'Enter'){ e.preventDefault(); moveWord(1, after); return; }
+    if(e.key === 'ArrowRight' && inp.selectionStart === inp.value.length){ e.preventDefault(); moveWord(1, after); return; }
+    if(e.key === 'ArrowLeft'  && inp.selectionStart === 0){ e.preventDefault(); moveWord(-1, after); }
+  };
+}
+
+function moveWord(d, after){
+  if(!ed) return;
+  if(d > 0 && ed.sel === ed.words.length - 1 && ed.words[ed.sel] !== ''){
+    ed.words.push('');           /* stepping off the end opens a slot to add a word */
+  }
+  ed.sel = Math.max(0, Math.min(ed.words.length - 1, ed.sel + d));
+  ed.fresh = true; after();
+}
+
+/* ---------------------------------------------------------------------------
+   ONE PANE, ALWAYS THE WHOLE CONVERSATION.
+
+   The exchange being worked on is outlined; Previous and Next move the outline
+   and TAPPING ANY OTHER LINE MOVES IT STRAIGHT THERE (Ken, September 24 2026).
+   That is what makes "step through it" and "scroll through it" one screen
+   rather than two features.
+
+   It also settles how the two taps stay apart, which is how a mishearing gets
+   reported at all: a tap on a line you are NOT on takes you there; a tap on the
+   other person's line of the exchange you are ALREADY on opens it for
+   correction, in the same place the words appeared. One tap to arrive, a second
+   to correct. The correction never replaces the record - it sits under the line,
+   marked as the user's.
+   --------------------------------------------------------------------------- */
+function saidBy(m){
+  return m.took < 0 ? m.composed : (m.usedSecondSet ? m.cards2 : m.cards)[m.took].text;
+}
+
+function conversationPaneHTML(cur, opts){
+  opts = opts || {};
+  var h = '';
+  MOMENTS.forEach(function(m, i){
+    var v = verdicts[i] || {};
+    var here = (i === cur);
+    var mine = v.misheard
+      ? '<span class="cmine">your note: “' + esc(String(v.heardNote || m.partner).trim()) + '”</span>'
+      : '';
+    if(here && opts.editHeard){
+      h += '<div class="cline"><div class="cwho">' + esc(PARTNER) + '</div>'
+         + '<span class="cthem cnow">' + wordsHTML() + '</span></div>';
+    } else {
+      h += '<div class="cline"><div class="cwho">' + esc(PARTNER) + '</div>'
+         + '<span class="cthem' + (here ? ' cnow' : '') + '" data-goto="' + i + '"'
+         + (here && opts.correctable
+              ? ' data-heard="1" title="tap again to correct what was written down"'
+              : ' title="tap to go to this moment"')
+         + '>“' + esc(m.partner) + '”' + mine + '</span></div>';
+    }
+    if(here && opts.wait){
+      h += '<div class="cwait">' + esc(PARTNER) + ' waited <span class="n">' + m.wait + '</span> seconds</div>';
+    }
+    if(here && m.usedSecondSet){
+      h += '<div class="cappsaid" style="color:var(--warn)">you asked for different suggestions</div>';
+    }
+    h += '<div class="cline" style="text-align:right"><div class="cwho">You'
+       + (m.took < 0 ? ' — typed it yourself' : '') + '</div>'
+       + '<span class="cyou' + (here ? ' cnow' : '') + '" data-goto="' + i + '"'
+       + ' title="tap to go to this moment">“' + esc(saidBy(m)) + '”</span></div>';
+    if(here && opts.own){
+      h += '<div class="cline" style="text-align:right"><div class="cwho">what you would rather have said</div>'
+         + '<span class="cyou" style="background:#FFFDF0;border-color:var(--init)">' + wordsHTML() + '</span></div>';
+    }
+  });
+  return h;
+}
+
+function wireGoto(root, cur, go){
+  Array.prototype.forEach.call(root.querySelectorAll('[data-goto]'), function(el){
+    var i = +el.getAttribute('data-goto');
+    if(i === cur && el.hasAttribute('data-heard')) return;   /* that one corrects instead */
+    el.onclick = function(e){ e.stopPropagation(); if(i !== cur) go(i); };
+  });
+}
+
+function scrollPaneToCurrent(root){
+  var pane = root.querySelector('.tpane');
+  var now  = root.querySelector('.cnow');
+  if(!pane || !now) return;
+  /* measured against the pane, NOT offsetTop. The pane is not a positioned element, so
+     offsetTop is a page-level number - it read in the thousands and scrolled the pane to
+     the very bottom every time, which looked exactly like the outline being on the wrong
+     exchange. */
+  var delta = now.getBoundingClientRect().top - pane.getBoundingClientRect().top;
+  pane.scrollTop = Math.max(0, pane.scrollTop + delta - pane.clientHeight / 3);
+}
+
+/* ====================== screen 2: moving through it ====================== */
 var mode = 'step';
 var stepAt = 0;
 
 function setMode(m){
   mode = m;
-  $('mStep').classList.toggle('on', m==='step');
-  $('mRead').classList.toggle('on', m==='read');
-  $('mPlay').classList.toggle('on', m==='play');
+  $('mStep').classList.toggle('on', m !== 'play');
+  $('mPlay').classList.toggle('on', m === 'play');
   stopPlay();
-  if(m==='step'){
-    $('modeNote').innerHTML = '<b>Stepping.</b> One moment at a time, the next arriving when the '
-      + 'user is ready. The quickest of the three, and it loses the timing completely — nothing '
-      + 'here says that the second reply took eighteen seconds to arrive.';
+  if(m !== 'play'){
+    $('modeNote').innerHTML = '<b>Moving through it.</b> The whole conversation is in the pane at '
+      + 'the top and the exchange you are on is outlined. The two moment buttons move the outline, '
+      + 'and tapping any other line moves it straight there — so scrolling to a part you '
+      + 'remember and stepping through one at a time are the same screen, not two features. What it '
+      + 'loses is the timing: nothing here says that the second reply took eighteen seconds to arrive.';
     renderStep();
-  } else if(m==='read'){
-    $('modeNote').innerHTML = '<b>Reading it all.</b> The whole conversation laid out, so somebody '
-      + 'who already knows the part they want can go straight to it. What the app itself said out '
-      + 'loud to fill the silence is shown too, because the other person heard it.';
-    renderRead();
   } else {
-    $('modeNote').innerHTML = '<b>Playing it back.</b> Roughly two minutes at the real speed. '
-      + '<b>It is a reconstruction, not a recording:</b> the other person’s voice was never kept, '
-      + 'and the app only knows when their words reached it, not when they stopped speaking — so the '
-      + 'silences shown here are, if anything, shorter than the real ones were.';
+    $('modeNote').innerHTML = '<b>Playing it back.</b> The same pane, filling in time with a clock '
+      + '— about two minutes, which is how long it really took. <b>It is a reconstruction, not '
+      + 'a recording:</b> the other person’s voice was never kept, and the app only knows when '
+      + 'their words reached it, not when they stopped speaking — so the silences shown here '
+      + 'are, if anything, shorter than the real ones were. The play bar under the tablet is this '
+      + 'page’s, not the app’s — where a scrubber would live on the real screen is '
+      + 'still open, and is one more thing to weigh against building playback at all.';
     renderPlay();
   }
 }
 
 function renderStep(){
   var m = MOMENTS[stepAt];
-  var h = '<div class="quiet" style="margin-bottom:8px">Moment '+(stepAt+1)+' of '+MOMENTS.length+'</div>'
-        + '<div class="said"><b>Mom said:</b> “'+esc(m.partner)+'”'
-        + noteHTML(stepAt)
-        + '</div>'
-        + cardsHTML(m.usedSecondSet ? m.cards2 : m.cards, {took:m.took, closer:-1, clickable:false});
-  if(m.took < 0){
-    h += '<p class="quiet" style="margin-top:9px"><b>You used none of them.</b> You opened the typing '
-       + 'box and wrote: “'+esc(m.composed)+'”</p>';
-  }
-  h += '<div class="btnrow">'
-     + '<button class="btn small" id="sPrev"'+(stepAt===0?' disabled':'')+'>&larr; Back</button>'
-     + '<button class="btn small on" id="sNext"'+(stepAt===MOMENTS.length-1?' disabled':'')+'>Next moment &rarr;</button>'
-     + '<button class="btn small" id="sJump">Say something about this one</button>'
-     + '</div>';
-  $('stage').innerHTML = h;
-  if($('sPrev')) $('sPrev').onclick = function(){ if(stepAt>0){ stepAt--; renderStep(); } };
-  if($('sNext')) $('sNext').onclick = function(){ if(stepAt<MOMENTS.length-1){ stepAt++; renderStep(); } };
-  if($('sJump')) $('sJump').onclick = function(){ momentAt = stepAt; renderMoment(); $('moment').scrollIntoView({block:'center'}); };
+  var list = m.usedSecondSet ? m.cards2 : m.cards;
+  var cards = list.map(function(c,i){
+    return tcardHTML(c, i, {took:m.took, closer:-1, editing:-1});
+  }).join('');
+  $('stage').innerHTML = tabletHTML(
+    conversationPaneHTML(stepAt, {wait:true}),
+    barHTML({prev:stepAt>0, next:stepAt<MOMENTS.length-1, cards:false}),
+    cards, false);
+  var root = $('stage');
+  wireBar(root, {
+    prev: function(){ if(stepAt>0){ stepAt--; renderStep(); } },
+    next: function(){ if(stepAt<MOMENTS.length-1){ stepAt++; renderStep(); } },
+    play: function(){ setMode('play'); },
+    settings: leaveAlert
+  });
+  wireGoto(root, stepAt, function(i){ stepAt = i; renderStep(); });
+  Array.prototype.forEach.call(root.querySelectorAll('[data-card]'), function(el){
+    el.onclick = function(){ ed = null; momentAt = stepAt; renderMoment(); $('moment').scrollIntoView({block:'center'}); };
+  });
+  scrollPaneToCurrent(root);
 }
 
-function renderRead(){
-  var h = '<div class="b-wrap">';
-  EVENTS.forEach(function(e){
-    if(e.k==='partner'){
-      var m = MOMENTS[e.m];
-      h += '<div class="b-meta">Mom</div><div class="bubble b-them">“'+esc(m.partner)+'”'
-         + noteHTML(e.m)
-         + '</div>';
-    } else if(e.k==='you'){
-      var mm = MOMENTS[e.m];
-      var said = mm.took < 0 ? mm.composed : (mm.usedSecondSet ? mm.cards2 : mm.cards)[mm.took].text;
-      h += '<div class="b-meta" style="text-align:right">You'
-         + (mm.took < 0 ? ' — typed it yourself' : '') + '</div>'
-         + '<div class="bubble b-you">“'+esc(said)+'” '
-         + '<button class="markit" data-m="'+e.m+'">say something about this</button></div>';
-    } else if(e.k==='app'){
-      h += '<div class="bubble b-app">the app said “'+esc(e.text)+'” out loud</div>';
-    } else if(e.k==='act'){
-      h += '<div class="b-meta" style="text-align:right;color:#8A5200">'+esc(e.text)+'</div>';
-    }
-  });
-  h += '</div>';
-  $('stage').innerHTML = h;
-  Array.prototype.forEach.call($('stage').querySelectorAll('.markit'), function(b){
-    b.onclick = function(){ momentAt = +b.getAttribute('data-m'); renderMoment(); $('moment').scrollIntoView({block:'center'}); };
-  });
+function leaveAlert(){
+  alert('In the app this takes you back to the Review tab in Settings, which is where you came in '
+      + '— the same way you leave a practice session. Nothing has to be saved first; what you '
+      + 'write is kept as you write it.');
 }
 
 /* ---- playback ----
-   ⚠ THE LIST IS APPENDED TO, NEVER REBUILT. Rebuilding it on every tick restarted each
-   line's fade-in ten times a second, so the whole conversation sat permanently at the
-   start of its animation and NOTHING WAS VISIBLE except the boxes that have no
-   animation. It looked like the timeline was broken; it was being redrawn to death. */
+   THE LIST IS APPENDED TO, NEVER REBUILT. Rebuilding it on every tick restarted
+   each line's fade-in ten times a second, so the whole conversation sat
+   permanently at the start of its animation and NOTHING WAS VISIBLE. */
 var playTimer = null, playT = 0, playing = false;
 var shown = 0, lastPartnerT = null, answered = true;
 
 function renderPlay(){
   stopPlay();
   playT = 0; shown = 0; lastPartnerT = null; answered = true;
-  $('stage').innerHTML =
-      '<div class="tline" id="tlBody"></div>'
-    + '<div id="liveWait" style="margin-left:18px"></div>'
+  $('stage').innerHTML = tabletHTML(
+      '<div id="tlBody"></div><div id="liveWait"></div>',
+      barHTML({playing:true, cards:false}), emptyCardsHTML(4), false)
     + '<div class="transport">'
     +   '<button class="btn small on" id="pPlay">Play</button>'
     +   '<span class="clock" id="pClock">0:00</span>'
@@ -735,8 +1121,9 @@ function renderPlay(){
     + '</div>';
   $('pPlay').onclick = togglePlay;
   $('pReset').onclick = renderPlay;
-  $('tlBody').innerHTML = '<p class="quiet">Press Play. It runs for about two minutes, '
-    + 'which is how long the real conversation took.</p>';
+  $('tlBody').innerHTML = '<p class="quiet">Press Play. It runs for about two minutes, which is how '
+    + 'long the real conversation took. The four boxes fill when the suggestions arrived.</p>';
+  wireBar($('stage'), { play: togglePlay, settings: leaveAlert });
   drawTimeline();
 }
 
@@ -744,7 +1131,7 @@ function togglePlay(){
   if(playing){ stopPlay(); return; }
   if(playT >= DURATION){ renderPlay(); }
   playing = true;
-  $('pPlay').textContent = 'Pause';
+  if($('pPlay')) $('pPlay').textContent = 'Pause';
   playTimer = setInterval(function(){
     playT = Math.min(DURATION, playT + 0.1);
     drawTimeline();
@@ -761,255 +1148,196 @@ function stopPlay(){
 function drawTimeline(){
   var body = $('tlBody');
   if(!body) return;
-
   while(shown < EVENTS.length && EVENTS[shown].t <= playT){
     if(shown === 0) body.innerHTML = '';
     body.insertAdjacentHTML('beforeend', eventHTML(EVENTS[shown]));
     shown++;
-    body.scrollTop = body.scrollHeight;
   }
+  var pane = body.parentNode;
+  if(pane) pane.scrollTop = pane.scrollHeight;
 
   /* THE POINT OF THE WHOLE SCREEN: a counter ticking up while nobody is saying
      anything, so the wait is felt rather than read. */
   var live = $('liveWait');
   if(live){
     live.innerHTML = (!answered && lastPartnerT !== null && playing)
-      ? '<div class="waiting">'+PARTNER+' has been waiting <span class="n">'
+      ? '<div class="cwait">' + esc(PARTNER) + ' has been waiting <span class="n">'
         + Math.floor(playT - lastPartnerT) + '</span> seconds…</div>'
       : '';
   }
-  $('pClock').textContent = mmss(playT);
-  $('pBar').style.width = (100 * playT / DURATION) + '%';
+  if($('pClock')) $('pClock').textContent = mmss(playT);
+  if($('pBar')) $('pBar').style.width = (100 * playT / DURATION) + '%';
+}
+
+function paintPlayCards(mi, second){
+  var box = $('stage').querySelector('.tcards');
+  if(!box) return;
+  var m = MOMENTS[mi];
+  box.innerHTML = (second ? m.cards2 : m.cards).map(function(c,i){
+    return tcardHTML(c, i, {took:-1, closer:-1, editing:-1});
+  }).join('');
 }
 
 function eventHTML(e){
+  var stamp = '<span class="ct">' + mmss(e.t) + '</span>';
   if(e.k === 'partner'){
     lastPartnerT = e.t; answered = false;
-    return row(e.t, '<span class="e-partner"><b>Mom:</b> “'+esc(MOMENTS[e.m].partner)+'”</span>');
+    return '<div class="cline"><div class="cwho">' + stamp + esc(PARTNER) + '</div>'
+         + '<span class="cthem">“' + esc(MOMENTS[e.m].partner) + '”</span></div>';
   }
-  if(e.k === 'app')    return row(e.t, '<span class="e-app">the app said “'+esc(e.text)+'”</span>');
-  if(e.k === 'cards')  return row(e.t, '<span class="e-cards">four suggestions appeared</span>');
-  if(e.k === 'cards2') return row(e.t, '<span class="e-cards">four different suggestions appeared</span>');
-  if(e.k === 'act')    return row(e.t, '<span class="e-act">'+esc(e.text)+'</span>');
-  /* the user's turn, with how long the other person had been waiting for it */
+  if(e.k === 'app')    return '<div class="cappsaid">' + stamp + 'the app said “' + esc(e.text) + '”</div>';
+  if(e.k === 'cards'){ paintPlayCards(e.m, false); return '<div class="cappsaid" style="color:var(--init)">' + stamp + 'four suggestions appeared</div>'; }
+  if(e.k === 'cards2'){ paintPlayCards(e.m, true); return '<div class="cappsaid" style="color:var(--init)">' + stamp + 'four different suggestions appeared</div>'; }
+  if(e.k === 'act')    return '<div class="cappsaid" style="color:var(--warn)">' + stamp + esc(e.text) + '</div>';
   var m = MOMENTS[e.m];
-  var said = m.took < 0 ? m.composed : (m.usedSecondSet ? m.cards2 : m.cards)[m.took].text;
   var waited = lastPartnerT === null ? 0 : Math.round(e.t - lastPartnerT);
   answered = true;
-  return '<div class="waiting">'+PARTNER+' waited <span class="n">'+waited+'</span> seconds</div>'
-       + row(e.t, '<span class="e-you"><b>You:</b> “'+esc(said)+'”</span>');
-}
-
-function row(t, inner){
-  return '<div class="ev"><span class="t">'+mmss(t)+'</span>'+inner+'</div>';
+  return '<div class="cwait">' + esc(PARTNER) + ' waited <span class="n">' + waited + '</span> seconds</div>'
+       + '<div class="cline" style="text-align:right"><div class="cwho">' + stamp + 'You</div>'
+       + '<span class="cyou">“' + esc(saidBy(m)) + '”</span></div>';
 }
 
 /* ====================== screen 3: one moment ====================== */
 var momentAt = 1;                  /* start on the Sunday one - it is the interesting case */
-var verdicts = {};                 /* what the reviewer clicked, per moment */
+var verdicts = {};                 /* what the reviewer did, per moment */
+
+function saveEdit(){
+  if(!ed) return;
+  var V = verdicts[momentAt] = verdicts[momentAt] || {};
+  if(ed.kind === 'card'){
+    V.text = edText();
+    if(V.text !== V.seed) V.j = 'closest';
+  } else {
+    V.heardNote = edText();
+  }
+  saveVerdicts();
+  refreshUndo();
+}
+
+/* The bar is not redrawn on every keystroke - that would pull the keyboard focus
+   out from under the user - so the one button whose state changes as they type is
+   updated on its own. It was sitting greyed out during the only moment it is
+   wanted. */
+function refreshUndo(){
+  var V = verdicts[momentAt] || {};
+  var dirty = !!(V.text && V.text !== V.seed) || !!V.own || !!V.heardNote;
+  var b = document.querySelector('#moment .tbar .cmd:nth-child(6)');
+  if(!b) return;
+  if(dirty){
+    b.removeAttribute('disabled');
+    b.setAttribute('data-cmd','undo');
+    b.onclick = undoMoment;
+  } else {
+    b.setAttribute('disabled','');
+    b.removeAttribute('data-cmd');
+  }
+}
+function undoMoment(){
+  /* the only control on the screen that takes anything away, so it is one press
+     and it puts back exactly what was there before the user touched it */
+  ed = null; verdicts[momentAt] = {}; saveVerdicts(); renderMoment();
+}
 
 function renderMoment(){
   var m = MOMENTS[momentAt];
-  var v = verdicts[momentAt] || {};
+  var V = verdicts[momentAt] = verdicts[momentAt] || {};
   var list = m.usedSecondSet ? m.cards2 : m.cards;
 
-  var h = '';
-  if(m.flag){
-    h += '<p class="quiet" style="margin:0 0 9px"><span class="flag">Flagged:</span> '+esc(m.flag)+'</p>';
-  }
-  h += '<div class="said"><b>Mom said:</b> “'+esc(m.partner)+'”'
-     + noteHTML(momentAt)
-     + '</div>';
+  var editingCard  = (ed && ed.kind === 'card') ? ed.ci : -1;
+  var editingHeard = !!(ed && ed.kind === 'heard');
+  var closer = (V.closer === undefined) ? -1 : V.closer;
 
-  if(m.usedSecondSet){
-    h += '<p class="quiet" style="margin:0 0 7px">You asked for different suggestions. These are the ones you ended up with.</p>';
-  }
-  /* Which card was closest defaults to the one they actually spoke, and they can move
-     it. The default is only a starting point: the card that would have served them best
-     is not always the one they grabbed in four seconds. */
-  var closer = (v.closer === undefined) ? m.took : v.closer;
-  /* Saying "none of them" takes the mark off every card, so the question that follows
-     must stop referring to one. Both the cards and the wording read the same value. */
-  if(v.j === 'none') closer = -1;
-  h += cardsHTML(list, {took:m.took, closer:closer, clickable:true});
+  var pane = conversationPaneHTML(momentAt, {
+    wait:true, correctable:true, editHeard:editingHeard, own:!!V.own
+  });
+  var cards = V.own ? emptyCardsHTML(4) : list.map(function(c,i){
+    return tcardHTML(c, i, {took:m.took, closer:closer, editing:editingCard});
+  }).join('');
 
-  if(m.took < 0){
-    h += '<p class="quiet" style="margin-top:9px"><b>You used none of them</b> — you typed '
-       + '“'+esc(m.composed)+'” instead.</p>';
-  }
-  h += '<p class="quiet" style="margin-top:9px">'
-     + (m.took < 0 ? 'Tap whichever one came closest to what you wanted to say.'
-                   : 'Tap a different one if it would have suited you better than the one you used.')
-     + '</p>';
+  $('moment').innerHTML = tabletHTML(pane, barHTML({
+    prev: momentAt > 0, next: momentAt < MOMENTS.length - 1,
+    cards: true, editing: !!ed, own: !!V.own,
+    dirty: !!(V.text && V.text !== V.seed) || !!V.own || !!V.heardNote
+  }), cards, !!ed);
 
-  /* Saying one card and marking another is a finding in itself, so it is named on
-     screen rather than only recorded. */
-  if(m.took >= 0 && closer >= 0 && closer !== m.took && v.j !== 'none'){
-    h += '<p class="quiet" style="color:var(--warn);margin-top:4px"><b>Noted:</b> a different '
-       + 'card would have suited you better than the one you used. That is worth knowing on its '
-       + 'own — it usually means a card was worded badly, or that there was no time to read '
-       + 'down to it.</p>';
-  }
+  var root = $('moment');
 
-  var subject = (closer >= 0 && closer !== m.took) ? 'that one' : 'it';
-  h += '<div class="ask">'
-     +   (closer < 0 ? 'Was any of them close?'
-                     : 'Would ' + subject + ' have been what you wanted to say?')
-     + '</div>'
-     + '<div class="btnrow">'
-     +   '<button class="btn'+(v.j==='right'?' on':'')+'" data-j="right">Yes, that was right</button>'
-     +   '<button class="btn'+(v.j==='closest'?' on':'')+'" data-j="closest">It was the closest of the four</button>'
-     +   '<button class="btn'+(v.j==='none'?' on':'')+'" data-j="none">None of them</button>'
-     + '</div>';
+  wireBar(root, {
+    prev: function(){ ed = null; if(momentAt>0){ momentAt--; renderMoment(); } },
+    next: function(){ ed = null; if(momentAt<MOMENTS.length-1){ momentAt++; renderMoment(); } },
+    play: function(){ setMode('play'); $('stage').scrollIntoView({block:'center'}); },
+    wback: function(){ if(ed) moveWord(-1, renderMoment); },
+    wfwd:  function(){ if(ed) moveWord(1, renderMoment); },
+    undo: undoMoment,
+    own: function(){
+      V.own = !V.own;
+      if(V.own){ V.j = 'none'; V.closer = -1; V.text = ''; V.seed = undefined; startEdit('card', -1, ''); }
+      else { ed = null; V.j = undefined; }
+      saveVerdicts(); renderMoment();
+    },
+    hear: function(){ speak(edText() || V.text || ''); },
+    settings: leaveAlert
+  });
 
-  if(v.j === 'closest' || v.j === 'none'){
-    /* PREFILLED from the card that was closest, so the user edits rather than composes
-       (Ken, September 23 2026). Writing from blank is the slowest thing in the app and
-       effort is the binding constraint; changing two words is not.
-       Only for "closest" - if none of them were close, starting them from one would
-       push them toward wording they have just said was wrong. */
-    var seeded = v.seed !== undefined && v.seed !== '';
-    var none = (v.j === 'none');
-    h += '<div style="margin-top:12px">'
-       +   '<label class="tl" for="pref'+momentAt+'">'
-       +     (none   ? 'Then say it in your own words. What did you want to tell '+PARTNER+'?'
-       :     seeded  ? 'Change this into what you would rather have said'
-                     : 'What would you rather have said?')
-       +   '</label>'
-       +   '<textarea class="typed" id="pref'+momentAt+'" rows="3" placeholder="'
-       +     (none ? 'Whatever you would have said if you had had all the time in the world.'
-                   : 'Type it here — there is no hurry, nobody is waiting.')
-       +   '">' + esc(v.text || '') + '</textarea>'
-       +   '<div class="btnrow">'
-       +     '<button class="btn" id="hearIt">Hear it</button>'
-       +     '<button class="btn on" id="keepIt">Keep it</button>'
-       +     '<button class="btn" id="skipIt">Skip this one</button>'
-       +   '</div>'
-       +   (v.cleared && !(v.text || '')
-            ? '<p class="quiet" style="margin-top:7px">Cleared the card’s wording. '
-              + '<button class="markit" id="unclear">Put it back</button></p>'
-            : '')
-       + '</div>';
-  }
-
-  /* Offered on EVERY moment, not only the one we know is wrong - the app cannot know
-     which line it got wrong, so it cannot choose where to offer the button. */
-  h += '<div class="btnrow" style="margin-top:14px">'
-     +   '<button class="btn small'+(v.misheard?' on':'')+'" id="misheard">'
-     +     (v.misheard ? 'Marked as misheard' : 'The app wrote down the wrong words here')
-     +   '</button>'
-     + '</div>';
-  if(v.misheard){
-    h += '<div style="margin-top:9px">'
-       +   '<label class="tl" for="heard'+momentAt+'">What did '+PARTNER+' actually say? (you can leave this blank, if you want)</label>'
-       +   '<textarea id="heard'+momentAt+'" rows="2" placeholder="Change the part that came out wrong.">'
-       +   esc(v.heardNote || '') + '</textarea>'
-       + '</div>';
-  }
-  h += '<p class="quiet" style="margin-top:6px">This does not change the record — it puts a note '
-     + 'beside it, marked as yours. There is nothing here for the user to fix; it tells us where the '
-     + 'listening struggles.</p>';
-
-  if(m.hintText){
-    h += '<p class="quiet" style="margin-top:14px;padding-top:10px;border-top:1px dashed var(--line-soft)">'
-       + '<b>About this moment:</b> ' + esc(m.hintText) + '</p>';
-  }
-
-  $('moment').innerHTML = h;
-  $('mCount').textContent = 'Moment ' + (momentAt+1) + ' of ' + MOMENTS.length;
-
-  Array.prototype.forEach.call($('moment').querySelectorAll('[data-card]'), function(b){
-    b.onclick = function(){
-      var i = +b.getAttribute('data-card');
-      verdicts[momentAt] = verdicts[momentAt] || {};
-      var V = verdicts[momentAt];
+  /* ONE RULE: tap the thing you want to say something about. */
+  Array.prototype.forEach.call(root.querySelectorAll('[data-card]'), function(el){
+    el.onclick = function(){
+      var i = +el.getAttribute('data-card');
+      V.own = false;
       V.closer = i;
-      if(V.j === 'none') V.j = undefined;      /* they have just pointed at one */
-      /* Re-seed only if the box still holds exactly what we put there. Anything the
-         user has actually written is never overwritten by a change of mind here. */
-      if(V.text === undefined || (V.seed !== undefined && V.text === V.seed)){
-        if(V.j === 'closest'){ V.text = list[i].text; V.seed = V.text; }
-      }
+      V.seed = list[i].text;
+      if(V.text === undefined || V.text === '') V.text = list[i].text;
+      V.j = (V.text !== V.seed) ? 'closest' : (i === m.took ? 'right' : 'better card');
+      startEdit('card', i, V.text);
       saveVerdicts(); renderMoment();
     };
   });
 
-  Array.prototype.forEach.call($('moment').querySelectorAll('[data-j]'), function(b){
-    b.onclick = function(){
-      var j = b.getAttribute('data-j');
-      verdicts[momentAt] = verdicts[momentAt] || {};
-      var V = verdicts[momentAt];
-      var justSeeded = false;
-      V.j = j;
-      /* Seed ONLY when the box has never been touched, so switching between the two
-         buttons can never throw away something the user has already written. */
-      /* "None of them" empties the box, so the user writes their own sentence instead of
-         being steered by wording they have just said was wrong (Ken, September 23 2026).
-         Only wording that CAME FROM A CARD is cleared - something they wrote from a blank
-         box is theirs and is left alone. What is cleared is recoverable in one tap, since
-         this is the only control on the screen that takes anything away. */
-      if(j === 'none' && V.seed !== undefined){
-        if(V.text) V.cleared = V.text;
-        V.text = undefined;
-        V.seed = undefined;
-      }
-      var pick = (V.closer === undefined) ? m.took : V.closer;
-      if(j === 'closest' && V.text === undefined && pick >= 0){
-        V.text = list[pick].text;
-        V.seed = V.text;          /* kept so we can tell an edit from a fresh sentence */
-        justSeeded = true;
-      }
-      saveVerdicts(); renderMoment();
-      var box = $('pref'+momentAt);
-      if(box && (justSeeded || j === 'none')){
-        box.focus();
-        box.setSelectionRange(box.value.length, box.value.length);
-      }
-    };
-  });
-  var ta = $('pref'+momentAt);
-  if(ta){
-    ta.addEventListener('input', function(){
-      verdicts[momentAt] = verdicts[momentAt] || {};
-      verdicts[momentAt].text = ta.value;
-      saveVerdicts();
-    });
-  }
-  if($('hearIt')) $('hearIt').onclick = function(){ speak(ta ? ta.value : ''); };
-  if($('keepIt')) $('keepIt').onclick = function(){
-    var t = ta ? ta.value.trim() : '';
-    if(!t){ alert('Type something first — that sentence is the whole point of this screen.'); return; }
-    $('confQuote').innerHTML = '“' + esc(t) + '”';
-    document.getElementById('confQuote').scrollIntoView({block:'center'});
-  };
-  if($('skipIt')) $('skipIt').onclick = function(){
-    if(momentAt < MOMENTS.length-1){ momentAt++; renderMoment(); }
-  };
-  if($('unclear')) $('unclear').onclick = function(){
-    var V = verdicts[momentAt] || {};
-    /* Putting it back restores its PROVENANCE too. The words still came from a card, so
-       pressing "None of them" again must be able to clear them again, and the gathered
-       report must not call them something the user wrote. */
-    V.text = V.cleared; V.seed = V.cleared; V.cleared = undefined;
-    verdicts[momentAt] = V; saveVerdicts(); renderMoment();
-  };
-  var hb = $('heard'+momentAt);
-  if(hb) hb.addEventListener('input', function(){
-    verdicts[momentAt] = verdicts[momentAt] || {};
-    verdicts[momentAt].heardNote = hb.value;
-    saveVerdicts();
-  });
-  if($('misheard')) $('misheard').onclick = function(){
-    verdicts[momentAt] = verdicts[momentAt] || {};
-    var V = verdicts[momentAt];
-    V.misheard = !V.misheard;
-    /* Start them from what the app HEARD, so correcting one word is an edit rather than
-       retyping the sentence (Ken, September 23 2026). Never overwritten once they have
-       touched it, and not re-seeded if they un-flag and flag again. */
-    if(V.misheard && V.heardNote === undefined) V.heardNote = m.partner;
+  var heardEl = root.querySelector('[data-heard]');
+  if(heardEl) heardEl.onclick = function(e){
+    e.stopPropagation();
+    if(PRACTICE_VIEW){
+      alert('In a rehearsal the app speaks the other person’s lines itself, so there is no '
+          + 'microphone and nothing can have been misheard. This tap does nothing here.');
+      return;
+    }
+    V.misheard = true;
+    startEdit('heard', -1, V.heardNote || m.partner);
     saveVerdicts(); renderMoment();
   };
+
+  wireGoto(root, momentAt, function(i){ ed = null; momentAt = i; renderMoment(); });
+  wireWords(root, renderMoment);
+  scrollPaneToCurrent(root);
+
+  $('mCount').textContent = 'Moment ' + (momentAt+1) + ' of ' + MOMENTS.length;
+
+  /* the explanation lives OUTSIDE the tablet - it is us talking to a reviewer,
+     not anything the app would ever show */
+  var hint = '';
+  if(PRACTICE_VIEW){
+    hint += '<p style="color:#4a2352"><b>Shown as a rehearsal.</b> Tapping what the other person '
+          + 'said does nothing — there was no microphone, so nothing can have been misheard. '
+          + 'Anything written here still counts as an example of how you want to sound, and can '
+          + 'still go on your buttons; a <i>fact</i> taken out of it is asked about first, because '
+          + 'the situation was made up (see the next screen).</p>';
+  }
+  if(m.flag) hint += '<p><span class="flag">Flagged:</span> ' + esc(m.flag) + '</p>';
+  if(m.hintText) hint += '<p><b>About this moment:</b> ' + esc(m.hintText) + '</p>';
+  if(closer >= 0 && m.took >= 0 && closer !== m.took){
+    hint += '<p style="color:var(--warn)"><b>Noted:</b> a different card would have suited you '
+          + 'better than the one you used. That is worth knowing on its own — it usually means '
+          + 'a card was worded badly, or that there was no time to read down to it.</p>';
+  }
+  if(V.text && V.seed !== undefined && V.text !== V.seed){
+    hint += '<p style="color:var(--pref)"><b>Kept:</b> “' + esc(V.text) + '”. In the app '
+          + 'you would be asked, on leaving this moment, whether to keep any of it — see the '
+          + 'next screen.</p>';
+    $('confQuote').innerHTML = '“' + esc(V.text) + '”';
+  }
+  $('mHint').innerHTML = hint;
 }
+
 function saveVerdicts(){ save('verdicts', JSON.stringify(verdicts)); }
 
 /* The real app speaks in the user's own chosen voice. This is the browser's default one,
@@ -1022,6 +1350,26 @@ function speak(t){
   }catch(e){
     alert('This browser would not speak it. In the app it would use the voice the user has chosen.');
   }
+}
+
+/* Screen 4's third option is the one that differs between a real conversation and a
+   rehearsal, and the difference is a QUESTION rather than a rule (Ken, September 24
+   2026). A fact written during a rehearsal may have been invented to fit a made-up
+   situation - so the app asks whether it is true, instead of either trusting it or
+   silently refusing to offer it. The other two carry over untouched: how somebody wants
+   to sound is theirs whoever they were pretending to talk to. */
+function renderConf(){
+  var el = $('factOpt');
+  if(!el) return;
+  el.innerHTML = PRACTICE_VIEW
+    ? '<label class="opt"><input type="checkbox" id="k3">'
+      + '<span>Add to About Me: my back gives me trouble</span></label>'
+      + '<div class="sub">This was a rehearsal, so before it is kept: '
+      + '<label><input type="radio" name="fact" value="true" checked> that is true about me</label>'
+      + '<label><input type="radio" name="fact" value="made-up"> I made it up for the practice</label>'
+      + '</div>'
+    : '<label class="opt"><input type="checkbox" id="k3">'
+      + '<span>Add to About Me: my back gives me trouble</span></label>';
 }
 
 /* ====================== the questions ====================== */
@@ -1129,18 +1477,23 @@ function copyAll(){
 }
 
 /* ====================== start up ====================== */
+try{ verdicts = JSON.parse(load('verdicts') || '{}') || {}; }catch(e){ verdicts = {}; }
 renderList();
 setMode('step');
-try{ verdicts = JSON.parse(load('verdicts') || '{}') || {}; }catch(e){ verdicts = {}; }
 renderMoment();
 renderQuestions();
+renderConf();
 ['who','c1','c2','c3','c4'].forEach(function(id){ wireField($(id)); });
 
 $('mStep').onclick = function(){ setMode('step'); };
-$('mRead').onclick = function(){ setMode('read'); };
 $('mPlay').onclick = function(){ setMode('play'); };
-$('prevM').onclick = function(){ if(momentAt>0){ momentAt--; renderMoment(); } };
-$('nextM').onclick = function(){ if(momentAt<MOMENTS.length-1){ momentAt++; renderMoment(); } };
+$('prevM').onclick = function(){ ed = null; if(momentAt>0){ momentAt--; renderMoment(); } };
+$('nextM').onclick = function(){ ed = null; if(momentAt<MOMENTS.length-1){ momentAt++; renderMoment(); } };
+/* both open questions are switchable on the page rather than described */
+$('icA').onclick = function(){ ICONSET='A'; $('icA').classList.add('on'); $('icB').classList.remove('on'); renderMoment(); };
+$('icB').onclick = function(){ ICONSET='B'; $('icB').classList.add('on'); $('icA').classList.remove('on'); renderMoment(); };
+$('vReal').onclick = function(){ PRACTICE_VIEW=false; $('vReal').classList.add('on'); $('vPrac').classList.remove('on'); renderMoment(); renderConf(); };
+$('vPrac').onclick = function(){ PRACTICE_VIEW=true;  $('vPrac').classList.add('on'); $('vReal').classList.remove('on'); renderMoment(); renderConf(); };
 $('gather').onclick = gather;
 $('copyAll').onclick = copyAll;
 </script>
