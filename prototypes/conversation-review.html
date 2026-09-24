@@ -1,0 +1,978 @@
+<!doctype html>
+<!--
+  Conversation review - PROTOTYPE FOR COMMENT (September 23 2026)
+
+  Step 2 of the four Ken set out: the document, then this, then a design document,
+  then the build. It exists to be put in front of speech and language therapists and
+  argued with. Nothing here is the real app and nothing here is built.
+
+  Deliberately NOT in app/, so it is never deployed and never becomes something that
+  has to be maintained. Open it directly in a browser; there is nothing to install.
+
+  WHAT IT IS ACTUALLY FOR - the seven questions at the foot of the page. Everything
+  above them exists so that those can be answered by somebody who has touched the
+  thing rather than read about it. The single biggest one is which way through a
+  conversation should be the normal one, which is why all three are live here.
+
+  READ THE AMERICAN-ENGLISH RULE BEFORE EDITING. A prototype goes to people outside
+  the project, so it is MORE exposed than the app, not less. American spelling and
+  American vocabulary throughout - "store" not "shop", "check the box" not "tick".
+
+  The conversation is made up but is built to be realistic and to contain, on purpose:
+  a long silence worth feeling, a turn where the user asked for different suggestions,
+  a turn where they gave up and typed, a mishearing, a closed-set turn, and a closing.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conversant AAC - reviewing a past conversation (prototype)</title>
+<style>
+  :root{
+    --ink:#22303a; --muted:#5a6b76; --faint:#8b9aa4;
+    --line:#c3ced5; --line-soft:#e2e8ec; --page:#f6f8f9; --card:#ffffff;
+    --brand:#1F4E79;
+    --pref:#2E7D32;  --pref-bg:#F1F8E9;
+    --disp:#A86300;  --disp-bg:#FFF8E1;
+    --init:#1565C0;  --init-bg:#E8F0FE;
+    --rep:#6A1B9A;   --rep-bg:#F3E5F5;
+    --slate:#455A64; --slate-bg:#ECEFF1;
+    --warn:#8A5200;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{font:16px/1.55 Arial,Helvetica,sans-serif;margin:0;background:var(--page);color:var(--ink)}
+  .wrap{max-width:900px;margin:0 auto;padding:22px 20px 80px}
+  h1{font-size:25px;color:var(--brand);margin:0 0 6px}
+  h2{font-size:19px;color:var(--brand);margin:0 0 4px}
+  h3{font-size:15px;color:var(--brand);margin:16px 0 6px}
+  p{margin:0 0 11px}
+  .lede{color:var(--muted);font-size:15px;margin:0 0 18px}
+  .step{color:var(--faint);font-size:12.5px;letter-spacing:.09em;text-transform:uppercase;
+        font-weight:bold;margin:0 0 3px}
+  .sheet{background:var(--card);border:1px solid var(--line-soft);border-radius:10px;
+         padding:20px 22px;margin:0 0 20px}
+  .note{background:#FFFBEA;border:1px solid #EAD9A0;border-radius:8px;padding:12px 14px;
+        font-size:14.5px;margin:0 0 16px;color:#5f4a12}
+  .note b{color:#4a3a0c}
+  .quiet{color:var(--muted);font-size:14px}
+  .center{text-align:center}
+
+  /* ---- the fake device ------------------------------------------------ */
+  .device{border:1px solid var(--line);border-radius:10px;background:#fff;overflow:hidden;
+          box-shadow:0 1px 3px rgba(0,0,0,.06)}
+  .tabbar{display:flex;background:#ECEFF1;border-bottom:1px solid var(--line);overflow-x:auto}
+  .tab{font-size:12px;padding:8px 12px;color:#455A64;border-right:1px solid #CFD8DC;white-space:nowrap}
+  .tab.on{background:#fff;color:var(--brand);font-weight:bold;box-shadow:inset 0 -2px 0 var(--brand)}
+  .screen{padding:14px 16px}
+
+  /* ---- the conversation list ------------------------------------------ */
+  .lhdr,.lrow{display:grid;grid-template-columns:1.5fr 1fr 1fr 1.1fr 2.1fr;gap:10px;align-items:center}
+  .lhdr{font-size:11.5px;color:var(--muted);font-weight:bold;padding:0 10px 6px}
+  .lrow{font-size:13.5px;padding:10px;border:1px solid var(--line-soft);border-radius:6px;
+        margin-bottom:6px;cursor:pointer;background:#fff;text-align:left;width:100%;font-family:inherit;color:inherit}
+  .lrow:hover{border-color:var(--brand);background:#F7FAFC}
+  .lrow.sel{border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)}
+  .st{font-size:12px}
+  .flag{color:var(--warn);font-weight:bold}
+  .done{color:var(--pref)} .part{color:var(--brand)} .nope{color:var(--faint)}
+  @media (max-width:760px){
+    .lhdr{display:none}
+    .lrow{grid-template-columns:1fr 1fr;row-gap:3px}
+  }
+
+  /* ---- shared bits ----------------------------------------------------- */
+  .said{background:var(--slate-bg);border-left:4px solid var(--slate);padding:9px 12px;
+        border-radius:5px;font-size:14.5px;margin:0 0 12px}
+  .heardwrong{display:block;font-size:12.5px;color:var(--warn);margin-top:5px}
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  @media (max-width:640px){ .cards{grid-template-columns:1fr} }
+  .rcard{border:1px solid var(--line-soft);border-radius:6px;padding:9px 11px;font-size:14px;
+         text-align:left;font-family:inherit;color:inherit;cursor:pointer;background:#fff;width:100%}
+  .rcard .hint{display:block;font-size:11.5px;color:var(--muted);margin-bottom:3px}
+  .rcard:hover{box-shadow:0 0 0 2px rgba(31,78,121,.25)}
+  .rcard.chosen{outline:2px solid var(--pref);outline-offset:1px}
+  .rcard[disabled]{cursor:default;opacity:1}
+  .s-pref{border-left:6px solid var(--pref);background:var(--pref-bg)}
+  .s-disp{border-left:6px solid var(--disp);background:var(--disp-bg)}
+  .s-init{border-left:6px solid var(--init);background:var(--init-bg)}
+  .s-rep {border-left:6px solid var(--rep);background:var(--rep-bg)}
+  .s-slate{border-left:6px solid var(--slate);background:var(--slate-bg)}
+  .tookit{display:block;font-size:11.5px;color:var(--pref);font-weight:bold;margin-top:5px}
+
+  .btn{font:inherit;font-size:14px;border:1px solid #90A4AE;border-radius:5px;padding:8px 13px;
+       background:#fff;color:#37474F;cursor:pointer}
+  .btn:hover{border-color:var(--brand)}
+  .btn.on{background:var(--brand);color:#fff;border-color:var(--brand);font-weight:bold}
+  .btn.small{font-size:13px;padding:6px 10px}
+  .btnrow{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 0}
+  .ask{font-size:14.5px;font-weight:bold;margin:14px 0 8px}
+
+  textarea{font:inherit;font-size:14px;width:100%;border:1px solid var(--line);border-radius:6px;
+           padding:9px 11px;resize:vertical;background:#fff;color:inherit}
+  textarea.typed{background:#FFFDF6;min-height:70px}
+  input[type=text]{font:inherit;font-size:14px;border:1px solid var(--line);border-radius:6px;
+                   padding:8px 10px;background:#fff;color:inherit}
+  label.tl{display:block;font-size:12.5px;color:var(--muted);margin:0 0 4px}
+
+  /* ---- playback --------------------------------------------------------- */
+  /* NOT ".tl" - that is the field-label class, and a shared name gave every label in the
+     page the timeline's 260px minimum height and its left border. */
+  .tline{border-left:2px solid var(--line-soft);margin-left:4px;padding-left:14px;
+         min-height:260px;max-height:330px;overflow-y:auto}
+  .ev{position:relative;font-size:14px;padding:5px 0;animation:in .25s ease}
+  @keyframes in{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+  .ev .t{display:inline-block;width:44px;color:var(--faint);font-size:12px;
+         font-variant-numeric:tabular-nums}
+  .e-partner{color:#37474F} .e-partner b{color:#1a2a33}
+  .e-app{color:var(--rep);font-style:italic}
+  .e-cards{color:var(--init)}
+  .e-you{color:var(--pref)} .e-you b{color:#1b5e20}
+  .e-act{color:var(--warn)}
+  .waiting{margin:6px 0 6px -16px;padding:7px 12px;background:#FFF8E1;border:1px dashed var(--disp);
+           border-radius:6px;font-size:13px;color:var(--warn);display:inline-block}
+  .waiting .n{font-weight:bold;font-variant-numeric:tabular-nums}
+  .transport{display:flex;gap:10px;align-items:center;margin-top:14px;padding-top:12px;
+             border-top:1px solid var(--line-soft);flex-wrap:wrap}
+  .clock{font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px;min-width:44px}
+  .scrub{flex:1 1 140px;height:7px;background:#CFD8DC;border-radius:4px;position:relative;overflow:hidden}
+  .scrub i{position:absolute;inset:0 auto 0 0;width:0;background:var(--brand);transition:width .1s linear}
+
+  /* ---- read-it-all ------------------------------------------------------ */
+  .bubble{max-width:82%;padding:8px 12px;border-radius:12px;font-size:14px;margin:0 0 7px}
+  .b-them{background:var(--slate-bg);border:1px solid var(--line-soft)}
+  .b-you{background:var(--pref-bg);border:1px solid #cfe3c4;margin-left:auto}
+  .b-app{background:#F3E5F5;border:1px solid #e3cdea;font-style:italic;color:#4a2352;
+         font-size:13px;max-width:70%;margin-left:auto}
+  .b-meta{font-size:12px;color:var(--faint);margin:0 0 7px}
+  .b-wrap{display:flex;flex-direction:column}
+  .markit{border:none;background:none;color:var(--brand);font:inherit;font-size:12.5px;
+          cursor:pointer;padding:0 0 0 4px;text-decoration:underline}
+
+  /* ---- the confirmation card -------------------------------------------- */
+  .conf{border:2px solid var(--brand);border-radius:8px;padding:14px 16px;background:#F7FAFC;margin-top:14px}
+  .conf h4{font-size:15px;color:var(--brand);margin:0 0 9px}
+  .quoted{font-size:14px;background:#fff;border:1px solid var(--line-soft);border-radius:6px;
+          padding:9px 11px;margin:0 0 12px}
+  .opt{display:flex;gap:9px;align-items:flex-start;font-size:14px;padding:6px 0;cursor:pointer}
+  .opt input{margin:4px 0 0}
+  .sub{margin:2px 0 4px 26px;font-size:13.5px;color:var(--muted)}
+  .sub label{margin-right:14px;cursor:pointer}
+
+  /* ---- comment boxes ----------------------------------------------------- */
+  .cbox{margin:18px 0 0;padding:14px 0 0;border-top:1px dashed var(--line)}
+  .cbox label{display:block;font-size:13.5px;color:var(--brand);font-weight:bold;margin:0 0 6px}
+
+  /* ---- questions ---------------------------------------------------------- */
+  .q{padding:14px 0;border-bottom:1px solid var(--line-soft)}
+  .q:last-child{border-bottom:none}
+  .qh{font-size:15px;font-weight:bold;margin:0 0 4px}
+  .qwhy{font-size:13.5px;color:var(--muted);margin:0 0 9px}
+  .choices{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 9px}
+  .choices label{font-size:13.5px;border:1px solid var(--line);border-radius:14px;padding:5px 12px;
+                 cursor:pointer;background:#fff}
+  .choices input{margin-right:6px}
+  .choices label:hover{border-color:var(--brand)}
+
+  .bigbtn{font:inherit;font-size:16px;font-weight:bold;background:var(--brand);color:#fff;
+          border:none;border-radius:8px;padding:13px 22px;cursor:pointer}
+  .bigbtn:hover{background:#17395a}
+  .okmsg{color:var(--pref);font-weight:bold;font-size:14px;margin-left:12px}
+  .out{width:100%;min-height:200px;font:13px/1.5 Consolas,monospace;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Reviewing a conversation you have already had</h1>
+<p class="lede">A working sketch of something Conversant AAC does not do yet. Nothing here is real,
+nothing is saved anywhere except your own browser, and everything on the page can still change &mdash;
+which is the point of showing it to you now rather than later.</p>
+
+<!-- ============================== INTRO ============================== -->
+<div class="sheet">
+  <h2>What we are asking you to look at</h2>
+  <p>Conversant AAC listens to the person a user is talking with, and within a few seconds
+  offers four things the user might say back. They pick one and the device speaks it.
+  Every one of those conversations is already saved on the user's own device, in detail &mdash;
+  and at the moment there is no way for anyone to look at one.</p>
+
+  <p><b>This is a sketch of that missing piece.</b> The idea underneath it is that going back over
+  a conversation is the only time the user can think about their own communication with nobody
+  waiting on them. During a conversation everything is a race against the silence. Afterward
+  there is no clock at all, so that is where the slow, careful thinking can happen: was that
+  really what I wanted to say, and what would I rather have said instead?</p>
+
+  <div class="note"><b>Three things this deliberately is not.</b>
+  It never scores the user or tells them their conversation could have been better &mdash; remarks
+  about the words are fine, verdicts on the person are not. It never changes anything without
+  asking. And nothing here is required: every part of it can be skipped, and stopping loses nothing.</div>
+
+  <p><b>What would help most.</b> Click through the four screens below and write down anything
+  at all in the comment box under each one &mdash; including &ldquo;this would never work&rdquo;
+  and &ldquo;I do not understand what this is for&rdquo;. Then answer as many of the seven
+  questions at the foot of the page as you have patience for. At the very bottom is a button
+  that gathers everything you wrote into one block of text for you to copy into an email.</p>
+
+  <p class="quiet">Nothing you type leaves this page. It is kept in your own browser so you can
+  close the tab and come back, and it goes nowhere at all until you copy it and send it yourself.</p>
+
+  <p style="margin-top:14px"><label class="tl" for="who">Your name, so we know whose comments these are</label>
+  <input type="text" id="who" size="34" placeholder="e.g. Jane Alvarez, SLP"></p>
+</div>
+
+<!-- ============================== SCREEN 1 ============================== -->
+<div class="sheet">
+  <p class="step">Screen 1 of 4</p>
+  <h2>Finding the conversation</h2>
+  <p>Review would live in its own tab in the app's settings, next to Practice &mdash; something
+  done deliberately, in a quiet moment, and never reachable from the conversation screen where a
+  stray tap could cause trouble. Conversations are listed newest first.</p>
+
+  <div class="device">
+    <div class="tabbar">
+      <div class="tab">General</div><div class="tab">Conversation</div><div class="tab">Speech</div>
+      <div class="tab">Express Panel</div><div class="tab">Practice</div>
+      <div class="tab on">Review</div><div class="tab">About</div>
+    </div>
+    <div class="screen">
+      <div class="lhdr"><div>When</div><div>Who</div><div>Where</div><div>How long</div><div>Where you got to</div></div>
+      <div id="convList"></div>
+    </div>
+  </div>
+
+  <p class="quiet" style="margin-top:12px">The app knows which moments the user themselves
+  asked for something different at the time &mdash; where they pressed for other suggestions, or
+  gave up and typed instead &mdash; so it can say so on the row. It is a hint, not a filter:
+  <b>the app cannot know which moment actually mattered to them</b>, and it should not pretend to.</p>
+
+  <div class="cbox">
+    <label for="c1">Your comments on this screen</label>
+    <textarea id="c1" rows="3" placeholder="Would someone find their way here? Is the right information on a row? Does the highlighting of difficult moments help, or does it steer them?"></textarea>
+  </div>
+</div>
+
+<!-- ============================== SCREEN 2 ============================== -->
+<div class="sheet">
+  <p class="step">Screen 2 of 4 &mdash; the question we most need answered</p>
+  <h2>Three ways through the same conversation</h2>
+  <p>We genuinely do not know which of these should be the normal way in. <b>Please try all three</b>,
+  and tell us which one you would put in front of a client &mdash; and whether the other two are worth
+  building at all.</p>
+
+  <div class="btnrow" role="group" aria-label="Choose a way through">
+    <button class="btn on" id="mStep">Step through it</button>
+    <button class="btn" id="mRead">Read it all</button>
+    <button class="btn" id="mPlay">Play it back</button>
+  </div>
+
+  <div class="device" style="margin-top:12px">
+    <div class="screen" id="stage"></div>
+  </div>
+
+  <div id="modeNote" class="quiet" style="margin-top:12px"></div>
+
+  <div class="cbox">
+    <label for="c2">Your comments on these three</label>
+    <textarea id="c2" rows="4" placeholder="Which one would you use? Is playing it back at the real speed worth it, or just slow? Would a client sit through two minutes of it?"></textarea>
+  </div>
+</div>
+
+<!-- ============================== SCREEN 3 ============================== -->
+<div class="sheet">
+  <p class="step">Screen 3 of 4</p>
+  <h2>Looking at one moment</h2>
+  <p>This is the heart of it. The user sees what was said to them, the four suggestions exactly as
+  they appeared, and which one they used. Then two short questions &mdash; and a box where they can
+  write what they would rather have said.</p>
+
+  <div class="note"><b>Why we do not ask them to score all four.</b> The four suggestions are four
+  different kinds of reply on purpose &mdash; agreeing, declining, changing direction, asking for
+  clarification &mdash; so on most turns only one or two were ever real candidates. Scoring all four
+  would mean rating two the user never considered. So we ask only about the one that was closest.
+  <b>Is that the right call?</b></div>
+
+  <div class="device">
+    <div class="screen" id="moment"></div>
+  </div>
+
+  <div class="btnrow">
+    <button class="btn small" id="prevM">&larr; Previous moment</button>
+    <span class="quiet" id="mCount" style="align-self:center"></span>
+    <button class="btn small" id="nextM">Next moment &rarr;</button>
+  </div>
+
+  <div class="cbox">
+    <label for="c3">Your comments on this screen</label>
+    <textarea id="c3" rows="4" placeholder="Is the question clear? Would a client type a whole sentence here? Is asking about only the closest card right, or should they mark each one?"></textarea>
+  </div>
+</div>
+
+<!-- ============================== SCREEN 4 ============================== -->
+<div class="sheet">
+  <p class="step">Screen 4 of 4</p>
+  <h2>What comes of it</h2>
+  <p>A review is only worth the effort if something changes. When the user writes what they would
+  rather have said, the app offers to keep parts of it &mdash; and offers, never just does it.
+  Adding a button moves every button after it on their panel, and those positions are learned by
+  hand as much as by eye.</p>
+
+  <div class="device"><div class="screen">
+    <div class="conf">
+      <h4>Shall I keep anything from that?</h4>
+      <div class="quoted" id="confQuote">&ldquo;I&rsquo;d rather you came here &mdash; my back has been rough this week.&rdquo;</div>
+
+      <label class="opt"><input type="checkbox" id="k1" checked>
+        <span>Remember this as an example of how I want to sound</span></label>
+
+      <label class="opt"><input type="checkbox" id="k2">
+        <span>Put &ldquo;My back has been rough this week&rdquo; on my buttons</span></label>
+      <div class="sub">
+        <label><input type="radio" name="scope" value="anyone"> for anyone</label>
+        <label><input type="radio" name="scope" value="mom" checked> only when I am talking with Mom</label>
+      </div>
+
+      <label class="opt"><input type="checkbox" id="k3">
+        <span>Add to About Me: my back gives me trouble</span></label>
+
+      <div class="btnrow"><button class="btn on">Done</button><button class="btn">Keep nothing</button></div>
+    </div>
+  </div></div>
+
+  <h3>Where everything the user says in review would end up</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:14px;margin-top:4px">
+    <tr style="background:#D5E8F0"><th style="text-align:left;padding:7px 9px;border:1px solid var(--line-soft)">What they say</th>
+        <th style="text-align:left;padding:7px 9px;border:1px solid var(--line-soft)">Where it goes</th></tr>
+    <tr><td style="padding:7px 9px;border:1px solid var(--line-soft)">&ldquo;This one was right&rdquo;, or a sentence they wrote</td>
+        <td style="padding:7px 9px;border:1px solid var(--line-soft)">Kept as an example of how they want to sound, so suggestions gradually read more like them</td></tr>
+    <tr><td style="padding:7px 9px;border:1px solid var(--line-soft)">A fact the app did not have</td>
+        <td style="padding:7px 9px;border:1px solid var(--line-soft)">About Me, the notes about that person, or the details of that place</td></tr>
+    <tr><td style="padding:7px 9px;border:1px solid var(--line-soft)">A phrase they keep reaching for</td>
+        <td style="padding:7px 9px;border:1px solid var(--line-soft)">A button, for everyone or for one person</td></tr>
+    <tr><td style="padding:7px 9px;border:1px solid var(--line-soft)">&ldquo;It got her words wrong&rdquo;</td>
+        <td style="padding:7px 9px;border:1px solid var(--line-soft)">A note beside the record. Nothing for them to fix; it tells us where the listening struggles</td></tr>
+    <tr><td style="padding:7px 9px;border:1px solid var(--line-soft)">&ldquo;It was too slow&rdquo;</td>
+        <td style="padding:7px 9px;border:1px solid var(--line-soft)">A setting they can change</td></tr>
+    <tr><td style="padding:7px 9px;border:1px solid var(--line-soft)">&ldquo;Nothing was wrong &mdash; I just wanted to say something else&rdquo;</td>
+        <td style="padding:7px 9px;border:1px solid var(--line-soft)"><b>Nothing is fixed.</b> The sentence is still kept</td></tr>
+  </table>
+  <p class="quiet" style="margin-top:10px">That last row matters. Much of what somebody wishes they
+  had said depended on something in their own head that morning. If every comment were pushed into
+  the profile, the profile would fill up with things that were true for one afternoon and would
+  shape every conversation afterward.</p>
+
+  <div class="cbox">
+    <label for="c4">Your comments on this screen</label>
+    <textarea id="c4" rows="4" placeholder="Is asking every time right, or would it become tiresome? Should the app ever suggest adding a fact about the person, or only accept what they offer?"></textarea>
+  </div>
+</div>
+
+<!-- ============================== QUESTIONS ============================== -->
+<div class="sheet">
+  <h2>Seven questions</h2>
+  <p class="quiet">Answer as many as you want to. A one-line answer is worth more to us than a
+  blank, and &ldquo;I don't know&rdquo; is a real answer.</p>
+  <div id="questions"></div>
+</div>
+
+<!-- ============================== SEND ============================== -->
+<div class="sheet center">
+  <h2>When you are done</h2>
+  <p class="quiet">This gathers everything you wrote into one block of text. Copy it and email it to
+  <b>volksswitch@gmail.com</b>. Nothing is sent by this page.</p>
+  <button class="bigbtn" id="gather">Gather everything I wrote</button>
+  <span id="okmsg" class="okmsg"></span>
+  <textarea id="out" class="out" placeholder="Your answers will appear here." spellcheck="false"></textarea>
+  <div class="btnrow" style="justify-content:center"><button class="btn" id="copyAll">Copy it</button></div>
+</div>
+
+<p class="quiet center">Conversant AAC is free and open source. Volksswitch.org &middot; prototype, September 2026</p>
+</div>
+
+<script>
+'use strict';
+
+/* ======================================================================
+   THE SAMPLE CONVERSATION
+   Made up, but built to contain on purpose: a silence worth feeling, a turn
+   where the user asked for different suggestions, a turn where they gave up
+   and typed, a mishearing, a turn where Mom put choices on the table, and a
+   closing. Times are seconds from the start.
+   ====================================================================== */
+
+var MOMENTS = [
+  {
+    partner: "Hi, honey. How has your week been?",
+    cards: [
+      {s:'pref', hint:"Good, busy",       text:"Pretty good, thanks — busy though."},
+      {s:'disp', hint:"Not great",        text:"Honestly, not my best week."},
+      {s:'init', hint:"Better now",       text:"Better now that you've called."},
+      {s:'rep',  hint:"Say again?",       text:"Sorry — could you say that again?"}
+    ],
+    took: 0, wait: 12, flag: null
+  },
+  {
+    partner: "We were thinking of driving up to see you on Sunday — does that work?",
+    cards: [
+      {s:'pref', hint:"Sunday's fine",      text:"Sunday works, come on up."},
+      {s:'disp', hint:"Not Sunday",         text:"I'd love to, but Sunday isn't great for me."},
+      {s:'init', hint:"Saturday instead?",  text:"Could we make it Saturday instead?"},
+      {s:'rep',  hint:"Which Sunday?",      text:"Sorry — which Sunday do you mean?"}
+    ],
+    took: 0, wait: 18, flag: null,
+    hintText: "This is the one to try the buttons on. The user said yes to Sunday — but what they wanted to say was that their back has been bad and they would rather not travel."
+  },
+  {
+    partner: "Lovely. What time suits you?",
+    cards: [
+      {s:'pref', hint:"Whenever",      text:"Any time is fine by me."},
+      {s:'disp', hint:"Not early",     text:"Not first thing, if that's all right."},
+      {s:'init', hint:"After lunch?",  text:"Would after lunch work for you?"},
+      {s:'rep',  hint:"Which day?",    text:"Sorry — we're talking about Sunday?"}
+    ],
+    cards2: [
+      {s:'pref', hint:"Early afternoon", text:"Early afternoon is best."},
+      {s:'disp', hint:"Depends",         text:"It depends how the morning goes."},
+      {s:'init', hint:"You choose",      text:"Whatever suits you — you're the one driving."},
+      {s:'rep',  hint:"How long?",       text:"How long will you be staying?"}
+    ],
+    took: 0, usedSecondSet: true, wait: 21, flag: "asked for different suggestions"
+  },
+  {
+    partner: "Shall I bring lunch, or would you rather go out?",
+    closedSet: true,
+    cards: [
+      {s:'pref', hint:"Bring lunch",  text:"Bring lunch — that would be lovely."},
+      {s:'pref', hint:"Go out",       text:"Let's go out, my treat."},
+      {s:'disp', hint:"Neither",      text:"Actually, I'd rather just have coffee."},
+      {s:'init', hint:"You pick",     text:"Whichever is easier for you."}
+    ],
+    took: 0, wait: 9, flag: null,
+    hintText: "When the other person puts choices on the table, the four suggestions become those choices instead of the usual four kinds of reply."
+  },
+  {
+    partner: "I'll bring that soap you like. Anything else you need?",
+    reallySaid: "I'll bring that soup you like. Anything else you need?",
+    cards: [
+      {s:'pref', hint:"Nothing, thanks", text:"That's plenty, thank you."},
+      {s:'disp', hint:"Don't bother",    text:"Please don't go to any trouble."},
+      {s:'init', hint:"One thing",       text:"Could you pick up a few things on the way?"},
+      {s:'rep',  hint:"Soap?",           text:"Sorry — soap?"}
+    ],
+    took: -1,
+    composed: "Some of those crackers, if you're passing the store.",
+    wait: 30, flag: "gave up and typed instead"
+  },
+  {
+    partner: "All right, I'll let you go. See you Sunday.",
+    closing: true,
+    cards: [
+      {s:'slate', hint:"See you Sunday", text:"See you Sunday. Love you."},
+      {s:'slate', hint:"Take care",      text:"Take care, talk soon."},
+      {s:'slate', hint:"Bye",            text:"Bye for now."},
+      {s:'init',  hint:"One more thing",  text:"Actually, before you go —"}
+    ],
+    took: 0, wait: 8, flag: null,
+    hintText: "When the app hears the other person starting to wind up, the suggestions become ways of saying goodbye — plus one way of not saying it yet."
+  }
+];
+
+/* The timeline, for playing it back. t is seconds from the start. */
+var EVENTS = [
+  {t:0,   k:'partner', m:0}, {t:4,  k:'app', text:"I'm thinking about that."},
+  {t:7,   k:'cards',   m:0}, {t:12, k:'you', m:0},
+
+  {t:16,  k:'partner', m:1}, {t:21, k:'app', text:"Just a second."},
+  {t:25,  k:'cards',   m:1}, {t:34, k:'you', m:1},
+
+  {t:37,  k:'partner', m:2}, {t:42, k:'app', text:"I'm thinking about that."},
+  {t:45,  k:'cards',   m:2}, {t:49, k:'act', text:"you asked for different suggestions"},
+  {t:53,  k:'cards2',  m:2}, {t:58, k:'you', m:2},
+
+  {t:61,  k:'partner', m:3}, {t:65, k:'cards', m:3}, {t:70, k:'you', m:3},
+
+  {t:73,  k:'partner', m:4}, {t:78, k:'app', text:"I'm thinking about that."},
+  {t:81,  k:'act',     text:"you opened the typing box"},
+  {t:91,  k:'app',     text:"Still working on that one."},
+  {t:103, k:'you',     m:4},
+
+  {t:107, k:'partner', m:5}, {t:111, k:'cards', m:5}, {t:115, k:'you', m:5}
+];
+var DURATION = 120;
+
+var CONVS = [
+  {when:"Tue Sep 22, 2:14 pm", who:"Mom",      where:"Home",          len:"12 min, 6 replies",
+   state:'<span class="flag">2 moments you asked for something else</span> &middot; <span class="nope">not looked at</span>', live:true},
+  {when:"Mon Sep 21, 9:40 am", who:"Dr. Ruiz", where:"The clinic",    len:"6 min, 4 replies",
+   state:'<span class="done">finished</span>'},
+  {when:"Sun Sep 20, 6:05 pm", who:"Marcus",   where:"The diner",     len:"21 min, 17 replies",
+   state:'<span class="part">part way through — 7 of 17 left</span>'},
+  {when:"Sat Sep 19, 11:00 am", who:"Practice", where:"Ordering coffee", len:"5 min, 6 replies",
+   state:'<span class="nope">not looked at</span>'}
+];
+
+var QUESTIONS = [
+  {id:'q1', h:"Which way through a conversation should be the normal one?",
+   why:"Stepping is quick. Reading it all lets someone go straight to the part they remember. Playing it back is the only way to feel how long the silences were.",
+   opts:["Step through it","Read it all","Play it back","All three, with a choice","None of them work"]},
+  {id:'q2', h:"Would a client really write a whole sentence in review?",
+   why:"The argument for it is that nobody is waiting, so there is no time pressure. The argument against is that typing is tiring whether or not anyone is waiting.",
+   opts:["Yes, readily","Some would","Only with help","Very unlikely"]},
+  {id:'q3', h:"Is “none of these were right” worth collecting when no sentence follows it?",
+   why:"It tells us something across many users and does nothing at all for the individual who said it.",
+   opts:["Yes, collect it","Only with a reason attached","No, skip it instead"]},
+  {id:'q4', h:"Should the app ever offer to add a fact to About Me?",
+   why:"Offering saves a trip to a questionnaire nobody enjoys. Offering badly fills the profile with things that were true for one afternoon.",
+   opts:["Yes, always offer","Only for clear, lasting facts","No — only accept what the user enters"]},
+  {id:'q5', h:"How many of their conversations would a client realistically review?",
+   why:"The design assumes most are never opened. That assumption should be checked rather than hoped for.",
+   opts:["Nearly all","The ones that went badly","One now and then","Essentially none"]},
+  {id:'q6', h:"Does the app flagging its own difficult moments help, or does it steer them?",
+   why:"It is the app saying where it thinks it did badly. That could be useful, or it could push attention away from what actually mattered to the user.",
+   opts:["Helps","Helps if it is clearly optional","Steers them too much","No view"]},
+  {id:'q7', h:"Should review ever summarize — how a week went, how often suggestions were used?",
+   why:"Useful to a clinician. Also the shortest path to something that reads like a score on the user, which is the one thing we have ruled out.",
+   opts:["Yes, for the user too","Only for a clinician","No summaries at all"]}
+];
+
+/* ====================== small helpers ====================== */
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function mmss(s){ var m=Math.floor(s/60), r=Math.floor(s%60); return m+':'+(r<10?'0':'')+r; }
+
+/* Browser storage can throw in a private window, so every touch is wrapped. */
+function save(k,v){ try{ localStorage.setItem('rvproto_'+k, v); }catch(e){} }
+function load(k){ try{ return localStorage.getItem('rvproto_'+k) || ''; }catch(e){ return ''; } }
+
+function wireField(el){
+  if(!el) return;
+  var v = load(el.id);
+  if(v) el.value = v;
+  el.addEventListener('input', function(){ save(el.id, el.value); });
+}
+
+/* ====================== screen 1: the list ====================== */
+function renderList(){
+  var h = '';
+  CONVS.forEach(function(c,i){
+    h += '<button class="lrow' + (i===0?' sel':'') + '" data-i="'+i+'">'
+       +   '<div><b>'+esc(c.when)+'</b></div><div>'+esc(c.who)+'</div>'
+       +   '<div>'+esc(c.where)+'</div><div>'+esc(c.len)+'</div>'
+       +   '<div class="st">'+c.state+'</div>'
+       + '</button>';
+  });
+  $('convList').innerHTML = h;
+  Array.prototype.forEach.call($('convList').children, function(b){
+    b.addEventListener('click', function(){
+      Array.prototype.forEach.call($('convList').children, function(x){ x.classList.remove('sel'); });
+      b.classList.add('sel');
+      if(b.getAttribute('data-i') !== '0'){
+        alert('Only the conversation with Mom is filled in for this sketch. The others are there to show what the list would look like.');
+      } else {
+        document.getElementById('stage').scrollIntoView({block:'center'});
+      }
+    });
+  });
+}
+
+/* ====================== card rendering (shared) ====================== */
+function cardHTML(c, chosen, clickable){
+  return '<button class="rcard s-'+c.s+(chosen?' chosen':'')+'"'
+       + (clickable?'':' disabled')
+       + ' data-t="'+esc(c.text)+'">'
+       + '<span class="hint">'+esc(c.hint)+'</span>'+esc(c.text)
+       + (chosen?'<span class="tookit">you said this</span>':'')
+       + '</button>';
+}
+function cardsHTML(list, took, clickable){
+  return '<div class="cards">' + list.map(function(c,i){
+    return cardHTML(c, i===took, clickable);
+  }).join('') + '</div>';
+}
+
+/* ====================== screen 2: three ways through ====================== */
+var mode = 'step';
+var stepAt = 0;
+
+function setMode(m){
+  mode = m;
+  $('mStep').classList.toggle('on', m==='step');
+  $('mRead').classList.toggle('on', m==='read');
+  $('mPlay').classList.toggle('on', m==='play');
+  stopPlay();
+  if(m==='step'){
+    $('modeNote').innerHTML = '<b>Stepping.</b> One moment at a time, the next arriving when the '
+      + 'user is ready. The quickest of the three, and it loses the timing completely — nothing '
+      + 'here says that the second reply took eighteen seconds to arrive.';
+    renderStep();
+  } else if(m==='read'){
+    $('modeNote').innerHTML = '<b>Reading it all.</b> The whole conversation laid out, so somebody '
+      + 'who already knows the part they want can go straight to it. What the app itself said out '
+      + 'loud to fill the silence is shown too, because the other person heard it.';
+    renderRead();
+  } else {
+    $('modeNote').innerHTML = '<b>Playing it back.</b> Roughly two minutes at the real speed. '
+      + '<b>It is a reconstruction, not a recording:</b> the other person’s voice was never kept, '
+      + 'and the app only knows when her words reached it, not when she stopped speaking — so the '
+      + 'silences shown here are, if anything, shorter than the real ones were.';
+    renderPlay();
+  }
+}
+
+function renderStep(){
+  var m = MOMENTS[stepAt];
+  var h = '<div class="quiet" style="margin-bottom:8px">Moment '+(stepAt+1)+' of '+MOMENTS.length+'</div>'
+        + '<div class="said"><b>Mom said:</b> “'+esc(m.partner)+'”'
+        + (m.reallySaid ? '<span class="heardwrong">The app heard this wrong. She actually said &ldquo;soup&rdquo;.</span>' : '')
+        + '</div>'
+        + cardsHTML(m.usedSecondSet ? m.cards2 : m.cards, m.took, false);
+  if(m.took < 0){
+    h += '<p class="quiet" style="margin-top:9px"><b>You used none of them.</b> You opened the typing '
+       + 'box and wrote: “'+esc(m.composed)+'”</p>';
+  }
+  h += '<div class="btnrow">'
+     + '<button class="btn small" id="sPrev"'+(stepAt===0?' disabled':'')+'>&larr; Back</button>'
+     + '<button class="btn small on" id="sNext"'+(stepAt===MOMENTS.length-1?' disabled':'')+'>Next moment &rarr;</button>'
+     + '<button class="btn small" id="sJump">Say something about this one</button>'
+     + '</div>';
+  $('stage').innerHTML = h;
+  if($('sPrev')) $('sPrev').onclick = function(){ if(stepAt>0){ stepAt--; renderStep(); } };
+  if($('sNext')) $('sNext').onclick = function(){ if(stepAt<MOMENTS.length-1){ stepAt++; renderStep(); } };
+  if($('sJump')) $('sJump').onclick = function(){ momentAt = stepAt; renderMoment(); $('moment').scrollIntoView({block:'center'}); };
+}
+
+function renderRead(){
+  var h = '<div class="b-wrap">';
+  EVENTS.forEach(function(e){
+    if(e.k==='partner'){
+      var m = MOMENTS[e.m];
+      h += '<div class="b-meta">Mom</div><div class="bubble b-them">“'+esc(m.partner)+'”'
+         + (m.reallySaid ? '<span class="heardwrong">heard wrong — she said &ldquo;soup&rdquo;</span>' : '')
+         + '</div>';
+    } else if(e.k==='you'){
+      var mm = MOMENTS[e.m];
+      var said = mm.took < 0 ? mm.composed : (mm.usedSecondSet ? mm.cards2 : mm.cards)[mm.took].text;
+      h += '<div class="b-meta" style="text-align:right">You'
+         + (mm.took < 0 ? ' — typed it yourself' : '') + '</div>'
+         + '<div class="bubble b-you">“'+esc(said)+'” '
+         + '<button class="markit" data-m="'+e.m+'">say something about this</button></div>';
+    } else if(e.k==='app'){
+      h += '<div class="bubble b-app">the app said “'+esc(e.text)+'” out loud</div>';
+    } else if(e.k==='act'){
+      h += '<div class="b-meta" style="text-align:right;color:#8A5200">'+esc(e.text)+'</div>';
+    }
+  });
+  h += '</div>';
+  $('stage').innerHTML = h;
+  Array.prototype.forEach.call($('stage').querySelectorAll('.markit'), function(b){
+    b.onclick = function(){ momentAt = +b.getAttribute('data-m'); renderMoment(); $('moment').scrollIntoView({block:'center'}); };
+  });
+}
+
+/* ---- playback ----
+   ⚠ THE LIST IS APPENDED TO, NEVER REBUILT. Rebuilding it on every tick restarted each
+   line's fade-in ten times a second, so the whole conversation sat permanently at the
+   start of its animation and NOTHING WAS VISIBLE except the boxes that have no
+   animation. It looked like the timeline was broken; it was being redrawn to death. */
+var playTimer = null, playT = 0, playing = false;
+var shown = 0, lastPartnerT = null, answered = true;
+
+function renderPlay(){
+  stopPlay();
+  playT = 0; shown = 0; lastPartnerT = null; answered = true;
+  $('stage').innerHTML =
+      '<div class="tline" id="tlBody"></div>'
+    + '<div id="liveWait" style="margin-left:18px"></div>'
+    + '<div class="transport">'
+    +   '<button class="btn small on" id="pPlay">Play</button>'
+    +   '<span class="clock" id="pClock">0:00</span>'
+    +   '<div class="scrub"><i id="pBar"></i></div>'
+    +   '<button class="btn small" id="pReset">Start over</button>'
+    + '</div>';
+  $('pPlay').onclick = togglePlay;
+  $('pReset').onclick = renderPlay;
+  $('tlBody').innerHTML = '<p class="quiet">Press Play. It runs for about two minutes, '
+    + 'which is how long the real conversation took.</p>';
+  drawTimeline();
+}
+
+function togglePlay(){
+  if(playing){ stopPlay(); return; }
+  if(playT >= DURATION){ renderPlay(); }
+  playing = true;
+  $('pPlay').textContent = 'Pause';
+  playTimer = setInterval(function(){
+    playT = Math.min(DURATION, playT + 0.1);
+    drawTimeline();
+    if(playT >= DURATION) stopPlay();
+  }, 100);
+}
+function stopPlay(){
+  playing = false;
+  if(playTimer){ clearInterval(playTimer); playTimer = null; }
+  if($('pPlay')) $('pPlay').textContent = playT >= DURATION ? 'Play it again' : 'Play';
+  if($('liveWait')) $('liveWait').innerHTML = '';
+}
+
+function drawTimeline(){
+  var body = $('tlBody');
+  if(!body) return;
+
+  while(shown < EVENTS.length && EVENTS[shown].t <= playT){
+    if(shown === 0) body.innerHTML = '';
+    body.insertAdjacentHTML('beforeend', eventHTML(EVENTS[shown]));
+    shown++;
+    body.scrollTop = body.scrollHeight;
+  }
+
+  /* THE POINT OF THE WHOLE SCREEN: a counter ticking up while nobody is saying
+     anything, so the wait is felt rather than read. */
+  var live = $('liveWait');
+  if(live){
+    live.innerHTML = (!answered && lastPartnerT !== null && playing)
+      ? '<div class="waiting">she has been waiting <span class="n">'
+        + Math.floor(playT - lastPartnerT) + '</span> seconds…</div>'
+      : '';
+  }
+  $('pClock').textContent = mmss(playT);
+  $('pBar').style.width = (100 * playT / DURATION) + '%';
+}
+
+function eventHTML(e){
+  if(e.k === 'partner'){
+    lastPartnerT = e.t; answered = false;
+    return row(e.t, '<span class="e-partner"><b>Mom:</b> “'+esc(MOMENTS[e.m].partner)+'”</span>');
+  }
+  if(e.k === 'app')    return row(e.t, '<span class="e-app">the app said “'+esc(e.text)+'”</span>');
+  if(e.k === 'cards')  return row(e.t, '<span class="e-cards">four suggestions appeared</span>');
+  if(e.k === 'cards2') return row(e.t, '<span class="e-cards">four different suggestions appeared</span>');
+  if(e.k === 'act')    return row(e.t, '<span class="e-act">'+esc(e.text)+'</span>');
+  /* the user's turn, with how long the other person had been waiting for it */
+  var m = MOMENTS[e.m];
+  var said = m.took < 0 ? m.composed : (m.usedSecondSet ? m.cards2 : m.cards)[m.took].text;
+  var waited = lastPartnerT === null ? 0 : Math.round(e.t - lastPartnerT);
+  answered = true;
+  return '<div class="waiting">she waited <span class="n">'+waited+'</span> seconds</div>'
+       + row(e.t, '<span class="e-you"><b>You:</b> “'+esc(said)+'”</span>');
+}
+
+function row(t, inner){
+  return '<div class="ev"><span class="t">'+mmss(t)+'</span>'+inner+'</div>';
+}
+
+/* ====================== screen 3: one moment ====================== */
+var momentAt = 1;                  /* start on the Sunday one - it is the interesting case */
+var verdicts = {};                 /* what the reviewer clicked, per moment */
+
+function renderMoment(){
+  var m = MOMENTS[momentAt];
+  var v = verdicts[momentAt] || {};
+  var list = m.usedSecondSet ? m.cards2 : m.cards;
+
+  var h = '';
+  if(m.flag){
+    h += '<p class="quiet" style="margin:0 0 9px"><span class="flag">Flagged:</span> '+esc(m.flag)+'</p>';
+  }
+  h += '<div class="said"><b>Mom said:</b> “'+esc(m.partner)+'”'
+     + (m.reallySaid ? '<span class="heardwrong">The app wrote down &ldquo;soap&rdquo;. She said &ldquo;soup&rdquo;.</span>' : '')
+     + '</div>';
+
+  if(m.usedSecondSet){
+    h += '<p class="quiet" style="margin:0 0 7px">You asked for different suggestions. These are the ones you ended up with.</p>';
+  }
+  h += cardsHTML(list, m.took, false);
+
+  if(m.took < 0){
+    h += '<p class="quiet" style="margin-top:9px"><b>You used none of them</b> — you typed '
+       + '“'+esc(m.composed)+'” instead.</p>';
+  }
+
+  h += '<div class="ask">'+(m.took<0 ? 'Was any of them close?' : 'Was that what you wanted to say?')+'</div>'
+     + '<div class="btnrow">'
+     +   '<button class="btn'+(v.j==='right'?' on':'')+'" data-j="right">Yes, that was right</button>'
+     +   '<button class="btn'+(v.j==='closest'?' on':'')+'" data-j="closest">It was the closest of the four</button>'
+     +   '<button class="btn'+(v.j==='none'?' on':'')+'" data-j="none">None of them</button>'
+     + '</div>';
+
+  if(v.j === 'closest' || v.j === 'none'){
+    h += '<div style="margin-top:12px">'
+       +   '<label class="tl" for="pref'+momentAt+'">What would you rather have said?</label>'
+       +   '<textarea class="typed" id="pref'+momentAt+'" rows="2" placeholder="Type it here — there is no hurry, nobody is waiting.">'
+       +   esc(v.text || '') + '</textarea>'
+       +   '<div class="btnrow">'
+       +     '<button class="btn" id="hearIt">Hear it</button>'
+       +     '<button class="btn on" id="keepIt">Keep it</button>'
+       +     '<button class="btn" id="skipIt">Skip this one</button>'
+       +   '</div>'
+       + '</div>';
+  }
+
+  if(m.reallySaid){
+    h += '<div class="btnrow" style="margin-top:14px">'
+       +   '<button class="btn small'+(v.misheard?' on':'')+'" id="misheard">The app got her words wrong here</button>'
+       + '</div>'
+       + '<p class="quiet" style="margin-top:6px">This does not change the record — it puts a note '
+       + 'beside it. There is nothing here for the user to fix; it tells us where the listening struggles.</p>';
+  }
+
+  if(m.hintText){
+    h += '<p class="quiet" style="margin-top:14px;padding-top:10px;border-top:1px dashed var(--line-soft)">'
+       + '<b>About this moment:</b> ' + esc(m.hintText) + '</p>';
+  }
+
+  $('moment').innerHTML = h;
+  $('mCount').textContent = 'Moment ' + (momentAt+1) + ' of ' + MOMENTS.length;
+
+  Array.prototype.forEach.call($('moment').querySelectorAll('[data-j]'), function(b){
+    b.onclick = function(){
+      verdicts[momentAt] = verdicts[momentAt] || {};
+      verdicts[momentAt].j = b.getAttribute('data-j');
+      saveVerdicts(); renderMoment();
+    };
+  });
+  var ta = $('pref'+momentAt);
+  if(ta){
+    ta.addEventListener('input', function(){
+      verdicts[momentAt] = verdicts[momentAt] || {};
+      verdicts[momentAt].text = ta.value;
+      saveVerdicts();
+    });
+  }
+  if($('hearIt')) $('hearIt').onclick = function(){ speak(ta ? ta.value : ''); };
+  if($('keepIt')) $('keepIt').onclick = function(){
+    var t = ta ? ta.value.trim() : '';
+    if(!t){ alert('Type something first — that sentence is the whole point of this screen.'); return; }
+    $('confQuote').innerHTML = '“' + esc(t) + '”';
+    document.getElementById('confQuote').scrollIntoView({block:'center'});
+  };
+  if($('skipIt')) $('skipIt').onclick = function(){
+    if(momentAt < MOMENTS.length-1){ momentAt++; renderMoment(); }
+  };
+  if($('misheard')) $('misheard').onclick = function(){
+    verdicts[momentAt] = verdicts[momentAt] || {};
+    verdicts[momentAt].misheard = !verdicts[momentAt].misheard;
+    saveVerdicts(); renderMoment();
+  };
+}
+function saveVerdicts(){ save('verdicts', JSON.stringify(verdicts)); }
+
+/* The real app speaks in the user's own chosen voice. This is the browser's default one,
+   purely so the button does something. */
+function speak(t){
+  if(!t || !t.trim()) { alert('Type something first.'); return; }
+  try{
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(new SpeechSynthesisUtterance(t));
+  }catch(e){
+    alert('This browser would not speak it. In the app it would use the voice the user has chosen.');
+  }
+}
+
+/* ====================== the questions ====================== */
+function renderQuestions(){
+  var h = '';
+  QUESTIONS.forEach(function(q){
+    h += '<div class="q"><div class="qh">'+esc(q.h)+'</div><div class="qwhy">'+esc(q.why)+'</div>'
+       + '<div class="choices">';
+    q.opts.forEach(function(o,i){
+      h += '<label><input type="radio" name="'+q.id+'" value="'+esc(o)+'">'+esc(o)+'</label>';
+    });
+    h += '</div><textarea id="'+q.id+'_t" rows="2" placeholder="Anything you want to add"></textarea></div>';
+  });
+  $('questions').innerHTML = h;
+
+  QUESTIONS.forEach(function(q){
+    wireField($(q.id+'_t'));
+    var saved = load(q.id);
+    Array.prototype.forEach.call(document.getElementsByName(q.id), function(r){
+      if(r.value === saved) r.checked = true;
+      r.addEventListener('change', function(){ save(q.id, r.value); });
+    });
+  });
+}
+
+/* ====================== gather it all up ====================== */
+function gather(){
+  var L = [];
+  L.push('CONVERSANT AAC - CONVERSATION REVIEW PROTOTYPE');
+  L.push('Comments from: ' + ($('who').value.trim() || '(name not given)'));
+  L.push('Date: ' + new Date().toDateString());
+  L.push('');
+
+  var screens = [
+    ['Screen 1 - finding the conversation', 'c1'],
+    ['Screen 2 - three ways through',       'c2'],
+    ['Screen 3 - looking at one moment',    'c3'],
+    ['Screen 4 - what comes of it',         'c4']
+  ];
+  screens.forEach(function(s){
+    var v = ($(s[1]).value || '').trim();
+    L.push(s[0]);
+    L.push(v ? '  ' + v.replace(/\n/g,'\n  ') : '  (no comment)');
+    L.push('');
+  });
+
+  L.push('THE SEVEN QUESTIONS');
+  QUESTIONS.forEach(function(q,i){
+    /* Read the answer OFF THE PAGE, not out of browser storage. Storage is refused in a
+       private window and wherever site data is blocked - and this page is going to be
+       opened from a file somebody was emailed. Reading it from storage meant seven
+       answers the reviewer had just checked were reported as "(no answer)", silently,
+       in the one thing they send us. */
+    var checked = document.querySelector('input[name="' + q.id + '"]:checked');
+    var pick = checked ? checked.value : (load(q.id) || '(no answer)');
+    var extra = ($(q.id+'_t').value || '').trim();
+    L.push((i+1) + '. ' + q.h);
+    L.push('   Answer: ' + pick);
+    if(extra) L.push('   Notes:  ' + extra.replace(/\n/g,'\n           '));
+  });
+  L.push('');
+
+  var any = Object.keys(verdicts).length;
+  if(any){
+    L.push('WHAT THEY DID ON THE SAMPLE CONVERSATION (so we can see how it was used)');
+    Object.keys(verdicts).forEach(function(k){
+      var v = verdicts[k];
+      var bits = [];
+      if(v.j) bits.push('marked "' + v.j + '"');
+      if(v.text && v.text.trim()) bits.push('wrote: "' + v.text.trim() + '"');
+      if(v.misheard) bits.push('flagged a mishearing');
+      if(bits.length) L.push('  Moment ' + (Number(k)+1) + ': ' + bits.join('; '));
+    });
+    L.push('');
+  }
+
+  L.push('(Generated by the prototype page. Nothing was sent automatically.)');
+  $('out').value = L.join('\n');
+  $('okmsg').textContent = 'Ready — copy it below.';
+}
+
+function copyAll(){
+  var t = $('out');
+  if(!t.value.trim()){ gather(); }
+  t.select();
+  var ok = false;
+  try{ ok = document.execCommand('copy'); }catch(e){ ok = false; }
+  $('okmsg').textContent = ok
+    ? 'Copied. Paste it into an email to volksswitch@gmail.com.'
+    : 'This browser would not let the page copy. Select the text below and copy it by hand.';
+}
+
+/* ====================== start up ====================== */
+renderList();
+setMode('step');
+try{ verdicts = JSON.parse(load('verdicts') || '{}') || {}; }catch(e){ verdicts = {}; }
+renderMoment();
+renderQuestions();
+['who','c1','c2','c3','c4'].forEach(function(id){ wireField($(id)); });
+
+$('mStep').onclick = function(){ setMode('step'); };
+$('mRead').onclick = function(){ setMode('read'); };
+$('mPlay').onclick = function(){ setMode('play'); };
+$('prevM').onclick = function(){ if(momentAt>0){ momentAt--; renderMoment(); } };
+$('nextM').onclick = function(){ if(momentAt<MOMENTS.length-1){ momentAt++; renderMoment(); } };
+$('gather').onclick = gather;
+$('copyAll').onclick = copyAll;
+</script>
+</body>
+</html>
