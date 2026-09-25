@@ -75,6 +75,15 @@ written here anyway, because three of these bugs invite exactly that mistake.**
     - *Search:* `the main thing`, `matters`, `deserves`, `worth`, `the strongest`, `only worth` — attached to the document's own content rather than to the app's behavior.
 12. **"So" at the start of a sentence.** It announces a conclusion being drawn, which is what turns a list of facts into an argument. It ran 15 times in 420 sentences in the Conversation Review before the September 25 2026 pass. *Therefore, Otherwise, And yet, But* do the same job. A paragraph reads as documentation when its sentences simply follow one another.
     - *Search:* sentence-initial `So`, `Therefore`, `Otherwise`, `And yet`.
+    - **⚠ NOT EVERY SENTENCE-INITIAL *So* IS A CONNECTIVE. *So do*, *So does*, *So is*, *So
+      are* is an INVERSION meaning "that too", and deleting the *So* turns a statement into
+      an order.** *"So do your saved settings profiles"* became *"Do your saved settings
+      profiles"* - an imperative telling the reader to go and do something. One shipped into
+      Backup Compatibility before a check for sentences starting *Do / Does / Is / Are* caught
+      it. **Look at the word after *So* before deleting it.**
+    - **⚠ *OTHERWISE* READS LIKE THE SAME TELL AND IS NOT.** *"Otherwise the user taps Listen
+      when they are ready"* names the other branch, which the reader needs; *"So ..."* only
+      labels what the previous sentence already implied. Leave *Otherwise* alone.
 13. **Defensive tags: *anyway, at all, though, still, of course, after all*.** One word tacked onto a clause to fend off an objection nobody raised — *"this layout has no room for a box anyway"*, *"the phrase panel appears in review at all"*. Bug 6 in a form you can search for.
 14. **An absence handed the sentence when a real actor was standing right there** (Ken, September 25 2026). *"and nothing tells us why"* → **"and we don't know why."** *"nothing checks whether a suggestion suits the turn"* → **"the app doesn't check whether…"** Personifying an absence borrows weight that naming the actor doesn't need. **Ask who or what actually does the thing, and put them first.**
     - **It is not a ban on *nothing*.** *"Nothing changes without confirmation"* and *"Nothing is at stake in a practice conversation"* are plain and stay. The test is whether a person, or the app, was available to be the subject.
