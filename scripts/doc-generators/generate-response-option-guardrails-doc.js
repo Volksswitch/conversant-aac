@@ -1,4 +1,4 @@
-/* Generates docPath("Conversant AAC Suggestion Guardrails.docx") - the rules the app
+/* Generates docPath("Conversant AAC Response Option Guardrails.docx") - the rules the app
  * imposes on the words the AI may put in a suggested reply, and what those rules do NOT
  * restrict: the user's own words.
  *
@@ -129,7 +129,7 @@ const doc = new Document({
             margin: { top: MARGIN, right: MARGIN, bottom: MARGIN, left: MARGIN } } },
         headers: { default: new Header({ children: [new Paragraph({
             alignment: AlignmentType.RIGHT,
-            children: [new TextRun({ text: "Conversant AAC — Suggestion Guardrails", italics: true, color: "808080", size: 18, font: "Arial" })]
+            children: [new TextRun({ text: "Conversant AAC — Response Option Guardrails", italics: true, color: "808080", size: 18, font: "Arial" })]
         })]})},
         footers: { default: new Footer({ children: [new Paragraph({
             alignment: AlignmentType.CENTER,
@@ -145,7 +145,7 @@ const doc = new Document({
             new Paragraph({ spacing: { before: 0, after: 60 },
                 children: [new TextRun({ text: "Conversant AAC", bold: true, size: 44, color: "1F4E79" })] }),
             new Paragraph({ spacing: { before: 0, after: 60 },
-                children: [new TextRun({ text: "Suggestion Guardrails", bold: true, size: 32, color: "444444" })] }),
+                children: [new TextRun({ text: "Response Option Guardrails", bold: true, size: 32, color: "444444" })] }),
             new Paragraph({ spacing: { before: 0, after: 80 },
                 children: [new TextRun({ text: "What the AI is not allowed to put in a suggested reply, why, and how the user can still say anything they want", italics: true, size: 24, color: "555555" })] }),
             new Paragraph({ spacing: { before: 0, after: 320 },
@@ -281,6 +281,6 @@ const doc = new Document({
 });
 
 Packer.toBuffer(doc).then(buffer => {
-    fs.writeFileSync(docPath("Conversant AAC Suggestion Guardrails.docx"), buffer);
-    console.log("Wrote Conversant AAC Suggestion Guardrails.docx");
+    fs.writeFileSync(docPath("Conversant AAC Response Option Guardrails.docx"), buffer);
+    console.log("Wrote Conversant AAC Response Option Guardrails.docx");
 });
