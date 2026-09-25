@@ -2,6 +2,7 @@
 
     python scripts/wordpress/publish-documents.py            # show what would change
     python scripts/wordpress/publish-documents.py --apply    # do it
+    python scripts/wordpress/publish-documents.py --apply --force   # ignore the dates
 
 For every document in user-documents.json whose "Last updated" date differs from the
 one already published (or that has never been published): export a fresh PDF through
@@ -56,6 +57,7 @@ def build_table(docs):
 
 def main():
     apply = '--apply' in sys.argv
+    force = '--force' in sys.argv
     cfg = json.load(open(LIST, encoding='utf-8'))
     docs = cfg['documents']
     replaced, plan = [], []
@@ -65,7 +67,12 @@ def main():
         said = stamp.byline_date(path)
         if said is None:
             raise SystemExit(f'No "Last updated" date found in {d["file"]} - fix the byline first.')
-        if d.get('mediaId') and d.get('date') == said.isoformat():
+        # ⚠ THE DATE CANNOT SEE A SECOND CHANGE ON THE SAME DAY. The byline is the
+        # change signal, so a document edited twice in one day looks unchanged after the
+        # first publish - which is exactly what happened on September 25 2026, when a
+        # later pass touched all 13 after they had already gone out. --force republishes
+        # the whole list regardless.
+        if not force and d.get('mediaId') and d.get('date') == said.isoformat():
             continue
         plan.append((d, said, path))
 
