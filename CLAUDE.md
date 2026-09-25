@@ -35,7 +35,7 @@ Ken stopped reading the Conversation Review document a few pages in. His words: 
 
 **The reader wants to know what the app does.** They are short on time and will not spend a second pass unpacking a paragraph. Answer specific questions where they come up. Do not build a case.
 
-### The ten tells
+### The tells
 
 1. **Every sentence argues instead of informing.** Documentation says what a thing is and how it works. It does not keep proving the design is right when nobody has disagreed.
 2. **Aphorisms.** Short punchy fragments dropped in to be admired: *"Not a lesser purpose, just a different one."* *"Those are cheaper to get wrong on paper."*
@@ -47,6 +47,13 @@ Ken stopped reading the Conversation Review document a few pages in. His words: 
 8. **Formal headings.** *"Why This Document Exists"*, *"Getting In: Choosing a Conversation"*. A heading is a label. An opening section usually needs no heading at all — it is just the paragraphs after the title.
 9. **Process the reader does not care about.** Build steps, what is and is not built yet, review status. The therapists reading a proposal know it is a proposal.
 10. **British register.** *had got, somebody, in one stroke, precisely, whilst.* Covered by the American English rule, but it arrives with this style and not on its own.
+11. **The document rating its own material (Ken, September 25 2026).** *"This is the main thing on the screen, not a fallback."* *"That last row matters and should stay."* *"Real-time playback deserves to be built."* *"Review is only worth the effort if it changes something."* The document is telling the reader how to weigh what it is about to say, which is the reader's job. **Say what is true and let them weigh it.** Watch for *the main thing, matters, deserves, worth, the strongest, only worth* attached to the document's own content rather than to the app's behavior.
+12. **"So" at the start of a sentence.** It announces a conclusion being drawn, which is what turns a list of facts into an argument. It ran 15 times in 420 sentences in the Conversation Review before this pass. *Therefore, Otherwise, And yet, But* do the same job. A paragraph reads as documentation when its sentences simply follow one another.
+13. **Defensive tags: *anyway, at all, though, still, of course, after all*.** One word tacked onto a clause to fend off an objection nobody raised — *"this layout has no room for a box anyway"*, *"the phrase panel appears in review at all"*. It is tell 6 in a form you can search for.
+
+**Two more shapes, both versions of tells already listed, and both easy to miss because they read as rigor.** *Citing our own verification to the reader*: "Measured: all thirty-two cells keep the same size." The fact is what the reader wants; that we checked it is process (tell 9). And *stating the same fact in two sections* — "the most personal material review collects" appeared twice, four pages apart. "State a fact once" applies across the whole document, not within a paragraph.
+
+**None of 11, 12 or 13 belongs in `essayisms`, and the reason is the bar that list already sets: a phrase only goes in it if it has no innocent use.** "At all" has one ("how often anyone used review at all"). So does a sentence-initial "So" now and then, and "worth" in "worth knowing". A check on any of them would fire on correct writing, which is what teaches people to scroll past it. They are a person reading, and the words above are what to search for while reading.
 
 ### What to write instead
 
@@ -71,7 +78,7 @@ Ken stopped reading the Conversation Review document a few pages in. His words: 
 - **L14** — passive voice above 10 per thousand words. It reports a rate for the document plus a few examples, not one finding per sentence: the worst documents run at one passive in three sentences, and a finding each would bury every other rule.
 - **L15** — a whole paragraph of prose in bold. Bold marks a phrase inside a sentence. A paragraph bold end to end is almost always an edit that spread the first run's formatting over the rest, which is what happened to 104 paragraphs of the Conversation Review on September 25 2026 while every other check stayed clean. `docx_safe.set_para_text` now refuses a paragraph whose runs disagree unless the caller says which formatting to keep.
 
-**The checks cover the small part of this rule a machine can decide.** Tells 1, 2, 6, 7 and 9 need a person reading the sentence. A clean run does not mean the document reads well.
+**The checks cover the small part of this rule a machine can decide.** Tells 1, 2, 6, 7, 9, 11, 12 and 13 need a person reading the sentence. A clean run does not mean the document reads well — the Conversation Review passed all five checks on September 25 2026 while still carrying every fault Ken then marked up by hand.
 
 **The backlog is real and is not being fixed all at once.** As of September 25 2026 the checks report about 100 banned phrases, 700 long sentences and 200 headings across the documents. Clear them as each document is next touched, not in one sweep.
 
