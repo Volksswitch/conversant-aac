@@ -28,6 +28,33 @@ a second copy of a list like this drifts, and the stale copy is the one somebody
    way you would say it to somebody.* If a plain version arrives instantly and sounds
    nothing like what is on the page, the writing was performing.
 
+## Stop and ask before any fix that could change what the app does
+
+**A writing bug is never worth a wrong sentence.** If clearing one would rename something,
+change what the app is said to do, or soften a guarantee, **stop and ask Ken to approve it.**
+Style never outranks accuracy.
+
+Ken asked (September 25 2026) whether he had to say this explicitly. He doesn't — it is
+already the standing rule under *Working Guidelines*: verify UI details against source before
+writing about them, because an invented UI detail is a silent error that reaches users. **It is
+written here anyway, because three of these bugs invite exactly that mistake.**
+
+- **Bug 18 is a rename rule.** It tells you to pick one word for a thing and drop the other, so
+  it is the highest-risk item on this list. **The winning word is the app's own**, checked in
+  `app/index.html` and `app/js/ui.js` — not the one that reads better. *Rehearsal →
+  practice conversation* was safe because Settings says *Practice*. *Compose Pane* went to
+  Ken because the manuals said *Composition Pane*, and he chose the manuals' word.
+- **Bug 16 rewrites whole sentences**, which is where meaning quietly shifts.
+- **Bug 17 is safe as a split and unsafe as a reword.** Turning a colon into a period changes
+  nothing; rewriting the clause around it can.
+- **⚠ Watch the *never* and *does not* sentences hardest.** They are promises — *“the
+  app will not answer general-knowledge questions”*, *“it does not follow the device's
+  own light or dark setting”*. **Contracting one is safe. Rewording one is a change to what
+  the product guarantees**, and it must not happen as a side effect of a style pass.
+
+**Bug 15 is the safe end of the scale**: contractions and apostrophes change no meaning at all,
+which is why 69 of the Product Overview's 95 candidates need no approval.
+
 ---
 
 ## The bugs

@@ -61,7 +61,7 @@ PATTERNS = [
      r'\b(do not|does not|did not|is not|are not|was not|were not|cannot|will not'
      r'|would not|could not|should not|has not|have not|had not)\b', 12),
     ("straight apostrophe", 15, r"\w'\w", 6),
-    ('need/want + gerund', 16, r'\b(needs?|wants?|bears?|merits?) \w+ing\b', 8),
+    ('need/want + gerund', 16, r'\b(needs?|wants?|bears?|merits?) (?!(?:some|any|no|every)thing\b)\w+ing\b', 8),
     ('do the + gerund', 16, r'\bdoes? the \w+ing\b', 6),
     ('neither + gerund as subject', 16, r'\bNeither \w+ing\b', 4),
     ('formal verb for a common one', 16,
@@ -70,7 +70,7 @@ PATTERNS = [
     ('colon before a clause', 17,
      r'[a-z”]:\s+(?:the|it|they|a|an|you|we|this|that)\b[^,;:]{0,60}'
      r'\b(is|are|was|were|means|can|will|would|does|do|has|have|puts|asks|carries|gives)\b', 8),
-    ('pseudo-cleft', 19, r'\bWhat [a-z][^.?!]{3,40}\b(is|are|does|means|comes)\b', 6),
+    ('pseudo-cleft', 19, r'\bWhat (?!about\b)[a-z][^.?!]{3,40}\b(is|are|does|means|comes)\b', 6),
 ]
 
 # Reported as a rate: fine once, a tic in bulk.
