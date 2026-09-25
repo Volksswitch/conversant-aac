@@ -19,9 +19,28 @@ from lxml import etree
 W = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
 
 
+def _all_bold(p_el):
+    """True when every run carrying text is directly bold.
+
+    Direct formatting only: a run that takes its bold from the paragraph style is not
+    an accident, and a whole paragraph turned bold by an edit always is.
+    """
+    runs = [r for r in p_el.iter(W + 'r')
+            if ''.join(t.text or '' for t in r.iter(W + 't')).strip()]
+    if not runs:
+        return False
+    for r in runs:
+        rpr = r.find(W + 'rPr')
+        b = rpr.find(W + 'b') if rpr is not None else None
+        if b is None or b.get(W + 'val') in ('0', 'false'):
+            return False
+    return True
+
+
 class Para:
     __slots__ = ('i', 'style', 'text', 'container', 'keep_next', 'before', 'after',
-                 'num_id', 'ilvl', 'aligned', 'has_drawing', 'table_index')
+                 'num_id', 'ilvl', 'aligned', 'has_drawing', 'table_index',
+                 'all_bold')
 
     def __init__(self, **kw):
         for k in self.__slots__:
@@ -132,7 +151,7 @@ class Doc:
                     has_drawing=ch.find('.//' + W.replace('wordprocessingml/2006/main',
                                                           'drawingml/2006/wordprocessingDrawing') + 'anchor') is not None
                                 or ch.find('.//{http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing}inline') is not None,
-                    table_index=table_index))
+                    table_index=table_index, all_bold=_all_bold(ch)))
             elif tag == W + 'tbl':
                 idx = len(self.tables)
                 self.tables.append(ch)

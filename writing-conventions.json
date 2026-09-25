@@ -783,5 +783,237 @@
       "(iPad)": "ipad",
       "(Android)": "android"
     }
+  },
+  "_plainStyle": [
+    "Ken, September 25 2026, after giving up a few pages into the Conversation Review",
+    "document: the writing was 'pompous, overly sure of itself, tedious, complex in",
+    "structure, defensive, and dramatic'. The rule and the full list of tells live in",
+    "CLAUDE.md under PLAIN STYLE. These are the parts a machine can decide.",
+    "A phrase only belongs here if it has NO innocent use in a plain document - the",
+    "same bar as britishPhrases. Everything else is a person reading the sentence."
+  ],
+  "essayisms": [
+    {
+      "phrase": "not merely",
+      "use": "say what it is, and stop",
+      "severity": "error"
+    },
+    {
+      "phrase": "in one stroke",
+      "use": "plain wording",
+      "severity": "error"
+    },
+    {
+      "phrase": "its own kind of",
+      "use": "plain wording",
+      "severity": "error"
+    },
+    {
+      "phrase": "make no mistake",
+      "use": "delete",
+      "severity": "error"
+    },
+    {
+      "phrase": "cannot be overstated",
+      "use": "delete, or state the fact",
+      "severity": "error"
+    },
+    {
+      "phrase": "it is worth noting",
+      "use": "delete and state the thing",
+      "severity": "error"
+    },
+    {
+      "phrase": "it is worth stating",
+      "use": "delete and state the thing",
+      "severity": "error"
+    },
+    {
+      "phrase": "worth stating once",
+      "use": "delete and state the thing",
+      "severity": "error"
+    },
+    {
+      "phrase": "worth remembering",
+      "use": "delete and state the thing",
+      "severity": "error"
+    },
+    {
+      "phrase": "the whole point",
+      "use": "say what it does",
+      "severity": "error"
+    },
+    {
+      "phrase": "that is the point",
+      "use": "say what it does",
+      "severity": "error"
+    },
+    {
+      "phrase": "which is the point",
+      "use": "say what it does",
+      "severity": "error"
+    },
+    {
+      "phrase": "is the point",
+      "use": "say what it does",
+      "severity": "error"
+    },
+    {
+      "phrase": "the point is",
+      "use": "say what it does",
+      "severity": "error"
+    },
+    {
+      "phrase": "precisely the",
+      "use": "the",
+      "severity": "error"
+    },
+    {
+      "phrase": "precisely what",
+      "use": "what",
+      "severity": "error"
+    },
+    {
+      "phrase": "precisely because",
+      "use": "because",
+      "severity": "error"
+    },
+    {
+      "phrase": "precisely those",
+      "use": "those",
+      "severity": "error"
+    },
+    {
+      "phrase": "exactly that",
+      "use": "plain wording",
+      "severity": "error"
+    },
+    {
+      "phrase": "in exactly one place",
+      "use": "in one place",
+      "severity": "error"
+    },
+    {
+      "phrase": "load-bearing",
+      "use": "say what depends on it",
+      "severity": "error"
+    },
+    {
+      "phrase": "by construction",
+      "use": "say why it cannot happen",
+      "severity": "error"
+    },
+    {
+      "phrase": "pays for itself",
+      "use": "say what it saves",
+      "severity": "error"
+    },
+    {
+      "phrase": "earns its keep",
+      "use": "say what it does",
+      "severity": "error"
+    },
+    {
+      "phrase": "earns its place",
+      "use": "say what it does",
+      "severity": "error"
+    },
+    {
+      "phrase": "does real damage",
+      "use": "say what goes wrong",
+      "severity": "error"
+    },
+    {
+      "phrase": "at its heart",
+      "use": "delete",
+      "severity": "error"
+    },
+    {
+      "phrase": "cheaper to get wrong",
+      "use": "plain wording",
+      "severity": "error"
+    },
+    {
+      "phrase": "in its own right",
+      "use": "delete",
+      "severity": "error"
+    },
+    {
+      "phrase": "arguably",
+      "use": "delete, or say who argues it",
+      "severity": "error"
+    },
+    {
+      "phrase": "crucially",
+      "use": "delete",
+      "severity": "error"
+    },
+    {
+      "phrase": "tellingly",
+      "use": "delete",
+      "severity": "error"
+    },
+    {
+      "phrase": "tempting argument",
+      "use": "name the argument",
+      "severity": "error"
+    },
+    {
+      "phrase": "the strongest",
+      "use": "say what it does without ranking it",
+      "severity": "review"
+    },
+    {
+      "phrase": "far more",
+      "use": "more, or give the number",
+      "severity": "review"
+    },
+    {
+      "phrase": "genuinely",
+      "use": "delete",
+      "severity": "review"
+    },
+    {
+      "phrase": "exactly what",
+      "use": "what",
+      "severity": "review"
+    },
+    {
+      "phrase": "is what makes",
+      "use": "two plain sentences",
+      "severity": "review"
+    },
+    {
+      "phrase": "honestly",
+      "use": "delete",
+      "severity": "review"
+    },
+    {
+      "phrase": "nothing else in",
+      "use": "say what it does without the comparison",
+      "severity": "review"
+    },
+    {
+      "phrase": "the only place in",
+      "use": "say what it does without the comparison",
+      "severity": "review"
+    },
+    {
+      "phrase": "worth more than",
+      "use": "plain comparison",
+      "severity": "review"
+    }
+  ],
+  "_plainStyleLimits": [
+    "Numbers, not taste. Measured across the documents in September 2026: the median",
+    "sentence is 18 words and the 90th percentile is 35, so 40 is above what the",
+    "documents already do and flags only the sentences a reader has to unpack twice.",
+    "A heading over 7 words is a sentence pretending to be a heading."
+  ],
+  "plainStyleLimits": {
+    "maxSentenceWords": 40,
+    "maxEmDashesPerParagraph": 2,
+    "maxHeadingWords": 7,
+    "maxPassivesPerThousandWords": 10
   }
 }

@@ -27,6 +27,56 @@ Ken: *"I assume that terms like 'walking the object' are understood by programme
 
 **"Or don't bother to say anything" is a real instruction, not exasperation.** If a detail cannot be put plainly and he does not need it to decide anything, leave it out. Length is not thoroughness. What he needs from a report is: what now works, what it cost or saved, what is still broken, and anything waiting on his call — not the route taken to get there.
 
+## PLAIN STYLE — write documentation, not an essay (Ken, September 25 2026)
+
+Ken stopped reading the Conversation Review document a few pages in. His words: *"pompous, overly sure of itself (sometimes claiming things it has no evidence for), tedious, complex in structure, defensive, and dramatic."* He also heard a British voice reading it.
+
+**This is a separate rule from PLAIN LANGUAGE above.** That one is about vocabulary a non-programmer cannot follow. This one is about writing that a reader *can* follow and gives up on anyway. Every sentence he quoted was in plain words.
+
+**The reader wants to know what the app does.** They are short on time and will not spend a second pass unpacking a paragraph. Answer specific questions where they come up. Do not build a case.
+
+### The ten tells
+
+1. **Every sentence argues instead of informing.** Documentation says what a thing is and how it works. It does not keep proving the design is right when nobody has disagreed.
+2. **Aphorisms.** Short punchy fragments dropped in to be admired: *"Not a lesser purpose, just a different one."* *"Those are cheaper to get wrong on paper."*
+3. **Superlatives and certainty words.** *precisely, exactly, the strongest single use, nothing else in the app can do, in one stroke.* Most are claims with no evidence behind them.
+4. **Drama.** *"fighting a four-second clock", "undo that in one stroke".* Borrowed tension on a design note.
+5. **Stacked clauses.** A sentence that starts, interrupts itself with a dash, then resumes. One is fine. Twenty in a row is exhausting.
+6. **Defensiveness.** Sentences that answer objections the reader never raised, and sentences that defend the document itself — why it was written, why writing it first was worth the time.
+7. **Self-commentary.** *"the first edition had got wrong", "recorded here so it is not re-argued".* The document talking about its own history instead of giving the current answer.
+8. **Formal headings.** *"Why This Document Exists"*, *"Getting In: Choosing a Conversation"*. A heading is a label. An opening section usually needs no heading at all — it is just the paragraphs after the title.
+9. **Process the reader does not care about.** Build steps, what is and is not built yet, review status. The therapists reading a proposal know it is a proposal.
+10. **British register.** *had got, somebody, in one stroke, precisely, whilst.* Covered by the American English rule, but it arrives with this style and not on its own.
+
+### What to write instead
+
+- **Subject, verb, predicate (Ken, September 25 2026).** Say who does what. Put the actor first and the action next, and resist opening a sentence with a subordinate clause.
+- **Use the active voice.** *"A saved conversation can be stepped through"* -> *"the user steps through a saved conversation".* Passive voice hides who acts, and a reader in a hurry has to work it out. Also avoid *there is* and *there are*, which push the real subject to the back of the sentence.
+- **Work out who the READER is before writing a word (Ken, September 25 2026).** It decides what "you" means, and it is different per document. In a **User Manual** and the **Beta Test Plan** the reader and the user are the same person, so "you" means the user throughout. In a proposal for the therapists, a design document or the Product Overview they are different people, so "you" is the reader and *"the user"* is the person using the app. Never let one sentence mean both.
+- **"You" is welcome when you are talking to the reader (Ken).** Addressing them directly is friendlier than the third person, which is what the style is for.
+- Short paragraphs. One idea each. Four sentences at most.
+- Plain declarative sentences. The house median is 18 words; past 40 is too long.
+- Lead each item in a list with a bolded phrase so a reader can scan it.
+- State a fact once. Do not restate it as a lesson.
+- Give reasoning only where there is a real decision the reader needs explained, and give it in one sentence.
+- Friendly, not stern. Write it the way you would say it to someone across a desk.
+
+### Enforcement
+
+`check docs` runs five rules against the documents:
+
+- **L11** — the banned phrases, from `essayisms` in `writing-conventions.json`. A phrase only goes in that list if it has no innocent use in a plain document, the same bar as `britishPhrases`.
+- **L12** — sentences over 40 words, and paragraphs with more than two dashes.
+- **L13** — headings over seven words, or containing a colon.
+- **L14** — passive voice above 10 per thousand words. It reports a rate for the document plus a few examples, not one finding per sentence: the worst documents run at one passive in three sentences, and a finding each would bury every other rule.
+- **L15** — a whole paragraph of prose in bold. Bold marks a phrase inside a sentence. A paragraph bold end to end is almost always an edit that spread the first run's formatting over the rest, which is what happened to 104 paragraphs of the Conversation Review on September 25 2026 while every other check stayed clean. `docx_safe.set_para_text` now refuses a paragraph whose runs disagree unless the caller says which formatting to keep.
+
+**The checks cover the small part of this rule a machine can decide.** Tells 1, 2, 6, 7 and 9 need a person reading the sentence. A clean run does not mean the document reads well.
+
+**The backlog is real and is not being fixed all at once.** As of September 25 2026 the checks report about 100 banned phrases, 700 long sentences and 200 headings across the documents. Clear them as each document is next touched, not in one sweep.
+
+**Scope is everything a person reads: every document, the prototypes, on-screen text, release notes, and chat replies.** Code comments are exempt, same as the plain-language rule.
+
 ## Product Name
 The product is named **Conversant AAC** (decided June 18 2026). The name captures the product's core mission: transforming communication into conversation. "Conversant" carries both meanings simultaneously — fluent in conversation, and *in* conversation. The project/working directory continues to be called "AI-driven AAC" for continuity; the product-facing name in the app and documents is Conversant AAC. The product is free and open source.
 

@@ -213,6 +213,48 @@ def t_insert_para_refuses_inside_a_cell():
         raise AssertionError('a body paragraph must not be planted inside a table cell')
 
 
+def _mixed_para():
+    """A bold lead-in phrase and then plain prose - the commonest shape in these
+    documents, and the one that spread bold across a whole document in September 2026."""
+    d = docx.Document()
+    para = d.add_paragraph()
+    lead = para.add_run('Telling the app what it got wrong. ')
+    lead.bold = True
+    para.add_run('The record knows which suggestions the user ignored.')
+    return d, para
+
+
+def t_set_para_text_refuses_a_mixed_paragraph():
+    d, para = _mixed_para()
+    try:
+        D.set_para_text(para._element, 'replacement prose')
+    except D.DocxIntegrityError:
+        pass
+    else:
+        raise AssertionError(
+            'a paragraph whose runs disagree must not silently take run 0 formatting')
+
+
+def t_set_para_text_plain_drops_the_lead_in_bold():
+    d, para = _mixed_para()
+    D.set_para_text(para._element, 'replacement prose', format_from='plain')
+    assert para.text == 'replacement prose', para.text
+    assert not any(r.bold for r in para.runs), 'format_from="plain" left bold behind'
+
+
+def t_set_para_text_first_keeps_run_zero_formatting():
+    d, para = _mixed_para()
+    D.set_para_text(para._element, 'replacement prose', format_from='first')
+    assert para.runs[0].bold is True, 'format_from="first" dropped the formatting'
+
+
+def t_set_para_text_allows_a_uniform_paragraph():
+    d = docx.Document()
+    para = d.add_paragraph('All one formatting here.')
+    D.set_para_text(para._element, 'replacement prose')
+    assert para.text == 'replacement prose'
+
+
 if __name__ == '__main__':
     print('docx_safe self-test')
     for name, fn in sorted(globals().items()):

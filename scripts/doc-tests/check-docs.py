@@ -510,6 +510,148 @@ def l5_jargon(doc):
     return out
 
 
+@rule('L11', 'No essay writing', 'Ken stopped reading the Conversation Review a few '
+      'pages in: pompous, sure of itself, tedious, defensive, dramatic. A document says '
+      'what the app does; it does not argue with an imaginary critic.', scope='all',
+      severity='review')
+def l11_essayisms(doc):
+    # ⚠ THIS LIST IS THE SMALL, DECIDABLE PART OF THE RULE, NOT THE RULE. The tells a
+    # machine cannot see - an aphorism, a paragraph that argues instead of informing, a
+    # sentence defending a decision nobody questioned - are in CLAUDE.md under PLAIN
+    # STYLE and need a person. A phrase only belongs in the list if it has no innocent
+    # use in a plain document, the same bar as britishPhrases: a check that fires on
+    # correct writing is one people learn to scroll past.
+    out = []
+    for e in CONV['essayisms']:
+        for p_, m in _hits(doc, r'\b%s\b' % re.escape(e['phrase'])):
+            out.append(F('"%s" - %s' % (m.group(0), e['use']), p_.i, snip(p_.text),
+                         severity=e['severity']))
+    return out
+
+
+# A sentence end: . ! or ? followed by whitespace. Abbreviations produce the odd false
+# split, which costs nothing here - a miscounted sentence is short, and short is what
+# the rule wants anyway.
+SENT_RX = re.compile(r'(?<=[.!?])\s+')
+
+
+@rule('L12', 'Sentences a reader can take in once',
+      'The audience is time-limited and cannot spend a second pass unpacking a '
+      'paragraph. Measured September 2026: the median sentence in these documents is '
+      '18 words, so anything past the limit is well outside what they already do.',
+      scope='all', severity='review')
+def l12_length(doc):
+    limits = CONV['plainStyleLimits']
+    maxw, maxd = limits['maxSentenceWords'], limits['maxEmDashesPerParagraph']
+    out = []
+    for p_ in doc.paras:
+        text = (p_.text or '').strip()
+        if not text or CAPTION_RX.match(text):
+            continue
+        if p_.is_heading:
+            continue
+        for s in SENT_RX.split(text):
+            n = len(s.split())
+            if n > maxw:
+                out.append(F('%d-word sentence - split it' % n, p_.i, snip(s)))
+        # Stacked clauses are the other half of the same complaint. One aside is
+        # ordinary writing; three in a paragraph is a sentence interrupting itself.
+        dashes = text.count('\u2014')
+        if dashes > maxd:
+            out.append(F('%d dashes in one paragraph - use separate sentences' % dashes,
+                         p_.i, snip(text)))
+    return out
+
+
+@rule('L13', 'Headings are labels, not sentences',
+      'A heading tells a reader in a hurry what is in the section. "Why This Document '
+      'Exists" and "Getting In: Choosing a Conversation" are prose with a number in '
+      'front (Ken, September 25 2026).', scope='all', severity='review')
+def l13_headings(doc):
+    maxw = CONV['plainStyleLimits']['maxHeadingWords']
+    out = []
+    for p_ in doc.paras:
+        if not p_.is_heading:
+            continue
+        text = (p_.text or '').strip()
+        # Drop a leading "4." or "4.2" so the number is not counted as a word.
+        body = re.sub(r'^\s*\d+(\.\d+)*\.?\s*', '', text)
+        if not body:
+            continue
+        n = len(body.split())
+        if n > maxw:
+            out.append(F('%d-word heading - shorten it' % n, p_.i, snip(text)))
+        if ':' in body:
+            out.append(F('a colon in a heading - pick one half', p_.i, snip(text)))
+    return out
+
+
+# Passive voice: a form of "to be" and then a past participle. The -ed forms are a
+# regular ending; the irregulars have to be listed. A participle used as an adjective
+# ("is tired", "is interested") slips through as a false positive, which is why the
+# rule reports a RATE rather than one finding per hit.
+_IRREGULAR = ('taken|given|written|sent|done|shown|made|held|kept|seen|known|built|'
+              'told|found|drawn|chosen|spoken|set|put|lost|left|meant|brought|caught')
+PASSIVE_RX = re.compile(
+    r'\b(?:is|are|was|were|be|been|being)\s+'
+    r'(?:not\s+|never\s+|already\s+|only\s+|also\s+|then\s+|still\s+)?'
+    r'(?:\w+ed|%s)\b' % _IRREGULAR, re.I)
+
+
+@rule('L14', 'Say who does what',
+      'Subject, verb, predicate (Ken, September 25 2026). Passive voice hides who acts, '
+      'and a reader in a hurry has to work it out. "A saved conversation can be stepped '
+      'through" -> "the user steps through a saved conversation".', scope='all',
+      severity='review')
+def l14_passive(doc):
+    # ⚠ ONE FINDING PER DOCUMENT, NOT PER SENTENCE, AND THAT IS THE DESIGN. Passive
+    # voice runs at roughly one sentence in three in the worst documents, so a finding
+    # each would bury every other rule in the run and get the whole check scrolled past.
+    # The rate is the signal; the examples are there to start on.
+    limit = CONV['plainStyleLimits']['maxPassivesPerThousandWords']
+    hits, words = [], 0
+    for p_ in doc.paras:
+        text = (p_.text or '').strip()
+        if not text or p_.is_heading:
+            continue
+        words += len(text.split())
+        for m in PASSIVE_RX.finditer(text):
+            hits.append((p_.i, m.group(0), text))
+    if words < 400 or not hits:
+        return []
+    rate = len(hits) * 1000.0 / words
+    if rate <= limit:
+        return []
+    out = [F('%d passive verbs in %d words (%.1f per thousand, house limit %d)'
+             % (len(hits), words, rate, limit))]
+    for i, phrase, text in hits[:8]:
+        out.append(F('passive: "%s"' % phrase, i, snip(text)))
+    if len(hits) > 8:
+        out.append(F('...and %d more' % (len(hits) - 8)))
+    return out
+
+
+@rule('L15', 'A paragraph of prose is not all bold',
+      'Bold marks a phrase inside a sentence. A whole paragraph in bold is almost '
+      'always an edit that spread run 1\'s formatting over the rest - it turned 104 '
+      'paragraphs of the Conversation Review bold in one pass, September 25 2026, with '
+      'every other check clean.', scope='all', severity='review')
+def l15_all_bold(doc):
+    # A deliberate bold LEAD-IN leaves the paragraph mixed, so it never matches. Only a
+    # paragraph that is bold end to end does, which is what makes this cheap to act on.
+    # Short lines are left alone: a one-line bold note is somebody's decision.
+    out = []
+    for p_ in doc.paras:
+        if p_.i == 0 or p_.container != 'body' or p_.is_heading:
+            continue
+        text = (p_.text or '').strip()
+        if len(text.split()) <= 12 or CAPTION_RX.match(text):
+            continue
+        if p_.all_bold:
+            out.append(F('the whole paragraph is bold', p_.i, snip(text)))
+    return out
+
+
 @rule('L6', 'No commas in a document name',
       'Word replaces each comma with the two characters ^J when it saves a PDF to cloud '
       'storage, so a name with commas produces a mangled file every time.')

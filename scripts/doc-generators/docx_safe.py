@@ -141,6 +141,93 @@ def insert_para_after(doc, anchor_text, new_text):
     return new
 
 
+def _rpr_key(run_el):
+    """A comparable signature for a run's direct formatting."""
+    rpr = run_el.find(qn('w:rPr'))
+    if rpr is None:
+        return ''
+    from lxml import etree
+    return etree.tostring(rpr, encoding='unicode')
+
+
+def set_para_text(p_el, text, format_from=None):
+    """Replace a paragraph's whole text.
+
+    ⚠ REFUSES A PARAGRAPH WHOSE RUNS ARE FORMATTED DIFFERENTLY unless the caller says
+    which formatting to keep. This is here because of a real failure, September 25 2026:
+    a rewrite of the Conversation Review document replaced 141 paragraphs, and roughly
+    half of them opened with a BOLD lead-in phrase as run 0 and carried plain prose in
+    run 1. Keeping "the first run's formatting" therefore set 104 whole paragraphs in
+    bold. Nothing errored, every rule passed, Word opened the file, and the document
+    went to the reader in bold from top to bottom.
+
+    format_from:
+      None    - keep the formatting when every run agrees; raise when they disagree.
+      'first' - keep run 0's formatting, whatever the rest carried.
+      'plain' - drop direct formatting and take the paragraph style's. This is what
+                body prose almost always wants.
+    """
+    runs = list(p_el.iterchildren(qn('w:r')))
+    if format_from is None and len({_rpr_key(r) for r in runs}) > 1:
+        raise DocxIntegrityError(
+            'runs are formatted differently (%d variants) - pass format_from="plain" '
+            'to take the paragraph style, or "first" to keep run 0\'s: %r'
+            % (len({_rpr_key(r) for r in runs}),
+               ''.join(r.text or '' for r in runs)[:60]))
+    for extra in runs[1:]:
+        p_el.remove(extra)
+    if runs:
+        keep = runs[0]
+        if format_from == 'plain':
+            rpr = keep.find(qn('w:rPr'))
+            if rpr is not None:
+                keep.remove(rpr)
+        _set_run_text(keep, text)
+    else:
+        r = p_el.makeelement(qn('w:r'), {})
+        _set_run_text(r, text)
+        p_el.append(r)
+    return p_el
+
+
+def delete_para(p_el):
+    """Remove a paragraph.
+
+    ⚠ REFUSES THE LAST PARAGRAPH IN A TABLE CELL. An empty <w:tc> is invalid OOXML and
+    Word declines to open the document - the fault that broke both user manuals in
+    August 2026. Deleting a table ROW is what that case almost always wants.
+    """
+    parent = p_el.getparent()
+    if parent.tag == qn('w:tc'):
+        if len(list(parent.iterchildren(qn('w:p')))) == 1:
+            raise DocxIntegrityError(
+                'that is the only paragraph in a table cell; delete the row instead')
+    parent.remove(p_el)
+
+
+def split_para(p_el, texts, format_from=None):
+    """Turn one paragraph into several, each a copy of it carrying one of `texts`.
+
+    Copies the paragraph and keeps only its FIRST run, so no unique child (a comment
+    anchor, a drawing) can be duplicated - the fault this module exists for.
+    """
+    if not texts:
+        raise ValueError('split_para needs at least one string')
+    for r in list(p_el.iterchildren(qn('w:r'))):
+        if not _is_plain(r):
+            raise DocxIntegrityError('paragraph holds a run with a unique child')
+    set_para_text(p_el, texts[0], format_from)
+    prev = p_el
+    for t in texts[1:]:
+        new = copy.deepcopy(p_el)
+        for extra in list(new.iterchildren(qn('w:r')))[1:]:
+            new.remove(extra)
+        set_para_text(new, t, format_from)
+        prev.addnext(new)
+        prev = new
+    return p_el
+
+
 def _set_run_text(run_el, text):
     for t in list(run_el.iterchildren(qn('w:t'))):
         run_el.remove(t)

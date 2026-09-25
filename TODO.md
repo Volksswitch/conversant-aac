@@ -37,6 +37,32 @@ the one that quietly waits forever.
 
 ## Open
 
+### Bold lead-in phrases: keep them or not
+- **Raised:** 2026-09-25 - Ken saw the Conversation Review document in bold from top to
+  bottom and asked for plain text. The bold was an accident of the rewrite, but 94 of
+  those paragraphs had carried a deliberate **bold lead-in phrase** before it, and
+  clearing the accident cleared those too. The document now has no bold in its prose at
+  all.
+- **What is wanted:** Ken's decision. Either the document stays fully plain, or the
+  opening phrase comes back on the list-style paragraphs so a reader can scan them.
+- **Why it is not being done now:** he asked for plain text and got it; putting bold back
+  is a change he has not asked for. The PLAIN STYLE rule in CLAUDE.md currently
+  recommends bold lead-ins, so **whichever way he decides, that line has to match** - the
+  rule and the documents cannot disagree.
+- **Cost either way:** small. One pass over the list-style paragraphs.
+
+### The rest of the documents still carry the old style
+- **Raised:** 2026-09-25, when the PLAIN STYLE rule was written and the checks added.
+- **The backlog, measured that day across roughly 40 documents:** 101 banned phrases as
+  errors and 163 to review (L11), 692 sentences over 40 words (L12), 221 headings too
+  long or carrying a colon (L13), 28 documents over the passive-voice limit (L14), and
+  63 paragraphs bold end to end (L15).
+- **Why it is not being done now:** a single sweep over every document is a large pass
+  with no reader waiting on it, and each document reads better when somebody rewrites it
+  rather than when a script clears its findings.
+- **What is wanted:** clear the findings for a document the next time that document is
+  touched for any reason. `check docs <name>` lists them.
+
 ### Beta Test Plan still tells testers to get a free Deepgram account for speech
 - **Raised:** 2026-09-21 - found while applying the public-release documents rule. Its
   "What you need" and set-up steps say to create a free Deepgram account for the voice, and
