@@ -532,7 +532,14 @@ def l11_essayisms(doc):
 # A sentence end: . ! or ? followed by whitespace. Abbreviations produce the odd false
 # split, which costs nothing here - a miscounted sentence is short, and short is what
 # the rule wants anyway.
-SENT_RX = re.compile(r'(?<=[.!?])\s+')
+#
+# ⚠ THE CLOSING QUOTE ERRS THE OTHER WAY AND DOES COST SOMETHING. A sentence ending
+# `... said that.”` is not followed by whitespace at the period, so two sentences were
+# counted as one and reported as over-long. That is the failure mode to avoid in a
+# review rule: it sends somebody to rewrite a pair of sentences that were already
+# short. Measured September 26 2026 across the 42 documents: 40 of 548 findings, and
+# they were indistinguishable from the real ones without counting by hand.
+SENT_RX = re.compile(r'(?<=[.!?])[”’"\')\]]*\s+')
 
 
 @rule('L12', 'Sentences a reader can take in once',
