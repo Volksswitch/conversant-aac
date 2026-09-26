@@ -34,6 +34,18 @@ green run as "the document is good":
 import sys, os, re, json, glob
 import subprocess
 
+# ⚠ A WINDOWS CONSOLE IS cp1252 AND RAISES ON THE PUNCTUATION THESE DOCUMENTS USE, so
+# printing a finding whose snippet contains an arrow, a dash or a curly quote killed the
+# whole run. The failure is the worst kind for a checker: piped through grep it looks
+# exactly like a document with nothing wrong with it. Found September 26 2026, when the
+# Android manual reported clean three times and had in fact crashed on "Settings -> ".
+# check-writing-bugs.py already did this; check-docs did not.
+try:
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+except Exception:
+    pass
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from docx_model import Doc, W
 
