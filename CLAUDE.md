@@ -37,7 +37,7 @@ Ken stopped reading the Conversation Review document a few pages in. His words: 
 
 ### The bugs live in [WRITING-BUGS.md](WRITING-BUGS.md)
 
-**Twenty-two of them, each with an example and how to search for it, plus a list of the shapes that were checked and turned out to be fine.** They are in their own file on purpose (Ken, September 25 2026): *“I've found that you sometimes read and ignore what you find in CLAUDE.md.”* **A list here is background you have already read; a file a workflow step tells you to open is one you work through.** So the catalog moved out, and “sync docs” step 3a says to open it. **Keep it in one place** — a second copy drifts, and the stale copy is the one somebody follows.
+**Twenty-three of them, each with an example and how to search for it, plus a list of the shapes that were checked and turned out to be fine.** They are in their own file on purpose (Ken, September 25 2026): *“I've found that you sometimes read and ignore what you find in CLAUDE.md.”* **A list here is background you have already read; a file a workflow step tells you to open is one you work through.** So the catalog moved out, and “sync docs” step 3a says to open it. **Keep it in one place** — a second copy drifts, and the stale copy is the one somebody follows.
 
 **The short form, for when you are writing rather than reviewing:** documentation says what a thing is and how it works. It does not argue, admire itself, rate its own material, borrow drama, or reach for an unusual construction when an ordinary one exists. **The one test that finds nearly all of it is Ken's: say the sentence out loud the way you would say it to somebody.**
 

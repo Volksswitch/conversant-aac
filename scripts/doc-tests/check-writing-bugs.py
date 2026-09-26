@@ -71,13 +71,50 @@ PATTERNS = [
      r'[a-z”]:\s+(?:the|it|they|a|an|you|we|this|that)\b[^,;:]{0,60}'
      r'\b(is|are|was|were|means|can|will|would|does|do|has|have|puts|asks|carries|gives)\b', 8),
     ('pseudo-cleft', 19, r'\bWhat (?!about\b)[a-z][^.?!]{3,40}\b(is|are|does|means|comes)\b', 6),
+    # Bug 23. An invented person is only a fault when the fact is already on the page, so
+    # this can never be more than a candidate: "Someone typed the same sentence three times
+    # last week" opens identically and is the thing its paragraph exists to say.
+    ('invented example', 23,
+     r'(?:^|(?<=[.?!]) )(Someone who|A user who|Anyone who|A person who|Imagine |Picture the'
+     r'|Say the user|Suppose )[^.?!]{0,70}', 8),
 ]
 
 # Reported as a rate: fine once, a tic in bulk.
 CADENCE = [
     ('corrective "X, not Y"', 21, r',\s*(not|never|rather than)\s+[a-z“]'),
     ('trailing ", which ..." clause', 20, r', which \w+'),
+    # TRIED AND DROPPED (September 26 2026): "a subject running past a dozen words before
+    # its verb". It returned 62 candidates in a 6,000-word document, nearly all of them
+    # ordinary sentences, which is the noise level that teaches people to scroll past a
+    # check. Long sentences are already reported by `check docs` rule L12.
 ]
+
+
+def sections(paras):
+    """Every paragraph paired with the heading it falls under.
+
+    A pass that runs top to bottom thins out, and a section nobody looked at reads
+    exactly like a section that was already clean - so the count is reported per
+    section rather than per document (WRITING-BUGS.md, "How to use it").
+    """
+    here = '(front matter)'
+    out = []
+    for p in paras:
+        if p.is_heading and (p.text or '').strip():
+            here = p.text.strip()
+        out.append((here, p))
+    return out
+
+
+def section_sizes(paras):
+    sizes = {}
+    order = []
+    for heading, p in sections(paras):
+        if heading not in sizes:
+            sizes[heading] = 0
+            order.append(heading)
+        sizes[heading] += len((p.text or '').split())
+    return order, sizes
 
 
 def scan(path):
@@ -85,13 +122,16 @@ def scan(path):
     text = ' '.join(p.text for p in paras)
     words = max(1, len(text.split()))
     found = []
+    order, sizes = section_sizes(paras)
+    per_section = {h: 0 for h in order}
 
     for name, bug, pat, cap in PATTERNS:
         hits = []
-        for p in paras:
+        for heading, p in sections(paras):
             for m in re.finditer(pat, p.text):
                 a = max(0, m.start() - 42)
                 hits.append('...' + p.text[a:m.end() + 30].replace('\n', ' ') + '...')
+                per_section[heading] += 1
         if hits:
             found.append((f'bug {bug}  {name}', len(hits), hits[:cap]))
 
@@ -101,7 +141,7 @@ def scan(path):
         if n and n / words * 1000 > 4:
             found.append((f'bug {bug}  {name}',
                           n, [f'{n} in {words} words - count them before defending one']))
-    return found, words
+    return found, words, [(h, sizes[h], per_section[h]) for h in order]
 
 
 def main(argv):
@@ -113,7 +153,7 @@ def main(argv):
 
     total = 0
     for path in docs:
-        found, words = scan(path)
+        found, words, by_section = scan(path)
         n = sum(c for _, c, _ in found)
         total += n
         print(f'\n{os.path.basename(path)}   ({words} words)')
@@ -126,6 +166,12 @@ def main(argv):
                 print(f'      {line}')
             if count > len(lines):
                 print(f'      ... and {count - len(lines)} more')
+        if len(by_section) > 1:
+            print('  work list - one section at a time, and note what each one produced.')
+            print('  A section with no candidates may be clean, or may be one nobody read.')
+            print(f'      {"words":>6} {"found":>6}  section')
+            for heading, size, count in by_section:
+                print(f'      {size:6d} {count:6d}  {heading[:62]}')
 
     print(f'\n{"-" * 70}')
     print(f'{total} candidate(s). These are NOT errors - a person decides each one.')

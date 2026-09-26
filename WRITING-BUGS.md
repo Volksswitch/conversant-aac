@@ -21,8 +21,21 @@ a second copy of a list like this drifts, and the stale copy is the one somebody
    red is one people learn to scroll past. It finds nothing for bugs 1–11; those need a
    person.
 
-2. **Read the document against the list.** The scanner is a starting point and misses most
-   of what matters.
+2. **Read the document against the list, SECTION BY SECTION.** The scanner is a starting
+   point and misses most of what matters.
+
+   **⚠ THE BACK OF A DOCUMENT COMES OUT WORSE THAN THE FRONT, and nothing reported it**
+   (Ken, September 26 2026, on the Conversation Review: the rules “seem like they are being
+   forgotten a third of the way into the document”). A pass that runs top to bottom in one
+   go thins out, and a section that got no attention looks exactly like a section that was
+   already clean. Two things stop it:
+
+   - **Work one section at a time and write down what each one produced.** A section
+     reporting nothing then stands out instead of disappearing. The scanner ends each
+     document with a work list of its sections, their length, and how many candidates
+     each one holds, for the same reason.
+   - **Make a second pass from the back.** It costs little, and it puts fresh attention
+     where the first pass had least.
 
 3. **The one test that finds all of them**, and it is Ken's: *say the sentence out loud the
    way you would say it to somebody.* If a plain version arrives instantly and sounds
@@ -124,9 +137,12 @@ written here anyway, because three of these bugs invite exactly that mistake.**
 19. **The pseudo-cleft: *What X means is…*** *"What a tap means comes from what the user does next"* → **"The user's next action decides what a tap means."** It front-loads an abstract noun phrase and makes the reader hold it until the verb arrives. Name the actor and let the sentence start moving.
 20. **The trailing clause that comments instead of continuing.** *"…in a quiet moment, which is what Settings is for."* The clause adds no fact; it stands back and approves of the sentence just finished. **The test: does it carry information, or a verdict?** *"which keeps the record honest"* and *"which nothing else on the screen can do"* both carry information and stay.
 21. **The corrective *X, not Y* used for cadence.** It earns its place when it heads off a misreading the reader would plausibly have — *"four different kinds of reply, not a best-to-worst list"*. It is decoration when nothing was about to be misread, and it turns into a slogan when it goes imperative: *"offer, never just do it"* → **"The app offers and never simply acts."** Count them before defending one; eleven in a short document is a tic, whatever each is doing.
-22. **The same fact in two sections.** *"the most personal material review collects"* appeared twice, four pages apart. **"State a fact once" applies across the whole document, not within a paragraph.**
+22. **The same fact twice.** *“the most personal material review collects”* appeared twice, four pages apart. **“State a fact once” applies across the whole document, not within a paragraph — and it includes the very next sentence, which is bug 23.**
+23. **The invented example** (Ken, September 26 2026). A made-up person doing a made-up thing, put in to illustrate a fact the sentence before it already stated. *“The user can stop and pick up again at any turn. Someone who works through four turns of a long conversation and puts the tablet down comes back to the fifth.”* The second sentence carries no fact, and its specifics — four turns, a long conversation, the tablet going down — make the reader stop and work out whether any of them matter. **The test is mechanical: delete the sentence and see whether a fact goes with it.**
+    - *Search:* a sentence opening `Someone who`, `A user who`, `Anyone who`, `A person who`, `Imagine`, `Picture the`, `Say the user`, `Suppose`. The scanner reports these.
+    - **⚠ A REAL EXAMPLE IS NOT THIS BUG, and the two look alike.** *“Someone typed the same sentence three times last week”* opens the same way and stays, because it carries the fact — it is what repeated effort looks like — and nothing else in the document says it. **The question is whether the fact is already on the page, not whether the sentence has a person in it.**
 
-**What 16–21 have in common, and it is the thing to watch for rather than any single pattern: they are ways of making an ordinary sentence sound composed.** None uses a hard word, so the plain-language rule never catches them, and each survives every check we have.
+**What 16–21 and 23 have in common, and it is the thing to watch for rather than any single pattern: they are ways of making an ordinary sentence sound composed.** None uses a hard word, so the plain-language rule never catches them, and each survives every check we have.
 
 ---
 
@@ -147,6 +163,10 @@ harmless. **Recorded so they are not chased again.**
 - **Nothing in bugs 11–13 belongs in `essayisms`.** That list's bar is that a phrase has
   **no** innocent use. *At all* has one (*"how often anyone used review at all"*), so does
   a sentence-initial *So* now and then, and *worth* in *worth knowing*.
+- **A subject that runs past a dozen words before its verb** (tried September 26 2026 as a
+  handle for bug 23, and dropped). It returned 62 candidates in a 6,000-word document,
+  nearly all of them ordinary sentences — the noise level that teaches people to scroll
+  past a check. Long sentences are already reported by `check docs` rule L12.
 
 ---
 
