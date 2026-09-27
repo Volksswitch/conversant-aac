@@ -216,55 +216,23 @@ the one that quietly waits forever.
   asked for the Conversation Review first. Doing it in the same pass would mean editing a
   document he has not reviewed.
 
-### Conversation Review: the reader changes when the feature ships
-- **Raised:** 2026-09-27 - Ken: *"we won't publish it until it genuinely becomes
-  customer facing. At that point the assumed reader of the document will be the user,
-  not an SLP, and the sentence wording and structure will need to change."*
-- **Where it stands:** the document is not on the published list
-  (`scripts/wordpress/user-documents.json`, 13 entries, none of them this one), so a
-  "sync docs" run cannot publish it by accident. Nothing has to be done to hold it back.
-- **⚠ THE FIRST QUESTION IS WHETHER IT SURVIVES AS A DOCUMENT AT ALL, and it should be
-  settled before anybody rewrites a sentence.** The three User Manuals are self-contained
-  by decision (Ken, August 1 2026: *"humans MUCH prefer a single document"*), and a user
-  wanting to know how to review a conversation will look in their own manual. So the
-  likely shape is that this document's content becomes a section in each of the three
-  manuals, and what survives under this name is the design record for the build - which
-  is a different document with a different reader again. Rewriting this one for the user
-  and then harvesting it into the manuals would be the same work twice.
-- **What changes if it does become a user-facing document:**
-  - **"You" flips.** Today "you" is the reviewing therapist and "the user" is the person
-    using the app. For a user reader those swap. It is not a find-and-replace: some
-    sentences use the third person precisely because the reader is somebody else, and
-    some are about a clinician, where "you" would be wrong.
-  - **Section 13, "What Happens Next", goes.** It is a project plan addressed to
-    reviewers - read this, comment on the prototype, a design document follows.
-  - **Section 12, "Open Questions", goes.** A user manual does not carry open questions.
-  - **The conditional goes.** The document is written throughout as a proposal ("review
-    would live in its own tab"). A shipped feature is described in the present tense.
-  - **"We" and "us" go** - "we don't know why", "it tells us where transcription
-    struggles". Per the standing rule the project is "Volksswitch", never "Ken".
-  - **The beta sentence in section 8.1 goes or is marked** as a beta note, per the
-    September 21 2026 rule that only the Beta Test Plan describes the beta.
-  - **The remaining reasoning goes further than the tone pass took it.** A user needs to
-    know what to do, not why the design is as it is.
-- **Why it is not being done now:** the feature is not built, and the document is still
-  doing its present job - it is out with the speech and language therapists for comment.
-  Rewriting it for a reader it does not yet have would throw away the version they are
-  reading.
-
-## App changes (Conversant), not the guide
-A. Settings > Speech > Azure Region: make it a plain text box with a Paste button (today it
-   is a text box with a suggestion list, which looks and behaves like a menu - on an iPad
-   especially). Test must be unavailable until both key and region are filled in.
-B. Azure set-up as two buttons in Conversant: Step 1 "Sign up with Microsoft" (opens
-   Microsoft's pay-as-you-go sign-up in a new tab; creates the Microsoft account too),
-   Step 2 "Create my free speech service" (the set-up link). Conversant stays open between
-   them. To test first: can Microsoft's sign-up be made to land on the form directly?
-C. Key-test failure messages: after the Azure service was deleted, Test said "The
-   transcription service refused the key - check the key, and that the region is "eastus"."
-   That points the user at a typing mistake. Add the other real causes in plain words: the
-   speech service was deleted, or the Azure account was cancelled or switched off (e.g. an
-   un-upgraded free trial after 30 days).
+### Conversation Review: lift Section 14 into the three User Manuals
+- **Raised:** 2026-09-27 - the document became the design record, and Ken asked that the
+  user-facing material be preserved inside it rather than lost: *"preserve the
+  information that will be entered into the user manuals as a section in the design
+  doc."*
+- **Where it stands:** Section 14, "What the User Manuals Will Say", seven short
+  sub-sections written in the manual's voice, where "you" is the user. It is the only
+  part of that document addressed to the user; everything else is about why the feature
+  is the way it is, which a manual doesn't carry.
+- **What is wanted:** when the feature ships, that section goes into all three User
+  Manuals. They are self-contained by decision (Ken, August 1 2026), so it lands in each
+  of them in the same pass, and the standing rule applies - a change to shared behavior
+  that touches one manual and not the others is an incomplete sync.
+- **Why it is not being done now:** the feature is not built. A manual section describing
+  something that does not exist is worse than no section.
+- **Note:** the design record itself never becomes customer-facing, so it stays off
+  `scripts/wordpress/user-documents.json` permanently.
 
 ### The iPad and Android manuals carry the Windows manual's page header
 - **Raised:** 2026-09-15 - found while checking table borders. The running header at the
