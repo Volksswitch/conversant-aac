@@ -216,6 +216,42 @@ the one that quietly waits forever.
   asked for the Conversation Review first. Doing it in the same pass would mean editing a
   document he has not reviewed.
 
+### Conversation Review: the reader changes when the feature ships
+- **Raised:** 2026-09-27 - Ken: *"we won't publish it until it genuinely becomes
+  customer facing. At that point the assumed reader of the document will be the user,
+  not an SLP, and the sentence wording and structure will need to change."*
+- **Where it stands:** the document is not on the published list
+  (`scripts/wordpress/user-documents.json`, 13 entries, none of them this one), so a
+  "sync docs" run cannot publish it by accident. Nothing has to be done to hold it back.
+- **⚠ THE FIRST QUESTION IS WHETHER IT SURVIVES AS A DOCUMENT AT ALL, and it should be
+  settled before anybody rewrites a sentence.** The three User Manuals are self-contained
+  by decision (Ken, August 1 2026: *"humans MUCH prefer a single document"*), and a user
+  wanting to know how to review a conversation will look in their own manual. So the
+  likely shape is that this document's content becomes a section in each of the three
+  manuals, and what survives under this name is the design record for the build - which
+  is a different document with a different reader again. Rewriting this one for the user
+  and then harvesting it into the manuals would be the same work twice.
+- **What changes if it does become a user-facing document:**
+  - **"You" flips.** Today "you" is the reviewing therapist and "the user" is the person
+    using the app. For a user reader those swap. It is not a find-and-replace: some
+    sentences use the third person precisely because the reader is somebody else, and
+    some are about a clinician, where "you" would be wrong.
+  - **Section 13, "What Happens Next", goes.** It is a project plan addressed to
+    reviewers - read this, comment on the prototype, a design document follows.
+  - **Section 12, "Open Questions", goes.** A user manual does not carry open questions.
+  - **The conditional goes.** The document is written throughout as a proposal ("review
+    would live in its own tab"). A shipped feature is described in the present tense.
+  - **"We" and "us" go** - "we don't know why", "it tells us where transcription
+    struggles". Per the standing rule the project is "Volksswitch", never "Ken".
+  - **The beta sentence in section 8.1 goes or is marked** as a beta note, per the
+    September 21 2026 rule that only the Beta Test Plan describes the beta.
+  - **The remaining reasoning goes further than the tone pass took it.** A user needs to
+    know what to do, not why the design is as it is.
+- **Why it is not being done now:** the feature is not built, and the document is still
+  doing its present job - it is out with the speech and language therapists for comment.
+  Rewriting it for a reader it does not yet have would throw away the version they are
+  reading.
+
 ## App changes (Conversant), not the guide
 A. Settings > Speech > Azure Region: make it a plain text box with a Paste button (today it
    is a text box with a suggestion list, which looks and behaves like a menu - on an iPad
