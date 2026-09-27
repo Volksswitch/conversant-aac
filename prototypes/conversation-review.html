@@ -191,19 +191,14 @@
   .cmd[disabled]{opacity:.32;cursor:default}
   .cmd.on{background:var(--brand);border-color:var(--brand)}
   .cmd.on .ic,.cmd.on .lb{color:#fff}
-  /* ⚠ THE RESPONSE REGION IS A ROW: four cards, then "New 4" as a NARROW VERTICAL
-     STRIP down the right-hand side. That is where the app puts it (styles.css gives
-     .regenerate-btn `align-self:stretch` and a width of one button), and the first
-     cut of this prototype drew it as a full-width bar underneath, which moves a
-     keyguard hole. Ken found it, September 27 2026. */
-  .tresp{flex:1 1 auto;display:flex;gap:7px;padding:9px 11px;min-height:0}
   .tcards{flex:1 1 auto;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;
-          gap:7px;min-height:0}
-  .tnew{flex:0 0 46px;display:flex}
-  .newbtn{flex:1 1 auto;border:1px solid #B0BEC5;border-radius:5px;background:#fff;
+          gap:7px;padding:9px 11px;min-height:0}
+  /* the response region carries the "New 4" button in the app, so it carries it here.
+     Reserved whether or not it is marked, so the cards above never change size. */
+  .tnew{flex:0 0 auto;padding:0 11px 9px;display:flex}
+  .newbtn{flex:1 1 auto;height:30px;border:1px solid #B0BEC5;border-radius:5px;background:#fff;
           font:inherit;font-size:12px;color:#37474F;cursor:pointer;display:flex;
-          writing-mode:vertical-rl;transform:rotate(180deg);
-          align-items:center;justify-content:center;gap:7px;padding:6px 0}
+          align-items:center;justify-content:center;gap:7px}
   .newbtn:hover{border-color:var(--brand)}
   .newbtn.want{background:#E8F0FE;border-color:var(--init);color:#0d3f7a;font-weight:bold}
   .newbtn .wantmk{font-size:8px}
@@ -256,7 +251,7 @@
           letter-spacing:.04em;line-height:1}
   .dcell[data-cell]{cursor:pointer}
   .dcell[data-cell]:hover{border-color:var(--brand)}
-  /* the reframer buttons read as a different kind of thing in the app, and must here */
+  /* the influencer buttons read as a different kind of thing in the app, and must here */
   .dcell.ep-context{background:#FBF7F2;color:#6d4c41}
   .dcell.ep-compose{background:#FAFAFA;color:#455A64;font-style:italic}
   .dcell.ep-flex{background:#F2F7F4;color:#2f5d46}
@@ -870,17 +865,13 @@ function cmdBtn(id, ic, lb, o){
 /* The nine, in order. `st` says which are live right now. */
 function barHTML(st){
   var w = wordIcons();
-  /* ⚠ NINE, BECAUSE THE KEYGUARD IS CUT FOR NINE. "My own words" left the bar
-     and Redo took its slot (Ken, September 27 2026): the Express Panel already
-     carries "In my own words", and two buttons doing one job was spending a hole
-     the bar does not have to spare. */
   return cmdBtn('prev',  '◀', 'Previous Turn', {off: !st.prev})
        + cmdBtn('next',  '▶', 'Next Turn',     {off: !st.next})
        + cmdBtn('play',  '▶‖', 'Play it back', {on: !!st.playing})
        + cmdBtn('wback', w[0],     'Previous Word', {off: !st.editing})
        + cmdBtn('wfwd',  w[1],     'Next Word',     {off: !st.editing})
        + cmdBtn('undo',  '↺', 'Undo',        {off: !st.dirty})
-       + cmdBtn('redo',  '↻', 'Redo',        {off: !st.redoable})
+       + cmdBtn('own',   '✎', 'My own words',{off: !st.cards, on: !!st.own})
        + cmdBtn('hear',  '♪', 'Hear it',     {off: !st.editing && !st.own})
        + cmdBtn('settings', '⚙', 'Settings', {title: 'Settings - and the way back out of review'});
 }
@@ -968,16 +959,7 @@ function dockHTML(kb, lit, want, live){
   EP_ALWAYS.forEach(function(t){
     h += cell(t, 'phrase', 'ep-always', 'tap if you would rather have said this');
   });
-  /* ⚠ THE COMPOSE CELL SHOWS WHEN IT IS THE ANSWER. The command bar used to carry a
-     second "My own words" button and that button showed the state; it was dropped
-     (Ken, September 27 2026) so Redo could have the slot, which leaves this cell as the
-     only thing on screen that can say the user chose to type instead. */
-  h += '<div class="dcell ep-compose' + (want.own ? ' want' : '') + '"'
-     + (live ? ' data-cell="' + esc(EP_COMPOSE) + '" data-kind="compose"'
-             + ' title="tap if you would rather have typed it yourself"' : '')
-     + '>' + esc(EP_COMPOSE)
-     + (want.own ? '<span class="wantmk">you would have typed it</span>' : '')
-     + '</div>';
+  h += cell(EP_COMPOSE, 'compose', 'ep-compose', 'tap if you would rather have typed it yourself');
 
   /* THE FLEX BAND KEEPS ITS SLOTS WHETHER OR NOT ANYTHING FILLS THEM. It is empty
      until a partner or a place is switched on - which is the point being shown - but
@@ -1018,10 +1000,8 @@ function tabletHTML(pane, bar, cards, kb, lit, want, live, newBtn){
        +   '<div class="tmain">'
        +     '<div class="tpane">' + pane + '</div>'
        +     '<div class="tbar">' + bar + '</div>'
-       +     '<div class="tresp">'
-       +       '<div class="tcards">' + cards + '</div>'
-       +       '<div class="tnew">' + (newBtn || '') + '</div>'
-       +     '</div>'
+       +     '<div class="tcards">' + cards + '</div>'
+       +     '<div class="tnew">' + (newBtn || '') + '</div>'
        +   '</div>'
        +   '<div class="tdock">' + dockHTML(kb, lit, want, live) + '</div>'
        + '</div>';
@@ -1431,31 +1411,17 @@ function refreshUndo(){
    every keystroke: undo has to step back a word, not a letter, or it stops being usable
    with the two word buttons. */
 var undoStacks = {};
-var redoStacks = {};
 function snapshot(){
   var st = undoStacks[turnAt] = undoStacks[turnAt] || [];
   st.push(JSON.stringify(verdicts[turnAt] || {}));
   if(st.length > 40) st.shift();
-  /* ⚠ A FRESH ACTION ENDS THE REDO TRAIL. Keeping it would let Redo put back a
-     state that no longer follows from what is on screen. */
-  redoStacks[turnAt] = [];
 }
 function canUndo(){ return !!(undoStacks[turnAt] && undoStacks[turnAt].length); }
-function canRedo(){ return !!(redoStacks[turnAt] && redoStacks[turnAt].length); }
 function undoTurn(){
   var st = undoStacks[turnAt];
   if(!st || !st.length) return;
-  (redoStacks[turnAt] = redoStacks[turnAt] || []).push(JSON.stringify(verdicts[turnAt] || {}));
   try { verdicts[turnAt] = JSON.parse(st.pop()); } catch(e) { verdicts[turnAt] = {}; }
   /* an edit in progress belongs to the state being stepped out of */
-  ed = null;
-  saveVerdicts(); renderTurn();
-}
-function redoTurn(){
-  var back = redoStacks[turnAt];
-  if(!back || !back.length) return;
-  (undoStacks[turnAt] = undoStacks[turnAt] || []).push(JSON.stringify(verdicts[turnAt] || {}));
-  try { verdicts[turnAt] = JSON.parse(back.pop()); } catch(e) { return; }
   ed = null;
   saveVerdicts(); renderTurn();
 }
@@ -1479,9 +1445,9 @@ function renderTurn(){
   $('turnScreen').innerHTML = tabletHTML(pane, barHTML({
     prev: turnAt > 0, next: turnAt < TURNS.length - 1,
     cards: true, editing: !!ed, own: !!V.own,
-    dirty: canUndo(), redoable: canRedo()
+    dirty: canUndo()
   }), cards, !!ed, litPhrase(m),
-     { pick: V.preferPhrase || null, ctx: V.context || [], own: !!V.own }, !ed,
+     { pick: V.preferPhrase || null, ctx: V.context || [] }, !ed,
      '<button class="newbtn' + (V.wantMore ? ' want' : '') + '" data-new="1">↻ New 4'
        + (V.wantMore ? '<span class="wantmk">you would have asked for these</span>' : '') + '</button>');
 
@@ -1494,7 +1460,14 @@ function renderTurn(){
     wback: function(){ if(ed) moveWord(-1, renderTurn); },
     wfwd:  function(){ if(ed) moveWord(1, renderTurn); },
     undo: undoTurn,
-    redo: redoTurn,
+    own: function(){
+      snapshot();
+      V.wantMore = false; V.preferPhrase = undefined;
+      V.own = !V.own;
+      if(V.own){ V.j = 'none'; V.closer = -1; V.preferPhrase = undefined; V.text = ''; V.seed = undefined; startEdit('card', -1, ''); }
+      else { ed = null; V.j = undefined; }
+      saveVerdicts(); renderTurn();
+    },
     hear: function(){ speak(edText() || V.text || ''); },
     settings: leaveAlert
   });
