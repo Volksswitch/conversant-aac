@@ -184,6 +184,38 @@ the one that quietly waits forever.
 - **STILL OPEN from B:** whether Microsoft's sign-up can be made to land directly on the
   set-up form when it finishes. Not tried; it would need a fresh-account run.
 
+### Public-facing documents move to a user-manual tone, with no justification
+- **Raised:** 2026-09-27 - Ken, on being told the Conversation Review generator has no
+  stated goals: *"These documents need to change to a 'user manual' tone and style. We no
+  longer need to include 'justification' statements in these documents."*
+- **What is wanted:** every public-facing document says what the thing is and how it
+  works, and stops arguing for it. A sentence whose job is to persuade the reader that a
+  decision was right comes out. The reasoning still lives in `CLAUDE.md`, which is where
+  a future session looks to avoid re-arguing a settled decision - it just stops being
+  printed for the reader.
+- **Why it is not being done now:** it is a pass over roughly thirteen documents and Ken
+  has asked for the Conversation Review first. Doing them one at a time, as each is next
+  touched, is the same rule already in force for the banned phrases and the long
+  sentences.
+- **Note:** this is a THIRD writing rule, alongside PLAIN LANGUAGE (vocabulary a
+  non-programmer can follow) and PLAIN STYLE (writing a reader gives up on). It removes
+  material the other two leave in place, so it needs its own line in CLAUDE.md.
+
+### Product Overview: what a saved conversation holds
+- **Raised:** 2026-09-27 - Ken's comment on the Conversation Review document, section 3:
+  *"Is this information documented in the Product Overview? If not, it should be added."*
+- **Where it stands:** partly. The Product Overview carries one sentence about it, and
+  only in the roadmap list under conversation review - response option sets and what
+  became of them, the floor-holding phrases, and who/where/feeling/goals. It does not
+  mention the partial versions of what the partner said, the voice and spelling actually
+  used, the microphone going on and off, the Composition Pane text, or errors in time
+  order.
+- **What is wanted:** the short list moved into the body of the document, where it
+  describes what the app does today, rather than sitting inside a future-feature entry.
+- **Why it is not being done now:** the Product Overview is a separate document and Ken
+  asked for the Conversation Review first. Doing it in the same pass would mean editing a
+  document he has not reviewed.
+
 ## App changes (Conversant), not the guide
 A. Settings > Speech > Azure Region: make it a plain text box with a Paste button (today it
    is a text box with a suggestion list, which looks and behaves like a menu - on an iPad

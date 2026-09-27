@@ -179,6 +179,12 @@
   .tablet{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;
           background:#fff;height:450px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
   .tmain{flex:1 1 auto;display:flex;flex-direction:column;min-width:0}
+  /* Sticky, not just first: the pane scrolls to the turn being worked on, and a
+     control that scrolls away with it is a control nobody finds. */
+  .panePlay{position:sticky;top:0;float:right;margin:0 0 4px 8px;z-index:2;
+          border:1px solid #B0BEC5;border-radius:5px;box-shadow:0 1px 4px rgba(0,0,0,.10);
+          background:#fff;font:inherit;font-size:11px;color:#37474F;cursor:pointer;padding:3px 8px}
+  .panePlay:hover{border-color:var(--brand)}
   .tpane{flex:0 0 33%;overflow-y:auto;padding:9px 11px;font-size:13px;background:#FAFCFD;
          border-bottom:1px solid var(--line-soft)}
   .tbar{display:flex;gap:3px;padding:4px;background:#ECEFF1;border-bottom:1px solid var(--line-soft)}
@@ -191,14 +197,19 @@
   .cmd[disabled]{opacity:.32;cursor:default}
   .cmd.on{background:var(--brand);border-color:var(--brand)}
   .cmd.on .ic,.cmd.on .lb{color:#fff}
+  /* ⚠ THE RESPONSE REGION IS A ROW: four cards, then "New 4" as a NARROW VERTICAL
+     STRIP down the right-hand side. That is where the app puts it (styles.css gives
+     .regenerate-btn `align-self:stretch` and a width of one button), and the first
+     cut of this prototype drew it as a full-width bar underneath, which moves a
+     keyguard hole. Ken found it, September 27 2026. */
+  .tresp{flex:1 1 auto;display:flex;gap:7px;padding:9px 11px;min-height:0}
   .tcards{flex:1 1 auto;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;
-          gap:7px;padding:9px 11px;min-height:0}
-  /* the response region carries the "New 4" button in the app, so it carries it here.
-     Reserved whether or not it is marked, so the cards above never change size. */
-  .tnew{flex:0 0 auto;padding:0 11px 9px;display:flex}
-  .newbtn{flex:1 1 auto;height:30px;border:1px solid #B0BEC5;border-radius:5px;background:#fff;
+          gap:7px;min-height:0}
+  .tnew{flex:0 0 46px;display:flex}
+  .newbtn{flex:1 1 auto;border:1px solid #B0BEC5;border-radius:5px;background:#fff;
           font:inherit;font-size:12px;color:#37474F;cursor:pointer;display:flex;
-          align-items:center;justify-content:center;gap:7px}
+          writing-mode:vertical-rl;transform:rotate(180deg);
+          align-items:center;justify-content:center;gap:7px;padding:6px 0}
   .newbtn:hover{border-color:var(--brand)}
   .newbtn.want{background:#E8F0FE;border-color:var(--init);color:#0d3f7a;font-weight:bold}
   .newbtn .wantmk{font-size:8px}
@@ -251,7 +262,7 @@
           letter-spacing:.04em;line-height:1}
   .dcell[data-cell]{cursor:pointer}
   .dcell[data-cell]:hover{border-color:var(--brand)}
-  /* the influencer buttons read as a different kind of thing in the app, and must here */
+  /* the reframer buttons read as a different kind of thing in the app, and must here */
   .dcell.ep-context{background:#FBF7F2;color:#6d4c41}
   .dcell.ep-compose{background:#FAFAFA;color:#455A64;font-style:italic}
   .dcell.ep-flex{background:#F2F7F4;color:#2f5d46}
@@ -865,12 +876,16 @@ function cmdBtn(id, ic, lb, o){
 /* The nine, in order. `st` says which are live right now. */
 function barHTML(st){
   var w = wordIcons();
+  /* ⚠ NINE, BECAUSE THE KEYGUARD IS CUT FOR NINE. Redo joins the bar (Ken,
+     September 27 2026) and "Play it back" leaves it: the strip was already full,
+     and the document's own Section 7 gives the conversation pane carrying its own
+     playback control as the alternative. */
   return cmdBtn('prev',  '◀', 'Previous Turn', {off: !st.prev})
        + cmdBtn('next',  '▶', 'Next Turn',     {off: !st.next})
-       + cmdBtn('play',  '▶‖', 'Play it back', {on: !!st.playing})
        + cmdBtn('wback', w[0],     'Previous Word', {off: !st.editing})
        + cmdBtn('wfwd',  w[1],     'Next Word',     {off: !st.editing})
        + cmdBtn('undo',  '↺', 'Undo',        {off: !st.dirty})
+       + cmdBtn('redo',  '↻', 'Redo',        {off: !st.redoable})
        + cmdBtn('own',   '✎', 'My own words',{off: !st.cards, on: !!st.own})
        + cmdBtn('hear',  '♪', 'Hear it',     {off: !st.editing && !st.own})
        + cmdBtn('settings', '⚙', 'Settings', {title: 'Settings - and the way back out of review'});
@@ -993,6 +1008,9 @@ function wireBar(root, handlers){
     var k = b.getAttribute('data-cmd');
     b.onclick = function(){ if(handlers[k]) handlers[k](); };
   });
+  /* The pane's own play control, which used to be the bar's third button. */
+  var pp = root.querySelector('[data-paneplay]');
+  if(pp && handlers.play) pp.onclick = function(){ handlers.play(); };
 }
 
 function tabletHTML(pane, bar, cards, kb, lit, want, live, newBtn){
@@ -1000,8 +1018,10 @@ function tabletHTML(pane, bar, cards, kb, lit, want, live, newBtn){
        +   '<div class="tmain">'
        +     '<div class="tpane">' + pane + '</div>'
        +     '<div class="tbar">' + bar + '</div>'
-       +     '<div class="tcards">' + cards + '</div>'
-       +     '<div class="tnew">' + (newBtn || '') + '</div>'
+       +     '<div class="tresp">'
+       +       '<div class="tcards">' + cards + '</div>'
+       +       '<div class="tnew">' + (newBtn || '') + '</div>'
+       +     '</div>'
        +   '</div>'
        +   '<div class="tdock">' + dockHTML(kb, lit, want, live) + '</div>'
        + '</div>';
@@ -1144,7 +1164,10 @@ function saidBy(m){
 
 function conversationPaneHTML(cur, opts){
   opts = opts || {};
-  var h = '';
+  /* ⚠ PLAYBACK IS DRIVEN FROM THE PANE, NOT THE COMMAND BAR. The bar holds nine
+     buttons because the keyguard is cut for nine, and Redo took the ninth. */
+  var h = opts.noPlay ? ''
+        : '<button class="panePlay" data-paneplay="1">▶‖ Play it back at real speed</button>';
   TURNS.forEach(function(m, i){
     var v = verdicts[i] || {};
     var here = (i === cur);
@@ -1411,17 +1434,31 @@ function refreshUndo(){
    every keystroke: undo has to step back a word, not a letter, or it stops being usable
    with the two word buttons. */
 var undoStacks = {};
+var redoStacks = {};
 function snapshot(){
   var st = undoStacks[turnAt] = undoStacks[turnAt] || [];
   st.push(JSON.stringify(verdicts[turnAt] || {}));
   if(st.length > 40) st.shift();
+  /* ⚠ A FRESH ACTION ENDS THE REDO TRAIL. Keeping it would let Redo put back a
+     state that no longer follows from what is on screen. */
+  redoStacks[turnAt] = [];
 }
 function canUndo(){ return !!(undoStacks[turnAt] && undoStacks[turnAt].length); }
+function canRedo(){ return !!(redoStacks[turnAt] && redoStacks[turnAt].length); }
 function undoTurn(){
   var st = undoStacks[turnAt];
   if(!st || !st.length) return;
+  (redoStacks[turnAt] = redoStacks[turnAt] || []).push(JSON.stringify(verdicts[turnAt] || {}));
   try { verdicts[turnAt] = JSON.parse(st.pop()); } catch(e) { verdicts[turnAt] = {}; }
   /* an edit in progress belongs to the state being stepped out of */
+  ed = null;
+  saveVerdicts(); renderTurn();
+}
+function redoTurn(){
+  var back = redoStacks[turnAt];
+  if(!back || !back.length) return;
+  (undoStacks[turnAt] = undoStacks[turnAt] || []).push(JSON.stringify(verdicts[turnAt] || {}));
+  try { verdicts[turnAt] = JSON.parse(back.pop()); } catch(e) { return; }
   ed = null;
   saveVerdicts(); renderTurn();
 }
@@ -1445,7 +1482,7 @@ function renderTurn(){
   $('turnScreen').innerHTML = tabletHTML(pane, barHTML({
     prev: turnAt > 0, next: turnAt < TURNS.length - 1,
     cards: true, editing: !!ed, own: !!V.own,
-    dirty: canUndo()
+    dirty: canUndo(), redoable: canRedo()
   }), cards, !!ed, litPhrase(m),
      { pick: V.preferPhrase || null, ctx: V.context || [] }, !ed,
      '<button class="newbtn' + (V.wantMore ? ' want' : '') + '" data-new="1">↻ New 4'
@@ -1460,6 +1497,7 @@ function renderTurn(){
     wback: function(){ if(ed) moveWord(-1, renderTurn); },
     wfwd:  function(){ if(ed) moveWord(1, renderTurn); },
     undo: undoTurn,
+    redo: redoTurn,
     own: function(){
       snapshot();
       V.wantMore = false; V.preferPhrase = undefined;
