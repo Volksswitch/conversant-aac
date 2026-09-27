@@ -2354,6 +2354,17 @@ lead-in runs** (the Architecture Overview and both engine documents): a rebuild 
 plain paragraphs and silently drops every one of them. Those get **string patching**
 instead — replace the generator's own literals — which leaves the structures untouched.
 
+**The Conversation Review generator is RETIRED too (September 27 2026), and it is the
+same call for the same reason.** Measured that day: 187 paragraphs against the document's
+188 and 334 diff lines - the wording of nearly every paragraph in the first half, the
+section numbering, the title and the whole tone. The document had been rewritten by hand
+in the plain style on September 25 2026 and corrected by Ken three times since, so running
+the generator would have written back the version he gave up reading. **NOTHING REPLACES
+IT and nothing should**: the .docx is edited with `docx_safe.py`, which is what every other
+document pass already uses. **The FIGURE pipeline is not retired** - `capture-review-figures.js`
+still shoots the figures from the prototype - which is the same split the Architecture
+Overview kept for its diagrams.
+
 **STILL STALE, deliberately: the Conversation Engine Design (28 differences) and the
 Conversation Engine Overview (22).** They are guarded, so they can no longer do harm, and
 folding them is a dedicated pass rather than a drive-by.

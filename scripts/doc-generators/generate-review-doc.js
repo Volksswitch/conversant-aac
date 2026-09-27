@@ -1,3 +1,49 @@
+/* ⚠ THIS GENERATOR IS RETIRED — DO NOT RUN IT. (September 27 2026)
+ *
+ * "Conversant AAC Conversation Review.docx" is now its own source of truth. The
+ * plain-style rewrite of September 25 2026, Ken's three rounds of corrections, and the
+ * user-manual tone pass of September 27 were all made IN THE DOCUMENT, not here. Running
+ * this script would throw every one of them away and write back the version of the text
+ * that made Ken give up reading a few pages in.
+ *
+ * Measured the day it was retired: the generator produced 187 paragraphs against the
+ * document's 188, and 334 diff lines between them — the wording of nearly every
+ * paragraph in the first half, the section numbering, the title, and the whole tone.
+ *
+ * This is the same call made for the Architecture Overview on August 20 2026, for the
+ * same reason: a second source of truth that is always stale and occasionally
+ * destructive is worse than no second source. Reconciling it would have bought exactly
+ * one capability — rebuilding from source — that nobody has used since the document
+ * started being edited by hand.
+ *
+ * ⚠ NOTHING REPLACES IT. There is no new generator, and one should not be written.
+ * Edit the .docx with scripts/doc-generators/docx_safe.py, which is what every other
+ * document pass now uses, then run the checks:
+ *     python scripts/doc-generators/apply-doc-style.py "<doc>"
+ *     python scripts/doc-generators/fix-docx-lists.py  "<doc>"
+ *     python scripts/doc-tests/check-writing-bugs.py   "Conversation Review"
+ *     python scripts/doc-tests/check-docs.py           "Conversation Review"
+ *
+ * ⚠ THE FIGURE PIPELINE IS NOT RETIRED AND IS STILL LIVE. capture-review-figures.js
+ * shoots rv-fig1..9.png from prototypes/conversation-review.html, and those go into the
+ * .docx directly. Same split as the Architecture Overview, which kept its diagrams.
+ *
+ * This file is kept, not deleted, because it is the only assembled record of the
+ * document as it was first written. To read it, generate somewhere else:
+ *     ALLOW_RETIRED_REVIEW_DOC=1 OUTPATH=/tmp/review.docx node scripts/doc-generators/generate-review-doc.js
+ *
+ * The original header follows.
+ */
+if (process.env.ALLOW_RETIRED_REVIEW_DOC !== '1') {
+    console.error('');
+    console.error('This generator is retired. The document has been edited by hand since');
+    console.error('September 25 2026 and is now its own source of truth, so running this');
+    console.error('would discard every one of those edits. Edit the .docx instead.');
+    console.error('See the header of this file.');
+    console.error('');
+    process.exit(1);
+}
+
 /* Conversant AAC - Conversation Review (September 23 2026)
  *
  * The first of the four things Ken asked for, in his order: this document, then a UI

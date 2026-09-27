@@ -179,12 +179,6 @@
   .tablet{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;
           background:#fff;height:450px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
   .tmain{flex:1 1 auto;display:flex;flex-direction:column;min-width:0}
-  /* Sticky, not just first: the pane scrolls to the turn being worked on, and a
-     control that scrolls away with it is a control nobody finds. */
-  .panePlay{position:sticky;top:0;float:right;margin:0 0 4px 8px;z-index:2;
-          border:1px solid #B0BEC5;border-radius:5px;box-shadow:0 1px 4px rgba(0,0,0,.10);
-          background:#fff;font:inherit;font-size:11px;color:#37474F;cursor:pointer;padding:3px 8px}
-  .panePlay:hover{border-color:var(--brand)}
   .tpane{flex:0 0 33%;overflow-y:auto;padding:9px 11px;font-size:13px;background:#FAFCFD;
          border-bottom:1px solid var(--line-soft)}
   .tbar{display:flex;gap:3px;padding:4px;background:#ECEFF1;border-bottom:1px solid var(--line-soft)}
@@ -876,17 +870,17 @@ function cmdBtn(id, ic, lb, o){
 /* The nine, in order. `st` says which are live right now. */
 function barHTML(st){
   var w = wordIcons();
-  /* ⚠ NINE, BECAUSE THE KEYGUARD IS CUT FOR NINE. Redo joins the bar (Ken,
-     September 27 2026) and "Play it back" leaves it: the strip was already full,
-     and the document's own Section 7 gives the conversation pane carrying its own
-     playback control as the alternative. */
+  /* ⚠ NINE, BECAUSE THE KEYGUARD IS CUT FOR NINE. "My own words" left the bar
+     and Redo took its slot (Ken, September 27 2026): the Express Panel already
+     carries "In my own words", and two buttons doing one job was spending a hole
+     the bar does not have to spare. */
   return cmdBtn('prev',  '◀', 'Previous Turn', {off: !st.prev})
        + cmdBtn('next',  '▶', 'Next Turn',     {off: !st.next})
+       + cmdBtn('play',  '▶‖', 'Play it back', {on: !!st.playing})
        + cmdBtn('wback', w[0],     'Previous Word', {off: !st.editing})
        + cmdBtn('wfwd',  w[1],     'Next Word',     {off: !st.editing})
        + cmdBtn('undo',  '↺', 'Undo',        {off: !st.dirty})
        + cmdBtn('redo',  '↻', 'Redo',        {off: !st.redoable})
-       + cmdBtn('own',   '✎', 'My own words',{off: !st.cards, on: !!st.own})
        + cmdBtn('hear',  '♪', 'Hear it',     {off: !st.editing && !st.own})
        + cmdBtn('settings', '⚙', 'Settings', {title: 'Settings - and the way back out of review'});
 }
@@ -974,7 +968,16 @@ function dockHTML(kb, lit, want, live){
   EP_ALWAYS.forEach(function(t){
     h += cell(t, 'phrase', 'ep-always', 'tap if you would rather have said this');
   });
-  h += cell(EP_COMPOSE, 'compose', 'ep-compose', 'tap if you would rather have typed it yourself');
+  /* ⚠ THE COMPOSE CELL SHOWS WHEN IT IS THE ANSWER. The command bar used to carry a
+     second "My own words" button and that button showed the state; it was dropped
+     (Ken, September 27 2026) so Redo could have the slot, which leaves this cell as the
+     only thing on screen that can say the user chose to type instead. */
+  h += '<div class="dcell ep-compose' + (want.own ? ' want' : '') + '"'
+     + (live ? ' data-cell="' + esc(EP_COMPOSE) + '" data-kind="compose"'
+             + ' title="tap if you would rather have typed it yourself"' : '')
+     + '>' + esc(EP_COMPOSE)
+     + (want.own ? '<span class="wantmk">you would have typed it</span>' : '')
+     + '</div>';
 
   /* THE FLEX BAND KEEPS ITS SLOTS WHETHER OR NOT ANYTHING FILLS THEM. It is empty
      until a partner or a place is switched on - which is the point being shown - but
@@ -1008,9 +1011,6 @@ function wireBar(root, handlers){
     var k = b.getAttribute('data-cmd');
     b.onclick = function(){ if(handlers[k]) handlers[k](); };
   });
-  /* The pane's own play control, which used to be the bar's third button. */
-  var pp = root.querySelector('[data-paneplay]');
-  if(pp && handlers.play) pp.onclick = function(){ handlers.play(); };
 }
 
 function tabletHTML(pane, bar, cards, kb, lit, want, live, newBtn){
@@ -1164,10 +1164,7 @@ function saidBy(m){
 
 function conversationPaneHTML(cur, opts){
   opts = opts || {};
-  /* ⚠ PLAYBACK IS DRIVEN FROM THE PANE, NOT THE COMMAND BAR. The bar holds nine
-     buttons because the keyguard is cut for nine, and Redo took the ninth. */
-  var h = opts.noPlay ? ''
-        : '<button class="panePlay" data-paneplay="1">▶‖ Play it back at real speed</button>';
+  var h = '';
   TURNS.forEach(function(m, i){
     var v = verdicts[i] || {};
     var here = (i === cur);
@@ -1484,7 +1481,7 @@ function renderTurn(){
     cards: true, editing: !!ed, own: !!V.own,
     dirty: canUndo(), redoable: canRedo()
   }), cards, !!ed, litPhrase(m),
-     { pick: V.preferPhrase || null, ctx: V.context || [] }, !ed,
+     { pick: V.preferPhrase || null, ctx: V.context || [], own: !!V.own }, !ed,
      '<button class="newbtn' + (V.wantMore ? ' want' : '') + '" data-new="1">↻ New 4'
        + (V.wantMore ? '<span class="wantmk">you would have asked for these</span>' : '') + '</button>');
 
@@ -1498,14 +1495,6 @@ function renderTurn(){
     wfwd:  function(){ if(ed) moveWord(1, renderTurn); },
     undo: undoTurn,
     redo: redoTurn,
-    own: function(){
-      snapshot();
-      V.wantMore = false; V.preferPhrase = undefined;
-      V.own = !V.own;
-      if(V.own){ V.j = 'none'; V.closer = -1; V.preferPhrase = undefined; V.text = ''; V.seed = undefined; startEdit('card', -1, ''); }
-      else { ed = null; V.j = undefined; }
-      saveVerdicts(); renderTurn();
-    },
     hear: function(){ speak(edText() || V.text || ''); },
     settings: leaveAlert
   });
