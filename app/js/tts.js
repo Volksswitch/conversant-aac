@@ -98,7 +98,11 @@ function backendFor(name) {
 
 export function setProvider(name, opts = {}) {
     provider = isPaid(name) ? name : 'builtin';
-    if (opts.model) models[provider === 'builtin' ? 'deepgram' : provider] = opts.model;
+    // ⚠ THROUGH setPaidVoice, NOT STRAIGHT INTO THE TABLE. This assignment is the one
+    // that gave OpenAI a Deepgram voice: the caller worked the voice out by exclusion
+    // and this line took it without a word. Going through the setter means the same
+    // check covers both ways a voice can be chosen.
+    if (opts.model) setPaidVoice(provider === 'builtin' ? 'deepgram' : provider, opts.model);
     if (opts.getKey) getKey = opts.getKey;
     if (opts.getRegion) getRegion = opts.getRegion;
     if (opts.onBilled) onBilled = opts.onBilled;
@@ -109,9 +113,46 @@ export function getProvider() {
     return provider;
 }
 
+/*
+ * Does this voice id demonstrably belong to a DIFFERENT service?
+ *
+ * ⚠ THE CROSSOVER THIS EXISTS TO STOP (Ken, September 30 2026). A caller handed the
+ * OpenAI voice slot a Deepgram voice id, "aura-2-thalia-en", and OpenAI refused every
+ * utterance for a fortnight's worth of conversations while the Settings Test button --
+ * which computes the voice itself -- went on passing. Nothing here could tell, because
+ * this function took whatever it was given.
+ *
+ * ⚠ IT REFUSES ONLY WHAT IT CAN PROVE. Azure's voices are fetched rather than listed,
+ * and the REST services can return voices the starter list does not carry, so an id
+ * nobody claims is ALLOWED. Only an id that another service's own list claims, and
+ * this one's does not, is a crossover. A guard that refused anything it did not
+ * recognize would break every voice the app has not been told about, which is the
+ * larger and quieter failure.
+ */
+function belongsToAnotherService(name, voice) {
+    const listFor = (id) => (id === 'deepgram'
+        ? aura.VOICES.map((v) => v.id)
+        : (TTS_PROVIDERS[id] && TTS_PROVIDERS[id].voices || []).map((v) => v.id));
+    const mine = listFor(name);
+    if (mine.includes(voice)) return false;              // its own, whatever else says
+    for (const id of ['deepgram', ...Object.keys(TTS_PROVIDERS)]) {
+        if (id !== name && listFor(id).includes(voice)) return id;
+    }
+    return false;
+}
+
 // The voice for a named paid service, or for the one currently in use.
 export function setPaidVoice(name, model) {
-    if (model && isPaid(name)) models[name] = model;
+    if (!model || !isPaid(name)) return;
+    const owner = belongsToAnotherService(name, model);
+    if (owner) {
+        // Ignored rather than thrown: the caller is wrong, and the service's own
+        // default still speaks, so the user hears their words in a voice they did not
+        // pick instead of hearing nothing at all.
+        console.warn(`[tts] refusing to give ${name} the voice "${model}", which is ${owner}'s`);
+        return;
+    }
+    models[name] = model;
 }
 
 export function getPaidVoice(name = provider) {

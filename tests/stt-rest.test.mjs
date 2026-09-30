@@ -55,6 +55,22 @@ function fakeAudioWorld(sampleRate = 48000) {
     };
 }
 
+/*
+ * Source with its comments removed.
+ *
+ * ⚠ WITHOUT THIS A SOURCE-LEVEL CHECK PASSES ON THE COMMENT THAT EXPLAINS THE FIX
+ * rather than on the code that is the fix. It happened while writing the status check
+ * below: the comment naming 'idle' satisfied the assertion, so the test went green
+ * against a handler deliberately broken to prove it would not.
+ */
+function stripComments(source) {
+    return source
+        .replace(/\/\*[\s\S]*?\*\//g, ' ')
+        .split('\n')
+        .map((line) => line.replace(/\/\/.*$/, ''))
+        .join('\n');
+}
+
 /** One phrase: speech, then enough silence for the gate to close and submit. */
 async function sayOnePhrase(world) {
     for (let i = 0; i < 30; i++) world.frame(0.3);
@@ -156,4 +172,85 @@ test('a working service transcribes, and says nothing alarming', async () => {
     const { statuses, heard } = await phrasesAgainst(3, () => accept('hello there'));
     assert.deepEqual(heard, ['hello there', 'hello there', 'hello there']);
     assert.ok(!statuses.some(([s]) => s === 'error' || s === 'warning'));
+});
+
+/*
+ * ⚠ A CLICK IS NOT A WORD, AND THESE SERVICES INVENT ONE FROM IT.
+ *
+ * Ken's report of September 30 2026 carries a partner turn reading "Katarzyna." in a
+ * conversation where the partner had said nothing at all. Transcription models of this
+ * family produce confident text from near-silence rather than returning nothing, and a
+ * name from nowhere recorded as something a real person said is a serious failure in a
+ * product whose premise is that the transcript can be trusted enough to answer.
+ *
+ * ⚠ THE MEASURE IS HOW LONG THE GATE WAS OPEN, NOT HOW MUCH AUDIO THERE IS. Every span
+ * carries 1200ms of pre-roll and 450ms of hang time, so even a door closing produces
+ * over a second of audio and a length test would let everything through.
+ */
+test('a brief noise is not sent to be transcribed', async () => {
+    const world = fakeAudioWorld();
+    const realFetch = globalThis.fetch;
+    const realNav = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+    const realAudio = globalThis.window.AudioContext;
+    world.install();
+    const sent = [];
+    globalThis.fetch = async () => { sent.push(1); return accept('a name from nowhere'); };
+    const heard = [];
+    try {
+        const src = createSource({
+            provider: STT_PROVIDERS.openai,
+            getKey: () => 'the-key',
+            getModel: () => 'gpt-4o-transcribe',
+            onText: (t) => heard.push(t),
+            onStatus: () => {},
+        });
+        await src.start();
+        // One frame of sound - about 85ms at this rate - then silence. That is a tap or
+        // a door, not a word.
+        world.frame(0.3);
+        for (let i = 0; i < 12; i++) world.frame(0);
+        await new Promise((r) => setTimeout(r, 20));
+        assert.equal(sent.length, 0, 'nothing was submitted for a click');
+        assert.deepEqual(heard, [], 'and no words were invented from it');
+
+        // And a real utterance still goes through, so the floor is not simply deafness.
+        await sayOnePhrase(world);
+        assert.equal(sent.length, 1, 'genuine speech is still submitted');
+        src.stop();
+    } finally {
+        globalThis.fetch = realFetch;
+        globalThis.window.AudioContext = realAudio;
+        world.restore();
+        if (realNav) Object.defineProperty(globalThis, 'navigator', realNav);
+    }
+});
+
+/*
+ * ⚠ AN ORDINARY STOP WAS LOGGED AS AN ERROR. The phrase-at-a-time sources report
+ * 'idle' when they stop, and app.js only knew 'stopped' - so every normal stop on
+ * those services wrote `unknown status "idle"` to the error log, which trips the
+ * transcript's red wash. The app was telling the user something had gone wrong at the
+ * moment nothing had. Asserted at the source, because app.js cannot be loaded here.
+ */
+test('the status this source reports on stopping is one the app knows', async () => {
+    const { readFile } = await import('node:fs/promises');
+    const app = await readFile(new URL('../app/js/app.js', import.meta.url), 'utf8');
+    const at = app.indexOf('function handleSttStatus(');
+    assert.ok(at > 0, 'handleSttStatus must still exist');
+    // ⚠ COMMENTS STRIPPED FIRST. Without this the check passes on the comment that
+    // EXPLAINS the fix rather than on the code that is the fix - which is exactly what
+    // happened when this test was written, and it went green against a deliberately
+    // broken handler.
+    const body = stripComments(app.slice(at, at + 1800));
+
+    // Every status this module can emit has to be one the handler accounts for, or it
+    // is logged as an error. Read them out of this file rather than listing them here,
+    // so a new one cannot be added without this noticing.
+    const src = await readFile(new URL('../app/js/stt-rest.js', import.meta.url), 'utf8');
+    const emitted = new Set([...src.matchAll(/onStatus\(\s*'([a-z]+)'/g)].map((m) => m[1]));
+    assert.ok(emitted.size >= 4, `expected several statuses, found ${[...emitted]}`);
+    for (const status of emitted) {
+        assert.ok(body.includes(`'${status}'`),
+            `handleSttStatus does not account for "${status}", so it is logged as an error`);
+    }
 });

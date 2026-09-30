@@ -951,31 +951,86 @@ function showAzureVoiceStatus(which, kind, msg) {
 // Point tts.js at the chosen voice backend. Called at startup and whenever the
 // setting changes — unlike transcription, this takes effect immediately, because
 // tts.js routes per utterance instead of building a source once.
+/*
+ * ⚠ THIS FUNCTION KNEW ABOUT TWO PAID SERVICES AND THERE ARE FIVE (Ken, September 30
+ * 2026). It was written when Deepgram and Azure were the only ones, and when OpenAI,
+ * Google Cloud and ElevenLabs arrived nothing here was widened — so all three fell
+ * through to the Deepgram branch and were handed DEEPGRAM's voice and DEEPGRAM's key.
+ *
+ * The voice was the visible half: choosing the OpenAI voice sent OpenAI the voice id
+ * "aura-2-thalia-en", which it refused on every single utterance. It survived because
+ * the Settings Test button computes the voice itself and so tested a combination the
+ * app never actually sends — the exact test-and-operation divergence that made this
+ * hard to place, and the reason a refusal now names the voice it was refused for.
+ *
+ * ⚠ THE SHAPE TO WATCH FOR, because it is what a five-service app keeps producing: an
+ * `if (x === 'a') … else …` where the else branch is really "b" rather than "everything
+ * that is not a". Adding a third option silently routes it to b.
+ */
 function applyTtsProvider() {
     const provider = storage.loadTtsProvider();
     tts.setProvider(provider, {
         model: paidVoiceFor(provider),
         // Read at speak time, so a key or region pasted into Settings works without a
-        // reload. Which one is read depends on the provider, so both are supplied and
-        // the seam picks — the alternative, choosing here, would mean tts.js could
-        // never change provider without being re-wired.
-        getKey: () => (provider === 'azure'
-            ? storage.loadAzureKey()
-            : storage.loadDeepgramKey()) || '',
+        // reload. Which one is read depends on the provider, so the seam picks — the
+        // alternative, choosing here, would mean tts.js could never change provider
+        // without being re-wired.
+        getKey: () => serviceKeyFor(provider),
         getRegion: () => storage.loadAzureRegion(),
         onBilled: (characters) => storage.addTtsCharacters(characters),
     });
-    // Both voices are set regardless of which service is in use, so switching
-    // provider in Settings does not have to re-read them and cannot pick up a stale
-    // one from before the switch.
+    /*
+     * EVERY paid voice is set regardless of which service is in use, so switching
+     * provider in Settings does not have to re-read them and cannot pick up a stale one
+     * from before the switch. All five, not the two this used to cover.
+     */
     tts.setPaidVoice('deepgram', storage.loadAuraVoice() || ttsDeepgram.DEFAULT_VOICE);
     tts.setPaidVoice('azure', storage.loadAzureVoice() || ttsAzure.DEFAULT_VOICE);
+    for (const id of Object.keys(TTS_PROVIDERS)) {
+        tts.setPaidVoice(id, storage.loadServiceVoice(id) || TTS_PROVIDERS[id].defaultVoice);
+    }
+    /*
+     * ⚠ AND THE PER-SERVICE READERS ARE WIRED HERE, NOT ONLY WHEN SETTINGS OPENS.
+     *
+     * They used to be set while building the Settings panel, so a user who launched the
+     * app and simply started talking had none of them: the backend fell back to the
+     * shared reader, which is the one above that used to return Deepgram's key. Wiring
+     * them at startup means the right key is read whether or not anyone has been into
+     * Settings this session. Settings still sets them again, harmlessly.
+     */
+    for (const id of Object.keys(TTS_PROVIDERS)) {
+        tts.setProviderCredentials(id, {
+            getKey: () => storage.loadServiceKey(id) || '',
+            getModel: () => storage.loadServiceModel(id) || TTS_PROVIDERS[id].defaultModel,
+        });
+    }
 }
 
-// The user's chosen voice for a paid service, falling back to that service's default.
+/** The key for any paid voice service, chosen by service rather than by exclusion. */
+function serviceKeyFor(provider) {
+    if (provider === 'azure') return (storage.loadAzureKey() || '').trim();
+    if (provider === 'deepgram') return (storage.loadDeepgramKey() || '').trim();
+    if (TTS_PROVIDERS[provider]) return (storage.loadServiceKey(provider) || '').trim();
+    return '';
+}
+
+/*
+ * The user's chosen voice for a paid service, falling back to that service's default.
+ *
+ * ⚠ EVERY SERVICE IS NAMED, and the last line returns nothing rather than guessing.
+ * This used to end `return storage.loadAuraVoice() || …`, which meant OpenAI, Google
+ * Cloud and ElevenLabs were all handed a DEEPGRAM voice id — refused on every
+ * utterance. A voice id belongs to exactly one service and there is no sensible
+ * default across them, so an unknown service gets nothing and the backend falls back
+ * to its own default.
+ */
 function paidVoiceFor(provider) {
     if (provider === 'azure') return storage.loadAzureVoice() || ttsAzure.DEFAULT_VOICE;
-    return storage.loadAuraVoice() || ttsDeepgram.DEFAULT_VOICE;
+    if (provider === 'deepgram') return storage.loadAuraVoice() || ttsDeepgram.DEFAULT_VOICE;
+    if (TTS_PROVIDERS[provider]) {
+        return storage.loadServiceVoice(provider) || TTS_PROVIDERS[provider].defaultVoice;
+    }
+    return '';
 }
 
 // Same shape as showDeepgramStatus, for whichever of the two Aura voice pickers is
@@ -1176,7 +1231,11 @@ function handleSttBilled(seconds) {
 // an evening — the failure looked like a dead button rather than a status mapping.
 function handleSttStatus(status, detail) {
     const was = isListening;
-    if (status === 'stopped' || status === 'error') isListening = false;
+    // ⚠ 'idle' IS WHAT THE PHRASE-AT-A-TIME SOURCES REPORT WHEN THEY STOP, and this
+    // function only knew 'stopped'. So every ordinary stop on those services logged
+    // `unknown status "idle"` as an error, which trips the transcript's red wash — the
+    // app telling the user something had gone wrong at the moment nothing had.
+    if (status === 'stopped' || status === 'idle' || status === 'error') isListening = false;
     else if (status === 'listening') isListening = true;
     // 'capturing' — the voice gate opened, i.e. someone is speaking right now. It
     // reports activity WITHIN a listening session, so it must leave the state alone:

@@ -26,6 +26,15 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Fixed: choosing an OpenAI, Google Cloud or ElevenLabs voice did not work. The app was
+  sending those services a Deepgram voice name, which they refused, so every sentence
+  came out in this device's voice instead. Testing the voice in Settings worked, which
+  made it look as though the service was fine.
+- Fixed: those same three services were also being handed the Deepgram key.
+- Brief noises are no longer sent to be transcribed. A cough or a door closing could
+  come back as a sentence the other person never said, recorded as though they had.
+- Fixed: stopping the microphone on a paid transcription service logged an error and
+  tinted the transcript red, as though something had gone wrong when nothing had.
 - Changing which service does the listening now takes effect right away. It used to
   need the app restarted, and the note saying so appeared next to a different service's
   key, so it was easy to switch service and go on being heard by the previous one.

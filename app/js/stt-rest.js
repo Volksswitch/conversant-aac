@@ -58,6 +58,18 @@ const MAX_SPAN_MS = 25000;
 // than two that can silently disagree.
 const HANG_MS = 450;
 
+/*
+ * The shortest the voice gate may stay open before what it heard counts as speech.
+ *
+ * 250ms, because the shortest word anybody actually says out loud runs longer than
+ * that - "yes" and "no" are around 300 to 400 - while a cough, a door, a keyboard tap
+ * or a chair scrape is tens of milliseconds. Lower lets a click through to a service
+ * that will confidently invent a sentence from it; much higher starts dropping real
+ * one-word answers, which on this app are among the most common things a partner says.
+ */
+const MIN_SPEECH_MS = 250;
+
+
 // The pre-roll length comes from the gate itself (gate.preRollMs()), so the amount of
 // audio kept from before the gate opened always matches what the gate was built with.
 
@@ -210,10 +222,33 @@ export function createSource({ provider, getKey, getModel, onText, onStatus, onB
     function closeSpan(now, mine) {
         if (!span.length) return;
         const frames = span;
+        const openMs = Math.max(0, now - openedAt);
         span = [];
         spanSamples = 0;
-        billedMs += Math.max(0, now - openedAt);
+        billedMs += openMs;
         if (onBilled) onBilled(billedMs / 1000);
+        /*
+         * ⚠ A CLICK IS NOT A WORD, AND THESE SERVICES WILL INVENT ONE FROM IT.
+         *
+         * Transcription models of this family are known to produce confident text from
+         * near-silence rather than returning nothing. Ken's report of September 30 2026
+         * has a partner turn reading "Katarzyna." in a conversation where the partner
+         * had said nothing at all — a name from nowhere, recorded as something a real
+         * person said, in a product whose whole premise is that the user can trust the
+         * transcript enough to answer it.
+         *
+         * ⚠ THE MEASURE IS THE SPEECH, WHICH IS NEITHER THE AUDIO NOR THE OPEN TIME.
+         * Every span carries 1200ms of pre-roll, so a length test would let everything
+         * through. And the gate stays open for the 450ms hang after the last sound, so
+         * the open time never falls below that either — a threshold compared against it
+         * would simply never fire. Speech is the open time less the hang, and that is
+         * the part that says whether anybody was actually talking.
+         *
+         * A span closed by the length ceiling rather than by the gate has no hang to
+         * subtract, but that means 25 seconds of continuous speech and clears any
+         * threshold regardless.
+         */
+        if (openMs - HANG_MS < MIN_SPEECH_MS) { reset(); return; }
         submit(frames, rate, mine);
     }
 
