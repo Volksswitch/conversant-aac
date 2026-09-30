@@ -18,8 +18,10 @@
   "openaiTtsCostPer1kChars": 0.015,
   "googleSttCostPerHour": 0.96,
   "googleTtsCostPer1kChars": 0.016,
-  "elevenlabsSttCostPerHour": 0.4,
-  "elevenlabsTtsCostPer1kChars": 0.1,
+  "elevenlabsSttCostPerHour": 0.22,
+  "elevenlabsTtsCostPer1kChars": 0.08,
 
-  "_estimatedRates": "Two of these are estimates rather than published per-unit prices, and are marked so they are not quoted as measured. OpenAI bills speech by token, not by character, so its speaking rate is derived. ElevenLabs sells by monthly credit bundle rather than per hour or per character, so both of its figures are the effective rate on a mid-tier plan with its default multilingual voice; a user on a different plan pays a different amount."
+  "_elevenlabsNote": "Corrected September 30 2026 from 0.40 / 0.10, which were credit-bundle estimates and were high. Both are now published per-unit rates read off elevenlabs.io/pricing/api, and both are the rate for the model this app actually asks for: Scribe v2 batch transcription at $0.22 an hour (NOT the $0.39 realtime rate - the app submits a finished phrase rather than streaming), and Multilingual v2 speech at $0.08 per 1k characters, which is the same rate as their v3 voice. Flash and Turbo voices are $0.04 if the app ever offers them. A sale was running on the v4 voices until October 12 2026; these are the regular rates and are the right ones to keep.",
+
+  "_estimatedRates": "ONE of these is an estimate rather than a published per-unit price, and is marked so it is not quoted as measured: OpenAI bills speech by token, not by character, so its speaking rate is derived. Everything else here is a published rate."
 }

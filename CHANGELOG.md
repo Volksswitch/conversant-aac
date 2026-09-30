@@ -26,6 +26,15 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Fixed: if you hear or speak through ElevenLabs, the running cost on the About tab was
+  too high - about double for hearing, and a quarter too much for speaking. ElevenLabs
+  has lowered its prices and ours were out of date. What you were actually charged was
+  never affected; only the figure the app showed you.
+- If you use ElevenLabs to hear the other person, the app now asks for the current
+  version of their hearing service. ElevenLabs has retired the older one the app had
+  been asking for. Worth trying a conversation if this is your setup, and telling us
+  either way.
+
 ## Version 0.12.2
 
 - Two more OpenAI voices: Marin and Cedar. These are OpenAI's newest and the two they

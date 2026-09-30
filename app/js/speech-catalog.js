@@ -253,7 +253,14 @@ export const STT_PROVIDERS = {
     elevenlabs: {
         id: 'elevenlabs',
         label: 'ElevenLabs',
-        defaultModel: 'scribe_v1',
+        // ⚠ WAS `scribe_v1` UNTIL SEPTEMBER 30 2026, AND ELEVENLABS HAS RETIRED IT —
+        // their model list calls it deprecated and names scribe_v2 as the replacement.
+        // Nobody here has established whether a deprecated model still answers, so the
+        // old value was either costing us an obsolete model or failing outright, and a
+        // refused transcription looks exactly like a refused key. Batch, not realtime
+        // (`scribe_v2_realtime`): the app posts a finished clip, and the realtime model
+        // costs $0.39 an hour against $0.22. UNVERIFIED with a real key — see below.
+        defaultModel: 'scribe_v2',
         url: () => 'https://api.elevenlabs.io/v1/speech-to-text',
         headers: ({ key }) => ({ 'xi-api-key': key }),
         form: (wav, { model }) => {

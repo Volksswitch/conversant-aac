@@ -54,6 +54,29 @@ It reports and recommends nothing — whether a model is BETTER is a judgment no
 answers, and a mechanical "newer and cheaper, switch" would have shipped the Sonnet 5.5
 thinking trap.
 
+**⚠ THE MODEL CHECK COVERS EVERY MODEL THE APP NAMES, NOT JUST THE AI ONE — and the
+first review got this wrong, which is the reason it is spelled out.** The September 30
+2026 review reported the AI model current and said nothing about the speech models, so
+it missed that **the app was asking ElevenLabs to transcribe with a model ElevenLabs had
+retired** — while pricing the replacement. It also passed over a whole new ElevenLabs
+voice generation, mentioning it only in passing as "its newest voice" inside a note
+about a sale. The app names a model for the AI, for each speech service that hears, and
+for each that speaks; **all of them age, and a deprecated one fails in the way this
+project keeps finding expensive — silently, looking like a refused key.**
+
+**⚠ AND USE `prototypes/speech-providers.html` FOR THE REACHABILITY CHECK RATHER THAN
+WRITING A PROBE. This is the trap, and it is not hypothetical: the first review wrote its
+own throwaway probe and lost most of the check to a mistake the bench does not make.** A
+fake key beginning `sk-` is discarded at OpenAI's edge before any permission header is
+attached, so it reads as OpenAI blocking the browser when it is not — and the review
+reported OpenAI blocked on every endpoint the app uses, including speaking, which was
+wrong. The bench's fake key deliberately looks nothing like a real one, and it carries
+the control case (AssemblyAI, expected to fail) without which "everything is reachable"
+is equally consistent with a probe that cannot detect a failure. **Writing a fresh probe
+rebuilds a worse version of a tool that already exists** — the same shape as every other
+time this project has rediscovered something the hard way because the step that needed
+the tool never named it.
+
 **⚠ IT IS NOT PART OF CONVERSANT.** Nothing about it ships, deploys, or reaches a
 tester. It runs on Ken's machine, for Ken. The part that IS in the app — the key Test
 naming the model and any newer one, and the model and rates riding in tester reports —
@@ -69,6 +92,39 @@ ruled that out for a reason that only bites later: *"That may work well now give
 there are frequent releases but it could be a problem when Conversant goes public and
 there are fewer releases."* Anchoring a time-based check to an event whose frequency is
 about to fall by an order of magnitude is the trap.
+
+### Nothing can check whether ElevenLabs transcription works at all
+
+- **Raised:** 2026-09-30, while correcting the app from the retired `scribe_v1` to
+  `scribe_v2` after the monthly provider review. Went looking for a way to confirm the
+  change and found there is none.
+- **What is wanted:** any route that proves a real key gets a transcript back from
+  ElevenLabs. The app's ElevenLabs Test button asks for the voice list, so it proves the
+  key and says nothing about transcription; the bench page does ElevenLabs speaking only;
+  and there is no transcription test anywhere in the app for any of the six services.
+- **Why it matters more than it looks:** ElevenLabs transcription has been in the app
+  since September 8 2026 and has **never** been run with a real key — its own entry in
+  the catalog says so, and says it was written from documentation, which this project
+  measures at about a 50% error rate. So a user who picks ElevenLabs to hear may be
+  getting nothing, and the app would bill them for it on screen either way.
+- **Why it is not being done now:** the cheap version is adding ElevenLabs transcription
+  to the bench, which needs a real ElevenLabs key — there is none on this machine. The
+  thorough version is a transcription Test button per service, which is a new control on
+  a panel Ken has deliberately decluttered, so it is his call.
+
+### Does a genuinely revoked key come back unreadable, and does the app then blame the service
+
+- **Raised:** 2026-09-30, by the monthly provider review, which found that a clearly-fake
+  key beginning `sk-` is discarded at OpenAI's edge with nothing the browser can read.
+- **What is wanted:** find out whether OpenAI's edge treats a real-looking-but-revoked key
+  the same way. If it does, a user who pastes a truncated or revoked OpenAI key gets
+  nothing the app can read, so the app tells them it could not reach the service when the
+  truth is the key was refused — which is the exact misdiagnosis the failure-message work
+  of September 30 2026 was aimed at.
+- **Why it is not being done now:** **not established, and a fake key is not evidence.** A
+  clearly-bogus `sk-` string and a genuine expired one are different things to an edge
+  that may be pattern-matching the shape. Settling it needs a real OpenAI key that has
+  been created and then revoked, which nobody here has.
 
 ### Bold lead-in phrases: keep them or not
 - **Raised:** 2026-09-25 - Ken saw the Conversation Review document in bold from top to

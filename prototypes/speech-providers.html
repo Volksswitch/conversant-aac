@@ -406,6 +406,21 @@ function ms(t) { return t == null ? '' : (t / 1000).toFixed(2) + ' s'; }
    2. Reachability - the probe, built in so it can be re-run whenever a vendor
    changes their mind. Uses a deliberately invalid key on purpose.
    ========================================================================== */
+/*
+ * (!) THIS KEY DELIBERATELY LOOKS NOTHING LIKE A REAL ONE, AND MAKING IT REALISTIC
+ * WOULD BREAK THE PROBE. Measured September 30 2026: a fake key beginning `sk-` is
+ * thrown out at OpenAI's edge BEFORE any permission header is attached, so the browser
+ * sees no readable answer and the row reports OpenAI as BLOCKED - which is wrong, and
+ * is the same embarrassing direction as the websocket mistake described below. The
+ * identical request carrying a key that does not look like an OpenAI secret comes
+ * straight back with a readable refusal.
+ *
+ * That cost most of one monthly provider review, because the review wrote its own
+ * throwaway probe instead of opening this page, and reported OpenAI blocked on every
+ * endpoint the app uses. USE THIS PAGE RATHER THAN WRITING A FRESH PROBE: it already
+ * carries the control case below, without which "everything is reachable" means
+ * nothing.
+ */
 const FAKE = 'not-a-real-key-capability-probe';
 
 const REACH = [
