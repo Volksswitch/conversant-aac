@@ -47,6 +47,8 @@ const SHELL = [
   './js/vad.js',
   './js/tts.js',
   './js/llm.js',
+  './js/suggest-provider.js',
+  './js/suggest-anthropic.js',
   './js/ui.js',
   './js/storage.js',
   './js/placeholders.js',

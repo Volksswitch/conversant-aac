@@ -1,11 +1,12 @@
 {
-  "model": "claude-sonnet-4-6",
-  "inputCostPerMillionTokens": 3,
-  "outputCostPerMillionTokens": 15,
+  "model": "claude-sonnet-5-5",
+  "inputCostPerMillionTokens": 2,
+  "outputCostPerMillionTokens": 10,
+  "_modelNote": "Moved from claude-sonnet-4-6 ($3/$15) on September 30 2026. Newer and a third cheaper at the same tier. The model string lives in suggest-anthropic.js; this entry only prices it, so the two have to be changed together or the spend reads wrong with nothing reporting it.",
   "_cacheNote": "Prompt-cache multipliers on the input rate: a write costs 1.25x (5-minute TTL), a read 0.1x. Only the response-generation call is cached.",
   "cacheWriteMultiplier": 1.25,
   "cacheReadMultiplier": 0.1,
-  "lastVerified": "2026-09-08",
+  "lastVerified": "2026-09-30",
 
   "_speechNote": "Per-service speech rates, looked up by service name: '<id>SttCostPerHour' and '<id>TtsCostPer1kChars'. A service missing from here is priced at zero, which reads visibly wrong; that is deliberate, because the previous arrangement priced an unknown service at Deepgram's rate and named it Deepgram. List prices, and the estimate ignores every free allowance, so a light user owes less than it says. Nobody wins both halves: the cheapest to speak with is not the cheapest to listen with.",
 

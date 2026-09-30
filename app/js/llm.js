@@ -1,7 +1,36 @@
-const API_URL = 'https://api.anthropic.com/v1/messages';
 import { buildPartnerBrief, buildUserSideBlock, parseDraft, parseOpeners, CATEGORIES } from './practice-library.js';
+import * as provider from './suggest-provider.js';
+import anthropic from './suggest-anthropic.js';
 
-const MODEL = 'claude-sonnet-4-6';
+/*
+ * THIS FILE NO LONGER KNOWS WHERE SUGGESTIONS COME FROM (September 30 2026).
+ *
+ * It builds prompts and reads answers. Everything about a particular service — the
+ * address, the headers, the request shape, the model, what a key looks like, where
+ * the words sit in the reply — lives behind suggest-provider.js. See the note at the
+ * top of that file for why the line is drawn at "give me some words" rather than at
+ * "make this request": the lower cut would make a second cloud vendor easy and a
+ * model running on the device no easier at all, and on-device is the destination.
+ *
+ * ⚠ THE ONE RULE THAT KEEPS THIS TRUE: no call site below may reach past ask(). A
+ * function that makes its own request still works, so nothing fails and no test goes
+ * red — it just stops being covered by whatever provider the user has chosen. That is
+ * how seven copies of one request grew here in the first place.
+ */
+provider.register(anthropic);
+
+/**
+ * Ask the chosen provider to complete a prompt, and report what it cost.
+ *
+ * `system` is either a string or an ordered array of { text, cache } — the array form
+ * is how a stable prefix is marked for caching without this file knowing whether the
+ * provider caches at all.
+ */
+async function ask({ system, messages, maxTokens }) {
+    const { text, usage } = await provider.complete({ system, messages, maxTokens });
+    if (usage && onUsageUpdate) onUsageUpdate(usage);
+    return text;
+}
 
 /*
  * NO VULGARITY — absolute for now (Ken, August 3 2026).
@@ -127,45 +156,41 @@ let relationshipsBlock = '';
 let placesBlock = '';
 let situationBlock = '';
 
+/*
+ * The key. Held here as well as in the provider on purpose: every generation function
+ * below guards on it before building a prompt, so a missing key costs nothing and
+ * fails in one recognizable way rather than as a refusal from a service.
+ *
+ * What a key IS, whether it is well formed, and whether it works are all questions
+ * only the provider can answer, so all three delegate. A provider that needs no key
+ * at all — anything running on the device — reports itself as needing none and these
+ * become no-ops.
+ */
 export function setApiKey(key) {
     apiKey = key;
+    const p = provider.active();
+    if (p.setKey) p.setKey(key);
 }
 
-// Cheap client-side format check (no network). Catches the gross paste mistakes —
-// missing prefix, embedded whitespace, obviously-truncated — but NOT a key that is
-// subtly wrong (e.g. missing a few characters) since Anthropic keys have no fixed
-// public length. That case needs testApiKey (a live call). Returns { ok, reason }.
+/** Cheap format check, no network. Returns { ok, reason }. */
 export function validateKeyFormat(key) {
-    const k = (key || '').trim();
-    if (!k) return { ok: false, reason: 'empty' };
-    if (/\s/.test(k)) return { ok: false, reason: 'whitespace' };
-    if (!k.startsWith('sk-ant-')) return { ok: false, reason: 'prefix' };
-    if (k.length < 40) return { ok: false, reason: 'short' };
-    return { ok: true };
+    const p = provider.active();
+    if (p.needsKey === false) return { ok: true };
+    return p.validateKeyFormat ? p.validateKeyFormat(key) : { ok: true };
 }
 
-// Live verification against the API (the only way to catch a subtly-wrong key).
-// Uses GET /v1/models — it authenticates the key but bills no tokens — so a "Test"
-// costs nothing. 200 = valid; 401/403 = the key is rejected; anything else (incl. a
-// thrown fetch) = couldn't reach the service. Returns { ok, reason, status }.
+/** One live call that authenticates the key. Returns { ok, reason, status }. */
 export async function testApiKey(key) {
-    const k = (key ?? apiKey ?? '').trim();
-    if (!k) return { ok: false, reason: 'empty' };
-    try {
-        const res = await fetch('https://api.anthropic.com/v1/models?limit=1', {
-            method: 'GET',
-            headers: {
-                'x-api-key': k,
-                'anthropic-version': '2023-06-01',
-                'anthropic-dangerous-direct-browser-access': 'true',
-            },
-        });
-        if (res.ok) return { ok: true, status: res.status };
-        if (res.status === 401 || res.status === 403) return { ok: false, reason: 'rejected', status: res.status };
-        return { ok: false, reason: 'error', status: res.status };
-    } catch (err) {
-        return { ok: false, reason: 'network', message: err.message };
-    }
+    const p = provider.active();
+    if (p.needsKey === false) return { ok: true };
+    if (!p.testKey) return { ok: true };
+    return p.testKey(key ?? apiKey);
+}
+
+/** Which provider is answering, for the About screen and problem reports. */
+export function providerInfo() {
+    const p = provider.active();
+    return { id: p.id, label: p.label, model: p.model || null };
 }
 
 // The compact worldview profile text (worldview.buildBlock()). Set fresh before
@@ -272,26 +297,18 @@ export function onUsage(callback) {
 }
 
 /*
- * Report token usage to the cost counter.
+ * Usage reaches the cost counter through ask(), which forwards whatever the provider
+ * reports. Reading the service's own field names moved into the adapter with
+ * everything else service-shaped.
  *
- * ⚠ WITH PROMPT CACHING, `input_tokens` IS THE UNCACHED REMAINDER ONLY — it is not
- * the size of the prompt. The prompt is input_tokens + cacheWrite + cacheRead, and
- * the three are billed at DIFFERENT rates (full / 1.25x / 0.1x). Passing only
- * input_tokens once caching is on would silently under-report the bill by roughly
- * the cache hit rate, which for this app's hot path is ~90%. A cost display that
- * lies low is worse than none in a product whose whole funding model is "you pay
- * for what you use", so the three are counted separately all the way through to
- * pricing.json.
+ * ⚠ THE FOUR NUMBERS STAY SEPARATE ALL THE WAY TO pricing.json, and a future provider
+ * adapter must keep them separate too. Cached and uncached input bill at different
+ * rates, so collapsing them into one total under-reports the bill by roughly the
+ * cache hit rate — about ninety percent on this app's hot path. A cost display that
+ * reads low is worse than none in a product whose funding model is "you pay for what
+ * you use". A provider with no caching reports zeros for those two, which prices
+ * correctly on its own.
  */
-function trackUsage(data) {
-    if (!data.usage || !onUsageUpdate) return;
-    onUsageUpdate({
-        input: data.usage.input_tokens ?? 0,
-        output: data.usage.output_tokens ?? 0,
-        cacheWrite: data.usage.cache_creation_input_tokens ?? 0,
-        cacheRead: data.usage.cache_read_input_tokens ?? 0,
-    });
-}
 
 /* THE TIDY-UP PASS WAS REMOVED (Ken, August 27 2026), and this note is here so it is
  * not rebuilt by someone noticing the transcript reads roughly.
@@ -530,41 +547,24 @@ ${perCatBlock}${buildProfileBlock()}`;
 Conversation context (engine state — use it, do not echo it):
 ${JSON.stringify(context)}${avoidBlock}${steerBlock}${focusBlock}`;
 
-    // Two blocks, breakpoint on the first. An empty text block is rejected by the
-    // API, so the tail is only appended when it has content (it always does — the
-    // engine-context line is unconditional — but the guard costs nothing).
-    const system = [{ type: 'text', text: cachedPrompt, cache_control: { type: 'ephemeral' } }];
-    if (turnPrompt.trim()) system.push({ type: 'text', text: turnPrompt });
+    // Two blocks, and the ORDER plus the cache flag are the whole point — see the
+    // caching note above. An empty block is dropped by the adapter, so the tail needs
+    // no guard here.
+    const system = [
+        { text: cachedPrompt, cache: true },
+        { text: turnPrompt },
+    ];
 
     const messages = conversationHistory.map(entry => ({
         role: entry.role === 'partner' ? 'user' : 'assistant',
         content: entry.text
     }));
 
-    const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01',
-            'anthropic-dangerous-direct-browser-access': 'true'
-        },
-        body: JSON.stringify({
-            model: MODEL,
-            max_tokens: perCat === 2 ? 1000 : 700,
-            system,
-            messages
-        })
-    });
-
-    if (!response.ok) {
-        const err = await response.text();
-        throw new Error(`API error ${response.status}: ${err}`);
-    }
-
-    const data = await response.json();
-    trackUsage(data);
-    return parseGeneration(data.content[0].text.trim());
+    return parseGeneration(await ask({
+        system,
+        messages,
+        maxTokens: perCat === 2 ? 1000 : 700,
+    }));
 }
 
 // Practice Mode (§8): the AI plays the communication PARTNER. Given a scenario
@@ -606,25 +606,7 @@ ${NO_VULGARITY}`;
         messages.unshift({ role: 'user', content: '(Begin the conversation.)' });
     }
 
-    const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01',
-            'anthropic-dangerous-direct-browser-access': 'true'
-        },
-        body: JSON.stringify({ model: MODEL, max_tokens: 200, system: systemPrompt, messages })
-    });
-
-    if (!response.ok) {
-        const err = await response.text();
-        throw new Error(`API error ${response.status}: ${err}`);
-    }
-
-    const data = await response.json();
-    trackUsage(data);
-    let line = data.content[0].text.trim();
+    let line = await ask({ system: systemPrompt, messages, maxTokens: 200 });
     // Strip a stray wrapping pair of quotes the model sometimes adds.
     line = line.replace(/^["'“”']+/, '').replace(/["'“”']+$/, '').trim();
     return line;
@@ -650,24 +632,12 @@ Return ONLY a JSON object, no other text:
 - behavior: how they are when the conversation OPENS, exactly one of warm, businesslike, distracted, skeptical, dismissive, hurt, angry. Choose how they will be before any news is given, not the mood the news may cause.
 - details: the specific facts from the sentence (names, what happened, why), in plain sentences. Invent NOTHING the sentence does not say; leave it empty if there are none.`;
 
-    const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01',
-            'anthropic-dangerous-direct-browser-access': 'true'
-        },
-        body: JSON.stringify({ model: MODEL, max_tokens: 700, system: systemPrompt,
-            messages: [{ role: 'user', content: sentence }] })
+    const text = await ask({
+        system: systemPrompt,
+        messages: [{ role: 'user', content: sentence }],
+        maxTokens: 700,
     });
-    if (!response.ok) {
-        const err = await response.text();
-        throw new Error(`API error ${response.status}: ${err}`);
-    }
-    const data = await response.json();
-    trackUsage(data);
-    return parseDraft(data.content[0].text.trim(), sentence);
+    return parseDraft(text, sentence);
 }
 
 // Opening lines for a practice scenario the USER opens (Practice Scenarios document,
@@ -691,24 +661,11 @@ Return ONLY a JSON array of strings, no other text.${buildProfileBlock()}${build
 
 ${NO_VULGARITY}`;
 
-    const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01',
-            'anthropic-dangerous-direct-browser-access': 'true'
-        },
-        body: JSON.stringify({ model: MODEL, max_tokens: 400, system: systemPrompt,
-            messages: [{ role: 'user', content: '(Write the opening lines.)' }] })
-    });
-    if (!response.ok) {
-        const err = await response.text();
-        throw new Error(`API error ${response.status}: ${err}`);
-    }
-    const data = await response.json();
-    trackUsage(data);
-    return parseOpeners(data.content[0].text.trim());
+    return parseOpeners(await ask({
+        system: systemPrompt,
+        messages: [{ role: 'user', content: '(Write the opening lines.)' }],
+        maxTokens: 400,
+    }));
 }
 
 // Reframe-to-lead (Ken): the user HOLDS THE FLOOR (they just responded, or the
@@ -745,30 +702,12 @@ Return ONLY a JSON array of ${n} strings, nothing else. Example: ["...", "...", 
 Conversation context (engine state — use it, do not echo it):
 ${JSON.stringify(context)}${buildProfileBlock()}${buildSituationBlock()}${contextLines ? '\n\nConversation so far:\n' + contextLines : ''}`;
 
-    const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01',
-            'anthropic-dangerous-direct-browser-access': 'true'
-        },
-        body: JSON.stringify({
-            model: MODEL,
-            max_tokens: 600,
-            system: systemPrompt,
-            messages: [{ role: 'user', content: steer }]
-        })
+    const text = await ask({
+        system: systemPrompt,
+        messages: [{ role: 'user', content: steer }],
+        maxTokens: 600,
     });
-
-    if (!response.ok) {
-        const err = await response.text();
-        throw new Error(`API error ${response.status}: ${err}`);
-    }
-
-    const data = await response.json();
-    trackUsage(data);
-    return { responses: parseStatements(data.content[0].text.trim(), n) };
+    return { responses: parseStatements(text, n) };
 }
 
 // Parse a JSON array of statement strings (tolerating stray prose around it) into
@@ -809,30 +748,11 @@ ${NO_VULGARITY}
 
 Return ONLY the new utterance text, nothing else.${buildProfileBlock()}${buildSituationBlock()}${contextLines ? '\n\nConversation so far:\n' + contextLines : ''}`;
 
-    const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01',
-            'anthropic-dangerous-direct-browser-access': 'true'
-        },
-        body: JSON.stringify({
-            model: MODEL,
-            max_tokens: 200,
-            system: systemPrompt,
-            messages: [{ role: 'user', content: lastUserUtterance }]
-        })
+    return ask({
+        system: systemPrompt,
+        messages: [{ role: 'user', content: lastUserUtterance }],
+        maxTokens: 200,
     });
-
-    if (!response.ok) {
-        const err = await response.text();
-        throw new Error(`API error ${response.status}: ${err}`);
-    }
-
-    const data = await response.json();
-    trackUsage(data);
-    return data.content[0].text.trim();
 }
 
 // Pre-generate BOTH repair-of-self rewordings in ONE call (Ken, July 8 2026), so
@@ -861,30 +781,11 @@ ${NO_VULGARITY}
 
 Return ONLY a JSON object, no other text: {"rephrase": "...", "expand": "...", "guessed": false}${buildProfileBlock()}${buildSituationBlock()}${contextLines ? '\n\nConversation so far:\n' + contextLines : ''}`;
 
-    const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01',
-            'anthropic-dangerous-direct-browser-access': 'true'
-        },
-        body: JSON.stringify({
-            model: MODEL,
-            max_tokens: 300,
-            system: systemPrompt,
-            messages: [{ role: 'user', content: lastUserUtterance }]
-        })
-    });
-
-    if (!response.ok) {
-        const err = await response.text();
-        throw new Error(`API error ${response.status}: ${err}`);
-    }
-
-    const data = await response.json();
-    trackUsage(data);
-    return parseRepairOptions(data.content[0].text.trim());
+    return parseRepairOptions(await ask({
+        system: systemPrompt,
+        messages: [{ role: 'user', content: lastUserUtterance }],
+        maxTokens: 300,
+    }));
 }
 
 function parseRepairOptions(text) {

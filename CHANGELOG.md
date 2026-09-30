@@ -26,6 +26,11 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Suggestions arrive about twice as fast. The app now uses a newer version of Claude, and
+  in side-by-side testing on the same conversation a set of four response cards took about
+  three seconds where it used to take about six. Nothing changes in how you use the app.
+- The same change costs about a third less per conversation. If you watch the running total
+  on Settings → About, expect it to climb more slowly from now on.
 - Settings, Speech tab: Azure Speech is now the recommended paid speech service. It is
   listed first and marked "(Recommended)", followed by OpenAI, Google Cloud, Deepgram and
   ElevenLabs. The free choice, this device, is still first and is still where the app
