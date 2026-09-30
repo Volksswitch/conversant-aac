@@ -45,7 +45,35 @@ export function dimensionsOf(t) {
         voice: speech.ttsProvider || 'unknown',
         version: t.appVersion || 'unknown',
         keyboard: keyboardOf(info),
+        /*
+         * WHICH AI IS WRITING THEIR SUGGESTIONS.
+         *
+         * ⚠ A FACT PUT IN THE REPORT IS INVISIBLE UNTIL THE READER LOOKS FOR IT
+         * (Ken, September 30 2026). Adding the model to what the app sends would have
+         * achieved nothing on its own: it would have sat in the payload, unread,
+         * exactly like the answer to the models request the key test was already
+         * making and throwing away. This line is what turns it into a signal.
+         *
+         * It is a DIMENSION rather than a footnote because the question it answers is
+         * comparative - whether the wait and the sufficiency differ between testers on
+         * an older model and a newer one - which needs it to group.
+         */
+        suggestions: suggestionsOf(info),
     };
+}
+
+/*
+ * Which AI wrote their suggestions, and whether the app priced it as itself.
+ *
+ * ⚠ A MISMATCH IS THE INTERESTING ANSWER, not a fault in the data. The model and the
+ * price list are two files that have to move together; when they disagree, every spend
+ * figure the app has shown that tester is wrong, and nothing else anywhere reports it.
+ */
+export function suggestionsOf(info) {
+    const s = (info && info.suggestions) || {};
+    if (!s.model) return 'unknown';
+    if (s.pricedAs && s.pricedAs !== s.model) return `${s.model} (priced as ${s.pricedAs} - MISMATCH)`;
+    return s.model;
 }
 
 /* WHICH KEYBOARD THEY TYPE ON (Ken asked, September 10 2026: "how many people are

@@ -26,6 +26,10 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Testing your API key now also tells you which AI the app is using, and whether a newer
+  one has been released since. It says nothing about whether the newer one is better -
+  that is a judgment, and moving to one is not always an improvement.
+
 ## Version 0.12.1
 
 - Fixed: choosing an OpenAI, Google Cloud or ElevenLabs voice did not work. The app was

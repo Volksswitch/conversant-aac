@@ -7171,7 +7171,16 @@ function openSettings() {
         showApiKeyStatus('checking', 'Checking your key…');
         const res = await llm.testApiKey(key);
         btn.disabled = false;
-        if (res.ok) showApiKeyStatus('ok', '✓ Your key is working.');
+        // ⚠ THE SECOND SENTENCE IS THE ONLY MECHANICAL SIGNAL THAT THE MODEL HAS AGED.
+        // The app sat three months on one that was a generation behind and half again
+        // as dear, and nobody knew. The list was already being fetched to check the key;
+        // only the reading of it is new. It states the facts and recommends nothing —
+        // newer is not better, and moving to this one would have broken the app outright
+        // if it had been done mechanically.
+        if (res.ok && res.newer) {
+            showApiKeyStatus('ok', `✓ Your key is working. Using ${res.model}; `
+                + `${res.newer.id} has since been released (${res.newer.released}).`);
+        } else if (res.ok) showApiKeyStatus('ok', `✓ Your key is working. Using ${res.model || 'the current model'}.`);
         else if (res.reason === 'rejected') showApiKeyStatus('warn', '✗ The key was rejected — check you copied all of it, including the end.');
         else if (res.reason === 'empty') showApiKeyStatus('warn', 'Enter your key first, then tap Test.');
         else showApiKeyStatus('warn', "Couldn't reach the service — check your internet connection and try again.");

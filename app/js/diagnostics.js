@@ -21,6 +21,7 @@
  *      save" toggle already keeps them off disk; a report that scooped them out of
  *      memory would quietly defeat it (SEC-2).
  */
+import * as llm from './llm.js';
 import * as storage from './storage.js';
 import * as platform from './platform.js';
 import * as viewport from './viewport.js';
@@ -61,6 +62,18 @@ async function storageInfo() {
 /* The structured snapshot. Everything is best-effort: a diagnostic that throws
  * while collecting is worse than one with a gap in it, because it fires exactly
  * when the app is already misbehaving. */
+/*
+ * The rates the app prices its spend with. Read here rather than passed in: there are
+ * two callers and only one of them held it, which is exactly how one report ends up
+ * quietly thinner than the other.
+ */
+async function loadPricing() {
+    try {
+        const res = await fetch('data/pricing.json');
+        return res.ok ? await res.json() : null;
+    } catch { return null; }
+}
+
 export async function collectSystemInfo({ appVersion = '?', buildId = '?' } = {}) {
     const info = {
         app: { version: appVersion, build: buildId, url: location.href },
@@ -86,6 +99,31 @@ export async function collectSystemInfo({ appVersion = '?', buildId = '?' } = {}
         info.speech.sttProvider = storage.loadSttProvider ? storage.loadSttProvider() : '(n/a)';
         info.speech.ttsProvider = storage.loadTtsProvider ? storage.loadTtsProvider() : '(n/a)';
     } catch { /* ignore */ }
+    /*
+     * WHICH AI IS WRITING THE SUGGESTIONS, AND WHAT THE APP THINKS IT COSTS.
+     *
+     * ⚠ REPORTED BECAUSE NOTHING ELSE NOTICES A MODEL AGEING. The app spent three
+     * months on one that was a generation behind and half again as expensive, and the
+     * miss surfaced only when an unrelated question was asked (Ken, September 30 2026).
+     * A tester's report is the one place the answer arrives without anybody going to
+     * look for it.
+     *
+     * The RATES ride along because the model and the price list are two files that have
+     * to move together. Reporting only the model would hide the drift that matters most
+     * - a model changed and a price list left behind, which makes every spend figure
+     * the app shows quietly wrong.
+     */
+    try {
+        const p = llm.providerInfo ? llm.providerInfo() : null;
+        if (p) info.suggestions = { provider: p.id, model: p.model };
+        const pricing = await loadPricing();
+        if (pricing) {
+            info.suggestions = info.suggestions || {};
+            info.suggestions.pricedAs = pricing.model || '(not stated)';
+            info.suggestions.ratesPerMillion = `in ${pricing.inputCostPerMillionTokens}, out ${pricing.outputCostPerMillionTokens}`;
+        }
+    } catch { /* ignore */ }
+
     // How listening actually behaved, including across being backgrounded. The
     // failure worth catching here is silent - a lit microphone that is hearing
     // nothing - so the numbers are the only way anyone can report it.
@@ -199,6 +237,7 @@ export function formatSystemInfo(info) {
         '',
         block('DISPLAY', info.display),
         '',
+        block('SUGGESTIONS', info.suggestions),
         block('SPEECH', info.speech),
         '',
         block('STORAGE', info.storage),

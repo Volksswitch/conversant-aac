@@ -170,6 +170,9 @@ function byConfiguration(L, testers) {
         ['What hears them', t => dimensionsOf(t).hearing],
         ['What speaks for them', t => dimensionsOf(t).voice],
         ['App version', t => dimensionsOf(t).version],
+        // The one dimension nothing else in the project watches: a model that has
+        // aged, or a price list that no longer matches the model it prices.
+        ['AI writing the suggestions', t => dimensionsOf(t).suggestions],
         // Answers "how many people use the on-screen keyboard" by tester count, and
         // gets the turn-level comparison for free. An absent setting means physical,
         // which is the default and most people - see keyboardOf.

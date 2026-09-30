@@ -86,15 +86,50 @@ function validateKeyFormat(key) {
  * model and every account with a key can reach it; if a model picker is ever added,
  * this has to start generating a token rather than listing.
  */
+/*
+ * ⚠ THE ANSWER TO THIS CALL USED TO BE THROWN AWAY, AND IT IS THE ONLY MECHANICAL
+ * SIGNAL THE PROJECT HAS THAT ITS MODEL HAS AGED (Ken, September 30 2026).
+ *
+ * The app sat on a model for three months that was both a generation behind and half
+ * again as expensive, and nobody knew until an unrelated question was asked. Nothing
+ * tells us when a vendor ships something better — prices are not published in any form
+ * a program can read, and whether a model is BETTER is a judgment no endpoint reports.
+ * But what EXISTS is listable, and this request is already being made, so the fact
+ * costs nothing beyond reading the reply.
+ *
+ * It states two facts and draws no conclusion. "Newer" is not "better" — the move to
+ * Sonnet 5.5 would have broken the app outright if it had been made mechanically.
+ */
+function newerModelThan(current, models) {
+    const mine = models.find((m) => m.id === current);
+    if (!mine) return null;                       // an unlisted model: say nothing
+    // Same family, so Sonnet is compared with Sonnet. A different tier is a cost and
+    // quality decision, not an upgrade, and this is not the place to propose one.
+    const family = current.replace(/^claude-([a-z]+).*/, '$1');
+    const newer = models
+        .filter((m) => m.id !== current && m.id.startsWith(`claude-${family}-`))
+        .filter((m) => (m.created_at || '') > (mine.created_at || ''))
+        .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))[0];
+    return newer ? { id: newer.id, released: String(newer.created_at || '').slice(0, 10) } : null;
+}
+
 async function testKey(key) {
     const k = (key ?? apiKey ?? '').trim();
     if (!k) return { ok: false, reason: 'empty' };
     try {
-        const res = await fetch('https://api.anthropic.com/v1/models?limit=1', {
+        // Enough of the list to see the whole family. Still bills nothing.
+        const res = await fetch('https://api.anthropic.com/v1/models?limit=40', {
             method: 'GET',
             headers: HEADERS(k),
         });
-        if (res.ok) return { ok: true, status: res.status };
+        if (res.ok) {
+            let newer = null;
+            try {
+                const data = await res.json();
+                newer = newerModelThan(MODEL, (data && data.data) || []);
+            } catch { /* the key is what was being tested; this is a bonus */ }
+            return { ok: true, status: res.status, model: MODEL, newer };
+        }
         if (res.status === 401 || res.status === 403) return { ok: false, reason: 'rejected', status: res.status };
         return { ok: false, reason: 'error', status: res.status };
     } catch (err) {

@@ -356,3 +356,40 @@ test('a context tap that re-asked the AI is counted separately from one that did
     assert.match(text, /Said who\/where\/how mid-chat/);
     assert.match(text, /2 of 8 taps re-asked the AI/);
 });
+
+/*
+ * ⚠ A FACT PUT IN THE REPORT IS INVISIBLE UNTIL THE READER LOOKS FOR IT (Ken,
+ * September 30 2026). The app spent three months on a model that was a generation
+ * behind and half again as expensive, and nothing noticed. Sending the model in the
+ * report achieves nothing on its own - it would sit in the payload unread, exactly
+ * like the answer to the models request the key test was already making and throwing
+ * away. These cover the reading half.
+ */
+test('the AI writing the suggestions is one of the dimensions', () => {
+    const t = { appVersion: '0.12.1', systemInfo: {
+        platform: { summary: 'desktop' },
+        speech: { sttProvider: 'browser', ttsProvider: 'builtin' },
+        suggestions: { provider: 'anthropic', model: 'claude-sonnet-5-5', pricedAs: 'claude-sonnet-5-5' },
+    } };
+    assert.equal(dimensionsOf(t).suggestions, 'claude-sonnet-5-5');
+});
+
+/*
+ * ⚠ THE MISMATCH IS THE INTERESTING ANSWER. The model and the price list are two files
+ * that must move together; when they disagree every spend figure shown to that tester
+ * is wrong, and nothing else anywhere reports it.
+ */
+test('a model priced as something else is called out, not quietly shown', () => {
+    const t = { systemInfo: { suggestions: {
+        model: 'claude-sonnet-5-5', pricedAs: 'claude-sonnet-4-6',
+    } } };
+    assert.match(dimensionsOf(t).suggestions, /MISMATCH/);
+    assert.match(dimensionsOf(t).suggestions, /claude-sonnet-5-5/);
+    assert.match(dimensionsOf(t).suggestions, /claude-sonnet-4-6/);
+});
+
+/* A report from before this shipped has no model, and that is a real answer. */
+test('an older report says unknown rather than inventing a model', () => {
+    assert.equal(dimensionsOf({ systemInfo: { speech: {} } }).suggestions, 'unknown');
+    assert.equal(dimensionsOf({}).suggestions, 'unknown');
+});
