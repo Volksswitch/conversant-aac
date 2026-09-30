@@ -308,15 +308,77 @@ export async function blobToBase64(blob) {
 export const TTS_IDS = Object.keys(TTS_PROVIDERS);
 export const STT_IDS = Object.keys(STT_PROVIDERS);
 
+/*
+ * ⚠ ANYTHING KEY-SHAPED IS REMOVED BEFORE A SERVICE'S OWN WORDS GO ANYWHERE.
+ *
+ * A failure message travels a long way: the error log, the saved conversation, the
+ * problem report the tester sends, and the weekly report. Several services quote the
+ * credential back in their refusal. Most redact it themselves and that is THEIR choice,
+ * not a guarantee, and the standing rule is that a key never appears in an export path.
+ *
+ * Matches the shapes the services actually issue — a long unbroken run of key-ish
+ * characters, and the known prefixes even when short. Deliberately blunt: losing a word
+ * out of an error message costs nothing, and printing a key costs the user their key.
+ */
+function stripSecrets(text) {
+    return String(text)
+        .replace(/\b(sk|xi|pk|gsk|sk-ant|sk-proj)[-_][A-Za-z0-9_-]{4,}/g, '<key removed>')
+        .replace(/\b[A-Za-z0-9_-]{32,}\b/g, '<key removed>');
+}
+
+/**
+ * What the service itself said, pulled out of its refusal.
+ *
+ * ⚠ THE SHAPES DIFFER PER SERVICE AND THERE IS NO STANDARD, so this tries the ones the
+ * five services actually use and then gives up gracefully. Giving up returns nothing
+ * rather than a guess, because a mangled fragment of JSON in front of a user is worse
+ * than the generic sentence it would replace.
+ */
+export function serviceMessage(body) {
+    if (!body) return '';
+    let parsed = null;
+    try { parsed = JSON.parse(body); } catch { /* not JSON - fall through to the text */ }
+    const pick = (v) => (typeof v === 'string' && v.trim() ? v.trim() : '');
+    let msg = '';
+    if (parsed && typeof parsed === 'object') {
+        msg = pick(parsed.message)
+            || pick(parsed.error && parsed.error.message)   // OpenAI, Google Cloud
+            || pick(parsed.error)                            // some plain-string forms
+            || pick(parsed.detail && parsed.detail.message)  // ElevenLabs
+            || pick(parsed.detail)
+            || pick(parsed.err_msg)                          // Deepgram
+            || pick(parsed.Message);                         // Azure
+    }
+    // Not JSON at all, or JSON in a shape nobody here knows: use the raw text only when
+    // it reads like a sentence rather than like markup or a dump.
+    if (!msg && typeof body === 'string' && body.trim() && !/^[[{<]/.test(body.trim())) {
+        msg = body.trim();
+    }
+    if (!msg) return '';
+    msg = stripSecrets(msg).replace(/\s+/g, ' ').trim();
+    // Long enough for a real explanation, short enough not to bury the guidance above it.
+    return msg.length > 220 ? msg.slice(0, 217) + '...' : msg;
+}
+
 /**
  * A readable reason for a failed call.
  *
  * Kept here rather than in each provider because the status codes mean the same thing
  * everywhere, and because a message a user might read should not vary by vendor.
+ *
+ * ⚠ `detail` IS THE SERVICE'S OWN EXPLANATION AND IT IS THE HALF THAT SOLVES THINGS.
+ * Before September 30 2026 the body was read only to be thrown away, and every refusal
+ * came out as our guess about the key. That cost a real diagnosis: Ken's OpenAI voice
+ * failed with a 400 on every utterance while his key was demonstrably fine, and the app
+ * told him to check the key. The guidance below is still useful, so it stays and the
+ * service's own words are appended to it rather than replacing it.
  */
-export function describeFailure(status, label) {
+export function describeFailure(status, label, detail = '') {
+    const said = serviceMessage(detail);
+    const withDetail = (text) => (said ? `${text} ${label} said: ${said}` : text);
+
     if (status === 401 || status === 403) {
-        return `${label} did not accept the key. Check it was copied in full.`;
+        return withDetail(`${label} did not accept the key. Check it was copied in full.`);
     }
     // ⚠ GOOGLE REPORTS A BAD KEY AS 400, NOT 401 — measured, both in the provider bench
     // (recorded in CLAUDE.md's reachability table) and again from inside the app on
@@ -324,15 +386,15 @@ export function describeFailure(status, label) {
     // for a bug in the app when the real answer is almost always the key, so the message
     // names the likely cause first and the other possibility second.
     if (status === 400) {
-        return `${label} rejected the request. Usually that means the key is wrong `
-             + 'or the account does not have this service switched on.';
+        return withDetail(`${label} rejected the request. Usually that means the key is wrong `
+             + 'or the account does not have this service switched on.');
     }
     if (status === 404) {
-        return `${label} did not recognize that request. The voice may no longer exist.`;
+        return withDetail(`${label} did not recognize that request. The voice may no longer exist.`);
     }
     if (status === 429) {
-        return `${label} is rate limiting, or the account is out of credit.`;
+        return withDetail(`${label} is rate limiting, or the account is out of credit.`);
     }
-    if (status >= 500) return `${label} had a problem at their end. Try again shortly.`;
-    return `${label} refused the request (error ${status}).`;
+    if (status >= 500) return withDetail(`${label} had a problem at their end. Try again shortly.`);
+    return withDetail(`${label} refused the request (error ${status}).`);
 }

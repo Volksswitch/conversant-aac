@@ -190,3 +190,80 @@ test('a failure explains itself, and 400 is not read as our bug', () => {
     assert.match(describeFailure(429, 'ElevenLabs'), /rate limiting|out of credit/);
     assert.match(describeFailure(503, 'OpenAI'), /at their end/);
 });
+
+/*
+ * ⚠ THE SERVICE'S OWN WORDS ARE THE HALF THAT SOLVES ANYTHING.
+ *
+ * Before September 30 2026 the refusal body was read only to be thrown away, so every
+ * failure came out as our guess about the key. Ken's OpenAI voice was refused on every
+ * utterance with a demonstrably good key, and the app told him to check the key. The
+ * guidance is still useful, so the service's explanation is appended rather than
+ * replacing it.
+ */
+test('a refusal carries what the service itself said', () => {
+    const body = JSON.stringify({ error: { message: "Invalid value: 'nova'. Supported values are: 'alloy'." } });
+    const msg = describeFailure(400, 'OpenAI', body);
+    assert.match(msg, /key is wrong/, 'the guidance stays');
+    assert.match(msg, /OpenAI said:/, 'and names who is speaking');
+    assert.match(msg, /Invalid value: 'nova'/, 'and quotes the real reason');
+});
+
+test('the shapes the five services actually use are all read', () => {
+    const cases = [
+        [JSON.stringify({ error: { message: 'openai and google shape' } }), /openai and google shape/],
+        [JSON.stringify({ detail: { message: 'elevenlabs nested shape' } }), /elevenlabs nested shape/],
+        [JSON.stringify({ detail: 'elevenlabs flat shape' }), /elevenlabs flat shape/],
+        [JSON.stringify({ err_msg: 'deepgram shape' }), /deepgram shape/],
+        [JSON.stringify({ message: 'a plain message field' }), /a plain message field/],
+        ['a bare sentence with no JSON at all', /a bare sentence with no JSON at all/],
+    ];
+    for (const [body, expected] of cases) {
+        assert.match(describeFailure(400, 'Service', body), expected, body);
+    }
+});
+
+/*
+ * ⚠ A KEY MUST NEVER RIDE OUT IN AN ERROR MESSAGE.
+ *
+ * These messages reach the error log, the saved conversation, the problem report the
+ * tester sends, and the weekly report. Several services quote the credential back in
+ * their refusal; most redact it themselves, and that is their choice rather than a
+ * guarantee. Losing a word from an error message costs nothing. Printing a key costs
+ * the user their key.
+ */
+test('anything key-shaped is removed before the message travels', () => {
+    const secrets = [
+        'Incorrect API key provided: sk-ant-api03-REALKEYMATERIALHERE1234567890',
+        'bad credential xi-9f8e7d6c5b4a39281706152433221100aabbccdd',
+        'rejected: gsk_AbCdEfGhIjKlMnOpQrStUvWxYz0123456789',
+        'token AbCdEfGhIjKlMnOpQrStUvWxYz0123456789abcdefghij was not accepted',
+    ];
+    for (const s of secrets) {
+        const msg = describeFailure(401, 'Service', JSON.stringify({ message: s }));
+        assert.match(msg, /<key removed>/, `should redact: ${s}`);
+        for (const token of s.split(/\s+/)) {
+            if (token.length >= 24) {
+                assert.ok(!msg.includes(token), `leaked a secret-shaped token: ${token}`);
+            }
+        }
+    }
+});
+
+test('an unreadable body leaves the generic reason intact', () => {
+    // A body that is absent, empty, or markup rather than a sentence must never produce
+    // a mangled fragment in front of the user - the generic sentence is better.
+    for (const body of ['', null, undefined, '<html><body>502</body></html>', '{"nothing":"useful"}']) {
+        const msg = describeFailure(400, 'OpenAI', body);
+        assert.match(msg, /key is wrong/);
+        assert.ok(!msg.includes('OpenAI said:'), `should not quote: ${body}`);
+    }
+});
+
+test('a very long explanation is cut rather than burying the guidance', () => {
+    // Real words with spaces, not one long run of characters - a 2000-character token
+    // is key-shaped and is correctly eaten by the redaction above before it gets here.
+    const long = 'the supplied value is not permitted for this account '.repeat(40);
+    const msg = describeFailure(400, 'OpenAI', JSON.stringify({ message: long }));
+    assert.ok(msg.length < 500, `message ran to ${msg.length} characters`);
+    assert.match(msg, /\.\.\.$/);
+});

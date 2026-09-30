@@ -79,7 +79,11 @@ export async function transcribeClip(provider, key, wavBlob, {
             signal: controller.signal,
         });
         if (!res.ok) {
-            const err = new Error(describeFailure(res.status, provider.label));
+            // Reading the body is safe here: nothing else consumes it on this path, and
+            // a failure to read it must never replace the real reason with its own.
+            let said = '';
+            try { said = await res.text(); } catch { /* keep the generic reason */ }
+            const err = new Error(describeFailure(res.status, provider.label, said));
             err.status = res.status;
             throw err;
         }

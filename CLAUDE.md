@@ -1660,6 +1660,17 @@ Ken: *"Now add support for OpenAI, Google Cloud, and Eleven Labs (voices and whe
 
 - **⚠ AND ONE THE HYGIENE TEST MISSED BECAUSE OF ITS OWN GAP:** a raw NUL byte in `tts-rest.js`, the very mistake `tts-azure.js` carries a comment warning about (a literal NUL makes git treat the file as binary). `tests/source-hygiene.test.mjs` scanned only **git-tracked** files, so a brand-new file — exactly where a fresh mistake lives — was unguarded until after it was committed. It now scans untracked-but-not-ignored files too, verified to catch a planted byte in a new file.
 
+## ⚠ THE APP THREW AWAY THE ONE SENTENCE THAT EXPLAINS A SPEECH FAILURE (Ken, September 30 2026), FIXED
+
+Ken's OpenAI voice was refused on **every** utterance with a key that was demonstrably fine, and the app told him to check the key. The service had said exactly what was wrong. `describeFailure` read the refusal body **only to discard it** and substituted our guess.
+
+- **THE GUIDANCE WAS NOT THE PROBLEM AND IS KEPT.** "Usually the key" is right most of the time, and the Google-400 note that produced it is still correct. The service's own words are **appended**, not substituted. A generic message plus the real reason beats either alone.
+- **⚠ ANYTHING KEY-SHAPED IS STRIPPED FIRST, AND THIS IS NOT OPTIONAL.** Services quote the credential back in their refusals. Most redact it themselves, which is THEIR choice and not a guarantee, and this message travels to the error log, the saved conversation, the problem report and the weekly report — every one an export path where the standing rule says a key never appears. Losing a word from an error message costs nothing; printing a key costs the user their key. Guarded and mutation-checked.
+- **⚠ READING THE EXPLANATION MUST NEVER BECOME THE FAILURE.** A body can be absent, already consumed, or a stream that throws. Every read is wrapped, because replacing "the service refused this" with an error from the code trying to say why is worse than the original.
+- **THE SECOND HALF OF THE DIAGNOSIS: a refused utterance now NAMES THE VOICE AND MODEL.** The Settings voice Test and a live utterance reach the service by different routes — the Test uses a pair worked out on screen, an utterance uses the stored pair — so when they disagree, **Test passes and every real sentence is refused**. That is the shape of Ken's report, and nothing in the message could tell the two apart.
+- **Scope: the REST path only (OpenAI, Google Cloud, ElevenLabs), which is one file.** Azure and Deepgram are deliberately untouched: their own `describeFailure` carries a comment recording that those endpoints send an empty body, so there is nothing to read, and their messages are already specific.
+- **⚠ A CORRECTION TO THE RECORD: the OpenAI *voice* Test DOES speak.** I told Ken it only checked the key. There are two buttons — Test Key (a list request, key only) and Test Voice (which really synthesizes, in `tts-rest.js`). His working test was the second one, so the puzzle was never a weak test; it was a message that could not distinguish the two paths.
+
 ## Deepgram is NOT the only browser-direct option — MEASURED September 2 2026
 
 **Trigger: Ken could not create a Deepgram account for the first beta tester** (the

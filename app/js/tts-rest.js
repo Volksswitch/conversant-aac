@@ -36,6 +36,17 @@
  */
 import { describeFailure } from './speech-catalog.js';
 
+/*
+ * The refusal body, or '' if it cannot be read.
+ *
+ * ⚠ NEVER LET READING THE EXPLANATION BECOME THE FAILURE. A body can be absent,
+ * already consumed, or a stream that errors; throwing here would replace a clear
+ * "the service refused this" with an unrelated error from the code trying to say why.
+ */
+async function bodyText(res) {
+    try { return await res.text(); } catch { return ''; }
+}
+
 // Generous enough for a cold connection on tablet wifi, short enough that a dead network
 // does not leave the user in silence with a partner waiting. Same value as Azure's.
 const SYNTH_TIMEOUT_MS = 6000;
@@ -85,7 +96,7 @@ export async function verifyKey(provider, key, timeoutMs = 10000) {
             headers: provider.verify.headers({ key }),
             signal: controller.signal,
         });
-        if (!res.ok) throw new Error(describeFailure(res.status, provider.label));
+        if (!res.ok) throw new Error(describeFailure(res.status, provider.label, await bodyText(res)));
     } catch (err) {
         // An abort is our own timeout; a dropped connection looks identical to fetch.
         // Name both rather than claiming to know which, and never report either as a
@@ -116,7 +127,7 @@ export async function fetchVoices(provider, key, timeoutMs = 10000) {
             headers: provider.catalog.headers({ key }),
             signal: controller.signal,
         });
-        if (!res.ok) throw new Error(describeFailure(res.status, provider.label));
+        if (!res.ok) throw new Error(describeFailure(res.status, provider.label, await bodyText(res)));
         return provider.catalog.read(await res.json()) || [];
     } finally {
         clearTimeout(timer);
@@ -191,7 +202,19 @@ export function createVoice({ provider, getKey, getModel, onBilled } = {}) {
             clearTimeout(timer);
             if (inFlight === controller) inFlight = null;
         }
-        if (!res.ok) throw new Error(describeFailure(res.status, provider.label));
+        /*
+         * ⚠ THE VOICE AND MODEL ARE NAMED, and that is not decoration.
+         *
+         * The Settings voice Test and a live utterance reach this function by different
+         * routes: the Test hands over a voice and model worked out on screen, an
+         * utterance uses the stored pair. When those disagree, a Test passes and every
+         * real sentence is refused - which is exactly what Ken hit on September 30 2026,
+         * and the message said nothing that could tell the two apart.
+         */
+        if (!res.ok) {
+            throw new Error(`${describeFailure(res.status, provider.label, await bodyText(res))}`
+                + ` (voice ${voice || 'not set'}, model ${model || 'not set'})`);
+        }
 
         // Only once accepted: billing a refused request would overstate the bill, which
         // is the one direction that matters in a product whose premise is "pay for what

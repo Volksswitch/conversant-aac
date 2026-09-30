@@ -26,6 +26,10 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- When a paid speech service refuses a request, the message now tells you what the
+  service itself said, instead of only our guess that the key is wrong. It also names
+  the voice and the model it was refused for. Covers OpenAI, Google Cloud and
+  ElevenLabs; Azure and Deepgram already gave specific messages.
 - Suggestions arrive about twice as fast. The app now uses a newer version of Claude, and
   in side-by-side testing on the same conversation a set of four response cards took about
   three seconds where it used to take about six. Nothing changes in how you use the app.
