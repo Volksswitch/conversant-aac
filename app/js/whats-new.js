@@ -22,6 +22,10 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.12.2": [
+    "Two more OpenAI voices: Marin and Cedar. These are OpenAI's newest and the two they recommend for the best quality. Settings, Speech tab, under your speaking voice.",
+    "Testing your API key now also tells you which AI the app is using, and whether a newer one has been released since. It says nothing about whether the newer one is better - that is a judgment, and moving to one is not always an improvement."
+  ],
   "0.12.1": [
     "Fixed: choosing an OpenAI, Google Cloud or ElevenLabs voice did not work. The app was sending those services a Deepgram voice name, which they refused, so every sentence came out in this device's voice instead. Testing the voice in Settings worked, which made it look as though the service was fine.",
     "Fixed: those same three services were also being handed the Deepgram key.",
