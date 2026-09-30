@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.12.1
+
 - Fixed: choosing an OpenAI, Google Cloud or ElevenLabs voice did not work. The app was
   sending those services a Deepgram voice name, which they refused, so every sentence
   came out in this device's voice instead. Testing the voice in Settings worked, which

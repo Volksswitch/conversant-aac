@@ -22,6 +22,21 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.12.1": [
+    "Fixed: choosing an OpenAI, Google Cloud or ElevenLabs voice did not work. The app was sending those services a Deepgram voice name, which they refused, so every sentence came out in this device's voice instead. Testing the voice in Settings worked, which made it look as though the service was fine.",
+    "Fixed: those same three services were also being handed the Deepgram key.",
+    "Brief noises are no longer sent to be transcribed. A cough or a door closing could come back as a sentence the other person never said, recorded as though they had.",
+    "Fixed: stopping the microphone on a paid transcription service logged an error and tinted the transcript red, as though something had gone wrong when nothing had.",
+    "Changing which service does the listening now takes effect right away. It used to need the app restarted, and the note saying so appeared next to a different service's key, so it was easy to switch service and go on being heard by the previous one.",
+    "If the listening service stops working, the app now says so instead of listening in silence. Before, a service that refused every request left the microphone on with nothing appearing and nothing reported.",
+    "When a paid speech service refuses a request, the message now tells you what the service itself said, instead of only our guess that the key is wrong. It also names the voice and the model it was refused for. Covers OpenAI, Google Cloud and ElevenLabs; Azure and Deepgram already gave specific messages.",
+    "Suggestions arrive about twice as fast. The app now uses a newer version of Claude, and in side-by-side testing on the same conversation a set of four response cards took about three seconds where it used to take about six. Nothing changes in how you use the app.",
+    "The same change costs about a third less per conversation. If you watch the running total on Settings → About, expect it to climb more slowly from now on.",
+    "Settings, Speech tab: Azure Speech is now the recommended paid speech service. It is listed first and marked \"(Recommended)\", followed by OpenAI, Google Cloud, Deepgram and ElevenLabs. The free choice, this device, is still first and is still where the app starts, and anyone already using another service does not need to change anything.",
+    "Setting up Azure is easier. Three new buttons under the Azure key - \"1. Create Microsoft Account\" (skip it if you already have one), \"2. Create a \"Pay as you Go\" Azure account\" and \"3. Create my free speech service\" - open Microsoft's own pages in order and create a free Azure speech service for you. Conversant never sees your password or credit card.",
+    "The Azure Region box now sits beside the key, is a plain box with its own Paste button, and accepts the region however you copy it (for example \"(US) East US\" becomes \"eastus\"). Test works once both the key and the region are filled in.",
+    "When Azure refuses a key, the message now also says the speech service may have been deleted or the Azure subscription canceled or switched off, not only that the key or region may be mistyped."
+  ],
   "0.12.0": [
     "When an Express Panel band has more buttons than room, its last spot becomes a More button. Tap it to see the rest; on the last set it reads Close, which puts the panel back as it was. Tapping any other button except \"Hold on\" does the same. More follows your single-tap or double-tap setting.",
     "A new setting, \"Tapping More shows the rest\", on the Express Panel tab chooses whether the rest appear in that band only or across the whole panel.",
@@ -161,7 +176,7 @@ const RELEASE_NOTES = {
   ],
   "0.10.0": [
     "Conversant now tells Deepgram not to use your conversations to train their systems. It asks this on every request, for what the other person says and for what you say. Nothing looks or works differently; it is about where the words end up.",
-    "New: seven color schemes. Settings, on the tab now called \"Text & Color\", has \"Color scheme\": Default, Bold outlines, High contrast light, Dark, High contrast dark, Yellow on black, and Color-blind safe. Each changes the whole app at once, Settings and About Me included, and takes effect straight away so you can try them with the panel still open.",
+    "New: seven color schemes. Settings, on the tab now called \"Text & Color\", has \"Color scheme\": Default, Bold outlines, High contrast light, Dark, High contrast dark, Yellow on black, and Color-blind safe. Each changes the whole app at once, Settings and About Me included, and takes effect right away so you can try them with the panel still open.",
     "Bold outlines is the smallest change and probably the one to try first: the familiar colors, with every edge drawn heavily so a card reads as a block.",
     "Dark and High contrast dark suit a dim room, or anyone bothered by bright screens. Yellow on black is the highest contrast the screen can produce.",
     "Color-blind safe changes the four kinds of reply so they stay apart for red-green color blindness, and gives each one a different edge — solid, double, dashed, dotted — so they can be told apart without relying on color at all.",
