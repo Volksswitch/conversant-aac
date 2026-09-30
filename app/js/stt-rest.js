@@ -34,6 +34,16 @@ import { TARGET_RATE, downsample, floatToPcm16, encodeWav } from './stt-azure.js
 
 // Long enough for a cold connection, short enough that one stuck request does not leave
 // a whole phrase unheard while the partner waits.
+/*
+ * How many phrases in a row may fail before the app stops calling it weather.
+ *
+ * Three, because a phrase is submitted at each pause in the partner's speech: three in
+ * a row means the partner has said three things and nothing has appeared on screen.
+ * Lower would turn a single flaky moment into a stopped microphone; higher leaves the
+ * user talking to a device that cannot hear for longer than anyone would tolerate.
+ */
+const FAILURES_BEFORE_FATAL = 3;
+
 const REQUEST_TIMEOUT_MS = 10000;
 
 // A span that has run on this long is submitted early rather than being refused whole
@@ -116,6 +126,12 @@ export function createSource({ provider, getKey, getModel, onText, onStatus, onB
     // Bumped by stop(), so a submission still in flight when listening ends cannot
     // deliver text into the next conversation.
     let generation = 0;
+    /*
+     * Consecutive failed phrases. Reset by any success and by every start(), so the
+     * verdict below is always about THIS run of attempts rather than a tally that
+     * survives a fix.
+     */
+    let failures = 0;
 
     function reset() {
         span = [];
@@ -145,23 +161,43 @@ export function createSource({ provider, getKey, getModel, onText, onStatus, onB
                 sampleRate: TARGET_RATE,
             });
             if (mine !== generation) return;   // listening stopped while this was in flight
+            // A phrase came back, so whatever went wrong before was passing.
+            failures = 0;
             // Every phrase is final by construction: nothing is sent until the speaker
             // has paused, so there is nothing provisional to revise.
             if (text && onText) onText(text, true);
         } catch (err) {
             if (mine !== generation) return;
-            // ⚠ A FAILED PHRASE IS REPORTED BUT MUST NOT BE FATAL. handleSourceError in
-            // stt.js switches listening off for the session, which is right for a
-            // rejected key and wrong for one request that timed out on a flaky
-            // connection — the next phrase would very likely have worked. So a transport
-            // failure is a status and capture keeps running.
-            //
-            // A 401 or 403 is the exception: that will fail identically every time, and
-            // reporting it as an error is what lets the app tell the user their key is
-            // wrong instead of transcribing nothing forever in silence.
+            failures += 1;
+            /*
+             * ⚠ A FAILED PHRASE IS REPORTED BUT MUST NOT BE FATAL. handleSourceError in
+             * stt.js switches listening off for the session, which is right for a
+             * rejected key and wrong for one request that timed out on a flaky
+             * connection — the next phrase would very likely have worked. So a transport
+             * failure is a status and capture keeps running.
+             *
+             * A 401 or 403 is the exception: that will fail identically every time, and
+             * reporting it as an error is what lets the app tell the user their key is
+             * wrong instead of transcribing nothing forever in silence.
+             *
+             * ⚠ AND SO IS A RUN OF THEM, which is the half that was missing until
+             * September 30 2026. Tolerating every non-auth failure is right for ONE bad
+             * moment and wrong for a service that refuses everything: the app went on
+             * listening forever, transcribed nothing, and logged nothing, so the
+             * microphone stayed lit while the user's partner talked into it. That is the
+             * worst failure this app has, because it looks exactly like working.
+             *
+             * The count is what separates the two cases, and only a run of them decides:
+             * a phrase is submitted at each pause in the partner's speech, so three in a
+             * row means the partner has said three things and nothing has appeared. One
+             * is weather. Three is a broken setup. A single success resets it, so a flaky
+             * connection never accumulates its way to a false verdict.
+             */
+            const fatal = (err && (err.status === 401 || err.status === 403))
+                || failures >= FAILURES_BEFORE_FATAL;
             if (onStatus) {
-                if (err && (err.status === 401 || err.status === 403)) {
-                    onStatus('error', err.message);
+                if (fatal) {
+                    onStatus('error', (err && err.message) || 'phrases could not be transcribed');
                 } else {
                     onStatus('warning', err && err.name === 'AbortError'
                         ? 'a phrase took too long to transcribe'
@@ -241,6 +277,7 @@ export function createSource({ provider, getKey, getModel, onText, onStatus, onB
             preRollFrames = Math.max(1, Math.ceil((gate.preRollMs() / 1000) * rate / 4096));
             reset();
             billedMs = 0;
+            failures = 0;
             generation++;
             running = true;
             processor.onaudioprocess = (e) => {

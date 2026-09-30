@@ -316,6 +316,66 @@ test('the default is still the browser recognizer', () => {
     assert.equal(recognitions.length, before + 1);
 });
 
+/*
+ * ⚠ CHANGING THE HEARING SERVICE USED TO NEED A RESTART, and the note saying so
+ * appeared beside a different service's key field. The outcome is what matters: a user
+ * could pick a service, be told it was saved, and go on being heard by the previous one
+ * with nothing on screen disagreeing. Ken's own report of September 30 2026 read OpenAI
+ * while, across 107 days, OpenAI had never transcribed a single turn.
+ */
+test('the hearing service can be changed without restarting the app', () => {
+    assert.equal(stt.currentSource(), 'browser', 'the harness starts on the free one');
+    assert.equal(stt.setSource('openai'), true, 'the change was made');
+    assert.equal(stt.currentSource(), 'openai');
+    assert.equal(stt.setSource('browser'), true, 'and back again');
+    assert.equal(stt.currentSource(), 'browser');
+});
+
+test('choosing the service already in use changes nothing', () => {
+    const before = recognitions.length;
+    assert.equal(stt.setSource('browser'), false, 'no rebuild for the same service');
+    assert.equal(recognitions.length, before, 'and no second recognizer was constructed');
+});
+
+/*
+ * ⚠ THE OLD SOURCE IS TORN DOWN, NOT ABANDONED. init() only assigns; it never stops
+ * what is already running. Rebuilding without stopping would leave a microphone and a
+ * socket open with nothing owning them, which is worse than the bug being fixed.
+ */
+test('switching away stops the service that was listening', () => {
+    stt.startListening();
+    assert.equal(rec.capturing, true, 'the browser recognizer is running');
+    stt.setSource('openai');
+    assert.equal(rec.capturing, false,
+        'a service change stops listening rather than carrying an open microphone across');
+});
+
+/*
+ * ⚠ AND THE WORDS DO NOT CROSS THE SWITCH. A turn half-heard by one service and
+ * finished by another is a record nobody can read, and the saved conversation stamps
+ * one service per turn.
+ */
+test('a half-heard turn does not survive a service change', () => {
+    stt.startListening();
+    rec.emitFinal('the partner was saying this');
+    assert.match(stt.getCurrentTranscript(), /the partner was saying this/);
+    stt.setSource('openai');
+    assert.equal(stt.getCurrentTranscript(), '');
+});
+
+/*
+ * ⚠ ONE VISIBILITY LISTENER PER PAGE, NOT ONE PER init(). The guard used to be
+ * registered inside init(), which was safe only while init() ran exactly once at
+ * startup. setSource() re-runs it, and a second listener would suspend and resume the
+ * microphone twice on every trip to the home screen.
+ */
+test('switching back and forth does not stack backgrounding listeners', async () => {
+    const src = await readFile(new URL('../app/js/stt.js', import.meta.url), 'utf8');
+    const guard = src.slice(src.indexOf('speechCfg.guardVisibility'));
+    assert.ok(/!visibilityGuarded/.test(guard.slice(0, 300)),
+        'the registration must be guarded against running twice');
+});
+
 /* ── "0 seconds" — the recognizer's own endpoint, not a zero-length timer ──
  *
  * Ken, August 9 2026. The silence timer is restarted by EVERY result, interim ones

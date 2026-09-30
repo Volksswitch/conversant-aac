@@ -26,6 +26,12 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Changing which service does the listening now takes effect right away. It used to
+  need the app restarted, and the note saying so appeared next to a different service's
+  key, so it was easy to switch service and go on being heard by the previous one.
+- If the listening service stops working, the app now says so instead of listening in
+  silence. Before, a service that refused every request left the microphone on with
+  nothing appearing and nothing reported.
 - When a paid speech service refuses a request, the message now tells you what the
   service itself said, instead of only our guess that the key is wrong. It also names
   the voice and the model it was refused for. Covers OpenAI, Google Cloud and
@@ -427,7 +433,7 @@ forgetting to tag one is only ever noise, never silence.
 - **New: seven color schemes.** Settings, on the tab now called "Text & Color", has
   "Color scheme": Default, Bold outlines, High contrast light, Dark, High contrast
   dark, Yellow on black, and Color-blind safe. Each changes the whole app at once,
-  Settings and About Me included, and takes effect straight away so you can try them
+  Settings and About Me included, and takes effect right away so you can try them
   with the panel still open.
 - **Bold outlines** is the smallest change and probably the one to try first: the
   familiar colors, with every edge drawn heavily so a card reads as a block.

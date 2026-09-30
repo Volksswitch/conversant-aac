@@ -20,6 +20,20 @@ let speechCfg = { continuous: true, restartDelayMs: 0, guardVisibility: false };
 // listeningIntent must stay true so we resume on return, but onend must not
 // restart while we are deliberately suspended, or it fights the guard.
 let suspendedForHidden = false;
+/*
+ * The options init() was called with, kept so the hearing service can be changed
+ * without the caller re-supplying every callback — see setSource().
+ */
+let initOpts = null;
+/*
+ * ⚠ THE VISIBILITY GUARD IS REGISTERED ONCE PER PAGE, NOT ONCE PER init().
+ *
+ * It used to sit inside init(), which was safe only while init() ran exactly once at
+ * startup. setSource() re-runs it, and a second listener would suspend and resume the
+ * microphone twice on every trip to the home screen. The listener reads live module
+ * state, so the first one keeps working across a rebuild.
+ */
+let visibilityGuarded = false;
 let onTranscript = null;
 let onSilencePeriod = null;
 let onStatusChange = null;
@@ -380,6 +394,9 @@ function afterIngest(heardPartner, sawFinal) {
 export function init({ onResult, onSilence, onStatus, onPartnerSpeech, source,
                        getDeepgramKey, getAzureKey, getAzureRegion, getRestKey,
                        getRestModel, onBilled }) {
+    initOpts = { onResult, onSilence, onStatus, onPartnerSpeech, source,
+                 getDeepgramKey, getAzureKey, getAzureRegion, getRestKey,
+                 getRestModel, onBilled };
     // 'browser' is anything not recognized, so an unknown source degrades to the free
     // recognizer rather than to silence.
     const isPaidSource = source === 'deepgram' || source === 'azure' || !!STT_PROVIDERS[source];
@@ -496,7 +513,8 @@ export function init({ onResult, onSilence, onStatus, onPartnerSpeech, source,
     // (If more benign per-restart errors turn up during device testing, the
     // onerror allow-list below is where they belong — 'no-speech' and 'aborted'
     // are already ignored, which covers normal session teardown.)
-    if (speechCfg.guardVisibility && typeof document !== 'undefined') {
+    if (speechCfg.guardVisibility && typeof document !== 'undefined' && !visibilityGuarded) {
+        visibilityGuarded = true;
         document.addEventListener('visibilitychange', () => {
             // ⚠ BOTH BACKENDS. This used to test `recognition` alone, so with a paid
             // backend selected - where `recognition` is null - the guard did nothing
@@ -532,6 +550,57 @@ export function init({ onResult, onSilence, onStatus, onPartnerSpeech, source,
         // clearing the intent, onend would restart straight into the same error.
         handleSourceError(event.error);
     };
+}
+
+/** What init() would settle on for a given source name. */
+function normalizeSource(source) {
+    return (source === 'deepgram' || source === 'azure' || !!STT_PROVIDERS[source])
+        ? source
+        : 'browser';
+}
+
+/** Which service is listening right now, for diagnostics and for the turn stamp. */
+export function currentSource() {
+    return backend;
+}
+
+/*
+ * Switch the hearing service without restarting the app.
+ *
+ * ⚠ WHY THIS EXISTS. init() built the capture source ONCE at startup, so changing the
+ * service in Settings did nothing until the next launch. Settings said so, but the
+ * message went beside a different service's key field, and the consequence was the one
+ * that matters: a user could pick a service, be told it was saved, and go on being
+ * heard by the previous one with nothing on screen disagreeing. Measured on Ken's own
+ * report of September 30 2026 — his setting read OpenAI and across 107 days OpenAI had
+ * never transcribed a single turn.
+ *
+ * ⚠ THE OLD SOURCE IS TORN DOWN FIRST. init() only assigns; it never stops what is
+ * already running. Rebuilding without stopping would leave a microphone and a socket
+ * open with nothing owning them, which is worse than the bug being fixed.
+ *
+ * Returns true when the service actually changed.
+ */
+export function setSource(source) {
+    if (!initOpts) return false;                       // init() has not run yet
+    const wanted = normalizeSource(source);
+    if (wanted === backend) return false;
+
+    // Stop deliberately: this clears the user's intent to listen, which is right. A
+    // service change is a change of what is listening, so it should not silently carry
+    // an open microphone across to a different service.
+    try { stopListening(); } catch { /* nothing was running */ }
+    if (externalSource) {
+        try { externalSource.stop(); } catch { /* already stopped */ }
+    }
+    externalSource = null;
+    recognition = null;
+    // The words heard by the previous service belong to the previous service, and a
+    // half-captured turn spanning two of them is a record nobody can read.
+    resetTranscript();
+
+    init({ ...initOpts, source });
+    return true;
 }
 
 /*

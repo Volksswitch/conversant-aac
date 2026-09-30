@@ -7143,16 +7143,38 @@ function openSettings() {
             if (!radio.checked) return;
             storage.saveSttProvider(radio.value);
             reflectSttProvider();
-            // The message goes beside the key that choice depends on, not always
-            // beside Deepgram's. A confirmation that appears next to a different
-            // service's key field is worse than none: it reads as though THAT key was
-            // what just changed.
-            const reload = 'Saved. Reload the app (About → Reload the app) to start using it.';
-            showDeepgramStatus(null, '');
-            showAzureStatus(null, '');
-            if (radio.value === 'azure') showAzureStatus('ok', reload);
-            else if (radio.value === 'deepgram') showDeepgramStatus('ok', reload);
-            else showDeepgramStatus('ok', reload);
+            /*
+             * ⚠ THE CHOICE TAKES EFFECT NOW. It used to need a restart, and the note
+             * saying so went beside DEEPGRAM's key whatever was chosen — so somebody
+             * picking OpenAI was told, next to the wrong service, that nothing had
+             * happened yet. The outcome was the one that matters: the setting read one
+             * service and a different one went on doing the listening, with nothing on
+             * screen disagreeing.
+             */
+            stt.setSource(radio.value);
+            // The saved turn records WHICH service heard each line, so it has to move
+            // with the source. Read it back from stt rather than from the radio: what
+            // was asked for and what was built are not the same thing when a service
+            // cannot be constructed and the free recognizer takes over.
+            storage.setSttBackend(stt.currentSource());
+            /*
+             * The confirmation goes where the CHOICE was made, not beside a key field.
+             * It used to be sent to whichever key the choice depended on, which for four
+             * of the six services put it next to a different service's key and for the
+             * free one put it next to a paid service's. A message beside the wrong key
+             * is worse than none: it reads as though THAT key was what just changed.
+             */
+            const needsKey = radio.value !== 'builtin';
+            const haveKey = !needsKey
+                || (radio.value === 'azure' ? !!(storage.loadAzureKey() || '').trim()
+                    : radio.value === 'deepgram' ? !!(storage.loadDeepgramKey() || '').trim()
+                    : !!(storage.loadServiceKey(radio.value) || '').trim());
+            setStatusLine('sttProviderStatus', haveKey ? 'ok' : 'warn',
+                !needsKey
+                    ? 'Saved, and in use now. This device does the listening, at no cost.'
+                    : haveKey
+                        ? 'Saved, and in use now.'
+                        : 'Saved, and in use now — but this service needs a key before it can hear anything. Add one below.');
         };
     });
     const pasteDeepgramBtn = document.getElementById('pasteDeepgramKeyBtn');
