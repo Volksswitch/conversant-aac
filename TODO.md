@@ -37,6 +37,39 @@ the one that quietly waits forever.
 
 ## Open
 
+### The monthly provider review, running on the desktop rather than this laptop
+
+**Raised:** September 30 2026, by Ken, after the app was found to have spent three months
+on an AI model that was a generation behind and half again as expensive — noticed only
+because he asked an unrelated question. Ken: *"a service just got better and cheaper and
+we didn't know."*
+
+**What is wanted:** a recurring session, monthly, that checks the provider side and
+reports what changed. Four things: which models each provider now offers against the one
+in use; published prices against `pricing.json`, which is the only one of the four that
+cannot be automated at all; each service's real voice roster against the app's, which is
+what closes the OpenAI and Deepgram gap; and a re-run of the eleven-service browser
+reachability probe, since a vendor closing that door would silently end a configuration.
+It reports and recommends nothing — whether a model is BETTER is a judgment no endpoint
+answers, and a mechanical "newer and cheaper, switch" would have shipped the Sonnet 5.5
+thinking trap.
+
+**⚠ IT IS NOT PART OF CONVERSANT.** Nothing about it ships, deploys, or reaches a
+tester. It runs on Ken's machine, for Ken. The part that IS in the app — the key Test
+naming the model and any newer one, and the model and rates riding in tester reports —
+shipped on September 30 2026 and is separate.
+
+**Why it is not being done now:** a scheduled session belongs to the machine it is created
+on, and this one is Ken's LAPTOP. He wants it on the desktop, which is always on: *"we'll
+talk later about how to get it to run on my desktop."* The setup itself is short — the
+same request made from Claude on the other machine — but it has to be made there.
+
+**⚠ AND DO NOT ATTACH IT TO A RELEASE INSTEAD, which is the obvious shortcut.** Ken
+ruled that out for a reason that only bites later: *"That may work well now given that
+there are frequent releases but it could be a problem when Conversant goes public and
+there are fewer releases."* Anchoring a time-based check to an event whose frequency is
+about to fall by an order of magnitude is the trap.
+
 ### Bold lead-in phrases: keep them or not
 - **Raised:** 2026-09-25 - Ken saw the Conversation Review document in bold from top to
   bottom and asked for plain text. The bold was an accident of the rewrite, but 94 of

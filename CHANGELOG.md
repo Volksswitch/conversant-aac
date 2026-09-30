@@ -26,6 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Two more OpenAI voices: Marin and Cedar. These are OpenAI's newest and the two they
+  recommend for the best quality. Settings, Speech tab, under your speaking voice.
+
 - Testing your API key now also tells you which AI the app is using, and whether a newer
   one has been released since. It says nothing about whether the newer one is better -
   that is a judgment, and moving to one is not always an improvement.

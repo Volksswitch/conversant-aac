@@ -73,16 +73,32 @@ export const TTS_PROVIDERS = {
             url: () => 'https://api.openai.com/v1/models',
             headers: ({ key }) => ({ Authorization: 'Bearer ' + key }),
         },
-        // A fixed roster: OpenAI publishes no voice-list endpoint, so there is nothing
-        // to fetch and the list below IS the list.
+        /*
+         * A fixed roster: OpenAI publishes no voice-list endpoint, so there is nothing
+         * to fetch and the list below IS the list. Re-checked September 30 2026 — the
+         * `/v1/audio/voices` endpoint you will find referenced belongs to third-party
+         * servers that imitate OpenAI, not to OpenAI.
+         *
+         * ⚠ SO THIS LIST GOES STALE SILENTLY, AND IT HAD. `marin` and `cedar` were
+         * added at OpenAI's end and the app did not offer them; we found out by reading
+         * a refusal quoted in a field report, while debugging something else. The only
+         * thing that catches this is somebody looking, which is what the monthly
+         * provider review is for. Deepgram's list has the same property.
+         */
         catalog: null,
         voices: [
             { id: 'alloy', name: 'Alloy', detail: 'neutral' },
             { id: 'ash', name: 'Ash', detail: 'warm' },
             { id: 'ballad', name: 'Ballad', detail: 'expressive' },
+            // OpenAI's two newest, and the two it recommends for best quality. The same
+            // note on both because that is what is actually known about them: nothing
+            // published distinguishes the pair, and the Test button beside the picker
+            // settles it better than a word we made up would.
+            { id: 'cedar', name: 'Cedar', detail: 'most natural' },
             { id: 'coral', name: 'Coral', detail: 'bright' },
             { id: 'echo', name: 'Echo', detail: 'even' },
             { id: 'fable', name: 'Fable', detail: 'storytelling' },
+            { id: 'marin', name: 'Marin', detail: 'most natural' },
             { id: 'nova', name: 'Nova', detail: 'light' },
             { id: 'onyx', name: 'Onyx', detail: 'deep' },
             { id: 'sage', name: 'Sage', detail: 'calm' },
