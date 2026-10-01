@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.13.0
+
 - Changed: the double-tap setting now covers the whole conversation screen, not just
   the Express Panel. It has moved to Settings > General and is called "One tap or two".
   With two taps chosen, anything that speaks, changes your suggestions, or takes you to
@@ -35,13 +37,14 @@ forgetting to tag one is only ever noise, never silence.
   keyboard, stopping a sound, and everything inside Settings still take one tap.
 - New: Conversation Review. Open Settings and choose Conversation Review to see your
   saved conversations in a table: when, who, where, how long, and how far you have
-  got. Tap a column heading to sort by it, and tap it again to reverse the order. Pick
-  a conversation to go back over it a turn at a time on the screen you already know. Tap a response option to say it would have suited you
-  better, or change its words. You can also tap one of your own buttons, type what you
-  wish you had said, press New 4 to say you would have wanted a different set, or mark
-  who you were with or how you felt. Tap the other person's line twice to say the app
-  wrote down the wrong words. Nothing is spoken and nothing changes anywhere else, and
-  Settings takes you back out.
+  gotten. Tap a column heading to sort by it, and tap it again to reverse the order.
+  Pick a conversation to go back over it a turn at a time on the screen you already
+  know. Tap a different response option to say it would have suited you better, and
+  tap it again to change its words. You can also tap one of your Express Panel buttons,
+  type what you wish you had said, press New 4 to say you would have wanted a different
+  set, or mark who you were with or how you felt. Tap the other person's line twice to
+  say the app wrote down the wrong words. Nothing is spoken and nothing changes anywhere
+  else, and Settings takes you back out.
 - Fixed: if you hear or speak through ElevenLabs, the running cost on the About tab was
   too high - about double for hearing, and a quarter too much for speaking. ElevenLabs
   has lowered its prices and ours were out of date. What you were actually charged was
