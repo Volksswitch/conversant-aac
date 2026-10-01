@@ -659,6 +659,15 @@ Express buttons or About Me.
   keydown first, which is how review takes a whole word on one press. While a word is
   being edited, pointer-downs on the bar, cards and pane are prevented so focus — and
   the keyboard — stay put.
+- **CHOOSING A CARD AND EDITING IT ARE TWO TAPS (Ken, October 1 2026).** The first build
+  opened the editor on the first tap, which hid the Express Panel under the keyboard
+  before the user asked to type, with Undo the only visible way back. Now a tap chooses;
+  a tap on the chosen card edits (the spoken card counts as chosen until something else
+  is); a tap on the edited card away from its words finishes. Card taps follow the
+  user's single/double-tap setting. **Solid dark border = the current choice; the card
+  spoken at the time turns DASHED once something replaces it** — the first build gave
+  both the same border and they could not be told apart. **The conversation screen's
+  keyboard has no Hide key** (removed June 2026), so do not offer it as an exit.
 - **TYPING NEVER MOVES THE HIGHLIGHT (Ken, October 1 2026).** Only Previous/Next Word or
   tapping a word does. A space is just typed, so "need to" can replace "me" in one go;
   the slot splits into separate words when the highlight leaves it. The first build moved

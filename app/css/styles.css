@@ -5472,14 +5472,20 @@ body.reviewing .review-line { cursor: pointer; }
 
 /* The card the user spoke, and the one they now say would have suited them better.
    Two marks, because under a four-second clock the two often do not agree. */
-.response-card.review-spoken { box-shadow: inset 0 0 0 3px var(--ink); }
-.response-card.review-want { box-shadow: 0 0 0 4px var(--info); }
-.response-card.review-spoken.review-want { box-shadow: inset 0 0 0 3px var(--ink), 0 0 0 4px var(--info); }
+.response-card.review-spoken,
+.response-card.review-want {
+    outline: 4px solid var(--ink);
+    outline-offset: -4px;
+}
+/* The card spoken at the time, once something else has been chosen in its place. */
+.response-card.review-spoken.review-spoken-replaced { outline-style: dashed; }
+/* First tap of a double tap: armed, waiting for the second. */
+.response-card.review-armed { box-shadow: 0 0 0 4px var(--info); }
 .response-card.review-spoken::after,
 .response-card.review-want::after {
     position: absolute;
-    right: 0.4rem;
-    bottom: 0.25rem;
+    right: 0.5rem;
+    bottom: 0.35rem;
     font-size: 0.75rem;
     font-weight: 600;
     color: var(--ink-muted);
@@ -5487,8 +5493,7 @@ body.reviewing .review-line { cursor: pointer; }
 }
 body.reviewing .response-card { position: relative; }
 .response-card.review-spoken::after { content: 'You said this'; }
-.response-card.review-want::after { content: 'Would suit you better'; color: var(--info-ink); }
-.response-card.review-spoken.review-want::after { content: 'You said this · changed'; color: var(--info-ink); }
+.response-card.review-want::after { content: 'Would suit you better'; color: var(--ink); }
 
 /* A sentence being rewritten scrolls INSIDE its card; the card never changes size and
    the type is never shrunk - the text size is the user's setting. */

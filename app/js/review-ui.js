@@ -121,6 +121,15 @@ function ensureWordInput() {
     wordInput.tabIndex = -1;
     host.appendChild(wordInput);
     wordInput.addEventListener('input', onWordInput);
+    // Leaving the word box - a tap anywhere review does not keep focus - ends editing,
+    // so the Express Panel comes back.
+    wordInput.addEventListener('blur', () => {
+        setTimeout(() => {
+            if (!active || !editing || document.activeElement === wordInput) return;
+            stopEditing();
+            render();
+        }, 0);
+    });
     wordInput.addEventListener('keydown', onWordKey);
 }
 
@@ -342,8 +351,11 @@ function renderCards() {
     box.querySelectorAll('.response-card[data-index]').forEach((card) => {
         const i = Number(card.dataset.index);
         const spoken = i === t.took;
+        // Solid means "this one"; the card spoken at the time turns dashed once anything
+        // else has been chosen in its place (Ken, October 1 2026).
         card.classList.toggle('review-spoken', spoken);
-        card.classList.toggle('review-want', i === answerIdx);
+        card.classList.toggle('review-spoken-replaced', spoken && !!e.answer && answerIdx !== i);
+        card.classList.toggle('review-want', i === answerIdx && !spoken);
         const text = card.querySelector('.response-text');
         if (editing && editing.target === 'card' && editing.index === i && text) {
             card.classList.add('review-editing');
@@ -355,7 +367,11 @@ function renderCards() {
         if (spoken) bits.push('(you said this)');
         if (i === answerIdx && !spoken) bits.push('(would have suited you better)');
         card.setAttribute('aria-label', bits.join(' ').trim());
-        card.title = 'Tap to say this one would have suited you better, or to change its words';
+        card.title = editing && editing.target === 'card' && editing.index === i
+            ? 'Tap a word to change it, or tap the card to finish'
+            : i === selectedCard()
+            ? 'Tap again to change its words'
+            : 'Tap to say this one would have suited you better';
     });
 }
 
@@ -457,6 +473,7 @@ function onBarClick(e) {
 
 function goTo(i) {
     if (!conv || i < 0 || i >= conv.turns.length || i === at) return;
+    disarmCard();
     stopEditing();
     closeComposer();
     at = i;
@@ -509,11 +526,60 @@ function onCardsClick(e) {
         afterEdit(false);
         return;
     }
-    startCardEdit(i);
+    // The card being edited: a tap anywhere but a word finishes editing and brings the
+    // Express Panel back. The keyboard on this screen has no Hide key, so this is the
+    // way out besides moving to another turn.
+    if (editing && editing.target === 'card' && editing.index === i) {
+        stopEditing();
+        render();
+        return;
+    }
+    // Honour the user's tap setting, the same one the Express Panel uses: with double
+    // tap, the first tap only arms the card (Ken, October 1 2026).
+    if (storage.loadExpressTapMode() === 'double') {
+        if (armedCard !== i) { armCard(card, i); return; }
+        disarmCard();
+    }
+    if (selectedCard() === i) startCardEdit(i);
+    else chooseCard(i);
 }
 
-// Tapping a card makes it the answer AND editable where it is (§6.2). The other cards
-// stay as they were. Tapping the one that was spoken, and leaving it, records nothing.
+// Which card counts as chosen right now: the one the user picked in review, or, until
+// they pick another answer, the one they spoke at the time.
+function selectedCard() {
+    const e = entry();
+    if (e.answer) return e.answer.kind === 'card' ? e.answer.index : -1;
+    return turn().took;
+}
+
+let armedCard = -1;
+let armTimer = null;
+function armCard(el, i) {
+    disarmCard();
+    armedCard = i;
+    el.classList.add('review-armed');
+    armTimer = setTimeout(disarmCard, storage.loadDoubleTapMs());
+}
+function disarmCard() {
+    if (armTimer) { clearTimeout(armTimer); armTimer = null; }
+    armedCard = -1;
+    document.querySelectorAll('.review-armed').forEach((el) => el.classList.remove('review-armed'));
+}
+
+// CHOOSING a card is one step and EDITING it is another (Ken, October 1 2026): opening
+// the editor on the first tap hid the Express Panel under the keyboard before the user
+// had asked to type anything, with no obvious way back. Choosing the card spoken at the
+// time puts the turn back as it was.
+function chooseCard(i) {
+    stopEditing();
+    const t = turn();
+    if (i === t.took) change(model.clearAnswer(review, t));
+    else change(model.setCardAnswer(review, t, i, (t.cards[i] && t.cards[i].text) || ''));
+    render();
+}
+
+// A second tap on the chosen card makes its words editable where they are (§6.2).
+// Editing the card that was spoken, and leaving it unchanged, records nothing.
 function startCardEdit(i) {
     const t = turn();
     const e = entry();
