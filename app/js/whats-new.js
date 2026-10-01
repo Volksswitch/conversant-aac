@@ -24,7 +24,7 @@ import * as platform from './platform.js';
 const RELEASE_NOTES = {
   "0.13.1": [
     "Fixed: in longer conversations the app sometimes said \"AI is unavailable\" even though the connection was fine, and \"Try again\" only worked some of the time. The suggestions now come back reliably.",
-    "Fixed: after pressing \"Try again\" when the AI could not be reached, the four suggestions came back in one row instead of two-by-two. They now come back where they belong."
+    "Fixed: after pressing \"Try again\" with the panel on the side, the four suggestions came back in one row instead of two-by-two. They now come back where they belong."
   ],
   "0.13.0": [
     "Changed: the double-tap setting now covers the whole conversation screen, not just the Express Panel. It has moved to Settings > General and is called \"One tap or two\". With two taps chosen, anything that speaks, changes your suggestions, or takes you to another screen needs two taps: the response options, the buttons across the middle, New 4, and every Express Panel button, including the people, places and feelings. The first tap puts a ring around the button; the second tap does it. Typing on the keyboard, stopping a sound, and everything inside Settings still take one tap.",
