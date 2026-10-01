@@ -290,21 +290,6 @@ about to fall by an order of magnitude is the trap.
   non-programmer can follow) and PLAIN STYLE (writing a reader gives up on). It removes
   material the other two leave in place, so it needs its own line in CLAUDE.md.
 
-### Product Overview: what a saved conversation holds
-- **Raised:** 2026-09-27 - Ken's comment on the Conversation Review document, section 3:
-  *"Is this information documented in the Product Overview? If not, it should be added."*
-- **Where it stands:** partly. The Product Overview carries one sentence about it, and
-  only in the roadmap list under conversation review - response option sets and what
-  became of them, the floor-holding phrases, and who/where/feeling/goals. It does not
-  mention the partial versions of what the partner said, the voice and spelling actually
-  used, the microphone going on and off, the Composition Pane text, or errors in time
-  order.
-- **What is wanted:** the short list moved into the body of the document, where it
-  describes what the app does today, rather than sitting inside a future-feature entry.
-- **Why it is not being done now:** the Product Overview is a separate document and Ken
-  asked for the Conversation Review first. Doing it in the same pass would mean editing a
-  document he has not reviewed.
-
 ### Conversation Review: what the first build left out
 - **Raised:** 2026-10-01 - Ken asked for the feature in "Conversant AAC Conversation
   Review.docx" to be implemented. The first build covers choosing a conversation,
@@ -732,6 +717,23 @@ about to fall by an order of magnitude is the trap.
   behind a general "custom scenarios someday" note.
 
 ## Done
+
+### Product Overview: what a saved conversation holds
+- **Raised:** 2026-09-27 - Ken's comment on the Conversation Review document, section 3:
+  *"Is this information documented in the Product Overview? If not, it should be added."*
+- **Where it stands:** partly. The Product Overview carries one sentence about it, and
+  only in the roadmap list under conversation review - response option sets and what
+  became of them, the floor-holding phrases, and who/where/feeling/goals. It does not
+  mention the partial versions of what the partner said, the voice and spelling actually
+  used, the microphone going on and off, the Composition Pane text, or errors in time
+  order.
+- **What is wanted:** the short list moved into the body of the document, where it
+  describes what the app does today, rather than sitting inside a future-feature entry.
+- **Why it is not being done now:** the Product Overview is a separate document and Ken
+  asked for the Conversation Review first. Doing it in the same pass would mean editing a
+  document he has not reviewed.
+- **DONE 2026-10-01:** now in the body, in the new "Looking Back at a Conversation"
+  section, by "sync docs Product Overview".
 
 ### Conversation Review: lift Section 14 into the three User Manuals
 - **Raised:** 2026-09-27 - the document became the design record, and Ken asked that the
