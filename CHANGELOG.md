@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.13.1
+
 - **Fixed:** in longer conversations the app sometimes said "AI is unavailable" even though the connection was fine, and "Try again" only worked some of the time. The suggestions now come back reliably.
 - **Fixed:** after pressing "Try again" when the AI could not be reached, the four suggestions came back in one row instead of two-by-two. They now come back where they belong.
 
