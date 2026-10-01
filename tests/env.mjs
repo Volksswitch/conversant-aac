@@ -29,7 +29,10 @@ export class FakeRecognition {
         recognitions.push(this);
     }
     start() { if (this._started) throw new Error('already started'); this._started = true; }
-    stop() { this._started = false; if (this.onend) setTimeout(() => this.onend && this.onend(), 0); }
+    // Like a real browser: stop() on a recognizer that is not running does NOTHING -
+    // no 'end' event. An earlier version always fired one, which hid the iPad bug
+    // where turning listening off between two short sessions left the button lit.
+    stop() { const was = this._started; this._started = false; if (was && this.onend) setTimeout(() => this.onend && this.onend(), 0); }
     get capturing() { return this._started; }
 
     // Emit one FINAL recognition segment.

@@ -151,6 +151,17 @@ test('an interim not yet finalized is preserved across an onend restart', async 
     );
 });
 
+test('turning listening off between two short sessions still reports stopped (iPad, October 1 2026)', async () => {
+    // On the iPad the recognizer runs in short sessions with a pause before each
+    // restart. Turned off during that pause there is nothing running, the browser
+    // sends no 'end', and the Listen button stayed pulsing after End conversation.
+    stt.startListening();
+    rec._started = false;   // between sessions: the last one ended, the next not begun
+    stt.stopListening();
+    await sleep(5);
+    assert.equal(statuses.at(-1), 'stopped', 'the app is told listening is off');
+});
+
 test('a surfaced error (network) is reported and stops the restart loop', async () => {
     stt.startListening();
     rec.onerror({ error: 'network' });

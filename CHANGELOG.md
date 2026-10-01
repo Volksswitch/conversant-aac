@@ -26,6 +26,10 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+### On an iPad
+
+- **Fixed:** after ending a conversation or turning listening off, the Listen button could keep pulsing red as if it were still listening. It now goes off straight away.
+
 ## Version 0.13.1
 
 - **Fixed:** in longer conversations the app sometimes said "AI is unavailable" even though the connection was fine, and "Try again" only worked some of the time. The suggestions now come back reliably.

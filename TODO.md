@@ -79,12 +79,11 @@ and it slips past the echo filter, `handlePartnerResumed` stops the placeholder
 deliberately. **First step: reproduce on the computer and on the iPad.** Happens on the
 iPad only → (a), likely needing the microphone close to wait until the placeholder ends;
 happens on both → (b).
-**Ken confirmed it was the iPad, with DEEPGRAM doing the hearing** (Home Screen app,
-Deepgram voice). So both explanations remain open: Deepgram does deliver results in the
-Home Screen app, so a misheard final result (b) is possible, and closing the microphone
-can still change the iPad's audio setup (a). *(His problem report sent the same afternoon
-listed hearing as "this device", not Deepgram - worth checking which setting is actually
-in force on the iPad, since the two lead to different fixes.)*
+**Ken confirmed it was the iPad, in the Home Screen app, with the DEVICE'S OWN
+recognizer doing the hearing** (he first thought it was Deepgram, then checked; his
+problem report agrees). That recognizer was measured to deliver no results at all in the
+Home Screen app (July 30 2026), so (b) has nothing to work with there, which points
+strongly at (a).
 **The fix to try first (Ken asked for it to be listed):** when listening is turned off
 while a placeholder is playing, stop taking in speech at once but CLOSE THE MICROPHONE
 ONLY AFTER THE PLACEHOLDER FINISHES. The button shows off immediately, nothing more is

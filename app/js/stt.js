@@ -729,6 +729,12 @@ export function stopListening() {
     clearSilenceTimer();
     if (externalSource) return externalSource.stop();
     recognition.stop();
+    // ⚠ SAY "STOPPED" NOW, DON'T WAIT FOR THE BROWSER'S 'end' (Ken's iPad, October 1
+    // 2026). Where sessions are short and restarted after a pause (iPadOS), a stop that
+    // lands in that pause finds nothing running, and the browser sends no 'end' - so the
+    // Listen button stayed lit after End conversation. Reporting it twice is harmless:
+    // handleSttStatus only acts when the state actually changes.
+    if (onStatusChange) onStatusChange('stopped');
 }
 
 // The partner's speech heard so far this listening session — the finalized
