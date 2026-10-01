@@ -253,6 +253,7 @@ export function summarize(id, data) {
         where: practice ? 'Practice' : where,
         practice: practice !== null,
         replies: turns.filter((t) => t.user).length,
+        turns: turns.length,
         flagged: turns.filter((t) => t.flags.length).length,
     };
 }
@@ -276,6 +277,8 @@ export function normalizeReview(raw, conversationId) {
     const out = emptyReview(conversationId);
     if (!raw || typeof raw !== 'object') return out;
     out.updated = raw.updated || null;
+    // The furthest turn the user has reached, for "Where you got to" on the list.
+    if (Number.isInteger(raw.reached) && raw.reached >= 0) out.reached = raw.reached;
     const turns = raw.turns && typeof raw.turns === 'object' ? raw.turns : {};
     for (const [key, entry] of Object.entries(turns)) {
         const clean = cleanEntry(entry);
@@ -414,6 +417,48 @@ export function setMisheard(review, turn, said) {
 
 export function clearMisheard(review, turn) {
     return withEntry(review, turn.key, (e) => { e.misheard = null; });
+}
+
+/** Record that the user has reached turn `i`. Only ever moves forward. */
+export function markReached(review, i) {
+    const prev = Number.isInteger(review.reached) ? review.reached : -1;
+    return i > prev ? { ...review, reached: i } : review;
+}
+
+/**
+ * "Where you got to" (Figure 1): not looked at, part way through with how many turns are
+ * left, or finished. `rank` orders them for sorting, least far first.
+ */
+export function progressOf(review, turnCount) {
+    const reached = review && Number.isInteger(review.reached) ? review.reached : -1;
+    if (reached < 0) return { state: 'none', left: turnCount, rank: 0, label: 'not looked at' };
+    const left = Math.max(0, turnCount - 1 - reached);
+    if (!left) return { state: 'done', left: 0, rank: 2, label: 'finished' };
+    return { state: 'part', left, rank: 1, label: `part way through — ${left} of ${turnCount} left` };
+}
+
+const SORT_KEYS = {
+    when: (r) => Date.parse(r.started) || 0,
+    who: (r) => String(r.who || '').toLowerCase(),
+    where: (r) => String(r.where || '').toLowerCase(),
+    length: (r) => r.durationMs || 0,
+    progress: (r) => (r.progressRank || 0) * 1000 + (r.flagged ? 1 : 0),
+};
+
+/**
+ * Sort the list's rows by a column. Ties fall back to newest first, so rows with the
+ * same person or place still read in a sensible order.
+ */
+export function sortRows(rows, column = 'when', ascending = false) {
+    const key = SORT_KEYS[column] || SORT_KEYS.when;
+    const newest = SORT_KEYS.when;
+    return rows.slice().sort((a, b) => {
+        const ka = key(a);
+        const kb = key(b);
+        let c = typeof ka === 'string' ? ka.localeCompare(kb) : ka - kb;
+        if (!ascending) c = -c;
+        return c || (newest(b) - newest(a));
+    });
 }
 
 /** How many turns the user has said something about. */

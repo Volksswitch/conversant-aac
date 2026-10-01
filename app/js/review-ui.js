@@ -138,6 +138,9 @@ export async function enter(entry) {
         practice: model.isPractice(entry.data),
     };
     review = model.normalizeReview(raw, entry.id);
+    // Opening it is looking at it: the list stops saying "not looked at".
+    review = model.markReached(review, 0);
+    scheduleSave();
     history = model.createHistory();
     at = 0;
     editing = null;
@@ -457,16 +460,20 @@ function goTo(i) {
     stopEditing();
     closeComposer();
     at = i;
+    review = model.markReached(review, i);
+    scheduleSave();
     render();
 }
 
 function stepHistory(which) {
     const got = which === 'undo' ? history.undo(review, turn().key) : history.redo(review, turn().key);
     if (!got) return;
-    review = got.state;
+    // Undo takes back an answer, never how far the user has got.
+    review = { ...got.state, reached: Math.max(got.state.reached ?? -1, review.reached ?? -1) };
     stopEditing();
     const i = conv.turns.findIndex((t) => t.key === got.turnKey);
     if (i >= 0) at = i;
+    review = model.markReached(review, at);
     scheduleSave();
     render();
 }
@@ -725,10 +732,9 @@ export async function renderList(panel) {
         r.onchange = () => { listShowsPractice = r.value === 'practice'; void renderList(panel); };
     });
 
-    const list = document.createElement('div');
-    list.id = 'reviewList';
-    list.className = 'review-list';
-    panel.appendChild(list);
+    const wrap = document.createElement('div');
+    wrap.className = 'review-table-wrap';
+    panel.appendChild(wrap);
     panel.appendChild(status);
 
     if (!storage.hasDataFolder()) {
@@ -742,41 +748,96 @@ export async function renderList(panel) {
     for (const c of logs) {
         const s = model.summarize(c.id, c.data);
         if (!s || s.practice !== listShowsPractice) continue;
-        rows.push({ s, c });
+        const p = model.progressOf(model.normalizeReview(c.review, c.id), s.turns);
+        rows.push({ ...s, progress: p, progressRank: p.rank, entry: c });
     }
-    rows.sort((a, b) => String(b.s.started || b.s.id).localeCompare(String(a.s.started || a.s.id)));
     if (!rows.length) {
         status.textContent = listShowsPractice ? 'No saved practice conversations yet.' : 'No saved conversations yet.';
         return;
     }
     status.textContent = '';
-    for (const { s, c } of rows) {
+    drawTable(wrap, rows, status);
+}
+
+// The columns of Figure 1. Tapping a heading sorts by it; tapping it again reverses.
+const COLUMNS = [
+    { key: 'when', label: 'When', newestFirst: true },
+    { key: 'who', label: 'Who' },
+    { key: 'where', label: 'Where' },
+    { key: 'length', label: 'How long', newestFirst: true },
+    { key: 'progress', label: 'Where you got to' },
+];
+let sortColumn = 'when';
+let sortAscending = false;   // newest first, until the user picks another order
+
+function drawTable(wrap, rows, status) {
+    wrap.innerHTML = '';
+    const table = document.createElement('table');
+    table.className = 'review-table';
+    table.id = 'reviewTable';
+    const head = document.createElement('thead');
+    const hr = document.createElement('tr');
+    for (const col of COLUMNS) {
+        const th = document.createElement('th');
+        th.scope = 'col';
+        const on = col.key === sortColumn;
+        th.setAttribute('aria-sort', on ? (sortAscending ? 'ascending' : 'descending') : 'none');
         const b = document.createElement('button');
         b.type = 'button';
-        b.className = 'review-row';
-        const when = s.started ? new Date(s.started).toLocaleString(undefined, {
+        b.className = 'review-sort' + (on ? ' review-sort-on' : '');
+        b.dataset.sort = col.key;
+        b.innerHTML = `${esc(col.label)}<span class="review-sort-arrow" aria-hidden="true">${on ? (sortAscending ? ' ▲' : ' ▼') : ''}</span>`;
+        b.setAttribute('aria-label', `Sort by ${col.label}`);
+        b.addEventListener('click', () => {
+            if (sortColumn === col.key) sortAscending = !sortAscending;
+            else { sortColumn = col.key; sortAscending = !col.newestFirst; }
+            drawTable(wrap, rows, status);
+        });
+        th.appendChild(b);
+        hr.appendChild(th);
+    }
+    head.appendChild(hr);
+    table.appendChild(head);
+
+    const body = document.createElement('tbody');
+    for (const r of model.sortRows(rows, sortColumn, sortAscending)) {
+        const tr = document.createElement('tr');
+        tr.className = 'review-row' + (r.practice ? ' review-row-practice' : '');
+        tr.tabIndex = 0;
+        const when = r.started ? new Date(r.started).toLocaleString(undefined, {
             weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
-        }) : s.id;
-        const bits = [when, s.who || 'Someone', s.where, model.durationLabel(s.durationMs)].filter(Boolean);
-        const reviewed = model.touchedCount(model.normalizeReview(c.review, c.id));
-        let html = `<span class="review-row-main">${esc(bits.join(' · '))}</span>`;
-        if (s.flagged) {
-            html += `<span class="review-row-flag">${s.flagged} ${s.flagged === 1 ? 'turn' : 'turns'} where you asked for something different</span>`;
-        }
-        if (reviewed) html += `<span class="review-row-done">You have said something about ${reviewed} ${reviewed === 1 ? 'turn' : 'turns'}</span>`;
-        b.innerHTML = html;
-        b.addEventListener('click', async () => {
+        }) : r.id;
+        const length = `${model.durationLabel(r.durationMs)}, ${r.replies} ${r.replies === 1 ? 'reply' : 'replies'}`;
+        const flag = r.flagged
+            ? `<span class="review-row-flag">${r.flagged} ${r.flagged === 1 ? 'turn' : 'turns'} you asked for something else</span>`
+            : '';
+        const who = r.practice
+            ? `<span class="review-practice-badge">Practice</span>${esc(r.who || '')}`
+            : esc(r.who || 'Someone');
+        tr.innerHTML = `<td class="review-cell-when">${esc(when)}</td>`
+            + `<td>${who}</td>`
+            + `<td>${esc(r.where || '')}</td>`
+            + `<td>${esc(length)}</td>`
+            + `<td>${flag}<span class="review-progress review-progress-${r.progress.state}">${esc(r.progress.label)}</span></td>`;
+        tr.setAttribute('aria-label', `${when}, ${r.who || 'someone'}${r.where ? `, ${r.where}` : ''}, ${length}. ${r.progress.label}. Open to review.`);
+        const open = async () => {
             if (deps.conversationBusy()) {
                 status.textContent = 'A conversation is under way. End it first, then come back to review.';
                 return;
             }
             deps.closeSettings();
-            const ok = await enter(c);
+            const ok = await enter(r.entry);
             if (!ok) {
                 deps.openSettingsAt('review');
                 status.textContent = 'That conversation has nothing in it to review.';
             }
+        };
+        tr.addEventListener('click', open);
+        tr.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); void open(); }
         });
-        list.appendChild(b);
+        body.appendChild(tr);
     }
+    table.appendChild(body);
+    wrap.appendChild(table);
 }

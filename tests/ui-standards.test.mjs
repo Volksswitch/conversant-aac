@@ -92,6 +92,9 @@ const DELIBERATE = [
     ['.ee-tools button, .ee-tool, .cpe-section button', ['fill', 'radius'],
      "the editors' own row tools: a coherent family, internally consistent and never mixed "
      + 'with panel actions in the same row'],
+    ['.review-sort', ['fill'],
+     'a sortable COLUMN HEADING in the Conversation Review table: it reads as the heading '
+     + 'it is, and the row order says which one is in use'],
     ['.ep-btn', ['fill', 'radius', 'size'],
      'the Express Panel PREVIEWED inside Settings - it is the conversation surface, on the '
      + "surface's own type scale, which the user sets separately from the panel's"],

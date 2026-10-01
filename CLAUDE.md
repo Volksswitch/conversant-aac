@@ -626,8 +626,12 @@ Ken: *"I thought I was experiencing this but I doubted myself."* He was right, a
 
 ## Conversation Review — first build (Ken, October 1 2026), BUILT
 
-Design: `Documents/Conversant AAC Conversation Review.docx`. Settings → **Review** lists
-saved conversations (real or practice, never both); a row opens the review screen.
+Design: `Documents/Conversant AAC Conversation Review.docx`. Settings → **Conversation
+Review** (tab name Ken's, October 1 2026) is a table laid out as the document's Figure 1 —
+When, Who, Where, How long, Where you got to — sortable by tapping any heading, real or
+practice conversations, never both. "Where you got to" comes from `reached`, the furthest
+turn opened, kept in the review file; Undo never takes it back. A row opens the review
+screen.
 What is NOT built yet is in [TODO.md](TODO.md) ("Conversation Review: what the first
 build left out") — playback at real speed, and sending answers on to voice examples,
 Express buttons or About Me.

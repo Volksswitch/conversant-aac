@@ -26,9 +26,10 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
-- New: Conversation Review. Open Settings and choose Review to see your saved
-  conversations, newest first. Pick one to go back over it a turn at a time on the
-  screen you already know. Tap a response option to say it would have suited you
+- New: Conversation Review. Open Settings and choose Conversation Review to see your
+  saved conversations in a table: when, who, where, how long, and how far you have
+  got. Tap a column heading to sort by it, and tap it again to reverse the order. Pick
+  a conversation to go back over it a turn at a time on the screen you already know. Tap a response option to say it would have suited you
   better, or change its words. You can also tap one of your own buttons, type what you
   wish you had said, press New 4 to say you would have wanted a different set, or mark
   who you were with or how you felt. Tap the other person's line twice to say the app

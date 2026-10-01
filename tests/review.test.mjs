@@ -361,3 +361,34 @@ test('the whole chain: a conversation saved by storage, reviewed, and the correc
     assert.ok(await storage.writeConversationLog(id, logs[0].data, logs[0].review));
     assert.ok(files.has(`${id}.json`) && files.has(`${id}.review.json`));
 });
+
+/* ── The table on the Conversation Review tab ──────────────────────────────────── */
+
+test('where you got to: not looked at, part way through, finished', () => {
+    let r = model.emptyReview('c');
+    assert.equal(model.progressOf(r, 6).label, 'not looked at');
+    r = model.markReached(r, 1);
+    assert.equal(model.progressOf(r, 6).label, 'part way through — 4 of 6 left');
+    r = model.markReached(r, 0);              // going back does not undo progress
+    assert.equal(r.reached, 1);
+    r = model.markReached(r, 5);
+    assert.equal(model.progressOf(r, 6).label, 'finished');
+    // It survives being saved and read back.
+    assert.equal(model.normalizeReview(JSON.parse(JSON.stringify(r)), 'c').reached, 5);
+});
+
+test('the table sorts by any column, both ways, with newest first breaking ties', () => {
+    const rows = [
+        { id: 'a', started: '2026-09-20T10:00:00Z', who: 'Marcus', where: 'Diner', durationMs: 900000, progressRank: 1 },
+        { id: 'b', started: '2026-09-22T10:00:00Z', who: 'Mom', where: 'Home', durationMs: 300000, progressRank: 0 },
+        { id: 'c', started: '2026-09-21T10:00:00Z', who: 'Dr. Ruiz', where: 'Clinic', durationMs: 600000, progressRank: 2 },
+        { id: 'd', started: '2026-09-23T10:00:00Z', who: 'Mom', where: 'Clinic', durationMs: 60000, progressRank: 0 },
+    ];
+    const ids = (col, asc) => model.sortRows(rows, col, asc).map((r) => r.id).join('');
+    assert.equal(ids('when', false), 'dbca');
+    assert.equal(ids('when', true), 'acbd');
+    assert.equal(ids('who', true), 'cadb');      // Dr. Ruiz, Marcus, then both Moms newest first
+    assert.equal(ids('where', true), 'dcab');
+    assert.equal(ids('length', false), 'acbd');
+    assert.equal(ids('progress', true), 'dbac');
+});

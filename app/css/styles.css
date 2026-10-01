@@ -5524,21 +5524,53 @@ body.reviewing .response-card { position: relative; }
 .ep-btn.ep-review-want { box-shadow: 0 0 0 3px var(--info); position: relative; z-index: 2; }
 
 /* Settings > Review: the list of conversations. */
-.review-list { display: flex; flex-direction: column; gap: 0.4rem; }
-.review-row {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.15rem;
-    text-align: left;
+.review-table-wrap { overflow-x: auto; }
+.review-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 0.4rem;
+}
+.review-table th { text-align: left; padding: 0; }
+/* A column heading that sorts. It looks like a heading, not an action button, and says
+   which column the rows are in order of. */
+.review-sort {
+    width: 100%;
     min-height: var(--btn-min-dim);
-    padding: 0.5rem 0.75rem;
-    background: var(--surface-raised);
-    color: var(--ink);
-    border: 2px solid var(--edge-strong);
-    border-radius: 8px;
+    background: transparent;
+    border: none;
+    color: var(--ink-muted);
+    font-weight: 700;
+    text-align: left;
+    padding: 0 0.75rem;
     cursor: pointer;
 }
-.review-row-main { font-weight: 600; }
-.review-row-flag { color: var(--warn-ink); font-size: 0.9em; }
-.review-row-done { color: var(--ok-ink); font-size: 0.9em; }
+.review-sort-on { color: var(--ink); }
+.review-table td {
+    padding: 0.6rem 0.75rem;
+    background: var(--surface-raised);
+    border-top: 2px solid var(--edge-strong);
+    border-bottom: 2px solid var(--edge-strong);
+    vertical-align: middle;
+}
+.review-table td:first-child { border-left: 2px solid var(--edge-strong); border-radius: 8px 0 0 8px; }
+.review-table td:last-child { border-right: 2px solid var(--edge-strong); border-radius: 0 8px 8px 0; }
+.review-row { cursor: pointer; }
+.review-row:focus-visible td { outline: 3px solid var(--info); outline-offset: -3px; }
+.review-cell-when { font-weight: 700; white-space: nowrap; }
+.review-practice-badge {
+    display: inline-block;
+    margin-right: 0.4rem;
+    padding: 0 0.45rem;
+    border-radius: 999px;
+    background: var(--indigo-tint);
+    color: var(--indigo-ink);
+    font-size: 0.75em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.review-row-flag { display: block; color: var(--warn-ink); font-weight: 600; }
+.review-progress { display: block; }
+.review-progress-none { color: var(--ink-muted); }
+.review-progress-part { color: var(--info-ink); }
+.review-progress-done { color: var(--ok-ink); }
