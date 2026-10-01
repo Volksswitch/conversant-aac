@@ -841,7 +841,8 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
                 cellEl.setAttribute('aria-label', `${cellEl.getAttribute('aria-label') || ''} (being edited)`.trim());
             }
             if (reviewMarks && item && item.id) {
-                if (item.id === reviewMarks.usedId) {
+                const sameWords = (a, b) => !!a && !!b && String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
+                if (item.id === reviewMarks.usedId || sameWords(item.text, reviewMarks.usedText)) {
                     cellEl.classList.add('ep-review-used');
                     if (reviewMarks.usedReplaced) cellEl.classList.add('ep-review-replaced');
                     cellEl.setAttribute('aria-label', `${cellEl.getAttribute('aria-label') || ''} (you tapped this)`.trim());

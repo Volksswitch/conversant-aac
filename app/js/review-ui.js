@@ -155,6 +155,7 @@ export async function enter(entry) {
     editing = null;
     ed = null;
     composerOpen = false;
+    userPaged = false;
     active = true;
     document.body.classList.add('reviewing');
     for (const id of ['liveTurn', 'coachLine', 'nowPlaying']) { const el = $(id); if (el) el.hidden = true; }
@@ -234,7 +235,7 @@ function fromLabel(t) {
     if (!u) return '';
     if (u.audio) return 'played a sound';
     switch (u.source) {
-        case 'express': return 'tapped on your panel';
+        case 'express': return findItemId(u.text) ? 'tapped on your panel' : 'no longer on your panel';
         case 'composed': return 'typed in the Composition Pane';
         case 'control': return 'a command button';
         default: return '';
@@ -392,7 +393,8 @@ function renderPanel() {
     const place = marked('place');
     const feeling = marked('feeling');
     const goalIds = (e.reframers || []).filter((r) => r.kind === 'goal').map((r) => r.id);
-    const usedId = t.user && t.user.source === 'express' ? findItemId(t.user.text) : null;
+    const usedText = t.user && t.user.source === 'express' ? t.user.text : null;
+    const usedId = usedText ? findItemId(usedText) : null;
     const wantId = e.answer && (e.answer.kind === 'phrase' || e.answer.kind === 'sound') ? e.answer.itemId : null;
     lastComposed = deps.drawExpressPanel({
         partner, place, feeling, goalIds,
@@ -400,6 +402,7 @@ function renderPanel() {
         // anything replaces it - the same rule as the response cards (Ken, October 1 2026).
         reviewMarks: {
             usedId,
+            usedText,
             wantId,
             usedReplaced: !!e.answer,
             composeUsed: !!(t.user && t.user.source === 'composed'),
@@ -412,8 +415,16 @@ function renderPanel() {
         onToggleFeeling: (item) => toggleMark('feeling', item),
         onToggleGoal: (item) => toggleMark('goal', item),
         onInMyOwnWords: openComposer,
+        // Show the page holding the current choice, or failing that the button tapped at
+        // the time - unless the user is paging through the panel themselves.
+        reveal: userPaged ? null : [{ id: wantId }, { id: usedId, text: usedText }],
+        onMore: () => { userPaged = true; },
     });
 }
+
+// True while the user is turning the panel's pages themselves. Cleared when they move to
+// another turn or give an answer, which is when review shows the turn's own button again.
+let userPaged = false;
 
 /** Called by app.js whenever something would normally redraw the panel. */
 export function refreshPanel() { renderPanel(); }
@@ -421,7 +432,7 @@ export function refreshPanel() { renderPanel(); }
 function findItemId(text) {
     const want = String(text || '').trim().toLowerCase();
     if (!want) return null;
-    const items = (lastComposed && lastComposed.items) || deps.panelItems() || [];
+    const items = deps.panelItems() || [];
     const hit = items.find((it) => it && (it.text || it.label || '').trim().toLowerCase() === want);
     return hit ? hit.id : null;
 }
@@ -450,6 +461,7 @@ async function writeNow() {
 }
 
 function change(next) {
+    userPaged = false;
     history.push(review, turn().key);
     review = next;
     scheduleSave();
@@ -484,6 +496,7 @@ function goTo(i) {
     stopEditing();
     closeComposer();
     at = i;
+    userPaged = false;
     review = model.markReached(review, i);
     scheduleSave();
     render();

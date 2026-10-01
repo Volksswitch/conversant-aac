@@ -887,7 +887,13 @@ function initApp() {
         // In the user's own voice, as Hear it promises; nothing is logged, because
         // review is not a conversation.
         speak: (text) => tts.speak(text).catch(() => {}),
-        panelItems: () => expressPanel.getModel() ? composedPanel().items : [],
+        // EVERY button the user has, not only those on screen: a phrase behind More is
+        // still on their panel, and review has to find it to turn to its page.
+        panelItems: () => {
+            const m = expressPanel.getModel();
+            if (!m) return [];
+            return [...(m.always || []), ...(m.context || []), ...Object.values(m.flex || {}).flat()].filter(Boolean);
+        },
     });
 }
 
@@ -4171,11 +4177,16 @@ function renderExpressPanel() {
 // which band a tapped phrase sat in.
 function drawReviewPanel(r) {
     applyButtonSizing();
-    const composed = composedPanel({ partner: r.partner, place: r.place, feeling: r.feeling, goalIds: r.goalIds });
+    const ctx = { partner: r.partner, place: r.place, feeling: r.feeling, goalIds: r.goalIds };
+    // A button the turn is about must be ON SCREEN, even when it sits behind More (Ken,
+    // October 1 2026): "you tapped Thank you" with Thank you on another page tells the
+    // user nothing. `reveal` lists the ids in order of preference.
+    if (Array.isArray(r.reveal)) revealOnPanel(ctx, r.reveal.filter((t) => t && (t.id || t.text)));
+    const composed = composedPanel(ctx);
     primeExpressAudio(composed.items);
     ui.renderExpressPanel(expressLayoutRows(), composed.items, {
         moreCells: composed.more,
-        onMore: handleExpressMore,
+        onMore: (m) => { if (r.onMore) r.onMore(m); handleExpressMore(m); },
         playingAudioId: null,
         onPlayAudio: r.onAudio,
         bands: composed.bands,
@@ -4201,6 +4212,28 @@ function drawReviewPanel(r) {
         reviewMarks: r.reviewMarks,
     });
     return composed;
+}
+
+// Turn to the page that shows the first of `targets` that can be shown. Each target is
+// { id, text }: a phrase is found by its id, or by its words when the same phrase appears
+// in more than one list. Leaves the page as it was when none of them can be found -
+// which is the case for a button deleted since the conversation (Ken, October 1 2026).
+function revealOnPanel(ctx, targets) {
+    const norm = (t) => String(t || '').trim().toLowerCase();
+    const shows = (c, t) => c.items.some((it) => it && (it.id === t.id || (t.text && norm(it.text) === norm(t.text))));
+    const before = expressPaging;
+    for (const id of targets) {
+        if (shows(composedPanel(ctx), id)) return;
+        for (const band of Object.values(expressBands.BAND)) {
+            for (let page = 1; page < 100; page++) {
+                expressPaging = { band, page };
+                const c = composedPanel(ctx);
+                if (!c.paging || c.paging.band !== band || c.paging.page !== page) break;
+                if (shows(c, id)) return;
+            }
+        }
+        expressPaging = before;
+    }
 }
 
 function drawExpressPanel() {
