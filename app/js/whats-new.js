@@ -25,7 +25,7 @@ const RELEASE_NOTES = {
   "0.13.2": [
     {
       "for": "ipad",
-      "note": "Fixed: after ending a conversation or turning listening off, the Listen button could keep pulsing red as if it were still listening. It now goes off straight away."
+      "note": "Fixed: after ending a conversation or turning listening off, the Listen button could keep pulsing red as if it were still listening. It now goes off right away."
     }
   ],
   "0.13.1": [
