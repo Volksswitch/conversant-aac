@@ -79,6 +79,11 @@ and it slips past the echo filter, `handlePartnerResumed` stops the placeholder
 deliberately. **First step: reproduce on the computer and on the iPad.** Happens on the
 iPad only → (a), likely needing the microphone close to wait until the placeholder ends;
 happens on both → (b).
+**Ken confirmed it was the iPad.** His problem report from the same afternoon shows the
+Home Screen app, the device's own recognizer, and the Deepgram voice. The Home Screen
+app's built-in recognizer was measured to deliver no results at all (July 30 2026), so
+(b) has nothing to work with there, which points strongly at (a). Still worth one try on
+the computer to rule (b) out, since it costs a minute.
 
 ### The monthly provider review, running on the desktop rather than this laptop
 
