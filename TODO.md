@@ -37,6 +37,34 @@ the one that quietly waits forever.
 
 ## Open
 
+### Silent "get me other options" buttons must not cut off a placeholder
+
+**Raised:** October 1 2026, by Ken: *"pressing a 'reframe' button shouldn't interrupt a
+placeholder statement. It's a silent action that simply requests more options from the
+AI."*
+
+**What is wanted:** a button that only asks the AI for a fresh set of cards, and says
+nothing aloud, leaves a placeholder that is already playing alone. The placeholder is
+holding the floor for the user, and asking for better suggestions is exactly the moment
+the floor still needs holding.
+
+**Where it happens today (checked against the code):** three such buttons stop the
+placeholder ladder before asking the AI - "New N" (`handleRegenerate`,
+`placeholders.stop()`), a choice button (`handleChoiceChip`, `abortPlaceholders()`), and
+the compose window's Reframe (`handleReframe`, `placeholders.stop()`). The partner,
+place, feeling and goal buttons (`refreshForContextChange`) already leave it alone, so
+they are the pattern to follow.
+
+**Decide while doing it:** whether the ladder also keeps going AFTERWARDS (a later
+placeholder may still be due), or only the one already speaking is allowed to finish.
+Ken's words cover the one speaking; the "In my own words" decision of August 25 2026
+(composing is like reading the cards, so placeholders keep running) argues for the
+ladder continuing too. Check that the choice button's comment ("nothing may speak over
+the result") still holds - a placeholder is not the result, so the fix should not let
+one start over freshly arrived cards either.
+
+**Why not now:** Ken asked for it to be recorded, not built.
+
 ### The monthly provider review, running on the desktop rather than this laptop
 
 **Raised:** September 30 2026, by Ken, after the app was found to have spent three months
