@@ -338,7 +338,10 @@ export function showResponses(palette, onSelect) {
     // A real palette rendering means a working cycle completed — clear any
     // sticky error wash on the transcript (sticky-until-next-success).
     setTranscriptError(false);
-    responseOptions.classList.remove('is-empty', 'palette-refreshing');
+    // 'has-error' must go too: showResponseError sets it, it switches the grid to a
+    // single flex row, and "Try again" lands here — so leaving it on laid the four
+    // cards out side by side instead of 2x2 on a side dock.
+    responseOptions.classList.remove('is-empty', 'palette-refreshing', 'has-error');
     responseOptions.innerHTML = '';
     // Brief crossfade of contents on each render (geometry never moves, §5).
     responseOptions.classList.remove('palette-enter');

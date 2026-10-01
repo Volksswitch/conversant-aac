@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- **Fixed:** after pressing "Try again" when the AI could not be reached, the four suggestions came back in one row instead of two-by-two. They now come back where they belong.
+
 ## Version 0.13.0
 
 - Changed: the double-tap setting now covers the whole conversation screen, not just
