@@ -216,12 +216,35 @@ test('typing over an untouched word replaces it', () => {
     assert.equal(wed.editorText(ed), 'Really good thanks');
 });
 
-test('a space finishes the word and moves on', () => {
-    let ed = wed.createWordEditor('Pretty good thanks');
-    ed = wed.typeInto(ed, 'Really ');
+test('typing never moves the highlight, a space included (Ken, October 1 2026)', () => {
+    let ed = wed.createWordEditor('Let me think about it.');
+    ed = wed.selectWord(ed, 1);
+    ed = wed.typeInto(ed, 'need ');
     assert.equal(ed.sel, 1);
-    assert.equal(ed.fresh, true);
-    assert.equal(wed.editorText(ed), 'Really good thanks');
+    ed = wed.typeInto(ed, 'need to');
+    assert.equal(ed.sel, 1);
+    assert.equal(wed.editorText(ed), 'Let need to think about it.');
+});
+
+test("Ken's case: 'Let me think' becomes 'I need to think', and the new words split apart afterwards", () => {
+    let ed = wed.createWordEditor('Let me think about it.');
+    ed = wed.typeInto(ed, 'I');                 // "Let" -> "I"
+    ed = wed.moveWord(ed, 1);
+    ed = wed.typeInto(ed, 'need to');           // "me" -> "need to"
+    assert.equal(wed.editorText(ed), 'I need to think about it.');
+    ed = wed.moveWord(ed, 1);
+    assert.deepEqual(ed.words, ['I', 'need', 'to', 'think', 'about', 'it.']);
+    assert.equal(wed.currentWord(ed), 'think');
+    ed = wed.moveWord(ed, -1);
+    assert.equal(wed.currentWord(ed), 'to');
+});
+
+test('tapping a later word after typing two words lands on the word that was tapped', () => {
+    let ed = wed.createWordEditor('Let me think about it.');
+    ed = wed.selectWord(ed, 1);
+    ed = wed.typeInto(ed, 'need to');
+    ed = wed.selectWord(ed, 3);                 // "about", as it was on screen
+    assert.equal(wed.currentWord(ed), 'about');
 });
 
 test('three backspaces take out three words, going the way backspace goes', () => {
@@ -257,6 +280,8 @@ test('pasting several words over one puts them all in', () => {
     let ed = wed.createWordEditor('a b');
     ed = wed.typeInto(ed, 'x y z');
     assert.equal(wed.editorText(ed), 'x y z b');
+    ed = wed.moveWord(ed, 1);
+    assert.equal(wed.currentWord(ed), 'b');
 });
 
 /* ── The whole chain, through the REAL storage layer ────────────────────────────── */

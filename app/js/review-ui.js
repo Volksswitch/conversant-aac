@@ -602,7 +602,8 @@ function onWordKey(e) {
         afterEdit(true);
         return;
     }
-    if (e.key === 'Enter') { e.preventDefault(); ed = wed.moveWord(ed, 1); afterEdit(false); return; }
+    // Enter is a key like any other here: typing never moves the highlight (Ken).
+    if (e.key === 'Enter') { e.preventDefault(); return; }
     if (e.key === 'ArrowRight' && wordInput.selectionStart === wordInput.value.length) {
         e.preventDefault(); ed = wed.moveWord(ed, 1); afterEdit(false); return;
     }

@@ -659,6 +659,11 @@ Express buttons or About Me.
   keydown first, which is how review takes a whole word on one press. While a word is
   being edited, pointer-downs on the bar, cards and pane are prevented so focus — and
   the keyboard — stay put.
+- **TYPING NEVER MOVES THE HIGHLIGHT (Ken, October 1 2026).** Only Previous/Next Word or
+  tapping a word does. A space is just typed, so "need to" can replace "me" in one go;
+  the slot splits into separate words when the highlight leaves it. The first build moved
+  on at a space, which made replacing one word with two impossible — the second word
+  landed on top of the next one.
 - **Verified end to end**: `tests/review.test.mjs` writes a conversation through the
   real storage calls, reads it back, records a correction and reads it off disk; and in
   the browser with both keyboards.
