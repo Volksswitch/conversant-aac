@@ -396,7 +396,15 @@ function renderPanel() {
     const wantId = e.answer && (e.answer.kind === 'phrase' || e.answer.kind === 'sound') ? e.answer.itemId : null;
     lastComposed = deps.drawExpressPanel({
         partner, place, feeling, goalIds,
-        reviewMarks: { usedId, wantId },
+        // Solid = the current choice; what the user did at the time turns dashed once
+        // anything replaces it - the same rule as the response cards (Ken, October 1 2026).
+        reviewMarks: {
+            usedId,
+            wantId,
+            usedReplaced: !!e.answer,
+            composeUsed: !!(t.user && t.user.source === 'composed'),
+            composeWant: !!(e.answer && e.answer.kind === 'typed'),
+        },
         onPhrase: (item) => answerWithPhrase(item, false),
         onAudio: (item) => answerWithPhrase(item, true),
         onTogglePartner: (item) => toggleMark('partner', item),

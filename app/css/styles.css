@@ -5524,11 +5524,16 @@ body.reviewing .response-card { position: relative; }
     pointer-events: none;
 }
 
-#regenerateBtn.review-want { box-shadow: 0 0 0 4px var(--info); }
-
-/* The Express Panel: what the user tapped at the time, and what they would rather. */
-.ep-btn.ep-review-used { box-shadow: inset 0 0 0 3px var(--ink); position: relative; z-index: 1; }
-.ep-btn.ep-review-want { box-shadow: 0 0 0 3px var(--info); position: relative; z-index: 2; }
+/* New 4 and the Express Panel follow the cards' rule (Ken, October 1 2026): a SOLID dark
+   border is the current choice, and what the user did at the time turns DASHED once
+   something replaces it. Outlines drawn inside the box, so nothing moves. */
+#regenerateBtn.review-want,
+.ep-btn.ep-review-used,
+.ep-btn.ep-review-want {
+    outline: 4px solid var(--ink);
+    outline-offset: -4px;
+}
+.ep-btn.ep-review-used.ep-review-replaced { outline-style: dashed; }
 
 /* Settings > Review: the list of conversations. */
 .review-table-wrap { overflow-x: auto; }

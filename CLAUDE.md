@@ -667,7 +667,8 @@ Express buttons or About Me.
   is); a tap on the edited card away from its words finishes. Card taps follow the
   user's single/double-tap setting. **Solid dark border = the current choice; the card
   spoken at the time turns DASHED once something replaces it** — the first build gave
-  both the same border and they could not be told apart. **The conversation screen's
+  both the same border and they could not be told apart. **The same rule covers New 4 and
+  every Express Panel button, My own words included** (Ken, October 1 2026). **The conversation screen's
   keyboard has no Hide key** (removed June 2026), so do not offer it as an exit.
 - **TYPING NEVER MOVES THE HIGHLIGHT (Ken, October 1 2026).** Only Previous/Next Word or
   tapping a word does. A space is just typed, so "need to" can replace "me" in one go;

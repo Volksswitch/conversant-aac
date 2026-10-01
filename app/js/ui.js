@@ -781,6 +781,13 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
                 b.className = 'ep-btn ep-imow';
                 b.style.gridColumn = `span ${span}`;
                 setIconButton(b, 'compose', 'In my own words');
+                // In review: typed at the time (solid, dashed once replaced), or the
+                // answer chosen now (solid) - the same marks as every other button.
+                if (reviewMarks && reviewMarks.composeWant) b.classList.add('ep-review-want');
+                else if (reviewMarks && reviewMarks.composeUsed) {
+                    b.classList.add('ep-review-used');
+                    if (reviewMarks.usedReplaced) b.classList.add('ep-review-replaced');
+                }
                 b.addEventListener('click', () => onInMyOwnWords && onInMyOwnWords());
                 rowEl.appendChild(b);
                 return;
@@ -836,6 +843,7 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
             if (reviewMarks && item && item.id) {
                 if (item.id === reviewMarks.usedId) {
                     cellEl.classList.add('ep-review-used');
+                    if (reviewMarks.usedReplaced) cellEl.classList.add('ep-review-replaced');
                     cellEl.setAttribute('aria-label', `${cellEl.getAttribute('aria-label') || ''} (you tapped this)`.trim());
                 }
                 if (item.id === reviewMarks.wantId) {
