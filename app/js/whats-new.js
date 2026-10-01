@@ -22,6 +22,12 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.13.2": [
+    {
+      "for": "ipad",
+      "note": "Fixed: after ending a conversation or turning listening off, the Listen button could keep pulsing red as if it were still listening. It now goes off straight away."
+    }
+  ],
   "0.13.1": [
     "Fixed: in longer conversations the app sometimes said \"AI is unavailable\" even though the connection was fine, and \"Try again\" only worked some of the time. The suggestions now come back reliably.",
     "Fixed: after pressing \"Try again\" with the panel on the side, the four suggestions came back in one row instead of two-by-two. They now come back where they belong."
