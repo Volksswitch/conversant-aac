@@ -65,6 +65,21 @@ one start over freshly arrived cards either.
 
 **Why not now:** Ken asked for it to be recorded, not built.
 
+**ALSO THE LISTEN BUTTON (Ken, same day): *"same with pressing a button like the
+'listen' button ... I pressed the button to turn listening off and the placeholder
+statement was cut off."*** Turning the microphone off is just as silent and must not
+cut off a placeholder either. **Unlike the three buttons above, nothing in the app's
+code stops the placeholder on this path** (checked: `toggleListening` ->
+`stt.stopListening` -> `handleSttStatus` calls neither `placeholders.stop()` nor
+`tts.cancel()`), so the cause has to be found before it can be fixed. Two candidates:
+(a) **the device** - on an iPad, closing the microphone changes the iPad's audio setup and
+can cut off whatever is playing; (b) **a final result from the recognizer** - stopping
+recognition makes it deliver what it last heard, and if that is the placeholder misheard
+and it slips past the echo filter, `handlePartnerResumed` stops the placeholder
+deliberately. **First step: reproduce on the computer and on the iPad.** Happens on the
+iPad only → (a), likely needing the microphone close to wait until the placeholder ends;
+happens on both → (b).
+
 ### The monthly provider review, running on the desktop rather than this laptop
 
 **Raised:** September 30 2026, by Ken, after the app was found to have spent three months
