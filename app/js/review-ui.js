@@ -235,7 +235,7 @@ function fromLabel(t) {
     if (!u) return '';
     if (u.audio) return 'played a sound';
     switch (u.source) {
-        case 'express': return findItemId(u.text) ? 'tapped on your panel' : 'no longer on your panel';
+        case 'express': return findItemId(u.text) ? 'tapped on your Express Panel' : 'no longer on your Express Panel';
         case 'composed': return 'typed in the Composition Pane';
         case 'control': return 'a command button';
         default: return '';

@@ -674,7 +674,7 @@ Express buttons or About Me.
   while the user is paging themselves; that stops at their next answer or turn change.
   Review finds buttons in the whole panel model, never only what is on screen (the first
   cut did, and could not find anything behind More). **A phrase deleted since the
-  conversation leaves the panel where it is** and the pane says "no longer on your panel"
+  conversation leaves the panel where it is** and the pane says "no longer on your Express Panel"
   (Ken). **The conversation screen's
   keyboard has no Hide key** (removed June 2026), so do not offer it as an exit.
 - **TYPING NEVER MOVES THE HIGHLIGHT (Ken, October 1 2026).** Only Previous/Next Word or
