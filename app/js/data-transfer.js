@@ -440,7 +440,7 @@ export async function applyPackage(pkg, onProgress) {
 
     for (const c of convos) {
         if (!c || !c.id) { step('conversations'); continue; }
-        if (await storage.writeConversationLog(c.id, c.data)) restored.conversations++;
+        if (await storage.writeConversationLog(c.id, c.data, c.review || null)) restored.conversations++;
         step('conversations');
     }
 

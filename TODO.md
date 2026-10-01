@@ -305,6 +305,24 @@ about to fall by an order of magnitude is the trap.
   asked for the Conversation Review first. Doing it in the same pass would mean editing a
   document he has not reviewed.
 
+### Conversation Review: what the first build left out
+- **Raised:** 2026-10-01 - Ken asked for the feature in "Conversant AAC Conversation
+  Review.docx" to be implemented. The first build covers choosing a conversation,
+  moving through it, and recording every kind of answer to a file beside the
+  conversation. These parts of the design are not built yet:
+- **Play it back at real speed** (§7). The button is on the bar and shown unavailable.
+  The design document itself leaves it open (§12) and says to build it last.
+- **Sending answers to where they belong** (§8, §13.3). Answers are saved, but nothing
+  yet offers to turn a typed sentence into a voice example, a phrase into an Express
+  Panel button, or a fact into About Me. Each needs its own "do you want this?" step.
+- **The practice question** (§9): asking whether a fact from a practice conversation
+  is true or made up. It belongs with the About Me offer above.
+- **The beta counts** (§8.1): how often review is used, in the weekly report.
+- **The design document still says "Nothing in it is built."** Its next sync should
+  say what is built. Left alone because a doc sync is Ken's call.
+- **Why not now:** each one needs a decision or design work of its own, and the reading
+  and recording half is useful without them (§13.6 puts it first).
+
 ### Conversation Review: lift Section 14 into the three User Manuals
 - **Raised:** 2026-09-27 - the document became the design record, and Ken asked that the
   user-facing material be preserved inside it rather than lost: *"preserve the
@@ -318,8 +336,10 @@ about to fall by an order of magnitude is the trap.
   Manuals. They are self-contained by decision (Ken, August 1 2026), so it lands in each
   of them in the same pass, and the standing rule applies - a change to shared behavior
   that touches one manual and not the others is an incomplete sync.
-- **Why it is not being done now:** the feature is not built. A manual section describing
-  something that does not exist is worse than no section.
+- **Why it is not being done now:** the feature's first version was built on 2026-10-01,
+  so this is now waiting on a doc sync, which is Ken's call. Section 14 describes some
+  parts that are not built yet (see the entry above), so those lines need trimming when
+  it is lifted.
 - **Note:** the design record itself never becomes customer-facing, so it stays off
   `scripts/wordpress/user-documents.json` permanently.
 

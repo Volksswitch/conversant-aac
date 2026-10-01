@@ -5428,3 +5428,117 @@ body.conv-bottom     .danger-dialog {
     font-style: italic;
     font-weight: 600;
 }
+
+/* ===== CONVERSATION REVIEW (Conversation Review design document) =====
+   The conversation screen, reused. EVERY RULE HERE IS PAINT: outlines, shadows,
+   colors, opacity. None sets a width, height, padding, margin or border width, because
+   one keyguard has to fit a conversation and its review (Rule 1), and a box that grew
+   by a pixel would move every hole after it. */
+
+/* The Listen button is filled, and on this bar a fill means "on" (Rule 6). In review it
+   is Previous Turn, which is never on, so it takes the outlined look of its neighbours.
+   An INSET SHADOW stands in for the border it does not have: giving it a real 2px
+   border would widen its box and shift the eight buttons after it. */
+body.reviewing #listenBtn {
+    background: var(--surface-raised);
+    color: var(--slot-persistent);
+    box-shadow: inset 0 0 0 2px var(--slot-persistent);
+}
+body.reviewing #listenControls > button:disabled { opacity: 0.35; cursor: default; }
+
+body.reviewing .review-line { cursor: pointer; }
+.review-line.review-current {
+    outline: 3px solid var(--info);
+    outline-offset: 2px;
+}
+.review-line.review-none {
+    color: var(--ink-muted);
+    font-style: italic;
+    font-weight: 400;
+}
+.review-from {
+    font-weight: 400;
+    font-size: 0.85em;
+    color: var(--ink-muted);
+}
+.review-note {
+    margin: 0.1rem 0 0.35rem;
+    font-size: calc(0.92rem * var(--transcript-font-scale, 1));
+    color: var(--info-ink);
+    font-style: italic;
+}
+.review-note-left { text-align: left; }
+.review-note-right { text-align: right; }
+
+/* The card the user spoke, and the one they now say would have suited them better.
+   Two marks, because under a four-second clock the two often do not agree. */
+.response-card.review-spoken { box-shadow: inset 0 0 0 3px var(--ink); }
+.response-card.review-want { box-shadow: 0 0 0 4px var(--info); }
+.response-card.review-spoken.review-want { box-shadow: inset 0 0 0 3px var(--ink), 0 0 0 4px var(--info); }
+.response-card.review-spoken::after,
+.response-card.review-want::after {
+    position: absolute;
+    right: 0.4rem;
+    bottom: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--ink-muted);
+    pointer-events: none;
+}
+body.reviewing .response-card { position: relative; }
+.response-card.review-spoken::after { content: 'You said this'; }
+.response-card.review-want::after { content: 'Would suit you better'; color: var(--info-ink); }
+.response-card.review-spoken.review-want::after { content: 'You said this · changed'; color: var(--info-ink); }
+
+/* A sentence being rewritten scrolls INSIDE its card; the card never changes size and
+   the type is never shrunk - the text size is the user's setting. */
+.response-card.review-editing .response-text {
+    display: block;
+    overflow-y: auto;
+    -webkit-line-clamp: unset;
+}
+.review-word { border-radius: 4px; cursor: pointer; }
+.review-word-on {
+    background: var(--info-tint);
+    color: var(--info-ink);
+    outline: 2px solid var(--info);
+}
+.review-word-hole { display: inline-block; min-width: 1.5em; }
+
+/* Holds the highlighted word for whichever keyboard is in use. Out of sight on purpose:
+   the word on the card IS the thing being edited. */
+.review-word-input {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+#regenerateBtn.review-want { box-shadow: 0 0 0 4px var(--info); }
+
+/* The Express Panel: what the user tapped at the time, and what they would rather. */
+.ep-btn.ep-review-used { box-shadow: inset 0 0 0 3px var(--ink); position: relative; z-index: 1; }
+.ep-btn.ep-review-want { box-shadow: 0 0 0 3px var(--info); position: relative; z-index: 2; }
+
+/* Settings > Review: the list of conversations. */
+.review-list { display: flex; flex-direction: column; gap: 0.4rem; }
+.review-row {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.15rem;
+    text-align: left;
+    min-height: var(--btn-min-dim);
+    padding: 0.5rem 0.75rem;
+    background: var(--surface-raised);
+    color: var(--ink);
+    border: 2px solid var(--edge-strong);
+    border-radius: 8px;
+    cursor: pointer;
+}
+.review-row-main { font-weight: 600; }
+.review-row-flag { color: var(--warn-ink); font-size: 0.9em; }
+.review-row-done { color: var(--ok-ink); font-size: 0.9em; }

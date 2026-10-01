@@ -260,6 +260,10 @@ function buildResponseCard(response, index, onSelect, half) {
     const card = document.createElement('button');
     card.type = 'button';
     card.className = `response-card ${meta.cls}${half ? ' response-card-half' : ''}`;
+    // Which entry of the palette this card is. The DOM order follows the four category
+    // cells, not the palette, so anything that needs to find "card 2" asks this
+    // (Conversation Review marks the card spoken and the card wanted).
+    card.dataset.index = String(index);
     // The accessible name is the FULL wording, whatever the card-text setting has
     // on screen, because the full wording is what will actually be spoken.
     //
@@ -498,6 +502,10 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         // How the three kinds of Context button are told apart inside their shared
         // background: 'color' | 'thick' | 'side' | 'shape'. A setting, not a decision.
         contextMark = 'shape',
+        // CONVERSATION REVIEW (design document §6). `usedId` is the button the user
+        // tapped at the time; `wantId` is the one they now say they would rather have
+        // tapped. Paint only, never the box, so no keyguard hole moves.
+        reviewMarks = null,
         // The cells the partner's offered choices will land on (express-bands). An empty
         // one says what it is FOR rather than looking like a cell somebody forgot to
         // fill - the space is spoken for, and a panel that says so reads as finished
@@ -844,6 +852,16 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
                 // screen-reader user has no way to tell which cell the editor is on.
                 cellEl.setAttribute('aria-label', `${cellEl.getAttribute('aria-label') || ''} (being edited)`.trim());
             }
+            if (reviewMarks && item && item.id) {
+                if (item.id === reviewMarks.usedId) {
+                    cellEl.classList.add('ep-review-used');
+                    cellEl.setAttribute('aria-label', `${cellEl.getAttribute('aria-label') || ''} (you tapped this)`.trim());
+                }
+                if (item.id === reviewMarks.wantId) {
+                    cellEl.classList.add('ep-review-want');
+                    cellEl.setAttribute('aria-label', `${cellEl.getAttribute('aria-label') || ''} (you would rather have tapped this)`.trim());
+                }
+            }
             rowEl.appendChild(cellEl);
         });
         epGrid.appendChild(rowEl);
@@ -1154,6 +1172,14 @@ function setCommandFace(btn, iconName, label, face) {
     btn.classList.add('cmd-worded');
     btn.setAttribute('aria-label', label);
     btn.title = label;
+}
+
+// Draw one Command Bar button with a face that is not its own - Conversation Review
+// rebinds the bar and gives each button the face of the review action it now does.
+// Exported so the review screen draws in the user's chosen mode (icon or words) like
+// every other button; applyControlIcons() puts the usual faces back.
+export function setCommandBarFace(id, iconName, label, face) {
+    setCommandFace(document.getElementById(id), iconName, label, face);
 }
 
 // Switch the Command Bar between icons and short labels. Re-draws the buttons

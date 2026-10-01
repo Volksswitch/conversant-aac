@@ -62,6 +62,7 @@ import * as diagnostics from './diagnostics.js';
 import * as weeklySend from './weekly-send.js';
 import * as metrics from './metrics.js';
 import { makeCollapsible } from './sections.js';
+import * as reviewUI from './review-ui.js';
 
 // The platform verdict on partner capture (see platform.js), or null when capture
 // is expected to work. Non-null drives the pre-start warning; it does NOT by
@@ -843,6 +844,42 @@ function initApp() {
     // Last, so a disabled Listen button and its explanatory tooltip survive
     // ui.applyControlIcons() above (which rewrites the button's label/title).
     applyListenAvailability();
+
+    // Conversation Review: the second controller for the conversation screen. It owns
+    // none of the live conversation's state and is handed only what it needs.
+    reviewUI.init({
+        drawExpressPanel: drawReviewPanel,
+        restoreConversationScreen,
+        closeSettings: () => {
+            keyboard.hideKeyboard();
+            hostExpressPanel(false);
+            document.getElementById('settingsDialog').close();
+        },
+        openSettingsAt: (tab) => {
+            openSettings();
+            const el = document.querySelector(`#settingsTabs .settings-tab[data-tab="${tab}"]`);
+            if (el) activateSettingsTab(el, false);
+        },
+        conversationBusy: () => conversationInProgress(),
+        // In the user's own voice, as Hear it promises; nothing is logged, because
+        // review is not a conversation.
+        speak: (text) => tts.speak(text).catch(() => {}),
+        panelItems: () => expressPanel.getModel() ? composedPanel().items : [],
+    });
+}
+
+// Put the live conversation screen back after a review. Review is only entered with
+// no conversation under way, so "back" means the resting screen.
+function restoreConversationScreen() {
+    ui.renderConversation(conversationHistory);
+    clearPalette();
+    ui.applyControlIcons();
+    ui.setListenButtonState(isListening);
+    ui.setWrapUpState(false);
+    ui.setStartConversationState(false);
+    applyPrivacyState();
+    applyListenAvailability();
+    renderExpressPanel();
 }
 
 // --- API key surfaces (Ken, July 2026) -----------------------------------------
@@ -3810,7 +3847,8 @@ function expressLayoutRows() {
 // Every term is cleared by terminateConversation(), which is what makes it go false
 // again.
 function conversationInProgress() {
-    return practiceMode
+    return reviewUI.isActive()
+        || practiceMode
         || isListening
         // The user's statement is still being SPOKEN. Its turn reaches the history
         // only after the speech finishes, so an opening Express phrase left a window -
@@ -3949,7 +3987,7 @@ function partnerLabel(item) {
  * is shown ONCE, at its best position, and keeps the MORE SPECIFIC source: the panel
  * is short of positions, and a goal lit as this person's should expire with them.
  */
-function goalButtons() {
+function goalButtons(partner = activePartner, place = activePlace) {
     const out = [];
     const seen = new Set();
     const take = (list, source) => {
@@ -3961,11 +3999,11 @@ function goalButtons() {
     };
     // A free-typed partner button has no personId, so it has no edge to keep a goal
     // on - it contributes nothing rather than falling back to somebody else's list.
-    if (activePartner && activePartner.personId) {
-        take(relationships.getPartnerProfile(activePartner.personId).goals, 'partner');
+    if (partner && partner.personId) {
+        take(relationships.getPartnerProfile(partner.personId).goals, 'partner');
     }
-    if (activePlace && activePlace.placeId) {
-        const here = places.getPlace(activePlace.placeId);
+    if (place && place.placeId) {
+        const here = places.getPlace(place.placeId);
         take(here && here.goals, 'place');
     }
     take(relationships.getGeneralGoals(), 'general');
@@ -4010,18 +4048,24 @@ function handleExpressMore(m) {
     renderExpressPanel();
 }
 
-function composedPanel() {
+// `ctx` replaces the live partner, place, feeling and goals - Conversation Review draws
+// the panel as the user now says it should have been, without touching the live state.
+function composedPanel(ctx = null) {
+    const partner = ctx ? ctx.partner : activePartner;
+    const place = ctx ? ctx.place : activePlace;
+    const feeling = ctx ? ctx.feeling : activeFeeling;
+    const goalKeys = ctx ? (ctx.goalIds || []) : [...activeGoals.keys()];
     const composed = expressBands.composePanel(expressLayoutRows(), expressPanel.getModel(), {
-        partnerId: activePartner ? (activePartner.personId || activePartner.id) : null,
-        placeId: activePlace ? (activePlace.placeId || activePlace.id) : null,
-        goals: goalButtons(),
+        partnerId: partner ? (partner.personId || partner.id) : null,
+        placeId: place ? (place.placeId || place.id) : null,
+        goals: goalButtons(partner, place),
         // Switched-on buttons go to the front of their band so they are always in view,
         // and back to their own place when switched off (Ken, September 14 2026).
         litIds: [
-            activePartner && activePartner.id,
-            activePlace && activePlace.id,
-            activeFeeling && activeFeeling.id,
-            ...activeGoals.keys(),
+            partner && partner.id,
+            place && place.id,
+            feeling && feeling.id,
+            ...goalKeys,
         ].filter(Boolean),
         paging: expressPaging ? { ...expressPaging, scope: storage.loadExpressMoreScope() } : null,
     });
@@ -4090,6 +4134,54 @@ function reflectBandSizes() {
 }
 
 function renderExpressPanel() {
+    // While a conversation is being reviewed the panel MARKS rather than speaks, and
+    // review decides what is lit. Every path that redraws the panel comes through here,
+    // so none of them can put the live panel back under a review by accident.
+    if (reviewUI.isActive()) { reviewUI.refreshPanel(); return; }
+    drawExpressPanel(null);
+}
+
+// The Express Panel as Conversation Review draws it: the same cells, with taps routed
+// to review's handlers and nothing spoken. Returns what was drawn, so review can tell
+// which band a tapped phrase sat in.
+function drawReviewPanel(r) {
+    applyButtonSizing();
+    const composed = composedPanel({ partner: r.partner, place: r.place, feeling: r.feeling, goalIds: r.goalIds });
+    primeExpressAudio(composed.items);
+    ui.renderExpressPanel(expressLayoutRows(), composed.items, {
+        moreCells: composed.more,
+        onMore: handleExpressMore,
+        playingAudioId: null,
+        onPlayAudio: r.onAudio,
+        bands: composed.bands,
+        choiceSlots: composed.choiceSlots,
+        categories: expressItems.CATEGORIES,
+        influencerColors: expressItems.INFLUENCER_COLORS,
+        choiceChips: [],
+        choiceColor: expressItems.CHOICE_COLOR,
+        activeChoice: null,
+        activePartnerId: r.partner ? r.partner.id : null,
+        activeGoalIds: r.goalIds || [],
+        onToggleGoal: r.onToggleGoal,
+        activeFeelingId: r.feeling ? r.feeling.id : null,
+        activePlaceId: r.place ? r.place.id : null,
+        // Nothing here speaks, so the double-tap safeguard has nothing to guard.
+        tapMode: 'single',
+        doubleTapMs: storage.loadDoubleTapMs(),
+        onSpeak: r.onPhrase,
+        onTogglePartner: r.onTogglePartner,
+        onToggleFeeling: r.onToggleFeeling,
+        onTogglePlace: r.onTogglePlace,
+        onInMyOwnWords: r.onInMyOwnWords,
+        onDefineCell: null,
+        pickedId: null,
+        contextMark: storage.loadContextMark(),
+        reviewMarks: r.reviewMarks,
+    });
+    return composed;
+}
+
+function drawExpressPanel() {
     applyButtonSizing();   // the active layout may have changed → refresh --kbd-rows/--kbd-cols
     // The partner's choices cover the Context band's More button, so a paged panel goes
     // back to its first set the moment they arrive (Ken, September 14 2026).
@@ -5559,6 +5651,9 @@ function handleSettingsTab(tabName) {
     if (tabName === 'commands') { controlEditor.render(); keyboard.hideKeyboard(); return; }
     if (tabName === 'placeholders') { placeholderEditor.render(); return; }
     if (tabName === 'practice') { renderPracticePanel(); keyboard.hideKeyboard(); return; }
+    // Reads every saved conversation off disk, so it is drawn when the tab opens rather
+    // than with the rest of Settings.
+    if (tabName === 'review') { keyboard.hideKeyboard(); void reviewUI.renderList(document.getElementById('reviewPanel')); return; }
     // Rendered on open rather than at Settings-open: reading every conversation log
     // off disk is the most expensive thing in this panel, and it is pointless on the
     // ten other tabs. Keeps the keyboard available — the note field is typed into.

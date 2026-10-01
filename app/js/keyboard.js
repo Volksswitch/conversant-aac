@@ -35,7 +35,7 @@ const ACTION_NAMES = {
 // Windows keyboard is suppressed there too and the app's own (side-docked)
 // keyboard is used instead (Ken, June 14 2026 — resolves the OS-vs-app keyboard
 // question for Settings in favor of the app keyboard).
-const IN_SCOPE = '#composerInput, .wv-text, #apiKeyInput, #deepgramKeyInput, #controlEditor input, #expressEditor input, #settingsProfileNameInput, #problemNoteInput, #practicePanel input[type="text"], #practicePanel textarea';
+const IN_SCOPE = '#composerInput, #reviewWordInput, .wv-text, #apiKeyInput, #deepgramKeyInput, #controlEditor input, #expressEditor input, #settingsProfileNameInput, #problemNoteInput, #practicePanel input[type="text"], #practicePanel textarea';
 
 // Controls that must NOT dismiss the keyboard when tapped, even though tapping
 // them blurs the composer textarea. The composer (unlike About Me / Settings)
@@ -154,6 +154,13 @@ function insert(text) {
 function backspace() {
     const f = activeField;
     if (!f) return;
+    // Announce it first, the way a physical key does, so a field with its own idea of
+    // what Backspace means can claim it. Conversation Review's word editor is the one
+    // that does: there, Backspace on an untouched word removes the WHOLE word, and on an
+    // empty slot steps back to the word before - neither of which a character delete
+    // can express, and the second of which would otherwise be a key that did nothing.
+    const claim = new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true, cancelable: true });
+    if (!f.dispatchEvent(claim)) return;
     let start = f.selectionStart ?? f.value.length;
     const end = f.selectionEnd ?? f.value.length;
     if (start === end) {

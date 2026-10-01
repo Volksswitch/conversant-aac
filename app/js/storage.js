@@ -954,34 +954,77 @@ export async function listAudioFiles() {
     return out;
 }
 
-// Every saved conversation, as [{ id, data }]. Returns [] with no data folder.
+// A conversation's REVIEW file sits beside it, named for it (Conversation Review
+// §13.2): `<id>.review.json`. It is never mistaken for a conversation - every reader of
+// the folder goes through listConversationLogs, which sets these aside.
+const REVIEW_SUFFIX = '.review.json';
+
+// Every saved conversation, as [{ id, data, review? }]. Returns [] with no data folder.
+// A conversation that has been reviewed carries its review file with it, so a backup
+// moves both together and an import puts both back.
 export async function listConversationLogs() {
     const dir = await getConversationsDir();
     if (!dir) return [];
     const out = [];
+    const reviews = new Map();
     try {
         for await (const [entryName, handle] of dir.entries()) {
-            if (handle.kind !== 'file' || !entryName.toLowerCase().endsWith('.json')) continue;
+            const lower = entryName.toLowerCase();
+            if (handle.kind !== 'file' || !lower.endsWith('.json')) continue;
             try {
                 const file = await handle.getFile();
-                out.push({ id: entryName.slice(0, -5), data: JSON.parse(await file.text()) });
+                const parsed = JSON.parse(await file.text());
+                if (lower.endsWith(REVIEW_SUFFIX)) reviews.set(entryName.slice(0, -REVIEW_SUFFIX.length), parsed);
+                else out.push({ id: entryName.slice(0, -5), data: parsed });
             } catch { /* skip an unreadable/corrupt log rather than failing the whole export */ }
         }
     } catch { /* ignore */ }
+    for (const c of out) if (reviews.has(c.id)) c.review = reviews.get(c.id);
     out.sort((a, b) => a.id.localeCompare(b.id));
     return out;
 }
 
 // Write one conversation log back during an import. Overwrites an existing file of
 // the same id, which is intended: the id is a timestamp, so a collision means the
-// same conversation.
-export async function writeConversationLog(id, data) {
+// same conversation. A review travelling with it is written beside it.
+export async function writeConversationLog(id, data, review = null) {
     const dir = await getConversationsDir();
     if (!dir || !id) return false;
     try {
         const fh = await dir.getFileHandle(`${id}.json`, { create: true });
         const w = await fh.createWritable();
         await w.write(JSON.stringify(data, null, 2));
+        await w.close();
+        if (review && typeof review === 'object') await writeReview(id, review);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+// The review written beside a conversation, or null when it has never been reviewed.
+export async function readReview(id) {
+    if (!id) return null;
+    const dir = await getConversationsDir();
+    if (!dir) return null;
+    try {
+        const fh = await dir.getFileHandle(`${id}${REVIEW_SUFFIX}`);
+        return JSON.parse(await (await fh.getFile()).text());
+    } catch {
+        return null;
+    }
+}
+
+// ⚠ NEVER THE CONVERSATION FILE ITSELF. That file is the record of what happened, and a
+// correction that edited it would destroy the evidence it was reporting (§6.4).
+export async function writeReview(id, review) {
+    if (!id) return false;
+    const dir = await getConversationsDir();
+    if (!dir) return false;
+    try {
+        const fh = await dir.getFileHandle(`${id}${REVIEW_SUFFIX}`, { create: true });
+        const w = await fh.createWritable();
+        await w.write(JSON.stringify(review, null, 2));
         await w.close();
         return true;
     } catch {

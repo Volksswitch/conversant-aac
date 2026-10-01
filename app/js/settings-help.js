@@ -22,6 +22,7 @@ const HELP = {
     "input": "Screen Layout. Resize the areas of the conversation screen by dragging the borders, and set how far apart the buttons sit.",
     "conversation": "How the app listens, how many responses it offers you, and what it says while you are choosing.",
     "practice": "Practice a conversation with the AI playing the other person. You do not need a microphone.",
+    "review": "Go back over a conversation you have already had, one turn at a time, and say what you would rather have said.",
     "express": "Change the buttons on the Express Panel: the phrases you speak, the people you talk to, and how you are feeling.",
     "commands": "Change the words spoken by the command buttons, and your conversation starters and goodbyes.",
     "keyguard": "Spacing settings for fitting a physical keyguard, and a file listing where every button sits.",
@@ -152,7 +153,8 @@ const HELP = {
     "ttsProvider": "Which voice speaks for you. This device's own voices are free. A paid voice usually sounds far better. Azure is the one we recommend.",
     "keyboardMode": "Whether you type on a keyboard you plug in, or on the app's own keyboard on the screen.",
     "keyboardDock": "Whether the Express Panel and keyboard sit along the bottom of the screen, or down one side.",
-    "expressTapMode": "Whether one tap speaks an Express Panel button, or two are needed so you cannot set it off by accident."
+    "expressTapMode": "Whether one tap speaks an Express Panel button, or two are needed so you cannot set it off by accident.",
+    "reviewListKind": "Choose whether the list shows conversations with real people, or the ones you practiced with the app."
   },
   "sections": {
     "apiKey": "Your key from Anthropic. It is what lets the app suggest responses. Everything else still works without one.",
@@ -204,7 +206,8 @@ const HELP = {
     "practiceBehavior": "How the other person is behaving when the conversation starts. They still react to what you say.",
     "practiceDetails": "Facts for this practice, like names and what happened. The other person knows them, and your suggested replies can use them.",
     "practiceVoice": "The voice this person speaks in when you practice. Leave it on the general practice voice to use the one from the Speech settings.",
-    "practicePerson": "Start a scenario from someone you added in About Me. While you practice, how you talk with them is used too."
+    "practicePerson": "Start a scenario from someone you added in About Me. While you practice, how you talk with them is used too.",
+    "reviewList": "Your saved conversations, newest first. Tap one to go back over it. A mark means you asked for something different at the time."
   }
 };
 // @@SETTINGS_HELP_END@@

@@ -217,6 +217,7 @@
                 <div class="settings-tab" data-tab="conversation">Conversation</div>
                 <div class="settings-tab" data-tab="placeholders">Placeholders</div>
                 <div class="settings-tab" data-tab="practice">Practice</div>
+                <div class="settings-tab" data-tab="review">Review</div>
                 <div class="settings-tab" data-tab="express">Express Panel and Keyboard</div>
                 <div class="settings-tab" data-tab="commands">Commands</div>
                 <div class="settings-tab" data-tab="keyguard">Keyguard Design</div>
@@ -894,6 +895,17 @@
                         </div>
                     </div>
                     <div id="placeholderEditor"></div>
+                </div>
+                <div class="tab-panel" data-tab="review">
+                    <p class="tab-intro">Go back over a conversation you have already had, one turn at a time. Tap a response option to say it would have suited you better or to change its words, or use your own buttons and words. Nothing changes anywhere else, and Settings takes you back out.</p>
+                    <div class="setting-group" data-help="reviewList">
+                        <label>Saved conversations</label>
+                        <div class="radio-row">
+                            <label class="radio-label"><input type="radio" name="reviewListKind" value="real" checked> Real conversations</label>
+                            <label class="radio-label"><input type="radio" name="reviewListKind" value="practice"> Practice conversations</label>
+                        </div>
+                        <div id="reviewPanel"></div>
+                    </div>
                 </div>
                 <div class="tab-panel" data-tab="practice">
                     <p class="tab-intro">In <strong>Practice Mode</strong> the AI plays the other person, so you can rehearse a conversation without a microphone and without spending anyone's patience. Pick something to practice below; the conversation screen works exactly as it normally does, except <strong>Start Listening</strong> cues the other person to speak instead of opening the mic. Give them their own voice under <strong>Speech</strong>.</p>

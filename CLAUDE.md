@@ -624,6 +624,41 @@ Ken: *"I thought I was experiencing this but I doubted myself."* He was right, a
 
 **Follow-up — the conversation PANE was out of order relative to the (correct) transcript (Ken, July 13 2026).** Ken's on-device catch: after the partner replied, tapping **Repeat what I said** showed the user's re-spoken line ABOVE the partner's reply in the pane, though the transcript had it correctly after. Root cause: the pane rendered the partner's in-progress turn as a bottom-pinned **live line** (`ui.setLiveTranscript`), while a spoken-command user turn (`logSpokenUserTurn` — Say again / Hold on / Ask-them-to-repeat) was appended into the committed history *above* that live line; the transcript was already correct because it writes the partner turn at its pause. Fix (app.js, pane-only — storage untouched): when a command user turn is logged mid-partner-turn, **promote** the live partner turn into `conversationHistory` first (`flushLivePartnerToHistory`, tracked by `pendingPartnerHistoryIdx`) so the user turn renders after it; `commitExchange` / repair now use `placePartnerTurn` (update the promoted entry in place, else append) and `updatePartnerLive` keeps a promoted turn updating in place instead of re-showing the bottom live line. `logSpokenUserTurn` also calls `storage.logPartnerInterim` first so pane and transcript stay identical even if the command precedes the partner's first pause. Traced through the reported sequence (partner1→user1→partner2→say-again→response) → pane and transcript both order partner2 before the say-again. Verified boot-clean; the live mic ordering is the usual on-device retest boundary.
 
+## Conversation Review — first build (Ken, October 1 2026), BUILT
+
+Design: `Documents/Conversant AAC Conversation Review.docx`. Settings → **Review** lists
+saved conversations (real or practice, never both); a row opens the review screen.
+What is NOT built yet is in [TODO.md](TODO.md) ("Conversation Review: what the first
+build left out") — playback at real speed, and sending answers on to voice examples,
+Express buttons or About Me.
+
+- **IT IS A SECOND CONTROLLER ON THE SAME SCREEN, NOT A NEW SCREEN** (`review-ui.js`).
+  Capture-phase click listeners on the Command Bar, New 4, the cards, the pane and the
+  composer stop the live handlers ever seeing a tap. **Every review mark is paint** —
+  measured: 48 boxes identical in review and out of it, so one keyguard fits both. The
+  Listen button's "outlined" look in review is an inset shadow, because a real border
+  would widen it and move the eight buttons after it.
+- **`renderExpressPanel()` hands off to review while it is active.** Every path that
+  redraws the panel goes through it, so none can put the live, speaking panel back
+  under a review. `composedPanel(ctx)` and `goalButtons(partner, place)` take review's
+  marks instead of the live partner/place/feeling/goals.
+- **THE CONVERSATION FILE IS NEVER WRITTEN BY REVIEW.** Answers go in
+  `conversations/<id>.review.json`. `listConversationLogs()` sets those aside and
+  attaches each to its conversation, so a backup carries both and an import writes both
+  (`writeConversationLog(id, data, review)`). **Any new reader of the conversations
+  folder must go through `listConversationLogs`**, or it will read a review file as a
+  conversation.
+- **A turn is keyed by the timestamp of its first real entry** (partner, offer or user —
+  not a "listen on" event), so a review stays attached to the right turn.
+- **The word editor types into a hidden input** (`#reviewWordInput`, in the keyboard's
+  scope, prediction off). The on-screen keyboard's Backspace now dispatches a cancelable
+  keydown first, which is how review takes a whole word on one press. While a word is
+  being edited, pointer-downs on the bar, cards and pane are prevented so focus — and
+  the keyboard — stay put.
+- **Verified end to end**: `tests/review.test.mjs` writes a conversation through the
+  real storage calls, reads it back, records a correction and reads it off disk; and in
+  the browser with both keyboards.
+
 ## Interrupting the partner — capture their partial speech; keep capturing after (Ken, July 8 2026)
 
 Ken: interrupting the partner with an instant statement (e.g. an Express "Bye") was making it look like the partner never spoke — their in-progress speech wasn't recorded. Fixes + confirmations:
