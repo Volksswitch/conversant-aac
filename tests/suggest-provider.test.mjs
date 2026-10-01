@@ -51,6 +51,54 @@ test('the request tells the model not to think', async () => {
 });
 
 /*
+ * ⚠ THE ONE THAT SAID "AI IS UNAVAILABLE" (Ken's iPad, October 1 2026).
+ *
+ * In a long, plain conversation the model sometimes carried on talking as the user
+ * ("Card, please.") instead of returning the suggestions - 4 failures in 6 tries on a
+ * real coffee-shop practice. The service now enforces the reply's shape. Without the
+ * format the failure comes straight back, intermittently, which is the worst kind.
+ */
+test('the suggestions request asks the service to enforce the reply shape', async () => {
+    mockFetch(PALETTE);
+    await llm.generateResponses([{ role: 'partner', text: 'how are you?' }], {}, {});
+    const body = getFetchCalls()[0].body;
+    assert.equal(body.output_config?.format?.type, 'json_schema');
+    assert.deepEqual(body.output_config.format.schema, llm.GENERATION_SCHEMA);
+});
+
+test('every field the prompt asks for is allowed by the schema', async () => {
+    // The service rejects any field the schema does not name, so a field added to the
+    // prompt and forgotten here would never arrive - silently.
+    mockFetch(PALETTE);
+    await llm.generateResponses([{ role: 'partner', text: 'how are you?' }], {}, {});
+    const sys = getFetchCalls()[0].body.system;
+    const text = Array.isArray(sys) ? sys.map((b) => b.text).join('\n') : sys;
+    const start = text.indexOf('Return ONLY a JSON object');
+    const shape = text.slice(start, text.indexOf('"heard_uncertain"', start) + 40);
+    const asked = new Set([...shape.matchAll(/"([a-z_]+)":/g)].map((m) => m[1]));
+    assert.ok(asked.size > 8, 'found the shape block in the prompt');
+    const known = new Set([
+        ...Object.keys(llm.GENERATION_SCHEMA.properties),
+        ...Object.keys(llm.GENERATION_SCHEMA.properties.responses.items.properties),
+        ...Object.keys(llm.GENERATION_SCHEMA.properties.missing_other.items.properties),
+    ]);
+    for (const f of asked) assert.ok(known.has(f), `"${f}" is in the prompt but not the schema`);
+});
+
+test('a reply that cannot be read says why, and keeps what came back', async () => {
+    mockFetch({ content: [{ type: 'text', text: 'Card, please.' }], stop_reason: 'end_turn',
+        usage: { input_tokens: 1, output_tokens: 1 } });
+    await assert.rejects(
+        llm.generateResponses([{ role: 'partner', text: 'card or cash?' }], {}, {}),
+        (err) => {
+            assert.match(err.message, /stop: end_turn/);
+            assert.equal(err.reply, 'Card, please.');
+            assert.ok(!err.message.includes('Card, please'), 'the words stay out of the message');
+            return true;
+        });
+});
+
+/*
  * ⚠ THE ONE THAT TRIPLES THE BILL.
  *
  * The response generator is the only cached call, and a lone system block is tidier

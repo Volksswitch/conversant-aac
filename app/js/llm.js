@@ -26,11 +26,85 @@ provider.register(anthropic);
  * is how a stable prefix is marked for caching without this file knowing whether the
  * provider caches at all.
  */
-async function ask({ system, messages, maxTokens }) {
-    const { text, usage } = await provider.complete({ system, messages, maxTokens });
-    if (usage && onUsageUpdate) onUsageUpdate(usage);
-    return text;
+async function ask(args) {
+    return (await askDetailed(args)).text;
 }
+
+/**
+ * The same, keeping why the model stopped. `schema` (optional) is a JSON Schema the
+ * reply must match; a provider that cannot enforce one ignores it and the prompt's
+ * own "return only JSON" instruction is all that remains.
+ */
+async function askDetailed({ system, messages, maxTokens, schema }) {
+    const { text, usage, stopReason } = await provider.complete({ system, messages, maxTokens, schema });
+    if (usage && onUsageUpdate) onUsageUpdate(usage);
+    return { text, stopReason: stopReason || null };
+}
+
+/*
+ * THE SHAPE OF A SET OF SUGGESTIONS, ENFORCED BY THE SERVICE (Ken, October 1 2026).
+ *
+ * Why it exists: generateResponses sends the conversation as alternating turns, with
+ * the user's side as the model's own earlier replies. In a long, plain exchange
+ * (ordering coffee) Sonnet 5.5 sometimes just carried on the conversation - it
+ * answered "Card, please." instead of the JSON. Measured on a real 13-turn practice
+ * conversation: 4 failures in 6 tries, each reported to the user as "AI is
+ * unavailable". The prompt's "return ONLY a JSON object" was not enough; a schema the
+ * service enforces makes any other reply impossible.
+ *
+ * ⚠ KEEP IT IN STEP WITH THE PROMPT'S SHAPE (the "Return ONLY a JSON object" block in
+ * generateResponses). A field the prompt asks for and this schema omits cannot be
+ * returned at all - `additionalProperties: false` is required by the service - so it
+ * is silently lost, which is the classification-whitelist failure in a new place.
+ * tests/llm.test.mjs checks every field named in the prompt is in the schema.
+ */
+const nullable = (schema) => ({ anyOf: [schema, { type: 'null' }] });
+export const GENERATION_SCHEMA = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['partner_action', 'turn_status', 'is_repair_initiator', 'offered_options',
+        'offered_range', 'responses', 'missing_facts', 'missing_other', 'heard_uncertain'],
+    properties: {
+        partner_action: { type: 'string', enum: ['INVITATION', 'QUESTION', 'REQUEST', 'STATEMENT', 'GREETING', 'ASSESSMENT', 'CLOSING', 'OTHER'] },
+        turn_status: { type: 'string', enum: ['COMPLETE', 'INCOMPLETE', 'CONTINUING'] },
+        is_repair_initiator: { type: 'boolean' },
+        offered_options: { type: 'array', items: { type: 'string' } },
+        offered_range: nullable({
+            type: 'object',
+            additionalProperties: false,
+            required: ['min', 'max'],
+            properties: { min: nullable({ type: 'number' }), max: nullable({ type: 'number' }) },
+        }),
+        responses: {
+            type: 'array',
+            items: {
+                type: 'object',
+                additionalProperties: false,
+                required: ['slot', 'text', 'hint'],
+                properties: {
+                    slot: { type: 'string', enum: ['PREFERRED', 'DISPREFERRED', 'INITIATIVE', 'REPAIR', 'CHOICE', 'CHOICE_OTHER', 'CHOICE_ASK', 'CHOICE_REPAIR'] },
+                    text: { type: 'string' },
+                    hint: { type: 'string' },
+                    account: { type: 'boolean' },
+                    format: { type: 'string', enum: ['counter-offer', 'return-question', 'expansion'] },
+                    trigger: { type: 'string', enum: ['low_stt_confidence', 'uncertain_span', 'long_utterance', 'none'] },
+                    defers: { type: 'boolean' },
+                },
+            },
+        },
+        missing_facts: { type: 'array', items: { type: 'string' } },
+        missing_other: {
+            type: 'array',
+            items: {
+                type: 'object',
+                additionalProperties: false,
+                required: ['name', 'question'],
+                properties: { name: { type: 'string' }, question: { type: 'string' } },
+            },
+        },
+        heard_uncertain: { type: 'array', items: { type: 'string' } },
+    },
+};
 
 /*
  * NO VULGARITY — absolute for now (Ken, August 3 2026).
@@ -560,11 +634,24 @@ ${JSON.stringify(context)}${avoidBlock}${steerBlock}${focusBlock}`;
         content: entry.text
     }));
 
-    return parseGeneration(await ask({
+    const { text, stopReason } = await askDetailed({
         system,
         messages,
         maxTokens: perCat === 2 ? 1000 : 700,
-    }));
+        schema: GENERATION_SCHEMA,
+    });
+    try {
+        return parseGeneration(text);
+    } catch (err) {
+        // Say WHY it could not be read, and keep what came back. The reason goes in
+        // the message (it is app vocabulary: end_turn, max_tokens, refusal); the reply
+        // itself rides on the error for the caller to put in the log's private detail,
+        // because it is words about the conversation and must not travel in a report.
+        err.message = `${err.message} (stop: ${stopReason || 'unknown'}, ${text.length} chars)`;
+        err.reply = text;
+        err.stopReason = stopReason;
+        throw err;
+    }
 }
 
 // Practice Mode (§8): the AI plays the communication PARTNER. Given a scenario

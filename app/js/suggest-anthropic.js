@@ -195,7 +195,7 @@ function textFrom(data) {
     return block.text.trim();
 }
 
-async function complete({ system, messages, maxTokens }) {
+async function complete({ system, messages, maxTokens, schema }) {
     if (!apiKey) throw new Error('API key not set');
 
     const blocks = systemBlocks(system);
@@ -213,6 +213,9 @@ async function complete({ system, messages, maxTokens }) {
     };
     // Sent only when the model needs it. See the note at the top of this file.
     if (settings.thinking) body.thinking = settings.thinking;
+    // A reply shape the service ENFORCES, so the model cannot answer in plain prose
+    // instead. See GENERATION_SCHEMA in llm.js for why this was needed.
+    if (schema) body.output_config = { format: { type: 'json_schema', schema } };
 
     const response = await fetch(API_URL, {
         method: 'POST',
@@ -226,7 +229,9 @@ async function complete({ system, messages, maxTokens }) {
     }
 
     const data = await response.json();
-    return { text: textFrom(data), usage: usageFrom(data) };
+    // stopReason travels back so a reply that cannot be read can say why the model
+    // stopped: cut off at the length limit, declined, or finished normally.
+    return { text: textFrom(data), usage: usageFrom(data), stopReason: data.stop_reason || null };
 }
 
 export const anthropic = {

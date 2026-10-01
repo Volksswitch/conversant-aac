@@ -23,7 +23,9 @@
  *   {
  *     id, label,
  *     model,                                  // what to show on the About screen
- *     complete({ system, messages, maxTokens }) -> { text, usage },
+ *     complete({ system, messages, maxTokens, schema? }) -> { text, usage, stopReason? },
+ *                                     // schema: a JSON Schema the reply must match;
+ *                                     // a provider that cannot enforce one ignores it
  *     validateKeyFormat(key) -> { ok, reason },   // optional, no network
  *     testKey(key) -> { ok, reason, status },     // optional, one live call
  *     needsKey,                               // false for anything on-device

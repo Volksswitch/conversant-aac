@@ -201,6 +201,20 @@ test('an error is interleaved into the conversation file in time order', async (
     assert.match(errs[0].message, /429/);
 });
 
+test('a private conversation keeps the error but not the AI\'s unreadable reply', async () => {
+    // The reply is words about the conversation, exactly like the partner's speech
+    // beside it, so the same privacy backstop has to remove both.
+    storage.setConversationSaving(false);
+    const entry = storage.logError('generateOptions', 'Could not parse responses from API',
+        { partner: 'my results came back', reply: 'Card, please.' });
+    storage.setConversationSaving(true);
+    assert.ok(entry, 'the error itself is still recorded');
+    assert.ok(!entry.extra || (!('partner' in entry.extra) && !('reply' in entry.extra)),
+        'neither the partner\'s words nor the AI\'s reply survive');
+    const kept = storage.loadErrorLog().at(-1);
+    assert.ok(!JSON.stringify(kept).includes('Card, please'), 'and the stored copy carries neither');
+});
+
 test('"Don\'t save this conversation" really does stop the write', async () => {
     // ⚠ The gate is asserted against the FILE, not against a return value: this is
     // the promise both manuals make, and the only proof is that nothing landed.

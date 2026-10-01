@@ -2633,9 +2633,12 @@ export function logError(context, message, extra = null) {
     // extra.partner (generateOptions), so if the current conversation is private,
     // strip it before it can be persisted — even if a caller forgets to. Keep the
     // error itself (context/message/timestamp); only the captured speech is dropped.
-    if (extra && !conversationSaving && Object.prototype.hasOwnProperty.call(extra, 'partner')) {
+    // The AI's unreadable reply (extra.reply) is words about the same conversation,
+    // so it goes too.
+    if (extra && !conversationSaving && ['partner', 'reply'].some((k) => Object.prototype.hasOwnProperty.call(extra, k))) {
         extra = { ...extra };
         delete extra.partner;
+        delete extra.reply;
     }
     const entry = {
         ts: new Date().toISOString(),

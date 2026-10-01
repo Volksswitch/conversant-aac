@@ -1938,7 +1938,13 @@ async function generateOptions(partnerText) {
         // cannot be read as the app breaking.
         metrics.event(isRateLimit(err) ? metrics.EV.RATE_LIMITED : metrics.EV.GENERATION_FAILED,
             { ms: Date.now() - startedAt });
-        storage.logError('generateOptions', err.message, { partner: (partnerText || '').slice(0, 200) });
+        // The AI's own reply is kept when it could not be read - it is the only way to
+        // tell afterwards what went wrong. Private detail, like the partner's words:
+        // stripped for a private conversation and never sent in a weekly report.
+        storage.logError('generateOptions', err.message, {
+            partner: (partnerText || '').slice(0, 200),
+            ...(err.reply ? { reply: String(err.reply).slice(0, 400) } : {}),
+        });
         placeholders.stop();
         // The AI is unreachable, so it can neither suggest responses NOR tidy the
         // transcript. Keep the partner's raw words visible, marked blue/italic
