@@ -5479,8 +5479,10 @@ body.reviewing .review-line { cursor: pointer; }
 }
 /* The card spoken at the time, once something else has been chosen in its place. */
 .response-card.review-spoken.review-spoken-replaced { outline-style: dashed; }
-/* First tap of a double tap: armed, waiting for the second. */
-.response-card.review-armed { box-shadow: 0 0 0 4px var(--info); }
+/* ONE TAP OR TWO: the first of two taps ARMS a control and this ring says it is waiting
+   for the second (tap-guard.js). A shadow, so no box changes and no keyguard hole moves.
+   The Express Panel keeps its own .ep-armed look. */
+.tap-armed { box-shadow: 0 0 0 4px var(--info) !important; }
 .response-card.review-spoken::after,
 .response-card.review-want::after {
     position: absolute;

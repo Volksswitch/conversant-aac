@@ -26,6 +26,13 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Changed: the double-tap setting now covers the whole conversation screen, not just
+  the Express Panel. It has moved to Settings > General and is called "One tap or two".
+  With two taps chosen, anything that speaks, changes your suggestions, or takes you to
+  another screen needs two taps: the response options, the buttons across the middle,
+  New 4, and every Express Panel button, including the people, places and feelings. The
+  first tap puts a ring around the button; the second tap does it. Typing on the
+  keyboard, stopping a sound, and everything inside Settings still take one tap.
 - New: Conversation Review. Open Settings and choose Conversation Review to see your
   saved conversations in a table: when, who, where, how long, and how far you have
   got. Tap a column heading to sort by it, and tap it again to reverse the order. Pick

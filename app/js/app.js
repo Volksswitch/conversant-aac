@@ -63,6 +63,7 @@ import * as weeklySend from './weekly-send.js';
 import * as metrics from './metrics.js';
 import { makeCollapsible } from './sections.js';
 import * as reviewUI from './review-ui.js';
+import * as tapGuard from './tap-guard.js';
 
 // The platform verdict on partner capture (see platform.js), or null when capture
 // is expected to work. Non-null drives the pre-start warning; it does NOT by
@@ -671,7 +672,7 @@ function initApp() {
         if (!btn) return;
         if (btn.classList.contains('ep-more') || btn.id === 'holdOnBtn') return;
         if (btn.closest('#settingsDialog')) return;
-        if (btn.classList.contains('ep-phrase') && storage.loadExpressTapMode() === 'double') return;
+        if (tapGuard.isArmingTap(btn)) return;   // a first tap of two has not acted yet
         resetExpressPaging();
         setTimeout(renderExpressPanel, 0);
     }, true);
@@ -844,6 +845,28 @@ function initApp() {
     // Last, so a disabled Listen button and its explanatory tooltip survive
     // ui.applyControlIcons() above (which rewrites the button's label/title).
     applyListenAvailability();
+
+    // ONE TAP OR TWO, for the whole conversation screen (Ken, October 1 2026). See
+    // tap-guard.js for the rule. Installed after the button tour's and the panel
+    // paging's own listeners, which ask it whether a tap only armed something.
+    tapGuard.addRule('#listenControls > button', {
+        // Previous Word and Next Word only move the highlight in review, like the words.
+        exempt: (el) => reviewUI.isActive() && (el.id === 'sayAgainBtn' || el.id === 'holdOnBtn'),
+    });
+    tapGuard.addRule('#regenerateBtn');
+    tapGuard.addRule('#composerOverlay button');
+    tapGuard.addRule('#epGrid .ep-btn', {
+        armClass: 'ep-armed',
+        exempt: (el) => el.classList.contains('ep-undefined')
+            || (el.classList.contains('ep-audio') && el.classList.contains('ep-on')),   // stopping a sound
+    });
+    tapGuard.addRule('#responseOptions .response-card[data-index]', {
+        exempt: (el, target) => !!target.closest('[data-w]'),                          // a word being edited
+    });
+    tapGuard.addRule('#transcriptLog [data-turn]', {
+        exempt: (el, target) => !reviewUI.isActive() || !!target.closest('[data-w]'),
+    });
+    tapGuard.install();
 
     // Conversation Review: the second controller for the conversation screen. It owns
     // none of the live conversation's state and is handed only what it needs.
@@ -2628,6 +2651,8 @@ let tourFinishPending = false;
  */
 function handleTourPress(e) {
     if (!tour || !practiceMode) return;
+    // With "two taps" on, the first tap only arms the control - it is not a press yet.
+    if (tapGuard.isArmingTap(e.target)) return;
     const step = practiceTour.currentStep(tour);
     const result = practiceTour.pressed(tour, e.target);
     if (result === 'ignored') { hintWhere(step, e.target); return; }
@@ -4165,9 +4190,6 @@ function drawReviewPanel(r) {
         onToggleGoal: r.onToggleGoal,
         activeFeelingId: r.feeling ? r.feeling.id : null,
         activePlaceId: r.place ? r.place.id : null,
-        // Nothing here speaks, so the double-tap safeguard has nothing to guard.
-        tapMode: 'single',
-        doubleTapMs: storage.loadDoubleTapMs(),
         onSpeak: r.onPhrase,
         onTogglePartner: r.onTogglePartner,
         onToggleFeeling: r.onToggleFeeling,
@@ -4230,16 +4252,6 @@ function drawExpressPanel() {
         onToggleGoal: handleToggleGoal,
         activeFeelingId: activeFeeling ? activeFeeling.id : null,
         activePlaceId: activePlace ? activePlace.id : null,
-        // The double-tap safeguard guards SPEAKING: it exists so a stray touch cannot
-        // say something aloud that cannot be taken back. In Settings a tap does not
-        // speak — it selects the button for editing — so the safeguard is protecting
-        // against nothing there while blocking the one thing the user came to do.
-        // Found in the field (an SLP on a MacBook, August 15 2026): phrase buttons
-        // appeared dead in Settings while feeling buttons worked, because the feeling
-        // / partner / place toggles have always been single-tap and only phrases honor
-        // this setting. The user's own choice is untouched on the conversation screen.
-        tapMode: expressPanelInSettings ? 'single' : storage.loadExpressTapMode(),
-        doubleTapMs: storage.loadDoubleTapMs(),
         onSpeak: handleSpeakExpressItem,
         onTogglePartner: handleTogglePartner,
         onToggleFeeling: handleToggleFeeling,

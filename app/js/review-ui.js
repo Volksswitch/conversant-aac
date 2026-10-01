@@ -473,7 +473,6 @@ function onBarClick(e) {
 
 function goTo(i) {
     if (!conv || i < 0 || i >= conv.turns.length || i === at) return;
-    disarmCard();
     stopEditing();
     closeComposer();
     at = i;
@@ -534,12 +533,8 @@ function onCardsClick(e) {
         render();
         return;
     }
-    // Honour the user's tap setting, the same one the Express Panel uses: with double
-    // tap, the first tap only arms the card (Ken, October 1 2026).
-    if (storage.loadExpressTapMode() === 'double') {
-        if (armedCard !== i) { armCard(card, i); return; }
-        disarmCard();
-    }
+    // With "two taps" on, the first tap never reaches here: tap-guard.js arms the card
+    // and swallows it, for this screen as for the rest of the app.
     if (selectedCard() === i) startCardEdit(i);
     else chooseCard(i);
 }
@@ -550,20 +545,6 @@ function selectedCard() {
     const e = entry();
     if (e.answer) return e.answer.kind === 'card' ? e.answer.index : -1;
     return turn().took;
-}
-
-let armedCard = -1;
-let armTimer = null;
-function armCard(el, i) {
-    disarmCard();
-    armedCard = i;
-    el.classList.add('review-armed');
-    armTimer = setTimeout(disarmCard, storage.loadDoubleTapMs());
-}
-function disarmCard() {
-    if (armTimer) { clearTimeout(armTimer); armTimer = null; }
-    armedCard = -1;
-    document.querySelectorAll('.review-armed').forEach((el) => el.classList.remove('review-armed'));
 }
 
 // CHOOSING a card is one step and EDITING it is another (Ken, October 1 2026): opening

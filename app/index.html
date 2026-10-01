@@ -324,6 +324,37 @@
                          the Keyguard Design tab because it is a general display
                          preference that every user has an opinion about, keyguard or
                          not (Ken, August 3 2026). -->
+                    <!-- ONE TAP OR TWO, for the whole conversation screen (Ken, October 1
+                         2026): anything that speaks, changes the suggestions, or takes you
+                         to another screen. It started life on the Express Panel tab as
+                         "speaking an Express Panel phrase". The interval is meaningless
+                         unless two taps are required, so the two belong together. -->
+                    <div class="setting-group" data-help="tapToSpeak">
+                        <label>One tap or two</label>
+                        <div class="setting-item">
+                            <label>How many taps a button needs</label>
+                            <div class="radio-row">
+                                <label class="radio-label">
+                                    <input type="radio" name="expressTapMode" value="single" checked>
+                                    One tap
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="expressTapMode" value="double">
+                                    Two taps (guards against accidental taps)
+                                </label>
+                            </div>
+                        </div>
+                        <div class="setting-item">
+                            <label for="doubleTapMsSelect">Time allowed between the two taps</label>
+                            <select id="doubleTapMsSelect">
+                                <option value="300">0.3 seconds</option>
+                                <option value="400" selected>0.4 seconds</option>
+                                <option value="600">0.6 seconds</option>
+                                <option value="800">0.8 seconds</option>
+                                <option value="1000">1 second</option>
+                            </select>
+                        </div>
+                    </div>
                     <div class="setting-group" id="fullscreenGroup">
                         <!-- Section heading. Every control sits in a section (Ken,
                              August 11 2026), so a lone checkbox gets a heading naming
@@ -962,34 +993,6 @@
                         </div>
                     </div>
                     <div id="expressEditor"></div>
-                    <!-- The interval is meaningless unless a double tap is required, so
-                         the two belong together. -->
-                    <div class="setting-group" data-help="tapToSpeak">
-                        <label>Tapping to speak</label>
-                        <div class="setting-item">
-                            <label>Speaking an Express Panel phrase</label>
-                            <div class="radio-row">
-                                <label class="radio-label">
-                                    <input type="radio" name="expressTapMode" value="single" checked>
-                                    Single tap speaks it
-                                </label>
-                                <label class="radio-label">
-                                    <input type="radio" name="expressTapMode" value="double">
-                                    Require a double tap (guards against accidental taps)
-                                </label>
-                            </div>
-                        </div>
-                        <div class="setting-item">
-                            <label for="doubleTapMsSelect">Double-tap interval</label>
-                            <select id="doubleTapMsSelect">
-                                <option value="300">0.3 seconds</option>
-                                <option value="400" selected>0.4 seconds</option>
-                                <option value="600">0.6 seconds</option>
-                                <option value="800">0.8 seconds</option>
-                                <option value="1000">1 second</option>
-                            </select>
-                        </div>
-                    </div>
                     <!-- The look and the sizes come LAST on purpose (Ken, August 23
                          2026): these controls mean very little against an empty panel
                          and a great deal once there are real phrases to watch move.

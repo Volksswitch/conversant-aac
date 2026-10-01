@@ -435,8 +435,8 @@ export function showResponseError(message, onRetry) {
 // (distinct color, same span); blank cells and any leftover cells stay
 // blank. (The persistent overrides that used to sit above the grid have moved to
 // the Command Bar — Ken, June 29 2026 — so the panel is just the phrase grid.)
-// Activation: single-tap, or a confirming double-tap (first tap arms, second
-// within doubleTapMs confirms).
+// Activation: one tap, or two when the user's "One tap or two" setting asks for it -
+// decided for the whole screen by tap-guard.js, not here.
 // Speaking / opening the modal is the caller's job, so this stays presentational.
 const epGrid = document.getElementById('epGrid');
 
@@ -478,7 +478,6 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
     const {
         categories = {}, influencerColors = {},
         activePartnerId = null, activeFeelingId = null, activePlaceId = null,
-        tapMode = 'single', doubleTapMs = 400,
         onSpeak, onTogglePartner, onToggleFeeling, onTogglePlace, onInMyOwnWords,
         // Choice chips take the leading cells for exactly as long as the partner has
         // a closed set on the table, and only as many cells as there are choices
@@ -533,13 +532,6 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
     epGrid.classList.add('ep-mark-' + (['color', 'thick', 'side', 'shape'].includes(contextMark) ? contextMark : 'shape'));
     epGrid.innerHTML = '';
 
-    let armedBtn = null;
-    let armTimer = null;
-    const disarm = () => {
-        if (armedBtn) armedBtn.classList.remove('ep-armed');
-        armedBtn = null;
-        if (armTimer) { clearTimeout(armTimer); armTimer = null; }
-    };
     const blank = (span) => {
         const f = document.createElement('div');
         f.className = 'ep-cell-blank';
@@ -639,11 +631,9 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
             b.setAttribute('aria-label', playing ? `Stop playing ${label}` : `Play ${label}`);
             b.setAttribute('aria-pressed', String(playing));
             b.innerHTML = `<span class="ep-text">${escapeHtml(label)}</span>`;
-            b.addEventListener('click', () => {
-                if (playing || tapMode !== 'double') { disarm(); onPlayAudio && onPlayAudio(item); return; }
-                if (armedBtn === b) { disarm(); onPlayAudio && onPlayAudio(item); }
-                else { disarm(); armedBtn = b; b.classList.add('ep-armed'); armTimer = setTimeout(disarm, doubleTapMs); }
-            });
+            // One tap or two is decided by tap-guard.js, for the whole screen; stopping a
+            // playing sound is exempt there.
+            b.addEventListener('click', () => { onPlayAudio && onPlayAudio(item); });
             return b;
         }
         // phrase. Its color comes from the BAND it is in (set by the caller on the
@@ -658,12 +648,8 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         b.title = item.text;
         b.setAttribute('aria-label', item.text);
         b.innerHTML = `<span class="ep-text">${escapeHtml(item.text)}</span>`;
-        b.addEventListener('click', () => {
-            if (tapMode === 'double') {
-                if (armedBtn === b) { disarm(); onSpeak && onSpeak(item); }
-                else { disarm(); armedBtn = b; b.classList.add('ep-armed'); armTimer = setTimeout(disarm, doubleTapMs); }
-            } else { onSpeak && onSpeak(item); }
-        });
+        // One tap or two is decided by tap-guard.js, for the whole screen.
+        b.addEventListener('click', () => { onSpeak && onSpeak(item); });
         return b;
     };
 
@@ -715,12 +701,7 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         b.title = closing ? 'Put the panel back as it was' : 'Show more buttons';
         b.setAttribute('aria-label', closing ? 'Close, put the panel back as it was' : 'More buttons');
         b.innerHTML = `<span class="ep-text">${escapeHtml(m.label)}</span>`;
-        b.addEventListener('click', () => {
-            if (tapMode === 'double') {
-                if (armedBtn === b) { disarm(); onMore && onMore(m); }
-                else { disarm(); armedBtn = b; b.classList.add('ep-armed'); armTimer = setTimeout(disarm, doubleTapMs); }
-            } else { onMore && onMore(m); }
-        });
+        b.addEventListener('click', () => { onMore && onMore(m); });
         return b;
     };
 

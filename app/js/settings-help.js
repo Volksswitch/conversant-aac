@@ -81,7 +81,7 @@ const HELP = {
     "subsequentDelayInput": "How long before it says another one, if you are still choosing.",
     "placeholderEaseOffInput": "Adds this much to the wait each exchange, so the app eases off once the other person has learned that a pause means you are choosing.",
     "maxPlaceholdersInput": "How many of those holding phrases it may say in one turn. Set it to none if you would rather it stayed quiet.",
-    "doubleTapMsSelect": "How quickly the two taps have to follow one another to count as a double tap.",
+    "doubleTapMsSelect": "How quickly the second tap has to follow the first to count.",
     "appMarginSlider": "Moves the whole app in from the edges of the screen, so a keyguard fits inside a tight case opening.",
     "dockSepSlider": "The gap between the keyboard area and the rest of the screen. It does not move the keyboard itself.",
     "transcriptSepSlider": "The gap between the conversation and the row of command buttons underneath it.",
@@ -153,7 +153,7 @@ const HELP = {
     "ttsProvider": "Which voice speaks for you. This device's own voices are free. A paid voice usually sounds far better. Azure is the one we recommend.",
     "keyboardMode": "Whether you type on a keyboard you plug in, or on the app's own keyboard on the screen.",
     "keyboardDock": "Whether the Express Panel and keyboard sit along the bottom of the screen, or down one side.",
-    "expressTapMode": "Whether one tap speaks an Express Panel button, or two are needed so you cannot set it off by accident.",
+    "expressTapMode": "One tap, or two so a stray touch cannot say something or change the screen by accident.",
     "reviewListKind": "Choose whether the list shows conversations with real people, or the ones you practiced with the app."
   },
   "sections": {
@@ -187,7 +187,7 @@ const HELP = {
     "suggestions": "How many response suggestions you are offered, and how much of each one is shown on its card.",
     "commandBarFace": "Whether the buttons along the command bar show their picture or a short word or two instead.",
     "placeholders": "How long the app waits before it says something to hold your place, and how many times it may say one.",
-    "tapToSpeak": "Whether one tap or two speaks an Express Panel button, and how quickly the two taps must follow one another.",
+    "tapToSpeak": "Whether one tap or two is needed for anything that speaks, changes your suggestions, or takes you to another screen, and how quickly the two taps must follow.",
     "keyguardSpacing": "How much space sits around the edges of the app and between its parts. Changing these moves the holes in a keyguard.",
     "bandSizes": "How the panel is divided into bands, and how the buttons that never speak are told apart from each other.",
     "acknowledgment": "The phrases it may say first, right after the other person stops talking. One is picked at random.",
