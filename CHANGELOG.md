@@ -154,7 +154,7 @@ forgetting to tag one is only ever noise, never silence.
 - Which command button you pressed is now recorded by name, rather than only that one of them was pressed.
 - None of this is recorded for a conversation you asked the app not to save.
 
-- Your goals, and everything else about a person or a place, now save as you change them. Adding a goal saves it straight away, and so does moving one, removing one, or typing a short label for it. The "Save" button at the foot of those forms is now "Done" and simply takes you back to the list.
+- Your goals, and everything else about a person or a place, now save as you change them. Adding a goal saves it right away, and so does moving one, removing one, or typing a short label for it. The "Save" button at the foot of those forms is now "Done" and simply takes you back to the list.
 - Fixed: a goal you added to a person or a place looked saved and was not. It appeared in the list with a number beside it, but nothing was written until you found the "Save" button below the next section and pressed it - and there was nothing on screen to tell you that.
 - The "Goals For Any Conversation" screen no longer has a "Save" button either. It tells you it saved instead.
 
@@ -205,7 +205,7 @@ forgetting to tag one is only ever noise, never silence.
 ## Version 0.10.18
 
 - Telling the app who you are with, where you are, or how you feel now takes effect
-  straight away. Before, tapping one of those buttons part-way through a conversation
+  right away. Before, tapping one of those buttons part-way through a conversation
   only changed the suggestions you got the *next* time the other person paused, so the
   four suggestions in front of you were still the ones written before you said
   anything. Now, if there are suggestions on screen, they are replaced with ones that
@@ -413,7 +413,7 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Version 0.10.7
 
-- When someone asks you for something the app has not been told — your date of birth, your allergies, an address — it no longer makes one up. It used to: asked "are you allergic to anything?" with nothing on file, the top suggestion was "No allergies." Now the first suggestion is a plain "I don't know", which is the honest answer and the one a nurse or a doctor can actually act on. If the fact IS in your About Me, it still answers straight away.
+- When someone asks you for something the app has not been told — your date of birth, your allergies, an address — it no longer makes one up. It used to: asked "are you allergic to anything?" with nothing on file, the top suggestion was "No allergies." Now the first suggestion is a plain "I don't know", which is the honest answer and the one a nurse or a doctor can actually act on. If the fact IS in your About Me, it still answers right away.
 - There is a new kind of suggestion for those moments: "Give me a second and I'll type it." It buys you a moment out loud, and — unlike every other suggestion — it does not close off what the other person asked. Their question stays open, so when you have typed your answer it goes back against the right question. It never appears in the first position, because the first suggestion is always one that settles the matter and lets the other person get on.
 - About Me has a new topic, **Health & Safety** — allergies, medications, conditions, foods you can't have, date of birth, and who to contact in an emergency. These are the things a doctor, a pharmacist or a paramedic asks for, and until now there was nowhere to put them, so the app could only ever say it didn't know. Like your contact details, they are private: the app knows them, never brings them up on its own, and offers one only when somebody asks or you ask for it yourself.
 - **And when something comes up that About Me has no question for at all, it now becomes a question.** Nobody can write a list of every fact a life needs — an insurance number, a ward, your dog's name, whether you can manage stairs — so instead the conversations add them. If the AI needed something and had no way to ask you for it, that turns into a row in "Questions worth answering", and your answer is kept under "Other things about me" where you can change or remove it. Those answers are always private. **This works in practice conversations too**, so rehearsing an appointment can tell you what the app doesn't know about you while there is still time to fill it in.
@@ -633,7 +633,7 @@ have._
   your permission every time the app opens; that is the device asking, not the app
   losing your folder.
 - Connecting a data folder from Settings now shows your saved settings profiles and
-  backups straight away. They were there all along, but the two lists didn't redraw
+  backups right away. They were there all along, but the two lists didn't redraw
   until you closed Settings and opened it again, which made it look as though your
   profiles had been lost.
 - The app asks your browser to promise not to erase its stored settings, every time it
@@ -751,7 +751,7 @@ have._
 - **Fixed: the on-screen keyboard did not appear when you added a phrase to the Express
   Panel.** Pressing **Add a phrase** put the cursor in the new box, but the panel stayed
   in front of you instead of the keyboard, so there was no way to type until you tapped
-  outside the box and back in again. It now comes up straight away, in every band. Only
+  outside the box and back in again. It now comes up right away, in every band. Only
   affects people using the app's own on-screen keyboard.
 
 ## Version 0.8.2
@@ -1117,7 +1117,7 @@ have._
 - The version number is back on the opening screen, under Start. If you are ever asked which version you have, it is there without opening Settings — which matters most when the app is too stuck to open Settings at all.
 - Automatic weekly reports are now switched on. About once a week, when you open the app, it sends back a short summary of how it has been going — how many conversations, how long things took, and any errors it recorded. It never includes anything you or the other person said. Put the name you were given in Settings → Troubleshooting so we know whose report it is; the same place shows exactly what a report contains, lists everything already sent, and has the switch to turn it off.
 - Fixed: a problem report was leaving out whether the app can use this device's speech recognition — the first thing worth knowing when the app cannot hear anyone.
-- The first time you open the app after this update, it sends a report straight away rather than waiting for the week to come round, so you and we can both see that reporting is working before you rely on it.
+- The first time you open the app after this update, it sends a report right away rather than waiting for the week to come round, so you and we can both see that reporting is working before you rely on it.
 - Fixed: with a screen edge margin set, the keyboard did not move in with everything else, so its keys no longer lined up with the Express Panel buttons behind them — and a keyguard cut for one would not fit the other. The keyboard now sits inside the margin like the rest of the app.
 - When you tap a button in the Express Panel to set it up, that button now stays highlighted while you work on it, so you can see which one you picked. The highlight moves when you tap a different button, and clears when you leave the Express Panel settings or close Settings.
 - **"How I talk with them" now looks like something you can open.** In About Me → People I Know, when you add or edit a person, that section had no arrow and no box, so it read as a heading rather than a control — and everything inside it, including the conversation starters and goodbyes for that person, looked as though it simply wasn't there. It is now a proper button with an arrow that turns when it opens, and it says what you'll find inside.
@@ -1141,7 +1141,7 @@ have._
   culprit — your own, a friend's, a place you go. There is now a "how to say it" box
   next to each Express Panel phrase, next to a person's name and what you call them,
   and next to a place, each with its own 🔊 so you can try a spelling and hear the
-  result straight away. Spelling it the way it sounds is what works: "Shiv-awn" for
+  result right away. Spelling it the way it sounds is what works: "Shiv-awn" for
   Siobhan. **Only the voice sees it.** The button, the person, the place and the
   conversation transcript all keep the real spelling — so nothing on screen changes,
   and a saved conversation still reads properly.
@@ -1260,7 +1260,7 @@ have._
   listening, which Practice Mode is never meant to do — the AI plays the other
   person, so there is nothing to listen to.
 - Starting a conversation with a phrase from the Express Panel — or by typing one
-  in "In my own words" — now turns listening on straight away, so the other
+  in "In my own words" — now turns listening on right away, so the other
   person's reply is picked up. Before this, if you opened a conversation that way
   without first tapping Listen, the app stayed quiet and missed what they said
   back. Tapping Listen yourself, and the "resume listening automatically" setting,
