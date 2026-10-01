@@ -318,30 +318,8 @@ about to fall by an order of magnitude is the trap.
 - **The practice question** (§9): asking whether a fact from a practice conversation
   is true or made up. It belongs with the About Me offer above.
 - **The beta counts** (§8.1): how often review is used, in the weekly report.
-- **The design document still says "Nothing in it is built."** Its next sync should
-  say what is built. Left alone because a doc sync is Ken's call.
 - **Why not now:** each one needs a decision or design work of its own, and the reading
   and recording half is useful without them (§13.6 puts it first).
-
-### Conversation Review: lift Section 14 into the three User Manuals
-- **Raised:** 2026-09-27 - the document became the design record, and Ken asked that the
-  user-facing material be preserved inside it rather than lost: *"preserve the
-  information that will be entered into the user manuals as a section in the design
-  doc."*
-- **Where it stands:** Section 14, "What the User Manuals Will Say", seven short
-  sub-sections written in the manual's voice, where "you" is the user. It is the only
-  part of that document addressed to the user; everything else is about why the feature
-  is the way it is, which a manual doesn't carry.
-- **What is wanted:** when the feature ships, that section goes into all three User
-  Manuals. They are self-contained by decision (Ken, August 1 2026), so it lands in each
-  of them in the same pass, and the standing rule applies - a change to shared behavior
-  that touches one manual and not the others is an incomplete sync.
-- **Why it is not being done now:** the feature's first version was built on 2026-10-01,
-  so this is now waiting on a doc sync, which is Ken's call. Section 14 describes some
-  parts that are not built yet (see the entry above), so those lines need trimming when
-  it is lifted.
-- **Note:** the design record itself never becomes customer-facing, so it stays off
-  `scripts/wordpress/user-documents.json` permanently.
 
 ### The iPad and Android manuals carry the Windows manual's page header
 - **Raised:** 2026-09-15 - found while checking table borders. The running header at the
@@ -754,6 +732,29 @@ about to fall by an order of magnitude is the trap.
   behind a general "custom scenarios someday" note.
 
 ## Done
+
+### Conversation Review: lift Section 14 into the three User Manuals
+- **Raised:** 2026-09-27 - the document became the design record, and Ken asked that the
+  user-facing material be preserved inside it rather than lost: *"preserve the
+  information that will be entered into the user manuals as a section in the design
+  doc."*
+- **Where it stands:** Section 14, "What the User Manuals Will Say", seven short
+  sub-sections written in the manual's voice, where "you" is the user. It is the only
+  part of that document addressed to the user; everything else is about why the feature
+  is the way it is, which a manual doesn't carry.
+- **What is wanted:** when the feature ships, that section goes into all three User
+  Manuals. They are self-contained by decision (Ken, August 1 2026), so it lands in each
+  of them in the same pass, and the standing rule applies - a change to shared behavior
+  that touches one manual and not the others is an incomplete sync.
+- **Why it is not being done now:** the feature's first version was built on 2026-10-01,
+  so this is now waiting on a doc sync, which is Ken's call. Section 14 describes some
+  parts that are not built yet (see the entry above), so those lines need trimming when
+  it is lifted.
+- **Note:** the design record itself never becomes customer-facing, so it stays off
+  `scripts/wordpress/user-documents.json` permanently.
+- **DONE 2026-10-01:** lifted into all three manuals as section 6.8 by "sync docs", cut to
+  what was built. The design record's section 14 now says the manuals are the copy kept
+  current.
 
 ### The keyboard and generation-timing questions - both were collected and unread
 - **Raised:** 2026-09-10 - Ken asked two questions: "how many people are using the
