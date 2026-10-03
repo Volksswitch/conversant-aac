@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.13.3
+
 - New: what you do in Conversation Review now changes how the app sounds. Words you type
   for a turn, and response options you reword, become examples of how you talk. A
   response option you pick as closer counts as your choice for that turn, and so does an
