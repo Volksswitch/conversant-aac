@@ -350,16 +350,62 @@ about to fall by an order of magnitude is the trap.
   Review.docx" to be implemented. The first build covers choosing a conversation,
   moving through it, and recording every kind of answer to a file beside the
   conversation. These parts of the design are not built yet:
-- **Play it back at real speed** (§7). The button is on the bar and shown unavailable.
-  The design document itself leaves it open (§12) and says to build it last.
-- **Sending answers to where they belong** (§8, §13.3). Answers are saved, but nothing
-  yet offers to turn a typed sentence into a voice example, a phrase into an Express
-  Panel button, or a fact into About Me. Each needs its own "do you want this?" step.
-- **The practice question** (§9): asking whether a fact from a practice conversation
-  is true or made up. It belongs with the About Me offer above.
-- **The beta counts** (§8.1): how often review is used, in the weekly report.
-- **Why not now:** each one needs a decision or design work of its own, and the reading
-  and recording half is useful without them (§13.6 puts it first).
+- **Revised 2026-10-03 after Sarah's comments on the prototype** (one SLP; her PDF is
+  "Sarah's input - original.pdf" on Ken's Desktop). Ken's decisions are folded in below.
+- **WHY THIS FEATURE MATTERS, and it decides the order of everything below (Ken,
+  2026-10-03):** review is Conversant's single biggest answer to "it doesn't sound like
+  me." Sarah expects clients to use it "one now and then", and Ken keeps it anyway. **The
+  condition is that a review must visibly change how the app sounds.** Today it does not:
+  answers are saved to the review file and nothing reads them. A user who reviews and
+  sees no difference has wasted their effort, and will not review again.
+- **FIRST: review answers feed the voice examples.** The voice reading in About Me ("Read
+  my conversations") uses only what was said live, and skips the review files entirely.
+  Wanted:
+  - A sentence the user typed or a card they reworded in review counts as their own
+    words, the same as a composed turn, so it becomes a voice example.
+  - A card marked "closest" counts as the user's choice for that turn, in place of the
+    card picked live.
+  - It happens without a trip to About Me. Finishing a review, or leaving it, updates
+    the voice examples. Otherwise the link between the work and the result is invisible.
+  - The user can see what their review added (see the playback item below).
+- **LATER, after beta testers have used review: Express Panel buttons and About Me
+  facts** (§8, §13.3). Each still needs its own "do you want this?" step at the moment
+  it applies, not a separate screen; Sarah was confused by the "what comes of it"
+  screen. About Me facts only for clear, lasting facts (Sarah, agreed). **The practice
+  question** (§9, true or made up) belongs with the About Me offer.
+- **Play it back at real speed** (§7): stays on this list, last. **Its button comes off
+  the review bar for now** (Ken). What replaces it is Ken's call; the options put to him
+  on 2026-10-03 were a "what this review taught the app" view, or "next turn where you
+  asked for something else".
+- **The turn screen stays as it is** (Ken chose to wait for more reviewers or a tester).
+  Sarah called it "a lot"; Ken's view is that needing two taps to edit a card's wording
+  already keeps editing out of the way.
+- **The "turns you asked for something else" count on the conversation list stays**
+  (Ken, disagreeing with Sarah's "steers them too much"). It comes from what the user
+  did live (New 4, typing their own words), so it points at the turns where the app
+  missed their voice, which is where review is most worth the effort.
+- **Not decided:** Sarah suggests dropping "none of these were right" when no sentence
+  follows it.
+- **The beta counts** (§8.1): how often review is used, in the weekly report. Wanted
+  before deciding how much more to put into review.
+- **Why not now:** the voice-example item is next and waits only on Ken saying go. The
+  rest waits on beta feedback.
+
+### A clinician support tool
+- **Raised:** 2026-10-03 - Ken, from Sarah's answers on the review prototype: offering
+  to add a fact to About Me is "a requirement for a clinician tool", and summaries of how
+  a week went are "only for a clinician".
+- **What it is so far:** a separate tool for the user's SLP, alongside the app, not part
+  of it. Known contents: (a) weekly summaries for a client - how often they talked, how
+  often suggestions were used, what review found; (b) the "add this to About Me?" offer
+  for clear, lasting facts, with the clinician helping decide. It overlaps "An SLP
+  authoring practice conversations for a client to exercise" below, which is the same
+  person wanting a way in.
+- **What is wanted first:** a fuller description - who uses it, on what device, how a
+  client's data reaches it and with whose permission, and what it never sees (a real
+  conversation carries the words of a partner who never agreed to be reviewed).
+- **Why not now:** it is undescribed, and it should be shaped by what clinicians ask for
+  during the beta.
 
 ### The iPad and Android manuals carry the Windows manual's page header
 - **Raised:** 2026-09-15 - found while checking table borders. The running header at the
