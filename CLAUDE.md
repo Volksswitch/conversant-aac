@@ -580,6 +580,25 @@ the instance the page started with.
 **This is very likely what a tester is seeing when a fixed bug "comes back".** Before
 diagnosing a regression on Ken's machine, ask what build he is actually running.
 
+## Local testing uses its own data folder — trigger phrase "reset test data" (Ken, October 3 2026)
+
+**The copy run from serve.bat (http://localhost:8000) is a different web address from
+the installed app, so it has its own settings and NO data folder until one is chosen.**
+Ken will not point it at his real folder, so `test-data-folder/` in the project holds a
+made-up user (Marc Delgado: About Me, people, places, Express Panel, voice, 17
+conversations, one part reviewed). **"reset test data"** →
+`node --no-warnings scripts/make-test-data-folder.mjs`, which deletes and rebuilds it
+from the demo builder, with every date moved so the newest conversation was yesterday
+(the review list shows the last week by default). It only deletes a folder carrying its
+own marker file. The folder is git-ignored.
+
+**serve.bat now runs `scripts/dev-server.py`**, which tells the browser never to keep old
+copies of the app's files and always sends the whole file. Python's plain server let
+the browser run stale scripts, and a no-keep server that still answered "not modified"
+broke the service worker's update check. **The in-app browser pane refuses service
+workers on any new local address**, whatever the server, so a "didn't start up properly"
+box there about the service worker is the pane, not the app.
+
 ## Logs are ASCII, and a permission prompt is not a hang (Ken, August 2 2026)
 
 Two fixes from one error-log reading. Ken: *"is that an 'em dash'? If so, it doesn't belong in an error log. I would think that any log should be limited to ASCII."*

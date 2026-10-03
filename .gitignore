@@ -95,3 +95,6 @@ Reports/
 
 # A Windows shortcut Ken keeps in the project folder; not project content.
 *.lnk
+
+# Test data folder for local testing (rebuilt by scripts/make-test-data-folder.mjs)
+test-data-folder/
