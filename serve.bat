@@ -35,4 +35,6 @@ REM Open the default browser at the app URL. If it opens the wrong
 REM browser, just copy the URL above into Chrome or Edge instead.
 start "" "http://localhost:8000"
 
-python -m http.server 8000 --directory app
+REM dev-server.py is Python's own server plus one change: it tells the browser not to
+REM keep old copies of the app's files, so a reload always runs what is on disk.
+python scripts\dev-server.py 8000
