@@ -39,6 +39,7 @@ let wordInput = null;
 let lastComposed = null;  // what the panel was last drawn with: { items, bands }
 let composerOpen = false;
 let listShowsPractice = false;   // which list the Review tab shows
+let cardTapped = -1;      // the card the user last tapped on this visit to the turn
 // How far back the list goes, in days, or 'all'. Starts at a week every session (Ken,
 // October 3 2026): most users review only now and then, and a short list is quicker
 // to read and to open. A note below the list says when older ones are hidden.
@@ -162,6 +163,7 @@ export async function enter(entry) {
     ed = null;
     composerOpen = false;
     userPaged = false;
+    cardTapped = -1;
     active = true;
     document.body.classList.add('reviewing');
     for (const id of ['liveTurn', 'coachLine', 'nowPlaying']) { const el = $(id); if (el) el.hidden = true; }
@@ -507,6 +509,7 @@ function goTo(i) {
     closeComposer();
     at = i;
     userPaged = false;
+    cardTapped = -1;
     review = model.markReached(review, i);
     scheduleSave();
     render();
@@ -520,6 +523,7 @@ function stepHistory(which) {
     stopEditing();
     const i = conv.turns.findIndex((t) => t.key === got.turnKey);
     if (i >= 0) at = i;
+    cardTapped = -1;
     review = model.markReached(review, at);
     scheduleSave();
     render();
@@ -574,8 +578,13 @@ function onCardsClick(e) {
     }
     // With "two taps" on, the first tap never reaches here: tap-guard.js arms the card
     // and swallows it, for this screen as for the rest of the app.
-    if (selectedCard() === i) startCardEdit(i);
-    else chooseCard(i);
+    // EVERY card takes two taps to edit, the one spoken at the time included (Ken,
+    // October 3 2026). That card already shows as chosen, but the user has not tapped
+    // it yet, so the first tap only chooses it. Editing needs a tap on a card the user
+    // has ALREADY tapped on this visit to the turn.
+    if (cardTapped === i && selectedCard() === i) { startCardEdit(i); return; }
+    if (selectedCard() !== i) chooseCard(i);
+    cardTapped = i;
 }
 
 // Which card counts as chosen right now: the one the user picked in review, or, until

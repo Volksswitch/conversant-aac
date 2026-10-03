@@ -26,6 +26,10 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Fixed: in Conversation Review, one tap on the response option you used at the time
+  opened its words for editing. It now takes two taps, like every other response
+  option: the first chooses it, the second lets you change its words.
+
 ## Version 0.13.3
 
 - New: what you do in Conversation Review now changes how the app sounds. Words you type

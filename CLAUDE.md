@@ -691,8 +691,8 @@ Express buttons or About Me.
 - **CHOOSING A CARD AND EDITING IT ARE TWO TAPS (Ken, October 1 2026).** The first build
   opened the editor on the first tap, which hid the Express Panel under the keyboard
   before the user asked to type, with Undo the only visible way back. Now a tap chooses;
-  a tap on the chosen card edits (the spoken card counts as chosen until something else
-  is); a tap on the edited card away from its words finishes. Card taps follow the
+  a SECOND tap on the same card edits - including the card spoken at the time, which
+  shows as chosen but still needs its own first tap (Ken, October 3 2026); a tap on the edited card away from its words finishes. Card taps follow the
   user's single/double-tap setting. **Solid dark border = the current choice; the card
   spoken at the time turns DASHED once something replaces it** — the first build gave
   both the same border and they could not be told apart. **The same rule covers New 4 and

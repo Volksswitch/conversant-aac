@@ -22,6 +22,9 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.13.4": [
+    "Fixed: in Conversation Review, one tap on the response option you used at the time opened its words for editing. It now takes two taps, like every other response option: the first chooses it, the second lets you change its words."
+  ],
   "0.13.3": [
     "New: what you do in Conversation Review now changes how the app sounds. Words you type for a turn, and response options you reword, become examples of how you talk. A response option you pick as closer counts as your choice for that turn, and so does an Express Panel button you would rather have tapped: both help the app judge how long you like your replies to be. The app picks this up when you leave a review. You don't need to open About Me.",
     "New: a Jump button in Conversation Review, in place of the unavailable Play button. It takes you to the next turn where you asked for something else at the time, such as pressing New 4 or typing your own words. It is grayed out when there are no more.",
