@@ -9,8 +9,8 @@
  *
  * The nine Command Bar buttons, by position:
  *   Listen -> Previous Turn      Start conversation -> Next Turn
- *   End conversation -> What this review taught the app (Ken, October 3 2026; it took
- *     the place of "Play it back", which stays on the to-do list unbuilt)
+ *   End conversation -> Next turn where you asked for something else (Ken, October 3
+ *     2026; it took the place of "Play it back", which stays on the to-do list unbuilt)
  *   Repeat what I said -> Previous Word      Hold on -> Next Word
  *   Ask them to repeat -> Undo   Wrap up -> Redo   Don't save -> Hear it
  *   Settings -> Settings, which is also how the user leaves review (§5).
@@ -24,8 +24,6 @@ import * as storage from './storage.js';
 import * as keyboard from './keyboard.js';
 import * as model from './review-model.js';
 import * as wed from './word-editor.js';
-import * as voiceProfile from './voice.js';
-import { reviewContributions } from './voice-harvest.js';
 import { refreshVoiceHarvest } from './voice-refresh.js';
 
 let deps = null;
@@ -41,13 +39,12 @@ let wordInput = null;
 let lastComposed = null;  // what the panel was last drawn with: { items, bands }
 let composerOpen = false;
 let listShowsPractice = false;   // which list the Review tab shows
-let taught = null;        // null | 'reading' | what "What this review taught the app" shows
 
 // The bar, in order. `id` is the Command Bar button whose position the action takes.
 const BAR = [
     { id: 'listenBtn',          act: 'prevTurn', icon: 'prevTurn', label: 'Previous turn', face: 'Previous' },
     { id: 'initiateBtn',        act: 'nextTurn', icon: 'nextTurn', label: 'Next turn',     face: 'Next' },
-    { id: 'endConversationBtn', act: 'taught',   icon: 'learned',  label: 'What this review taught the app', face: 'Learned' },
+    { id: 'endConversationBtn', act: 'nextFlag', icon: 'nextFlag', label: 'Next turn where you asked for something else', face: 'Jump' },
     { id: 'sayAgainBtn',        act: 'prevWord', icon: 'prevWord', label: 'Previous word', face: 'Prev word' },
     { id: 'holdOnBtn',          act: 'nextWord', icon: 'nextWord', label: 'Next word',     face: 'Next word' },
     { id: 'pardonBtn',          act: 'undo',     icon: 'undo',     label: 'Undo',          face: 'Undo' },
@@ -161,7 +158,6 @@ export async function enter(entry) {
     ed = null;
     composerOpen = false;
     userPaged = false;
-    taught = null;
     active = true;
     document.body.classList.add('reviewing');
     for (const id of ['liveTurn', 'coachLine', 'nowPlaying']) { const el = $(id); if (el) el.hidden = true; }
@@ -178,7 +174,6 @@ async function leave() {
     // reading every conversation must not hold the user on a screen they asked to leave.
     void refreshVoiceHarvest();
     active = false;
-    taught = null;
     conv = null;
     review = null;
     lastComposed = null;
@@ -216,7 +211,7 @@ function renderBar() {
     const state = {
         prevTurn: at > 0,
         nextTurn: at < conv.turns.length - 1,
-        taught: true,
+        nextFlag: nextFlagged() >= 0,
         prevWord: !!editing,
         nextWord: !!editing,
         undo: history.canUndo(),
@@ -229,12 +224,8 @@ function renderBar() {
         const el = $(b.id);
         if (!el) continue;
         el.disabled = !state[b.act];
-        el.classList.remove('listening', 'private-on', 'ep-on', 'review-on');
+        el.classList.remove('listening', 'private-on', 'ep-on');
         el.setAttribute('aria-pressed', 'false');
-        if (b.act === 'taught' && taught) {
-            el.classList.add('review-on');
-            el.setAttribute('aria-pressed', 'true');
-        }
     }
 }
 
@@ -266,7 +257,6 @@ function wordsHtml() {
 function renderPane() {
     const log = $('transcriptLog');
     if (!log) return;
-    if (taught) { renderTaught(log); return; }
     const html = [];
     conv.turns.forEach((t, i) => {
         const here = i === at;
@@ -493,8 +483,6 @@ function onBarClick(e) {
     e.preventDefault();
     e.stopImmediatePropagation();
     if (btn.disabled) return;
-    // Any other button goes back to the conversation first.
-    if (taught && def.act !== 'taught' && def.act !== 'leave') { taught = null; render(); }
     switch (def.act) {
         case 'prevTurn': goTo(at - 1); break;
         case 'nextTurn': goTo(at + 1); break;
@@ -503,7 +491,7 @@ function onBarClick(e) {
         case 'undo': stepHistory('undo'); break;
         case 'redo': stepHistory('redo'); break;
         case 'hear': hear(); break;
-        case 'taught': void toggleTaught(); break;
+        case 'nextFlag': goTo(nextFlagged()); break;
         case 'leave': void leave(); break;
         default: break;
     }
@@ -511,7 +499,6 @@ function onBarClick(e) {
 
 function goTo(i) {
     if (!conv || i < 0 || i >= conv.turns.length || i === at) return;
-    taught = null;
     stopEditing();
     closeComposer();
     at = i;
@@ -539,61 +526,12 @@ function hear() {
     if (text) deps.speak(text);
 }
 
-// "What this review taught the app" (Ken, October 3 2026). Review is the app's answer to
-// "it doesn't sound like me", and that answer is only true if the user can see their
-// work land. So this saves the review, rebuilds the voice examples from it, and shows
-// what came of it. A second tap, or moving to a turn, goes back to the conversation.
-async function toggleTaught() {
-    if (taught) { taught = null; render(); return; }
-    stopEditing();
-    closeComposer();
-    taught = 'reading';
-    render();
-    await flushSave();
-    await refreshVoiceHarvest();
-    if (!active || taught !== 'reading') return;
-    taught = reviewContributions(conv.data, review);
-    render();
-}
-
-function renderTaught(log) {
-    const html = ['<div class="review-taught">', '<h3>What this review taught the app</h3>'];
-    if (taught === 'reading') {
-        html.push('<p>Reading your conversations…</p></div>');
-        log.innerHTML = html.join('');
-        return;
-    }
-    const inUse = new Set(voiceProfile.activeExemplars().slice(0, 12).map((t) => t.trim().toLowerCase()));
-    const used = taught.exemplars.filter((t) => inUse.has(t.trim().toLowerCase()));
-    const unused = taught.exemplars.length - used.length;
-    if (used.length) {
-        html.push('<p>Your own words from this review. The app now uses them as examples of how you talk:</p><ul>');
-        for (const t of used) html.push(`<li>“${esc(t)}”</li>`);
-        html.push('</ul>');
-    }
-    if (unused) {
-        html.push(`<p>${unused === 1 ? 'One more sentence is' : `${unused} more sentences are`} saved but not in use. Either you removed ${unused === 1 ? 'it' : 'them'} in About Me, or the app is using twelve newer examples.</p>`);
-    }
-    if (taught.tooShort.length) {
-        html.push(`<p>Too short to show how you talk, so not used as examples: ${taught.tooShort.map((t) => `“${esc(t)}”`).join(', ')}. An example needs four words or more.</p>`);
-    }
-    if (taught.choices) {
-        html.push(`<p>On ${taught.choices === 1 ? 'one turn' : `${taught.choices} turns`} you picked a different response option. The app now counts ${taught.choices === 1 ? 'that' : 'those'} as your choice when it works out how long you like your replies to be.</p>`);
-    }
-    if (!taught.exemplars.length && !taught.choices) {
-        html.push('<p>Nothing from this review changes how the app sounds yet. To give it examples of how you talk, type your own words for a turn, or change the words on a response option.</p>');
-    }
-    const others = Object.values((review && review.turns) || {}).filter((e) =>
-        (e.answer && !['typed', 'card'].includes(e.answer.kind))
-        || (e.reframers && e.reframers.length) || e.steer || e.misheard).length;
-    if (others) {
-        html.push(`<p>Your other answers, on ${others === 1 ? 'one turn' : `${others} turns`}, are saved. The app does not use them yet.</p>`);
-    }
-    html.push('<p>You can see everything the app has picked up, and remove anything, in About Me, under How I Sound.</p>');
-    html.push('</div>');
-    log.innerHTML = html.join('');
-    const box = $('transcript');
-    if (box) box.scrollTop = 0;
+// The next turn, after the one outlined, that carries one of the marks the list counts
+// ("turns you asked for something else"): -1 when none is left, which disables the button.
+function nextFlagged() {
+    if (!conv) return -1;
+    for (let i = at + 1; i < conv.turns.length; i++) if (conv.turns[i].flags.length) return i;
+    return -1;
 }
 
 // New 4 in review fetches nothing: it records that the user would have asked for a

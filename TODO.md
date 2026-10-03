@@ -361,15 +361,27 @@ about to fall by an order of magnitude is the trap.
 - **DONE 2026-10-03: review answers feed the voice examples.** Typed sentences and
   reworded response options become voice examples, ahead of words composed live; a
   response option marked closer replaces the live choice; any other answer withdraws the
-  live choice. The voice examples are rebuilt when the user leaves a review, and the
-  light bulb button on the review bar shows what that review taught the app.
+  live choice. The voice examples are rebuilt when the user leaves a review.
+- **Open (Ken, 2026-10-03): what can be learned from the other answers.** "A different
+  set" and "this Express button instead" both say none of the four options was right.
+  Today they only withdraw the live choice. See the entry below on the light bulb, and
+  the discussion that day: an Express answer is a choice of a shorter, ready-made reply.
 - **LATER, after beta testers have used review: Express Panel buttons and About Me
   facts** (§8, §13.3). Each still needs its own "do you want this?" step at the moment
   it applies, not a separate screen; Sarah was confused by the "what comes of it"
   screen. About Me facts only for clear, lasting facts (Sarah, agreed). **The practice
   question** (§9, true or made up) belongs with the About Me offer.
 - **Play it back at real speed** (§7): stays on this list, last. Its button came off
-  the review bar on 2026-10-03; "What this review taught the app" took its place.
+  the review bar on 2026-10-03; "Jump" (next turn where you asked for something else)
+  took its place, and is grayed out when no such turn is left.
+- **A light bulb on a reviewed turn** (Ken, 2026-10-03). Tapping it opens a dialog that
+  lists what the app learned from that turn and how it will change future
+  conversations. **First the app has to get better at deciding what it learns** - it
+  should not announce lessons it is not sure of. A first version, a whole-review summary
+  on the review bar, was built and taken out the same day.
+- **Filtering the Conversation Review list by date** (Ken, 2026-10-03): for example,
+  only the last week shown by default, beside the existing real/practice choice.
+  Undecided; see the discussion that day about what a default hides.
 - **The turn screen stays as it is** (Ken chose to wait for more reviewers or a tester).
   Sarah called it "a lot"; Ken's view is that needing two taps to edit a card's wording
   already keeps editing out of the way.

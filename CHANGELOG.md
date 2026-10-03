@@ -30,9 +30,9 @@ forgetting to tag one is only ever noise, never silence.
   for a turn, and response options you reword, become examples of how you talk. A
   response option you pick as closer counts as your choice for that turn. The app picks
   this up when you leave a review, with no trip to About Me needed.
-- New: a light bulb button in Conversation Review, in place of the unavailable Play
-  button. It shows what your review taught the app. Tap it again, or move to a turn, to
-  go back to the conversation.
+- New: a Jump button in Conversation Review, in place of the unavailable Play button.
+  It takes you to the next turn where you asked for something else at the time, such as
+  pressing New 4 or typing your own words. It is grayed out when there are no more.
 
 ## Version 0.13.2
 
