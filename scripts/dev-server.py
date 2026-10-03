@@ -19,6 +19,17 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'app')
 
 
 class NoCacheHandler(http.server.SimpleHTTPRequestHandler):
+    def send_head(self):
+        # Always send the whole file. Python's server answers "has this changed since?"
+        # with "Not Modified" and no file, which tells a browser to use the copy it
+        # kept - and we have just told it not to keep one. The service worker's update
+        # check then fails outright, and the app reports that it did not start up
+        # properly (found October 3 2026).
+        for h in ('If-Modified-Since', 'If-None-Match'):
+            if h in self.headers:
+                del self.headers[h]
+        return super().send_head()
+
     def end_headers(self):
         self.send_header('Cache-Control', 'no-store, must-revalidate')
         self.send_header('Expires', '0')
