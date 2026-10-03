@@ -362,10 +362,21 @@ about to fall by an order of magnitude is the trap.
   reworded response options become voice examples, ahead of words composed live; a
   response option marked closer replaces the live choice; any other answer withdraws the
   live choice. The voice examples are rebuilt when the user leaves a review.
-- **Open (Ken, 2026-10-03): what can be learned from the other answers.** "A different
-  set" and "this Express button instead" both say none of the four options was right.
-  Today they only withdraw the live choice. See the entry below on the light bulb, and
-  the discussion that day: an Express answer is a choice of a shorter, ready-made reply.
+- **DONE 2026-10-03: an Express button chosen in review counts in the length measure**,
+  as a choice of a short, ready-made reply over the four offered. It is never a voice
+  example (it is a button label). "A different set" teaches nothing about the voice; it
+  only withdraws the live choice.
+- **Measure whether each review lesson is right** (Ken, 2026-10-03: *"It would be great if
+  we could actually measure some of these guesses to know which ones are correct, close,
+  or no ops."*). Each kind of review answer is now its own entry in `REVIEW_LESSONS`
+  (voice-harvest.js), can be removed alone, and the harvest counts what each one
+  contributed. Still wanted: a way to tell whether a lesson helped. Candidates: the
+  share of turns answered from a response option without asking for a different set,
+  before and after a lesson starts contributing; or showing two sets side by side, with
+  and without a lesson, in a practice conversation. Needs beta data first.
+- **Leaving a review may be slow with a long history.** It rebuilds the voice examples
+  from every saved conversation. If testers notice, update only the conversation just
+  reviewed instead. Not measured.
 - **LATER, after beta testers have used review: Express Panel buttons and About Me
   facts** (§8, §13.3). Each still needs its own "do you want this?" step at the moment
   it applies, not a separate screen; Sarah was confused by the "what comes of it"
@@ -379,9 +390,9 @@ about to fall by an order of magnitude is the trap.
   conversations. **First the app has to get better at deciding what it learns** - it
   should not announce lessons it is not sure of. A first version, a whole-review summary
   on the review bar, was built and taken out the same day.
-- **Filtering the Conversation Review list by date** (Ken, 2026-10-03): for example,
-  only the last week shown by default, beside the existing real/practice choice.
-  Undecided; see the discussion that day about what a default hides.
+- **DONE 2026-10-03: the list can be cut by date** (last week by default each session,
+  last month, last three months, any time). Older conversations are skipped by file name
+  without being opened, and a line says how many are hidden, with a button to show them.
 - **The turn screen stays as it is** (Ken chose to wait for more reviewers or a tester).
   Sarah called it "a lot"; Ken's view is that needing two taps to edit a card's wording
   already keeps editing out of the way.

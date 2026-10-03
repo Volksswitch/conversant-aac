@@ -200,3 +200,47 @@ test('REVIEW: a conversation with no review harvests exactly as before', () => {
     const data = reviewedConversation();
     assert.deepEqual(harvest([{ id: 'c1', data }], OPTS), harvest([data], OPTS));
 });
+
+import { REVIEW_LESSONS, reviewedTurns } from '../app/js/voice-harvest.js';
+import { readFileSync } from 'node:fs';
+
+test('REVIEW: an Express button chosen in review is a length choice, never a voice example', () => {
+    const data = reviewedConversation();
+    const [first] = reviewModel.buildTurns(data);
+    const review = reviewModel.setPhraseAnswer(reviewModel.emptyReview('c1'), first, { itemId: 'x', text: 'Pretty good weekend thanks' });
+    const { turns } = reviewedTurns(data, review);
+    assert.equal(turns.length, 1);
+    assert.equal(turns[0].source, 'card');
+    assert.equal(turns[0].allOptions.length, 4, 'compared against the four it was chosen over');
+    const out = harvest([{ id: 'c1', data, review }], OPTS);
+    assert.deepEqual(out.exemplars, []);
+    assert.deepEqual(out.counts.byLesson, { phrase: 1 });
+});
+
+test('REVIEW: removing a lesson leaves that kind of answer with no effect at all', () => {
+    // The point of keeping the lessons apart: a guess that proves wrong can be dropped
+    // without touching anything else.
+    const data = reviewedConversation();
+    const [first, second] = reviewModel.buildTurns(data);
+    let review = reviewModel.setPhraseAnswer(reviewModel.emptyReview('c1'), first, { itemId: 'x', text: 'Pretty good weekend thanks' });
+    review = reviewModel.setTypedAnswer(review, second, 'Friday works, see you at noon.');
+    const { phrase, ...withoutPhrase } = REVIEW_LESSONS;
+    const out = reviewedTurns(data, review, withoutPhrase);
+    assert.equal(out.replaced.size, 1, 'only the typed answer replaces its live turn');
+    assert.deepEqual(out.turns.map((t) => t.lesson), ['typed']);
+});
+
+test('REVIEW: every kind of review answer has a lesson, so none is ignored by accident', () => {
+    // A new kind of answer must decide what it teaches. If it does not, this fails and
+    // says which one.
+    // The kinds are read out of the review model's own source, so a kind added there
+    // is checked here without anyone remembering to list it.
+    const src = readFileSync(new URL('../app/js/review-model.js', import.meta.url), 'utf8');
+    const kinds = new Set();
+    for (const m of src.matchAll(/kind:\s*([^,\n}]+)/g)) {
+        for (const q of m[1].matchAll(/'(\w+)'/g)) kinds.add(q[1]);
+    }
+    assert.deepEqual([...kinds].sort(), ['card', 'more', 'phrase', 'sound', 'typed'],
+        'found the answer kinds in review-model.js');
+    for (const k of kinds) assert.ok(REVIEW_LESSONS[k], `no lesson for review answer "${k}"`);
+});

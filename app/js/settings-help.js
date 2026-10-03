@@ -146,7 +146,8 @@ const HELP = {
     "googlePartnerVoiceSelect": "Choose the Google Cloud voice for the person you practice with.",
     "testGooglePartnerVoiceBtn": "Says a few words in the practice partner's Google Cloud voice.",
     "elevenlabsPartnerVoiceSelect": "Choose the ElevenLabs voice for the person you practice with.",
-    "testElevenlabsPartnerVoiceBtn": "Says a few words in the practice partner's ElevenLabs voice."
+    "testElevenlabsPartnerVoiceBtn": "Says a few words in the practice partner's ElevenLabs voice.",
+    "reviewListRange": "Choose how far back the list goes. It starts at the last week each time, so the list stays short and quick to open."
   },
   "radioGroups": {
     "sttProvider": "Who turns the other person's speech into words. Your browser does it free. The paid services work where the browser cannot. Azure is the one we recommend.",

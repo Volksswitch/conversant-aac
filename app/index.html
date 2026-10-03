@@ -928,13 +928,20 @@
                     <div id="placeholderEditor"></div>
                 </div>
                 <div class="tab-panel" data-tab="review">
-                    <p class="tab-intro">Go back over a conversation you have already had, one turn at a time. Tap a response option to say it would have suited you better or to change its words, or use your own buttons and words. Nothing changes anywhere else, and Settings takes you back out.</p>
+                    <p class="tab-intro">Go back over a conversation you have already had, one turn at a time. Tap a response option to say it would have suited you better or to change its words, or use your own buttons and words. What you write teaches the app how you talk. Settings takes you back out.</p>
                     <div class="setting-group" data-help="reviewList">
                         <label>Saved conversations</label>
                         <div class="radio-row">
                             <label class="radio-label"><input type="radio" name="reviewListKind" value="real" checked> Real conversations</label>
                             <label class="radio-label"><input type="radio" name="reviewListKind" value="practice"> Practice conversations</label>
                         </div>
+                        <label for="reviewListRange">Show conversations from</label>
+                        <select id="reviewListRange">
+                            <option value="7" selected>The last week</option>
+                            <option value="31">The last month</option>
+                            <option value="92">The last three months</option>
+                            <option value="all">Any time</option>
+                        </select>
                         <div id="reviewPanel"></div>
                     </div>
                 </div>

@@ -385,6 +385,21 @@ test('the whole chain: a conversation saved by storage, reviewed, and the correc
     files.clear();
     assert.ok(await storage.writeConversationLog(id, logs[0].data, logs[0].review));
     assert.ok(files.has(`${id}.json`) && files.has(`${id}.review.json`));
+
+    // And on to the voice (Ken, October 3 2026): the reworded card read back off disk
+    // becomes a voice example, through the same listing the app uses.
+    const { harvest } = await import('../app/js/voice-harvest.js');
+    const voice = harvest(await storage.listConversationLogs());
+    assert.deepEqual(voice.exemplars, ['Not great, if I am honest.']);
+
+    // The list's date range: an old conversation is skipped by its name, unopened, and
+    // counted, while one with no date in its name is always read.
+    await storage.writeConversationLog('2025-01-01T09-00-00', { exchanges: [] });
+    await storage.writeConversationLog('imported-without-a-date', { exchanges: [] });
+    const recent = await storage.listConversationLogs({ since: '2026-01-01' });
+    assert.deepEqual(recent.map((c) => c.id).sort(), [id, 'imported-without-a-date'].sort());
+    assert.equal(recent.older, 1);
+    assert.equal((await storage.listConversationLogs()).length, 3, 'with no range, everything is read');
 });
 
 /* ── The table on the Conversation Review tab ──────────────────────────────────── */

@@ -39,6 +39,10 @@ let wordInput = null;
 let lastComposed = null;  // what the panel was last drawn with: { items, bands }
 let composerOpen = false;
 let listShowsPractice = false;   // which list the Review tab shows
+// How far back the list goes, in days, or 'all'. Starts at a week every session (Ken,
+// October 3 2026): most users review only now and then, and a short list is quicker
+// to read and to open. A note below the list says when older ones are hidden.
+let listRange = '7';
 
 // The bar, in order. `id` is the Command Bar button whose position the action takes.
 const BAR = [
@@ -815,10 +819,20 @@ export async function renderList(panel) {
         r.onchange = () => { listShowsPractice = r.value === 'practice'; void renderList(panel); };
     });
 
+    const range = document.getElementById('reviewListRange');
+    if (range) {
+        range.value = listRange;
+        range.onchange = () => { listRange = range.value; void renderList(panel); };
+    }
+
     const wrap = document.createElement('div');
     wrap.className = 'review-table-wrap';
     panel.appendChild(wrap);
     panel.appendChild(status);
+    const olderNote = document.createElement('p');
+    olderNote.className = 'setting-hint review-older';
+    olderNote.hidden = true;
+    panel.appendChild(olderNote);
 
     if (!storage.hasDataFolder()) {
         status.textContent = 'Saved conversations live in your data folder, and none is connected. Choose one on the General tab.';
@@ -826,7 +840,20 @@ export async function renderList(panel) {
     }
     status.textContent = 'Reading your saved conversations…';
     let logs = [];
-    try { logs = await storage.listConversationLogs(); } catch { logs = []; }
+    const since = listRange === 'all' ? null : new Date(Date.now() - Number(listRange) * 86400000);
+    try { logs = await storage.listConversationLogs({ since }); } catch { logs = []; }
+    // Older conversations are hidden, not gone, so the list says so and offers them.
+    // The count covers real and practice together, because telling them apart would
+    // mean opening every old file, which is the work the range exists to avoid.
+    if (logs.older) {
+        olderNote.hidden = false;
+        olderNote.textContent = `Older conversations are hidden (${logs.older}, real and practice together). `;
+        const more = document.createElement('button');
+        more.type = 'button';
+        more.textContent = 'Show conversations from any time';
+        more.onclick = () => { listRange = 'all'; void renderList(panel); };
+        olderNote.appendChild(more);
+    }
     const rows = [];
     for (const c of logs) {
         const s = model.summarize(c.id, c.data);
@@ -835,7 +862,9 @@ export async function renderList(panel) {
         rows.push({ ...s, progress: p, progressRank: p.rank, entry: c });
     }
     if (!rows.length) {
-        status.textContent = listShowsPractice ? 'No saved practice conversations yet.' : 'No saved conversations yet.';
+        status.textContent = logs.older
+            ? (listShowsPractice ? 'No practice conversations in this time.' : 'No conversations in this time.')
+            : (listShowsPractice ? 'No saved practice conversations yet.' : 'No saved conversations yet.');
         return;
     }
     status.textContent = '';

@@ -962,15 +962,29 @@ const REVIEW_SUFFIX = '.review.json';
 // Every saved conversation, as [{ id, data, review? }]. Returns [] with no data folder.
 // A conversation that has been reviewed carries its review file with it, so a backup
 // moves both together and an import puts both back.
-export async function listConversationLogs() {
+//
+// `since` (a date) skips conversations started before it WITHOUT opening them: a
+// conversation's file name begins with the date it started, so the list can be cut by
+// name alone. That is what keeps a long history from slowing the Conversation Review
+// list. The returned array then carries `older`, how many conversation files were
+// skipped. A name that does not start with a date is always read.
+const DATED_NAME = /^(\d{4}-\d{2}-\d{2})/;
+export async function listConversationLogs({ since = null } = {}) {
     const dir = await getConversationsDir();
     if (!dir) return [];
     const out = [];
     const reviews = new Map();
+    const cutoff = since ? new Date(since).toISOString().slice(0, 10) : null;
+    let older = 0;
     try {
         for await (const [entryName, handle] of dir.entries()) {
             const lower = entryName.toLowerCase();
             if (handle.kind !== 'file' || !lower.endsWith('.json')) continue;
+            const dated = cutoff && DATED_NAME.exec(entryName);
+            if (dated && dated[1] < cutoff) {
+                if (!lower.endsWith(REVIEW_SUFFIX)) older++;
+                continue;
+            }
             try {
                 const file = await handle.getFile();
                 const parsed = JSON.parse(await file.text());
@@ -981,6 +995,7 @@ export async function listConversationLogs() {
     } catch { /* ignore */ }
     for (const c of out) if (reviews.has(c.id)) c.review = reviews.get(c.id);
     out.sort((a, b) => a.id.localeCompare(b.id));
+    if (cutoff) out.older = older;
     return out;
 }
 

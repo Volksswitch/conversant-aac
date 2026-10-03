@@ -697,12 +697,18 @@ Express buttons or About Me.
   reads each conversation's review: a typed sentence or a reworded card is an EXEMPLAR
   (ahead of live composed words), a card marked closer replaces the live choice as
   PREFERENCE only (the words are still the model's), and any other answer withdraws the
-  live choice. `voice-refresh.refreshVoiceHarvest` is the one place the harvest runs; it
+  live choice. **Each kind of answer is its own entry in `REVIEW_LESSONS` (Ken: these are
+  guesses, so each must be removable without touching the rest)**, and an Express button
+  chosen in review counts as a length choice, never an exemplar. A test reads the answer
+  kinds out of review-model.js and fails if one has no lesson.
+  `voice-refresh.refreshVoiceHarvest` is the one place the harvest runs; it
   runs when the user leaves a review. The unbuilt Play button's place holds **Jump**: the
   next turn after the current one that carries a list mark, grayed out when none is left
   (Ken: keep it simple). A "what this review taught the app" view was built and removed
   the same day - **the app must get better at deciding what it learns before it
-  announces it**; the light-bulb idea is in TODO.md. **Express buttons and About
+  announces it**; the light-bulb idea is in TODO.md. **The list shows the last week by
+  default** and skips older files by their name (which starts with the date), without
+  opening them. **Express buttons and About
   Me facts from review wait for beta feedback.** Any new kind of review answer must say
   what it does to the voice, or the review screen's summary will say it does nothing.
 - **Verified end to end**: `tests/review.test.mjs` writes a conversation through the

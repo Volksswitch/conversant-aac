@@ -23,8 +23,9 @@ import * as platform from './platform.js';
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
   "0.13.3": [
-    "New: what you do in Conversation Review now changes how the app sounds. Words you type for a turn, and response options you reword, become examples of how you talk. A response option you pick as closer counts as your choice for that turn. The app picks this up when you leave a review, with no trip to About Me needed.",
-    "New: a Jump button in Conversation Review, in place of the unavailable Play button. It takes you to the next turn where you asked for something else at the time, such as pressing New 4 or typing your own words. It is grayed out when there are no more."
+    "New: what you do in Conversation Review now changes how the app sounds. Words you type for a turn, and response options you reword, become examples of how you talk. A response option you pick as closer counts as your choice for that turn, and so does an Express Panel button you would rather have tapped: both help the app judge how long you like your replies to be. The app picks this up when you leave a review. You don't need to open About Me.",
+    "New: a Jump button in Conversation Review, in place of the unavailable Play button. It takes you to the next turn where you asked for something else at the time, such as pressing New 4 or typing your own words. It is grayed out when there are no more.",
+    "New: Conversation Review shows only the last week's conversations at first. Choose \"Show conversations from\" to go back further. A line under the list says how many older ones are hidden, with a button to show them all."
   ],
   "0.13.2": [
     {
