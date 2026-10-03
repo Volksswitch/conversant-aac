@@ -72,6 +72,7 @@ const SHELL = [
   './js/pronunciation.js',
   './js/voice.js',
   './js/voice-harvest.js',
+  './js/voice-refresh.js',
   './js/sound-check-items.js',
   './js/partner-profile.js',
   './js/worldview-ui.js',

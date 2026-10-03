@@ -112,3 +112,91 @@ test('a malformed or empty log does not throw', () => {
     assert.deepEqual(out.exemplars, []);
     assert.equal(out.lengthLean, null);
 });
+
+// --- Conversation Review answers reach the voice (Ken, October 3 2026) ------------
+//
+// The review half is written by the REAL review model, not by hand, so these tests
+// cross the link between "the user answered in review" and "the voice examples change".
+import * as reviewModel from '../app/js/review-model.js';
+import { reviewContributions } from '../app/js/voice-harvest.js';
+
+function reviewedConversation() {
+    const opts = (texts) => texts.map((t, i) => ({ slot: ['PREFERRED', 'DISPREFERRED', 'INITIATIVE', 'REPAIR'][i], text: t }));
+    const setA = ['It was great, thanks for asking.', 'Not bad.', 'Busy! How was yours?', 'My weekend?'];
+    const setB = ['Sure, sounds good to me.', 'Maybe another time.', 'Sure, what time works?', 'Lunch when?'];
+    return {
+        exchanges: [
+            { timestamp: '2026-10-01T10:00:00.000Z', role: 'partner', rawTranscript: 'How was your weekend?' },
+            { timestamp: '2026-10-01T10:00:02.000Z', role: 'offer', options: opts(setA), outcome: 'card', selectedIndex: 0 },
+            { timestamp: '2026-10-01T10:00:05.000Z', role: 'user', source: 'card', selectedText: setA[0], selectedIndex: 0, allOptions: setA },
+            { timestamp: '2026-10-01T10:01:00.000Z', role: 'partner', rawTranscript: 'Want to get lunch Friday?' },
+            { timestamp: '2026-10-01T10:01:02.000Z', role: 'offer', options: opts(setB), outcome: 'card', selectedIndex: 0 },
+            { timestamp: '2026-10-01T10:01:05.000Z', role: 'user', source: 'card', selectedText: setB[0], selectedIndex: 0, allOptions: setB },
+        ],
+    };
+}
+
+test('REVIEW: a sentence typed in review becomes a voice example', () => {
+    const data = reviewedConversation();
+    const [first] = reviewModel.buildTurns(data);
+    const review = reviewModel.setTypedAnswer(reviewModel.emptyReview('c1'), first, 'Honestly it was pretty quiet, I mostly slept.');
+    const out = harvest([{ id: 'c1', data, review }], OPTS);
+    assert.deepEqual(out.exemplars, ['Honestly it was pretty quiet, I mostly slept.']);
+    assert.equal(out.counts.reviewed, 1);
+});
+
+test('REVIEW: a reworded response option is the user’s words; an unchanged one is not', () => {
+    const data = reviewedConversation();
+    const [first, second] = reviewModel.buildTurns(data);
+    let review = reviewModel.setCardAnswer(reviewModel.emptyReview('c1'), first, 2, 'Busy, but good. How was yours?');
+    review = reviewModel.setCardAnswer(review, second, 1);
+    const out = harvest([{ id: 'c1', data, review }], OPTS);
+    assert.deepEqual(out.exemplars, ['Busy, but good. How was yours?']);
+    assert.ok(!out.exemplars.includes('Maybe another time.'), 'the model’s words never become an example');
+    const c = reviewContributions(data, review);
+    assert.equal(c.choices, 1);
+    assert.deepEqual(c.exemplars, ['Busy, but good. How was yours?']);
+});
+
+test('REVIEW: a review answer replaces the live choice, it does not add to it', () => {
+    const data = reviewedConversation();
+    const [first] = reviewModel.buildTurns(data);
+    const review = reviewModel.setCardAnswer(reviewModel.emptyReview('c1'), first, 1);
+    const out = harvest([{ id: 'c1', data, review }], OPTS);
+    // Two live card turns, one of them overridden by the review: still two choices.
+    assert.equal(out.counts.cards + out.counts.reviewed, 2);
+    assert.equal(out.counts.userTurns, 1);
+});
+
+test('REVIEW: "a different set" withdraws the live choice and adds nothing', () => {
+    const data = reviewedConversation();
+    const [first] = reviewModel.buildTurns(data);
+    const review = reviewModel.toggleMoreOptions(reviewModel.emptyReview('c1'), first);
+    const out = harvest([{ id: 'c1', data, review }], OPTS);
+    assert.equal(out.counts.userTurns, 1);
+    assert.equal(out.counts.reviewed, 0);
+});
+
+test('REVIEW: words written in review come before words composed live', () => {
+    const data = reviewedConversation();
+    data.exchanges.push({ timestamp: '2026-10-01T10:02:00.000Z', role: 'user', source: 'composed', selectedText: 'I will bring the forms on Friday.' });
+    const [first] = reviewModel.buildTurns(data);
+    const review = reviewModel.setTypedAnswer(reviewModel.emptyReview('c1'), first, 'Quiet one, mostly caught up on sleep.');
+    const out = harvest([{ id: 'c1', data, review }], OPTS);
+    assert.equal(out.exemplars[0], 'Quiet one, mostly caught up on sleep.');
+    assert.equal(out.exemplars.length, 2);
+});
+
+test('REVIEW: a short answer is reported as too short, not silently dropped', () => {
+    const data = reviewedConversation();
+    const [first] = reviewModel.buildTurns(data);
+    const review = reviewModel.setTypedAnswer(reviewModel.emptyReview('c1'), first, 'Pretty quiet.');
+    const c = reviewContributions(data, review);
+    assert.deepEqual(c.exemplars, []);
+    assert.deepEqual(c.tooShort, ['Pretty quiet.']);
+});
+
+test('REVIEW: a conversation with no review harvests exactly as before', () => {
+    const data = reviewedConversation();
+    assert.deepEqual(harvest([{ id: 'c1', data }], OPTS), harvest([data], OPTS));
+});

@@ -358,25 +358,18 @@ about to fall by an order of magnitude is the trap.
   condition is that a review must visibly change how the app sounds.** Today it does not:
   answers are saved to the review file and nothing reads them. A user who reviews and
   sees no difference has wasted their effort, and will not review again.
-- **FIRST: review answers feed the voice examples.** The voice reading in About Me ("Read
-  my conversations") uses only what was said live, and skips the review files entirely.
-  Wanted:
-  - A sentence the user typed or a card they reworded in review counts as their own
-    words, the same as a composed turn, so it becomes a voice example.
-  - A card marked "closest" counts as the user's choice for that turn, in place of the
-    card picked live.
-  - It happens without a trip to About Me. Finishing a review, or leaving it, updates
-    the voice examples. Otherwise the link between the work and the result is invisible.
-  - The user can see what their review added (see the playback item below).
+- **DONE 2026-10-03: review answers feed the voice examples.** Typed sentences and
+  reworded response options become voice examples, ahead of words composed live; a
+  response option marked closer replaces the live choice; any other answer withdraws the
+  live choice. The voice examples are rebuilt when the user leaves a review, and the
+  light bulb button on the review bar shows what that review taught the app.
 - **LATER, after beta testers have used review: Express Panel buttons and About Me
   facts** (§8, §13.3). Each still needs its own "do you want this?" step at the moment
   it applies, not a separate screen; Sarah was confused by the "what comes of it"
   screen. About Me facts only for clear, lasting facts (Sarah, agreed). **The practice
   question** (§9, true or made up) belongs with the About Me offer.
-- **Play it back at real speed** (§7): stays on this list, last. **Its button comes off
-  the review bar for now** (Ken). What replaces it is Ken's call; the options put to him
-  on 2026-10-03 were a "what this review taught the app" view, or "next turn where you
-  asked for something else".
+- **Play it back at real speed** (§7): stays on this list, last. Its button came off
+  the review bar on 2026-10-03; "What this review taught the app" took its place.
 - **The turn screen stays as it is** (Ken chose to wait for more reviewers or a tester).
   Sarah called it "a lot"; Ken's view is that needing two taps to edit a card's wording
   already keeps editing out of the way.
@@ -384,12 +377,9 @@ about to fall by an order of magnitude is the trap.
   (Ken, disagreeing with Sarah's "steers them too much"). It comes from what the user
   did live (New 4, typing their own words), so it points at the turns where the app
   missed their voice, which is where review is most worth the effort.
-- **Not decided:** Sarah suggests dropping "none of these were right" when no sentence
-  follows it.
 - **The beta counts** (§8.1): how often review is used, in the weekly report. Wanted
   before deciding how much more to put into review.
-- **Why not now:** the voice-example item is next and waits only on Ken saying go. The
-  rest waits on beta feedback.
+- **Why not now:** the rest waits on beta feedback.
 
 ### A clinician support tool
 - **Raised:** 2026-10-03 - Ken, from Sarah's answers on the review prototype: offering

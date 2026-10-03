@@ -26,6 +26,14 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- New: what you do in Conversation Review now changes how the app sounds. Words you type
+  for a turn, and response options you reword, become examples of how you talk. A
+  response option you pick as closer counts as your choice for that turn. The app picks
+  this up when you leave a review, with no trip to About Me needed.
+- New: a light bulb button in Conversation Review, in place of the unavailable Play
+  button. It shows what your review taught the app. Tap it again, or move to a turn, to
+  go back to the conversation.
+
 ## Version 0.13.2
 
 ### On an iPad

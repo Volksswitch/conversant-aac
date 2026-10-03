@@ -31,6 +31,8 @@
  * DROPPED rather than guessed at.
  */
 
+import { buildTurns, normalizeReview } from './review-model.js';
+
 // A turn is only a usable exemplar if it is long enough to carry any style at all.
 // "Yes." tells us nothing and would drag the length signal down.
 const MIN_EXEMPLAR_WORDS = 4;
@@ -76,7 +78,9 @@ export function collectExemplars(turns, opts = {}) {
     const out = [];
     for (let i = turns.length - 1; i >= 0; i--) {
         const turn = turns[i];
-        if (classifyTurn(turn, opts) !== 'composed') continue;
+        // A response option the user REWORDED in review is their own words too: the
+        // sentence is theirs even though the model wrote the first draft of it.
+        if (classifyTurn(turn, opts) !== 'composed' && !turn.reworded) continue;
         const text = String(turn.selectedText || '').trim();
         if (words(text).length < MIN_EXEMPLAR_WORDS) continue;
         const key = normalized(text);
@@ -134,25 +138,96 @@ export function measureLengthLean(turns, opts = {}) {
 }
 
 /**
+ * What a conversation's REVIEW says the user would rather have done, as user turns the
+ * rest of this module already understands (Conversation Review, Ken, October 3 2026:
+ * "We need to ensure that the work a user goes through to review a conversation
+ * genuinely impacts the system's ability to sound like them").
+ *
+ * - A sentence typed in review is the user's own words, so it is an exemplar, exactly
+ *   like a sentence composed live.
+ * - A response option marked "closest" is the user's CHOICE for that turn, in place of
+ *   the one taken live. The words are still the model's, so it is preference only -
+ *   the same rule that keeps a live card out of the exemplars.
+ * - A response option REWORDED in review is both: their choice, and their words.
+ * - Any other answer (an Express phrase, a sound, "a different set") says only that
+ *   the live choice was NOT what they wanted, so the live turn stops counting and
+ *   nothing replaces it.
+ *
+ * `replaced` holds the timestamps of the live user turns a review answer overrides.
+ */
+export function reviewedTurns(data, rawReview) {
+    const out = { replaced: new Set(), turns: [] };
+    if (!data || !rawReview) return out;
+    const review = normalizeReview(rawReview);
+    let turns;
+    try { turns = buildTurns(data); } catch { return out; }
+    for (const t of turns) {
+        const entry = review.turns[t.key];
+        const a = entry && entry.answer;
+        if (!a) continue;
+        if (t.user && t.user.at) out.replaced.add(t.user.at);
+        const text = String(a.text || '').trim();
+        if (a.kind === 'typed' && text) {
+            out.turns.push({ role: 'user', source: 'composed', selectedText: text, fromReview: true });
+        } else if (a.kind === 'card' && text) {
+            out.turns.push({
+                role: 'user', source: 'card', selectedText: text, selectedIndex: a.index,
+                allOptions: t.cards.map((c) => c.text), reworded: !!a.rewritten, fromReview: true,
+            });
+        }
+    }
+    return out;
+}
+
+/**
+ * What ONE conversation's review gives the voice: the sentences that count as the
+ * user's own words, and how many turns now count a different response option as their
+ * choice. Uses the same length rule as the harvest, so the review screen never claims
+ * a sentence the harvest would drop.
+ */
+export function reviewContributions(data, rawReview) {
+    const { turns } = reviewedTurns(data, rawReview);
+    const own = turns.filter((t) => t.source === 'composed' || t.reworded)
+        .map((t) => t.selectedText);
+    return {
+        exemplars: own.filter((t) => words(t).length >= MIN_EXEMPLAR_WORDS),
+        tooShort: own.filter((t) => words(t).length < MIN_EXEMPLAR_WORDS),
+        choices: turns.filter((t) => t.source === 'card' && !t.reworded).length,
+    };
+}
+
+/**
  * Everything the harvest concluded, from a flat list of user turns.
- * `conversations` is an array of parsed conversation-log objects.
+ * `conversations` is an array of parsed conversation-log objects, or the
+ * { id, data, review } entries storage.listConversationLogs() returns.
  */
 export function harvest(conversations, opts = {}) {
     const turns = [];
+    const fromReview = [];
     for (const convo of conversations || []) {
         // storage.listConversationLogs() returns { id, data }; a bare log object is
         // accepted too so this stays testable against plain fixtures.
         const log = convo && convo.data ? convo.data : convo;
         const ex = log && Array.isArray(log.exchanges) ? log.exchanges : [];
-        for (const t of ex) if (t && t.role === 'user') turns.push(t);
+        const reviewed = reviewedTurns(log, convo && convo.data ? convo.review : null);
+        for (const t of ex) {
+            if (!t || t.role !== 'user') continue;
+            if (t.timestamp && reviewed.replaced.has(t.timestamp)) continue;
+            turns.push(t);
+        }
+        fromReview.push(...reviewed.turns);
     }
+    // Review answers go LAST, so the newest-first exemplar walk reaches them first:
+    // a sentence the user wrote on purpose, looking back, outranks one typed in a hurry.
+    const all = turns.concat(fromReview);
     return {
-        exemplars: collectExemplars(turns, opts),
-        lengthLean: measureLengthLean(turns, opts),
+        exemplars: collectExemplars(all, opts),
+        lengthLean: measureLengthLean(all, opts),
         counts: {
             userTurns: turns.length,
             composed: turns.filter((t) => classifyTurn(t, opts) === 'composed').length,
             cards: turns.filter((t) => classifyTurn(t, opts) === 'card').length,
+            reviewed: fromReview.length,
         },
     };
 }

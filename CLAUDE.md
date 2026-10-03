@@ -691,6 +691,17 @@ Express buttons or About Me.
   the slot splits into separate words when the highlight leaves it. The first build moved
   on at a space, which made replacing one word with two impossible — the second word
   landed on top of the next one.
+- **⚠ A REVIEW MUST CHANGE HOW THE APP SOUNDS, OR IT IS WASTED WORK (Ken, October 3
+  2026).** Review is the app's main answer to "it doesn't sound like me", and Ken keeps it
+  even though an SLP expects clients to use it rarely. So `voice-harvest.reviewedTurns`
+  reads each conversation's review: a typed sentence or a reworded card is an EXEMPLAR
+  (ahead of live composed words), a card marked closer replaces the live choice as
+  PREFERENCE only (the words are still the model's), and any other answer withdraws the
+  live choice. `voice-refresh.refreshVoiceHarvest` is the one place the harvest runs; it
+  runs when the user leaves a review and when they tap the light bulb ("What this review
+  taught the app"), which replaced the unbuilt Play button. **Express buttons and About
+  Me facts from review wait for beta feedback.** Any new kind of review answer must say
+  what it does to the voice, or the review screen's summary will say it does nothing.
 - **Verified end to end**: `tests/review.test.mjs` writes a conversation through the
   real storage calls, reads it back, records a correction and reads it off disk; and in
   the browser with both keyboards.

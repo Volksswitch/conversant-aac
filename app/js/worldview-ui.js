@@ -21,10 +21,7 @@ import * as places from './places.js';
 import * as voiceProfile from './voice.js';
 import { SOUND_CHECK_ITEMS, VERDICT, questionFor } from './sound-check-items.js';
 import { REGISTER_DIMENSIONS, RELATIONSHIP_GOALS, goalText } from './partner-profile.js';
-import * as voiceHarvest from './voice-harvest.js';
-import * as controlPhrases from './control-phrases.js';
-import * as placeholderPhrases from './placeholder-phrases.js';
-import * as expressPanel from './express-panel.js';
+import { refreshVoiceHarvest } from './voice-refresh.js';
 import { speak } from './tts.js';
 import * as storage from './storage.js';
 import * as keyboard from './keyboard.js';
@@ -594,7 +591,7 @@ function buildHarvestSection() {
 
         wrap.append(el('p', { class: 'wv-intro', text: anything
             ? 'Taken from your own conversations. Remove anything that does not belong — it will not come back.'
-            : 'This fills up as you use the app: the words you type yourself, and any correction you find yourself asking for more than once. Nothing is read until you ask.' }));
+            : 'This fills up as you use the app: the words you type yourself, the words you write when you review a conversation, and any correction you find yourself asking for more than once. Nothing is read until you ask, or until you review a conversation.' }));
 
         // Steers are recorded as they happen and do NOT depend on a harvest having
         // been run. Rendering them inside the harvest branch hid them completely
@@ -623,20 +620,7 @@ function buildHarvestSection() {
             text: harvestResult ? 'Read my conversations again' : 'Read my conversations',
             onclick: async (e) => {
                 e.currentTarget.disabled = true;
-                try {
-                    const logs = await storage.listConversationLogs();
-                    voiceProfile.setHarvest(voiceHarvest.harvest(logs, {
-                        // Needed to classify turns written before the source field
-                        // existed: our own control phrases and the user's Express
-                        // labels must not be mistaken for prose they composed.
-                        // The placeholders join them: they are equally OUR words,
-                        // and harvesting one as an example of how this person talks
-                        // would be teaching the model its own stalling back to itself.
-                        controlPhrases: [...controlPhrases.allPhrases(), ...placeholderPhrases.allPhrases()],
-                        expressPhrases: expressPanel.allItems()
-                            .filter((i) => i.type === 'phrase' && i.text).map((i) => i.text),
-                    }));
-                } catch { /* no folder, or nothing readable */ }
+                await refreshVoiceHarvest();
                 draw();
             },
         }));

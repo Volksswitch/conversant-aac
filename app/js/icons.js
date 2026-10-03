@@ -62,6 +62,8 @@ export const ICONS = {
     prevTurn: SVG('<path d="M6 15l6-6 6 6"/>'),
     nextTurn: SVG('<path d="M6 9l6 6 6-6"/>'),
     play: SVG('<path d="M7 4l12 8-12 8z"/>'),
+    // A light bulb: what the app learned from a review.
+    learned: SVG('<path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>'),
     prevWord: SVG('<path d="M8 7l-5 5 5 5"/><line x1="11" y1="12" x2="21" y2="12"/>'),
     nextWord: SVG('<path d="M16 7l5 5-5 5"/><line x1="3" y1="12" x2="13" y2="12"/>'),
     undo: SVG('<path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>'),

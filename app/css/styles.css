@@ -5445,6 +5445,22 @@ body.reviewing #listenBtn {
     box-shadow: inset 0 0 0 2px var(--slot-persistent);
 }
 body.reviewing #listenControls > button:disabled { opacity: 0.35; cursor: default; }
+/* In review the End conversation position holds "What this review taught the app",
+   which ends nothing, so it drops the red that warns about ending a conversation. */
+body.reviewing #endConversationBtn {
+    border-color: var(--slot-persistent);
+    color: var(--slot-persistent);
+}
+/* "What this review taught the app" while it is showing (Rule 6). Paint only. */
+body.reviewing #listenControls > button.review-on {
+    background: var(--slot-persistent);
+    color: var(--surface-raised);
+}
+.review-taught { padding: 0.25rem 0.5rem; }
+.review-taught h3 { margin: 0 0 0.5rem; }
+.review-taught p { margin: 0 0 0.6rem; }
+.review-taught ul { margin: 0 0 0.6rem 1.2rem; padding: 0; }
+.review-taught li { margin-bottom: 0.3rem; font-weight: 600; }
 
 body.reviewing .review-line { cursor: pointer; }
 .review-line.review-current {
