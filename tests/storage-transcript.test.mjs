@@ -26,6 +26,8 @@ import { summarize } from '../app/js/usage-summary.js';
 
 /* ── A directory handle that behaves like the browser's ───────────────────── */
 
+let writeDelayMs = 0;
+
 function makeDir(name = '') {
     const files = new Map();
     const dirs = new Map();
@@ -50,6 +52,9 @@ function makeDir(name = '') {
                     return { size: rec.data.length, text: async () => rec.data };
                 },
                 async createWritable({ keepExistingData = false } = {}) {
+                    // Real createWritable is genuinely asynchronous; a test can make
+                    // it slow to open the window a race needs (CR-001).
+                    if (writeDelayMs) await new Promise(r => setTimeout(r, writeDelayMs));
                     let buf = keepExistingData ? rec.data : '';
                     let pos = buf.length;
                     return {
@@ -640,4 +645,54 @@ test('a private conversation records no events either', async () => {
     const data = await readLog(id);
     assert.equal(data.exchanges.filter((e) => e.role === 'event').length, 0);
     storage.setConversationSaving(true);
+});
+
+test('ending a conversation mid-write cannot overwrite its file with "null" (CR-001)', async () => {
+    // The order terminateConversation used to produce: a write started and not awaited
+    // (clearPalette -> finalizeOffer), then the log dropped in the same tick. The
+    // suspended write re-read the log after its await and wrote "null".
+    storage.setContextProvider(null);
+    storage.resetConversationId();
+    storage.setConversationSaving(true);
+    await storage.startConversationLog();
+    const id = storage.getConversationId();
+    await storage.logOffer({ kind: 'closings', options: [{ slot: 'CLOSING', text: 'Bye!' }] });
+    writeDelayMs = 5;
+    try {
+        storage.finalizeOffer({ outcome: 'cleared' });   // deliberately not awaited
+        storage.logEvent('listen off');                   // deliberately not awaited
+        storage.resetConversationId();
+        await new Promise(r => setTimeout(r, 60));
+    } finally { writeDelayMs = 0; }
+    const data = await readLog(id);
+    assert.ok(data && Array.isArray(data.exchanges), 'the file still holds the conversation');
+    const offers = data.exchanges.filter(e => e.role === 'offer');
+    assert.equal(offers.at(-1).outcome, 'cleared', 'and the last write is the newest one');
+});
+
+test('a new conversation starting mid-write cannot land in the old file (CR-001)', async () => {
+    storage.setContextProvider(null);
+    storage.resetConversationId();
+    storage.setConversationSaving(true);
+    await storage.startConversationLog();
+    const oldId = storage.getConversationId();
+    await storage.logOffer({ kind: 'ai', options: [{ slot: 'PREFERRED', text: 'Hello there.' }] });
+    const RealDate = Date;
+    writeDelayMs = 5;
+    try {
+        storage.finalizeOffer({ outcome: 'cleared' });
+        storage.resetConversationId();
+        // The opener starts the next conversation a few seconds later by the clock.
+        globalThis.Date = class extends RealDate {
+            constructor(...a) { super(...(a.length ? a : [RealDate.now() + 3000])); }
+            static now() { return RealDate.now() + 3000; }
+        };
+        await storage.startConversationLog();
+        await new Promise(r => setTimeout(r, 60));
+    } finally { globalThis.Date = RealDate; writeDelayMs = 0; }
+    assert.notEqual(storage.getConversationId(), oldId, 'the next conversation got its own id');
+    const old = await readLog(oldId);
+    assert.equal(old.id, oldId, 'the old file still belongs to the old conversation');
+    assert.equal(old.exchanges.filter(e => e.role === 'offer').length, 1,
+        'and still holds what was said in it');
 });

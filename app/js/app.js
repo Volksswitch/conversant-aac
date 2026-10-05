@@ -2820,6 +2820,10 @@ async function terminateConversation() {
     if (finalRaw) {
         await storage.finalizePartnerTurn(pendingHandle, { rawTranscript: finalRaw, cleanedTranscript: finalRaw, partner: pendingStamp });
     }
+    // Let this conversation's last writes land before its log is dropped (CR-001).
+    // Capped, so a write that never settles cannot leave End conversation hanging;
+    // the writes capture their own target, so finishing late is still safe.
+    await Promise.race([storage.whenLogWritten(), new Promise(r => setTimeout(r, 2000))]);
     storage.resetConversationId();       // next conversation gets a fresh id (error-log correlation)
 
     // Re-seed conversation privacy from the Settings default — a per-conversation

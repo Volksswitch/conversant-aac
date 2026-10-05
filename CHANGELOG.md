@@ -26,6 +26,10 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Fixed: ending a conversation, or starting a new one, could wipe the saved record
+  of the conversation you had just finished, so it vanished from Conversation
+  Review. The record is now always finished before the next one begins.
+
 ## Version 0.13.4
 
 - Fixed: in Conversation Review, one tap on the response option you used at the time

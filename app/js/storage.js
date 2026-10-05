@@ -2467,14 +2467,34 @@ export async function logUserResponse({ selectedText, spokenText = null, ttsUsed
     await flushLog();
 }
 
-async function flushLog() {
-    if (!currentLogHandle || !currentLogData) return;
-    try {
-        const writable = await currentLogHandle.createWritable();
-        await writable.write(JSON.stringify(currentLogData, null, 2));
-        await writable.close();
-    } catch { /* silent — don't interrupt conversation flow */ }
+// Every write to the conversation file goes through this chain, one at a time, in
+// the order they were asked for. Two properties matter (code review CR-001):
+// (1) the handle and the text are captured SYNCHRONOUSLY, before any await, so a
+// resetConversationId() or a new conversation starting while a write is suspended
+// cannot redirect it - before this, a suspended write re-read currentLogData after
+// its await and wrote "null", or the NEXT conversation's object, over the file just
+// ended; (2) writes are serialized, so the newest snapshot is always the last one
+// to close. Never re-read currentLogData after an await in here.
+let logWriteChain = Promise.resolve();
+
+function flushLog() {
+    const handle = currentLogHandle;
+    const data = currentLogData;
+    if (!handle || !data) return logWriteChain;
+    const text = JSON.stringify(data, null, 2);
+    logWriteChain = logWriteChain.then(async () => {
+        try {
+            const writable = await handle.createWritable();
+            await writable.write(text);
+            await writable.close();
+        } catch { /* silent — don't interrupt conversation flow */ }
+    });
+    return logWriteChain;
 }
+
+// Resolves once every conversation-file write asked for so far has landed. Ending
+// a conversation awaits this before dropping the log, so its last writes finish.
+export function whenLogWritten() { return logWriteChain; }
 
 // --- Error log (diagnostics, Ken July 2026) ---
 // A persistent record of errors (API failures, JSON parse failures, etc.) so an
