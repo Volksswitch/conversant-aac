@@ -170,6 +170,10 @@ export function init({ dialog, helpBtn, speak, cancel, labelFor }) {
     // first may decide. `gesturePrevented` carries that decision to the rest.
     let gestureDecided = false;
     let gesturePrevented = false;
+    // A SPEAK decided on pointerdown, spoken only when the click confirms it was a tap.
+    // A touch scroll also starts with pointerdown and never clicks, so speaking at once
+    // explained whatever the finger landed on and switched help off (CR-043).
+    let pendingSpeak = null;
 
     const state = () => ({ armed, speaking: speakingGroup !== null });
 
@@ -188,6 +192,7 @@ export function init({ dialog, helpBtn, speak, cancel, labelFor }) {
 
     function reset() {
         armed = false;
+        pendingSpeak = null;
         if (speakingGroup !== null) stopSpeaking();
         else render();
     }
@@ -245,7 +250,8 @@ export function init({ dialog, helpBtn, speak, cancel, labelFor }) {
                 return;
             case ACTION.SPEAK:
                 stop();
-                say(key, tap.groupEl);
+                if (e.type === 'click') say(key, tap.groupEl);   // a keyboard "click" has no pointerdown
+                else pendingSpeak = { key, groupEl: tap.groupEl };
                 return;
             case ACTION.SWALLOW:
                 stop();
@@ -265,10 +271,16 @@ export function init({ dialog, helpBtn, speak, cancel, labelFor }) {
     // has to be stopped; mousedown covers paths without pointer events; the trailing
     // click needs stopping too, because preventing pointerdown does not always cancel
     // it. All three share one decision — see `gestureDecided` in handle().
-    dialog.addEventListener('pointerdown', handle, true);
+    // ⚠ EVERY POINTERDOWN STARTS A NEW GESTURE. The flags used to be reset only on the
+    // click, and a touch scroll has no click, so the next tap was read as the tail of
+    // the scroll - the "?" needed two taps after any scroll (CR-043).
+    const newGesture = () => { gestureDecided = false; gesturePrevented = false; pendingSpeak = null; };
+    dialog.addEventListener('pointerdown', (e) => { newGesture(); handle(e); }, true);
+    dialog.addEventListener('pointercancel', newGesture, true);
     dialog.addEventListener('mousedown', handle, true);
     dialog.addEventListener('click', (e) => {
         handle(e);
+        if (pendingSpeak) { const p = pendingSpeak; pendingSpeak = null; say(p.key, p.groupEl); }
         // End of the gesture: the next tap decides afresh.
         gestureDecided = false;
         gesturePrevented = false;

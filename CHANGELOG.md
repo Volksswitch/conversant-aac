@@ -151,6 +151,9 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: on the Express Panel tab of Settings, tapping a button in one band while
   another band's section was open left the tapped button's editing row hidden. Its
   section now opens.
+- Fixed: after scrolling the Settings panel on a tablet, the first tap on the "?" help
+  button did nothing. And with help switched on, starting a scroll on a setting read
+  that setting aloud and switched help off. Both are fixed.
 
 ## Version 0.13.4
 
