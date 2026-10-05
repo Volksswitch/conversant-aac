@@ -5451,6 +5451,8 @@ function initSliderSteppers() {
 // Routed through the shared speak-as-a-turn path.
 async function handleSpeakExpressItem(phrase) {
     if (editedInSettings(phrase)) return;
+    // A phrase with no words can never speak or take the floor (CR-041).
+    if (!String(phrase.text || '').trim() && !String(phrase.speak || '').trim()) return;
     // In double-tap mode the general "any tap goes back" rule deliberately lets the
     // arming tap through, so the phrase that actually speaks puts the panel back here.
     if (resetExpressPaging()) renderExpressPanel();

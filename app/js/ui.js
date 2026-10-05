@@ -832,7 +832,12 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
             // of the list (a band with more cells than phrases, which is the Flex band's
             // resting state and every new partner's and place's starting state).
             const item = items[index];
-            const cellEl = (!item || item.type === 'empty')
+            // A phrase with no words yet (just added, or cleared) is an empty outline
+            // on the conversation screen - never a live blank button (CR-041). In
+            // Settings it stays a real button so tapping it still selects it to edit.
+            const blankPhrase = !onDefineCell && item && item.type === 'phrase'
+                && !String(item.text || '').trim() && !String(item.speak || '').trim();
+            const cellEl = (!item || item.type === 'empty' || blankPhrase)
                 ? buildUndefinedCell(index, span)
                 : buildItemBtn(item, span);
             // ONE BACKGROUND COLOR PER BAND, and the band is what the color says. It

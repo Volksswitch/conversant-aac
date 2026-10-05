@@ -144,6 +144,10 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: when the other person said "What?" and you pressed New 4 or tapped a person,
   feeling or place button instead of a repeat option, all four cards disappeared. The
   repeat options now stay, and New 4 gives fresh wordings of them.
+- Fixed: an Express Panel phrase left with no words showed as a blank button that
+  still worked, so tapping it threw away the suggestions, stopped listening and saved
+  an empty statement. It now shows as an empty space and does nothing on the
+  conversation screen.
 
 ## Version 0.13.4
 

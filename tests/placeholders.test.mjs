@@ -618,3 +618,11 @@ test('the launch-screen report reconnects the data folder before it is built', (
     assert.ok(restore > 0 && restore < body.indexOf('buildProblemReportText()'));
     assert.match(body, /folderReadableWithoutPrompt\(\)/);
 });
+
+// CR-041. A blank Express phrase is never a live button and never speaks.
+test('a blank Express phrase cannot speak', () => {
+    const at = appSource.indexOf('async function handleSpeakExpressItem(');
+    assert.match(appSource.slice(at, at + 400), /if \(!String\(phrase\.text \|\| ''\)\.trim\(\) && !String\(phrase\.speak \|\| ''\)\.trim\(\)\) return;/);
+    const ui = readFileSync(new URL('../app/js/ui.js', import.meta.url), 'utf8');
+    assert.match(ui, /item\.type === 'empty' \|\| blankPhrase/);
+});
