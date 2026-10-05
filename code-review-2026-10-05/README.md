@@ -65,10 +65,10 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-024](CR-024.md) | fixed (cd81b4f) | medium | confirmed | bug | `app/js/app.js:2546` | Practice Mode is switched on/off on the wrong side of the conversation teardown, so real conversations get labeled practice (and vice versa) |
 | [CR-025](CR-025.md) | fixed (cd81b4f) | medium | confirmed | bug | `app/js/app.js:2555` | Starting a practice scenario keeps the real conversation's Partner, Feeling and goals switched on |
 | [CR-026](CR-026.md) | fixed (a8fffb0) | medium | confirmed | bug | `app/js/app.js:2619` | When the practice partner's turn is interrupted, its spoken line is lost, the Listen button stays lit, and the 'cards may change' look never clears |
-| [CR-027](CR-027.md) | fixed (pending) | medium | confirmed | bug | `app/js/app.js:2680` | Tour instructions start speaking 0.7 s after a press and cut off what the user just said |
-| [CR-028](CR-028.md) | fixed (pending) | medium | confirmed | bug | `app/js/app.js:2742` | The controls tour calls the AI practice partner when auto-resume is on, breaking the tour's no-API promise |
-| [CR-029](CR-029.md) | open | medium | confirmed | bug | `app/js/app.js:3005` | New N's paging cursor outlives the static palette, so New 4 brings back old openers or goodbyes |
-| [CR-030](CR-030.md) | open | medium | confirmed | bug | `app/js/app.js:3628` | Ending Practice while the practice partner's turn is up leaves the Listen button stuck 'on' when hearing is a paid service |
+| [CR-027](CR-027.md) | fixed (11c3494) | medium | confirmed | bug | `app/js/app.js:2680` | Tour instructions start speaking 0.7 s after a press and cut off what the user just said |
+| [CR-028](CR-028.md) | fixed (11c3494) | medium | confirmed | bug | `app/js/app.js:2742` | The controls tour calls the AI practice partner when auto-resume is on, breaking the tour's no-API promise |
+| [CR-029](CR-029.md) | fixed (pending) | medium | confirmed | bug | `app/js/app.js:3005` | New N's paging cursor outlives the static palette, so New 4 brings back old openers or goodbyes |
+| [CR-030](CR-030.md) | fixed (pending) | medium | confirmed | bug | `app/js/app.js:3628` | Ending Practice while the practice partner's turn is up leaves the Listen button stuck 'on' when hearing is a paid service |
 | [CR-031](CR-031.md) | open | medium | confirmed | bug | `app/js/app.js:4249` | More button is a dead tap while the partner's choices are on offer |
 | [CR-032](CR-032.md) | open | medium | confirmed | bug | `app/js/app.js:4628` | Active partner/place/feeling keep a stale copy after their button is edited or deleted |
 | [CR-033](CR-033.md) | open | medium | confirmed | bug | `app/js/app.js:4852` | With the layout unlocked, taps inside Settings are hijacked to drag hidden layout borders |

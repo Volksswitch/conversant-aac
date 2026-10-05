@@ -585,3 +585,12 @@ test('the button tour waits for quiet and never calls the AI partner', () => {
     const pr = appSource.indexOf('function practiceResumeOrIdle(');
     assert.match(appSource.slice(pr, pr + 200), /!tour && manualListenArmed/);
 });
+
+// CR-029 and CR-030. Emptying the panel forgets the static set New N would page, and
+// ending practice turns the Listen button off.
+test('an emptied panel forgets its static set, and ending practice turns Listen off', () => {
+    const cp = appSource.indexOf('function clearPalette(');
+    assert.match(appSource.slice(cp, cp + 900), /currentStatic = \{ kind: null/);
+    const ec = appSource.indexOf('async function handleEndConversation(');
+    assert.match(appSource.slice(ec, ec + 1500), /await terminateConversation\(\);[\s\S]{0,300}if \(wasPractice\) \{ isListening = false; ui\.setListenButtonState\(false\); \}/);
+});

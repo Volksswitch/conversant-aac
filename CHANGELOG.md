@@ -113,6 +113,10 @@ forgetting to tag one is only ever noise, never silence.
   just said. With automatic listening on, the tour could also make up a pretend
   partner line and speak it over the instructions. The tour now waits for you to
   finish and never calls the AI.
+- Fixed: after choosing an opener, tapping New 4 could bring the openers back, and
+  after rewording the cards during a goodbye it could bring the goodbyes back. Also,
+  ending practice while using a paid listening service could leave the Listen button
+  lit and not working. Both are fixed.
 
 ## Version 0.13.4
 

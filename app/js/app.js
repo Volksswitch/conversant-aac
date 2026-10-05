@@ -3173,6 +3173,9 @@ function clearPalette() {
     }
     ui.clearResponseOptions();
     shownCards = { cards: [], kind: 'none' };
+    // No static set is on screen any more, so New N must not page one back (CR-029).
+    // The per-kind offsets stay: paging continues where it left off within a conversation.
+    currentStatic = { kind: null, full: [] };
 }
 
 /* The error box has replaced the cards (a request failed). The records must say so,
@@ -3725,6 +3728,7 @@ async function handleReframe() {
             const snap = engine.refreshPalette(result.responses);
             ui.showEngineState(snap);
             lastPalette = snap.palette;
+            currentStatic = { kind: null, full: [] };  // AI responses — New N regenerates, not pages (CR-029)
             showPalette(snap.palette);
             ui.setStatus('Select a response');
         } catch (err) {
@@ -3817,6 +3821,9 @@ async function handleEndConversation() {
     ui.setCoachLine(null);
     applyListenAvailability();   // back to a real conversation — Listen follows capture again
     await terminateConversation();
+    // The practice partner's turn lit Listen without opening any source, so a paid
+    // source has nothing to report on stopping and the button stayed lit (CR-030).
+    if (wasPractice) { isListening = false; ui.setListenButtonState(false); }
     // Ending a conversation clears the situation influencers — the next person /
     // mood shouldn't inherit this conversation's Partner & Feeling selections.
     // (Done here, NOT in the shared terminateConversation, because Start
