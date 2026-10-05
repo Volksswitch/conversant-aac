@@ -6569,6 +6569,16 @@ async function sendProblemReportFromStart() {
             setTimeout(() => { btn.textContent = btn.dataset.label; }, 5000);
         }
     };
+    // Before Start the data folder is not connected yet, so the report said there were
+    // no conversations and carried no transcripts (CR-036). Connect it first - only
+    // where that needs no permission prompt, and never for longer than the warm-up.
+    if (!storage.hasDataFolder()) {
+        try {
+            if (await storage.folderReadableWithoutPrompt()) {
+                await withTimeout(storage.restoreDataFolder(), STORAGE_WARMUP_MS, 'report folder');
+            }
+        } catch { /* report without it */ }
+    }
     let text;
     try {
         text = await buildProblemReportText();

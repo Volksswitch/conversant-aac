@@ -609,3 +609,12 @@ test('hide-on-blur follows the Express Panel being hosted in Settings', () => {
     const at = appSource.indexOf('function hostExpressPanel(');
     assert.match(appSource.slice(at, at + 700), /keyboard\.setHideOnBlur\(!!inSettings\)/);
 });
+
+// CR-036. The launch-screen report connects the data folder first, prompt-free.
+test('the launch-screen report reconnects the data folder before it is built', () => {
+    const at = appSource.indexOf('async function sendProblemReportFromStart(');
+    const body = appSource.slice(at, at + 2500);
+    const restore = body.indexOf('storage.restoreDataFolder()');
+    assert.ok(restore > 0 && restore < body.indexOf('buildProblemReportText()'));
+    assert.match(body, /folderReadableWithoutPrompt\(\)/);
+});

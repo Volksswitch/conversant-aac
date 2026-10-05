@@ -224,6 +224,19 @@ export function settleRestore(graceMs) {
     ]);
 }
 
+/* Can the data folder be reconnected with NO permission prompt? True for the device's
+ * private storage, and for a remembered folder the browser still lets us into. The
+ * launch-screen problem report uses this to read the user's history without risking
+ * a prompt (CR-036). */
+export async function folderReadableWithoutPrompt() {
+    if (!supportsFolderPicker()) return true;
+    try {
+        const stored = await idbGet(DIR_HANDLE_KEY);
+        if (!stored) return false;
+        return (await stored.queryPermission({ mode: 'readwrite' })) === 'granted';
+    } catch { return false; }
+}
+
 export async function restoreDataFolder() {
     // Track this attempt so settleRestore can wait for it. Wrapping the existing body
     // rather than restructuring it keeps the one code path the card and the Start tap

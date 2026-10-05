@@ -708,3 +708,7 @@ test('an offer whose wording arrives late is rewritten in place (CR-022)', async
     const offer = (await readLog(id)).exchanges.filter((e) => e.role === 'offer').at(-1);
     assert.equal(offer.options[1].text, 'I said I would be late.');
 });
+
+test('device storage can be reconnected with no permission prompt (CR-036)', async () => {
+    assert.equal(await storage.folderReadableWithoutPrompt(), true);
+});

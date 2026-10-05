@@ -129,6 +129,9 @@ forgetting to tag one is only ever noise, never silence.
   could vanish at the wrong moments, so tapping Save on an About Me answer could miss,
   and in "In my own words" the keyboard could disappear before you typed. It now
   behaves as before.
+- Fixed: a problem report sent from the opening screen said you had no saved
+  conversations and carried none of the conversation text that explains the problem.
+  It now reads your data folder first, when that needs no permission prompt.
 
 ## Version 0.13.4
 
