@@ -267,6 +267,43 @@ export function assemblePayload({ testerName, installId, appVersion, build, now,
     };
 }
 
+/*
+ * Take the names of people and places out of the usage summary before it is sent.
+ *
+ * ⚠ THE WEEKLY REPORT IS COUNTS ONLY, and the people the user talks to never agreed to
+ * anything (CR-013). summarize() keys its per-person and per-place breakdowns by NAME,
+ * which is right on the device - the user may see their own summary - and wrong in a
+ * report that leaves it automatically. So each name becomes "person 1", "place 1" and
+ * so on, in alphabetical order of the hidden name, which keeps the numbering steady
+ * from week to week unless someone is added. Every count is kept, so the number of
+ * people, the returning people and the per-row figures all still arrive.
+ * Pure: returns a new object and leaves the input alone.
+ */
+export function redactUsage(u) {
+    if (!u || typeof u !== 'object') return u;
+    const out = { ...u };
+    const names = (list) => [...new Set(list)].sort((a, b) => String(a).localeCompare(String(b)));
+    const people = names([
+        ...((u.partners || []).map((p) => p && p.label)),
+        ...Object.keys(u.hearingByPartner || {}),
+    ].filter(Boolean));
+    const personId = new Map(people.map((n, i) => [n, `person ${i + 1}`]));
+    const placeNames = names(Object.keys(u.hearingByPlace || {}));
+    const placeId = new Map(placeNames.map((n, i) => [n, `place ${i + 1}`]));
+    if (Array.isArray(u.partners)) {
+        out.partners = u.partners.map((p) => ({ ...p, label: personId.get(p && p.label) || 'person' }));
+    }
+    const rekey = (obj, ids) => {
+        if (!obj || typeof obj !== 'object') return obj;
+        const o = {};
+        for (const [k, v] of Object.entries(obj)) o[ids.get(k) || k] = v;
+        return o;
+    };
+    if (u.hearingByPartner) out.hearingByPartner = rekey(u.hearingByPartner, personId);
+    if (u.hearingByPlace) out.hearingByPlace = rekey(u.hearingByPlace, placeId);
+    return out;
+}
+
 /* ── Effects ─────────────────────────────────────────────────────────────── */
 
 async function gatherPayload({ appVersion, build, now }) {
@@ -276,6 +313,7 @@ async function gatherPayload({ appVersion, build, now }) {
     // cumulative block so the same rows are not sent twice in one payload.
     const weeks = (usage && usage.weeks) || [];
     if (usage) delete usage.weeks;
+    usage = redactUsage(usage);   // no names of people or places leave the device (CR-013)
     let events = null;
     try { events = metrics.snapshot(); } catch { /* leave null */ }
     let personalization = null;

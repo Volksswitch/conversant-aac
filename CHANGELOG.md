@@ -65,6 +65,9 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: in a conversation marked "Don't save this conversation", words you typed with
   the app's keyboard were still remembered and could come back later as suggested
   words. They are no longer remembered.
+- Fixed: the automatic weekly report included the names of the people you talk with and
+  the places you go, though it is meant to carry only counts. Those names are now
+  replaced with "person 1", "place 1" and so on before the report leaves your device.
 
 ## Version 0.13.4
 

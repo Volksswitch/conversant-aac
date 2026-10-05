@@ -298,3 +298,27 @@ test('local origin: development addresses are local, the real app is not', () =>
     assert.equal(isLocalOrigin({ protocol: 'https:', hostname: '1.10.0.1' }), false);
     assert.equal(isLocalOrigin({ protocol: 'https:', hostname: 'notlocalhost.com' }), false);
 });
+
+// CR-013. The weekly report is counts only, but the usage summary carries the names
+// of the people the user talks to and the places they go. Driven from summarize() so
+// the test cannot drift from the shape that is actually sent.
+test('no person or place name leaves in a weekly report, and every count still does', async () => {
+    const { summarize } = await import('../app/js/usage-summary.js');
+    const { redactUsage } = await import('../app/js/weekly-send.js');
+    const turn = (day, o) => ({ timestamp: day, partner: { id: 'p1', label: 'Dr. Secret' }, place: { id: 'pl1', label: 'Secret Clinic' }, ...o });
+    const conv = (id, day) => ({ id, data: { id, started: day, exchanges: [
+        turn(day, { role: 'partner', rawTranscript: 'hi', stt: 'browser', uncertain: [] }),
+        turn(day, { role: 'user', selectedText: 'hello', source: 'card', selectedSlot: 'PREFERRED', selectedIndex: 0 }),
+    ] } });
+    const u = summarize([conv('a', '2026-09-01T10:00:00Z'), conv('b', '2026-09-08T10:00:00Z')]);
+    delete u.weeks;
+    const r = redactUsage(u);
+    const sent = JSON.stringify(r);
+    assert.ok(!sent.includes('Dr. Secret'), 'no person name');
+    assert.ok(!sent.includes('Secret Clinic'), 'no place name');
+    assert.equal(r.partners.length, u.partners.length);
+    assert.equal(r.returningPartners, u.returningPartners);
+    assert.deepEqual(r.partners.map((p) => p.conversations), u.partners.map((p) => p.conversations));
+    assert.deepEqual(Object.values(r.hearingByPlace), Object.values(u.hearingByPlace));
+    assert.ok(JSON.stringify(u).includes('Dr. Secret'), 'the summary on the device is untouched');
+});
