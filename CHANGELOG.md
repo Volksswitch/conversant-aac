@@ -84,6 +84,8 @@ forgetting to tag one is only ever noise, never silence.
   your data folder. The screen now cannot be reached until you press Start.
 - Fixed: the text size setting for "In my own words" had no effect. The typing box now
   uses the size you choose.
+- Fixed: the cost of paid listening shown in Settings counted only part of what the
+  service bills, so it read far too low. It now counts all of it.
 
 ## Version 0.13.4
 

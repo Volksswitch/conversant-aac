@@ -308,6 +308,9 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
             pending = [];
             pendingMax = Math.ceil((10 * rate) / FRAME_SAMPLES);   // about ten seconds
             billedMs = 0;
+            // Tell the app the running total restarted, or its next report reads as a
+            // decrease and that whole first burst is never counted (CR-019).
+            if (onBilled) onBilled(0);
 
             try {
                 ws = new WebSocket(`${ENDPOINT}?${params}`, ['token', key]);

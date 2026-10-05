@@ -68,3 +68,15 @@ test('a socket that fails while connecting does not replay its audio later', asy
     ws.onopen();
     assert.equal(ws.sent.filter((b) => typeof b !== 'string').length, 0, 'the held audio was dropped with the error');
 });
+
+// CR-019. Each start resets the running total of audio billed, and the app stores
+// only the increase it sees. Without a reset report, the next session's first figure
+// read as a decrease and that whole burst went uncounted.
+test('every start reports that the billed total restarted at zero', async () => {
+    const billed = [];
+    source = createSource({ getKey: () => 'k', onText() {}, onStatus() {}, onBilled: (s) => billed.push(s) });
+    await source.start();
+    source.stop();
+    await source.start();
+    assert.equal(billed.filter((s) => s === 0).length, 2, 'one zero per start');
+});

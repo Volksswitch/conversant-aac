@@ -312,6 +312,9 @@ export function createSource({ provider, getKey, getModel, onText, onStatus, onB
             preRollFrames = Math.max(1, Math.ceil((gate.preRollMs() / 1000) * rate / 4096));
             reset();
             billedMs = 0;
+            // Tell the app the running total restarted, or its next report reads as a
+            // decrease and that whole first burst is never counted (CR-019).
+            if (onBilled) onBilled(0);
             failures = 0;
             generation++;
             running = true;

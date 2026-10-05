@@ -445,6 +445,9 @@ export function createSource({ getKey, getRegion, onText, onStatus, onBilled }) 
             preRollFrames = Math.max(1, Math.ceil((gate.preRollMs() / 1000) * rate / FRAME_SAMPLES));
             reset();
             billedMs = 0;
+            // Tell the app the running total restarted, or its next report reads as a
+            // decrease and that whole first burst is never counted (CR-019).
+            if (onBilled) onBilled(0);
             generation++;
 
             sourceNode = audioCtx.createMediaStreamSource(stream);
