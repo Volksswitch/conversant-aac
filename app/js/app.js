@@ -4102,6 +4102,10 @@ let expressPanelInSettings = false;
 function hostExpressPanel(inSettings) {
     resetExpressPaging();
     expressPanelInSettings = !!inSettings;
+    // Hide-on-blur belongs to the Express tab ONLY. Set here because every tab switch
+    // and every close path passes through this function; it used to be switched on
+    // by the Express tab and left on by About Me and every close (CR-035).
+    keyboard.setHideOnBlur(!!inSettings);
     ui.setExpressPanelHost(inSettings ? document.getElementById('settingsDialog') : null);
     // The single choke point for "the panel is no longer being edited": every path
     // that leaves the Express tab or closes Settings comes through here with false,

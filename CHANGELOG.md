@@ -125,6 +125,10 @@ forgetting to tag one is only ever noise, never silence.
   and instead quietly resized the conversation screen hidden behind Settings. Also,
   dragging a border on a layout that no longer quite fitted the screen could make
   other borders jump. Both are fixed.
+- Fixed: after visiting the Express Panel tab in Settings, the on-screen keyboard
+  could vanish at the wrong moments, so tapping Save on an About Me answer could miss,
+  and in "In my own words" the keyboard could disappear before you typed. It now
+  behaves as before.
 
 ## Version 0.13.4
 

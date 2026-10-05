@@ -603,3 +603,9 @@ test('More pages while choices show, and edited influencers are reconciled', () 
     assert.doesNotMatch(appSource, /if \(currentPartnerText && \(offeredChoices\.length \|\| offeredRange\)\) resetExpressPaging\(\);/);
     assert.match(appSource, /onChange: \(\) => \{ reconcileInfluencers\(\); renderExpressPanel\(\); \}/);
 });
+
+// CR-035. Hide-on-blur is set by the one function every tab switch and close passes.
+test('hide-on-blur follows the Express Panel being hosted in Settings', () => {
+    const at = appSource.indexOf('function hostExpressPanel(');
+    assert.match(appSource.slice(at, at + 700), /keyboard\.setHideOnBlur\(!!inSettings\)/);
+});
