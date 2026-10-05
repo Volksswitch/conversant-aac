@@ -57,6 +57,8 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: with the app's own on-screen keyboard, changes typed into a person, a place,
   or a goal's button label were lost if you left the screen without tapping Done. They
   are now kept as soon as you move away from the box.
+- Fixed: a long problem report could be refused when you pressed Send, and then held
+  back every weekly report after it for weeks. Long reports are now accepted whole.
 
 ## Version 0.13.4
 

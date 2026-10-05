@@ -114,7 +114,10 @@ function problemHeader(row) {
     const at = (re) => row.findIndex(c => re.test(norm(c)));
     const note = at(NOTE_COL);
     if (note < 0) return null;
-    return { note, sent: at(/^sent$/), tester: at(/^tester$/), version: at(/^version$/), full: at(/^full report$/) };
+    // 'full report' and its continuations, 'full report (2)' onward: the endpoint
+    // splits a report too long for one Sheets cell across them (CR-010).
+    const full = row.map((c, i) => (/^full report( \(\d+\))?$/.test(norm(c)) ? i : -1)).filter(i => i >= 0);
+    return { note, sent: at(/^sent$/), tester: at(/^tester$/), version: at(/^version$/), full };
 }
 
 function isHeaderRow(row) {
@@ -130,14 +133,21 @@ export function readReports(rows) {
     for (const row of rows) {
         if (isHeaderRow(row)) { cols = cols || problemHeader(row); continue; }
 
-        const raw = row.find(cell => {
+        const rawAt = row.findIndex(cell => {
             const t = String(cell || '').trim();
             return t.startsWith('{') && t.includes('"sentAt"');
         });
 
-        if (raw) {
-            let p;
-            try { p = JSON.parse(raw); } catch { broken.push(row[0] || '?'); continue; }
+        if (rawAt >= 0) {
+            // A report too long for one Sheets cell continues in the cells after it
+            // (CR-010), so join until it parses.
+            let p = null;
+            let text = '';
+            for (let i = rawAt; i < row.length && p === null; i++) {
+                text += String(row[i] ?? '');
+                try { p = JSON.parse(text.trim()); } catch { /* keep joining */ }
+            }
+            if (!p) { broken.push(row[0] || '?'); continue; }
             p.receivedAt = row[0] || '';
             (p.kind === 'problem' ? problems : reports).push(p);
             continue;
@@ -146,7 +156,8 @@ export function readReports(rows) {
         // No payload. On the problems tab that is normal and the row is read by name.
         if (cols) {
             const get = (i) => (i >= 0 ? String(row[i] || '').trim() : '');
-            const note = get(cols.note), full = get(cols.full);
+            const note = get(cols.note);
+            const full = cols.full.map(i => String(row[i] ?? '')).join('').trim();
             // A row with neither the tester's words nor the report body is an empty
             // row, not a lost complaint - do not count it against the reader.
             if (!note && !full) continue;

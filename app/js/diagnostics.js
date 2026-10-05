@@ -138,7 +138,10 @@ export async function collectSystemInfo({ appVersion = '?', buildId = '?' } = {}
         // personal data. (This is where the removed About-tab readout returns.)
         const voices = (window.speechSynthesis && window.speechSynthesis.getVoices()) || [];
         info.speech.voiceCount = voices.length;
-        info.speech.voices = voices.map(v => `${v.name} [${v.lang}] ${v.voiceURI}`);
+        // Capped: Edge offers hundreds of online voices, and the full list made a
+        // weekly report too large for the Sheet to store (CR-010). voiceCount above
+        // still says how many there were.
+        info.speech.voices = voices.slice(0, 80).map(v => `${v.name} [${v.lang}] ${v.voiceURI}`);
     } catch { /* ignore */ }
     info.storage = await storageInfo();
     info.settings = safeSettings();

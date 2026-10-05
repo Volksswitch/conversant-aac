@@ -104,9 +104,8 @@ function doPost(e) {
         p.installId || '',
         p.appVersion || '',
         p.build || '',
-        p.note || '',
-        p.report || ''
-      ]);
+        _clip(p.note)
+      ].concat(_parts(p.report, REPORT_PARTS)));
       if (ALERT_EMAIL) {
         MailApp.sendEmail(ALERT_EMAIL,
           'Conversant AAC - problem report from ' + (p.testerName || 'a tester'),
@@ -170,9 +169,8 @@ function doPost(e) {
       depth.people == null ? '' : depth.people,
       errors.length,
       _errorContexts(errors),
-      p.systemInfo ? 'included' : '',
-      _raw(p)                           // the report as received, so nothing is lost
-    ]);
+      p.systemInfo ? 'included' : ''
+    ].concat(_parts(_raw(p), RAW_PARTS))); // the report as received, so nothing is lost
 
     _writeWeeks(p);
 
@@ -254,7 +252,7 @@ function _writeWeeks(p) {
  * Visiting the /exec URL in a browser now prints this, so a redeploy is confirmable in
  * two seconds with nothing written. The correct redeploy is:
  *   Deploy > Manage deployments > pencil > Version: New version > Deploy   (same URL) */
-var SCRIPT_VERSION = '2026-08-31a';
+var SCRIPT_VERSION = '2026-10-05a';
 
 // A GET is handy for confirming the deployment is live, and WHICH CODE is live.
 function doGet() {
@@ -299,8 +297,37 @@ function _fit(sheet, header) {
   }
   return sheet;
 }
+/* ⚠ A SHEETS CELL HOLDS AT MOST 50,000 CHARACTERS, and a row with a longer one is
+ * REFUSED outright (CR-010). A problem report embeds the transcripts of the
+ * conversations an error happened in, so it passes that easily - and a refused report
+ * stays at the head of the app's queue, holding back every report after it for weeks.
+ * So long text is SPLIT across extra columns at the end of the row, never truncated
+ * unless it is longer than all of them together. The beta reader joins them back. */
+var CELL_MAX = 49000;
+var REPORT_PARTS = 6;   // 'full report' plus five continuations
+var RAW_PARTS = 5;      // 'raw' plus four continuations
+
+function _clip(s) {
+  s = String(s == null ? '' : s);
+  return s.length > CELL_MAX ? s.slice(0, CELL_MAX - 60) + '\n[...truncated ' + (s.length - CELL_MAX + 60) + ' chars]' : s;
+}
+
+function _parts(s, n) {
+  s = String(s == null ? '' : s);
+  var out = [];
+  for (var i = 0; i < n; i++) out.push(s.slice(i * CELL_MAX, (i + 1) * CELL_MAX));
+  if (s.length > n * CELL_MAX) out[n - 1] = _clip(s.slice((n - 1) * CELL_MAX));
+  return out;
+}
+
+function _partNames(name, n) {
+  var out = [name];
+  for (var i = 2; i <= n; i++) out.push(name + ' (' + i + ')');
+  return out;
+}
+
 var PROBLEM_HEADER = ['received', 'sent', 'tester', 'install', 'version', 'build',
-      'what happened (their words)', 'full report'];
+      'what happened (their words)'].concat(_partNames('full report', REPORT_PARTS));
 
 function _problemSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -328,7 +355,7 @@ var REPORT_HEADER = ['received', 'sent', 'tester', 'install', 'version', 'build'
       'app opens', 'conversations started', 'superseded', 'rate limited',
       'median generation (s)', 'median gap between checkpoints (s)', 'median stt gap (s)',
       'About Me %', 'express edited', 'people recorded',
-      'new errors since last report', 'error kinds', 'system info', 'raw'];
+      'new errors since last report', 'error kinds', 'system info'].concat(_partNames('raw', RAW_PARTS));
 
 function _sheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
