@@ -2,6 +2,7 @@ import { setIconButton } from './icons.js';
 import { choiceCells } from './express-items.js';
 import { panelRoles, setRowColumns } from './keyboard-layouts.js';
 import * as chime from './chime.js';
+import { focusMark, focusReturn } from './focus-keep.js';
 
 const responseOptions = document.getElementById('responseOptions');
 const statusBar = document.getElementById('statusBar');
@@ -335,6 +336,7 @@ export function setPaletteBusy(on) {
 }
 
 export function showResponses(palette, onSelect) {
+    const focusWas = focusMark(responseOptions);
     // A real palette rendering means a working cycle completed — clear any
     // sticky error wash on the transcript (sticky-until-next-success).
     setTranscriptError(false);
@@ -395,15 +397,19 @@ export function showResponses(palette, onSelect) {
         responseOptions.appendChild(el);
     }
     fitCardsAndCommands();
+    focusReturn(responseOptions, focusWas, document.getElementById('regenerateBtn'));
 }
 
 export function clearResponseOptions() {
     // Keep the reserved footprint: 4 empty slot-colored cells (not a placeholder
     // line), so the region's size is held even with no options / no conversation.
+    const focusWas = focusMark(responseOptions);
     responseOptions.classList.remove('is-empty', 'palette-enter', 'has-error', 'palette-refreshing');
     responseOptions.innerHTML = '';
     const split = cardsPerCategory === 2;
     for (let i = 0; i < RESERVED_SLOTS; i++) responseOptions.appendChild(buildEmptyCell(SLOT_ORDER[i], split));
+    // The empty cells are not buttons, so focus goes to "New N" rather than the top.
+    if (focusWas) { const r = document.getElementById('regenerateBtn'); if (r) try { r.focus({ preventScroll: true }); } catch { /* gone */ } }
 }
 
 // Show a VISIBLE error in the response region (Ken, July 2026): when a generation
@@ -533,6 +539,7 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
     const choiceSlotAt = new Map(choiceSlots.map((cellIndex, n) => [cellIndex, n + 1]));
     epGrid.classList.remove('ep-mark-color', 'ep-mark-thick', 'ep-mark-side', 'ep-mark-shape');
     epGrid.classList.add('ep-mark-' + (['color', 'thick', 'side', 'shape'].includes(contextMark) ? contextMark : 'shape'));
+    const focusWas = focusMark(epGrid);
     epGrid.innerHTML = '';
 
     const blank = (span) => {
@@ -860,6 +867,7 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         epGrid.appendChild(rowEl);
     });
     fitPanelText();
+    focusReturn(epGrid, focusWas);
 }
 
 /**
@@ -1243,7 +1251,13 @@ function composerTabTrap(e) {
     }
 }
 
+// What had keyboard focus when the composer opened, so closing it returns there
+// rather than to the top of the page (CR-016).
+let focusBeforeComposer = null;
+
 export function showComposerOverlay() {
+    const a = document.activeElement;
+    focusBeforeComposer = (a && a !== document.body && a.tagName === 'BUTTON') ? a : null;
     const ov = document.getElementById('composerOverlay');
     if (ov) ov.hidden = false;
     document.addEventListener('keydown', composerTabTrap, true);
@@ -1254,9 +1268,16 @@ export function showComposerOverlay() {
 export function hideComposerOverlay() {
     document.removeEventListener('keydown', composerTabTrap, true);
     const ta = document.getElementById('composerInput');
+    const hadFocus = !!(ta && document.activeElement === ta) || !!(document.activeElement && document.getElementById('composerOverlay')?.contains(document.activeElement));
     if (ta) ta.blur(); // dismisses the on-screen keyboard
     const ov = document.getElementById('composerOverlay');
     if (ov) ov.hidden = true;
+    if (hadFocus) {
+        const back = (focusBeforeComposer && focusBeforeComposer.isConnected) ? focusBeforeComposer
+            : document.querySelector('#epGrid .ep-imow');
+        if (back) try { back.focus({ preventScroll: true }); } catch { /* gone */ }
+    }
+    focusBeforeComposer = null;
 }
 
 export function onListenClick(handler) {

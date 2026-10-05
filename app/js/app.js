@@ -1649,6 +1649,20 @@ async function afterFolderNotice() {
     document.getElementById('startBtn').hidden = true;   // the card carries its own controls
     document.getElementById('whatsNewPanel').hidden = true;
     prompt.hidden = false;
+    keepStartFocus(prompt);
+}
+
+// Each start-up step hides the button that was just pressed. A keyboard or switch
+// user was then dropped back at the top of the page; this hands focus to the next
+// step's own button instead (CR-016). Only when focus has been lost, so nothing is
+// taken from somebody who is elsewhere.
+function keepStartFocus(region) {
+    const a = document.activeElement;
+    const lost = !a || a === document.body || a.offsetParent === null
+        || !!(a.closest && a.closest('#startBlock'));
+    if (!lost || !region) return;
+    const b = [...region.querySelectorAll('button')].find((x) => !x.hidden && !x.disabled);
+    if (b) try { b.focus({ preventScroll: true }); } catch { /* gone */ }
 }
 
 // Leave the reconnect notice, whichever way it was answered, and carry on down the
@@ -1680,6 +1694,7 @@ function afterListeningNotice() {
         document.getElementById('startBtn').hidden = true;   // Close is the proceed control here
         document.getElementById('whatsNewPanel').hidden = true;
         prompt.hidden = false;
+        keepStartFocus(prompt);
     } else {
         finishStart();
     }
@@ -1692,8 +1707,12 @@ function finishStart() {
     document.getElementById('startBtn').hidden = false;   // restore for any later start screen
     document.getElementById('apiKeyPrompt').hidden = true;
     document.getElementById('folderPrompt').hidden = true;
+    const focusInStart = !!(document.activeElement && document.activeElement.closest
+        && document.activeElement.closest('#startBlock'));
     document.getElementById('startBlock').classList.add('hidden');
     document.querySelector('main').classList.remove('disabled');
+    // Into the conversation: focus goes to Listen rather than the top of the page.
+    if (focusInStart) keepStartFocus(document.getElementById('listenControls'));
 }
 
 function toggleListening() {

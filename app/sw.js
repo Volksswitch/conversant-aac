@@ -50,6 +50,7 @@ const SHELL = [
   './js/suggest-provider.js',
   './js/suggest-anthropic.js',
   './js/ui.js',
+  './js/focus-keep.js',
   './js/storage.js',
   './js/placeholders.js',
   './js/placeholder-phrases.js',

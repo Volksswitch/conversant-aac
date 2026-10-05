@@ -31,6 +31,7 @@ import {
     ANYONE, ANYPLACE, flexKey, parseFlexKey, composePanel, CONTEXT_ORDER,
 } from './express-bands.js';
 import { confirmDanger } from './confirm-dialog.js';
+import { focusMark, focusReturn } from './focus-keep.js';
 import { makeCollapsible } from './sections.js';
 import * as tts from './tts.js';
 import * as storage from './storage.js';
@@ -171,7 +172,9 @@ function move(band, dir) {
     if (band === 'context' && list[i].type !== list[j].type) return;
     [list[i], list[j]] = [list[j], list[i]];
     saveBand(band, list);
+    const focusWas = focusMark(container);   // keep a keyboard user's place (CR-016)
     render();
+    focusReturn(container, focusWas);
 }
 
 async function removePicked(band) {

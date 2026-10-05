@@ -26,6 +26,7 @@ import { speak } from './tts.js';
 import * as storage from './storage.js';
 import * as keyboard from './keyboard.js';
 import { confirmDanger } from './confirm-dialog.js';
+import { focusMark, focusReturn } from './focus-keep.js';
 
 let contentEl;
 
@@ -854,7 +855,9 @@ function buildGoalEditor(saved, opts = {}) {
     const syncOther = () => { goalOtherWrap.style.display = goalAdd.value === OTHER ? '' : 'none'; };
 
     const renderGoals = () => {
+        const focusWas = focusMark(goalList);   // keep a keyboard user's place (CR-016)
         goalList.textContent = '';
+        queueMicrotask(() => focusReturn(goalList, focusWas));
         goals.forEach((g, i) => {
             const up = el('button', { type: 'button', class: 'wv-icon-btn',
                 'aria-label': 'Move up' }, '↑');
@@ -1604,7 +1607,11 @@ function renderModule(moduleId, focusKey = null) {
 
 function refreshCard(field) {
     const old = document.getElementById('wvcard-' + field.key);
-    if (old) old.replaceWith(buildCard(field));
+    if (!old) return;
+    const focusWas = focusMark(old);   // keep a keyboard user's place (CR-016)
+    const card = buildCard(field);
+    old.replaceWith(card);
+    focusReturn(card, focusWas);
 }
 
 // --- Card -------------------------------------------------------------------

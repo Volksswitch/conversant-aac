@@ -75,6 +75,10 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: with your device set to reduce motion, the stripe that shows new suggestions
   are coming still slid back and forth and the cards still pulsed. They now hold
   still.
+- Fixed: using a keyboard or switch, you lost your place after tapping an Express
+  Panel button, choosing a card, closing "In my own words", answering an About Me
+  question or moving a goal; the next step started again from the top of the screen.
+  Your place is now kept.
 
 ## Version 0.13.4
 
