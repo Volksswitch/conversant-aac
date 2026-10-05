@@ -2239,6 +2239,11 @@ async function prefetchRepairOptions(token) {
     if (token !== generationToken) return;
     if (engine.getMode() !== engine.MODE.REPAIR_OF_SELF) return;
     const snap = engine.setRepairOptions(opts);
+    // The engine's snapshots are COPIES, so every record that holds the earlier,
+    // hint-only cards is updated here too - otherwise Wrap up's cancel, the composer's
+    // Cancel and the saved offer all kept the blanks (CR-022).
+    lastPalette = snap.palette;
+    storage.reviseOffer(snap.palette).catch(() => { /* best effort */ });
     // Under an open composer, update what will be shown on Cancel instead of drawing
     // under the box (CR-020).
     if (composerOpen) {
@@ -2252,6 +2257,7 @@ async function prefetchRepairOptions(token) {
     // shorter than it was, and counting it as a fresh offer would inflate the
     // denominator abandonment is measured against.
     ui.showResponses(snap.palette, handleResponseSelected);
+    shownCards = { cards: snap.palette, kind: shownCards.kind };
 }
 
 async function handleRepairOfSelf(response) {

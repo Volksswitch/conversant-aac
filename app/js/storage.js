@@ -2347,6 +2347,18 @@ export async function finalizeOffer({ outcome, selectedIndex = null, shownMs = n
 
 export function hasPendingOffer() { return !!pendingOffer; }
 
+/* The words on the cards on screen changed in place - the repair wording arrived a
+ * moment after the cards did. Rewritten in the open offer so the file shows what was
+ * actually offered (CR-022), not the blank it started as. */
+export async function reviseOffer(options = []) {
+    if (!pendingOffer) return;
+    pendingOffer.options = (options || []).map((c) => ({
+        slot: (c && c.slot) || null,
+        text: (c && c.text) || '',
+    }));
+    await flushLog();
+}
+
 export function detachPendingPartnerTurn() {
     const t = pendingPartnerTurn;
     pendingPartnerTurn = null;

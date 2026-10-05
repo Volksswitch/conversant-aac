@@ -92,6 +92,10 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: after a failed request for suggestions, the app's record still treated the
   vanished cards as showing, and canceling Wrap up could bring them back over the
   error message. The record now reflects what is actually on screen.
+- Fixed: after the other person said "What?", the wording that filled in two of the
+  repair cards could disappear if you pressed Wrap up and changed your mind, or
+  canceled "In my own words". The wording now stays, and the saved conversation shows
+  it.
 
 ## Version 0.13.4
 

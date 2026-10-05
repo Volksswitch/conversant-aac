@@ -696,3 +696,15 @@ test('a new conversation starting mid-write cannot land in the old file (CR-001)
     assert.equal(old.exchanges.filter(e => e.role === 'offer').length, 1,
         'and still holds what was said in it');
 });
+
+test('an offer whose wording arrives late is rewritten in place (CR-022)', async () => {
+    storage.setContextProvider(null);
+    storage.resetConversationId();
+    storage.setConversationSaving(true);
+    await storage.startConversationLog();
+    const id = storage.getConversationId();
+    await storage.logOffer({ kind: 'repair', options: [{ slot: 'REPAIR', text: 'Say it again' }, { slot: 'REPAIR', text: '' }] });
+    await storage.reviseOffer([{ slot: 'REPAIR', text: 'Say it again' }, { slot: 'REPAIR', text: 'I said I would be late.' }]);
+    const offer = (await readLog(id)).exchanges.filter((e) => e.role === 'offer').at(-1);
+    assert.equal(offer.options[1].text, 'I said I would be late.');
+});
