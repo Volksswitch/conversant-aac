@@ -72,6 +72,9 @@ forgetting to tag one is only ever noise, never silence.
   could not see which button was selected, and in the dark color schemes there was no
   marker at all. A clear ring now shows on the Command Bar buttons, the response cards
   and New 4.
+- Fixed: with your device set to reduce motion, the stripe that shows new suggestions
+  are coming still slid back and forth and the cards still pulsed. They now hold
+  still.
 
 ## Version 0.13.4
 

@@ -307,3 +307,25 @@ test('no focus style takes the outline away without putting a ring back', () => 
     }
     assert.deepEqual(bad, []);
 });
+
+// CR-015. A reduced-motion rule only wins if it comes AFTER the rule it quiets - a
+// media query adds no specificity. Each selector inside a reduced-motion block must
+// have no later rule with the same selector setting animation or transition.
+test('reduced-motion rules come after the rules they override', () => {
+    const src = css.replace(/\/\*[\s\S]*?\*\//g, (m) => ' '.repeat(m.length));
+    const bad = [];
+    for (const block of src.matchAll(/@media \(prefers-reduced-motion: reduce\) \{/g)) {
+        let depth = 1, i = block.index + block[0].length;
+        while (depth && i < src.length) { if (src[i] === '{') depth++; else if (src[i] === '}') depth--; i++; }
+        const inner = src.slice(block.index + block[0].length, i - 1);
+        for (const r of inner.matchAll(/([^{}]+)\{[^}]*\}/g)) {
+            for (const sel of r[1].split(',').map((x) => x.trim())) {
+                const esc = sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const later = new RegExp(`(^|[},])\\s*${esc}\\s*(,[^{]*)?\\{[^}]*(animation|transition)`, 'g');
+                later.lastIndex = i;
+                if (later.exec(src)) bad.push(`${sel} (block at line ${lineOf(block.index)})`);
+            }
+        }
+    }
+    assert.deepEqual(bad, []);
+});

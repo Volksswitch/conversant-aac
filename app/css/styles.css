@@ -2073,21 +2073,6 @@ body.conv-bottom .palette-grid {
     to   { opacity: 1; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .palette-grid.palette-enter { animation: none; }
-    .response-card { transition: none; }
-    /* Keep the recording indicator visible, just steady (no pulse). */
-    #listenBtn.listening { animation: none; }
-    /* Same for the round-trip cue: hold it still rather than drop it. The fact
-       that a request is out still has to reach the user — it is what tells them
-       the cards may change — so the stripe spans the region and the cards sit at
-       a steady dim instead of breathing. */
-    .palette-refreshing::before { animation: none; width: 100%; opacity: 0.55; }
-    .palette-refreshing .response-card:not(.response-card-empty) {
-        animation: none;
-        opacity: 0.85;
-    }
-}
 
 /* The response card (§4). Slot color: tinted fill and a hued left border. */
 .response-card {
@@ -5613,3 +5598,24 @@ body.reviewing .response-card { position: relative; }
 .review-progress-none { color: var(--ink-muted); }
 .review-progress-part { color: var(--info-ink); }
 .review-progress-done { color: var(--ok-ink); }
+
+/* REDUCED MOTION LAST, ON PURPOSE (CR-015). A media query adds no specificity, so
+   these only win over the rules they quiet if they come AFTER them. When this block
+   sat in the middle of the file, the later base rules re-set the sweeping stripe,
+   the breathing cards and the card transition, and the setting did nothing. */
+@media (prefers-reduced-motion: reduce) {
+    .palette-grid.palette-enter { animation: none; }
+    .response-card { transition: none; }
+    /* Keep the recording indicator visible, just steady (no pulse). */
+    #listenBtn.listening { animation: none; }
+    /* Same for the round-trip cue: hold it still rather than drop it. The fact
+       that a request is out still has to reach the user — it is what tells them
+       the cards may change — so the stripe spans the region and the cards sit at
+       a steady dim instead of breathing. */
+    .palette-refreshing::before { animation: none; width: 100%; opacity: 0.55; }
+    .palette-refreshing .response-card:not(.response-card-empty) {
+        animation: none;
+        opacity: 0.85;
+    }
+    .wv-card.wv-flash { animation: none; }
+}
