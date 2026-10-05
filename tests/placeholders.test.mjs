@@ -506,3 +506,15 @@ test('the gaps log carries the partner words only when the conversation is saved
     assert.match(src, /recordExtraGaps\(result\.missingOther, gapContext\)/);
     assert.doesNotMatch(src, /record(Extra)?Gaps\([^)]*partnerText\)/, 'no caller passes the raw partner text');
 });
+
+// CR-017. Before Start the conversation screen only blocked taps, so a keyboard could
+// Tab past Start into Listen and the Express Panel and skip the start-up steps. Those
+// regions start inert and finishStart clears it.
+test('the conversation screen is inert until Start finishes', () => {
+    const html = readFileSync(new URL('../app/index.html', import.meta.url), 'utf8');
+    for (const id of ['transcriptLog', 'listenControls', 'responsesSection', 'dockArea']) {
+        assert.match(html, new RegExp(`id="${id}"[^>]*data-prestart-inert inert`), `${id} must start inert`);
+    }
+    const at = appSource.indexOf('function finishStart(');
+    assert.match(appSource.slice(at, at + 1500), /\[data-prestart-inert\][\s\S]*removeAttribute\('inert'\)/);
+});

@@ -1711,6 +1711,11 @@ function finishStart() {
         && document.activeElement.closest('#startBlock'));
     document.getElementById('startBlock').classList.add('hidden');
     document.querySelector('main').classList.remove('disabled');
+    // Before Start these regions are INERT, not just unclickable: pointer-events
+    // blocks a tap but not a keyboard, so Tab from Start used to reach Listen and
+    // the Express Panel and skip the start-up steps that reconnect the data folder
+    // and unlock the audio (CR-017).
+    document.querySelectorAll('[data-prestart-inert]').forEach((el) => el.removeAttribute('inert'));
     // Into the conversation: focus goes to Listen rather than the top of the page.
     if (focusInStart) keepStartFocus(document.getElementById('listenControls'));
 }

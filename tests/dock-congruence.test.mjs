@@ -142,7 +142,7 @@ async function measure(dockSide, layoutId, sidePosition = 'right') {
     // more of the app than a geometry check should depend on. Lifting the class is
     // the same shortcut scripts/capture-color-schemes.mjs takes, and it changes no
     // geometry - it only re-enables tapping.
-    await page.evaluate(() => document.querySelector('main')?.classList.remove('disabled'));
+    await page.evaluate(() => { document.querySelector('main')?.classList.remove('disabled'); document.querySelectorAll('[data-prestart-inert]').forEach((e) => e.removeAttribute('inert')); });
     // Open the keyboard the way a user does: "In my own words" on the panel focuses
     // the composer, and the composer is what summons it.
     await page.click('#epGrid .ep-imow');
@@ -230,7 +230,7 @@ test('with a wide gap and a screen edge margin, the two surfaces still agree',
                 return { x: r.x, y: r.y, w: r.width, h: r.height };
             })), sel);
         const panel = await rects('#epGrid .ep-row');
-        await page.evaluate(() => document.querySelector('main')?.classList.remove('disabled'));
+        await page.evaluate(() => { document.querySelector('main')?.classList.remove('disabled'); document.querySelectorAll('[data-prestart-inert]').forEach((e) => e.removeAttribute('inert')); });
         await page.click('#epGrid .ep-imow');
         await new Promise((r) => setTimeout(r, 400));
         const keyboard = await rects('#appKeyboard .kbd-row');
@@ -359,7 +359,7 @@ for (const [label, extra, viewport] of TEXT_CASES) {
             await page.setViewport(viewport);
             await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'networkidle0' });
             await new Promise((r) => setTimeout(r, 500));
-            await page.evaluate(() => document.querySelector('main')?.classList.remove('disabled'));
+            await page.evaluate(() => { document.querySelector('main')?.classList.remove('disabled'); document.querySelectorAll('[data-prestart-inert]').forEach((e) => e.removeAttribute('inert')); });
             await page.click('#initiateBtn');
             await new Promise((r) => setTimeout(r, 500));
 
@@ -421,7 +421,7 @@ async function conv(settings) {
     await page.setViewport({ width: 1280, height: 800 });
     await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'networkidle0' });
     await new Promise((r) => setTimeout(r, 400));
-    await page.evaluate(() => document.querySelector('main')?.classList.remove('disabled'));
+    await page.evaluate(() => { document.querySelector('main')?.classList.remove('disabled'); document.querySelectorAll('[data-prestart-inert]').forEach((e) => e.removeAttribute('inert')); });
 }
 
 const regionRects = () => page.evaluate(() => {

@@ -28,6 +28,7 @@ await page.evaluate(async () => {
     // scheme with weak colours and is not one. This IS the post-Start appearance:
     // the same class removal handleStart performs.
     document.querySelector('main').classList.remove('disabled');
+    document.querySelectorAll('[data-prestart-inert]').forEach((e) => e.removeAttribute('inert'));   // CR-017
     // display:none, not [hidden] -- the block's own rule sets display:flex, which
     // beats the attribute.
     const startBlock = document.querySelector('#startBlock');

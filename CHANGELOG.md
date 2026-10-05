@@ -79,6 +79,9 @@ forgetting to tag one is only ever noise, never silence.
   Panel button, choosing a card, closing "In my own words", answering an About Me
   question or moving a goal; the next step started again from the top of the screen.
   Your place is now kept.
+- Fixed: with a physical keyboard, you could Tab past the Start button and use Listen
+  or the Express Panel on the dimmed screen, which skipped the steps that reconnect
+  your data folder. The screen now cannot be reached until you press Start.
 
 ## Version 0.13.4
 
