@@ -50,9 +50,17 @@ export async function load() {
     loadUserFreq();
 }
 
+// Off for a "Don't save this conversation" conversation (CR-012). A private
+// conversation leaves nothing behind, and a learned word is kept for good and comes
+// back in bold as a suggestion, possibly with someone else watching. app.js sets this
+// from the same place it sets the conversation's save state.
+let learning = true;
+export function setLearning(on) { learning = !!on; }
+
 // Record that the user committed a word (on word boundary, or by picking a
 // prediction) — boosts it for next time. Words shorter than 2 chars are ignored.
 export function learn(word) {
+    if (!learning) return;
     const w = String(word || '').toLowerCase().replace(/[^a-z']/g, '');
     if (w.length < 2) return;
     const uf = loadUserFreq();

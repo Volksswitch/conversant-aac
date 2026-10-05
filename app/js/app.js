@@ -12,6 +12,7 @@ import { goalItems } from './partner-profile.js';
 import * as places from './places.js';
 import * as worldviewUI from './worldview-ui.js';
 import * as keyboard from './keyboard.js';
+import * as prediction from './prediction.js';
 import { SIDE_LAYOUTS, BOTTOM_LAYOUTS, LAYOUTS } from './keyboard-layouts.js';
 import * as viewport from './viewport.js';
 import * as convLayout from './conv-layout.js';
@@ -329,6 +330,7 @@ function initSpokenHelp() {
 
 function applyPrivacyState() {
     storage.setConversationSaving(!conversationPrivate);
+    prediction.setLearning(!conversationPrivate);   // typed words are not learned either (CR-012)
     ui.setPrivacyState(conversationPrivate);
 }
 

@@ -62,6 +62,9 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: in a conversation marked "Don't save this conversation", what the other person
   said could still be stored with your About Me answers when it showed the app was
   missing a fact about you. It no longer is.
+- Fixed: in a conversation marked "Don't save this conversation", words you typed with
+  the app's keyboard were still remembered and could come back later as suggested
+  words. They are no longer remembered.
 
 ## Version 0.13.4
 

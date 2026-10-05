@@ -39,3 +39,12 @@ test('learning ignores sub-2-char tokens and strips non-letters', () => {
     assert.ok(out.includes('hi'));
     assert.ok(!out.includes('a'));
 });
+
+test('a private conversation learns nothing, and learning resumes after it (CR-012)', () => {
+    prediction.setLearning(false);
+    prediction.learn('zebrafish');
+    assert.ok(!prediction.predict('zebraf', 3).includes('zebrafish'), 'a word typed in private is not kept');
+    prediction.setLearning(true);
+    prediction.learn('zebrafish');
+    assert.ok(prediction.predict('zebraf', 3).includes('zebrafish'), 'ordinary conversations still learn');
+});
