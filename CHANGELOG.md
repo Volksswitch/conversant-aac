@@ -117,6 +117,10 @@ forgetting to tag one is only ever noise, never silence.
   after rewording the cards during a goodbye it could bring the goodbyes back. Also,
   ending practice while using a paid listening service could leave the Listen button
   lit and not working. Both are fixed.
+- Fixed: while the other person's offered choices were showing, the More button on the
+  Express Panel did nothing. Also, after editing or deleting a lit person or place
+  button in Settings, the app kept using the old person or place, and a deleted place
+  could not be switched off. Both are fixed.
 
 ## Version 0.13.4
 

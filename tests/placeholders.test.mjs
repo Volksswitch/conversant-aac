@@ -594,3 +594,12 @@ test('an emptied panel forgets its static set, and ending practice turns Listen 
     const ec = appSource.indexOf('async function handleEndConversation(');
     assert.match(appSource.slice(ec, ec + 1500), /await terminateConversation\(\);[\s\S]{0,300}if \(wasPractice\) \{ isListening = false; ui\.setListenButtonState\(false\); \}/);
 });
+
+// CR-031 and CR-032. Choices reset the panel's paging when they ARRIVE, not on every
+// draw; and an edit in the Express editor reconciles the lit influencers.
+test('More pages while choices show, and edited influencers are reconciled', () => {
+    const so = appSource.indexOf('function setOfferedChoices(');
+    assert.match(appSource.slice(so, so + 400), /if \(next\.length\) resetExpressPaging\(\)/);
+    assert.doesNotMatch(appSource, /if \(currentPartnerText && \(offeredChoices\.length \|\| offeredRange\)\) resetExpressPaging\(\);/);
+    assert.match(appSource, /onChange: \(\) => \{ reconcileInfluencers\(\); renderExpressPanel\(\); \}/);
+});

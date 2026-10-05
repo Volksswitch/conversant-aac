@@ -723,7 +723,7 @@ function initApp() {
     clearPalette(); // render the reserved empty card footprint at rest
     renderExpressPanel();
     expressEditor.init(document.getElementById('expressEditor'), {
-        onChange: renderExpressPanel,
+        onChange: () => { reconcileInfluencers(); renderExpressPanel(); },
         onPick: renderExpressPanel,   // the mark lives on the panel, so a pick redraws it
         // The editor moved the caret into a box it just built, so the user is typing
         // and the dock must stay on the keyboard -- see syncExpressTabDock. Cleared by
@@ -3574,6 +3574,7 @@ function setOfferedChoices(options) {
     const next = Array.isArray(options) ? options.filter(Boolean) : [];
     if (next.length === offeredChoices.length && next.every((o, i) => o === offeredChoices[i])) return;
     offeredChoices = next;
+    if (next.length) resetExpressPaging();   // choices arriving put a paged panel back (CR-031)
     renderExpressPanel();
 }
 
@@ -3584,6 +3585,7 @@ function setOfferedRange(range) {
         || (range && offeredRange && range.min === offeredRange.min && range.max === offeredRange.max);
     if (same) return;
     offeredRange = range || null;
+    if (range) resetExpressPaging();   // as for choices (CR-031)
     renderExpressPanel();
 }
 
@@ -4264,6 +4266,31 @@ function dropGoalsFrom(source) {
  */
 let expressPaging = null;
 
+/* A lit partner, place or feeling holds the button it came from. When that button is
+ * edited or deleted in Settings, swap in the edited one or switch the influencer off -
+ * otherwise the AI went on being told the old person or place, and a deleted place
+ * (which survives End conversation) could never be switched off at all (CR-032).
+ * The practice partner has no button and is left alone. */
+function reconcileInfluencers() {
+    const items = expressPanel.allItems();
+    const find = (a) => (a ? items.find((x) => x && x.id === a.id) || null : null);
+    if (activePartner && !String(activePartner.id || '').startsWith('practice:')) {
+        const now = find(activePartner);
+        if (!now) { activePartner = null; dropGoalsFrom('partner'); applyControlPhrases(); }
+        else if (now !== activePartner) {
+            const moved = now.personId !== activePartner.personId;
+            activePartner = now;
+            if (moved) { dropGoalsFrom('partner'); applyControlPhrases(); }
+        }
+    }
+    if (activePlace) {
+        const now = find(activePlace);
+        if (!now) { activePlace = null; dropGoalsFrom('place'); }
+        else { if (now.placeId !== activePlace.placeId) dropGoalsFrom('place'); activePlace = now; }
+    }
+    if (activeFeeling) activeFeeling = find(activeFeeling);
+}
+
 function resetExpressPaging() {
     if (!expressPaging) return false;
     expressPaging = null;
@@ -4438,8 +4465,14 @@ function revealOnPanel(ctx, targets) {
 function drawExpressPanel() {
     applyButtonSizing();   // the active layout may have changed → refresh --kbd-rows/--kbd-cols
     // The partner's choices cover the Context band's More button, so a paged panel goes
-    // back to its first set the moment they arrive (Ken, September 14 2026).
-    if (currentPartnerText && (offeredChoices.length || offeredRange)) resetExpressPaging();
+    // back to its first set the moment they arrive (Ken, September 14 2026) - in
+    // setOfferedChoices / setOfferedRange. Here only a page that would sit UNDER the
+    // choices is refused; resetting every page on every draw made the Always and Flex
+    // bands' More a dead tap while choices were showing (CR-031).
+    if (currentPartnerText && (offeredChoices.length || offeredRange) && expressPaging
+        && (expressPaging.band === expressBands.BAND.CONTEXT || storage.loadExpressMoreScope() === 'panel')) {
+        resetExpressPaging();
+    }
     const composed = composedPanel();
     primeExpressAudio(composed.items);
     ui.renderExpressPanel(expressLayoutRows(), composed.items, {
