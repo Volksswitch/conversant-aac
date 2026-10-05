@@ -640,3 +640,35 @@ test('an ordinary palette is untouched', () => {
     assert.deepEqual(p.map(c => c.slot), ['PREFERRED', 'DISPREFERRED', 'INITIATIVE', 'REPAIR']);
     assert.equal(p[0].text, 'Fred.');
 });
+
+// CR-038. The user opened; the partner's go-ahead hands them the floor to lead, and
+// that holds through every later pause of the same reply until the user speaks.
+test('the user keeps the lead through every pause of the partner go-ahead', () => {
+    engine.reset();
+    engine.initiate();
+    engine.selectResponse({ slot: 'OPENER', text: 'Can I ask you something?' });
+    engine.ingestClassification(COMPLETE('STATEMENT', fourSlots), 'Sure');
+    assert.equal(engine.buildRequestContext().user_holds_floor_to_lead, true);
+    engine.ingestClassification(COMPLETE('STATEMENT', fourSlots), 'Sure, go ahead');
+    assert.equal(engine.buildRequestContext().user_holds_floor_to_lead, true, 'still leading at the second pause');
+    assert.equal(engine.getSnapshot().sequenceStack.length, 0, 'and no partner obligation was pushed');
+    engine.selectResponse({ slot: 'PREFERRED', text: 'Do you want to get lunch?' });
+    engine.ingestClassification(COMPLETE('QUESTION', fourSlots), 'Where were you thinking?');
+    assert.equal(engine.buildRequestContext().user_holds_floor_to_lead, false, 'a new partner turn is answered');
+    assert.equal(engine.getSnapshot().sequenceStack.at(-1).openedBy, 'PARTNER');
+});
+
+// CR-039. A partner turn that is not a closing puts the conversation in its body.
+test('the phase returns to the body after an opener is answered or a wind-down is talked past', () => {
+    engine.reset();
+    engine.initiate();
+    engine.selectResponse({ slot: 'OPENER', text: 'Hi!' });
+    engine.ingestClassification(COMPLETE('STATEMENT', fourSlots), 'Hi there');
+    assert.equal(engine.getSnapshot().phase, 'BODY');
+    engine.windDown();
+    engine.selectResponse({ slot: 'WIND_DOWN', text: 'I should get going.' });
+    engine.ingestClassification(COMPLETE('QUESTION', fourSlots), 'Oh wait, did you hear about Sam?');
+    assert.equal(engine.getSnapshot().phase, 'BODY');
+    engine.ingestClassification(COMPLETE('CLOSING'), 'Okay, take care!');
+    assert.equal(engine.getSnapshot().phase, 'PRE_CLOSING');
+});

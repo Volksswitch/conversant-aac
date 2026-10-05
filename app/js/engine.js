@@ -199,6 +199,12 @@ const state = {
     floor: FLOOR.OPEN,            // whose turn it is — see FLOOR
     lastClassification: null,     // {partner_action, turn_status, is_repair_initiator, offered_options, offered_range} — inspectable
     palette: [],                  // current response descriptors
+    // The partner has answered something the USER opened ("Sure, go ahead") and the
+    // user now holds the floor to lead. Kept as its own flag because the user's FPP is
+    // popped on that first reply, and every later pause of the same reply - and every
+    // New N, Reframe or chip - then lost the fact (CR-038). Cleared when the user
+    // next speaks or the conversation moves on.
+    userLeading: false,
 };
 
 export function reset() {
@@ -211,6 +217,7 @@ export function reset() {
     state.floor = FLOOR.OPEN;
     state.lastClassification = null;
     state.palette = [];
+    state.userLeading = false;
 }
 
 // Snapshot for the renderer / diagnostics. Everything the degenerate UI shows.
@@ -241,7 +248,7 @@ export function buildRequestContext() {
     // "answer the partner" responses. Surfaced explicitly so the model doesn't read
     // the partner's go-ahead as if the partner had asked the opener.
     const top = state.sequenceStack[state.sequenceStack.length - 1];
-    const userHoldsFloorToLead = !!(top && top.openedBy === 'USER' && top.action !== 'REPAIR');
+    const userHoldsFloorToLead = state.userLeading || !!(top && top.openedBy === 'USER' && top.action !== 'REPAIR');
     return {
         stt_confidence: state.lastPartnerUtterance.confidence,
         sequence_stack: state.sequenceStack.map(s => ({ action: s.action, opened_by: s.openedBy, utterance: s.utterance })),
@@ -297,6 +304,7 @@ export function ingestClassification(result, partnerText) {
     if (state.lastClassification.is_repair_initiator) {
         state.mode = MODE.REPAIR_OF_SELF;
         state.floor = FLOOR.SELF; // it's the user's turn to repeat their own utterance
+        state.userLeading = false;
         state.palette = repairSelfPalette();
         return getSnapshot();
     }
@@ -325,6 +333,10 @@ export function ingestClassification(result, partnerText) {
         // the partner, NOT a new FPP: it closes the user's opened sequence and hands
         // the floor back to the user to LEAD. Pop the user's FPP; push no partner FPP.
         state.sequenceStack.pop();
+        state.userLeading = true;
+    } else if (state.userLeading) {
+        // A later pause of the same go-ahead, still refining it: it creates no new
+        // obligation for the user to answer (CR-038).
     } else {
         // A new partner turn (empty stack, or after the user's SPP popped the last
         // one) — push the partner's FPP as a newly-owed sequence.
@@ -342,7 +354,13 @@ export function ingestClassification(result, partnerText) {
         state.phase = 'PRE_CLOSING';
         state.mode = MODE.PRE_CLOSING_CLOSING;
         state.palette = closingPalette();
+        state.userLeading = false;
     } else {
+        // A partner turn that is not a closing means the conversation is in its body:
+        // an opener has been answered, or the partner has talked past a wind-down.
+        // Nothing else ever set it back, so OPENING lasted the whole conversation and
+        // PRE_CLOSING kept short ordinary remarks on the goodbye fast path (CR-039).
+        state.phase = 'BODY';
         state.mode = MODE.RESPONDING;
         state.palette = paletteFromResponses(result.responses);
     }
@@ -537,6 +555,7 @@ export function deferAnswer(text) {
 }
 
 export function selectResponse(response) {
+    state.userLeading = false;   // the user has spoken or moved on (CR-038)
     // A promise is not an answer -- it must not pop the question it defers. Callers
     // route these to deferAnswer; this is the backstop, so a path that misses the
     // branch degrades to "nothing was discharged" rather than to a silent close.
@@ -592,6 +611,7 @@ export function selectResponse(response) {
  * OPEN is the honest answer — nobody has been established as holding the floor.
  */
 export function resumeConversation() {
+    state.userLeading = false;   // the user has spoken or moved on (CR-038)
     state.phase = 'BODY';
     state.mode = MODE.LISTENING;
     state.floor = FLOOR.OPEN;
@@ -608,6 +628,7 @@ export function reopenFromClosing() {
 // spokenText is what was actually said; it becomes the new lastUserUtterance.
 // No partner FPP is involved, so the stack is untouched.
 export function completeRepairOfSelf(spokenText) {
+    state.userLeading = false;   // the user has spoken or moved on (CR-038)
     if (spokenText) state.lastUserUtterance = spokenText;
     state.mode = MODE.LISTENING;
     state.floor = FLOOR.OPEN;
@@ -620,6 +641,7 @@ export function completeRepairOfSelf(spokenText) {
 // Pardon? — user initiates repair on the partner's turn. Push a nested repair
 // sequence; on the partner's re-speak (next COMPLETE), it resolves (see ingest).
 export function pardon() {
+    state.userLeading = false;   // the user has spoken or moved on (CR-038)
     // Only one open user-repair makes sense at a time: tapping Pardon? again
     // before the partner has re-spoken is the same unresolved "I didn't catch
     // that" obligation, not a new one. Don't stack a second REPAIR* on top of an
@@ -646,6 +668,7 @@ export function pardon() {
 // the partner didn't reciprocate re-offers the wind-downs (the app pages to a
 // different set when more are defined than fit).
 export function windDown() {
+    state.userLeading = false;   // the user has spoken or moved on (CR-038)
     state.phase = 'PRE_CLOSING';
     state.mode = MODE.PRE_CLOSING_CLOSING;
     state.floor = FLOOR.SELF; // the user is taking the floor to wind things down
@@ -667,6 +690,7 @@ export function showClosings() {
 // Initiate — user opens the conversation; surface pre-sequences / openers (§5.2).
 // `opts.partnerName` (from an active Partner toggle) personalizes the openers.
 export function initiate(opts = {}) {
+    state.userLeading = false;   // the user has spoken or moved on (CR-038)
     state.phase = 'OPENING';
     state.mode = MODE.INITIATING;
     state.floor = FLOOR.SELF; // the user is taking the floor to open

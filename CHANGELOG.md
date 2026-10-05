@@ -136,6 +136,11 @@ forgetting to tag one is only ever noise, never silence.
   said it was in use but the Listen button stayed off until the app was restarted, and
   switching back to "This device" could break listening. The paid service now works at
   once, and "This device" is refused where the browser cannot listen.
+- Fixed: when you opened with something like "Can I ask you something?" and the other
+  person said "Sure... go ahead" with a pause, or you asked for different options, the
+  suggestions switched to answering them instead of helping you ask. Also, after a
+  wrap-up the other person talked past, a short ordinary remark could suddenly bring
+  up the goodbye cards. Both are fixed.
 
 ## Version 0.13.4
 
