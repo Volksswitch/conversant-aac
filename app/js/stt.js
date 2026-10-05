@@ -659,6 +659,16 @@ function clearSilenceTimer() {
 // offline, since both backends are network services). The user re-taps to try again.
 function handleSourceError(detail) {
     listeningIntent = false;
+    clearSilenceTimer();
+    // ⚠ A PAID SOURCE IS TORN DOWN HERE (CR-007). None of them stop themselves on a
+    // fatal error, so the microphone stayed open, a Deepgram socket stayed closed, and
+    // the next Listen tap found the source "already running" and lit the button on a
+    // dead connection that would never hear anything. Stopped BEFORE the error is
+    // reported, so the last status the app sees is 'error'. The browser recognizer
+    // path reaches here too, with no external source.
+    if (externalSource) {
+        try { externalSource.stop(); } catch { /* already stopped */ }
+    }
     if (onStatusChange) onStatusChange('error', detail);
 }
 

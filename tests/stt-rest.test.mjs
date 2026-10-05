@@ -287,3 +287,43 @@ test('the startup hearing check finds a key for every paid hearing service', asy
         app.indexOf('const speechSupport = platform.speechRecognitionSupport();')));
     assert.match(init, /usingPaidStt\s*=.*sttKeyFor\(sttProvider\)/);
 });
+
+/*
+ * CR-007. A fatal error from a paid source used to leave it running: the microphone
+ * stayed open, phrases kept being submitted, and the next Listen tap found it
+ * "already running" and lit the button on a source that could not hear. Driven
+ * through stt.js, which is where the teardown now happens.
+ */
+test('a fatal error shuts the paid source down, so nothing more is sent', async () => {
+    const world = fakeAudioWorld();
+    const realFetch = globalThis.fetch;
+    const realNav = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+    const realAudio = globalThis.window.AudioContext;
+    world.install();
+    let calls = 0;
+    globalThis.fetch = async () => { calls++; return refuse(); };
+    const statuses = [];
+    try {
+        const stt = await import('../app/js/stt.js?cr007=' + Date.now());
+        stt.init({
+            onResult() {}, onSilence() {}, onPartnerSpeech() {},
+            onStatus: (s) => statuses.push(s),
+            source: 'openai',
+            getRestKey: () => 'the-key',
+            getRestModel: () => 'gpt-4o-transcribe',
+        });
+        stt.startListening();
+        await new Promise((r) => setTimeout(r, 10));
+        for (let i = 0; i < 3; i++) await sayOnePhrase(world);
+        assert.equal(statuses.at(-1), 'error', 'the last thing the app hears is the error');
+        assert.ok(statuses.includes('idle'), 'the source was stopped on the way');
+        const before = calls;
+        await sayOnePhrase(world);
+        assert.equal(calls, before, 'a stopped source submits nothing more');
+    } finally {
+        globalThis.fetch = realFetch;
+        globalThis.window.AudioContext = realAudio;
+        world.restore();
+        if (realNav) Object.defineProperty(globalThis, 'navigator', realNav);
+    }
+});

@@ -47,6 +47,9 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: with Deepgram doing the listening, the first words the other person said
   right after listening came back on could be lost, so their sentence appeared with
   its beginning missing.
+- Fixed: if a paid listening service lost its connection, tapping Listen again lit the
+  button but nothing was ever heard, and the microphone stayed on in the background.
+  The service now shuts down cleanly, so tapping Listen starts it afresh.
 
 ## Version 0.13.4
 
