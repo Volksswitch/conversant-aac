@@ -444,7 +444,10 @@ function demotePromise(list) {
 // refreshed, so we must NOT re-ingest the classification (that would push a
 // duplicate FPP). Guards against being called when there's nothing to refresh.
 export function refreshPalette(responses) {
-    state.palette = paletteFromResponses(responses);
+    // Never replace the cards with nothing. During a "What?" the model returns no
+    // responses by design, so a refresh then emptied the four repair cards (CR-040).
+    const next = paletteFromResponses(responses);
+    if (next.length) state.palette = next;
     return getSnapshot();
 }
 

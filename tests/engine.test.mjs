@@ -672,3 +672,14 @@ test('the phase returns to the body after an opener is answered or a wind-down i
     engine.ingestClassification(COMPLETE('CLOSING'), 'Okay, take care!');
     assert.equal(engine.getSnapshot().phase, 'PRE_CLOSING');
 });
+
+// CR-040. A refresh during "What?" (the model returns no responses then) must not
+// empty the four repair cards.
+test('a refresh with no responses keeps the repair cards', () => {
+    engine.reset();
+    engine.selectResponse({ slot: 'PREFERRED', text: 'I went to the game.' });
+    engine.ingestClassification({ classification: { partner_action: 'OTHER', is_repair_initiator: true }, responses: [] }, 'What?');
+    const before = engine.getSnapshot().palette.length;
+    assert.ok(before >= 4);
+    assert.equal(engine.refreshPalette([]).palette.length, before);
+});

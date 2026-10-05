@@ -3527,6 +3527,12 @@ async function handleRegenerate() {
             { advance: true, pin });
         return;
     }
+    // During a "What?" the cards are the four ways to repeat; "different options"
+    // means different wordings of those, not replies to "What?" (CR-040).
+    if (engine.getMode() === engine.MODE.REPAIR_OF_SELF) {
+        prefetchRepairOptions(++generationToken);
+        return;
+    }
     if (!currentPartnerText || !lastPalette.length) return;
     const token = ++generationToken;
     placeholders.stop();
@@ -3626,6 +3632,7 @@ function handleRangeChip() {
 // stack, mode and floor untouched, so no duplicate FPP), with the picked
 // alternative as the steer. The chips stay up: a second thought is one tap away.
 async function handleChoiceChip(chip) {
+    if (engine.getMode() === engine.MODE.REPAIR_OF_SELF) return;   // CR-040
     noteUserAction('choice chip');
     metrics.event(metrics.EV.CHOICE_CHIP);
     const pick = chip && chip.label;
@@ -4759,6 +4766,9 @@ async function refreshForContextChange() {
     // user is mid-wind-down and would suddenly be offered replies.
     if (currentStatic.kind) return false;
     if (!currentPartnerText || !lastPalette.length) return false;
+    // The repair cards answer "What?", not the partner's situation; and bumping the
+    // token here would throw away the repair wording still on its way (CR-040).
+    if (engine.getMode() === engine.MODE.REPAIR_OF_SELF) return false;
 
     const token = ++generationToken;
     const startedAt = Date.now();

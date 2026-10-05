@@ -141,6 +141,9 @@ forgetting to tag one is only ever noise, never silence.
   suggestions switched to answering them instead of helping you ask. Also, after a
   wrap-up the other person talked past, a short ordinary remark could suddenly bring
   up the goodbye cards. Both are fixed.
+- Fixed: when the other person said "What?" and you pressed New 4 or tapped a person,
+  feeling or place button instead of a repeat option, all four cards disappeared. The
+  repeat options now stay, and New 4 gives fresh wordings of them.
 
 ## Version 0.13.4
 
