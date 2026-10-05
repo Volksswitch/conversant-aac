@@ -37,6 +37,25 @@ the one that quietly waits forever.
 
 ## Open
 
+### Fix the problems found in the October 5 2026 code review
+
+**Raised:** October 5 2026, by Ken, who asked for a review of the whole app that a later
+session could work from.
+
+**What is wanted:** fix the 303 problems listed in
+[code-review-2026-10-05/README.md](code-review-2026-10-05/README.md), most serious first.
+Each one has its own file in that folder, written so a separate session can fix it
+without reading the rest. The first thirteen (one critical, twelve high) matter most:
+a saved conversation that can be overwritten, a paid hearing service quietly swapped for
+the free one after a restart, a repair card that crashes, edits typed on the app's own
+keyboard that are never saved, and three ways private information leaves the device or
+outlives a "Don't save" conversation.
+
+**How to track it:** each item's Status column in the README goes from "open" to "fixed
+(commit)" or "dropped" with a reason. Close this entry when nothing is left open.
+
+**Why not now:** the review was the task; fixing is separate work, one item per commit.
+
 ### Silent "get me other options" buttons must not cut off a placeholder
 
 **Raised:** October 1 2026, by Ken: *"pressing a 'reframe' button shouldn't interrupt a
@@ -245,6 +264,12 @@ about to fall by an order of magnitude is the trap.
   each of the three on an installed iPad or Android with a real key.
 - **Why not now:** outside the Recommended/order change being made, and it needs a real key
   for each service to confirm.
+- **Update, October 5 2026:** the code review read the start-up path and confirmed it is a
+  real fault: after every restart those three services are replaced by the free listening,
+  with nothing on screen saying so. It also found a second way in that affects Deepgram and
+  Azure too: a key pasted after choosing a service is not picked up until the next restart.
+  The fix is item [CR-002](code-review-2026-10-05/CR-002.md). Trying each service on a real
+  device with a real key is still wanted once it is fixed; close this entry then.
 
 ### Speech Provider Guide and Azure set-up: the 19 September change list
 - **Raised:** 2026-09-19 - assembled over the Azure pricing review and Ken's fresh-account
