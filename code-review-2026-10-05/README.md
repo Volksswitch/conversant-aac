@@ -69,10 +69,10 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-028](CR-028.md) | fixed (11c3494) | medium | confirmed | bug | `app/js/app.js:2742` | The controls tour calls the AI practice partner when auto-resume is on, breaking the tour's no-API promise |
 | [CR-029](CR-029.md) | fixed (ecc9000) | medium | confirmed | bug | `app/js/app.js:3005` | New N's paging cursor outlives the static palette, so New 4 brings back old openers or goodbyes |
 | [CR-030](CR-030.md) | fixed (ecc9000) | medium | confirmed | bug | `app/js/app.js:3628` | Ending Practice while the practice partner's turn is up leaves the Listen button stuck 'on' when hearing is a paid service |
-| [CR-031](CR-031.md) | fixed (pending) | medium | confirmed | bug | `app/js/app.js:4249` | More button is a dead tap while the partner's choices are on offer |
-| [CR-032](CR-032.md) | fixed (pending) | medium | confirmed | bug | `app/js/app.js:4628` | Active partner/place/feeling keep a stale copy after their button is edited or deleted |
-| [CR-033](CR-033.md) | open | medium | confirmed | bug | `app/js/app.js:4852` | With the layout unlocked, taps inside Settings are hijacked to drag hidden layout borders |
-| [CR-034](CR-034.md) | open | medium | confirmed | bug | `app/js/app.js:5098` | Dragging a border uses the un-normalized stored layout, so other borders jump |
+| [CR-031](CR-031.md) | fixed (62cb220) | medium | confirmed | bug | `app/js/app.js:4249` | More button is a dead tap while the partner's choices are on offer |
+| [CR-032](CR-032.md) | fixed (62cb220) | medium | confirmed | bug | `app/js/app.js:4628` | Active partner/place/feeling keep a stale copy after their button is edited or deleted |
+| [CR-033](CR-033.md) | fixed (pending) | medium | confirmed | bug | `app/js/app.js:4852` | With the layout unlocked, taps inside Settings are hijacked to drag hidden layout borders |
+| [CR-034](CR-034.md) | fixed (pending) | medium | confirmed | bug | `app/js/app.js:5098` | Dragging a border uses the un-normalized stored layout, so other borders jump |
 | [CR-035](CR-035.md) | open | medium | confirmed | bug | `app/js/app.js:5685` | Visiting the Express Panel tab leaves 'hide keyboard on blur' switched on for About Me and the composer |
 | [CR-036](CR-036.md) | open | medium | confirmed | bug | `app/js/app.js:6313` | The launch-screen problem report is built before the data folder is connected, so it has no history or transcripts |
 | [CR-037](CR-037.md) | open | medium | confirmed | bug | `app/js/app.js:7368` | Changing the hearing service in a browser without built-in recognition either does nothing or throws |

@@ -5079,6 +5079,15 @@ function layoutDraggable() {
     return storage.loadLayoutUnlocked() && !realConversationInProgress();
 }
 
+// Whether a press may be taken as a border grab. Not while any dialog is open: the
+// conversation screen is still laid out behind Settings, so a tap on a Settings
+// control lying over a border line was swallowed and resized the hidden screen,
+// moving keyguard holes unseen (CR-033). Kept separate from layoutDraggable so the
+// unlocked look survives Settings closing on any path.
+function layoutGrabbable() {
+    return layoutDraggable() && !document.querySelector('dialog[open]');
+}
+
 /**
  * A conversation has begun. The three places that can start one all say so through
  * here, and metrics.conversationStarted is idempotent, so none of them has to know
@@ -5134,7 +5143,7 @@ function refreshLayoutMode() {
 // Which border, if any, is under this point. Returns null for everything else, which
 // is the common case and is why this is cheap enough to run on every pointerdown.
 function borderUnder(x, y) {
-    if (!layoutDraggable()) return null;
+    if (!layoutGrabbable()) return null;
     const dock = storage.loadKeyboardDock() === 'side' ? 'side' : 'bottom';
     const r = {
         transcript: boxOf('#transcriptSection'),
@@ -5239,7 +5248,7 @@ function positionLayoutHandles() {
  * which finds a border by PROXIMITY - here the element already says which one. */
 function onHandlePointerDown(e) {
     if (e.button != null && e.button !== 0) return;
-    if (!layoutDraggable()) return;
+    if (!layoutGrabbable()) return;
     const el = e.currentTarget;
     const dock = storage.loadKeyboardDock() === 'side' ? 'side' : 'bottom';
     const key = el.id === 'layoutHandleCommand' ? 'command'
@@ -5321,7 +5330,9 @@ function onLayoutDrag(e) {
     const gap = lerp(storage.loadButtonGapPos(), 0, GAP_MAX_REM) * rem;
     const ctx = layoutContext(dock, VW, VH, rem, gap);
 
-    const stored = storage.loadConvLayout(dock);
+    // The layout AS SHOWN: the display normalizes the stored layout to fit this
+    // screen, and dragging from the raw one made other borders jump (CR-034).
+    const stored = convLayout.normalize(storage.loadConvLayout(dock), ctx);
     const solved = convLayout.solve(stored, ctx);
     // Where the pointer is, as a fraction of the SAME budget the solver uses - so the
     // screen edge margin comes off both and the border lands under the finger.

@@ -204,3 +204,33 @@ test('the keyboard can never take so much width that the command bar stops being
         + `${9 * L.MIN_BTN_REM * ctxSide.rem}px`);
     assert.ok(widest.dock <= lim.dock.hi + 1e-9);
 });
+
+// CR-034. A drag must start from the layout AS SHOWN. When the stored layout no
+// longer fits (8 cards raises the response floor, here), the display normalizes it;
+// dragging from the raw stored one made the other borders jump.
+test('dragging the command bar border moves only that border on an out-of-bounds layout', async () => {
+    const ctx = { dock: 'bottom', width: 1280, height: 500, rem: 16, gap: 0, cards: 8 };
+    const stored = { command: 0.10, response: 0.30, dock: 0.60 };
+    const norm = L.normalize(stored, ctx);
+    const shown = L.solve(norm, ctx);
+    const value = L.valueForDrag('transcriptCommand', shown.transcript + 0.01, shown, ctx);
+    const next = L.setRegion(norm, 'command', value, ctx);
+    next.last = 'command';
+    const after = L.solve(L.normalize(next, ctx), ctx);
+    assert.ok(Math.abs(after.response - shown.response) < 1e-9, 'the response panel stays put');
+    assert.ok(Math.abs(after.dock - shown.dock) < 1e-9, 'the keyboard stays put');
+    assert.ok(after.command < shown.command, 'the command bar shrinks as its top is dragged down');
+    const { readFileSync } = await import('node:fs');
+    const app = readFileSync(new URL('../app/js/app.js', import.meta.url), 'utf8');
+    const d = app.indexOf('function onLayoutDrag(');
+    assert.match(app.slice(d, d + 1500), /convLayout\.normalize\(storage\.loadConvLayout\(dock\), ctx\)/, 'and the app drags from it');
+});
+
+// CR-033. A press is never taken as a border grab while a dialog is open.
+test('border grabs are refused while a dialog is open', async () => {
+    const { readFileSync } = await import('node:fs');
+    const app = readFileSync(new URL('../app/js/app.js', import.meta.url), 'utf8');
+    assert.match(app, /function layoutGrabbable\(\) \{\s*return layoutDraggable\(\) && !document\.querySelector\('dialog\[open\]'\);/);
+    const b = app.indexOf('function borderUnder(');
+    assert.match(app.slice(b, b + 200), /if \(!layoutGrabbable\(\)\) return null;/);
+});

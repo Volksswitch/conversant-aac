@@ -121,6 +121,10 @@ forgetting to tag one is only ever noise, never silence.
   Express Panel did nothing. Also, after editing or deleting a lit person or place
   button in Settings, the app kept using the old person or place, and a deleted place
   could not be switched off. Both are fixed.
+- Fixed: with the screen layout unlocked, some taps on Settings controls did nothing
+  and instead quietly resized the conversation screen hidden behind Settings. Also,
+  dragging a border on a layout that no longer quite fitted the screen could make
+  other borders jump. Both are fixed.
 
 ## Version 0.13.4
 
