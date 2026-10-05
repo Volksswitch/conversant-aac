@@ -44,6 +44,9 @@ forgetting to tag one is only ever noise, never silence.
   you talk, and Conversation Review called them, and your Express Panel taps, "a
   command button". They are now recorded as yours. Your own Express Panel phrases are
   kept out of what the app learns, so it still leaves those for you to say.
+- Fixed: with Deepgram doing the listening, the first words the other person said
+  right after listening came back on could be lost, so their sentence appeared with
+  its beginning missing.
 
 ## Version 0.13.4
 

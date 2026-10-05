@@ -43,8 +43,8 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-002](CR-002.md) | fixed (7d870bb) | high | confirmed | bug | `app/js/app.js:485` | After a restart, OpenAI, Google Cloud and ElevenLabs hearing are silently replaced by the browser's own recognizer |
 | [CR-003](CR-003.md) | fixed (80b49c5) | high | confirmed | bug | `app/js/app.js:1689` | Answering with an Express phrase, typed words, a sound or a repair card leaves the partner's words in the listening buffer, so the next Listen tap re-records them |
 | [CR-004](CR-004.md) | fixed (240e9fa) | high | confirmed | bug | `app/js/app.js:2249` | Choosing a 'say it again / rephrase / expand' repair card crashes on an undefined variable |
-| [CR-005](CR-005.md) | fixed (pending) | high | confirmed | bug | `app/js/app.js:3725` | Typed and Express Panel turns are saved as 'control', so the voice harvest never learns from the user's own words |
-| [CR-006](CR-006.md) | open | high | confirmed | bug | `app/js/stt-deepgram.js:193` | Deepgram hearing drops the partner's first words whenever they start talking before the connection finishes opening |
+| [CR-005](CR-005.md) | fixed (6579a46) | high | confirmed | bug | `app/js/app.js:3725` | Typed and Express Panel turns are saved as 'control', so the voice harvest never learns from the user's own words |
+| [CR-006](CR-006.md) | fixed (pending) | high | confirmed | bug | `app/js/stt-deepgram.js:193` | Deepgram hearing drops the partner's first words whenever they start talking before the connection finishes opening |
 | [CR-007](CR-007.md) | open | high | confirmed | bug | `app/js/stt.js:660` | After a paid hearing service fails, it keeps running, and the next Listen tap lights the button on a dead connection |
 | [CR-008](CR-008.md) | open | high | confirmed | data-loss | `app/js/worldview-ui.js:151` | Choosing a data folder from the About Me banner reconciles only About Me answers, so other stores later overwrite the folder's files |
 | [CR-009](CR-009.md) | open | high | confirmed | data-loss | `app/js/worldview-ui.js:1209` | People, Places and general-goal edits auto-save on the 'change' event, which never fires for text typed with the on-screen keyboard |
@@ -108,7 +108,7 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-067](CR-067.md) | open | medium | confirmed | design-violation | `app/js/storage.js:574` | Loading a settings profile that came from another device applies its device-bound settings, bypassing the backup's hold-back rule |
 | [CR-068](CR-068.md) | open | medium | confirmed | design-violation | `app/js/stt-azure.js:333` | Azure hearing: one busy or server error switches listening off, a lost connection never does, and the helpful key-refusal message is never shown |
 | [CR-069](CR-069.md) | open | medium | confirmed | design-violation | `app/js/stt.js:443` | The background/foreground guard is never set up when the app starts on a paid hearing service |
-| [CR-070](CR-070.md) | fixed (pending) | medium | confirmed | design-violation | `app/js/voice-harvest.js:76` | Catchphrase redaction at the voice-harvest boundary was never built |
+| [CR-070](CR-070.md) | fixed (6579a46) | medium | confirmed | design-violation | `app/js/voice-harvest.js:76` | Catchphrase redaction at the voice-harvest boundary was never built |
 | [CR-071](CR-071.md) | open | medium | confirmed | design-violation | `app/js/weekly-send.js:298` | System information is re-sent in every weekly report because the change-detection hash includes a timestamp and live counters |
 | [CR-072](CR-072.md) | open | medium | confirmed | other | `app/js/app.js:2249` | No undeclared-identifier check: the handleRepairOfSelf ReferenceError shipped with every test green |
 | [CR-073](CR-073.md) | open | medium | confirmed | other | `app/sw.js:39` | No test checks that the service worker precaches every module the app imports (how tap-guard.js slipped) |

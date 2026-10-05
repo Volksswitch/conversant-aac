@@ -190,8 +190,23 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
     let openedAt = 0;
     let billedMs = 0;
 
+    // Audio that arrived while the socket was still connecting. Listening restarts at
+    // the start of nearly every partner turn, which is exactly when they start
+    // talking, and the handshake takes hundreds of ms (a second or more on cellular).
+    // Sending into a CONNECTING socket silently drops the audio, so the opening words
+    // were lost - and the pre-roll, which exists to protect them, was thrown away too
+    // (CR-006). Held here and flushed on open. Bounded, and dropped on error/close so
+    // a dead socket can never replay old audio into a later one.
+    let pending = [];
+    let pendingMax = 0;
+
     function send(buf) {
-        if (ws && ws.readyState === WebSocket.OPEN) ws.send(buf);
+        if (!ws) return;
+        if (ws.readyState === WebSocket.OPEN) { ws.send(buf); return; }
+        if (ws.readyState === WebSocket.CONNECTING) {
+            pending.push(buf);
+            while (pending.length > pendingMax) pending.shift();
+        }
     }
 
     // Float samples (-1..1) → 16-bit little-endian PCM, which is what
@@ -290,6 +305,8 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
             gate = vad.createGate();
             preRollFrames = Math.max(1, Math.ceil((gate.preRollMs() / 1000) * rate / FRAME_SAMPLES));
             preRoll = [];
+            pending = [];
+            pendingMax = Math.ceil((10 * rate) / FRAME_SAMPLES);   // about ten seconds
             billedMs = 0;
 
             try {
@@ -300,8 +317,9 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
             }
             ws.binaryType = 'arraybuffer';
             ws.onmessage = handleMessage;
-            ws.onerror = () => { if (onStatus) onStatus('error', 'network'); };
+            ws.onerror = () => { pending = []; if (onStatus) onStatus('error', 'network'); };
             ws.onclose = (e) => {
+                pending = [];
                 // CARRY THE CLOSE CODE. A rejected key, a refused subprotocol and a
                 // dropped connection all arrive here as the same event, and the bare
                 // word "closed" cannot tell them apart — which on a tablet, with no
@@ -323,6 +341,9 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
                 // completed broke it: the button went red on the tap and black again
                 // when the socket failed, which reads as the button not working rather
                 // than as the connection being refused (Ken, iPad, August 3 2026).
+                // What arrived during the handshake goes first, in order (CR-006).
+                for (const b of pending) ws.send(b);
+                pending = [];
                 if (onStatus) onStatus('listening');
                 keepAliveTimer = setInterval(() => {
                     // Only while silent — during speech the audio itself keeps the
@@ -378,6 +399,7 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
             if (stream) { stream.getTracks().forEach((t) => { try { t.stop(); } catch { /* gone */ } }); stream = null; }
             if (audioCtx) { try { audioCtx.close(); } catch { /* gone */ } audioCtx = null; }
             preRoll = [];
+            pending = [];
             if (onStatus) onStatus('stopped');
         },
 
