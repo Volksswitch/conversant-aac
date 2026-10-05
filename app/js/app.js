@@ -2026,6 +2026,7 @@ async function generateOptions(partnerText) {
         // Try again retries the same turn.
         updatePartnerLive(partnerText);
         ui.setTranscriptState('uncleaned');
+        notePaletteReplacedByError();
         ui.showResponseError('AI is unavailable — reply using the Express Panel or “In my own words.” The partner\'s words are shown above.', () => generateOptions(partnerText));
         ui.setStatus(`Error: ${err.message}`);
     }
@@ -3013,7 +3014,9 @@ function overlayCancel() {
     // The general "we are staying in this conversation after all" transition.
     ui.showEngineState(engine.resumeConversation());
     currentStatic = back.static;
-    showPalette(back.cards, back.kind);
+    // An empty panel is put back as an empty panel, not as an empty "offer" (CR-021).
+    if (back.cards && back.cards.length) showPalette(back.cards, back.kind);
+    else clearPalette();
     ui.setStatus(back.status || '');
 }
 
@@ -3113,6 +3116,19 @@ function clearPalette() {
     }
     ui.clearResponseOptions();
     shownCards = { cards: [], kind: 'none' };
+}
+
+/* The error box has replaced the cards (a request failed). The records must say so,
+ * or the next action is filed against cards that are gone and Wrap up's cancel puts
+ * them back over the error box (CR-021). */
+function notePaletteReplacedByError() {
+    if (storage.hasPendingOffer()) {
+        storage.finalizeOffer({ outcome: 'error', shownMs: shownSpanMs() });
+        metrics.paletteAbandoned('generation failed');
+    }
+    shownCards = { cards: [], kind: 'none' };
+    cardsShownAt = 0;
+    decideTaken = false;
 }
 
 function showPalette(cards, kind = 'ai') {
@@ -3470,6 +3486,7 @@ async function handleRegenerate() {
     } catch (err) {
         if (token !== generationToken) return;
         storage.logError('regenerate', err.message);
+        notePaletteReplacedByError();
         ui.showResponseError(`Couldn't get new options: ${err.message}`, handleRegenerate);
         ui.setStatus(`Error: ${err.message}`);
     }
@@ -3564,6 +3581,7 @@ async function handleChoiceChip(chip) {
     } catch (err) {
         if (token !== generationToken) return;
         storage.logError('choiceChip', err.message, { partner: (currentPartnerText || '').slice(0, 200) });
+        notePaletteReplacedByError();
         ui.showResponseError(`Couldn't build responses for "${pick}": ${err.message}`, () => handleChoiceChip(chip));
         ui.setStatus(`Error: ${err.message}`);
     }
@@ -3655,6 +3673,7 @@ async function handleReframe() {
         } catch (err) {
             if (token !== generationToken) return;
             storage.logError('reframe', err.message);
+            notePaletteReplacedByError();
             ui.showResponseError(`Couldn't rework the options: ${err.message}`);
             ui.setStatus(`Error: ${err.message}`);
         }
@@ -3673,6 +3692,7 @@ async function handleReframe() {
     } catch (err) {
         if (token !== generationToken) return;
         storage.logError('reframeLead', err.message);
+        notePaletteReplacedByError();
         ui.showResponseError(`Couldn't get statements: ${err.message}`);
         ui.setStatus(`Error: ${err.message}`);
     }

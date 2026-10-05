@@ -531,3 +531,15 @@ test('goodbyes and repair wording are held while the composer is open', () => {
     const sh = appSource.indexOf('function showHeldForComposer(');
     assert.match(appSource.slice(sh, sh + 800), /kind === 'closing'[\s\S]*renderStaticPalette\('closing'/);
 });
+
+// CR-021. When the error box replaces the cards, the records must say so - every
+// showResponseError call is preceded by the helper that closes the offer and empties
+// the record of what is on screen.
+test('every error box is preceded by updating the record of what is on screen', () => {
+    const lines = appSource.split(/\r?\n/);
+    const bad = [];
+    lines.forEach((l, i) => {
+        if (/^\s*ui\.showResponseError\(/.test(l) && !/notePaletteReplacedByError\(\)/.test(lines[i - 1] || '')) bad.push(i + 1);
+    });
+    assert.deepEqual(bad, []);
+});

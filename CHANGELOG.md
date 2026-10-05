@@ -89,6 +89,9 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: if the other person started saying goodbye while you were typing in "In my
   own words" and you then canceled, an older set of suggestions could replace the
   goodbye cards. The goodbye cards now wait and appear when you cancel.
+- Fixed: after a failed request for suggestions, the app's record still treated the
+  vanished cards as showing, and canceling Wrap up could bring them back over the
+  error message. The record now reflects what is actually on screen.
 
 ## Version 0.13.4
 
