@@ -227,3 +227,20 @@ test('choosing the lighter option counts as permission, and says what overrides 
     assert.match(block, /IS this user telling you a lighter reply suits them/);
     assert.match(block, /do not want joking suggestions, which overrides this outright/);
 });
+
+// CR-070. A sentence the user typed can carry one of their catchphrases, and an
+// exemplar is sent under "follow their phrasing" - so the catchphrase is taken out
+// before it reaches the model, and a sentence left too short to carry a style is
+// dropped. Only the user's OWN phrases are redacted.
+test('a harvested sentence reaches the prompt without the user catchphrases', async () => {
+    await reset();
+    voice.setHarvest({
+        exemplars: ["Let's go! I'll meet you at the game Saturday.", "That's clutch, nice one", 'Thank you so much for coming today.'],
+        lengthLean: null, counts: {},
+    });
+    const block = voice.buildBlock(["Let's go!", "That's clutch"]);
+    assert.match(block, /"I'll meet you at the game Saturday\."/);
+    assert.doesNotMatch(block, /"Let's go! I'll/, 'the catchphrase is gone from the exemplar');
+    assert.doesNotMatch(block, /"nice one"/i, 'a sentence left under four words is dropped');
+    assert.match(block, /"Thank you so much for coming today\."/, 'words not in the user list are untouched');
+});

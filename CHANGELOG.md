@@ -40,6 +40,10 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: when the other person said "What?" and you chose a card to repeat, reword or
   expand what you had said, the app spoke it and then stopped: the line was not added
   to the conversation or saved, and listening did not come back on.
+- Fixed: sentences you typed in "In my own words" were never used to teach the app how
+  you talk, and Conversation Review called them, and your Express Panel taps, "a
+  command button". They are now recorded as yours. Your own Express Panel phrases are
+  kept out of what the app learns, so it still leaves those for you to say.
 
 ## Version 0.13.4
 

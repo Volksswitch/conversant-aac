@@ -47,6 +47,39 @@ function normalized(text) {
     return String(text || '').toLowerCase().replace(/[^a-z0-9' ]/g, '').replace(/\s+/g, ' ').trim();
 }
 
+export { MIN_EXEMPLAR_WORDS };
+
+/**
+ * Strip the user's catchphrases out of a harvested sentence.
+ *
+ * ⚠ CATCHPHRASES ARE EXPRESS PANEL BUTTONS AND THE AI NEVER PRODUCES THEM (CLAUDE.md,
+ * August 5 2026). A sentence the user typed can contain one ("Let's go! I'll meet you
+ * Saturday."), and an exemplar is sent under "follow their phrasing" - so left in, it
+ * teaches the model to say the user's signature line for them. The redaction happens
+ * at the boundary where harvested prose reaches the model (CR-070).
+ *
+ * `phrases` must be the user's OWN Express phrases (provenance-filtered), never the
+ * shipped defaults: stripping "Yes" or "Thank you" out of every sentence would wreck
+ * the exemplars. Case-insensitive, whole-phrase, trailing punctuation included.
+ * Returns the cleaned sentence, possibly empty.
+ */
+export function redactCatchphrases(text, phrases = []) {
+    let out = String(text || '');
+    const list = phrases.map((p) => String(p || '').trim().replace(/[.!?,;:]+$/, '').trim())
+        .filter((p) => p.length > 0)
+        .sort((a, b) => b.length - a.length);   // longest first: "Let's go team" before "Let's go"
+    for (const p of list) {
+        const esc = p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const re = new RegExp(`(^|[^\\w'])${esc}[.!?,;:]*(?=$|[^\\w'])`, 'gi');
+        out = out.replace(re, '$1');
+    }
+    return out.replace(/\s+/g, ' ')
+        .replace(/\s+([.!?,;:])/g, '$1')
+        .replace(/^[\s.!?,;:\-]+/, '')
+        .replace(/[\s,;:\-]+$/, '')
+        .trim();
+}
+
 /**
  * What kind of turn is this? Uses the recorded `source` when present, and falls back
  * to elimination for pre-August-2026 logs.

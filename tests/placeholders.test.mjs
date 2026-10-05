@@ -452,3 +452,18 @@ test('the repair-of-self log names its source explicitly', () => {
     assert.ok(!/[,{]\s*source\s*[,}]/.test(body), 'no bare `source` shorthand - there is no such variable here');
     assert.match(body, /source:\s*'control'/);
 });
+
+// CR-005. Typed sentences and Express taps were saved as 'control' because
+// speakAsUserTurn never handed its `source` to the commit, so the voice harvest never
+// learned from the user's own words. Both halves of the link are checked.
+test('a typed sentence or Express tap is recorded with its own source', () => {
+    const strip = (s) => s.replace(/\/\*[\s\S]*?\*\//g, ' ').split('\n')
+        .map((l) => l.replace(/\/\/.*$/, '')).join('\n');
+    const at = appSource.indexOf('async function speakAsUserTurn(');
+    const body = strip(appSource.slice(at, at + appSource.slice(at).search(/\r?\n\}\r?\n/)));
+    assert.match(body, /commitExchange\([^)]*\{[^}]*\bsource\b[^}]*\}\s*\)/,
+        'speakAsUserTurn must pass source to commitExchange');
+    const c = appSource.indexOf('async function commitExchange(');
+    const commit = strip(appSource.slice(c, c + appSource.slice(c).search(/\r?\n\}\r?\n/)));
+    assert.match(commit, /opts\.source/, 'commitExchange must record opts.source');
+});

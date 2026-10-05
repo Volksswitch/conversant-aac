@@ -32,6 +32,7 @@ import { readFile, writeFile, hasDataFolder } from './storage.js';
 // reuse verbatim) from a levity one (never reuse). sound-check-items.js imports
 // nothing, so there is no cycle.
 import { getItem } from './sound-check-items.js';
+import { redactCatchphrases, MIN_EXEMPLAR_WORDS } from './voice-harvest.js';
 
 const FILE = 'voice.json';
 const CACHE_KEY = 'aac_voice';
@@ -348,7 +349,12 @@ export function buildBlock(idiom = []) {
     // so calling them fabrications would be false. But they are PAST utterances, and
     // treating a month-old sentence as currently true is the anti-fabrication failure
     // from the other direction — hence "not current facts" rather than "not facts".
-    const harvested = activeExemplars();
+    // Catchphrases are taken out first: they are the user's to say, on a button, and
+    // an exemplar sent under "follow their phrasing" would teach the model to say them
+    // unprompted (CR-070). Against the FULL idiom list, not the 20 shown below.
+    const harvested = activeExemplars()
+        .map((t) => redactCatchphrases(t, idiom))
+        .filter((t) => t.split(/\s+/).filter(Boolean).length >= MIN_EXEMPLAR_WORDS);
     if (harvested.length) {
         lines.push('');
         lines.push('Sentences this user has actually written themselves, in real conversations. This is the best evidence you have of how they put things:');

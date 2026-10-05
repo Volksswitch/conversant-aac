@@ -2373,7 +2373,7 @@ async function commitExchange(raw, userText, index, opts = {}) {
         // 'card' when the user tapped one of the AI's suggestions. index < 0 reaches
         // here from repair-of-self and other non-palette commits, which are our words
         // rather than theirs — see the source field in storage.logUserResponse.
-        source: opts.audio ? 'audio' : (index >= 0 ? 'card' : 'control'),
+        source: opts.audio ? 'audio' : (index >= 0 ? 'card' : (opts.source || 'control')),
         // How long the cards were up before the user acted — see the field note in
         // storage.logUserResponse. null when no cards were showing.
         decideMs,
@@ -3770,7 +3770,9 @@ async function speakAsUserTurn(historyText, spokenText = historyText, source = '
     engine.selectResponse({ text: historyText });
     ui.showEngineState(engine.getSnapshot());
     // Interruption: the partner's heard text is recorded verbatim, like every turn.
-    await commitExchange(raw, historyText, -1, { spokenText });
+    // `source` reaches the record: without it every typed sentence and Express tap was
+    // saved as 'control', so the voice harvest never learned from them (CR-005).
+    await commitExchange(raw, historyText, -1, { spokenText, source });
 
     // The user has spoken and a reply is coming, so the mic has to be open to catch
     // it. Opening a conversation this way is the same act as selecting an opener, so

@@ -244,3 +244,12 @@ test('REVIEW: every kind of review answer has a lesson, so none is ignored by ac
         'found the answer kinds in review-model.js');
     for (const k of kinds) assert.ok(REVIEW_LESSONS[k], `no lesson for review answer "${k}"`);
 });
+
+test('redactCatchphrases removes the user phrase and nothing else (CR-070)', async () => {
+    const { redactCatchphrases } = await import('../app/js/voice-harvest.js');
+    assert.equal(redactCatchphrases("Let's go! I'll meet you Saturday.", ["Let's go!"]), "I'll meet you Saturday.");
+    assert.equal(redactCatchphrases('LETS GO team', ["Let's go"]), 'LETS GO team', 'whole phrase only');
+    assert.equal(redactCatchphrases("I said let's go, honestly", ["Let's go!"]), 'I said honestly');
+    assert.equal(redactCatchphrases('Thank you so much', ['Yes']), 'Thank you so much');
+    assert.equal(redactCatchphrases('Going (home) now', ['(home)']), 'Going now', 'regex characters are escaped');
+});
