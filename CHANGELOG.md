@@ -108,6 +108,11 @@ forgetting to tag one is only ever noise, never silence.
   pretend partner was talking, their words were not written into the conversation and
   the Listen button stayed red. If the AI could not be reached, the cards stayed
   dimmed as if new ones were coming. All three are fixed.
+- Fixed: in the button tour, the next instruction started talking less than a second
+  after you tapped a card or a Command Bar button, cutting off the sentence you had
+  just said. With automatic listening on, the tour could also make up a pretend
+  partner line and speak it over the instructions. The tour now waits for you to
+  finish and never calls the AI.
 
 ## Version 0.13.4
 

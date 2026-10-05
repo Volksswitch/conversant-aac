@@ -574,3 +574,14 @@ test('an interrupted practice partner turn is wound down and its line kept', () 
     assert.equal((body.match(/endPracticeCue\(token\)/g) || []).length, 3, 'error, superseded before speaking, superseded after');
     assert.match(body, /storage\.logPartnerInterim\(\{ rawTranscript: line/);
 });
+
+// CR-027 and CR-028. The tour waits for the user's own sentence to finish before the
+// next instruction, and never cues the AI practice partner.
+test('the button tour waits for quiet and never calls the AI partner', () => {
+    const st = appSource.indexOf('async function speakTourStep(');
+    assert.match(appSource.slice(st, st + 600), /await waitUntilQuiet\(\)/);
+    const ap = appSource.indexOf('async function advancePracticePartner(');
+    assert.match(appSource.slice(ap, ap + 300), /if \(!practiceMode \|\| tour\) return;/);
+    const pr = appSource.indexOf('function practiceResumeOrIdle(');
+    assert.match(appSource.slice(pr, pr + 200), /!tour && manualListenArmed/);
+});

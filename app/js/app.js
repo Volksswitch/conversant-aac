@@ -2714,7 +2714,8 @@ function endPracticeCue(token) {
 }
 
 async function advancePracticePartner() {
-    if (!practiceMode) return;
+    // Never during the button tour: it has no partner and needs no AI key (CR-028).
+    if (!practiceMode || tour) return;
     const token = ++generationToken;   // aborts if the user ends/pauses mid-generation
     practiceCueToken = token;
     ui.setPaletteBusy(true);   // the cards showing may be replaced — say so (Ken)
@@ -2758,9 +2759,23 @@ async function advancePracticePartner() {
 // Say the current step and show it, then wait for the user to press the control it
 // names. Nothing here is timed: the tour advances on a press and on nothing else, so
 // a user who stops to think, or to try the button twice, is never left behind.
+// Wait until nothing is being said, so the next instruction never cuts off the
+// sentence the user just made the app speak - which is the very thing the tour is
+// showing them (CR-027). Capped, so the tour can never stall.
+async function waitUntilQuiet(ceilingMs = 15000) {
+    const until = Date.now() + ceilingMs;
+    while ((speakingUserStatement || tts.isSpeaking()) && Date.now() < until) {
+        await new Promise((r) => setTimeout(r, 150));
+    }
+}
+
 async function speakTourStep() {
+    const before = practiceTour.currentStep(tour);
+    if (!before) return;
+    await waitUntilQuiet();
+    // A press made while waiting may have moved the tour on; say the step it is on now.
     const step = practiceTour.currentStep(tour);
-    if (!step) return;
+    if (!step || step !== before) return;
     ui.setCoachLine(step.say);
     // The practice partner's voice, for the same reason spoken help uses it: it must
     // be audibly NOT the user's own, or the app explaining itself sounds like the
@@ -2828,8 +2843,9 @@ function hintWhere(step, target) {
     // needs to know what they are being asked to do, not only where the button is.
     ui.setCoachLine(`${step.say}\n${step.where}`);
     // Only the new information is spoken. Repeating the whole instruction on every
-    // mis-tap would be slower to sit through each time it happened.
-    tts.speak(step.where, partnerVoiceOptions());
+    // mis-tap would be slower to sit through each time it happened. Not over the
+    // user's own sentence, though: the text is on screen either way (CR-027).
+    if (!speakingUserStatement) tts.speak(step.where, partnerVoiceOptions());
 }
 
 function announceTourFinished() {
@@ -2866,7 +2882,7 @@ function togglePracticeCue() {
 // auto-resume is armed) or wait for the user to tap Start Listening — the SAME gate
 // as a real conversation.
 function practiceResumeOrIdle() {
-    if (manualListenArmed && storage.loadAutoRelisten()) {
+    if (!tour && manualListenArmed && storage.loadAutoRelisten()) {
         advancePracticePartner();
     } else {
         isListening = false;
