@@ -738,7 +738,7 @@ function initApp() {
     placeholderEditor.init(document.getElementById('placeholderEditor'));
     // About Me is an ordinary Settings tab — it renders into its tab-panel and is
     // dismissed by the shared Settings Close button (no overlay of its own).
-    worldviewUI.init();
+    worldviewUI.init({ onFolderConnected: adoptDataFolder });   // every store, not only About Me (CR-008)
     applyFontScales();   // user-set Transcript / Composer / Express text sizes
     initSliderSteppers(); // − / + fine-step buttons on the size sliders
     ui.setRegenerateLabel(storage.loadResponsesPerCategory() * 4); // "New 4"/"New 8"

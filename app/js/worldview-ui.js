@@ -81,7 +81,15 @@ function formatValue(value) {
 
 // --- lifecycle --------------------------------------------------------------
 
-export function init() {
+// The app's shared "a folder has just been connected" routine (app.js
+// adoptDataFolder), passed in because this module cannot import app.js. Connecting a
+// folder here must reconcile EVERY store, not only About Me - otherwise the people,
+// places and Express Panel keep their stale cache and their next save writes it over
+// the folder's files (CR-008).
+let onFolderConnected = null;
+
+export function init(opts = {}) {
+    onFolderConnected = opts.onFolderConnected || null;
     // About Me is now an ordinary Settings tab (Ken, July 2026) — it renders into
     // its tab-panel like every other tab, with no title bar and no "Done" button.
     // The Settings panel's shared "Close" button closes it and returns to the
@@ -106,7 +114,12 @@ function showDockKeyboard() {
 export async function open() {
     // Best-effort: make sure the user-owned data folder is restored so answers
     // persist to worldview.json (falls back to the localStorage cache if not).
+    const hadFolder = storage.hasDataFolder();
     try { await storage.restoreDataFolder(); } catch { /* no stored handle yet */ }
+    // A folder that has only now been connected gets the full reconciliation.
+    if (!hadFolder && storage.hasDataFolder() && onFolderConnected) {
+        try { await onFolderConnected(); } catch { /* best-effort */ }
+    }
     try {
         await wv.loadRegistry();
     } catch {
@@ -151,7 +164,11 @@ function renderFolderPrompt() {
                     await storage.pickDataFolder();
                     // File-in-folder wins (v0.2.25): adopt an existing
                     // worldview.json, or promote cache-only answers to a new one.
-                    try { await wv.syncToFolder(); } catch { /* best-effort */ }
+                    if (onFolderConnected) {
+                        try { await onFolderConnected(); } catch { /* best-effort */ }
+                    } else {
+                        try { await wv.syncToFolder(); } catch { /* best-effort */ }
+                    }
                     renderHome();   // banner clears; progress reflects adopted data
                 } catch (err) {
                     e.currentTarget.disabled = false;   // AbortError = user cancelled

@@ -50,6 +50,10 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: if a paid listening service lost its connection, tapping Listen again lit the
   button but nothing was ever heard, and the microphone stayed on in the background.
   The service now shuts down cleanly, so tapping Listen starts it afresh.
+- Fixed: choosing a data folder from the banner on the About Me page brought in only
+  your About Me answers. Your people, places and Express Panel from that folder did
+  not appear, and the next change you made could write over them. All of it is now
+  read from the folder.
 
 ## Version 0.13.4
 

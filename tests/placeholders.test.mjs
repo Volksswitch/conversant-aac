@@ -467,3 +467,17 @@ test('a typed sentence or Express tap is recorded with its own source', () => {
     const commit = strip(appSource.slice(c, c + appSource.slice(c).search(/\r?\n\}\r?\n/)));
     assert.match(commit, /opts\.source/, 'commitExchange must record opts.source');
 });
+
+// CR-008. Choosing a data folder from the About Me banner reconciled only About Me,
+// so the other stores kept their stale cache and their next save overwrote the
+// folder's files. The banner, and a folder newly restored by open(), must run the
+// app's shared post-connect routine.
+test('connecting a folder from About Me reconciles every store', () => {
+    const wvui = readFileSync(new URL('../app/js/worldview-ui.js', import.meta.url), 'utf8')
+        .replace(/\/\*[\s\S]*?\*\//g, ' ').split('\n').map((l) => l.replace(/\/\/.*$/, '')).join('\n');
+    const prompt = wvui.slice(wvui.indexOf('function renderFolderPrompt('));
+    assert.match(prompt.slice(0, 1500), /await onFolderConnected\(\)/);
+    const open = wvui.slice(wvui.indexOf('export async function open('));
+    assert.match(open.slice(0, 1200), /onFolderConnected\(\)/);
+    assert.match(appSource, /worldviewUI\.init\(\{\s*onFolderConnected:\s*adoptDataFolder\s*\}\)/);
+});
