@@ -494,3 +494,15 @@ test('leaving a field typed into with the on-screen keyboard fires change', () =
     assert.ok(at > 0, 'the keyboard must remember the value a field had on focus');
     assert.match(kb.slice(at, at + 900), /addEventListener\('focusout'[\s\S]*dispatchEvent\(new Event\('change'/);
 });
+
+// CR-011. A "Don't save" conversation still wrote the partner's words into About Me
+// through the gaps log. The gap is still recorded; the words go only when saving.
+test('the gaps log carries the partner words only when the conversation is saved', () => {
+    const strip = (s) => s.replace(/\/\*[\s\S]*?\*\//g, ' ').split('\n')
+        .map((l) => l.replace(/\/\/.*$/, '')).join('\n');
+    const src = strip(appSource);
+    assert.match(src, /const gapContext = storage\.isConversationSaving\(\) \? partnerText : ''/);
+    assert.match(src, /recordGaps\(result\.missingFacts, gapContext\)/);
+    assert.match(src, /recordExtraGaps\(result\.missingOther, gapContext\)/);
+    assert.doesNotMatch(src, /record(Extra)?Gaps\([^)]*partnerText\)/, 'no caller passes the raw partner text');
+});

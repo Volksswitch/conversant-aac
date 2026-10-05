@@ -1951,8 +1951,13 @@ async function generateOptions(partnerText) {
 
         // Record facts the model lacked — drives the questionnaire's "suggested
         // next." Open gaps only; recordGaps drops answered/declined keys.
+        // ⚠ The partner's words go with a gap ONLY when this conversation is being
+        // saved. In a "Don't save" conversation the gap is still noted (it carries no
+        // content), but what the other person said is not written into About Me, which
+        // lives in the data folder and in every backup (CR-011).
+        const gapContext = storage.isConversationSaving() ? partnerText : '';
         if (result.missingFacts && result.missingFacts.length) {
-            worldview.recordGaps(result.missingFacts, partnerText).catch(() => { /* non-fatal */ });
+            worldview.recordGaps(result.missingFacts, gapContext).catch(() => { /* non-fatal */ });
         }
         // And the ones About Me has no question for at all, which become questions of
         // their own — the only way a fact outside our fixed set can ever be recorded.
@@ -1960,7 +1965,7 @@ async function generateOptions(partnerText) {
         // rehearsal for an appointment finds out what the app does not know in time to
         // fix it. See worldview.recordExtraGaps.
         if (result.missingOther && result.missingOther.length) {
-            worldview.recordExtraGaps(result.missingOther, partnerText).catch(() => { /* non-fatal */ });
+            worldview.recordExtraGaps(result.missingOther, gapContext).catch(() => { /* non-fatal */ });
         }
     } catch (err) {
         if (token !== generationToken) return;

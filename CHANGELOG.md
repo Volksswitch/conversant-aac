@@ -59,6 +59,9 @@ forgetting to tag one is only ever noise, never silence.
   are now kept as soon as you move away from the box.
 - Fixed: a long problem report could be refused when you pressed Send, and then held
   back every weekly report after it for weeks. Long reports are now accepted whole.
+- Fixed: in a conversation marked "Don't save this conversation", what the other person
+  said could still be stored with your About Me answers when it showed the app was
+  missing a fact about you. It no longer is.
 
 ## Version 0.13.4
 
