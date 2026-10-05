@@ -54,6 +54,9 @@ forgetting to tag one is only ever noise, never silence.
   your About Me answers. Your people, places and Express Panel from that folder did
   not appear, and the next change you made could write over them. All of it is now
   read from the folder.
+- Fixed: with the app's own on-screen keyboard, changes typed into a person, a place,
+  or a goal's button label were lost if you left the screen without tapping Done. They
+  are now kept as soon as you move away from the box.
 
 ## Version 0.13.4
 

@@ -732,6 +732,31 @@ export function init() {
         }
     });
 
+    /*
+     * ⚠ A FIELD TYPED INTO WITH THIS KEYBOARD NEVER FIRES 'change' BY ITSELF (CR-009).
+     * Keys assign the value and dispatch 'input'; a browser only fires 'change' for a
+     * value the USER edited, so leaving the field fired nothing. Every editor that
+     * "commits a typed field when it is left" listens for 'change', so on-screen
+     * typing in People, Places and goal labels was silently discarded. So: remember
+     * the value on focus, and on leaving, if it moved, fire the 'change' a physical
+     * keyboard would have. A real 'change' resets the baseline, so a field typed into
+     * with a physical keyboard while in on-screen mode is not reported twice.
+     */
+    const valueOnFocus = new WeakMap();
+    document.addEventListener('focusin', (e) => {
+        if (isScoped(e.target) && 'value' in e.target) valueOnFocus.set(e.target, e.target.value);
+    });
+    document.addEventListener('change', (e) => {
+        if (e.isTrusted && valueOnFocus.has(e.target)) valueOnFocus.set(e.target, e.target.value);
+    }, true);
+    document.addEventListener('focusout', (e) => {
+        const f = e.target;
+        if (mode !== 'onscreen' || !valueOnFocus.has(f)) return;
+        const before = valueOnFocus.get(f);
+        valueOnFocus.delete(f);
+        if (f.value !== before) f.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+
     document.addEventListener('focusin', (e) => {
         if (mode !== 'onscreen') return;
         if (isScoped(e.target)) {

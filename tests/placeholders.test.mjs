@@ -481,3 +481,16 @@ test('connecting a folder from About Me reconciles every store', () => {
     assert.match(open.slice(0, 1200), /onFolderConnected\(\)/);
     assert.match(appSource, /worldviewUI\.init\(\{\s*onFolderConnected:\s*adoptDataFolder\s*\}\)/);
 });
+
+// CR-009. The on-screen keyboard sets a field's value and fires 'input', so leaving
+// the field fired no 'change', and every editor that commits a typed field "when it
+// is left" (People, Places, goal labels) silently dropped on-screen typing. The
+// keyboard now fires the 'change' a physical keyboard would. (Verified in the
+// browser: a person's note typed with the keys is saved without pressing Done.)
+test('leaving a field typed into with the on-screen keyboard fires change', () => {
+    const kb = readFileSync(new URL('../app/js/keyboard.js', import.meta.url), 'utf8')
+        .replace(/\/\*[\s\S]*?\*\//g, ' ').split('\n').map((l) => l.replace(/\/\/.*$/, '')).join('\n');
+    const at = kb.indexOf('const valueOnFocus');
+    assert.ok(at > 0, 'the keyboard must remember the value a field had on focus');
+    assert.match(kb.slice(at, at + 900), /addEventListener\('focusout'[\s\S]*dispatchEvent\(new Event\('change'/);
+});
