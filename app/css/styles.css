@@ -2024,7 +2024,7 @@ body.conv-bottom .palette-grid {
     box-shadow: none;
     border-radius: 6px;
     font-family: inherit;
-    font-size: 1.1rem;
+    font-size: calc(1.1rem * var(--composer-font-scale, 1));   /* the user's text size (CR-018) */
     resize: none;
 }
 /* Focus is what draws the ring; keep the input edgeless when selected too. */

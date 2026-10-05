@@ -329,3 +329,15 @@ test('reduced-motion rules come after the rules they override', () => {
     }
     assert.deepEqual(bad, []);
 });
+
+// CR-018. A hard-coded size on the composer's text box beat the rule carrying the
+// user's text-size setting, so the setting did nothing.
+test('every font size on the composer text box follows the user setting', () => {
+    const src = css.replace(/\/\*[\s\S]*?\*\//g, '');
+    const bad = [];
+    for (const m of src.matchAll(/([^{}]*#composerInput[^{}]*)\{([^}]*)\}/g)) {
+        const fs = /font-size:\s*([^;]+);/.exec(m[2]);
+        if (fs && !/--composer-font-scale/.test(fs[1])) bad.push(m[1].trim());
+    }
+    assert.deepEqual(bad, []);
+});

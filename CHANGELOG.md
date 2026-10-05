@@ -82,6 +82,8 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: with a physical keyboard, you could Tab past the Start button and use Listen
   or the Express Panel on the dimmed screen, which skipped the steps that reconnect
   your data folder. The screen now cannot be reached until you press Start.
+- Fixed: the text size setting for "In my own words" had no effect. The typing box now
+  uses the size you choose.
 
 ## Version 0.13.4
 
