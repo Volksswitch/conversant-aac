@@ -94,8 +94,11 @@ export function focusItem(id) {
         }
     }
     render();
-    const row = container && container.querySelector('.ee-row-picked');
-    if (row) row.scrollIntoView({ block: 'nearest' });
+    // After the section toggles have settled, so the row is no longer inside a shut one.
+    requestAnimationFrame(() => {
+        const row = container && container.querySelector('.ee-row-picked');
+        if (row) row.scrollIntoView({ block: 'nearest' });
+    });
 }
 
 /** A tap on an UNDEFINED panel cell: add an entry to the band that owns that cell. */
@@ -731,7 +734,15 @@ export function render() {
     if (openAfterRender) {
         const det = container.querySelector(`.setting-group[data-band="${openAfterRender}"] details`);
         openAfterRender = null;
-        if (det && !det.open) det.open = true;   // fires toggle, which closes the others
+        if (det) {
+            // Close the others FIRST, synchronously. The section restore above queued a
+            // toggle for whichever band was open before, and when it ran after ours it
+            // closed the band just opened - so the picked row stayed hidden (CR-042).
+            for (const other of container.querySelectorAll('.setting-group[data-band] details')) {
+                if (other !== det && other.open) other.open = false;
+            }
+            if (!det.open) det.open = true;
+        }
     }
 }
 

@@ -148,6 +148,9 @@ forgetting to tag one is only ever noise, never silence.
   still worked, so tapping it threw away the suggestions, stopped listening and saved
   an empty statement. It now shows as an empty space and does nothing on the
   conversation screen.
+- Fixed: on the Express Panel tab of Settings, tapping a button in one band while
+  another band's section was open left the tapped button's editing row hidden. Its
+  section now opens.
 
 ## Version 0.13.4
 
