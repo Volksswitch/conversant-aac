@@ -96,6 +96,9 @@ forgetting to tag one is only ever noise, never silence.
   repair cards could disappear if you pressed Wrap up and changed your mind, or
   canceled "In my own words". The wording now stays, and the saved conversation shows
   it.
+- Fixed: a reply chosen from the "say it again" cards was saved without who you were
+  talking to or where, and if rewording it failed, listening stayed off. These replies
+  are now saved like any other, and listening comes back if the rewording fails.
 
 ## Version 0.13.4
 

@@ -543,3 +543,14 @@ test('every error box is preceded by updating the record of what is on screen', 
     });
     assert.deepEqual(bad, []);
 });
+
+// CR-023. Repair replies used to write the turn by hand, skipping the shared commit
+// (no stamps, no ease-off, no category count) and leaving the mic off on failure.
+test('a repair reply goes through the shared commit step and resumes on failure', () => {
+    const at = appSource.indexOf('async function handleRepairOfSelf(');
+    const body = appSource.slice(at, at + appSource.slice(at).search(/\r?\n\}\r?\n/));
+    assert.match(body, /await commitExchange\(raw, text, index, \{[^}]*source: 'control'/);
+    assert.match(body, /noteUserAction\('card', index\)/);
+    assert.match(body, /resumePartnerCapture\(\)/);
+    assert.doesNotMatch(body, /storage\.logUserResponse\(/, 'no hand-written user turn');
+});

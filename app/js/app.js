@@ -2035,7 +2035,7 @@ async function generateOptions(partnerText) {
 // A response from the palette was selected. Repair-of-self operations act on the
 // user's own last utterance; everything else is a normal SPP / opener / closer.
 async function handleResponseSelected(response, index) {
-    if (response.op) return handleRepairOfSelf(response);
+    if (response.op) return handleRepairOfSelf(response, index);
 
     // Opening the conversation: after the user's opening statement is spoken, the
     // partner is expected to reply, so start recording automatically (Ken) —
@@ -2260,7 +2260,8 @@ async function prefetchRepairOptions(token) {
     shownCards = { cards: snap.palette, kind: shownCards.kind };
 }
 
-async function handleRepairOfSelf(response) {
+async function handleRepairOfSelf(response, index = -1) {
+    const wasListening = isListening;
     placeholders.stop();
     generationToken++;
     stt.stopListening();
@@ -2287,11 +2288,14 @@ async function handleRepairOfSelf(response) {
         return;
     }
 
+    // A failed or empty repair leaves the turn where it was, so the microphone comes
+    // back as it was too - it used to stay off with the cards still up (CR-023).
+    const giveUp = (status) => {
+        ui.setStatus(status);
+        if (wasListening && !practiceMode) resumePartnerCapture();
+    };
     let text = engine.getLastUserUtterance();
-    if (!text) {
-        ui.setStatus('Nothing to repeat yet');
-        return;
-    }
+    if (!text) { giveUp('Nothing to repeat yet'); return; }
     if (response.op !== 'respeak') {
         // Prefer the pre-generated wording already shown on the card; only round-trip
         // if the pre-generation hasn't arrived yet or failed.
@@ -2303,7 +2307,7 @@ async function handleRepairOfSelf(response) {
                 text = await llm.repairSelf(engine.getLastUserUtterance(), response.op, conversationHistory);
             } catch (err) {
                 storage.logError('repairSelf', err.message, { op: response.op });
-                ui.setStatus(`Error: ${err.message}`);
+                giveUp(`Error: ${err.message}`);
                 return;
             }
         }
@@ -2317,6 +2321,12 @@ async function handleRepairOfSelf(response) {
     currentPartnerText = '';
     currentPartnerUncertain = [];
 
+    // The card was taken: same bookkeeping as any other card, so the offer closes as
+    // 'card' and the REPAIR choice reaches the category counts (CR-023).
+    const shownAtTap = (shownCards.cards || []).slice();
+    const decideMs = noteUserAction('card', index);
+    metrics.paletteTaken({ slot: response.slot || null, index, decideMs });
+
     ui.setStatus('Speaking...');
     await speakUserStatement(text);
 
@@ -2325,21 +2335,12 @@ async function handleRepairOfSelf(response) {
     engine.completeRepairOfSelf(text);
     ui.showEngineState(engine.getSnapshot());
 
-    // Log the partner's repair initiation and the user's restated turn. The
-    // partner's "What?" was already written at its pause, so finalize that pending
-    // entry rather than appending a duplicate.
-    if (raw) {
-        placePartnerTurn(raw);   // in place if promoted mid-turn, else append
-        const h = storage.detachPendingPartnerTurn();
-        storage.finalizePartnerTurn(h, { rawTranscript: raw, cleanedTranscript: raw });
-    }
-    conversationHistory.push({ role: 'user', text });
-    // 'control': the user's earlier words re-spoken, or the app's rewording of them -
-    // never new composition. (This read a `source` that was never declared, so every
-    // repair card threw here after speaking - CR-004.)
-    storage.logUserResponse({ selectedText: text, spokenText: spokenFormFor(text), ttsUsed: tts.lastVoiceUsed(), selectedIndex: -1, allOptions: [], source: 'control' });
-    ui.renderConversation(conversationHistory);
-    ui.setLiveTranscript('');
+    // Through the shared commit step, like every other reply, so the turn carries who
+    // and where, the holding phrases ease off, and the partner's "What?" is finalized
+    // in place (CR-023). source 'control': the user's earlier words re-spoken, or the
+    // app's rewording of them - never new composition, so never a voice exemplar.
+    await commitExchange(raw, text, index, { decideMs, chosenFrom: shownAtTap, source: 'control' });
+    clearPalette();
     resumeOrIdle();
 }
 
@@ -2425,7 +2426,7 @@ async function commitExchange(raw, userText, index, opts = {}) {
         // 'card' when the user tapped one of the AI's suggestions. index < 0 reaches
         // here from repair-of-self and other non-palette commits, which are our words
         // rather than theirs — see the source field in storage.logUserResponse.
-        source: opts.audio ? 'audio' : (index >= 0 ? 'card' : (opts.source || 'control')),
+        source: opts.audio ? 'audio' : (opts.source || (index >= 0 ? 'card' : 'control')),
         // How long the cards were up before the user acted — see the field note in
         // storage.logUserResponse. null when no cards were showing.
         decideMs,
