@@ -518,24 +518,7 @@ function initApp() {
         // Stamp every partner turn with what heard it. Set beside init because that
         // is what fixes the choice; changing it needs a reload, so this cannot drift.
         storage.setSttBackend(usingPaidStt ? sttProvider : 'browser');
-        stt.init({
-            onResult: handleSpeechResult,
-            onSilence: handleSilencePeriod,
-            onStatus: handleSttStatus,
-            onPartnerSpeech: handlePartnerResumed,
-            source: usingPaidStt ? sttProvider : 'builtin',
-            // Read at start time, so a key pasted into Settings works on the next
-            // Listen rather than needing a reload.
-            getDeepgramKey: () => storage.loadDeepgramKey() || '',
-            getAzureKey: () => storage.loadAzureKey() || '',
-            getAzureRegion: () => storage.loadAzureRegion(),
-            // The catalog services each have their own key, so the reader takes the
-            // service id rather than there being one per vendor here.
-            getRestKey: (id) => storage.loadServiceKey(id) || '',
-            getRestModel: (id) => storage.loadServiceModel(id)
-                || (STT_PROVIDERS[id] && STT_PROVIDERS[id].defaultModel) || '',
-            onBilled: handleSttBilled,
-        });
+        stt.init(sttInitOptions(usingPaidStt ? sttProvider : 'builtin'));
     }
 
     // Hard backstop: a placeholder must never speak over the user's own statement
@@ -1095,16 +1078,52 @@ function sttKeyFor(provider) {
  * pasted after launch did nothing until the radio was touched or the app reloaded.
  * Only acts when the service actually differs: setSource stops any running capture.
  */
+/* Everything stt.init needs, in one place, so startup and a later switch in Settings
+ * build the hearing the same way (CR-037). */
+function sttInitOptions(source) {
+    return {
+        onResult: handleSpeechResult,
+        onSilence: handleSilencePeriod,
+        onStatus: handleSttStatus,
+        onPartnerSpeech: handlePartnerResumed,
+        source,
+        // Read at start time, so a key pasted into Settings works on the next
+        // Listen rather than needing a reload.
+        getDeepgramKey: () => storage.loadDeepgramKey() || '',
+        getAzureKey: () => storage.loadAzureKey() || '',
+        getAzureRegion: () => storage.loadAzureRegion(),
+        // The catalog services each have their own key, so the reader takes the
+        // service id rather than there being one per vendor here.
+        getRestKey: (id) => storage.loadServiceKey(id) || '',
+        getRestModel: (id) => storage.loadServiceModel(id)
+            || (STT_PROVIDERS[id] && STT_PROVIDERS[id].defaultModel) || '',
+        onBilled: handleSttBilled,
+    };
+}
+
+/* Switch what does the listening, from Settings. Covers the two cases setSource alone
+ * cannot (CR-037): hearing was never set up at all (a browser with no recognizer of
+ * its own started on the free option), and a switch TO the device's recognizer where
+ * there is none - refused, keeping what works. Returns false when refused. */
+function switchHearing(source) {
+    const support = platform.speechRecognitionSupport();
+    if (source === 'builtin' && !support.apiPresent) return false;
+    if (!stt.setSource(source) && stt.currentSource() !== (source === 'builtin' ? 'browser' : source)) {
+        stt.setSilenceThreshold(storage.loadSilenceThreshold());
+        stt.init(sttInitOptions(source));
+    }
+    storage.setSttBackend(stt.currentSource());
+    const paid = stt.currentSource() !== 'browser';
+    listeningUnavailable = (paid || support.usable) ? null : support;
+    applyListenAvailability();
+    return true;
+}
+
 function adoptChosenHearingIfKeyed(service) {
     const chosen = storage.loadSttProvider();
     if (chosen !== service || !sttKeyFor(service)) return;
     if (stt.currentSource() === service) return;
-    if (!stt.setSource(service)) return;
-    storage.setSttBackend(stt.currentSource());
-    if (stt.currentSource() === service) {
-        listeningUnavailable = null;    // a paid service does its own capture
-        applyListenAvailability();
-    }
+    switchHearing(service);
 }
 
 function serviceKeyFor(provider) {
@@ -7620,12 +7639,19 @@ function openSettings() {
              * service and a different one went on doing the listening, with nothing on
              * screen disagreeing.
              */
-            stt.setSource(radio.value);
-            // The saved turn records WHICH service heard each line, so it has to move
-            // with the source. Read it back from stt rather than from the radio: what
-            // was asked for and what was built are not the same thing when a service
-            // cannot be constructed and the free recognizer takes over.
-            storage.setSttBackend(stt.currentSource());
+            if (!switchHearing(radio.value)) {
+                // Put the setting and the radio back to what is actually listening.
+                const now = stt.currentSource();
+                storage.saveSttProvider(now === 'browser' ? 'builtin' : now);
+                reflectSttProvider();
+                setStatusLine('sttProviderStatus', 'warn',
+                    'This browser cannot listen by itself, so this choice is not available here. Choose a paid listening service instead.');
+                return;
+            }
+            // The saved turn records WHICH service heard each line, so it moves with the
+            // source - read back from stt inside switchHearing rather than from the
+            // radio: what was asked for and what was built are not the same thing when
+            // a service cannot be constructed and the free recognizer takes over.
             /*
              * The confirmation goes where the CHOICE was made, not beside a key field.
              * It used to be sent to whichever key the choice depended on, which for four

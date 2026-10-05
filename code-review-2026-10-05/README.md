@@ -74,8 +74,8 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-033](CR-033.md) | fixed (415937a) | medium | confirmed | bug | `app/js/app.js:4852` | With the layout unlocked, taps inside Settings are hijacked to drag hidden layout borders |
 | [CR-034](CR-034.md) | fixed (415937a) | medium | confirmed | bug | `app/js/app.js:5098` | Dragging a border uses the un-normalized stored layout, so other borders jump |
 | [CR-035](CR-035.md) | fixed (93fddea) | medium | confirmed | bug | `app/js/app.js:5685` | Visiting the Express Panel tab leaves 'hide keyboard on blur' switched on for About Me and the composer |
-| [CR-036](CR-036.md) | fixed (pending) | medium | confirmed | bug | `app/js/app.js:6313` | The launch-screen problem report is built before the data folder is connected, so it has no history or transcripts |
-| [CR-037](CR-037.md) | open | medium | confirmed | bug | `app/js/app.js:7368` | Changing the hearing service in a browser without built-in recognition either does nothing or throws |
+| [CR-036](CR-036.md) | fixed (bc922dd) | medium | confirmed | bug | `app/js/app.js:6313` | The launch-screen problem report is built before the data folder is connected, so it has no history or transcripts |
+| [CR-037](CR-037.md) | fixed (pending) | medium | confirmed | bug | `app/js/app.js:7368` | Changing the hearing service in a browser without built-in recognition either does nothing or throws |
 | [CR-038](CR-038.md) | open | medium | confirmed | bug | `app/js/engine.js:322` | "User is leading" context is lost after the first pause of the partner's go-ahead, and on New N / Reframe / chip / context refresh |
 | [CR-039](CR-039.md) | open | medium | confirmed | bug | `app/js/engine.js:341` | Engine phase never returns to BODY: OPENING lasts the whole conversation and PRE_CLOSING sticks after the partner reopens |
 | [CR-040](CR-040.md) | open | medium | confirmed | bug | `app/js/engine.js:428` | New N, Reframe, choice chip or a context tap during "What?" repair empties the response cards |

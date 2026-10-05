@@ -585,6 +585,9 @@ export function setSource(source) {
     if (!initOpts) return false;                       // init() has not run yet
     const wanted = normalizeSource(source);
     if (wanted === backend) return false;
+    // The device's own recognizer where the browser has none: building it would throw
+    // AFTER the working source had been torn down, leaving no hearing at all (CR-037).
+    if (wanted === 'browser' && !(window.SpeechRecognition || window.webkitSpeechRecognition)) return false;
 
     // Stop deliberately: this clears the user's intent to listen, which is right. A
     // service change is a change of what is listening, so it should not silently carry

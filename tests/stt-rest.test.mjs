@@ -327,3 +327,22 @@ test('a fatal error shuts the paid source down, so nothing more is sent', async 
         if (realNav) Object.defineProperty(globalThis, 'navigator', realNav);
     }
 });
+
+// CR-037. Switching to the device's recognizer where the browser has none must be
+// refused, leaving the paid source that works in place.
+test('switching to a recognizer the browser does not have is refused, not thrown', async () => {
+    const savedSR = globalThis.window.SpeechRecognition;
+    const savedWSR = globalThis.window.webkitSpeechRecognition;
+    try {
+        const stt = await import('../app/js/stt.js?cr037=' + Date.now());
+        stt.init({ onResult() {}, onSilence() {}, onStatus() {}, onPartnerSpeech() {}, source: 'openai',
+            getRestKey: () => 'k', getRestModel: () => 'm' });
+        delete globalThis.window.SpeechRecognition;
+        delete globalThis.window.webkitSpeechRecognition;
+        assert.equal(stt.setSource('builtin'), false);
+        assert.equal(stt.currentSource(), 'openai');
+    } finally {
+        globalThis.window.SpeechRecognition = savedSR;
+        if (savedWSR) globalThis.window.webkitSpeechRecognition = savedWSR;
+    }
+});

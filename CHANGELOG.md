@@ -132,6 +132,10 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: a problem report sent from the opening screen said you had no saved
   conversations and carried none of the conversation text that explains the problem.
   It now reads your data folder first, when that needs no permission prompt.
+- Fixed: on a browser that cannot listen by itself, choosing a paid listening service
+  said it was in use but the Listen button stayed off until the app was restarted, and
+  switching back to "This device" could break listening. The paid service now works at
+  once, and "This device" is refused where the browser cannot listen.
 
 ## Version 0.13.4
 
