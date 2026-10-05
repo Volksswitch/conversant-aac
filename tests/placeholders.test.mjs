@@ -441,3 +441,14 @@ test('every way of answering empties the listening buffer', () => {
         assert.match(body, /stt\.resetTranscript\(\)/, `${fn} must call stt.resetTranscript()`);
     }
 });
+
+// CR-004. handleRepairOfSelf logged `source` by shorthand with no such variable in
+// scope, so every repair card threw a ReferenceError after speaking.
+test('the repair-of-self log names its source explicitly', () => {
+    const at = appSource.indexOf('async function handleRepairOfSelf(');
+    const end = at + appSource.slice(at).search(/\r?\n\}\r?\n/);
+    const body = appSource.slice(at, end).replace(/\/\*[\s\S]*?\*\//g, ' ')
+        .split('\n').map((l) => l.replace(/\/\/.*$/, '')).join('\n');
+    assert.ok(!/[,{]\s*source\s*[,}]/.test(body), 'no bare `source` shorthand - there is no such variable here');
+    assert.match(body, /source:\s*'control'/);
+});

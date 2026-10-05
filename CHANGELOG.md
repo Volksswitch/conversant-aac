@@ -37,6 +37,9 @@ forgetting to tag one is only ever noise, never silence.
   sound, or a "say it again" card, the next tap on Listen could repeat the other
   person's earlier words in front of what they said next, and the suggestions
   answered the old question again.
+- Fixed: when the other person said "What?" and you chose a card to repeat, reword or
+  expand what you had said, the app spoke it and then stopped: the line was not added
+  to the conversation or saved, and listening did not come back on.
 
 ## Version 0.13.4
 

@@ -2282,7 +2282,10 @@ async function handleRepairOfSelf(response) {
         storage.finalizePartnerTurn(h, { rawTranscript: raw, cleanedTranscript: raw });
     }
     conversationHistory.push({ role: 'user', text });
-    storage.logUserResponse({ selectedText: text, spokenText: spokenFormFor(text), ttsUsed: tts.lastVoiceUsed(), selectedIndex: -1, allOptions: [], source });
+    // 'control': the user's earlier words re-spoken, or the app's rewording of them -
+    // never new composition. (This read a `source` that was never declared, so every
+    // repair card threw here after speaking - CR-004.)
+    storage.logUserResponse({ selectedText: text, spokenText: spokenFormFor(text), ttsUsed: tts.lastVoiceUsed(), selectedIndex: -1, allOptions: [], source: 'control' });
     ui.renderConversation(conversationHistory);
     ui.setLiveTranscript('');
     resumeOrIdle();
