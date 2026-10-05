@@ -290,3 +290,20 @@ test('no border is drawn in a colour too light to be seen on a light surface', (
     assert.deepEqual(bad, [],
         `border colours too light to read as a boundary — use var(--edge) or var(--edge-strong):\n  ${bad.join('\n  ')}`);
 });
+
+// CR-014. A focus style that removes the outline must put a visible ring back. The
+// shadow-only style was invisible in the dark schemes. The composer's text box is
+// exempt: it is the only field on screen and the caret marks it. A practice card is
+// exempt: its border color changes on focus.
+test('no focus style takes the outline away without putting a ring back', () => {
+    const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '../app/css/styles.css'), 'utf8')
+        .replace(/\/\*[\s\S]*?\*\//g, '');
+    const bad = [];
+    for (const m of src.matchAll(/([^{}]*:focus-visible[^{}]*)\{([^}]*)\}/g)) {
+        const sel = m[1].trim(), body = m[2];
+        if (!/outline:\s*none/.test(body)) continue;
+        if (/#composerInput|\.practice-card/.test(sel)) continue;
+        bad.push(sel);
+    }
+    assert.deepEqual(bad, []);
+});

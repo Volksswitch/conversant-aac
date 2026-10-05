@@ -68,6 +68,10 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: the automatic weekly report included the names of the people you talk with and
   the places you go, though it is meant to carry only counts. Those names are now
   replaced with "person 1", "place 1" and so on before the report leaves your device.
+- Fixed: when moving through the conversation screen with a keyboard or switch, you
+  could not see which button was selected, and in the dark color schemes there was no
+  marker at all. A clear ring now shows on the Command Bar buttons, the response cards
+  and New 4.
 
 ## Version 0.13.4
 

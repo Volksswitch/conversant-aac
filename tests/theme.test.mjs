@@ -151,6 +151,8 @@ const PAIRS = [
     ['text on the emphasis button', 'accent-ink', 'accent', 4.5],
     ['a link', 'link', 'surface-raised', 4.5],
     ['a link on the page', 'link', 'surface-page', 4.5],
+    // The keyboard-focus ring is drawn in the link color (CR-014), on the page and the dock.
+    ['a focus ring on the dock', 'link', 'surface-sunken', 3],
     ['danger text on its panel', 'danger-ink', 'danger-tint', 4.5],
     ['warning text on its panel', 'warn-ink', 'warn-tint', 4.5],
     ['confirmation text on its panel', 'ok-ink', 'ok-tint', 4.5],

@@ -1760,7 +1760,11 @@ body.conv-bottom .ep-row {
    this removes a genuine ambiguity rather than only matching a style. */
 .cmd-btn:focus-visible {
     box-shadow: 0 2px 10px var(--shadow);
-    outline: none;
+    /* A RING, never a fill (a fill means "on" here). The shadow alone was invisible
+       in the dark schemes - black on black - and faint in the light ones (CR-014).
+       An outline is paint only, so no keyguard hole moves. */
+    outline: 3px solid var(--link);
+    outline-offset: 2px;
 }
 .cmd-btn:active { transform: translateY(1px); }
 .cmd-btn-end {
@@ -1769,7 +1773,11 @@ body.conv-bottom .ep-row {
 }
 .cmd-btn-end:focus-visible {
     box-shadow: 0 2px 10px var(--shadow);
-    outline: none;
+    /* A RING, never a fill (a fill means "on" here). The shadow alone was invisible
+       in the dark schemes - black on black - and faint in the light ones (CR-014).
+       An outline is paint only, so no keyguard hole moves. */
+    outline: 3px solid var(--link);
+    outline-offset: 2px;
 }
 
 /* Command Bar showing words instead of glyphs (Ken, August 30 2026). The cells
@@ -2098,7 +2106,11 @@ body.conv-bottom .palette-grid {
 }
 .response-card:focus-visible {
     box-shadow: 0 2px 10px var(--shadow);
-    outline: none;
+    /* A RING, never a fill (a fill means "on" here). The shadow alone was invisible
+       in the dark schemes - black on black - and faint in the light ones (CR-014).
+       An outline is paint only, so no keyguard hole moves. */
+    outline: 3px solid var(--link);
+    outline-offset: 2px;
 }
 .response-card:active { transform: translateY(1px); }
 
@@ -2841,7 +2853,11 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
    first place). */
 .regenerate-btn:focus-visible {
     box-shadow: 0 2px 10px var(--shadow);
-    outline: none;
+    /* A RING, never a fill (a fill means "on" here). The shadow alone was invisible
+       in the dark schemes - black on black - and faint in the light ones (CR-014).
+       An outline is paint only, so no keyguard hole moves. */
+    outline: 3px solid var(--link);
+    outline-offset: 2px;
 }
 .regenerate-btn:active { transform: translateY(1px); }
 
@@ -3035,7 +3051,11 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
 /* Same treatment as .cmd-btn above — shadow and nudge, never a fill. */
 .persist-btn:focus-visible {
     box-shadow: 0 2px 10px var(--shadow);
-    outline: none;
+    /* A RING, never a fill (a fill means "on" here). The shadow alone was invisible
+       in the dark schemes - black on black - and faint in the light ones (CR-014).
+       An outline is paint only, so no keyguard hole moves. */
+    outline: 3px solid var(--link);
+    outline-offset: 2px;
 }
 .persist-btn:active { transform: translateY(1px); }
 
