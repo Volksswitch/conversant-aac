@@ -426,3 +426,18 @@ test('the composer records opening, canceling WITH the words, and the steer', ()
     assert.match(appSource, /storage\.logEvent\('reframe', \{ text: steer\.trim\(\) \}\)/,
         'recorded where the steer is taken, so both Reframe branches are covered once');
 });
+
+// CR-003. Every path where the USER takes the floor consumes the partner's turn, so
+// it must empty the listening buffer - or, with auto-resume off, the next Listen tap
+// is read as "paused mid-turn" and the old words are glued onto the new ones.
+test('every way of answering empties the listening buffer', () => {
+    const strip = (s) => s.replace(/\/\*[\s\S]*?\*\//g, ' ').split('\n')
+        .map((l) => l.replace(/\/\/.*$/, '')).join('\n');
+    for (const fn of ['handleResponseSelected', 'speakAsUserTurn', 'playAudioTurn', 'handleRepairOfSelf']) {
+        const at = appSource.indexOf(`async function ${fn}(`);
+        assert.ok(at > 0, `${fn} not found`);
+        const body = strip(appSource.slice(at, appSource.indexOf('\n}\n', at) > 0
+            ? appSource.indexOf('\n}\n', at) : appSource.slice(at).search(/\r?\n\}\r?\n/) + at));
+        assert.match(body, /stt\.resetTranscript\(\)/, `${fn} must call stt.resetTranscript()`);
+    }
+});

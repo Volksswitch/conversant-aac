@@ -493,3 +493,15 @@ test('a repeated word is not mistaken for a re-send', async () => {
     rec.emitFinal('I disagree.');
     assert.equal(stt.getCurrentTranscript(), 'No. I disagree.');
 });
+
+// CR-003. The contract every floor change relies on: stopping the microphone KEEPS
+// what was heard (a stop/start mid-turn is a pause), so a path that ends the turn
+// has to empty the buffer itself.
+test('stopping keeps the buffer; only resetTranscript empties it', async () => {
+    stt.startListening();
+    rec.emitFinal('How was your weekend?');
+    stt.stopListening();
+    assert.equal(stt.getCurrentTranscript(), 'How was your weekend?');
+    stt.resetTranscript();
+    assert.equal(stt.getCurrentTranscript(), '');
+});

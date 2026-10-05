@@ -33,6 +33,10 @@ forgetting to tag one is only ever noise, never silence.
   the app went back to your device's own listening every time it was reopened, while
   Settings still showed your choice. It now keeps using the service you chose. A key
   you add after choosing a service also starts working straight away.
+- Fixed: after you answered with an Express Panel button, your own typed words, a
+  sound, or a "say it again" card, the next tap on Listen could repeat the other
+  person's earlier words in front of what they said next, and the suggestions
+  answered the old question again.
 
 ## Version 0.13.4
 

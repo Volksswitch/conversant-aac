@@ -2257,7 +2257,11 @@ async function handleRepairOfSelf(response) {
         }
     }
 
-    const raw = currentPartnerText; // the partner's repair-initiator turn ("What?")
+    // The partner's repair-initiator turn ("What?"), including anything heard since
+    // the last pause. Consumed here, so the buffer is emptied with it - otherwise the
+    // next Listen tap re-records it (CR-003).
+    const raw = heardPartnerText();
+    if (!practiceMode) stt.resetTranscript();
     currentPartnerText = '';
     currentPartnerUncertain = [];
 
@@ -3746,6 +3750,11 @@ async function speakAsUserTurn(historyText, spokenText = historyText, source = '
     // what they'd said up to the interruption (Ken).
     const raw = heardPartnerText();
     stt.stopListening();
+    // Speaking IS a floor change, so the partner turn just captured is consumed.
+    // stopListening() keeps the buffer, and with auto-resume off nothing else empties
+    // it - so the next Listen tap took the "paused mid-turn" branch and glued their
+    // old words onto whatever they said next (CR-003). Same as handleResponseSelected.
+    if (!practiceMode) stt.resetTranscript();
     currentPartnerText = '';
     currentPartnerUncertain = [];
 
@@ -5324,6 +5333,10 @@ async function playAudioTurn(item) {
     }
     if (result.aborted) return;   // the conversation ended under it - see stopExpressAudio
 
+    // It played, so the user has taken the floor exactly as a spoken phrase does -
+    // and the partner turn captured above is consumed (CR-003). Not before the
+    // played check: a clip that failed resumes the SAME turn and must keep it.
+    if (!practiceMode) stt.resetTranscript();
     // It played, so the user has taken the floor exactly as a spoken phrase does.
     noteUserAction('express');
     metrics.paletteAbandoned('express sound');
