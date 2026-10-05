@@ -2635,19 +2635,27 @@ function renderPracticePanel() {
 // conversation on the real conversation screen, and wait for the user to tap Start
 // Listening to cue the partner (never auto-plays — reinforces the step).
 async function startPractice(scenario) {
-    practiceMode = true;
-    practiceScenario = scenario;
     // A scenario carrying `steps` is the controls tour, not a conversation — see
-    // practice-tour.js. Set before terminateConversation, which clears the tour.
+    // practice-tour.js.
     const isTour = Array.isArray(scenario.steps) && scenario.steps.length > 0;
     keyboard.hideKeyboard();
     hostExpressPanel(false);       // the panel must not close inside the dialog
     document.getElementById('settingsDialog').close();
-    await terminateConversation(); // fresh conversation state + log (keeps practiceMode)
-    // Set AFTER the teardown, which clears the partner. A scenario started from someone
-    // in About Me makes that person the active partner, so "how I talk with them" and
-    // their goals shape the suggestions exactly as in a real conversation. The id is
-    // not an Express Panel button's, so no button lights: the person may have none.
+    // ⚠ THE REAL CONVERSATION IS ENDED FIRST, while practice is still off. The
+    // teardown commits the partner's unanswered words with the CURRENT stamp, and with
+    // practice already on that stamp read "Practice: <title>" - which filed the whole
+    // real conversation as a rehearsal (CR-024).
+    await terminateConversation();
+    practiceMode = true;
+    practiceScenario = scenario;
+    // Who, how and what for belong to the conversation that just ended, not to the
+    // rehearsal; the teardown does not clear them, so this does (CR-025). Place is
+    // left alone on purpose: ending a conversation does not move you.
+    clearInfluencers();
+    // A scenario started from someone in About Me makes that person the active
+    // partner, so "how I talk with them" and their goals shape the suggestions exactly
+    // as in a real conversation. The id is not an Express Panel button's, so no button
+    // lights: the person may have none.
     const person = scenario.personId ? relationships.getPerson(scenario.personId) : null;
     if (person) {
         activePartner = { id: `practice:${person.id}`, type: 'partner', personId: person.id,

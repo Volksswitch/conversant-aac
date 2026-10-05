@@ -554,3 +554,14 @@ test('a repair reply goes through the shared commit step and resumes on failure'
     assert.match(body, /resumePartnerCapture\(\)/);
     assert.doesNotMatch(body, /storage\.logUserResponse\(/, 'no hand-written user turn');
 });
+
+// CR-024 and CR-025. Starting practice ends the real conversation BEFORE practice is
+// switched on (or its unanswered turn is stamped as practice), and clears the real
+// conversation's partner, feeling and goals.
+test('starting practice ends the real conversation first and clears its influencers', () => {
+    const at = appSource.indexOf('async function startPractice(');
+    const body = appSource.slice(at, at + 3000);
+    const term = body.indexOf('await terminateConversation()');
+    assert.ok(term > 0 && term < body.indexOf('practiceMode = true'), 'teardown before practice is on');
+    assert.ok(body.indexOf('clearInfluencers()') > term, 'influencers cleared after the teardown');
+});

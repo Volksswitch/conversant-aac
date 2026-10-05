@@ -99,6 +99,11 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: a reply chosen from the "say it again" cards was saved without who you were
   talking to or where, and if rewording it failed, listening stayed off. These replies
   are now saved like any other, and listening comes back if the rewording fails.
+- Fixed: starting a practice scenario in the middle of a real conversation could file
+  the real conversation as a practice one, and kept the real partner, feeling and
+  goals switched on, so the practice suggestions were written as if you were still
+  talking to that person. The real conversation now ends first and those are switched
+  off.
 
 ## Version 0.13.4
 
