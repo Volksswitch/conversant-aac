@@ -1825,7 +1825,9 @@ async function generateOptions(partnerText) {
         ui.showEngineState(snap);
         lastPalette = snap.palette;
         // The PARTNER started closing, so offer the decline alongside the goodbyes.
-        renderStaticPalette('closing', snap.palette,
+        // Held, not drawn, while "In my own words" is open (CR-020).
+        if (composerOpen) holdClosingsForComposer(snap.palette);
+        else renderStaticPalette('closing', snap.palette,
             'Say goodbye — or hold them a moment', { pin: declineClosingCard() });
         ui.setTranscriptState('ready');
         return;
@@ -1901,7 +1903,12 @@ async function generateOptions(partnerText) {
 
         // The partner themselves closed → offer the goodbyes as a pageable static
         // palette (New N dips further); otherwise the normal response cards.
-        if (snap.mode === engine.MODE.PRE_CLOSING_CLOSING) {
+        if (snap.mode === engine.MODE.PRE_CLOSING_CLOSING && composerOpen) {
+            // ⚠ Goodbyes are held like any other set while the box is open, or they
+            // were drawn under it and an OLDER held set then replaced them on Cancel
+            // (CR-020).
+            holdClosingsForComposer(snap.palette);
+        } else if (snap.mode === engine.MODE.PRE_CLOSING_CLOSING) {
             // Partner-initiated close — pin the decline so they can be held a moment.
             renderStaticPalette('closing', snap.palette,
                 'Say goodbye — or hold them a moment', { pin: declineClosingCard() });
@@ -2231,6 +2238,13 @@ async function prefetchRepairOptions(token) {
     if (token !== generationToken) return;
     if (engine.getMode() !== engine.MODE.REPAIR_OF_SELF) return;
     const snap = engine.setRepairOptions(opts);
+    // Under an open composer, update what will be shown on Cancel instead of drawing
+    // under the box (CR-020).
+    if (composerOpen) {
+        if (heldForComposer && heldForComposer.kind !== 'closing') heldForComposer.palette = snap.palette;
+        else if (!heldForComposer) heldForComposer = { palette: snap.palette, at: Date.now() };
+        return;
+    }
     // Deliberately NOT showPalette: these cards are already on screen and the user is
     // already reading them — two of the three simply gain real wording in place of
     // their hint. Restarting the deliberation clock here would report the reading as
@@ -2926,14 +2940,28 @@ let heldForComposer = null;   // { palette, offered, at }
 
 function dropHeldForComposer() { heldForComposer = null; }
 
+// Goodbyes that arrived while the user was composing: kept to be shown on Cancel,
+// with the decline card pinned, exactly as they would have been drawn.
+function holdClosingsForComposer(palette) {
+    currentStatic = { kind: null, full: [] };
+    heldForComposer = { palette, at: Date.now(), kind: 'closing' };
+    metrics.event(metrics.EV.PALETTE_HELD, { kind: 'closing' });
+}
+
 /* Put up the cards a reprompt produced while the user was composing. Only the CANCEL
  * path calls this: speaking from the box ends the turn, and Reframe replaces the set
  * with something the user explicitly asked for. */
 function showHeldForComposer() {
     if (!heldForComposer) return false;
     const { palette, offered, range, at } = heldForComposer;
-    metrics.event(metrics.EV.PALETTE_TAKEN, { kind: 'ai', heldMs: Date.now() - at });
+    metrics.event(metrics.EV.PALETTE_TAKEN, { kind: heldForComposer.kind || 'ai', heldMs: Date.now() - at });
+    const kind = heldForComposer.kind;
     heldForComposer = null;
+    if (kind === 'closing') {
+        renderStaticPalette('closing', palette,
+            'Say goodbye — or hold them a moment', { pin: declineClosingCard() });
+        return true;
+    }
     currentStatic = { kind: null, full: [] };
     showPalette(palette);
     setOfferedChoices(offered || []);

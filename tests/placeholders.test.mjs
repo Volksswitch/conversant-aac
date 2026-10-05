@@ -518,3 +518,16 @@ test('the conversation screen is inert until Start finishes', () => {
     const at = appSource.indexOf('function finishStart(');
     assert.match(appSource.slice(at, at + 1500), /\[data-prestart-inert\][\s\S]*removeAttribute\('inert'\)/);
 });
+
+// CR-020. Goodbyes and repair wording arriving while "In my own words" is open are
+// held for Cancel like any other set, never drawn under the box.
+test('goodbyes and repair wording are held while the composer is open', () => {
+    const at = appSource.indexOf('async function generateOptions(');
+    const body = appSource.slice(at, at + 12000);
+    assert.match(body, /if \(composerOpen\) holdClosingsForComposer\(snap\.palette\)/, 'the farewell fast path holds');
+    assert.match(body, /PRE_CLOSING_CLOSING && composerOpen\)[\s\S]{0,400}holdClosingsForComposer/, 'the AI closing path holds');
+    const rp = appSource.indexOf('async function prefetchRepairOptions(');
+    assert.match(appSource.slice(rp, rp + 2000), /if \(composerOpen\) \{/);
+    const sh = appSource.indexOf('function showHeldForComposer(');
+    assert.match(appSource.slice(sh, sh + 800), /kind === 'closing'[\s\S]*renderStaticPalette\('closing'/);
+});

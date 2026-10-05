@@ -57,8 +57,8 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-016](CR-016.md) | fixed (5b32476) | medium | confirmed | accessibility | `app/js/ui.js:536` | Keyboard focus is thrown back to the top of the page whenever the panel, the cards or an About Me card redraws, or the composer closes |
 | [CR-017](CR-017.md) | fixed (6c59380) | medium | confirmed | bug | `app/css/styles.css:1103` | Before Start, a physical keyboard can operate the whole conversation screen and skip the start-up sequence |
 | [CR-018](CR-018.md) | fixed (51461b3) | medium | confirmed | bug | `app/css/styles.css:2019` | "In my own words" text-size setting has no effect |
-| [CR-019](CR-019.md) | fixed (pending) | medium | confirmed | bug | `app/js/app.js:1274` | Paid transcription time is under-counted: the running total is never reset when listening restarts |
-| [CR-020](CR-020.md) | open | medium | confirmed | bug | `app/js/app.js:1846` | With 'In my own words' open, a goodbye or repair turn is drawn under the box and an older held set replaces it on Cancel |
+| [CR-019](CR-019.md) | fixed (7b2b7b3) | medium | confirmed | bug | `app/js/app.js:1274` | Paid transcription time is under-counted: the running total is never reset when listening restarts |
+| [CR-020](CR-020.md) | fixed (pending) | medium | confirmed | bug | `app/js/app.js:1846` | With 'In my own words' open, a goodbye or repair turn is drawn under the box and an older held set replaces it on Cancel |
 | [CR-021](CR-021.md) | open | medium | confirmed | bug | `app/js/app.js:1959` | A failed AI request leaves the replaced cards' offer record open and shownCards stale, so later actions are attributed to cards no longer on screen |
 | [CR-022](CR-022.md) | open | medium | confirmed | bug | `app/js/app.js:2176` | Repair wordings fetched after 'What?' are drawn on screen only: Wrap up cancel and composer Cancel bring back blank hint cards, and the saved offer never gets the real wording |
 | [CR-023](CR-023.md) | open | medium | confirmed | bug | `app/js/app.js:2228` | Repair-of-self replies skip the shared commit step, so they are recorded without context and break several counters |

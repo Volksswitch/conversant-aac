@@ -86,6 +86,9 @@ forgetting to tag one is only ever noise, never silence.
   uses the size you choose.
 - Fixed: the cost of paid listening shown in Settings counted only part of what the
   service bills, so it read far too low. It now counts all of it.
+- Fixed: if the other person started saying goodbye while you were typing in "In my
+  own words" and you then canceled, an older set of suggestions could replace the
+  goodbye cards. The goodbye cards now wait and appear when you cancel.
 
 ## Version 0.13.4
 
