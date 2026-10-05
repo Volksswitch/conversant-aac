@@ -270,6 +270,9 @@ about to fall by an order of magnitude is the trap.
   Azure too: a key pasted after choosing a service is not picked up until the next restart.
   The fix is item [CR-002](code-review-2026-10-05/CR-002.md). Trying each service on a real
   device with a real key is still wanted once it is fixed; close this entry then.
+- **Update, October 5 2026 (later):** CR-002 is fixed. Checked in the browser with a
+  made-up key: OpenAI hearing survives a restart, and a Google key pasted after a restart
+  is picked up at once. What remains is the real-device, real-key check above.
 
 ### Speech Provider Guide and Azure set-up: the 19 September change list
 - **Raised:** 2026-09-19 - assembled over the Azure pricing review and Ken's fresh-account

@@ -39,8 +39,8 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 
 | ID | Status | Severity | Verdict | Category | Location | Title |
 |---|---|---|---|---|---|---|
-| [CR-001](CR-001.md) | fixed (see git log) | critical | confirmed | data-loss | `app/js/storage.js:2473` | Ending or restarting a conversation overwrites the saved conversation file with "null" or with the next conversation's data |
-| [CR-002](CR-002.md) | open | high | confirmed | bug | `app/js/app.js:485` | After a restart, OpenAI, Google Cloud and ElevenLabs hearing are silently replaced by the browser's own recognizer |
+| [CR-001](CR-001.md) | fixed (5b5e88e) | critical | confirmed | data-loss | `app/js/storage.js:2473` | Ending or restarting a conversation overwrites the saved conversation file with "null" or with the next conversation's data |
+| [CR-002](CR-002.md) | fixed (pending) | high | confirmed | bug | `app/js/app.js:485` | After a restart, OpenAI, Google Cloud and ElevenLabs hearing are silently replaced by the browser's own recognizer |
 | [CR-003](CR-003.md) | open | high | confirmed | bug | `app/js/app.js:1689` | Answering with an Express phrase, typed words, a sound or a repair card leaves the partner's words in the listening buffer, so the next Listen tap re-records them |
 | [CR-004](CR-004.md) | open | high | confirmed | bug | `app/js/app.js:2249` | Choosing a 'say it again / rephrase / expand' repair card crashes on an undefined variable |
 | [CR-005](CR-005.md) | open | high | confirmed | bug | `app/js/app.js:3725` | Typed and Express Panel turns are saved as 'control', so the voice harvest never learns from the user's own words |

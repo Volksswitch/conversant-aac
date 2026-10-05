@@ -254,3 +254,36 @@ test('the status this source reports on stopping is one the app knows', async ()
             `handleSttStatus does not account for "${status}", so it is logged as an error`);
     }
 });
+
+/*
+ * CR-002. At startup the app decides whether a paid hearing service is usable by
+ * looking up its key - and that lookup knew only Deepgram and Azure, so OpenAI,
+ * Google Cloud and ElevenLabs hearing quietly fell back to the browser on every
+ * launch while Settings still showed the paid choice. app.js cannot be loaded here,
+ * so the real helper is lifted out of the source and run against the real storage.
+ */
+test('the startup hearing check finds a key for every paid hearing service', async () => {
+    const { readFile } = await import('node:fs/promises');
+    const storage = await import('../app/js/storage.js');
+    const app = await readFile(new URL('../app/js/app.js', import.meta.url), 'utf8');
+    const at = app.indexOf('function sttKeyFor(');
+    assert.ok(at > 0, 'sttKeyFor must exist');
+    const end = app.slice(at).search(/\r?\n\}\r?\n/);   // the file may be CRLF
+    const src = app.slice(at, at + end) + '\n}';
+    const sttKeyFor = new Function('storage', 'STT_PROVIDERS', `${src}; return sttKeyFor;`)(storage, STT_PROVIDERS);
+
+    storage.saveDeepgramKey('dg-key');
+    storage.saveAzureKey('az-key');
+    for (const id of Object.keys(STT_PROVIDERS)) storage.saveServiceKey(id, `${id}-key`);
+    assert.equal(sttKeyFor('deepgram'), 'dg-key');
+    assert.equal(sttKeyFor('azure'), 'az-key');
+    for (const id of Object.keys(STT_PROVIDERS)) {
+        assert.equal(sttKeyFor(id), `${id}-key`, `${id} hearing must be found at startup`);
+    }
+    assert.equal(sttKeyFor('builtin'), '', 'the free recognizer needs no key');
+
+    // And the startup decision really uses it, rather than a list of its own.
+    const init = stripComments(app.slice(app.indexOf('const sttProvider = storage.loadSttProvider();'),
+        app.indexOf('const speechSupport = platform.speechRecognitionSupport();')));
+    assert.match(init, /usingPaidStt\s*=.*sttKeyFor\(sttProvider\)/);
+});

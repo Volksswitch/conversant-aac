@@ -482,10 +482,10 @@ function initApp() {
     // handleSourceError treats as fatal and switches listening off — so treating a
     // keyless paid choice as "paid" would leave the user unable to listen at all,
     // rather than falling back to the recognizer they do have.
-    const paidSttKey = sttProvider === 'deepgram' ? storage.loadDeepgramKey()
-                     : sttProvider === 'azure'    ? storage.loadAzureKey()
-                     : null;
-    const usingPaidStt = !!(paidSttKey || '').trim();
+    // ⚠ sttKeyFor NAMES every paid service. This used to know only Deepgram and
+    // Azure, so OpenAI, Google Cloud and ElevenLabs hearing quietly fell back to the
+    // browser on every launch while Settings still showed the paid choice (CR-002).
+    const usingPaidStt = sttProvider !== 'builtin' && !!sttKeyFor(sttProvider);
     const speechSupport = platform.speechRecognitionSupport();
     listeningUnavailable = (usingPaidStt || speechSupport.usable) ? null : speechSupport;
 
@@ -1073,6 +1073,38 @@ function applyTtsProvider() {
 }
 
 /** The key for any paid voice service, chosen by service rather than by exclusion. */
+/*
+ * The key a HEARING service needs, by name - every paid one, and nothing for the
+ * device's own recognizer. A sibling of serviceKeyFor rather than a reuse, because
+ * that one looks the catalog services up in the VOICE list; the hearing list is its
+ * own, and a service in one need not be in the other.
+ */
+function sttKeyFor(provider) {
+    if (provider === 'deepgram') return (storage.loadDeepgramKey() || '').trim();
+    if (provider === 'azure') return (storage.loadAzureKey() || '').trim();
+    if (STT_PROVIDERS[provider]) return (storage.loadServiceKey(provider) || '').trim();
+    return '';
+}
+
+/*
+ * A key has just been saved. If it belongs to the hearing service the user chose,
+ * and that service is not what is listening (because the app started before the key
+ * existed and fell back to the browser), switch to it now. Without this, a key
+ * pasted after launch did nothing until the radio was touched or the app reloaded.
+ * Only acts when the service actually differs: setSource stops any running capture.
+ */
+function adoptChosenHearingIfKeyed(service) {
+    const chosen = storage.loadSttProvider();
+    if (chosen !== service || !sttKeyFor(service)) return;
+    if (stt.currentSource() === service) return;
+    if (!stt.setSource(service)) return;
+    storage.setSttBackend(stt.currentSource());
+    if (stt.currentSource() === service) {
+        listeningUnavailable = null;    // a paid service does its own capture
+        applyListenAvailability();
+    }
+}
+
 function serviceKeyFor(provider) {
     if (provider === 'azure') return (storage.loadAzureKey() || '').trim();
     if (provider === 'deepgram') return (storage.loadDeepgramKey() || '').trim();
@@ -7353,7 +7385,7 @@ function openSettings() {
         // Typing a key is what makes the voices worth showing, so the pickers fill in
         // as it is entered rather than on the next reload. Defined further down this
         // function; it only ever runs from an event, so the order is fine.
-        onChange: () => refreshDeepgramVoices(),
+        onChange: () => { refreshDeepgramVoices(); adoptChosenHearingIfKeyed('deepgram'); },
     });
     reflectSttProvider();
     document.querySelectorAll('input[name="sttProvider"]').forEach((radio) => {
@@ -7383,10 +7415,7 @@ function openSettings() {
              * is worse than none: it reads as though THAT key was what just changed.
              */
             const needsKey = radio.value !== 'builtin';
-            const haveKey = !needsKey
-                || (radio.value === 'azure' ? !!(storage.loadAzureKey() || '').trim()
-                    : radio.value === 'deepgram' ? !!(storage.loadDeepgramKey() || '').trim()
-                    : !!(storage.loadServiceKey(radio.value) || '').trim());
+            const haveKey = !needsKey || !!sttKeyFor(radio.value);
             setStatusLine('sttProviderStatus', haveKey ? 'ok' : 'warn',
                 !needsKey
                     ? 'Saved, and in use now. This device does the listening, at no cost.'
@@ -7440,6 +7469,7 @@ function openSettings() {
             // is no longer visible.
             storage.clearAzureVoiceCatalog();
             refreshAzureVoices({ force: true });
+            adoptChosenHearingIfKeyed('azure');
         },
     });
     // Someone who set Azure up before the region had to be entered was running on the
@@ -7925,7 +7955,7 @@ function openSettings() {
                 // refetched on a key change. Keeping the old one would offer voices this
                 // key cannot use, which then fails at the Test button - a long way from
                 // where the cause is still visible.
-                onChange: () => { showStatus(null, ''); refreshVoices(); },
+                onChange: () => { showStatus(null, ''); refreshVoices(); adoptChosenHearingIfKeyed(id); },
             });
         }
 

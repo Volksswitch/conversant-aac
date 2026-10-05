@@ -97,6 +97,9 @@ export async function collectSystemInfo({ appVersion = '?', buildId = '?' } = {}
     try { info.display = viewport.getMetrics(); } catch { info.display = { error: 'unavailable' }; }
     try {
         info.speech.sttProvider = storage.loadSttProvider ? storage.loadSttProvider() : '(n/a)';
+        // What is ACTUALLY listening, beside what was chosen. The two came apart for
+        // months without a report being able to show it (CR-002).
+        info.speech.sttInUse = stt.currentSource ? stt.currentSource() : '(n/a)';
         info.speech.ttsProvider = storage.loadTtsProvider ? storage.loadTtsProvider() : '(n/a)';
     } catch { /* ignore */ }
     /*

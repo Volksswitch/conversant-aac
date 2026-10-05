@@ -29,6 +29,10 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: ending a conversation, or starting a new one, could wipe the saved record
   of the conversation you had just finished, so it vanished from Conversation
   Review. The record is now always finished before the next one begins.
+- Fixed: if you chose OpenAI, Google Cloud or ElevenLabs to hear the other person,
+  the app went back to your device's own listening every time it was reopened, while
+  Settings still showed your choice. It now keeps using the service you chose. A key
+  you add after choosing a service also starts working straight away.
 
 ## Version 0.13.4
 
