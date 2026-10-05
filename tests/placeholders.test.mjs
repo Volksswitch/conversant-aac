@@ -565,3 +565,12 @@ test('starting practice ends the real conversation first and clears its influenc
     assert.ok(term > 0 && term < body.indexOf('practiceMode = true'), 'teardown before practice is on');
     assert.ok(body.indexOf('clearInfluencers()') > term, 'influencers cleared after the teardown');
 });
+
+// CR-026. Every way the practice partner's cue can end early puts the Listen button
+// and the busy look back, and a line already spoken is recorded.
+test('an interrupted practice partner turn is wound down and its line kept', () => {
+    const at = appSource.indexOf('async function advancePracticePartner(');
+    const body = appSource.slice(at, at + appSource.slice(at).search(/\r?\n\}\r?\n/));
+    assert.equal((body.match(/endPracticeCue\(token\)/g) || []).length, 3, 'error, superseded before speaking, superseded after');
+    assert.match(body, /storage\.logPartnerInterim\(\{ rawTranscript: line/);
+});

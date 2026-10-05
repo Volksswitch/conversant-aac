@@ -104,6 +104,10 @@ forgetting to tag one is only ever noise, never silence.
   goals switched on, so the practice suggestions were written as if you were still
   talking to that person. The real conversation now ends first and those are switched
   off.
+- Fixed: in practice, if you tapped Wrap up, Start conversation or a pause while the
+  pretend partner was talking, their words were not written into the conversation and
+  the Listen button stayed red. If the AI could not be reached, the cards stayed
+  dimmed as if new ones were coming. All three are fixed.
 
 ## Version 0.13.4
 

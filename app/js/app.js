@@ -2233,6 +2233,7 @@ async function prefetchRepairOptions(token) {
         opts = await llm.repairOptions(last, conversationHistory);
     } catch (err) {
         storage.logError('repairOptions', err.message);
+        if (token === generationToken) ui.setPaletteBusy(false);   // nothing is coming (CR-026)
         return;
     }
     // Bail if a newer turn superseded this, or the user already left repair-of-self.
@@ -2699,9 +2700,23 @@ async function endPractice() {
 
 // The partner takes a turn: author their line, speak it in the partner voice, then
 // feed it through the normal pipeline so the user's response palette appears.
+// The practice partner's turn currently being cued, so an interrupted one can be
+// wound down without touching a NEWER one that has already started (CR-026).
+let practiceCueToken = 0;
+
+// The cue ended without the normal path running: put the Listen button and the
+// "cards may change" look back, unless a newer cue owns them now.
+function endPracticeCue(token) {
+    if (practiceCueToken !== token) return;
+    isListening = false;
+    ui.setListenButtonState(false);
+    ui.setPaletteBusy(false);
+}
+
 async function advancePracticePartner() {
     if (!practiceMode) return;
     const token = ++generationToken;   // aborts if the user ends/pauses mid-generation
+    practiceCueToken = token;
     ui.setPaletteBusy(true);   // the cards showing may be replaced — say so (Ken)
     isListening = true;
     ui.setListenButtonState(true);     // red pulse + chime (rehearse the "listening" feel)
@@ -2712,17 +2727,27 @@ async function advancePracticePartner() {
     } catch (e) {
         storage.logError('practice-partner', e.message || String(e), { partner: partnerStamp() });
         ui.setStatus('Could not reach the AI. Check your API key and internet, then tap Start Listening.');
-        isListening = false;
-        ui.setListenButtonState(false);
+        endPracticeCue(token);
         return;
     }
-    if (token !== generationToken || !practiceMode) return;   // superseded (ended/paused)
+    if (token !== generationToken || !practiceMode) { endPracticeCue(token); return; }   // superseded (ended/paused)
     // Speak the partner's line in the DISTINCT partner voice. The mic is off in
     // practice, so there's no echo to filter.
     // Both voices are passed; tts.js uses whichever matches the active provider, so
     // the partner stays distinct from the user on either one.
     await tts.speak(line, partnerVoiceOptions(practiceScenario));
-    if (token !== generationToken || !practiceMode) return;
+    if (token !== generationToken || !practiceMode) {
+        // Interrupted after the line was heard (Wrap up, Start conversation, a pause).
+        // It was SAID, so it goes in the record - it used to vanish - but no new cards
+        // are asked for, because the user has already moved on (CR-026).
+        if (practiceMode) {
+            currentPartnerText = line;
+            updatePartnerLive(line);
+            storage.logPartnerInterim({ rawTranscript: line, partner: partnerStamp() });
+        }
+        endPracticeCue(token);
+        return;
+    }
     // Feed the spoken line through the normal pipeline (logs the partner turn,
     // updates the engine, generates the user's response palette). Mic-free.
     await handleSilencePeriod(line);
@@ -2829,6 +2854,7 @@ function togglePracticeCue() {
         placeholders.stop();
         tts.cancel();
         ui.setListenButtonState(false);
+        ui.setPaletteBusy(false);      // nothing is coming now (CR-026)
         ui.setStatus('Paused — tap Start Listening to continue.');
     } else {
         manualListenArmed = true;      // arm auto-resume for the rest of the session
