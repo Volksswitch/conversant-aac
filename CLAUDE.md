@@ -736,6 +736,13 @@ Express buttons or About Me.
 
 ## "Sounds like me" — the October 6 2026 evaluation and the fixes that followed
 
+**PRODUCT PRINCIPLE (Ken, October 6 2026).** The app works if people pick the suggestions
+often enough to keep using it. Two things decide that: the suggestions must sound
+**enough** like the user (would I say this? — not "is this exactly me?"), and they must
+arrive in time. **"Sounds like me" is the biggest part of that for the people who matter
+most to the user.** With a stranger at a counter, generic wording costs little; with
+family and close friends it is identity. So voice effort goes to per-person voice first.
+
 The full account is `Documents/Conversant AAC Sounds Like Me Evaluation.docx`. Read it
 before reopening any voice-layer question. Items deferred from it are in [TODO.md](TODO.md)
 under "Sounds like me: what the October 6 2026 evaluation left to do".
