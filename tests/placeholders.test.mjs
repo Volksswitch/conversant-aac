@@ -1036,3 +1036,13 @@ test('the Flex situations dropdown shows "choose" when the edited situation has 
     assert.match(ed, /if \(!sel\.value\) return;/);
     assert.match(ed, /del\.disabled = !editingListed;/);
 });
+
+// CR-255. The keyboard arms a capital only where a sentence or the box starts, and
+// Review sets it per freshly highlighted word.
+test('the one-shot capital follows the start of a sentence', async () => {
+    const { readFileSync } = await import('node:fs');
+    const kb = readFileSync(new URL('../app/js/keyboard.js', import.meta.url), 'utf8');
+    const rv = readFileSync(new URL('../app/js/review-ui.js', import.meta.url), 'utf8');
+    assert.match(kb, /: startsSentence\(field\) \? 'shift' : 'off';/);
+    assert.match(rv, /if \(ed\.fresh\) keyboard\.setShift\(ed\.sel === 0 \|\| \/\[\.!\?\]\$\/\.test\(prev\)\);/);
+});

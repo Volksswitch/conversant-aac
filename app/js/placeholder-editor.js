@@ -28,6 +28,7 @@
  * typing; structural changes (add / delete / reorder / reset) re-render.
  */
 
+import { setIconButton } from './icons.js';
 import * as model from './placeholder-phrases.js';
 import * as tts from './tts.js';
 import { confirmDanger } from './confirm-dialog.js';
@@ -65,7 +66,7 @@ function textInput(value, placeholder, oninput) {
     return inp;
 }
 
-// One pool: rows of text + 🔊 ✕, plus Add. No reorder - see the header.
+// One pool: rows of text + a speaker + delete, plus Add. No reorder - see the header.
 function poolSection(title, key) {
     const sec = document.createElement('div');
     sec.className = 'setting-group cpe-section';
@@ -93,7 +94,8 @@ function poolSection(title, key) {
         // before. Deliberately not disabled on an empty field: text commits without
         // a re-render, so a disabled state set at build time would still say
         // "empty" after the user had typed into it.
-        const hear = mkBtn('🔊', 'ee-hear', 'Hear this phrase');
+        const hear = mkBtn('', 'ee-hear', 'Hear this phrase');
+        setIconButton(hear, 'speak', 'Hear this phrase');   // follows the color scheme (CR-256)
         hear.addEventListener('click', () => {
             const said = (row.querySelector('input')?.value || '').trim();
             if (said) tts.speak(said);

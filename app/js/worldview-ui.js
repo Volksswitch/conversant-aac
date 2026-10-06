@@ -49,6 +49,13 @@ function focusFirstField(scope) {
 
 // --- tiny DOM helper --------------------------------------------------------
 
+// An icon on a button made by el(), with its name (CR-256: the speaker emoji ignored
+// the color scheme; the app's own icon follows it).
+function withIcon(b, icon, label) {
+    setIconButton(b, icon, label);
+    return b;
+}
+
 function el(tag, props = {}, children = []) {
     const n = document.createElement(tag);
     for (const [k, v] of Object.entries(props)) {
@@ -310,7 +317,7 @@ function renderExtra(name, back = renderHome) {
     card.append(input);
 
     const actions = el('div', { class: 'wv-actions' });
-    const speakBtn = el('button', { class: 'wv-btn wv-btn-speak', text: '🔊 Speak my answer',
+    const speakBtn = el('button', { class: 'wv-btn wv-btn-speak', text: 'Speak my answer',
         onclick: () => { const v = input.value.trim(); if (v) speak(v); } });
     if (!(e.value || '').trim()) speakBtn.setAttribute('disabled', 'true');
     actions.append(speakBtn);
@@ -575,8 +582,8 @@ function buildSoundCheckCard(item, { editing = false } = {}) {
             // Hearing a candidate spoken is how you judge whether you would say it —
             // this user's whole output channel is a synthesizer, so reading it on
             // screen is not the same test. Same idea as "Speak my answer" elsewhere.
-            el('button', { class: 'wv-btn-speak sc-speak', text: '🔊', title: 'Hear this', 'aria-label': 'Hear: ' + text,
-                onclick: () => speak(text) }),
+            withIcon(el('button', { class: 'wv-btn-speak sc-speak',
+                onclick: () => speak(text) }), 'speak', 'Hear: ' + text),
         ]));
     }
 
@@ -1134,12 +1141,12 @@ function buildPersonForm(existing) {
         // to a real word is the opposite of helpful. See predictionOff in keyboard.js.
         const inp = el('input', { type: 'text', class: 'wv-text wv-say-as',
             'data-no-predict': '', placeholder, value: initial || '' });
-        const hear = el('button', { class: 'wv-btn-speak wv-say-as-hear', text: '🔊',
-            title: 'Hear it said', 'aria-label': 'Hear it said',
+        const hear = el('button', { class: 'wv-btn-speak wv-say-as-hear',
             onclick: () => {
                 const v = getValue().trim() || getFallback().trim();
                 if (v) speak(v);
             } });
+        setIconButton(hear, 'speak', 'Hear it said');
         return { row: el('div', { class: 'wv-say-as-row' }, [inp, hear]), inp };
     };
 
@@ -1463,12 +1470,12 @@ function buildPlaceForm(existing) {
     // (Ken, August 25 2026): you have to hear the voice get it wrong before you know
     // whether writing a respelling is worth the effort, and until you have written one
     // there is nothing for this button to say.
-    const pronHear = el('button', { class: 'wv-btn-speak wv-say-as-hear', text: '🔊',
-        title: 'Hear it said', 'aria-label': 'Hear it said',
+    const pronHear = el('button', { class: 'wv-btn-speak wv-say-as-hear',
         onclick: () => {
             const v = pronIn.value.trim() || nameIn.value.trim();
             if (v) speak(v);
         } });
+    setIconButton(pronHear, 'speak', 'Hear it said');
     const pronRow = el('div', { class: 'wv-say-as-row' }, [pronIn, pronHear]);
 
     // One blank row to start, so the first fact costs no extra tap.
@@ -1696,7 +1703,7 @@ function buildCard(field) {
     const current = wv.getField(field.key);
     const speakBtn = el('button', {
         class: 'wv-btn wv-btn-speak',
-        text: '🔊 Speak my answer',
+        text: 'Speak my answer',
         onclick: () => { const v = formatValue(wv.getField(field.key)); if (v) speak(v); }
     });
     if (!formatValue(current)) speakBtn.setAttribute('disabled', 'true');

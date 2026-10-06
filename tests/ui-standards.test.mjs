@@ -491,3 +491,30 @@ test('key box hints fit, and disabled Settings buttons are dimmed', async (t) =>
     assert.deepEqual(out.clipped, [], 'an empty key box cuts off its hint');
     assert.deepEqual(out.bright, [], 'a disabled button looks enabled');
 });
+
+/*
+ * CR-256. A button's picture is the app's own icon, never an emoji: an emoji is drawn
+ * by the platform's color-emoji font, which ignores the color scheme.
+ */
+test('no Settings button shows an emoji', async (t) => {
+    if (skip) return t.skip(skip);
+    const found = await page.evaluate(async () => {
+        const dlg = document.getElementById('settingsDialog');
+        if (!dlg.open) { document.getElementById('settingsBtn').click(); await new Promise((r) => setTimeout(r, 400)); }
+        const out = [];
+        for (const tab of document.querySelectorAll('#settingsDialog .settings-tab[data-tab]')) {
+            tab.click();
+            await new Promise((r) => setTimeout(r, 80));
+            for (const d of document.querySelectorAll('#settingsDialog details')) d.open = true;
+            await new Promise((r) => setTimeout(r, 60));
+            for (const b of document.querySelectorAll('#settingsDialog button')) {
+                if (!b.offsetParent) continue;
+                // A face that IS, or starts with, an emoji (a padlock inside a topic's
+                // title is part of its words, not the control's picture).
+                if (/^\s*\p{Extended_Pictographic}/u.test(b.textContent || '')) out.push(`${tab.dataset.tab}: ${b.className || b.id}`);
+            }
+        }
+        return out;
+    });
+    assert.deepEqual(found, [], 'use setIconButton with an icon from icons.js');
+});

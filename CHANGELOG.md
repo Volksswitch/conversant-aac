@@ -507,6 +507,11 @@ forgetting to tag one is only ever noise, never silence.
   different situation, and its delete button is grayed out until there is something to
   delete. In Settings, tapping the X to close works even when the "?" help button is
   armed.
+- When you correct a word in the middle of a sentence in Conversation Review, or tap
+  back into a word you already started, the on-screen keyboard no longer makes the
+  first letter a capital. The speaker buttons for hearing a phrase in Settings and
+  About Me now use the app's own speaker picture, so they follow your color scheme
+  instead of always being gray and blue.
 
 ## Version 0.13.4
 

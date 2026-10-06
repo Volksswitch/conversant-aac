@@ -700,6 +700,13 @@ function syncWordInput() {
         try { wordInput.focus({ preventScroll: true }); } catch { wordInput.focus(); }
         keyboard.showFor(wordInput);
     }
+    // A capital only for the first word or one after a sentence ends (CR-255): the
+    // field keeps focus between words, so the capital armed for word 0 used to land
+    // on whichever word was replaced next.
+    const prev = ed.sel > 0 ? String(ed.words[ed.sel - 1] || '') : '';
+    // Only on a freshly highlighted word: typing runs this too, and re-arming then
+    // would capitalize every letter of the first word.
+    if (ed.fresh) keyboard.setShift(ed.sel === 0 || /[.!?]$/.test(prev));
     if (ed.fresh) {
         try { wordInput.setSelectionRange(0, wordInput.value.length); } catch { /* not focusable yet */ }
     }

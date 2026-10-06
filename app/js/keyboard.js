@@ -594,6 +594,22 @@ function servingPanelOpen() {
         (composer && !composer.hidden));
 }
 
+function startsSentence(field) {
+    const v = field.value || '';
+    let caret = v.length;
+    try { if (typeof field.selectionStart === 'number') caret = field.selectionStart; } catch { /* no caret */ }
+    const before = v.slice(0, caret);
+    return /^\s*$/.test(before) || /[.!?]\s+$/.test(before);
+}
+
+/** Set the one-shot capital from outside - Review moves between words without the
+ *  field losing focus, so show() does not run again (CR-255). */
+export function setShift(on) {
+    if (shiftState === 'lock') return;
+    shiftState = on ? 'shift' : 'off';
+    applyShiftVisual();
+}
+
 function show(field) {
     activeField = field;
     // Start each field in one-shot Shift so the first letter is capitalized
@@ -601,7 +617,11 @@ function show(field) {
     // the composer). One-shot reverts to lowercase after that first character.
     // The API key is case-sensitive and lowercase ("sk-ant-…"), so leave it off.
     // A key is case-sensitive, so no box marked data-no-autocap starts capitalized.
-    shiftState = (field.dataset && field.dataset.noAutocap !== undefined) ? 'off' : 'shift';
+    //
+    // Only where a sentence (or the box) actually starts (CR-255): tapping back into a
+    // word already begun, or onto a word mid-sentence, gave "I went to the Store".
+    shiftState = (field.dataset && field.dataset.noAutocap !== undefined) ? 'off'
+        : startsSentence(field) ? 'shift' : 'off';
     setDock(dockFor(field));
     // A modal <dialog> (Settings) lives in the top layer and renders above —
     // and makes inert — anything in normal flow. So when the focused field is

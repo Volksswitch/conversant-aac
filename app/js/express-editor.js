@@ -280,6 +280,13 @@ function el(tag, cls, text) {
     return e;
 }
 
+// An icon in place of a button's text, keeping the name mkBtn gave it (CR-256: the
+// speaker emoji ignored the color scheme; the app's own icon follows it).
+function withIcon(b, icon) {
+    setIconButton(b, icon, b.getAttribute('aria-label') || b.title || '');
+    return b;
+}
+
 function mkBtn(label, cls, onClick, title) {
     const b = el('button', cls, label);
     b.type = 'button';
@@ -338,12 +345,12 @@ function phraseRow(band, item) {
 
     // Reads the LIVE value rather than one captured at build time, so it speaks what
     // is in the field now and not what was there when the row was drawn.
-    row.appendChild(mkBtn('🔊', 'ee-hear', () => {
+    row.appendChild(withIcon(mkBtn('', 'ee-hear', () => {
         const inputs = row.querySelectorAll('input');
         const shown = inputs[0] && inputs[0].value.trim();
         const said = (inputs[1] && inputs[1].value.trim()) || shown;
         if (said) tts.speak(said, shown && shown !== said ? { display: shown } : {});
-    }, 'Hear this phrase'));
+    }, 'Hear this phrase'), 'speak'));
     return row;
 }
 
@@ -461,7 +468,7 @@ function audioRow(band, item) {
 
     // Hear it here. Plays and stops without touching the microphone: this is Settings,
     // not a conversation.
-    row.appendChild(mkBtn('🔊', 'ee-hear', async () => {
+    row.appendChild(withIcon(mkBtn('', 'ee-hear', async () => {
         if (previewAudio) {
             const wasThis = previewAudio.id === item.id;
             stopPreview();
@@ -481,7 +488,7 @@ function audioRow(band, item) {
             if (previewAudio && previewAudio.el === player) stopPreview();
             status.textContent = `It would not play: ${e.message || e}`;
         });
-    }, 'Hear this sound, or stop it'));
+    }, 'Hear this sound, or stop it'), 'speak'));
 
     row.appendChild(status);
     return row;

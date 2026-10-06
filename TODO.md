@@ -92,6 +92,10 @@ outlives a "Don't save" conversation.
   should read "button spacing"; the button-size setting was removed in September 2026.
   The Screen Layout section the manuals describe is now headed "Gaps between buttons".
 
+- **CR-256, all three User Manuals:** where a manual shows the speaker as an emoji
+  "(🔊)", it is now the app's own speaker icon (the same one as the composer's Speak
+  button), and "Speak my answer" no longer has the emoji in front of it.
+
 **Why not now:** the manuals are edited only in a document sync, which runs when Ken
 chooses.
 
