@@ -105,3 +105,26 @@ test('a dropped connection while listening is reported once', async () => {
     ws.onerror(); ws.onclose({ code: 1006 });
     assert.equal(statuses.filter((s) => s === 'error').length, 1);
 });
+
+// CR-060. Through the real stt.js: words Deepgram showed as unsettled survive Listen
+// being turned off and on in the middle of the partner's sentence.
+test('unsettled words on screen survive a pause of Deepgram listening', async () => {
+    const stt = await import('../app/js/stt.js?cr060=' + Date.now());
+    stt.init({ onResult() {}, onSilence() {}, onStatus() {}, onPartnerSpeech() {},
+        source: 'deepgram', getDeepgramKey: () => 'k' });
+    try {
+    stt.startListening();
+    await new Promise((r) => setTimeout(r, 10));
+    const interim = (t) => ({ data: JSON.stringify({ is_final: false, channel: { alternatives: [{ transcript: t }] } }) });
+    let ws = FakeWS.last;
+    ws.readyState = FakeWS.OPEN; ws.onopen();
+    ws.onmessage(interim('I wanted to ask'));
+    stt.stopListening();
+    stt.resumeListening();
+    await new Promise((r) => setTimeout(r, 10));
+    ws = FakeWS.last;
+    ws.readyState = FakeWS.OPEN; ws.onopen();
+    ws.onmessage(interim('or Friday'));
+    assert.equal(stt.getCurrentTranscript(), 'I wanted to ask or Friday');
+    } finally { stt.stopListening(); }   // a failure must not leave a KeepAlive running
+});

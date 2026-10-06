@@ -714,8 +714,17 @@ function handleSourceError(detail) {
 // able to put it back. stopListening() is the deliberate, user-driven stop and does
 // clear the intent; conflating the two would turn a trip to the home screen into the
 // user having switched listening off.
+// Words a paid source showed but had not settled. Its stop sends no final, and the
+// next session's first interim would overwrite them - so a pause mid-sentence lost
+// what was on screen (CR-060). Kept as heard. NOT for the built-in recognizer, whose
+// own stop delivers a final: doing it there too would record the words twice.
+function commitPendingInterim() {
+    if (currentInterim.trim()) commitSegment(currentInterim);
+    currentInterim = '';
+}
+
 function suspendSource() {
-    if (externalSource) { try { externalSource.stop(); } catch { /* not running */ } return; }
+    if (externalSource) { commitPendingInterim(); try { externalSource.stop(); } catch { /* not running */ } return; }
     try { recognition.stop(); } catch { /* not running */ }
 }
 
@@ -771,7 +780,7 @@ export function stopListening() {
     suspendedForHidden = false;   // a deliberate stop outranks a backgrounded suspend
     openedAt = 0;                 // the run is over; the next Listen starts a new clock
     clearSilenceTimer();
-    if (externalSource) return externalSource.stop();
+    if (externalSource) { commitPendingInterim(); return externalSource.stop(); }
     recognition.stop();
     // ⚠ SAY "STOPPED" NOW, DON'T WAIT FOR THE BROWSER'S 'end' (Ken's iPad, October 1
     // 2026). Where sessions are short and restarted after a pause (iPadOS), a stop that

@@ -396,12 +396,14 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
                 // Detached first: a stopped source must report nothing more, and a late
                 // onopen must not start a KeepAlive for it (CR-049).
                 ws.onmessage = null; ws.onerror = null; ws.onclose = null; ws.onopen = null;
-                // CloseStream asks Deepgram to flush any pending transcript before
-                // hanging up, so the partner's last words are not lost.
+                // CloseStream is a courtesy to the service. It does NOT recover the last
+                // words: the socket closes at once, and a browser discards anything that
+                // arrives once it is closing (CR-060). What was on screen is kept by
+                // stt.js committing the unsettled words before it calls stop().
                 try {
                     if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'CloseStream' }));
                 } catch { /* already closing */ }
-                try { ws.close(); } catch { /* already closed */ }
+                try { ws.close(1000); } catch { /* already closed */ }
                 ws = null;
             }
             if (processor) { try { processor.disconnect(); } catch { /* gone */ } processor = null; }

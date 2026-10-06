@@ -199,6 +199,9 @@ forgetting to tag one is only ever noise, never silence.
   you to reconnect the folder first.
 - Fixed: while typing a new practice scenario, switching to another Settings tab and
   back emptied the form. What you typed now stays.
+- Fixed: with Deepgram listening, turning Listen off and on in the middle of the other
+  person's sentence, or switching away from the app and back, lost the words that were
+  on screen but not yet settled. They are now kept.
 
 ## Version 0.13.4
 
