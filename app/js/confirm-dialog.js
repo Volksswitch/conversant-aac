@@ -146,11 +146,16 @@ export function showBusy({ title = 'Please wait', body = '' } = {}) {
     const block = (e) => e.preventDefault();
     dlg.addEventListener('cancel', block);          // Escape
     dlg.addEventListener('click', block);           // backdrop
+    // CR-082. A second Escape or Android Back is not cancelable in current Chromium,
+    // so preventDefault alone lets the box go. closedby="none" stops that where it is
+    // supported; elsewhere, a box that closes anyway is put straight back.
+    let open = true;
+    dlg.setAttribute('closedby', 'none');
+    dlg.addEventListener('close', () => { if (open) { try { dlg.showModal(); } catch { /* removed */ } } });
 
     document.body.append(dlg);
     dlg.showModal();
 
-    let open = true;
     return {
         update(text) { if (open) prog.textContent = text || ''; },
         close() {
@@ -193,6 +198,8 @@ export function showNotice({ title = '', body = '', buttonLabel = 'OK' } = {}) {
         // already replaced underneath itself.
         dlg.addEventListener('cancel', (e) => e.preventDefault());
         dlg.addEventListener('click', (e) => { if (e.target === dlg) e.preventDefault(); });
+        dlg.setAttribute('closedby', 'none');   // see showBusy (CR-082)
+        dlg.addEventListener('close', () => { if (!settled) { try { dlg.showModal(); } catch { /* removed */ } } });
 
         document.body.append(dlg);
         dlg.showModal();

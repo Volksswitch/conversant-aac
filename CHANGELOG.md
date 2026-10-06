@@ -264,6 +264,9 @@ forgetting to tag one is only ever noise, never silence.
   stack two confirmation boxes, sending the report twice or saying it was not sent
   when it had been. A second tap now does nothing, and the button says it is preparing
   the report.
+- Fixed: pressing Escape or Android's Back gesture could close the "Please wait" box
+  during a restore, letting Restore be pressed again, or close the "the app will now
+  restart" box. Neither can be dismissed that way now.
 
 ## Version 0.13.4
 
