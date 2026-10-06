@@ -390,3 +390,10 @@ test('the installed app is locked to landscape', () => {
     const manifest = JSON.parse(readFileSync(new URL('../app/manifest.webmanifest', import.meta.url), 'utf8'));
     assert.equal(manifest.orientation, 'landscape');
 });
+
+// CR-225: every button takes the app's typeface. CR-226: the response cell carries no tint.
+test('buttons inherit the house typeface, and response cells are not tinted', () => {
+    const css = readFileSync(new URL('../app/css/styles.css', import.meta.url), 'utf8');
+    assert.match(css, /:where\(button, input, select, textarea\) \{\s*font-family: inherit;\s*\}/);
+    assert.match(css, /\.response-cell:not\(\.response-card\) \{ background: transparent; \}/);
+});

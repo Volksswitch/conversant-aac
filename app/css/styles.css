@@ -981,6 +981,14 @@
     font-family: inherit;
     font-size: inherit;
 }
+/* The same typeface everywhere (CR-225): a button does not inherit it by default, so the
+   Express Panel, the response suggestions and the Command Bar were in the browser's own
+   button face (Arial on Windows) while the keyboard and transcript were not - and the
+   Express Panel changed typeface, and so its line breaks, when shown in Settings.
+   Zero specificity, typeface only: sizes on the conversation surface are set per control. */
+:where(button, input, select, textarea) {
+    font-family: inherit;
+}
 
 body {
     font-family: system-ui, -apple-system, sans-serif;
@@ -2115,6 +2123,9 @@ body.conv-bottom .palette-grid {
     line-height: 1.18;
     color: var(--ink);
     overflow: hidden;
+    /* A single word too wide for the card at the largest text sizes breaks rather than
+       being cut off sideways, where no line clamp can show that words are missing. */
+    overflow-wrap: anywhere;
 }
 /* In a 2-up (stacked) category cell each card is half-height, so size the text
    down a notch and clamp more tightly. */
@@ -2275,6 +2286,10 @@ body.conv-bottom .palette-grid {
 .slot-initiative   { border-left-color: var(--slot-initiative);   background: var(--slot-initiative-tint); }
 .slot-repair       { border-left-color: var(--slot-repair);       background: var(--slot-repair-tint); }
 .slot-persistent   { border-left-color: var(--slot-persistent); }
+/* The slot class sits on the CELL as well as on its card, and the cell is square while
+   the card is rounded, so the cell's tint showed at the card's corners and between two
+   stacked cards (CR-226). The card carries the tint; the cell carries none. Paint only. */
+.response-cell:not(.response-card) { background: transparent; }
 
 /* The per-slot rules for the response BADGE and the LATENCY DOT are gone with the
    elements themselves. The latency dot was dropped earlier (every card speaks

@@ -460,6 +460,11 @@ forgetting to tag one is only ever noise, never silence.
   place now also deletes the sound files of any sound buttons that went with them, so
   they no longer fill the data folder and every backup. The warning says so when
   sounds are involved.
+- The Express Panel, the response suggestions and the command buttons now use the same
+  typeface as the rest of the app, so a phrase wraps the same way on the conversation
+  screen as it does while you edit it in Settings. In the Bold outlines and color-
+  blind color schemes, the small colored corners showing behind the rounded response
+  cards are gone.
 
 ## Version 0.13.4
 
