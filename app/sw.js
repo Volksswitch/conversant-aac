@@ -16,7 +16,7 @@
 // and a redeploy could keep serving the shell precached by an earlier one. A copy
 // served straight from the working tree keeps the placeholder, which is a valid
 // (and stable) cache name for local development.
-const CACHE_VERSION = 'aac-v0.13.5-@@BUILD@@';
+const CACHE_VERSION = 'aac-v0.13.6-@@BUILD@@';
 // Cache Storage is scoped to the ORIGIN, not the path, and activate() below
 // deletes every cache that is not this one. Any two Conversant deployments sharing
 // an origin under different paths would therefore delete each other's shell every
