@@ -311,6 +311,9 @@ forgetting to tag one is only ever noise, never silence.
   data folder (for example a OneDrive file that had not finished downloading or
   syncing), it could replace that file with an older or empty copy. It now leaves a
   file it cannot read alone and notes it in the error log.
+- Fixed: after you answered or ended a conversation, the last few words the other
+  person had been saying could reappear on screen and be carried into the next
+  exchange as if just said.
 
 ## Version 0.13.4
 

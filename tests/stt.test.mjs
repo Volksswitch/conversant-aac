@@ -540,3 +540,26 @@ test('a mis-heard echo of the placeholder earns no checkpoint', async () => {
     stt.stopListening();
     stt.resetTranscript();
 });
+
+// CR-098. The browser hands over a last result after stop(); it must not land in a
+// buffer the app has just cleared.
+test('a result arriving after Listen stops does not come back after a reset', async () => {
+    stt.startListening();
+    rec.emitFinal('Do you want coffee?');
+    stt.stopListening();
+    stt.resetTranscript();
+    rec.emitFinal('or tea');
+    await sleep(THRESHOLD_S * 1000 + 60);
+    assert.equal(stt.getCurrentTranscript(), '');
+    assert.deepEqual(silences, []);
+});
+
+test('words still in progress when Listen stops are kept for a resume', () => {
+    stt.startListening();
+    rec.emitFinal('I was');
+    rec.emitInterim('thinking about lunch');
+    stt.stopListening();
+    rec.emitFinal('thinking about lunch');   // the browser's late copy, ignored
+    stt.resumeListening();
+    assert.equal(stt.getCurrentTranscript(), 'I was thinking about lunch');
+});

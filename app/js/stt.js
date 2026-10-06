@@ -521,6 +521,11 @@ export function init({ onResult, onSilence, onStatus, onPartnerSpeech, source,
     recognition.lang = 'en-US';
 
     recognition.onresult = (event) => {
+        // stop() makes the browser hand over a last result AFTER the stop (CR-098). The
+        // words in it were already kept when listening stopped (see stopListening), and
+        // the caller has usually cleared the buffer since, so taking them here put the
+        // partner's last words back as if they had just been said.
+        if (!listeningIntent && !suspendedForHidden) return;
         let heardPartner = false;   // any non-echo content this event?
         let sawFinal = false;       // did the recognizer settle a segment? (the 0s trigger)
         for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -636,6 +641,9 @@ export function setSource(source) {
         try { externalSource.stop(); } catch { /* already stopped */ }
     }
     externalSource = null;
+    // Detach the old recognizer first, so a result it sends after stopping cannot
+    // reach the new service's transcript (CR-098).
+    if (recognition) { recognition.onresult = recognition.onend = recognition.onerror = null; }
     recognition = null;
     // The words heard by the previous service belong to the previous service, and a
     // half-captured turn spanning two of them is a record nobody can read.
@@ -789,6 +797,9 @@ export function stopListening() {
     openedAt = 0;                 // the run is over; the next Listen starts a new clock
     clearSilenceTimer();
     if (externalSource) { commitPendingInterim(); return externalSource.stop(); }
+    // Keep what was heard up to this moment: the late result the browser sends after a
+    // stop is now ignored, so the in-progress words are kept here instead (CR-098).
+    commitPendingInterim();
     recognition.stop();
     // ⚠ SAY "STOPPED" NOW, DON'T WAIT FOR THE BROWSER'S 'end' (Ken's iPad, October 1
     // 2026). Where sessions are short and restarted after a pause (iPadOS), a stop that
