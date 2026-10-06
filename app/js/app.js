@@ -5936,7 +5936,7 @@ async function generateScreenOpenings() {
     // that needs the download down the folder path.
     const canPickFolder = storage.supportsUserChosenFolder();
     if (canPickFolder && !storage.hasDataFolder()) {
-        window.alert('Choose a data folder first (Settings → General → Data Folder), then try again.');
+        await showNotice({ title: 'Screen openings', body: 'Choose a data folder first (Settings → General → Data Folder), then try again.', buttonLabel: 'OK' });
         return;
     }
     // A zoomed page measures wrong in BOTH directions at once — Safari scales
@@ -5946,8 +5946,8 @@ async function generateScreenOpenings() {
     // OS accessibility zoom are outside our reach, so refuse rather than emit a
     // plausible-looking wrong file.
     if (Math.abs(zoomScale() - 1) > 0.01) {
-        window.alert('The screen is zoomed, so the measurements would be wrong. ' +
-            'Reset the zoom to 100% and try again.');
+        await showNotice({ title: 'Screen openings', buttonLabel: 'OK',
+            body: 'The screen is zoomed, so the measurements would be wrong. Reset the zoom to 100% and try again.' });
         return;
     }
     // In real fullscreen the page viewport IS the screen, so there is nothing above
@@ -5996,17 +5996,25 @@ async function generateScreenOpenings() {
 
     if (!canPickFolder) {
         dataTransfer.downloadText('Screen Openings.txt', text, 'text/plain');
-        window.alert(`"Screen Openings.txt" (${lines.length} controls) is ready to save. ` +
-            'Choose "Save to Files" in the sheet that appears, then attach it to an email.\n\n' +
-            expected);
+        // "Save to Files" is the iPad's wording; elsewhere the browser saves or shares
+        // the file its own way (CR-239).
+        const how = platform.isIOS()
+            ? 'Choose "Save to Files" in the sheet that appears, then attach it to an email.'
+            : 'Your browser will save or share the file. Keep it and attach it to an email.';
+        await showNotice({ title: 'Screen openings', buttonLabel: 'OK',
+            body: `"Screen Openings.txt" (${lines.length} controls) is ready to save. ${how} ${expected}` });
         return;
     }
+    // The app's own notice card rather than the browser's pop-up, like every other
+    // outcome in Settings (CR-239). The measuring above is already done, so the card
+    // cannot cover anything being measured.
     try {
         await storage.writeFile('Screen Openings.txt', text);
-        window.alert(`Wrote "Screen Openings.txt" (${lines.length} controls) to the data folder.\n\n` +
-            expected);
+        await showNotice({ title: 'Screen openings', buttonLabel: 'OK',
+            body: `Wrote "Screen Openings.txt" (${lines.length} controls) to the data folder. ${expected}` });
     } catch (err) {
-        window.alert(`Could not write the file: ${err.message}`);
+        await showNotice({ title: 'Screen openings', buttonLabel: 'OK',
+            body: `Could not write the file: ${err.message}` });
     }
 }
 
@@ -6713,13 +6721,17 @@ async function updateUsageDisplay() {
             // bill, but they are two rates on two very different quantities, so which of
             // them is carrying the cost is exactly what a user deciding whether to keep
             // paying needs to see.
-            const words = usage.inputTokens + usage.cacheWriteTokens
+            // TOKENS, the unit the Anthropic bill counts, and labeled as such (CR-240):
+            // called "words" it read as a count of what was said, and it is several
+            // times larger, because the app's standing instructions are re-read on
+            // every request. No conversion to words - that would be meaningless here.
+            const tokens = usage.inputTokens + usage.cacheWriteTokens
                         + usage.cacheReadTokens + usage.outputTokens;
             // Both names are literal because both services are. When the provider
             // abstraction lands (CLAUDE.md, "Vendor choice is a USER decision") these
             // become the chosen provider's name, from the same place the endpoint and
             // the rates come from - not two more strings to find.
-            line('Anthropic Claude', `${words.toLocaleString()} words in and out`, aiCost);
+            line('Anthropic Claude', `${tokens.toLocaleString()} tokens (the unit Anthropic bills by)`, aiCost);
             // ⚠ THE SPEECH TOTAL IS PER COMPANY, and with two services to choose from
             // it can no longer be one line. The point of naming the company is that
             // the user holds an account with it and gets a bill from it — so hearing
@@ -6730,17 +6742,29 @@ async function updateUsageDisplay() {
             // checked against a statement. An unknown id shows itself rather than
             // borrowing another company's name — see the rate lookup above.
             const nameOf = (p) => SPEECH_COMPANY[p] || p;
-            const heard = sttSeconds > 0 ? `${Math.round(sttSeconds / 60)} min heard` : 'not used';
+            // Under a minute is shown in seconds: "0 min heard" beside a cost read as a
+            // counting error (CR-242).
+            const heard = sttSeconds <= 0 ? 'not used'
+                : sttSeconds < 60 ? `${Math.round(sttSeconds)} sec heard`
+                    : `${Math.round(sttSeconds / 60)} min heard`;
             const spoken = ttsCharacters > 0 ? `${ttsCharacters.toLocaleString()} characters spoken` : 'not used';
-            if (nameOf(sttProviderNow) === nameOf(ttsProviderNow)) {
+            // This device's own hearing or voice has no bill to check, so it gets no
+            // line; it used to appear as a company called "builtin" (CR-241).
+            const paidStt = sttProviderNow !== 'builtin';
+            const paidTts = ttsProviderNow !== 'builtin';
+            if (paidStt && paidTts && nameOf(sttProviderNow) === nameOf(ttsProviderNow)) {
                 line(nameOf(sttProviderNow), '', sttCost + ttsCost);
                 line('Hearing', heard, sttCost, 'usage-sub');
                 line('Speaking', spoken, ttsCost, 'usage-sub');
             } else {
-                line(nameOf(sttProviderNow), '', sttCost);
-                line('Hearing', heard, sttCost, 'usage-sub');
-                line(nameOf(ttsProviderNow), '', ttsCost);
-                line('Speaking', spoken, ttsCost, 'usage-sub');
+                if (paidStt) {
+                    line(nameOf(sttProviderNow), '', sttCost);
+                    line('Hearing', heard, sttCost, 'usage-sub');
+                }
+                if (paidTts) {
+                    line(nameOf(ttsProviderNow), '', ttsCost);
+                    line('Speaking', spoken, ttsCost, 'usage-sub');
+                }
             }
         }
     }

@@ -273,14 +273,14 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-232](CR-232.md) | fixed (0f35707) | low | confirmed | ui-inconsistency | `app/index.html:767` | 'Let me drag the borders to resize' checkbox uses an unstyled class and renders bold, unlike every other checkbox |
 | [CR-233](CR-233.md) | partly fixed (0f35707) - manual wording waits for sync docs (TODO.md) | low | confirmed | ui-inconsistency | `app/index.html:779` | "Button size" was removed but the section, its spoken help, its Reset help and the manuals still describe it |
 | [CR-234](CR-234.md) | fixed (0f35707) | low | confirmed | ui-inconsistency | `app/js/app.js:669` | In review, any non-answer tap (Undo, Hear it, Next Word, a card being edited) throws the Express Panel back to its first page |
-| [CR-235](CR-235.md) | fixed (pending) | low | confirmed | ui-inconsistency | `app/js/app.js:1121` | Azure practice-partner 'Auto' and the scenario voice list ignore the account's own Azure voice list |
-| [CR-236](CR-236.md) | fixed (pending) | low | confirmed | ui-inconsistency | `app/js/app.js:2163` | The 'cards may change' look can stay on forever after a failed repair prefetch or a failed practice-partner line |
-| [CR-237](CR-237.md) | fixed (pending) | low | confirmed | ui-inconsistency | `app/js/app.js:4577` | Opener cards are not refreshed when the partner is chosen after pressing Start conversation |
-| [CR-238](CR-238.md) | fixed (pending) | low | confirmed | ui-inconsistency | `app/js/app.js:4903` | Layout handles can stay visible and swallow taps after a conversation begins via Start conversation |
-| [CR-239](CR-239.md) | open | low | confirmed | ui-inconsistency | `app/js/app.js:5438` | Keyguard 'Generate Screen Openings' reports through native browser alert boxes |
-| [CR-240](CR-240.md) | open | low | confirmed | ui-inconsistency | `app/js/app.js:6143` | Cost breakdown labels a token count as 'words in and out', and the count includes cached tokens re-read on every request |
-| [CR-241](CR-241.md) | open | low | confirmed | ui-inconsistency | `app/js/app.js:6153` | Cost breakdown shows the internal word 'builtin' as a company name |
-| [CR-242](CR-242.md) | open | low | confirmed | ui-inconsistency | `app/js/app.js:6154` | Cost breakdown shows '0 min heard' for paid hearing under 30 seconds |
+| [CR-235](CR-235.md) | fixed (97ea6ba) | low | confirmed | ui-inconsistency | `app/js/app.js:1121` | Azure practice-partner 'Auto' and the scenario voice list ignore the account's own Azure voice list |
+| [CR-236](CR-236.md) | fixed (97ea6ba) | low | confirmed | ui-inconsistency | `app/js/app.js:2163` | The 'cards may change' look can stay on forever after a failed repair prefetch or a failed practice-partner line |
+| [CR-237](CR-237.md) | fixed (97ea6ba) | low | confirmed | ui-inconsistency | `app/js/app.js:4577` | Opener cards are not refreshed when the partner is chosen after pressing Start conversation |
+| [CR-238](CR-238.md) | fixed (97ea6ba) | low | confirmed | ui-inconsistency | `app/js/app.js:4903` | Layout handles can stay visible and swallow taps after a conversation begins via Start conversation |
+| [CR-239](CR-239.md) | fixed (pending) | low | confirmed | ui-inconsistency | `app/js/app.js:5438` | Keyguard 'Generate Screen Openings' reports through native browser alert boxes |
+| [CR-240](CR-240.md) | fixed (pending) | low | confirmed | ui-inconsistency | `app/js/app.js:6143` | Cost breakdown labels a token count as 'words in and out', and the count includes cached tokens re-read on every request |
+| [CR-241](CR-241.md) | fixed (pending) | low | confirmed | ui-inconsistency | `app/js/app.js:6153` | Cost breakdown shows the internal word 'builtin' as a company name |
+| [CR-242](CR-242.md) | fixed (pending) | low | confirmed | ui-inconsistency | `app/js/app.js:6154` | Cost breakdown shows '0 min heard' for paid hearing under 30 seconds |
 | [CR-243](CR-243.md) | open | low | confirmed | ui-inconsistency | `app/js/app.js:6530` | The restore confirmation says it replaces saved profiles, but profiles are added beside existing ones and conversations are merged |
 | [CR-244](CR-244.md) | open | low | confirmed | ui-inconsistency | `app/js/app.js:7010` | A failure while choosing a data folder is reported only in the hidden status bar |
 | [CR-245](CR-245.md) | open | low | confirmed | ui-inconsistency | `app/js/app.js:7063` | Tapping Copy twice quickly leaves the button permanently labeled 'Copied ✓' |

@@ -994,3 +994,13 @@ test('Azure partner voices come from the account list; openers follow a partner 
     const pre = appSource.slice(appSource.indexOf('async function prefetchRepairOptions'));
     assert.match(pre.slice(0, 1400), /REPAIR_OF_SELF\) \{ ui\.setPaletteBusy\(false\); return; \}/);
 });
+
+// CR-239..242. No browser pop-ups; the cost breakdown says tokens, shows seconds under a
+// minute, and gives this device's free hearing or voice no company line.
+test('no browser alert boxes, and the cost breakdown wording', () => {
+    assert.ok(!/window\.alert\(/.test(appSource), 'use showNotice instead');
+    assert.match(appSource, /tokens \(the unit Anthropic bills by\)/);
+    assert.ok(!/words in and out/.test(appSource));
+    assert.match(appSource, /sttSeconds < 60 \? `\$\{Math\.round\(sttSeconds\)\} sec heard`/);
+    assert.match(appSource, /const paidStt = sttProviderNow !== 'builtin';/);
+});

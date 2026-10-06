@@ -484,6 +484,12 @@ forgetting to tag one is only ever noise, never silence.
   change to that person's own openers and name; and when the screen layout is
   unlocked, the round drag handles now leave as soon as the openers appear, so they no
   longer sit on top of buttons.
+- In Settings > About, the cost breakdown is clearer: the Anthropic line now counts
+  tokens (the unit Anthropic bills by) instead of calling them words, hearing under a
+  minute shows in seconds instead of "0 min", and this device's own free hearing or
+  voice no longer appears as a company called "builtin". The result of making the
+  keyguard Screen Openings file now appears in the app's own message box instead of a
+  browser pop-up.
 
 ## Version 0.13.4
 
