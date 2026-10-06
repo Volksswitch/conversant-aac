@@ -265,3 +265,10 @@ test('speaking: a stepper in the slider\'s group still passes through', () => {
     assert.equal(decideTap(speaking, tap({ key: 'control:buttonSizeSlider', sameGroup: true, isRange: false })).action,
         ACTION.ABORT_AND_PASS);
 });
+
+// CR-253. The X that closes Settings always works, armed or speaking.
+test('the close button is never swallowed by help mode', () => {
+    for (const state of [{ armed: true, speaking: false }, { armed: false, speaking: true }, { armed: false, speaking: false }]) {
+        assert.equal(decideTap(state, { isClose: true, key: null }).action, ACTION.ALLOW);
+    }
+});

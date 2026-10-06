@@ -502,6 +502,11 @@ forgetting to tag one is only ever noise, never silence.
   phrases it also resets.
 - Moving a row up or down now uses the same arrow shapes everywhere: the Commands
   lists, the Express Panel editor and the goal lists in About Me.
+- In the Express Panel editor's Flex section, the "Already set up" list now reads
+  "choose" when the situation you are editing has no phrases yet, instead of showing a
+  different situation, and its delete button is grayed out until there is something to
+  delete. In Settings, tapping the X to close works even when the "?" help button is
+  armed.
 
 ## Version 0.13.4
 

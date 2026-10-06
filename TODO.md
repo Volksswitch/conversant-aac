@@ -107,6 +107,20 @@ layouts document flagged this ("pick one in the build") and the build kept both.
 
 **Why not now:** which key a person reaches for is a choice for the people who use it.
 
+### The keyboard's number page has no decimal point or comma
+
+**Raised:** October 5 2026, from code review item CR-254.
+
+**What is wanted:** Ken's decision. The number button opens the keyboard on its symbols
+page so a number can be typed, but on the usual layouts that page has no "." or ",":
+answering "98.6" or "2.5" means switching back to the letters page in the middle of the
+number. The keyboard code records that comma and period stay on the letters page by his
+spec. Options: (1) put a decimal point on the symbols page in place of one of the rarer
+symbols - no key moves, so a keyguard still fits; lean, since numbers with a decimal
+point are common in medical answers; (2) leave it as it is.
+
+**Why not now:** it reverses a recorded keyboard decision.
+
 ### The mode chip's styling: delete it, or is it coming back?
 
 **Raised:** October 5 2026, from code review items CR-175 and CR-179.

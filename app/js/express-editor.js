@@ -658,6 +658,18 @@ function flexSection(composed) {
             const sel = document.createElement('select');
             sel.className = 'ee-situation-pick';
             sel.setAttribute('aria-label', 'Jump to a situation you have already set up');
+            // When the situation being edited has no phrases yet it is not in this list,
+            // and the browser would show the first entry as though it were the one being
+            // edited (CR-252). A "choose" entry stands in instead, so the dropdown never
+            // names a situation other than the one on screen.
+            const editingListed = entries.some((e) => e.partnerId === flexPartner && e.placeId === flexPlace);
+            if (!editingListed) {
+                const o = document.createElement('option');
+                o.value = '';
+                o.textContent = '— choose —';
+                o.selected = true;
+                sel.appendChild(o);
+            }
             entries.forEach(({ key, partnerId, placeId }) => {
                 const o = document.createElement('option');
                 o.value = key;
@@ -666,6 +678,7 @@ function flexSection(composed) {
                 sel.appendChild(o);
             });
             sel.addEventListener('change', () => {
+                if (!sel.value) return;
                 const { partnerId, placeId } = parseFlexKey(sel.value);
                 flexPartner = partnerId; flexPlace = placeId;
                 render();
@@ -676,8 +689,12 @@ function flexSection(composed) {
             // to "Add a phrase" - two adjacent targets, one of which removes every
             // phrase for the situation. Beside the dropdown it reads as "remove the one
             // named here", which is what it does.
-            box.appendChild(mkBtn('✕', 'ee-situation-del', deleteSituation,
-                'Delete every phrase for the situation shown'));
+            const del = mkBtn('', 'ee-situation-del', deleteSituation, 'Delete every phrase for the situation shown');
+            setIconButton(del, 'close', 'Delete every phrase for the situation shown');
+            // Nothing to delete while the dropdown says "choose": the situation being
+            // edited has no phrases (CR-252).
+            del.disabled = !editingListed;
+            box.appendChild(del);
             body.appendChild(box);
         }
 

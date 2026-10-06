@@ -51,6 +51,10 @@ export const ACTION = Object.freeze({
  */
 export function decideTap(state, tap) {
     if (tap.isHelpButton) return { action: ACTION.TOGGLE };
+    // Closing Settings is never a value change to protect from, so the X always works,
+    // armed or not (CR-253). It used to be explained with nothing - it has no phrase -
+    // which swallowed the tap and silently switched help off.
+    if (tap.isClose) return { action: ACTION.ALLOW };
 
     if (state.speaking) {
         // The same-target exception. Ranges are excluded and that carve-out is not
@@ -93,6 +97,7 @@ const IGNORED = '.slider-step';
 export function resolveTap(target, doc = document) {
     if (!target || !target.closest) return { isHelpButton: false, key: null, groupEl: null, isRange: false };
     if (target.closest('#settingsHelpBtn')) return { isHelpButton: true, key: null, groupEl: null, isRange: false };
+    if (target.closest('#closeSettingsBtn')) return { isHelpButton: false, isClose: true, key: null, groupEl: null, isRange: false };
 
     const tab = target.closest('.settings-tab');
     if (tab) return { isHelpButton: false, key: `tab:${tab.dataset.tab}`, groupEl: tab, isRange: false };
@@ -199,10 +204,12 @@ export function init({ dialog, helpBtn, speak, cancel, labelFor }) {
 
     async function say(key, groupEl) {
         const text = lookup(key) || labelFor(key, groupEl);
+        // Nothing to say: stay armed, as for a tap on nothing explainable (CR-253).
+        // Disarming here looked like the "?" had simply stopped working.
+        if (!text) { render(); return; }
         // One-shot (Ken): disarm before speaking, so the user is never stuck in help
         // mode unable to change the value they just asked about.
         armed = false;
-        if (!text) { render(); return; }
         speakingGroup = groupEl || null;
         const mine = ++speakToken;
         render();
@@ -232,6 +239,7 @@ export function init({ dialog, helpBtn, speak, cancel, labelFor }) {
         const tap = resolveTap(e.target);
         const { action, key } = decideTap(state(), {
             isHelpButton: tap.isHelpButton,
+            isClose: !!tap.isClose,
             key: tap.key,
             sameGroup: !!(tap.groupEl && tap.groupEl === speakingGroup),
             isRange: tap.isRange,

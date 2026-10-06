@@ -1027,3 +1027,12 @@ test('editor: reset warning, live place names, sound labels, greyed tools', asyn
     const mp = ed.slice(ed.indexOf('function markPicked('));
     assert.match(mp.slice(0, 400), /refreshToolStates\(\);/);
 });
+
+// CR-252. The situations dropdown never names a situation other than the one being edited.
+test('the Flex situations dropdown shows "choose" when the edited situation has no phrases', async () => {
+    const { readFileSync } = await import('node:fs');
+    const ed = readFileSync(new URL('../app/js/express-editor.js', import.meta.url), 'utf8');
+    assert.match(ed, /o\.textContent = '— choose —';/);
+    assert.match(ed, /if \(!sel\.value\) return;/);
+    assert.match(ed, /del\.disabled = !editingListed;/);
+});
