@@ -379,6 +379,12 @@ forgetting to tag one is only ever noise, never silence.
   your settings; a name containing a dollar sign now appears correctly in the opening
   lines; and an empty sound file, or one that is not really an MP3 or M4A, is refused
   when you add it rather than failing in a conversation.
+- Fixed: the same holding phrase (such as "I'm thinking") could be said twice in a row
+  across two pauses; resetting the Always band to the app's phrases no longer tells
+  the AI those are your own words; restoring a backup on the same tablet held the
+  other way round no longer holds back its screen settings; and clearing "Who they
+  are" on a practice scenario keeps the old description instead of leaving the AI to
+  invent a partner.
 
 ## Version 0.13.4
 

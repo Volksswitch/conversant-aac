@@ -181,14 +181,14 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-140](CR-140.md) | fixed (d9ec76f) | low | confirmed | bug | `app/js/app.js:6440` | Problem-report note is never cleared after a successful send, so the next report repeats it |
 | [CR-141](CR-141.md) | fixed (d9ec76f) | low | confirmed | bug | `app/js/app.js:6677` | Restoring a damaged backup can leave 'Reading…' on screen forever: the restore and file-import handlers have no error handling and summarize() can throw |
 | [CR-142](CR-142.md) | fixed (d9ec76f) | low | confirmed | bug | `app/js/app.js:6836` | Clearing the error log makes the next problem report pull every old errored conversation from disk |
-| [CR-143](CR-143.md) | fixed (pending) | low | confirmed | bug | `app/js/conv-layout.js:148` | Side-dock layout is never pulled back above the transcript floor, so a smaller usable height pushes the response cards off the bottom |
-| [CR-144](CR-144.md) | fixed (pending) | low | confirmed | bug | `app/js/data-transfer.js:304` | A malformed settings section in a backup wipes every setting back to its default |
-| [CR-145](CR-145.md) | fixed (pending) | low | confirmed | bug | `app/js/engine.js:165` | Partner names containing $$, $&, $` or $' are mangled in opener cards (String.replace expands them as replacement patterns) |
-| [CR-146](CR-146.md) | fixed (pending) | low | confirmed | bug | `app/js/express-audio.js:40` | Sound-file check looks only at the file name, accepts empty files, and is skipped when restoring a backup |
-| [CR-147](CR-147.md) | open | low | confirmed | bug | `app/js/express-items.js:270` | Resetting the Always band marks shipped phrases as the user's own words |
-| [CR-148](CR-148.md) | open | low | confirmed | bug | `app/js/placeholders.js:213` | Each pause resets the 'never the same phrase twice in a row' memory for holding phrases |
-| [CR-149](CR-149.md) | open | low | confirmed | bug | `app/js/platform.js:283` | Device signature uses raw screen width x height, so the same tablet in a different orientation counts as a different screen |
-| [CR-150](CR-150.md) | open | low | confirmed | bug | `app/js/practice-editor.js:224` | Editing a scenario can blank out who the other person is; it then runs with no persona and cannot be copied |
+| [CR-143](CR-143.md) | fixed (0e56dde) | low | confirmed | bug | `app/js/conv-layout.js:148` | Side-dock layout is never pulled back above the transcript floor, so a smaller usable height pushes the response cards off the bottom |
+| [CR-144](CR-144.md) | fixed (0e56dde) | low | confirmed | bug | `app/js/data-transfer.js:304` | A malformed settings section in a backup wipes every setting back to its default |
+| [CR-145](CR-145.md) | fixed (0e56dde) | low | confirmed | bug | `app/js/engine.js:165` | Partner names containing $$, $&, $` or $' are mangled in opener cards (String.replace expands them as replacement patterns) |
+| [CR-146](CR-146.md) | fixed (0e56dde) | low | confirmed | bug | `app/js/express-audio.js:40` | Sound-file check looks only at the file name, accepts empty files, and is skipped when restoring a backup |
+| [CR-147](CR-147.md) | fixed (pending) | low | confirmed | bug | `app/js/express-items.js:270` | Resetting the Always band marks shipped phrases as the user's own words |
+| [CR-148](CR-148.md) | fixed (pending) | low | confirmed | bug | `app/js/placeholders.js:213` | Each pause resets the 'never the same phrase twice in a row' memory for holding phrases |
+| [CR-149](CR-149.md) | fixed (pending) | low | confirmed | bug | `app/js/platform.js:283` | Device signature uses raw screen width x height, so the same tablet in a different orientation counts as a different screen |
+| [CR-150](CR-150.md) | fixed (pending) | low | confirmed | bug | `app/js/practice-editor.js:224` | Editing a scenario can blank out who the other person is; it then runs with no persona and cannot be copied |
 | [CR-151](CR-151.md) | open | low | confirmed | bug | `app/js/prediction.js:65` | Learned word list: one typo outranks the dictionary forever, the list never stops growing, and non-ASCII words are stored mangled |
 | [CR-152](CR-152.md) | open | low | confirmed | bug | `app/js/pronunciation.js:81` | Name respellings also hit names followed or preceded by accented letters (whole-word test is ASCII-only) |
 | [CR-153](CR-153.md) | open | low | confirmed | bug | `app/js/review-ui.js:684` | Undo can take back two actions at once after a previous edit: the word snapshot flag is never reset when editing stops |

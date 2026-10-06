@@ -155,3 +155,11 @@ test('the new-scenario form edits the draft that survives a redraw', async () =>
     const src = readFileSync(new URL('../app/js/practice-editor.js', import.meta.url), 'utf8');
     assert.match(src, /const draft = creating \? scenario : \{ \.\.\.scenario \};/);
 });
+
+// CR-150. A blank "who they are" keeps the description it had.
+test('clearing who they are keeps the old description', async () => {
+    const id = await library.copyScenario(doctor());
+    const before = library.getScenario(id).partnerPersona;
+    await library.updateScenario(id, { partnerPersona: '   ' });
+    assert.equal(library.getScenario(id).partnerPersona, before);
+});

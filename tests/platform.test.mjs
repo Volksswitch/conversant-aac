@@ -241,3 +241,11 @@ test('Android defaults to the paid transcription ONLY when a key is set', async 
     // not change mid-session - and it means a single process cannot answer for two
     // platforms. The computer side is covered by isAndroid() being false there.
 });
+
+// CR-149. The same screen held the other way round is still the same screen.
+test('a tablet turned sideways is the same screen', async () => {
+    const p = await loadPlatform({ ua: UA.windowsEdge });
+    const here = { os: 'android', shell: 'tab', screen: '1280x800' };
+    assert.equal(p.compareDevice({ os: 'android', shell: 'tab', screen: '800x1280' }, here).sameScreen, true);
+    assert.equal(p.compareDevice({ os: 'android', shell: 'tab', screen: '1366x768' }, here).sameScreen, false);
+});

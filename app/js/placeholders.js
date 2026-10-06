@@ -213,7 +213,8 @@ export function arm() {
     armed = true;
     armTime = Date.now();
     count = 0;
-    lastIndex = { acknowledgment: -1, thinking: -1 };
+    // lastIndex is NOT reset here (CR-148): it is what stops the same phrase being
+    // said twice in a row, and a pause is not a reason to forget the last one said.
     const settings = storage.loadPlaceholderSettings();
     // 0 = the user wants no placeholders at all (they read as artificial).
     if (settings.maxPlaceholders === 0) { active = false; return; }
@@ -241,7 +242,8 @@ export async function start() {
     armed = false;
     active = true;
     count = 0;
-    lastIndex = { acknowledgment: -1, thinking: -1 };
+    // lastIndex is NOT reset here (CR-148): it is what stops the same phrase being
+    // said twice in a row, and a pause is not a reason to forget the last one said.
     timer = setTimeout(speakNext, Math.max(0, initialDelayFor(settings) * 1000 - (Date.now() - base)));
 }
 

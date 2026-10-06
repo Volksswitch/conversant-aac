@@ -243,6 +243,9 @@ export async function updateScenario(id, fields = {}) {
     if (i < 0) return;
     const next = { ...m.scenarios[i], ...fields, id };
     if (!str(next.title)) next.title = m.scenarios[i].title;
+    // Who they are is what the AI plays; a blank one is kept as it was, like the title
+    // (CR-150), or practice would invent a partner and the copy button would do nothing.
+    if (!str(next.partnerPersona)) next.partnerPersona = m.scenarios[i].partnerPersona;
     m.scenarios[i] = normalizeScenario(next);
     await save();
 }

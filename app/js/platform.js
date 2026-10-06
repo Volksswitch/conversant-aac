@@ -311,8 +311,17 @@ export function deviceSignature() {
         os: isIOS() ? 'ios' : isAndroid() ? 'android' : 'desktop',
         // 'app' (installed / Home Screen) or 'tab'.
         shell: isStandalone() ? 'app' : 'tab',
-        screen: w && h ? `${w}x${h}` : '',
+        // Longer side first, so turning the tablet does not make it a different
+        // screen (CR-149).
+        screen: w && h ? `${Math.max(w, h)}x${Math.min(w, h)}` : '',
     };
+}
+
+// "800x1280" and "1280x800" are the same screen held two ways; backups written before
+// CR-149 recorded whichever way it was held.
+function screenKey(s) {
+    const [a, b] = String(s || '').split('x').map(Number);
+    return a && b ? `${Math.max(a, b)}x${Math.min(a, b)}` : '';
 }
 
 /*
@@ -329,7 +338,7 @@ export function compareDevice(sig, here = deviceSignature()) {
     return {
         sameOs: !!ok && sig.os === here.os && sig.shell === here.shell,
         // An empty screen on either side is not a match: unknown is not the same as equal.
-        sameScreen: !!ok && !!sig.screen && !!here.screen && sig.screen === here.screen,
+        sameScreen: !!ok && !!screenKey(sig.screen) && screenKey(sig.screen) === screenKey(here.screen),
         known: !!ok && !!sig.os,
     };
 }

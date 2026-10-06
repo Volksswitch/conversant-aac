@@ -270,3 +270,15 @@ test('the seed is spent once - a later edit never re-replaces the Always band', 
     const reloaded = await panel.load();
     assert.deepEqual(reloaded.always.map((x) => x.text), ['My own words']);
 });
+
+// CR-147. Putting the Always band back to the app's phrases does not make them the user's.
+test('a reset band is the app\'s wording, not the user\'s', async () => {
+    const m = panel.getModel();
+    m.always[3] = { ...m.always[3], text: 'Perhaps' };
+    panel.setModel(m);
+    assert.ok(panel.userAuthoredItems().some((x) => x.text === 'Perhaps'));
+    panel.resetBand('always');
+    await settle();
+    assert.ok(panel.getModel().always.every((x) => x.origin === 'default'));
+    assert.equal(panel.userAuthoredItems().filter((x) => x.band === 'always' || panel.getModel().always.some((a) => a.id === x.id)).length, 0);
+});

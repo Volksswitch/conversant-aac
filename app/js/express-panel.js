@@ -158,11 +158,13 @@ export function getModel() {
  * Persist an edited model. Provenance is re-stamped by diffing against the model as
  * it was, so no editor path has to remember to do it (express-items.markEdits).
  */
-export function setModel(next) {
+export function setModel(next, { keepOriginFor = [] } = {}) {
     const prev = model || getModel();
     const n = normalize({ ...next, version: MODEL_VERSION, seed: SEED_REVISION });
-    n.always = markEdits(n.always, prev.always);
-    n.context = markEdits(n.context, prev.context);
+    // A band just put back to the app's own phrases keeps their DEFAULT origin; diffed
+    // against the user's edits it was stamped as their own wording (CR-147).
+    if (!keepOriginFor.includes('always')) n.always = markEdits(n.always, prev.always);
+    if (!keepOriginFor.includes('context')) n.context = markEdits(n.context, prev.context);
     for (const key of Object.keys(n.flex)) {
         n.flex[key] = markEdits(n.flex[key], prev.flex[key] || []);
     }
@@ -216,7 +218,7 @@ export function resetBand(band) {
     const m = getModel();
     if (band === 'always') m.always = ALWAYS_DEFAULTS.map((x) => ({ ...x }));
     else if (band === 'context') m.context = CONTEXT_DEFAULTS.map((x) => ({ ...x }));
-    return setModel(m);
+    return setModel(m, { keepOriginFor: [band] });
 }
 
 /** Restore everything the app ships with. */

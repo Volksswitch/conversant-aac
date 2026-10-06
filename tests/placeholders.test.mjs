@@ -861,3 +861,18 @@ test('CR-140/141: a sent note is cleared; restore failures are said on the statu
     assert.match(appSource, /if \(res && \(res\.sent \|\| res\.queued\)\) \{\n\s*const box = document\.getElementById\('problemNoteInput'\);/);
     assert.match(appSource, /async function importFromFile\(file\)/);
 });
+
+// CR-148. A new pause must not forget the phrase just said.
+test('the same holding phrase is never said twice in a row across pauses', async () => {
+    storage.savePlaceholderSettings(0.005, 5, 1);
+    const said = [];
+    for (let i = 0; i < 40; i++) {
+        resetSpoken();
+        placeholders.arm();
+        await sleep(25);
+        if (spokenTexts[0]) said.push(spokenTexts[0]);
+        placeholders.stop();
+    }
+    assert.ok(said.length > 30, `enough phrases spoken: ${said.length}`);
+    for (let i = 1; i < said.length; i++) assert.notEqual(said[i], said[i - 1], `repeat at ${i}`);
+});
