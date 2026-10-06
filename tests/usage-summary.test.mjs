@@ -63,7 +63,7 @@ test('category distribution counts only turns that recorded a slot', () => {
         user('2026-08-01T10:03:00Z'),                                  // an older log
     ])]);
     assert.equal(s.slotsRecorded, 3);
-    assert.deepEqual(s.slotCounts, { PREFERRED: 2, REPAIR: 1 });
+    assert.deepEqual({ ...s.slotCounts }, { PREFERRED: 2, REPAIR: 1 });
     assert.equal(s.userTurns, 4, 'the older turn still counts as a turn');
 });
 
@@ -97,7 +97,7 @@ test('errors are counted, grouped by context, and attributed to conversations', 
     ]);
     assert.equal(s.errors, 3);
     assert.equal(s.conversationsWithErrors, 2);
-    assert.deepEqual(s.errorContexts, { generate: 2, cleanup: 1 });
+    assert.deepEqual({ ...s.errorContexts }, { generate: 2, cleanup: 1 });
     // An error entry is not a turn — it must not inflate the conversation length.
     assert.equal(s.turns, 4);
 });
@@ -456,4 +456,17 @@ test('a context entry alone does not count a partner or a conversation', () => {
     const s2 = summarize([withTurns]);
     assert.equal(s2.influencers.turnsWithPartner, 2);
     assert.equal(s2.partners[0].turns, 2);
+});
+
+// CR-224. A name read from a conversation file is only ever a key in the summary's own
+// tallies; "__proto__" must not reach every object in the page.
+test('a partner named "__proto__" is counted as a name, not written onto every object', () => {
+    const log = { started: '2026-10-01T12:00:00Z', exchanges: [
+        { role: 'partner', timestamp: '2026-10-01T12:00:01Z', rawTranscript: 'hello there friend',
+          partner: { label: '__proto__' }, uncertain: [] },
+    ] };
+    const s = summarize([{ id: 'c1', data: log }]);
+    assert.equal(({}).turns, undefined, 'Object.prototype untouched');
+    assert.ok(Object.prototype.hasOwnProperty.call(s.hearingByPartner, '__proto__'));
+    assert.equal(s.hearingByPartner['__proto__'].turns, 1);
 });

@@ -280,3 +280,17 @@ test('a held-back setting KEEPS this device\'s value rather than resetting it', 
     // And what was allowed through really did come from the file.
     assert.equal(now.voiceURI, 'Daniel');
 });
+
+// CR-223. A conversation in a backup is only written if its name and body are sound.
+test('a backup conversation with an unsafe name or no body is not written', async () => {
+    const { isSafeConversation } = await import('../app/js/data-transfer.js');
+    const ok = { id: '2026-10-01T12-00-00', data: { exchanges: [] } };
+    assert.equal(isSafeConversation(ok), true);
+    assert.equal(isSafeConversation({ id: '2026-09-13T12-12-30-2', data: {} }), true, 'a same-second name');
+    assert.equal(isSafeConversation({ ...ok, id: '2026-10-01T12-00-00.review' }), false, 'would overwrite review notes');
+    assert.equal(isSafeConversation({ ...ok, id: '../settings/x' }), false);
+    assert.equal(isSafeConversation({ ...ok, id: 'a\\b' }), false);
+    assert.equal(isSafeConversation({ id: 'x' }), false, 'no body');
+    assert.equal(isSafeConversation({ id: 'x', data: [] }), false);
+    assert.equal(isSafeConversation({ id: 7, data: {} }), false);
+});

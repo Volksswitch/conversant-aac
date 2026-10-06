@@ -239,6 +239,19 @@ function pad(n) { return String(n).padStart(2, '0'); }
 // There is one again and it holds everything, so "backup" is the true word. Nothing
 // breaks either way: an import is validated by the `kind` INSIDE the file, never by its
 // name, so every prefix this app has ever written still restores and still lists.
+/*
+ * A backup is a file somebody could hand the app from anywhere, so a conversation's
+ * name and contents are checked before anything is written (CR-223), as sound file
+ * names already are. A name ending in ".review" would overwrite the notes made while
+ * reviewing another conversation; a path separator would write outside the folder; a
+ * missing or non-object body would leave an empty file behind.
+ */
+export function isSafeConversation(c) {
+    if (!c || typeof c.id !== 'string' || !c.id.trim()) return false;
+    if (/[\\/]/.test(c.id) || c.id.includes('..') || /\.review$/i.test(c.id)) return false;
+    return !!c.data && typeof c.data === 'object' && !Array.isArray(c.data);
+}
+
 export function suggestedFilename(now = new Date()) {
     return 'conversant-backup-' +
         now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) +
@@ -445,8 +458,9 @@ export async function applyPackage(pkg, onProgress) {
     restored.activeProfile = activeEntry ? activeEntry.written : '';
 
     for (const c of convos) {
-        if (!c || !c.id) { step('conversations'); continue; }
-        if (await storage.writeConversationLog(c.id, c.data, c.review || null)) restored.conversations++;
+        if (!isSafeConversation(c)) { step('conversations'); continue; }
+        const review = (c.review && typeof c.review === 'object' && !Array.isArray(c.review)) ? c.review : null;
+        if (await storage.writeConversationLog(c.id, c.data, review)) restored.conversations++;
         step('conversations');
     }
 

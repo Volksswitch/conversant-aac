@@ -172,25 +172,25 @@ export function summarize(logs) {
         turns: 0, userTurns: 0, partnerTurns: 0,
         medianTurnsPerConversation: null, medianDurationMs: null,
         fromCard: 0, composed: 0, fromCardPercent: null,
-        slotCounts: {}, slotsRecorded: 0,
+        slotCounts: Object.create(null), slotsRecorded: 0,
         respondMsMedian: null, respondSamples: 0, respondOver4s: 0, respondDiscarded: 0,
-        errors: 0, errorContexts: {}, conversationsWithErrors: 0,
+        errors: 0, errorContexts: Object.create(null), conversationsWithErrors: 0,
         emptyConversations: 0,
         // --- added August 16 2026: all of it from what was already on disk ---
         weeks: [],                       // the retention curve (see the header note)
-        sourceCounts: {}, sourcesRecorded: 0,   // card / composed / express / control
+        sourceCounts: Object.create(null), sourcesRecorded: 0,   // card / composed / express / control
         partners: [],                    // one row per named partner, practice excluded
         returningPartners: 0,
         influencers: { turnsWithPartner: 0, turnsWithFeeling: 0, turnsWithPlace: 0,
                        distinctPartners: 0, distinctFeelings: 0, distinctPlaces: 0 },
-        voiceByProvider: {}, voiceFellBack: 0,
-        byRecognizer: {},
+        voiceByProvider: Object.create(null), voiceFellBack: 0,
+        byRecognizer: Object.create(null),
         partnerWordsMedian: null, userWordsMedian: null,
         // ⚠ COUNTS ONLY, NEVER THE WORDS THEMSELVES. This whole object is sent
         // verbatim in the weekly report, and a doubted word IS a word the partner
         // said. How many, never which.
         hearing: { turns: 0, flagged: 0, words: 0, flaggedWords: 0, recorded: 0 },
-        hearingByPartner: {}, hearingByPlace: {}, hearingByRecognizer: {},
+        hearingByPartner: Object.create(null), hearingByPlace: Object.create(null), hearingByRecognizer: Object.create(null),
         palettesOffered: 0, optionsOffered: 0, cardsPerPaletteMedian: null, optionWordsMedian: null,
         decideMsMedian: null, decideSamples: 0,
     };
