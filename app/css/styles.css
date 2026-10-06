@@ -5343,6 +5343,21 @@ body.conv-bottom     .danger-dialog {
     font-style: italic;
     padding-right: 0.5rem;
 }
+/* A recently typed Reframe instruction with its Keep buttons. The text takes the row
+   and the buttons wrap beneath it on a narrow panel, rather than squeezing the text. */
+.sc-subtitle {
+    font-size: 1rem;
+    margin: 0.8rem 0 0.3rem;
+}
+.sc-steer-row { flex-wrap: wrap; gap: 0.4rem; }
+.sc-steer-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.4rem;
+    margin-left: auto;
+}
 .sc-lean {
     background: var(--info-tint);
     border-left: 4px solid var(--slot-initiative, var(--info));

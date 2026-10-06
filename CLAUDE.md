@@ -734,6 +734,58 @@ Express buttons or About Me.
   real storage calls, reads it back, records a correction and reads it off disk; and in
   the browser with both keyboards.
 
+## "Sounds like me" — the October 6 2026 evaluation and the fixes that followed
+
+The full account is `Documents/Conversant AAC Sounds Like Me Evaluation.docx`. Read it
+before reopening any voice-layer question. Items deferred from it are in [TODO.md](TODO.md)
+under "Sounds like me: what the October 6 2026 evaluation left to do".
+
+- **What it found, in short:** About Me works mainly on content (true facts and reasons),
+  not wording; it made a terse persona's options longer. Most Conversation Review answers
+  changed nothing the AI sees, and realistic amounts of review showed no detectable effect.
+  The fixed style rules (softened declines, banned openers) usually beat the user's own
+  examples. **Nothing measures whether the suggestions sound like the user** — that is the
+  first deferred item, and no voice claim should be made to users until it exists.
+- **The literal goal is out of reach this way**; the achievable one is "picked over a
+  generic assistant's in a blind comparison, and more turns answered from the first set".
+- **The length measure compares within each kind of reply** (`voice-harvest.measureLengthLean`
+  against `slotMedians` from the offer records). Comparing with the whole set mostly
+  measured which kind was picked, and told a terse persona's AI to write fuller replies.
+  How I Sound's brevity items (`soundCheckLengthLean`) are the cleaner evidence and win
+  when the two disagree.
+- **Practice conversations are not read for voice**, and practice Reframe steers are not
+  recorded. The partner there is the AI in a scenario.
+- **Style steers are grouped by meaning and sent in the app's own words** (`MEANINGS` in
+  voice.js); content steers still need exact repeats. **⚠ The reading is deliberately
+  cautious, and the code review of the first version is why:** it read "too informal" as
+  a request for casual wording and "say it would be nice to see her" as "warmer", and a
+  wrong reading becomes a standing instruction in every later response. Now a steer
+  counts as a style request only if every style word is in a known negated form or has
+  no negator in front of it, AND at most one other word is left once style words and
+  filler are taken out. Anything else falls back to exact wording, which costs nothing
+  that was not lost before. **Widen `POSITIVE` only with a test proving a content
+  sentence containing the new word still reads as content.**
+- **A repeated request made only with one person stands only for that person**
+  (`instructionsFor`, sent in the situation block). Before, a correction typed twice to
+  Mom went into the shared voice block and shaped the user's voice with everyone.
+- **About Me's recent-instructions × only hides the offer** (`hidden`), separate from
+  `dismissed`, so turning down "keep this" never stops a request becoming standing later.
+- **The situation block is built at request time** (`llm.setSituationProvider`). The
+  cached copy went stale when a partner was switched off, so a request could describe
+  the previous partner, their per-person settings and their kept instructions. **Any new
+  per-request context belongs in that provider, never in a block set once and reused.**
+- **A harvest carries `version: 2`**; a length reading from an older harvest is ignored
+  until the conversations are read again.
+- **Keeping an instruction is one tap in About Me, deliberately not on the conversation
+  screen** — nothing new on the keyguard surface, nothing that slows a live exchange.
+  Kept-for-everyone goes in the cached voice block; kept-for-a-person goes in the
+  situation block, because the voice block is the same for every partner.
+- **The harvest keeps 30 sentences and shows 12**, interleaving review and live ones, so a
+  removal frees a place and review answers cannot crowd out live ones for good.
+- **Each levity item names its light candidates** (`light`). "No idea, sorry." is plain.
+- **Still Ken's call, not changed:** letting the user's own evidence outrank the fixed
+  style rules (TODO, avenue 4).
+
 ## Interrupting the partner — capture their partial speech; keep capturing after (Ken, July 8 2026)
 
 Ken: interrupting the partner with an instant statement (e.g. an Express "Bye") was making it look like the partner never spoke — their in-progress speech wasn't recorded. Fixes + confirmations:
@@ -862,12 +914,12 @@ The worldview model (Architecture Overview §6) has a concrete questionnaire des
     - **Limitation accepted (Ken: *"That limitation is fine. By the time the user has all the buttons filled they will have internalized the purpose and behavior of the express panel."*):** the affordance disappears once every cell is filled, so in-situ positioning helps while *populating* and not while *rearranging*. Editing a filled cell in place would need a distinct gesture (long press), and **adding a gesture to the conversation surface is a bigger decision than this one** — deliberately not proposed.
       - **⚠ THE PER-PERSON/PLACE SCOPED PANEL CUTS BOTH WAYS HERE (Ken flagged the complication).** It **softens** the limitation — each new scope starts with **empty cells**, so the affordance keeps earning its place long after the default set is full instead of retiring once. It also **sharpens a question the scoped-panel build must answer: when a cell is tapped, WHICH SCOPE is being edited?** A user who edits what they believe is their clinic panel and in fact edits the global one has been misled, and **the reverse error is worse because it is silent.** The active scope must be **unmistakable at the moment of editing**, not merely selectable somewhere on the tab.
       - Also note **choice chips claim leading cells dynamically**, so a cell blank at rest may be occupied during a closed-set turn — **the conversation gate already prevents that collision**, a second thing it buys beyond the safety argument.
-- **⚠ DECIDED (Ken, August 7 2026) — the CYRANO PROBLEM is a first-class risk, and the voice layer MAKES IT WORSE.** Ken (from his presentations): *"a more insidious problem is when the user defers to the AI because they believe that the AI is a better communicator. See: Cyrano de Bergerac and his friend Christian."* **This is measured, not speculative:** Jakesch et al. (CHI 2023) gave 1,506 participants a writing assistant tilted toward one side; it changed what they wrote **and the opinions they subsequently reported on a survey** — they name it **latent persuasion**. General form: automation *misuse* is over-reliance (Parasuraman & Riley 1997). The AAC-specific felt version is Valencia et al. (CHI 2023), where choosing a generated phrase made AAC users feel the **system** had chosen.
+- **⚠ DECIDED (Ken, August 7 2026) — the CYRANO PROBLEM is a first-class risk, and the voice layer MAKES IT WORSE.** Ken (from his presentations): *"a more insidious problem is when the user defers to the AI because they believe that the AI is a better communicator. See: Cyrano de Bergerac and his friend Christian."* **This is measured, not speculative:** Jakesch et al. (CHI 2023) gave 1,506 participants a writing assistant tilted toward one side; it changed what they wrote **and the opinions they subsequently reported on a survey** — they name it **latent persuasion**. General form: automation *misuse* is over-reliance (Parasuraman & Riley 1997). The AAC-specific version is in Valencia et al. (CHI 2023): one participant said choosing a generated phrase means something different in front of a close friend than typing it. *(Corrected October 6 2026: the earlier wording here, that choosing made users feel the system had chosen, is not what that paper reports; its section 5.4.2 is about other people attributing the words to the device.)*
   - **The uncomfortable part, stated rather than buried: today a card that doesn't sound like the user produces FRICTION, and that friction is what sends them to "In my own words." It is the user's own defense against deferring — and it is powered by exactly the mismatch this plan exists to eliminate. Succeeding at the goal removes the signal.**
   - **Ken's counterweight, recorded because it constrains the mitigations:** *"falling back on a less than 'totally me' response may be more than acceptable if it keeps you in the conversation."* That is the product's founding premise (the 4-second silence), so **the answer is emphatically not to make the cards worse.**
   - **What actually mitigates:** (1) free composition must not be so much slower than tapping that deferring becomes *rational* — this reframes the **composition-speed work (prediction, phrase/abbreviation expansion) as a DEPENDENCY of the voice layer**, not an unrelated convenience; (2) **never rank cards by quality** — position carries category, not rank (Aug 7 2026), and a best-first palette is a standing invitation to defer to slot 1 (a second, independent reason for a decision taken on other grounds); (3) measure it, accepting the ambiguity — **a falling composed-turn share moves the same way whether the layer is succeeding or the user is deferring**, so only the "does this sound like you?" mark separates them, which is why it is the primary instrument; (4) keep the catchphrase decision in force — a device producing the user's own idiom unprompted is the hardest of all to tell from the user.
 - **The failure mode to design against in Phase 2: a selected card is the MODEL's wording, not the user's.** Feeding selections back as style exemplars teaches the model to imitate itself and converge on its own house style *while looking like personalization*. **REWEIGHTED in the second edition:** the first edition ranked selections lowest, which is right about *exemplars* and wrong about *preference* — a selection is a forced-choice judgment against three rejected alternatives, made in real conversation, with no observation effect, at zero cost, i.e. **behavioral evidence, and behavior beats self-report.** So selections are now the **authority for preference** and remain **unusable as style exemplars**; composed "In my own words" prose stays the exemplar authority. The split between the two columns is the design.
-- **⚠ GAP IN THE SHIPPED BANK (found August 7 2026 while settling the question wording; NOT yet filled): every one of the twelve items is RESPONSIVE.** All give a partner turn and ask how the user would reply, so the bank measures only their **responding** voice. The app generates a great deal of **initiating** text — conversation starters, the INITIATIVE slot, wind-downs, and the statements the floor-aware Reframe produces — and **none of it is governed by anything the user has told us.** The fix is items with no `partner` field ("Suppose you want to ask someone for help." → "Could you give me a hand?" / "Would you mind helping me?" / "Can you help?"); `questionFor` already asks them the right question and the renderer already omits the partner line, so it is authoring work only. A test asserts the bank is currently all-responsive, so adding one trips a visible reminder rather than sliding in unnoticed.
+- **The bank has INITIATING items now (the `initiate-` items; the gap noted August 7 2026 is filled).** Most items still give a partner turn and measure the **responding** voice; the initiating ones have no `partner` field and measure how the user starts things, which is what governs conversation starters, the INITIATIVE slot, wind-downs and Reframe statements. `questionFor` asks them the right question and the renderer omits the partner line.
 - **REVISED PHASES (second edition):** **0** voice block (+ Express provenance marking) → **1** **"Sound Check"** forced-choice module (~12 taps, hand-authored bank) + negative constraints + C3/C4, with **writing samples demoted to optional** and framed as conversational turns → **2** harvest from use, **selections promoted to the preference authority** (the raw material has been on disk since v0.3.0 and read by nothing; the aggregation half can start before the rest) → **3** per-person register on the graph edge, sharing the Phase-1 instrument via the partner channel → **4** personality/values last (the *values* half retains independent worth; the personality half is the weakest signal per unit of effort in the bank).
 
 ---

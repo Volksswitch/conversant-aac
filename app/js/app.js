@@ -599,6 +599,10 @@ function initApp() {
     });
     // When a set of cards was ASKED for - see llm.setOnRequest for why it is a hook.
     llm.setOnRequest(({ reason }) => storage.logEvent('generation requested', { reason }));
+    // Every request reads who the user is talking with, where they are and how they
+    // feel at the moment it is built, so a partner switched off since the last request
+    // can never be described to the AI as present (October 6 2026).
+    llm.setSituationProvider(buildSituationBlock);
     // What was selected when a conversation begins - see storage.setContextProvider.
     storage.setContextProvider(contextSnapshot);
 
@@ -3978,8 +3982,16 @@ async function handleReframe() {
     // correction they keep having to repeat can become a standing preference
     // (Sounds Like Me, Phase 2). Gated on the per-conversation privacy choice: "Don't
     // save this conversation" has to mean this too, or the one thing the user typed
-    // outlives the conversation they asked not to keep.
-    if (storage.isConversationSaving()) voiceProfile.recordSteer(steer);
+    // outlives the conversation they asked not to keep. Practice is left out: the
+    // partner there is the AI in a role-play, and a request made to it is about the
+    // scenario (October 6 2026). Who the user was talking to is kept with it, so About
+    // Me can offer to keep the request for that person.
+    if (storage.isConversationSaving() && !practiceMode) {
+        voiceProfile.recordSteer(steer, {
+            personId: (activePartner && activePartner.personId) || null,
+            label: activePartner ? partnerLabel(activePartner) : null,
+        });
+    }
 
     const token = ++generationToken;
     placeholders.stop();
@@ -4914,6 +4926,14 @@ function buildSituationBlock() {
         if (activePartner.personId) {
             const how = relationships.buildPartnerBlock(activePartner.personId, label);
             if (how) lines.push(how);
+            // Instructions that stand for this person only: kept for them in About Me,
+            // or asked for repeatedly only with them. Here rather than in the voice
+            // block because that block is cached and the same for every partner
+            // (October 6 2026).
+            const mine = voiceProfile.instructionsFor(activePartner.personId);
+            if (mine.length) {
+                lines.push(`When talking with ${label || 'this person'}, this user has asked you to keep to these instructions: ${mine.join('; ')}`);
+            }
         }
     }
     // WHAT THE USER IS AIMING FOR in this exchange - the goals they have switched on

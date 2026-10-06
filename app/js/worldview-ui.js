@@ -464,7 +464,7 @@ function renderHome() {
     const answered = voiceProfile.answeredCount();
     const soundMeta = answered
         ? `${answered} of ${SOUND_CHECK_ITEMS.length} answered`
-        : 'Help the app write suggestions in your words';
+        : 'Help the app word suggestions more the way you would';
     contentEl.append(el('button', { class: 'wv-module-row', onclick: () => renderSoundCheck() }, [
         el('div', { class: 'wv-module-main' }, [
             el('div', { class: 'wv-module-title', text: 'How I Sound' }),
@@ -518,7 +518,7 @@ function renderSoundCheck() {
     contentEl.append(el('h3', { class: 'wv-page-title', text: 'How I Sound' }));
 
     contentEl.append(el('p', { class: 'wv-intro', text:
-        'The app writes suggestions for you. These questions are how it learns to write them in your words instead of its own.' }));
+        'The app writes suggestions for you. These questions help it word them more the way you would, instead of its own way.' }));
     contentEl.append(el('p', { class: 'wv-intro', text:
         'Each one shows a few ways of saying the same thing. They all mean the same — only the wording is different. Pick whichever sounds most like something you would say.' }));
     contentEl.append(el('p', { class: 'wv-intro sc-disclaimer', text:
@@ -628,40 +628,95 @@ function buildHarvestSection() {
             'aria-label': removeLabel, onclick: onRemove }),
     ]);
 
+    // A Reframe instruction the user typed recently, with the one-tap choice to keep it
+    // (October 6 2026). The choice is made HERE, between conversations, rather than on
+    // the conversation screen: nothing new appears on the screen a keyguard covers, and
+    // nothing slows a live exchange.
+    const recentRow = (st) => el('div', { class: 'wv-entry sc-steer-row' }, [
+        el('span', { class: 'sc-harvest-text', text: st.label ? `"${st.text}" (with ${st.label})` : `"${st.text}"` }),
+        el('div', { class: 'sc-steer-actions' }, [
+            el('button', { class: 'wv-btn', text: 'Keep for everyone',
+                onclick: () => { voiceProfile.keepSteer(st.text); draw(); } }),
+            ...(st.personId ? [el('button', { class: 'wv-btn', text: `Keep for ${st.label || 'this person'}`,
+                onclick: () => { voiceProfile.keepSteer(st.text, { personId: st.personId, label: st.label }); draw(); } })] : []),
+            // Turns down this offer only. It does not stop the request from becoming
+            // standing later if the user keeps asking for it.
+            el('button', { class: 'wv-entry-remove', text: '×', title: 'Do not offer this again',
+                'aria-label': `Do not offer "${st.text}" again`,
+                onclick: () => { voiceProfile.hideSteer(st.text, st.personId); draw(); } }),
+        ]),
+    ]);
+
     const draw = () => {
         wrap.innerHTML = '';
         wrap.append(el('h3', { class: 'wv-section-title', text: 'What the app has picked up' }));
 
+        // Exactly what the AI is given, worked out the way the app does it, so a
+        // sentence the AI gets can always be seen and removed here.
+        const idiom = expressPanel.userAuthoredItems()
+            .filter((it) => it.type === 'phrase' && it.text).map((it) => it.text);
         const harvestResult = voiceProfile.getHarvest();
-        const exemplars = voiceProfile.activeExemplars();
+        const exemplars = voiceProfile.exemplarsSent(idiom);
+        const shortReplies = voiceProfile.shortRepliesSent(idiom);
         const steers = voiceProfile.repeatedSteers();
-        const lean = harvestResult && harvestResult.lengthLean;
-        const anything = exemplars.length || steers.length || (lean && lean.lean !== 'neither');
+        const kept = voiceProfile.keptSteers();
+        const recent = voiceProfile.recentSteers();
+        const lean = voiceProfile.lengthInstruction();
+        const anything = exemplars.length || shortReplies.length || steers.length || kept.length
+            || recent.length || lean;
 
         wrap.append(el('p', { class: 'wv-intro', text: anything
             ? 'Taken from your own conversations. Remove anything that does not belong — it will not come back.'
-            : 'This fills up as you use the app: the words you type yourself, the words you write when you review a conversation, and any correction you find yourself asking for more than once. Nothing is read until you ask, or until you review a conversation.' }));
+            : 'This fills up as you use the app: the words you type yourself, the words you write when you review a conversation, and the instructions you give with Reframe. Nothing is read until you ask, or until you review a conversation.' }));
+
+        // Instructions the user chose to keep, for everyone or for one person.
+        for (const k of kept) {
+            wrap.append(removableRow(
+                k.personId ? `Kept for ${k.label || 'one person'}: "${k.text}"` : `Kept for everyone: "${k.text}"`,
+                () => { voiceProfile.unkeepSteer(k.text, k.personId); draw(); },
+                `Stop using "${k.text}"`));
+        }
 
         // Steers are recorded as they happen and do NOT depend on a harvest having
         // been run. Rendering them inside the harvest branch hid them completely
         // from anyone who had never pressed the button — found in testing.
         for (const st of steers) {
+            const words = st.texts.length > 1 ? st.texts.map((t) => `"${t}"`).join(', ') : `"${st.text}"`;
+            const who = st.personId ? ` with ${st.label || 'one person'}` : '';
             wrap.append(removableRow(
-                `You have asked for "${st.text}" ${st.count} times`,
-                () => { voiceProfile.dismissExemplar(st.text); draw(); },
+                `You have asked for this ${st.count} times${who}: ${words}`,
+                () => { voiceProfile.dismissSteer(st.key); draw(); },
                 `Stop using "${st.text}"`));
         }
 
-        if (lean && lean.lean !== 'neither') {
-            wrap.append(el('p', { class: 'sc-lean', text: lean.lean === 'shorter'
-                ? `When you are offered a choice, you usually pick the shorter wording (${lean.shorter} times out of ${lean.shorter + lean.longer}).`
-                : `When you are offered a choice, you usually pick the fuller wording (${lean.longer} times out of ${lean.shorter + lean.longer}).` }));
+        if (recent.length) {
+            wrap.append(el('h4', { class: 'sc-subtitle', text: 'Instructions you typed recently' }));
+            for (const st of recent) wrap.append(recentRow(st));
         }
 
-        for (const text of exemplars) {
-            wrap.append(removableRow(`"${text}"`,
-                () => { voiceProfile.dismissExemplar(text); draw(); },
-                `Remove "${text}"`));
+        // The length line the AI is actually given, and where it came from.
+        if (lean) {
+            const decided = lean.shorter + lean.longer;
+            const n = lean.lean === 'shorter' ? lean.shorter : lean.longer;
+            const text = lean.source === 'live'
+                ? (lean.lean === 'shorter'
+                    ? `When you are offered a choice, you usually pick a shorter wording than is typical for that kind of reply (${n} times out of ${decided}).`
+                    : `When you are offered a choice, you usually pick a fuller wording than is typical for that kind of reply (${n} times out of ${decided}).`)
+                : (lean.lean === 'shorter'
+                    ? `In How I Sound, you picked the shortest wording in ${n} of ${decided} questions about length.`
+                    : `In How I Sound, you picked the fullest wording in ${n} of ${decided} questions about length.`);
+            wrap.append(el('p', { class: 'sc-lean', text }));
+        }
+
+        for (const e of exemplars) {
+            wrap.append(removableRow(`"${e.sent}"`,
+                () => { voiceProfile.dismissExemplar(e.text); draw(); },
+                `Remove "${e.sent}"`));
+        }
+        for (const e of shortReplies) {
+            wrap.append(removableRow(`Short reply: "${e.sent}"`,
+                () => { voiceProfile.dismissExemplar(e.text); draw(); },
+                `Remove "${e.sent}"`));
         }
 
         wrap.append(el('button', {

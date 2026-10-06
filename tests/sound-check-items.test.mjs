@@ -126,3 +126,36 @@ test('the bank probes BOTH responding and initiating voice', () => {
     // An initiating item must not carry a partner line by accident.
     for (const it of initiating) assert.equal(it.partner, undefined, `${it.id}`);
 });
+// --- October 6 2026: the fixes from "Conversant AAC Sounds Like Me Evaluation" -----
+
+test('"No idea, sorry." is the plain reply, not permission to joke', async () => {
+    const { isLighterChoice } = await import('../app/js/sound-check-items.js');
+    const it = getItem('levity-dontknow');
+    assert.equal(isLighterChoice(it, 'No idea, sorry.'), false);
+    assert.equal(isLighterChoice(it, "No, I don't know that one."), false);
+    assert.equal(isLighterChoice(it, it.candidates[2]), true);
+});
+
+test('every levity item names its lighter candidates', () => {
+    for (const it of SOUND_CHECK_ITEMS.filter((i) => i.dimension === 'levity')) {
+        assert.ok(Array.isArray(it.light) && it.light.length, `${it.id} has no light list`);
+        assert.ok(it.light.length < it.candidates.length, `${it.id} must keep a flat reply`);
+        for (const i of it.light) assert.ok(i >= 0 && i < it.candidates.length, `${it.id}: ${i}`);
+    }
+});
+
+test('the brevity questions give a length lean only on enough agreeing answers', async () => {
+    const { soundCheckLengthLean } = await import('../app/js/sound-check-items.js');
+    const words = (t) => (t.match(/[A-Za-z0-9']+/g) || []).length;
+    const economy = SOUND_CHECK_ITEMS.filter((i) => i.dimension === 'economy');
+    assert.ok(economy.length >= 3, 'enough brevity items to reach the threshold');
+    const pick = (fn) => Object.fromEntries(economy.map((it) => {
+        const counts = it.candidates.map(words);
+        return [it.id, { choice: it.candidates[counts.indexOf(fn(...counts))] }];
+    }));
+    assert.equal(soundCheckLengthLean(pick(Math.min)).lean, 'shorter');
+    assert.equal(soundCheckLengthLean(pick(Math.max)).lean, 'longer');
+    const two = Object.fromEntries(Object.entries(pick(Math.min)).slice(0, 2));
+    assert.equal(soundCheckLengthLean(two), null, 'two answers are not a finding');
+    assert.equal(soundCheckLengthLean({}), null);
+});

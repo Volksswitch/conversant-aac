@@ -33,7 +33,7 @@
     ],
     "tabs": {
         "general": "Your AI key, where your information is kept, saved copies of your settings, and backing up or moving everything.",
-        "aboutme": "The getting-to-know-you questions. Anything you answer here helps the AI suggest responses that sound like you.",
+        "aboutme": "The getting-to-know-you questions. Anything you answer here helps the AI suggest responses that fit you.",
         "textsize": "How the app looks: which color scheme it uses, and how big the writing is in each part. Every area is set on its own.",
         "speech": "Your key for the paid services, how the app hears the other person, and the voices used for speaking.",
         "input": "Screen Layout. Resize the areas of the conversation screen by dragging the borders, and set how far apart the buttons sit.",

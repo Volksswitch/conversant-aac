@@ -566,7 +566,7 @@
       "id": "B1",
       "tier": "abstract",
       "title": "What I’m Like",
-      "note": "A few questions about your personality. Every one is optional, and they only change HOW the app words things — never what it talks about.",
+      "note": "A few questions about your personality. Every one is optional, and they only shape the attitude behind the suggestions — never what they talk about.",
       "fields": [
         {
           "key": "b1_extra_1",
@@ -847,7 +847,7 @@
       "id": "B4",
       "tier": "abstract",
       "title": "What Matters to Me",
-      "note": "Each of these describes someone. Say how much they sound like you. There are no right answers — they only help the app sound like you when something matters.",
+      "note": "Each of these describes someone. Say how much they sound like you. There are no right answers — they only help the suggestions reflect what matters to you when it comes up.",
       "fields": [
         {
           "key": "b4_selfdir",

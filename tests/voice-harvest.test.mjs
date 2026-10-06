@@ -68,26 +68,64 @@ test('a turn too short to carry a style is not an exemplar', () => {
     assert.deepEqual(collectExemplars([composed('Yes.'), composed('Okay then.')], OPTS), []);
 });
 
-test('length lean is measured against the MEDIAN of what was offered', () => {
-    // Chosen is the shortest of three every time.
-    const turns = Array.from({ length: 8 }, () =>
-        card('Sure.', ['Sure.', 'Yes, that works for me.', 'Yes, that works well for me thank you.']));
-    const lean = measureLengthLean(turns, OPTS);
+// The length measure compares a pick with options OF ITS OWN KIND (October 6 2026).
+const slotCard = (chosen, slot) => ({ role: 'user', source: 'card', selectedText: chosen, selectedIndex: 0, selectedSlot: slot, allOptions: [chosen, 'x'] });
+const MEDIANS = { PREFERRED: 6, DISPREFERRED: 12, INITIATIVE: 10, REPAIR: 3 };
+
+test('length lean compares a pick with the typical length of its own kind of reply', () => {
+    // Best guesses shorter than the usual best guess, every time.
+    const turns = Array.from({ length: 8 }, () => slotCard('Sure, sounds good.', 'PREFERRED'));
+    const lean = measureLengthLean(turns, { ...OPTS, slotMedians: MEDIANS });
     assert.equal(lean.lean, 'shorter');
     assert.equal(lean.shorter, 8);
     assert.equal(lean.longer, 0);
 });
 
+test('picking long KINDS of reply is not a preference for long replies', () => {
+    // The old measure read this user as "fuller": a decline and a change of direction
+    // are long by design. Each pick here is ordinary for its own kind.
+    const turns = [];
+    for (let i = 0; i < 4; i++) turns.push(slotCard('I would love to, but I have plans that night.', 'DISPREFERRED'));
+    for (let i = 0; i < 4; i++) turns.push(slotCard('How about we try that new place instead?', 'INITIATIVE'));
+    const lean = measureLengthLean(turns, { ...OPTS, slotMedians: { DISPREFERRED: 10, INITIATIVE: 8 } });
+    assert.notEqual(lean.lean, 'shorter');
+    // 10 words against a median of 10, and 8 against 8: level, so no lean at all.
+    assert.equal(lean.lean, 'neither');
+});
+
+test('picks from the fixed openers, goodbyes and choices do not count', () => {
+    const turns = Array.from({ length: 8 }, () => slotCard('Bye!', 'CLOSING'))
+        .concat(Array.from({ length: 8 }, () => slotCard('Mild.', 'CHOICE')));
+    assert.equal(measureLengthLean(turns, { ...OPTS, slotMedians: MEDIANS }), null);
+});
+
 test('a lean is withheld below the evidence threshold — three taps is not a finding', () => {
-    const turns = Array.from({ length: 3 }, () => card('Sure.', ['Sure.', 'Yes, that works for me.']));
-    assert.equal(measureLengthLean(turns, OPTS), null);
+    const turns = Array.from({ length: 3 }, () => slotCard('Sure.', 'PREFERRED'));
+    assert.equal(measureLengthLean(turns, { ...OPTS, slotMedians: MEDIANS }), null);
 });
 
 test('mixed picking reports "neither" rather than inventing a lean', () => {
-    const short = card('Sure.', ['Sure.', 'Yes, that works well for me thank you.']);
-    const long = card('Yes, that works well for me thank you.', ['Sure.', 'Yes, that works well for me thank you.']);
+    const short = slotCard('Sure.', 'PREFERRED');
+    const long = slotCard('Yes, that works really well for me, thank you.', 'PREFERRED');
     const turns = [short, long, short, long, short, long, short, long];
-    assert.equal(measureLengthLean(turns, OPTS).lean, 'neither');
+    assert.equal(measureLengthLean(turns, { ...OPTS, slotMedians: MEDIANS }).lean, 'neither');
+});
+
+test('with no typical lengths to compare against, there is no lean', () => {
+    const turns = Array.from({ length: 8 }, () => slotCard('Sure.', 'PREFERRED'));
+    assert.equal(measureLengthLean(turns, OPTS), null);
+});
+
+test('the typical lengths come from the sets offered, kind by kind', async () => {
+    const { slotMedians } = await import('../app/js/voice-harvest.js');
+    const offer = (n) => ({ role: 'offer', options: [
+        { slot: 'PREFERRED', text: 'one two three four' },
+        { slot: 'REPAIR', text: 'one two' },
+        { slot: 'OPENER', text: 'one two three four five six seven eight' },
+    ] });
+    const log = { exchanges: Array.from({ length: 8 }, offer) };
+    assert.deepEqual(slotMedians([log]), { PREFERRED: 4, REPAIR: 2 }, 'openers are not a kind of reply');
+    assert.deepEqual(slotMedians([{ exchanges: [offer()] }]), {}, 'too few examples of a kind to trust');
 });
 
 test('selections never contribute exemplars, however many there are', () => {
@@ -187,13 +225,14 @@ test('REVIEW: words written in review come before words composed live', () => {
     assert.equal(out.exemplars.length, 2);
 });
 
-test('REVIEW: a short answer is reported as too short, not silently dropped', () => {
+test('REVIEW: a short answer is kept as a short reply, not dropped', () => {
     const data = reviewedConversation();
     const [first] = reviewModel.buildTurns(data);
     const review = reviewModel.setTypedAnswer(reviewModel.emptyReview('c1'), first, 'Pretty quiet.');
     const c = reviewContributions(data, review);
     assert.deepEqual(c.exemplars, []);
-    assert.deepEqual(c.tooShort, ['Pretty quiet.']);
+    assert.deepEqual(c.shortReplies, ['Pretty quiet.']);
+    assert.deepEqual(harvest([{ id: 'c1', data, review }], OPTS).shortReplies, ['Pretty quiet.']);
 });
 
 test('REVIEW: a conversation with no review harvests exactly as before', () => {
@@ -252,4 +291,90 @@ test('redactCatchphrases removes the user phrase and nothing else (CR-070)', asy
     assert.equal(redactCatchphrases("I said let's go, honestly", ["Let's go!"]), 'I said honestly');
     assert.equal(redactCatchphrases('Thank you so much', ['Yes']), 'Thank you so much');
     assert.equal(redactCatchphrases('Going (home) now', ['(home)']), 'Going now', 'regex characters are escaped');
+});
+
+// --- October 6 2026: the fixes from "Conversant AAC Sounds Like Me Evaluation" -----
+import { interleave, collectShortReplies } from '../app/js/voice-harvest.js';
+
+const stamped = (turn, label, id = null) => ({ ...turn, partner: { id, label } });
+
+test('a practice conversation is not read at all', () => {
+    const practice = { exchanges: [stamped(composed('Can I get a large coffee, please?'), 'Practice: Coffee shop')] };
+    const real = { exchanges: [composed('See you at the game on Saturday.')] };
+    const out = harvest([practice, real], OPTS);
+    assert.deepEqual(out.exemplars, ['See you at the game on Saturday.']);
+    assert.equal(out.counts.practiceSkipped, 1);
+});
+
+test('review answers and live sentences share the places instead of review taking them all', () => {
+    const review = Array.from({ length: 10 }, (_, i) => `Review sentence number ${i}.`);
+    const live = Array.from({ length: 10 }, (_, i) => `Live sentence number ${i}.`);
+    const out = interleave(review, live, 12);
+    assert.equal(out.length, 12);
+    assert.equal(out.filter((t) => t.startsWith('Live')).length, 6);
+    assert.equal(out[0], review[0], 'a review answer leads each pair');
+    assert.deepEqual(interleave(['Only one here.'], live, 4), ['Only one here.', live[0], live[1], live[2]],
+        'when one list runs out the other fills the rest');
+});
+
+test('the harvest keeps more sentences than it shows, so a removed one is replaced', () => {
+    const turns = Array.from({ length: 20 }, (_, i) => composed(`A sentence I typed, number ${i}.`));
+    const out = harvest([{ exchanges: turns }], OPTS);
+    assert.equal(out.exemplars.length, 20);
+});
+
+test('short replies the user typed are kept, newest first', () => {
+    const turns = [composed('Nah.'), composed('Sure thing.'), composed('This one is long enough to count.')];
+    assert.deepEqual(collectShortReplies(turns, OPTS), ['Sure thing.', 'Nah.']);
+    assert.deepEqual(harvest([{ exchanges: turns }], OPTS).shortReplies, ['Sure thing.', 'Nah.']);
+});
+
+test('a Reframe instruction typed in review is kept with the person that turn was with', () => {
+    const data = reviewedConversation();
+    for (const e of data.exchanges) if (e.role === 'user') e.partner = { id: 'p1', label: 'Mom' };
+    const [first] = reviewModel.buildTurns(data);
+    const review = reviewModel.setSteer(reviewModel.emptyReview('c1'), first, 'warmer, she was upset');
+    const out = harvest([{ id: 'c1', data, review }], OPTS);
+    assert.equal(out.steers.length, 1);
+    assert.equal(out.steers[0].text, 'warmer, she was upset');
+    assert.equal(out.steers[0].personId, 'p1');
+    assert.equal(out.steers[0].label, 'Mom');
+    assert.equal(out.steers[0].fromReview, true);
+});
+
+test('a response option marked closer in review is measured within its own kind', () => {
+    const data = reviewedConversation();
+    const [first] = reviewModel.buildTurns(data);
+    const review = reviewModel.setCardAnswer(reviewModel.emptyReview('c1'), first, 1);
+    const { turns } = reviewedTurns(data, review);
+    assert.equal(turns[0].selectedSlot, 'DISPREFERRED', 'the kind travels with the choice');
+});
+
+test('the length lean in a real harvest uses the offered sets of real conversations only', () => {
+    // Eight offers give PREFERRED a typical length of 6 words; the user's best-guess
+    // picks are 2 words, so the lean is shorter. Practice offers would be ignored.
+    const offers = Array.from({ length: 8 }, () => ({ role: 'offer', options: [
+        { slot: 'PREFERRED', text: 'Yes, that would be really great.' },
+        { slot: 'DISPREFERRED', text: 'I wish I could, but I am busy then.' },
+    ] }));
+    const picks = Array.from({ length: 8 }, () => slotCard('Sure thing.', 'PREFERRED'));
+    const out = harvest([{ exchanges: [...offers, ...picks] }], OPTS);
+    assert.equal(out.lengthLean.lean, 'shorter');
+});
+
+
+test('a Reframe instruction typed in review is dated when typed, and takes the partner marked in review', () => {
+    const data = reviewedConversation();
+    for (const e of data.exchanges) if (e.role === 'user') e.partner = { id: 'p1', label: 'Mom' };
+    const [first] = reviewModel.buildTurns(data);
+    let review = reviewModel.setSteer(reviewModel.emptyReview('c1'), first, 'ask about the trip');
+    review = reviewModel.toggleReframer(review, first, { kind: 'partner', id: 'p2', label: 'Dad' });
+    const out = harvest([{ id: 'c1', data, review }], OPTS);
+    assert.equal(out.steers[0].personId, 'p2');
+    assert.equal(out.steers[0].label, 'Dad');
+    assert.ok(out.steers[0].at > '2026-10-01T10:00:05.000Z', 'dated when typed, not by the old conversation');
+});
+
+test('the harvest says which version wrote it', () => {
+    assert.equal(harvest([], OPTS).version, 2);
 });

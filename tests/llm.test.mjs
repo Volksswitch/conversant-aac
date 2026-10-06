@@ -866,3 +866,22 @@ test('statements, practice openers and both repair prompts are told the words ar
         assert.match(sysText(getFetchCalls()[0]), /SPOKEN ALOUD/);
     }
 });
+
+
+// October 6 2026: the situation block is read when each request is built, so a partner
+// switched off since the last request is never described to the AI as present.
+test('a situation provider is read at request time and wins over the last block set', async () => {
+    let now = 'SENTINEL_FIRST';
+    llm.setSituationBlock('SENTINEL_STALE');
+    llm.setSituationProvider(() => now);
+    mockFetch(structured);
+    await llm.generateResponses([{ role: 'partner', text: 'Hi' }]);
+    now = 'SENTINEL_SECOND';
+    mockFetch(JSON.stringify(['One.', 'Two.', 'Three.', 'Four.']));
+    await llm.generateStatements('talk about the trip');
+    const calls = getFetchCalls();
+    assert.ok(sysText(calls[0]).includes('SENTINEL_SECOND'), 'the second request reads the state now');
+    assert.ok(!sysText(calls[0]).includes('SENTINEL_STALE'));
+    llm.setSituationProvider(null);
+    llm.setSituationBlock('');
+});

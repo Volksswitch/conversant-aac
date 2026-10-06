@@ -1,20 +1,15 @@
 /* Sound Check — the forced-choice item bank (Sounds Like Me, Phase 1).
  * Ken, August 7 2026.
  *
- * Twelve items. Each shows three ways of saying the same thing that differ only in
+ * Twenty items. Each shows three ways of saying the same thing that differ only in
  * wording. The user picks one; the sentence they pick becomes an exemplar in the
  * voice block, which is what teaches the model to write in their words rather than
  * its own.
  *
- * ── A GAP TO FILL: every item here is RESPONSIVE ──
- *
- * All twelve give a partner turn and ask how the user would reply, so the bank
- * measures only their responding voice. The app also generates a great deal of
- * INITIATING text — conversation starters, the INITIATIVE slot, wind-downs, and the
- * statements the floor-aware Reframe produces — and none of that is governed by
- * anything the user has told us. Items with no `partner` field ("Suppose you want to
- * ask someone for help") are the fix, and `questionFor` already asks them the right
- * question. Noted August 7 2026; not yet authored.
+ * Most items give a partner turn and ask how the user would reply. The `initiate-`
+ * items have no partner turn and measure how the user starts things, which is the
+ * text the app writes for openers, the INITIATIVE slot and wind-downs; `questionFor`
+ * asks them the right question.
  *
  * ── THE FOUR AUTHORING RULES. Break any one and the instrument stops measuring. ──
  *
@@ -277,7 +272,7 @@ export const SOUND_CHECK_ITEMS = [
     // "that went wrong" and vary only how lightly it is met, so a choice here is
     // about manner and nothing else. `leads` alternates across them.
     {
-        id: 'levity-dontknow', dimension: 'levity', leads: 'flat',
+        id: 'levity-dontknow', dimension: 'levity', leads: 'flat', light: [2],
         stipulate: 'Suppose you genuinely do not know the answer.',
         partner: 'Do you happen to know what year that happened?',
         candidates: [
@@ -287,7 +282,7 @@ export const SOUND_CHECK_ITEMS = [
         ],
     },
     {
-        id: 'levity-mishap', dimension: 'levity', leads: 'light',
+        id: 'levity-mishap', dimension: 'levity', leads: 'light', light: [0, 1],
         stipulate: 'Suppose you have just knocked something over, and no harm is done.',
         partner: 'Oh — are you okay?',
         candidates: [
@@ -297,7 +292,7 @@ export const SOUND_CHECK_ITEMS = [
         ],
     },
     {
-        id: 'levity-late', dimension: 'levity', leads: 'flat',
+        id: 'levity-late', dimension: 'levity', leads: 'flat', light: [1, 2],
         stipulate: 'Suppose you have been kept waiting a while and you do not really mind.',
         partner: "Sorry, I've kept you waiting forever.",
         candidates: [
@@ -309,17 +304,61 @@ export const SOUND_CHECK_ITEMS = [
 ];
 
 /**
- * Was this answer to a levity item one of the LIGHTER replies? Each levity item offers
- * a flat reply beside the lighter ones - first when the item `leads: 'flat'`, last when
- * it `leads: 'light'` - and choosing the flat one is the opposite of permission to be
- * light (CR-052). Keep that convention when adding a levity item.
+ * Was this answer to a levity item one of the LIGHTER replies? Choosing a flat reply is
+ * the opposite of permission to be light (CR-052).
+ *
+ * Each levity item lists its lighter candidates in `light`, by position. They used to be
+ * inferred as "everything except the one flat reply", which was wrong for
+ * levity-dontknow: "No idea, sorry." is the TERSE flat reply, not a joke, and picking it
+ * told the AI a joking response suited the user - for exactly the plain-spoken user who
+ * picks it (found by the October 6 2026 evaluation; 3 of the 10 test personas chose it).
+ * Give every new levity item a `light` list.
  */
 export function isLighterChoice(item, text) {
     if (!item || item.dimension !== 'levity') return false;
     const i = item.candidates.indexOf(text);
     if (i < 0) return false;
+    if (Array.isArray(item.light)) return item.light.includes(i);
     const flat = item.leads === 'light' ? item.candidates.length - 1 : 0;
     return i !== flat;
+}
+
+function wordCount(text) {
+    return (String(text || '').match(/[A-Za-z0-9']+/g) || []).length;
+}
+
+// Below this many decided brevity answers, a lean is noise.
+const MIN_DECIDED_FOR_LEAN = 3;
+
+/**
+ * Length preference from the brevity ("economy") items. This is the cleanest length
+ * evidence the app has, because each item holds the content constant and varies only
+ * how much is said - unlike a live pick, where the four response options are four
+ * different kinds of reply and differ in length for that reason alone.
+ *
+ * `answers` is the stored soundCheck map (itemId -> { choice }). A pick of the item's
+ * shortest candidate counts as shorter, its longest as longer, anything else as level.
+ * Same shape as voice-harvest.measureLengthLean, so the two can be compared.
+ */
+export function soundCheckLengthLean(answers = {}) {
+    let shorter = 0, longer = 0, level = 0;
+    for (const item of SOUND_CHECK_ITEMS) {
+        if (item.dimension !== 'economy') continue;
+        const a = answers && answers[item.id];
+        const i = a && a.choice ? item.candidates.indexOf(a.choice) : -1;
+        if (i < 0) continue;
+        const counts = item.candidates.map(wordCount);
+        const n = counts[i];
+        if (n === Math.min(...counts)) shorter++;
+        else if (n === Math.max(...counts)) longer++;
+        else level++;
+    }
+    const decided = shorter + longer;
+    if (decided < MIN_DECIDED_FOR_LEAN) return null;
+    let lean = 'neither';
+    if (shorter / decided >= 0.75) lean = 'shorter';
+    else if (longer / decided >= 0.75) lean = 'longer';
+    return { lean, shorter, longer, level, total: shorter + longer + level };
 }
 
 /**

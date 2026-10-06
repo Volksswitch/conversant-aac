@@ -347,6 +347,18 @@ export function setSituationBlock(text) {
     situationBlock = (text || '').trim();
 }
 
+// A function that builds the situation block from the app's state AT REQUEST TIME.
+// When set, it is used instead of the last block passed to setSituationBlock. The
+// cached copy went stale: switching a partner button off, or on with no partner turn
+// open, did not refresh it, so the next request could describe the previous partner -
+// their name, their per-person profile, and the instructions kept for them only
+// (found October 6 2026). Asking for the block when the request is built means no
+// caller can forget to refresh it.
+let situationProvider = null;
+export function setSituationProvider(fn) {
+    situationProvider = typeof fn === 'function' ? fn : null;
+}
+
 /*
  * Builds the personalization + placeholder-safety block appended to a generation
  * system prompt. Even with no profile set, the no-brackets instruction prevents the
@@ -377,7 +389,11 @@ function buildProfileBlock() {
 // Who the user is talking with / how they feel / where they are — the volatile half
 // of the old combined profile block. Kept out of the cached prefix; see above.
 function buildSituationBlock() {
-    return situationBlock ? `\n\n${situationBlock}` : '';
+    let text = situationBlock;
+    if (situationProvider) {
+        try { text = String(situationProvider() || '').trim(); } catch { /* keep the last block */ }
+    }
+    return text ? `\n\n${text}` : '';
 }
 
 export function onUsage(callback) {

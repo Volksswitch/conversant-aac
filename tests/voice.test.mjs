@@ -108,7 +108,12 @@ test('harvested prose is labelled as the user own past words, not as fabrication
     await reset();
     voice.setHarvest({ exemplars: ['I have been looking forward to this all week.'], lengthLean: null, counts: {} });
     const block = voice.buildBlock([]);
-    assert.match(block, /actually written themselves, in real conversations/);
+    assert.match(block, /written themselves, during their conversations or when looking back over one/);
+    // Not "in real conversations": some were written in review, and the AI was told
+    // review answers came from real conversations (October 6 2026).
+    assert.doesNotMatch(block, /in real conversations/);
+    // The plan's caution that typed length reflects effort reaches the prompt.
+    assert.match(block, /length may partly reflect that effort/);
     // The Sound Check line ("nothing they mention is a fact") would be FALSE here —
     // these are the user's real words about real things.
     assert.doesNotMatch(block, /fixed list of made-up replies/);
@@ -129,9 +134,9 @@ test('a dismissed sentence leaves the prompt and does not come back on a re-harv
 
 test('a measured length lean is stated with its evidence', async () => {
     await reset();
-    voice.setHarvest({ exemplars: [], lengthLean: { lean: 'shorter', shorter: 9, longer: 2, level: 1, total: 12 }, counts: {} });
+    voice.setHarvest({ version: 2, exemplars: [], lengthLean: { lean: 'shorter', shorter: 9, longer: 2, level: 1, total: 12 }, counts: {} });
     const block = voice.buildBlock([]);
-    assert.match(block, /picks the shorter one far more often/);
+    assert.match(block, /picks wordings shorter than is typical for that kind of reply/);
     assert.match(block, /9 of 11 decided/, 'the count is shown, not just the verdict');
 });
 
@@ -160,8 +165,10 @@ test('a steer typed twice becomes a standing instruction, with its count', async
     assert.equal(rep.length, 1, 'punctuation and case must not split a repeat');
     assert.equal(rep[0].count, 2);
     const block = voice.buildBlock([]);
-    assert.match(block, /typed the same correction more than once/);
+    assert.match(block, /asked for the same thing more than once/);
     assert.match(block, /asked 2 times/);
+    // A style request reaches the AI in the app's own words, not the user's.
+    assert.match(block, /Keep responses short\. \(asked 2 times\)/);
 });
 
 test('different steers are not conflated into one', async () => {
@@ -303,4 +310,358 @@ test('every reworded candidate maps onto a candidate that exists', async () => {
         assert.ok(all.has(newText), newText);
         assert.ok(!all.has(oldText), oldText);
     }
+});
+
+// --- October 6 2026: the fixes from "Conversant AAC Sounds Like Me Evaluation" -----
+
+test('two wordings of one style request count as one request', async () => {
+    await reset();
+    voice.recordSteer('shorter');
+    voice.recordSteer('keep it to five words');
+    const rep = voice.repeatedSteers();
+    assert.equal(rep.length, 1);
+    assert.equal(rep[0].meaning, 'shorter');
+    assert.equal(rep[0].count, 2);
+    assert.deepEqual(rep[0].texts.sort(), ['keep it to five words', 'shorter']);
+    const block = voice.buildBlock([]);
+    assert.match(block, /Keep responses short\. \(asked 2 times\)/);
+    // A style steer can carry content too, so the user's own wording is not sent.
+    assert.doesNotMatch(block, /five words/);
+});
+
+test('a request about content still needs the same wording twice', async () => {
+    await reset();
+    voice.recordSteer('say I already have plans');
+    voice.recordSteer('say I have plans already');
+    assert.deepEqual(voice.repeatedSteers(), []);
+});
+
+test('a style request mixed with content is treated as content, not as a style rule', async () => {
+    // Reading it as a style request would turn a one-off about this turn into a
+    // standing instruction; the cautious reading costs nothing that was not lost before.
+    await reset();
+    voice.recordSteer("shorter, and say I'm tired");
+    voice.recordSteer('Shorter and more casual. talk like a 17 year old');
+    assert.deepEqual(voice.steerMeanings("shorter, and say I'm tired"), []);
+    assert.deepEqual(voice.repeatedSteers(), [], 'the two are different requests');
+});
+
+test('negated forms are read first, so "less formal" is casual and not formal', () => {
+    assert.deepEqual(voice.steerMeanings('less formal please'), ['casual']);
+    assert.deepEqual(voice.steerMeanings('too polite'), ['blunter']);
+    assert.deepEqual(voice.steerMeanings('no jokes'), ['serious']);
+    // Narrow on purpose: these are about the turn, not the style.
+    assert.deepEqual(voice.steerMeanings('it was warm out'), []);
+    assert.deepEqual(voice.steerMeanings("say I'll stay longer"), []);
+});
+
+test('opposite requests cannot both stand; the newer one wins', async () => {
+    await reset();
+    voice.setHarvest({ exemplars: [], lengthLean: null, counts: {}, steers: [
+        { text: 'shorter', at: '2026-01-01T00:00:00Z' },
+        { text: 'be brief', at: '2026-01-02T00:00:00Z' },
+        { text: 'make it longer', at: '2026-02-01T00:00:00Z' },
+        { text: 'more detail', at: '2026-02-02T00:00:00Z' },
+    ] });
+    const rep = voice.repeatedSteers();
+    assert.deepEqual(rep.map((r) => r.meaning), ['longer']);
+});
+
+test('a steer typed in review counts toward a repeat', async () => {
+    await reset();
+    voice.setHarvest({ exemplars: [], lengthLean: null, counts: {}, steers: [
+        { text: 'Be blunter.', at: '2026-10-01T00:00:00Z', personId: 'p1', label: 'Mom', fromReview: true },
+    ] });
+    voice.recordSteer('be blunter');
+    assert.equal(voice.repeatedSteers()[0].count, 2);
+});
+
+test('removing a repeated request removes it under every wording', async () => {
+    await reset();
+    voice.recordSteer('shorter');
+    voice.recordSteer('keep it brief');
+    voice.dismissSteer(voice.repeatedSteers()[0].key);
+    voice.recordSteer('fewer words');
+    assert.deepEqual(voice.repeatedSteers(), []);
+});
+
+test('a kept instruction for everyone reaches the prompt; one kept for a person does not', async () => {
+    await reset();
+    voice.keepSteer('Use short sentences.');
+    voice.keepSteer('Call her Mama.', { personId: 'p1', label: 'Mom' });
+    const block = voice.buildBlock([]);
+    assert.match(block, /asked you to keep/);
+    assert.match(block, /"Use short sentences\."/);
+    assert.doesNotMatch(block, /Mama/, 'that one belongs to the situation block, sent only with Mom');
+    assert.deepEqual(voice.keptFor('p1').map((k) => k.text), ['Call her Mama.']);
+    assert.deepEqual(voice.keptFor(null).map((k) => k.text), ['Use short sentences.']);
+    voice.unkeepSteer('Use short sentences.', null);
+    assert.doesNotMatch(voice.buildBlock([]), /Use short sentences/);
+});
+
+test('keeping the same instruction twice for the same person stores it once', async () => {
+    await reset();
+    voice.keepSteer('Keep it light.', { personId: 'p1', label: 'Mom' });
+    voice.keepSteer('keep it light', { personId: 'p1', label: 'Mom' });
+    voice.keepSteer('Keep it light.');
+    assert.equal(voice.keptSteers().length, 2, 'once for Mom and once for everyone');
+});
+
+test('the recent list offers typed instructions, newest first, minus kept and removed ones', async () => {
+    await reset();
+    voice.setHarvest({ exemplars: [], lengthLean: null, counts: {}, steers: [
+        { text: 'mention the bus', at: '2026-10-05T00:00:00Z', personId: 'p2', label: 'Devon', fromReview: true },
+    ] });
+    voice.recordSteer('ask about her day', { personId: 'p1', label: 'Mom' });
+    voice.recordSteer('kept one');
+    voice.recordSteer('removed one');
+    voice.keepSteer('kept one');
+    voice.dismissSteer('removed one');
+    const recent = voice.recentSteers();
+    assert.deepEqual(recent.map((r) => r.text), ['ask about her day', 'mention the bus']);
+    assert.equal(recent[0].personId, 'p1');
+    assert.equal(recent[0].label, 'Mom');
+});
+
+test('a steer records who the user was talking to', async () => {
+    await reset();
+    voice.recordSteer('slower', { personId: 'p1', label: 'Mom' });
+    const stored = JSON.parse(localStorage.getItem('aac_voice'));
+    assert.equal(stored.steers[0].personId, 'p1');
+    assert.equal(stored.steers[0].label, 'Mom');
+});
+
+test('removing an example lets the next one take its place', async () => {
+    await reset();
+    const pool = Array.from({ length: 14 }, (_, i) => `Sentence number ${i + 1} that I typed.`);
+    voice.setHarvest({ exemplars: pool, lengthLean: null, counts: {} });
+    assert.equal(voice.exemplarsShown().length, 12);
+    assert.ok(!voice.exemplarsShown().includes(pool[12]));
+    voice.dismissExemplar(pool[0]);
+    assert.equal(voice.exemplarsShown().length, 12);
+    assert.ok(voice.exemplarsShown().includes(pool[12]), 'the thirteenth moves up');
+    assert.match(voice.buildBlock([]), /Sentence number 13 that I typed\./);
+});
+
+test('short replies reach the prompt, without the user catchphrases', async () => {
+    await reset();
+    voice.setHarvest({ exemplars: [], shortReplies: ['Nah, all good.', "Let's go!"], lengthLean: null, counts: {} });
+    const block = voice.buildBlock(["Let's go!"]);
+    assert.match(block, /Short replies this user has typed themselves: "Nah, all good\."/);
+    const shortLine = block.split(/\r?\n/).find((l) => l.startsWith('Short replies'));
+    assert.doesNotMatch(shortLine, /Let's go/, 'a catchphrase that is the whole reply is gone');
+    voice.dismissExemplar('Nah, all good.');
+    assert.doesNotMatch(voice.buildBlock([]), /Nah, all good/);
+});
+
+// Length from How I Sound, and how it is reconciled with the live measure.
+async function answerBrevity(pick) {
+    const { SOUND_CHECK_ITEMS } = await import('../app/js/sound-check-items.js');
+    const words = (t) => (t.match(/[A-Za-z0-9']+/g) || []).length;
+    for (const it of SOUND_CHECK_ITEMS.filter((i) => i.dimension === 'economy')) {
+        const counts = it.candidates.map(words);
+        const target = pick === 'short' ? Math.min(...counts) : Math.max(...counts);
+        voice.recordAnswer(it.id, 'chose', it.candidates[counts.indexOf(target)]);
+    }
+}
+
+test('How I Sound brevity answers produce a length instruction of their own', async () => {
+    await reset();
+    await answerBrevity('short');
+    assert.match(voice.buildBlock([]), /picked the shortest in \d of \d questions about length\. Keep responses brief/);
+});
+
+test('when live picks and How I Sound disagree about length, only How I Sound is sent', async () => {
+    await reset();
+    await answerBrevity('short');
+    voice.setHarvest({ version: 2, exemplars: [], lengthLean: { lean: 'longer', shorter: 2, longer: 9, level: 1, total: 12 }, counts: {} });
+    const block = voice.buildBlock([]);
+    assert.match(block, /picked the shortest in/);
+    assert.doesNotMatch(block, /fuller than is typical/);
+    assert.doesNotMatch(block, /Do not clip/);
+});
+
+test('when they agree, the live measure is sent with its count', async () => {
+    await reset();
+    await answerBrevity('short');
+    voice.setHarvest({ version: 2, exemplars: [], lengthLean: { lean: 'shorter', shorter: 9, longer: 2, level: 1, total: 12 }, counts: {} });
+    const block = voice.buildBlock([]);
+    assert.match(block, /9 of 11 decided/);
+    assert.doesNotMatch(block, /questions about length/);
+});
+
+test('the user own sentences are told to outrank the How I Sound picks', async () => {
+    await reset();
+    voice.recordAnswer('economy-queue', 'chose', "That's fine.");
+    voice.setHarvest({ exemplars: ['I will be there at six, save me a seat.'], lengthLean: null, counts: {} });
+    const block = voice.buildBlock([]);
+    assert.doesNotMatch(block, /single most important guide/, 'only one part may claim to come first');
+    assert.match(block, /Where this user's own sentences appear further down, those come first/);
+    assert.match(block, /where it differs from the picked examples above, follow it/);
+});
+
+// The app.js half cannot be loaded by a test, so it is checked at source level.
+// Comments are stripped first: a comment naming the fix would otherwise satisfy the
+// check while the code itself was broken.
+import { readFileSync } from 'node:fs';
+function stripComments(source) {
+    return source
+        .replace(/\/\*[\s\S]*?\*\//g, ' ')
+        .split('\n')
+        .map((line) => line.replace(/\/\/.*$/, ''))
+        .join('\n');
+}
+
+test('app.js keeps practice steers out and records who each steer was typed to', () => {
+    const app = stripComments(readFileSync(new URL('../app/js/app.js', import.meta.url), 'utf8'));
+    const at = app.indexOf('voiceProfile.recordSteer(');
+    assert.ok(at > 0, 'the steer is still recorded');
+    const before = app.slice(Math.max(0, at - 200), at);
+    assert.match(before, /!practiceMode/, 'a practice steer must not be saved');
+    assert.match(app.slice(at, at + 300), /personId/, 'the partner is saved with it');
+});
+
+test('app.js sends a person\'s kept instructions only in the situation block', () => {
+    const app = stripComments(readFileSync(new URL('../app/js/app.js', import.meta.url), 'utf8'));
+    const start = app.indexOf('function buildSituationBlock()');
+    const body = app.slice(start, app.indexOf('\n}\n', start));
+    assert.match(body, /voiceProfile\.instructionsFor\(activePartner\.personId\)/);
+});
+
+test('a request that is already standing is not offered again in the recent list', async () => {
+    await reset();
+    voice.recordSteer('shorter');
+    voice.recordSteer('keep it brief');
+    voice.recordSteer('mention the game');
+    assert.deepEqual(voice.recentSteers().map((r) => r.text), ['mention the game']);
+});
+
+test('the user sentences are not compared with picked examples that are not there', async () => {
+    await reset();
+    voice.setHarvest({ exemplars: ['I will be there at six, save me a seat.'], lengthLean: null, counts: {} });
+    assert.doesNotMatch(voice.buildBlock([]), /picked examples above/);
+});
+
+
+// --- October 6 2026: what the code review of the fixes found -----------------------
+
+test('a negated style word is read the right way round, or not at all', () => {
+    assert.deepEqual(voice.steerMeanings("don't make a joke"), ['serious']);
+    assert.deepEqual(voice.steerMeanings('don’t be funny'), ['serious'], 'a curly apostrophe too');
+    assert.deepEqual(voice.steerMeanings('not casual'), ['formal']);
+    assert.deepEqual(voice.steerMeanings("that's too informal"), ['formal']);
+    assert.deepEqual(voice.steerMeanings("don't be blunt"), ['warmer']);
+    assert.deepEqual(voice.steerMeanings('less brief'), ['longer']);
+    assert.deepEqual(voice.steerMeanings('no need to be blunter'), [], 'unknown negation: not read');
+});
+
+test('a content steer that happens to contain a style word is not a style request', () => {
+    for (const t of ['say it would be nice to see her', 'it would be kind of fun', "tell him I'm relaxed about it",
+        "say we're getting to the point of deciding", 'mention it was a brief visit', 'say more about the trip']) {
+        assert.deepEqual(voice.steerMeanings(t), [], t);
+    }
+});
+
+test('asking for "too informal" after "more formal" never produces a casual instruction', async () => {
+    await reset();
+    voice.recordSteer('more formal'); voice.recordSteer('be more formal');
+    voice.recordSteer("that's too informal"); voice.recordSteer('too informal');
+    const block = voice.buildBlock([]);
+    assert.doesNotMatch(block, /casual/i);
+    assert.match(block, /Keep the wording more formal\. \(asked 4 times\)/);
+});
+
+test('a request made only with one person stands only for that person', async () => {
+    await reset();
+    voice.recordSteer('ask about her garden', { personId: 'p1', label: 'Mom' });
+    voice.recordSteer('ask about her garden', { personId: 'p1', label: 'Mom' });
+    const rep = voice.repeatedSteers();
+    assert.equal(rep[0].personId, 'p1');
+    assert.doesNotMatch(voice.buildBlock([]), /garden/, 'not in the block every partner gets');
+    assert.deepEqual(voice.instructionsFor('p1'), ['"ask about her garden"']);
+    assert.deepEqual(voice.instructionsFor('p2'), []);
+    // Asked with a second person as well, it becomes everyone's.
+    voice.recordSteer('ask about her garden', { personId: 'p2', label: 'Aunt Rosa' });
+    assert.match(voice.buildBlock([]), /garden/);
+    assert.deepEqual(voice.instructionsFor('p1'), []);
+});
+
+test('instructionsFor carries what was kept for that person and their own style requests', async () => {
+    await reset();
+    voice.keepSteer('Call her Mama.', { personId: 'p1', label: 'Mom' });
+    voice.recordSteer('shorter', { personId: 'p1', label: 'Mom' });
+    voice.recordSteer('keep it brief', { personId: 'p1', label: 'Mom' });
+    assert.deepEqual(voice.instructionsFor('p1'), ['"Call her Mama."', 'Keep responses short.']);
+    assert.doesNotMatch(voice.buildBlock([]), /Keep responses short/);
+});
+
+test('turning down an offer to keep does not stop the request from becoming standing', async () => {
+    await reset();
+    voice.recordSteer('shorter');
+    voice.hideSteer('shorter', null);
+    assert.deepEqual(voice.recentSteers(), []);
+    voice.recordSteer('keep it brief');
+    assert.equal(voice.repeatedSteers()[0].meaning, 'shorter');
+});
+
+test('a removed request and a removed kept instruction are not offered for keeping again', async () => {
+    await reset();
+    voice.recordSteer('shorter'); voice.recordSteer('keep it brief');
+    voice.dismissSteer(voice.repeatedSteers()[0].key);
+    assert.deepEqual(voice.recentSteers(), [], 'its wordings do not come back as offers');
+    voice.recordSteer('mention the bus');
+    voice.keepSteer('mention the bus');
+    voice.unkeepSteer('mention the bus', null);
+    assert.deepEqual(voice.recentSteers(), []);
+});
+
+test('the losing half of an opposite pair is not offered for keeping', async () => {
+    await reset();
+    voice.setHarvest({ version: 2, exemplars: [], lengthLean: null, counts: {}, steers: [
+        { text: 'shorter', at: '2026-01-01T00:00:00Z' }, { text: 'be brief', at: '2026-01-02T00:00:00Z' },
+        { text: 'make it longer', at: '2026-02-01T00:00:00Z' }, { text: 'more detail', at: '2026-02-02T00:00:00Z' },
+    ] });
+    assert.deepEqual(voice.recentSteers(), []);
+});
+
+test('a length reading stored by an older version is not used', async () => {
+    await reset();
+    voice.setHarvest({ exemplars: [], lengthLean: { lean: 'longer', shorter: 2, longer: 9, level: 1, total: 12 }, counts: {} });
+    assert.equal(voice.lengthInstruction(), null);
+    assert.equal(voice.buildBlock([]), '');
+});
+
+test('lengthInstruction says which source the length line came from', async () => {
+    await reset();
+    await answerBrevity('short');
+    assert.equal(voice.lengthInstruction().source, 'soundcheck');
+    voice.setHarvest({ version: 2, exemplars: [], lengthLean: { lean: 'shorter', shorter: 9, longer: 2, level: 1, total: 12 }, counts: {} });
+    assert.equal(voice.lengthInstruction().source, 'live');
+});
+
+test('the sentences listed for About Me are exactly the ones the AI is given', async () => {
+    await reset();
+    // The first is emptied by the catchphrase rule; the thirteenth must take its place
+    // in both the list and the prompt.
+    const pool = ["Let's go!", ...Array.from({ length: 13 }, (_, i) => `Sentence number ${i + 1} that I typed.`)];
+    voice.setHarvest({ version: 2, exemplars: pool, lengthLean: null, counts: {} });
+    const sent = voice.exemplarsSent(["Let's go!"]);
+    assert.equal(sent.length, 12);
+    assert.ok(!sent.some((e) => /Let's go/.test(e.sent)));
+    const block = voice.buildBlock(["Let's go!"]);
+    for (const e of sent) assert.ok(block.includes(`"${e.sent}"`), e.sent);
+    assert.ok(sent.some((e) => e.sent === 'Sentence number 12 that I typed.'));
+});
+
+test('several length signals come with a line saying which comes first', async () => {
+    await reset();
+    await answerBrevity('short');
+    voice.setHarvest({ version: 2, exemplars: ['I will be there at six, save me a seat.'], lengthLean: null, counts: {} });
+    assert.match(voice.buildBlock([]), /On length: an instruction this user asked for comes first/);
+});
+
+test('keeping many instructions never quietly drops an earlier one', async () => {
+    await reset();
+    for (let i = 0; i < 30; i++) voice.keepSteer(`instruction number ${i}`);
+    assert.equal(voice.keptSteers().length, 30);
 });

@@ -31,8 +31,8 @@ import { readFile, readPortableFile, writeFile, hasDataFolder } from './storage.
 // For the item's dimension only, so buildBlock can tell a bland exemplar (safe to
 // reuse verbatim) from a levity one (never reuse). sound-check-items.js imports
 // nothing, so there is no cycle.
-import { getItem, isLighterChoice, SOUND_CHECK_ITEMS, RENAMED_CANDIDATES } from './sound-check-items.js';
-import { redactCatchphrases, MIN_EXEMPLAR_WORDS } from './voice-harvest.js';
+import { getItem, isLighterChoice, SOUND_CHECK_ITEMS, RENAMED_CANDIDATES, soundCheckLengthLean } from './sound-check-items.js';
+import { redactCatchphrases, MIN_EXEMPLAR_WORDS, MAX_EXEMPLARS } from './voice-harvest.js';
 
 const FILE = 'voice.json';
 const CACHE_KEY = 'aac_voice';
@@ -69,7 +69,18 @@ function emptyProfile() {
         // conversation pane, so recording it there would muddy the standing rule that
         // the transcript mirrors the pane. Errors are in the log as a deliberate
         // diagnostic exception; a steer is not a diagnostic.
+        // Since October 6 2026 each also carries the person it was typed to:
+        // { text, at, personId, label }.
         steers: [],
+        // Instructions the user chose to KEEP, from About Me: [{ text, personId, label,
+        // at }]. personId null means "for everyone"; otherwise it is sent only while
+        // that person's partner button is on.
+        kept: [],
+        // Offers the user turned down in About Me's "Instructions you typed recently"
+        // list, as `${personId}|${normalized text}`. Kept apart from `dismissed` on
+        // purpose: turning down an offer to keep one wording must not stop that request
+        // from ever becoming standing if the user keeps asking for it.
+        hidden: [],
     };
 }
 
@@ -99,6 +110,8 @@ function normalize(raw) {
         harvest: (raw.harvest && typeof raw.harvest === 'object') ? raw.harvest : null,
         dismissed: Array.isArray(raw.dismissed) ? raw.dismissed.filter((x) => typeof x === 'string') : [],
         steers: Array.isArray(raw.steers) ? raw.steers.filter((x) => x && typeof x.text === 'string') : [],
+        kept: Array.isArray(raw.kept) ? raw.kept.filter((x) => x && typeof x.text === 'string' && x.text.trim()) : [],
+        hidden: Array.isArray(raw.hidden) ? raw.hidden.filter((x) => typeof x === 'string') : [],
     };
 }
 
@@ -178,49 +191,282 @@ export function setSample(key, text) {
     return save();
 }
 
-// A steer typed once is a one-off about that particular turn; typed again, word for
-// word, it is a standing preference the app keeps failing to meet. Two is the bar
-// because typing the identical instruction twice is deliberate, and because the user
-// can see the count and remove it — a wrongly promoted preference shapes every future
-// response, so it is shown with its evidence rather than asserted.
+// A steer typed once is a one-off about that particular turn; asked for again it is a
+// standing preference the app keeps failing to meet. Two is the bar because asking
+// twice is deliberate, and because the user can see the count and remove it — a
+// wrongly promoted preference shapes every future response, so it is shown with its
+// evidence rather than asserted.
 const STEER_REPEAT_MIN = 2;
 const MAX_STEERS = 200;
+const MAX_RECENT = 8;
 
 function normalizeSteer(text) {
-    return String(text || '').toLowerCase().replace(/[^a-z0-9' ]/g, ' ').replace(/\s+/g, ' ').trim();
+    return String(text || '').toLowerCase().replace(/[’‘]/g, "'")
+        .replace(/[^a-z0-9' ]/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
-/** Record one typed Reframe steer. Callers gate on storage.isConversationSaving(). */
-export function recordSteer(text) {
+/*
+ * WHAT A STEER ASKS FOR, so two wordings of one request count as one (October 6 2026).
+ * Grouping by exact wording meant "shorter" and "keep it to five words" were two
+ * different requests, and a terse user could ask for brevity in a dozen ways without
+ * the app ever keeping it.
+ *
+ * ⚠ A WRONG READING IS WORSE THAN NONE, so this is deliberately cautious. A recognized
+ * request becomes a standing instruction in every later response, so a request read
+ * as its opposite ("too informal" read as "casual") or a content steer read as a style
+ * rule ("say it would be nice to see her" read as "warmer") does lasting harm, while a
+ * missed one only falls back to the exact-wording rule this replaced. So a steer counts
+ * as a style request only when:
+ *   - every style word in it is either read in a known negated form (NEGATED) or has
+ *     no negating word in front of it - otherwise it is not read at all; and
+ *   - once its style words and filler are taken out, at most one other word is left.
+ *     "Shorter, and say I'm tired" is about content and keeps its exact wording.
+ * A recognized request reaches the AI in the app's own words (MEANINGS), never the
+ * user's.
+ */
+const NEGATED = [
+    [/\b(?:less|not so|not as|too|not|don't be|do not be|stop being(?: so)?) (?:formal|stiff|proper|professional)\b/g, 'casual'],
+    [/\b(?:less|not so|not as|too|not|don't be|do not be|stop being(?: so)?) (?:casual|informal|relaxed|chill|slangy|sloppy)\b/g, 'formal'],
+    [/\b(?:less|not so|not as|too|don't be|do not be|stop being(?: so)?) (?:polite|nice|soft|gentle|careful)\b/g, 'blunter'],
+    [/\b(?:less|not so|not as|too|don't be|do not be|stop being(?: so)?) (?:blunt|harsh|rude|cold|abrupt|direct)\b/g, 'warmer'],
+    [/\b(?:less|not so|not as|too) (?:wordy|long)\b/g, 'shorter'],
+    [/\b(?:less|not so|not as|too) (?:short|brief|curt|terse|concise)\b/g, 'longer'],
+    [/\b(?:less|not so|not as|too|don't be|do not be|stop being(?: so)?) (?:serious|stiff)\b/g, 'funnier'],
+    [/\b(?:less|not so|not as|too|don't be|do not be|stop being(?: so)?) (?:funny|jokey|silly)\b|\bno jokes?\b|\b(?:don't|do not|stop|no) (?:make |making |crack |cracking )?(?:a )?jok(?:e|es|ing)\b/g, 'serious'],
+];
+const POSITIVE = [
+    [/\b(?:shorter|keep it short|short and sweet|short (?:reply|replies|answer|answers|response|responses)|brief|briefer|briefly|concise|terse|fewer words|few words|cut it down)\b|\b(?:one|two|three|four|five|six|seven|eight|nine|ten|\d+)[ -]words?\b/g, 'shorter'],
+    [/\b(?:longer (?:reply|replies|answer|answers|response|responses|sentences)|make it longer|more detail|more detailed|more words|fuller)\b/g, 'longer'],
+    [/\b(?:casual|casually|informal|laid back|talk like (?:a |an )?(?:kid|teen|teenager|young person|\d+ year old))\b/g, 'casual'],
+    [/\b(?:more formal|be formal|sound formal|formally|more professional|more respectful)\b/g, 'formal'],
+    [/\b(?:warmer|more warmth|friendlier|be friendly|nicer|kinder|softer|gentler)\b/g, 'warmer'],
+    [/\b(?:blunter|be blunt|more blunt|more direct|be direct|firmer|be firm)\b/g, 'blunter'],
+    [/\b(?:funnier|be funny|more playful|be playful|more humor|lighten it up|more sarcastic)\b/g, 'funnier'],
+    [/\b(?:be serious|more serious|keep it serious)\b/g, 'serious'],
+];
+// A word in front of a style word that turns it around ("don't be blunt").
+// Up to three words may sit between ("no need to be blunter").
+const NEGATOR = /\b(?:don't|do not|doesn't|not|no|never|stop|stop being|without|avoid|less|too)(?: [\w']+){0,3}\s*$/;
+// Words that carry no request of their own, so a steer made only of these and style
+// words is a pure style request.
+const FILLER = new Set(('please a an the it it\'s its them they be more much bit little lot way really very so just '
+    + 'and or but also keep make sound talk use with me my i you your reply replies response responses answer '
+    + 'answers option options wording words word sentence sentences tone this that try again still even can could '
+    + 'would should maybe to for of like than less too').split(' '));
+const MEANINGS = {
+    shorter: { text: 'Keep responses short.', opposite: 'longer' },
+    longer: { text: 'Give fuller responses; do not clip them down to the minimum.', opposite: 'shorter' },
+    casual: { text: 'Keep the wording casual and relaxed.', opposite: 'formal' },
+    formal: { text: 'Keep the wording more formal.', opposite: 'casual' },
+    warmer: { text: 'Make the wording warmer.', opposite: 'blunter' },
+    blunter: { text: 'Make the wording more direct and less cushioned.', opposite: 'warmer' },
+    funnier: { text: 'A lighter, more playful wording is welcome wherever the rest of these instructions allow it.', opposite: 'serious' },
+    serious: { text: 'Keep the wording serious, with no joking.', opposite: 'funnier' },
+};
+
+/** The style requests a steer makes, as MEANINGS keys. Empty for anything else. */
+export function steerMeanings(text) {
+    let t = ` ${normalizeSteer(text).replace(/\b(?:kind|sort) of\b/g, ' ')} `;
+    const found = new Set();
+    for (const [re, key] of NEGATED) {
+        re.lastIndex = 0;
+        if (re.test(t)) { found.add(key); re.lastIndex = 0; t = t.replace(re, ' '); }
+        re.lastIndex = 0;
+    }
+    for (const [re, key] of POSITIVE) {
+        re.lastIndex = 0;
+        let m;
+        let hit = false;
+        while ((m = re.exec(t))) {
+            if (NEGATOR.test(t.slice(0, m.index))) return [];   // turned around - do not guess
+            hit = true;
+        }
+        re.lastIndex = 0;
+        if (hit) { found.add(key); t = t.replace(re, ' '); }
+        re.lastIndex = 0;
+    }
+    if (!found.size) return [];
+    const left = t.split(' ').filter((w) => w && !FILLER.has(w));
+    return left.length <= 1 ? [...found] : [];
+}
+
+/** Record one typed Reframe steer, with who the user was talking to when they typed
+ *  it. Callers gate on storage.isConversationSaving() and skip practice. */
+export function recordSteer(text, { personId = null, label = null } = {}) {
     const t = String(text || '').trim();
     if (!t) return current();
     const p = current();
-    p.steers.push({ text: t, at: new Date().toISOString() });
+    p.steers.push({ text: t, at: new Date().toISOString(), personId: personId || null, label: label || null });
     if (p.steers.length > MAX_STEERS) p.steers = p.steers.slice(-MAX_STEERS);
     return save();
 }
 
+// Every steer the app knows about: typed live, and typed in review (rebuilt from the
+// review files by the harvest).
+function allSteers(p) {
+    const fromReview = (p.harvest && Array.isArray(p.harvest.steers)) ? p.harvest.steers : [];
+    return p.steers.concat(fromReview.filter((x) => x && typeof x.text === 'string'));
+}
+
+function goneSet(p) {
+    return new Set(p.dismissed.map(normalizeSteer));
+}
+
+/*
+ * Every request asked for at least `min` times, before removals and before the
+ * opposite-request rule. A group belongs to ONE PERSON when every time it was asked
+ * was with that person, and to everyone otherwise: a request typed only to Mom is
+ * about talking with Mom, and sending it with every partner is how a correction for
+ * one person becomes the user's voice for all of them.
+ */
+function steerGroups(p, min) {
+    const groups = new Map();
+    const add = (key, meaning, s) => {
+        if (!groups.has(key)) groups.set(key, { key, meaning, text: s.text, texts: [], count: 0, last: '', people: new Map() });
+        const g = groups.get(key);
+        g.count++;
+        if (!g.texts.includes(s.text)) g.texts.push(s.text);
+        if ((s.at || '') >= g.last) { g.last = s.at || ''; g.text = s.text; }
+        g.people.set(s.personId || null, s.label || null);
+    };
+    for (const s of allSteers(p)) {
+        const norm = normalizeSteer(s.text);
+        if (!norm) continue;
+        const meanings = steerMeanings(s.text);
+        if (meanings.length) for (const m of meanings) add(`meaning:${m}`, m, s);
+        else add(norm, null, s);
+    }
+    return [...groups.values()].filter((g) => g.count >= min).map((g) => {
+        const only = g.people.size === 1 ? [...g.people.entries()][0] : null;
+        const personId = only && only[0] ? only[0] : null;
+        return { key: g.key, meaning: g.meaning, text: g.text, texts: g.texts, count: g.count,
+            last: g.last, personId, label: personId ? only[1] : null };
+    });
+}
+
+function isGone(g, gone) {
+    return gone.has(normalizeSteer(g.key)) || g.texts.some((t) => gone.has(normalizeSteer(t)));
+}
+
 /**
- * Steers the user has typed more than once, most-repeated first. Anything said only
- * once is deliberately excluded: it was about that turn, not about how they sound.
+ * Requests the user has made more than once, most-repeated first. A style request
+ * counts however it was worded; anything else counts only when typed word for word.
+ * Each group: { key, text, texts, count, meaning, personId, label } - `text` is the
+ * newest wording, `texts` every wording, `meaning` the MEANINGS key or null, and
+ * `personId` set when every time it was asked was with one person.
  */
 export function repeatedSteers(min = STEER_REPEAT_MIN) {
     const p = current();
-    // Compared by the same normalized form the steers are grouped by (CR-163): a
-    // removed correction came back once its first wording aged out of the list and a
-    // later variant ("keep it short!") became the one shown.
-    const gone = new Set(p.dismissed.map(normalizeSteer));
-    const groups = new Map();
-    for (const s of p.steers) {
-        const key = normalizeSteer(s.text);
-        if (!key) continue;
-        if (!groups.has(key)) groups.set(key, { key, text: s.text, count: 0 });
-        groups.get(key).count++;
-    }
-    return [...groups.values()]
-        .filter((g) => g.count >= min && !gone.has(g.key))
-        .map(({ text, count }) => ({ text, count }))
+    // Removing a request takes its key or any of its wordings (CR-163): a removed
+    // correction came back once its first wording aged out of the list and a later
+    // variant ("keep it short!") became the one shown.
+    const gone = goneSet(p);
+    let out = steerGroups(p, min).filter((g) => !isGone(g, gone));
+    // Two opposite requests (shorter and longer) cannot both stand for the same people;
+    // the newer wins.
+    out = out.filter((g) => {
+        if (!g.meaning) return true;
+        const opp = out.find((o) => o.meaning === MEANINGS[g.meaning].opposite && o.personId === g.personId);
+        return !opp || g.last >= opp.last;
+    });
+    return out.map(({ key, text, texts, count, meaning, personId, label }) => ({ key, text, texts, count, meaning, personId, label }))
         .sort((a, b) => b.count - a.count);
+}
+
+/** Stop using a repeated request. Takes a group's key or any of its wordings. */
+export function dismissSteer(keyOrText) {
+    const p = current();
+    const t = String(keyOrText || '').trim();
+    if (t && !p.dismissed.includes(t)) p.dismissed.push(t);
+    return save();
+}
+
+function keptKey(text, personId) {
+    return `${personId || ''}|${normalizeSteer(text)}`;
+}
+
+/**
+ * Keep a typed instruction for good (About Me, one tap). `personId` null keeps it for
+ * everyone; otherwise it reaches the AI only while that person's partner button is on.
+ * There is no limit: each one is a deliberate choice, and quietly dropping the oldest
+ * to make room would undo one the user made.
+ */
+export function keepSteer(text, { personId = null, label = null } = {}) {
+    const t = String(text || '').trim();
+    if (!t) return current();
+    const p = current();
+    if (!p.kept.some((k) => keptKey(k.text, k.personId) === keptKey(t, personId))) {
+        p.kept.push({ text: t, personId: personId || null, label: label || null, at: new Date().toISOString() });
+    }
+    return save();
+}
+
+/** Stop using a kept instruction. It is not offered for keeping again afterwards. */
+export function unkeepSteer(text, personId = null) {
+    const p = current();
+    const key = keptKey(text, personId);
+    p.kept = p.kept.filter((k) => keptKey(k.text, k.personId) !== key);
+    if (!p.hidden.includes(key)) p.hidden.push(key);
+    return save();
+}
+
+/** Turn down the offer to keep one typed instruction (About Me's recent list). */
+export function hideSteer(text, personId = null) {
+    const p = current();
+    const key = keptKey(text, personId);
+    if (!p.hidden.includes(key)) p.hidden.push(key);
+    return save();
+}
+
+/** Every kept instruction. */
+export function keptSteers() { return current().kept.slice(); }
+
+/** Kept instructions for one person (personId), or for everyone (null). */
+export function keptFor(personId = null) {
+    return current().kept.filter((k) => (k.personId || null) === (personId || null));
+}
+
+/**
+ * Everything that stands for one person and no one else: what the user chose to keep
+ * for them, and what they have asked for repeatedly only with them. As lines ready for
+ * the prompt's situation block, which is the part sent only while that person's
+ * partner button is on (the voice block is shared by every partner).
+ */
+export function instructionsFor(personId) {
+    if (!personId) return [];
+    const kept = keptFor(personId).map((k) => `"${k.text}"`);
+    const repeated = repeatedSteers().filter((g) => g.personId === personId)
+        .map((g) => (g.meaning ? MEANINGS[g.meaning].text : `"${g.text}"`));
+    return kept.concat(repeated);
+}
+
+/**
+ * The instructions typed recently, live and in review, that About Me offers to keep:
+ * not kept, not turned down, and not part of any request asked for repeatedly
+ * (standing, removed, or overridden by its opposite - keeping one of those would only
+ * be a second way to say the same thing, or would contradict it). Newest first, one
+ * per wording and person.
+ */
+export function recentSteers(limit = MAX_RECENT) {
+    const p = current();
+    const gone = goneSet(p);
+    const hidden = new Set(p.hidden);
+    const kept = new Set(p.kept.map((k) => keptKey(k.text, k.personId)));
+    const keptAnywhere = new Set(p.kept.filter((k) => !k.personId).map((k) => normalizeSteer(k.text)));
+    const repeated = new Set(steerGroups(p, STEER_REPEAT_MIN).flatMap((g) => g.texts.map(normalizeSteer)));
+    const seen = new Set();
+    const out = [];
+    const sorted = allSteers(p).slice().sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')));
+    for (const s of sorted) {
+        const norm = normalizeSteer(s.text);
+        const key = keptKey(s.text, s.personId);
+        if (!norm || gone.has(norm) || hidden.has(key) || kept.has(key) || keptAnywhere.has(norm)
+            || repeated.has(norm) || seen.has(key)) continue;
+        seen.add(key);
+        out.push({ text: s.text, at: s.at || null, personId: s.personId || null, label: s.label || null });
+        if (out.length >= limit) break;
+    }
+    return out;
 }
 
 /** Store what the harvest concluded (voice-harvest.js does the reading). */
@@ -236,12 +482,74 @@ export function getHarvest() { return current().harvest; }
  * The harvested sentences that are actually in play — everything found, minus what
  * the user has removed. "Here is what I think you sound like" cannot be a black box,
  * least of all for people who have spent their lives having others speak for them.
+ *
+ * The harvest keeps more than the prompt shows, so removing one lets the next take its
+ * place. `exemplarsShown` is the part the AI is given.
  */
 export function activeExemplars() {
     const p = current();
     const found = (p.harvest && Array.isArray(p.harvest.exemplars)) ? p.harvest.exemplars : [];
     const gone = new Set(p.dismissed.map((s) => s.trim().toLowerCase()));
     return found.filter((t) => !gone.has(String(t).trim().toLowerCase()));
+}
+
+export function exemplarsShown(idiom = []) {
+    return exemplarsSent(idiom).map((e) => e.sent);
+}
+
+/** The user's own short replies (one to three words), minus what they have removed. */
+export function activeShortReplies() {
+    const p = current();
+    const found = (p.harvest && Array.isArray(p.harvest.shortReplies)) ? p.harvest.shortReplies : [];
+    const gone = new Set(p.dismissed.map((s) => s.trim().toLowerCase()));
+    return found.filter((t) => !gone.has(String(t).trim().toLowerCase()));
+}
+
+/*
+ * EXACTLY what the AI is given, so About Me can show the same thing (October 6 2026).
+ * Catchphrases are taken out and a sentence left too short is dropped BEFORE the
+ * twelve are chosen, so About Me listing the first twelve found would show one the AI
+ * never got and hide one it did - and a sentence that cannot be seen cannot be
+ * removed. Each entry is { text, sent }: `text` is what was found (and what removing it
+ * records), `sent` is the wording the AI gets. `idiom` is the user's own Express
+ * phrases, the same list buildBlock takes.
+ */
+export function exemplarsSent(idiom = []) {
+    return activeExemplars()
+        .map((text) => ({ text, sent: redactCatchphrases(text, idiom) }))
+        .filter((e) => e.sent.split(/\s+/).filter(Boolean).length >= MIN_EXEMPLAR_WORDS)
+        .slice(0, MAX_EXEMPLARS);
+}
+
+export function shortRepliesSent(idiom = []) {
+    return activeShortReplies()
+        .map((text) => ({ text, sent: redactCatchphrases(text, idiom) }))
+        .filter((e) => e.sent.trim())
+        .slice(0, 8);
+}
+
+// Older builds stored a length reading taken against the whole set offered, which
+// mostly measured which KIND of reply was picked. It is not used until the
+// conversations are read again (October 6 2026).
+const HARVEST_VERSION = 2;
+
+/*
+ * The one length instruction the AI is given, and where it came from - so About Me
+ * says what is actually sent. Live picks are compared within each kind of reply
+ * (voice-harvest); How I Sound's brevity questions hold the content constant and are
+ * the cleaner evidence, so when the two point opposite ways only How I Sound is used.
+ * Returns { source: 'live'|'soundcheck', lean, shorter, longer } or null.
+ */
+export function lengthInstruction() {
+    const p = current();
+    const h = p.harvest;
+    const live = h && h.version >= HARVEST_VERSION ? h.lengthLean : null;
+    const liveDir = live && (live.lean === 'shorter' || live.lean === 'longer') ? live.lean : null;
+    const sc = soundCheckLengthLean(p.soundCheck);
+    const scDir = sc && (sc.lean === 'shorter' || sc.lean === 'longer') ? sc.lean : null;
+    if (liveDir && (!scDir || scDir === liveDir)) return { source: 'live', lean: liveDir, shorter: live.shorter, longer: live.longer };
+    if (scDir) return { source: 'soundcheck', lean: scDir, shorter: sc.shorter, longer: sc.longer };
+    return null;
 }
 
 /** Remove a harvested sentence, permanently — a re-harvest must not resurrect it. */
@@ -337,7 +645,10 @@ export function buildBlock(idiom = []) {
     if (chosen.length) {
         lines.push('Examples of how this user prefers to reply. They were shown several ways of saying the same thing and picked these:');
         for (const t of chosen.slice(0, maxChosen)) lines.push(`  "${t}"`);
-        lines.push('Match the length, directness, and level of formality of those examples. They are the single most important guide to wording that you have.');
+        // Two parts of this block used to call themselves the most important guide,
+        // with nothing to say which won (October 6 2026). The user's own sentences win:
+        // these were picked from lines we wrote, those are lines the user wrote.
+        lines.push("Match the length, directness, and level of formality of those examples. They are a strong guide to wording. Where this user's own sentences appear further down, those come first.");
         // The exemplars are STYLE, not autobiography. They were picked off a fixed
         // list of hypothetical replies, so anything they appear to mention is a
         // property of the question bank, not of this user — and the anti-fabrication
@@ -379,25 +690,43 @@ export function buildBlock(idiom = []) {
     // Catchphrases are taken out first: they are the user's to say, on a button, and
     // an exemplar sent under "follow their phrasing" would teach the model to say them
     // unprompted (CR-070). Against the FULL idiom list, not the 20 shown below.
-    const harvested = activeExemplars()
-        .map((t) => redactCatchphrases(t, idiom))
-        .filter((t) => t.split(/\s+/).filter(Boolean).length >= MIN_EXEMPLAR_WORDS);
+    const harvested = exemplarsSent(idiom).map((e) => e.sent);
     if (harvested.length) {
         lines.push('');
-        lines.push('Sentences this user has actually written themselves, in real conversations. This is the best evidence you have of how they put things:');
-        for (const t of harvested.slice(0, 12)) lines.push(`  "${t}"`);
-        lines.push('Follow their phrasing, rhythm and level of detail. They are things this person said in the PAST, not current facts — do not assume any of it is still true, and do not repeat their content.');
+        // Not "in real conversations": some were written in review, looking back, and
+        // practice conversations are no longer read at all (October 6 2026).
+        lines.push(chosen.length
+            ? 'Sentences this user has written themselves, during their conversations or when looking back over one. This is the best evidence you have of how they put things, and where it differs from the picked examples above, follow it:'
+            : 'Sentences this user has written themselves, during their conversations or when looking back over one. This is the best evidence you have of how they put things:');
+        for (const t of harvested) lines.push(`  "${t}"`);
+        // The plan's own caution, which never reached the prompt: typed text is
+        // shortened by the effort of typing (Sounds Like Me, Table 5).
+        lines.push('Follow their phrasing, rhythm and level of detail. They typed these by hand, which is slow for them, so their length may partly reflect that effort. They are things this person said in the PAST, not current facts — do not assume any of it is still true, and do not repeat their content.');
     }
 
-    // Measured from real selections, and stated as the measurement it is. This is the
-    // one dimension computable locally without a model call: word count is word
-    // count. The others are deliberately not guessed at.
-    const lean = p.harvest && p.harvest.lengthLean;
-    if (lean && lean.lean && lean.lean !== 'neither') {
+    // Replies too short to show phrasing, kept rather than dropped (October 6 2026).
+    const short = shortRepliesSent(idiom).map((e) => e.sent);
+    if (short.length) {
         lines.push('');
-        lines.push(lean.lean === 'shorter'
-            ? `Offered a choice of wordings in real conversations, this user picks the shorter one far more often than the longer (${lean.shorter} of ${lean.shorter + lean.longer} decided). Keep responses brief unless there is a clear reason not to.`
-            : `Offered a choice of wordings in real conversations, this user picks the fuller one far more often than the shorter (${lean.longer} of ${lean.shorter + lean.longer} decided). Do not clip responses down to the minimum.`);
+        lines.push(`Short replies this user has typed themselves: ${short.map((t) => `"${t}"`).join(', ')}.`);
+        lines.push('These show how briefly they answer when a few words will do. Do not copy them; let them set how short a reply can be.');
+    }
+
+    // Length: one instruction, from whichever source lengthInstruction() trusts.
+    const len = lengthInstruction();
+    if (len) {
+        const decided = len.shorter + len.longer;
+        const n = len.lean === 'shorter' ? len.shorter : len.longer;
+        lines.push('');
+        if (len.source === 'live') {
+            lines.push(len.lean === 'shorter'
+                ? `Offered a choice in their conversations, this user picks wordings shorter than is typical for that kind of reply far more often than longer ones (${n} of ${decided} decided). Keep responses brief unless there is a clear reason not to.`
+                : `Offered a choice in their conversations, this user picks wordings fuller than is typical for that kind of reply far more often than shorter ones (${n} of ${decided} decided). Do not clip responses down to the minimum.`);
+        } else {
+            lines.push(len.lean === 'shorter'
+                ? `Shown several ways of saying the same thing, this user picked the shortest in ${n} of ${decided} questions about length. Keep responses brief unless there is a clear reason not to.`
+                : `Shown several ways of saying the same thing, this user picked the fullest in ${n} of ${decided} questions about length. Do not clip responses down to the minimum.`);
+        }
     }
 
     if (idiom.length) {
@@ -406,14 +735,38 @@ export function buildBlock(idiom = []) {
         lines.push('Use these ONLY to judge their vocabulary and level of formality. They are button labels, so they are short for that reason alone — do NOT treat them as evidence that this user prefers short replies. Do NOT put these exact phrases into responses; the user says those themselves.');
     }
 
-    // Corrections the user has had to type more than once. This is the strongest
-    // signal in the file, because it is not a preference they reported — it is one
-    // they were driven to state repeatedly by the app getting it wrong.
-    const steers = repeatedSteers();
+    // Instructions the user chose to keep for everyone (About Me). Their own words,
+    // because they chose these exact words to keep.
+    const keptAll = keptFor(null);
+    if (keptAll.length) {
+        lines.push('');
+        lines.push('Instructions this user has asked you to keep. Follow them in every response:');
+        for (const k of keptAll) lines.push(`  "${k.text}"`);
+    }
+
+    // Requests the user has had to make more than once. This is the strongest signal
+    // in the file, because it is not a preference they reported — it is one they were
+    // driven to state repeatedly by the app getting it wrong. A style request is sent
+    // in the app's own words (see MEANINGS); any other is sent as the user typed it.
+    // Only requests made with more than one person, or with no partner set, are here:
+    // one made only with one person goes in the situation block, sent with that person.
+    const steers = repeatedSteers().filter((g) => !g.personId);
     if (steers.length) {
         lines.push('');
-        lines.push('When your suggestions have not been right, this user has typed the same correction more than once. Treat each as a standing instruction, not a one-off:');
-        for (const s of steers.slice(0, 6)) lines.push(`  "${s.text}" (asked ${s.count} times)`);
+        lines.push('When your suggestions have not been right, this user has asked for the same thing more than once. Treat each as a standing instruction, not a one-off:');
+        for (const s of steers.slice(0, 6)) {
+            lines.push(s.meaning
+                ? `  ${MEANINGS[s.meaning].text} (asked ${s.count} times)`
+                : `  "${s.text}" (asked ${s.count} times)`);
+        }
+    }
+
+    // Several parts of this block bear on length. Say which comes first, so the model
+    // is not left to weigh them (found by the October 6 2026 review).
+    const lengthRequest = steers.some((s) => s.meaning === 'shorter' || s.meaning === 'longer');
+    if ((len ? 1 : 0) + (lengthRequest ? 1 : 0) + (short.length ? 1 : 0) + (harvested.length ? 1 : 0) + (chosen.length ? 1 : 0) >= 2) {
+        lines.push('');
+        lines.push('On length: an instruction this user asked for comes first, then the length line above. The examples show their style; their length is a guide, not a rule.');
     }
 
     if (p.never.length) {

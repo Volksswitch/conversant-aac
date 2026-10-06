@@ -31,13 +31,25 @@
  * DROPPED rather than guessed at.
  */
 
-import { buildTurns, normalizeReview } from './review-model.js';
+import { buildTurns, normalizeReview, isPractice } from './review-model.js';
 
 // A turn is only a usable exemplar if it is long enough to carry any style at all.
-// "Yes." tells us nothing and would drag the length signal down.
+// Shorter ones are kept apart as SHORT REPLIES (below): "Nah, I'm good." says little
+// about phrasing but a great deal about how briefly this person answers.
 const MIN_EXEMPLAR_WORDS = 4;
-const MAX_EXEMPLARS = 12;          // matches what buildBlock will show
+const MAX_EXEMPLARS = 12;          // what buildBlock shows
+// More are kept than are shown, so a sentence the user removes, or one the catchphrase
+// redaction empties, frees its place for the next one instead of shrinking the list.
+const MAX_POOL = 30;
+const MAX_SHORT_REPLIES = 8;
 const MIN_SELECTIONS_FOR_LEAN = 6; // below this, a lean is noise
+// The four kinds of reply the length measure compares within. Openers, wind-downs,
+// goodbyes, the partner's own choices and the repair-of-self options are fixed or
+// shaped by something other than the user's taste, so a pick among them says nothing
+// about how long they like a reply.
+const STRUCTURAL_SLOTS = new Set(['PREFERRED', 'DISPREFERRED', 'INITIATIVE', 'REPAIR']);
+// A kind of reply needs this many past examples before its typical length means much.
+const MIN_SLOT_SAMPLES = 8;
 
 function words(text) {
     return String(text || '').trim().split(/\s+/).filter(Boolean);
@@ -47,7 +59,7 @@ function normalized(text) {
     return String(text || '').toLowerCase().replace(/[^a-z0-9' ]/g, '').replace(/\s+/g, ' ').trim();
 }
 
-export { MIN_EXEMPLAR_WORDS };
+export { MIN_EXEMPLAR_WORDS, MAX_EXEMPLARS };
 
 /**
  * Strip the user's catchphrases out of a harvested sentence.
@@ -107,6 +119,19 @@ export function classifyTurn(turn, { controlPhrases = [], expressPhrases = [] } 
  * Newest first, deduplicated, and long enough to carry a style.
  */
 export function collectExemplars(turns, opts = {}) {
+    return ownSentences(turns, opts, (n) => n >= MIN_EXEMPLAR_WORDS, opts.max || MAX_EXEMPLARS);
+}
+
+/**
+ * The user's own replies that are too short to show phrasing - one to three words
+ * they typed themselves. They used to be dropped, which lost the clearest evidence a
+ * terse user gives: that a few words are often all they want to say. Newest first.
+ */
+export function collectShortReplies(turns, opts = {}) {
+    return ownSentences(turns, opts, (n) => n > 0 && n < MIN_EXEMPLAR_WORDS, opts.max || MAX_SHORT_REPLIES);
+}
+
+function ownSentences(turns, opts, lengthOk, max) {
     const seen = new Set();
     const out = [];
     for (let i = turns.length - 1; i >= 0; i--) {
@@ -115,46 +140,121 @@ export function collectExemplars(turns, opts = {}) {
         // sentence is theirs even though the model wrote the first draft of it.
         if (classifyTurn(turn, opts) !== 'composed' && !turn.reworded) continue;
         const text = String(turn.selectedText || '').trim();
-        if (words(text).length < MIN_EXEMPLAR_WORDS) continue;
+        if (!lengthOk(words(text).length)) continue;
         const key = normalized(text);
-        if (seen.has(key)) continue;
+        if (!key || seen.has(key)) continue;
         seen.add(key);
         out.push(text);
-        if (out.length >= MAX_EXEMPLARS) break;
+        if (out.length >= max) break;
     }
     return out;
 }
 
 /**
+ * Two newest-first lists, taken in turn, so neither can crowd the other out for good.
+ * Review answers lead each pair: a sentence written on purpose, looking back, is the
+ * better example of the two. Until October 6 2026 every review answer went ahead of
+ * every live one, so a few reviews filled all twelve places and nothing typed in a
+ * conversation reached the AI again.
+ */
+export function interleave(first, second, max) {
+    const seen = new Set();
+    const out = [];
+    for (let i = 0; out.length < max && (i < first.length || i < second.length); i++) {
+        for (const t of [first[i], second[i]]) {
+            if (t === undefined || out.length >= max) continue;
+            const key = normalized(t);
+            if (seen.has(key)) continue;
+            seen.add(key);
+            out.push(t);
+        }
+    }
+    return out;
+}
+
+/**
+ * The typical length of each kind of reply the app has offered, from the offer records
+ * (every set shown carries the kind of each response option since September 10 2026).
+ * Returns { SLOT: median word count } for kinds with enough examples. Practice
+ * conversations are left out, for the same reason they are left out of the harvest.
+ */
+export function slotMedians(conversations) {
+    const lengths = new Map();
+    for (const convo of conversations || []) {
+        const log = convo && convo.data ? convo.data : convo;
+        if (!log || isPractice(log)) continue;
+        const ex = Array.isArray(log.exchanges) ? log.exchanges : [];
+        for (const e of ex) {
+            if (!e || e.role !== 'offer' || !Array.isArray(e.options)) continue;
+            for (const o of e.options) {
+                if (!o || !STRUCTURAL_SLOTS.has(o.slot)) continue;
+                const n = words(o.text).length;
+                if (!n) continue;
+                if (!lengths.has(o.slot)) lengths.set(o.slot, []);
+                lengths.get(o.slot).push(n);
+            }
+        }
+    }
+    const out = {};
+    for (const [slot, list] of lengths) {
+        if (list.length < MIN_SLOT_SAMPLES) continue;
+        out[slot] = median(list);
+    }
+    return out;
+}
+
+function median(list) {
+    const a = list.slice().sort((x, y) => x - y);
+    return a.length % 2 ? a[(a.length - 1) / 2] : (a[a.length / 2 - 1] + a[a.length / 2]) / 2;
+}
+
+/**
  * Length preference, measured from real selections.
  *
- * For every turn where the user picked one card out of several, compare the chosen
- * card's length against the median length of what was on offer. This is the one
- * dimension from the Sound Check that can be computed locally with no model call and
- * no judgment: word count is word count. Formality, affect and floor-handling cannot
- * be measured this way and are deliberately not guessed at.
+ * ⚠ IT COMPARES LIKE WITH LIKE (October 6 2026). It used to compare a pick with the
+ * median of the whole set offered. But the four response options are four different
+ * KINDS of reply - a decline and a change of direction are long by design, and the
+ * clarify option is nearly always the shortest and is rarely picked - so the old
+ * measure mostly recorded which kind the user picked. A user who simply never needed
+ * to clarify read as preferring fuller replies; for a terse test persona it told the
+ * AI "do not clip responses down to the minimum", and that sentence alone made the
+ * options longer (Conversant AAC Sounds Like Me Evaluation, October 6 2026).
+ *
+ * So a pick now counts only against options OF ITS OWN KIND: a best guess against the
+ * typical length of the best guesses the app has offered this user, and so on. A user
+ * who picks by content gives no lean, which is right. Picks from the fixed openers,
+ * wind-downs and goodbyes do not count at all. The typical lengths drift as the
+ * suggestions change; that blurs the measure a little and never biases it toward one
+ * kind of reply.
+ *
+ * `opts.slotMedians` is { SLOT: median words } (see slotMedians). An Express button
+ * chosen in review instead of the four counts as shorter only when it is shorter than
+ * every option offered - it was chosen over the whole set, not within one kind.
  *
  * Returns null below MIN_SELECTIONS_FOR_LEAN, because a lean drawn from three taps
  * is noise presented as a finding.
  */
 export function measureLengthLean(turns, opts = {}) {
+    const medians = opts.slotMedians || {};
     let shorter = 0, longer = 0, level = 0;
     for (const turn of turns) {
         if (classifyTurn(turn, opts) !== 'card') continue;
-        const offered = Array.isArray(turn.allOptions) ? turn.allOptions.filter(Boolean) : [];
-        if (offered.length < 2) continue;
         const chosen = String(turn.selectedText || '');
         if (!chosen.trim()) continue;
-
-        const lengths = offered.map((o) => words(typeof o === 'string' ? o : (o && o.text)).length)
-            .filter((n) => n > 0)
-            .sort((a, b) => a - b);
-        if (lengths.length < 2) continue;
-        const mid = lengths.length % 2
-            ? lengths[(lengths.length - 1) / 2]
-            : (lengths[lengths.length / 2 - 1] + lengths[lengths.length / 2]) / 2;
-
         const n = words(chosen).length;
+
+        if (turn.viaExpress) {
+            const offered = (Array.isArray(turn.allOptions) ? turn.allOptions : [])
+                .map((o) => words(typeof o === 'string' ? o : (o && o.text)).length)
+                .filter((x) => x > 0);
+            if (!offered.length) continue;
+            if (n < Math.min(...offered)) shorter++;
+            else level++;
+            continue;
+        }
+        const mid = STRUCTURAL_SLOTS.has(turn.selectedSlot) ? medians[turn.selectedSlot] : undefined;
+        if (mid === undefined || mid === null) continue;
+
         if (n < mid) shorter++;
         else if (n > mid) longer++;
         else level++;
@@ -203,6 +303,7 @@ export const REVIEW_LESSONS = {
         withdraw: true,
         turn: (a, t) => (a.text ? {
             source: 'card', selectedText: a.text, selectedIndex: a.index,
+            selectedSlot: (t.cards[a.index] && t.cards[a.index].slot) || null,
             allOptions: t.cards.map((c) => c.text), reworded: !!a.rewritten,
         } : null),
     },
@@ -235,13 +336,29 @@ export const REVIEW_LESSONS = {
  * `replaced` holds the timestamps of the live user turns a review answer overrides.
  */
 export function reviewedTurns(data, rawReview, lessons = REVIEW_LESSONS) {
-    const out = { replaced: new Set(), turns: [] };
+    const out = { replaced: new Set(), turns: [], steers: [] };
     if (!data || !rawReview) return out;
     const review = normalizeReview(rawReview);
     let turns;
     try { turns = buildTurns(data); } catch { return out; }
     for (const t of turns) {
         const entry = review.turns[t.key];
+        // A Reframe instruction typed in review: the direction the user would have
+        // steered the AI on this turn. It used to be saved and never read. It now joins
+        // the instructions About Me offers to keep, with the person this turn was
+        // with, and counts toward a repeated instruction (October 6 2026).
+        if (entry && entry.steer) {
+            // The partner the user marked in review as who it really was wins over the
+            // one the live conversation had.
+            const marked = (entry.reframers || []).find((r) => r && r.kind === 'partner');
+            out.steers.push({
+                text: entry.steer,
+                at: entry.steerAt || (t.user && t.user.at) || (t.partner && t.partner.at) || null,
+                personId: marked ? (marked.id || null) : ((t.context && t.context.partnerId) || null),
+                label: marked ? (marked.label || null) : ((t.context && t.context.partner) || null),
+                fromReview: true,
+            });
+        }
         const a = entry && entry.answer;
         const lesson = a && lessons[a.kind];
         if (!lesson) continue;
@@ -270,7 +387,8 @@ export function reviewContributions(data, rawReview) {
         .map((t) => t.selectedText);
     return {
         exemplars: own.filter((t) => words(t).length >= MIN_EXEMPLAR_WORDS),
-        tooShort: own.filter((t) => words(t).length < MIN_EXEMPLAR_WORDS),
+        // Kept as short replies rather than dropped (see collectShortReplies).
+        shortReplies: own.filter((t) => words(t).length > 0 && words(t).length < MIN_EXEMPLAR_WORDS),
         choices: turns.filter((t) => t.source === 'card' && !t.reworded).length,
         byLesson: countByLesson(turns),
     };
@@ -280,34 +398,52 @@ export function reviewContributions(data, rawReview) {
  * Everything the harvest concluded, from a flat list of user turns.
  * `conversations` is an array of parsed conversation-log objects, or the
  * { id, data, review } entries storage.listConversationLogs() returns.
+ *
+ * ⚠ PRACTICE CONVERSATIONS ARE LEFT OUT (October 6 2026). The partner there is the AI
+ * playing a scenario, the scenario sets the register (a job interview is not how
+ * anyone talks to their sister), and content invented for the role-play can leak in.
+ * They were read as though they were real, and the prompt said so. Running one shipped
+ * scenario three times was enough to change the length instruction on the test data.
  */
 export function harvest(conversations, opts = {}) {
-    const turns = [];
+    const live = [];
     const fromReview = [];
+    const reviewSteers = [];
+    let practiceSkipped = 0;
     for (const convo of conversations || []) {
         // storage.listConversationLogs() returns { id, data }; a bare log object is
         // accepted too so this stays testable against plain fixtures.
         const log = convo && convo.data ? convo.data : convo;
+        if (log && isPractice(log)) { practiceSkipped++; continue; }
         const ex = log && Array.isArray(log.exchanges) ? log.exchanges : [];
         const reviewed = reviewedTurns(log, convo && convo.data ? convo.review : null);
         for (const t of ex) {
             if (!t || t.role !== 'user') continue;
             if (t.timestamp && reviewed.replaced.has(t.timestamp)) continue;
-            turns.push(t);
+            live.push(t);
         }
         fromReview.push(...reviewed.turns);
+        reviewSteers.push(...reviewed.steers);
     }
-    // Review answers go LAST, so the newest-first exemplar walk reaches them first:
-    // a sentence the user wrote on purpose, looking back, outranks one typed in a hurry.
-    const all = turns.concat(fromReview);
+    const all = live.concat(fromReview);
+    const pool = { ...opts, max: MAX_POOL };
     return {
-        exemplars: collectExemplars(all, opts),
-        lengthLean: measureLengthLean(all, opts),
+        // Read by voice.js: a length reading from an older version measured the whole
+        // set offered and is not used (October 6 2026).
+        version: 2,
+        // Review answers and live sentences share the places (see interleave).
+        exemplars: interleave(collectExemplars(fromReview, pool), collectExemplars(live, pool), MAX_POOL),
+        shortReplies: interleave(collectShortReplies(fromReview, opts), collectShortReplies(live, opts), MAX_SHORT_REPLIES),
+        lengthLean: measureLengthLean(all, { ...opts, slotMedians: slotMedians(conversations) }),
+        // Reframe instructions typed in review. Live ones are recorded as they happen
+        // (voice.recordSteer); these are rebuilt from the review files each time.
+        steers: reviewSteers,
         counts: {
-            userTurns: turns.length,
-            composed: turns.filter((t) => classifyTurn(t, opts) === 'composed').length,
-            cards: turns.filter((t) => classifyTurn(t, opts) === 'card').length,
+            userTurns: live.length,
+            composed: live.filter((t) => classifyTurn(t, opts) === 'composed').length,
+            cards: live.filter((t) => classifyTurn(t, opts) === 'card').length,
             reviewed: fromReview.length,
+            practiceSkipped,
             // How much each review lesson contributed, so its effect can be measured
             // and a lesson that turns out to be wrong can be found and removed.
             byLesson: countByLesson(fromReview),

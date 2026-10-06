@@ -219,6 +219,9 @@ function finishTurn(t, index, practice) {
         flags,
         context: {
             partner: labelOf(t.context.partner),
+            // The person's id in About Me, when the partner was one, so what the user
+            // writes in review can be tied to that person (voice-harvest).
+            partnerId: (t.context.partner && typeof t.context.partner === 'object' && t.context.partner.id) || null,
             place: labelOf(t.context.place),
             feeling: labelOf(t.context.feeling),
         },
@@ -299,6 +302,7 @@ function cleanEntry(entry) {
         answer: entry.answer && typeof entry.answer === 'object' ? { ...entry.answer } : null,
         reframers: Array.isArray(entry.reframers) ? entry.reframers.filter((r) => r && r.kind && (r.id || r.label)) : [],
         steer: typeof entry.steer === 'string' && entry.steer.trim() ? entry.steer.trim() : null,
+        steerAt: typeof entry.steerAt === 'string' ? entry.steerAt : null,
         misheard: entry.misheard && typeof entry.misheard === 'object' ? { ...entry.misheard } : null,
     };
     if (e.answer && e.answer.kind === 'card') {
@@ -403,7 +407,12 @@ export function toggleReframer(review, turn, { kind, id = null, label = '' }) {
 
 /** Reframe in review's Composition Pane: the direction they would have steered the AI in. */
 export function setSteer(review, turn, text) {
-    return withEntry(review, turn.key, (e) => { e.steer = String(text || '').trim() || null; });
+    // When it was typed, so a later "newer request wins" compares it by when the user
+    // asked, not by when the conversation happened.
+    return withEntry(review, turn.key, (e) => {
+        e.steer = String(text || '').trim() || null;
+        e.steerAt = e.steer ? new Date().toISOString() : null;
+    });
 }
 
 /**
