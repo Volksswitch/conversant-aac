@@ -250,7 +250,7 @@ function renderExtras() {
     contentEl.scrollTop = 0;
     contentEl.innerHTML = '';
     showDockKeyboard();
-    contentEl.append(el('button', { class: 'wv-back', text: '‹ Back', onclick: renderHome }));
+    contentEl.append(el('button', { class: 'wv-back', text: '‹ About Me', onclick: renderHome }));   // CR-265
     contentEl.append(el('h3', { class: 'wv-section-title', text: 'Other things about me' }));
     contentEl.append(el('p', { class: 'wv-intro', text:
         'These are not built-in questions — each one came up because somebody asked it in a conversation. '
@@ -320,6 +320,11 @@ function renderExtra(name, back = renderHome) {
     const speakBtn = el('button', { class: 'wv-btn wv-btn-speak', text: 'Speak my answer',
         onclick: () => { const v = input.value.trim(); if (v) speak(v); } });
     if (!(e.value || '').trim()) speakBtn.setAttribute('disabled', 'true');
+    // Follows the box as it is typed in, like the built-in questions (CR-263).
+    input.addEventListener('input', () => {
+        if (input.value.trim()) speakBtn.removeAttribute('disabled');
+        else speakBtn.setAttribute('disabled', 'true');
+    });
     actions.append(speakBtn);
     actions.append(el('button', { class: 'wv-btn wv-btn-link', text: 'Prefer not to say',
         onclick: async () => { await wv.declineExtra(name); renderExtra(name, back); } }));
@@ -480,7 +485,7 @@ function renderHome() {
 async function onRestart() {
     const ok = await confirmDanger({
         title: 'Clear everything?',
-        body: 'This permanently deletes every answer, all the people you have added, all the places you have added, and everything the app has learned about how you sound. This cannot be undone.',
+        body: 'This permanently deletes every answer, all the people you have added, all the places you have added, your goals for any conversation, and everything the app has learned about how you sound. This cannot be undone.',
         confirmLabel: 'Yes, clear it all',
         cancelLabel: 'Keep my answers'
     });
@@ -509,7 +514,7 @@ function renderSoundCheck() {
     contentEl.scrollTop = 0;
     contentEl.innerHTML = '';
 
-    contentEl.append(el('button', { class: 'wv-back', text: '‹ All topics', onclick: renderHome }));
+    contentEl.append(el('button', { class: 'wv-back', text: '‹ About Me', onclick: renderHome }));
     contentEl.append(el('h3', { class: 'wv-page-title', text: 'How I Sound' }));
 
     contentEl.append(el('p', { class: 'wv-intro', text:
@@ -726,7 +731,7 @@ function focusLastNeverInput(wrap) {
 function renderPeople(editingId = null) {
     contentEl.innerHTML = '';
 
-    contentEl.append(el('button', { class: 'wv-back', text: '‹ All topics', onclick: renderHome }));
+    contentEl.append(el('button', { class: 'wv-back', text: '‹ About Me', onclick: renderHome }));
     contentEl.append(el('h3', { class: 'wv-page-title', text: 'People in Your Life' }));
     contentEl.append(el('p', { class: 'wv-intro', text:
         'Add the people (and pets) who matter to you — name, how they relate to you, '
@@ -1343,7 +1348,7 @@ const FACT_SUGGESTIONS = [
  */
 function renderGeneralGoals() {
     contentEl.innerHTML = '';
-    contentEl.append(el('button', { class: 'wv-back', text: '‹ All topics', onclick: renderHome }));
+    contentEl.append(el('button', { class: 'wv-back', text: '‹ About Me', onclick: renderHome }));
     contentEl.append(el('h3', { class: 'wv-page-title', text: 'Goals For Any Conversation' }));
     contentEl.append(el('p', { class: 'wv-intro', text:
         'These appear as buttons in the Express Panel whichever person or place you '
@@ -1371,7 +1376,7 @@ function renderGeneralGoals() {
 function renderPlaces(editingId = null) {
     contentEl.innerHTML = '';
 
-    contentEl.append(el('button', { class: 'wv-back', text: '‹ All topics', onclick: renderHome }));
+    contentEl.append(el('button', { class: 'wv-back', text: '‹ About Me', onclick: renderHome }));
     contentEl.append(el('h3', { class: 'wv-page-title', text: 'My Places' }));
     contentEl.append(el('p', { class: 'wv-intro', text:
         'Add the places you go, and anything worth knowing about each one. In a conversation '
@@ -1620,12 +1625,15 @@ function renderModule(moduleId, focusKey = null) {
     contentEl.scrollTop = 0;
     contentEl.innerHTML = '';
 
-    contentEl.append(el('button', { class: 'wv-back', text: '‹ All topics', onclick: renderHome }));
+    contentEl.append(el('button', { class: 'wv-back', text: '‹ About Me', onclick: renderHome }));
     contentEl.append(el('h3', { class: 'wv-page-title', text: mod.title }));
 
-    // Show module-level note if present (e.g. the "Private by default" notice on A5)
+    // Show module-level note if present (e.g. the "Private by default" notice on A5).
+    // The padlock only where the module actually holds private answers; on the others
+    // the note describes what the module is for, and a padlock misled (CR-266).
     if (mod.note) {
-        contentEl.append(el('p', { class: 'wv-module-note', text: '🔒 ' + mod.note }));
+        const anyPrivate = (mod.fields || []).some((f) => f.defaultPrivacy === 'private');
+        contentEl.append(el('p', { class: 'wv-module-note', text: (anyPrivate ? '🔒 ' : '') + mod.note }));
     }
 
     for (const field of mod.fields) {

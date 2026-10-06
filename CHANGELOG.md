@@ -526,6 +526,11 @@ forgetting to tag one is only ever noise, never silence.
   conversations from any time" button has the same size lettering as the other
   buttons. Switching the command buttons from words back to icons no longer leaves an
   icon off-center.
+- About Me fixes: "Speak my answer" on a question that came up in a conversation now
+  turns on as soon as you type an answer; the Restart warning now says it also clears
+  your goals for any conversation; every link back to the About Me list now reads
+  "About Me" instead of "All topics" or "Back"; and the padlock now appears only on
+  topics that hold private answers.
 
 ## Version 0.13.4
 

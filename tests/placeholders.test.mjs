@@ -1069,3 +1069,13 @@ test('review note removable, older-list wording, command icons cleared of word f
     const face = ui.slice(ui.indexOf('function setCommandFace('));
     assert.match(face.slice(0, 700), /btn\.style\.removeProperty\(p\)/);
 });
+
+// CR-263..266 guards (About Me).
+test('About Me: extra-answer Speak follows the box; restart names goals; one back label; padlock only on private topics', async () => {
+    const { readFileSync } = await import('node:fs');
+    const wvui = readFileSync(new URL('../app/js/worldview-ui.js', import.meta.url), 'utf8');
+    assert.match(wvui, /if \(input\.value\.trim\(\)\) speakBtn\.removeAttribute\('disabled'\);/);
+    assert.match(wvui, /your goals for any conversation, and everything the app has learned/);
+    assert.ok(!/'‹ All topics'/.test(wvui));
+    assert.match(wvui, /\(anyPrivate \? '🔒 ' : ''\) \+ mod\.note/);
+});
