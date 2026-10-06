@@ -148,3 +148,10 @@ test('opening lines are requested with the saved scenario and come back as a lis
     assert.match(text, /We live together\./);
     assert.match(text, /No vulgarity/);
 });
+
+// CR-059. A new scenario being typed in survives the form being drawn again.
+test('the new-scenario form edits the draft that survives a redraw', async () => {
+    const { readFileSync } = await import('node:fs');
+    const src = readFileSync(new URL('../app/js/practice-editor.js', import.meta.url), 'utf8');
+    assert.match(src, /const draft = creating \? scenario : \{ \.\.\.scenario \};/);
+});

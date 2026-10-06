@@ -197,6 +197,8 @@ forgetting to tag one is only ever noise, never silence.
   folder, restoring a backup seemed to work but was undone the next time the folder
   was reconnected, and a backup made then left out your conversations. Both now ask
   you to reconnect the folder first.
+- Fixed: while typing a new practice scenario, switching to another Settings tab and
+  back emptied the form. What you typed now stays.
 
 ## Version 0.13.4
 

@@ -207,7 +207,10 @@ function renderList() {
 // The form. `creating` is the blank-form path; otherwise `scenario` is stored and every
 // change is saved as it is made.
 function renderForm(scenario, creating) {
-    const draft = { ...scenario };
+    // A new scenario's form edits the draft kept on the view itself, so what is typed
+    // survives the form being drawn again - switching Settings tabs redraws it, and a
+    // copy here came back blank (CR-059). An existing scenario is saved on every change.
+    const draft = creating ? scenario : { ...scenario };
     const note = status('');
 
     const save = async (fields) => {
