@@ -2931,7 +2931,16 @@ async function logErrorToConversation(entry) {
     } catch { /* best effort — never break the flow */ }
 }
 
-async function appendErrorFile(entry) {
+// Appends are lined up one after another (CR-216): each one copies the file, adds
+// its line and closes, and the last close wins - so two errors at the same moment
+// both started from the same copy and the first line was lost.
+let errorFileChain = Promise.resolve();
+function appendErrorFile(entry) {
+    errorFileChain = errorFileChain.then(() => writeErrorLine(entry)).catch(() => {});
+    return errorFileChain;
+}
+
+async function writeErrorLine(entry) {
     if (!dirHandle) return;
     try {
         const line = `${entry.ts} v${entry.version} conv=${entry.conversation} [${entry.context}] ${entry.message}`

@@ -60,7 +60,7 @@ function makeDir(name = '') {
                     return {
                         async write(chunk) { buf = buf.slice(0, pos) + chunk; pos = buf.length; },
                         async seek(p) { pos = p; },
-                        async close() { rec.data = buf; },
+                        async close() { if (writeDelayMs) await new Promise(r => setTimeout(r, writeDelayMs)); rec.data = buf; },
                     };
                 },
             };
@@ -313,6 +313,20 @@ test('a turn that never reached the file before going private is not appended wh
     await storage.finalizePartnerTurn(h, { rawTranscript: 'something private', cleanedTranscript: 'Something private.' });
     await storage.whenLogWritten();
     assert.ok(!JSON.stringify(await readLog(id)).includes('omething private'));
+});
+
+// CR-216. Two errors at the same moment both reach errors.log, in order: appends used
+// to start from the same copy of the file, and the last close discarded the first line.
+test('two errors logged together both reach errors.log, in order', async () => {
+    writeDelayMs = 5;
+    try {
+        storage.logError('first', 'ALPHA_ERROR');
+        storage.logError('second', 'BETA_ERROR');
+        await new Promise((r) => setTimeout(r, 80));
+    } finally { writeDelayMs = 0; }
+    const text = await (await (await root.getFileHandle('errors.log')).getFile()).text();
+    assert.ok(text.includes('ALPHA_ERROR') && text.includes('BETA_ERROR'), text);
+    assert.ok(text.indexOf('ALPHA_ERROR') < text.indexOf('BETA_ERROR'));
 });
 
 test('the written file is valid JSON with the shape a later reader expects', async () => {
