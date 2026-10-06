@@ -63,6 +63,7 @@ import * as diagnostics from './diagnostics.js';
 import * as weeklySend from './weekly-send.js';
 import * as metrics from './metrics.js';
 import { makeCollapsible } from './sections.js';
+import { whenIdle as voiceHarvestIdle } from './voice-refresh.js';
 import * as reviewUI from './review-ui.js';
 import * as tapGuard from './tap-guard.js';
 
@@ -275,6 +276,10 @@ let announcingUserStatement = false;
 let statementSeq = 0;
 // Module-level so it guards across Settings opens, not only within one (CR-084).
 let azureFetchInFlight = false;
+// Asked for again while one was in flight: run once more with the key and region as
+// they are then, or a value typed during the fetch was never looked up (CR-291).
+let azureRefetchPending = false;
+let azureRefetchTimer = null;
 // Bumped by terminateConversation (CR-078). speakUserStatement RETURNS whether the
 // conversation it spoke into is still the current one: ending a conversation cuts the
 // speech short and clears everything, so a caller that carried on would put the
@@ -7289,6 +7294,9 @@ async function importPackageText(text, sourceLabel) {
               'especially with a lot of saved conversations. Do not close the app.',
     });
     try {
+        // A voice update still running would save the old voice profile over the one
+        // this restores (CR-294), so it finishes first.
+        await voiceHarvestIdle();
         const done = await dataTransfer.applyPackage(pkg, (p) => {
             busy.update(p.total ? `Restored ${p.done} of ${p.total} items…` : '');
         });
@@ -8233,7 +8241,7 @@ function openSettings() {
             // use — which fails at the Test button rather than here, where the cause
             // is no longer visible.
             storage.clearAzureVoiceCatalog();
-            refreshAzureVoices({ force: true });
+            refreshAzureVoicesSoon();
             adoptChosenHearingIfKeyed('azure');
             reflectAzureTestAvailability();
         },
@@ -8268,7 +8276,7 @@ function openSettings() {
             // Which voices an account can use is a property of its region, so a region
             // change invalidates the list just as a key change does.
             storage.clearAzureVoiceCatalog();
-            refreshAzureVoices({ force: true });
+            refreshAzureVoicesSoon();
         };
         // Show the stored form on blur - "(US) East US" becomes "eastus" - so the box
         // says exactly what the app will use.
@@ -8520,20 +8528,30 @@ function openSettings() {
         };
         draw(cached ? cached.voices : ttsAzure.VOICES);
         if (cached && !force) return;          // already have the real thing
-        if (azureFetchInFlight) return;
+        if (azureFetchInFlight) { azureRefetchPending = true; return; }
 
         azureFetchInFlight = true;
+        const region = storage.loadAzureRegion();
         try {
-            const voices = await ttsAzure.fetchVoices(key, storage.loadAzureRegion());
+            const voices = await ttsAzure.fetchVoices(key, region);
+            // An answer for a key or region that has since changed is not saved.
+            if ((storage.loadAzureKey() || '').trim() !== key || storage.loadAzureRegion() !== region) return;
             storage.saveAzureVoiceCatalog(voices);
             draw(voices);
             showAzureVoiceStatus('own', 'ok', `${voices.length} English voices available`);
         } catch (err) {
+            if ((storage.loadAzureKey() || '').trim() !== key || storage.loadAzureRegion() !== region) return;
             showAzureVoiceStatus('own', 'warn',
                 `Showing a few voices only — the full list could not be loaded. ${(err && err.message) || ''}`.trim());
         } finally {
             azureFetchInFlight = false;
+            if (azureRefetchPending) { azureRefetchPending = false; refreshAzureVoices({ force: true }); }
         }
+    };
+    // Typed key or region: fetch once typing stops, not per letter (CR-291).
+    const refreshAzureVoicesSoon = () => {
+        clearTimeout(azureRefetchTimer);
+        azureRefetchTimer = setTimeout(() => refreshAzureVoices({ force: true }), 600);
     };
 
     refreshDeepgramVoices();

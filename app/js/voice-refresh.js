@@ -18,7 +18,19 @@ import * as expressPanel from './express-panel.js';
  * the harvest concludes. Returns the result, or null with no data folder or nothing
  * readable. Never throws.
  */
-export async function refreshVoiceHarvest() {
+// The run in progress, so a backup restore can wait for it (CR-294): finishing after
+// the restore, it saved the voice profile from BEFORE the restore over the restored
+// one. Two asks while one is running share it.
+let inFlight = null;
+export function refreshVoiceHarvest() {
+    if (!inFlight) inFlight = run().finally(() => { inFlight = null; });
+    return inFlight;
+}
+
+/** Resolves once no voice update is running. */
+export function whenIdle() { return inFlight || Promise.resolve(); }
+
+async function run() {
     try {
         const logs = await storage.listConversationLogs();
         const result = voiceHarvest.harvest(logs, {

@@ -130,11 +130,29 @@ function readCache() {
 function writeCache(m) {
     try { localStorage.setItem(CACHE_KEY, JSON.stringify(m)); } catch { /* quota — disk is truth */ }
 }
+/*
+ * One write at a time, latest wins (CR-292). Typing a phrase saves the panel on every
+ * letter; overlapping writes could finish out of order and leave the folder holding
+ * an earlier version - which then wins on the next launch. A burst collapses into the
+ * write in progress plus one more with the newest panel.
+ */
+let diskWriting = null;
+let diskPending = null;
 function writeDisk(m) {
     // Best-effort; never blocks the UI. No-op without a data folder.
-    if (newerOnDisk) return;   // never overwrite a newer copy's file (CR-284)
-    writeFile(FILE, JSON.stringify({ ...m, updated: new Date().toISOString() }, null, 2))
-        .catch(() => { /* disk write is best-effort */ });
+    if (newerOnDisk) return Promise.resolve();   // never overwrite a newer copy's file (CR-284)
+    diskPending = m;
+    if (!diskWriting) {
+        diskWriting = (async () => {
+            while (diskPending) {
+                const next = diskPending;
+                diskPending = null;
+                try { await writeFile(FILE, JSON.stringify({ ...next, updated: new Date().toISOString() }, null, 2)); }
+                catch { /* disk write is best-effort */ }
+            }
+        })().finally(() => { diskWriting = null; });
+    }
+    return diskWriting;
 }
 
 /** Load: data folder (source of truth) → cache → defaults. */
@@ -321,6 +339,6 @@ export async function syncToFolder() {
         return 'adopted';
     }
     model = getModel();
-    await writeFile(FILE, JSON.stringify({ ...model, updated: new Date().toISOString() }, null, 2));
+    await writeDisk(model);   // through the same queue (CR-292)
     return 'wrote';
 }

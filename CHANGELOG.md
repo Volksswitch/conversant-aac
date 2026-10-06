@@ -562,6 +562,13 @@ forgetting to tag one is only ever noise, never silence.
   Settings closes, so it is never still armed the next time you open Settings. The
   detailed usage log in your data folder is now kept as one file per month, so saving
   it stays quick.
+- Typing an Azure key or region now loads the full voice list once you stop typing,
+  instead of sometimes leaving a "could not be loaded" warning. Quick typing in the
+  Express Panel editor can no longer leave the saved copy a few letters behind. A
+  quick double tap on "Make a copy", "Start from this person" or "Add scenario" in
+  Practice now makes just one. Restoring a backup right after leaving a conversation
+  review no longer risks the old "How I Sound" answers being written back over the
+  restored ones.
 
 ## Version 0.13.4
 

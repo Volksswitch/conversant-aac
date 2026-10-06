@@ -58,8 +58,19 @@ function el(tag, props = {}, children = []) {
     return n;
 }
 
+// A button whose action takes time is held off until it finishes (CR-293): a second
+// tap while "Make a copy" was saving made a second copy. Disabled synchronously, before
+// the first await, so the second tap already finds it unavailable.
 function button(label, onclick, cls = '') {
-    return el('button', { type: 'button', text: label, class: cls, onclick });
+    const guarded = onclick && async function (e) {
+        if (this.disabled) return;
+        const r = onclick.call(this, e);
+        if (r && typeof r.then === 'function') {
+            this.disabled = true;
+            try { await r; } finally { this.disabled = false; }
+        }
+    };
+    return el('button', { type: 'button', text: label, class: cls, onclick: guarded });
 }
 
 // Each row's Edit / Copy / Delete says which scenario it is for, or every row sounds

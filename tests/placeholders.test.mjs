@@ -1115,3 +1115,14 @@ test('spoken help is reset on every Settings close path and on open', () => {
     const open = appSource.slice(appSource.indexOf('function openSettings() {'));
     assert.match(open.slice(0, 300), /resetSpokenHelp\(\);/);
 });
+
+// CR-291..294 guards.
+test('Azure voices refetch once typing stops; panel writes queue; practice buttons hold off; import waits for the voice update', async () => {
+    const { readFileSync } = await import('node:fs');
+    const ep = readFileSync(new URL('../app/js/express-panel.js', import.meta.url), 'utf8');
+    const pe = readFileSync(new URL('../app/js/practice-editor.js', import.meta.url), 'utf8');
+    assert.match(appSource, /if \(azureFetchInFlight\) \{ azureRefetchPending = true; return; \}/);
+    assert.match(ep, /while \(diskPending\) \{/);
+    assert.match(pe, /if \(this\.disabled\) return;/);
+    assert.match(appSource, /await voiceHarvestIdle\(\);\s*const done = await dataTransfer\.applyPackage/);
+});
