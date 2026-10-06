@@ -890,6 +890,8 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
             // which is the whole reason the floor of four is tolerable.
             const band = bands[index];
             if (band) cellEl.classList.add('ep-band-' + band);
+            // The same button after a redraw, for the two-tap safeguard (CR-161).
+            if (item) cellEl.dataset.tapKey = `${index}|${item.id || item.type}|${item.text || item.label || item.name || ''}`;
             // Marked here rather than inside the two builders, so an undefined cell
             // and a defined one cannot drift apart — a cell tapped while empty keeps
             // its mark through the moment it becomes a phrase.

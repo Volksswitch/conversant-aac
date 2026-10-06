@@ -251,7 +251,10 @@ export function summarize(logs) {
             }
 
             // The situation stamps ride on both roles, so they are read once here.
-            const label = e && e.partner && e.partner.label;
+            // Only real turns count (CR-162): a context, offer or event entry carries the
+            // partner too, and counting it made someone tapped but never spoken with
+            // look like a returning partner.
+            const label = (isPartner(e) || isUser(e)) && e.partner && e.partner.label;
             if (label) {
                 out.influencers.turnsWithPartner++;
                 if (!practice && !isPracticeLabel(label)) {
@@ -380,7 +383,8 @@ export function summarize(logs) {
             }
         }
         if (sawError) out.conversationsWithErrors++;
-        if (convStart !== null) bucketable.push({ t: convStart, kind: 'conversation', convId, practice });
+        // A file with no turns is counted as empty, not as a conversation (CR-162).
+        if (convStart !== null && turns.length) bucketable.push({ t: convStart, kind: 'conversation', convId, practice });
 
         const stamps = ex.map(e => ms(e && e.timestamp)).filter(t => t !== null);
         if (stamps.length >= 2) durations.push(Math.max(...stamps) - Math.min(...stamps));
@@ -420,7 +424,7 @@ export function summarize(logs) {
         const data = entry && entry.data;
         if (!data || !Array.isArray(data.exchanges)) continue;
         for (const e of data.exchanges) {
-            const label = e && e.partner && e.partner.label;
+            const label = (isPartner(e) || isUser(e)) && e.partner && e.partner.label;
             const t = ms(e && e.timestamp);
             if (!label || t === null || isPracticeLabel(label)) continue;
             const row = partnerRows.get(label);

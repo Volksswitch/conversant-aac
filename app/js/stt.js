@@ -278,7 +278,7 @@ function fuzzySlice(haystack, needle) {
 //   - embed:  our phrase fuzzily appears inside a longer captured segment — the
 //             recognizer merged our playback with adjacent noise. Multi-word only,
 //             so a short common token can't swallow real partner speech.
-function isEcho(transcript) {
+function isEcho(transcript, isFinal = false) {
     const now = Date.now();
     for (let i = activePhrases.length - 1; i >= 0; i--) {
         if (activePhrases[i].expires < now) activePhrases.splice(i, 1);
@@ -290,7 +290,11 @@ function isEcho(transcript) {
     const multiWord = segTokens.length >= 2;
     return activePhrases.some(({ text: p, tokens: pTokens }) => {
         if (p === t) return true;                                       // exact
-        if (p.startsWith(t)) return true;                              // interim prefix
+        // An interim grows letter by letter ("giv", "give me"), so any prefix of our
+        // phrase is our echo. A SETTLED result is a whole word, and only matches at a
+        // word boundary: a partner's "No." is not the start of our "Nothing much"
+        // (CR-159).
+        if (isFinal ? p.startsWith(t + ' ') : p.startsWith(t)) return true;
         if (multiWord && fuzzySlice(pTokens, segTokens)) return true;  // echo is a slice of our phrase
         if (pTokens.length >= 2 && fuzzySlice(segTokens, pTokens)) return true; // our phrase inside a longer segment
         return false;
@@ -363,7 +367,7 @@ function commitSegment(transcript) {
 function ingest(transcript, isFinal) {
     // Drop our own TTS echo (a placeholder/response/prompt) — it must not
     // accumulate or renew the partner's turn. Only unique partner content gets through.
-    if (isEcho(transcript)) return false;
+    if (isEcho(transcript, isFinal)) return false;
     if (speechActive() && novelWordCount(transcript) >= 2) heardDuringSpeech = true;
     if (isFinal) {
         commitSegment(transcript);
@@ -749,6 +753,13 @@ function suspendSource() {
 function openSource() {
     listeningIntent = true;
     suspendedForHidden = false;   // a deliberate (re)start clears any backgrounded state
+    // Counted for the paid services too, so a report can say how long they took to hear
+    // anything (CR-160).
+    noteListen('sessions');
+    // Only the FIRST open of a run starts the clock: the restart-on-end loop reopens
+    // the recognizer constantly, and timing from the latest reopen would measure the
+    // gap since the last restart rather than how long the user waited.
+    if (!openedAt) { openedAt = Date.now(); heardThisRun = false; }
     if (externalSource) {
         // Async: the paid backend needs microphone permission and a socket. Its own
         // status callback reports 'listening' once it is actually up, so the button
@@ -756,11 +767,6 @@ function openSource() {
         externalSource.start();
         return;
     }
-    noteListen('sessions');
-    // Only the FIRST open of a run starts the clock: the restart-on-end loop reopens
-    // the recognizer constantly, and timing from the latest reopen would measure the
-    // gap since the last restart rather than how long the user waited.
-    if (!openedAt) { openedAt = Date.now(); heardThisRun = false; }
     try { recognition.start(); } catch { /* already started */ }
     if (onStatusChange) onStatusChange('listening');
 }

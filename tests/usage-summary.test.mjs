@@ -439,3 +439,21 @@ test('⚠ the summary carries COUNTS ONLY — no doubted word can ride the weekl
         assert.ok(!dumped.includes(w), `"${w}" must not appear in the summary`);
     }
 });
+
+// CR-162. A partner tapped but never spoken with is not a conversation partner.
+test('a context entry alone does not count a partner or a conversation', () => {
+    const ctxOnly = { id: 'c1', data: { exchanges: [
+        { role: 'context', timestamp: '2026-10-01T10:00:00Z', partner: { id: 'p', label: 'Dr. Patel' } },
+    ] } };
+    const s = summarize([ctxOnly]);
+    assert.equal(s.partners.length, 0);
+    assert.equal(s.influencers.turnsWithPartner, 0);
+    const withTurns = { id: 'c2', data: { exchanges: [
+        { role: 'context', timestamp: '2026-10-02T10:00:00Z', partner: { id: 'p', label: 'Dr. Patel' } },
+        { role: 'partner', timestamp: '2026-10-02T10:00:05Z', rawTranscript: 'Hi', partner: { id: 'p', label: 'Dr. Patel' } },
+        { role: 'user', timestamp: '2026-10-02T10:00:09Z', selectedText: 'Hello', partner: { id: 'p', label: 'Dr. Patel' } },
+    ] } };
+    const s2 = summarize([withTurns]);
+    assert.equal(s2.influencers.turnsWithPartner, 2);
+    assert.equal(s2.partners[0].turns, 2);
+});

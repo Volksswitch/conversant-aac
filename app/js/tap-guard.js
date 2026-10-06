@@ -26,6 +26,7 @@ import * as storage from './storage.js';
 const RULES = [];
 let armed = null;
 let armedClass = '';
+let armedKey = '';
 let timer = null;
 
 /** Guard every element matching `selector`, unless `exempt(el, target)` says not to. */
@@ -57,19 +58,31 @@ function match(target) {
 export function isArmingTap(target) {
     if (!doubleTapOn()) return false;
     const m = match(target);
-    return !!m && armed !== m.el;
+    return !!m && !sameAsArmed(m.el);
+}
+
+// ⚠ THE EXPRESS PANEL REDRAWS ITSELF (CR-161) - when the partner's choices arrive, a
+// sound starts, a band pages - and the armed button is replaced by an identical new one.
+// A button that carries a data-tap-key is the same button if the key matches, so the
+// second tap still acts. A response card carries no key: a replaced card is new
+// wording, and must be armed again.
+function sameAsArmed(el) {
+    if (armed === el) return true;
+    return !!armed && !armed.isConnected && !!armedKey && el.dataset.tapKey === armedKey;
 }
 
 export function disarm() {
     if (timer) { clearTimeout(timer); timer = null; }
     if (armed) armed.classList.remove(armedClass);
     armed = null;
+    armedKey = '';
     armedClass = '';
 }
 
 function arm(el, cls) {
     disarm();
     armed = el;
+    armedKey = el.dataset.tapKey || '';
     armedClass = cls;
     el.classList.add(cls);
     timer = setTimeout(disarm, storage.loadDoubleTapMs());
@@ -83,7 +96,7 @@ export function install() {
         if (!doubleTapOn()) return;
         const m = match(e.target);
         if (!m) return;
-        if (armed === m.el) { disarm(); return; }      // the second tap: let it act
+        if (sameAsArmed(m.el)) { disarm(); return; }   // the second tap: let it act
         arm(m.el, m.rule.armClass);
         e.preventDefault();
         e.stopImmediatePropagation();

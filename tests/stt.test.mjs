@@ -563,3 +563,17 @@ test('words still in progress when Listen stops are kept for a resume', () => {
     stt.resumeListening();
     assert.equal(stt.getCurrentTranscript(), 'I was thinking about lunch');
 });
+
+// CR-159. A partner's short reply is not mistaken for the start of our own phrase.
+test('a short settled reply that begins like our phrase is kept; our own echo still dropped', async () => {
+    stt.startListening();
+    stt.noteSpokenStart('Nothing much, just relaxing at home.');
+    stt.noteSpokenEnd();
+    await sleep(1600);                        // past the echo tail, inside the match window
+    rec.emitInterim('noth');                  // our own words arriving letter by letter
+    assert.equal(stt.getCurrentTranscript(), '', 'an interim prefix is still our echo');
+    rec.emitFinal('No.');
+    await sleep(THRESHOLD_S * 1000 + 60);
+    assert.equal(stt.getCurrentTranscript(), 'No.');
+    assert.equal(silences.length, 1, 'the reply fires a checkpoint');
+});

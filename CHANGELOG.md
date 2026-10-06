@@ -394,6 +394,11 @@ forgetting to tag one is only ever noise, never silence.
   longer pays for a clip whose words are never used; and the cost shown for paid
   listening now counts the audio actually sent, so it no longer reads lower than the
   bill.
+- Fixed: a short reply such as "No." right after you spoke could be ignored as if it
+  were the app hearing itself; with "Two taps" on, a phrase tapped twice could fail to
+  speak if the Express Panel refreshed between the taps; and the weekly usage figures
+  no longer count someone you only tapped, but never talked with, as a conversation
+  partner.
 
 ## Version 0.13.4
 

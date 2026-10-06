@@ -882,3 +882,13 @@ test('CR-153: each Review edit is its own Undo step', () => {
     const stop = rv.slice(rv.indexOf('function stopEditing'));
     assert.match(stop.slice(0, 400), /wordSnapshotTaken = false;/);
 });
+
+test('CR-160/161: paid listening is timed; a redrawn Express button keeps its armed state', () => {
+    const stt = readFileSync(new URL('../app/js/stt.js', import.meta.url), 'utf8');
+    const os = stt.slice(stt.indexOf('function openSource'));
+    assert.ok(os.indexOf("noteListen('sessions')") < os.indexOf('if (externalSource)'));
+    const tg = readFileSync(new URL('../app/js/tap-guard.js', import.meta.url), 'utf8');
+    assert.match(tg, /if \(sameAsArmed\(m\.el\)\) \{ disarm\(\); return; \}/);
+    const ui = readFileSync(new URL('../app/js/ui.js', import.meta.url), 'utf8');
+    assert.match(ui, /cellEl\.dataset\.tapKey = /);
+});
