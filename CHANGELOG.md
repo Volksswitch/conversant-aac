@@ -297,6 +297,9 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: when a new version came out, the app could restart itself in the middle of a
   conversation. It now waits until no conversation is under way and Settings is
   closed, then updates.
+- Fixed: with a Google Cloud voice, the practice partner and the spoken help in
+  Settings could pick a voice made for another language, which can be hard to
+  understand. They now pick another voice in your own language.
 
 ## Version 0.13.4
 

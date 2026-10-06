@@ -42,7 +42,7 @@ import * as sttDeepgram from './stt-deepgram.js';
 import * as ttsDeepgram from './tts-deepgram.js';
 import * as ttsAzure from './tts-azure.js';
 import * as ttsRest from './tts-rest.js';
-import { TTS_PROVIDERS, STT_PROVIDERS } from './speech-catalog.js';
+import { TTS_PROVIDERS, STT_PROVIDERS, pickOtherVoice } from './speech-catalog.js';
 
 /*
  * The company name shown beside a speech charge on the About tab — the one the user
@@ -1220,8 +1220,7 @@ function pickRestPartnerVoice(id, chosen = storage.loadServicePartnerVoice(id)) 
     if (!provider) return null;
     const own = storage.loadServiceVoice(id) || provider.defaultVoice;
     const list = (storage.loadServiceVoiceCatalog(id) || provider.voices || []);
-    const other = list.find((v) => v.id !== own);
-    return other ? other.id : own;
+    return pickOtherVoice(list, own);   // same language first (CR-093)
 }
 
 /*

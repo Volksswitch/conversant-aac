@@ -296,6 +296,26 @@ export function languageOfGoogleVoice(voice) {
     return m ? m[1] : 'en-US';
 }
 
+/*
+ * A voice that is not the user's own, for the practice partner and spoken help
+ * (CR-093). Prefers one in the SAME language, as the device-voice picker does: Google's
+ * list covers dozens of languages and its first entry is rarely English, so "any other
+ * voice" read English text in an Afrikaans voice. The language is known only where the
+ * id carries it (Google's "en-US-..." form); anywhere else every voice counts as a match.
+ * Returns the user's own voice only when there is no other.
+ */
+export function pickOtherVoice(list, own) {
+    const langOf = (id) => {
+        const m = /^([a-z]{2,3}-[A-Z]{2})-/.exec(String(id || ''));
+        return m ? m[1] : null;
+    };
+    const mine = langOf(own);
+    const others = (list || []).filter((v) => v && v.id !== own);
+    const same = others.find((v) => !mine || !langOf(v.id) || langOf(v.id) === mine);
+    const pick = same || others[0];
+    return pick ? pick.id : own;
+}
+
 /** Base64 → Blob, without going through a data: URL (which caps at a few megabytes). */
 export function base64ToBlob(b64, mimeType) {
     const bin = atob(b64);
