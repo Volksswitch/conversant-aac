@@ -333,14 +333,14 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-292](CR-292.md) | fixed (c972110) | low | plausible | race-condition | `app/js/express-panel.js:123` | The panel file is written to disk on every keystroke with no ordering, so the saved copy can end up behind |
 | [CR-293](CR-293.md) | fixed (c972110) | low | plausible | race-condition | `app/js/practice-editor.js:118` | A quick double tap on Make a copy, Start from this person or Add scenario creates duplicate scenarios |
 | [CR-294](CR-294.md) | fixed (c972110) | low | plausible | race-condition | `app/js/review-ui.js:181` | Leaving a review starts a voice rebuild that can overwrite a backup restored moments later |
-| [CR-295](CR-295.md) | fixed (pending) | low | plausible | race-condition | `app/js/review-ui.js:465` | Review save: an in-flight write is not awaited on leave, and re-entering uses the list's stale copy of the review, which can roll back answers |
-| [CR-296](CR-296.md) | fixed (pending) | low | plausible | race-condition | `app/js/storage.js:2120` | Two log writers arriving together each start the conversation file, duplicating the start entry |
-| [CR-297](CR-297.md) | fixed (pending) | low | plausible | race-condition | `app/js/stt.js:494` | On iPad, a delayed recognizer restart ignores a backgrounding that happened during the delay |
-| [CR-298](CR-298.md) | fixed (pending) | low | plausible | race-condition | `app/js/stt.js:584` | setSource() abandons the old built-in recognizer with its handlers still attached, so its late events act on the newly chosen service |
-| [CR-299](CR-299.md) | open | low | plausible | race-condition | `app/js/tts-deepgram.js:197` | A closed Deepgram socket's leftover handlers can fail the next sentence on the new connection |
-| [CR-300](CR-300.md) | open | low | plausible | race-condition | `app/js/weekly-send.js:355` | Two report sends can run at the same time and overwrite each other's queue, sending duplicates or dropping a report |
-| [CR-301](CR-301.md) | open | low | plausible | resource-leak | `app/js/app.js:5089` | A layout drag that loses its pointerup leaves the whole app unclickable |
-| [CR-302](CR-302.md) | open | low | plausible | resource-leak | `app/js/storage.js:19` | IndexedDB helpers open a new database connection on every call and never close it |
+| [CR-295](CR-295.md) | fixed (c32e3fb) | low | plausible | race-condition | `app/js/review-ui.js:465` | Review save: an in-flight write is not awaited on leave, and re-entering uses the list's stale copy of the review, which can roll back answers |
+| [CR-296](CR-296.md) | fixed (c32e3fb) | low | plausible | race-condition | `app/js/storage.js:2120` | Two log writers arriving together each start the conversation file, duplicating the start entry |
+| [CR-297](CR-297.md) | fixed (c32e3fb) | low | plausible | race-condition | `app/js/stt.js:494` | On iPad, a delayed recognizer restart ignores a backgrounding that happened during the delay |
+| [CR-298](CR-298.md) | fixed (c32e3fb) | low | plausible | race-condition | `app/js/stt.js:584` | setSource() abandons the old built-in recognizer with its handlers still attached, so its late events act on the newly chosen service |
+| [CR-299](CR-299.md) | fixed (aeaccb3) - already fixed by CR-099: closeSocket detaches the handlers before closing | low | plausible | race-condition | `app/js/tts-deepgram.js:197` | A closed Deepgram socket's leftover handlers can fail the next sentence on the new connection |
+| [CR-300](CR-300.md) | fixed (pending) | low | plausible | race-condition | `app/js/weekly-send.js:355` | Two report sends can run at the same time and overwrite each other's queue, sending duplicates or dropping a report |
+| [CR-301](CR-301.md) | fixed (pending) | low | plausible | resource-leak | `app/js/app.js:5089` | A layout drag that loses its pointerup leaves the whole app unclickable |
+| [CR-302](CR-302.md) | fixed (pending) | low | plausible | resource-leak | `app/js/storage.js:19` | IndexedDB helpers open a new database connection on every call and never close it |
 | [CR-303](CR-303.md) | open | low | plausible | ui-inconsistency | `app/js/app.js:6615` | The non-destructive Back up confirmation uses the red danger card |
 
 ---

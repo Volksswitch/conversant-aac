@@ -124,3 +124,17 @@ test('a weekly report that cannot be queued leaves everything to be tried again'
     assert.equal(storage.loadWeeklyErrorMark(), mark, 'the errors are not marked sent');
     assert.ok(storage.loadWeeklySendLog().some((e) => /could not be queued/.test(e.outcome)));
 });
+
+// CR-300. Two deliveries at once post each report once, and the queue ends empty.
+test('overlapping deliveries post a report only once', async () => {
+    store.clear();
+    let posts = 0;
+    globalThis.fetch = async () => {
+        posts++;
+        await new Promise((r) => setTimeout(r, 30));
+        return { ok: true, status: 200, text: async () => 'ok' };
+    };
+    await Promise.all([send('once'), weekly.flush()]);
+    assert.equal(posts, 1, 'the same report was not posted twice');
+    assert.equal(storage.loadWeeklyQueue().length, 0);
+});

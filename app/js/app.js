@@ -5614,6 +5614,7 @@ function onHandlePointerDown(e) {
     window.addEventListener('pointermove', onLayoutDrag);
     window.addEventListener('pointerup', endLayoutDrag);
     window.addEventListener('pointercancel', endLayoutDrag);
+    window.addEventListener('blur', endLayoutDrag);   // the release may never arrive (CR-301)
 }
 
 function wireLayoutHandles() {
@@ -5656,6 +5657,7 @@ function onLayoutPointerDown(e) {
     window.addEventListener('pointermove', onLayoutDrag);
     window.addEventListener('pointerup', endLayoutDrag);
     window.addEventListener('pointercancel', endLayoutDrag);
+    window.addEventListener('blur', endLayoutDrag);   // the release may never arrive (CR-301)
 }
 
 // The cursor is the only affordance a mouse user gets, and it is enough: it changes
@@ -5668,6 +5670,11 @@ function onLayoutHover(e) {
 
 function onLayoutDrag(e) {
     if (!layoutDrag) return;
+    // A mouse with no button held is not dragging: the release went somewhere the
+    // page never heard (another window, outside the browser), and without this every
+    // button stayed unresponsive while moving the mouse went on resizing (CR-301).
+    // Touch reports a pressed button while down, so it is not affected.
+    if (e.pointerType === 'mouse' && e.buttons === 0) { endLayoutDrag(); return; }
     const rem = remPx();
     const appMargin = lerp(storage.loadAppMarginPos(), 0, APP_MARGIN_MAX_REM) * rem;
     const VW = layoutVW() - 2 * appMargin, VH = layoutVH() - 2 * appMargin;
@@ -5709,6 +5716,7 @@ function endLayoutDrag() {
     window.removeEventListener('pointermove', onLayoutDrag);
     window.removeEventListener('pointerup', endLayoutDrag);
     window.removeEventListener('pointercancel', endLayoutDrag);
+    window.removeEventListener('blur', endLayoutDrag);
 }
 
 // Apply the user-set text-size scales as CSS multipliers on each surface's base

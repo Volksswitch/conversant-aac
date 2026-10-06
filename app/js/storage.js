@@ -16,13 +16,27 @@ let conversationDirHandle = null;
 
 // --- IndexedDB helpers for persisting the directory handle ---
 
+// One connection, shared (CR-302). Opening a new one for every look-up left them all
+// open for the life of the page, and open connections would block any future change
+// to this small database's layout - with no "blocked" handling, a look-up would then
+// hang instead of failing. A request to change the layout closes this one.
+let dbPromise = null;
 function idbOpen() {
-    return new Promise((resolve, reject) => {
-        const req = indexedDB.open(IDB_NAME, 1);
-        req.onupgradeneeded = () => req.result.createObjectStore(IDB_STORE);
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error);
-    });
+    if (!dbPromise) {
+        dbPromise = new Promise((resolve, reject) => {
+            const req = indexedDB.open(IDB_NAME, 1);
+            req.onupgradeneeded = () => req.result.createObjectStore(IDB_STORE);
+            req.onsuccess = () => {
+                const db = req.result;
+                db.onversionchange = () => { try { db.close(); } catch { /* gone */ } dbPromise = null; };
+                db.onclose = () => { dbPromise = null; };
+                resolve(db);
+            };
+            req.onerror = () => { dbPromise = null; reject(req.error); };
+            req.onblocked = () => { dbPromise = null; reject(new Error('IndexedDB open blocked')); };
+        });
+    }
+    return dbPromise;
 }
 
 async function idbGet(key) {

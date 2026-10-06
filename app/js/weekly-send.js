@@ -426,7 +426,24 @@ async function post(payload) {
 /* Try to send everything queued. Each success is logged for the tester to read
  * back; the first network failure stops the run and leaves the rest queued, so a
  * flaky connection does not burn through the queue reporting failures. */
-export async function flush() {
+/*
+ * One delivery run at a time (CR-300). A problem report sent from the launch screen
+ * and the weekly check a few seconds after Start each ran their own; overlapping, the
+ * second posted the same report again, and the first then wrote back a queue that no
+ * longer held what had been added meanwhile. Now a second call waits for the first,
+ * then runs; and the queue is read fresh from storage each time round, with a sent
+ * report removed by matching it rather than by writing back an old copy.
+ */
+let flushing = null;
+export function flush() {
+    const run = () => flushImpl();
+    const next = (flushing || Promise.resolve()).then(run, run);
+    const tracked = next.finally(() => { if (flushing === tracked) flushing = null; });
+    flushing = tracked;
+    return next;
+}
+
+async function flushImpl() {
     let queue = storage.loadWeeklyQueue();
     if (!queue.length) return { sent: 0, queued: 0 };
     let sent = 0;
@@ -437,7 +454,9 @@ export async function flush() {
             outcome = await post(payload);
         } catch {
             // Offline or blocked. Keep it — this is the failure the queue exists for.
-            storage.saveWeeklyQueue(queue);
+            // The stored queue already holds it; writing back this run's copy could
+            // drop a report added while the post was waiting.
+            queue = storage.loadWeeklyQueue();
             storage.appendWeeklySendLog({ at: new Date().toISOString(), bytes: JSON.stringify(payload).length, outcome: 'waiting for a connection' });
             return { sent, queued: queue.length };
         }
@@ -453,9 +472,12 @@ export async function flush() {
         // head is evicted in time rather than jamming the queue for good.
         if (outcome !== 'sent') {
             storage.appendWeeklySendLog({ at: new Date().toISOString(), bytes: JSON.stringify(payload).length, outcome });
-            return { sent, queued: queue.length };
+            return { sent, queued: storage.loadWeeklyQueue().length };
         }
-        queue = queue.slice(1);
+        const sentText = JSON.stringify(payload);
+        queue = storage.loadWeeklyQueue();
+        const at = queue.findIndex((q) => JSON.stringify(q) === sentText);
+        if (at >= 0) queue.splice(at, 1);
         storage.saveWeeklyQueue(queue);
         storage.appendWeeklySendLog({ at: new Date().toISOString(), bytes: JSON.stringify(payload).length, outcome });
         sent++;

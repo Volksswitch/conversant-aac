@@ -569,6 +569,9 @@ forgetting to tag one is only ever noise, never silence.
   Practice now makes just one. Restoring a backup right after leaving a conversation
   review no longer risks the old "How I Sound" answers being written back over the
   restored ones.
+- Fixed: a problem report could occasionally be sent twice, and dragging a border to
+  resize part of the screen could get stuck following the pointer after it left the
+  window.
 
 ## Version 0.13.4
 
