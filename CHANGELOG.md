@@ -154,6 +154,9 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: after scrolling the Settings panel on a tablet, the first tap on the "?" help
   button did nothing. And with help switched on, starting a scroll on a setting read
   that setting aloud and switched help off. Both are fixed.
+- Fixed: on Side Layout 10, the number button opened the keyboard on a page of symbols
+  with no way back to the letters. It now opens on the letters page, which on that
+  layout already has the numbers.
 
 ## Version 0.13.4
 

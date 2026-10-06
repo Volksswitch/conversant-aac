@@ -886,6 +886,12 @@ export function hideKeyboard() {
 // keyboard-backed surface (the "In my own words" composer) call this so the
 // keyboard shows deterministically. No-op in physical mode. show() is idempotent,
 // so a real focusin firing too just re-renders harmlessly. (Ken, July 2026.)
+function layoutHasPageKey() {
+    const id = dockFor() === 'side' ? sideLayoutId : bottomLayoutId;
+    const rows = (LAYOUTS[id] && LAYOUTS[id].rows) || [];
+    return rows.some((row) => (row || []).some((c) => c && c.action === 'page'));
+}
+
 export function showFor(field, opts = {}) {
     if (mode !== 'onscreen' || !field) return;
     // Open on a chosen page. The symbols page is GENERATED from the active letters
@@ -893,7 +899,11 @@ export function showFor(field, opts = {}) {
     // keyguard hole (see the note above the symbols-page builder). Used when the
     // partner has asked for a number, so the digits are already under the user's
     // hand instead of one more tap away.
-    if (opts.page === 'symbols' || opts.page === 'letters') page = opts.page;
+    if (opts.page === 'letters') page = opts.page;
+    // Only where the layout has a key to come back: a layout with no page key (Side
+    // Layout 10, which has the digits on its letters page) would otherwise open on
+    // symbols with no way back to the letters (CR-044).
+    if (opts.page === 'symbols' && layoutHasPageKey()) page = opts.page;
     show(field);
 }
 

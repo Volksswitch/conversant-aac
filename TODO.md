@@ -56,6 +56,19 @@ outlives a "Don't save" conversation.
 
 **Why not now:** the review was the task; fixing is separate work, one item per commit.
 
+### Side Layout 10 has no key to reach the symbols
+
+**Raised:** October 5 2026, from code review item CR-044.
+
+**What is wanted:** Ken's decision. On Side Layout 10 there is no key that switches to the
+symbols page, so a question mark, an apostrophe, an exclamation mark and every other
+symbol except comma and period cannot be typed. The fix the review suggests is to split
+the space key on the bottom row into a symbols key plus a shorter space key.
+
+**Why not now:** that changes where keys sit on Side Layout 10, so anyone with a keyguard
+cut for that layout would need a new one. The other half of the item is fixed: the
+number button no longer opens that layout on the symbols page with no way back.
+
 ### Silent "get me other options" buttons must not cut off a placeholder
 
 **Raised:** October 1 2026, by Ken: *"pressing a 'reframe' button shouldn't interrupt a

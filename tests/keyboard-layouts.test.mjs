@@ -96,3 +96,14 @@ test('a layout with no space key still has no compose button, and does not crash
     const roles = panelRoles([[{ kind: 'char', span: 1 }, { kind: 'blank', span: 1 }]]);
     assert.deepEqual(roles[0].map((c) => c.role), ['position', 'gap']);
 });
+
+// CR-044. Every layout but Side Layout 10 has a page key. S10 is the known exception
+// (its symbols are unreachable until Ken decides whether to change its key layout -
+// see TODO.md); the keyboard never opens it on the symbols page.
+test('only Side Layout 10 lacks a page key', async () => {
+    const { LAYOUTS } = await import('../app/js/keyboard-layouts.js');
+    const without = Object.entries(LAYOUTS)
+        .filter(([, l]) => !(l.rows || []).some((row) => row.some((c) => c && c.action === 'page')))
+        .map(([id]) => id);
+    assert.deepEqual(without, ['S10']);
+});
