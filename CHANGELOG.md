@@ -450,6 +450,9 @@ forgetting to tag one is only ever noise, never silence.
   before you went private.
 - On a slow device, tapping Start a second time while the app is still starting no
   longer starts everything twice. The button stays dimmed until the app is ready.
+- With a paid voice, stopping speech (for example "Hold on", a card tap, or ending the
+  conversation) now also drops any sentence that was lined up to be said next, as the
+  device voice already did.
 
 ## Version 0.13.4
 

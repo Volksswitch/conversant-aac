@@ -330,6 +330,7 @@ export function createVoice({ getKey, getRegion, onBilled } = {}) {
                                  // resume wait is not overtaken by playback
     let inFlight = null;         // AbortController for the request being made
     let chain = Promise.resolve();
+    let cancelGen = 0;   // bumped by cancel(); see speak() (CR-217)
     const cache = new Map();     // voice+text -> decoded AudioBuffer
     // Set only while the Settings Test button is exercising a key and region the
     // user has typed but not yet saved, so Test reports on what is on screen.
@@ -457,7 +458,12 @@ export function createVoice({ getKey, getRegion, onBilled } = {}) {
      * quiet longest.
      */
     function speak(text, { model = DEFAULT_VOICE } = {}) {
+        // A sentence lined up behind the one playing is dropped by cancel() too: it
+        // takes its place in the queue NOW, so a stop that lands before it starts still
+        // applies to it (CR-217). A speak() made after the cancel still plays.
+        const gen = cancelGen;
         const run = async () => {
+            if (gen !== cancelGen) return;
             const trimmed = (text || '').trim();
             if (!trimmed) return;
 
@@ -487,6 +493,7 @@ export function createVoice({ getKey, getRegion, onBilled } = {}) {
 
     function cancel() {
         playToken++;                        // a speak() waiting on resume() must not start now
+        cancelGen++;
         if (inFlight) { try { inFlight.abort(); } catch { /* already done */ } inFlight = null; }
         for (const node of sources) {
             try { node.stop(); } catch { /* already stopped */ }

@@ -235,6 +235,33 @@ test('END TO END: a long one-off sentence is not cached', async () => {
     }
 });
 
+// CR-217. A stop drops every sentence already lined up, not only the one playing; a
+// sentence asked for after the stop still plays.
+test('END TO END: a stop drops queued sentences, and a later one still plays', async () => {
+    const said = [];
+    const realFetch = globalThis.fetch;
+    const realAudio = globalThis.window.AudioContext;
+    globalThis.window.AudioContext = function () { return fakeAudio(); };
+    globalThis.fetch = async (url, init) => {
+        said.push(String(init && init.body || ''));
+        return { ok: true, status: 200, arrayBuffer: async () => new ArrayBuffer(64) };
+    };
+    try {
+        tts.setProvider('azure', { getKey: () => 'k', getRegion: () => 'eastus' });
+        const a = tts.speak('QUEUED_ONE');
+        const b = tts.speak('QUEUED_TWO');
+        tts.cancel();
+        await Promise.allSettled([a, b]);
+        await tts.speak('AFTER_STOP');
+        assert.ok(!said.some((x) => x.includes('QUEUED_TWO')), 'the lined-up sentence is not spoken');
+        assert.ok(said.some((x) => x.includes('AFTER_STOP')), 'a sentence after the stop still plays');
+    } finally {
+        globalThis.fetch = realFetch;
+        globalThis.window.AudioContext = realAudio;
+        tts.setProvider('builtin');
+    }
+});
+
 test('END TO END: a refused request falls back to the browser voice and says so', async () => {
     // The one outcome that is never acceptable is the user pressing a button and
     // nothing being said. This is the path that guarantees it, and the fallback is

@@ -179,6 +179,7 @@ export function createVoice({ getKey, onBilled } = {}) {
                                // resume wait below is not overtaken by playback
     let player = null;         // the streaming player for the utterance in flight
     let chain = Promise.resolve();
+    let cancelGen = 0;   // bumped by cancel(); see speak() (CR-217)
     const cache = new Map();
     // Set only while the Settings Test button is exercising a key the user has
     // typed but not yet saved, so Test reports on what is on screen.
@@ -544,7 +545,12 @@ export function createVoice({ getKey, onBilled } = {}) {
      * few hundred milliseconds to finish waking while the first chunks are in flight.
      */
     function speak(text, { model = DEFAULT_VOICE } = {}) {
+        // A sentence lined up behind the one playing is dropped by cancel() too: it
+        // takes its place in the queue NOW, so a stop that lands before it starts still
+        // applies to it (CR-217). A speak() made after the cancel still plays.
+        const gen = cancelGen;
         const run = async () => {
+            if (gen !== cancelGen) return;
             const trimmed = (text || '').trim();
             if (!trimmed) return;
             const key = cacheKey(model, trimmed);
@@ -672,6 +678,7 @@ export function createVoice({ getKey, onBilled } = {}) {
     function cancel() {
         const inFlight = !!pending || !!player;
         playToken++;               // a play() waiting on resume() must not start now
+        cancelGen++;
         // The player first: it must stop handing out new nodes before the live ones
         // are stopped, or a chunk arriving in between would schedule itself and speak
         // after the cancel.

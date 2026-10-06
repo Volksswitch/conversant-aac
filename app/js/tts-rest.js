@@ -151,6 +151,7 @@ export function createVoice({ provider, getKey, getModel, onBilled } = {}) {
     let playToken = 0;
     let inFlight = null;
     let chain = Promise.resolve();
+    let cancelGen = 0;   // bumped by cancel(); see speak() (CR-217)
     const cache = new Map();
     // Set only while the Settings Test button exercises a key the user has typed but not
     // yet saved, so Test reports on what is on screen rather than on what is stored.
@@ -274,7 +275,12 @@ export function createVoice({ provider, getKey, getModel, onBilled } = {}) {
      * silent failure means the user pressed a button and nothing happened.
      */
     function speak(text, { model = provider.defaultVoice } = {}) {
+        // A sentence lined up behind the one playing is dropped by cancel() too: it
+        // takes its place in the queue NOW, so a stop that lands before it starts still
+        // applies to it (CR-217). A speak() made after the cancel still plays.
+        const gen = cancelGen;
         const run = async () => {
+            if (gen !== cancelGen) return;
             const trimmed = (text || '').trim();
             if (!trimmed) return;
 
@@ -304,6 +310,7 @@ export function createVoice({ provider, getKey, getModel, onBilled } = {}) {
 
     function cancel() {
         playToken++;
+        cancelGen++;
         if (inFlight) { try { inFlight.abort(); } catch { /* already done */ } inFlight = null; }
         for (const node of sources) {
             try { node.stop(); } catch { /* already stopped */ }
