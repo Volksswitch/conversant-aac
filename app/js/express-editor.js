@@ -35,6 +35,7 @@ import { focusMark, focusReturn } from './focus-keep.js';
 import { makeCollapsible } from './sections.js';
 import * as tts from './tts.js';
 import * as storage from './storage.js';
+import { setIconButton } from './icons.js';
 import {
     AUDIO_KIND, AUDIO_KIND_LABELS, checkAudioFile, audioFileName,
 } from './express-audio.js';
@@ -574,10 +575,15 @@ function section(key, title, build) {
 /** The one toolbar. Fixed above the list, so it never travels with the item. */
 function toolbar(band, extra) {
     const bar = el('div', 'ee-toolbar');
-    const tool = (face, act, fn, name) => { const b = mkBtn(face, 'ee-tool', fn, name); b.dataset.tool = act; return b; };
-    bar.appendChild(tool('▲', 'up', () => move(band, -1), 'Move the selected button up'));
-    bar.appendChild(tool('▼', 'down', () => move(band, 1), 'Move the selected button down'));
-    bar.appendChild(tool('✕', 'delete', () => removePicked(band), 'Delete the selected button'));
+    const tool = (icon, act, fn, name) => {
+        const b = mkBtn('', 'ee-tool', fn, name);
+        setIconButton(b, icon, name);
+        b.dataset.tool = act;
+        return b;
+    };
+    bar.appendChild(tool('moveUp', 'up', () => move(band, -1), 'Move the selected button up'));
+    bar.appendChild(tool('moveDown', 'down', () => move(band, 1), 'Move the selected button down'));
+    bar.appendChild(tool('close', 'delete', () => removePicked(band), 'Delete the selected button'));
     (extra || []).forEach((b) => bar.appendChild(b));
     return bar;
 }

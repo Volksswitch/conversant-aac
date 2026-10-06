@@ -15,6 +15,7 @@
  * (CLAUDE.md Build Step 2 design intent) — opt-in, never automatic.
  */
 
+import { setIconButton } from './icons.js';
 import * as wv from './worldview.js';
 import * as rel from './relationships.js';
 import * as places from './places.js';
@@ -881,12 +882,12 @@ function buildGoalEditor(saved, opts = {}) {
         goalList.textContent = '';
         queueMicrotask(() => focusReturn(goalList, focusWas));
         goals.forEach((g, i) => {
-            const up = el('button', { type: 'button', class: 'wv-icon-btn',
-                'aria-label': 'Move up', title: 'Move up' }, '↑');
-            const down = el('button', { type: 'button', class: 'wv-icon-btn',
-                'aria-label': 'Move down', title: 'Move down' }, '↓');
-            const del = el('button', { type: 'button', class: 'wv-icon-btn',
-                'aria-label': 'Remove this goal', title: 'Remove this goal' }, '✕');
+            const up = el('button', { type: 'button', class: 'wv-icon-btn' });
+            setIconButton(up, 'moveUp', 'Move up');
+            const down = el('button', { type: 'button', class: 'wv-icon-btn' });
+            setIconButton(down, 'moveDown', 'Move down');
+            const del = el('button', { type: 'button', class: 'wv-icon-btn' });
+            setIconButton(del, 'close', 'Remove this goal');
             // Disabled at the ends rather than a no-op: a button that does nothing
             // when pressed is indistinguishable from one that is not working.
             if (i === 0) up.disabled = true;

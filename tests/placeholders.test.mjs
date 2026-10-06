@@ -791,7 +791,7 @@ test('CR-111-114: editor buttons and pickers are named; rows select on focus; ba
     assert.match(ee, /'Which partner the Flex phrases are for'/);
     assert.match(ee, /wrap\.dataset\.help = 'express' \+ key\[0\]\.toUpperCase\(\) \+ key\.slice\(1\)/);
     const cp = readFileSync(new URL('../app/js/control-phrases-editor.js', import.meta.url), 'utf8');
-    assert.match(cp, /mkBtn\('✕', 'ee-del', 'Delete this phrase'\)/);
+    assert.match(cp, /setIconButton\(del, 'close', 'Delete this phrase'\)/);
 });
 
 test('CR-115-118: practice fields named, focus kept, rows named, Review leaves no stray toggles', () => {

@@ -60,6 +60,10 @@ export const ICONS = {
     // bar for the word itself, so they do not read as moving one letter (§6.3 - the
     // design document carries two candidates; this is the first).
     prevTurn: SVG('<path d="M6 15l6-6 6 6"/>'),
+    // Moving a row up or down a list: the same chevrons, so reordering looks the same
+    // in every editor (CR-251). Text arrows and triangles had read as two controls.
+    moveUp: SVG('<path d="M6 15l6-6 6 6"/>'),
+    moveDown: SVG('<path d="M6 9l6 6 6-6"/>'),
     nextTurn: SVG('<path d="M6 9l6 6 6-6"/>'),
     play: SVG('<path d="M7 4l12 8-12 8z"/>'),
     // Two chevrons: skip ahead to the next turn worth a look.

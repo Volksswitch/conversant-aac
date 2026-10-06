@@ -285,11 +285,11 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-244](CR-244.md) | fixed (5fa8ba8) | low | confirmed | ui-inconsistency | `app/js/app.js:7010` | A failure while choosing a data folder is reported only in the hidden status bar |
 | [CR-245](CR-245.md) | fixed (5fa8ba8) | low | confirmed | ui-inconsistency | `app/js/app.js:7063` | Tapping Copy twice quickly leaves the button permanently labeled 'Copied ✓' |
 | [CR-246](CR-246.md) | fixed (5fa8ba8) | low | confirmed | ui-inconsistency | `app/js/app.js:7386` | Warnings and test results in Settings stay on screen after they stop being true |
-| [CR-247](CR-247.md) | fixed (pending) | low | confirmed | ui-inconsistency | `app/js/control-phrases-editor.js:122` | Commands tab reset warning does not mention the "one more thing" phrases it also resets |
-| [CR-248](CR-248.md) | fixed (pending) | low | confirmed | ui-inconsistency | `app/js/express-editor.js:218` | Place buttons keep their old name after the place is renamed in My Places, unlike partner buttons |
-| [CR-249](CR-249.md) | fixed (pending) | low | confirmed | ui-inconsistency | `app/js/express-editor.js:218` | Deleting a sound button in the Express editor asks to delete "this button" instead of its name |
-| [CR-250](CR-250.md) | fixed (pending) | low | confirmed | ui-inconsistency | `app/js/express-editor.js:498` | Move and delete buttons do nothing, with no feedback, when no row is selected |
-| [CR-251](CR-251.md) | open | low | confirmed | ui-inconsistency | `app/js/express-editor.js:500` | One 'move up/down' action wears three glyph sets across the editors |
+| [CR-247](CR-247.md) | fixed (1a29273) | low | confirmed | ui-inconsistency | `app/js/control-phrases-editor.js:122` | Commands tab reset warning does not mention the "one more thing" phrases it also resets |
+| [CR-248](CR-248.md) | fixed (1a29273) | low | confirmed | ui-inconsistency | `app/js/express-editor.js:218` | Place buttons keep their old name after the place is renamed in My Places, unlike partner buttons |
+| [CR-249](CR-249.md) | fixed (1a29273) | low | confirmed | ui-inconsistency | `app/js/express-editor.js:218` | Deleting a sound button in the Express editor asks to delete "this button" instead of its name |
+| [CR-250](CR-250.md) | fixed (1a29273) | low | confirmed | ui-inconsistency | `app/js/express-editor.js:498` | Move and delete buttons do nothing, with no feedback, when no row is selected |
+| [CR-251](CR-251.md) | fixed (pending) | low | confirmed | ui-inconsistency | `app/js/express-editor.js:500` | One 'move up/down' action wears three glyph sets across the editors |
 | [CR-252](CR-252.md) | open | low | confirmed | ui-inconsistency | `app/js/express-editor.js:568` | The 'Already set up' situation list shows the wrong situation, cannot select its first entry, and its delete X silently does nothing |
 | [CR-253](CR-253.md) | open | low | confirmed | ui-inconsistency | `app/js/help-mode.js:201` | With spoken help armed, tapping the Settings Close button silently disarms help and swallows the tap |
 | [CR-254](CR-254.md) | open | low | confirmed | ui-inconsistency | `app/js/keyboard-layouts.js:201` | Generated symbols page drops comma and period, so the number page has no decimal point; code comment claims only letters are replaced |

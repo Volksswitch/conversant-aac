@@ -14,6 +14,7 @@
  * the model and calls onChange so the engine re-reads the openers/closers.
  */
 
+import { setIconButton } from './icons.js';
 import * as model from './control-phrases.js';
 import { confirmDanger } from './confirm-dialog.js';
 import { makeCollapsible } from './sections.js';
@@ -79,11 +80,11 @@ function listSection(title, key) {
 
         const tools = document.createElement('div');
         tools.className = 'ee-tools';
-        const up = mkBtn('↑', null, 'Move up'); up.disabled = i === 0;
+        const up = mkBtn('', null, 'Move up'); setIconButton(up, 'moveUp', 'Move up'); up.disabled = i === 0;
         up.addEventListener('click', () => { [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]]; commit(true); });
-        const down = mkBtn('↓', null, 'Move down'); down.disabled = i === arr.length - 1;
+        const down = mkBtn('', null, 'Move down'); setIconButton(down, 'moveDown', 'Move down'); down.disabled = i === arr.length - 1;
         down.addEventListener('click', () => { [arr[i + 1], arr[i]] = [arr[i], arr[i + 1]]; commit(true); });
-        const del = mkBtn('✕', 'ee-del', 'Delete this phrase');
+        const del = mkBtn('', 'ee-del', 'Delete this phrase'); setIconButton(del, 'close', 'Delete this phrase');
         del.disabled = arr.length <= 1; // never leave the list empty (no cards to show)
         del.addEventListener('click', () => { arr.splice(i, 1); commit(true); });
         tools.append(up, down, del);
