@@ -1138,3 +1138,13 @@ test('review waits for a save in progress and reads fresh; a delayed restart che
     assert.match(st, /if \(recognition !== rec\) return;/);
     assert.match(st, /recognition\.abort\(\);/);
 });
+
+// CR-303. Making a backup harms nothing, so it asks with the plain card; the red card
+// stays for actions that delete or replace data, including Import.
+test('backing up asks with the plain card, not the red one', () => {
+    const at = appSource.indexOf("title: 'Back up everything on this device?'");
+    assert.ok(at > 0, 'the backup question is present');
+    const before = appSource.slice(Math.max(0, at - 120), at);
+    assert.match(before, /confirmNeutral\(/);
+    assert.doesNotMatch(appSource, /title: 'Back up your settings\?'/);
+});

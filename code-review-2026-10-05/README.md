@@ -338,10 +338,10 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-297](CR-297.md) | fixed (c32e3fb) | low | plausible | race-condition | `app/js/stt.js:494` | On iPad, a delayed recognizer restart ignores a backgrounding that happened during the delay |
 | [CR-298](CR-298.md) | fixed (c32e3fb) | low | plausible | race-condition | `app/js/stt.js:584` | setSource() abandons the old built-in recognizer with its handlers still attached, so its late events act on the newly chosen service |
 | [CR-299](CR-299.md) | fixed (aeaccb3) - already fixed by CR-099: closeSocket detaches the handlers before closing | low | plausible | race-condition | `app/js/tts-deepgram.js:197` | A closed Deepgram socket's leftover handlers can fail the next sentence on the new connection |
-| [CR-300](CR-300.md) | fixed (pending) | low | plausible | race-condition | `app/js/weekly-send.js:355` | Two report sends can run at the same time and overwrite each other's queue, sending duplicates or dropping a report |
-| [CR-301](CR-301.md) | fixed (pending) | low | plausible | resource-leak | `app/js/app.js:5089` | A layout drag that loses its pointerup leaves the whole app unclickable |
-| [CR-302](CR-302.md) | fixed (pending) | low | plausible | resource-leak | `app/js/storage.js:19` | IndexedDB helpers open a new database connection on every call and never close it |
-| [CR-303](CR-303.md) | open | low | plausible | ui-inconsistency | `app/js/app.js:6615` | The non-destructive Back up confirmation uses the red danger card |
+| [CR-300](CR-300.md) | fixed (b40fbe5) | low | plausible | race-condition | `app/js/weekly-send.js:355` | Two report sends can run at the same time and overwrite each other's queue, sending duplicates or dropping a report |
+| [CR-301](CR-301.md) | fixed (b40fbe5) | low | plausible | resource-leak | `app/js/app.js:5089` | A layout drag that loses its pointerup leaves the whole app unclickable |
+| [CR-302](CR-302.md) | fixed (b40fbe5) | low | plausible | resource-leak | `app/js/storage.js:19` | IndexedDB helpers open a new database connection on every call and never close it |
+| [CR-303](CR-303.md) | fixed (pending) | low | plausible | ui-inconsistency | `app/js/app.js:6615` | The non-destructive Back up confirmation uses the red danger card |
 
 ---
 

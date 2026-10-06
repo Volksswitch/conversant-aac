@@ -572,6 +572,8 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: a problem report could occasionally be sent twice, and dragging a border to
   resize part of the screen could get stuck following the pointer after it left the
   window.
+- Making a backup now asks with a plain question instead of the red warning card,
+  which is kept for actions that delete or replace your data.
 
 ## Version 0.13.4
 

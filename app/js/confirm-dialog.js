@@ -144,6 +144,48 @@ function neutralCard(title) {
     return { dlg, p };
 }
 
+/* A plain two-button question for an action that cannot harm anything (CR-303).
+ * The red card is kept for destructive actions, so it keeps reading as dangerous.
+ * Cancel has focus; Escape and the backdrop cancel. Returns Promise<boolean>. */
+export function confirmNeutral({
+    title = '',
+    body = '',
+    confirmLabel = 'OK',
+    cancelLabel = 'Cancel'
+} = {}) {
+    return new Promise((resolve) => {
+        const { dlg, p } = neutralCard(title);
+        p.textContent = body;
+        const actions = document.createElement('div');
+        actions.className = 'danger-actions';
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'danger-cancel';
+        cancelBtn.textContent = cancelLabel;
+        const confirmBtn = document.createElement('button');
+        confirmBtn.className = 'danger-confirm neutral-confirm';
+        confirmBtn.textContent = confirmLabel;
+        actions.append(cancelBtn, confirmBtn);
+        dlg.append(actions);
+
+        let settled = false;
+        const done = (val) => {
+            if (settled) return;
+            settled = true;
+            try { dlg.close(); } catch { /* already closing */ }
+            dlg.remove();
+            resolve(val);
+        };
+        cancelBtn.addEventListener('click', () => done(false));
+        confirmBtn.addEventListener('click', () => done(true));
+        dlg.addEventListener('cancel', (e) => { e.preventDefault(); done(false); });
+        dlg.addEventListener('click', (e) => { if (e.target === dlg) done(false); });
+
+        document.body.append(dlg);
+        dlg.showModal();
+        cancelBtn.focus();
+    });
+}
+
 /* A modal that cannot be dismissed, for work that must not be interrupted.
  * Returns { update(text), close() }. ALWAYS close it in a finally. */
 export function showBusy({ title = 'Please wait', body = '' } = {}) {

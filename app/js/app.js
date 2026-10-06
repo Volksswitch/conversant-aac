@@ -56,7 +56,7 @@ const SPEECH_COMPANY = {
     ...Object.fromEntries(Object.entries(TTS_PROVIDERS).map(([id, p]) => [id, p.label])),
 };
 import * as sttAzure from './stt-azure.js';
-import { confirmDanger, showBusy, showNotice } from './confirm-dialog.js';
+import { confirmDanger, confirmNeutral, showBusy, showNotice } from './confirm-dialog.js';
 import * as helpMode from './help-mode.js';
 import * as usageSummary from './usage-summary.js';
 import * as diagnostics from './diagnostics.js';
@@ -7387,8 +7387,8 @@ function wireBackupControls() {
         if (exportInProgress) return;
         if (await folderRememberedButDisconnected()) { setBackupStatus(RECONNECT_FIRST); return; }   // CR-058
         const toFolder = storage.hasVisibleDataFolder();
-        if (!(await confirmDanger({
-            title: 'Back up your settings?',
+        if (!(await confirmNeutral({
+            title: 'Back up everything on this device?',
             body: 'Everything on this device goes into one file: your answers, the people ' +
                   'and places you have entered, your buttons and phrases, your saved ' +
                   'conversations, your settings and your saved profiles. Your keys are ' +
