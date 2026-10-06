@@ -7210,15 +7210,15 @@ async function buildErrorReport() {
     for (const [id, errs] of groups) {
         out.push(`════════ Conversation ${id} ════════`);
         const convLog = id !== '(none)' ? await storage.readConversationLog(id) : null;
-        if (convLog && convLog.exchanges && convLog.exchanges.length) {
+        // Checked FIRST (CR-074): a conversation turned private part-way through still
+        // has its earlier turns on disk, and they must not reach a report.
+        const isPrivate = storage.isConversationPrivate(id, convLog);
+        if (isPrivate) {
+            out.push('Transcript: [private conversation — transcript withheld]');
+        } else if (convLog && convLog.exchanges && convLog.exchanges.length) {
             out.push(`Started: ${convLog.started || '?'}`);
             out.push('Transcript:');
             for (const ex of convLog.exchanges) out.push(transcriptLine(ex));
-        } else if (id === storage.getConversationId() && !storage.isConversationSaving()) {
-            // The current conversation is private ("Don't save this conversation"),
-            // so nothing was written to disk on purpose — don't leak the live turns
-            // into the bug report either (SEC-2).
-            out.push('Transcript: [private conversation — transcript withheld]');
         } else if (id === storage.getConversationId() && conversationHistory.length) {
             // The current conversation may not be fully on disk yet (an error can
             // fire before the turn is committed) — fall back to the live turns.
@@ -7229,7 +7229,7 @@ async function buildErrorReport() {
         }
         out.push('', `Errors (${errs.length}):`);
         for (const e of errs) {
-            out.push(`  ${e.ts} v${e.version || '?'} [${e.context}] ${e.message}` + (e.extra ? ` | ${JSON.stringify(e.extra)}` : ''));
+            out.push(`  ${e.ts} v${e.version || '?'} [${e.context}] ${e.message}` + (e.extra && !isPrivate ? ` | ${JSON.stringify(e.extra)}` : ''));
         }
         out.push('');
     }

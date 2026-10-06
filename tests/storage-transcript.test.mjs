@@ -233,6 +233,27 @@ test('"Don\'t save this conversation" really does stop the write', async () => {
     storage.setConversationSaving(true);
 });
 
+test('turning "Don\'t save" on part-way marks the saved turns private, without deleting them (CR-074)', async () => {
+    await storage.logPartnerInterim({ rawTranscript: 'the diagnosis was not what we hoped' });
+    const id = storage.getConversationId();
+    storage.setConversationSaving(false);
+    await storage.whenLogWritten();
+    const log = await readLog(id);
+    assert.equal(log.private, true, 'the file says it is private');
+    assert.ok(JSON.stringify(log).includes('diagnosis'), 'the earlier turn is not deleted');
+    storage.setConversationSaving(true);
+    // Saving is back on, so only the persistent marks can still say so - which is what a
+    // report built after the conversation has ended relies on.
+    assert.equal(storage.isConversationPrivate(id, null), true, 'remembered by id');
+    assert.equal(storage.isConversationPrivate(id, log), true, 'and by the file');
+    assert.equal(storage.isConversationPrivate('some-other-id', null), false);
+    // The report checks privacy BEFORE it prints the transcript on disk.
+    const app = (await import('node:fs')).readFileSync(new URL('../app/js/app.js', import.meta.url), 'utf8');
+    const body = app.slice(app.indexOf('async function buildErrorReport'));
+    assert.ok(body.indexOf('isConversationPrivate') < body.indexOf("out.push('Transcript:')"));
+    assert.match(body, /e\.extra && !isPrivate/);
+});
+
 test('the written file is valid JSON with the shape a later reader expects', async () => {
     const log = await readLog(storage.getConversationId());
     assert.equal(typeof log.started, 'string');

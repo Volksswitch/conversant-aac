@@ -2034,7 +2034,32 @@ export function saveHintFontScale(v) {
 // conversation. When saving is off, the log functions below no-op entirely — no
 // file is created and no turn is written.
 let conversationSaving = true;
-export function setConversationSaving(on) { conversationSaving = !!on; }
+export function setConversationSaving(on) {
+    conversationSaving = !!on;
+    // Turned private part-way through (CR-074): what was already written stays on
+    // disk, so mark it - in the file and in a short list here - so a problem report
+    // withholds its transcript and the speech in its errors even after the
+    // conversation has ended. The earlier turns are NOT deleted; that is Ken's call.
+    if (conversationSaving || !currentConversationId) return;
+    markConversationPrivate(currentConversationId);
+    if (currentLogData && !currentLogData.private) { currentLogData.private = true; flushLog(); }
+}
+const PRIVATE_IDS_KEY = 'aac_private_conversations';
+function markConversationPrivate(id) {
+    try {
+        const ids = JSON.parse(localStorage.getItem(PRIVATE_IDS_KEY) || '[]');
+        if (!ids.includes(id)) ids.push(id);
+        localStorage.setItem(PRIVATE_IDS_KEY, JSON.stringify(ids.slice(-200)));
+    } catch { /* ignore */ }
+}
+// True for a conversation marked "Don't save" at any point, now or earlier.
+export function isConversationPrivate(id, log) {
+    if (!id) return false;
+    if (log && log.private) return true;
+    if (id === currentConversationId && !conversationSaving) return true;
+    try { return JSON.parse(localStorage.getItem(PRIVATE_IDS_KEY) || '[]').includes(id); }
+    catch { return false; }
+}
 export function isConversationSaving() { return conversationSaving; }
 export function loadNoSaveDefault() { return !!loadSettings().noSaveDefault; }
 export function saveNoSaveDefault(v) {

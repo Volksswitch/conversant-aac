@@ -237,6 +237,9 @@ forgetting to tag one is only ever noise, never silence.
   switching to another app and back could leave the app unable to hear, or switch
   listening off with an error. Listening now pauses when you leave and picks up again
   when you come back, as it already did for the free listening.
+- Fixed: if you turned on "Don't save this conversation" part-way through, a problem
+  report could still include what was said earlier in that conversation. The report
+  now leaves out the whole conversation's wording, even after it has ended.
 
 ## Version 0.13.4
 
