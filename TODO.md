@@ -727,6 +727,12 @@ about to fall by an order of magnitude is the trap.
   v0.3.9, and a decline that gives a reason), so reversing them is Ken's call. A bare
   "No" can read as rude to a stranger, so relaxing the decline rule may belong per
   person. Any change needs the persona test (item 3).
+- **Ken's direction, 2026-10-06:** *"Since these are adults, it seems that they should."*
+  Proposed boundary, awaiting his OK: the user's own words outrank rules about HOW to
+  say something (softened declines, banned openers, full-sentence answers, the fixed
+  example phrasings). They don't outrank rules about WHAT may be said: no invented facts
+  or events, no outside knowledge, no vulgarity unless chosen for a person, and text a
+  voice can say.
 
 #### 5. A short version of each response option that can be spoken
 - **Raised:** 2026-10-06 - the evaluation's avenue 5.
@@ -800,23 +806,24 @@ about to fall by an order of magnitude is the trap.
   because the app should not announce lessons it is not sure of (the light-bulb entry
   above). It waits on the measure in item 1. About Me's "What the app has picked up"
   list also does not mark which lines came from a review.
-- **Shape discussed with Ken, 2026-10-06 (not built; supersedes (a)'s "two or three"):**
-  - **Three steps, each moving from the AI's words toward the user's own.** Tap an
-    option: "this was the closest." Tap it again: the Response Panel shows eight
-    versions of that option, the same idea in different wording, two ways along each of
-    length, formality, warmth and humor. Tap a version to choose it; tap it again and the
-    Composition Pane opens with its words in the normal text box, with Clear available.
-    "In my own words" still opens a blank box directly.
-  - **Settling is covered without a separate mark.** Going a step further on the option
-    the user actually spoke says they took it because they had to. "A different set"
-    keeps its meaning: different ideas, not different wording.
-  - **The normal text box replaces the in-place word editor** (Ken: nudge the user
-    toward their own words, and do not make them learn a second way of editing).
-    Highlighted-word editing could come back as a Settings choice if testers struggle
-    to place a cursor.
-  - **Each lesson is tagged with the moment:** the person, the goals switched on, what
-    the partner was doing, the kind of reply chosen, place and feeling, and the
-    partner's words. Lessons are used by matching the moment, person first.
+- **DECIDED by Ken, 2026-10-06 (not built): review becomes one action, a complete
+  rewrite.** *"Let's simplify everything."* This replaces (a), (b) and an earlier
+  same-day plan of eight restyled versions to tap.
+  - **The user picks the turn they want to change, and the Composition Pane opens.** It
+    holds the words that were spoken at the time, with Clear available, in the normal
+    text box with word completion. The user writes the whole reply they would rather
+    have said.
+  - **Nothing else is kept from today's review screen:** no closer marks, no choosing a
+    different option, no Express buttons, no in-place word editor. The evaluation found
+    those answers changed almost nothing the AI sees.
+  - **Each rewrite stands alone as a pair:** what the partner said, and what the user
+    would rather have said. The conversation might have gone differently after a
+    different reply; the app makes no attempt to account for that.
+  - **Each pair is also a test item** for item 1: what the app offered against what the
+    user wanted, for the same moment.
+  - **Each pair is tagged with the moment:** the person, the goals switched on, what
+    the partner was doing, the kind of reply, place and feeling, and the partner's
+    words.
   - **What the partner was doing is not saved today** (Ken: "add it"). The AI works it
     out on every turn (asking, inviting, sharing news, greeting, wrapping up); save it
     with the set of options in the conversation file. Small, and useful for measurement
