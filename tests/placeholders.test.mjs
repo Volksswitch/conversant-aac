@@ -678,3 +678,8 @@ test('a tapped empty cell passes its position to the editor', () => {
     const ed = readFileSync(new URL('../app/js/express-editor.js', import.meta.url), 'utf8');
     assert.match(ed, /while \(list\.length < opts\.pos\) list\.push\(newEmptyItem\(\)\)/);
 });
+
+test('CR-077: an earlier statement cut off by a later one cannot clear the speaking flag', () => {
+    const body = appSource.slice(appSource.indexOf('async function speakUserStatement'));
+    assert.match(body.slice(0, 400), /mine === statementSeq/);
+});

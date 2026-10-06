@@ -246,6 +246,8 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: if you turned on "Don't save this conversation" while suggestion cards were
   showing and then tapped one, the saved file still recorded which card you chose.
   Nothing is added after you go private.
+- Fixed: if a second reply interrupted the first, a holding phrase such as "I'm
+  thinking" could start talking over the second reply.
 
 ## Version 0.13.4
 

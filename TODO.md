@@ -56,6 +56,24 @@ outlives a "Don't save" conversation.
 
 **Why not now:** the review was the task; fixing is separate work, one item per commit.
 
+### A second tap while the first reply is still being spoken
+
+**Raised:** October 5 2026, from code review item CR-077.
+
+**What is wanted:** Ken's decision. With one-tap speaking, a second tap on a reply card
+or an Express Panel phrase while the first is still being spoken cuts the first one off
+and speaks the second. Both are then recorded, and sent to the AI, as if both were said
+in full. Two choices: (1) ignore the second tap until the first has finished, which
+protects against a stray tap but means the user cannot change their mind mid-sentence;
+or (2) let the second replace the first and record the first as cut off. I lean to (1),
+because a stray tap is the commoner case for this population and the double-tap setting
+does not help someone who has it switched off. "Hold on" and stopping a sound stay
+exempt either way.
+
+**Why not now:** it changes what a tap does, which is Ken's call. The part that was wrong
+either way is fixed: the first reply's ending no longer lets a holding phrase start over
+the second.
+
 ### Settings profiles saved before October 5 2026: hold back the device settings or not?
 
 **Raised:** October 5 2026, from code review item CR-067.

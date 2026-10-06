@@ -263,11 +263,18 @@ let announcingUserStatement = false;
  * exists for. It still holds the gate, so an automatic placeholder cannot barge
  * over it.
  */
+// Only the LATEST statement may clear the flag (CR-077): when a second tap cuts the
+// first statement off, the first call's ending must not declare the user silent
+// while the second is still playing - that let a placeholder start over it.
+let statementSeq = 0;
 async function speakUserStatement(text, { announce = false } = {}) {
+    const mine = ++statementSeq;
     speakingUserStatement = true;
     announcingUserStatement = announce;
     try { await tts.speak(text); }
-    finally { speakingUserStatement = false; announcingUserStatement = false; }
+    finally {
+        if (mine === statementSeq) { speakingUserStatement = false; announcingUserStatement = false; }
+    }
 }
 
 // Spoken help in Settings: arm the "?", then tap a control, its label, or a tab to
