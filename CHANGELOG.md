@@ -256,6 +256,10 @@ forgetting to tag one is only ever noise, never silence.
   other person said something new could make the app miss what they had said: a
   goodbye answered with ordinary replies, a "What?" not bringing up the ways to repeat
   yourself, or the choices they offered not appearing as buttons.
+- Fixed: tapping a second sound button while the first sound was still playing could
+  leave the second one impossible to stop, play it twice over itself, keep it playing
+  after End conversation, and turn the microphone back on so the sound was written
+  down as the other person talking.
 
 ## Version 0.13.4
 

@@ -5580,17 +5580,25 @@ function handlePlayAudioItem(item) {
     // The second tap on the playing button stops it; the listening comes back in
     // playAudioTurn, where the first tap is still waiting for the clip to end.
     if (audioPlayer && audioPlayer.item.id === item.id) { stopExpressAudio(); return; }
-    if (audioPlayer) stopExpressAudio();
+    // Switching to a different sound (CR-080): the first one's turn is still
+    // recorded, but it hands its listening state to this one rather than turning the
+    // microphone back on under it, and it takes the partner's words with it.
+    let inherit = null;
+    if (audioPlayer) {
+        audioPlayer.replaced = true;
+        inherit = { wasListening: !!audioPlayer.wasListening };
+        stopExpressAudio();
+    }
     if (!item.file) return;
     resetExpressPaging();
-    const turn = playAudioTurn(item);
+    const turn = playAudioTurn(item, inherit);
     audioTurnDone = turn;
     turn.finally(() => { if (audioTurnDone === turn) audioTurnDone = null; });
 }
 
 // Plays the clip. Resolves { played, stopped }. Nothing in here may wait before
 // play() is called, or an iPad refuses to start the sound.
-async function playClip(item) {
+async function playClip(item, opts = {}) {
     let url = audioUrls.get(item.file);
     if (!url) {
         const blob = await storage.readAudioFile(item.file);
@@ -5603,33 +5611,36 @@ async function playClip(item) {
     const ended = new Promise((resolve) => { finish = resolve; });
     el.onended = () => finish(false);
     el.onerror = () => finish(true);
-    audioPlayer = { item, el, finish };
+    // Only state that still belongs to THIS clip is cleared afterwards (CR-080): a
+    // second sound can start before this one's ending has run, and clearing the
+    // shared record then would leave the new sound unstoppable and unmarked.
+    const mine = { item, el, finish, wasListening: !!opts.wasListening };
+    audioPlayer = mine;
     speakingUserStatement = true;   // holding phrases wait, as they do for speech
     renderExpressPanel();           // the button shows as playing
     try {
         await el.play();
     } catch (err) {
-        audioPlayer = null;
-        speakingUserStatement = false;
+        if (audioPlayer === mine) { audioPlayer = null; speakingUserStatement = false; }
         renderExpressPanel();
         return { played: false, why: (err && err.message) || String(err) };
     }
     const stopped = await ended;
-    const aborted = !!(audioPlayer && audioPlayer.aborted);
-    const preempted = !!(audioPlayer && audioPlayer.preempted);
-    audioPlayer = null;
-    speakingUserStatement = false;
+    if (audioPlayer === mine) { audioPlayer = null; speakingUserStatement = false; }
     renderExpressPanel();
-    return { played: true, stopped: !!stopped, aborted, preempted };
+    return { played: true, stopped: !!stopped, aborted: !!mine.aborted,
+             preempted: !!mine.preempted, replaced: !!mine.replaced };
 }
 
-async function playAudioTurn(item) {
+async function playAudioTurn(item, inherit = null) {
     // Everything up to play() is immediate - see playClip.
-    const wasListening = isListening;
-    const opensConversation = conversationHistory.length === 0;
-    const raw = heardPartnerText();
+    // A sound that replaced another takes over its listening state, and the partner's
+    // words already went with the first sound's turn (CR-080).
+    const wasListening = inherit ? inherit.wasListening : isListening;
+    const opensConversation = !inherit && conversationHistory.length === 0;
+    const raw = inherit ? '' : heardPartnerText();
     stt.stopListening();   // the mute
-    const result = await playClip(item);
+    const result = await playClip(item, { wasListening });
     if (!result.played) {
         storage.logError('express-audio', `A sound button could not play: ${result.why}`);
         if (wasListening && !practiceMode) resumePartnerCapture();
@@ -5666,6 +5677,8 @@ async function playAudioTurn(item) {
     // Stopped by something that is taking the floor itself: that path decides about
     // listening, so two paths do not both restart it (CR-064).
     if (result.preempted) return;
+    // Replaced by another sound, which now owns the listening (CR-080).
+    if (result.replaced) return;
     if (practiceMode) { resumeOrIdle(); return; }
     // The unmute: listening comes back as it was before the sound.
     if (wasListening) { startFreshListening(); return; }

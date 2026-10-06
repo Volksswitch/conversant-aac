@@ -699,3 +699,13 @@ test('CR-079: a context refresh or regenerate never skips classifying the newest
     assert.equal((appSource.match(/lastIngestedPartnerText = partnerText/g) || []).length, 2,
         'both places the engine takes in a classification record it');
 });
+
+test('CR-080: a sound only clears the playing record while it is still its own', () => {
+    const clip = appSource.slice(appSource.indexOf('async function playClip'));
+    const body = clip.slice(0, clip.indexOf('async function playAudioTurn'));
+    assert.doesNotMatch(body, /^\s*audioPlayer = null;/m, 'every clear is guarded');
+    assert.match(body, /audioPlayer === mine/);
+    const turn = appSource.slice(appSource.indexOf('async function playAudioTurn'));
+    assert.ok(turn.indexOf('result.replaced') < turn.indexOf('startFreshListening'),
+        'a replaced sound never turns listening back on');
+});
