@@ -612,7 +612,7 @@ test('hide-on-blur follows the Express Panel being hosted in Settings', () => {
 
 // CR-036. The launch-screen report connects the data folder first, prompt-free.
 test('the launch-screen report reconnects the data folder before it is built', () => {
-    const at = appSource.indexOf('async function sendProblemReportFromStart(');
+    const at = appSource.indexOf('async function sendProblemReportFromStartNow(');
     const body = appSource.slice(at, at + 2500);
     const restore = body.indexOf('storage.restoreDataFolder()');
     assert.ok(restore > 0 && restore < body.indexOf('buildProblemReportText()'));
@@ -708,4 +708,11 @@ test('CR-080: a sound only clears the playing record while it is still its own',
     const turn = appSource.slice(appSource.indexOf('async function playAudioTurn'));
     assert.ok(turn.indexOf('result.replaced') < turn.indexOf('startFreshListening'),
         'a replaced sound never turns listening back on');
+});
+
+test('CR-081: both report buttons go through the one-at-a-time guard', () => {
+    assert.match(appSource, /function sendProblemReport\(\) \{ return oneReportAtATime\(/);
+    assert.match(appSource, /function sendProblemReportFromStart\(\) \{ return oneReportAtATime\(/);
+    const g = appSource.slice(appSource.indexOf('async function oneReportAtATime'));
+    assert.match(g.slice(0, 300), /finally \{ problemReportInProgress = false; \}/);
 });

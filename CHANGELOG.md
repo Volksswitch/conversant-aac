@@ -260,6 +260,10 @@ forgetting to tag one is only ever noise, never silence.
   leave the second one impossible to stop, play it twice over itself, keep it playing
   after End conversation, and turn the microphone back on so the sound was written
   down as the other person talking.
+- Fixed: tapping Send twice on a problem report while it was being prepared could
+  stack two confirmation boxes, sending the report twice or saying it was not sent
+  when it had been. A second tap now does nothing, and the button says it is preparing
+  the report.
 
 ## Version 0.13.4
 

@@ -6679,7 +6679,18 @@ function setProblemReportStatus(msg) {
  * The report is built ONCE and the same string is previewed, confirmed and sent, so
  * what leaves the device is character-for-character what was shown.
  */
-async function sendProblemReportFromStart() {
+// One report at a time, whichever button started it (CR-081). Building the report
+// reads every saved conversation, which takes seconds on a tablet, and a second tap in
+// that time used to stack a second confirmation card - sending the report twice, or
+// saying "Not sent" after it had been.
+let problemReportInProgress = false;
+async function oneReportAtATime(run) {
+    if (problemReportInProgress) return;
+    problemReportInProgress = true;
+    try { await run(); } finally { problemReportInProgress = false; }
+}
+function sendProblemReportFromStart() { return oneReportAtATime(sendProblemReportFromStartNow); }
+async function sendProblemReportFromStartNow() {
     // The status line lives in Settings, which is the panel that may be unreachable,
     // so the button reports on itself. Without this the tester gets no confirmation
     // at all beyond whatever the browser happens to show, which can be nothing.
@@ -6702,6 +6713,11 @@ async function sendProblemReportFromStart() {
                 await withTimeout(storage.restoreDataFolder(), STORAGE_WARMUP_MS, 'report folder');
             }
         } catch { /* report without it */ }
+    }
+    if (btn) {
+        // Remember the real label first, or say() would keep this as the label.
+        btn.dataset.label = btn.dataset.label || btn.textContent;
+        btn.textContent = 'Preparing the report...';
     }
     let text;
     try {
@@ -6776,7 +6792,9 @@ const REPORT_DISCLOSURE =
  * what leaves the device is character-for-character what was on screen. Rebuilding it
  * after the confirmation would let it drift between the two.
  */
-async function sendProblemReport() {
+function sendProblemReport() { return oneReportAtATime(sendProblemReportNow); }
+async function sendProblemReportNow() {
+    setProblemReportStatus('Preparing the report...');
     let text;
     try {
         text = await buildProblemReportText();
