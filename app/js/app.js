@@ -5704,13 +5704,25 @@ async function preemptSound() {
 }
 
 function primeExpressAudio(items) {
+    // Let go of clips no longer on the panel (CR-218): each stored clip name is new,
+    // so a replaced or deleted sound used to stay in memory for the whole session -
+    // up to 10 MB each. The clip that is playing is never let go of; a clip shown
+    // again later is simply read again.
+    const live = new Set((items || []).filter((i) => i && i.type === 'audio' && i.file).map((i) => i.file));
+    for (const [name, url] of audioUrls) {
+        if (live.has(name) || (audioPlayer && audioPlayer.item.file === name)) continue;
+        if (url) URL.revokeObjectURL(url);
+        audioUrls.delete(name);
+    }
     for (const item of items || []) {
         if (!item || item.type !== 'audio' || !item.file || audioUrls.has(item.file)) continue;
         audioUrls.set(item.file, null);
         storage.readAudioFile(item.file)
             .then((blob) => {
-                if (blob) audioUrls.set(item.file, URL.createObjectURL(blob));
-                else audioUrls.delete(item.file);
+                if (!blob) { if (!audioUrls.get(item.file)) audioUrls.delete(item.file); return; }
+                // A tap while this was loading may already have made a URL; keep that one.
+                if (audioUrls.get(item.file)) return;
+                audioUrls.set(item.file, URL.createObjectURL(blob));
             })
             .catch(() => audioUrls.delete(item.file));
     }

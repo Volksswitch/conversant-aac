@@ -255,8 +255,8 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-214](CR-214.md) | fixed (bf26d73) | low | confirmed | privacy | `app/js/storage.js:2167` | Turning saving back on mid-turn writes the other person's words that were spoken while the conversation was private |
 | [CR-215](CR-215.md) | fixed (e2663e0) | low | confirmed | race-condition | `app/js/app.js:1518` | The Start button stays tappable for up to 14 seconds with no feedback, and a second tap runs the start-up twice |
 | [CR-216](CR-216.md) | fixed (072d255) | low | confirmed | race-condition | `app/js/storage.js:2704` | Two errors close together: one line is lost from errors.log |
-| [CR-217](CR-217.md) | fixed (pending) | low | confirmed | race-condition | `app/js/tts-azure.js:459` | Stopping speech does not stop a sentence already waiting in a paid voice's queue; it plays afterwards unannounced |
-| [CR-218](CR-218.md) | open | low | confirmed | resource-leak | `app/js/app.js:5207` | Played sound files are never released from memory |
+| [CR-217](CR-217.md) | fixed (8a82fd8) | low | confirmed | race-condition | `app/js/tts-azure.js:459` | Stopping speech does not stop a sentence already waiting in a paid voice's queue; it plays afterwards unannounced |
+| [CR-218](CR-218.md) | fixed (pending) | low | confirmed | resource-leak | `app/js/app.js:5207` | Played sound files are never released from memory |
 | [CR-219](CR-219.md) | open | low | confirmed | resource-leak | `app/js/express-editor.js:667` | Resetting the Always band or deleting a situation orphans sound files, and every backup carries them |
 | [CR-220](CR-220.md) | open | low | confirmed | resource-leak | `app/js/storage.js:223` | settleRestore leaves its grace timer running after the restore settles |
 | [CR-221](CR-221.md) | open | low | confirmed | security | `app/js/app.js:6598` | File names from the data folder are inserted into the page as HTML in the backup and profile lists |

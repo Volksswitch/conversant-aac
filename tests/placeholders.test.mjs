@@ -965,3 +965,11 @@ test('Start cannot run twice at once', () => {
     const fin = appSource.slice(appSource.indexOf('function finishStart() {'));
     assert.match(fin.slice(0, 120), /setStartBusy\(false\)/);
 });
+
+// CR-218. Sound clips no longer on the panel are let go of, never the playing one.
+test('clips no longer on the panel release their memory, but not the playing one', () => {
+    const body = appSource.slice(appSource.indexOf('function primeExpressAudio(items) {'));
+    const fn = body.slice(0, body.indexOf('\nfunction ') > 0 ? body.indexOf('\nfunction ') : 2000);
+    assert.match(fn, /URL\.revokeObjectURL\(url\)/);
+    assert.match(fn, /audioPlayer && audioPlayer\.item\.file === name/);
+});
