@@ -99,13 +99,13 @@ function doPost(e) {
     if (p.kind === 'problem') {
       _problemSheet().appendRow([
         new Date(),
-        p.sentAt || '',
-        p.testerName || '(not set)',
-        p.installId || '',
-        p.appVersion || '',
-        p.build || '',
-        _clip(p.note)
-      ].concat(_parts(p.report, REPORT_PARTS)));
+        _txt(p.sentAt || ''),
+        _txt(p.testerName || '(not set)'),
+        _txt(p.installId || ''),
+        _txt(p.appVersion || ''),
+        _txt(p.build || ''),
+        _txt(_clip(p.note))
+      ].concat(_parts(p.report, REPORT_PARTS).map(_txt)));
       if (ALERT_EMAIL) {
         MailApp.sendEmail(ALERT_EMAIL,
           'Conversant AAC - problem report from ' + (p.testerName || 'a tester'),
@@ -122,11 +122,11 @@ function doPost(e) {
 
     _sheet().appendRow([
       new Date(),                       // received (server clock)
-      p.sentAt || '',                   // sent (device clock - they can differ)
-      p.testerName || '(not set)',
-      p.installId || '',
-      p.appVersion || '',
-      p.build || '',
+      _txt(p.sentAt || ''),             // sent (device clock - they can differ)
+      _txt(p.testerName || '(not set)'),
+      _txt(p.installId || ''),
+      _txt(p.appVersion || ''),
+      _txt(p.build || ''),
       p.coversDays == null ? '' : p.coversDays,
       usage.conversations || 0,
       usage.practiceConversations || 0,
@@ -143,8 +143,8 @@ function doPost(e) {
       usage.cardsPerPaletteMedian == null ? '' : usage.cardsPerPaletteMedian,
       usage.optionWordsMedian == null ? '' : usage.optionWordsMedian,
       usage.emptyConversations || 0,
-      _pairs(usage.slotCounts),
-      _pairs(usage.sourceCounts),
+      _txt(_pairs(usage.slotCounts)),
+      _txt(_pairs(usage.sourceCounts)),
       // The partner-side proxy: someone who came back is the nearest thing the app
       // can say to "they would do it again". Not the same as asking them.
       (usage.partners || []).length,
@@ -168,9 +168,9 @@ function doPost(e) {
       depth.expressEdited == null ? '' : depth.expressEdited,
       depth.people == null ? '' : depth.people,
       errors.length,
-      _errorContexts(errors),
+      _txt(_errorContexts(errors)),
       p.systemInfo ? 'included' : ''
-    ].concat(_parts(_raw(p), RAW_PARTS))); // the report as received, so nothing is lost
+    ].concat(_parts(_raw(p), RAW_PARTS).map(_txt))); // the report as received, so nothing is lost
 
     _writeWeeks(p);
 
@@ -223,9 +223,9 @@ function _writeWeeks(p) {
   for (var w = 0; w < weeks.length; w++) {
     var k = weeks[w];
     var row = [
-      install,
+      _txt(install),
       k.week,
-      p.testerName || '(not set)',
+      _txt(p.testerName || '(not set)'),
       k.start ? new Date(k.start) : '',
       k.activeDays || 0,
       k.conversations || 0,
@@ -252,7 +252,7 @@ function _writeWeeks(p) {
  * Visiting the /exec URL in a browser now prints this, so a redeploy is confirmable in
  * two seconds with nothing written. The correct redeploy is:
  *   Deploy > Manage deployments > pencil > Version: New version > Deploy   (same URL) */
-var SCRIPT_VERSION = '2026-10-05a';
+var SCRIPT_VERSION = '2026-10-05b';
 
 // A GET is handy for confirming the deployment is live, and WHICH CODE is live.
 function doGet() {
@@ -306,6 +306,17 @@ function _fit(sheet, header) {
 var CELL_MAX = 49000;
 var REPORT_PARTS = 6;   // 'full report' plus five continuations
 var RAW_PARTS = 5;      // 'raw' plus four continuations
+
+/* Text from a report goes in as TEXT, never as a formula (CR-087). The password ships
+ * in the public app, so anyone can post a report; a value starting with = + - or @
+ * would otherwise run as a formula in a Sheet that holds tester names and speech. The
+ * leading apostrophe is how Sheets marks a cell as plain text; it is not shown, and a
+ * CSV export leaves it out. Numbers and dates are passed through untouched. */
+function _txt(v) {
+  if (v == null) return '';
+  if (typeof v !== 'string') return v;
+  return /^[=+\-@\t\r]/.test(v) ? "'" + v : v;
+}
 
 function _clip(s) {
   s = String(s == null ? '' : s);
