@@ -270,6 +270,9 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: with a paid listening service, tapping Listen twice quickly could open the
   microphone twice and send everything twice, and turning listening off while it was
   still starting up could leave the microphone on anyway.
+- Fixed: each time Settings was opened, typing or pasting in a key or region box saved
+  it, and asked the speech service for its voice list, one more time than before, so a
+  few visits to Settings turned one keystroke into a burst of requests.
 
 ## Version 0.13.4
 

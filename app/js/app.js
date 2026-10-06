@@ -272,6 +272,8 @@ let announcingUserStatement = false;
 // first statement off, the first call's ending must not declare the user silent
 // while the second is still playing - that let a placeholder start over it.
 let statementSeq = 0;
+// Module-level so it guards across Settings opens, not only within one (CR-084).
+let azureFetchInFlight = false;
 // Bumped by terminateConversation (CR-078). speakUserStatement RETURNS whether the
 // conversation it spoke into is still the current one: ending a conversation cuts the
 // speech short and clears everything, so a caller that carried on would put the
@@ -974,22 +976,31 @@ function showRedactedKey(input, key) {
 
 // Reveal the real key for editing, and re-redact when focus leaves. `load`/`save`
 // keep this generic over both key fields.
+// Called on every Settings open. The listeners are attached ONCE and read the
+// callbacks from the box, which each open refreshes (CR-084): attaching them again
+// each time made one keystroke save N times and fetch the voice list N times.
 function wireKeyField(input, { load, save, onChange }) {
     if (!input) return;
-    input.addEventListener('focus', () => {
-        if (input.dataset.redacted) {
-            input.value = load() || '';
-            delete input.dataset.redacted;
-            input.classList.remove('key-redacted');
-        }
-    });
-    input.addEventListener('blur', () => showRedactedKey(input, load()));
-    input.addEventListener('input', () => {
-        // Never save the redacted placeholder back over the real key.
-        if (input.dataset.redacted) return;
-        save(input.value.trim());
-        if (onChange) onChange(input.value.trim());
-    });
+    input._keyField = { load, save, onChange };
+    if (!input.dataset.keyWired) {
+        input.dataset.keyWired = '1';
+        const cb = () => input._keyField;
+        input.addEventListener('focus', () => {
+            if (input.dataset.redacted) {
+                input.value = cb().load() || '';
+                delete input.dataset.redacted;
+                input.classList.remove('key-redacted');
+            }
+        });
+        input.addEventListener('blur', () => showRedactedKey(input, cb().load()));
+        input.addEventListener('input', () => {
+            // Never save the redacted placeholder back over the real key.
+            if (input.dataset.redacted) return;
+            const { save: sv, onChange: ch } = cb();
+            sv(input.value.trim());
+            if (ch) ch(input.value.trim());
+        });
+    }
     showRedactedKey(input, load());
 }
 
@@ -7866,6 +7877,7 @@ function openSettings() {
             storage.clearAzureVoiceCatalog();
             refreshAzureVoices({ force: true });
             adoptChosenHearingIfKeyed('azure');
+            reflectAzureTestAvailability();
         },
     });
     // Someone who set Azure up before the region had to be entered was running on the
@@ -7886,10 +7898,10 @@ function openSettings() {
         testAzureBtn.disabled = azureTestRunning || !ready;
         testAzureBtn.title = ready ? '' : 'Enter both the key and the region first.';
     };
-    azureKeyInput?.addEventListener('input', reflectAzureTestAvailability);
     if (azureRegionInput) {
         azureRegionInput.value = storage.loadAzureRegionSetting();
-        azureRegionInput.addEventListener('input', () => {
+        // Property handlers, so re-opening Settings replaces rather than adds (CR-084).
+        azureRegionInput.oninput = () => {
             storage.saveAzureRegion(azureRegionInput.value);
             showAzureStatus(null, '');
             reflectAzureTestAvailability();
@@ -7897,12 +7909,12 @@ function openSettings() {
             // change invalidates the list just as a key change does.
             storage.clearAzureVoiceCatalog();
             refreshAzureVoices({ force: true });
-        });
+        };
         // Show the stored form on blur - "(US) East US" becomes "eastus" - so the box
         // says exactly what the app will use.
-        azureRegionInput.addEventListener('blur', () => {
+        azureRegionInput.onblur = () => {
             azureRegionInput.value = storage.loadAzureRegionSetting();
-        });
+        };
     }
     const pasteAzureBtn = document.getElementById('pasteAzureKeyBtn');
     if (pasteAzureBtn) {
@@ -8111,7 +8123,6 @@ function openSettings() {
      * line, because falling silently back to the sixteen shipped voices is
      * indistinguishable, in a picker, from that being all this account has.
      */
-    let azureFetchInFlight = false;
     const refreshAzureVoices = async ({ force = false } = {}) => {
         const key = (storage.loadAzureKey() || '').trim();
         if (!key) {
@@ -8361,10 +8372,9 @@ function openSettings() {
                 try {
                     const text = (await navigator.clipboard.readText() || '').trim();
                     if (!text) { showStatus('warn', 'There was nothing to paste.'); return; }
+                    // The input event this dispatches saves the key and refetches the
+                    // voices; doing both again here doubled the request (CR-084).
                     setKeyFieldValue(keyInput, text);
-                    storage.saveServiceKey(id, text);
-                    showStatus(null, '');
-                    refreshVoices();
                 } catch {
                     showStatus('warn', 'This browser would not let the app read the clipboard.');
                 }

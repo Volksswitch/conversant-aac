@@ -716,3 +716,11 @@ test('CR-081: both report buttons go through the one-at-a-time guard', () => {
     const g = appSource.slice(appSource.indexOf('async function oneReportAtATime'));
     assert.match(g.slice(0, 300), /finally \{ problemReportInProgress = false; \}/);
 });
+
+test('CR-084: opening Settings again never adds a second set of key-box listeners', () => {
+    const s = appSource.indexOf('\nfunction openSettings');
+    const e = appSource.indexOf('\n}\n', s);
+    assert.doesNotMatch(appSource.slice(s, e), /addEventListener\(/);
+    const w = appSource.slice(appSource.indexOf('function wireKeyField'));
+    assert.match(w.slice(0, 600), /if \(!input\.dataset\.keyWired\)/);
+});
