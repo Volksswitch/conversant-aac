@@ -240,6 +240,9 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: if you turned on "Don't save this conversation" part-way through, a problem
   report could still include what was said earlier in that conversation. The report
   now leaves out the whole conversation's wording, even after it has ended.
+- Fixed: loading an older settings profile, or restoring a backup, could quietly turn
+  automatic weekly reports back on after you had turned them off. That switch now
+  belongs to the device and is left alone.
 
 ## Version 0.13.4
 

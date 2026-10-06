@@ -339,6 +339,22 @@ test('the tidy-up is gone: a committed partner turn is stored exactly as heard',
  *
  * Driven through the real profile writer and reader against a real folder, because the
  * bug lived in the merge between them and not in either end. */
+test('a profile or a backup cannot turn automatic reports back on (CR-075)', async () => {
+    await storage.restoreDataFolder();
+    await storage.saveSettingsProfile('before opting out');   // saved with the switch untouched
+    storage.saveWeeklySendEnabled(false);
+    await storage.applySettingsProfile('before opting out');
+    assert.equal(storage.loadWeeklySendEnabled(), false, 'loading an older profile');
+    storage.applyPortableSettings({ weeklySendEnabled: true });
+    assert.equal(storage.loadWeeklySendEnabled(), false, 'restoring a backup');
+    await storage.saveSettingsProfile('after opting out');
+    const dir = await root.getDirectoryHandle('settings');
+    const saved = JSON.parse(await (await (await dir.getFileHandle('after opting out.json')).getFile()).text());
+    assert.equal('weeklySendEnabled' in saved.settings, false);
+    assert.equal(storage.reportableSettings().weeklySendEnabled, false, 'still visible in a problem report');
+    storage.saveWeeklySendEnabled(true);
+});
+
 test('reloading a settings profile cannot blank the tester name', async () => {
     await storage.restoreDataFolder();
     // The sequence Ken described: settings saved as a profile BEFORE the name is typed.

@@ -475,7 +475,10 @@ const SETTINGS_DIR = 'settings';
 export const SECRET_KEYS = ['apiKey', 'deepgramKey', 'azureKey',
                             'openaiKey', 'googleKey', 'elevenlabsKey'];
 
-const PROFILE_EXCLUDE = [...SECRET_KEYS, 'usageInputTokens', 'usageOutputTokens', 'usageCacheWriteTokens', 'usageCacheReadTokens', 'usageSttSeconds', 'usageTtsCharacters', 'usageSince', 'lastSeenVersion', 'activeSettingsProfile', 'installId', 'testerName', 'weeklySendLastAt', 'weeklyInfoHash', 'weeklyEndpoint', 'weeklyErrorMark'];
+const PROFILE_EXCLUDE = [...SECRET_KEYS, 'usageInputTokens', 'usageOutputTokens', 'usageCacheWriteTokens', 'usageCacheReadTokens', 'usageSttSeconds', 'usageTtsCharacters', 'usageSince', 'lastSeenVersion', 'activeSettingsProfile', 'installId', 'testerName', 'weeklySendLastAt', 'weeklyInfoHash', 'weeklyEndpoint', 'weeklyErrorMark',
+    // This device's user's consent to automatic reports (CR-075). A profile or a backup
+    // must never turn it back on.
+    'weeklySendEnabled'];
 
 // The settings bundle with both API keys replaced by a presence marker, for a
 // problem report (Ken, August 7 2026). The redaction lives HERE rather than in
