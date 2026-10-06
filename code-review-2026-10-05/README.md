@@ -93,7 +93,7 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-052](CR-052.md) | fixed (65a937b) | medium | confirmed | bug | `app/js/voice.js:302` | Choosing the FLAT reply on a levity Sound Check item is reported to the AI as choosing the lighter one, granting joke permission |
 | [CR-053](CR-053.md) | fixed (65a937b) | medium | confirmed | bug | `app/js/voice.js:311` | The five 'starting things off' Sound Check answers are cut from the prompt when the user answers the bank in order |
 | [CR-054](CR-054.md) | fixed (bbf9cda) | medium | confirmed | bug | `app/js/worldview.js:539` | Fact labels sent to the AI come from the first placeholder synonym and misdescribe several answers |
-| [CR-055](CR-055.md) | fixed (pending) | medium | confirmed | bug | `app/sw.js:39` | tap-guard.js is missing from the service worker's precache list, so the app cannot start offline after a first install |
+| [CR-055](CR-055.md) | fixed (25397ba) | medium | confirmed | bug | `app/sw.js:39` | tap-guard.js is missing from the service worker's precache list, so the app cannot start offline after a first install |
 | [CR-056](CR-056.md) | open | medium | confirmed | bug | `scripts/doc-tests/check-docs.py:452` | The documents' British-phrase check never matches anything, and the app-text version cannot see a phrase broken across a line |
 | [CR-057](CR-057.md) | open | medium | confirmed | data-loss | `app/js/app.js:6476` | A partial restore is announced as a complete one |
 | [CR-058](CR-058.md) | open | medium | confirmed | data-loss | `app/js/data-transfer.js:393` | Restoring a backup while the remembered data folder is not reconnected is silently undone on the next launch (and an export made then omits every conversation) |
@@ -111,7 +111,7 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-070](CR-070.md) | fixed (6579a46) | medium | confirmed | design-violation | `app/js/voice-harvest.js:76` | Catchphrase redaction at the voice-harvest boundary was never built |
 | [CR-071](CR-071.md) | open | medium | confirmed | design-violation | `app/js/weekly-send.js:298` | System information is re-sent in every weekly report because the change-detection hash includes a timestamp and live counters |
 | [CR-072](CR-072.md) | open | medium | confirmed | other | `app/js/app.js:2249` | No undeclared-identifier check: the handleRepairOfSelf ReferenceError shipped with every test green |
-| [CR-073](CR-073.md) | fixed (pending) | medium | confirmed | other | `app/sw.js:39` | No test checks that the service worker precaches every module the app imports (how tap-guard.js slipped) |
+| [CR-073](CR-073.md) | fixed (25397ba) | medium | confirmed | other | `app/sw.js:39` | No test checks that the service worker precaches every module the app imports (how tap-guard.js slipped) |
 | [CR-074](CR-074.md) | open | medium | confirmed | privacy | `app/js/app.js:6856` | Problem report includes the saved transcript of the current conversation even after it was marked Don't save |
 | [CR-075](CR-075.md) | open | medium | confirmed | privacy | `app/js/storage.js:465` | Loading a settings profile or restoring a backup can silently switch automatic reporting back on |
 | [CR-076](CR-076.md) | open | medium | confirmed | privacy | `app/js/storage.js:2338` | "Don't save this conversation" does not stop the app recording which card was chosen afterwards |

@@ -35,5 +35,5 @@ test('every file in app/js is in the offline list', () => {
 test('the offline cache name carries the app version', () => {
     const app = readFileSync(new URL('js/app.js', appDir), 'utf8');
     const version = /const APP_VERSION = '([^']+)'/.exec(app)[1];
-    assert.match(sw, new RegExp(`CACHE_VERSION = 'aac-v${version.replace(/\./g, '\.')}-`));
+    assert.match(sw, new RegExp(`CACHE_VERSION = 'aac-v${version.replace(/\./g, '\\.')}-`));
 });
