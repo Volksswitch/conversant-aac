@@ -454,6 +454,15 @@ function applyColorScheme(scheme) {
 }
 
 function initApp() {
+    // Reporting from the launch screen, wired FIRST and on its own (CR-182): the tester
+    // who most needs it is the one whose app did not finish starting, so nothing that
+    // can throw may come before it. The report has no note, because the panel you
+    // would type one into is exactly what may be unreachable (Ken, August 7 2026).
+    try {
+        const startReportBtn = document.getElementById('startReportBtn');
+        if (startReportBtn) startReportBtn.addEventListener('click', () => sendProblemReportFromStart());
+    } catch { /* the report link must never be what stops the app starting */ }
+
     // Stamp the error log with this build's version (Ken, July 2026).
     storage.setAppVersion(APP_VERSION);
 
@@ -610,13 +619,6 @@ function initApp() {
         openSettings();
         revealSetting('apiKeyInput');   // the button promises the field, not the tab
     });
-    // Reporting from the launch screen. Wired here, early in init, ON PURPOSE: the
-    // tester who most needs it is the one whose app did not finish starting, so this
-    // listener must be attached before anything that could throw. It saves straight
-    // to a file with no note, because the panel you would type a note into is
-    // exactly what may be unreachable (Ken, August 7 2026).
-    const startReportBtn = document.getElementById('startReportBtn');
-    if (startReportBtn) startReportBtn.addEventListener('click', () => sendProblemReportFromStart());
     document.getElementById('apiKeyContinueBtn').addEventListener('click', finishStart);
 
     // The click IS the fix: a permission request is only granted while the browser

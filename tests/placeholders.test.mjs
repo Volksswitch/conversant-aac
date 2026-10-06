@@ -917,3 +917,12 @@ test('CR-171/172/174: discard asks first, a failed review save is logged, changi
     const wv = readFileSync(new URL('../app/js/worldview-ui.js', import.meta.url), 'utf8');
     assert.doesNotMatch(wv, /voiceProfile\.clearAnswer\(item\.id\)/);
 });
+
+test('CR-180-182: one look for report boxes, scheme-colored dialogs, report link wired first', () => {
+    const css = readFileSync(new URL('../app/css/styles.css', import.meta.url), 'utf8');
+    assert.match(css, /#errorLogView, #usageSummaryView, #systemInfoView, #weeklyReportContents, #weeklySendLogView \{/);
+    const dlg = css.slice(css.indexOf('.danger-dialog {'));
+    assert.match(dlg.slice(0, 400), /background: var\(--surface-raised\);/);
+    const init = appSource.slice(appSource.indexOf('function initApp()'));
+    assert.ok(init.indexOf("getElementById('startReportBtn')") < init.indexOf('storage.setAppVersion'));
+});

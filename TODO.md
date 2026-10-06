@@ -58,7 +58,7 @@ outlives a "Don't save" conversation.
 
 ### The mode chip's styling: delete it, or is it coming back?
 
-**Raised:** October 5 2026, from code review item CR-175.
+**Raised:** October 5 2026, from code review items CR-175 and CR-179.
 
 **What is wrong:** the conversation screen once showed a small "mode chip" naming what the
 app was doing. It is no longer on the screen, but its styling and the code that draws it

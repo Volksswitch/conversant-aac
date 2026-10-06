@@ -415,6 +415,10 @@ forgetting to tag one is only ever noise, never silence.
   instead of being lost silently; two conversations started within the same second no
   longer share one saved file; and "Change my answer" in How I Sound keeps your old
   answer until you pick a new one.
+- Fixed: the five report boxes on the Troubleshooting tab now look the same;
+  confirmation and progress boxes now take the colors of the dark and yellow-on-black
+  schemes; and if the app fails while starting, the "send a report" link on the
+  opening screen now works, with advice you can actually follow.
 
 ## Version 0.13.4
 

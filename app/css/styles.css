@@ -1912,10 +1912,13 @@ body.conv-bottom .palette-grid {
 
 /* Error-log viewer (Settings → About): a read-only monospace pane with its
    actions on a row beneath. */
-#errorLogView {
+/* All five read-only report boxes on the Troubleshooting tab share one look: one
+   monospace face, one size (UI-Design 13, CR-180). Column-aligned ones keep "pre";
+   the weekly report's description wraps. */
+#errorLogView, #usageSummaryView, #systemInfoView, #weeklyReportContents, #weeklySendLogView {
     width: 100%;
     font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
-    font-size: 0.78rem;
+    font-size: 0.85rem;
     line-height: 1.35;
     white-space: pre;
     overflow: auto;
@@ -1928,7 +1931,7 @@ body.conv-bottom .palette-grid {
 }
 #errorLogActions, #usageSummaryActions, #systemInfoActions, #problemReportActions { display: flex; gap: 0.5rem; margin-top: 0.4rem; }
 /* Monospace so the summary's aligned columns line up (Ken, Aug 7 2026). */
-#usageSummaryView, #systemInfoView { font-family: Consolas, 'Courier New', monospace; font-size: 0.85em; white-space: pre; }
+#weeklyReportContents, #weeklySendLogView { white-space: pre-wrap; }
 /* Deliberately quiet: the launch screen is not a support desk, and this must
    not compete with Start. It is the only reporting route when Settings cannot
    be reached, so it is always present rather than shown on a condition. */
@@ -4478,6 +4481,9 @@ label.radio-label input[type="radio"] {
     position: fixed;
     inset: var(--app-margin);
     margin: auto;
+    /* The scheme's own surface, not the browser's default dialog grey (CR-181). */
+    background: var(--surface-raised);
+    color: var(--ink);
     border: none;
     border-top: 6px solid var(--danger);
     border-radius: 10px;
