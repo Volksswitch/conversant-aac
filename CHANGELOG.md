@@ -419,6 +419,11 @@ forgetting to tag one is only ever noise, never silence.
   confirmation and progress boxes now take the colors of the dark and yellow-on-black
   schemes; and if the app fails while starting, the "send a report" link on the
   opening screen now works, with advice you can actually follow.
+- Fixed: with no AI key (the app can be used without one), the transcript no longer
+  turns red and logs an error at every pause; a button you switched on now stays on
+  screen while you page that part of the Express Panel with More; choosing an OpenAI,
+  Google Cloud or ElevenLabs voice without its key now says to add the key; and a
+  holding phrase no longer starts while the other person has just begun talking again.
 
 ## Version 0.13.4
 

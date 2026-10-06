@@ -442,3 +442,19 @@ test('no goals changes nothing about the Flex band', () => {
     assert.deepEqual(empty.items.slice(10).map((x) => x.text), ['One', 'Two']);
     assert.equal(empty.unreachable.goals, 0);
 });
+
+// CR-185. A switched-on button stays on screen while its band is paged.
+test('a switched-on button stays on screen on every page of its band', () => {
+    const feelings = ['Happy', 'Sad', 'Tired', 'Calm', 'Bored', 'Proud', 'Hungry', 'Cold']
+        .map((t) => ({ id: t, type: 'feeling', text: t }));
+    const model = { sizes: { shape: 'counts', context: 4, flex: 0 }, always: [], context: feelings, flex: {} };
+    const seen = new Set();
+    for (let page = 0; page < 6; page++) {
+        const c = bands.composePanel(GRID, model, { litIds: ['Proud'], paging: { band: 'context', page } });
+        const shown = texts(c, 8, 11);
+        assert.equal(shown[0], 'Proud', `page ${page}: ${shown}`);
+        shown.forEach((t) => t && seen.add(t));
+        if (c.more[0] && c.more[0].label === 'Close') break;
+    }
+    assert.equal(seen.size, feelings.length, 'every feeling is still reachable');
+});

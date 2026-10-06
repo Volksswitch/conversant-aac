@@ -298,15 +298,29 @@ export function composePanel(layoutRows, model = {}, situation = {}) {
         firstPage[band] = per;
         behindMore[band] = L.length - per;
         unreachableOf[band] = 0;
-        const lastBandPage = Math.ceil(L.length / per) - 1;
+        // ⚠ A SWITCHED-ON BUTTON STAYS ON SCREEN ON EVERY PAGE (CR-185). litFirst put the
+        // lit ones at the front of the list; while the band is paged they keep the
+        // first positions and only the rest of the list pages behind them. At least one
+        // position is left for paging, so a band that is mostly lit can still be read.
+        const litN = Math.min(countLit(L, situation.litIds), per - 1);
+        const perRest = per - litN;
+        const rest = L.length - litN;
+        const lastBandPage = Math.ceil(rest / perRest) - 1;
         const lastPanelPage = Math.ceil((L.length - per) / Math.max(1, plan.total - 1));
         lastPageOf[band] = scope === 'panel' ? lastPanelPage : lastBandPage;
         let page = req && req.band === band ? Math.max(0, Math.round(+req.page || 0)) : 0;
         page = Math.min(page, lastPageOf[band]);
         const moreAt = P[n - 1];
         // The band's own positions: page 0 always, and every page under the band scope.
-        const start = scope === 'band' ? page * per : 0;
-        for (let k = 0; k < per; k++) items[P[k]] = L[start + k];
+        // Page 0 is simply the list; a later page is the lit buttons, then that page of
+        // the rest.
+        if (scope === 'band' && page > 0) {
+            for (let k = 0; k < litN; k++) items[P[k]] = L[k];
+            const start = litN + page * perRest;
+            for (let k = litN; k < per; k++) items[P[k]] = L[start + (k - litN)];
+        } else {
+            for (let k = 0; k < per; k++) items[P[k]] = L[k];
+        }
         more.push({ index: moreAt, band, page, label: page >= lastPageOf[band] ? 'Close' : 'More' });
     }
 
@@ -318,12 +332,18 @@ export function composePanel(layoutRows, model = {}, situation = {}) {
     for (const m of more) if (m.page > 0) paged = m;
     if (paged && scope === 'panel') {
         const L = lists[paged.band];
+        // Switched-on buttons in every band keep their cells (CR-185); the takeover
+        // fills the others. The paged band's own lit ones are already in front, so the
+        // list it pages through starts after them.
+        const lit = new Set((situation.litIds || []).filter(Boolean));
+        const keep = new Set();
+        for (let i = 0; i < plan.total; i++) if (items[i] && lit.has(items[i].id)) keep.add(i);
         const per0 = positions[paged.band].length - 1;
-        const perP = plan.total - 1;
-        const offset = per0 + (paged.page - 1) * perP;
+        const perP = plan.total - 1 - keep.size;
+        const offset = per0 + (paged.page - 1) * Math.max(1, perP);
         let k = 0;
         for (let i = 0; i < plan.total; i++) {
-            if (i === paged.index) continue;
+            if (i === paged.index || keep.has(i)) continue;
             items[i] = L[offset + k++];
             bandsOut[i] = paged.band;
         }
@@ -375,6 +395,14 @@ export function composePanel(layoutRows, model = {}, situation = {}) {
  * Switched-on buttons first, everything else in the user's own order. Stable, so a
  * button switched off goes straight back to where it was in the priority.
  */
+// How many entries at the front of a list are switched on (litFirst put them there).
+function countLit(list, litIds) {
+    const lit = new Set((litIds || []).filter(Boolean));
+    let n = 0;
+    while (n < list.length && list[n] && lit.has(list[n].id)) n++;
+    return n;
+}
+
 export function litFirst(list, litIds) {
     const lit = new Set((litIds || []).filter(Boolean));
     if (!lit.size) return list;

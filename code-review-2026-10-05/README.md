@@ -218,13 +218,13 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-177](CR-177.md) | fixed (f907e98) | low | confirmed | dead-code | `app/js/keyboard.js:279` | Dead toolbar/Hide code and comments still describe a keyboard Hide button that no longer exists |
 | [CR-178](CR-178.md) | fixed (f907e98) | low | confirmed | dead-code | `app/js/storage.js:689` | activeProfileUnsaved is dead code, and would report unsaved changes forever for a profile saved before the September layout migration |
 | [CR-179](CR-179.md) | open - awaits Ken with CR-175 (TODO.md: the mode chip) | low | confirmed | dead-code | `app/js/ui.js:13` | Dead mode-chip and diagnostic engine-panel code in ui.js targets elements that no longer exist |
-| [CR-180](CR-180.md) | fixed (pending) | low | confirmed | design-violation | `app/css/styles.css:1924` | Read-only report views on Troubleshooting use three typefaces and three sizes, contrary to §13 |
-| [CR-181](CR-181.md) | fixed (pending) | low | confirmed | design-violation | `app/css/styles.css:4524` | Confirmation dialog has no themed background (uses the browser's Canvas color) |
-| [CR-182](CR-182.md) | fixed (pending) | low | confirmed | design-violation | `app/js/app.js:609` | The launch-screen report button is wired after the code most likely to throw, and the failure card points to unreachable Settings |
-| [CR-183](CR-183.md) | open | low | confirmed | design-violation | `app/js/app.js:1243` | Partner resuming does not stop an in-flight generation from restarting the placeholder ladder |
-| [CR-184](CR-184.md) | open | low | confirmed | design-violation | `app/js/app.js:1267` | With no AI key set, every pause logs an error, keeps the transcript red and shows an error box |
-| [CR-185](CR-185.md) | open | low | confirmed | design-violation | `app/js/app.js:4101` | A switched-on partner, place or feeling disappears while its band is paged |
-| [CR-186](CR-186.md) | open | low | confirmed | design-violation | `app/js/app.js:7788` | Choosing OpenAI, Google Cloud or ElevenLabs as the speaking voice with no key gives no warning |
+| [CR-180](CR-180.md) | fixed (d45e4a6) | low | confirmed | design-violation | `app/css/styles.css:1924` | Read-only report views on Troubleshooting use three typefaces and three sizes, contrary to §13 |
+| [CR-181](CR-181.md) | fixed (d45e4a6) | low | confirmed | design-violation | `app/css/styles.css:4524` | Confirmation dialog has no themed background (uses the browser's Canvas color) |
+| [CR-182](CR-182.md) | fixed (d45e4a6) | low | confirmed | design-violation | `app/js/app.js:609` | The launch-screen report button is wired after the code most likely to throw, and the failure card points to unreachable Settings |
+| [CR-183](CR-183.md) | fixed (pending) | low | confirmed | design-violation | `app/js/app.js:1243` | Partner resuming does not stop an in-flight generation from restarting the placeholder ladder |
+| [CR-184](CR-184.md) | fixed (pending) | low | confirmed | design-violation | `app/js/app.js:1267` | With no AI key set, every pause logs an error, keeps the transcript red and shows an error box |
+| [CR-185](CR-185.md) | fixed (pending) | low | confirmed | design-violation | `app/js/app.js:4101` | A switched-on partner, place or feeling disappears while its band is paged |
+| [CR-186](CR-186.md) | fixed (pending) | low | confirmed | design-violation | `app/js/app.js:7788` | Choosing OpenAI, Google Cloud or ElevenLabs as the speaking voice with no key gives no warning |
 | [CR-187](CR-187.md) | open | low | confirmed | design-violation | `app/js/express-bands.js:122` | In 'rows' mode a large Flex band can shrink the Context band below its floor of four |
 | [CR-188](CR-188.md) | open | low | confirmed | design-violation | `app/js/express-panel.js:207` | Removing a person or place leaves their Flex phrase lists behind as 'Someone at somewhere' |
 | [CR-189](CR-189.md) | open | low | confirmed | design-violation | `app/js/keyboard-layouts.js:120` | Bottom Layout 6 ships with two Backspace keys, which the layout document said to resolve before building |

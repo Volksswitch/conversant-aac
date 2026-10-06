@@ -926,3 +926,11 @@ test('CR-180-182: one look for report boxes, scheme-colored dialogs, report link
     const init = appSource.slice(appSource.indexOf('function initApp()'));
     assert.ok(init.indexOf("getElementById('startReportBtn')") < init.indexOf('storage.setAppVersion'));
 });
+
+test('CR-183/184/186: resume aborts the ladder; no key asks nothing; every paid voice warns without a key', () => {
+    const hr = appSource.slice(appSource.indexOf('function handlePartnerResumed'));
+    assert.match(hr.slice(0, 1200), /abortPlaceholders\(\);/);
+    const go = appSource.slice(appSource.indexOf('async function generateOptions'));
+    assert.ok(go.indexOf("if (!(storage.loadApiKey() || '').trim())") < go.indexOf('llm.generateResponses'));
+    assert.match(appSource, /setStatusLine\(radio\.value \+ 'VoiceStatus', 'warn'/);
+});

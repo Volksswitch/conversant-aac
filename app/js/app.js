@@ -1332,7 +1332,9 @@ function handlePartnerResumed() {
     // here; it's caught on the first interim STT result (except while a placeholder is
     // actively playing, where the echo guard blocks detection until it finishes — a
     // known limitation until Phase-2 partner voice recognition).
-    placeholders.stop();
+    // abortPlaceholders, not just stop: a generation still running from the last pause
+    // must not restart the ladder when it returns; the next pause re-arms it (CR-183).
+    abortPlaceholders();
 }
 
 // Fired each time the partner pauses for the configured silence period.
@@ -1902,6 +1904,17 @@ async function generateOptions(partnerText) {
         else renderStaticPalette('closing', snap.palette,
             'Say goodbye — or hold them a moment', { pin: declineClosingCard() });
         ui.setTranscriptState('ready');
+        return;
+    }
+
+    // ⚠ NO KEY IS A WAY OF USING THE APP, NOT A FAILURE (CR-184). Without one there are
+    // no suggestions to ask for, so nothing is asked and nothing is logged: the words
+    // still show, and the Express Panel and "In my own words" still answer. Asking
+    // anyway logged an error at every pause and left the red error wash on for good.
+    if (!(storage.loadApiKey() || '').trim()) {
+        ui.setPaletteBusy(false);
+        ui.setTranscriptState('idle');
+        ui.setStatus('No AI key - reply with the Express Panel or In my own words');
         return;
     }
 
@@ -8384,10 +8397,15 @@ function openSettings() {
             // discovered mid-conversation.
             showAuraStatus('own', null, '');
             showAzureVoiceStatus('own', null, '');
+            for (const id of Object.keys(TTS_PROVIDERS)) setStatusLine(id + 'VoiceStatus', null, '');
             if (radio.value === 'deepgram' && !(storage.loadDeepgramKey() || '').trim()) {
                 showAuraStatus('own', 'warn', 'Add your Deepgram key above, then tap Test.');
             } else if (radio.value === 'azure' && !(storage.loadAzureKey() || '').trim()) {
                 showAzureVoiceStatus('own', 'warn', 'Add your Azure Speech key above, then tap Test.');
+            } else if (TTS_PROVIDERS[radio.value] && !(storage.loadServiceKey(radio.value) || '').trim()) {
+                // The other three paid voices, which used to say nothing (CR-186).
+                setStatusLine(radio.value + 'VoiceStatus', 'warn',
+                    `Add your ${TTS_PROVIDERS[radio.value].label} key above, then tap Test.`);
             }
         };
     });
