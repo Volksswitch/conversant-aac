@@ -440,3 +440,15 @@ test('undo and redo close the composition pane', async () => {
     const at = src.indexOf('function stepHistory(');
     assert.match(src.slice(at, at + 900), /stopEditing\(\);[\s\S]{0,300}closeComposer\(\);/);
 });
+
+// CR-258. A phrase answer keeps its own respelling, so Hear it says it as the panel
+// does; a sound answer never carries one.
+test('a phrase answer keeps its respelling; a sound answer does not', () => {
+    const [first] = model.buildTurns(sampleConversation());
+    let r = model.setPhraseAnswer(model.emptyReview('c'), first, { itemId: 'v', text: 'Volksswitch', speak: 'Folks-switch' });
+    assert.equal(model.getEntry(r, first.key).answer.speak, 'Folks-switch');
+    r = model.setPhraseAnswer(r, first, { itemId: 's', text: 'Birthday song', sound: true, speak: 'x' });
+    assert.equal(model.getEntry(r, first.key).answer.speak, null);
+    r = model.setPhraseAnswer(r, first, { itemId: 'p', text: 'Yes', speak: 'Yes' });
+    assert.equal(model.getEntry(r, first.key).answer.speak, null, 'the same words need no respelling');
+});

@@ -347,12 +347,15 @@ export function setCardAnswer(review, turn, index, text) {
     });
 }
 
-export function setPhraseAnswer(review, turn, { itemId = null, text = '', sound = false, needed = null } = {}) {
+export function setPhraseAnswer(review, turn, { itemId = null, text = '', sound = false, needed = null, speak = null } = {}) {
     return withEntry(review, turn.key, (e) => {
         e.answer = {
             kind: sound ? 'sound' : 'phrase',
             itemId,
             text: String(text || ''),
+            // The phrase's own "how to say it", so Hear it sounds the way the panel does
+            // (CR-258). Kept only when it differs from the words.
+            speak: !sound && speak && String(speak) !== String(text || '') ? String(speak) : null,
             // WHAT HAD TO BE SWITCHED ON TO REACH IT. A Flex phrase exists only because a
             // person or place is on, so the answer is the pair (§6, Figure 4).
             needed: Array.isArray(needed) && needed.length ? needed.slice() : null,

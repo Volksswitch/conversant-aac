@@ -515,6 +515,10 @@ forgetting to tag one is only ever noise, never silence.
 - The practice button tour now calls the button "Wrap up", matching the screen, and if
   you have chosen words instead of pictures on the command buttons, its hints name the
   word the button shows.
+- In Conversation Review, Hear it now says a phrase the way your Express Panel button
+  says it (using its "how to say it" spelling), no longer reads out a sound button's
+  name as if you had said it, and is not offered while you are correcting what the
+  other person said.
 
 ## Version 0.13.4
 

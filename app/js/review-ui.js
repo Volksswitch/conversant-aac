@@ -223,7 +223,7 @@ function render() {
 
 function renderBar() {
     const e = entry();
-    const hearable = editing ? !!wed.editorText(ed) : !!answerText(e);
+    const hearable = !!hearText();
     const state = {
         prevTurn: at > 0,
         nextTurn: at < conv.turns.length - 1,
@@ -552,8 +552,21 @@ function stepHistory(which) {
 }
 
 function hear() {
-    const text = editing ? wed.editorText(ed) : answerText(entry());
+    const text = hearText();
     if (text) deps.speak(text);
+}
+
+/*
+ * What Hear it says, or '' when it should say nothing (CR-258): never a sound
+ * button's NAME (that would read the label out as though the user said it), never the
+ * other person's words in the user's voice while correcting what was heard, and a
+ * phrase in its own respelling, as the panel says it.
+ */
+function hearText() {
+    if (editing) return editing.target === 'heard' ? '' : wed.editorText(ed);
+    const a = entry() && entry().answer;
+    if (!a || a.kind === 'sound') return '';
+    return (a.kind === 'phrase' && a.speak) || answerText(entry());
 }
 
 // The next turn, after the one outlined, that carries one of the marks the list counts
@@ -780,6 +793,7 @@ function answerWithPhrase(item, sound) {
             text: sound ? (item.label || 'Sound') : (item.text || ''),
             sound,
             needed,
+            speak: sound ? null : (item.speak || null),
         }));
     }
     render();
