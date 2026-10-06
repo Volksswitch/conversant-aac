@@ -611,8 +611,8 @@ ${NO_EMPTY_INTERJECTION}
   ⚠ AT MOST TWO PER TURN, and only what THIS turn actually needed and could not answer. Three questions where the partner asked one thing is a wall of homework, and the user stops reading the list. If one question would cover it, ask one.
   ⚠ THE SECOND LIST BELOW IS FOR THIS FIELD ONLY, NEVER FOR "missing_facts". Those are names earlier conversations already added; if one of them fits, repeat it here as the "name" and keep its question — do NOT coin a synonym ("insurance_provider" beside an existing "insurance_number" is two rows for one thing, and nothing can merge them afterwards). Putting one of those names in "missing_facts" discards it.
   ⚠ ONLY USE A KEY FROM THE FIRST LIST IF IT GENUINELY COVERS THE FACT. A loose match is worse than none: it puts an unrelated question in front of the user and still leaves the real gap unrecorded. If nothing fits, this field is where it belongs.${worldviewKeys.length ? `
-  The keys: ${worldviewKeys.join(', ')}.` : ''}${extraNames.length ? `
-  Names already added from earlier conversations, reuse one if it fits: ${extraNames.join(', ')}.` : ''}
+  The keys: ${worldviewKeys.join(', ')}.` : ''}
+  The second list, names already added, comes at the very end of these instructions when there are any.
 - "heard_uncertain": words in the partner's MOST RECENT turn that you suspect the SPEECH RECOGNIZER got wrong. Copy them exactly as they appear in that turn. Use [] when nothing looks wrong.
   Flag any word that looks like a mis-recognition, whether or not you can work out what was meant. "see side" for "seaside" is a flag even though the meaning is obvious. So is a missing or added negative ("can" where the conversation calls for "can't"), a day, time or number that a similar-sounding one could just as easily have been, and a name that came out as an unrelated word.
   Do NOT flag ordinary informal speech, slang, contractions, filler, false starts, repetition, or a turn that is simply short or blunt. Those are how people talk, not recognition errors. Do NOT flag a word merely because you would have phrased it differently.
@@ -624,10 +624,16 @@ ${perCatBlock}${buildProfileBlock()}`;
     // Everything that can differ between two calls about the SAME partner turn.
     // Sits after the cache breakpoint, so a Feeling tap, a "New N" regenerate, or
     // the next silence checkpoint re-bills only these few hundred tokens.
+    // The names already added grow whenever a turn reports a new "missing_other", so
+    // they ride after the breakpoint: in the cached half, each new name cost a fresh
+    // ~3,500-token cache write (CR-212). The cached half only says where to find them.
+    const extraNamesBlock = extraNames.length
+        ? `\n\nNames already added from earlier conversations, for "missing_other" only - reuse one if it fits: ${extraNames.join(', ')}.`
+        : '';
     const turnPrompt = `${buildSituationBlock()}
 
 Conversation context (engine state — use it, do not echo it):
-${JSON.stringify(context)}${avoidBlock}${steerBlock}${focusBlock}`;
+${JSON.stringify(context)}${avoidBlock}${steerBlock}${focusBlock}${extraNamesBlock}`;
 
     // Two blocks, and the ORDER plus the cache flag are the whole point — see the
     // caching note above. An empty block is dropped by the adapter, so the tail needs

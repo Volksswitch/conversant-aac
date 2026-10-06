@@ -8519,12 +8519,18 @@ function openSettings() {
          * Returns { ok, count, error } so the Test button can say so; still throws
          * nothing, so the paths that call it in passing are unaffected.
          */
+        // Only the newest request may fill the list: an answer for a key the user has
+        // since changed must not be saved over the new key's (CR-211).
+        let voiceSeq = 0;
+        let voiceTimer = null;
         const refreshVoices = async () => {
             if (!provider.catalog || !voiceSelect) return { ok: true, count: 0, none: true };
             const key = (storage.loadServiceKey(id) || '').trim();
             if (!key) return { ok: false, count: 0, error: 'no key' };
+            const mine = ++voiceSeq;
             try {
                 const voices = await ttsRest.fetchVoices(provider, key);
+                if (mine !== voiceSeq) return { ok: false, count: 0, error: 'superseded' };
                 if (!voices.length) return { ok: false, count: 0, error: 'the list came back empty' };
                 // ⚠ CACHED, and not only so the picker fills instantly next launch.
                 // "Auto" for the partner has to be answerable OUTSIDE Settings, at the
@@ -8545,7 +8551,16 @@ function openSettings() {
                 // refetched on a key change. Keeping the old one would offer voices this
                 // key cannot use, which then fails at the Test button - a long way from
                 // where the cause is still visible.
-                onChange: () => { showStatus(null, ''); refreshVoices(); adoptChosenHearingIfKeyed(id); },
+                // The old account's list goes at once, and the new one is fetched once
+                // typing stops: a key typed by hand used to send a request per character,
+                // each refused (CR-211).
+                onChange: () => {
+                    showStatus(null, '');
+                    storage.clearServiceVoiceCatalog(id);
+                    clearTimeout(voiceTimer);
+                    voiceTimer = setTimeout(refreshVoices, 600);
+                    adoptChosenHearingIfKeyed(id);
+                },
             });
         }
 

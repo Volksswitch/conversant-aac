@@ -1410,6 +1410,11 @@ export function loadServiceVoiceCatalog(id) {
     }
 }
 
+/** Forget a service's cached voice list - its key changed to another account (CR-211). */
+export function clearServiceVoiceCatalog(id) {
+    try { localStorage.removeItem(`aac_${id}_voices`); } catch { /* nothing to clear */ }
+}
+
 export function saveServiceVoiceCatalog(id, voices) {
     try {
         localStorage.setItem(`aac_${id}_voices`,

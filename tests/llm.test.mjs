@@ -510,6 +510,22 @@ test('the cached block is byte-identical across calls that differ only per-turn'
     assert.notEqual(turnBlock(a).text, turnBlock(b).text, 'the tail is where the per-turn difference belongs');
 });
 
+// CR-212. The names earlier conversations added grow during a conversation, so they
+// belong in the tail; in the cached half every new name cost a fresh cache write.
+test('names already added ride in the tail and leave the cached block unchanged', async () => {
+    mockFetch(structured);
+    const history = [{ role: 'partner', text: 'How are you?' }];
+    llm.setExtraNames([]);
+    await llm.generateResponses(history, { phase: 'BODY' });
+    llm.setExtraNames(['SENTINEL_NAME']);
+    await llm.generateResponses(history, { phase: 'BODY' });
+    const [a, b] = getFetchCalls();
+    assert.equal(cachedBlock(a).text, cachedBlock(b).text);
+    assert.ok(!cachedBlock(b).text.includes('SENTINEL_NAME'));
+    assert.ok(turnBlock(b).text.includes('SENTINEL_NAME'));
+    llm.setExtraNames([]);
+});
+
 test('the profile IS cached, and editing it honestly invalidates the prefix', async () => {
     mockFetch(structured);
     llm.setWorldviewBlock('About me: I live in Denver.');

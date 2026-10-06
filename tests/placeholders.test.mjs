@@ -949,3 +949,11 @@ test('the global error handlers label a failure after Start as uncaught', () => 
     assert.match(body, /\(started \? 'uncaught:' : 'startup:'\) \+ where/);
     assert.ok(body.indexOf('started =') < body.indexOf('logError('), 'decided before logging');
 });
+
+// CR-211. Typing a speech key by hand sent one voice-list request per character, and a
+// changed key kept the previous account's list. The list is cleared at once and fetched
+// once typing stops, and only the newest answer is kept.
+test('a typed service key clears the old voice list and fetches the new one once', () => {
+    assert.match(appSource, /storage\.clearServiceVoiceCatalog\(id\);\s*clearTimeout\(voiceTimer\);\s*voiceTimer = setTimeout\(refreshVoices, 600\)/);
+    assert.match(appSource, /if \(mine !== voiceSeq\) return/);
+});
