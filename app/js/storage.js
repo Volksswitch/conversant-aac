@@ -559,6 +559,18 @@ function sanitizeProfileName(name) {
     return String(name || '').trim().replace(/[^A-Za-z0-9 _\-()]/g, '').replace(/\s+/g, ' ').slice(0, 60);
 }
 
+// The file an EXISTING profile lives in (CR-154). A profile copied into the folder
+// can be named with characters the app would not have used ("José", "Mom's tablet"),
+// and the list shows it by its real name, so Load, Update and Delete must find it by
+// that name too. Only a newly typed name is cleaned up.
+async function existingProfileFile(dir, name) {
+    const raw = String(name || '').trim();
+    if (raw && !/[\\/]/.test(raw)) {
+        try { await dir.getFileHandle(`${raw}.json`); return `${raw}.json`; } catch { /* not that name */ }
+    }
+    return `${sanitizeProfileName(name)}.json`;
+}
+
 async function getSettingsDir(create) {
     if (!dirHandle) return null;
     try {
@@ -595,7 +607,8 @@ export async function saveSettingsProfile(name) {
         device: platform.deviceSignature(),
         settings: exportSettingsBundle(),
     };
-    const fh = await dir.getFileHandle(`${clean}.json`, { create: true });
+    // Updating a profile that already exists writes to ITS file, whatever it is called.
+    const fh = await dir.getFileHandle(await existingProfileFile(dir, name), { create: true });
     const w = await fh.createWritable();
     await w.write(JSON.stringify(payload, null, 2));
     await w.close();
@@ -620,8 +633,11 @@ export async function listSettingsProfiles() {
 
 export async function settingsProfileExists(name) {
     const clean = sanitizeProfileName(name);
-    if (!clean) return false;
-    return (await listSettingsProfiles()).some((n) => n.toLowerCase() === clean.toLowerCase());
+    const raw = String(name || '').trim();
+    if (!clean && !raw) return false;
+    // The listed name as it is, or the cleaned-up form of a newly typed one (CR-154).
+    return (await listSettingsProfiles()).some((n) =>
+        n.toLowerCase() === raw.toLowerCase() || n.toLowerCase() === clean.toLowerCase());
 }
 
 // Apply a saved profile: replace the whole settings bundle with the profile's,
@@ -635,7 +651,7 @@ export async function applySettingsProfile(name) {
     if (!dir) throw new Error('Choose a data folder first.');
     let payload;
     try {
-        const fh = await dir.getFileHandle(`${clean}.json`);
+        const fh = await dir.getFileHandle(await existingProfileFile(dir, name));
         const file = await fh.getFile();
         payload = JSON.parse(await file.text());
     } catch {
@@ -782,7 +798,7 @@ export async function deleteSettingsProfile(name) {
     const clean = sanitizeProfileName(name);
     const dir = await getSettingsDir(false);
     if (!dir) return;
-    try { await dir.removeEntry(`${clean}.json`); } catch { /* already gone */ }
+    try { await dir.removeEntry(await existingProfileFile(dir, name)); } catch { /* already gone */ }
 }
 
 // --- Backup / transfer seams (July 2026) ---

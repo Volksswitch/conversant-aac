@@ -633,7 +633,11 @@ function startCardEdit(i) {
     const e = entry();
     const keep = e.answer && e.answer.kind === 'card' && e.answer.index === i;
     const text = keep ? e.answer.text : (t.cards[i] && t.cards[i].text) || '';
-    change(model.setCardAnswer(review, t, i, text));
+    // Only a real change is an Undo step: an identical one made the next Undo press
+    // appear to do nothing (CR-153).
+    const next = model.setCardAnswer(review, t, i, text);
+    if (JSON.stringify(model.getEntry(next, t.key)) !== JSON.stringify(e)) change(next);
+    else review = next;
     editing = { target: 'card', index: i };
     ed = wed.createWordEditor(text);
     render();
@@ -642,6 +646,9 @@ function startCardEdit(i) {
 function stopEditing() {
     editing = null;
     ed = null;
+    // The next edit starts its own Undo step, so one press never removes two edits
+    // (CR-153).
+    wordSnapshotTaken = false;
     if (wordInput && document.activeElement === wordInput) wordInput.blur();
 }
 

@@ -35,6 +35,7 @@ test('learned words are boosted ahead of the dictionary', () => {
 test('learning ignores sub-2-char tokens and strips non-letters', () => {
     prediction.learn('a');            // too short — ignored
     prediction.learn('hi!!!');        // → "hi"
+    prediction.learn('hi!!!');        // twice: a word used once ranks after the dictionary (CR-151)
     const out = prediction.predict('h', 5);
     assert.ok(out.includes('hi'));
     assert.ok(!out.includes('a'));
@@ -47,4 +48,23 @@ test('a private conversation learns nothing, and learning resumes after it (CR-0
     prediction.setLearning(true);
     prediction.learn('zebrafish');
     assert.ok(prediction.predict('zebraf', 3).includes('zebrafish'), 'ordinary conversations still learn');
+});
+
+// CR-151. One typo does not beat the dictionary; repeated use does; the list is capped.
+test('a word typed once comes after the dictionary, a word used often comes first', () => {
+    prediction.learn('teh');
+    assert.notEqual(prediction.predict('te', 1)[0], 'teh');
+    prediction.learn('teh'); prediction.learn('teh');
+    assert.equal(prediction.predict('te', 1)[0], 'teh');
+});
+
+test('a word with an accented letter is not stored as a fragment', () => {
+    prediction.learn('José');
+    assert.ok(!prediction.predict('jo', 10).includes('jos'));
+});
+
+test('the learned list stays capped', () => {
+    for (let i = 0; i < 3000; i++) prediction.learn('zz' + i.toString(36) + 'q');
+    const stored = JSON.parse(localStorage.getItem('aac_word_freq'));
+    assert.ok(Object.keys(stored).length <= 2500, `${Object.keys(stored).length}`);
 });

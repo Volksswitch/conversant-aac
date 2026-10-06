@@ -385,6 +385,11 @@ forgetting to tag one is only ever noise, never silence.
   other way round no longer holds back its screen settings; and clearing "Who they
   are" on a practice scenario keeps the old description instead of leaving the AI to
   invent a partner.
+- Fixed: a word you mistyped once no longer comes up ahead of the real word in typing
+  suggestions (a word you use often still comes first); a pronunciation set for a
+  short name like "Ana" no longer changes a longer name like "Anaïs"; Undo in
+  Conversation Review now takes back one edit at a time; and a settings profile copied
+  into the folder with a name such as "José" can now be loaded, updated and deleted.
 
 ## Version 0.13.4
 

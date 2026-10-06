@@ -185,14 +185,14 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-144](CR-144.md) | fixed (0e56dde) | low | confirmed | bug | `app/js/data-transfer.js:304` | A malformed settings section in a backup wipes every setting back to its default |
 | [CR-145](CR-145.md) | fixed (0e56dde) | low | confirmed | bug | `app/js/engine.js:165` | Partner names containing $$, $&, $` or $' are mangled in opener cards (String.replace expands them as replacement patterns) |
 | [CR-146](CR-146.md) | fixed (0e56dde) | low | confirmed | bug | `app/js/express-audio.js:40` | Sound-file check looks only at the file name, accepts empty files, and is skipped when restoring a backup |
-| [CR-147](CR-147.md) | fixed (pending) | low | confirmed | bug | `app/js/express-items.js:270` | Resetting the Always band marks shipped phrases as the user's own words |
-| [CR-148](CR-148.md) | fixed (pending) | low | confirmed | bug | `app/js/placeholders.js:213` | Each pause resets the 'never the same phrase twice in a row' memory for holding phrases |
-| [CR-149](CR-149.md) | fixed (pending) | low | confirmed | bug | `app/js/platform.js:283` | Device signature uses raw screen width x height, so the same tablet in a different orientation counts as a different screen |
-| [CR-150](CR-150.md) | fixed (pending) | low | confirmed | bug | `app/js/practice-editor.js:224` | Editing a scenario can blank out who the other person is; it then runs with no persona and cannot be copied |
-| [CR-151](CR-151.md) | open | low | confirmed | bug | `app/js/prediction.js:65` | Learned word list: one typo outranks the dictionary forever, the list never stops growing, and non-ASCII words are stored mangled |
-| [CR-152](CR-152.md) | open | low | confirmed | bug | `app/js/pronunciation.js:81` | Name respellings also hit names followed or preceded by accented letters (whole-word test is ASCII-only) |
-| [CR-153](CR-153.md) | open | low | confirmed | bug | `app/js/review-ui.js:684` | Undo can take back two actions at once after a previous edit: the word snapshot flag is never reset when editing stops |
-| [CR-154](CR-154.md) | open | low | confirmed | bug | `app/js/storage.js:503` | A profile whose file name has an accent, period or apostrophe cannot be loaded, updated or deleted |
+| [CR-147](CR-147.md) | fixed (7fbf964) | low | confirmed | bug | `app/js/express-items.js:270` | Resetting the Always band marks shipped phrases as the user's own words |
+| [CR-148](CR-148.md) | fixed (7fbf964) | low | confirmed | bug | `app/js/placeholders.js:213` | Each pause resets the 'never the same phrase twice in a row' memory for holding phrases |
+| [CR-149](CR-149.md) | fixed (7fbf964) | low | confirmed | bug | `app/js/platform.js:283` | Device signature uses raw screen width x height, so the same tablet in a different orientation counts as a different screen |
+| [CR-150](CR-150.md) | fixed (7fbf964) | low | confirmed | bug | `app/js/practice-editor.js:224` | Editing a scenario can blank out who the other person is; it then runs with no persona and cannot be copied |
+| [CR-151](CR-151.md) | fixed (pending) | low | confirmed | bug | `app/js/prediction.js:65` | Learned word list: one typo outranks the dictionary forever, the list never stops growing, and non-ASCII words are stored mangled |
+| [CR-152](CR-152.md) | fixed (pending) | low | confirmed | bug | `app/js/pronunciation.js:81` | Name respellings also hit names followed or preceded by accented letters (whole-word test is ASCII-only) |
+| [CR-153](CR-153.md) | fixed (pending) | low | confirmed | bug | `app/js/review-ui.js:684` | Undo can take back two actions at once after a previous edit: the word snapshot flag is never reset when editing stops |
+| [CR-154](CR-154.md) | fixed (pending) | low | confirmed | bug | `app/js/storage.js:503` | A profile whose file name has an accent, period or apostrophe cannot be loaded, updated or deleted |
 | [CR-155](CR-155.md) | open | low | confirmed | bug | `app/js/storage.js:1197` | One stored setting ('<id>Model') serves as both the speaking model and the hearing model for OpenAI, Google Cloud and ElevenLabs |
 | [CR-156](CR-156.md) | open | low | confirmed | bug | `app/js/storage.js:2749` | metrics.log flush can strand buffered lines with no timer (and skips them at page-hide) |
 | [CR-157](CR-157.md) | open | low | confirmed | bug | `app/js/stt-azure.js:482` | Azure's last-phrase submission when listening stops is paid for and then always thrown away |

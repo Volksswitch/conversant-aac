@@ -77,9 +77,11 @@ export function buildLexicon(people = [], placeList = []) {
 export function substitute(text, lexicon) {
     if (!text || !lexicon || !lexicon.length) return text;
     const map = new Map(lexicon.map((e) => [e.from, e.to]));
+    // Any letter counts as part of a word, accented ones included, so "Ana" is not
+    // found inside "Anaïs" (CR-152).
     const rx = new RegExp(
-        '(?<![A-Za-z0-9])(' + lexicon.map((e) => escapeRe(e.from)).join('|') + ')(?![A-Za-z0-9])',
-        'g'
+        '(?<![\\p{L}\\p{N}])(' + lexicon.map((e) => escapeRe(e.from)).join('|') + ')(?![\\p{L}\\p{N}])',
+        'gu'
     );
     return text.replace(rx, (m) => map.get(m) ?? m);
 }

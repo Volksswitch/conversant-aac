@@ -789,3 +789,21 @@ test('a profile saved on another kind of device leaves device-bound settings alo
     assert.equal(storage.loadSttProvider(), 'deepgram', 'how the app hears stays as it is here');
     assert.equal(storage.loadColorScheme(), 'dark', 'an ordinary setting comes across');
 });
+
+// CR-154. A profile copied in with a name the app would not have chosen can still be
+// loaded, updated and deleted by the name it is listed under.
+test('a profile named with an accent can be loaded and deleted', async () => {
+    await storage.restoreDataFolder();
+    const dir = await root.getDirectoryHandle('settings', { create: true });
+    const fh = await dir.getFileHandle('José.json', { create: true });
+    const w = await fh.createWritable();
+    await w.write(JSON.stringify({ name: 'José', settings: { voiceURI: 'Karen' } }));
+    await w.close();
+    assert.ok((await storage.listSettingsProfiles()).includes('José'));
+    await storage.applySettingsProfile('José');
+    assert.equal(storage.getPortableSettings().voiceURI, 'Karen');
+    await storage.saveSettingsProfile('José');
+    assert.deepEqual((await storage.listSettingsProfiles()).filter((n) => /Jos/.test(n)), ['José'], 'updated in place');
+    await storage.deleteSettingsProfile('José');
+    assert.ok(!(await storage.listSettingsProfiles()).includes('José'));
+});

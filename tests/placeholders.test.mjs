@@ -876,3 +876,9 @@ test('the same holding phrase is never said twice in a row across pauses', async
     assert.ok(said.length > 30, `enough phrases spoken: ${said.length}`);
     for (let i = 1; i < said.length; i++) assert.notEqual(said[i], said[i - 1], `repeat at ${i}`);
 });
+
+test('CR-153: each Review edit is its own Undo step', () => {
+    const rv = readFileSync(new URL('../app/js/review-ui.js', import.meta.url), 'utf8');
+    const stop = rv.slice(rv.indexOf('function stopEditing'));
+    assert.match(stop.slice(0, 400), /wordSnapshotTaken = false;/);
+});

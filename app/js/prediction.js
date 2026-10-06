@@ -59,12 +59,23 @@ export function setLearning(on) { learning = !!on; }
 
 // Record that the user committed a word (on word boundary, or by picking a
 // prediction) — boosts it for next time. Words shorter than 2 chars are ignored.
+//
+// A word with a letter outside a-z is skipped rather than stored as a fragment ("José"
+// would have become "jos"). The list is capped, keeping the most used words, so it
+// cannot grow without limit in the shared browser storage (CR-151).
+const LEARNED_MAX = 2000;
 export function learn(word) {
     if (!learning) return;
-    const w = String(word || '').toLowerCase().replace(/[^a-z']/g, '');
+    const raw = String(word || '').toLowerCase();
+    if (/[^\x00-\x7f]/.test(raw)) return;
+    const w = raw.replace(/[^a-z']/g, '');
     if (w.length < 2) return;
     const uf = loadUserFreq();
     uf[w] = (uf[w] || 0) + 1;
+    const keys = Object.keys(uf);
+    if (keys.length > LEARNED_MAX + 500) {
+        keys.sort((a, b) => uf[b] - uf[a]).slice(LEARNED_MAX).forEach((k) => { delete uf[k]; });
+    }
     saveUserFreq();
 }
 
@@ -83,7 +94,10 @@ export function predict(prefix, limit = 3) {
     const out = [];
     const seen = new Set();
     const push = (w) => { if (!seen.has(w)) { seen.add(w); out.push(w); } };
-    personal.forEach(push);
+    // ⚠ A WORD TYPED ONCE DOES NOT BEAT THE DICTIONARY (CR-151): a single typo ("teh")
+    // used to be offered ahead of the real word from then on. A word used at least twice
+    // comes first; a word used once comes after the dictionary's matches.
+    personal.filter((w) => uf[w] >= 2).forEach(push);
 
     // Then dictionary matches in frequency order until we hit the limit.
     if (out.length < limit) {
@@ -92,5 +106,6 @@ export function predict(prefix, limit = 3) {
             if (w !== p && w.startsWith(p)) push(w);
         }
     }
+    personal.forEach(push);
     return out.slice(0, limit);
 }

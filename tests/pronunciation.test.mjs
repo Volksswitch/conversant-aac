@@ -80,3 +80,9 @@ test('regex metacharacters in a name are literal, not a pattern', () => {
     const lex = [{ from: 'A+B', to: 'Ay plus Bee' }];
     assert.equal(substitute('The A+B group met.', lex), 'The Ay plus Bee group met.');
 });
+
+// CR-152. A name is not found inside a longer name with an accented letter.
+test('a name is not matched inside a longer name with an accented letter', () => {
+    assert.equal(substitute('Anaïs and Ana', [{ from: 'Ana', to: 'Ah-na' }]), 'Anaïs and Ah-na');
+    assert.equal(substitute('Renée met Ren', [{ from: 'Ren', to: 'Wren' }]), 'Renée met Wren');
+});
