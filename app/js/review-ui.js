@@ -521,6 +521,10 @@ function stepHistory(which) {
     // Undo takes back an answer, never how far the user has got.
     review = { ...got.state, reached: Math.max(got.state.reached ?? -1, review.reached ?? -1) };
     stopEditing();
+    // As goTo does: an open typing box would otherwise file its sentence under the
+    // turn Undo just moved to (CR-047).
+    closeComposer();
+    userPaged = false;
     const i = conv.turns.findIndex((t) => t.key === got.turnKey);
     if (i >= 0) at = i;
     cardTapped = -1;

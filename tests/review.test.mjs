@@ -432,3 +432,11 @@ test('the table sorts by any column, both ways, with newest first breaking ties'
     assert.equal(ids('length', false), 'acbd');
     assert.equal(ids('progress', true), 'dbac');
 });
+
+// CR-047. Undo/Redo closes the typing box, as moving to another turn does.
+test('undo and redo close the composition pane', async () => {
+    const { readFileSync } = await import('node:fs');
+    const src = readFileSync(new URL('../app/js/review-ui.js', import.meta.url), 'utf8');
+    const at = src.indexOf('function stepHistory(');
+    assert.match(src.slice(at, at + 900), /stopEditing\(\);[\s\S]{0,300}closeComposer\(\);/);
+});

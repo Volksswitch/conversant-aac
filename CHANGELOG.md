@@ -163,6 +163,9 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: if you tapped "Hold on" or "Repeat what I said" while suggestions were still
   being fetched, your sentence was often cut off partway the moment they arrived. It
   now finishes.
+- Fixed: in Conversation Review, pressing Undo while typing in "In my own words" could
+  jump to an earlier exchange with the typing box still open, so Speak saved your
+  sentence under the wrong exchange. Undo now closes the box.
 
 ## Version 0.13.4
 
