@@ -695,3 +695,12 @@ test('restorePhase puts back a closing and leaves the floor open', () => {
     assert.equal(snap.phase, before.phase);
     assert.equal(snap.floor, engine.FLOOR.OPEN);
 });
+
+// CR-145. A $ in a name is inserted as typed.
+test('a partner name with a dollar sign appears as typed in the openers', () => {
+    for (const n of ['Ca$$ie', 'Bo$&b', "A$'Z", 'A$`Z']) {
+        engine.reset();
+        const snap = engine.initiate({ partnerName: n });
+        assert.ok(snap.palette.some((p) => p.text.includes(n) && !p.text.includes('{name}')), n);
+    }
+});

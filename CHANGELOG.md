@@ -374,6 +374,11 @@ forgetting to tag one is only ever noise, never silence.
   damaged backup file now says it can't be read instead of stopping at "Reading…"; and
   after you clear the error list, a problem report no longer brings back every old
   conversation that ever had an error.
+- Fixed: with the keyboard on the side, a layout dragged to its limit no longer pushes
+  the response cards off a shorter screen; a damaged backup can no longer wipe all
+  your settings; a name containing a dollar sign now appears correctly in the opening
+  lines; and an empty sound file, or one that is not really an MP3 or M4A, is refused
+  when you add it rather than failing in a conversation.
 
 ## Version 0.13.4
 

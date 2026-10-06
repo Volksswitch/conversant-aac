@@ -145,12 +145,15 @@ export function normalize(layout, ctx) {
     for (const k of ['command', 'response', 'dock']) {
         next[k] = clamp(num(next[k], DEFAULTS[ctx.dock][k]), lim[k].lo, lim[k].hi);
     }
-    if (ctx.dock === 'side') return next;   // the keyboard is on the other axis
-
-    const order = ['dock', 'response', 'command'].filter((k) => k !== next.last);
-    if (next.last && order.indexOf(next.last) < 0) order.push(next.last);
+    // The transcript keeps its floor on both docks (CR-143). On a side dock the keyboard
+    // is on the other axis, so its width is never trimmed for a lack of height.
+    const side = ctx.dock === 'side';
+    const parts = side ? ['response', 'command'] : ['dock', 'response', 'command'];
+    const order = parts.filter((k) => k !== next.last);
+    if (next.last && parts.includes(next.last)) order.push(next.last);
     for (const k of order) {
-        const owe = lim.floorT - (1 - next.command - next.response - next.dock);
+        const used = next.command + next.response + (side ? 0 : next.dock);
+        const owe = lim.floorT - (1 - used);
         if (owe <= 0) break;
         next[k] = Math.max(lim[k].lo, next[k] - owe);
     }

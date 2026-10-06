@@ -166,3 +166,17 @@ test('CR-141: a damaged profile entry does not stop a backup being described', (
     const lines = dt.summarize(pkg);
     assert.ok(lines.includes('1 saved profile: A'), lines.join(' | '));
 });
+
+test('CR-146: an empty file or one that is not really MP3/M4A is refused when added', () => {
+    assert.equal(audio.checkAudioFile({ name: 'a.mp3', size: 0 }).ok, false);
+    assert.equal(audio.checkAudioFile({ name: 'a.mp3', size: 100, type: 'audio/wav' }).ok, false);
+    assert.equal(audio.checkAudioFile({ name: 'a.mp3', size: 100, type: '' }).ok, true, 'no type is allowed');
+    assert.equal(audio.checkAudioFile({ name: 'a.m4a', size: 100, type: 'audio/x-m4a' }).ok, true);
+});
+
+test('CR-144: settings that are not a plain object are dropped, an empty object kept', () => {
+    const base = { kind: 'conversant-aac-backup', packageVersion: 3, data: {} };
+    assert.equal(dt.parsePackage(JSON.stringify({ ...base, settings: [] })).settings, undefined);
+    assert.equal(dt.parsePackage(JSON.stringify({ ...base, settings: 'x' })).settings, undefined);
+    assert.deepEqual(dt.parsePackage(JSON.stringify({ ...base, settings: {} })).settings, {});
+});

@@ -177,14 +177,14 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-136](CR-136.md) | fixed (15611e1) | low | confirmed | bug | `app/js/app.js:3712` | Practice conversations record 'listen off' events although no microphone was ever on |
 | [CR-137](CR-137.md) | fixed (15611e1) | low | confirmed | bug | `app/js/app.js:4456` | The goal stamp can record the wrong source for a lit goal |
 | [CR-138](CR-138.md) | fixed (15611e1) | low | confirmed | bug | `app/js/app.js:5292` | A sound's 'user acted' bookkeeping happens when it ENDS, inflating response times and leaving cards live during playback |
-| [CR-139](CR-139.md) | fixed (pending) | low | confirmed | bug | `app/js/app.js:6022` | Cost display falls back to old Sonnet 4.6 rates if pricing.json fails to load |
-| [CR-140](CR-140.md) | fixed (pending) | low | confirmed | bug | `app/js/app.js:6440` | Problem-report note is never cleared after a successful send, so the next report repeats it |
-| [CR-141](CR-141.md) | fixed (pending) | low | confirmed | bug | `app/js/app.js:6677` | Restoring a damaged backup can leave 'Reading…' on screen forever: the restore and file-import handlers have no error handling and summarize() can throw |
-| [CR-142](CR-142.md) | fixed (pending) | low | confirmed | bug | `app/js/app.js:6836` | Clearing the error log makes the next problem report pull every old errored conversation from disk |
-| [CR-143](CR-143.md) | open | low | confirmed | bug | `app/js/conv-layout.js:148` | Side-dock layout is never pulled back above the transcript floor, so a smaller usable height pushes the response cards off the bottom |
-| [CR-144](CR-144.md) | open | low | confirmed | bug | `app/js/data-transfer.js:304` | A malformed settings section in a backup wipes every setting back to its default |
-| [CR-145](CR-145.md) | open | low | confirmed | bug | `app/js/engine.js:165` | Partner names containing $$, $&, $` or $' are mangled in opener cards (String.replace expands them as replacement patterns) |
-| [CR-146](CR-146.md) | open | low | confirmed | bug | `app/js/express-audio.js:40` | Sound-file check looks only at the file name, accepts empty files, and is skipped when restoring a backup |
+| [CR-139](CR-139.md) | fixed (d9ec76f) | low | confirmed | bug | `app/js/app.js:6022` | Cost display falls back to old Sonnet 4.6 rates if pricing.json fails to load |
+| [CR-140](CR-140.md) | fixed (d9ec76f) | low | confirmed | bug | `app/js/app.js:6440` | Problem-report note is never cleared after a successful send, so the next report repeats it |
+| [CR-141](CR-141.md) | fixed (d9ec76f) | low | confirmed | bug | `app/js/app.js:6677` | Restoring a damaged backup can leave 'Reading…' on screen forever: the restore and file-import handlers have no error handling and summarize() can throw |
+| [CR-142](CR-142.md) | fixed (d9ec76f) | low | confirmed | bug | `app/js/app.js:6836` | Clearing the error log makes the next problem report pull every old errored conversation from disk |
+| [CR-143](CR-143.md) | fixed (pending) | low | confirmed | bug | `app/js/conv-layout.js:148` | Side-dock layout is never pulled back above the transcript floor, so a smaller usable height pushes the response cards off the bottom |
+| [CR-144](CR-144.md) | fixed (pending) | low | confirmed | bug | `app/js/data-transfer.js:304` | A malformed settings section in a backup wipes every setting back to its default |
+| [CR-145](CR-145.md) | fixed (pending) | low | confirmed | bug | `app/js/engine.js:165` | Partner names containing $$, $&, $` or $' are mangled in opener cards (String.replace expands them as replacement patterns) |
+| [CR-146](CR-146.md) | fixed (pending) | low | confirmed | bug | `app/js/express-audio.js:40` | Sound-file check looks only at the file name, accepts empty files, and is skipped when restoring a backup |
 | [CR-147](CR-147.md) | open | low | confirmed | bug | `app/js/express-items.js:270` | Resetting the Always band marks shipped phrases as the user's own words |
 | [CR-148](CR-148.md) | open | low | confirmed | bug | `app/js/placeholders.js:213` | Each pause resets the 'never the same phrase twice in a row' memory for holding phrases |
 | [CR-149](CR-149.md) | open | low | confirmed | bug | `app/js/platform.js:283` | Device signature uses raw screen width x height, so the same tablet in a different orientation counts as a different screen |

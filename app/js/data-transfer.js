@@ -46,7 +46,7 @@
 
 import * as storage from './storage.js';
 import * as platform from './platform.js';
-import { isSafeAudioName, mimeForName, blobToBase64, base64ToBlob } from './express-audio.js';
+import { isSafeAudioName, mimeForName, blobToBase64, base64ToBlob, MAX_AUDIO_BYTES } from './express-audio.js';
 
 export const PACKAGE_KIND = 'conversant-aac-backup';
 // 3: one file again, carrying content AND settings AND every saved profile, with a
@@ -335,6 +335,13 @@ export function parsePackage(text) {
     if (isSettingsOnly && (!pkg.settings || typeof pkg.settings !== 'object')) {
         throw new Error('That backup looks damaged — it has no settings in it.');
     }
+    // Settings that are not a plain object (an array, a string, a number) are damage,
+    // and applying them would REPLACE every setting with junk or nothing (CR-144). They
+    // are dropped. An empty object is kept: a device on all defaults exports {}.
+    if (!isSettingsOnly && pkg.settings !== undefined
+        && (!pkg.settings || typeof pkg.settings !== 'object' || Array.isArray(pkg.settings))) {
+        delete pkg.settings;
+    }
     // Normalized so every caller downstream sees one shape.
     if (isSettingsOnly) pkg.data = pkg.data || {};
     // ⚠ A VERSION-1 FILE'S SETTINGS ARE STILL IGNORED. They were exported when the app
@@ -442,7 +449,9 @@ export async function applyPackage(pkg, onProgress) {
     // refused, since a backup is a file somebody could hand the app from anywhere.
     let soundFailed = false;
     for (const s of sounds) {
-        if (s && isSafeAudioName(s.name) && typeof s.data === 'string') {
+        // The same 10 MB limit as adding a sound in the app (CR-146).
+        if (s && isSafeAudioName(s.name) && typeof s.data === 'string'
+            && Math.floor(s.data.length * 3 / 4) <= MAX_AUDIO_BYTES) {
             try {
                 await storage.writeAudioFile(s.name, base64ToBlob(s.data, s.type || mimeForName(s.name)));
                 restored.audio++;

@@ -162,7 +162,8 @@ function nextRetry() {
 // reads cleanly ("Hi {name}, got a minute?" → "Hi, got a minute?").
 function applyName(template, name) {
     const n = (name || '').trim();
-    if (n) return template.replace(/\{name\}/g, n).replace(/\s+/g, ' ').trim();
+    // A function, so a $ in a name is inserted as typed, not read as a pattern (CR-145).
+    if (n) return template.replace(/\{name\}/g, () => n).replace(/\s+/g, ' ').trim();
     return template
         .replace(/\s*,?\s*\{name\}\s*,?\s*/g, (m, offset, str) => {
             const before = str.slice(0, offset).trimEnd();

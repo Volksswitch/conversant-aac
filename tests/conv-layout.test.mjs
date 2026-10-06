@@ -234,3 +234,14 @@ test('border grabs are refused while a dialog is open', async () => {
     const b = app.indexOf('function borderUnder(');
     assert.match(app.slice(b, b + 200), /if \(!layoutGrabbable\(\)\) return null;/);
 });
+
+// CR-143. A side-dock layout dragged to its limits, then put on a shorter screen,
+// still leaves the transcript its floor.
+test('side keyboard: a shorter screen trims the regions back above the transcript floor', () => {
+    const tall = { ...ctxSide, height: 1000 };
+    let layout = L.setRegion(fresh(tall), 'response', 0.99, tall);
+    layout = L.setRegion(layout, 'command', 0.99, tall);
+    const short = { ...ctxSide, height: 560 };
+    const s = L.solve(L.normalize(layout, short), short);
+    assert.ok(s.transcript >= L.limits(short).floorT - 1e-9, `transcript ${s.transcript}`);
+});

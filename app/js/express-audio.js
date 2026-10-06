@@ -46,6 +46,13 @@ export function checkAudioFile(file) {
     if (file.size > MAX_AUDIO_BYTES) {
         return { ok: false, reason: 'That file is larger than 10 MB. Try a shorter clip.' };
     }
+    // Checked now rather than discovered mid-conversation (CR-146). An empty type is
+    // allowed: some systems report none for a perfectly good file.
+    if (!file.size) return { ok: false, reason: 'That file is empty.' };
+    const OK_TYPES = ['audio/mpeg', 'audio/mp3', 'audio/mp4', 'audio/x-m4a', 'audio/m4a', 'audio/aac'];
+    if (file.type && !OK_TYPES.includes(file.type)) {
+        return { ok: false, reason: 'That file is not really an MP3 or M4A, so it may not play on every device.' };
+    }
     return { ok: true, ext, type: ALLOWED[ext] };
 }
 
