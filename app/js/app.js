@@ -612,7 +612,7 @@ function initApp() {
         ui.setNowPlaying(speaking ? text : null);
     });
 
-    document.getElementById('startBtn').addEventListener('click', handleStart);
+    document.getElementById('startBtn').addEventListener('click', () => handleStart().catch((e) => { setStartBusy(false); throw e; }));
     // API-key notice (step 3 of the pre-start sequence): "Add an API key" opens
     // Settings; "Continue" proceeds into the conversation without a key.
     document.getElementById('apiKeyPromptBtn').addEventListener('click', () => {
@@ -1571,7 +1571,22 @@ async function warmUpStorage() {
     applyControlPhrases();
 }
 
+// A second tap on Start while the first is still waiting on storage ran everything
+// twice, and the second engine reset could land after the conversation had begun
+// (CR-215). The button is disabled while starting and re-enabled when the start
+// finishes or fails.
+let startInProgress = false;
+function setStartBusy(busy) {
+    startInProgress = busy;
+    const btn = document.getElementById('startBtn');
+    if (!btn) return;
+    btn.disabled = busy;
+    if (busy) btn.setAttribute('aria-busy', 'true'); else btn.removeAttribute('aria-busy');
+}
+
 async function handleStart() {
+    if (startInProgress) return;
+    setStartBusy(true);
     metrics.event(metrics.EV.START_PRESSED);
     // Bring the audio context up NOW, while a real tap is in hand. The chime
     // itself is fired from an async recognizer callback where WebKit would refuse
@@ -1769,6 +1784,7 @@ function afterListeningNotice() {
 // un-dim the conversation surface. The end of the Start → upgrade → listening →
 // API-key chain.
 function finishStart() {
+    setStartBusy(false);
     document.getElementById('startBtn').hidden = false;   // restore for any later start screen
     document.getElementById('apiKeyPrompt').hidden = true;
     document.getElementById('folderPrompt').hidden = true;

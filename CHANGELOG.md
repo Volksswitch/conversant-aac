@@ -448,6 +448,8 @@ forgetting to tag one is only ever noise, never silence.
   turned saving back on before they finished, the saved conversation could include
   what they said during the private stretch. That turn now keeps only what was saved
   before you went private.
+- On a slow device, tapping Start a second time while the app is still starting no
+  longer starts everything twice. The button stays dimmed until the app is ready.
 
 ## Version 0.13.4
 

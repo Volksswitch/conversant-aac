@@ -957,3 +957,11 @@ test('a typed service key clears the old voice list and fetches the new one once
     assert.match(appSource, /storage\.clearServiceVoiceCatalog\(id\);\s*clearTimeout\(voiceTimer\);\s*voiceTimer = setTimeout\(refreshVoices, 600\)/);
     assert.match(appSource, /if \(mine !== voiceSeq\) return/);
 });
+
+// CR-215. A second tap on Start while the first is still starting is ignored.
+test('Start cannot run twice at once', () => {
+    const body = appSource.slice(appSource.indexOf('async function handleStart() {'));
+    assert.match(body.slice(0, 200), /if \(startInProgress\) return;\s*setStartBusy\(true\);/);
+    const fin = appSource.slice(appSource.indexOf('function finishStart() {'));
+    assert.match(fin.slice(0, 120), /setStartBusy\(false\)/);
+});
