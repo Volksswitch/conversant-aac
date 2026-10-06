@@ -289,3 +289,31 @@ test('a folder file that cannot be written is reported as not restored (CR-096)'
         root.getFileHandle = real;
     }
 });
+
+test('a data file that cannot be read is never overwritten by the browser copy (CR-097)', async () => {
+    const places = await import('../app/js/places.js');
+    assert.equal(await storage.restoreDataFolder(), true);
+    const file = await root.getFileHandle('places.json', { create: true });
+    const w = await file.createWritable(); await w.write('{"places":[{"id":"real","name":"The real one"}]}'); await w.close();
+    localStorage.setItem('aac_places', JSON.stringify({ places: [] }));   // an empty cache
+    const real = root.getFileHandle.bind(root);
+    const readBack = async () => (await (await real('places.json')).getFile()).text();
+
+    root.getFileHandle = async (n, o) => {
+        const h = await real(n, o);
+        if (n !== 'places.json') return h;
+        return { ...h, getFile: async () => { const e = new Error('not downloaded'); e.name = 'NotReadableError'; throw e; } };
+    };
+    try {
+        assert.equal(await places.syncToFolder(), 'noop');
+        assert.match(await readBack(), /The real one/, 'unreadable: left as it was');
+    } finally { root.getFileHandle = real; }
+
+    const half = await real('places.json');
+    const w2 = await half.createWritable(); await w2.write('{"places":[{"id":"re'); await w2.close();
+    assert.equal(await places.syncToFolder(), 'noop');
+    assert.equal(await readBack(), '{"places":[{"id":"re', 'half-written: left as it was');
+
+    await root.removeEntry('places.json');
+    assert.equal(await places.syncToFolder(), 'wrote', 'a genuinely missing file is still created');
+});

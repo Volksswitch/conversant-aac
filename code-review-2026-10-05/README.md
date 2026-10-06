@@ -134,8 +134,8 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-093](CR-093.md) | fixed (61e1e4f) | medium | plausible | bug | `app/js/app.js:1133` | Practice partner and spoken help can be read in a foreign-language Google voice |
 | [CR-094](CR-094.md) | fixed (552ec48) | medium | plausible | bug | `app/js/storage.js:403` | A full browser storage makes every AI suggestion request fail, because saving the usage counter can throw |
 | [CR-095](CR-095.md) | fixed (830188f) | medium | plausible | bug | `scripts/weekly-report-endpoint.gs:110` | Endpoint reports failure after it has already written the row, so the app re-sends and the Sheet and inbox get duplicates |
-| [CR-096](CR-096.md) | fixed (pending) | medium | plausible | data-loss | `app/js/data-transfer.js:403` | A data file whose folder write fails is reported as restored, but the old folder file wins on restart |
-| [CR-097](CR-097.md) | open | medium | plausible | data-loss | `app/js/storage.js:369` | A failed or partial read of a data file is treated as 'no file', so the browser copy can overwrite the folder copy |
+| [CR-096](CR-096.md) | fixed (054973d) | medium | plausible | data-loss | `app/js/data-transfer.js:403` | A data file whose folder write fails is reported as restored, but the old folder file wins on restart |
+| [CR-097](CR-097.md) | fixed (pending) | medium | plausible | data-loss | `app/js/storage.js:369` | A failed or partial read of a data file is treated as 'no file', so the browser copy can overwrite the folder copy |
 | [CR-098](CR-098.md) | open | medium | plausible | race-condition | `app/js/stt.js:457` | A late result from the built-in recognizer after listening stops is added to the cleared buffer |
 | [CR-099](CR-099.md) | open | medium | plausible | race-condition | `app/js/tts-deepgram.js:658` | After a Deepgram sentence is stopped, leftover audio from it is glued onto the next sentence and cached that way |
 | [CR-100](CR-100.md) | open | low | confirmed | accessibility | `app/css/styles.css:3782` | "Which side" switch has no focus indicator, a sub-minimum target and an invisible off-state outline |

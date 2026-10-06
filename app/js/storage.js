@@ -379,6 +379,35 @@ export async function getStorageStatus() {
 
 // --- File read/write via the data folder ---
 
+/*
+ * Read a data file for syncing, and say WHY when there is nothing (CR-097). readFile
+ * answers null for every failure, and the sync functions took null to mean "no file
+ * yet" and wrote the browser's copy over it - so a OneDrive file not yet downloaded, or
+ * caught mid-sync, was replaced by an older or empty copy. Only a file that genuinely
+ * does not exist is 'missing'; anything else is 'unreadable', and the caller leaves the
+ * file alone. 'ok' carries the parsed contents.
+ */
+export async function readPortableFile(filename) {
+    if (!dirHandle) return { state: 'missing', data: null };
+    let text;
+    try {
+        const fileHandle = await dirHandle.getFileHandle(filename);
+        const file = await fileHandle.getFile();
+        text = await file.text();
+    } catch (err) {
+        const notFound = err && (err.name === 'NotFoundError' || /NotFound/.test(String(err.message || '')));
+        if (notFound) return { state: 'missing', data: null };
+        logError('data folder', `${filename} could not be read, so it was left as it is`);
+        return { state: 'unreadable', data: null };
+    }
+    try {
+        return { state: 'ok', data: JSON.parse(text) };
+    } catch {
+        logError('data folder', `${filename} is not complete or not valid, so it was left as it is`);
+        return { state: 'unreadable', data: null };
+    }
+}
+
 export async function readFile(filename) {
     if (!dirHandle) return null;
     try {

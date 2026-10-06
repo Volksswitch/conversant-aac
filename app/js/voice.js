@@ -27,7 +27,7 @@
  * would rather say, and the sentences they pick ARE the examples.
  */
 
-import { readFile, writeFile, hasDataFolder } from './storage.js';
+import { readFile, readPortableFile, writeFile, hasDataFolder } from './storage.js';
 // For the item's dimension only, so buildBlock can tell a bland exemplar (safe to
 // reuse verbatim) from a levity one (never reuse). sound-check-items.js imports
 // nothing, so there is no cycle.
@@ -244,9 +244,9 @@ export async function resetAll() {
 /** Reconcile once a data folder becomes available — v0.2.25 file-in-folder-wins. */
 export async function syncToFolder() {
     if (!hasDataFolder()) return 'noop';
-    const raw = await readFile(FILE);
-    let disk = null;
-    if (raw) { try { disk = JSON.parse(raw); } catch { disk = null; } }
+    const got = await readPortableFile(FILE);
+    if (got.state === 'unreadable') return 'noop';   // never overwrite what could not be read (CR-097)
+    const disk = got.data;
     if (disk) {
         profile = normalize(disk);
         writeCache(profile);

@@ -307,6 +307,10 @@ forgetting to tag one is only ever noise, never silence.
   example while OneDrive was syncing it), the app said that part was restored even
   though the old version would come back after the restart. It now tries once more
   and, if that fails, says that part was not restored.
+- Fixed: if the app could not read one of your data files when it connected to the
+  data folder (for example a OneDrive file that had not finished downloading or
+  syncing), it could replace that file with an older or empty copy. It now leaves a
+  file it cannot read alone and notes it in the error log.
 
 ## Version 0.13.4
 

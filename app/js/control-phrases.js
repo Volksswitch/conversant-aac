@@ -52,7 +52,7 @@
  * DEFAULTS so it works even before app.js injects these.
  */
 
-import { readFile, writeFile, hasDataFolder } from './storage.js';
+import { readFile, readPortableFile, writeFile, hasDataFolder } from './storage.js';
 
 const FILE = 'control-phrases.json';
 const CACHE_KEY = 'aac_control_phrases';
@@ -323,9 +323,9 @@ export function resetPhrases() {
  */
 export async function syncToFolder() {
     if (!hasDataFolder()) return 'noop';
-    const raw = await readFile(FILE);
-    let disk = null;
-    if (raw) { try { disk = JSON.parse(raw); } catch { disk = null; } }
+    const got = await readPortableFile(FILE);
+    if (got.state === 'unreadable') return 'noop';   // never overwrite what could not be read (CR-097)
+    const disk = got.data;
     if (disk) {
         phrases = normalize(disk);
         const changed = mergeNewDefaults(phrases);   // append any new default cards

@@ -41,7 +41,7 @@
  * worldview/relationships save().
  */
 
-import { readFile, writeFile, hasDataFolder } from './storage.js';
+import { readFile, readPortableFile, writeFile, hasDataFolder } from './storage.js';
 import {
     ALWAYS_DEFAULTS, CONTEXT_DEFAULTS, SEED_REVISION,
     ensureIds, ensureOrigin, markEdits, isUserAuthored, ORIGIN,
@@ -247,9 +247,9 @@ export function userAuthoredItems() {
  */
 export async function syncToFolder() {
     if (!hasDataFolder()) return 'noop';
-    const raw = await readFile(FILE);
-    let disk = null;
-    if (raw) { try { disk = JSON.parse(raw); } catch { disk = null; } }
+    const got = await readPortableFile(FILE);
+    if (got.state === 'unreadable') return 'noop';   // never overwrite what could not be read (CR-097)
+    const disk = got.data;
     if (disk) {
         model = normalize(disk);
         writeCache(model);

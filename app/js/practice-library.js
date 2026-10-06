@@ -23,7 +23,7 @@
  * wording that carries the safety line in section 5.3 has one home and is tested.
  */
 
-import { readFile, writeFile, hasDataFolder } from './storage.js';
+import { readFile, readPortableFile, writeFile, hasDataFolder } from './storage.js';
 
 const FILE = 'practice-scenarios.json';
 const CACHE_KEY = 'aac_practice_scenarios';
@@ -137,9 +137,9 @@ async function save() {
 
 export async function syncToFolder() {
     if (!hasDataFolder()) return 'noop';
-    const raw = await readFile(FILE);
-    let disk = null;
-    if (raw) { try { disk = JSON.parse(raw); } catch { disk = null; } }
+    const got = await readPortableFile(FILE);
+    if (got.state === 'unreadable') return 'noop';   // never overwrite what could not be read (CR-097)
+    const disk = got.data;
     if (disk) {
         model = normalize(disk);
         writeCache(model);
