@@ -18,7 +18,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
     shouldSend, hasActivity, enqueue, redactErrors, assemblePayload, describeReport,
-    hashOf, formatSendLog, PAYLOAD_FIELDS, errorsSince, newestErrorTs, isLocalOrigin,
+    hashOf, stableInfo, formatSendLog, PAYLOAD_FIELDS, errorsSince, newestErrorTs, isLocalOrigin,
 } from '../app/js/weekly-send.js';
 
 const DAY = 86400000;
@@ -321,4 +321,26 @@ test('no person or place name leaves in a weekly report, and every count still d
     assert.deepEqual(r.partners.map((p) => p.conversations), u.partners.map((p) => p.conversations));
     assert.deepEqual(Object.values(r.hearingByPlace), Object.values(u.hearingByPlace));
     assert.ok(JSON.stringify(u).includes('Dr. Secret'), 'the summary on the device is untouched');
+});
+
+test('CR-071: system info counts as changed only when the setup changes', () => {
+    const base = () => ({
+        app: { version: '1', build: 'x', url: 'https://a/' }, when: '2026-10-01T00:00:00Z',
+        storage: { folder: true, usageMB: 1.5, quotaMB: 900, reconnect: 'ok' },
+        speech: { sttProvider: 'builtin', listening: { n: 1 }, listenDelay: { ms: 5 } },
+        display: { screen: { w: 1280, h: 800 }, devicePixelRatio: 1.5, nativeResolution: { w: 1920, h: 1200 },
+                   layoutViewport: { w: 1280, h: 700 } },
+        settings: { colorScheme: 'default' },
+    });
+    const a = base();
+    const b = base();
+    b.when = '2026-10-08T00:00:00Z'; b.app.url = 'https://a/?x=1'; b.storage.usageMB = 9;
+    b.storage.reconnect = 'other'; b.speech.listening = { n: 50 }; b.display.layoutViewport = { w: 900, h: 600 };
+    assert.equal(hashOf(stableInfo(a)), hashOf(stableInfo(b)));
+    const c = base();
+    c.settings.colorScheme = 'dark';
+    assert.notEqual(hashOf(stableInfo(a)), hashOf(stableInfo(c)));
+    // The comparison must not strip what is actually sent.
+    assert.equal(a.when, '2026-10-01T00:00:00Z');
+    assert.equal(a.storage.usageMB, 1.5);
 });

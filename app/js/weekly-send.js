@@ -245,6 +245,28 @@ export function hashOf(obj) {
     return String(h >>> 0);
 }
 
+/*
+ * The part of the system info that describes the SETUP, for deciding whether it changed.
+ *
+ * CR-071. The snapshot also carries things that move every time it is taken - the
+ * moment it was taken, storage used, the listening counters, the window size, the
+ * page address - so hashing it whole made every week look like a change: the full
+ * block went out every week and a real change was invisible in the Sheet. Only the
+ * COMPARISON uses this; when the setup has changed the whole snapshot is still sent.
+ */
+export function stableInfo(info) {
+    const copy = JSON.parse(JSON.stringify(info || {}));
+    delete copy.when;
+    if (copy.app) delete copy.app.url;
+    if (copy.storage) { delete copy.storage.usageMB; delete copy.storage.quotaMB; delete copy.storage.reconnect; }
+    if (copy.speech) { delete copy.speech.listening; delete copy.speech.listenDelay; }
+    if (copy.display && !copy.display.error) {
+        const d = copy.display;
+        copy.display = { screen: d.screen, devicePixelRatio: d.devicePixelRatio, nativeResolution: d.nativeResolution };
+    }
+    return copy;
+}
+
 // Keys must match PAYLOAD_FIELDS exactly — asserted by the drift test.
 export function assemblePayload({ testerName, installId, appVersion, build, now, coversDays,
                                   usage, weeks, events, personalization, errors, systemInfo }) {
@@ -334,7 +356,7 @@ async function gatherPayload({ appVersion, build, now }) {
     let systemInfo = null;
     try {
         const info = await diagnostics.collectSystemInfo({ appVersion, buildId: build });
-        const h = hashOf(info);
+        const h = hashOf(stableInfo(info));
         if (h !== storage.loadWeeklyInfoHash()) {
             systemInfo = info;
             storage.saveWeeklyInfoHash(h);
