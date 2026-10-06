@@ -1171,6 +1171,12 @@ export function loadSttProvider() {
     // listening off. So the default would have left every Android user WITHOUT a key
     // unable to listen at all, which is far worse than the imperfect built-in
     // recognizer they have today.
+    //
+    // Azure is checked FIRST because it is the recommended service (CR-192), and it
+    // needs a region as well as a key: without one it cannot start either. The
+    // region is read WITHOUT the eastus fallback, which would make the check pass
+    // for anyone with a key and no region.
+    if (platform.isAndroid() && (loadAzureKey() || '').trim() && loadAzureRegionSetting().trim()) return 'azure';
     if (platform.isAndroid() && (loadDeepgramKey() || '').trim()) return 'deepgram';
     return 'builtin';
 }

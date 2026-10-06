@@ -231,6 +231,13 @@ test('Android defaults to the paid transcription ONLY when a key is set', async 
         'with no key, Android must keep the recognizer that actually works');
     assert.equal(await load(UA.androidTablet, { deepgramKey: '   ' }), 'builtin',
         'whitespace is not a key');
+    // CR-192: the recommended service, with BOTH key and region, is the default; a
+    // key with no region cannot start, so it is not.
+    assert.equal(await load(UA.androidTablet, { azureKey: 'az-key', azureRegion: 'eastus' }), 'azure');
+    assert.equal(await load(UA.androidTablet, { azureKey: 'az-key' }), 'builtin',
+        'a key with no region cannot start');
+    assert.equal(await load(UA.androidTablet, { azureKey: 'az-key', azureRegion: 'eastus', deepgramKey: 'dg-key' }), 'azure',
+        'with both keys, the recommended service wins');
     // A stored choice is still the user's and always wins.
     assert.equal(await load(UA.androidTablet, { sttProvider: 'builtin', deepgramKey: 'dg-key' }), 'builtin',
         'an explicit choice outranks the platform default');

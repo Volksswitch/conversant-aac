@@ -434,6 +434,9 @@ forgetting to tag one is only ever noise, never silence.
   "mind you", "a bit of a queue"), and the one you picked was used to shape your
   suggestions. They now read as American English; if you already answered, your answer
   carries over to the new wording.
+- On an Android device, pasting an Azure key and region now switches hearing to Azure
+  on its own, the same way a Deepgram key already did. If you have both, Azure (the
+  one we recommend) is used. A choice you made yourself always wins.
 
 ## Version 0.13.4
 
