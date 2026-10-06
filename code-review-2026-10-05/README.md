@@ -166,12 +166,12 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-125](CR-125.md) | fixed (8210602) | low | confirmed | bug | `app/js/app.js:1222` | Recognizer delivery-gap metric includes gaps across microphone stops |
 | [CR-126](CR-126.md) | fixed (8210602) | low | confirmed | bug | `app/js/app.js:1760` | Closing fast path shows goodbyes without clearing the turn's choice buttons, number button or steering |
 | [CR-127](CR-127.md) | fixed (86aa35c) | low | confirmed | bug | `app/js/app.js:1802` | After a mid-turn 'Repeat what I said', the partner's words are sent to the AI twice |
-| [CR-128](CR-128.md) | fixed (pending) | low | confirmed | bug | `app/js/app.js:2137` | offerClosings restarts listening without closing the turn in metrics, so the next partner turn's checkpoint count continues from the previous turn |
-| [CR-129](CR-129.md) | fixed (pending) | low | confirmed | bug | `app/js/app.js:2602` | A practice conversation the AI partner opens is never counted as a started conversation |
-| [CR-130](CR-130.md) | fixed (pending) | low | confirmed | bug | `app/js/app.js:2912` | Cancelling Wrap up or Start conversation resets the engine to mid-conversation even when restoring goodbye or repair cards |
-| [CR-131](CR-131.md) | open | low | confirmed | bug | `app/js/app.js:2914` | Cancelling Wrap up or Start conversation back to an empty panel records a fake empty set of cards |
-| [CR-132](CR-132.md) | open | low | confirmed | bug | `app/js/app.js:3005` | Clearing the panel (End conversation, Start-turn clear) does not reset the deliberation clock, so the next action reports a reading time for cards that were gone |
-| [CR-133](CR-133.md) | open | low | confirmed | bug | `app/js/app.js:3146` | Choosing an opener mid-conversation records the opener offer in the OLD conversation file |
+| [CR-128](CR-128.md) | fixed (38bd7ca) | low | confirmed | bug | `app/js/app.js:2137` | offerClosings restarts listening without closing the turn in metrics, so the next partner turn's checkpoint count continues from the previous turn |
+| [CR-129](CR-129.md) | fixed (38bd7ca) | low | confirmed | bug | `app/js/app.js:2602` | A practice conversation the AI partner opens is never counted as a started conversation |
+| [CR-130](CR-130.md) | fixed (38bd7ca) | low | confirmed | bug | `app/js/app.js:2912` | Cancelling Wrap up or Start conversation resets the engine to mid-conversation even when restoring goodbye or repair cards |
+| [CR-131](CR-131.md) | fixed (2f8c3fa, with CR-021) | low | confirmed | bug | `app/js/app.js:2914` | Cancelling Wrap up or Start conversation back to an empty panel records a fake empty set of cards |
+| [CR-132](CR-132.md) | fixed (pending) | low | confirmed | bug | `app/js/app.js:3005` | Clearing the panel (End conversation, Start-turn clear) does not reset the deliberation clock, so the next action reports a reading time for cards that were gone |
+| [CR-133](CR-133.md) | fixed (pending) | low | confirmed | bug | `app/js/app.js:3146` | Choosing an opener mid-conversation records the opener offer in the OLD conversation file |
 | [CR-134](CR-134.md) | open | low | confirmed | bug | `app/js/app.js:3333` | New 4 does nothing over Reframe 'lead' statements, and no-op presses still close out the set's record |
 | [CR-135](CR-135.md) | open | low | confirmed | bug | `app/js/app.js:3511` | Reframe drops the held newer set but also its choice buttons and number button |
 | [CR-136](CR-136.md) | open | low | confirmed | bug | `app/js/app.js:3712` | Practice conversations record 'listen off' events although no microphone was ever on |

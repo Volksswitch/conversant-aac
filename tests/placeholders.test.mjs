@@ -833,3 +833,11 @@ test('CR-128-130: goodbye listening starts a new turn, partner-led practice coun
     assert.ok(ap.indexOf('noteConversationStarted()') < ap.indexOf('++generationToken'));
     assert.match(appSource, /engine\.restorePhase\(\{ phase: back\.phase, mode: back\.mode \}\)/);
 });
+
+test('CR-132/133: clearing the cards stops the reading clock; an opener set is recorded in the new conversation', () => {
+    const cp = appSource.slice(appSource.indexOf('function clearPalette'));
+    assert.match(cp.slice(0, 900), /cardsShownAt = 0;/);
+    const hr = appSource.slice(appSource.indexOf('async function handleResponseSelected'));
+    assert.match(hr, /noteUserAction\(opensNewConversation \? 'new conversation' : 'card'/);
+    assert.match(hr, /await storage\.logOffer\(\{ kind: 'opener', options: shownAtTap \}\)/);
+});

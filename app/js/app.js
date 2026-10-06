@@ -2143,7 +2143,13 @@ async function handleResponseSelected(response, index) {
     // Stop the deliberation clock before anything else happens in here — speaking
     // takes a second or more, so a reading time taken after it would be wrong by the
     // length of the sentence.
-    const decideMs = noteUserAction('card', index);
+    // ⚠ AN OPENER OVER A LIVE CONVERSATION ENDS THAT CONVERSATION (CR-133). The opener
+    // set was written into the OLD conversation's file, so there it is recorded as
+    // "new conversation", and the set and the pick are written again into the new file
+    // below, where the opener actually belongs.
+    const opensNewConversation = response.slot === 'OPENER' && pendingNewConversation;
+    const decideMs = noteUserAction(opensNewConversation ? 'new conversation' : 'card',
+        opensNewConversation ? null : index);
     metrics.paletteTaken({ slot: response.slot || null, index, decideMs });
 
     placeholders.stop();
@@ -2199,6 +2205,10 @@ async function handleResponseSelected(response, index) {
         pendingNewConversation = false;
         await terminateConversation();
         noteConversationStarted();
+        if (opensNewConversation) {
+            await storage.logOffer({ kind: 'opener', options: shownAtTap });
+            await storage.finalizeOffer({ outcome: 'card', selectedIndex: index, shownMs: decideMs });
+        }
         // terminateConversation() resets the engine, so put it back into the opening
         // state the card was drawn from before the selection below consumes it.
         ui.showEngineState(engine.initiate({ partnerName: partnerLabel(activePartner) }));
@@ -3272,6 +3282,10 @@ function clearPalette() {
     }
     ui.clearResponseOptions();
     shownCards = { cards: [], kind: 'none' };
+    // No cards, so no reading clock: the next action must not be timed from cards that
+    // are gone (CR-132). After the finalize above, which still needs the span.
+    cardsShownAt = 0;
+    decideTaken = false;
     // No static set is on screen any more, so New N must not page one back (CR-029).
     // The per-kind offsets stay: paging continues where it left off within a conversation.
     currentStatic = { kind: null, full: [] };
