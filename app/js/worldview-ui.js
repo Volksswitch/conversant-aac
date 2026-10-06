@@ -18,6 +18,7 @@
 import * as wv from './worldview.js';
 import * as rel from './relationships.js';
 import * as places from './places.js';
+import * as expressPanel from './express-panel.js';
 import * as voiceProfile from './voice.js';
 import { SOUND_CHECK_ITEMS, VERDICT, questionFor } from './sound-check-items.js';
 import { REGISTER_DIMENSIONS, RELATIONSHIP_GOALS, goalText } from './partner-profile.js';
@@ -330,6 +331,14 @@ function renderExtra(name, back = renderHome) {
     card.append(actions);
     contentEl.append(card);
     focusFirstField(card);
+}
+
+// The Express Panel half of removing a person or place, said in the warning (CR-188).
+function expressNote({ phrases, buttons }) {
+    const parts = [];
+    if (phrases) parts.push(`the ${phrases} Express Panel phrase${phrases === 1 ? '' : 's'} written for them`);
+    if (buttons) parts.push(`their button on the Express Panel`);
+    return parts.length ? ` It also removes ${parts.join(' and ')}.` : '';
 }
 
 function renderHome() {
@@ -772,14 +781,17 @@ function buildPersonCard(p) {
             onclick: () => { peopleReturnScroll = contentEl.scrollTop; renderPeople(p.id); } }),
         el('button', { class: 'wv-btn wv-btn-link', text: 'Remove',
             onclick: async () => {
+                const owned = expressPanel.situationsFor({ partnerId: p.id });
                 const ok = await confirmDanger({
                     title: `Remove ${p.name || 'this person'}?`,
-                    body: 'This removes them and your relationship from your profile. This cannot be undone.',
+                    body: 'This removes them and your relationship from your profile.'
+                        + expressNote(owned) + ' This cannot be undone.',
                     confirmLabel: 'Remove',
                     cancelLabel: 'Cancel'
                 });
                 if (!ok) return;
                 await rel.removePerson(p.id);
+                if (owned.keys.length || owned.buttons) expressPanel.removeSituationsFor({ partnerId: p.id });
                 renderPeople();
             } })
     ]));
@@ -1410,14 +1422,17 @@ function buildPlaceCard(p) {
             onclick: () => { placesReturnScroll = contentEl.scrollTop; renderPlaces(p.id); } }),
         el('button', { class: 'wv-btn wv-btn-link', text: 'Remove',
             onclick: async () => {
+                const owned = expressPanel.situationsFor({ placeId: p.id });
                 const ok = await confirmDanger({
                     title: `Remove ${p.name || 'this place'}?`,
-                    body: 'This removes the place and everything you recorded about it. This cannot be undone.',
+                    body: 'This removes the place and everything you recorded about it.'
+                        + expressNote(owned) + ' This cannot be undone.',
                     confirmLabel: 'Remove',
                     cancelLabel: 'Cancel'
                 });
                 if (!ok) return;
                 await places.removePlace(p.id);
+                if (owned.keys.length || owned.buttons) expressPanel.removeSituationsFor({ placeId: p.id });
                 renderPlaces();
             } })
     ]));

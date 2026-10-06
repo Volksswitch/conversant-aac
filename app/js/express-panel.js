@@ -46,7 +46,7 @@ import {
     ALWAYS_DEFAULTS, CONTEXT_DEFAULTS, SEED_REVISION,
     ensureIds, ensureOrigin, markEdits, isUserAuthored, ORIGIN,
 } from './express-items.js';
-import { DEFAULT_SIZES, SHAPE, CONTEXT_FLOOR, sortContext, flexKey } from './express-bands.js';
+import { DEFAULT_SIZES, SHAPE, CONTEXT_FLOOR, sortContext, flexKey, parseFlexKey } from './express-bands.js';
 
 const FILE = 'express-panel.json';
 const CACHE_KEY = 'aac_express_items';
@@ -210,6 +210,33 @@ export function flexSituations() {
 export function removeFlexList(key) {
     const m = getModel();
     delete m.flex[key];
+    return setModel(m);
+}
+
+/*
+ * What belongs to one person or place (CR-188): the Flex situations written for them
+ * and their Context button. Removing a person or place in About Me takes these with
+ * it, and the confirmation says how many phrases go - otherwise they stayed stored for
+ * good and showed in the editor as "Someone at Anyplace".
+ */
+export function situationsFor({ partnerId = null, placeId = null } = {}) {
+    const m = getModel();
+    const keys = Object.keys(m.flex).filter((k) => {
+        const s = parseFlexKey(k);
+        return (partnerId && s.partnerId === partnerId) || (placeId && s.placeId === placeId);
+    });
+    const phrases = keys.reduce((n, k) => n + (m.flex[k] || []).length, 0);
+    const buttons = (m.context || []).filter((it) => it
+        && ((partnerId && it.personId === partnerId) || (placeId && it.placeId === placeId))).length;
+    return { keys, phrases, buttons };
+}
+
+export function removeSituationsFor(ids = {}) {
+    const { keys } = situationsFor(ids);
+    const m = getModel();
+    for (const k of keys) delete m.flex[k];
+    m.context = (m.context || []).filter((it) => !(it
+        && ((ids.partnerId && it.personId === ids.partnerId) || (ids.placeId && it.placeId === ids.placeId))));
     return setModel(m);
 }
 

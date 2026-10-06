@@ -282,3 +282,22 @@ test('a reset band is the app\'s wording, not the user\'s', async () => {
     assert.ok(panel.getModel().always.every((x) => x.origin === 'default'));
     assert.equal(panel.userAuthoredItems().filter((x) => x.band === 'always' || panel.getModel().always.some((a) => a.id === x.id)).length, 0);
 });
+
+// CR-188. Removing a person takes their situations and their Context button with them.
+test('a person\'s situations and button can be found and removed together', async () => {
+    const m = panel.getModel();
+    m.flex[bands.flexKey('sue', bands.ANYPLACE)] = [{ id: 'f1', type: 'phrase', text: 'Hi Sue' }];
+    m.flex[bands.flexKey('sue', 'clinic')] = [{ id: 'f2', type: 'phrase', text: 'Back again' }, { id: 'f3', type: 'phrase', text: 'Thanks' }];
+    m.flex[bands.flexKey(bands.ANYONE, bands.ANYPLACE)] = [{ id: 'f4', type: 'phrase', text: 'Hello' }];
+    m.context = [...(m.context || []), { id: 'c-sue', type: 'partner', personId: 'sue', name: 'Sue' }];
+    panel.setModel(m);
+    await settle();
+    const owned = panel.situationsFor({ partnerId: 'sue' });
+    assert.equal(owned.phrases, 3);
+    assert.equal(owned.buttons, 1);
+    panel.removeSituationsFor({ partnerId: 'sue' });
+    const after = panel.getModel();
+    assert.deepEqual(Object.keys(after.flex).filter((k) => k.startsWith('sue')), []);
+    assert.ok(after.flex[bands.flexKey(bands.ANYONE, bands.ANYPLACE)], 'the general list is kept');
+    assert.ok(!after.context.some((x) => x.personId === 'sue'));
+});

@@ -458,3 +458,13 @@ test('a switched-on button stays on screen on every page of its band', () => {
     }
     assert.equal(seen.size, feelings.length, 'every feeling is still reachable');
 });
+
+// CR-187. In rows mode the Context band keeps its floor of four even when Flex is
+// given every other row.
+test('rows mode keeps the Context floor when Flex takes every other row', () => {
+    const narrow = Array.from({ length: 12 }, () => Array(3).fill('x'));   // 3 per row
+    for (let flexRows = 0; flexRows <= 12; flexRows++) {
+        const plan = bands.bandPlan(narrow, { shape: 'rows', contextRows: 1, flexRows });
+        assert.ok(plan.contextN >= 4, `flexRows ${flexRows}: context ${plan.contextN}`);
+    }
+});

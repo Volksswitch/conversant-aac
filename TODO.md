@@ -56,6 +56,18 @@ outlives a "Don't save" conversation.
 
 **Why not now:** the review was the task; fixing is separate work, one item per commit.
 
+### Bottom Layout 6 has two Backspace keys
+
+**Raised:** October 5 2026, from code review item CR-189.
+
+**What is wanted:** Ken's decision on which Backspace to keep on Bottom Layout 6: the
+one at the end of the third letter row, or the one on the bottom row beside the period.
+The other would become a blank space, so no key moves and a keyguard still fits; the
+blank also becomes one more empty spot rather than an Express Panel position. The
+layouts document flagged this ("pick one in the build") and the build kept both.
+
+**Why not now:** which key a person reaches for is a choice for the people who use it.
+
 ### The mode chip's styling: delete it, or is it coming back?
 
 **Raised:** October 5 2026, from code review items CR-175 and CR-179.

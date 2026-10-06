@@ -813,3 +813,18 @@ test('generateStatements carries an avoid list when given one', async () => {
     await llm.generateStatements('talk about the game');
     assert.doesNotMatch(sysText(getFetchCalls()[0]), /asked for a different set/);
 });
+
+// CR-190. Every prompt that writes words for the user carries the speakability rule.
+test('statements, practice openers and both repair prompts are told the words are spoken', async () => {
+    const calls = [
+        [JSON.stringify(['One.', 'Two.']), () => llm.generateStatements('lead')],
+        [JSON.stringify(['Hi.', 'Hello.']), () => llm.generatePracticeOpeners({ title: 'Cafe', partnerPersona: 'A barista' })],
+        ['I said I was busy.', () => llm.repairSelf('I was busy', 'rephrase')],
+        [JSON.stringify({ rephrase: 'a', expand: 'b' }), () => llm.repairOptions('I was busy')],
+    ];
+    for (const [reply, call] of calls) {
+        mockFetch(reply);
+        await call();
+        assert.match(sysText(getFetchCalls()[0]), /SPOKEN ALOUD/);
+    }
+});

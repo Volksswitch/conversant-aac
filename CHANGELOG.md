@@ -424,6 +424,12 @@ forgetting to tag one is only ever noise, never silence.
   screen while you page that part of the Express Panel with More; choosing an OpenAI,
   Google Cloud or ElevenLabs voice without its key now says to add the key; and a
   holding phrase no longer starts while the other person has just begun talking again.
+- Fixed: in "rows" band sizing, giving the Flex band almost every row no longer
+  squeezes the Context band below the four spots a four-way choice needs; removing a
+  person or place in About Me now also removes the Express Panel phrases and button
+  you made for them, and the warning says so; and rephrased repeats, practice openers
+  and steering statements now follow the same rules as suggestions, so no texting
+  shorthand, symbols, or empty "Well," at the start.
 
 ## Version 0.13.4
 

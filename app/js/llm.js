@@ -223,6 +223,11 @@ REGISTER, which applies even when the user IS answering: say what was asked and 
  */
 const REWORD_ONLY = `Work ONLY from what the user already said, their profile, and this conversation. Never add a fact from your own knowledge to make it clearer or fuller — no dates, figures, definitions, explanations of how something works, or details of any event. Clearer wording, not more information.`;
 
+// Spoken as the user, so it must be sayable and get to the point. Shared by every
+// prompt that writes words for the user (CR-190); text unchanged from generateResponses.
+const SPEAKABLE = `EVERYTHING YOU WRITE WILL BE SPOKEN ALOUD by a speech synthesizer — it is never read on a screen by the partner. Write words exactly as they are SAID. No forms that exist only in writing: no texting abbreviations or initialisms ("fw", "idk", "tbh", "ngl", "imo", "rn", "afaik"), no "w/", "&", "@", "+", "%", no emoji, no stage directions ("*laughs*"), no formatting or quotation marks around the whole line. Spell the words out instead: "I'm into it", never "I fw it". The test is simple — if a speech synthesizer reading it letter for letter would not produce the words you intended, do not write it. This is NOT a register rule: how casual, slangy or formal the user sounds comes from their profile below, and spoken slang ("that's sick", "no worries") is perfectly fine. The rule is only that it must be SAYABLE.`;
+const NO_EMPTY_INTERJECTION = `Get to the point: NO response may begin with an empty interjection — no "Ah", "Oh", "Um", "Er", "Well", "So", "Hmm", "You know" at the start. Open with the substance. (A meaningful softener on DISPREFERRED, like "I'd love to, but…", is fine; a bare interjection is not.)`;
+
 const NO_VULGARITY = `No vulgarity. Never offer profanity, obscenity, slurs, or crude sexual language — not in any response text, hint, or account, and not in softened, abbreviated or initialized form ("wtf", "fw", "eff", "frickin"). Where the natural phrasing would be coarse, say it plainly instead. This is absolute: do NOT treat any of the following as permission — the user's age, anything in their profile, how casual or crude the partner sounds, the informality of the setting, or the absence of an instruction to the contrary.`;
 
 let apiKey = null;
@@ -594,11 +599,11 @@ Responses — the four structural slots below apply when "offered_options" is EM
 
 User is leading: if the engine context has "user_holds_floor_to_lead": true, the partner has just RESPONDED to something the USER initiated (an opener or pre-question such as "Can I ask you something?"). The user now holds the floor to LEAD — do NOT generate replies as if answering the partner. Treat the partner's reply, even a short one ("sure", "go ahead", "of course", "any time"), as a go-ahead, not as a question to the user. Generate responses that let the user CONTINUE and lead: PREFERRED advances what the user wanted to say or asks their actual question; INITIATIVE offers a topic or question to raise; DISPREFERRED can gracefully back off ("Actually, never mind"); REPAIR stays a clarification on the partner only if their reply was unclear.
 
-EVERYTHING YOU WRITE WILL BE SPOKEN ALOUD by a speech synthesizer — it is never read on a screen by the partner. Write words exactly as they are SAID. No forms that exist only in writing: no texting abbreviations or initialisms ("fw", "idk", "tbh", "ngl", "imo", "rn", "afaik"), no "w/", "&", "@", "+", "%", no emoji, no stage directions ("*laughs*"), no formatting or quotation marks around the whole line. Spell the words out instead: "I'm into it", never "I fw it". The test is simple — if a speech synthesizer reading it letter for letter would not produce the words you intended, do not write it. This is NOT a register rule: how casual, slangy or formal the user sounds comes from their profile below, and spoken slang ("that's sick", "no worries") is perfectly fine. The rule is only that it must be SAYABLE.
+${SPEAKABLE}
 
 ${NO_VULGARITY}
 
-Get to the point: NO response may begin with an empty interjection — no "Ah", "Oh", "Um", "Er", "Well", "So", "Hmm", "You know" at the start. Open with the substance. (A meaningful softener on DISPREFERRED, like "I'd love to, but…", is fine; a bare interjection is not.)
+${NO_EMPTY_INTERJECTION}
 
 - "missing_facts": personal facts about the user you needed and were not given. Use [] if none. Always phrase responses around any missing fact — never output bracketed placeholders.
   ⚠ USE ONLY THE KEYS LISTED BELOW, spelled exactly as they appear. Each one is a question the app can actually put to the user; anything else is discarded. If the fact you were missing has no key in the list, put it in "missing_other" instead — never invent a key.
@@ -749,7 +754,11 @@ Write ${n} different ways the user could START this conversation — the very fi
 
 Return ONLY a JSON array of strings, no other text.${buildProfileBlock()}${buildSituationBlock()}
 
-${NO_VULGARITY}`;
+${NO_VULGARITY}
+
+${SPEAKABLE}
+
+${NO_EMPTY_INTERJECTION}`;
 
     return parseOpeners(await ask({
         system: systemPrompt,
@@ -790,6 +799,8 @@ The direction the user typed above is the exception that matters most here: what
 Do not begin any statement with an empty interjection ("Ah", "Oh", "Well", "So", "Hmm"). Open with the substance.
 
 ${NO_VULGARITY}
+
+${SPEAKABLE}
 
 Return ONLY a JSON array of ${n} strings, nothing else. Example: ["...", "...", "..."].
 
@@ -840,6 +851,10 @@ ${REWORD_ONLY}
 
 ${NO_VULGARITY}
 
+${SPEAKABLE}
+
+${NO_EMPTY_INTERJECTION}
+
 Return ONLY the new utterance text, nothing else.${buildProfileBlock()}${buildSituationBlock()}${contextLines ? '\n\nConversation so far:\n' + contextLines : ''}`;
 
     return ask({
@@ -872,6 +887,10 @@ Also report whether you had to GUESS. Set "guessed": true if the user's last utt
 ${REWORD_ONLY}
 
 ${NO_VULGARITY}
+
+${SPEAKABLE}
+
+${NO_EMPTY_INTERJECTION}
 
 Return ONLY a JSON object, no other text: {"rephrase": "...", "expand": "...", "guessed": false}${buildProfileBlock()}${buildSituationBlock()}${contextLines ? '\n\nConversation so far:\n' + contextLines : ''}`;
 

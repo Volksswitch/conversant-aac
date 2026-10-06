@@ -119,7 +119,7 @@ export function bandPlan(layoutRows, sizes = {}) {
         const filled = perRow.map((count, r) => ({ count, r })).filter((x) => x.count > 0);
         const nRows = filled.length;
         let ctxRows = clamp(sizes.contextRows ?? 1, 0, nRows);
-        const flexRows = clamp(sizes.flexRows ?? 0, 0, nRows - ctxRows);
+        let flexRows = clamp(sizes.flexRows ?? 0, 0, nRows - ctxRows);
         let alwaysRows = nRows - ctxRows - flexRows;
 
         // ⚠ IN ROWS MODE THE FLOOR IS MADE UP BY WHOLE ROWS, NOT BY BORROWING CELLS.
@@ -132,6 +132,13 @@ export function bandPlan(layoutRows, sizes = {}) {
             .reduce((n, x) => n + x.count, 0);
         while (ctxPositions() < Math.min(CONTEXT_FLOOR, total) && alwaysRows > 0) {
             alwaysRows--;
+            ctxRows++;
+        }
+        // ⚠ THE FLOOR IS UNCONDITIONAL (CR-187). With Flex given every remaining row
+        // there is no Always row to take, so a row comes from Flex instead - otherwise a
+        // narrow layout left Context below four and a four-way choice could not show.
+        while (ctxPositions() < Math.min(CONTEXT_FLOOR, total) && flexRows > 0) {
+            flexRows--;
             ctxRows++;
         }
         // Which band each row belongs to, keyed by its place among the rows that
