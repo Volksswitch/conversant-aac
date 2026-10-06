@@ -78,9 +78,9 @@ export const TOUR_STEPS = [
     },
     {
         id: 'pick-card',
-        where: "The cards are the row of large boxes above your phrases. Any one of them will do.",
+        where: "The response options are the row of large boxes above your phrases. Any one of them will do.",
         target: '#responseOptions .response-card',
-        say: "Those are response cards. Tapping one speaks it in your voice — that is "
+        say: "Those are response options. Tapping one speaks it in your voice — that is "
            + "how you say almost everything. Tap whichever one you like.",
     },
     {
@@ -106,10 +106,10 @@ export const TOUR_STEPS = [
     },
     {
         id: 'regenerate',
-        where: "The one I mean shows two crossing arrows, and it sits on its own beside the cards rather than in the middle row.",
+        where: "The one I mean shows two crossing arrows, and it sits on its own beside the response options rather than in the middle row.",
         target: '#regenerateBtn',
-        say: "When none of the cards is quite right, this button gives you a different "
-           + "set. Tap it and watch the cards change.",
+        say: "When none of the response options is quite right, this button gives you a different "
+           + "set. Tap it and watch the response options change.",
     },
     {
         id: 'compose',

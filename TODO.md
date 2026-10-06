@@ -56,21 +56,6 @@ outlives a "Don't save" conversation.
 
 **Why not now:** the review was the task; fixing is separate work, one item per commit.
 
-### "Response card" or "response option" in the Settings labels (CR-205)
-
-**Raised:** October 5 2026, from code review item CR-205. The rest of CR-205 and the
-other manual corrections (CR-202, 203, 204, 233, 256) were applied in the October 6
-2026 "sync docs".
-
-**What is wanted:** Ken's choice. The screen says "What a response card shows" and
-labels its text sizes "Response cards"; the manuals say "What a response option shows",
-because the house word list treats "card" as a development word and "check docs"
-refuses it in a manual. Either the screen moves to "response option" (the lean, since
-that is the word the manuals already teach), or the word list gives way. Until then the
-manual's label does not match the screen.
-
-**Why not now:** it changes on-screen wording, which is Ken's call.
-
 ### Bottom Layout 6 has two Backspace keys
 
 **Raised:** October 5 2026, from code review item CR-189.

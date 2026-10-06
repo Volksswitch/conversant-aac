@@ -76,7 +76,7 @@ function listSection(title, key) {
     arr.forEach((text, i) => {
         const row = document.createElement('div');
         row.className = 'ee-row ee-phrase';
-        row.appendChild(textInput(text, 'Card text', (v) => { arr[i] = v; commit(false); }));
+        row.appendChild(textInput(text, 'Response option text', (v) => { arr[i] = v; commit(false); }));
 
         const tools = document.createElement('div');
         tools.className = 'ee-tools';

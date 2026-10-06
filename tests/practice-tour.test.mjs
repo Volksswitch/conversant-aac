@@ -91,7 +91,7 @@ test('each button is described by more than its position', () => {
     // miscounted, which is the likely reason they pressed the wrong one. Every
     // description names the icon as well, so it can be checked against the screen.
     for (const s of TOUR_STEPS) {
-        assert.match(s.where, /shows|cards are|dark button/i,
+        assert.match(s.where, /shows|response options are|dark button/i,
             `${s.id} describes a position but not what the button looks like`);
     }
 });

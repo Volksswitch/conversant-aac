@@ -396,7 +396,7 @@ function renderCards() {
         if (i === answerIdx && !spoken) bits.push('(would have suited you better)');
         card.setAttribute('aria-label', bits.join(' ').trim());
         card.title = editing && editing.target === 'card' && editing.index === i
-            ? 'Tap a word to change it, or tap the card to finish'
+            ? 'Tap a word to change it, or tap the response option to finish'
             : i === selectedCard()
             ? 'Tap again to change its words'
             : 'Tap to say this one would have suited you better';

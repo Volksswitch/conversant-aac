@@ -661,7 +661,7 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
             if (on) b.classList.add('ep-on');
             // The tooltip and the spoken name carry the FULL wording, because the
             // face is a short reminder and on its own may not say which goal it is.
-            b.title = `${item.text} - rebuilds the response cards with this in mind`;
+            b.title = `${item.text} - rebuilds the response options with this in mind`;
             b.setAttribute('aria-label', `Goal: ${item.text}${on ? ' (on)' : ''}`);
             b.setAttribute('aria-pressed', String(on));
             b.innerHTML = `<span class="ep-text">${escapeHtml(label)}</span>`;
@@ -729,7 +729,7 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         }
         const on = activeChoice != null && chip.label === activeChoice;
         if (on) b.classList.add('ep-on');
-        b.title = `Answer with "${chip.label}" — rebuilds the response cards around it`;
+        b.title = `Answer with "${chip.label}" — rebuilds the response options around it`;
         b.setAttribute('aria-label', `Answer with ${chip.label}${on ? ' (chosen)' : ''}`);
         b.setAttribute('aria-pressed', String(on));
         b.innerHTML = `<span class="ep-text">${escapeHtml(chip.label)}</span>`;

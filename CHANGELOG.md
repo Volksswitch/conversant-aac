@@ -26,6 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Settings now calls the suggested replies "response options" everywhere, the same word the
+  User Manuals use, instead of sometimes calling them "cards".
+
 ## Version 0.13.6
 
 - **Bigger writing in Settings.** Text & Color → Text size now has a "Settings panel" choice. It enlarges the labels, the section headings, what you type in a box, and the choices in a list.
