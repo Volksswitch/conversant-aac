@@ -456,6 +456,10 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: the lists of saved backups and settings profiles in Settings now show every
   file name exactly as written, including names with quotes or symbols, and a file
   name can no longer be read as part of the page.
+- Resetting the Always band, deleting a set of Flex phrases, or removing a person or
+  place now also deletes the sound files of any sound buttons that went with them, so
+  they no longer fill the data folder and every backup. The warning says so when
+  sounds are involved.
 
 ## Version 0.13.4
 

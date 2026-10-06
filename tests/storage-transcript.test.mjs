@@ -894,3 +894,19 @@ test('two conversations started in the same second do not share a file', async (
     const kept = await readLog(first);
     assert.ok(kept.exchanges.some((e) => e.selectedText === 'one'), 'the first file was not overwritten');
 });
+
+// CR-220. When the restore wins, the grace timer is cleared rather than left running.
+test('settleRestore clears its timer when the restore finishes first', async () => {
+    await storage.restoreDataFolder();
+    const realClear = globalThis.clearTimeout;
+    let cleared = 0;
+    globalThis.clearTimeout = (id) => { cleared++; return realClear(id); };
+    try {
+        const started = Date.now();
+        const p = storage.restoreDataFolder();
+        await storage.settleRestore(60000);
+        await p;
+        assert.ok(Date.now() - started < 5000);
+        assert.ok(cleared >= 1, 'the grace timer was cleared');
+    } finally { globalThis.clearTimeout = realClear; }
+});

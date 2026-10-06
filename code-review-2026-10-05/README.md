@@ -257,10 +257,10 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-216](CR-216.md) | fixed (072d255) | low | confirmed | race-condition | `app/js/storage.js:2704` | Two errors close together: one line is lost from errors.log |
 | [CR-217](CR-217.md) | fixed (8a82fd8) | low | confirmed | race-condition | `app/js/tts-azure.js:459` | Stopping speech does not stop a sentence already waiting in a paid voice's queue; it plays afterwards unannounced |
 | [CR-218](CR-218.md) | fixed (b3f7d69) | low | confirmed | resource-leak | `app/js/app.js:5207` | Played sound files are never released from memory |
-| [CR-219](CR-219.md) | open | low | confirmed | resource-leak | `app/js/express-editor.js:667` | Resetting the Always band or deleting a situation orphans sound files, and every backup carries them |
-| [CR-220](CR-220.md) | open | low | confirmed | resource-leak | `app/js/storage.js:223` | settleRestore leaves its grace timer running after the restore settles |
-| [CR-221](CR-221.md) | fixed (pending) | low | confirmed | security | `app/js/app.js:6598` | File names from the data folder are inserted into the page as HTML in the backup and profile lists |
-| [CR-222](CR-222.md) | fixed (pending) | low | confirmed | security | `app/js/app.js:6758` | No guard against unescaped interpolation into innerHTML in app source |
+| [CR-219](CR-219.md) | fixed (pending) | low | confirmed | resource-leak | `app/js/express-editor.js:667` | Resetting the Always band or deleting a situation orphans sound files, and every backup carries them |
+| [CR-220](CR-220.md) | fixed (pending) | low | confirmed | resource-leak | `app/js/storage.js:223` | settleRestore leaves its grace timer running after the restore settles |
+| [CR-221](CR-221.md) | fixed (8a0d912) | low | confirmed | security | `app/js/app.js:6598` | File names from the data folder are inserted into the page as HTML in the backup and profile lists |
+| [CR-222](CR-222.md) | fixed (8a0d912) | low | confirmed | security | `app/js/app.js:6758` | No guard against unescaped interpolation into innerHTML in app source |
 | [CR-223](CR-223.md) | open | low | confirmed | security | `app/js/data-transfer.js:442` | Imported conversation ids are not validated, so a backup can write arbitrary files into the conversations folder (including review files) |
 | [CR-224](CR-224.md) | open | low | confirmed | security | `app/js/usage-summary.js:287` | A partner, place or recognizer label of "__proto__" pollutes Object.prototype during the usage summary |
 | [CR-225](CR-225.md) | open | low | confirmed | ui-inconsistency | `app/css/styles.css:981` | Conversation-surface buttons render in the browser's default font (Arial), and the Express Panel preview in Settings switches to the app font |

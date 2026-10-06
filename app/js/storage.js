@@ -218,10 +218,13 @@ let restoreInFlight = null;
  */
 export function settleRestore(graceMs) {
     if (!restoreInFlight) return Promise.resolve();
+    // The losing timer is cleared: Promise.race does not cancel it, which is the same
+    // shape as the old false "storage warm-up did not finish" error (CR-220).
+    let t;
     return Promise.race([
         restoreInFlight.catch(() => {}),
-        new Promise((res) => setTimeout(res, graceMs)),
-    ]);
+        new Promise((res) => { t = setTimeout(res, graceMs); }),
+    ]).finally(() => clearTimeout(t));
 }
 
 /* Can the data folder be reconnected with NO permission prompt? True for the device's

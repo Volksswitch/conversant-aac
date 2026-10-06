@@ -711,9 +711,11 @@ function contextSection(composed) {
  */
 async function resetAlways() {
     const mine = bandList('always').length;
+    const sounds = expressPanel.clipsIn(bandList('always')).length;
+    const soundNote = sounds ? ` Your ${sounds === 1 ? 'sound button and its sound file' : `${sounds} sound buttons and their sound files`} will be deleted too.` : '';
     if (!(await confirmDanger({
         title: 'Replace the Always phrases?',
-        body: `All ${mine} phrase${mine === 1 ? '' : 's'} in the Always band will be replaced with the set the app comes with. This is not an undo: it does not restore what you had before you started editing, and any phrase you have written yourself will be gone.`,
+        body: `All ${mine} button${mine === 1 ? '' : 's'} in the Always band will be replaced with the set the app comes with. This is not an undo: it does not restore what you had before you started editing, and any phrase you have written yourself will be gone.${soundNote}`,
         confirmLabel: 'Replace them',
     }))) return;
     expressPanel.resetBand('always');
@@ -728,7 +730,7 @@ async function deleteSituation() {
     if (!list.length) return;
     if (!(await confirmDanger({
         title: 'Delete this situation?',
-        body: `The ${list.length} phrase${list.length === 1 ? '' : 's'} you have written for ${situationName(flexPartner, flexPlace)} will be removed.`,
+        body: `The ${list.length} button${list.length === 1 ? '' : 's'} you have made for ${situationName(flexPartner, flexPlace)} will be removed${expressPanel.clipsIn(list).length ? ', and any sound files with them' : ''}.`,
         confirmLabel: 'Delete them',
     }))) return;
     expressPanel.removeFlexList(key);

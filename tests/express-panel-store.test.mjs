@@ -301,3 +301,23 @@ test('a person\'s situations and button can be found and removed together', asyn
     assert.ok(after.flex[bands.flexKey(bands.ANYONE, bands.ANYPLACE)], 'the general list is kept');
     assert.ok(!after.context.some((x) => x.personId === 'sue'));
 });
+
+// CR-219. When a whole list goes, its sound files go with it - unless another button
+// still uses the same file.
+test('resetting a band deletes its sound files, keeping any still in use', async () => {
+    await storage.restoreDataFolder();
+    await storage.writeAudioFile('gone-1.mp3', 'x');
+    await storage.writeAudioFile('shared-1.mp3', 'y');
+    const m = panel.getModel();
+    m.always = [
+        { id: 'a1', type: 'audio', label: 'Song', file: 'gone-1.mp3' },
+        { id: 'a2', type: 'audio', label: 'Shared', file: 'shared-1.mp3' },
+    ];
+    m.flex[bands.flexKey(bands.ANYONE, bands.ANYPLACE)] = [{ id: 'f1', type: 'audio', label: 'Shared', file: 'shared-1.mp3' }];
+    panel.setModel(m);
+    panel.resetBand('always');
+    await new Promise((r) => setTimeout(r, 20));
+    const names = (await storage.listAudioFiles()).map((x) => x.name);
+    assert.ok(!names.includes('gone-1.mp3'), 'the reset band\'s clip is deleted');
+    assert.ok(names.includes('shared-1.mp3'), 'a clip another button still uses is kept');
+});

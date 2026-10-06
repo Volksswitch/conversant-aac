@@ -41,7 +41,7 @@
  * worldview/relationships save().
  */
 
-import { readFile, readPortableFile, writeFile, hasDataFolder } from './storage.js';
+import { readFile, readPortableFile, writeFile, hasDataFolder, deleteAudioFile } from './storage.js';
 import {
     ALWAYS_DEFAULTS, CONTEXT_DEFAULTS, SEED_REVISION,
     ensureIds, ensureOrigin, markEdits, isUserAuthored, ORIGIN,
@@ -209,8 +209,11 @@ export function flexSituations() {
 /** Forget one situation — used when a person or place is deleted, and by the editor. */
 export function removeFlexList(key) {
     const m = getModel();
+    const before = clipsIn(m.flex[key]);
     delete m.flex[key];
-    return setModel(m);
+    const out = setModel(m);
+    releaseClips(before);
+    return out;
 }
 
 /*
@@ -234,18 +237,40 @@ export function situationsFor({ partnerId = null, placeId = null } = {}) {
 export function removeSituationsFor(ids = {}) {
     const { keys } = situationsFor(ids);
     const m = getModel();
+    const before = keys.flatMap((k) => clipsIn(m.flex[k]));
     for (const k of keys) delete m.flex[k];
     m.context = (m.context || []).filter((it) => !(it
         && ((ids.partnerId && it.personId === ids.partnerId) || (ids.placeId && it.placeId === ids.placeId))));
-    return setModel(m);
+    const out = setModel(m);
+    releaseClips(before);
+    return out;
 }
 
 /** Restore the shipped starting set for ONE band. Confirmed by the caller. */
 export function resetBand(band) {
     const m = getModel();
+    const before = clipsIn(m[band]);
     if (band === 'always') m.always = ALWAYS_DEFAULTS.map((x) => ({ ...x }));
     else if (band === 'context') m.context = CONTEXT_DEFAULTS.map((x) => ({ ...x }));
-    return setModel(m, { keepOriginFor: [band] });
+    const out = setModel(m, { keepOriginFor: [band] });
+    releaseClips(before);
+    return out;
+}
+
+/*
+ * A sound button's clip lives in the data folder, up to 10 MB, and every backup
+ * carries it. When a whole list goes - a band reset, a situation deleted, a person
+ * or place removed - its clips go too, or the folder and every backup keep files
+ * nothing can play (CR-219). A clip still used by any other button is kept.
+ */
+export function clipsIn(list) {
+    return (list || []).filter((x) => x && x.type === 'audio' && x.file).map((x) => x.file);
+}
+
+function releaseClips(files) {
+    if (!files.length) return;
+    const live = new Set(clipsIn(allItems()));
+    for (const f of files) if (!live.has(f)) deleteAudioFile(f).catch(() => {});
 }
 
 /** Restore everything the app ships with. */
