@@ -1987,7 +1987,9 @@ async function generateOptions(partnerText) {
         // Either way the response options above still show.
         if (pEpoch === placeholderEpoch && convLogic.shouldPlayPlaceholder(snap)) {
             placeholders.start();
-        } else {
+        } else if (pEpoch === placeholderEpoch) {
+            // When the epoch moved, abortPlaceholders already stopped the ladder - and
+            // the user's own statement may be playing right now (CR-046).
             placeholders.stop();
         }
         // Repair-of-self ("What?"): pre-generate the rephrase + expand wordings in ONE

@@ -243,6 +243,12 @@ export function isSpeaking() {
     return speaking;
 }
 
+// Which utterance is current. A caller that keeps the value from just after its own
+// speak() can later tell whether what is playing is still THEIRS (CR-046).
+export function currentUtterance() {
+    return speakToken;
+}
+
 export function onSpeakingChange(callback) {
     speakingListeners.push(callback);
 }

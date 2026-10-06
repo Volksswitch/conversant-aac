@@ -626,3 +626,16 @@ test('a blank Express phrase cannot speak', () => {
     const ui = readFileSync(new URL('../app/js/ui.js', import.meta.url), 'utf8');
     assert.match(ui, /item\.type === 'empty' \|\| blankPhrase/);
 });
+
+// CR-046. stop() cancels the ladder's own phrase only - never the user's statement
+// that happens to be playing when suggestions arrive.
+test('stopping the placeholders leaves the user statement playing', async () => {
+    const tts = await import('../app/js/tts.js');
+    const placeholders = await import('../app/js/placeholders.js');
+    placeholders.stop();                       // nothing of the ladder's is playing
+    tts.speak('I am saying this myself.');     // the user's statement
+    assert.equal(tts.isSpeaking(), true);
+    placeholders.stop();
+    assert.equal(tts.isSpeaking(), true, 'the user is not cut off');
+    tts.cancel();
+});

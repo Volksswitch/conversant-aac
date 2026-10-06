@@ -55,6 +55,9 @@ let lastIndex = { acknowledgment: -1, thinking: -1 };
 let armTime = 0;             // when the partner stopped (initial-delay clock origin)
 let armed = false;           // arm() was called and start() hasn't consumed it
 let exchanges = 0;           // exchanges completed in THIS conversation (see easing off)
+// The utterance the ladder itself started, so stop() cancels only a placeholder and
+// never the user's own statement that happens to be playing (CR-046).
+let ownUtterance = null;
 
 /* Easing off over a conversation (Ken, September 8 2026).
  *
@@ -249,7 +252,11 @@ export function stop() {
         clearTimeout(timer);
         timer = null;
     }
-    tts.cancel();
+    // ⚠ ONLY THE LADDER'S OWN PHRASE. This used to cancel ANY speech, so suggestions
+    // arriving while "Hold on" or "Repeat what I said" was playing cut the user off
+    // mid-sentence. Callers that must silence everything call tts.cancel() themselves.
+    if (ownUtterance !== null && ownUtterance === tts.currentUtterance() && tts.isSpeaking()) tts.cancel();
+    ownUtterance = null;
 }
 
 async function speakNext() {
@@ -278,7 +285,9 @@ async function speakNext() {
         // from it (Ken, September 10 2026, asking whether a conversation can be
         // recreated to the second). The count alone could never do that.
         try { onSpoken({ n: count, text: phrase }); } catch { /* reporting must never stop the phrase */ }
-        await tts.speak(phrase);
+        const speaking = tts.speak(phrase);
+        ownUtterance = tts.currentUtterance();
+        await speaking;
     }
     if (!active) return;
     // Cap: stop after maxPlaceholders placeholders. -1 = no limit (0 = none is

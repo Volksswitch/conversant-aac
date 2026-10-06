@@ -160,6 +160,9 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: in Settings, after moving or deleting a phrase, or after tapping a box the
   app's keyboard does not serve, the keyboard stayed up but its letters went nowhere
   or into the previous box. It now types into the box you are in, or puts itself away.
+- Fixed: if you tapped "Hold on" or "Repeat what I said" while suggestions were still
+  being fetched, your sentence was often cut off partway the moment they arrived. It
+  now finishes.
 
 ## Version 0.13.4
 
