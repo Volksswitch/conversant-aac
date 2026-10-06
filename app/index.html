@@ -229,7 +229,7 @@
                     <div class="setting-group" data-help="apiKey">
                         <label for="apiKeyInput">API Key</label>
                         <div id="apiKeyRow" class="key-row">
-                            <input type="text" id="apiKeyInput" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
+                            <input type="text" id="apiKeyInput" data-key-field data-no-predict data-no-autocap placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
                             <button id="pasteApiKeyBtn" type="button" aria-label="Paste API key">Paste</button>
                             <button id="testApiKeyBtn" type="button">Test</button>
                         </div>
@@ -514,7 +514,7 @@
                                 <div class="field-group">
                                     <div class="region-field key-field">
                                         <label for="azureKeyInput">Key</label>
-                                        <input type="text" id="azureKeyInput" placeholder="Your Azure Speech key" autocomplete="off" spellcheck="false">
+                                        <input type="text" id="azureKeyInput" data-key-field data-no-predict data-no-autocap placeholder="Your Azure Speech key" autocomplete="off" spellcheck="false">
                                     </div>
                                     <button id="pasteAzureKeyBtn" type="button" aria-label="Paste Azure Speech key">Paste</button>
                                 </div>
@@ -524,7 +524,7 @@
                                          key box gets a matching caption, or it sits under an empty band. -->
                                     <div class="region-field">
                                         <label for="azureRegionInput">Region</label>
-                                        <input type="text" id="azureRegionInput" class="region-input" placeholder="e.g. eastus" autocomplete="off" spellcheck="false">
+                                        <input type="text" id="azureRegionInput" data-key-field data-no-predict data-no-autocap class="region-input" placeholder="e.g. eastus" autocomplete="off" spellcheck="false">
                                     </div>
                                     <button id="pasteAzureRegionBtn" type="button" aria-label="Paste Azure region">Paste</button>
                                 </div>
@@ -552,7 +552,7 @@
                         <div class="setting-item">
                             <label for="openaiKeyInput">OpenAI</label>
                             <div id="openaiKeyRow" class="key-row">
-                                <input type="text" id="openaiKeyInput" placeholder="Your OpenAI API key" autocomplete="off" spellcheck="false">
+                                <input type="text" id="openaiKeyInput" data-key-field data-no-predict data-no-autocap placeholder="Your OpenAI API key" autocomplete="off" spellcheck="false">
                                 <button id="pasteOpenaiKeyBtn" type="button" aria-label="Paste OpenAI key">Paste</button>
                                 <button id="testOpenaiKeyBtn" type="button">Test</button>
                             </div>
@@ -562,7 +562,7 @@
                         <div class="setting-item">
                             <label for="googleKeyInput">Google Cloud</label>
                             <div id="googleKeyRow" class="key-row">
-                                <input type="text" id="googleKeyInput" placeholder="Your Google Cloud API key" autocomplete="off" spellcheck="false">
+                                <input type="text" id="googleKeyInput" data-key-field data-no-predict data-no-autocap placeholder="Your Google Cloud API key" autocomplete="off" spellcheck="false">
                                 <button id="pasteGoogleKeyBtn" type="button" aria-label="Paste Google Cloud key">Paste</button>
                                 <button id="testGoogleKeyBtn" type="button">Test</button>
                             </div>
@@ -572,7 +572,7 @@
                         <div class="setting-item">
                             <label for="deepgramKeyInput">Deepgram</label>
                             <div id="deepgramKeyRow" class="key-row">
-                                <input type="text" id="deepgramKeyInput" placeholder="Your Deepgram API key" autocomplete="off" spellcheck="false">
+                                <input type="text" id="deepgramKeyInput" data-key-field data-no-predict data-no-autocap placeholder="Your Deepgram API key" autocomplete="off" spellcheck="false">
                                 <button id="pasteDeepgramKeyBtn" type="button" aria-label="Paste Deepgram key">Paste</button>
                                 <button id="testDeepgramKeyBtn" type="button">Test</button>
                             </div>
@@ -585,7 +585,7 @@
                                  library rather than by a name, so the picker below is
                                  filled from the account once a key is in. -->
                             <div id="elevenlabsKeyRow" class="key-row">
-                                <input type="text" id="elevenlabsKeyInput" placeholder="Your ElevenLabs API key" autocomplete="off" spellcheck="false">
+                                <input type="text" id="elevenlabsKeyInput" data-key-field data-no-predict data-no-autocap placeholder="Your ElevenLabs API key" autocomplete="off" spellcheck="false">
                                 <button id="pasteElevenlabsKeyBtn" type="button" aria-label="Paste ElevenLabs key">Paste</button>
                                 <button id="testElevenlabsKeyBtn" type="button">Test</button>
                             </div>

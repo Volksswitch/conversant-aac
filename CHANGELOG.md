@@ -219,6 +219,11 @@ forgetting to tag one is only ever noise, never silence.
   not put it there; if you had just selected another phrase, the new one was slipped
   in after it and every phrase below moved down. It now goes in the spot you tapped,
   and nothing else moves.
+- Fixed: with the app's own keyboard chosen, several Settings boxes (the OpenAI,
+  Google, ElevenLabs and Azure keys, the Azure region, the tester name and the
+  holding-phrase editor) brought up the device's keyboard instead, and typing a
+  Deepgram key capitalized its first letter. All of them now use the app's keyboard,
+  and key boxes are never capitalized or offered word suggestions.
 
 ## Version 0.13.4
 

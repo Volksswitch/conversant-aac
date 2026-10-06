@@ -35,7 +35,10 @@ const ACTION_NAMES = {
 // Windows keyboard is suppressed there too and the app's own (side-docked)
 // keyboard is used instead (Ken, June 14 2026 — resolves the OS-vs-app keyboard
 // question for Settings in favor of the app keyboard).
-const IN_SCOPE = '#composerInput, #reviewWordInput, .wv-text, #apiKeyInput, #deepgramKeyInput, #controlEditor input, #expressEditor input, #settingsProfileNameInput, #problemNoteInput, #practicePanel input[type="text"], #practicePanel textarea';
+// Credential boxes are matched by ATTRIBUTE, not by id (CR-066): listing them by id
+// missed every key box added after the first two, exactly as listing providers by name
+// had done before. A new key box carries data-key-field and is served automatically.
+const IN_SCOPE = '#composerInput, #reviewWordInput, .wv-text, input[data-key-field], #controlEditor input, #expressEditor input, #settingsProfileNameInput, #problemNoteInput, #testerNameInput, #placeholderEditor input, #practicePanel input[type="text"], #practicePanel textarea';
 
 // Controls that must NOT dismiss the keyboard when tapped, even though tapping
 // them blurs the composer textarea. The composer (unlike About Me / Settings)
@@ -365,10 +368,9 @@ function handleKey(keyEl) {
  * being suggested in ordinary composing.
  */
 function predictionOff(f) {
-    return !f
-        || f.id === 'apiKeyInput'
-        || f.id === 'deepgramKeyInput'
-        || (f.dataset && f.dataset.noPredict !== undefined);
+    // Every key box carries data-no-predict, so no secret is ever offered as a word
+    // or learned into the word list (CR-066, SEC-6).
+    return !f || (f.dataset && f.dataset.noPredict !== undefined);
 }
 
 // The partial word immediately before the caret (letters/apostrophe). Empty where
@@ -665,7 +667,8 @@ function show(field) {
     // (proper nouns in About Me — Carl, Chicago, Mom — and sentence starts in
     // the composer). One-shot reverts to lowercase after that first character.
     // The API key is case-sensitive and lowercase ("sk-ant-…"), so leave it off.
-    shiftState = field.id === 'apiKeyInput' ? 'off' : 'shift';
+    // A key is case-sensitive, so no box marked data-no-autocap starts capitalized.
+    shiftState = (field.dataset && field.dataset.noAutocap !== undefined) ? 'off' : 'shift';
     // Suppress the toolbar Hide button during the "In my own words" modal
     // (#composerInput): there, Speak/Reframe/Cancel are the only exits and they
     // dismiss the keyboard, so Hide is redundant. Keep it for About Me/Settings.

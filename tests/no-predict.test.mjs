@@ -65,3 +65,19 @@ test('the ordinary text fields are NOT marked', () => {
     assert.doesNotMatch(express.slice(saysIdx, speakIdx), /noPredict/,
         'the visible-text field must keep word completion');
 });
+
+// CR-066. Every credential box is marked, and the keyboard decides by the marks.
+test('every key box is served by the app keyboard, never predicted, never capitalized', async () => {
+    const { readFileSync } = await import('node:fs');
+    const html = readFileSync(new URL('../app/index.html', import.meta.url), 'utf8');
+    const boxes = [...html.matchAll(/<input[^>]*id="([a-zA-Z]*KeyInput|azureRegionInput)"[^>]*>/g)];
+    assert.ok(boxes.length >= 7, `found ${boxes.length}`);
+    for (const [tag, id] of boxes) {
+        for (const attr of ['data-key-field', 'data-no-predict', 'data-no-autocap']) {
+            assert.ok(tag.includes(attr), `${id} lacks ${attr}`);
+        }
+    }
+    const kb = readFileSync(new URL('../app/js/keyboard.js', import.meta.url), 'utf8');
+    assert.match(kb, /input\[data-key-field\]/);
+    assert.doesNotMatch(kb, /f\.id === 'apiKeyInput'|f\.id === 'deepgramKeyInput'/);
+});
