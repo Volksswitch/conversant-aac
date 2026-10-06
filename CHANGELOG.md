@@ -490,6 +490,11 @@ forgetting to tag one is only ever noise, never silence.
   voice no longer appears as a company called "builtin". The result of making the
   keyguard Screen Openings file now appears in the app's own message box instead of a
   browser pop-up.
+- Settings messages are more accurate: the warning before importing a backup now says
+  your saved profiles and conversations are kept and the backup's are added; a problem
+  choosing a data folder now shows beside the folder name; a Copy button tapped twice
+  quickly goes back to saying "Copy"; and the "this service needs a key" warnings go
+  away as soon as the key is entered, and are checked again each time Settings opens.
 
 ## Version 0.13.4
 

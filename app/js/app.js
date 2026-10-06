@@ -1162,10 +1162,40 @@ function switchHearing(source) {
 }
 
 function adoptChosenHearingIfKeyed(service) {
+    // Every key field calls this when its key changes, which makes it the one place a
+    // "needs a key" note can be taken back once the key is there (CR-246).
+    recheckKeyNotes();
     const chosen = storage.loadSttProvider();
     if (chosen !== service || !sttKeyFor(service)) return;
     if (stt.currentSource() === service) return;
     switchHearing(service);
+}
+
+/*
+ * Status lines that said a key was missing, re-checked against the keys as they are
+ * NOW (CR-246). They were written once and cleared only by the control that wrote them,
+ * so "this service needs a key" stayed on screen after the key was pasted, and across
+ * reopening Settings. Only the missing-key notes are touched; any other status stays.
+ */
+function recheckKeyNotes() {
+    const chosen = storage.loadSttProvider();
+    const hear = document.getElementById('sttProviderStatus');
+    if (hear) {
+        if (chosen !== 'builtin' && !sttKeyFor(chosen)) {
+            setStatusLine('sttProviderStatus', 'warn',
+                'This service needs a key before it can hear anything. Add one below.');
+        } else if (/needs a key/.test(hear.textContent)) {
+            setStatusLine('sttProviderStatus', null, '');
+        }
+    }
+    const byLabel = { 'Deepgram': 'deepgram', 'Azure Speech': 'azure',
+        ...Object.fromEntries(Object.entries(TTS_PROVIDERS).map(([id, pr]) => [pr.label, id])) };
+    for (const el of document.querySelectorAll('#settingsDialog .api-key-status')) {
+        const m = !el.hidden && /^Add your (.+?) key above/.exec(el.textContent || '');
+        if (m && byLabel[m[1]] && serviceKeyFor(byLabel[m[1]])) {
+            el.hidden = true; el.textContent = '';
+        }
+    }
 }
 
 function serviceKeyFor(provider) {
@@ -7204,7 +7234,7 @@ async function importPackageText(text, sourceLabel) {
         title: 'Replace everything with this backup?',
         body: `${sourceLabel ? sourceLabel + '\n\n' : ''}This backup was made on ${when} and contains:\n\n• ` +
               summary.join('\n• ') +
-              `\n\nImporting REPLACES what is on this device — your About Me answers, people, Express Panel, starters, settings and saved profiles. Your keys are left exactly as they are, and anything that belongs to the other device, like the screen edge margin, stays behind. The app will ask you to restart afterwards.`,
+              `\n\nImporting REPLACES your About Me answers, people, places, Express Panel, phrases and settings. Saved profiles and conversations in the backup are ADDED to the ones already here; a profile with the same name as one of yours comes in with "(2)" after it. Your keys are left exactly as they are, and anything that belongs to the other device, like the screen edge margin, stays behind. The app will ask you to restart afterwards.`,
         confirmLabel: 'Replace my data',
     }))) {
         setBackupStatus('Import canceled — nothing was changed.');
@@ -7580,6 +7610,9 @@ async function buildErrorReport() {
 
 function openSettings() {
     const dialog = document.getElementById('settingsDialog');
+    // "Auto chose ..." describes a test run earlier; it is not true on a new visit (CR-246).
+    const partnerNote = document.getElementById('partnerVoiceStatus');
+    if (partnerNote) { partnerNote.hidden = true; partnerNote.textContent = ''; }
     const apiKeyInput = document.getElementById('apiKeyInput');
     const voiceSelect = document.getElementById('voiceSelect');
     const silenceThresholdInput = document.getElementById('silenceThresholdInput');
@@ -7700,11 +7733,15 @@ function openSettings() {
     makeGroupsCollapsible(document.querySelector('.tab-panel[data-tab="general"]'));
 
     document.getElementById('pickFolderBtn').onclick = async () => {
+        setStatusLine('dataFolderStatus', null, '');
         try {
             await storage.pickDataFolder();
             await adoptDataFolder();
         } catch (err) {
             if (err.name !== 'AbortError') {
+                // Beside the folder name, where it can be seen: the status bar this used
+                // to write to has been hidden since v0.5.2 (CR-244).
+                setStatusLine('dataFolderStatus', 'warn', `Could not use that folder: ${err.message}`);
                 ui.setStatus(`Folder error: ${err.message}`);
             }
         }
@@ -7743,7 +7780,8 @@ function openSettings() {
         const btn = document.getElementById('copyErrorLogBtn');
         try {
             await navigator.clipboard.writeText(await buildErrorReport());
-            const orig = btn.textContent; btn.textContent = 'Copied ✓';
+            const orig = btn.dataset.label || (btn.dataset.label = btn.textContent);   // CR-245
+            btn.textContent = 'Copied ✓';
             setTimeout(() => { btn.textContent = orig; }, 1500);
         } catch { /* clipboard blocked/denied */ }
     };
@@ -7759,7 +7797,9 @@ function openSettings() {
 
     // --- Troubleshooting tab (Ken, August 7 2026) ---
     const flash = (btn, word = 'Copied ✓') => {
-        const orig = btn.textContent;
+        // The label is kept once: a second tap inside the 1.5 s used to capture
+        // "Copied ✓" as the label and leave the button saying it for good (CR-245).
+        const orig = btn.dataset.label || (btn.dataset.label = btn.textContent);
         btn.textContent = word;
         setTimeout(() => { btn.textContent = orig; }, 1500);
     };
@@ -8042,6 +8082,7 @@ function openSettings() {
         const provider = storage.loadSttProvider();
         const radio = document.querySelector(`input[name="sttProvider"][value="${provider}"]`);
         if (radio) radio.checked = true;
+        recheckKeyNotes();   // runs on every open of Settings too (CR-246)
         // The key field itself is always on screen (it is shared with the voice
         // choice below); only what this costs is conditional.
     };
@@ -8884,6 +8925,9 @@ function openSettings() {
     };
 
     voiceSelect.onchange = () => {
+        // A different own voice changes what Auto picks for the partner, so the note
+        // naming Auto's last pick no longer holds (CR-246).
+        showPartnerVoiceNote('');
         const voiceURI = voiceSelect.value || null;
         tts.setVoice(voiceURI);
         storage.saveVoiceURI(voiceURI);

@@ -277,14 +277,14 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-236](CR-236.md) | fixed (97ea6ba) | low | confirmed | ui-inconsistency | `app/js/app.js:2163` | The 'cards may change' look can stay on forever after a failed repair prefetch or a failed practice-partner line |
 | [CR-237](CR-237.md) | fixed (97ea6ba) | low | confirmed | ui-inconsistency | `app/js/app.js:4577` | Opener cards are not refreshed when the partner is chosen after pressing Start conversation |
 | [CR-238](CR-238.md) | fixed (97ea6ba) | low | confirmed | ui-inconsistency | `app/js/app.js:4903` | Layout handles can stay visible and swallow taps after a conversation begins via Start conversation |
-| [CR-239](CR-239.md) | fixed (pending) | low | confirmed | ui-inconsistency | `app/js/app.js:5438` | Keyguard 'Generate Screen Openings' reports through native browser alert boxes |
-| [CR-240](CR-240.md) | fixed (pending) | low | confirmed | ui-inconsistency | `app/js/app.js:6143` | Cost breakdown labels a token count as 'words in and out', and the count includes cached tokens re-read on every request |
-| [CR-241](CR-241.md) | fixed (pending) | low | confirmed | ui-inconsistency | `app/js/app.js:6153` | Cost breakdown shows the internal word 'builtin' as a company name |
-| [CR-242](CR-242.md) | fixed (pending) | low | confirmed | ui-inconsistency | `app/js/app.js:6154` | Cost breakdown shows '0 min heard' for paid hearing under 30 seconds |
-| [CR-243](CR-243.md) | open | low | confirmed | ui-inconsistency | `app/js/app.js:6530` | The restore confirmation says it replaces saved profiles, but profiles are added beside existing ones and conversations are merged |
-| [CR-244](CR-244.md) | open | low | confirmed | ui-inconsistency | `app/js/app.js:7010` | A failure while choosing a data folder is reported only in the hidden status bar |
-| [CR-245](CR-245.md) | open | low | confirmed | ui-inconsistency | `app/js/app.js:7063` | Tapping Copy twice quickly leaves the button permanently labeled 'Copied ✓' |
-| [CR-246](CR-246.md) | open | low | confirmed | ui-inconsistency | `app/js/app.js:7386` | Warnings and test results in Settings stay on screen after they stop being true |
+| [CR-239](CR-239.md) | fixed (eab59d1) | low | confirmed | ui-inconsistency | `app/js/app.js:5438` | Keyguard 'Generate Screen Openings' reports through native browser alert boxes |
+| [CR-240](CR-240.md) | fixed (eab59d1) | low | confirmed | ui-inconsistency | `app/js/app.js:6143` | Cost breakdown labels a token count as 'words in and out', and the count includes cached tokens re-read on every request |
+| [CR-241](CR-241.md) | fixed (eab59d1) | low | confirmed | ui-inconsistency | `app/js/app.js:6153` | Cost breakdown shows the internal word 'builtin' as a company name |
+| [CR-242](CR-242.md) | fixed (eab59d1) | low | confirmed | ui-inconsistency | `app/js/app.js:6154` | Cost breakdown shows '0 min heard' for paid hearing under 30 seconds |
+| [CR-243](CR-243.md) | fixed (pending) | low | confirmed | ui-inconsistency | `app/js/app.js:6530` | The restore confirmation says it replaces saved profiles, but profiles are added beside existing ones and conversations are merged |
+| [CR-244](CR-244.md) | fixed (pending) | low | confirmed | ui-inconsistency | `app/js/app.js:7010` | A failure while choosing a data folder is reported only in the hidden status bar |
+| [CR-245](CR-245.md) | fixed (pending) | low | confirmed | ui-inconsistency | `app/js/app.js:7063` | Tapping Copy twice quickly leaves the button permanently labeled 'Copied ✓' |
+| [CR-246](CR-246.md) | fixed (pending) | low | confirmed | ui-inconsistency | `app/js/app.js:7386` | Warnings and test results in Settings stay on screen after they stop being true |
 | [CR-247](CR-247.md) | open | low | confirmed | ui-inconsistency | `app/js/control-phrases-editor.js:122` | Commands tab reset warning does not mention the "one more thing" phrases it also resets |
 | [CR-248](CR-248.md) | open | low | confirmed | ui-inconsistency | `app/js/express-editor.js:218` | Place buttons keep their old name after the place is renamed in My Places, unlike partner buttons |
 | [CR-249](CR-249.md) | open | low | confirmed | ui-inconsistency | `app/js/express-editor.js:218` | Deleting a sound button in the Express editor asks to delete "this button" instead of its name |

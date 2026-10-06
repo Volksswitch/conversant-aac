@@ -1004,3 +1004,13 @@ test('no browser alert boxes, and the cost breakdown wording', () => {
     assert.match(appSource, /sttSeconds < 60 \? `\$\{Math\.round\(sttSeconds\)\} sec heard`/);
     assert.match(appSource, /const paidStt = sttProviderNow !== 'builtin';/);
 });
+
+// CR-243..246 guards.
+test('backup warning, folder error, copy label and stale key notes', () => {
+    assert.ok(!/Importing REPLACES what is on this device/.test(appSource));
+    assert.match(appSource, /are ADDED to the ones already here/);
+    assert.match(appSource, /setStatusLine\('dataFolderStatus', 'warn'/);
+    assert.match(appSource, /const flash = \(btn, word = 'Copied ✓'\) => \{[\s\S]{0,300}btn\.dataset\.label \|\| \(btn\.dataset\.label = btn\.textContent\)/);
+    const adopt = appSource.slice(appSource.indexOf('function adoptChosenHearingIfKeyed'));
+    assert.match(adopt.slice(0, 300), /recheckKeyNotes\(\);/);
+});
