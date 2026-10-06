@@ -2716,8 +2716,10 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
    `#settingsContent button`, the id would outrank every class rule in the file and
    repaint the lot.
 
-   Text inputs are deliberately NOT here: `color-scheme` already gives them a proper
-   dark field, which is exactly what that property is for. --- */
+   Text inputs were once left to `color-scheme` on purpose. That gave a mid-grey field
+   with white text and a placeholder at about 2.4:1 in every dark scheme, and in
+   Yellow on black no yellow at all - so they now take the scheme's own colors in the
+   rule just below (CR-089). --- */
 /* ⚠ AND IT SETS THE WHOLE APPEARANCE, NOT JUST THE FILL. It used to set background and
    color only, so a button nobody had styled kept the BROWSER'S square 2px outset border
    and read as a box rather than a button — "some have rounded corners and grey
@@ -2739,6 +2741,20 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
     border-radius: 4px;
     padding: 0.5rem 0.9rem;
     cursor: pointer;
+}
+
+/* Text fields take the scheme's own colors (CR-089). `:where()` keeps this at zero
+   specificity, so a field that styles itself - the edgeless composer box, the editors'
+   own inputs - still wins. Only typing fields are named: sliders, checkboxes, radios and
+   file pickers keep their native `color-scheme` look. */
+:where(input[type="text"], input[type="password"], input[type="search"], input[type="email"],
+       input[type="url"], input[type="tel"], input[type="number"], input:not([type]), textarea) {
+    background: var(--surface-raised);
+    color: var(--ink);
+}
+:where(input, textarea)::placeholder {
+    color: var(--ink-muted);
+    opacity: 1;
 }
 
 /* ⚠ INPUTS ARE IN THIS LIST NOW. Buttons and selects took the floor and text fields did

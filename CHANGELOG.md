@@ -285,6 +285,9 @@ forgetting to tag one is only ever noise, never silence.
   showed no change, so it looked like the tap had missed; and with a mouse resting on
   it, a phrase could go white on white. The first tap now always shows a blue line
   inside the button.
+- Fixed: in the Dark, High contrast dark and Yellow on black color schemes, typing
+  boxes were gray with hard-to-read gray hints, and in Yellow on black they were not
+  yellow on black at all. They now take the scheme's own colors.
 
 ## Version 0.13.4
 
