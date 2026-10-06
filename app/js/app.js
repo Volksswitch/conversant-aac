@@ -7220,10 +7220,20 @@ async function renderBackupList() {
     // filename is also what they see if they open the folder themselves. Size is
     // there because a suspiciously small backup is worth noticing before restoring
     // from it.
-    select.innerHTML = backups.map((b) => {
+    // Built as elements, never as markup: the names are FILE names from the data
+    // folder, which on some systems may contain < > " & - so a crafted name could
+    // otherwise run code in the app, where the keys live (CR-221).
+    select.replaceChildren(...backups.map((b) => {
         const when = b.savedAt ? new Date(b.savedAt).toLocaleString() : 'unknown date';
-        return `<option value="${b.name}">${when} — ${b.name} (${b.sizeKB} KB)</option>`;
-    }).join('');
+        return optionOf(b.name, `${when} — ${b.name} (${b.sizeKB} KB)`);
+    }));
+}
+
+function optionOf(value, label) {
+    const o = document.createElement('option');
+    o.value = value;
+    o.textContent = label;
+    return o;
 }
 
 function wireBackupControls() {
@@ -7391,7 +7401,7 @@ async function renderSettingsProfiles() {
         setProfileStatus('');
         return;
     }
-    select.innerHTML = names.map((n) => `<option value="${n}">${n}</option>`).join('');
+    select.replaceChildren(...names.map((n) => optionOf(n, n)));   // file names: never markup (CR-221)
     setActionsEnabled(true);
     // Reflect the profile currently in effect (persisted across reloads) rather than
     // defaulting to the first name — so after a load/restart the picker shows what's

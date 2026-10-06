@@ -453,6 +453,9 @@ forgetting to tag one is only ever noise, never silence.
 - With a paid voice, stopping speech (for example "Hold on", a card tap, or ending the
   conversation) now also drops any sentence that was lined up to be said next, as the
   device voice already did.
+- Fixed: the lists of saved backups and settings profiles in Settings now show every
+  file name exactly as written, including names with quotes or symbols, and a file
+  name can no longer be read as part of the page.
 
 ## Version 0.13.4
 
