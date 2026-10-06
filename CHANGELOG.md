@@ -187,6 +187,9 @@ forgetting to tag one is only ever noise, never silence.
   heading - for example calling the store where you work your "school" - so
   suggestions could say things that are not true. Each answer now goes with a heading
   that matches its question.
+- Fixed: after installing the app, opening it for the first time with no internet
+  connection could fail to start, because one of its files was not kept for offline
+  use. It is now kept.
 
 ## Version 0.13.4
 

@@ -39,6 +39,7 @@ const CACHE_NAME = `aac-shell-${SCOPE_TAG}${CACHE_VERSION}`;
 const SHELL = [
   './',
   './index.html',
+  './apple-touch-icon.png',
   './css/styles.css',
   './js/app.js',
   './js/stt.js',
@@ -101,6 +102,7 @@ const SHELL = [
   './js/settings-help.js',
   './js/help-mode.js',
   './js/sections.js',
+  './js/tap-guard.js',
   './js/usage-summary.js',
   './js/diagnostics.js',
   './js/weekly-send.js',
