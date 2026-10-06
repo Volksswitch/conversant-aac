@@ -88,6 +88,10 @@ outlives a "Don't save" conversation.
   quotes the screen as it is. Lean: change the screen, since "response option" is the
   word the manuals already teach.
 
+- **CR-233, all three User Manuals (Settings profiles row):** "button and gap sizes"
+  should read "button spacing"; the button-size setting was removed in September 2026.
+  The Screen Layout section the manuals describe is now headed "Gaps between buttons".
+
 **Why not now:** the manuals are edited only in a document sync, which runs when Ken
 chooses.
 

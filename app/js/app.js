@@ -679,6 +679,10 @@ function initApp() {
     // resets when it actually speaks.
     document.addEventListener('click', (e) => {
         if (!expressPaging) return;
+        // Review turns the panel's pages itself and puts them back at a turn change or
+        // an answer; Hear it, Undo or a word step must not undo the user's paging
+        // (CR-234). Leaving review resets it (restoreConversationScreen).
+        if (reviewUI.isActive()) return;
         const btn = e.target && e.target.closest ? e.target.closest('button') : null;
         if (!btn) return;
         if (btn.classList.contains('ep-more') || btn.id === 'holdOnBtn') return;
@@ -913,6 +917,7 @@ function initApp() {
 // Put the live conversation screen back after a review. Review is only entered with
 // no conversation under way, so "back" means the resting screen.
 function restoreConversationScreen() {
+    resetExpressPaging();   // the live panel never resumes on a page review left it on (CR-234)
     ui.renderConversation(conversationHistory);
     clearPalette();
     ui.applyControlIcons();

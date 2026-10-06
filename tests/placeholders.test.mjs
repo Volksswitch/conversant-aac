@@ -973,3 +973,12 @@ test('clips no longer on the panel release their memory, but not the playing one
     assert.match(fn, /URL\.revokeObjectURL\(url\)/);
     assert.match(fn, /audioPlayer && audioPlayer\.item\.file === name/);
 });
+
+// CR-234. In Review, the global "any button puts the panel back" rule stands aside, and
+// leaving Review puts the live panel back on its first page.
+test('review keeps its own Express Panel paging, and leaving it resets the panel', () => {
+    const at = appSource.indexOf('if (!expressPaging) return;');
+    assert.ok(appSource.slice(at, at + 400).includes('if (reviewUI.isActive()) return;'));
+    const fn = appSource.slice(appSource.indexOf('function restoreConversationScreen() {'));
+    assert.match(fn.slice(0, 200), /resetExpressPaging\(\)/);
+});

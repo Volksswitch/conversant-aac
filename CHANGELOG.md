@@ -471,6 +471,13 @@ forgetting to tag one is only ever noise, never silence.
   dimmed, and the empty speech-service key boxes are wide enough to show their whole
   hint. With a mouse, pointing at a person, place or feeling button no longer makes it
   look switched on.
+- With "Two taps" on, the blue ring that shows your first tap landed is now drawn
+  inside the button, so it is fully visible instead of hidden behind the buttons next
+  to it. On Settings > Screen Layout, the drag-to-resize option looks like the other
+  checkboxes, and the section that only holds button spacing is now called "Gaps
+  between buttons" (its spoken help no longer mentions a button-size setting that was
+  removed). In Conversation Review, paging the Express Panel with More now stays put
+  when you tap Hear it, Undo or a word step.
 
 ## Version 0.13.4
 
