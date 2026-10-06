@@ -229,7 +229,7 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-188](CR-188.md) | fixed (76e8303) | low | confirmed | design-violation | `app/js/express-panel.js:207` | Removing a person or place leaves their Flex phrase lists behind as 'Someone at somewhere' |
 | [CR-189](CR-189.md) | open - awaits Ken (TODO.md: two Backspace keys) | low | confirmed | design-violation | `app/js/keyboard-layouts.js:120` | Bottom Layout 6 ships with two Backspace keys, which the layout document said to resolve before building |
 | [CR-190](CR-190.md) | fixed (76e8303) | low | confirmed | design-violation | `app/js/llm.js:773` | Speakability and no-empty-interjection rules are missing from the other prompts that write the user's words |
-| [CR-191](CR-191.md) | open | low | confirmed | design-violation | `app/js/sound-check-items.js:108` | Sound Check replies use British phrasing, and the chosen ones become the user's voice in every prompt |
+| [CR-191](CR-191.md) | fixed (pending) | low | confirmed | design-violation | `app/js/sound-check-items.js:108` | Sound Check replies use British phrasing, and the chosen ones become the user's voice in every prompt |
 | [CR-192](CR-192.md) | open | low | confirmed | design-violation | `app/js/storage.js:1081` | Android hearing default switches to a paid service only for a Deepgram key, not the recommended Azure key |
 | [CR-193](CR-193.md) | open | low | confirmed | design-violation | `app/js/storage.js:2708` | errors.log gets fancy punctuation through the error's extra detail, breaking the plain-ASCII log rule |
 | [CR-194](CR-194.md) | open | low | confirmed | design-violation | `app/js/tts.js:133` | The voice crossover guard does not know Azure's voices |

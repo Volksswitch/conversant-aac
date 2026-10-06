@@ -31,7 +31,7 @@ import { readFile, readPortableFile, writeFile, hasDataFolder } from './storage.
 // For the item's dimension only, so buildBlock can tell a bland exemplar (safe to
 // reuse verbatim) from a levity one (never reuse). sound-check-items.js imports
 // nothing, so there is no cycle.
-import { getItem, isLighterChoice, SOUND_CHECK_ITEMS } from './sound-check-items.js';
+import { getItem, isLighterChoice, SOUND_CHECK_ITEMS, RENAMED_CANDIDATES } from './sound-check-items.js';
 import { redactCatchphrases, MIN_EXEMPLAR_WORDS } from './voice-harvest.js';
 
 const FILE = 'voice.json';
@@ -73,13 +73,27 @@ function emptyProfile() {
     };
 }
 
+// A stored Sound Check answer keeps the candidate's TEXT. When a candidate was
+// reworded (CR-191) the old text would no longer match any card and would still be
+// sent to the AI as the user's wording, so it is mapped onto the new text here.
+function migrateChoices(sc) {
+    if (!sc || typeof sc !== 'object') return {};
+    const out = {};
+    for (const [id, a] of Object.entries(sc)) {
+        out[id] = (a && typeof a === 'object' && Object.prototype.hasOwnProperty.call(RENAMED_CANDIDATES, a.choice))
+            ? { ...a, choice: RENAMED_CANDIDATES[a.choice] }
+            : a;
+    }
+    return out;
+}
+
 function normalize(raw) {
     const base = emptyProfile();
     if (!raw || typeof raw !== 'object') return base;
     return {
         ...base,
         ...raw,
-        soundCheck: (raw.soundCheck && typeof raw.soundCheck === 'object') ? raw.soundCheck : {},
+        soundCheck: migrateChoices(raw.soundCheck),
         never: Array.isArray(raw.never) ? raw.never.filter((s) => typeof s === 'string' && s.trim()) : [],
         samples: (raw.samples && typeof raw.samples === 'object') ? raw.samples : {},
         harvest: (raw.harvest && typeof raw.harvest === 'object') ? raw.harvest : null,

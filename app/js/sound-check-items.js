@@ -81,6 +81,27 @@ export const DIMENSIONS = {
     levity: 'Whether an awkward moment is met flatly or brushed off with a remark.',
 };
 
+/*
+ * Wording changed on October 5 2026 (CR-191): several candidates read as British
+ * ("lovely", "mind you", "whereabouts"), and a chosen candidate is sent to the AI
+ * as the user's own wording. Each kept its length and its place in the item, so
+ * the item still measures what it did. voice.js maps a stored answer that still
+ * carries the old text onto the new one, so nobody loses their answer.
+ */
+export const RENAMED_CANDIDATES = {
+    "Good, thanks. Quiet one.": "Good, thanks. Pretty quiet.",
+    "It was good, thanks — quiet, but that suited me.": "It was good, thanks — quiet, but I liked that.",
+    "Not properly yet, no — I keep meaning to sit down and work it out.": "Not really, no — I keep meaning to sit down and figure it out.",
+    "Not properly yet, no.": "Not really, no.",
+    "Oh, lovely. Thanks.": "Oh, great. Thanks.",
+    "Oh, whereabouts?": "Oh, where to?",
+    "I don't suppose you could help me?": "I hate to ask, but could you help me?",
+    "Right, I'd better go.": "Okay, I'd better go.",
+    "I should get going - this has been lovely.": "I should get going - this has been great.",
+    "No idea, I'm afraid.": "No idea, sorry.",
+    "It's fine. I was starting to plan my escape, mind you.": "It's fine. I was starting to plan my escape, though.",
+};
+
 export const SOUND_CHECK_ITEMS = [
     {
         id: 'economy-weekend', dimension: 'economy', leads: 'short',
@@ -88,8 +109,8 @@ export const SOUND_CHECK_ITEMS = [
         partner: 'How was your weekend?',
         candidates: [
             'Good, thanks.',
-            'Good, thanks. Quiet one.',
-            'It was good, thanks — quiet, but that suited me.',
+            'Good, thanks. Pretty quiet.',
+            'It was good, thanks — quiet, but I liked that.',
         ],
     },
     {
@@ -97,15 +118,15 @@ export const SOUND_CHECK_ITEMS = [
         stipulate: 'Suppose you have not made your mind up yet.',
         partner: 'Have you thought any more about what you want to do?',
         candidates: [
-            'Not properly yet, no — I keep meaning to sit down and work it out.',
-            'Not properly yet, no.',
+            'Not really, no — I keep meaning to sit down and figure it out.',
+            'Not really, no.',
             'Not yet.',
         ],
     },
     {
         id: 'economy-queue', dimension: 'economy', leads: 'middle',
         stipulate: 'Suppose you do not mind waiting.',
-        partner: "There's a bit of a queue today, I'm afraid.",
+        partner: "There's a bit of a wait today, sorry.",
         candidates: [
             "That's fine, no rush.",
             "That's fine.",
@@ -137,7 +158,7 @@ export const SOUND_CHECK_ITEMS = [
         stipulate: 'Suppose you are pleased about it.',
         partner: 'I brought you a coffee.',
         candidates: [
-            'Oh, lovely. Thanks.',
+            'Oh, great. Thanks.',
             "Thanks, that's kind of you.",
             "That's really thoughtful, thank you.",
         ],
@@ -167,7 +188,7 @@ export const SOUND_CHECK_ITEMS = [
         stipulate: 'Suppose you are glad to hear it.',
         partner: "I've just got back from a trip.",
         candidates: [
-            'Oh, whereabouts?',
+            'Oh, where to?',
             'That sounds nice. Where did you go?',
             'That sounds nice.',
         ],
@@ -195,7 +216,7 @@ export const SOUND_CHECK_ITEMS = [
     {
         id: 'warmth-let-you-go', dimension: 'warmth', leads: 'warm',
         stipulate: 'Suppose you have enjoyed the conversation.',
-        partner: 'Right, I should let you go.',
+        partner: 'Well, I should let you go.',
         candidates: [
             'It was really good to talk to you. Take care.',
             'Good to talk to you. Bye.',
@@ -222,7 +243,7 @@ export const SOUND_CHECK_ITEMS = [
         candidates: [
             'Can you help me?',
             'Would you mind helping me?',
-            "I don't suppose you could help me?",
+            'I hate to ask, but could you help me?',
         ],
     },
     {
@@ -247,9 +268,9 @@ export const SOUND_CHECK_ITEMS = [
         id: 'initiate-leaving', dimension: 'warmth', leads: 'plain',
         stipulate: 'Suppose you need to bring the conversation to an end.',
         candidates: [
-            "Right, I'd better go.",
+            "Okay, I'd better go.",
             'I should get going.',
-            'I should get going - this has been lovely.',
+            'I should get going - this has been great.',
         ],
     },
     // The three levity items. All hold the CONTENT fixed at "I do not have this" or
@@ -261,14 +282,14 @@ export const SOUND_CHECK_ITEMS = [
         partner: 'Do you happen to know what year that happened?',
         candidates: [
             "No, I don't know that one.",
-            "No idea, I'm afraid.",
+            'No idea, sorry.',
             'Not a clue. That one left my head a long time ago.',
         ],
     },
     {
         id: 'levity-mishap', dimension: 'levity', leads: 'light',
         stipulate: 'Suppose you have just knocked something over, and no harm is done.',
-        partner: 'Oh — are you all right?',
+        partner: 'Oh — are you okay?',
         candidates: [
             'Well, that went beautifully.',
             "Fine, thanks. Not my finest moment.",
@@ -278,11 +299,11 @@ export const SOUND_CHECK_ITEMS = [
     {
         id: 'levity-late', dimension: 'levity', leads: 'flat',
         stipulate: 'Suppose you have been kept waiting a while and you do not really mind.',
-        partner: "Sorry, I've kept you waiting ages.",
+        partner: "Sorry, I've kept you waiting forever.",
         candidates: [
             "It's fine, honestly.",
             "It's fine - I had nowhere better to be.",
-            "It's fine. I was starting to plan my escape, mind you.",
+            "It's fine. I was starting to plan my escape, though.",
         ],
     },
 ];

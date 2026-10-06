@@ -222,7 +222,7 @@ test('a levity choice is listed apart from the bland ones, and forbidden as a sc
 // Selections are behavior, and behavior is the stronger evidence — but an explicit
 // refusal elsewhere in the profile still wins. Stated here so the two blocks agree.
 test('choosing the lighter option counts as permission, and says what overrides it', async () => {
-    voice.recordAnswer('levity-late', VERDICT.CHOSE, "It's fine. I was starting to plan my escape, mind you.");
+    voice.recordAnswer('levity-late', VERDICT.CHOSE, "It's fine. I was starting to plan my escape, though.");
     const block = voice.buildBlock();
     assert.match(block, /IS this user telling you a lighter reply suits them/);
     assert.match(block, /do not want joking suggestions, which overrides this outright/);
@@ -278,4 +278,29 @@ test('a removed correction does not come back under another wording', async () =
     for (let i = 0; i < 200; i++) voice.recordSteer('other ' + i);   // the first wording ages out
     voice.recordSteer('keep it short!'); voice.recordSteer('keep it short!');
     assert.equal(voice.repeatedSteers().filter((g) => /keep it short/i.test(g.text)).length, 0);
+});
+
+// CR-191. Reworded candidates: an answer stored under the old wording is carried onto
+// the new one, so the card stays highlighted and the AI gets the American wording.
+test('a Sound Check answer stored under old British wording loads as the new wording', async () => {
+    await reset();
+    localStorage.setItem('aac_voice', JSON.stringify({
+        soundCheck: {
+            'affect-coffee': { verdict: VERDICT.CHOSE, choice: 'Oh, lovely. Thanks.', at: '2026-09-01T00:00:00Z' },
+            'formality-sit': { verdict: VERDICT.CHOSE, choice: 'Yeah, thanks.', at: '2026-09-01T00:00:00Z' },
+        },
+    }));
+    await voice.load();
+    assert.equal(voice.getAnswer('affect-coffee').choice, 'Oh, great. Thanks.');
+    assert.equal(voice.getAnswer('formality-sit').choice, 'Yeah, thanks.', 'unchanged wording is untouched');
+    assert.doesNotMatch(voice.buildBlock([]), /lovely/);
+});
+
+test('every reworded candidate maps onto a candidate that exists', async () => {
+    const { RENAMED_CANDIDATES, SOUND_CHECK_ITEMS } = await import('../app/js/sound-check-items.js');
+    const all = new Set(SOUND_CHECK_ITEMS.flatMap((it) => it.candidates));
+    for (const [oldText, newText] of Object.entries(RENAMED_CANDIDATES)) {
+        assert.ok(all.has(newText), newText);
+        assert.ok(!all.has(oldText), oldText);
+    }
 });
