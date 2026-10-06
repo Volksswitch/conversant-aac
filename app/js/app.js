@@ -6762,7 +6762,23 @@ let primedBackupsDir = null;
 // finished, which on a slow device is indistinguishable from the crash the user was
 // already afraid of. Now they are told, and they start it.
 async function offerRestart(what, done) {
-    const bits = [`Your ${what} has been imported.`];
+    // ⚠ A PARTIAL RESTORE MUST SAY SO (CR-057). Announcing a complete one when parts
+    // failed leads people to delete the backup or wipe the old device.
+    const failed = (done && done.failed) || [];
+    const inFile = (done && done.conversationsInFile) || 0;
+    const missing = Math.max(0, inFile - ((done && done.conversations) || 0));
+    const noFolder = !storage.hasDataFolder();
+    const partial = failed.length > 0 || (missing > 0 && !noFolder);
+    const bits = [`Your ${what} has been ${partial ? 'partly ' : ''}imported.`];
+    if (failed.length) {
+        bits.push(`Some parts could not be restored: ${failed.join(', ')}.`);
+    }
+    if (missing > 0) {
+        bits.push(noFolder
+            ? `The ${inFile} saved conversation${inFile === 1 ? '' : 's'} in it could not be restored: they need a data folder.`
+            : `${missing} saved conversation${missing === 1 ? '' : 's'} could not be restored.`);
+    }
+    if (partial) bits.push('Keep your backup file.');
     // ⚠ SAY WHAT DID NOT COME ACROSS. Filtering at import only beats asking the user to
     // split the file themselves if the app then TELLS them what it decided - a setting
     // that silently fails to arrive is the exact failure this design replaced.
@@ -6836,7 +6852,7 @@ async function importPackageText(text, sourceLabel) {
             storage.logError('import', 'partial restore, failed: ' + done.failed.join(', '));
         }
         busy.close();
-        await offerRestart('backup', done);
+        await offerRestart('backup', { ...done, conversationsInFile: (pkg.conversations || []).length });
     } catch (err) {
         storage.logError('import', err.message || String(err));
         setBackupStatus('Import failed: ' + (err.message || 'unknown error'));

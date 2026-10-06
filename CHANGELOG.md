@@ -190,6 +190,9 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: after installing the app, opening it for the first time with no internet
   connection could fail to start, because one of its files was not kept for offline
   use. It is now kept.
+- Fixed: when a backup only partly restored (for example, a tablet running out of
+  space), the app still said it had been imported. It now says which parts did not
+  come across and tells you to keep your backup file.
 
 ## Version 0.13.4
 

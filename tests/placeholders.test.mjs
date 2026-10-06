@@ -639,3 +639,12 @@ test('stopping the placeholders leaves the user statement playing', async () => 
     assert.equal(tts.isSpeaking(), true, 'the user is not cut off');
     tts.cancel();
 });
+
+// CR-057. A restore that came across only in part says so.
+test('the restart notice reports parts and conversations that did not restore', () => {
+    const at = appSource.indexOf('async function offerRestart(');
+    const body = appSource.slice(at, at + 2500);
+    assert.match(body, /done\.failed/);
+    assert.match(body, /conversationsInFile/);
+    assert.match(appSource, /offerRestart\('backup', \{ \.\.\.done, conversationsInFile:/);
+});
