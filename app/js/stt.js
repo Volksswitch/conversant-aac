@@ -422,9 +422,44 @@ function afterIngest(heardPartner, sawFinal) {
  * so the user's silence-period setting and "Ask them to repeat" behave identically
  * whichever service produced the words. A backend supplies text and nothing else.
  */
+// Registered once per page, from the TOP of init(), so it covers a paid source too.
+// It used to sit in the browser branch, after the paid branch had already returned,
+// so an app launched on Deepgram, Azure or a REST service had no guard at all (CR-069).
+function registerVisibilityGuard() {
+    if (speechCfg.guardVisibility && typeof document !== 'undefined' && !visibilityGuarded) {
+        visibilityGuarded = true;
+        document.addEventListener('visibilitychange', () => {
+            // ⚠ BOTH BACKENDS. This used to test `recognition` alone, so with a paid
+            // backend selected - where `recognition` is null - the guard did nothing
+            // at all. It was written when the browser recognizer was the only source,
+            // and the gap became load-bearing the moment a platform was recommended
+            // to use the paid one (Ken, Android, August 31 2026): the configuration
+            // being recommended was the one configuration the guard did not cover.
+            //
+            // The paid path is not immune to this. It holds a microphone and a socket
+            // of its own, and a backgrounded page has its audio pipeline suspended, so
+            // it can just as easily come back deaf - and being paid, it fails in a way
+            // the user has been told is the reliable option.
+            if (!recognition && !externalSource) return;
+            if (document.hidden) {
+                if (listeningIntent && !suspendedForHidden) {
+                    suspendedForHidden = true;
+                    suspendSource();
+                }
+            } else if (suspendedForHidden) {
+                suspendedForHidden = false;
+                if (listeningIntent) openSource();
+            }
+        });
+    }
+
+}
+
 export function init({ onResult, onSilence, onStatus, onPartnerSpeech, source,
                        getDeepgramKey, getAzureKey, getAzureRegion, getRestKey,
                        getRestModel, onBilled }) {
+    speechCfg = platform.speechConfig();
+    registerVisibilityGuard();
     initOpts = { onResult, onSilence, onStatus, onPartnerSpeech, source,
                  getDeepgramKey, getAzureKey, getAzureRegion, getRestKey,
                  getRestModel, onBilled };
@@ -544,33 +579,6 @@ export function init({ onResult, onSilence, onStatus, onPartnerSpeech, source,
     // (If more benign per-restart errors turn up during device testing, the
     // onerror allow-list below is where they belong — 'no-speech' and 'aborted'
     // are already ignored, which covers normal session teardown.)
-    if (speechCfg.guardVisibility && typeof document !== 'undefined' && !visibilityGuarded) {
-        visibilityGuarded = true;
-        document.addEventListener('visibilitychange', () => {
-            // ⚠ BOTH BACKENDS. This used to test `recognition` alone, so with a paid
-            // backend selected - where `recognition` is null - the guard did nothing
-            // at all. It was written when the browser recognizer was the only source,
-            // and the gap became load-bearing the moment a platform was recommended
-            // to use the paid one (Ken, Android, August 31 2026): the configuration
-            // being recommended was the one configuration the guard did not cover.
-            //
-            // The paid path is not immune to this. It holds a microphone and a socket
-            // of its own, and a backgrounded page has its audio pipeline suspended, so
-            // it can just as easily come back deaf - and being paid, it fails in a way
-            // the user has been told is the reliable option.
-            if (!recognition && !externalSource) return;
-            if (document.hidden) {
-                if (listeningIntent && !suspendedForHidden) {
-                    suspendedForHidden = true;
-                    suspendSource();
-                }
-            } else if (suspendedForHidden) {
-                suspendedForHidden = false;
-                if (listeningIntent) openSource();
-            }
-        });
-    }
-
     recognition.onerror = (event) => {
         // Counted BEFORE the allow-list: 'aborted' is normal once, and hundreds of
         // them is a restart loop, which is the thing worth seeing.

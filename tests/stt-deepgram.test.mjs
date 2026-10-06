@@ -128,3 +128,28 @@ test('unsettled words on screen survive a pause of Deepgram listening', async ()
     assert.equal(stt.getCurrentTranscript(), 'I wanted to ask or Friday');
     } finally { stt.stopListening(); }   // a failure must not leave a KeepAlive running
 });
+
+// CR-069. An app that starts on a paid service still gets the background guard:
+// leaving the app stops the source, coming back starts it again.
+test('a paid source launched at start-up is suspended and resumed with the page', async () => {
+    const listeners = [];
+    const realDoc = globalThis.document;
+    globalThis.document = { hidden: false, addEventListener: (t, f) => { if (t === 'visibilitychange') listeners.push(f); } };
+    try {
+        const stt = await import('../app/js/stt.js?cr069=' + Date.now());
+        stt.init({ onResult() {}, onSilence() {}, onStatus() {}, onPartnerSpeech() {},
+            source: 'deepgram', getDeepgramKey: () => 'k' });
+        assert.ok(listeners.length >= 1, 'the guard is registered for a paid source');
+        stt.startListening();
+        await new Promise((r) => setTimeout(r, 10));
+        const first = FakeWS.last;
+        globalThis.document.hidden = true; listeners.forEach((f) => f());
+        assert.equal(first.readyState, FakeWS.CLOSED, 'leaving the app stops the source');
+        globalThis.document.hidden = false; listeners.forEach((f) => f());
+        await new Promise((r) => setTimeout(r, 10));
+        assert.notEqual(FakeWS.last, first, 'coming back opens it again');
+        stt.stopListening();
+    } finally {
+        globalThis.document = realDoc;
+    }
+});

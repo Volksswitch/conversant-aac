@@ -233,6 +233,10 @@ forgetting to tag one is only ever noise, never silence.
   left the microphone lit and hearing nothing. Azure now behaves like the other paid
   services: it keeps going through one bad moment and stops, with a clear message,
   after three failures in a row. A refused key also explains the likely causes.
+- Fixed: on an Android tablet or an installed iPad using a paid listening service,
+  switching to another app and back could leave the app unable to hear, or switch
+  listening off with an error. Listening now pauses when you leave and picks up again
+  when you come back, as it already did for the free listening.
 
 ## Version 0.13.4
 
