@@ -180,3 +180,14 @@ test('CR-144: settings that are not a plain object are dropped, an empty object 
     assert.equal(dt.parsePackage(JSON.stringify({ ...base, settings: 'x' })).settings, undefined);
     assert.deepEqual(dt.parsePackage(JSON.stringify({ ...base, settings: {} })).settings, {});
 });
+
+test('CR-170: the learned typing words travel in a backup', async () => {
+    const prediction = await import('../app/js/prediction.js');
+    prediction.importFrequencies({ thunderbolt: 5, teh: 1 });
+    const pkg = await dt.buildPackage('9.9.9');
+    assert.deepEqual(pkg.wordFreq, { thunderbolt: 5, teh: 1 });
+    assert.ok(dt.summarize(pkg).some((l) => /2 learned words/.test(l)));
+    prediction.importFrequencies({});
+    await dt.applyPackage(dt.parsePackage(JSON.stringify(pkg)));
+    assert.equal(JSON.parse(localStorage.getItem('aac_word_freq')).thunderbolt, 5);
+});

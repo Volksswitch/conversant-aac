@@ -81,6 +81,23 @@ export function learn(word) {
 
 // Top predictions for a typed prefix. Personalized matches (by the user's own
 // count) come first, then dictionary matches (by frequency rank), deduped.
+// The learned word counts travel in a backup (CR-170), so moving to a new device - or
+// between the two iPad modes, which keep separate storage - does not start over.
+// Counts only, never sentences.
+export function exportFrequencies() {
+    return { ...loadUserFreq() };
+}
+export function importFrequencies(obj) {
+    if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return false;
+    const clean = {};
+    for (const [w, n] of Object.entries(obj)) {
+        if (/^[a-z']{2,}$/.test(w) && Number.isFinite(n) && n > 0) clean[w] = Math.floor(n);
+    }
+    userFreq = clean;
+    saveUserFreq();
+    return true;
+}
+
 export function predict(prefix, limit = 3) {
     const p = String(prefix || '').toLowerCase().replace(/[^a-z']/g, '');
     if (!p) return [];

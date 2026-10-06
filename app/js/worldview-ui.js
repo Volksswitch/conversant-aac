@@ -1207,14 +1207,20 @@ function buildPersonForm(existing) {
      * identity by accident. A rename still works, because the new name commits when
      * it is typed; deleting a person is what Remove is for.
      */
+    // The name last saved, not the one the form opened with: blanking the box after a
+    // rename must keep the new name, and other changes are still saved meanwhile (CR-167).
+    let lastName = existing ? existing.name : '';
     async function commitNow() {
         if (!existing) return;
         const name = nameIn.value.trim();
         const relationship = getRelationship();
-        if (!name && !relationship) return;   // nothing to save yet
+        // "Other…" chosen but nothing typed yet keeps the relationship it had, rather
+        // than deleting it before the user has typed a word (CR-168).
+        const relArg = (relSelect.value === OTHER && !relationship) ? undefined : relationship;
+        if (!(name || lastName) && !relationship) return;   // nothing to save yet
         await rel.updatePerson(existing.id, {
-            name: name || existing.name,
-            relationship,
+            name: name || lastName,
+            relationship: relArg,
             about: aboutIn.value.trim(),
             nickname: nicknameIn.value.trim(),
             pronunciation: namePron.inp.value.trim(),
@@ -1224,6 +1230,7 @@ function buildPersonForm(existing) {
             topicsWelcome: topicsWelcomeIn.value,
             topicsAvoid: topicsAvoidIn.value
         });
+        if (name) lastName = name;
         await rel.setPartnerProfile(existing.id, profile.read());
     }
 
@@ -1502,14 +1509,16 @@ function buildPlaceForm(existing) {
     // depth on a form somebody may only want to put a name into.
     // Saved as it is edited, exactly as a person is - see the long note on
     // commitNow in buildPersonForm for why, and for what that gives up.
+    let lastPlaceName = existing ? existing.name : '';
     async function commitPlaceNow() {
         if (!existing) return;
         syncDraft();
         const name = nameIn.value.trim();
+        if (name) lastPlaceName = name;
         await places.updatePlace(existing.id, {
             // A place with no name cannot be shown or referred to, so an emptied box
-            // keeps the name it had rather than erasing it. Renaming still works.
-            name: name || existing.name,
+            // keeps the name it had rather than erasing it - the LATEST one (CR-167).
+            name: name || lastPlaceName,
             pronunciation: pronIn.value.trim(),
             facts: draft,
             goals: goalEd.read(),

@@ -2824,9 +2824,14 @@ async function advancePracticePartner() {
     isListening = true;
     ui.setListenButtonState(true);     // red pulse + chime (rehearse the "listening" feel)
     ui.setStatus('The other person is speaking…');
+    // ⚠ A PAUSE KEEPS WHAT THEY SAID (CR-169), as it does with a real microphone: a line
+    // already spoken this turn and not yet answered is part of the history the partner
+    // continues from, and the new line is added to it rather than replacing it.
+    const prior = currentPartnerText;
     let line;
     try {
-        line = await llm.generatePartnerUtterance(practiceScenario, conversationHistory);
+        line = await llm.generatePartnerUtterance(practiceScenario,
+            prior ? [...conversationHistory, { role: 'partner', text: prior }] : conversationHistory);
     } catch (e) {
         storage.logError('practice-partner', e.message || String(e), { partner: partnerStamp() });
         ui.setStatus('Could not reach the AI. Check your API key and internet, then tap Start Listening.');
@@ -2844,16 +2849,16 @@ async function advancePracticePartner() {
         // It was SAID, so it goes in the record - it used to vanish - but no new cards
         // are asked for, because the user has already moved on (CR-026).
         if (practiceMode) {
-            currentPartnerText = line;
-            updatePartnerLive(line);
-            storage.logPartnerInterim({ rawTranscript: line, partner: partnerStamp() });
+            currentPartnerText = prior ? `${prior} ${line}` : line;
+            updatePartnerLive(currentPartnerText);
+            storage.logPartnerInterim({ rawTranscript: currentPartnerText, partner: partnerStamp() });
         }
         endPracticeCue(token);
         return;
     }
     // Feed the spoken line through the normal pipeline (logs the partner turn,
     // updates the engine, generates the user's response palette). Mic-free.
-    await handleSilencePeriod(line);
+    await handleSilencePeriod(prior ? `${prior} ${line}` : line);
 }
 
 // --- The controls tour (practice-tour.js) ---

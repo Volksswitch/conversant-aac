@@ -572,7 +572,7 @@ test('an interrupted practice partner turn is wound down and its line kept', () 
     const at = appSource.indexOf('async function advancePracticePartner(');
     const body = appSource.slice(at, at + appSource.slice(at).search(/\r?\n\}\r?\n/));
     assert.equal((body.match(/endPracticeCue\(token\)/g) || []).length, 3, 'error, superseded before speaking, superseded after');
-    assert.match(body, /storage\.logPartnerInterim\(\{ rawTranscript: line/);
+    assert.match(body, /storage\.logPartnerInterim\(\{ rawTranscript: currentPartnerText/);
 });
 
 // CR-027 and CR-028. The tour waits for the user's own sentence to finish before the
@@ -823,7 +823,7 @@ test('CR-123-126: About Me named, chips pressed, gap metric honest, goodbyes dro
 });
 
 test('CR-127: every request for cards sends a moved partner turn once', () => {
-    assert.doesNotMatch(appSource, /\[\.\.\.conversationHistory, \{ role: 'partner'/);
+    assert.doesNotMatch(appSource, /\[\.\.\.conversationHistory, \{ role: 'partner', text: (currentPartnerText|partnerText) \}/);
 });
 
 test('CR-128-130: goodbye listening starts a new turn, partner-led practice counts, cancel restores a closing', () => {
@@ -899,4 +899,12 @@ test('CR-163-166: dismissed corrections stay gone; dev copies stay silent; folde
     assert.doesNotMatch(wv, re, 'no event target read after a wait');
     const ex = wv.slice(wv.indexOf('function renderExtra(name, back = renderHome)'));
     assert.match(ex.slice(0, 900), /onclick: \(\) => back\(\)/);
+});
+
+test('CR-167-169: forms keep the latest name and an unfinished Other; a practice pause keeps the line', () => {
+    const wv = readFileSync(new URL('../app/js/worldview-ui.js', import.meta.url), 'utf8');
+    assert.match(wv, /name: name \|\| lastName,/);
+    assert.match(wv, /const relArg = \(relSelect\.value === OTHER && !relationship\) \? undefined : relationship;/);
+    const ap = appSource.slice(appSource.indexOf('async function advancePracticePartner'));
+    assert.match(ap.slice(0, 2500), /prior \? \[\.\.\.conversationHistory, \{ role: 'partner', text: prior \}\]/);
 });

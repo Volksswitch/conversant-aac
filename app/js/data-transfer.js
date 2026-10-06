@@ -46,6 +46,7 @@
 
 import * as storage from './storage.js';
 import * as platform from './platform.js';
+import * as prediction from './prediction.js';
 import { isSafeAudioName, mimeForName, blobToBase64, base64ToBlob, MAX_AUDIO_BYTES } from './express-audio.js';
 
 export const PACKAGE_KIND = 'conversant-aac-backup';
@@ -168,6 +169,8 @@ export async function buildPackage(appVersion, onProgress) {
         data,
         conversations,
         audio,
+        // The typing suggestions' learned words (CR-170). Absent in older files.
+        wordFreq: prediction.exportFrequencies(),
     };
 }
 
@@ -211,6 +214,8 @@ export function summarize(pkg) {
     lines.push(`${convos} saved conversation${convos === 1 ? '' : 's'}`);
     const sounds = (pkg && Array.isArray(pkg.audio)) ? pkg.audio.length : 0;
     if (sounds) lines.push(`${sounds} sound file${sounds === 1 ? '' : 's'}`);
+    const learned = pkg && pkg.wordFreq && typeof pkg.wordFreq === 'object' ? Object.keys(pkg.wordFreq).length : 0;
+    if (learned) lines.push(`${learned} learned word${learned === 1 ? '' : 's'} for typing suggestions`);
     const settingCount = pkg && pkg.settings ? Object.keys(pkg.settings).length : 0;
     if (settingCount) lines.push(`${settingCount} setting${settingCount === 1 ? '' : 's'}`);
     // Only real, named profiles (CR-141): a damaged entry must not stop the summary.
@@ -460,6 +465,7 @@ export async function applyPackage(pkg, onProgress) {
         step('sound files');
     }
     if (soundFailed) restored.failed.push('Sound files');
+    if (pkg.wordFreq && prediction.importFrequencies(pkg.wordFreq)) restored.wordFreq = true;
 
     return restored;
 }

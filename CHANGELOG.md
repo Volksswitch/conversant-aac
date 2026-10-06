@@ -400,10 +400,16 @@ forgetting to tag one is only ever noise, never silence.
   no longer count someone you only tapped, but never talked with, as a conversation
   partner.
 - Fixed: a correction you removed from what the app learned (such as "keep it short")
-  could come back later under a slightly different wording; cancelling the folder
-  window from "Choose data folder" in About Me left the button greyed out and logged
+  could come back later under a slightly different wording; canceling the folder
+  window from "Choose data folder" in About Me left the button grayed out and logged
   an error; and Back from a question that came up in conversation now returns to that
   list rather than the start of About Me.
+- Fixed: in About Me, clearing a person's or place's name box after renaming them no
+  longer brings back the old name, and other changes are still saved while the box is
+  empty; choosing "Other…" for someone's relationship no longer deletes their current
+  one before you type the new one; in practice, pausing and restarting listening no
+  longer replaces the pretend partner's first line with a new one; and a backup now
+  carries the words the app has learned from your typing.
 
 ## Version 0.13.4
 

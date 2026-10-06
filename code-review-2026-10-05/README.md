@@ -201,14 +201,14 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-160](CR-160.md) | fixed (76f50c0) | low | confirmed | bug | `app/js/stt.js:681` | The 'how long until the microphone hears something' diagnostic never records anything for paid hearing |
 | [CR-161](CR-161.md) | fixed (76f50c0) | low | confirmed | bug | `app/js/tap-guard.js:86` | Two-tap mode: the first tap is forgotten whenever the Express Panel redraws between the taps |
 | [CR-162](CR-162.md) | fixed (76f50c0) | low | confirmed | bug | `app/js/usage-summary.js:254` | Usage summary counts context and other non-turn records as partner turns and as conversations with a person |
-| [CR-163](CR-163.md) | fixed (pending) | low | confirmed | bug | `app/js/voice.js:203` | A dismissed repeated correction can come back once its first wording ages out of the steer history |
-| [CR-164](CR-164.md) | fixed (pending) | low | confirmed | bug | `app/js/weekly-send.js:84` | Local-copy guard misses machine names, .local addresses and IPv6 private addresses, so developer copies can still send reports |
-| [CR-165](CR-165.md) | fixed (pending) | low | confirmed | bug | `app/js/worldview-ui.js:157` | Cancelling the About Me folder picker throws on a null event target, leaves the button disabled and logs a false start-up error |
-| [CR-166](CR-166.md) | fixed (pending) | low | confirmed | bug | `app/js/worldview-ui.js:260` | Back from a 'question that came up in a conversation' skips the list it was opened from |
-| [CR-167](CR-167.md) | open | low | confirmed | bug | `app/js/worldview-ui.js:1188` | Person/place auto-save name guard restores a stale name and silently drops other edits |
-| [CR-168](CR-168.md) | open | low | confirmed | bug | `app/js/worldview-ui.js:1212` | Picking 'Other…' in the relationship list immediately erases the saved relationship |
-| [CR-169](CR-169.md) | open | low | confirmed | data-loss | `app/js/app.js:2733` | Pausing and resuming the practice partner throws away the line it already spoke |
-| [CR-170](CR-170.md) | open | low | confirmed | data-loss | `app/js/data-transfer.js:101` | Learned word-prediction vocabulary is not in the backup, despite 'everything travels' |
+| [CR-163](CR-163.md) | fixed (78c3140) | low | confirmed | bug | `app/js/voice.js:203` | A dismissed repeated correction can come back once its first wording ages out of the steer history |
+| [CR-164](CR-164.md) | fixed (78c3140) | low | confirmed | bug | `app/js/weekly-send.js:84` | Local-copy guard misses machine names, .local addresses and IPv6 private addresses, so developer copies can still send reports |
+| [CR-165](CR-165.md) | fixed (78c3140) | low | confirmed | bug | `app/js/worldview-ui.js:157` | Cancelling the About Me folder picker throws on a null event target, leaves the button disabled and logs a false start-up error |
+| [CR-166](CR-166.md) | fixed (78c3140) | low | confirmed | bug | `app/js/worldview-ui.js:260` | Back from a 'question that came up in a conversation' skips the list it was opened from |
+| [CR-167](CR-167.md) | fixed (pending) | low | confirmed | bug | `app/js/worldview-ui.js:1188` | Person/place auto-save name guard restores a stale name and silently drops other edits |
+| [CR-168](CR-168.md) | fixed (pending) | low | confirmed | bug | `app/js/worldview-ui.js:1212` | Picking 'Other…' in the relationship list immediately erases the saved relationship |
+| [CR-169](CR-169.md) | fixed (pending) | low | confirmed | data-loss | `app/js/app.js:2733` | Pausing and resuming the practice partner throws away the line it already spoke |
+| [CR-170](CR-170.md) | fixed (pending) | low | confirmed | data-loss | `app/js/data-transfer.js:101` | Learned word-prediction vocabulary is not in the backup, despite 'everything travels' |
 | [CR-171](CR-171.md) | open | low | confirmed | data-loss | `app/js/practice-editor.js:300` | Cancel on the new-scenario form throws away everything typed without asking |
 | [CR-172](CR-172.md) | open | low | confirmed | data-loss | `app/js/review-ui.js:468` | Review saves fail silently - a failed review write is never logged or shown |
 | [CR-173](CR-173.md) | open | low | confirmed | data-loss | `app/js/storage.js:2069` | Two conversations started in the same second share one file name, and the second one erases the first |
