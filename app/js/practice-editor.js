@@ -62,14 +62,23 @@ function button(label, onclick, cls = '') {
     return el('button', { type: 'button', text: label, class: cls, onclick });
 }
 
+// Each row's Edit / Copy / Delete says which scenario it is for, or every row sounds
+// the same to a screen reader (CR-117). The words on the button are unchanged.
+function named(b, label) { b.setAttribute('aria-label', label); return b; }
+
 // A group the spoken "?" can explain. The key is matched to a "sections" entry in
 // settings-help.json.
 function helpGroup(parent, key, heading) {
     const g = el('div', { class: 'setting-group practice-group' });
     g.dataset.help = key;
-    if (heading) g.appendChild(el('label', { text: heading }));
+    // The heading names the control it sits above, for a screen reader (CR-115).
+    if (heading) { const l = el('label', { text: heading, id: `pe-${key}` }); g.appendChild(l); g.dataset.headingId = l.id; }
     parent.appendChild(g);
     return g;
+}
+
+function nameFrom(g, control) {
+    if (g.dataset.headingId) control.setAttribute('aria-labelledby', g.dataset.headingId);
 }
 
 function status(text) {
@@ -88,6 +97,20 @@ function goTo(next) {
     view = next;
     render();
     container.scrollIntoView?.({ block: 'start' });
+    landFocus();
+}
+
+// After the view is rebuilt the button that had focus is gone, so focus would fall to
+// the top of the page (CR-116). It goes to the heading of a form - never a text box,
+// which would raise the on-screen keyboard - or to the first scenario in the list.
+function landFocus(prefer = null) {
+    if (!container) return;
+    const target = prefer
+        || container.querySelector('.practice-title')
+        || container.querySelector('.practice-card');
+    if (!target) return;
+    if (target.matches('h3')) target.tabIndex = -1;
+    try { target.focus({ preventScroll: true }); } catch { /* gone */ }
 }
 
 // --- views ---------------------------------------------------------------------
@@ -115,10 +138,10 @@ function renderList() {
         const row = el('div', { class: 'practice-row' }, [card(s, () => hooks.onStart(s))]);
         if (hasKey && s.partnerPersona) {
             row.appendChild(el('div', { class: 'practice-tools' }, [
-                button('Make a copy', async () => {
+                named(button('Make a copy', async () => {
                     const id = await library.copyScenario(s);
                     if (id) goTo({ mode: 'edit', id });
-                }),
+                }), `Make a copy of ${s.title || '(untitled)'}`),
             ]));
         }
         list.appendChild(row);
@@ -134,12 +157,12 @@ function renderList() {
             ylist.appendChild(el('div', { class: 'practice-row' }, [
                 card(s, () => hooks.onStart(s)),
                 el('div', { class: 'practice-tools' }, [
-                    button('Edit', () => goTo({ mode: 'edit', id: s.id })),
-                    button('Make a copy', async () => {
+                    named(button('Edit', () => goTo({ mode: 'edit', id: s.id })), `Edit ${s.title || '(untitled)'}`),
+                    named(button('Make a copy', async () => {
                         const id = await library.copyScenario(s);
                         if (id) goTo({ mode: 'edit', id });
-                    }),
-                    button('Delete', async () => {
+                    }), `Make a copy of ${s.title || '(untitled)'}`),
+                    named(button('Delete', async () => {
                         const ok = await confirmDanger({
                             title: 'Delete this scenario?',
                             body: `“${s.title}” and everything written in it will be deleted. Conversations you already practiced with it are kept.`,
@@ -149,7 +172,8 @@ function renderList() {
                         if (!ok) return;
                         await library.removeScenario(s.id);
                         render();
-                    }, 'practice-delete'),
+                        landFocus();
+                    }, 'practice-delete'), `Delete ${s.title || '(untitled)'}`),
                 ]),
             ]));
         }
@@ -225,6 +249,7 @@ function renderForm(scenario, creating) {
             : el('input', { type: 'text', value: draft[prop] || '', placeholder, autocomplete: 'off' });
         f.addEventListener('input', () => { draft[prop] = f.value; });
         f.addEventListener('change', () => save({ [prop]: f.value }));
+        nameFrom(g, f);
         g.appendChild(f);
         return f;
     };
@@ -238,6 +263,7 @@ function renderForm(scenario, creating) {
             await save({ [prop]: sel.value });
             if (onPick) onPick(sel.value);
         });
+        nameFrom(g, sel);
         g.appendChild(sel);
         return g;
     };
@@ -281,6 +307,7 @@ function renderForm(scenario, creating) {
             if (sel.value) voices[vc.service] = sel.value; else delete voices[vc.service];
             save({ voices });
         });
+        nameFrom(g, sel);
         g.append(sel, el('div', { class: 'practice-tools' }, [
             button('Hear it', () => hooks.hearVoice && hooks.hearVoice(vc.service, sel.value)),
         ]));

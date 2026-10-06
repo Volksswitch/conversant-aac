@@ -793,3 +793,12 @@ test('CR-111-114: editor buttons and pickers are named; rows select on focus; ba
     const cp = readFileSync(new URL('../app/js/control-phrases-editor.js', import.meta.url), 'utf8');
     assert.match(cp, /mkBtn\('✕', 'ee-del', 'Delete this phrase'\)/);
 });
+
+test('CR-115-118: practice fields named, focus kept, rows named, Review leaves no stray toggles', () => {
+    const pe = readFileSync(new URL('../app/js/practice-editor.js', import.meta.url), 'utf8');
+    assert.match(pe, /function nameFrom\(g, control\)/);
+    assert.match(pe, /landFocus\(\);\n\}/);
+    assert.match(pe, /`Delete \$\{s\.title \|\| '\(untitled\)'\}`/);
+    const rv = readFileSync(new URL('../app/js/review-ui.js', import.meta.url), 'utf8');
+    assert.match(rv, /el\.removeAttribute\('aria-pressed'\)/);
+});

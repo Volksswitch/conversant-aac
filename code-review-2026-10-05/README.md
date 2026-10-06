@@ -149,14 +149,14 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-108](CR-108.md) | fixed (55627f0) | low | confirmed | accessibility | `app/js/app.js:1346` | When a phrase-at-a-time speech service stops, the screen-reader status still says 'Listening...' |
 | [CR-109](CR-109.md) | fixed (55627f0) | low | confirmed | accessibility | `app/js/app.js:5452` | Settings tab panels are not tabpanels and are not linked to their tabs |
 | [CR-110](CR-110.md) | fixed (55627f0) | low | confirmed | accessibility | `app/js/confirm-dialog.js:34` | The red confirmation card and the busy/notice cards have no accessible name or description |
-| [CR-111](CR-111.md) | fixed (pending) | low | confirmed | accessibility | `app/js/control-phrases-editor.js:80` | Commands editor's up/down/delete glyph buttons have no accessible name or tooltip |
-| [CR-112](CR-112.md) | fixed (pending) | low | confirmed | accessibility | `app/js/express-editor.js:259` | In the Express Panel editor, tabbing into a row does not select it, so Move/Delete act on a different button |
-| [CR-113](CR-113.md) | fixed (pending) | low | confirmed | accessibility | `app/js/express-editor.js:458` | Several editor dropdowns have no accessible name |
-| [CR-114](CR-114.md) | fixed (pending) | low | confirmed | accessibility | `app/js/express-editor.js:489` | Spoken help ('?') says nothing for the Always, Context and Flex sections of the Express Panel editor |
-| [CR-115](CR-115.md) | open | low | confirmed | accessibility | `app/js/practice-editor.js:70` | Practice form fields and the Commands editor's arrow and delete buttons have no accessible names |
-| [CR-116](CR-116.md) | open | low | confirmed | accessibility | `app/js/practice-editor.js:87` | Practice tab: every navigation rebuilds the panel and drops keyboard focus to the top of the page |
-| [CR-117](CR-117.md) | open | low | confirmed | accessibility | `app/js/practice-editor.js:137` | Practice tab: Edit / Make a copy / Delete buttons do not say which scenario they act on |
-| [CR-118](CR-118.md) | open | low | confirmed | accessibility | `app/js/review-ui.js:234` | Leaving Conversation Review leaves aria-pressed="false" on six non-toggle Command Bar buttons, including Listen |
+| [CR-111](CR-111.md) | fixed (9a101dd) | low | confirmed | accessibility | `app/js/control-phrases-editor.js:80` | Commands editor's up/down/delete glyph buttons have no accessible name or tooltip |
+| [CR-112](CR-112.md) | fixed (9a101dd) | low | confirmed | accessibility | `app/js/express-editor.js:259` | In the Express Panel editor, tabbing into a row does not select it, so Move/Delete act on a different button |
+| [CR-113](CR-113.md) | fixed (9a101dd) | low | confirmed | accessibility | `app/js/express-editor.js:458` | Several editor dropdowns have no accessible name |
+| [CR-114](CR-114.md) | fixed (9a101dd) | low | confirmed | accessibility | `app/js/express-editor.js:489` | Spoken help ('?') says nothing for the Always, Context and Flex sections of the Express Panel editor |
+| [CR-115](CR-115.md) | fixed (pending) | low | confirmed | accessibility | `app/js/practice-editor.js:70` | Practice form fields and the Commands editor's arrow and delete buttons have no accessible names |
+| [CR-116](CR-116.md) | fixed (pending) | low | confirmed | accessibility | `app/js/practice-editor.js:87` | Practice tab: every navigation rebuilds the panel and drops keyboard focus to the top of the page |
+| [CR-117](CR-117.md) | fixed (pending) | low | confirmed | accessibility | `app/js/practice-editor.js:137` | Practice tab: Edit / Make a copy / Delete buttons do not say which scenario they act on |
+| [CR-118](CR-118.md) | fixed (pending) | low | confirmed | accessibility | `app/js/review-ui.js:234` | Leaving Conversation Review leaves aria-pressed="false" on six non-toggle Command Bar buttons, including Listen |
 | [CR-119](CR-119.md) | open | low | confirmed | accessibility | `app/js/review-ui.js:307` | Review state is invisible to assistive technology: whole-conversation re-announcements on every keystroke, and marks not reflected in names |
 | [CR-120](CR-120.md) | open | low | confirmed | accessibility | `app/js/ui.js:716` | Empty Express Panel cells are focusable buttons that do nothing on the conversation screen |
 | [CR-121](CR-121.md) | open | low | confirmed | accessibility | `app/js/ui.js:1194` | Redrawing the Command Bar faces wipes state-dependent accessible names (privacy shows the wrong tooltip at every launch) |

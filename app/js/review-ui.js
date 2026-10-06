@@ -186,7 +186,13 @@ async function leave() {
     document.body.classList.remove('reviewing');
     const regen = $('regenerateBtn');
     if (regen) regen.classList.remove('review-want');
-    for (const b of BAR) { const el = $(b.id); if (el) { el.disabled = false; el.classList.remove('review-on'); } }
+    // Review made every bar button a toggle; outside Review most are not, so the
+    // attribute goes - the three real toggles get theirs back from their own setters
+    // in restoreConversationScreen (CR-118).
+    for (const b of BAR) {
+        const el = $(b.id);
+        if (el) { el.disabled = false; el.classList.remove('review-on'); el.removeAttribute('aria-pressed'); }
+    }
     deps.restoreConversationScreen();
     deps.openSettingsAt('review');
 }

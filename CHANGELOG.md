@@ -338,6 +338,11 @@ forgetting to tag one is only ever noise, never silence.
   readers; moving to a phrase with the Tab key now selects it, so Move and Delete act
   on that phrase; and the "?" help now speaks for the Always, Flex and Context
   sections.
+- For keyboard and screen-reader users: the Practice form's boxes and choices are now
+  named; after Edit, Done, Cancel or Delete in Practice, your place is kept rather
+  than jumping to the top of Settings; each practice scenario's Edit, Make a copy and
+  Delete buttons say which scenario they are for; and leaving Conversation Review no
+  longer leaves the Command Bar buttons announced as on/off switches.
 
 ## Version 0.13.4
 
