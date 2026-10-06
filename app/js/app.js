@@ -1754,6 +1754,8 @@ function toggleListening() {
         manualListenArmed = false;
         stt.stopListening();
     } else {
+        // Never open the microphone while a recording is still audible (CR-064).
+        if (audioPlayer) { preemptSound().then(() => { if (!isListening) toggleListening(); }); return; }
         // Manual start: arm auto-resume for the rest of this session.
         manualListenArmed = true;
         // A stop/start in the MIDDLE of a partner turn is a PAUSE, not a turn
@@ -2060,6 +2062,7 @@ async function generateOptions(partnerText) {
 // A response from the palette was selected. Repair-of-self operations act on the
 // user's own last utterance; everything else is a normal SPP / opener / closer.
 async function handleResponseSelected(response, index) {
+    await preemptSound();   // a playing clip stops, and is recorded, first (CR-064)
     if (response.op) return handleRepairOfSelf(response, index);
 
     // Opening the conversation: after the user's opening statement is spoken, the
@@ -3911,6 +3914,7 @@ function clearInfluencers() {
 // auto-resume is armed. `historyText` is what's logged/displayed; `spokenText`
 // is what TTS says (an Express Panel phrase may carry a distinct pronunciation form).
 async function speakAsUserTurn(historyText, spokenText = historyText, source = 'composed') {
+    await preemptSound();   // a playing clip stops, and is recorded, first (CR-064)
     // Saying it their own way ends the deliberation just as a card tap does, and this
     // is the case worth catching: cards were on offer and the user went elsewhere.
     // Recorded as abandonment WITH its reading time, which is the pair that separates
@@ -5485,6 +5489,20 @@ async function handleSpeakExpressItem(phrase) {
  */
 const audioUrls = new Map();   // stored clip name -> object URL, or null while loading
 let audioPlayer = null;        // { item, el, finish(stopped) } while a clip plays
+let audioTurnDone = null;      // the playing clip's turn, settled once it is recorded
+
+/* Something else is taking the floor or opening the microphone while a clip plays.
+ * Stop the clip and WAIT for its turn to be recorded first, so the order is right
+ * (partner, sound, then what came next), the partner's words are recorded once, and
+ * the microphone never opens while the recording is still audible (CR-064). The
+ * clip's own turn then leaves listening to whatever preempted it. */
+async function preemptSound() {
+    if (!audioPlayer) return;
+    audioPlayer.preempted = true;
+    const turn = audioTurnDone;
+    stopExpressAudio();
+    if (turn) { try { await turn; } catch { /* recorded or not, carry on */ } }
+}
 
 function primeExpressAudio(items) {
     for (const item of items || []) {
@@ -5516,7 +5534,9 @@ function handlePlayAudioItem(item) {
     if (audioPlayer) stopExpressAudio();
     if (!item.file) return;
     resetExpressPaging();
-    playAudioTurn(item);
+    const turn = playAudioTurn(item);
+    audioTurnDone = turn;
+    turn.finally(() => { if (audioTurnDone === turn) audioTurnDone = null; });
 }
 
 // Plays the clip. Resolves { played, stopped }. Nothing in here may wait before
@@ -5547,10 +5567,11 @@ async function playClip(item) {
     }
     const stopped = await ended;
     const aborted = !!(audioPlayer && audioPlayer.aborted);
+    const preempted = !!(audioPlayer && audioPlayer.preempted);
     audioPlayer = null;
     speakingUserStatement = false;
     renderExpressPanel();
-    return { played: true, stopped: !!stopped, aborted };
+    return { played: true, stopped: !!stopped, aborted, preempted };
 }
 
 async function playAudioTurn(item) {
@@ -5593,6 +5614,9 @@ async function playAudioTurn(item) {
         manualListenArmed = true;
         noteConversationStarted();
     }
+    // Stopped by something that is taking the floor itself: that path decides about
+    // listening, so two paths do not both restart it (CR-064).
+    if (result.preempted) return;
     if (practiceMode) { resumeOrIdle(); return; }
     // The unmute: listening comes back as it was before the sound.
     if (wasListening) { startFreshListening(); return; }

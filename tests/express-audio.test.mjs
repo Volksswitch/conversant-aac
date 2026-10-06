@@ -144,3 +144,18 @@ test('a backup cannot write a clip under a name the app did not make', async () 
     const restored = await dt.applyPackage(dt.parsePackage(JSON.stringify(pkg)));
     assert.equal(restored.audio, 0);
 });
+
+// CR-064. Speaking, choosing a card or starting to listen while a clip plays stops
+// the clip and waits for its turn to be recorded first.
+test('every floor-taking path stops a playing sound first', async () => {
+    const { readFileSync } = await import('node:fs');
+    const app = readFileSync(new URL('../app/js/app.js', import.meta.url), 'utf8');
+    for (const fn of ['async function speakAsUserTurn(', 'async function handleResponseSelected(']) {
+        const at = app.indexOf(fn);
+        assert.match(app.slice(at, at + 300), /await preemptSound\(\)/, fn);
+    }
+    const tl = app.indexOf('function toggleListening(');
+    assert.match(app.slice(tl, tl + 2500), /if \(audioPlayer\) \{ preemptSound\(\)/);
+    const pa = app.indexOf('async function playAudioTurn(');
+    assert.match(app.slice(pa, pa + 3500), /if \(result\.preempted\) return;/);
+});

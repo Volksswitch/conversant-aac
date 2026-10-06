@@ -210,6 +210,11 @@ forgetting to tag one is only ever noise, never silence.
   answered another way. It now says them. Also, tapping one of the other person's
   offered choices and then using Reframe (or the other way round) dropped one of the
   two; both are now used.
+- Fixed: tapping a phrase, a response card, "In my own words" Speak or Listen while a
+  recorded sound was playing left the sound playing under the app's voice, could turn
+  the microphone back on while the recording was still audible, and could save the
+  other person's last line twice. The sound now stops first and is recorded in the
+  right order.
 
 ## Version 0.13.4
 
