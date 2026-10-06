@@ -213,7 +213,9 @@ export function summarize(pkg) {
     if (sounds) lines.push(`${sounds} sound file${sounds === 1 ? '' : 's'}`);
     const settingCount = pkg && pkg.settings ? Object.keys(pkg.settings).length : 0;
     if (settingCount) lines.push(`${settingCount} setting${settingCount === 1 ? '' : 's'}`);
-    const profiles = (pkg && Array.isArray(pkg.profiles)) ? pkg.profiles : [];
+    // Only real, named profiles (CR-141): a damaged entry must not stop the summary.
+    const profiles = (pkg && Array.isArray(pkg.profiles))
+        ? pkg.profiles.filter((x) => x && typeof x.name === 'string' && x.name.trim()) : [];
     if (profiles.length) {
         lines.push(`${profiles.length} saved profile${profiles.length === 1 ? '' : 's'}: ` +
                    profiles.map((x) => x.name).join(', '));

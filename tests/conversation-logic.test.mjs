@@ -151,3 +151,18 @@ test('historyForRequest without a moved turn simply appends the partner words', 
     const out = cl.historyForRequest([{ role: 'user', text: 'Hi' }], 'Hello there');
     assert.deepEqual(out.map((e) => e.text), ['Hi', 'Hello there']);
 });
+
+// CR-142. The report adds what only the disk has, and never what was cleared.
+test('mergeErrorGroups adds errors only the saved conversations have', () => {
+    const inApp = [['c2', [{ ts: '2026-10-02T00:00:00Z', message: 'new' }]]];
+    const onDisk = [
+        ['c2', [{ ts: '2026-10-02T00:00:00Z', message: 'new' }]],
+        ['c1', [{ ts: '2026-09-01T00:00:00Z', message: 'old' }, { ts: '2026-10-01T00:00:00Z', message: 'lost' }]],
+    ];
+    const { groups, added } = cl.mergeErrorGroups(inApp, onDisk);
+    assert.equal(added, 2);
+    assert.deepEqual(groups.map(([id]) => id), ['c2', 'c1']);
+    const after = cl.mergeErrorGroups([], onDisk, '2026-09-15T00:00:00Z');
+    assert.equal(after.added, 2, 'only the two after the clear');
+    assert.deepEqual(after.groups.find(([id]) => id === 'c1')[1].map((e) => e.message), ['lost']);
+});

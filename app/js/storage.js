@@ -2745,8 +2745,16 @@ export function appendWeeklySendLog(entry) {
     } catch { /* ignore */ }
 }
 
+// When the user last pressed Clear (CR-142). The errors stay inside the saved
+// conversations, so a report must not treat the cleared list as a LOST one and pull
+// every old error back in; only errors newer than this are read from disk.
+const ERROR_LOG_CLEARED_KEY = 'aac_error_log_cleared_at';
 export function clearErrorLog() {
     localStorage.removeItem(ERROR_LOG_KEY);
+    try { localStorage.setItem(ERROR_LOG_CLEARED_KEY, new Date().toISOString()); } catch { /* full */ }
+}
+export function loadErrorLogClearedAt() {
+    try { return localStorage.getItem(ERROR_LOG_CLEARED_KEY) || ''; } catch { return ''; }
 }
 
 // Typographic punctuation -> its plain-ASCII equivalent, for text bound for a log

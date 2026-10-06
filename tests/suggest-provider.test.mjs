@@ -210,3 +210,15 @@ test('a provider that needs no key is never asked for one', async () => {
         provider.setProvider(previous);
     }
 });
+
+// CR-139. The price list, the app's fallback price and the model in use move together.
+test('the price list, the fallback price and the model agree', async () => {
+    const { readFileSync } = await import('node:fs');
+    const pricing = JSON.parse(readFileSync(new URL('../app/data/pricing.json', import.meta.url), 'utf8'));
+    const adapter = readFileSync(new URL('../app/js/suggest-anthropic.js', import.meta.url), 'utf8');
+    const app = readFileSync(new URL('../app/js/app.js', import.meta.url), 'utf8');
+    assert.ok(adapter.includes(`'${pricing.model}'`), 'pricing.json names the model the adapter uses');
+    const fb = app.slice(app.indexOf('async function loadPricing'));
+    assert.ok(fb.slice(0, 1200).includes(`model: '${pricing.model}'`), 'the fallback names the same model');
+    assert.ok(fb.slice(0, 1200).includes(`inputCostPerMillionTokens: ${pricing.inputCostPerMillionTokens}, outputCostPerMillionTokens: ${pricing.outputCostPerMillionTokens}`));
+});

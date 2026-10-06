@@ -856,3 +856,8 @@ test('CR-135-138: held choices survive Reframe, practice logs no mic, goal sourc
     assert.ok(pa.indexOf("noteUserAction('express')") < pa.indexOf('await playClip('));
     assert.equal((pa.slice(0, 3000).match(/noteUserAction\('express'\)/g) || []).length, 1);
 });
+
+test('CR-140/141: a sent note is cleared; restore failures are said on the status line', () => {
+    assert.match(appSource, /if \(res && \(res\.sent \|\| res\.queued\)\) \{\n\s*const box = document\.getElementById\('problemNoteInput'\);/);
+    assert.match(appSource, /async function importFromFile\(file\)/);
+});

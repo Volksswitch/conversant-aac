@@ -153,6 +153,32 @@ export function captureAfterUserSpeaks({ opensConversation, armed, autoResume })
  * partner said AFTER that follows. If nothing new can be told apart, the old request
  * is sent unchanged.
  */
+/*
+ * The error report's groups: the in-app list, plus any error the saved conversations
+ * hold that the list does not (CR-142). One error is the same error when its time and
+ * message match. Errors from before the user last cleared the list are not brought back.
+ * Groups are [conversationId, [error...]], newest conversation first.
+ */
+export function mergeErrorGroups(inApp = [], onDisk = [], clearedAt = '') {
+    const map = new Map(inApp.map(([id, errs]) => [id, errs.slice()]));
+    const seen = new Set();
+    for (const [, errs] of inApp) for (const e of errs) seen.add(`${e.ts}|${e.message}`);
+    let added = 0;
+    for (const [id, errs] of onDisk) {
+        for (const e of errs) {
+            const k = `${e.ts}|${e.message}`;
+            if (seen.has(k)) continue;
+            if (clearedAt && String(e.ts || '') <= clearedAt) continue;
+            seen.add(k);
+            if (!map.has(id)) map.set(id, []);
+            map.get(id).push(e);
+            added++;
+        }
+    }
+    const groups = [...map.keys()].sort().reverse().map((id) => [id, map.get(id)]);
+    return { groups, added };
+}
+
 export function historyForRequest(history, partnerText, promotedIdx = -1, promotedPrefix = '') {
     const base = Array.isArray(history) ? history : [];
     const moved = promotedIdx >= 0 ? base[promotedIdx] : null;

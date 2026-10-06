@@ -159,3 +159,10 @@ test('every floor-taking path stops a playing sound first', async () => {
     const pa = app.indexOf('async function playAudioTurn(');
     assert.match(app.slice(pa, pa + 3500), /if \(result\.preempted\) return;/);
 });
+
+test('CR-141: a damaged profile entry does not stop a backup being described', () => {
+    const pkg = dt.parsePackage(JSON.stringify({ kind: 'conversant-aac-backup', packageVersion: 3, data: {},
+        profiles: [null, {}, { name: 'A' }] }));
+    const lines = dt.summarize(pkg);
+    assert.ok(lines.includes('1 saved profile: A'), lines.join(' | '));
+});

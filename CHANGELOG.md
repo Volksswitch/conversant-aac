@@ -369,6 +369,11 @@ forgetting to tag one is only ever noise, never silence.
   and you then tapped Reframe, the buttons for that list never appeared on the Express
   Panel. And playing a sound now stops any new suggestion cards from popping in while
   it plays.
+- Fixed: the spending figure in Settings no longer reads high if the price list can't
+  be loaded; the note you typed for a problem report is cleared once it is sent; a
+  damaged backup file now says it can't be read instead of stopping at "Reading…"; and
+  after you clear the error list, a problem report no longer brings back every old
+  conversation that ever had an error.
 
 ## Version 0.13.4
 

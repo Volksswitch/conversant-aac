@@ -6515,14 +6515,18 @@ async function loadPricing() {
     if (pricingData) return pricingData;
     try {
         const resp = await fetch('data/pricing.json');
+        if (!resp.ok) throw new Error(`pricing ${resp.status}`);
         pricingData = await resp.json();
+        return pricingData;
     } catch {
-        pricingData = {
-            inputCostPerMillionTokens: 3, outputCostPerMillionTokens: 15,
+        // ⚠ MUST MOVE WITH app/data/pricing.json AND suggest-anthropic.js's MODEL
+        // (CR-139). Not kept for the session, so a later call tries the file again.
+        return {
+            model: 'claude-sonnet-5-5',
+            inputCostPerMillionTokens: 2, outputCostPerMillionTokens: 10,
             cacheWriteMultiplier: 1.25, cacheReadMultiplier: 0.1,
         };
     }
-    return pricingData;
 }
 
 async function updateUsageDisplay() {
@@ -6964,6 +6968,12 @@ async function sendProblemReportNow() {
         // post() now reads the answer, so "received" means received. The tester is
         // never asked to detect a failure by noticing that nothing happened - which
         // was the previous plan and put the onus in the wrong place entirely.
+        // The note has left the tester's hands (sent, or saved to go), so the box is
+        // emptied - otherwise the next report carries this one's words (CR-140).
+        if (res && (res.sent || res.queued)) {
+            const box = document.getElementById('problemNoteInput');
+            if (box) box.value = '';
+        }
         if (res && res.sent) setProblemReportStatus('Sent and received. Thank you — that is the whole procedure.');
         else if (res && res.queued) setProblemReportStatus('Not sent yet — it is saved and will go by itself next time you open the app. Nothing more for you to do.');
         else setProblemReportStatus('Not sent yet — it is saved and will try again on its own.');
@@ -7064,14 +7074,27 @@ async function folderRememberedButDisconnected() {
 }
 const RECONNECT_FIRST = 'Reconnect your data folder first (General tab, Data Folder), then try again. Without it the backup cannot reach the folder.';
 
+// A file that cannot be read (a cloud placeholder, a file changed since it was picked)
+// is said on the status line rather than lost as an unexplained failure (CR-141).
+async function importFromFile(file) {
+    try {
+        await importPackageText(await file.text(), `From the file ${file.name}`);
+    } catch (err) {
+        storage.logError('import', err.message || String(err));
+        setBackupStatus('Could not read that backup: ' + (err.message || 'unknown error'));
+    }
+}
+
 async function importPackageText(text, sourceLabel) {
     if (importInProgress) return;
     if (await folderRememberedButDisconnected()) { setBackupStatus(RECONNECT_FIRST); return; }
     let pkg;
+    let summary;
     try {
         pkg = dataTransfer.parsePackage(text);
+        summary = dataTransfer.summarize(pkg);   // a damaged file is reported here (CR-141)
     } catch (err) {
-        setBackupStatus(err.message);
+        setBackupStatus(err.message || 'That backup could not be read.');
         return;
     }
     // Show what's in the file BEFORE replacing anything — the user is about to
@@ -7080,7 +7103,7 @@ async function importPackageText(text, sourceLabel) {
     if (!(await confirmDanger({
         title: 'Replace everything with this backup?',
         body: `${sourceLabel ? sourceLabel + '\n\n' : ''}This backup was made on ${when} and contains:\n\n• ` +
-              dataTransfer.summarize(pkg).join('\n• ') +
+              summary.join('\n• ') +
               `\n\nImporting REPLACES what is on this device — your About Me answers, people, Express Panel, starters, settings and saved profiles. Your keys are left exactly as they are, and anything that belongs to the other device, like the screen edge margin, stays behind. The app will ask you to restart afterwards.`,
         confirmLabel: 'Replace my data',
     }))) {
@@ -7233,13 +7256,19 @@ function wireBackupControls() {
         const name = document.getElementById('backupFileSelect').value;
         if (!name) return;
         setBackupStatus('Reading…');
-        const text = await storage.readBackup(name);
-        if (text === null) {
-            setBackupStatus('Could not read that backup — it may have been moved or deleted.');
-            await renderBackupList();
-            return;
+        try {
+            const text = await storage.readBackup(name);
+            if (text === null) {
+                setBackupStatus('Could not read that backup — it may have been moved or deleted.');
+                await renderBackupList();
+                return;
+            }
+            await importPackageText(text, `From your data folder: ${name}`);
+        } catch (err) {
+            // Said here, not left to the start-up failure handler (CR-141).
+            storage.logError('import', err.message || String(err));
+            setBackupStatus('Could not read that backup: ' + (err.message || 'unknown error'));
         }
-        await importPackageText(text, `From your data folder: ${name}`);
     };
 
     // The picker needs a real user gesture, so the button just opens it; the work
@@ -7257,18 +7286,20 @@ function wireBackupControls() {
     document.getElementById('importDataBtn').onclick = async () => {
         setBackupStatus('');
         if (window.showOpenFilePicker && primedBackupsDir) {
+            let file;
             try {
                 const [handle] = await window.showOpenFilePicker({
                     startIn: primedBackupsDir,
                     types: [{ description: 'Conversant backup', accept: { 'application/json': ['.json'] } }],
                     multiple: false,
                 });
-                const file = await handle.getFile();
-                await importPackageText(await file.text(), `From the file ${file.name}`);
+                file = await handle.getFile();
             } catch {
                 // The user closed the picker, or the browser refused it. Neither is an
                 // error worth reporting, and the plain input is still there.
+                return;
             }
+            await importFromFile(file);
             return;
         }
         fileInput.value = '';       // so re-picking the SAME file still fires change
@@ -7278,7 +7309,7 @@ function wireBackupControls() {
     fileInput.onchange = async () => {
         const file = fileInput.files && fileInput.files[0];
         if (!file) return;
-        await importPackageText(await file.text(), `From the file ${file.name}`);
+        await importFromFile(file);
     };
 
     renderBackupList();
@@ -7385,13 +7416,14 @@ async function errorsFromDisk() {
 }
 
 async function buildErrorReport() {
-    let groups = groupErrorsByConversation();
-    // Nothing in the browser's list is not the same as nothing having gone wrong.
-    let fromDisk = false;
-    if (!groups.length) {
-        groups = await errorsFromDisk();
-        fromDisk = groups.length > 0;
-    }
+    // ⚠ MERGED, NOT A FALLBACK (CR-142). The in-app list can lose errors (a cleared
+    // browser, a new web address) while the saved conversations keep them, and one new
+    // error used to hide every older one. Errors on disk that the list does not have
+    // are added, except those from before the user last pressed Clear.
+    const merged = convLogic.mergeErrorGroups(groupErrorsByConversation(), await errorsFromDisk(),
+        storage.loadErrorLogClearedAt());
+    const groups = merged.groups;
+    const fromDisk = merged.added > 0;
     const out = [
         'Conversant AAC — error report',
         `App version: ${APP_VERSION}`,
@@ -7402,8 +7434,9 @@ async function buildErrorReport() {
     if (fromDisk) {
         // Say where these came from. The in-app error list being empty while the
         // saved conversations are not is itself worth knowing when reading a report.
-        out.push('(read from the saved conversations - the in-app error list was empty,',
-                 ' which usually means browser storage was cleared or the app changed address)', '');
+        out.push('(some of these were read from the saved conversations - the in-app error list',
+                 ' did not have them, which usually means browser storage was cleared or the app',
+                 ' changed address)', '');
     }
 
     for (const [id, errs] of groups) {
