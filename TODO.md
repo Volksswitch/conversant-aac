@@ -824,6 +824,25 @@ about to fall by an order of magnitude is the trap.
   - **Turns with known struggles get a clearer mark;** any turn can still be reviewed.
   - **Decision time is not used as a signal** (Ken): reading time and how much a reply
     matters make it hard to read.
+- **Tested 2026-10-06 (Ken: "Run the review"), about $3.90.** Six review lessons for Mom,
+  each tagged with what she was doing and paired with her words, were given to the AI
+  only when talking with her. They were compared with no review and with today's review
+  of the same answers, on eight new Mom turns, three samples each, judged blind against
+  an invented reference for how Marc talks with her. Scripts:
+  `scripts/voice-eval/2026-10-06/exp-review-moment/`.
+  - **With Mom's "how I talk with them" settings filled in, neither form of review beat
+    no review.** The AI was already short, warm and said "I'm fine" first. The tagged
+    lessons lost slightly (5 wins, 10 losses on the first option; not conclusive).
+  - **Without those settings, the AI's own guess for "Mom" was already close.** Today's
+    review did a little better on the whole set of four (10 wins, 3 losses; not
+    conclusive). The tagged lessons made replies about a word longer and lost on the
+    first option (4 wins, 11 losses; not conclusive).
+  - **What it means:** review can only pay back where the AI's guess differs from how the
+    user really talks with that person. For Marc and Mom the gap was small. **Untested:**
+    a person the user talks with in a way the AI wouldn't guess, which is the case review
+    exists for.
+  - **Limits:** invented persona and lessons, 24 comparisons per pairing, and the judge
+    mostly preferred whichever reply was shorter.
 
 #### 9. Register per person
 - **Raised:** 2026-10-06 - the evaluation's avenue 9.

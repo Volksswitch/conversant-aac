@@ -30,6 +30,7 @@ any model or prompt change" (Sounds like me, item 3). They are not maintained to
 | `practice-harvest` | How practice conversations changed what the app read |
 | `voice-layer` | The harvest over the test data, and the length-measure bias |
 | `prompt-assembly` | The full instructions sent to the AI, and their sizes |
+| `exp-review-moment` | Review lessons kept per person and tagged with the moment, against no review and today's review, with and without the person's "how I talk with them" settings (`NOPROFILE=1`). Set `OUT` to a folder outside the project before running. Results are in TODO.md under "Rebuild review around tapping" |
 
 The judge is the same model family that writes the suggestions. Treat any judge score
 as one measure among several, never as proof that the suggestions sound like someone.
