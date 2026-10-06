@@ -53,16 +53,41 @@ function scrollLogToBottom() {
 }
 
 // Render the committed conversation (array of {role:'partner'|'user', text}).
+//
+// ⚠ IT UPDATES IN PLACE RATHER THAN REDRAWING (CR-103). The log is a live region for
+// screen readers, and a redraw made every line new again, so the whole conversation
+// was re-read at each turn - and several times a second while the partner was talking.
+// Now only a new line is ADDED (and announced); a line whose words changed has its
+// existing text edited, which is not announced; lines are removed only when the
+// conversation got shorter (a new one began).
 export function renderConversation(history) {
     if (!transcriptLog) return;
-    transcriptLog.innerHTML = '';
-    (history || []).forEach((t) => {
-        const div = document.createElement('div');
-        div.className = `turn turn-${t.role === 'partner' ? 'partner' : 'user'}`;
-        // A partner turn recorded without the AI cleanup pass (AI unreachable, or an
-        // interruption fragment) is marked raw — blue/italic.
-        div.textContent = t.text;
-        transcriptLog.appendChild(div);
+    const turns = history || [];
+    // Conversation Review draws its own lines here; anything not drawn by this
+    // function means start again from empty.
+    if (transcriptLog.querySelectorAll(':scope > [data-conv]').length !== transcriptLog.children.length) {
+        transcriptLog.innerHTML = '';
+    }
+    while (transcriptLog.children.length > turns.length) transcriptLog.lastElementChild.remove();
+    turns.forEach((t, i) => {
+        const cls = `turn turn-${t.role === 'partner' ? 'partner' : 'user'}`;
+        const text = String(t.text == null ? '' : t.text);
+        let div = transcriptLog.children[i];
+        if (!div) {
+            div = document.createElement('div');
+            div.dataset.conv = '1';
+            div.className = cls;
+            div.textContent = text;
+            transcriptLog.appendChild(div);
+            return;
+        }
+        if (div.className !== cls) div.className = cls;
+        const node = div.firstChild;
+        if (node && node.nodeType === 3 && !node.nextSibling) {
+            if (node.data !== text) node.data = text;
+        } else if (div.textContent !== text) {
+            div.textContent = text;
+        }
     });
     scrollLogToBottom();
 }

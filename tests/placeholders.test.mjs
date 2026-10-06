@@ -765,3 +765,12 @@ test('CR-105: the cards are not a live region; a status line says they changed',
     const ui = readFileSync(new URL('../app/js/ui.js', import.meta.url), 'utf8');
     assert.match(ui, /announcePalette\('New suggestions'\)/);
 });
+
+test('CR-103: only the conversation lines are a live region, and they update in place', () => {
+    const html = readFileSync(new URL('../app/index.html', import.meta.url), 'utf8');
+    assert.match(html, /<div id="transcript" class="transcript-log">/);
+    assert.match(html, /id="transcriptLog" role="log" aria-live="polite" aria-relevant="additions"/);
+    const ui = readFileSync(new URL('../app/js/ui.js', import.meta.url), 'utf8');
+    const body = ui.slice(ui.indexOf('export function renderConversation'));
+    assert.match(body.slice(0, 2000), /node\.data = text/);
+});

@@ -326,6 +326,9 @@ forgetting to tag one is only ever noise, never silence.
 - For screen-reader users: each new set of suggestions is now announced as "New
   suggestions" instead of every suggestion being read out at each pause. Moving onto a
   card still reads its full wording.
+- For screen-reader users: the conversation pane no longer reads the whole
+  conversation again each time a line is added, or while the other person is still
+  talking. Each new line is read once.
 
 ## Version 0.13.4
 

@@ -51,8 +51,8 @@
                      internally; the layout must NEVER grow, for the static
                      keyguard). Partner and user turns are styled differently.
                      Not an input, so no light/card background. -->
-                <div id="transcript" class="transcript-log" aria-live="polite">
-                    <div id="transcriptLog" data-prestart-inert inert></div>
+                <div id="transcript" class="transcript-log">
+                    <div id="transcriptLog" role="log" aria-live="polite" aria-relevant="additions" data-prestart-inert inert></div>
                     <div id="liveTurn" class="turn turn-partner turn-live" hidden></div>
                     <!-- The controls tour's instruction. Bottom-pinned inside the
                          transcript like the live turn, and like it NOT part of the
