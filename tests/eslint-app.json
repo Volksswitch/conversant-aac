@@ -1,0 +1,18 @@
+{
+  "root": true,
+  "env": { "browser": true, "es2022": true },
+  "parserOptions": { "ecmaVersion": "latest", "sourceType": "module" },
+  "rules": {
+    "no-undef": "error",
+    "no-dupe-keys": "error",
+    "no-unreachable": "error",
+    "no-self-assign": "error",
+    "no-dupe-else-if": "error",
+    "valid-typeof": "error",
+    "no-cond-assign": "error",
+    "no-duplicate-case": "error"
+  },
+  "overrides": [
+    { "files": ["app/sw.js"], "env": { "serviceworker": true } }
+  ]
+}

@@ -109,8 +109,8 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-068](CR-068.md) | fixed (4b8639e) | medium | confirmed | design-violation | `app/js/stt-azure.js:333` | Azure hearing: one busy or server error switches listening off, a lost connection never does, and the helpful key-refusal message is never shown |
 | [CR-069](CR-069.md) | fixed (f7eb489) | medium | confirmed | design-violation | `app/js/stt.js:443` | The background/foreground guard is never set up when the app starts on a paid hearing service |
 | [CR-070](CR-070.md) | fixed (6579a46) | medium | confirmed | design-violation | `app/js/voice-harvest.js:76` | Catchphrase redaction at the voice-harvest boundary was never built |
-| [CR-071](CR-071.md) | fixed (pending) | medium | confirmed | design-violation | `app/js/weekly-send.js:298` | System information is re-sent in every weekly report because the change-detection hash includes a timestamp and live counters |
-| [CR-072](CR-072.md) | open | medium | confirmed | other | `app/js/app.js:2249` | No undeclared-identifier check: the handleRepairOfSelf ReferenceError shipped with every test green |
+| [CR-071](CR-071.md) | fixed (8e395bf) | medium | confirmed | design-violation | `app/js/weekly-send.js:298` | System information is re-sent in every weekly report because the change-detection hash includes a timestamp and live counters |
+| [CR-072](CR-072.md) | fixed (pending) | medium | confirmed | other | `app/js/app.js:2249` | No undeclared-identifier check: the handleRepairOfSelf ReferenceError shipped with every test green |
 | [CR-073](CR-073.md) | fixed (25397ba) | medium | confirmed | other | `app/sw.js:39` | No test checks that the service worker precaches every module the app imports (how tap-guard.js slipped) |
 | [CR-074](CR-074.md) | open | medium | confirmed | privacy | `app/js/app.js:6856` | Problem report includes the saved transcript of the current conversation even after it was marked Don't save |
 | [CR-075](CR-075.md) | open | medium | confirmed | privacy | `app/js/storage.js:465` | Loading a settings profile or restoring a backup can silently switch automatic reporting back on |
