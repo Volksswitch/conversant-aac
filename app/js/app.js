@@ -4189,7 +4189,7 @@ function hostExpressPanel(inSettings) {
     // which is exactly the two clearing conditions Ken asked for. Clearing at the
     // individual close sites would have meant finding all six of them, and missing
     // one would strand a highlight on a cell nobody is editing.
-    if (!inSettings) expressEditor.clearPicked();
+    if (!inSettings) { expressEditor.stopPreview(); expressEditor.clearPicked(); }
     // Re-render even when there was no pick to clear: the cells' tap behaviour
     // differs between the two hosts (a tap here edits, in the dock it speaks), and
     // that is decided when the handler is bound. Without this the panel keeps the

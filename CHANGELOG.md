@@ -273,6 +273,9 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: each time Settings was opened, typing or pasting in a key or region box saved
   it, and asked the speech service for its voice list, one more time than before, so a
   few visits to Settings turned one keystroke into a burst of requests.
+- Fixed: a sound you were previewing in Settings kept playing after you closed
+  Settings or moved to another tab, with no way to stop it, and could be written down
+  as the other person talking.
 
 ## Version 0.13.4
 

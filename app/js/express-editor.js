@@ -322,6 +322,15 @@ function phraseRow(band, item) {
  * played, and a recording of somebody else must never be filed as the user speaking.
  */
 let previewAudio = null;
+// Stop a preview (CR-085). Called whenever the Express tab is left or Settings closes:
+// the player is not on the page, so nothing else would ever stop it, and a song left
+// playing with the microphone on is written down as the other person talking.
+export function stopPreview() {
+    if (!previewAudio) return;
+    try { previewAudio.el.pause(); } catch { /* ignore */ }
+    URL.revokeObjectURL(previewAudio.url);
+    previewAudio = null;
+}
 // The data folder's audio folder, read when the editor renders - see chooseAudioFile.
 let primedAudioDir = null;
 
@@ -421,9 +430,7 @@ function audioRow(band, item) {
     row.appendChild(mkBtn('🔊', 'ee-hear', async () => {
         if (previewAudio) {
             const wasThis = previewAudio.id === item.id;
-            try { previewAudio.el.pause(); } catch { /* ignore */ }
-            URL.revokeObjectURL(previewAudio.url);
-            previewAudio = null;
+            stopPreview();
             if (wasThis) return;
         }
         const current = bandList(band).find((x) => x.id === item.id) || item;
@@ -436,7 +443,10 @@ function audioRow(band, item) {
         player.onended = () => {
             if (previewAudio && previewAudio.el === player) { URL.revokeObjectURL(url); previewAudio = null; }
         };
-        player.play().catch((e) => { status.textContent = `It would not play: ${e.message || e}`; });
+        player.play().catch((e) => {
+            if (previewAudio && previewAudio.el === player) stopPreview();
+            status.textContent = `It would not play: ${e.message || e}`;
+        });
     }, 'Hear this sound, or stop it'));
 
     row.appendChild(status);

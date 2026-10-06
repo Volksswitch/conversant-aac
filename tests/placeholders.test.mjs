@@ -724,3 +724,8 @@ test('CR-084: opening Settings again never adds a second set of key-box listener
     const w = appSource.slice(appSource.indexOf('function wireKeyField'));
     assert.match(w.slice(0, 600), /if \(!input\.dataset\.keyWired\)/);
 });
+
+test('CR-085: leaving the Express tab or Settings stops a sound being previewed', () => {
+    const h = appSource.slice(appSource.indexOf('function hostExpressPanel'));
+    assert.match(h.slice(0, 1500), /if \(!inSettings\) \{ expressEditor\.stopPreview\(\);/);
+});
