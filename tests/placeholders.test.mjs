@@ -1079,3 +1079,11 @@ test('About Me: extra-answer Speak follows the box; restart names goals; one bac
     assert.ok(!/'‹ All topics'/.test(wvui));
     assert.match(wvui, /\(anyPrivate \? '🔒 ' : ''\) \+ mod\.note/);
 });
+
+// CR-267. A pick-one answer can be taken back by tapping the chosen chip again.
+test('About Me: tapping the chosen pick-one chip clears the answer', async () => {
+    const { readFileSync } = await import('node:fs');
+    const wvui = readFileSync(new URL('../app/js/worldview-ui.js', import.meta.url), 'utf8');
+    const fn = wvui.slice(wvui.indexOf('function buildChoice('));
+    assert.match(fn.slice(0, 1500), /current === opt\s*\?\s*wv\.resetField\(field\.key\)/);
+});

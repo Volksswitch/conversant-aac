@@ -531,6 +531,10 @@ forgetting to tag one is only ever noise, never silence.
   your goals for any conversation; every link back to the About Me list now reads
   "About Me" instead of "All topics" or "Back"; and the padlock now appears only on
   topics that hold private answers.
+- In About Me, a pick-one answer can now be cleared by tapping the chosen answer again
+  (or saving an empty "In my own words" box), so it goes back to no answer. The spoken
+  help for the Conversation tab now describes what is actually on it, and two spoken-
+  help phrases say "an OpenAI" and "an ElevenLabs" correctly.
 
 ## Version 0.13.4
 

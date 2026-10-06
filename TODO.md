@@ -125,6 +125,35 @@ point are common in medical answers; (2) leave it as it is.
 
 **Why not now:** it reverses a recorded keyboard decision.
 
+### "Ask them to repeat" before anything has been heard
+
+**Raised:** October 6 2026, from code review item CR-270.
+
+**What is wanted:** Ken's decision. Tapping "Ask them to repeat" when the app has heard
+nothing yet still says the phrase, writes it into the saved conversation as though a
+conversation had started, and treats the other person's next words as a repeat. The
+app cannot know whether the person spoke before listening was on, in which case this is
+right. Options: (1) still say the phrase, but when nothing has been heard and nothing
+has been said yet, do not record it or start a conversation file - lean, because a stray
+tap then costs only a spoken phrase; (2) leave it as it is.
+
+**Why not now:** whether a pardon at rest should count as the start of a conversation
+is a choice about the record, not a fault.
+
+### Screen-reader heading navigation in Settings
+
+**Raised:** October 6 2026, from code review item CR-269.
+
+**What is wanted:** Ken's decision on whether to rebuild how Settings sections are made
+so a screen reader's "next heading" key jumps between them. Today it finds nothing,
+because each section heading sits inside a part of the page that browsers flatten for
+screen readers. The fix is a rebuild of the section code that has to keep
+one-open-at-a-time, remembered open sections, and the spoken help. Lean: leave it, since
+the people this app serves rarely use a screen reader in Settings, and the rebuild
+touches every Settings tab.
+
+**Why not now:** a large change for a small benefit to this population.
+
 ### The mode chip's styling: delete it, or is it coming back?
 
 **Raised:** October 5 2026, from code review items CR-175 and CR-179.

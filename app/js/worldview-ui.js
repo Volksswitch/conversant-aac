@@ -1748,7 +1748,11 @@ function buildChoice(field, current) {
             class: 'wv-chip' + (current === opt ? ' wv-chip-on' : ''),
             'aria-pressed': String(current === opt),   // CR-124
             text: opt,
-            onclick: () => saveAndRefresh(field, opt)
+            // Tapping the chosen one again clears it, as the multi-choice chips do: a
+            // pick-one answer had no way back to "no answer" at all (CR-267).
+            onclick: () => (current === opt
+                ? wv.resetField(field.key).then(() => refreshCard(field))
+                : saveAndRefresh(field, opt))
         }));
     }
     wrap.append(chips);
@@ -1758,7 +1762,11 @@ function buildChoice(field, current) {
     const input = el('input', { type: 'text', class: 'wv-text', placeholder: 'In my own words…',
         value: isCustom ? current : '' });
     const save = el('button', { class: 'wv-btn wv-btn-primary', text: 'Save',
-        onclick: () => { const v = input.value.trim(); if (v) saveAndRefresh(field, v); } });
+        onclick: () => {
+            const v = input.value.trim();
+            if (v) saveAndRefresh(field, v);
+            else if (isCustom) wv.resetField(field.key).then(() => refreshCard(field));   // CR-267
+        } });
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') save.click(); });
     wrap.append(el('div', { class: 'wv-own' }, [input, save]));
     return wrap;
