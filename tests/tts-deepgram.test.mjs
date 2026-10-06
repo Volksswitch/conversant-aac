@@ -476,17 +476,22 @@ test('a service that returns no audio throws, so the browser voice takes over',
 
 // CR-051. The time limit is for a connection that has gone quiet, not for a long
 // sentence: audio that keeps arriving for longer than 6 seconds must not be cut off.
+// The fake clock is on from before the request, because that is when the timer is set.
+async function settle(t) { for (let i = 0; i < 5; i++) { t.mock.timers.tick(1); await Promise.resolve(); } }
+
 test('a long sentence that keeps arriving is not cut off at six seconds', async (t) => {
     const { ctx, made, voice } = setup(t);
-    const speaking = voice.speak('a long sentence');
-    await tick(); await tick();
-    t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: Date.now() });
+    t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: 1_000_000 });
     let failed = null;
+    const speaking = voice.speak('a long sentence');
     speaking.catch((e) => { failed = e; });
+    await settle(t);
     for (let i = 0; i < 16; i++) {            // 8 seconds of arrival, a chunk every 0.5 s
         made[0].chunk(chunk40ms(800));
         t.mock.timers.tick(500);
+        await Promise.resolve();
     }
+    assert.equal(failed, null, failed && failed.message);
     made[0].flushed();
     t.mock.timers.reset();
     await tick(); await tick();
@@ -497,11 +502,12 @@ test('a long sentence that keeps arriving is not cut off at six seconds', async 
 
 test('audio that stops arriving still times out', async (t) => {
     const { made, voice } = setup(t);
+    t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: 1_000_000 });
     const speaking = voice.speak('a sentence that stalls');
-    await tick(); await tick();
-    t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: Date.now() });
+    const outcome = speaking.then(() => 'resolved', (e) => e.message);
+    await settle(t);
     made[0].chunk(chunk40ms(800));
     t.mock.timers.tick(7000);
     t.mock.timers.reset();
-    await assert.rejects(speaking, /took too long/);
+    assert.match(await outcome, /took too long/);
 });

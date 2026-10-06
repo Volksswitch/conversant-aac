@@ -89,7 +89,7 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-048](CR-048.md) | fixed (f917a32) | medium | confirmed | bug | `app/js/storage.js:2690` | An error logged outside a conversation creates a fake conversation file that then swallows the next real conversation |
 | [CR-049](CR-049.md) | fixed (b9b7989) | medium | confirmed | bug | `app/js/stt-deepgram.js:303` | Stopping Deepgram while it is still connecting reports a false error and can switch listening off for good |
 | [CR-050](CR-050.md) | fixed (e1cfd64) | medium | confirmed | bug | `app/js/stt.js:360` | Words the partner says while the app is speaking a placeholder never get fresh suggestions |
-| [CR-051](CR-051.md) | fixed (pending) | medium | confirmed | bug | `app/js/tts-deepgram.js:298` | Deepgram voice cuts off any long sentence after 6 seconds and then repeats the whole thing in the device voice |
+| [CR-051](CR-051.md) | fixed (453a46b) | medium | confirmed | bug | `app/js/tts-deepgram.js:298` | Deepgram voice cuts off any long sentence after 6 seconds and then repeats the whole thing in the device voice |
 | [CR-052](CR-052.md) | open | medium | confirmed | bug | `app/js/voice.js:302` | Choosing the FLAT reply on a levity Sound Check item is reported to the AI as choosing the lighter one, granting joke permission |
 | [CR-053](CR-053.md) | open | medium | confirmed | bug | `app/js/voice.js:311` | The five 'starting things off' Sound Check answers are cut from the prompt when the user answers the bank in order |
 | [CR-054](CR-054.md) | open | medium | confirmed | bug | `app/js/worldview.js:539` | Fact labels sent to the AI come from the first placeholder synonym and misdescribe several answers |
