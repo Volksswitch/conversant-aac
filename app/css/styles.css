@@ -3329,6 +3329,12 @@ dialog::backdrop {
     padding: 0.5rem 1rem;
     font-size: 0.9rem;
     cursor: pointer;
+    /* As tall as every other button (Rule 15). The tabs were about half the height,
+       which with limited hand control meant landing on the wrong tab (CR-061). The
+       column scrolls if fourteen of them no longer fit. */
+    min-height: var(--btn-min-dim);
+    display: flex;
+    align-items: center;
 }
 
 .settings-tab:hover {
@@ -3785,10 +3791,13 @@ dialog select {
 }
 
 .switch {
+    /* Sized from the button floor like every other control (CR-061). */
+    --sw-h: var(--btn-min-dim);
+    --sw-w: calc(var(--btn-min-dim) * 1.6);
     position: relative;
     display: inline-block;
-    width: 3rem;
-    height: 1.5rem;
+    width: var(--sw-w);
+    height: var(--sw-h);
     flex-shrink: 0;
 }
 
@@ -3805,8 +3814,13 @@ dialog select {
     position: absolute;
     inset: 0;
     background: var(--surface-pressed);
-    border-radius: 1.5rem;
+    border-radius: var(--sw-h);
     transition: background 0.15s;
+}
+/* The real control is invisible, so its keyboard focus is drawn on the track. */
+.switch input:focus-visible + .switch-track {
+    outline: 3px solid var(--link);
+    outline-offset: 2px;
 }
 
 .switch-track::before {
@@ -3814,8 +3828,8 @@ dialog select {
     position: absolute;
     top: 0.15rem;
     left: 0.15rem;
-    width: 1.2rem;
-    height: 1.2rem;
+    width: calc(var(--sw-h) - 0.3rem);
+    height: calc(var(--sw-h) - 0.3rem);
     background: var(--surface-raised);
     border-radius: 50%;
     box-shadow: 0 1px 2px var(--shadow-strong);
@@ -3827,10 +3841,12 @@ dialog select {
 }
 
 .switch input:checked + .switch-track::before {
-    transform: translateX(1.5rem);
+    transform: translateX(calc(var(--sw-w) - var(--sw-h)));
 }
 
 dialog label.checkbox-label {
+    /* The whole row is the target, so it is as tall as a button (CR-061). */
+    min-height: var(--btn-min-dim);
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -3852,6 +3868,7 @@ label.checkbox-label input[type="checkbox"] {
 }
 
 dialog label.radio-label {
+    min-height: var(--btn-min-dim);   /* the whole row is the target (CR-061) */
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -4249,6 +4266,7 @@ label.radio-label input[type="radio"] {
 
 /* Shared style for checkbox rows in the People editor (Lives with me, Private) */
 .wv-person-checkbox-row {
+    min-height: var(--btn-min-dim);   /* CR-061 */
     display: flex;
     align-items: center;
     gap: 0.5rem;

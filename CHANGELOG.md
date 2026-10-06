@@ -202,6 +202,9 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: with Deepgram listening, turning Listen off and on in the middle of the other
   person's sentence, or switching away from the app and back, lost the words that were
   on screen but not yet settled. They are now kept.
+- Fixed: in Settings, the tabs, the rows of choices (such as which listening service
+  to use) and the side switch were much smaller than the other buttons, making it easy
+  to tap the wrong one. They are now the same size as the other buttons.
 
 ## Version 0.13.4
 

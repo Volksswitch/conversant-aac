@@ -341,3 +341,17 @@ test('every font size on the composer text box follows the user setting', () => 
     }
     assert.deepEqual(bad, []);
 });
+
+// CR-061. Settings tabs, option rows and the switch are sized from the button floor.
+test('Settings tabs, option rows and the switch use the button floor', () => {
+    const src = css.replace(/\/\*[\s\S]*?\*\//g, '');
+    const rule = (sel) => {
+        const at = src.indexOf(sel + ' {');
+        assert.ok(at >= 0, `${sel} rule missing`);
+        return src.slice(at, src.indexOf('}', at));
+    };
+    assert.match(rule('.settings-tab'), /min-height:\s*var\(--btn-min-dim\)/);
+    assert.match(rule('dialog label.radio-label'), /min-height:\s*var\(--btn-min-dim\)/);
+    assert.match(rule('dialog label.checkbox-label'), /min-height:\s*var\(--btn-min-dim\)/);
+    assert.match(rule('.switch'), /--sw-h:\s*var\(--btn-min-dim\)/);
+});
