@@ -802,3 +802,13 @@ test('CR-115-118: practice fields named, focus kept, rows named, Review leaves n
     const rv = readFileSync(new URL('../app/js/review-ui.js', import.meta.url), 'utf8');
     assert.match(rv, /el\.removeAttribute\('aria-pressed'\)/);
 });
+
+test('CR-119-122: Review quiets the log, empty slots leave the Tab order, latch labels survive a redraw, notes are described', () => {
+    const rv = readFileSync(new URL('../app/js/review-ui.js', import.meta.url), 'utf8');
+    assert.match(rv, /\$\('transcriptLog'\)\?\.setAttribute\('aria-live', 'off'\)/);
+    const ui = readFileSync(new URL('../app/js/ui.js', import.meta.url), 'utf8');
+    assert.match(ui, /if \(!onDefineCell\) \{ b\.tabIndex = -1; b\.setAttribute\('aria-disabled', 'true'\); \}/);
+    assert.match(ui, /setPrivacyState\(lastPrivacy\);/);
+    const wn = readFileSync(new URL('../app/js/whats-new.js', import.meta.url), 'utf8');
+    assert.match(wn, /okBtn\.setAttribute\('aria-describedby', list\.id\)/);
+});

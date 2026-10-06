@@ -1756,8 +1756,10 @@ function finishStart() {
     document.getElementById('startBtn').hidden = false;   // restore for any later start screen
     document.getElementById('apiKeyPrompt').hidden = true;
     document.getElementById('folderPrompt').hidden = true;
-    const focusInStart = !!(document.activeElement && document.activeElement.closest
-        && document.activeElement.closest('#startBlock'));
+    // Focus left behind on the page itself counts too: closing "What's new" removes
+    // the button that had it (CR-122).
+    const focusInStart = !document.activeElement || document.activeElement === document.body
+        || !!(document.activeElement.closest && document.activeElement.closest('#startBlock'));
     document.getElementById('startBlock').classList.add('hidden');
     document.querySelector('main').classList.remove('disabled');
     // Before Start these regions are INERT, not just unclickable: pointer-events

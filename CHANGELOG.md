@@ -343,6 +343,12 @@ forgetting to tag one is only ever noise, never silence.
   than jumping to the top of Settings; each practice scenario's Edit, Make a copy and
   Delete buttons say which scenario they are for; and leaving Conversation Review no
   longer leaves the Command Bar buttons announced as on/off switches.
+- For keyboard, switch and screen-reader users: Conversation Review no longer re-reads
+  the whole conversation as you edit a word, and a rewritten card is named by its new
+  words; empty Express Panel slots on the conversation screen are no longer stops when
+  moving with the Tab key; the "Don't save", Wrap up, Start conversation and New
+  buttons keep a name that matches whether they are on; and the "What's new" notes are
+  read out with the Close button, with your place kept after closing it.
 
 ## Version 0.13.4
 

@@ -825,12 +825,20 @@ export function renderPanel(currentVersion, notes, onDismiss) {
     h.className = 'whatsnew-title';
     h.textContent = "What's new in Conversant AAC";
     const okBtn = document.createElement('button');
+    okBtn.type = 'button';
     okBtn.className = 'whatsnew-ok';
     okBtn.textContent = 'Close';
     head.append(h, okBtn);
 
     const list = document.createElement('ul');
     list.className = 'whatsnew-list';
+    // Named, and the notes are the Close button's description, so a screen reader
+    // reads them rather than only "Close, button" (CR-122).
+    h.id = 'whatsNewTitle';
+    list.id = 'whatsNewList';
+    panel.setAttribute('role', 'region');
+    panel.setAttribute('aria-labelledby', h.id);
+    okBtn.setAttribute('aria-describedby', list.id);
     for (const note of items) {
         const li = document.createElement('li');
         li.textContent = note;

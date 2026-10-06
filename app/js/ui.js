@@ -763,6 +763,9 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
     // (Rule 1, the hard requirement). Same reason .ep-cell-blank matches the box.
     const buildUndefinedCell = (index, span) => {
         const b = document.createElement('button');
+        // Outside Settings an empty slot does nothing, so it is taken out of the Tab
+        // order and marked unavailable - attributes only, the box is unchanged (CR-120).
+        if (!onDefineCell) { b.tabIndex = -1; b.setAttribute('aria-disabled', 'true'); }
         b.type = 'button';
         b.className = 'ep-btn ep-undefined';
         b.style.gridColumn = `span ${span}`;
@@ -1101,7 +1104,12 @@ export function onPrivacyToggleClick(handler) {
 
 // Reflect the "don't save this conversation" state on the Command Bar button —
 // a sticky toggle shown as a selected button (Rule 6). `private` true = saving OFF.
+// The last state each latch was drawn in, so redrawing the icons can put the matching
+// label back (CR-121) instead of a label that says the opposite of the button's state.
+let lastPrivacy = false, lastWrapUp = false, lastStart = false, lastRegenCount = null;
+
 export function setPrivacyState(isPrivate) {
+    lastPrivacy = !!isPrivate;
     const btn = document.getElementById('privacyBtn');
     if (!btn) return;
     btn.classList.toggle('private-on', isPrivate);
@@ -1118,6 +1126,7 @@ export function setPrivacyState(isPrivate) {
 // it is the only thing on screen that says a wrap-up is in progress at all - without it
 // the wind-down statements just look like a strange set of suggestions.
 export function setWrapUpState(on) {
+    lastWrapUp = !!on;
     const btn = document.getElementById('windDownBtn');
     if (!btn) return;
     btn.classList.toggle('wrapup-on', !!on);
@@ -1131,6 +1140,7 @@ export function setWrapUpState(on) {
 // mid-conversation puts the openers up WITHOUT ending anything, so the button has to
 // show that it is on and that pressing it again is the way back.
 export function setStartConversationState(on) {
+    lastStart = !!on;
     const btn = document.getElementById('initiateBtn');
     if (!btn) return;
     btn.classList.toggle('opener-on', !!on);
@@ -1266,6 +1276,14 @@ export function applyControlIcons() {
     setIconButton(document.getElementById('speakBtn'), 'speak', 'Speak');
     setIconButton(document.getElementById('reframeBtn'), 'reframe', 'Reframe — new options from this');
     setIconButton(document.getElementById('cancelComposerBtn'), 'clear', 'Cancel');
+    // The faces above carry the resting labels; put back the ones that match each
+    // latch's real state (CR-121). Review draws its own faces, so not during Review.
+    if (!document.body.classList.contains('reviewing')) {
+        setPrivacyState(lastPrivacy);
+        setWrapUpState(lastWrapUp);
+        setStartConversationState(lastStart);
+        if (lastRegenCount != null) setRegenerateLabel(lastRegenCount);
+    }
     setListenButtonState(capturing); // (re)draw the Listen button's face in this mode
 }
 
@@ -1337,6 +1355,7 @@ export function onRegenerateClick(handler) {
 // Update the regenerate button's accessible name / tooltip to match how many
 // cards are actually shown — "New 4" with 1 per category, "New 8" with 2 (Ken).
 export function setRegenerateLabel(count) {
+    lastRegenCount = count;
     const btn = document.getElementById('regenerateBtn');
     if (!btn) return;
     const label = `New ${count} — different options`;

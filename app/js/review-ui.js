@@ -166,6 +166,9 @@ export async function enter(entry) {
     cardTapped = -1;
     active = true;
     document.body.classList.add('reviewing');
+    // Review redraws the pane on every keystroke while a word is edited, so it must
+    // not be a live region here or the whole conversation is re-read each time (CR-119).
+    $('transcriptLog')?.setAttribute('aria-live', 'off');
     for (const id of ['liveTurn', 'coachLine', 'nowPlaying']) { const el = $(id); if (el) el.hidden = true; }
     render();
     return true;
@@ -184,8 +187,9 @@ async function leave() {
     review = null;
     lastComposed = null;
     document.body.classList.remove('reviewing');
+    $('transcriptLog')?.setAttribute('aria-live', 'polite');
     const regen = $('regenerateBtn');
-    if (regen) regen.classList.remove('review-want');
+    if (regen) { regen.classList.remove('review-want'); regen.removeAttribute('aria-pressed'); }
     // Review made every bar button a toggle; outside Review most are not, so the
     // attribute goes - the three real toggles get theirs back from their own setters
     // in restoreConversationScreen (CR-118).
@@ -381,7 +385,8 @@ function renderCards() {
         } else if (text && answerIdx === i && e.answer.rewritten) {
             text.textContent = e.answer.text;
         }
-        const bits = [card.getAttribute('aria-label') || ''];
+        // A rewritten card is named by its new words - what would have been said (CR-119).
+        const bits = [answerIdx === i && e.answer && e.answer.rewritten ? e.answer.text : (card.getAttribute('aria-label') || '')];
         if (spoken) bits.push('(you said this)');
         if (i === answerIdx && !spoken) bits.push('(would have suited you better)');
         card.setAttribute('aria-label', bits.join(' ').trim());
@@ -396,7 +401,11 @@ function renderCards() {
 function renderNew() {
     const e = entry();
     const regen = $('regenerateBtn');
-    if (regen) regen.classList.toggle('review-want', !!(e.answer && e.answer.kind === 'more'));
+    const want = !!(e.answer && e.answer.kind === 'more');
+    if (regen) {
+        regen.classList.toggle('review-want', want);
+        regen.setAttribute('aria-pressed', String(want));   // CR-119
+    }
 }
 
 // The Express Panel, drawn with this turn's marks. Lit buttons are what the user marked
