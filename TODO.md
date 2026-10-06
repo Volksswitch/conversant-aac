@@ -56,48 +56,20 @@ outlives a "Don't save" conversation.
 
 **Why not now:** the review was the task; fixing is separate work, one item per commit.
 
-### Manual corrections from the code review, for the next "sync docs"
+### "Response card" or "response option" in the Settings labels (CR-205)
 
-**Raised:** October 5 2026, from code review items whose fix is a document edit.
+**Raised:** October 5 2026, from code review item CR-205. The rest of CR-205 and the
+other manual corrections (CR-202, 203, 204, 233, 256) were applied in the October 6
+2026 "sync docs".
 
-**What is wanted:** apply these in the next document sync.
-- **CR-202, all three User Manuals:** the sentence telling the reader to close Settings
-  by "tap outside the panel" is wrong; only the X (or Esc on a keyboard) closes it.
-  Tapping beside the panel does nothing, and on the Express Panel tab it picks a button
-  to edit. Change it to "Tap the X at the right of the Settings title bar to dismiss
-  it." Also check the API-key sentence that begins "Tap elsewhere, or tap the X": keep
-  "tap elsewhere" if it means leaving the field, remove it if it implies closing
-  Settings. Do NOT add tap-outside-to-close to the app instead: the area beside
-  Settings is a live editing surface and sits under a keyguard.
+**What is wanted:** Ken's choice. The screen says "What a response card shows" and
+labels its text sizes "Response cards"; the manuals say "What a response option shows",
+because the house word list treats "card" as a development word and "check docs"
+refuses it in a manual. Either the screen moves to "response option" (the lean, since
+that is the word the manuals already teach), or the word list gives way. Until then the
+manual's label does not match the screen.
 
-- **CR-203, all three User Manuals:** "Text size" says four parts of the screen; there
-  are five. The missing one is the short version shown on a response option. Change
-  "four parts" to "five parts" and "Each of the four offers four sizes" to "Each offers
-  four sizes", and split the response-options entry into the full wording and the short
-  version.
-- **CR-204, all three User Manuals (Voice row, section 6.3):** "unless you tick Show
-  this device's joke voices" should read "unless you check" with the name in quotes.
-- **CR-205, all three User Manuals:** two quoted names do not match the screen.
-  "Don't save conversations to my data folder" is now "Do not save my conversations"
-  (in the 4.5 note and the 6.5 row), and "Auto-resume listening" is "Resume listening
-  automatically after speaking a response". **Needs Ken's choice for two more:** the
-  manual says "Response options per category" and "What a response option shows",
-  while the screen says "Suggestions per category" and "What a response card shows"
-  (and the text-size labels say "Response cards"). Either the screen moves to the
-  manual's words (the house word list calls "card" a development word), or the manual
-  quotes the screen as it is. Lean: change the screen, since "response option" is the
-  word the manuals already teach.
-
-- **CR-233, all three User Manuals (Settings profiles row):** "button and gap sizes"
-  should read "button spacing"; the button-size setting was removed in September 2026.
-  The Screen Layout section the manuals describe is now headed "Gaps between buttons".
-
-- **CR-256, all three User Manuals:** where a manual shows the speaker as an emoji
-  "(🔊)", it is now the app's own speaker icon (the same one as the composer's Speak
-  button), and "Speak my answer" no longer has the emoji in front of it.
-
-**Why not now:** the manuals are edited only in a document sync, which runs when Ken
-chooses.
+**Why not now:** it changes on-screen wording, which is Ken's call.
 
 ### Bottom Layout 6 has two Backspace keys
 
