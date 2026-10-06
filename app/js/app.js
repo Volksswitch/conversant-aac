@@ -6093,8 +6093,11 @@ function reflectTitleBarNeed() {
 // an openings file believing they were in a mode they were not actually in, which is
 // the exact trap 0.6.4 closed. The state has to be honest while the panel is open.
 //
-// Safe to close() here: there is no 'close' listener (the one listener is 'cancel',
-// which close() does not fire -- it is Escape only), and the active tab, scroll
+// Safe to close() here: the only 'close' listener on this dialog is help-mode's reset(),
+// which merely disarms spoken help - harmless, because an armed tap cannot reach the
+// fullscreen checkbox. ANY NEW 'close' listener on #settingsDialog will also run on
+// every fullscreen re-promotion, so do not add one: dialog cleanup runs explicitly in
+// the Close handler, never on 'close' (CR-199). The active tab, scroll
 // position and field values all live in the DOM and survive. Focus is put back where
 // it was so that a reparented on-screen keyboard comes straight back from the
 // focusout/focusin round trip.

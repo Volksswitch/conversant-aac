@@ -236,9 +236,9 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-195](CR-195.md) | fixed (3075270) | low | confirmed | design-violation | `app/js/tts.js:337` | An Express phrase's respelling is announced to the echo filter and 'now playing' line instead of its display text |
 | [CR-196](CR-196.md) | fixed (3075270) | low | confirmed | design-violation | `app/js/ui.js:424` | The 'Try again' button in the response area is not covered by the two-tap safeguard |
 | [CR-197](CR-197.md) | fixed (3075270) | low | confirmed | design-violation | `app/js/ui.js:611` | Goal buttons reference an undefined --goal-tint token |
-| [CR-198](CR-198.md) | fixed (pending) | low | confirmed | design-violation | `app/manifest.webmanifest:9` | Installed-app manifest allows any orientation although the app is landscape-only |
-| [CR-199](CR-199.md) | open | low | confirmed | doc-mismatch | `app/js/app.js:5578` | repromoteSettingsOverFullscreen comment says the Settings dialog has no 'close' listener; help-mode registers one |
-| [CR-200](CR-200.md) | open | low | confirmed | doc-mismatch | `app/js/keyboard.js:312` | Inline completion acceptance is described differently in CLAUDE.md than it is built |
+| [CR-198](CR-198.md) | fixed (f81132d) | low | confirmed | design-violation | `app/manifest.webmanifest:9` | Installed-app manifest allows any orientation although the app is landscape-only |
+| [CR-199](CR-199.md) | fixed (pending) | low | confirmed | doc-mismatch | `app/js/app.js:5578` | repromoteSettingsOverFullscreen comment says the Settings dialog has no 'close' listener; help-mode registers one |
+| [CR-200](CR-200.md) | fixed (pending) | low | confirmed | doc-mismatch | `app/js/keyboard.js:312` | Inline completion acceptance is described differently in CLAUDE.md than it is built |
 | [CR-201](CR-201.md) | open | low | confirmed | doc-mismatch | `app/js/viewport.js:30` | Display diagnostics label the visual viewport as the layout viewport (contrary to UI Rule 13) |
 | [CR-202](CR-202.md) | open | low | confirmed | doc-mismatch | `Documents/Conversant AAC User Manual (Windows Chromebook Mac).docx:318` | User Manual says tapping outside the Settings Panel closes it; nothing does that |
 | [CR-203](CR-203.md) | open | low | confirmed | doc-mismatch | `Documents/Conversant AAC User Manual (Windows Chromebook Mac).docx:343` | Manual describes four text-size controls; the app has five and the short-version size is undocumented |
