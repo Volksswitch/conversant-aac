@@ -1014,3 +1014,16 @@ test('backup warning, folder error, copy label and stale key notes', () => {
     const adopt = appSource.slice(appSource.indexOf('function adoptChosenHearingIfKeyed'));
     assert.match(adopt.slice(0, 300), /recheckKeyNotes\(\);/);
 });
+
+// CR-247..250 guards.
+test('editor: reset warning, live place names, sound labels, greyed tools', async () => {
+    const { readFileSync } = await import('node:fs');
+    const ed = readFileSync(new URL('../app/js/express-editor.js', import.meta.url), 'utf8');
+    const cp = readFileSync(new URL('../app/js/control-phrases-editor.js', import.meta.url), 'utf8');
+    assert.match(cp, /the "one more thing" phrases/);
+    assert.match(appSource, /\? \{ \.\.\.item, name: placeLabel\(item\) \}/);
+    assert.match(ed, /item\.text \|\| item\.label \|\| item\.name/);
+    assert.match(ed, /function refreshToolStates\(\)/);
+    const mp = ed.slice(ed.indexOf('function markPicked('));
+    assert.match(mp.slice(0, 400), /refreshToolStates\(\);/);
+});

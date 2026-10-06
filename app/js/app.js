@@ -4612,9 +4612,15 @@ function composedPanel(ctx = null) {
     // renderer is deliberately ignorant of the relationship graph and must stay so.
     // This is also what carries the answer to the toggle handler, since the item the
     // user taps is one of these.
+    // A place's name is resolved the same way (CR-248): it was stored when the button
+    // was made, so renaming the place in My Places never reached the button, the
+    // status line or the saved conversation. The stored name stays the fallback for a
+    // place since deleted.
     composed.items = composed.items.map((item) => (item && item.type === 'partner'
         ? { ...item, label: partnerLabel(item) }
-        : item));
+        : item && item.type === 'place'
+            ? { ...item, name: placeLabel(item) }
+            : item));
     return composed;
 }
 
@@ -4969,6 +4975,11 @@ function goalStamp() {
 // Where the turn happened. Keeps the stable placeId (when the Express item points at
 // a recorded place) so a reviewed conversation can join back to My Places, plus the
 // display label for the case where the place has since been deleted.
+function placeLabel(item) {
+    const p = item && item.placeId ? places.getPlace(item.placeId) : null;
+    return (p && p.name) || (item && item.name) || '';
+}
+
 function placeStamp() {
     if (!activePlace) return null;
     const label = (activePlace.name || '').trim();

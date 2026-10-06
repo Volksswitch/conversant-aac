@@ -121,7 +121,7 @@ export function render() {
     reset.addEventListener('click', async () => {
         const ok = await confirmDanger({
             title: 'Reset control phrases?',
-            body: 'This restores the default wording for every command phrase — asking them to repeat, trying again, the openers, the wind-down statements and the goodbyes. Your edits will be lost.',
+            body: 'This restores the default wording for every command phrase — asking them to repeat, trying again, the openers, the wrap-up statements, the goodbyes and the "one more thing" phrases. Your edits will be lost.',
             confirmLabel: 'Reset to default',
             cancelLabel: 'Keep mine',
         });

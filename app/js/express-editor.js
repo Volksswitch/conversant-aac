@@ -205,13 +205,13 @@ async function removePicked(band) {
     const list = bandList(band).slice();
     const i = list.findIndex((x) => x.id === pickedId);
     if (i < 0) return;
-    const label = labelOf(list[i]) || 'this button';
+    const label = labelOf(list[i]);
     // Deleting does not merely lose a phrase - it pulls every button after it up a
     // cell, so the positions the user has learned all move. Squarely the "significant
     // work" bar (standing rule, Ken, June 15 2026).
     if (!(await confirmDanger({
         title: 'Delete this button?',
-        body: `"${label}" will be removed, and every button after it moves up one place.`,
+        body: `${label ? `"${label}" will be removed` : 'This button will be removed'}, and every button after it moves up one place.`,
         confirmLabel: 'Delete it',
     }))) return;
     const [gone] = list.splice(i, 1);
@@ -234,7 +234,26 @@ function markPicked(row, id) {
     pickedId = id;
     if (container) container.querySelectorAll('.ee-row-picked').forEach((r) => r.classList.remove('ee-row-picked'));
     row.classList.add('ee-row-picked');
+    refreshToolStates();
     if (onPickCb) onPickCb();
+}
+
+/*
+ * Up, down and delete act on the selected row of their own band, and did nothing at
+ * all when no row there was selected - which reads as broken (CR-250). They are greyed
+ * until there is something for them to do. Set in place, without re-rendering, which
+ * would take focus out of the field the user just tapped.
+ */
+function refreshToolStates() {
+    if (!container) return;
+    for (const sec of container.querySelectorAll('.setting-group[data-band]')) {
+        const list = bandList(sec.dataset.band);
+        const i = list.findIndex((x) => x.id === pickedId);
+        for (const b of sec.querySelectorAll('.ee-tool[data-tool]')) {
+            const t = b.dataset.tool;
+            b.disabled = i < 0 || (t === 'up' && i === 0) || (t === 'down' && i === list.length - 1);
+        }
+    }
 }
 
 function labelOf(item) {
@@ -242,7 +261,13 @@ function labelOf(item) {
     // A partner's face is resolved live from About Me, so the list here reads the same
     // as the panel beside it - and keeps up the moment somebody is renamed there.
     if (item.type === 'partner') return relationships.displayName(item.personId, item.name);
-    return String(item.text || item.name || '').trim();
+    // A place's name live from My Places, like a partner's (CR-248); a sound's face is
+    // its label (CR-249).
+    if (item.type === 'place') {
+        const p = item.placeId ? places.getPlace(item.placeId) : null;
+        return String((p && p.name) || item.name || '').trim();
+    }
+    return String(item.text || item.label || item.name || '').trim();
 }
 
 // ---------------------------------------------------------------- small builders
@@ -549,9 +574,10 @@ function section(key, title, build) {
 /** The one toolbar. Fixed above the list, so it never travels with the item. */
 function toolbar(band, extra) {
     const bar = el('div', 'ee-toolbar');
-    bar.appendChild(mkBtn('▲', 'ee-tool', () => move(band, -1), 'Move the selected button up'));
-    bar.appendChild(mkBtn('▼', 'ee-tool', () => move(band, 1), 'Move the selected button down'));
-    bar.appendChild(mkBtn('✕', 'ee-tool', () => removePicked(band), 'Delete the selected button'));
+    const tool = (face, act, fn, name) => { const b = mkBtn(face, 'ee-tool', fn, name); b.dataset.tool = act; return b; };
+    bar.appendChild(tool('▲', 'up', () => move(band, -1), 'Move the selected button up'));
+    bar.appendChild(tool('▼', 'down', () => move(band, 1), 'Move the selected button down'));
+    bar.appendChild(tool('✕', 'delete', () => removePicked(band), 'Delete the selected button'));
     (extra || []).forEach((b) => bar.appendChild(b));
     return bar;
 }
@@ -779,6 +805,7 @@ export function render() {
     // Band sizes' open state as Flex's: Band sizes closed and Flex opened, apparently
     // at random. Two containers, two scopes.
     makeCollapsible(container, 'expressBands');
+    refreshToolStates();
 
     if (openAfterRender) {
         const det = container.querySelector(`.setting-group[data-band="${openAfterRender}"] details`);

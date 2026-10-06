@@ -495,6 +495,11 @@ forgetting to tag one is only ever noise, never silence.
   choosing a data folder now shows beside the folder name; a Copy button tapped twice
   quickly goes back to saying "Copy"; and the "this service needs a key" warnings go
   away as soon as the key is entered, and are checked again each time Settings opens.
+- In Settings, the Express Panel editor's up, down and delete buttons are greyed out
+  until you pick a button to act on; deleting a sound button names it in the warning;
+  renaming a place in About Me now updates its Express Panel button too, as renaming a
+  person already did; and the Commands reset warning now mentions the "one more thing"
+  phrases it also resets.
 
 ## Version 0.13.4
 
