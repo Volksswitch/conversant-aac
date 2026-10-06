@@ -200,6 +200,8 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
 
     let openedAt = 0;
     let billedMs = 0;
+    let sentSamples = 0;   // audio actually handed to the socket this session (CR-158)
+    let audioRate = 0;
 
     // Audio that arrived while the socket was still connecting. Listening restarts at
     // the start of nearly every partner turn, which is exactly when they start
@@ -239,22 +241,27 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
         if (edge === 'open') {
             openedAt = now;
             // Flush what was already in hand — the start of the word that opened
-            // the gate is in there.
-            for (const f of preRoll) send(f);
+            // the gate is in there. It is billed like any other audio sent (CR-158).
+            for (const f of preRoll) { send(f); sentSamples += f.byteLength / 2; }
             preRoll = [];
             if (onStatus) onStatus('capturing');
-        } else if (edge === 'close') {
-            billedMs += now - openedAt;
-            if (onBilled) onBilled(billedMs / 1000);
         }
 
         if (gate.isOpen()) {
             send(frame.buffer);
+            sentSamples += frame.length;
         } else {
             // Not sending: keep the tail in the pre-roll ring instead.
             preRoll.push(frame.buffer);
             while (preRoll.length > preRollFrames) preRoll.shift();
         }
+        // Report what has been sent when a span ends (CR-158).
+        if (edge === 'close') reportBilled();
+    }
+
+    function reportBilled() {
+        billedMs = audioRate ? (sentSamples / audioRate) * 1000 : billedMs;
+        if (onBilled) onBilled(billedMs / 1000);
     }
 
     function handleMessage(ev) {
@@ -324,6 +331,8 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
             pending = [];
             pendingMax = Math.ceil((10 * rate) / FRAME_SAMPLES);   // about ten seconds
             billedMs = 0;
+            sentSamples = 0;
+            audioRate = rate;
             // Tell the app the running total restarted, or its next report reads as a
             // decrease and that whole first burst is never counted (CR-019).
             if (onBilled) onBilled(0);
@@ -404,11 +413,8 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
             wanted = false;
             if (!running) return;
             running = false;
-            // Close the gate first so a span in progress is still counted.
-            if (gate && gate.isOpen()) {
-                billedMs += Date.now() - openedAt;
-                if (onBilled) onBilled(billedMs / 1000);
-            }
+            // A span in progress is still counted.
+            if (gate && gate.isOpen()) reportBilled();
             if (gate) gate.reset();
             if (keepAliveTimer) { clearInterval(keepAliveTimer); keepAliveTimer = null; }
             if (ws) {

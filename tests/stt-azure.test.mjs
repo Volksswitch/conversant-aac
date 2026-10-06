@@ -405,3 +405,42 @@ test('a refused Azure key is fatal at once and explains why', async () => {
     assert.equal(s[0][0], 'error');
     assert.match(s[0][1], /deleted/);
 });
+
+// CR-157 and CR-158. A span in hand at stop is not sent; what is billed is the audio
+// that was sent, pre-roll included.
+test('stopping mid-phrase sends nothing; a sent phrase is billed for the audio sent', async () => {
+    const world = fakeAudioWorld(48000);
+    const realFetch = globalThis.fetch;
+    const realNav = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+    const realAudio = globalThis.window.AudioContext;
+    world.install();
+    const requests = [];
+    globalThis.fetch = async (url, init) => { requests.push(init); return { ok: true, status: 200, json: async () => ({ RecognitionStatus: 'Success', DisplayText: 'Hi.' }) }; };
+    let billed = 0;
+    try {
+        const src = azure.createSource({ getKey: () => 'k', getRegion: () => 'eastus',
+            onText() {}, onStatus() {}, onBilled: (s) => { billed = s; } });
+        await src.start();
+        for (let i = 0; i < 10; i++) world.frame(0);     // fills the pre-roll
+        for (let i = 0; i < 10; i++) world.frame(0.3);
+        src.stop();
+        await new Promise((r) => setTimeout(r, 20));
+        assert.equal(requests.length, 0, 'nothing was sent for the phrase cut off by the stop');
+        assert.equal(billed, 0);
+
+        await src.start();
+        for (let i = 0; i < 10; i++) world.frame(0);
+        for (let i = 0; i < 30; i++) world.frame(0.3);
+        for (let i = 0; i < 12; i++) world.frame(0);
+        await new Promise((r) => setTimeout(r, 20));
+        assert.equal(requests.length, 1);
+        const sentSeconds = (readHeader(requests[0].body).dataLength / 2) / 16000;
+        assert.ok(Math.abs(billed - sentSeconds) < 0.05, `billed ${billed} against sent ${sentSeconds}`);
+        src.stop();
+    } finally {
+        globalThis.fetch = realFetch;
+        globalThis.window.AudioContext = realAudio;
+        world.restore();
+        if (realNav) Object.defineProperty(globalThis, 'navigator', realNav);
+    }
+});

@@ -387,12 +387,14 @@ export function createSource({ getKey, getRegion, onText, onStatus, onBilled }) 
         span = [];
         spanSamples = 0;
         const openMs = Math.max(0, now - openedAt);
-        billedMs += openMs;
-        if (onBilled) onBilled(billedMs / 1000);
         // A cough or a click is not sent (and not billed as a phrase): speech is the
         // open time less the hang (CR-068, as in stt-rest.js). A span cut by the
         // length ceiling is long speech by definition.
         if (!ceiling && openMs - HANG_MS < MIN_SPEECH_MS) return;
+        // What the service bills is the audio SENT, pre-roll included - not the time
+        // the gate was open (CR-158).
+        billedMs += (frames.reduce((n, f) => n + f.length, 0) / rate) * 1000;
+        if (onBilled) onBilled(billedMs / 1000);
         submit(frames, rate, mine);
     }
 
@@ -515,10 +517,10 @@ export function createSource({ getKey, getRegion, onText, onStatus, onBilled }) 
             wanted = false;
             if (!running) return;
             running = false;
-            // Submit whatever is in hand before tearing down: the partner's last words
-            // are the ones most likely to matter, and dropping them would look exactly
-            // like a mishearing.
-            if (gate && gate.isOpen()) closeSpan(Date.now(), generation);
+            // ⚠ A SPAN IN HAND IS DROPPED, NOT SENT (CR-157). Its reply would arrive after
+            // the stop and be thrown away, so sending it only paid for words never used;
+            // what was heard up to the stop is taken from the live transcript instead.
+            if (gate && gate.isOpen()) { span = []; spanSamples = 0; }
             generation++;
             if (gate) gate.reset();
             reset();

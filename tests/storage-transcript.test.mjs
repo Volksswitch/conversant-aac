@@ -807,3 +807,11 @@ test('a profile named with an accent can be loaded and deleted', async () => {
     await storage.deleteSettingsProfile('José');
     assert.ok(!(await storage.listSettingsProfiles()).includes('José'));
 });
+
+// CR-155. The speaking model and the hearing model are separate settings.
+test('a speaking model and a hearing model are stored apart', () => {
+    storage.saveServiceTtsModel('openai', 'gpt-4o-mini-tts');
+    assert.equal(storage.loadServiceSttModel('openai'), null);
+    storage.saveServiceSttModel('openai', 'gpt-4o-transcribe');
+    assert.equal(storage.loadServiceTtsModel('openai'), 'gpt-4o-mini-tts');
+});

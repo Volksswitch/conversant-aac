@@ -1085,7 +1085,7 @@ function applyTtsProvider() {
     for (const id of Object.keys(TTS_PROVIDERS)) {
         tts.setProviderCredentials(id, {
             getKey: () => storage.loadServiceKey(id) || '',
-            getModel: () => storage.loadServiceModel(id) || TTS_PROVIDERS[id].defaultModel,
+            getModel: () => storage.loadServiceTtsModel(id) || TTS_PROVIDERS[id].defaultModel,
         });
     }
 }
@@ -1128,7 +1128,7 @@ function sttInitOptions(source) {
         // The catalog services each have their own key, so the reader takes the
         // service id rather than there being one per vendor here.
         getRestKey: (id) => storage.loadServiceKey(id) || '',
-        getRestModel: (id) => storage.loadServiceModel(id)
+        getRestModel: (id) => storage.loadServiceSttModel(id)
             || (STT_PROVIDERS[id] && STT_PROVIDERS[id].defaultModel) || '',
         onBilled: handleSttBilled,
     };
@@ -8597,7 +8597,7 @@ function openSettings() {
                 testVoiceBtn.disabled = true;
                 showVoiceStatus('checking', 'Testing…');
                 const voice = (voiceSelect && voiceSelect.value) || provider.defaultVoice;
-                const model = storage.loadServiceModel(id) || provider.defaultModel;
+                const model = storage.loadServiceTtsModel(id) || provider.defaultModel;
                 const res = await tts.testRestVoice(id, key, model, voice);
                 testVoiceBtn.disabled = false;
                 showVoiceStatus(res.ok ? 'ok' : 'warn', res.message);
@@ -8614,7 +8614,7 @@ function openSettings() {
                 // Resolves Auto exactly as the Practice partner will, so what is heard
                 // here is what will be heard there - the point of the button.
                 const voice = pickRestPartnerVoice(id, partnerSelect && partnerSelect.value);
-                const model = storage.loadServiceModel(id) || provider.defaultModel;
+                const model = storage.loadServiceTtsModel(id) || provider.defaultModel;
                 const res = await tts.testRestVoice(id, key, model, voice);
                 testPartnerBtn.disabled = false;
                 showPartnerStatus(res.ok ? 'ok' : 'warn', res.message);
@@ -8649,7 +8649,7 @@ function openSettings() {
         // utterance rather than whichever was current when the backend was built.
         tts.setProviderCredentials(id, {
             getKey: () => storage.loadServiceKey(id) || '',
-            getModel: () => storage.loadServiceModel(id) || provider.defaultModel,
+            getModel: () => storage.loadServiceTtsModel(id) || provider.defaultModel,
         });
         tts.setPaidVoice(id, storage.loadServiceVoice(id) || provider.defaultVoice);
         refreshVoices();

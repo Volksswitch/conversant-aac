@@ -189,14 +189,14 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-148](CR-148.md) | fixed (7fbf964) | low | confirmed | bug | `app/js/placeholders.js:213` | Each pause resets the 'never the same phrase twice in a row' memory for holding phrases |
 | [CR-149](CR-149.md) | fixed (7fbf964) | low | confirmed | bug | `app/js/platform.js:283` | Device signature uses raw screen width x height, so the same tablet in a different orientation counts as a different screen |
 | [CR-150](CR-150.md) | fixed (7fbf964) | low | confirmed | bug | `app/js/practice-editor.js:224` | Editing a scenario can blank out who the other person is; it then runs with no persona and cannot be copied |
-| [CR-151](CR-151.md) | fixed (pending) | low | confirmed | bug | `app/js/prediction.js:65` | Learned word list: one typo outranks the dictionary forever, the list never stops growing, and non-ASCII words are stored mangled |
-| [CR-152](CR-152.md) | fixed (pending) | low | confirmed | bug | `app/js/pronunciation.js:81` | Name respellings also hit names followed or preceded by accented letters (whole-word test is ASCII-only) |
-| [CR-153](CR-153.md) | fixed (pending) | low | confirmed | bug | `app/js/review-ui.js:684` | Undo can take back two actions at once after a previous edit: the word snapshot flag is never reset when editing stops |
-| [CR-154](CR-154.md) | fixed (pending) | low | confirmed | bug | `app/js/storage.js:503` | A profile whose file name has an accent, period or apostrophe cannot be loaded, updated or deleted |
-| [CR-155](CR-155.md) | open | low | confirmed | bug | `app/js/storage.js:1197` | One stored setting ('<id>Model') serves as both the speaking model and the hearing model for OpenAI, Google Cloud and ElevenLabs |
-| [CR-156](CR-156.md) | open | low | confirmed | bug | `app/js/storage.js:2749` | metrics.log flush can strand buffered lines with no timer (and skips them at page-hide) |
-| [CR-157](CR-157.md) | open | low | confirmed | bug | `app/js/stt-azure.js:482` | Azure's last-phrase submission when listening stops is paid for and then always thrown away |
-| [CR-158](CR-158.md) | open | low | confirmed | bug | `app/js/stt-deepgram.js:221` | Shown transcription seconds leave out the 1.2 seconds of lead-in audio sent with every phrase, and count clicks that were never sent |
+| [CR-151](CR-151.md) | fixed (ddcfbe0) | low | confirmed | bug | `app/js/prediction.js:65` | Learned word list: one typo outranks the dictionary forever, the list never stops growing, and non-ASCII words are stored mangled |
+| [CR-152](CR-152.md) | fixed (ddcfbe0) | low | confirmed | bug | `app/js/pronunciation.js:81` | Name respellings also hit names followed or preceded by accented letters (whole-word test is ASCII-only) |
+| [CR-153](CR-153.md) | fixed (ddcfbe0) | low | confirmed | bug | `app/js/review-ui.js:684` | Undo can take back two actions at once after a previous edit: the word snapshot flag is never reset when editing stops |
+| [CR-154](CR-154.md) | fixed (ddcfbe0) | low | confirmed | bug | `app/js/storage.js:503` | A profile whose file name has an accent, period or apostrophe cannot be loaded, updated or deleted |
+| [CR-155](CR-155.md) | fixed (pending) | low | confirmed | bug | `app/js/storage.js:1197` | One stored setting ('<id>Model') serves as both the speaking model and the hearing model for OpenAI, Google Cloud and ElevenLabs |
+| [CR-156](CR-156.md) | fixed (pending) | low | confirmed | bug | `app/js/storage.js:2749` | metrics.log flush can strand buffered lines with no timer (and skips them at page-hide) |
+| [CR-157](CR-157.md) | fixed (pending) | low | confirmed | bug | `app/js/stt-azure.js:482` | Azure's last-phrase submission when listening stops is paid for and then always thrown away |
+| [CR-158](CR-158.md) | fixed (pending) | low | confirmed | bug | `app/js/stt-deepgram.js:221` | Shown transcription seconds leave out the 1.2 seconds of lead-in audio sent with every phrase, and count clicks that were never sent |
 | [CR-159](CR-159.md) | open | low | confirmed | bug | `app/js/stt.js:263` | The echo filter throws away a partner's one-word answer that happens to begin the app's last sentence |
 | [CR-160](CR-160.md) | open | low | confirmed | bug | `app/js/stt.js:681` | The 'how long until the microphone hears something' diagnostic never records anything for paid hearing |
 | [CR-161](CR-161.md) | open | low | confirmed | bug | `app/js/tap-guard.js:86` | Two-tap mode: the first tap is forgotten whenever the Express Panel redraws between the taps |

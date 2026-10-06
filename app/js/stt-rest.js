@@ -236,8 +236,6 @@ export function createSource({ provider, getKey, getModel, onText, onStatus, onB
         const openMs = Math.max(0, now - openedAt);
         span = [];
         spanSamples = 0;
-        billedMs += openMs;
-        if (onBilled) onBilled(billedMs / 1000);
         /*
          * ⚠ A CLICK IS NOT A WORD, AND THESE SERVICES WILL INVENT ONE FROM IT.
          *
@@ -260,6 +258,10 @@ export function createSource({ provider, getKey, getModel, onText, onStatus, onB
          * threshold regardless.
          */
         if (openMs - HANG_MS < MIN_SPEECH_MS) { reset(); return; }
+        // Billed for the audio SENT, pre-roll included, and only when it is sent - a
+        // discarded click costs nothing (CR-158).
+        billedMs += (frames.reduce((n, f) => n + f.length, 0) / rate) * 1000;
+        if (onBilled) onBilled(billedMs / 1000);
         submit(frames, rate, mine);
     }
 

@@ -390,6 +390,10 @@ forgetting to tag one is only ever noise, never silence.
   short name like "Ana" no longer changes a longer name like "Anaïs"; Undo in
   Conversation Review now takes back one edit at a time; and a settings profile copied
   into the folder with a name such as "José" can now be loaded, updated and deleted.
+- Fixed: with Azure listening, stopping while the other person was mid-sentence no
+  longer pays for a clip whose words are never used; and the cost shown for paid
+  listening now counts the audio actually sent, so it no longer reads lower than the
+  bill.
 
 ## Version 0.13.4
 

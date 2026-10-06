@@ -1282,14 +1282,25 @@ export function saveServicePartnerVoice(id, voice) {
     saveSettings(settings);
 }
 
-/** The model (OpenAI's tts model, ElevenLabs' model_id, Google's recognizer). */
-export function loadServiceModel(id) {
-    return loadSettings()[id + 'Model'] || null;
+// ⚠ TWO SETTINGS, ONE PER DIRECTION (CR-155). The same service names a speaking
+// model and a hearing model that cannot be swapped (OpenAI's gpt-4o-mini-tts against
+// gpt-4o-transcribe), and one shared key would send the one to the other.
+/** The speaking model (OpenAI's tts model, ElevenLabs' model_id). */
+export function loadServiceTtsModel(id) {
+    return loadSettings()[id + 'TtsModel'] || null;
 }
-
-export function saveServiceModel(id, model) {
+export function saveServiceTtsModel(id, model) {
     const settings = loadSettings();
-    settings[id + 'Model'] = model;
+    settings[id + 'TtsModel'] = model;
+    saveSettings(settings);
+}
+/** The hearing model (OpenAI's transcribe model, Google's recognizer, ElevenLabs' scribe). */
+export function loadServiceSttModel(id) {
+    return loadSettings()[id + 'SttModel'] || null;
+}
+export function saveServiceSttModel(id, model) {
+    const settings = loadSettings();
+    settings[id + 'SttModel'] = model;
     saveSettings(settings);
 }
 
@@ -2897,6 +2908,7 @@ const METRICS_FLUSH_MS = 10000;
 let metricsBuffer = [];
 let metricsTimer = null;
 let metricsWriting = false;
+let metricsFlushAgain = false;
 
 export function appendMetricsFile(entry) {
     if (!dirHandle) return;
@@ -2910,13 +2922,16 @@ export function appendMetricsFile(entry) {
 }
 
 export async function flushMetricsFile() {
+    // A flush asked for while one is writing runs again when that write ends, rather
+    // than cancelling the timer and leaving the lines with nothing to write them
+    // (CR-156) - the page-hide flush could land in exactly that gap.
+    if (metricsWriting) { metricsFlushAgain = true; return; }
     if (metricsTimer) { try { clearTimeout(metricsTimer); } catch { /* ignore */ } metricsTimer = null; }
     if (!dirHandle || !metricsBuffer.length) return;
     // A second flush arriving mid-write would seek to a stale length and overwrite
     // what the first one is still putting down, so the lines are taken and the write
     // is serialized. On failure they go BACK on the front of the buffer: a flush that
     // failed because the folder handle went stale should not lose the events.
-    if (metricsWriting) return;
     metricsWriting = true;
     const lines = metricsBuffer;
     metricsBuffer = [];
@@ -2931,6 +2946,12 @@ export async function flushMetricsFile() {
         metricsBuffer = lines.concat(metricsBuffer);
     } finally {
         metricsWriting = false;
+        if (metricsFlushAgain || metricsBuffer.length >= METRICS_FLUSH_LINES) {
+            metricsFlushAgain = false;
+            if (metricsBuffer.length) flushMetricsFile();
+        } else if (metricsBuffer.length && !metricsTimer) {
+            metricsTimer = setTimeout(flushMetricsFile, METRICS_FLUSH_MS);
+        }
     }
 }
 
