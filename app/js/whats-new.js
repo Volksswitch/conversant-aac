@@ -28,6 +28,7 @@ const RELEASE_NOTES = {
     "Opening a section in Settings keeps its heading in view. The heading you tapped stays where it was, instead of sliding off the top of the panel.",
     "A goal button you switch on stays where it is. It moves to the front only when its place would otherwise be hidden behind More.",
     "The Always band stays on the page you chose. Tapping a button on its second page no longer jumps the panel back to the first page. Press Close to go back.",
+    "Background noise no longer shows up as foreign words. When you hear through OpenAI or ElevenLabs, sounds like keyboard typing could appear in the conversation as words in other languages, or as labels like \"[Music]\". The app now tells these services to expect English and leaves sound labels out.",
     "The box in Troubleshooting → Report a problem now just asks for a few words describing what you experienced."
   ],
   "0.13.5": [

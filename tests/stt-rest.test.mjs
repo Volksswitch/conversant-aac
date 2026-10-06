@@ -376,3 +376,24 @@ test('capture resumes a suspended audio context and routes through a muted node'
         if (realNav) Object.defineProperty(globalThis, 'navigator', realNav);
     }
 });
+
+// Ken, October 6 2026: typing on the keyboard while listening put six languages and
+// "[Music]" into the conversation. Two guards: every service is told to expect English,
+// and sound labels are removed before anything is written down.
+import { withoutSoundLabels } from '../app/js/stt-rest.js';
+
+test('OpenAI and ElevenLabs are told the language rather than left to guess it', () => {
+    const wav = new Blob([new Uint8Array(4)], { type: 'audio/wav' });
+    const oa = STT_PROVIDERS.openai.form(wav, { model: 'm' });
+    assert.equal(oa.get('language'), 'en');
+    const el = STT_PROVIDERS.elevenlabs.form(wav, { model: 'm' });
+    assert.equal(el.get('language_code'), 'en');
+    assert.equal(el.get('tag_audio_events'), 'false');
+});
+
+test('sound labels are removed, and a clip of nothing else adds nothing', () => {
+    assert.equal(withoutSoundLabels('[Music]'), '');
+    assert.equal(withoutSoundLabels('(keyboard clicking) ♪'), '');
+    assert.equal(withoutSoundLabels('Danke. [Music] Okay then.'), 'Danke. Okay then.');
+    assert.equal(withoutSoundLabels('How are you today?'), 'How are you today?');
+});

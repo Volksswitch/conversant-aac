@@ -215,6 +215,11 @@ export const STT_PROVIDERS = {
             const fd = new FormData();
             fd.append('file', wav, 'clip.wav');
             fd.append('model', model);
+            // ⚠ THE LANGUAGE MUST BE STATED. Left to guess, the service decides a language
+            // per clip, and a clip of keyboard clicks came back as Amharic, Korean, Hebrew,
+            // Persian, German and Japanese in one turn (Ken, October 6 2026). English, as
+            // Google is told below; the app has no other language yet.
+            fd.append('language', 'en');
             return fd;
         },
         read: (j) => j.text || '',
@@ -267,6 +272,10 @@ export const STT_PROVIDERS = {
             const fd = new FormData();
             fd.append('file', wav, 'clip.wav');
             fd.append('model_id', model);
+            // The language, for the reason given under OpenAI; and no sound labels such
+            // as "(laughter)", which would be written down as the other person talking.
+            fd.append('language_code', 'en');
+            fd.append('tag_audio_events', 'false');
             return fd;
         },
         read: (j) => j.text || '',

@@ -109,10 +109,23 @@ export async function transcribeClip(provider, key, wavBlob, {
             err.status = res.status;
             throw err;
         }
-        return provider.read(await res.json()) || '';
+        return withoutSoundLabels(provider.read(await res.json()) || '');
     } finally {
         clearTimeout(timer);
     }
+}
+
+/**
+ * Removes the labels a service writes for sounds that are not speech - "[Music]",
+ * "(keyboard clicking)", music notes. Written into the conversation they read as the
+ * other person having said them (Ken, October 6 2026). A clip that was nothing but
+ * labels comes back empty, so nothing is added at all.
+ */
+export function withoutSoundLabels(text) {
+    return String(text || '')
+        .replace(/\[[^\]]*\]|\([^)]*\)|[♪♫]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
 }
 
 /**
