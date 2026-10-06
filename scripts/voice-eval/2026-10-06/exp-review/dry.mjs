@@ -1,0 +1,12 @@
+import * as L from './lib.mjs';
+const nul = await L.voiceBlockNullHarvest();
+console.log('=== HARVEST NULL (voice.json as shipped) ===\n' + nul);
+const convos = L.loadConversations();
+const k0 = await L.voiceBlockFor(convos);
+console.log('\n=== K0: harvest over 17 unreviewed logs ===');
+console.log(JSON.stringify(k0.result, null, 1));
+console.log(k0.block);
+console.log('\nidiom:', L.idiom());
+L.setStaticBlocks();
+console.log('\nsituation Mom:\n' + L.situationFor({ personId: 'p-elena' }));
+console.log('\nsituation stranger @ Gino:\n' + L.situationFor({ placeId: 'pl-gino-s-pizza' }));

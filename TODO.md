@@ -356,6 +356,21 @@ about to fall by an order of magnitude is the trap.
 - **What is wanted:** clear the findings for a document the next time that document is
   touched for any reason. `check docs <name>` lists them.
 
+### The list tool adds numbering definitions that nothing uses
+- **Raised:** 2026-10-06 - found by the checker on the same day's wording pass over the
+  Product Overview, the Beta Test Plan and the three User Manuals.
+- **The finding:** each run of `scripts/doc-generators/fix-docx-lists.py` gives every list
+  run a NEW numbering definition and leaves the old one in place. One run took each
+  manual from 48 definitions to 72, with 24 in use; the Product Overview went from 74 to
+  78 with 4 in use, and the Beta Test Plan from 39 to 43 with 4 in use. Word opens all
+  five, and the integrity and numbering-id checks pass.
+- **What is wanted:** have the tool reuse a list's existing definition when that list is
+  already numbered on its own, or remove definitions nothing uses after it runs.
+- **Why it is not being done now:** it does no harm today and was found during a wording
+  pass. It only grows, so fix it before the definitions run into the hundreds.
+- **Until then:** run `fix-docx-lists.py --check` first, and skip the real run when it
+  reports 0 runs with items split across different numberings.
+
 ### Beta Test Plan still tells testers to get a free Deepgram account for speech
 - **Raised:** 2026-09-21 - found while applying the public-release documents rule. Its
   "What you need" and set-up steps say to create a free Deepgram account for the voice, and
@@ -560,6 +575,18 @@ about to fall by an order of magnitude is the trap.
   missed their voice, which is where review is most worth the effort.
 - **The beta counts** (§8.1): how often review is used, in the weekly report. Wanted
   before deciding how much more to put into review.
+- **2026-10-06, from the Sounds Like Me evaluation:** as wired before that day's
+  changes, review is expected to return less than it costs if voice is the return being
+  counted. At realistic amounts of reviewing the evaluation could detect no change in
+  the best-guess option, though it could not rule out a small gain. So the condition
+  above, that a review must visibly change how the app sounds, is not yet shown to be
+  met. The same day's changes made Reframe instructions typed in review count, and keep
+  typed answers of under four words as short replies. What remains is in "Sounds like
+  me: what the October 6 2026 evaluation left to do", below: its item 1 is the candidate
+  measure for "Measure whether each review lesson is right", and items 7, 8, 28 and 30
+  cover review. The beta counts above are still not built. Two parts of the design were
+  also found not built and were not on this list until now: turning a complaint about
+  timing into a setting, and the misheard "report to us" (item 28).
 - **Why not now:** the rest waits on beta feedback.
 
 ### A clinician support tool
@@ -577,6 +604,596 @@ about to fall by an order of magnitude is the trap.
   conversation carries the words of a partner who never agreed to be reviewed).
 - **Why not now:** it is undescribed, and it should be shaped by what clinicians ask for
   during the beta.
+
+### Sounds like me: what the October 6 2026 evaluation left to do
+- **Raised:** 2026-10-06 - Ken asked whether Conversant's suggestions can "sound like"
+  the user. The evaluation is written up as
+  `Documents/Conversant AAC Sounds Like Me Evaluation.docx` (being written the same day).
+  Ken then said "do all three": record the findings here, make the free fixes, and turn
+  the report into that document.
+- **What is listed here:** every finding and avenue the same day's changes did not
+  cover. Those changes are not repeated here. Among them, the length measure now
+  compares like with like and is checked against How I Sound, and practice conversations
+  are left out. Reframe instructions with the same meaning are grouped and can be kept
+  with one tap in About Me.
+- **Avenue numbers** refer to the evaluation's ranked list of other avenues. Avenue 2
+  and most of avenue 3 were done on October 6. Avenue 8, editing an option before
+  speaking it, is "I, Robot?" item 3, below.
+- **Why measurement comes first:** About Me is likely to make the suggestions fit the
+  user's life (facts appeared where questions invited them), but for a terse or slangy
+  user it changed the wording little and made options longer.
+  At realistic amounts of reviewing, no change in the best-guess option could be
+  detected. Nothing in the app measures whether suggestions sound like the user, so
+  nothing below can yet be shown to work.
+- **The order:** items 1-3 measure; 4-16 are other avenues; 17-19 are deferred, each
+  with a trigger; 20-31 are faults and gaps found and not fixed; 32-34 follow from the
+  October 6 changes.
+
+#### 1. Measure it: a blind "which would you say?" check, and a first-set count
+- **Raised:** 2026-10-06 - the evaluation's avenue 1, ranked first because without a
+  measure nothing else here can be shown to work.
+- **What is wanted:**
+  - **(a) A blind check each month,** offered and never required, about 5 minutes. The
+    app shows about 12 of the user's own past partner turns. Under each, in random
+    order: today's best guess, and one made with About Me's facts but without the voice
+    parts. The question is "Which would you say?" Two or three items repeat later to
+    show how consistent the user is with themselves. It can reuse the How I Sound screen.
+  - **The user's own answer as a third choice:** the user's own typed answer, live or
+    from review, can be a third choice, as long as that conversation is kept out of the
+    example sentences. This is also how review answers become a yardstick for whether
+    the voice parts work at all.
+  - **(b) A weekly count** of turns answered from the FIRST set offered, with no New 4,
+    Reframe or typing, from data already on the device.
+- **Why a comparison is needed:** people rate AI text as sounding like them even when
+  their measured style says otherwise (Baumler et al. 2026, and the choice-blindness
+  studies). A rising share of picks can also mean the user is deferring to the app.
+  Only a comparison against a version without the voice parts tells the two apart.
+- **What five testers can show:** one tester needs 18 wins out of 24 to show a
+  preference alone. Pooled, five testers at 36 items each detect a 60-to-50 preference
+  about 75% of the time, if the testers are alike. A live test that turns the voice
+  parts off for half of real conversations needs about 390 sets each way and is not
+  recommended. An alternative that degrades no turn shows one option made with the
+  profile and one without in each category. It needs about 194 picks, but it doubles the
+  reading and adds a second request.
+- **Why not now:** the blind check needs a design - where it sits, and how the version
+  without voice is made on the device, since conversations never leave it - and Ken chose
+  the free fixes first.
+
+#### 2. "Chosen from a card" counts more than its name says
+- **Raised:** 2026-10-06 - the evaluation (avenue 1).
+- **The finding:** the usage summary's "Chosen from a card" counts any pick of a
+  response option. That includes picks made after New 4 or Reframe, picks from the fixed
+  openers, wrap-up statements and goodbyes, and repeats of the user's last line. On the
+  test data it reads 47 of 60 turns (78%); the strict figure is 36 of 60 (60%). The beta
+  evaluator prints it as "A suggestion was good enough", one of the beta's two headline
+  numbers, which CLAUDE.md defines as turns spoken from an AI-written option without
+  asking for others.
+- **What is wanted:** count only picks from the first AI-written set offered for that
+  partner turn (the weekly count in item 1), and make the beta evaluator's label match.
+  (In the code: `FROM_CARD` in usage-summary.js; `scripts/beta-eval/aggregate.mjs` and
+  `render.mjs`.)
+- **Also rename the on-screen labels.** Settings > Troubleshooting still says "card" in
+  three places: "Chosen from a card", the "From a card" column of the week table, and
+  "... cards, about ... words each". They should say "response option" (for example
+  "Chosen from the first response options offered"), as the rest of Settings has since
+  CR-205.
+- **Why not now:** it changes a headline beta number, and reports already in the Sheet
+  were counted the old way, so the beta evaluator has to tell the two apart by version.
+  It belongs with item 1.
+
+#### 3. A persona test before any model or prompt change
+- **Raised:** 2026-10-06 - the evaluation (avenue 1). So far a change of model has been
+  checked for speed, cost and usable options, not for voice.
+- **What is wanted:** before a change of model, model settings or instructions, run the
+  two test personas (Marc, terse and slangy; Grace, gentle and polite) through the
+  evaluation's method of adding one layer at a time, and compare with the last run.
+  About $2 a run. It can also try settings nobody has tried: the model's thinking
+  setting, and a randomness setting, which the app does not set at all.
+- **Read it as a check that nothing got worse, not as proof of voice:** the evaluating
+  agent wrote the personas and their lines, the same model writes and judges, and for
+  Marc the score mostly measures length and common casual words.
+- **The first run is owed now.** The October 6 changes themselves change what the AI is
+  told, and none was persona-tested: the new length instruction, the user's own
+  sentences coming before How I Sound, the note about typing effort, and kept
+  instructions.
+- **Why not now:** the scripts that ran it are in the evaluation session's temporary
+  folder, not in the project, and that folder goes when the session ends. They need
+  moving under `scripts/` with a trigger phrase first.
+
+#### 4. Let the user's own evidence outrank the fixed style rules
+- **Raised:** 2026-10-06 - the evaluation's avenue 4.
+- **The finding:** the fixed instructions carry firm style rules. A decline must have a
+  softener, the decline and a reason, and never a bare "No". No reply opens with "Oh",
+  "Well" or "So". An answer to an either/or question is a full sentence. Ordinary
+  questions get a warm answer. Nothing says which wins when these disagree with the
+  user's own examples. Marc's dinner decline contained "I'd love to (or like to), but..."
+  in 12 of 12 runs, and 1 of his 96 decline options used his own style. "Wiped", which
+  appears in the instructions only in the decline rule's example, turned up in his
+  options in 6 of 9 setups. Three of his own How I Sound picks break the opener rule.
+- **What is wanted:**
+  - **(a) The user wins over a style rule.** One line saying that where the user's own
+    sentences, kept instructions or per-person note conflict with a style rule, the user
+    wins.
+  - **The safety rules stay absolute:** no invented facts, no outside knowledge, no
+    vulgarity, speakable text.
+  - **(b) The user's own examples beside the rules:** their own declines beside the
+    decline instruction, and their own clarifications beside the clarify instruction.
+  - **(c) Length as a number** ("about 4 words"), worked out on the device, instead of
+    "shorter" or "fuller".
+  - **(d) Neutral fixed examples.** The 40 to 50 fixed example phrasings written as if
+    the user said them ("I'd love to, but...", "I'm pretty wiped today") removed or made
+    neutral.
+- **Why not now:** these rules reflect earlier decisions (the empty-opener rule of
+  v0.3.9, and a decline that gives a reason), so reversing them is Ken's call. A bare
+  "No" can read as rude to a stranger, so relaxing the decline rule may belong per
+  person. Any change needs the persona test (item 3).
+
+#### 5. A short version of each response option that can be spoken
+- **Raised:** 2026-10-06 - the evaluation's avenue 5.
+- **The finding:** each response option carries a 1-to-3-word label. When "What a
+  response option shows" is set to "The short version", the user sees that label while
+  the device speaks the full sentence, about 9 words. So a terse user can see terse words
+  and still be heard saying long ones.
+- **What is wanted:** a third form for each option: a short version of the same reply
+  that can actually be spoken, about 3 to 5 words, made in the same request. Each pick
+  then records a clean style choice - the same content at a different length - which the
+  voice plan says is needed to learn about voice.
+- **Why not now:** a small-to-medium build that changes the reply format, and the
+  instructions that describe the format must change with it (the service has enforced
+  the reply's shape since October 1 2026). How an option shows a third form is a display
+  decision for Ken.
+
+#### 6. "The app suggested this, the user said that" pairs, by partner
+- **Raised:** 2026-10-06 - the evaluation's avenue 6.
+- **The finding:** the app already saves a set of response options the user turned
+  away from, the Reframe instruction or typed words that followed, the reply finally
+  used, and who the partner was. A reworded option in review keeps both versions. The
+  reading of past conversations uses only the end of each episode: a typed reply becomes
+  an example with no context, and the rejected set, the original wording and the partner
+  go unused. The test data has about 0.35 such episodes per conversation.
+- **What is wanted:** send the two to four most recent pairs for the current partner
+  with each request. Optionally, an occasional extra request turns them into a short
+  style note.
+- **Evidence and risk:** learning from contrasts (TICL, 2025) and from similar past
+  situations (CIPHER, 2024) worked in tests, but with archived text and simulated users,
+  not live ones. Rejected wording can leak back into the options.
+- **Why not now:** a medium build that changes what goes into every request, so it
+  needs the persona test (item 3) first.
+
+#### 7. Review answers that still change nothing
+- **Raised:** 2026-10-06 - the evaluation's section on Conversation Review.
+- **The finding:** after the October 6 changes, three kinds of review answer are still
+  saved and shown again on the review screen, and change nothing else. They are the
+  "should have known" marks (partner, place, feeling, goal), the "it misheard" flag with
+  what was really said, and the original wording of a reworded option. Example sentences
+  and the length reading still apply to every partner: a sentence written for Mom
+  applies equally to a store clerk. (A Reframe instruction can now be kept for one
+  person, and a request made repeatedly only with one person stands only for them;
+  nothing else is tied to a person.)
+- **What is wanted:** decide what each of these should change, and tag every lesson
+  with the partner and place so that only the matching ones are sent. The reworded
+  original belongs with item 6.
+- **Why not now:** each is a design decision. A misheard flag carries what the partner
+  said, which is never sent automatically, so what it could feed (a count in the weekly
+  report, a measure of how well the app hears) needs deciding first.
+
+#### 8. Rebuild review around tapping
+- **Raised:** 2026-10-06 - the evaluation's avenue 7.
+- **The finding:** typing is most of review's cost. A modest review (10 turns, 2 closer
+  marks, 1 reworded option, 1 eight-word typed sentence) comes to about 23 taps and 60
+  typed characters, 6 to 8½ minutes at 5 words a minute. The user is never told what a
+  review changed.
+- **What is wanted:**
+  - **(a) Versions to tap instead of typing.** When the user picks an option in review,
+    two or three versions of the same content in different styles (shorter, more casual,
+    warmer).
+  - **(b) A one-tap reason for the miss:** too long, too formal, too polite, wrong idea,
+    missing fact.
+  - **(c) A "turns worth a look" walk** that skips turns with no sign of trouble.
+  - **(d) A summary of what the review changed,** when the user leaves - the
+    whole-review form of the light bulb in "Conversation Review: what the first build
+    left out", above.
+- **Risk:** the restyled versions come from the AI, so they stay within its range.
+- **Why not now:** a medium redesign of a feature that is waiting on beta feedback, and
+  Ken chose to leave the turn screen as it is until more reviewers or a tester have used
+  it. (d) was built once as a whole-review summary and taken out on October 3 2026,
+  because the app should not announce lessons it is not sure of (the light-bulb entry
+  above). It waits on the measure in item 1. About Me's "What the app has picked up"
+  list also does not mark which lines came from a review.
+
+#### 9. Register per person
+- **Raised:** 2026-10-06 - the evaluation's avenue 9.
+- **The finding:** every example sentence is shared across partners. While Marc talks
+  to Mom, the AI sees a line he said to his sister ("Prepare to lose, small child") as
+  the best evidence of how he talks. The per-person "how I talk with them" menu and note
+  have never been measured in a controlled test. In the review experiment the decline
+  rule's wording mostly survived them: 12 of 18 decline options to Sofia used the rule's
+  softeners although her note says "Nothing here should sound careful or nice", and all
+  18 to Devon contained "wiped".
+- **What is wanted:**
+  - **(a) A test of the per-person menu and note:** Marc with Mom, Sofia and his doctor,
+    note on and off. About $2.
+  - **(b) Example sentences by partner:** show the AI only the example sentences said to
+    the current partner, falling back to everyone.
+  - **(c) An easy partner choice at Start conversation,** as an optional tap.
+- **Why not now:** (a) needs the persona scripts kept (item 3); (b) changes what goes
+  into every request; (c) adds a step on the conversation screen, which is Ken's call. A
+  wrong partner applies the wrong register, so the tap has to stay optional.
+
+#### 10. Record who entered each About Me answer
+- **Raised:** 2026-10-06 - the evaluation's avenue 9.
+- **The finding:** a parent or therapist may fill in About Me, How I Sound or the note
+  on how the user talks with someone. The app sends all of it to the AI as the user's
+  own word, and the per-person note "overrides the general guidance above". That clashes
+  with the decided rule that partner input is second-hand and never outranks the user
+  (August 7 2026). It is also a route to a tidier, "well-behaved" version of the user
+  that nobody can see happening.
+- **What is wanted:** record, for each answer and note, whether the user or a supporter
+  entered it, and tell the AI which is which. A supporter's description of how the user
+  talks is second-hand.
+- **Why not now:** it needs a way for the app to know who is typing that does not add a
+  tap to every answer, and a default for the answers already saved, which carry no
+  record. Ken's call.
+
+#### 11. The spoken voice and the placeholders are part of sounding like the user
+- **Raised:** 2026-10-06 - the evaluation's avenue 10.
+- **The finding:** a partner hears more than wording: the voice's age, gender and
+  accent, and the placeholders, which the app speaks on its own in the user's voice and
+  which by default the app wrote ("Working that out."). The built-in voices offer no
+  younger voices. The reading of past conversations treats every placeholder and
+  Commands phrase as the app's words, so the user's own edits to them never count as
+  evidence of how they talk.
+- **What is wanted:**
+  - **(a) A voice that fits:** help the user pick a voice whose age and manner fit them.
+  - **(b) Placeholders that fit:** offer placeholder phrases that fit the user's
+    register.
+  - **(c) Edited phrases count as the user's words.** Count an edited placeholder or
+    Commands phrase as the user's own words, as the Express Panel already does for a
+    button the user wrote or changed.
+- **Why not now:** (b) must keep the two standing rules for placeholders (each reads
+  correctly after any partner turn, and each is first person and never directed at the
+  partner); (c) needs the app to tell an edited phrase from a shipped one. Ken chose the
+  free fixes first.
+
+#### 12. The AI sees its own earlier suggestions as the user's replies
+- **Raised:** 2026-10-06 - the evaluation's avenue 11.
+- **The finding:** within a conversation, the user's earlier replies are sent to the AI
+  as the user's own past turns, and most of them are response options the AI wrote (47
+  of 60 turns in the test data, which is authored). Research shows that continuing a text
+  keeps that text's style, so this may pull suggestions toward the AI's own style as a
+  conversation goes on. It stops at the end of each conversation, and the reading of
+  past conversations never uses picked options as examples.
+- **What is wanted:** test first. Compare the current arrangement with earlier picked
+  turns marked as picked options, or moved out of the place the AI reads as the user's
+  own replies. Change it only if the test shows a gain.
+- **Why not now:** untested, and it touches how the AI keeps track of the exchange. The
+  same arrangement once made the AI carry on the conversation instead of answering in
+  the required form (fixed October 1 2026), so any change needs the full test.
+
+#### 13. Practice Mode as a labeled source of the user's own words
+- **Raised:** 2026-10-06 - the evaluation's avenue 12.
+- **The finding:** typed sentences are the only source of the user's own wording, and
+  they are rare: 2 of 60 turns in the test data, and none of 30 in one tester's report,
+  although her note says she typed (see item 34). Practice is private, low-stakes and
+  repeatable, and therapists have asked to write scenarios. Since October 6 practice
+  conversations are left out of the reading entirely, because practice skewed the length
+  reading, and the AI was told those sentences came from real conversations.
+- **What is wanted:**
+  - **Scenarios that draw out typed replies:** written to draw out the user's own typed
+    replies.
+  - **Honest labels:** what they produce marked as practice and described to the AI as
+    practice.
+  - **Facts from practice checked:** any fact from practice put through the "is that true
+    about you?" question (listed in "Conversation Review: what the first build left
+    out", above).
+- **Risk:** the scenario sets the register (a job interview, an angry partner), and
+  made-up content can leak in.
+- **Why not now:** untested, and it brings back part of what the same day's change took
+  out. It should wait for a measure (item 1) that can show whether it helps.
+
+#### 14. Importing an existing AAC device's history
+- **Raised:** 2026-10-06 - the evaluation's avenue 13.
+- **The finding:** a device's history (Grid 3 chat history, TD Snap data tracking, text
+  messages) is the fastest pool of the user's own conversational sentences. Volume only
+  pays if the app picks examples that match the situation: in Tomanek et al. (2023),
+  randomly chosen samples gave no gain and matched ones gave 8 points. Today the AI sees
+  the newest 12.
+- **What is wanted:** an optional import that previews every line, removes other
+  people's names and keeps everything on the device, together with examples chosen to
+  match the situation.
+- **Risks:** device history is shaped by typing effort and word prediction; private
+  details can come up out of context; many devices keep no history or make it hard to
+  export; texts and email are written, not spoken.
+- **Why not now:** a large build, a supporter is probably needed to export, and it
+  depends on examples chosen to match the situation, which do not exist.
+
+#### 15. Two options per category as a style comparison
+- **Raised:** 2026-10-06 - the evaluation's avenue 14.
+- **The finding:** the two-per-category setting asks for options with different
+  content, so a pick between them does not isolate style (about 15 of 40 pairs happened
+  to keep the content). It costs about a third more per set, and the typical wait rose
+  from 3.0 to 4.5 seconds.
+- **What is wanted:** an option that asks for the second option in a category to keep
+  the content and change the style, and records which one the user picks.
+- **Why not now:** item 5 gets the same comparison more cheaply: no extra wait, and no
+  second option per category to choose between. Revisit only if item 5 is built and is
+  not enough.
+
+#### 16. One-tap Reframe presets
+- **Raised:** 2026-10-06 - the evaluation's avenue 3. Its other half, keeping a Reframe
+  instruction with one tap, was built the same day in About Me.
+- **The finding:** asked plainly on every turn ("shorter and more casual"), the AI made
+  a terse persona's best guess shorter (8.8 to 5.9 words) and more casual. That was one
+  run of 8 turns, and the gain in score could be chance.
+- **What is wanted:** a few one-tap presets such as "shorter", "more casual" and
+  "blunter", worded by register and never by age ("talk like a 17 year old" invites a
+  stereotype).
+- **Why not now:** the presets need a place on the conversation screen, most naturally
+  beside Reframe in the compose window, which shares the keyguard grid. Adding controls
+  there is Ken's call.
+
+#### 17. Deferred: fine-tuning a model on the user's own text
+- **Raised:** 2026-10-06 - the evaluation's deferred list.
+- **Where it stands, from the evaluation's research:**
+  - **OpenAI:** closed at its own service since May 7 2026 for accounts that have never
+    used it. New jobs end for everyone on January 6 2027.
+  - **Not offered:** by Anthropic, the Gemini API or Mistral.
+  - **Amazon:** closed for Claude models.
+  - **Still offered:** by Microsoft's and Google's enterprise clouds, which need a cloud
+    subscription and sign-in setup, and at Microsoft an hourly hosting fee.
+- **What is wanted:** nothing now. On the trigger below, a test of tuning on the user's
+  own sentences, or on chosen-versus-rejected pairs.
+- **Why it would matter:** fine-tuning reaches what prompting does not. In IMPersona
+  (2025), a model tuned on about 13,000 of a person's messages passed as them 44% of the
+  time against 25% for prompting; tuned on 500, it did no better. Weinberg et al. (CHI
+  2026) reproduced one AAC user's slang from about 19,500 messages. Training on
+  chosen-versus-rejected pairs, offered on Microsoft's cloud, would use data the app
+  already saves.
+- **Why not now:** it needs thousands of the user's own sentences, which at this app's
+  composing rates takes months to years. The routes the evaluation found open are
+  Microsoft's and Google's enterprise clouds, which need a cloud subscription and sign-in
+  setup. One other service (Fireworks) answered a browser directly, but the evaluation
+  did not test fine-tuning through it.
+- **Revisit when:** a user has several thousand of their own sentences, or preference
+  training becomes reachable with only the user's own key.
+
+#### 18. Deferred: a second request that rewrites options in the user's style
+- **Raised:** 2026-10-06 - the evaluation's deferred list.
+- **What is wanted:** a second request that rewrites the four response options in the
+  user's style, used only if the first request cannot be made to do it.
+- **Why not now:** it would roughly double the wait, which works against the silence
+  the app exists to shorten, and a plain request in the first pass already shortens and
+  loosens the options.
+- **Revisit when:** the measure in item 1 shows a gap that instructions in the first
+  request cannot close.
+
+#### 19. Deferred: partners describing how the user talks
+- **Raised:** 2026-10-06 - the evaluation's deferred list. The partner channel was
+  decided on August 7 2026 (offered, never required, private to the user, never
+  outranking the user) and has not been built.
+- **What the evaluation adds:** use it first only inside the measure in item 1, as a
+  check, not as input to the AI.
+- **Why not now:** its value as input is unmeasured, and it needs the invite-and-collect
+  machinery the August decision describes.
+- **Revisit when:** the blind check in item 1 exists.
+
+#### 20. The "never say" list leaks through the partner's own word
+- **Raised:** 2026-10-06 - the evaluation's review experiment.
+- **The finding:** on one test turn, 10 of 72 response options contained
+  "inspiration", a word on the persona's "never say" list. All 10 quoted or rejected the
+  partner's own use of it. One change-of-direction option made a joke on a turn about
+  disability labels. The instruction reads "Respect this without exception."
+- **What is wanted:** Ken's decision on whether quoting the word to reject it is
+  allowed, since that is still the user saying it aloud; then an instruction that says
+  so, checked with the persona test (item 3).
+- **Why not now:** a user may well want to say "please don't call me an inspiration",
+  so the right rule is a decision, not a fix.
+
+#### 21. The Express Panel instruction throws away a brevity signal
+- **Raised:** 2026-10-06 - the evaluation.
+- **The finding:** the user's own Express Panel phrases go to the AI with three
+  instructions: use them only to judge vocabulary, never reuse them, and do not read
+  their shortness as a wish for short replies. The last one discards one of the few
+  brevity signals a terse user's own buttons carry. The evaluation's layered tests never
+  sent this part, so no tested setup matches what a user with their own buttons sends.
+- **What is wanted:** decide whether short buttons the user wrote should count toward a
+  brevity reading, and run the persona test with this part included.
+- **Why not now:** the instruction was written on purpose (a button label is short
+  because it is a button), so changing it is a judgment, not a fix.
+
+#### 22. Does Start conversation carry the last person's register forward? Verify first
+- **Raised:** 2026-10-06 - the evaluation found the per-person "how I talk with them"
+  part cleared by End conversation and by entering Practice, but not on the path where
+  Start conversation's opener begins a new conversation.
+- **What was found on checking (not tested):** that path keeps the active partner on
+  purpose, so the openers can use that person's name and phrases; a comment in the code
+  says so. While the partner button stays lit, sending that person's register matches
+  what the screen shows.
+- **What is wanted:** check in the running app whether the per-person part is ever sent
+  with no partner button lit, and fix it only if it is.
+- **Why not now:** not confirmed, and likely not a fault.
+- **DONE 2026-10-06:** the code review of the October 6 changes found the real version of
+  this: the part of each request that names the partner was built when a request was
+  made and then reused, so switching a partner off could leave that person's name, their
+  "how I talk with them" settings and their kept instructions in the next request. Every
+  request now builds that part from the buttons lit at that moment (checked in the
+  running app).
+
+#### 23. How I Sound throws away its two escape answers
+- **Raised:** 2026-10-06 - the evaluation.
+- **The finding:** "They all sound like me" and "I wouldn't say any of these" are saved
+  and never sent. The voice plan calls the second at least as informative as a pick,
+  because it is a rejection the user gave without being asked.
+- **What is wanted:** send "I wouldn't say any of these" as a constraint, and treat
+  "They all sound like me" as no preference.
+- **Why not now:** sending rejected lines risks the AI reusing their wording, so it
+  needs the persona test first, and it was not on the list of free fixes.
+
+#### 24. How I Sound is never retired as live evidence builds up
+- **Raised:** 2026-10-06 - the evaluation.
+- **The finding:** the voice plan says live choices replace How I Sound once enough of
+  them build up. Nothing in the app does that: every pick is sent on every request, and
+  nothing retires them.
+- **What is wanted:** decide how much live evidence lowers How I Sound's weight or
+  retires it, and when.
+- **Why not now:** the October 6 change already tells the AI to follow the user's own
+  typed sentences where the two differ, which covers the commonest conflict. A threshold
+  for retiring it cannot be justified until live evidence has built up for a real user,
+  which it never has (item 34).
+
+#### 25. How I Sound's wording: one item, past rewordings, and two stale descriptions
+- **Raised:** 2026-10-06 - the evaluation.
+- **One item breaks the bank's own rule.** Every item is meant to keep the content the
+  same across its three choices, so the user chooses on style alone. "How was your
+  weekend?" adds "quiet" to two of its three choices (`economy-weekend`), and it is one
+  of the four items that isolate length, which the October 6 brevity instruction now
+  relies on. The evaluation also found that comparing a pick with the middle choice
+  cannot record one of the two directions in 4 items. (Checked October 6: the new
+  instruction does not use that comparison; it counts a pick of the shortest or the
+  longest choice.)
+- **Rewording changes what users chose.** When 11 choices in 8 items were reworded to
+  remove British phrasing, saved answers were switched to the new wording, so the AI now
+  gets a sentence the user never saw. Any rewording needs a decision on what happens to
+  answers already given.
+- **Two choices the evaluation pointed at as leaning British** (sound-check-items.js,
+  lines 136 and 178 on October 6): "That is quite all right. Please don't worry." and
+  "how are you coping?". Read them as an American would say them; a person decides.
+- **Two stale descriptions.** The item file's header said there were twelve items, all
+  answering a partner; the bank has twenty, five of them starting a conversation. That
+  header was corrected on October 6, and so was CLAUDE.md's "GAP IN THE SHIPPED BANK"
+  note.
+- **Why not now:** each rewording is small but changes saved answers, which is Ken's
+  call.
+
+#### 26. British words in response options: watch in real use
+- **Raised:** 2026-10-06 - the evaluation.
+- **The finding:** with About Me alone, Grace's options used "lovely" twice and "proper"
+  once in 64, against none in 128 with no profile. That could be chance.
+- **What is wanted:** watch for them in problem reports and reviewed conversations. If
+  they recur, tighten the American-English instruction the AI is given.
+- **Why not now:** three words in 64 options is not yet a pattern.
+
+#### 27. Sounds Like Me: a citation and section 5.3
+- **Raised:** 2026-10-06 - the evaluation's citation audit and its reading of the plan.
+- **The citation:** "Conversant AAC Sounds Like Me.docx" says Valencia et al. (CHI 2023)
+  found that choosing a generated phrase made AAC users feel the system had made the
+  choice. The paper's section 5.4.2 is about other people attributing the words to the
+  device, not the user's own feeling. CLAUDE.md's entry on the Cyrano problem repeated
+  the claim; that was corrected on October 6.
+- **Section 5.3** is titled "The question is authorization, not self-description", but
+  the How I Sound question asks about resemblance ("sounds most like something you would
+  say"). The section also calls it a preference and still quotes the rejected wording
+  "which would you rather say?". CLAUDE.md's note on asking the user and the partner
+  different questions carries the same quote.
+- **What is wanted:** correct both in the document at its next sync, and the CLAUDE.md
+  note on asking the user and the partner different questions with it.
+- **Why not now:** design records are corrected in a "sync docs" pass, which Ken times.
+
+#### 28. Conversation Review promises two things that are not built
+- **Raised:** 2026-10-06 - the evaluation.
+- **The finding:** "Conversant AAC Conversation Review.docx" promises "a report to us"
+  when the user flags a misheard line, and says the app asks "is that true about you, or
+  did you make it up for the practice?" about facts from practice. Neither is built. The
+  User Manuals were already corrected.
+- **What is wanted:** build them (the practice question is already listed in
+  "Conversation Review: what the first build left out", above), or mark them in the
+  design record as not built. A misheard report cannot send what the partner said
+  automatically, so it needs a form that carries counts only, or goes through a problem
+  report the tester sees first.
+- **Why not now:** a documents pass, and whether the misheard report should exist is
+  Ken's call.
+
+#### 29. The cached part of the instructions may be larger than the code says - verify
+- **Raised:** 2026-10-06 - an observation in the evaluation that it did not check
+  separately.
+- **The finding:** two code comments (llm.js, near lines 362 and 512) put the cached
+  part of every request at about 3,400 tokens, and CLAUDE.md's caching entry at about
+  3,570 (August 8 2026). The evaluation's measurements put it at about 10,700 to 16,400
+  tokens, which fits Marc's whole request being about 44,400 characters.
+- **Why it matters:** each time a review, or the reading of past conversations, changes
+  the voice part, the whole cached part is written again at 1.25 times the input price
+  (inferred, not measured). A larger cached part makes each such change cost more.
+- **What is wanted:** read from one real request in the running app how much was written
+  to the cache, then correct the comments and CLAUDE.md.
+- **Why not now:** not checked yet; it needs one real request with a key.
+
+#### 30. A piece of review code nothing uses
+- **Raised:** 2026-10-06 - the evaluation.
+- **The finding:** one part of the reading of past conversations counts what each kind
+  of review answer contributed (`reviewContributions` in voice-harvest.js). Nothing has
+  used it since the "what this review taught the app" view was removed on October 3
+  2026.
+- **What is wanted:** use it for item 8(d) and the light bulb, or remove it.
+- **Why not now:** it is the natural piece for those, so removing it now may mean
+  writing it again.
+
+#### 31. The reading of past conversations runs only when asked
+- **Raised:** 2026-10-06 - the evaluation, checked against the code the same day.
+- **The finding:** the app reads past conversations for example sentences only when the
+  user leaves a review or presses "Read my conversations" in About Me; nothing else
+  starts it. So a user who never reviews never gets example sentences from live
+  conversations. The voice plan describes this step as needing no user effort
+  ("self-populating").
+- **What is wanted:** decide whether it should also run on its own, for example after
+  each conversation, reading only that conversation.
+- **Why not now:** reading every saved conversation may be slow with a long history (see
+  "Leaving a review may be slow" above), and each change rewrites the cached part of the
+  instructions (item 29). It should follow item 34's check that the reading works on
+  real devices at all.
+
+#### 32. The User Manuals: describe "keep an instruction"
+- **Raised:** 2026-10-06 - created by the same day's change. About Me's "What the app
+  has picked up" now lists the Reframe instructions the user typed recently, in
+  conversations and in review, each with "Keep for everyone" and, when a partner was
+  set, "Keep for <person>".
+- **What is wanted:** describe the list and its buttons in all three User Manuals in the
+  same pass: what a kept instruction does (sent on every request, or only while that
+  person's partner button is on) and how to remove one. Check the manuals' description of
+  the other October 6 changes at the same time.
+- **Also check:** no control inside About Me has its own spoken help today, only the tab.
+  The coverage test does not read worldview-ui.js, so it cannot notice. Decide whether
+  About Me's controls, these two buttons included, should have spoken help, rather than
+  adding it to these two alone.
+- **Why not now:** the feature changed today, and documents wait until a feature has
+  stopped moving. Do it at the next "sync docs" once Ken says it has settled.
+
+#### 33. Over-promising wording: confirm the rest, then republish
+- **Raised:** 2026-10-06 - the evaluation listed passages that state as fact outcomes
+  nothing has measured, plus two that were out of date the other way. The same day's
+  pass reworded them; this entry is what is left once that pass is done.
+- **Seen reworded the same afternoon:**
+  - **Product Overview:** paragraphs 47, 103, 125 and 206.
+  - **Beta Test Plan:** the "Make it yours" step, which now names How I Sound.
+  - **All three User Manuals:** the glossary entry for "Profile".
+  - **About Me:** the notes on the personality and values sections.
+  - **In the app:** the Review tab's and How I Sound's introductions are part of the
+    October 6 change.
+- **Still open:** the Sounds Like Me plan's table of phases, which calls the reading of
+  past conversations "self-populating" (see item 31). Correct it with item 27.
+- **Republishing:** every published document whose wording changed needs a fresh PDF on
+  the website (the Product Overview, the Beta Test Plan and the three User Manuals, if
+  their wording changed). The Beta Test Plan was last published on September 26, so it
+  goes out normally. The Product Overview and the three manuals were already published
+  with an October 6 byline, and the publishing script sees no change when the byline
+  date matches the published one, so it will skip them. Its `--force` option
+  republishes all 13 documents, and every replaced copy is then left in the media
+  library for Ken to delete.
+- **Why not now:** publishing is the last step of a "sync docs" pass, and this pass did
+  not publish.
+
+#### 34. Check that real testers' devices build example sentences
+- **Raised:** 2026-10-06 - the evaluation found the voice features have never run for a
+  real user. From August 7 until the 0.13.5 fix (October 6), typed and Express Panel
+  turns were saved under the wrong label and could never become example sentences. The
+  reading of past conversations has never run in Ken's own data folders. One tester's
+  problem report showed 30 turns and none typed, although her note says she typed.
+- **What is wanted:** once testers are on 0.13.5 or later, confirm that their devices
+  build example sentences. The weekly report cannot say today: it counts How I Sound
+  answers but not example sentences. A count with no words in it (how many example
+  sentences, short replies and kept instructions a device holds, and when the reading
+  last ran) would answer it.
+- **Why not now:** 0.13.5 shipped today, so there is nothing to check yet. The count is
+  a small change to the weekly report, best made with the first-set count in item 1.
 
 ### The iPad and Android manuals carry the Windows manual's page header
 - **Raised:** 2026-09-15 - found while checking table borders. The running header at the
@@ -627,6 +1244,10 @@ about to fall by an order of magnitude is the trap.
   nothing, and is decided before the words are said).
 - **Why not now:** the voice harvesting it protects has not been built. Build the two
   together.
+- **2026-10-06:** that reason no longer holds. The reading of past conversations is
+  built, and About Me's "What the app has picked up" list has a × that removes one
+  sentence for good (whether it should ask first is the "×" entry above). Check whether
+  that answers this item, and close it or say what is still missing.
 
 #### 2. The "well-behaved" voice - corroboration, no new build
 - **The finding:** filtering his swearing and dark humor out of the training data left an
@@ -652,6 +1273,13 @@ about to fall by an order of magnitude is the trap.
   Panel long-press discussions). Options to weigh include a composer control that pulls in
   the last card shown, which adds nothing to the cards themselves.
 - **Why not now:** needs Ken's call on the gesture before anything is drawn.
+- **2026-10-06:** the Sounds Like Me evaluation lists this as its avenue 8 and suggests
+  the composer control above: load the last option shown into "In my own words" to edit
+  word by word. It adds one thing: save each edit as an "AI wrote this, user said that"
+  pair (item 6 of "Sounds like me: what the October 6 2026 evaluation left to do",
+  above). The pair is where the value lies, since edited text stays closer to the AI's
+  style than writing from scratch (Baumler et al. 2026). The cost is time, during the
+  silence the app exists to shorten.
 
 #### 4. Partners wondering whether it is the user or the AI talking
 - **The finding:** a friend told the author, "since you started using your new app, I am
@@ -678,6 +1306,11 @@ about to fall by an order of magnitude is the trap.
 - **Wanted:** fold a few such questions into the Beta Test Plan (for example, alongside the
   existing interviews). No app code.
 - **Why not now:** it is a Beta Test Plan edit, done in a documents pass.
+- **2026-10-06:** the Sounds Like Me evaluation proposes the interview question for
+  weeks 2 and 6: "Show me one that sounded like you and one that didn't. What was wrong
+  with the one that didn't?" Sort each miss as length, formality, wrong kind of reply,
+  missing fact, humor, or the AI's own habits. It also advises against an absolute "does
+  this sound like me, 1 to 7" rating, which runs high whatever the real fit.
 
 #### 6. Mixing languages within a sentence
 - **The finding:** the AI followed the author's Spanish-English mixing and Argentine slang,
@@ -760,6 +1393,10 @@ about to fall by an order of magnitude is the trap.
   the Flex-band buttons; goals that come from a PLACE rather than a person (a place can
   hold one as a fact today, and nothing treats it as a goal); the active goal stamped
   onto each saved turn (built in 0.11.1); and Reframe's sticky version, which IS a conversation goal and was deferred here.
+- **2026-10-06:** a Reframe instruction can now be kept, for everyone or one person (About
+  Me, "What the app has picked up"). A sticky Reframe for one conversation only is still
+  not built; see "a goal typed for THIS conversation only" in "Several conversation goals
+  per partner", below.
 - **Still open, and Ken's:** whether a goal can attach to a KIND of relationship ("with
   anyone in authority I want to seem capable") rather than only a named person.
 
@@ -864,6 +1501,9 @@ about to fall by an order of magnitude is the trap.
   one-shot Reframe today and is not kept. **Why not now: it needs a fourth control on the
   composer**, which changes the geometry of a modal that shares the keyguard grid - a UI
   decision on the keyguard-backed surface, and Ken's to make rather than mine.
+- **2026-10-06:** a Reframe instruction can now be kept from About Me, for everyone or
+  for one person (the Sounds Like Me evaluation's avenue 3). That is a standing
+  instruction, not a goal for one conversation, so this item is unchanged.
 - **THE DOCUMENT EXISTS NOW (2026-09-10): `Conversant AAC Conversation Goals.docx`.** Ken
   asked for it on finding there was none. It records the premise, the three layers, the
   three sources, and - the part he specifically asked for - what we are NOT doing and why,
@@ -987,6 +1627,10 @@ about to fall by an order of magnitude is the trap.
   deferred at its first build, and the sharing half overlaps the export work. Raised as
   a real request from a real clinician rather than a hypothesis, so it should not sit
   behind a general "custom scenarios someday" note.
+- **2026-10-06:** the Sounds Like Me evaluation found part (a) built on the device in
+  September (commit 09c7ccc, "make one your own, or build a new one"), so that half of
+  the reason has gone. Part (b) is still not built, and a backup import cannot stand in
+  for it, because an import replaces the whole data set.
 
 ## Done
 
