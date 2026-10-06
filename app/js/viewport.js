@@ -25,14 +25,18 @@ export function getMetrics() {
     const orientation = (screen.orientation && screen.orientation.type)
         || (matchMedia('(orientation: portrait)').matches ? 'portrait' : 'landscape');
 
+    // The box our page actually lays out against (the number that matters). It is
+    // the documentElement's client box, which zoom cannot move - the same reading
+    // app.js uses (layoutVW/layoutVH; UI Layout Rule 13). window.innerWidth/Height
+    // is reported separately because in Safari it is the VISUAL viewport and shrinks
+    // under zoom, which is exactly the difference a zoom report has to show (CR-201).
+    const lw = document.documentElement.clientWidth || window.innerWidth;
+    const lh = document.documentElement.clientHeight || window.innerHeight;
     return {
-        // The box our page actually lays out against (the number that matters).
-        layoutViewport: { w: window.innerWidth, h: window.innerHeight },
-        // Same, minus scrollbars.
-        clientBox: {
-            w: document.documentElement.clientWidth,
-            h: document.documentElement.clientHeight,
-        },
+        layoutViewport: { w: lw, h: lh },
+        // window.innerWidth/Height: the layout box plus any scrollbars, except in
+        // Safari under zoom, where it follows the visual viewport.
+        innerWindow: { w: window.innerWidth, h: window.innerHeight },
         // The whole browser window (incl. chrome). outerH - innerH ≈ top chrome.
         outerWindow: { w: window.outerWidth, h: window.outerHeight },
         approxBrowserChromeH: Math.max(0, window.outerHeight - window.innerHeight),
@@ -54,9 +58,7 @@ export function getMetrics() {
             : null,
         orientation,
         // Aspect ratio of the layout viewport (landscape > 1).
-        aspect: window.innerHeight
-            ? +(window.innerWidth / window.innerHeight).toFixed(3)
-            : null,
+        aspect: lh ? +(lw / lh).toFixed(3) : null,
     };
 }
 
