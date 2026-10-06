@@ -128,8 +128,8 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-087](CR-087.md) | fixed (ad24dcd) | medium | confirmed | security | `scripts/weekly-report-endpoint.gs:107` | Report endpoint writes tester-supplied text into the Sheet unescaped, so text starting with = + - @ becomes a spreadsheet formula |
 | [CR-088](CR-088.md) | fixed (e33027a) | medium | confirmed | ui-inconsistency | `app/css/styles.css:2514` | Double-tap "armed" look is invisible or broken on many Express Panel buttons (cascade order) |
 | [CR-089](CR-089.md) | fixed (fd28d0d) | medium | confirmed | ui-inconsistency | `app/css/styles.css:2706` | In the dark schemes every text field uses the browser's gray field: placeholder text is 2.4:1 and Yellow-on-black fields are white-on-gray |
-| [CR-090](CR-090.md) | fixed (pending) | medium | confirmed | ui-inconsistency | `app/js/app.js:2122` | After picking a response card with automatic listening off, the old cards stay on screen and can be tapped again |
-| [CR-091](CR-091.md) | open | medium | confirmed | ui-inconsistency | `app/js/ui.js:245` | Switching 'What a response card shows' mid-conversation leaves the full wording visible in 'short version' mode |
+| [CR-090](CR-090.md) | fixed (66d4272) | medium | confirmed | ui-inconsistency | `app/js/app.js:2122` | After picking a response card with automatic listening off, the old cards stay on screen and can be tapped again |
+| [CR-091](CR-091.md) | fixed (pending) | medium | confirmed | ui-inconsistency | `app/js/ui.js:245` | Switching 'What a response card shows' mid-conversation leaves the full wording visible in 'short version' mode |
 | [CR-092](CR-092.md) | open | medium | plausible | bug | `app/index.html:1277` | A browser background update can reload the page in the middle of a conversation |
 | [CR-093](CR-093.md) | open | medium | plausible | bug | `app/js/app.js:1133` | Practice partner and spoken help can be read in a foreign-language Google voice |
 | [CR-094](CR-094.md) | open | medium | plausible | bug | `app/js/storage.js:403` | A full browser storage makes every AI suggestion request fail, because saving the usage counter can throw |

@@ -735,3 +735,9 @@ test('CR-090: a spoken card clears the cards before returning to rest', () => {
     const end = body.indexOf('\n}\n');
     assert.match(body.slice(0, end), /clearPalette\(\);\n\s*resumeOrIdle\(\);\n\s*\}$/);
 });
+
+test('CR-091: changing what a card shows re-fits the cards', () => {
+    const ui = readFileSync(new URL('../app/js/ui.js', import.meta.url), 'utf8');
+    const body = ui.slice(ui.indexOf('export function setCardTextMode'));
+    assert.match(body.slice(0, body.indexOf('\n}\n')), /fitCardsAndCommands\(\);/);
+});

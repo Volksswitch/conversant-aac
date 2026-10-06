@@ -291,6 +291,9 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: with automatic listening off, the suggestion cards stayed on screen after one
   was spoken, so a stray tap could say an out-of-date answer aloud. They now go back
   to empty, as they already did after an Express Panel phrase.
+- Fixed: changing "What a response card shows" while suggestions were on screen could
+  leave a long card showing its full wording in "short version" mode, or cut off
+  without "..." the other way round.
 
 ## Version 0.13.4
 

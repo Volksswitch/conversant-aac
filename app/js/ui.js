@@ -246,6 +246,9 @@ const CARD_TEXT_CLASSES = {
 export function setCardTextMode(mode) {
     const cls = CARD_TEXT_CLASSES[mode] || CARD_TEXT_CLASSES['both-full'];
     Object.values(CARD_TEXT_CLASSES).forEach(c => responseOptions.classList.toggle(c, c === cls));
+    // Re-fit for the new mode (CR-091): the trimming is written as inline styles, which
+    // would otherwise keep the old mode's wording showing or leave new wording untrimmed.
+    fitCardsAndCommands();
 }
 
 // A card shows ONLY the RESPONSE TEXT, large and easy to read (Ken): the slot
