@@ -724,3 +724,17 @@ test('an error between conversations starts no conversation file (CR-048)', asyn
     assert.equal([...dir._files.keys()].length, before, 'no file was created');
     assert.equal(storage.getConversationId(), null, 'and no id was minted');
 });
+
+test('a profile saved on another kind of device leaves device-bound settings alone (CR-067)', async () => {
+    const dir = await root.getDirectoryHandle('settings', { create: true });
+    const fh = await dir.getFileHandle('Laptop.json', { create: true });
+    const w = await fh.createWritable();
+    await w.write(JSON.stringify({ name: 'Laptop', device: { os: 'ios', shell: 'app', screen: '1x1' },
+        settings: { sttProvider: 'builtin', colorScheme: 'dark' } }));
+    await w.close();
+    storage.saveSttProvider('deepgram');
+    storage.saveColorScheme('default');
+    await storage.applySettingsProfile('Laptop');
+    assert.equal(storage.loadSttProvider(), 'deepgram', 'how the app hears stays as it is here');
+    assert.equal(storage.loadColorScheme(), 'dark', 'an ordinary setting comes across');
+});

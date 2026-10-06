@@ -224,6 +224,10 @@ forgetting to tag one is only ever noise, never silence.
   holding-phrase editor) brought up the device's keyboard instead, and typing a
   Deepgram key capitalized its first letter. All of them now use the app's keyboard,
   and key boxes are never capitalized or offered word suggestions.
+- Fixed: loading a settings profile that was saved on a different kind of device
+  brought over settings that belong to the old device, such as how the app hears and
+  the screen edge margin, which could leave an iPad unable to hear. Those settings now
+  stay as they are, as they already did when restoring a backup.
 
 ## Version 0.13.4
 

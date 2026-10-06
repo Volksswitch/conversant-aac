@@ -56,6 +56,21 @@ outlives a "Don't save" conversation.
 
 **Why not now:** the review was the task; fixing is separate work, one item per commit.
 
+### Settings profiles saved before October 5 2026: hold back the device settings or not?
+
+**Raised:** October 5 2026, from code review item CR-067.
+
+**What is wanted:** Ken's decision. A settings profile now records which kind of device
+it was saved on, and loading it on a different kind of device leaves how the app hears,
+the keyboard type, full screen and the screen edge margin as they are, the same as
+restoring a backup does. Profiles saved before this change carry no such record, so the
+app cannot tell where they came from. Today they are loaded whole, as they always were.
+The other choice is to hold those four settings back for them too, which is safer on a
+device the profile did not come from but changes what loading an old profile does on
+the device that saved it.
+
+**Why not now:** it changes how existing profiles behave, which is Ken's call.
+
 ### Side Layout 10 has no key to reach the symbols
 
 **Raised:** October 5 2026, from code review item CR-044.

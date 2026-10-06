@@ -548,6 +548,9 @@ export async function saveSettingsProfile(name) {
         name: clean,
         savedAt: new Date().toISOString(),
         version: appVersion,
+        // Which kind of device it was saved on, so loading it elsewhere can leave the
+        // device-bound settings alone, as restoring a backup does (CR-067).
+        device: platform.deviceSignature(),
         settings: exportSettingsBundle(),
     };
     const fh = await dir.getFileHandle(`${clean}.json`, { create: true });
@@ -602,9 +605,23 @@ export async function applySettingsProfile(name) {
     for (const k of PROFILE_EXCLUDE) {
         if (current[k] !== undefined) merged[k] = current[k];
     }
-    for (const k of Object.keys(incoming)) {
-        if (!PROFILE_EXCLUDE.includes(k)) merged[k] = incoming[k];
+    // ⚠ A PROFILE SAVED ON ANOTHER KIND OF DEVICE leaves the device-bound settings as
+    // they are here - how the app hears, the keyboard type, full screen, the screen
+    // edge margin - exactly as a backup restore does. Loading one used to bring them
+    // all over and could leave an iPad unable to hear (CR-067). A profile with no
+    // device stamp (saved before this) is applied whole, as it always was.
+    const held = [];
+    let keepHere = () => false;
+    if (payload && payload.device) {
+        const cmp = platform.compareDevice(payload.device, platform.deviceSignature());
+        keepHere = (k) => (!cmp.sameOs && platform.OS_BOUND[k]) || (!cmp.sameScreen && platform.SCREEN_BOUND[k]);
     }
+    for (const k of Object.keys(incoming)) {
+        if (PROFILE_EXCLUDE.includes(k)) continue;
+        if (keepHere(k)) { held.push(k); continue; }
+        merged[k] = incoming[k];
+    }
+    for (const k of held) if (current[k] !== undefined) merged[k] = current[k];
     saveSettings(merged);
     return clean;
 }
@@ -639,7 +656,7 @@ export async function exportSettingsProfiles() {
             for (const [k, v] of Object.entries((payload && payload.settings) || {})) {
                 if (!PROFILE_EXCLUDE.includes(k)) settings[k] = v;
             }
-            out.push({ name, savedAt: payload?.savedAt || '', version: payload?.version || '', settings });
+            out.push({ name, savedAt: payload?.savedAt || '', version: payload?.version || '', device: payload?.device || null, settings });
         } catch { /* skip an unreadable profile rather than failing the whole export */ }
     }
     return out;
@@ -683,6 +700,7 @@ export async function importSettingsProfiles(profiles) {
                 name: clean,
                 savedAt: p.savedAt || new Date().toISOString(),
                 version: p.version || appVersion,
+                ...(p.device ? { device: p.device } : {}),
                 settings,
             }, null, 2));
             await w.close();

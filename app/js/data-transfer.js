@@ -70,28 +70,10 @@ export const SETTINGS_VERSION = 2;
  * different, and not merely something you might want to re-tune.
  */
 
-// Held back when the OS or the shell differs.
-export const OS_BOUND = {
-    // Whether a physical keyboard is attached is a fact about the hardware.
-    keyboardMode: 'on-screen or physical keyboard',
-    // ⚠ MEASURED, July 30 2026: the free recognizer delivers NOTHING in an iPad Home
-    // Screen app. Carrying "use the browser's own listening" there lands somebody on a
-    // device that cannot hear a word — the one place where a setting Ken rightly calls
-    // operational is also OS-bound.
-    sttProvider: 'how the app hears the other person',
-    // The Fullscreen API is refused on iOS and the control is hidden there, so this is
-    // already harmless — held back for honesty rather than safety.
-    fullscreen: 'use the whole screen',
-};
-
-// Held back when the screen differs.
-export const SCREEN_BOUND = {
-    // ⚠ THE CLEAREST CASE IN THE APP, and the one that proves "proportional" is not the
-    // test: the value IS proportional and would render fine anywhere, but it exists to
-    // clear the lip of a case opening on one particular device (Rule 16). A keyguard is
-    // cut for one screen.
-    appMarginPos: 'screen edge margin',
-};
+// The settings that belong to one device live in platform.js, so storage.js can use
+// them when a saved profile is loaded too (CR-067). Re-exported for the callers here.
+export { OS_BOUND, SCREEN_BOUND } from './platform.js';
+import { OS_BOUND, SCREEN_BOUND } from './platform.js';
 
 // The user-owned data files. Each has a data-folder file (source of truth) and a
 // localStorage write-through cache (same-machine mirror / no-folder stopgap), so
