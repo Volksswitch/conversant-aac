@@ -535,6 +535,12 @@ forgetting to tag one is only ever noise, never silence.
   (or saving an empty "In my own words" box), so it goes back to no answer. The spoken
   help for the Conversation tab now describes what is actually on it, and two spoken-
   help phrases say "an OpenAI" and "an ElevenLabs" correctly.
+- Four fixes: if the computer's file chooser fails when you tap Import, the app now
+  says so and opens the plain one instead of doing nothing; the error log's Copy
+  button says "Copy blocked" when the device refuses; with "Resume listening
+  automatically" on, the listening tone now still sounds later in the conversation if
+  the sound was not ready the first time (common on an iPad); and after Reframe, a
+  chatty reply from the AI can no longer turn into a card you could speak.
 
 ## Version 0.13.4
 

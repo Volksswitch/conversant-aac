@@ -305,14 +305,14 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-264](CR-264.md) | fixed (c4447c3) | low | confirmed | ui-inconsistency | `app/js/worldview-ui.js:443` | Restart confirmation does not mention that the general goal list is also deleted |
 | [CR-265](CR-265.md) | fixed (c4447c3) | low | confirmed | ui-inconsistency | `app/js/worldview-ui.js:472` | About Me back links say '‹ Back' on two screens and '‹ All topics' on six, including screens that are not topics |
 | [CR-266](CR-266.md) | fixed (c4447c3) | low | confirmed | ui-inconsistency | `app/js/worldview-ui.js:1566` | Every topic note is shown with a padlock, including notes that have nothing to do with privacy |
-| [CR-267](CR-267.md) | fixed (pending) | low | confirmed | ui-inconsistency | `app/js/worldview-ui.js:1662` | A multiple-choice About Me answer can never be removed, only hidden |
-| [CR-268](CR-268.md) | fixed (pending) | low | confirmed | ui-inconsistency | `settings-help.json:40` | Spoken help for the Conversation tab still says it covers what the app says while choosing |
+| [CR-267](CR-267.md) | fixed (1e51142) | low | confirmed | ui-inconsistency | `app/js/worldview-ui.js:1662` | A multiple-choice About Me answer can never be removed, only hidden |
+| [CR-268](CR-268.md) | fixed (1e51142) | low | confirmed | ui-inconsistency | `settings-help.json:40` | Spoken help for the Conversation tab still says it covers what the app says while choosing |
 | [CR-269](CR-269.md) | open - awaits Ken (TODO.md: screen-reader heading navigation; lean leave it) | low | plausible | accessibility | `app/js/sections.js:111` | Collapsible Settings sections have no heading semantics, so screen-reader users cannot jump between them |
 | [CR-270](CR-270.md) | open - awaits Ken (TODO.md: pardon before anything is heard) | low | plausible | bug | `app/js/app.js:3280` | "Ask them to repeat" pressed with no conversation records a turn and opens a repair |
-| [CR-271](CR-271.md) | open | low | plausible | bug | `app/js/app.js:6713` | Import from the backups folder silently does nothing on any picker failure and never falls back |
-| [CR-272](CR-272.md) | open | low | plausible | bug | `app/js/app.js:7044` | Copy on the error log fails silently, likely always on an iPad |
-| [CR-273](CR-273.md) | open | low | plausible | bug | `app/js/chime.js:46` | The once-per-conversation listening chime is used up even when it made no sound |
-| [CR-274](CR-274.md) | open | low | plausible | bug | `app/js/llm.js:810` | Lead-mode statements: a non-JSON reply is split into lines and offered as speakable cards |
+| [CR-271](CR-271.md) | fixed (pending) | low | plausible | bug | `app/js/app.js:6713` | Import from the backups folder silently does nothing on any picker failure and never falls back |
+| [CR-272](CR-272.md) | fixed (pending) | low | plausible | bug | `app/js/app.js:7044` | Copy on the error log fails silently, likely always on an iPad |
+| [CR-273](CR-273.md) | fixed (pending) | low | plausible | bug | `app/js/chime.js:46` | The once-per-conversation listening chime is used up even when it made no sound |
+| [CR-274](CR-274.md) | fixed (pending) | low | plausible | bug | `app/js/llm.js:810` | Lead-mode statements: a non-JSON reply is split into lines and offered as speakable cards |
 | [CR-275](CR-275.md) | open | low | plausible | bug | `app/js/practice-library.js:135` | A failed save of a practice scenario makes buttons silently do nothing and is logged as a start-up failure |
 | [CR-276](CR-276.md) | open | low | plausible | bug | `app/js/stt-rest.js:307` | OpenAI, Google and ElevenLabs hearing never wakes its audio engine and is wired straight to the speakers |
 | [CR-277](CR-277.md) | open | low | plausible | bug | `app/js/stt.js:368` | On Android the live text and a checkpoint can repeat words while a re-sent sentence is still in progress |

@@ -1087,3 +1087,10 @@ test('About Me: tapping the chosen pick-one chip clears the answer', async () =>
     const fn = wvui.slice(wvui.indexOf('function buildChoice('));
     assert.match(fn.slice(0, 1500), /current === opt\s*\?\s*wv\.resetField\(field\.key\)/);
 });
+
+// CR-271 / CR-272 guards.
+test('Import tries the plain chooser when the picker fails; error-log Copy says when it is blocked', () => {
+    assert.match(appSource, /if \(err && err\.name === 'AbortError'\) return;\s*setBackupStatus\('The file chooser could not open here/);
+    const cp = appSource.slice(appSource.indexOf("document.getElementById('copyErrorLogBtn').onclick"));
+    assert.match(cp.slice(0, 900), /show\('Copy blocked'\)/);
+});

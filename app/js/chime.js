@@ -43,10 +43,13 @@ export function resetConversation() { playedThisConversation = false; }
 export function playListenChime() {
     if (!enabled) return false;
     if (oncePerConversation && playedThisConversation) return false;
-    playedThisConversation = true;
+    // The once-per-conversation latch is set only when the tone actually sounds (or
+    // when the device has no audio at all). Set first, an iPad whose audio was not yet
+    // ready stayed silent and then skipped the tone for the rest of the conversation,
+    // so the other person never heard it (CR-273).
     try {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        if (!AudioCtx) return true;   // policy allowed it; this device has no audio
+        if (!AudioCtx) { playedThisConversation = true; return true; }   // policy allowed it; no audio here
         ctx = ctx || new AudioCtx();
         // NEVER schedule into a context that isn't running. WebKit starts a context
         // suspended unless it was created during a user gesture, and this call is
@@ -66,6 +69,7 @@ export function playListenChime() {
         const t = ctx.currentTime;
         playNote(t,        660, 0.20);  // E5
         playNote(t + 0.17, 880, 0.26);  // A5
+        playedThisConversation = true;
     } catch { /* audio unavailable — silent, never blocks capture */ }
     return true;
 }

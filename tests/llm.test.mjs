@@ -246,6 +246,18 @@ test('generateStatements parses a JSON array into STATEMENT-slot responses', asy
     assert.equal(r.responses[0].text, 'I wanted to tell you about my week.');
 });
 
+// CR-274. The statements come back in a fixed shape, and prose is refused rather than
+// split into lines that would become cards in the user's voice.
+test('generateStatements reads {statements}, sends a schema, and refuses prose', async () => {
+    mockFetch(JSON.stringify({ statements: ['One thing I wanted to say.', 'Can I ask you something?'] }));
+    const r = await llm.generateStatements('lead');
+    assert.equal(r.responses.length, 2);
+    assert.deepEqual(getFetchCalls()[0].body.output_config?.format?.schema, llm.STATEMENTS_SCHEMA,
+        'the shape rides with the request');
+    mockFetch('Sure! Here are some ways you could raise it:\n1. A thing\n2. Another');
+    await assert.rejects(() => llm.generateStatements('lead'), /Could not parse statements/);
+});
+
 test('repairOptions parses {rephrase, expand}', async () => {
     mockFetch(JSON.stringify({ rephrase: 'I was at the market.', expand: 'I went to the market for fruit.' }));
     const r = await llm.repairOptions('I went to the market.');

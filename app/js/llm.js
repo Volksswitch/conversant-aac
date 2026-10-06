@@ -808,32 +808,44 @@ ${NO_VULGARITY}
 
 ${SPEAKABLE}
 
-Return ONLY a JSON array of ${n} strings, nothing else. Example: ["...", "...", "..."].
+Return ONLY a JSON object of the form {"statements": [${n} strings]}, nothing else.
 
 Conversation context (engine state — use it, do not echo it):
 ${JSON.stringify(context)}${buildProfileBlock()}${buildSituationBlock()}${contextLines ? '\n\nConversation so far:\n' + contextLines : ''}${avoidBlock}`;
 
+    // The shape is enforced, as for the suggestions (CR-274): without it the model
+    // sometimes answers conversationally, and the old last-resort line splitting turned
+    // "Sure! Here are some ways to bring it up:" into a card the user could speak.
     const text = await ask({
         system: systemPrompt,
         messages: [{ role: 'user', content: steer }],
         maxTokens: 600,
+        schema: STATEMENTS_SCHEMA,
     });
     return { responses: parseStatements(text, n) };
 }
+
+export const STATEMENTS_SCHEMA = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['statements'],
+    properties: { statements: { type: 'array', items: { type: 'string' } } },
+};
 
 // Parse a JSON array of statement strings (tolerating stray prose around it) into
 // STATEMENT-slot response descriptors. Falls back to splitting lines if needed.
 function parseStatements(text, n) {
     let list = null;
-    try { list = JSON.parse(text); } catch { /* try to extract */ }
+    let parsed = null;
+    try { parsed = JSON.parse(text); } catch { /* try to extract */ }
+    if (parsed && Array.isArray(parsed.statements)) list = parsed.statements;
+    else if (Array.isArray(parsed)) list = parsed;   // the older bare-array form
     if (!Array.isArray(list)) {
         const m = text.match(/\[[\s\S]*\]/);
         if (m) { try { list = JSON.parse(m[0]); } catch { /* fall through */ } }
     }
-    if (!Array.isArray(list)) {
-        // Last resort: non-empty lines, stripped of list markers/quotes.
-        list = text.split('\n').map(s => s.replace(/^\s*[-*\d.]*\s*/, '').replace(/^["']|["']$/g, '').trim()).filter(Boolean);
-    }
+    // No more splitting a reply into lines: prose is not a set of statements, and a
+    // line of it would be spoken in the user's voice (CR-274).
     if (!Array.isArray(list) || !list.length) throw new Error('Could not parse statements from API');
     return list.slice(0, n).map(t => ({ slot: 'STATEMENT', text: String(t).trim(), hint: '' })).filter(m => m.text);
 }

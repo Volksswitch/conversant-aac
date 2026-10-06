@@ -80,3 +80,32 @@ test('being disabled does not consume the conversation\'s single chime', () => {
     chime.setEnabled(true);
     assert.equal(chime.playListenChime(), true, 'the cue was never spent while off');
 });
+
+// CR-273. On an iPad the audio is often not ready when listening starts. The tone is
+// not played then, and it must not count as played: the next start tries again, and
+// only once it actually sounds is the rest of the conversation quiet.
+test('auto-resume ON: a start that could not sound does not use up the conversation\'s tone', () => {
+    const made = [];
+    const fake = {
+        state: 'suspended', currentTime: 0, destination: {},
+        resume() { return Promise.resolve(); },
+        createOscillator() { made.push('osc'); return { type: '', frequency: { value: 0 }, connect(n) { return n; }, start() {}, stop() {} }; },
+        createGain() { return { gain: { value: 0, setValueAtTime() {}, linearRampToValueAtTime() {}, exponentialRampToValueAtTime() {} }, connect(n) { return n; } }; },
+    };
+    const saved = globalThis.window.AudioContext;
+    globalThis.window.AudioContext = function () { return fake; };
+    try {
+        chime.setOncePerConversation(true);
+        chime.resetConversation();
+        chime.playListenChime();
+        assert.equal(made.length, 0, 'nothing is scheduled on audio that is not ready');
+        assert.equal(chime.playListenChime(), true, 'the next start still tries');
+        fake.state = 'running';
+        chime.playListenChime();
+        assert.ok(made.length > 0, 'it sounds once the audio is ready');
+        assert.equal(chime.playListenChime(), false, 'and then the conversation is quiet');
+    } finally {
+        globalThis.window.AudioContext = saved;
+        chime.resetConversation();
+    }
+});

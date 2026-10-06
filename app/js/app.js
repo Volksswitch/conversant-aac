@@ -7458,13 +7458,17 @@ function wireBackupControls() {
                     multiple: false,
                 });
                 file = await handle.getFile();
-            } catch {
-                // The user closed the picker, or the browser refused it. Neither is an
-                // error worth reporting, and the plain input is still there.
-                return;
+            } catch (err) {
+                // Closing the picker is not an error. Anything else used to be swallowed
+                // too, and returned before the plain chooser below was ever tried - so a
+                // browser that refused the picker left Import doing nothing on every tap
+                // (CR-271). Say so, and try the plain chooser.
+                if (err && err.name === 'AbortError') return;
+                setBackupStatus('The file chooser could not open here, so the plain one is being tried. '
+                    + 'If nothing appears, tap Import again.');
+                file = null;
             }
-            await importFromFile(file);
-            return;
+            if (file) { await importFromFile(file); return; }
         }
         fileInput.value = '';       // so re-picking the SAME file still fires change
         fileInput.click();
@@ -7802,12 +7806,17 @@ function openSettings() {
     renderErrorLog();
     document.getElementById('copyErrorLogBtn').onclick = async () => {
         const btn = document.getElementById('copyErrorLogBtn');
+        const orig = btn.dataset.label || (btn.dataset.label = btn.textContent);   // CR-245
+        const show = (word) => { btn.textContent = word; setTimeout(() => { btn.textContent = orig; }, 1500); };
         try {
             await navigator.clipboard.writeText(await buildErrorReport());
-            const orig = btn.dataset.label || (btn.dataset.label = btn.textContent);   // CR-245
-            btn.textContent = 'Copied ✓';
-            setTimeout(() => { btn.textContent = orig; }, 1500);
-        } catch { /* clipboard blocked/denied */ }
+            show('Copied ✓');
+        } catch {
+            // Refused, usually because building the report took long enough that the
+            // browser no longer counts the tap (iPad). It used to fail with no sign at
+            // all (CR-272).
+            show('Copy blocked');
+        }
     };
     document.getElementById('clearErrorLogBtn').onclick = async () => {
         if (!(await confirmDanger({
