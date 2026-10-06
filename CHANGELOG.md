@@ -294,6 +294,9 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: changing "What a response card shows" while suggestions were on screen could
   leave a long card showing its full wording in "short version" mode, or cut off
   without "..." the other way round.
+- Fixed: when a new version came out, the app could restart itself in the middle of a
+  conversation. It now waits until no conversation is under way and Settings is
+  closed, then updates.
 
 ## Version 0.13.4
 

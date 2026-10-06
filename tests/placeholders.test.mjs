@@ -741,3 +741,11 @@ test('CR-091: changing what a card shows re-fits the cards', () => {
     const body = ui.slice(ui.indexOf('export function setCardTextMode'));
     assert.match(body.slice(0, body.indexOf('\n}\n')), /fitCardsAndCommands\(\);/);
 });
+
+test('CR-092: a new version waits for a quiet moment before restarting the app', () => {
+    const html = readFileSync(new URL('../app/index.html', import.meta.url), 'utf8');
+    assert.match(html, /if \(window\.__aacReloadIfIdle\) window\.__aacReloadIfIdle\(\);/);
+    assert.match(appSource, /window\.__aacReloadIfIdle = reloadForUpdateIfIdle;/);
+    const f = appSource.slice(appSource.indexOf('function reloadForUpdateIfIdle'));
+    assert.match(f.slice(0, 400), /conversationInProgress\(\)/);
+});

@@ -3041,6 +3041,7 @@ async function terminateConversation() {
     // flush above, so the pending turn is written under this conversation's setting.
     conversationPrivate = storage.loadNoSaveDefault();
     applyPrivacyState();
+    reloadForUpdateIfIdle();   // a waiting update can take over now (CR-092)
 }
 
 // How many opener / wind-down / closing cards the response footprint can show: 8
@@ -4159,6 +4160,22 @@ function expressLayoutRows() {
 //
 // Every term is cleared by terminateConversation(), which is what makes it go false
 // again.
+/*
+ * A new version has taken over (CR-092). Reloading straight away would wipe a
+ * conversation mid-sentence - an update check can land at any time, and a tablet left
+ * running all day gets one from the browser itself. So the reload waits until nothing
+ * is under way: no conversation, no composer, no open panel. It checks again every few
+ * seconds, and at the end of every conversation.
+ */
+let updateWaitTimer = null;
+function reloadForUpdateIfIdle() {
+    if (!window.__aacUpdateReady) return;
+    const busy = conversationInProgress() || composerOpen || !!document.querySelector('dialog[open]');
+    if (!busy) { window.location.reload(); return; }
+    if (!updateWaitTimer) updateWaitTimer = setInterval(reloadForUpdateIfIdle, 5000);
+}
+window.__aacReloadIfIdle = reloadForUpdateIfIdle;
+
 function conversationInProgress() {
     return reviewUI.isActive()
         || practiceMode

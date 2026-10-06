@@ -1277,7 +1277,11 @@
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (reloading || !hadController) return;
                 reloading = true;
-                window.location.reload();
+                // Once the app is running it decides when: never mid-conversation
+                // (CR-092). Before it has loaded, reload at once.
+                window.__aacUpdateReady = true;
+                if (window.__aacReloadIfIdle) window.__aacReloadIfIdle();
+                else window.location.reload();
             });
             window.addEventListener('load', async () => {
                 try {
