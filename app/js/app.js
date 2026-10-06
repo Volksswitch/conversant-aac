@@ -3024,11 +3024,24 @@ function hintWhere(step, target) {
     lastHintAt = now;
     // The instruction STAYS on screen and the hint is added to it — the user still
     // needs to know what they are being asked to do, not only where the button is.
-    ui.setCoachLine(`${step.say}\n${step.where}`);
+    const where = whereFor(step);
+    ui.setCoachLine(`${step.say}\n${where}`);
     // Only the new information is spoken. Repeating the whole instruction on every
     // mis-tap would be slower to sit through each time it happened. Not over the
     // user's own sentence, though: the text is on screen either way (CR-027).
-    if (!speakingUserStatement) tts.speak(step.where, partnerVoiceOptions());
+    if (!speakingUserStatement) tts.speak(where, partnerVoiceOptions());
+}
+
+// The tour's hints describe each command button's PICTURE. With words chosen for the
+// command buttons instead (Settings > Commands), the picture is not on screen, so the
+// hint names the word the button actually shows (CR-257).
+function whereFor(step) {
+    const el = step && step.target ? document.querySelector(step.target) : null;
+    if (el && el.closest('#listenControls') && el.classList.contains('cmd-worded')) {
+        const face = (el.textContent || '').trim();
+        if (face) return `The one I mean is the button that says "${face}", in the row of buttons across the middle.`;
+    }
+    return step.where;
 }
 
 function announceTourFinished() {

@@ -512,6 +512,9 @@ forgetting to tag one is only ever noise, never silence.
   first letter a capital. The speaker buttons for hearing a phrase in Settings and
   About Me now use the app's own speaker picture, so they follow your color scheme
   instead of always being gray and blue.
+- The practice button tour now calls the button "Wrap up", matching the screen, and if
+  you have chosen words instead of pictures on the command buttons, its hints name the
+  word the button shows.
 
 ## Version 0.13.4
 

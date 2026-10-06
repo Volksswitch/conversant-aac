@@ -129,7 +129,7 @@ export const TOUR_STEPS = [
         id: 'wind-down',
         where: "The one I mean shows an arrow pointing down onto a line. It is seventh from the left in the middle row.",
         target: '#windDownBtn',
-        say: "Wind down is how you signal you would like to finish, without saying "
+        say: "Wrap up is how you signal you would like to finish, without saying "
            + "goodbye yet. It offers things like \"I should get going.\" Tap it.",
     },
     {

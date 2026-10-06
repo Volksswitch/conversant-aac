@@ -1046,3 +1046,13 @@ test('the one-shot capital follows the start of a sentence', async () => {
     assert.match(kb, /: startsSentence\(field\) \? 'shift' : 'off';/);
     assert.match(rv, /if \(ed\.fresh\) keyboard\.setShift\(ed\.sel === 0 \|\| \/\[\.!\?\]\$\/\.test\(prev\)\);/);
 });
+
+// CR-257. The tour calls the button by its name, and names the word when the command
+// buttons show words instead of pictures.
+test('the button tour says Wrap up and follows word labels', async () => {
+    const { readFileSync } = await import('node:fs');
+    const tour = readFileSync(new URL('../app/js/practice-tour.js', import.meta.url), 'utf8');
+    assert.ok(!/Wind down/.test(tour));
+    assert.match(appSource, /function whereFor\(step\)/);
+    assert.match(appSource, /tts\.speak\(where, partnerVoiceOptions\(\)\)/);
+});
