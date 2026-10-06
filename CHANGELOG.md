@@ -442,6 +442,8 @@ forgetting to tag one is only ever noise, never silence.
 - On an Android device where Conversant is installed, turning the device sideways no
   longer switches it to a portrait layout. It stays in landscape, so a keyguard keeps
   lining up.
+- If deleting a saved settings profile fails, Settings now says so instead of saying
+  nothing.
 
 ## Version 0.13.4
 

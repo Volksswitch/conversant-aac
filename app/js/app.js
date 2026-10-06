@@ -7813,12 +7813,16 @@ function openSettings() {
             body: `Delete the settings profile “${name}”? This removes its file from your data folder.`,
             confirmLabel: 'Delete',
         }))) return;
-        await storage.deleteSettingsProfile(name);
-        // If the deleted profile was the one in effect, forget the pointer (the live
-        // settings are unchanged; they're just no longer "named").
-        if (storage.loadActiveSettingsProfile() === name) storage.saveActiveSettingsProfile('');
-        await renderSettingsProfiles();
-        setProfileStatus(`Deleted “${name}”.`);
+        try {
+            await storage.deleteSettingsProfile(name);
+            // If the deleted profile was the one in effect, forget the pointer (the live
+            // settings are unchanged; they're just no longer "named").
+            if (storage.loadActiveSettingsProfile() === name) storage.saveActiveSettingsProfile('');
+            await renderSettingsProfiles();
+            setProfileStatus(`Deleted “${name}”.`);
+        } catch (err) {
+            setProfileStatus(err.message || 'Could not delete the profile.');
+        }
     };
 
     wireBackupControls();
@@ -9072,7 +9076,14 @@ function openSettings() {
 function reportStartupFailure(where, err) {
     const msg = (err && (err.stack || err.message)) || String(err);
     try { console.error('[startup]', where, err); } catch { /* no console */ }
-    try { storage.logError('startup:' + where, msg); } catch { /* logging is best-effort */ }
+    // A failure after Start is not a start-up failure, and the error log and the weekly
+    // report group by this label, so it says which it was (CR-206).
+    let started = true;
+    try {
+        const sb = document.getElementById('startBlock');
+        started = !sb || sb.classList.contains('hidden');
+    } catch { /* no DOM - call it started */ }
+    try { storage.logError((started ? 'uncaught:' : 'startup:') + where, msg); } catch { /* logging is best-effort */ }
     try {
         const box = document.getElementById('startupError');
         if (!box || !box.hidden) return;   // first failure wins — it is the root cause

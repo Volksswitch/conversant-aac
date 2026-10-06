@@ -940,3 +940,12 @@ test('CR-183/184/186: resume aborts the ladder; no key asks nothing; every paid 
 test('the response error retry button is under the two-tap guard', () => {
     assert.match(appSource, /tapGuard\.addRule\('#responseOptions \.response-error-retry'\)/);
 });
+
+// CR-206. A failure after Start is logged as 'uncaught:', not as a start-up failure,
+// because the error log and the weekly report group by this label.
+test('the global error handlers label a failure after Start as uncaught', () => {
+    const fn = appSource.slice(appSource.indexOf('function reportStartupFailure'));
+    const body = fn.slice(0, fn.indexOf('\n}\n') > 0 ? fn.indexOf('\n}\n') : fn.indexOf('\r\n}\r\n'));
+    assert.match(body, /\(started \? 'uncaught:' : 'startup:'\) \+ where/);
+    assert.ok(body.indexOf('started =') < body.indexOf('logError('), 'decided before logging');
+});
