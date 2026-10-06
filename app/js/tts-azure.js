@@ -55,6 +55,12 @@ const SYNTH_TIMEOUT_MS = 6000;
 // repeat constantly, so this is most of what the app says.
 const MAX_CACHE_ENTRIES = 300;
 
+// Only SHORT phrases are kept (CR-213). The cache exists for what repeats -
+// placeholders, control phrases, Express buttons - and those are all short. A one-off
+// AI response or composed sentence never repeats, and a decoded sentence is hundreds
+// of kilobytes, so keeping 300 of them could reach ~200 MB on a tablet over a day.
+export const MAX_CACHED_CHARS = 120;
+
 /*
  * The FALLBACK voices — a curated handful, used only until the real catalog has been
  * fetched, and after that only if fetching fails.
@@ -471,7 +477,7 @@ export function createVoice({ getKey, getRegion, onBilled } = {}) {
                 if (mine !== playToken) return;
                 buffer = await decode(c, bytes);
                 if (mine !== playToken) return;
-                remember(key, buffer);      // so the next time this phrase is said, it is instant
+                if (trimmed.length <= MAX_CACHED_CHARS) remember(key, buffer);   // instant next time
             }
             await play(c, buffer);
         };

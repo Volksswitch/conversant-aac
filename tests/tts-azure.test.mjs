@@ -210,6 +210,31 @@ test('END TO END: a repeated phrase is not requested twice', async () => {
     }
 });
 
+// CR-213. A long one-off sentence is not kept: it never repeats, and hundreds of them
+// held decoded in memory could make a tablet reload the page mid-conversation.
+test('END TO END: a long one-off sentence is not cached', async () => {
+    const calls = [];
+    const realFetch = globalThis.fetch;
+    const realAudio = globalThis.window.AudioContext;
+    globalThis.window.AudioContext = function () { return fakeAudio(); };
+    globalThis.fetch = async (url, init) => {
+        calls.push({ url, init });
+        return { ok: true, status: 200, arrayBuffer: async () => new ArrayBuffer(64) };
+    };
+    try {
+        tts.setProvider('azure', { getKey: () => 'k', getRegion: () => 'eastus' });
+        const long = 'This is a long, one-off sentence that the app would never say twice in exactly the same words, so keeping it costs memory and buys nothing.';
+        assert.ok(long.length > 120);
+        await tts.speak(long);
+        await tts.speak(long);
+        assert.equal(calls.length, 2, 'a long sentence is fetched each time');
+    } finally {
+        globalThis.fetch = realFetch;
+        globalThis.window.AudioContext = realAudio;
+        tts.setProvider('builtin');
+    }
+});
+
 test('END TO END: a refused request falls back to the browser voice and says so', async () => {
     // The one outcome that is never acceptable is the user pressing a button and
     // nothing being said. This is the path that guarantees it, and the fallback is

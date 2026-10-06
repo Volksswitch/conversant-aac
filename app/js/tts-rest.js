@@ -55,6 +55,12 @@ const SYNTH_TIMEOUT_MS = 6000;
 // are short phrases, and a count is something a reader can reason about.
 const MAX_CACHE_ENTRIES = 300;
 
+// Only SHORT phrases are kept (CR-213). The cache exists for what repeats -
+// placeholders, control phrases, Express buttons - and those are all short. A one-off
+// AI response or composed sentence never repeats, and a decoded sentence is hundreds
+// of kilobytes, so keeping 300 of them could reach ~200 MB on a tablet over a day.
+export const MAX_CACHED_CHARS = 120;
+
 /** voice + text — the two things that change what comes back. */
 export function cacheKey(voice, text) {
     // ⚠ THE SEPARATOR IS A NUL WRITTEN AS AN ESCAPE, never as a raw byte - the same
@@ -288,7 +294,7 @@ export function createVoice({ provider, getKey, getModel, onBilled } = {}) {
                 if (mine !== playToken) return;
                 buffer = await decode(c, bytes);
                 if (mine !== playToken) return;
-                remember(k, buffer);
+                if (trimmed.length <= MAX_CACHED_CHARS) remember(k, buffer);
             }
             await play(c, buffer);
         };

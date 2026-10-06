@@ -77,6 +77,12 @@ const SYNTH_TOTAL_MS = 60000;
 // a count is something a reader can reason about.
 const MAX_CACHE_ENTRIES = 300;
 
+// Only SHORT phrases are kept (CR-213). The cache exists for what repeats -
+// placeholders, control phrases, Express buttons - and those are all short. A one-off
+// AI response or composed sentence never repeats, and a decoded sentence is hundreds
+// of kilobytes, so keeping 300 of them could reach ~200 MB on a tablet over a day.
+export const MAX_CACHED_CHARS = 120;
+
 /*
  * The voices offered in Settings. Deepgram documents the model id format as
  * [model]-[voice]-[language], so these are mechanically derived from the published
@@ -580,7 +586,7 @@ export function createVoice({ getKey, onBilled } = {}) {
                 if (player === p) player = null;
                 throw new Error('The voice service returned no audio.');
             }
-            remember(key, samples);   // so the next time this phrase is said, it is instant
+            if (trimmed.length <= MAX_CACHED_CHARS) remember(key, samples);   // instant next time
             p.end();
             await p.done;
             if (player === p) player = null;
