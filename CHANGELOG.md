@@ -439,6 +439,9 @@ forgetting to tag one is only ever noise, never silence.
   one we recommend) is used. A choice you made yourself always wins.
 - With "Two taps" turned on, the "Try again" button that appears when suggestions fail
   now needs two taps like everything else on that screen.
+- On an Android device where Conversant is installed, turning the device sideways no
+  longer switches it to a portrait layout. It stays in landscape, so a keyguard keeps
+  lining up.
 
 ## Version 0.13.4
 

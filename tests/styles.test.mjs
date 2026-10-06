@@ -383,3 +383,10 @@ test('every var(--x) a script uses is defined somewhere', async () => {
     }
     assert.deepEqual(missing, []);
 });
+
+// CR-198. Landscape only (UI Layout Rule 2); an installed Android app honors this and
+// would otherwise rotate into a portrait layout that moves every keyguard hole.
+test('the installed app is locked to landscape', () => {
+    const manifest = JSON.parse(readFileSync(new URL('../app/manifest.webmanifest', import.meta.url), 'utf8'));
+    assert.equal(manifest.orientation, 'landscape');
+});
