@@ -133,7 +133,7 @@
                  (own vertical budget). All buttons are icon-only (Rule 4); each
                  keeps an accessible name. Session controls, persistent overrides,
                  and Settings. -->
-            <div id="listenControls" aria-label="Command Bar" data-prestart-inert inert>
+            <div id="listenControls" role="group" aria-label="Command Bar" data-prestart-inert inert>
                 <button id="listenBtn" type="button">Start Listening</button>
                 <button id="initiateBtn" type="button" class="cmd-btn">Start conversation</button>
                 <button id="endConversationBtn" type="button" class="cmd-btn cmd-btn-end">End conversation</button>
@@ -163,7 +163,7 @@
                     <!-- "In my own words" modal input box — overlays the response
                          footprint, base UI NOT blurred. Shown by the In-my-own-words
                          Express Panel button; any of the 3 buttons dismisses it. -->
-                    <div id="composerOverlay" class="composer-overlay" hidden aria-label="In my own words">
+                    <div id="composerOverlay" role="group" class="composer-overlay" hidden aria-label="In my own words">
                         <textarea id="composerInput" rows="2" placeholder="Type here, then Speak it, Reframe to get new options from it, or Cancel." autocomplete="off"></textarea>
                         <div id="composerControls">
                             <!-- Speak + Reframe tile the response-card region (mirrors
@@ -188,12 +188,12 @@
              words"). The keyboard overlays this same space during the modal. -->
         <div id="dockArea" data-prestart-inert inert>
             <div id="expressPanel" class="express-panel">
-                <div id="epGrid" aria-label="Express Panel"></div>
+                <div id="epGrid" role="group" aria-label="Express Panel"></div>
             </div>
         </div>
     </main>
 
-    <dialog id="settingsDialog">
+    <dialog id="settingsDialog" aria-labelledby="settingsTitle">
         <!-- The dismiss control sits in the title bar rather than a footer row
              (Ken, August 1 2026): a full-width footer cost a whole button's height
              plus its padding out of the panel, on every tab, to hold one button. -->

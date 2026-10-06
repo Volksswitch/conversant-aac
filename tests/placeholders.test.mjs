@@ -749,3 +749,11 @@ test('CR-092: a new version waits for a quiet moment before restarting the app',
     const f = appSource.slice(appSource.indexOf('function reloadForUpdateIfIdle'));
     assert.match(f.slice(0, 400), /conversationInProgress\(\)/);
 });
+
+test('CR-104/CR-106: named regions carry a role, and Settings is named', () => {
+    const html = readFileSync(new URL('../app/index.html', import.meta.url), 'utf8');
+    for (const id of ['listenControls', 'composerOverlay', 'epGrid']) {
+        assert.match(html, new RegExp(`id="${id}" role="group"`), id);
+    }
+    assert.match(html, /<dialog id="settingsDialog" aria-labelledby="settingsTitle">/);
+});

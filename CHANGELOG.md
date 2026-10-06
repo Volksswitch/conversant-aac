@@ -321,6 +321,8 @@ forgetting to tag one is only ever noise, never silence.
   when off; the "Choose data folder" button in About Me keeps its words readable when
   tapped; and the "Choice button" placeholders on the Express Panel are no longer
   faint.
+- For screen-reader users: the Command Bar, the Express Panel and "In my own words"
+  are now announced by name, and opening Settings now announces "Settings".
 
 ## Version 0.13.4
 
