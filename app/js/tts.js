@@ -98,6 +98,11 @@ function backendFor(name) {
 
 export function setProvider(name, opts = {}) {
     provider = isPaid(name) ? name : 'builtin';
+    // A voice no longer in use lets go of any open connection, which otherwise kept
+    // pinging Deepgram every few seconds for the rest of the session (CR-086).
+    for (const [id, b] of Object.entries(backends)) {
+        if (b && id !== provider && b.release) b.release();
+    }
     // ⚠ THROUGH setPaidVoice, NOT STRAIGHT INTO THE TABLE. This assignment is the one
     // that gave OpenAI a Deepgram voice: the caller worked the voice out by exclusion
     // and this line took it without a word. Going through the setter means the same

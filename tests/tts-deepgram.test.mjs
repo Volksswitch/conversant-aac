@@ -511,3 +511,40 @@ test('audio that stops arriving still times out', async (t) => {
     t.mock.timers.reset();
     assert.match(await outcome, /took too long/);
 });
+
+// CR-086. A changed key must not go on speaking over the connection the old one
+// opened; release() closes the connection but keeps the cached phrases.
+test('a changed key opens a new connection rather than speaking on the old one', async (t) => {
+    const ctx = fakeContext();
+    const { FakeWS, made } = fakeSocketFactory();
+    global.WebSocket = FakeWS;
+    global.window = { AudioContext: function () { return ctx; } };
+    let key = 'A';
+    const voice = aura.createVoice({ getKey: () => key });
+    t.after(() => voice.reset());
+    const say = async (text) => {
+        const p = voice.speak(text);
+        await tick(); await tick();
+        made[made.length - 1].chunk(chunk40ms(500));
+        made[made.length - 1].flushed();
+        await tick(); await tick();
+        ctx.finishAll();
+        await p;
+    };
+    await say('one');
+    key = 'B';
+    await say('two');
+    assert.equal(made.length, 2);
+    assert.deepEqual(made[1].protocols, ['token', 'B']);
+    assert.equal(made[0].readyState, 3, 'the old connection was closed');
+
+    voice.release();
+    assert.equal(made[1].readyState, 3, 'release closes the connection');
+    assert.ok(voice.cacheSize() > 0, 'and keeps the cached phrases');
+});
+
+test('choosing another voice releases the backends no longer in use (CR-086)', () => {
+    const src = readFileSync(new URL('../app/js/tts.js', import.meta.url), 'utf8');
+    const body = src.slice(src.indexOf('export function setProvider('));
+    assert.match(body.slice(0, 600), /id !== provider && b\.release\) b\.release\(\)/);
+});

@@ -276,6 +276,10 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: a sound you were previewing in Settings kept playing after you closed
   Settings or moved to another tab, with no way to stop it, and could be written down
   as the other person talking.
+- Fixed: after you changed or removed your Deepgram key, the app could go on speaking
+  (and billing) on the old key for the rest of the session. Choosing a different voice
+  service also now closes the Deepgram connection instead of leaving it open in the
+  background.
 
 ## Version 0.13.4
 

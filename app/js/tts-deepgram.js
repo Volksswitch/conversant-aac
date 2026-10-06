@@ -160,6 +160,9 @@ export function createVoice({ getKey, onBilled } = {}) {
     let ctx = null;
     let socket = null;
     let socketModel = null;
+    // The key the open connection was made with (CR-086): a changed or removed key
+    // must not go on speaking - and billing - over the old one.
+    let socketKey = null;
     let pending = null;        // the synthesis in flight: { chunks, resolve, reject, timer }
     // (!) A SET, NOT ONE NODE: streamed audio is many nodes scheduled back to back,
     // and cancel() has to be able to stop every one of them - including the ones
@@ -207,6 +210,7 @@ export function createVoice({ getKey, onBilled } = {}) {
         try { socket.close(); } catch { /* already gone */ }
         socket = null;
         socketModel = null;
+        socketKey = null;
     }
 
     function failPending(message) {
@@ -221,11 +225,11 @@ export function createVoice({ getKey, onBilled } = {}) {
     // needs a new connection — reusing one would keep speaking in the old voice,
     // which is the kind of bug that looks like the setting is broken.
     function connect(model) {
-        if (socket && socket.readyState === WebSocket.OPEN && socketModel === model) {
+        const key = currentKey();
+        if (socket && socket.readyState === WebSocket.OPEN && socketModel === model && socketKey === key) {
             return Promise.resolve(socket);
         }
         closeSocket();
-        const key = currentKey();
         if (!key) return Promise.reject(new Error('No Deepgram key is set.'));
 
         return new Promise((resolve, reject) => {
@@ -256,6 +260,7 @@ export function createVoice({ getKey, onBilled } = {}) {
                 clearTimeout(openTimer);
                 socket = ws;
                 socketModel = model;
+                socketKey = key;
                 startKeepAlive();   // an idle connection is the one that gets closed
                 resolve(ws);
             };
@@ -291,7 +296,7 @@ export function createVoice({ getKey, onBilled } = {}) {
             };
             ws.onclose = () => {
                 clearTimeout(openTimer);
-                if (socket === ws) { socket = null; socketModel = null; stopKeepAlive(); }
+                if (socket === ws) { socket = null; socketModel = null; socketKey = null; stopKeepAlive(); }
                 failPending('The connection to the voice service closed.');
                 reject(new Error('The connection to the voice service closed.'));
             };
@@ -703,5 +708,8 @@ export function createVoice({ getKey, onBilled } = {}) {
         cache.clear();
     }
 
-    return { speak, cancel, isSpeaking, unlock, test, reset, cacheSize: () => cache.size };
+    // Close the connection but keep the cache, for when another voice is chosen: the
+    // cached phrases are still this voice's, and fetching them again would bill again.
+    function release() { cancel(); closeSocket(); }
+    return { speak, cancel, isSpeaking, unlock, test, reset, release, cacheSize: () => cache.size };
 }
