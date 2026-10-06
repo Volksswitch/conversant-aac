@@ -841,3 +841,9 @@ test('CR-132/133: clearing the cards stops the reading clock; an opener set is r
     assert.match(hr, /noteUserAction\(opensNewConversation \? 'new conversation' : 'card'/);
     assert.match(hr, /await storage\.logOffer\(\{ kind: 'opener', options: shownAtTap \}\)/);
 });
+
+test('CR-134: New N over steering statements asks for different statements', () => {
+    const rg = appSource.slice(appSource.indexOf('async function handleRegenerate'));
+    assert.match(rg, /if \(!currentPartnerText && activeSteer\.lead && lastPalette\.length\)/);
+    assert.match(appSource, /activeSteer = \{ focusChoice: null, steer: null, lead: null \};\n\}/);
+});

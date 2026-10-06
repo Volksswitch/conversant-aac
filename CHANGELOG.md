@@ -362,6 +362,9 @@ forgetting to tag one is only ever noise, never silence.
   waited for the AI instead of bringing up the goodbyes at once. The weekly usage
   figures also now count practice conversations the pretend partner starts, and no
   longer run a goodbye into the next turn.
+- Fixed: after you used Reframe on your own turn to get statements that steer the
+  conversation, the New button did nothing. It now brings a different set of
+  statements in the same direction.
 
 ## Version 0.13.4
 

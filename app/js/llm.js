@@ -765,9 +765,13 @@ ${NO_VULGARITY}`;
 // conversation where they want. Returns { responses:[{slot:'STATEMENT',text,hint}] }
 // so it renders one-per-cell like openers/closers. `count` (4 or 8) matches the
 // footprint capacity.
-export async function generateStatements(steer, conversationHistory = [], context = {}, count = 4) {
+export async function generateStatements(steer, conversationHistory = [], context = {}, count = 4, opts = {}) {
     if (!apiKey) throw new Error('API key not set');
     const n = count === 8 ? 8 : 4;
+    // "New N" over a set of statements (CR-134): a different set, not the same again.
+    const avoidBlock = (Array.isArray(opts.avoid) && opts.avoid.length)
+        ? `\n\nThe user found these statements not quite right and asked for a different set. Take a different angle, tone, or content; do not just reword these:\n${opts.avoid.map((t) => `- ${t}`).join('\n')}`
+        : '';
 
     const contextLines = conversationHistory.slice(-8).map(entry =>
         `${entry.role === 'partner' ? 'Partner' : 'User'}: ${entry.text}`
@@ -790,7 +794,7 @@ ${NO_VULGARITY}
 Return ONLY a JSON array of ${n} strings, nothing else. Example: ["...", "...", "..."].
 
 Conversation context (engine state — use it, do not echo it):
-${JSON.stringify(context)}${buildProfileBlock()}${buildSituationBlock()}${contextLines ? '\n\nConversation so far:\n' + contextLines : ''}`;
+${JSON.stringify(context)}${buildProfileBlock()}${buildSituationBlock()}${contextLines ? '\n\nConversation so far:\n' + contextLines : ''}${avoidBlock}`;
 
     const text = await ask({
         system: systemPrompt,

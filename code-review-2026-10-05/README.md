@@ -170,9 +170,9 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-129](CR-129.md) | fixed (38bd7ca) | low | confirmed | bug | `app/js/app.js:2602` | A practice conversation the AI partner opens is never counted as a started conversation |
 | [CR-130](CR-130.md) | fixed (38bd7ca) | low | confirmed | bug | `app/js/app.js:2912` | Cancelling Wrap up or Start conversation resets the engine to mid-conversation even when restoring goodbye or repair cards |
 | [CR-131](CR-131.md) | fixed (2f8c3fa, with CR-021) | low | confirmed | bug | `app/js/app.js:2914` | Cancelling Wrap up or Start conversation back to an empty panel records a fake empty set of cards |
-| [CR-132](CR-132.md) | fixed (pending) | low | confirmed | bug | `app/js/app.js:3005` | Clearing the panel (End conversation, Start-turn clear) does not reset the deliberation clock, so the next action reports a reading time for cards that were gone |
-| [CR-133](CR-133.md) | fixed (pending) | low | confirmed | bug | `app/js/app.js:3146` | Choosing an opener mid-conversation records the opener offer in the OLD conversation file |
-| [CR-134](CR-134.md) | open | low | confirmed | bug | `app/js/app.js:3333` | New 4 does nothing over Reframe 'lead' statements, and no-op presses still close out the set's record |
+| [CR-132](CR-132.md) | fixed (42ff82b) | low | confirmed | bug | `app/js/app.js:3005` | Clearing the panel (End conversation, Start-turn clear) does not reset the deliberation clock, so the next action reports a reading time for cards that were gone |
+| [CR-133](CR-133.md) | fixed (42ff82b) | low | confirmed | bug | `app/js/app.js:3146` | Choosing an opener mid-conversation records the opener offer in the OLD conversation file |
+| [CR-134](CR-134.md) | fixed (pending) | low | confirmed | bug | `app/js/app.js:3333` | New 4 does nothing over Reframe 'lead' statements, and no-op presses still close out the set's record |
 | [CR-135](CR-135.md) | open | low | confirmed | bug | `app/js/app.js:3511` | Reframe drops the held newer set but also its choice buttons and number button |
 | [CR-136](CR-136.md) | open | low | confirmed | bug | `app/js/app.js:3712` | Practice conversations record 'listen off' events although no microphone was ever on |
 | [CR-137](CR-137.md) | open | low | confirmed | bug | `app/js/app.js:4456` | The goal stamp can record the wrong source for a lit goal |

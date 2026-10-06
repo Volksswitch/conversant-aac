@@ -172,7 +172,7 @@ let composerForNumber = false;
 // the chip, Reframe text replaces the text — and both last only as long as the
 // partner turn they steer, which is what keeps Reframe one-shot ACROSS turns
 // (the standing v0.3.20 decision) while making it stick WITHIN one.
-let activeSteer = { focusChoice: null, steer: null };
+let activeSteer = { focusChoice: null, steer: null, lead: null };
 // Bumped whenever a speaking button that does NOT consume the partner turn (Say
 // again / Hold on / Wind down) fires, so an already-in-flight generateOptions won't
 // re-schedule a placeholder after the user has acted — WITHOUT discarding the
@@ -3631,6 +3631,30 @@ async function handleRegenerate() {
         generateOptions(currentPartnerText);   // the newest words were never classified (CR-079)
         return;
     }
+    // Statements the user asked for to steer things on their own turn (CR-134): a
+    // different set for the same direction. There is no partner turn to answer here.
+    if (!currentPartnerText && activeSteer.lead && lastPalette.length) {
+        const token = ++generationToken;
+        ui.setPaletteBusy(true);
+        ui.setStatus('Getting different statements...');
+        const prior = lastPalette.map((m) => m.text).filter(Boolean);
+        try {
+            const result = await llm.generateStatements(activeSteer.lead, conversationHistory,
+                engine.buildRequestContext(), conversationPaletteCap(), { avoid: prior });
+            if (token !== generationToken) return;
+            const snap = engine.refreshPalette(result.responses);
+            ui.showEngineState(snap);
+            lastPalette = snap.palette;
+            showConversationPalette(snap.palette, 'Pick a statement to steer things');
+        } catch (err) {
+            if (token !== generationToken) return;
+            storage.logError('regenerateLead', err.message);
+            notePaletteReplacedByError();
+            ui.showResponseError(`Couldn't get new statements: ${err.message}`, handleRegenerate);
+            ui.setStatus(`Error: ${err.message}`);
+        }
+        return;
+    }
     if (!currentPartnerText || !lastPalette.length) return;
     const token = ++generationToken;
     placeholders.stop();
@@ -3689,7 +3713,7 @@ async function handleRegenerate() {
 // Drop this turn's steering. Called wherever the partner turn being steered ends
 // or is replaced, so a steer can never leak into the next turn's options.
 function clearTurnSteering() {
-    activeSteer = { focusChoice: null, steer: null };
+    activeSteer = { focusChoice: null, steer: null, lead: null };
 }
 
 // Set (or clear) the alternatives showing as Express Panel choice chips. Cheap
@@ -3873,6 +3897,7 @@ async function handleReframe() {
 
     // Lead mode: the user holds the floor and wants to steer.
     ui.setStatus('Finding statements to steer the conversation...');
+    activeSteer.lead = steer;   // so "New N" can ask for different statements (CR-134)
     try {
         const result = await llm.generateStatements(steer, conversationHistory, engine.buildRequestContext(), conversationPaletteCap());
         if (token !== generationToken) return; // superseded

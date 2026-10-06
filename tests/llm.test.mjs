@@ -801,3 +801,15 @@ test('the prompt tells the model where a fact with no question goes', async () =
     assert.match(sys, /insurance_number/, 'and the names already in use, so it reuses one');
     llm.setWorldviewKeys([]); llm.setExtraNames([]);
 });
+
+// CR-134. "New N" over statements asks for a different set, naming the ones to avoid.
+test('generateStatements carries an avoid list when given one', async () => {
+    mockFetch(JSON.stringify(['A.', 'B.']));
+    await llm.generateStatements('talk about the game', [], {}, 4, { avoid: ['Did you see the game?'] });
+    const sys = sysText(getFetchCalls()[0]);
+    assert.match(sys, /asked for a different set/);
+    assert.match(sys, /- Did you see the game\?/);
+    mockFetch(JSON.stringify(['A.']));
+    await llm.generateStatements('talk about the game');
+    assert.doesNotMatch(sysText(getFetchCalls()[0]), /asked for a different set/);
+});
