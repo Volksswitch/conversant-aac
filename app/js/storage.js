@@ -2703,7 +2703,11 @@ export function logError(context, message, extra = null) {
     const entry = {
         ts: new Date().toISOString(),
         version: appVersion,
-        conversation: ensureConversationId(),   // matches the <id>.json log file
+        // The conversation in progress, or null between conversations. Minting an id
+        // here started the NEXT conversation's file at the error's time, so a later real
+        // conversation was filed under it, mis-dated and too long (CR-048). Accepted
+        // cost: an error before a conversation's first write carries no id.
+        conversation: currentConversationId || null,   // matches the <id>.json log file
         context: asciiForLog(context),
         message: asciiForLog(message),
     };
@@ -2732,7 +2736,7 @@ export function logError(context, message, extra = null) {
 async function logErrorToConversation(entry) {
     if (!conversationSaving || !dirHandle) return;
     try {
-        if (!currentLogData) await startConversationLog();
+        // Only into a conversation that already has a file - never start one (CR-048).
         if (!currentLogData) return;
         currentLogData.exchanges.push({
             timestamp: entry.ts,

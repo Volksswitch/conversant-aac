@@ -166,6 +166,10 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: in Conversation Review, pressing Undo while typing in "In my own words" could
   jump to an earlier exchange with the typing box still open, so Speak saved your
   sentence under the wrong exchange. Undo now closes the box.
+- Fixed: a problem in Settings (a failed import, a voice test that failed, a report
+  that would not send) could quietly start a saved "conversation" holding only that
+  error, and your next real conversation was then filed under that earlier time with
+  the wrong length. Errors now join only a conversation that is actually under way.
 
 ## Version 0.13.4
 

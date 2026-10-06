@@ -712,3 +712,15 @@ test('an offer whose wording arrives late is rewritten in place (CR-022)', async
 test('device storage can be reconnected with no permission prompt (CR-036)', async () => {
     assert.equal(await storage.folderReadableWithoutPrompt(), true);
 });
+
+test('an error between conversations starts no conversation file (CR-048)', async () => {
+    storage.setContextProvider(null);
+    storage.resetConversationId();
+    storage.setConversationSaving(true);
+    const dir = await root.getDirectoryHandle('conversations');
+    const before = [...dir._files.keys()].length;
+    storage.logError('export', 'something failed in Settings');
+    await new Promise((r) => setTimeout(r, 30));
+    assert.equal([...dir._files.keys()].length, before, 'no file was created');
+    assert.equal(storage.getConversationId(), null, 'and no id was minted');
+});
