@@ -447,6 +447,18 @@
                             <option value="1.45">Largest</option>
                             </select>
                         </div>
+                        <!-- The Settings panel's own writing (Ken, October 6 2026): labels,
+                             section headings, what is typed in a box, and the choices in a
+                             list. Buttons are left alone; their size is set elsewhere. -->
+                        <div class="setting-item">
+                            <label for="settingsFontSelect">Settings panel</label>
+                            <select id="settingsFontSelect" class="font-size-select">
+                            <option value="0.85">Smaller</option>
+                            <option value="1" selected>Default</option>
+                            <option value="1.2">Larger</option>
+                            <option value="1.45">Largest</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <!-- Speech: everything about how the app HEARS and SPEAKS, in one
@@ -1165,7 +1177,7 @@
                     </div>
                     <div class="setting-group" data-help="reportProblem">
                         <label for="problemNoteInput">Report a problem</label>
-                        <textarea id="problemNoteInput" rows="3" placeholder="What happened? &quot;I pressed Listen and nothing happened&quot; is a perfect report."></textarea>
+                        <textarea id="problemNoteInput" rows="3" placeholder="Just a few words describing what you experienced"></textarea>
                         <div id="problemReportActions">
                             <!-- Send is the ONLY route (Ken, August 31 2026), and the
                                  two it replaced were removed rather than hidden.

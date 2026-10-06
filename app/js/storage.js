@@ -2121,6 +2121,15 @@ export function saveExpressFontScale(v) {
     settings.expressFontScale = clampScale(v);
     saveSettings(settings);
 }
+export function loadSettingsFontScale() {
+    const s = loadSettings();
+    return s.settingsFontScale == null ? 1 : clampScale(s.settingsFontScale);
+}
+export function saveSettingsFontScale(v) {
+    const settings = loadSettings();
+    settings.settingsFontScale = clampScale(v);
+    saveSettings(settings);
+}
 export function loadResponseFontScale() {
     const s = loadSettings();
     return s.responseFontScale == null ? 1 : clampScale(s.responseFontScale);

@@ -22,6 +22,12 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.13.6": [
+    "Bigger writing in Settings. Text & Color → Text size now has a \"Settings panel\" choice. It enlarges the labels, the section headings, what you type in a box, and the choices in a list.",
+    "Choices in a Settings list are easier to tap. When you open a list, each choice is now as tall as a button, with a line between them.",
+    "Opening a section in Settings keeps its heading in view. The heading you tapped stays where it was, instead of sliding off the top of the panel.",
+    "The box in Troubleshooting → Report a problem now just asks for a few words describing what you experienced."
+  ],
   "0.13.5": [
     "Your saved conversations are safer. Ending a conversation, or starting a new one, no longer wipes the record of the one you just finished. A data file the app cannot read (for example one OneDrive has not finished syncing) is no longer replaced with an older or empty copy. And choosing a data folder from About Me now brings in your people, places and Express Panel too, instead of writing over them.",
     "\"Don't save this conversation\" now keeps the whole conversation private: what the other person said, the words you typed and the card you chose are not kept anywhere, including in problem reports.",

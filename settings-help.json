@@ -133,6 +133,7 @@
         "transcriptFontSelect": "How big the writing is in the conversation, where what was said is shown.",
         "composerFontSelect": "How big the writing is when you type something in your own words.",
         "expressFontSelect": "How big the writing is on the Express Panel buttons.",
+        "settingsFontSelect": "How big the writing is in Settings: the labels, the headings, what you type in a box, and the choices in a list.",
         "deepgramKeyInput": "Paste your Deepgram key here. It stays on this device and is never put into a backup.",
         "pasteDeepgramKeyBtn": "Pastes a Deepgram key you have already copied.",
         "testDeepgramKeyBtn": "Checks your Deepgram key and tells you whether it was accepted.",

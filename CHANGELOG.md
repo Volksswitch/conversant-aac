@@ -26,6 +26,11 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- **Bigger writing in Settings.** Text & Color → Text size now has a "Settings panel" choice. It enlarges the labels, the section headings, what you type in a box, and the choices in a list.
+- **Choices in a Settings list are easier to tap.** When you open a list, each choice is now as tall as a button, with a line between them.
+- **Opening a section in Settings keeps its heading in view.** The heading you tapped stays where it was, instead of sliding off the top of the panel.
+- The box in Troubleshooting → Report a problem now just asks for a few words describing what you experienced.
+
 ## Version 0.13.5
 
 - Your saved conversations are safer. Ending a conversation, or starting a new one,

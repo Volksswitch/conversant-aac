@@ -3449,6 +3449,63 @@ dialog select {
     cursor: pointer;
 }
 
+/* THE SETTINGS PANEL'S OWN TEXT SIZE (Ken, October 6 2026). Text size -> "Settings panel"
+   multiplies the labels, the section headings, what is typed in a box and the choices in
+   a list. Buttons are left alone: their size is the keyguard's business, and growing the
+   words inside a fixed button would only push them out of it.
+   rem cannot be scoped to a container, so each kind of text carries the multiplier
+   itself. The read-only report boxes on the Troubleshooting tab keep their small
+   monospace size - they are copied out, not read on the panel. */
+#settingsContent label {
+    font-size: calc(0.9rem * var(--settings-font-scale, 1));
+}
+#settingsContent :is(input:not([type="radio"]):not([type="checkbox"]):not([type="range"]),
+                     select, textarea:not([readonly])) {
+    font-size: calc(1rem * var(--settings-font-scale, 1));
+}
+#settingsContent .wv-disclosure-title {
+    font-size: calc(1em * var(--settings-font-scale, 1));   /* em: a sub-section stays a step smaller */
+}
+#settingsContent .wv-question {
+    font-size: calc(1.05rem * var(--settings-font-scale, 1));
+}
+
+/* LIST CHOICES FAR ENOUGH APART TO HIT (Ken, October 6 2026: "too close together to be
+   accurately selected"). The browser's own list packs its choices about 20px apart and
+   cannot be spaced. Where the browser lets a page draw the list itself, each choice is
+   as tall as a button. Elsewhere - Safari on an iPad - the device's own picker is used,
+   which is already sized for a finger. */
+@supports (appearance: base-select) {
+    #settingsContent select,
+    #settingsContent select::picker(select) {
+        appearance: base-select;
+    }
+    #settingsContent select::picker(select) {
+        background: var(--surface-raised);
+        color: var(--ink);
+        border: 1px solid var(--edge-strong);
+        border-radius: 4px;
+        padding: 0.25rem 0;
+    }
+    #settingsContent select option {
+        min-height: var(--btn-min-dim);
+        padding: 0.3rem 0.8rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    #settingsContent select option + option {
+        border-top: 1px solid var(--edge-subtle);
+    }
+    #settingsContent select option:hover,
+    #settingsContent select option:focus-visible {
+        background: var(--info-tint);
+    }
+    #settingsContent select option:checked {
+        font-weight: 600;
+    }
+}
+
 /* NOT masked with -webkit-text-security, deliberately (Ken, July 30 2026).
  *
  * That property is what Safari itself uses to render a password field, so its

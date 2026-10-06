@@ -5730,6 +5730,7 @@ function applyFontScales() {
     root.setProperty('--express-font-scale', String(storage.loadExpressFontScale()));
     root.setProperty('--response-font-scale', String(storage.loadResponseFontScale()));
     root.setProperty('--hint-font-scale', String(storage.loadHintFontScale()));
+    root.setProperty('--settings-font-scale', String(storage.loadSettingsFontScale()));
 }
 
 // The − / + buttons flanking each size slider nudge it by a small fixed step
@@ -7747,6 +7748,8 @@ function openSettings() {
     expressFontSelect.value = String(storage.loadExpressFontScale());
     responseFontSelect.value = String(storage.loadResponseFontScale());
     hintFontSelect.value = String(storage.loadHintFontScale());
+    const settingsFontSelect = document.getElementById('settingsFontSelect');
+    settingsFontSelect.value = String(storage.loadSettingsFontScale());
     // Conversation privacy default (the Command Bar "Don't save" button overrides
     // it live for the current conversation).
     const noSaveDefaultInput = document.getElementById('noSaveDefaultInput');
@@ -9266,6 +9269,7 @@ function openSettings() {
     expressFontSelect.onchange = () => { storage.saveExpressFontScale(expressFontSelect.value); applyFontScales(); };
     responseFontSelect.onchange = () => { storage.saveResponseFontScale(responseFontSelect.value); applyFontScales(); };
     hintFontSelect.onchange = () => { storage.saveHintFontScale(hintFontSelect.value); applyFontScales(); };
+    settingsFontSelect.onchange = () => { storage.saveSettingsFontScale(settingsFontSelect.value); applyFontScales(); };
 
     document.getElementById('closeSettingsBtn').onclick = () => {
         // Belt-and-suspenders: persist the API key from the field on Close.

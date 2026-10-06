@@ -75,6 +75,35 @@ function closeSiblings(details) {
     }
 }
 
+/*
+ * THE HEADING YOU TAPPED STAYS WHERE IT WAS (Ken, October 6 2026: "when I expand a
+ * section ... the section header shouldn't disappear upward").
+ *
+ * Opening a section shuts the open one above it, and everything below moves up by the
+ * height that one gave back - so the heading the user just tapped slid up and often off
+ * the top of the panel. Scrolling back by the same amount puts it under the finger again.
+ * Where there is not enough above it to do that, it ends up at the top of the tab, which
+ * is still in view. Only a tap sets the anchor: a section opened by the app itself (a
+ * "take me to that setting" jump) is left to whatever scrolled it there.
+ */
+function scrollParent(el) {
+    for (let p = el.parentElement; p; p = p.parentElement) {
+        const oy = getComputedStyle(p).overflowY;
+        if (oy === 'auto' || oy === 'scroll') return p;
+    }
+    return null;
+}
+
+function holdHeadingInPlace(summary, anchor) {
+    if (!anchor) return;
+    const { scroller, top } = anchor;
+    const moved = summary.getBoundingClientRect().top - top;
+    if (moved) scroller.scrollTop += moved;
+    // Never leave the heading above the visible area, whatever the arithmetic said.
+    const above = scroller.getBoundingClientRect().top - summary.getBoundingClientRect().top;
+    if (above > 0) scroller.scrollTop -= above;
+}
+
 function build(container, scope, seq) {
     for (const group of container.querySelectorAll(':scope > .setting-group')) {
         const existing = group.querySelector(':scope > details');
@@ -122,9 +151,17 @@ function build(container, scope, seq) {
 
         details.append(summary, body);
         details.open = openSections.has(key);
+        // Where the heading sat when it was tapped, so it can be put back there.
+        let anchor = null;
+        summary.addEventListener('click', () => {
+            const scroller = scrollParent(summary);
+            anchor = scroller ? { scroller, top: summary.getBoundingClientRect().top } : null;
+        });
         details.addEventListener('toggle', () => {
             if (details.open) openSections.add(key); else openSections.delete(key);
             if (details.open) closeSiblings(details);
+            holdHeadingInPlace(summary, anchor);
+            anchor = null;
         });
         group.appendChild(details);
 
