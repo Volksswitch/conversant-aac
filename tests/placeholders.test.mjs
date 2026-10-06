@@ -648,3 +648,11 @@ test('the restart notice reports parts and conversations that did not restore', 
     assert.match(body, /conversationsInFile/);
     assert.match(appSource, /offerRestart\('backup', \{ \.\.\.done, conversationsInFile:/);
 });
+
+// CR-058. Backup and restore refuse while the folder is remembered but not connected.
+test('backup and restore refuse while the data folder is not reconnected', () => {
+    const imp = appSource.indexOf('async function importPackageText(');
+    assert.match(appSource.slice(imp, imp + 300), /folderRememberedButDisconnected\(\)/);
+    const exp = appSource.indexOf("getElementById('exportDataBtn').onclick");
+    assert.match(appSource.slice(exp, exp + 300), /folderRememberedButDisconnected\(\)/);
+});

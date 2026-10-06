@@ -6815,8 +6815,19 @@ function setBackupStatus(msg) {
 // Restore from the text of a backup file, wherever it came from — the folder list
 // or the file picker. Both routes must confirm identically, because both replace
 // everything; keeping one implementation is what guarantees that.
+// A folder the app remembers but is not connected to right now (Android asks every
+// launch; a declined prompt elsewhere). A backup restored then lands only in the
+// browser's copy and the folder's old files win at the next reconnect; one made then
+// leaves out every conversation (CR-058). So both refuse and say how to fix it.
+async function folderRememberedButDisconnected() {
+    try { return !storage.hasDataFolder() && await storage.hasRememberedFolder(); }
+    catch { return false; }
+}
+const RECONNECT_FIRST = 'Reconnect your data folder first (General tab, Data Folder), then try again. Without it the backup cannot reach the folder.';
+
 async function importPackageText(text, sourceLabel) {
     if (importInProgress) return;
+    if (await folderRememberedButDisconnected()) { setBackupStatus(RECONNECT_FIRST); return; }
     let pkg;
     try {
         pkg = dataTransfer.parsePackage(text);
@@ -6915,6 +6926,7 @@ function wireBackupControls() {
     // went, because the status line under the button is what proved easy to miss.
     document.getElementById('exportDataBtn').onclick = async () => {
         if (exportInProgress) return;
+        if (await folderRememberedButDisconnected()) { setBackupStatus(RECONNECT_FIRST); return; }   // CR-058
         const toFolder = storage.hasVisibleDataFolder();
         if (!(await confirmDanger({
             title: 'Back up your settings?',

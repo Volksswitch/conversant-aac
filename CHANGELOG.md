@@ -193,6 +193,10 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: when a backup only partly restored (for example, a tablet running out of
   space), the app still said it had been imported. It now says which parts did not
   come across and tells you to keep your backup file.
+- Fixed: on a computer or Android tablet where you had skipped reconnecting your data
+  folder, restoring a backup seemed to work but was undone the next time the folder
+  was reconnected, and a backup made then left out your conversations. Both now ask
+  you to reconnect the folder first.
 
 ## Version 0.13.4
 
