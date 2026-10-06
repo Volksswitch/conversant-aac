@@ -656,3 +656,17 @@ test('backup and restore refuse while the data folder is not reconnected', () =>
     const exp = appSource.indexOf("getElementById('exportDataBtn').onclick");
     assert.match(appSource.slice(exp, exp + 300), /folderRememberedButDisconnected\(\)/);
 });
+
+// CR-062. A failed request leaves the holding phrases to run.
+test('a failed suggestion request does not silence the holding phrases', () => {
+    const at = appSource.indexOf("storage.logError('generateOptions', err.message");
+    const tail = appSource.slice(at, at + 1200).replace(/\/\/.*$/gm, '');
+    assert.doesNotMatch(tail.slice(0, tail.indexOf('updatePartnerLive') > 0 ? tail.indexOf('updatePartnerLive') : 600), /placeholders\.stop\(\)/);
+});
+
+// CR-063. A chip choice and a Reframe steer go out together whichever came first.
+test('the chip choice and the Reframe steer are sent together', () => {
+    assert.match(appSource, /reason: 'reframe', steer, focusChoice: activeSteer\.focusChoice/);
+    const chip = appSource.indexOf('async function handleChoiceChip(');
+    assert.match(appSource.slice(chip, chip + 3000), /focusChoice: pick,\s*steer: activeSteer\.steer/);
+});

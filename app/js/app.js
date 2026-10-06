@@ -2036,7 +2036,11 @@ async function generateOptions(partnerText) {
             partner: (partnerText || '').slice(0, 200),
             ...(err.reply ? { reply: String(err.reply).slice(0, 400) } : {}),
         });
-        placeholders.stop();
+        // ⚠ THE HOLDING PHRASES ARE NOT STOPPED HERE. They are armed by the partner's
+        // silence precisely so they still speak when the AI fails or there is no key -
+        // that is when the user is slowest to answer. Stopping them on every failure
+        // meant no holding phrase ever played without a key (CR-062). Every user action
+        // and the partner resuming still stop them.
         // The AI is unreachable, so it can neither suggest responses NOR tidy the
         // transcript. Keep the partner's raw words visible, marked blue/italic
         // (state 'uncleaned' on the LIVE turn), so the user can read them and reply
@@ -3659,6 +3663,7 @@ async function handleChoiceChip(chip) {
     try {
         const result = await llm.generateResponses(history, engine.buildRequestContext(), { reason: 'choice chip',
             focusChoice: pick,
+            steer: activeSteer.steer || undefined,   // a chip and a Reframe compose (CR-063)
             perCategory: storage.loadResponsesPerCategory(),
         });
         if (token !== generationToken) return;   // superseded (newer turn, or another chip)
@@ -3753,7 +3758,7 @@ async function handleReframe() {
         activeSteer.steer = steer;
         const history = [...conversationHistory, { role: 'partner', text: currentPartnerText }];
         try {
-            const result = await llm.generateResponses(history, engine.buildRequestContext(), { reason: 'reframe', steer, perCategory: storage.loadResponsesPerCategory() });
+            const result = await llm.generateResponses(history, engine.buildRequestContext(), { reason: 'reframe', steer, focusChoice: activeSteer.focusChoice || undefined, perCategory: storage.loadResponsesPerCategory() });
             if (token !== generationToken) return; // superseded
             const snap = engine.refreshPalette(result.responses);
             ui.showEngineState(snap);

@@ -205,6 +205,11 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: in Settings, the tabs, the rows of choices (such as which listening service
   to use) and the side switch were much smaller than the other buttons, making it easy
   to tap the wrong one. They are now the same size as the other buttons.
+- Fixed: when the AI could not be reached or no AI key had been entered, the app went
+  silent after the other person spoke instead of saying a holding phrase while you
+  answered another way. It now says them. Also, tapping one of the other person's
+  offered choices and then using Reframe (or the other way round) dropped one of the
+  two; both are now used.
 
 ## Version 0.13.4
 
