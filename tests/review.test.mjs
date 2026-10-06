@@ -452,3 +452,14 @@ test('a phrase answer keeps its respelling; a sound answer does not', () => {
     r = model.setPhraseAnswer(r, first, { itemId: 'p', text: 'Yes', speak: 'Yes' });
     assert.equal(model.getEntry(r, first.key).answer.speak, null, 'the same words need no respelling');
 });
+
+// CR-259. The "misheard" note can be taken back, and a turn with nothing else on it
+// then leaves the review file entirely.
+test('clearing the misheard note drops an otherwise empty entry', () => {
+    const [first] = model.buildTurns(sampleConversation());
+    let r = model.setMisheard(model.emptyReview('c'), first, 'something');
+    assert.ok(model.getEntry(r, first.key).misheard);
+    r = model.clearMisheard(r, first);
+    const e = model.getEntry(r, first.key);
+    assert.ok(!e || !e.misheard);
+});

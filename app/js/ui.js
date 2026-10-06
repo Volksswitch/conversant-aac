@@ -1224,6 +1224,11 @@ function setCommandFace(btn, iconName, label, face) {
     if (commandLabelMode !== 'words' || !face) {
         setIconButton(btn, iconName, label);
         btn.classList.remove('cmd-worded');
+        // The word face was fitted with inline styles that the fitting pass, which
+        // only visits worded buttons, can no longer reach - left behind they pushed the
+        // icon off-center (CR-262).
+        ['-webkit-line-clamp', 'display', '-webkit-box-orient', 'align-items']
+            .forEach((p) => btn.style.removeProperty(p));
         return;
     }
     btn.textContent = face;

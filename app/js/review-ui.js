@@ -289,7 +289,10 @@ function renderPane() {
                 const said = e.misheard.said
                     ? ` You say ${esc(partnerName(t))} said: “${esc(e.misheard.said)}”`
                     : '';
-                html.push(`<div class="review-note review-note-left" data-turn="${i}">Your note: the app wrote down the wrong words.${said}</div>`);
+                // The note can be taken back (CR-259): one stray tap set it, and nothing
+                // removed it once review had been left and Undo had gone.
+                const removable = i === at && !(editing && editing.target === 'heard');
+                html.push(`<div class="review-note review-note-left" data-turn="${i}" data-part="misheard"${removable ? ' title="Tap to remove this note"' : ''}>Your note: the app wrote down the wrong words.${said}${removable ? ' <span class="review-note-remove">Tap to remove this note.</span>' : ''}</div>`);
             }
         }
         if (here) {
@@ -681,6 +684,12 @@ function onPaneClick(e) {
     e.stopImmediatePropagation();
     const i = Number(line.dataset.turn);
     if (i !== at) { goTo(i); return; }
+    if (line.dataset.part === 'misheard') {
+        if (editing && editing.target === 'heard') return;
+        change(model.clearMisheard(review, turn()));
+        render();
+        return;
+    }
     if (line.dataset.part !== 'partner') return;
     // Nothing can have been misheard in practice: the app spoke those lines itself.
     if (conv.practice) return;
@@ -904,14 +913,22 @@ export async function renderList(panel) {
     // Older conversations are hidden, not gone, so the list says so and offers them.
     // The count covers real and practice together, because telling them apart would
     // mean opening every old file, which is the work the range exists to avoid.
+    // Named after the period picked, and without a count: the count could not say how
+    // many of them were practice, and under the practice list it read as though it did
+    // (CR-260).
+    const rangeText = range && range.selectedIndex >= 0
+        ? range.options[range.selectedIndex].text.toLowerCase() : 'this period';
     if (logs.older) {
         olderNote.hidden = false;
-        olderNote.textContent = `Older conversations are hidden (${logs.older}, real and practice together). `;
+        olderNote.textContent = `Conversations from before ${rangeText} are not shown.`;
+        // A sibling of the note rather than inside it, or it takes the note's smaller
+        // lettering (CR-261).
         const more = document.createElement('button');
         more.type = 'button';
+        more.className = 'review-older-more';
         more.textContent = 'Show conversations from any time';
         more.onclick = () => { listRange = 'all'; void renderList(panel); };
-        olderNote.appendChild(more);
+        olderNote.after(more);
     }
     const rows = [];
     for (const c of logs) {
@@ -922,7 +939,7 @@ export async function renderList(panel) {
     }
     if (!rows.length) {
         status.textContent = logs.older
-            ? (listShowsPractice ? 'No practice conversations in this time.' : 'No conversations in this time.')
+            ? (listShowsPractice ? `No practice conversations from ${rangeText}.` : `No conversations from ${rangeText}.`)
             : (listShowsPractice ? 'No saved practice conversations yet.' : 'No saved conversations yet.');
         return;
     }

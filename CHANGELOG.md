@@ -519,6 +519,13 @@ forgetting to tag one is only ever noise, never silence.
   says it (using its "how to say it" spelling), no longer reads out a sound button's
   name as if you had said it, and is not offered while you are correcting what the
   other person said.
+- In Conversation Review, a "the app wrote down the wrong words" note can now be
+  removed by tapping it, so a stray tap is no longer permanent. The saved-
+  conversations list now names the period you picked (for example "No practice
+  conversations from the last week") instead of a confusing count, and its "Show
+  conversations from any time" button has the same size lettering as the other
+  buttons. Switching the command buttons from words back to icons no longer leaves an
+  icon off-center.
 
 ## Version 0.13.4
 

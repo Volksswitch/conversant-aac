@@ -1056,3 +1056,16 @@ test('the button tour says Wrap up and follows word labels', async () => {
     assert.match(appSource, /function whereFor\(step\)/);
     assert.match(appSource, /tts\.speak\(where, partnerVoiceOptions\(\)\)/);
 });
+
+// CR-259..262 guards.
+test('review note removable, older-list wording, command icons cleared of word fitting', async () => {
+    const { readFileSync } = await import('node:fs');
+    const rv = readFileSync(new URL('../app/js/review-ui.js', import.meta.url), 'utf8');
+    const ui = readFileSync(new URL('../app/js/ui.js', import.meta.url), 'utf8');
+    assert.match(rv, /if \(line\.dataset\.part === 'misheard'\) \{/);
+    assert.match(rv, /model\.clearMisheard\(review, turn\(\)\)/);
+    assert.ok(!/real and practice together\)/.test(rv));
+    assert.match(rv, /olderNote\.after\(more\);/);
+    const face = ui.slice(ui.indexOf('function setCommandFace('));
+    assert.match(face.slice(0, 700), /btn\.style\.removeProperty\(p\)/);
+});
