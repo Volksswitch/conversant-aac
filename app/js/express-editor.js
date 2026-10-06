@@ -314,8 +314,9 @@ function phraseRow(band, item) {
     // is in the field now and not what was there when the row was drawn.
     row.appendChild(mkBtn('🔊', 'ee-hear', () => {
         const inputs = row.querySelectorAll('input');
-        const said = (inputs[1] && inputs[1].value.trim()) || (inputs[0] && inputs[0].value.trim());
-        if (said) tts.speak(said);
+        const shown = inputs[0] && inputs[0].value.trim();
+        const said = (inputs[1] && inputs[1].value.trim()) || shown;
+        if (said) tts.speak(said, shown && shown !== said ? { display: shown } : {});
     }, 'Hear this phrase'));
     return row;
 }

@@ -366,3 +366,20 @@ test('CR-088: the armed look outranks every switched-on and hover rule', () => {
     const block = css.slice(armed, css.indexOf('}', armed));
     assert.doesNotMatch(block, /padding|border-width|margin|width|height/, 'paint only');
 });
+
+// CR-197. A script that names a color the stylesheet never defines gets nothing: the
+// property is invalid and the button paints transparent, in every scheme, silently.
+test('every var(--x) a script uses is defined somewhere', async () => {
+    const { readdirSync, readFileSync: rf } = await import('node:fs');
+    const root = new URL('../app/', import.meta.url);
+    const css = rf(new URL('css/styles.css', root), 'utf8') + rf(new URL('index.html', root), 'utf8');
+    const defined = new Set([...css.matchAll(/(--[\w-]+)\s*:/g)].map((m) => m[1]));
+    const js = readdirSync(new URL('js/', root)).filter((f) => f.endsWith('.js'))
+        .map((f) => [f, rf(new URL('js/' + f, root), 'utf8')]);
+    for (const [, src] of js) for (const m of src.matchAll(/setProperty\(\s*'(--[\w-]+)'/g)) defined.add(m[1]);
+    const missing = [];
+    for (const [f, src] of js) {
+        for (const m of src.matchAll(/var\((--[\w-]+)/g)) if (!defined.has(m[1])) missing.push(`${f}: ${m[1]}`);
+    }
+    assert.deepEqual(missing, []);
+});

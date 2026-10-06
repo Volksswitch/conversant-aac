@@ -934,3 +934,9 @@ test('CR-183/184/186: resume aborts the ladder; no key asks nothing; every paid 
     assert.ok(go.indexOf("if (!(storage.loadApiKey() || '').trim())") < go.indexOf('llm.generateResponses'));
     assert.match(appSource, /setStatusLine\(radio\.value \+ 'VoiceStatus', 'warn'/);
 });
+
+// CR-196. The error box's Try again replaces what is on screen, so two-tap mode
+// guards it like the cards beside it.
+test('the response error retry button is under the two-tap guard', () => {
+    assert.match(appSource, /tapGuard\.addRule\('#responseOptions \.response-error-retry'\)/);
+});

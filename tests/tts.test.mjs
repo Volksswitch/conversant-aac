@@ -8,7 +8,7 @@
  * The voiceURI strings below are the real shapes each engine emits, so this file
  * doubles as the record of what we expect to see on the device.
  */
-import './env.mjs';
+import { spokenTexts, resetSpoken } from './env.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as tts from '../app/js/tts.js';
@@ -168,4 +168,15 @@ test('a service with no override falls through to its own stored voice, never an
         undefined, 'an absent override must not borrow another service\'s');
     assert.equal(tts.voiceOverrideFor('openai', {}), undefined);
     assert.equal(tts.voiceOverrideFor('openai'), undefined);
+});
+
+// CR-195. An Express phrase arrives already respelled; the real words are what the
+// echo filter and the now-playing line must hear about, and the voice gets the respelling.
+test('speak() announces the display words and gives the voice the respelling', async () => {
+    const heard = [];
+    tts.onSpeakingChange((speaking, text) => { if (speaking) heard.push(text); });
+    resetSpoken();
+    await tts.speak('Folks-switch', { display: 'Volksswitch' });
+    assert.equal(heard.at(-1), 'Volksswitch');
+    assert.equal(spokenTexts.at(-1), 'Folks-switch');
 });

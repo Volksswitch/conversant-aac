@@ -437,6 +437,8 @@ forgetting to tag one is only ever noise, never silence.
 - On an Android device, pasting an Azure key and region now switches hearing to Azure
   on its own, the same way a Deepgram key already did. If you have both, Azure (the
   one we recommend) is used. A choice you made yourself always wins.
+- With "Two taps" turned on, the "Try again" button that appears when suggestions fail
+  now needs two taps like everything else on that screen.
 
 ## Version 0.13.4
 

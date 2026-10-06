@@ -656,7 +656,7 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
             // for it would be one more thing to understand for no gain (Ken).
             const on = goalOn.has(item.id);
             const label = item.label || item.text || 'Goal';
-            setColor(b, 'var(--goal)', 'var(--goal-tint)');
+            setColor(b, 'var(--goal)');   // no --goal-tint exists; the band supplies the fill (CR-197)
             b.classList.add('ep-goal');
             if (on) b.classList.add('ep-on');
             // The tooltip and the spoken name carry the FULL wording, because the

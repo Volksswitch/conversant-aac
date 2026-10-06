@@ -281,12 +281,12 @@ let azureFetchInFlight = false;
 // cut-off reply back on the empty screen, record the partner's line twice, bring the
 // goodbye cards back, or turn the microphone on after End. Every caller stops on false.
 let conversationEpoch = 0;
-async function speakUserStatement(text, { announce = false } = {}) {
+async function speakUserStatement(text, { announce = false, display = null } = {}) {
     const epoch = conversationEpoch;
     const mine = ++statementSeq;
     speakingUserStatement = true;
     announcingUserStatement = announce;
-    try { await tts.speak(text); }
+    try { await tts.speak(text, display && display !== text ? { display } : {}); }
     finally {
         if (mine === statementSeq) { speakingUserStatement = false; announcingUserStatement = false; }
     }
@@ -874,6 +874,8 @@ function initApp() {
     tapGuard.addRule('#responseOptions .response-card[data-index]', {
         exempt: (el, target) => !!target.closest('[data-w]'),                          // a word being edited
     });
+    // The error box's Try again replaces what is in the response area (CR-196).
+    tapGuard.addRule('#responseOptions .response-error-retry');
     tapGuard.addRule('#transcriptLog [data-turn]', {
         exempt: (el, target) => !reviewUI.isActive() || !!target.closest('[data-w]'),
     });
@@ -4088,7 +4090,7 @@ async function speakAsUserTurn(historyText, spokenText = historyText, source = '
 
     ui.setStatus('Speaking...');
     clearPalette();               // any AI palette shown is now stale
-    if (!(await speakUserStatement(spokenText))) return;
+    if (!(await speakUserStatement(spokenText, { display: historyText }))) return;
 
     // Append to the transcript AFTER speaking (Ken); now-playing stays suppressed
     // during the speech, so there's no pre-text preview.

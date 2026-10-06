@@ -347,7 +347,11 @@ export function speak(text, opts = {}) {
     // "now playing" line, and the echo filter, which all read the announced text —
     // keeps the real name, and only the synthesiser sees the respelling. See
     // pronunciation.js for why each of those must not.
-    notifySpeaking(text);
+    //
+    // An Express phrase carries its OWN respelling and arrives here already respelled,
+    // so its caller names the real words in `opts.display` (CR-195). Without it the echo
+    // filter would listen for the made-up spelling, which the recognizer never returns.
+    notifySpeaking(opts.display || text);
     const said = pronounce(text);
 
     const paid = backendFor(provider);
