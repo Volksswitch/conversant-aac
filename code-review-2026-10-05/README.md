@@ -205,14 +205,14 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-164](CR-164.md) | fixed (78c3140) | low | confirmed | bug | `app/js/weekly-send.js:84` | Local-copy guard misses machine names, .local addresses and IPv6 private addresses, so developer copies can still send reports |
 | [CR-165](CR-165.md) | fixed (78c3140) | low | confirmed | bug | `app/js/worldview-ui.js:157` | Cancelling the About Me folder picker throws on a null event target, leaves the button disabled and logs a false start-up error |
 | [CR-166](CR-166.md) | fixed (78c3140) | low | confirmed | bug | `app/js/worldview-ui.js:260` | Back from a 'question that came up in a conversation' skips the list it was opened from |
-| [CR-167](CR-167.md) | fixed (pending) | low | confirmed | bug | `app/js/worldview-ui.js:1188` | Person/place auto-save name guard restores a stale name and silently drops other edits |
-| [CR-168](CR-168.md) | fixed (pending) | low | confirmed | bug | `app/js/worldview-ui.js:1212` | Picking 'Other…' in the relationship list immediately erases the saved relationship |
-| [CR-169](CR-169.md) | fixed (pending) | low | confirmed | data-loss | `app/js/app.js:2733` | Pausing and resuming the practice partner throws away the line it already spoke |
-| [CR-170](CR-170.md) | fixed (pending) | low | confirmed | data-loss | `app/js/data-transfer.js:101` | Learned word-prediction vocabulary is not in the backup, despite 'everything travels' |
-| [CR-171](CR-171.md) | open | low | confirmed | data-loss | `app/js/practice-editor.js:300` | Cancel on the new-scenario form throws away everything typed without asking |
-| [CR-172](CR-172.md) | open | low | confirmed | data-loss | `app/js/review-ui.js:468` | Review saves fail silently - a failed review write is never logged or shown |
-| [CR-173](CR-173.md) | open | low | confirmed | data-loss | `app/js/storage.js:2069` | Two conversations started in the same second share one file name, and the second one erases the first |
-| [CR-174](CR-174.md) | open | low | confirmed | data-loss | `app/js/worldview-ui.js:527` | 'Change my answer' in How I Sound deletes the answer at once instead of on re-answer |
+| [CR-167](CR-167.md) | fixed (b989257) | low | confirmed | bug | `app/js/worldview-ui.js:1188` | Person/place auto-save name guard restores a stale name and silently drops other edits |
+| [CR-168](CR-168.md) | fixed (b989257) | low | confirmed | bug | `app/js/worldview-ui.js:1212` | Picking 'Other…' in the relationship list immediately erases the saved relationship |
+| [CR-169](CR-169.md) | fixed (b989257) | low | confirmed | data-loss | `app/js/app.js:2733` | Pausing and resuming the practice partner throws away the line it already spoke |
+| [CR-170](CR-170.md) | fixed (b989257) | low | confirmed | data-loss | `app/js/data-transfer.js:101` | Learned word-prediction vocabulary is not in the backup, despite 'everything travels' |
+| [CR-171](CR-171.md) | fixed (pending) | low | confirmed | data-loss | `app/js/practice-editor.js:300` | Cancel on the new-scenario form throws away everything typed without asking |
+| [CR-172](CR-172.md) | fixed (pending) | low | confirmed | data-loss | `app/js/review-ui.js:468` | Review saves fail silently - a failed review write is never logged or shown |
+| [CR-173](CR-173.md) | fixed (pending) | low | confirmed | data-loss | `app/js/storage.js:2069` | Two conversations started in the same second share one file name, and the second one erases the first |
+| [CR-174](CR-174.md) | fixed (pending) | low | confirmed | data-loss | `app/js/worldview-ui.js:527` | 'Change my answer' in How I Sound deletes the answer at once instead of on re-answer |
 | [CR-175](CR-175.md) | open | low | confirmed | dead-code | `app/css/styles.css:2962` | About 40 rules style elements and classes that no longer exist |
 | [CR-176](CR-176.md) | open | low | confirmed | dead-code | `app/js/app.js:2870` | windDownShown is written but never read |
 | [CR-177](CR-177.md) | open | low | confirmed | dead-code | `app/js/keyboard.js:279` | Dead toolbar/Hide code and comments still describe a keyboard Hide button that no longer exists |

@@ -483,7 +483,10 @@ async function flushSave() {
 async function writeNow() {
     if (!conv || !review) return;
     const out = { ...review, updated: new Date().toISOString() };
-    await storage.writeReview(conv.id, out);
+    // A save that fails is said, not swallowed (CR-172); nothing of what was written
+    // goes in the message.
+    const ok = await storage.writeReview(conv.id, out);
+    if (!ok) storage.logError('review save', `could not write the review for ${conv.id}`);
 }
 
 function change(next) {

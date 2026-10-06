@@ -815,3 +815,21 @@ test('a speaking model and a hearing model are stored apart', () => {
     storage.saveServiceSttModel('openai', 'gpt-4o-transcribe');
     assert.equal(storage.loadServiceTtsModel('openai'), 'gpt-4o-mini-tts');
 });
+
+// CR-173. Two conversations started in the same second keep separate files.
+test('two conversations started in the same second do not share a file', async () => {
+    await storage.restoreDataFolder();
+    storage.resetConversationId();
+    await storage.startConversationLog();
+    const first = storage.getConversationId();
+    await storage.logUserResponse({ selectedText: 'one', selectedIndex: -1, allOptions: [] });
+    await storage.whenLogWritten();
+    storage.resetConversationId();
+    await storage.startConversationLog();
+    const second = storage.getConversationId();
+    await storage.whenLogWritten();
+    assert.notEqual(first, second);
+    assert.ok(second.startsWith(first.slice(0, 19)), 'still starts with the date and time');
+    const kept = await readLog(first);
+    assert.ok(kept.exchanges.some((e) => e.selectedText === 'one'), 'the first file was not overwritten');
+});

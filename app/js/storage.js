@@ -2191,9 +2191,17 @@ let pendingPartnerTurn = null;
 // even before the log file is written and even when the conversation isn't saved.
 let currentConversationId = null;
 
+// ⚠ TWO CONVERSATIONS STARTED IN THE SAME SECOND GOT THE SAME NAME (CR-173), and the
+// second then opened and overwrote the first's file. The name still starts with the
+// date and time to the second (the review list reads the date from it); a second one
+// in the same second gets "-2", "-3" after it.
+let lastIdStem = '';
+let idsThisSecond = 0;
 function ensureConversationId() {
     if (!currentConversationId) {
-        currentConversationId = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        const stem = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        if (stem === lastIdStem) { idsThisSecond++; currentConversationId = `${stem}-${idsThisSecond}`; }
+        else { lastIdStem = stem; idsThisSecond = 1; currentConversationId = stem; }
     }
     return currentConversationId;
 }

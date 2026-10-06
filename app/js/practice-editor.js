@@ -327,7 +327,19 @@ function renderForm(scenario, creating) {
                 const id = await library.addScenario(draft);
                 goTo({ mode: 'edit', id });
             }),
-            button('Cancel', () => goTo({ mode: 'list' })),
+            button('Cancel', async () => {
+                // A typed partner is real work on an on-screen keyboard, so leaving it
+                // asks first (CR-171). An untouched form goes straight back.
+                const typed = ['title', 'partnerPersona', 'details', 'description', 'behaviorText']
+                    .some((k) => String(draft[k] || '').trim());
+                if (typed && !(await confirmDanger({
+                    title: 'Discard this scenario?',
+                    body: 'What you have typed will be lost.',
+                    confirmLabel: 'Discard',
+                    cancelLabel: 'Keep editing',
+                }))) return;
+                goTo({ mode: 'list' });
+            }),
         );
     } else {
         tools.append(

@@ -410,6 +410,11 @@ forgetting to tag one is only ever noise, never silence.
   one before you type the new one; in practice, pausing and restarting listening no
   longer replaces the pretend partner's first line with a new one; and a backup now
   carries the words the app has learned from your typing.
+- Fixed: tapping Cancel on a practice scenario you have typed now asks before throwing
+  it away; a Conversation Review that could not be saved is now noted in the error log
+  instead of being lost silently; two conversations started within the same second no
+  longer share one saved file; and "Change my answer" in How I Sound keeps your old
+  answer until you pick a new one.
 
 ## Version 0.13.4
 

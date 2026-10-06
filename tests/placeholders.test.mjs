@@ -908,3 +908,12 @@ test('CR-167-169: forms keep the latest name and an unfinished Other; a practice
     const ap = appSource.slice(appSource.indexOf('async function advancePracticePartner'));
     assert.match(ap.slice(0, 2500), /prior \? \[\.\.\.conversationHistory, \{ role: 'partner', text: prior \}\]/);
 });
+
+test('CR-171/172/174: discard asks first, a failed review save is logged, changing an answer keeps it', () => {
+    const pe = readFileSync(new URL('../app/js/practice-editor.js', import.meta.url), 'utf8');
+    assert.match(pe, /title: 'Discard this scenario\?'/);
+    const rv = readFileSync(new URL('../app/js/review-ui.js', import.meta.url), 'utf8');
+    assert.match(rv, /if \(!ok\) storage\.logError\('review save'/);
+    const wv = readFileSync(new URL('../app/js/worldview-ui.js', import.meta.url), 'utf8');
+    assert.doesNotMatch(wv, /voiceProfile\.clearAnswer\(item\.id\)/);
+});

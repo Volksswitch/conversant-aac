@@ -524,7 +524,7 @@ function renderSoundCheck() {
     contentEl.append(buildNeverList());
 }
 
-function buildSoundCheckCard(item) {
+function buildSoundCheckCard(item, { editing = false } = {}) {
     const saved = voiceProfile.getAnswer(item.id);
     const card = el('div', { class: 'wv-card sc-card', id: 'sc-' + item.id });
 
@@ -540,14 +540,18 @@ function buildSoundCheckCard(item) {
 
     if (item.partner) card.append(el('p', { class: 'sc-partner', text: `They said: "${item.partner}"` }));
 
-    if (saved) {
-        // Answered: show what they picked and let them redo it. Re-answering simply
-        // overwrites, so there is no destructive step and no confirmation needed.
+    if (saved && !editing) {
+        // Answered: show what they picked and let them redo it. "Change my answer" shows
+        // the choices again WITHOUT clearing the old answer, which stays until a new one
+        // is picked (CR-174) - clearing first lost it if the user then left.
         card.append(el('p', { class: 'sc-chosen', text:
             saved.choice ? `You would say: "${saved.choice}"` : '(no preference recorded)' }));
         card.append(el('div', { class: 'wv-actions' }, [
             el('button', { class: 'wv-btn wv-btn-link', text: 'Change my answer',
-                onclick: () => { voiceProfile.clearAnswer(item.id); refreshSoundCheckCard(item); } })
+                onclick: () => {
+                    const old = document.getElementById('sc-' + item.id);
+                    if (old) old.replaceWith(buildSoundCheckCard(item, { editing: true }));
+                } })
         ]));
         return card;
     }
