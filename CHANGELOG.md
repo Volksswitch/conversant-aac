@@ -465,6 +465,12 @@ forgetting to tag one is only ever noise, never silence.
   screen as it does while you edit it in Settings. In the Bold outlines and color-
   blind color schemes, the small colored corners showing behind the rounded response
   cards are gone.
+- On a narrow screen with the panel at the side, an Express Panel word too long for
+  its button now continues on the next line instead of being cut off. In Settings,
+  buttons that cannot be used right now (such as Load with no saved profile) look
+  dimmed, and the empty speech-service key boxes are wide enough to show their whole
+  hint. With a mouse, pointing at a person, place or feeling button no longer makes it
+  look switched on.
 
 ## Version 0.13.4
 

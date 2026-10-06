@@ -2500,11 +2500,22 @@ body.conv-bottom .palette-grid {
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
+    /* A word wider than a narrow cell breaks onto the next line, where the 3-line clamp
+       can show an ellipsis, instead of being cut off sideways with nothing to say a
+       word is missing ("Awesom") (CR-227). */
+    overflow-wrap: anywhere;
 }
 .ep-btn:focus-visible {
     background: var(--surface-raised);
     outline: 2px solid var(--ep-color);
     outline-offset: -1px;
+}
+/* More and Close are a solid fill with white words; the focus rule above would put the
+   white words on a white fill (CR-230). */
+.ep-btn.ep-more:focus-visible {
+    background: color-mix(in srgb, var(--band-color, var(--edge-strong)) 82%, var(--shade));
+    color: var(--ink-inverse);
+    outline-color: var(--band-color, var(--edge-strong));
 }
 .ep-btn:active { transform: translateY(1px); }
 /* Armed: see #epGrid .ep-btn.ep-armed below the switched-on rules (CR-088). */
@@ -2741,6 +2752,13 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
     border-radius: 4px;
     padding: 0.5rem 0.9rem;
     cursor: pointer;
+}
+/* A button that does nothing must look like it (CR-228): Load, Update and Delete with
+   no saved profile looked exactly like the working button beside them. Zero
+   specificity, so a family's own disabled look still wins. */
+:where(#settingsDialog button:disabled) {
+    opacity: 0.45;
+    cursor: default;
 }
 
 /* Text fields take the scheme's own colors (CR-089). `:where()` keeps this at zero
@@ -3481,7 +3499,10 @@ dialog select {
     margin-top: 0.25rem;
 }
 .key-row input[type="text"] {
-    flex: 0 1 9rem;
+    /* 14rem fits the longest empty-box hint ("Your Google Cloud API key", ~11.9rem)
+       with room to spare; 9rem cut every one of them mid-word (CR-229). Still
+       shrinks on a narrow panel. */
+    flex: 0 1 14rem;
     width: auto;
     min-width: 0;
 }
@@ -3506,7 +3527,7 @@ dialog select {
 .key-row.align-end { align-items: flex-end; }
 .key-row .region-field { display: flex; flex-direction: column; gap: 0.2rem; flex: 0 1 7rem; min-width: 0; }
 .key-row .region-field .region-input { flex: none; width: 100%; }
-.key-row .key-field { flex: 0 1 9rem; }
+.key-row .key-field { flex: 0 1 14rem; }
 /* A box and its Paste button wrap as ONE unit on a narrow screen - a Paste button
    stranded on the next line reads as belonging to whatever is beside it there. */
 .key-row .field-group { display: flex; align-items: flex-end; gap: 0.5rem; min-width: 0; flex: 0 1 auto; }
@@ -5152,6 +5173,20 @@ body.conv-bottom     .danger-dialog {
         background: color-mix(in srgb, var(--ep-color) 82%, var(--shade));
         color: var(--ink-inverse);
         outline-color: var(--ep-color);
+    }
+    /* In the Context band only a SWITCHED-ON button is solid. The rule above made an
+       un-lit partner or feeling under the pointer look switched on, while a place
+       beside it stayed light (CR-230). */
+    .ep-btn.ep-band-context.ep-partner:hover,
+    .ep-btn.ep-band-context.ep-place:hover,
+    .ep-btn.ep-band-context.ep-feeling:hover {
+        background: var(--surface-raised);
+        color: var(--ink);
+        outline-color: var(--band-color);
+    }
+    .ep-btn.ep-band-context.ep-on:hover {
+        background: color-mix(in srgb, var(--band-color) 82%, var(--shade));
+        color: var(--ink-inverse);
     }
     
     .session-btn-end:hover {

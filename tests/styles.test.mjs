@@ -397,3 +397,11 @@ test('buttons inherit the house typeface, and response cells are not tinted', ()
     assert.match(css, /:where\(button, input, select, textarea\) \{\s*font-family: inherit;\s*\}/);
     assert.match(css, /\.response-cell:not\(\.response-card\) \{ background: transparent; \}/);
 });
+
+// CR-227. A word too wide for an Express Panel cell breaks rather than being cut off.
+test('Express Panel text breaks a word that cannot fit', () => {
+    const css = readFileSync(new URL('../app/css/styles.css', import.meta.url), 'utf8');
+    const at = css.search(/^\.ep-text \{/m);
+    assert.ok(at >= 0);
+    assert.match(css.slice(at, css.indexOf('}', at)), /overflow-wrap: anywhere;/);
+});

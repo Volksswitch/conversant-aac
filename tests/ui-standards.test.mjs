@@ -457,3 +457,37 @@ test('every Settings section heading speaks under the help button', async (t) =>
     });
     assert.deepEqual(silent, [], 'give the section a data-help key and an entry in settings-help.json');
 });
+
+/*
+ * CR-229 and CR-228. An empty key box shows its whole hint ("Your Google Cloud API
+ * key"), and a Settings button that does nothing looks like it.
+ */
+test('key box hints fit, and disabled Settings buttons are dimmed', async (t) => {
+    if (skip) return t.skip(skip);
+    const out = await page.evaluate(async () => {
+        const dlg = document.getElementById('settingsDialog');
+        if (!dlg.open) { document.getElementById('settingsBtn').click(); await new Promise((r) => setTimeout(r, 400)); }
+        const ctx = document.createElement('canvas').getContext('2d');
+        const clipped = []; const bright = [];
+        for (const tab of document.querySelectorAll('#settingsDialog .settings-tab[data-tab]')) {
+            tab.click();
+            await new Promise((r) => setTimeout(r, 60));
+            for (const d of document.querySelectorAll('#settingsDialog details')) d.open = true;
+            await new Promise((r) => setTimeout(r, 60));
+            for (const el of document.querySelectorAll('#settingsDialog .key-row input[placeholder]')) {
+                if (!el.offsetParent || el.value) continue;
+                const cs = getComputedStyle(el);
+                ctx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+                const inner = el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+                if (ctx.measureText(el.placeholder).width > inner + 1) clipped.push(el.id);
+            }
+            for (const b of document.querySelectorAll('#settingsDialog button:disabled')) {
+                if (!b.offsetParent) continue;
+                if (parseFloat(getComputedStyle(b).opacity) >= 1) bright.push(b.id || b.textContent.trim());
+            }
+        }
+        return { clipped, bright };
+    });
+    assert.deepEqual(out.clipped, [], 'an empty key box cuts off its hint');
+    assert.deepEqual(out.bright, [], 'a disabled button looks enabled');
+});
