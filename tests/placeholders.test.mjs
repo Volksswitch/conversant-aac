@@ -774,3 +774,12 @@ test('CR-103: only the conversation lines are a live region, and they update in 
     const body = ui.slice(ui.indexOf('export function renderConversation'));
     assert.match(body.slice(0, 2000), /node\.data = text/);
 });
+
+test('CR-107-110: choice groups, tabs, dialogs and the idle status are all named', () => {
+    const html = readFileSync(new URL('../app/index.html', import.meta.url), 'utf8');
+    assert.equal((html.match(/class="radio-row">/g) || []).length, 0, 'every choice group has a role and a name');
+    assert.match(appSource, /tab\.setAttribute\('aria-controls', panel\.id\)/);
+    assert.match(appSource, /status === 'stopped' \|\| status === 'idle'\) \{/);
+    const dlg = readFileSync(new URL('../app/js/confirm-dialog.js', import.meta.url), 'utf8');
+    assert.match(dlg, /dlg\.setAttribute\('aria-describedby', p\.id\)/);
+});

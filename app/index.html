@@ -334,8 +334,8 @@
                     <div class="setting-group" data-help="tapToSpeak">
                         <label>One tap or two</label>
                         <div class="setting-item">
-                            <label>How many taps a button needs</label>
-                            <div class="radio-row">
+                            <label id="tapModeLabel">How many taps a button needs</label>
+                            <div class="radio-row" role="radiogroup" aria-labelledby="tapModeLabel">
                                 <label class="radio-label">
                                     <input type="radio" name="expressTapMode" value="single" checked>
                                     One tap
@@ -603,7 +603,7 @@
                         <!-- radio-row / radio-label are the standard pair used by every
                              other radio group here; this one was added later and missed
                              them, so it had no layout of its own. -->
-                        <div class="radio-row">
+                        <div class="radio-row" role="radiogroup" aria-label="Hearing the other person">
                             <label class="radio-label"><input type="radio" name="sttProvider" value="builtin"> This browser's own (free)</label>
                             <label class="radio-label"><input type="radio" name="sttProvider" value="azure"> Azure transcription (paid)</label>
                             <label class="radio-label"><input type="radio" name="sttProvider" value="openai"> OpenAI transcription (paid)</label>
@@ -627,7 +627,7 @@
                          better ones does not make them reachable from a web app. -->
                     <div class="setting-group" data-help="yourVoice">
                         <label>Your speaking voice</label>
-                        <div class="radio-row">
+                        <div class="radio-row" role="radiogroup" aria-label="Your speaking voice">
                             <label class="radio-label"><input type="radio" name="ttsProvider" value="builtin"> This device's voices (free)</label>
                             <label class="radio-label"><input type="radio" name="ttsProvider" value="azure"> Azure voice (paid)</label>
                             <label class="radio-label"><input type="radio" name="ttsProvider" value="openai"> OpenAI voice (paid)</label>
@@ -933,7 +933,7 @@
                     <p class="tab-intro">Go back over a conversation you have already had, one turn at a time. Tap a response option to say it would have suited you better or to change its words, or use your own buttons and words. What you write teaches the app how you talk. Settings takes you back out.</p>
                     <div class="setting-group" data-help="reviewList">
                         <label>Saved conversations</label>
-                        <div class="radio-row">
+                        <div class="radio-row" role="radiogroup" aria-label="Saved conversations">
                             <label class="radio-label"><input type="radio" name="reviewListKind" value="real" checked> Real conversations</label>
                             <label class="radio-label"><input type="radio" name="reviewListKind" value="practice"> Practice conversations</label>
                         </div>
@@ -956,8 +956,8 @@
                     <div class="setting-group" data-help="expressKeyboard">
                         <label>Express Panel and Keyboard selection</label>
                         <div class="setting-item">
-                            <label>Keyboard for typing</label>
-                            <div class="radio-row">
+                            <label id="keyboardModeLabel">Keyboard for typing</label>
+                            <div class="radio-row" role="radiogroup" aria-labelledby="keyboardModeLabel">
                                 <label class="radio-label">
                                     <input type="radio" name="keyboardMode" value="physical" checked>
                                     My physical keyboard
@@ -969,8 +969,8 @@
                             </div>
                         </div>
                         <div class="setting-item">
-                            <label>Where it sits</label>
-                            <div class="radio-row">
+                            <label id="keyboardDockLabel">Where it sits</label>
+                            <div class="radio-row" role="radiogroup" aria-labelledby="keyboardDockLabel">
                                 <label class="radio-label">
                                     <input type="radio" name="keyboardDock" value="bottom" checked>
                                     Bottom of the screen

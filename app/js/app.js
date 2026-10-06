@@ -1426,7 +1426,7 @@ function handleSttStatus(status, detail) {
         storage.logError('stt', detail || 'a phrase could not be transcribed');
     } else if (status === 'listening') {
         ui.setStatus('Listening...');
-    } else if (status === 'stopped') {
+    } else if (status === 'stopped' || status === 'idle') {   // REST sources say 'idle' (CR-108)
         ui.setStatus('Ready');
     }
 }
@@ -5859,6 +5859,17 @@ function initSettingsTabs() {
         const on = tab.classList.contains('active');
         tab.tabIndex = on ? 0 : -1;            // roving tabindex: one Tab stop for the strip
         tab.setAttribute('aria-selected', String(on));
+        // Tie each tab to its panel, so a screen reader can say which panel it is and
+        // jump into it (CR-109).
+        const name = tab.dataset.tab;
+        tab.id = tab.id || `settingsTab-${name}`;
+        const panel = document.querySelector(`#settingsContent .tab-panel[data-tab="${name}"]`);
+        if (panel) {
+            panel.id = panel.id || `settingsPanel-${name}`;
+            panel.setAttribute('role', 'tabpanel');
+            panel.setAttribute('aria-labelledby', tab.id);
+            tab.setAttribute('aria-controls', panel.id);
+        }
         tab.addEventListener('click', () => activateSettingsTab(tab, false));
     });
     // Up/Down arrows move BETWEEN tabs (Ken, July 2026 — the tabs stack in a

@@ -51,6 +51,8 @@ export function confirmDanger({
         const p = document.createElement('p');
         p.className = 'danger-body';
         p.textContent = body;
+        nameDialog(dlg, h, p);
+        dlg.setAttribute('role', 'alertdialog');
 
         const actions = document.createElement('div');
         actions.className = 'danger-actions';
@@ -114,6 +116,18 @@ export function confirmDanger({
  * one dialog in this app that the user cannot dismiss, which is only defensible because
  * every caller closes it in a `finally`.
  */
+// A dialog is announced by its title and its words, not only by the button that has
+// focus - otherwise a screen reader said "Cancel, button" and never read the warning
+// (CR-110).
+let dialogCount = 0;
+function nameDialog(dlg, h, p) {
+    const n = ++dialogCount;
+    h.id = `dlg-title-${n}`;
+    p.id = `dlg-body-${n}`;
+    dlg.setAttribute('aria-labelledby', h.id);
+    dlg.setAttribute('aria-describedby', p.id);
+}
+
 function neutralCard(title) {
     const dlg = document.createElement('dialog');
     dlg.className = 'danger-dialog neutral-dialog';
@@ -125,6 +139,7 @@ function neutralCard(title) {
     head.append(h);
     const p = document.createElement('p');
     p.className = 'danger-body';
+    nameDialog(dlg, h, p);
     dlg.append(head, p);
     return { dlg, p };
 }

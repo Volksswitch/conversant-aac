@@ -329,6 +329,10 @@ forgetting to tag one is only ever noise, never silence.
 - For screen-reader users: the conversation pane no longer reads the whole
   conversation again each time a line is added, or while the other person is still
   talking. Each new line is read once.
+- For screen-reader users: each set of choices in Settings now says what question it
+  answers; each Settings tab is tied to its page; warning boxes read their title and
+  message, not just "Cancel"; and after you stop listening with OpenAI, Google Cloud
+  or ElevenLabs, the app no longer says it is still listening.
 
 ## Version 0.13.4
 
