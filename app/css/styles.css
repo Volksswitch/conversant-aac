@@ -3847,6 +3847,9 @@ dialog select {
     inset: 0;
     background: var(--surface-pressed);
     border-radius: var(--sw-h);
+    /* An outline that holds 3:1 against the panel even when off (CR-100). Inset, so it
+       does not move the knob the way a border would. */
+    box-shadow: inset 0 0 0 2px var(--edge-strong);
     transition: background 0.15s;
 }
 /* The real control is invisible, so its keyboard focus is drawn on the track. */
@@ -4389,6 +4392,7 @@ label.radio-label input[type="radio"] {
 
 .wv-folder-prompt-btn:hover {
     background: var(--info);
+    color: var(--ink-inverse);   /* readable on the blue (CR-101) */
 }
 
 .wv-folder-prompt-btn:disabled {
@@ -5479,7 +5483,9 @@ body.conv-bottom     .danger-dialog {
    cell after it and the keyguard holes would stop lining up (Rule 1, the hard
    requirement). */
 .ep-btn.ep-choice-slot .ep-text {
-    color: color-mix(in srgb, var(--band-color, var(--band-context)) 55%, transparent);
+    /* A token that holds 4.5:1 on the dock in every scheme (CR-102); the italic
+       already says it is a placeholder. */
+    color: var(--ink-muted);
     font-style: italic;
     font-weight: 600;
 }

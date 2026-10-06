@@ -138,9 +138,9 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-097](CR-097.md) | fixed (a2ddd0d) | medium | plausible | data-loss | `app/js/storage.js:369` | A failed or partial read of a data file is treated as 'no file', so the browser copy can overwrite the folder copy |
 | [CR-098](CR-098.md) | fixed (424db85) | medium | plausible | race-condition | `app/js/stt.js:457` | A late result from the built-in recognizer after listening stops is added to the cleared buffer |
 | [CR-099](CR-099.md) | fixed (aeaccb3) | medium | plausible | race-condition | `app/js/tts-deepgram.js:658` | After a Deepgram sentence is stopped, leftover audio from it is glued onto the next sentence and cached that way |
-| [CR-100](CR-100.md) | open | low | confirmed | accessibility | `app/css/styles.css:3782` | "Which side" switch has no focus indicator, a sub-minimum target and an invisible off-state outline |
-| [CR-101](CR-101.md) | open | low | confirmed | accessibility | `app/css/styles.css:4335` | Folder-prompt button text becomes unreadable on hover/after tap |
-| [CR-102](CR-102.md) | open | low | confirmed | accessibility | `app/css/styles.css:5426` | "Choice button #N" placeholder text is below text contrast minimum |
+| [CR-100](CR-100.md) | fixed (pending) | low | confirmed | accessibility | `app/css/styles.css:3782` | "Which side" switch has no focus indicator, a sub-minimum target and an invisible off-state outline |
+| [CR-101](CR-101.md) | fixed (pending) | low | confirmed | accessibility | `app/css/styles.css:4335` | Folder-prompt button text becomes unreadable on hover/after tap |
+| [CR-102](CR-102.md) | fixed (pending) | low | confirmed | accessibility | `app/css/styles.css:5426` | "Choice button #N" placeholder text is below text contrast minimum |
 | [CR-103](CR-103.md) | open | low | confirmed | accessibility | `app/index.html:54` | Transcript live region re-reads the whole conversation, every growing partial word, and every holding phrase |
 | [CR-104](CR-104.md) | open | low | confirmed | accessibility | `app/index.html:136` | aria-label placed on plain divs (Command Bar, Express Panel, composer) is ignored by assistive technology |
 | [CR-105](CR-105.md) | open | low | confirmed | accessibility | `app/index.html:159` | Response-card live region reads out all four (or eight) suggestions on every refresh |

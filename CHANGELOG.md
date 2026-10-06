@@ -317,6 +317,10 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: with the Deepgram voice, cutting a sentence off and starting another straight
   away could put a scrap of the old sentence at the start of the new one, and that
   same wrong audio could then play every time the phrase was used.
+- Easier to see: the Left/Right switch for the side keyboard now has a visible outline
+  when off; the "Choose data folder" button in About Me keeps its words readable when
+  tapped; and the "Choice button" placeholders on the Express Panel are no longer
+  faint.
 
 ## Version 0.13.4
 

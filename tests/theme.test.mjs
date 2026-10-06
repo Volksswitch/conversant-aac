@@ -143,6 +143,10 @@ const PAIRS = [
     ['body text on a card', 'ink', 'surface-raised', 4.5],
     ['body text on the settings panel', 'ink', 'surface-panel', 4.5],
     ['body text on the dock', 'ink', 'surface-sunken', 4.5],
+    // The "Choice button #n" placeholder labels in the Context band (CR-102).
+    ['muted text on the dock', 'ink-muted', 'surface-sunken', 4.5],
+    // The side-dock switch's outline when it is off (CR-100).
+    ['a strong edge on a pressed surface', 'edge-strong', 'surface-pressed', 3],
     ['a heading', 'ink-strong', 'surface-panel', 4.5],
     ['a heading on a card', 'ink-strong', 'surface-raised', 4.5],
     ['muted text', 'ink-muted', 'surface-raised', 4.5],
