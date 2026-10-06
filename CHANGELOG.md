@@ -303,6 +303,10 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: if the browser's storage for the app filled up, every request for suggestions
   could fail even though the AI had answered, and paid voices fell back to the device
   voice on every sentence. The app now carries on when a setting cannot be saved.
+- Fixed: if the computer briefly refused to write a file while restoring a backup (for
+  example while OneDrive was syncing it), the app said that part was restored even
+  though the old version would come back after the restart. It now tries once more
+  and, if that fails, says that part was not restored.
 
 ## Version 0.13.4
 

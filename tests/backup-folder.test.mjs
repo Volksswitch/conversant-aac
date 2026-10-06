@@ -270,3 +270,22 @@ test('unsaved changes to the current profile are detectable before an export', a
     storage.saveActiveSettingsProfile('');
     assert.deepEqual(await storage.activeProfileUnsaved(), { name: '', differs: false });
 });
+
+test('a folder file that cannot be written is reported as not restored (CR-096)', async () => {
+    assert.equal(await storage.restoreDataFolder(), true);
+    localStorage.setItem('aac_express_items', JSON.stringify({ version: 3, bands: {} }));
+    const pkg = await dt.buildPackage('9.9.9');
+    const real = root.getFileHandle.bind(root);
+    root.getFileHandle = async (n, o) => {
+        const h = await real(n, o);
+        if (n !== 'express-panel.json') return h;
+        return { ...h, createWritable: async () => { throw new Error('locked by sync'); } };
+    };
+    try {
+        const done = await dt.applyPackage(dt.parsePackage(JSON.stringify(pkg)));
+        assert.ok(done.failed.includes('Express Panel items'));
+        assert.ok(!done.files.includes('Express Panel items'));
+    } finally {
+        root.getFileHandle = real;
+    }
+});

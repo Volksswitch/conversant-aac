@@ -382,9 +382,19 @@ export async function applyPackage(pkg, onProgress) {
             restored.failed.push(entry.label);
             continue;
         }
-        try {
-            await storage.writeFile(entry.file, text);   // no-op without a data folder
-        } catch { /* cache write already succeeded; folder is best-effort */ }
+        // ⚠ THE FOLDER FILE IS WHAT LOADS AFTER THE RESTART (CR-096), so a failed write
+        // there (a sync lock, a full disk) would bring the OLD version back while the
+        // card said it was restored. One retry, then it is reported as not restored.
+        // Without a data folder the cache is the store, and this is a no-op.
+        let wrote = false;
+        for (let tries = 0; tries < 2 && !wrote; tries++) {
+            try { await storage.writeFile(entry.file, text); wrote = true; } catch { /* retry once */ }
+        }
+        if (!wrote && storage.hasDataFolder()) {
+            restored.failed.push(entry.label);
+            step(entry.label);
+            continue;
+        }
         restored.files.push(entry.label);
         step(entry.label);
     }
