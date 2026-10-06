@@ -21,6 +21,9 @@ let bust = 0;
 let stt, rec, silences, statuses, partnerActivity;
 
 beforeEach(async () => {
+    // End the previous test's turn, so a timer it left (such as the one checkpoint owed
+    // to partner words heard while the app spoke - CR-050) cannot fire into this test.
+    if (stt) { try { stt.stopListening(); stt.resetTranscript(); } catch { /* fine */ } }
     stt = await import('../app/js/stt.js?b=' + (bust++));   // fresh module state
     silences = []; statuses = []; partnerActivity = 0;
     stt.setSilenceThreshold(THRESHOLD_S);
@@ -284,6 +287,10 @@ test('echo filter: genuine partner speech sharing only a couple words is NOT dro
     stt.noteSpokenEnd();
     rec.emitFinal('Did you get out and see any friends this weekend?');
     assert.ok(stt.getCurrentTranscript().includes('friends'), 'a different partner sentence is kept');
+    // Heard during the echo tail, so it is owed a checkpoint once the tail passes
+    // (CR-050); end the turn so that one-off timer cannot fire into a later test.
+    stt.stopListening();
+    stt.resetTranscript();
 });
 
 /* --- backend selection (Ken, July 30 2026) ---------------------------------
@@ -504,4 +511,32 @@ test('stopping keeps the buffer; only resetTranscript empties it', async () => {
     assert.equal(stt.getCurrentTranscript(), 'How was your weekend?');
     stt.resetTranscript();
     assert.equal(stt.getCurrentTranscript(), '');
+});
+
+// CR-050. A short addition said over a placeholder gets fresh suggestions once the
+// app falls quiet - but a mis-heard echo of the placeholder must not.
+test('partner words said over the app get one checkpoint after it stops', async () => {
+    stt.startListening();
+    rec.emitFinal('Do you want coffee?');
+    await sleep(THRESHOLD_S * 1000 + 60);
+    assert.deepEqual(silences, ['Do you want coffee?']);
+    stt.noteSpokenStart("I'm thinking about that.");
+    rec.emitFinal('Or maybe some tea instead.');
+    stt.noteSpokenEnd();
+    await sleep(1500 + THRESHOLD_S * 1000 + 150);
+    assert.equal(silences.length, 2, 'a second checkpoint fired');
+    assert.match(silences[1], /tea instead/);
+    stt.stopListening();
+    stt.resetTranscript();
+});
+
+test('a mis-heard echo of the placeholder earns no checkpoint', async () => {
+    stt.startListening();
+    stt.noteSpokenStart('Still mulling that over.');
+    rec.emitFinal('steel mulling that over');
+    stt.noteSpokenEnd();
+    await sleep(1500 + THRESHOLD_S * 1000 + 150);
+    assert.deepEqual(silences, []);
+    stt.stopListening();
+    stt.resetTranscript();
 });

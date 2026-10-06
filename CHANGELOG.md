@@ -173,6 +173,9 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: with Deepgram listening, ending a conversation or switching away from the app
   just after tapping Listen could show the red "something went wrong" wash for no
   reason, and listening might not come back when you returned. Fixed.
+- Fixed: if the other person added something while the app was saying a holding
+  phrase, the suggestions stayed based on what they had said before. A short addition
+  like that now gets fresh suggestions once the app stops talking.
 
 ## Version 0.13.4
 

@@ -141,6 +141,27 @@ function speechActive() {
     return appSpeaking || Date.now() < speechSettleUntil;
 }
 
+/*
+ * PARTNER WORDS HEARD WHILE THE APP WAS TALKING (CR-050). The trigger-level guard
+ * above stops them arming a checkpoint, which is right while we speak - but nothing
+ * looked again once we stopped, so a short addition said over a placeholder ("Or maybe
+ * some tea instead") never got fresh suggestions. So: note it, and once the tail has
+ * passed, arm ONE checkpoint for it.
+ *
+ * ⚠ THE RUNAWAY LOOP IS WHAT THIS MUST NOT BRING BACK. A mis-heard echo of our own
+ * phrase could otherwise arm a checkpoint, whose placeholder is mis-heard again, and
+ * so on. Two guards: only text with at least two words that resemble NONE of the
+ * words we were saying counts, and at most one deferred checkpoint per utterance.
+ */
+let heardDuringSpeech = false;
+let deferredUsedThisUtterance = false;
+
+function novelWordCount(transcript) {
+    const words = normalizeForEcho(transcript || '').split(' ').filter(Boolean);
+    const ours = activePhrases.flatMap((p) => p.tokens);
+    return words.filter((w) => !ours.some((o) => tokensSimilar(w, o))).length;
+}
+
 // Join finalized segments (and/or the in-progress interim) with single spaces. The
 // recognizer returns each segment WITHOUT a separating space, so "Good morning."
 // + "How are you?" would otherwise concatenate into "Good morning.How are you?"
@@ -169,6 +190,7 @@ function normalizeForEcho(text) {
 // expire after a tail window (they stay matchable until then).
 export function noteSpokenStart(text) {
     appSpeaking = true;
+    deferredUsedThisUtterance = false;
     const norm = normalizeForEcho(text || '');
     if (!norm) return;
     // While speaking, the phrase never expires; noteSpokenEnd sets the deadline.
@@ -183,6 +205,14 @@ export function noteSpokenEnd() {
     for (const p of activePhrases) {
         if (p.expires === Infinity) p.expires = deadline;
     }
+    // Partner words that arrived while we spoke get their checkpoint now (CR-050).
+    setTimeout(() => {
+        if (!heardDuringSpeech || !listeningIntent || speechActive() || deferredUsedThisUtterance) return;
+        heardDuringSpeech = false;
+        deferredUsedThisUtterance = true;
+        resetSilenceTimer(false);
+        if (onPartnerActivity) onPartnerActivity();
+    }, ECHO_TAIL_MS + 10);
 }
 
 // Levenshtein distance, only meaningful for the small threshold we compare against
@@ -334,6 +364,7 @@ function ingest(transcript, isFinal) {
     // Drop our own TTS echo (a placeholder/response/prompt) — it must not
     // accumulate or renew the partner's turn. Only unique partner content gets through.
     if (isEcho(transcript)) return false;
+    if (speechActive() && novelWordCount(transcript) >= 2) heardDuringSpeech = true;
     if (isFinal) {
         commitSegment(transcript);
         currentInterim = '';
@@ -762,6 +793,7 @@ export function getCurrentTranscript() {
 // user asks the partner to repeat — the current exchange's text is thrown away
 // and the system keeps listening for the partner's restated utterance.
 export function resetTranscript() {
+    heardDuringSpeech = false;
     accumulatedText = '';
     segments = [];
     currentInterim = '';
