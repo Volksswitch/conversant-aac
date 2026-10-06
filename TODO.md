@@ -800,6 +800,30 @@ about to fall by an order of magnitude is the trap.
   because the app should not announce lessons it is not sure of (the light-bulb entry
   above). It waits on the measure in item 1. About Me's "What the app has picked up"
   list also does not mark which lines came from a review.
+- **Shape discussed with Ken, 2026-10-06 (not built; supersedes (a)'s "two or three"):**
+  - **Three steps, each moving from the AI's words toward the user's own.** Tap an
+    option: "this was the closest." Tap it again: the Response Panel shows eight
+    versions of that option, the same idea in different wording, two ways along each of
+    length, formality, warmth and humor. Tap a version to choose it; tap it again and the
+    Composition Pane opens with its words in the normal text box, with Clear available.
+    "In my own words" still opens a blank box directly.
+  - **Settling is covered without a separate mark.** Going a step further on the option
+    the user actually spoke says they took it because they had to. "A different set"
+    keeps its meaning: different ideas, not different wording.
+  - **The normal text box replaces the in-place word editor** (Ken: nudge the user
+    toward their own words, and do not make them learn a second way of editing).
+    Highlighted-word editing could come back as a Settings choice if testers struggle
+    to place a cursor.
+  - **Each lesson is tagged with the moment:** the person, the goals switched on, what
+    the partner was doing, the kind of reply chosen, place and feeling, and the
+    partner's words. Lessons are used by matching the moment, person first.
+  - **What the partner was doing is not saved today** (Ken: "add it"). The AI works it
+    out on every turn (asking, inviting, sharing news, greeting, wrapping up); save it
+    with the set of options in the conversation file. Small, and useful for measurement
+    as well, so it can go ahead of the rest.
+  - **Turns with known struggles get a clearer mark;** any turn can still be reviewed.
+  - **Decision time is not used as a signal** (Ken): reading time and how much a reply
+    matters make it hard to read.
 
 #### 9. Register per person
 - **Raised:** 2026-10-06 - the evaluation's avenue 9.
