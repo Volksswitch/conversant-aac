@@ -56,6 +56,25 @@
  * said. Keeping that decision in one place is what guarantees it.
  */
 
+// Wake the audio before anything plays, but never wait for ever (CR-280). On an iPad a
+// resume asked for outside a tap can stay pending until the next tap, and a holding
+// phrase fired by a timer then hung: the app stayed "speaking", which holds back new
+// suggestions, and every later sentence queued behind it. "interrupted" (iOS) counts
+// as not running too. If the audio has not woken within the limit this throws, and
+// tts.js says the sentence in the device's own voice instead.
+const WAKE_LIMIT_MS = 1500;
+async function wake(c) {
+    if (c.state === 'running') return;
+    let timer;
+    try {
+        await Promise.race([
+            Promise.resolve(c.resume()).catch(() => { /* judged below */ }),
+            new Promise((res) => { timer = setTimeout(res, WAKE_LIMIT_MS); }),
+        ]);
+    } finally { clearTimeout(timer); }
+    if (c.state !== 'running') throw new Error('Audio could not start on this device.');
+}
+
 const ENDPOINT = 'wss://api.deepgram.com/v1/speak';
 const ENCODING = 'linear16';
 const SAMPLE_RATE = 24000;
@@ -357,11 +376,11 @@ export function createVoice({ getKey, onBilled } = {}) {
      */
     async function play(samples) {
         const c = audioContext();          // throws if this browser cannot play audio
-        if (c.state === 'suspended') {
+        if (c.state !== 'running') {
             const mine = ++playToken;
-            // A refused resume is not fatal - start() may still work, and throwing
-            // here would cost the user the browser-voice fallback as well.
-            try { await c.resume(); } catch { /* fall through and try anyway */ }
+            // Woken with a time limit; if it will not wake, the device voice says it
+            // instead (see wake() at the top of this file, CR-280).
+            await wake(c);
             // cancel() cannot stop a node that does not exist yet, so checking here is
             // the only way a cancel during the wait can be honored.
             if (mine !== playToken) return;
@@ -559,10 +578,10 @@ export function createVoice({ getKey, onBilled } = {}) {
 
             const c = audioContext();          // throws if this browser cannot play audio
             const mine = ++playToken;
-            if (c.state === 'suspended') {
-                // A refused resume is not fatal - the audio may still play, and throwing
-                // here would cost the user the browser-voice fallback as well.
-                try { await c.resume(); } catch { /* fall through and try anyway */ }
+            if (c.state !== 'running') {
+                // Woken with a time limit; if it will not wake, the device voice says it
+                // instead (see wake() at the top of this file, CR-280).
+                await wake(c);
                 if (mine !== playToken) return;
             }
 

@@ -547,6 +547,10 @@ forgetting to tag one is only ever noise, never silence.
   on its own still hears; on Android, words the other person is still saying no longer
   show doubled for a moment; and words shown but not yet settled are no longer lost if
   you switch away from the app in the middle of the other person's sentence.
+- With a paid voice on an iPad, if the device's sound does not wake up within a moment
+  and a half, the sentence is now said in the device's own voice instead of the app
+  going silent and stopping new suggestions until you tap something. When the AI
+  declines to answer, what that request cost is now counted in Settings > About.
 
 ## Version 0.13.4
 

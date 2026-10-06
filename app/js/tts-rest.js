@@ -36,6 +36,25 @@
  */
 import { describeFailure } from './speech-catalog.js';
 
+// Wake the audio before anything plays, but never wait for ever (CR-280). On an iPad a
+// resume asked for outside a tap can stay pending until the next tap, and a holding
+// phrase fired by a timer then hung: the app stayed "speaking", which holds back new
+// suggestions, and every later sentence queued behind it. "interrupted" (iOS) counts
+// as not running too. If the audio has not woken within the limit this throws, and
+// tts.js says the sentence in the device's own voice instead.
+const WAKE_LIMIT_MS = 1500;
+async function wake(c) {
+    if (c.state === 'running') return;
+    let timer;
+    try {
+        await Promise.race([
+            Promise.resolve(c.resume()).catch(() => { /* judged below */ }),
+            new Promise((res) => { timer = setTimeout(res, WAKE_LIMIT_MS); }),
+        ]);
+    } finally { clearTimeout(timer); }
+    if (c.state !== 'running') throw new Error('Audio could not start on this device.');
+}
+
 /*
  * The refusal body, or '' if it cannot be read.
  *
@@ -286,10 +305,10 @@ export function createVoice({ provider, getKey, getModel, onBilled } = {}) {
 
             const c = audioContext();      // throws if this browser cannot play audio
             const mine = ++playToken;
-            if (c.state === 'suspended') {
-                // A refused resume is not fatal — the audio may still play, and throwing
-                // would cost the user the browser-voice fallback as well.
-                try { await c.resume(); } catch { /* fall through and try anyway */ }
+            if (c.state !== 'running') {
+                // Woken with a time limit; if it will not wake, the device voice says it
+                // instead (see wake() at the top of this file, CR-280).
+                await wake(c);
                 if (mine !== playToken) return;
             }
 

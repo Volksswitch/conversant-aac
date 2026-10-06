@@ -258,6 +258,16 @@ test('generateStatements reads {statements}, sends a schema, and refuses prose',
     await assert.rejects(() => llm.generateStatements('lead'), /Could not parse statements/);
 });
 
+// CR-279. A reply with no text (a refusal) is still counted, and the error says why.
+test('a refusal is billed and named in the error', async () => {
+    const seen = [];
+    llm.onUsage((u) => seen.push(u));
+    mockFetch({ content: [], stop_reason: 'refusal', usage: { input_tokens: 100, output_tokens: 0 } });
+    await assert.rejects(() => llm.generateResponses([{ role: 'partner', text: 'Hi' }]), /refusal/);
+    assert.ok(seen.some((u) => (u.input || u.inputTokens || u.input_tokens) === 100), JSON.stringify(seen));
+    llm.onUsage(null);
+});
+
 test('repairOptions parses {rephrase, expand}', async () => {
     mockFetch(JSON.stringify({ rephrase: 'I was at the market.', expand: 'I went to the market for fruit.' }));
     const r = await llm.repairOptions('I went to the market.');

@@ -231,7 +231,14 @@ async function complete({ system, messages, maxTokens, schema }) {
     const data = await response.json();
     // stopReason travels back so a reply that cannot be read can say why the model
     // stopped: cut off at the length limit, declined, or finished normally.
-    return { text: textFrom(data), usage: usageFrom(data), stopReason: data.stop_reason || null };
+    // Usage and the stop reason are read FIRST, and a reply with no text comes back as
+    // empty rather than throwing here (CR-279): thrown, the request was billed but not
+    // counted, and the reason (a refusal, say) was lost from the error.
+    const usage = usageFrom(data);
+    const stopReason = data.stop_reason || null;
+    let text = '';
+    try { text = textFrom(data); } catch { text = ''; }
+    return { text, usage, stopReason };
 }
 
 export const anthropic = {

@@ -419,3 +419,22 @@ test('fetching with no key fails before any request is made', async () => {
         globalThis.fetch = realFetch;
     }
 });
+
+// CR-280. Audio that never wakes (an iPad, outside a tap) gives up within the limit
+// rather than hanging the app in "speaking", so the device voice can say it instead.
+test('a voice whose audio never wakes gives up instead of hanging', async () => {
+    const realFetch = globalThis.fetch;
+    const realAudio = globalThis.window.AudioContext;
+    const ctx = { ...fakeAudio(), state: 'suspended', resume: () => new Promise(() => {}) };
+    globalThis.window.AudioContext = function () { return ctx; };
+    globalThis.fetch = async () => ({ ok: true, status: 200, arrayBuffer: async () => new ArrayBuffer(64) });
+    try {
+        const voice = azure.createVoice({ getKey: () => 'k', getRegion: () => 'eastus' });
+        const started = Date.now();
+        await assert.rejects(() => voice.speak('Hello there.'), /could not start/);
+        assert.ok(Date.now() - started < 4000, 'it gave up within the limit');
+    } finally {
+        globalThis.fetch = realFetch;
+        globalThis.window.AudioContext = realAudio;
+    }
+});

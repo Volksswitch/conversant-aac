@@ -35,6 +35,25 @@
  * A backend only produces sound.
  */
 
+// Wake the audio before anything plays, but never wait for ever (CR-280). On an iPad a
+// resume asked for outside a tap can stay pending until the next tap, and a holding
+// phrase fired by a timer then hung: the app stayed "speaking", which holds back new
+// suggestions, and every later sentence queued behind it. "interrupted" (iOS) counts
+// as not running too. If the audio has not woken within the limit this throws, and
+// tts.js says the sentence in the device's own voice instead.
+const WAKE_LIMIT_MS = 1500;
+async function wake(c) {
+    if (c.state === 'running') return;
+    let timer;
+    try {
+        await Promise.race([
+            Promise.resolve(c.resume()).catch(() => { /* judged below */ }),
+            new Promise((res) => { timer = setTimeout(res, WAKE_LIMIT_MS); }),
+        ]);
+    } finally { clearTimeout(timer); }
+    if (c.state !== 'running') throw new Error('Audio could not start on this device.');
+}
+
 // Azure's regional hostnames are built from the region name, so the region is as
 // load-bearing as the key: a valid key with the wrong region is refused exactly like
 // a bad key. That is why Settings asks for it as its own field rather than burying
@@ -469,10 +488,10 @@ export function createVoice({ getKey, getRegion, onBilled } = {}) {
 
             const c = audioContext();       // throws if this browser cannot play audio
             const mine = ++playToken;
-            if (c.state === 'suspended') {
-                // A refused resume is not fatal — the audio may still play, and
-                // throwing here would cost the user the browser-voice fallback too.
-                try { await c.resume(); } catch { /* fall through and try anyway */ }
+            if (c.state !== 'running') {
+                // Woken with a time limit; if it will not wake, the device voice says it
+                // instead (see wake() at the top of this file, CR-280).
+                await wake(c);
                 if (mine !== playToken) return;
             }
 

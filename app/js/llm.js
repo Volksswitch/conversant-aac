@@ -41,6 +41,12 @@ async function askDetailed({ system, messages, maxTokens, schema }) {
         // A counter must never cost the user their suggestions (CR-094).
         try { onUsageUpdate(usage); } catch { /* ignore */ }
     }
+    // After the usage is counted: a reply with no text says why it stopped, so a refusal
+    // is not read as any other failure (CR-279).
+    if (!text) {
+        throw Object.assign(new Error(`no text in the reply (stop: ${stopReason || 'unknown'})`),
+            { stopReason: stopReason || null });
+    }
     return { text, stopReason: stopReason || null };
 }
 
