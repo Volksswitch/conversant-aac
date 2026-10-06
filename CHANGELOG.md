@@ -354,6 +354,9 @@ forgetting to tag one is only ever noise, never silence.
   "Hear this" buttons in How I Sound say what they will read. If the other person
   offered choices and then says goodbye, the choice buttons now go away with the
   goodbye cards.
+- Fixed: if you tapped "Repeat what I said" or "Ask them to repeat" while the other
+  person was still talking, the next suggestions were asked for as if they had said
+  the same thing twice.
 
 ## Version 0.13.4
 

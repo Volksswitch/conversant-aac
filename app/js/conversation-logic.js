@@ -141,3 +141,31 @@ export function captureAfterUserSpeaks({ opensConversation, armed, autoResume })
     if (opensConversation) return true;   // same act as selecting an opener
     return Boolean(armed && autoResume);
 }
+
+/*
+ * The conversation as sent to the AI with the partner's latest words (CR-127).
+ *
+ * When the user spoke mid-turn ("Repeat what I said", "Ask them to repeat"), the
+ * partner's turn so far was moved into the history ahead of the user's words, and is
+ * then updated in place as they carry on - which is right for the screen. Sending that
+ * history plus the latest words as well told the AI the partner had said the same thing
+ * twice. So the moved turn is sent as it was when the user spoke, and only what the
+ * partner said AFTER that follows. If nothing new can be told apart, the old request
+ * is sent unchanged.
+ */
+export function historyForRequest(history, partnerText, promotedIdx = -1, promotedPrefix = '') {
+    const base = Array.isArray(history) ? history : [];
+    const moved = promotedIdx >= 0 ? base[promotedIdx] : null;
+    const prefix = String(promotedPrefix || '').trim();
+    const latest = String(partnerText || '').trim();
+    if (moved && moved.role === 'partner' && prefix && latest.startsWith(prefix)) {
+        const rest = latest.slice(prefix.length).trim();
+        if (rest) {
+            const out = base.slice();
+            out[promotedIdx] = { ...moved, text: prefix };
+            out.push({ role: 'partner', text: rest });
+            return out;
+        }
+    }
+    return [...base, { role: 'partner', text: partnerText }];
+}

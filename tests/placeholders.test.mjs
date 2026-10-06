@@ -821,3 +821,7 @@ test('CR-123-126: About Me named, chips pressed, gap metric honest, goodbyes dro
     const fast = appSource.slice(appSource.indexOf('if (windingDown && convLogic.looksLikeClosing(partnerText))'));
     assert.ok(fast.indexOf('setOfferedChoices([])') < fast.indexOf("renderStaticPalette('closing'"));
 });
+
+test('CR-127: every request for cards sends a moved partner turn once', () => {
+    assert.doesNotMatch(appSource, /\[\.\.\.conversationHistory, \{ role: 'partner'/);
+});

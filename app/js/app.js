@@ -195,6 +195,7 @@ function abortPlaceholders() {
 // transcript, where the partner turn is written at its pause). -1 = not promoted
 // (still the live line). Reset per partner turn; commitExchange finalizes it.
 let pendingPartnerHistoryIdx = -1;
+let promotedPartnerPrefix = '';
 // Increments on every silence period / reset so that a slower, earlier
 // option-generation round-trip can't overwrite a newer one — latest wins.
 let generationToken = 0;
@@ -389,6 +390,7 @@ function flushLivePartnerToHistory() {
     if (!raw) return;
     conversationHistory.push({ role: 'partner', text: raw });
     pendingPartnerHistoryIdx = conversationHistory.length - 1;
+    promotedPartnerPrefix = raw;   // what they had said when the user spoke (CR-127)
     ui.renderConversation(conversationHistory);
     ui.setLiveTranscript('');
 }
@@ -1927,7 +1929,8 @@ async function generateOptions(partnerText) {
 
     // Generate from prior committed turns plus what the partner has said so far in
     // this one. All of it is the recognizer's own wording; nothing rewrites it.
-    const history = [...conversationHistory, { role: 'partner', text: partnerText }];
+    const history = convLogic.historyForRequest(conversationHistory, partnerText,
+        pendingPartnerHistoryIdx, promotedPartnerPrefix);
 
     // Inject the current worldview profile so the assistant speaks AS the user.
     // Rebuilt each turn so questionnaire edits take effect immediately.
@@ -3616,7 +3619,8 @@ async function handleRegenerate() {
     llm.setPlacesBlock(places.buildBlock(activePlace && activePlace.placeId));
     llm.setSituationBlock(buildSituationBlock());
     llm.setVoiceBlock(voiceBlockText());
-    const history = [...conversationHistory, { role: 'partner', text: currentPartnerText }];
+    const history = convLogic.historyForRequest(conversationHistory, currentPartnerText,
+        pendingPartnerHistoryIdx, promotedPartnerPrefix);   // CR-127
 
     try {
         // Carry this turn's steering through — otherwise "New N" silently discards
@@ -3721,7 +3725,8 @@ async function handleChoiceChip(chip) {
     llm.setVoiceBlock(voiceBlockText());
 
     ui.setStatus(`Building responses around "${pick}"...`);
-    const history = [...conversationHistory, { role: 'partner', text: currentPartnerText }];
+    const history = convLogic.historyForRequest(conversationHistory, currentPartnerText,
+        pendingPartnerHistoryIdx, promotedPartnerPrefix);   // CR-127
     try {
         const result = await llm.generateResponses(history, engine.buildRequestContext(), { reason: 'choice chip',
             focusChoice: pick,
@@ -3818,7 +3823,8 @@ async function handleReframe() {
         // guidance instead of discarding it (Ken). Still one-shot ACROSS turns —
         // it dies with the partner turn, and the box is cleared either way.
         activeSteer.steer = steer;
-        const history = [...conversationHistory, { role: 'partner', text: currentPartnerText }];
+        const history = convLogic.historyForRequest(conversationHistory, currentPartnerText,
+        pendingPartnerHistoryIdx, promotedPartnerPrefix);   // CR-127
         try {
             const result = await llm.generateResponses(history, engine.buildRequestContext(), { reason: 'reframe', steer, focusChoice: activeSteer.focusChoice || undefined, perCategory: storage.loadResponsesPerCategory() });
             if (token !== generationToken) return; // superseded
@@ -4882,7 +4888,8 @@ async function refreshForContextChange() {
     llm.setPlacesBlock(places.buildBlock(activePlace && activePlace.placeId));
     llm.setSituationBlock(buildSituationBlock());
     llm.setVoiceBlock(voiceBlockText());
-    const history = [...conversationHistory, { role: 'partner', text: currentPartnerText }];
+    const history = convLogic.historyForRequest(conversationHistory, currentPartnerText,
+        pendingPartnerHistoryIdx, promotedPartnerPrefix);   // CR-127
     try {
         const result = await llm.generateResponses(history, engine.buildRequestContext(), { reason: 'context change',
             perCategory: storage.loadResponsesPerCategory(),

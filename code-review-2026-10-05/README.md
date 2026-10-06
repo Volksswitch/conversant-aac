@@ -161,11 +161,11 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-120](CR-120.md) | fixed (de0119a) | low | confirmed | accessibility | `app/js/ui.js:716` | Empty Express Panel cells are focusable buttons that do nothing on the conversation screen |
 | [CR-121](CR-121.md) | fixed (de0119a) | low | confirmed | accessibility | `app/js/ui.js:1194` | Redrawing the Command Bar faces wipes state-dependent accessible names (privacy shows the wrong tooltip at every launch) |
 | [CR-122](CR-122.md) | fixed (de0119a) | low | confirmed | accessibility | `app/js/whats-new.js:852` | What's new panel: focus lands on Close before the notes, and is lost after Close or Start |
-| [CR-123](CR-123.md) | fixed (pending) | low | confirmed | accessibility | `app/js/worldview-ui.js:1666` | About Me controls lack accessible names and selected state: answer boxes, option chips, Sound Check speaker, goal and relationship selects |
-| [CR-124](CR-124.md) | fixed (pending) | low | confirmed | accessibility | `app/js/worldview-ui.js:1667` | Selected answer chips expose their state by color only, with no aria-pressed |
-| [CR-125](CR-125.md) | fixed (pending) | low | confirmed | bug | `app/js/app.js:1222` | Recognizer delivery-gap metric includes gaps across microphone stops |
-| [CR-126](CR-126.md) | fixed (pending) | low | confirmed | bug | `app/js/app.js:1760` | Closing fast path shows goodbyes without clearing the turn's choice buttons, number button or steering |
-| [CR-127](CR-127.md) | open | low | confirmed | bug | `app/js/app.js:1802` | After a mid-turn 'Repeat what I said', the partner's words are sent to the AI twice |
+| [CR-123](CR-123.md) | fixed (8210602) | low | confirmed | accessibility | `app/js/worldview-ui.js:1666` | About Me controls lack accessible names and selected state: answer boxes, option chips, Sound Check speaker, goal and relationship selects |
+| [CR-124](CR-124.md) | fixed (8210602) | low | confirmed | accessibility | `app/js/worldview-ui.js:1667` | Selected answer chips expose their state by color only, with no aria-pressed |
+| [CR-125](CR-125.md) | fixed (8210602) | low | confirmed | bug | `app/js/app.js:1222` | Recognizer delivery-gap metric includes gaps across microphone stops |
+| [CR-126](CR-126.md) | fixed (8210602) | low | confirmed | bug | `app/js/app.js:1760` | Closing fast path shows goodbyes without clearing the turn's choice buttons, number button or steering |
+| [CR-127](CR-127.md) | fixed (pending) | low | confirmed | bug | `app/js/app.js:1802` | After a mid-turn 'Repeat what I said', the partner's words are sent to the AI twice |
 | [CR-128](CR-128.md) | open | low | confirmed | bug | `app/js/app.js:2137` | offerClosings restarts listening without closing the turn in metrics, so the next partner turn's checkpoint count continues from the previous turn |
 | [CR-129](CR-129.md) | open | low | confirmed | bug | `app/js/app.js:2602` | A practice conversation the AI partner opens is never counted as a started conversation |
 | [CR-130](CR-130.md) | open | low | confirmed | bug | `app/js/app.js:2912` | Cancelling Wrap up or Start conversation resets the engine to mid-conversation even when restoring goodbye or repair cards |

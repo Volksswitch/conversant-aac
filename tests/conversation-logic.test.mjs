@@ -135,3 +135,19 @@ test('mid-conversation, armed + auto-resume on captures', () => {
 test('mid-conversation, an unarmed session stays idle (the manual-Listen gate survives)', () => {
     assert.equal(cl.captureAfterUserSpeaks({ opensConversation: false, armed: false, autoResume: true }), false);
 });
+
+// CR-127. A partner turn moved ahead of a mid-turn user command is not sent twice.
+test('historyForRequest sends a moved partner turn once, then only what came after', () => {
+    const history = [
+        { role: 'partner', text: 'So I was thinking we could get lunch Friday' },   // updated in place
+        { role: 'user', text: 'Repeat what I said' },
+    ];
+    const out = cl.historyForRequest(history, 'So I was thinking we could get lunch Friday', 0, 'So I was thinking');
+    assert.deepEqual(out.map((e) => e.text), ['So I was thinking', 'Repeat what I said', 'we could get lunch Friday']);
+    assert.equal(history[0].text, 'So I was thinking we could get lunch Friday', 'the screen copy is untouched');
+});
+
+test('historyForRequest without a moved turn simply appends the partner words', () => {
+    const out = cl.historyForRequest([{ role: 'user', text: 'Hi' }], 'Hello there');
+    assert.deepEqual(out.map((e) => e.text), ['Hi', 'Hello there']);
+});
