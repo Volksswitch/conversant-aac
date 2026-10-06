@@ -105,6 +105,7 @@
         },
         {
           "key": "home_region",
+          "label": "State or province, and country",
           "q": "What state or province, and country?",
           "type": "text",
           "options": [],
@@ -152,6 +153,7 @@
       "fields": [
         {
           "key": "occupation",
+          "label": "What I do during the day",
           "q": "Do you work, go to school, or spend your days another way?",
           "type": "choice",
           "options": [
@@ -169,6 +171,7 @@
         },
         {
           "key": "work_school",
+          "label": "Where I work or study",
           "q": "Where — the name of the company, school, or program?",
           "type": "text",
           "options": [],
@@ -181,6 +184,7 @@
         },
         {
           "key": "grade_role",
+          "label": "My grade or role there",
           "q": "What grade or year, or what's your role there?",
           "type": "text",
           "options": [],
@@ -193,6 +197,7 @@
         },
         {
           "key": "typical_week",
+          "label": "A typical week",
           "q": "What does a typical week look like for you?",
           "type": "text",
           "options": [],
@@ -204,6 +209,7 @@
         },
         {
           "key": "regular_places",
+          "label": "Places I go regularly",
           "q": "Where do you go regularly? (gym, church, club, a favorite café)",
           "type": "multi",
           "options": [],
@@ -390,6 +396,7 @@
         },
         {
           "key": "fav_music",
+          "label": "Favorite music",
           "q": "Favorite music — artists, bands, or genres?",
           "type": "multi",
           "options": [],
@@ -403,6 +410,7 @@
         },
         {
           "key": "fav_screen",
+          "label": "Favorite shows or movies",
           "q": "Favorite shows or movies?",
           "type": "multi",
           "options": [],
@@ -415,6 +423,7 @@
         },
         {
           "key": "fav_reading",
+          "label": "Favorite reading",
           "q": "Favorite books, authors, or things you read?",
           "type": "multi",
           "options": [],
@@ -438,6 +447,7 @@
         },
         {
           "key": "fav_places",
+          "label": "Favorite places",
           "q": "Favorite places — to visit, or that mean a lot to you?",
           "type": "multi",
           "options": [],

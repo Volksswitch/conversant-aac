@@ -539,6 +539,10 @@ function formatValue(value) {
 function labelFor(key) {
     const meta = fieldMeta(key);
     if (!meta) return key;
+    // An authored label wins. `fills` are placeholder SYNONYMS, and the first one is
+    // sometimes the wrong description of the answer - an employer came out as
+    // "School", and two different place questions both came out as "Place" (CR-054).
+    if (meta.label) return meta.label;
     // The canonical placeholder name reads as a clean fact label
     // ("name" -> "Name: Alex"), far better than the full question text.
     if (meta.fills && meta.fills.length) {

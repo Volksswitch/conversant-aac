@@ -594,3 +594,24 @@ test('an allergy on file is answered plainly; with none, nothing is claimed', as
     await wv.setField('health_allergies', ['penicillin']);
     assert.match(wv.buildBlock(), /penicillin/i);
 });
+
+// CR-054. A fact's label says what the answer IS. The first placeholder synonym said
+// "School" for an employer and "Place" for two different questions.
+test('fact labels describe the answer, and no two fields share one', async () => {
+    await wv.setField('occupation', 'I work');
+    await wv.setField('work_school', 'Acme Hardware');
+    await wv.setField('regular_places', ['the gym']);
+    await wv.setField('fav_places', ['Paris']);
+    const block = wv.buildBlock();
+    assert.doesNotMatch(block, /School: Acme Hardware/);
+    assert.match(block, /Where I work or study: Acme Hardware/);
+    assert.match(block, /Places I go regularly: the gym/);
+    assert.match(block, /Favorite places: Paris/);
+    const reg = JSON.parse(await readFile(new URL('../app/data/worldview-questions.json', import.meta.url), 'utf8'));
+    const labels = new Map();
+    for (const m of reg.modules) for (const f of m.fields || []) {
+        const l = String(f.label || (f.fills && f.fills[0]) || f.key).toLowerCase();
+        assert.ok(!labels.has(l), `"${l}" labels both ${labels.get(l)} and ${f.key}`);
+        labels.set(l, f.key);
+    }
+});

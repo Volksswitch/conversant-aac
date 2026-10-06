@@ -183,6 +183,10 @@ forgetting to tag one is only ever noise, never silence.
   you never asked for. Also, if you answered the questions from top to bottom, your
   answers about starting a conversation, asking for help and saying goodbye never
   reached the app. Both are fixed.
+- Fixed: the app could describe your About Me answers to the AI under the wrong
+  heading - for example calling the store where you work your "school" - so
+  suggestions could say things that are not true. Each answer now goes with a heading
+  that matches its question.
 
 ## Version 0.13.4
 
