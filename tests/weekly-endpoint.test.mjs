@@ -98,3 +98,11 @@ test('text from a report is written as text, never as a formula (CR-087)', () =>
     assert.ok(sheets[ctx.SHEET_NAME].rows.at(-1).includes("'@me"));
     assert.ok(sheets[ctx.WEEKS_SHEET_NAME].rows.at(-1).includes("'@me"));
 });
+
+test('a failed email does not turn a written report into an error (CR-095)', () => {
+    const { ctx, sheets, post } = load();
+    ctx.MailApp.sendEmail = () => { throw new Error('Service invoked too many times'); };
+    ctx.console = { error() {} };
+    assert.equal(post({ kind: 'problem', sentAt: '2026-10-05', testerName: 'T', note: 'n', report: 'r' }), 'ok');
+    assert.equal(sheets[ctx.PROBLEMS_SHEET_NAME].rows.length, 2, 'one header row and one report');
+});

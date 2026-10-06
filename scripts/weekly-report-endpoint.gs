@@ -106,10 +106,15 @@ function doPost(e) {
         _txt(p.build || ''),
         _txt(_clip(p.note))
       ].concat(_parts(p.report, REPORT_PARTS).map(_txt)));
+      // Once the row is written the report has ARRIVED (CR-095). A failed email (the
+      // daily quota, a lost permission) must not answer 'error', or the app sends the
+      // report again on every launch and every later report waits behind it.
       if (ALERT_EMAIL) {
-        MailApp.sendEmail(ALERT_EMAIL,
-          'Conversant AAC - problem report from ' + (p.testerName || 'a tester'),
-          (p.note || '(no note)') + '\n\nSee the problems tab for the full report.');
+        try {
+          MailApp.sendEmail(ALERT_EMAIL,
+            'Conversant AAC - problem report from ' + (p.testerName || 'a tester'),
+            (p.note || '(no note)') + '\n\nSee the problems tab for the full report.');
+        } catch (mailErr) { console.error(mailErr); }
       }
       return _out('ok');
     }
@@ -172,9 +177,11 @@ function doPost(e) {
       p.systemInfo ? 'included' : ''
     ].concat(_parts(_raw(p), RAW_PARTS).map(_txt))); // the report as received, so nothing is lost
 
-    _writeWeeks(p);
+    // As above: the report is written, so nothing after this may turn it into an error.
+    try { _writeWeeks(p); } catch (wErr) { console.error(wErr); }
 
     if (ALERT_EMAIL && ALERT_ON_WEEKLY_ERRORS && errors.length) {
+      try {
       MailApp.sendEmail(ALERT_EMAIL,
         // The subject carries the two things worth knowing without opening anything:
         // who, and what kind. Since 0.7.11 these are only the errors NEW since that
@@ -190,6 +197,7 @@ function doPost(e) {
          'Nothing about what anybody said is in here or in the Sheet.',
          'Run "evaluate beta" on an export of the reports tab to see them in context.'
         ].join('\n'));
+      } catch (mailErr) { console.error(mailErr); }
     }
     return _out('ok');
   } catch (err) {
@@ -252,7 +260,7 @@ function _writeWeeks(p) {
  * Visiting the /exec URL in a browser now prints this, so a redeploy is confirmable in
  * two seconds with nothing written. The correct redeploy is:
  *   Deploy > Manage deployments > pencil > Version: New version > Deploy   (same URL) */
-var SCRIPT_VERSION = '2026-10-05b';
+var SCRIPT_VERSION = '2026-10-05c';
 
 // A GET is handy for confirming the deployment is live, and WHICH CODE is live.
 function doGet() {
