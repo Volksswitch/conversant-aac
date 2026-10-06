@@ -31,7 +31,7 @@ import { readFile, writeFile, hasDataFolder } from './storage.js';
 // For the item's dimension only, so buildBlock can tell a bland exemplar (safe to
 // reuse verbatim) from a levity one (never reuse). sound-check-items.js imports
 // nothing, so there is no cycle.
-import { getItem } from './sound-check-items.js';
+import { getItem, isLighterChoice, SOUND_CHECK_ITEMS } from './sound-check-items.js';
 import { redactCatchphrases, MIN_EXEMPLAR_WORDS } from './voice-harvest.js';
 
 const FILE = 'voice.json';
@@ -300,16 +300,25 @@ export function buildBlock(idiom = []) {
      */
     const answered = Object.entries(p.soundCheck)
         .filter(([, a]) => a && a.choice);
+    // A FLAT answer to a levity item is a plain exemplar, not permission to joke: it
+    // goes with the others and never into the lighter list (CR-052).
+    const lighter = ([id, a]) => isLighterChoice(getItem(id), a.choice);
+    // In BANK order, not answer order: answer order put the initiating items after
+    // the twelve responsive ones, past a cap of 12, so they never reached the prompt
+    // (CR-053). Bank order is also stable between turns, which the cached prefix needs.
+    const bankOrder = new Map(SOUND_CHECK_ITEMS.map((it, i) => [it.id, i]));
+    answered.sort(([a], [b]) => (bankOrder.get(a) ?? 1e9) - (bankOrder.get(b) ?? 1e9));
     const chosen = answered
-        .filter(([id]) => (getItem(id) || {}).dimension !== 'levity')
+        .filter((e) => !lighter(e))
         .map(([, a]) => a.choice);
     const chosenLevity = answered
-        .filter(([id]) => (getItem(id) || {}).dimension === 'levity')
+        .filter((e) => lighter(e))
         .map(([, a]) => a.choice);
+    const maxChosen = SOUND_CHECK_ITEMS.length;   // the whole bank fits (CR-053)
 
     if (chosen.length) {
         lines.push('Examples of how this user prefers to reply. They were shown several ways of saying the same thing and picked these:');
-        for (const t of chosen.slice(0, 12)) lines.push(`  "${t}"`);
+        for (const t of chosen.slice(0, maxChosen)) lines.push(`  "${t}"`);
         lines.push('Match the length, directness, and level of formality of those examples. They are the single most important guide to wording that you have.');
         // The exemplars are STYLE, not autobiography. They were picked off a fixed
         // list of hypothetical replies, so anything they appear to mention is a

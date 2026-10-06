@@ -288,6 +288,20 @@ export const SOUND_CHECK_ITEMS = [
 ];
 
 /**
+ * Was this answer to a levity item one of the LIGHTER replies? Each levity item offers
+ * a flat reply beside the lighter ones - first when the item `leads: 'flat'`, last when
+ * it `leads: 'light'` - and choosing the flat one is the opposite of permission to be
+ * light (CR-052). Keep that convention when adding a levity item.
+ */
+export function isLighterChoice(item, text) {
+    if (!item || item.dimension !== 'levity') return false;
+    const i = item.candidates.indexOf(text);
+    if (i < 0) return false;
+    const flat = item.leads === 'light' ? item.candidates.length - 1 : 0;
+    return i !== flat;
+}
+
+/**
  * The question asked above the candidates. It FOLLOWS THE ITEM rather than being one
  * fixed string, because responding and initiating are different tasks and the stem
  * should say which is being asked (Ken, August 7 2026).

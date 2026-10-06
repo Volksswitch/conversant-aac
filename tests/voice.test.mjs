@@ -244,3 +244,27 @@ test('a harvested sentence reaches the prompt without the user catchphrases', as
     assert.doesNotMatch(block, /"nice one"/i, 'a sentence left under four words is dropped');
     assert.match(block, /"Thank you so much for coming today\."/, 'words not in the user list are untouched');
 });
+
+// CR-052. The flat reply on a levity item is not permission to be light.
+test('choosing the flat reply on every levity item grants no joke permission', async () => {
+    await reset();
+    const { SOUND_CHECK_ITEMS } = await import('../app/js/sound-check-items.js');
+    for (const it of SOUND_CHECK_ITEMS.filter((i) => i.dimension === 'levity')) {
+        const flat = it.leads === 'light' ? it.candidates.at(-1) : it.candidates[0];
+        voice.recordAnswer(it.id, 'chose', flat);
+    }
+    const block = voice.buildBlock([]);
+    assert.doesNotMatch(block, /picked the lighter one/);
+    assert.match(block, /"No, I don't know that one\."/, 'the flat reply is an ordinary example');
+});
+
+// CR-053. Every answer reaches the prompt, the initiating items included.
+test('answering the whole bank in order puts every initiating answer in the prompt', async () => {
+    await reset();
+    const { SOUND_CHECK_ITEMS } = await import('../app/js/sound-check-items.js');
+    for (const it of SOUND_CHECK_ITEMS) voice.recordAnswer(it.id, 'chose', it.candidates[0]);
+    const block = voice.buildBlock([]);
+    for (const it of SOUND_CHECK_ITEMS.filter((i) => i.id.startsWith('initiate-'))) {
+        assert.ok(block.includes(it.candidates[0]), `${it.id} is missing`);
+    }
+});

@@ -178,6 +178,11 @@ forgetting to tag one is only ever noise, never silence.
   like that now gets fresh suggestions once the app stops talking.
 - Fixed: with the Deepgram voice, a long sentence stopped partway and was then said
   again from the beginning in the device's own voice. It now plays through once.
+- Fixed: in How I Sound, choosing the plain, no-joke answer to the "awkward moment"
+  questions told the app you liked to lighten things up, so it offered joking replies
+  you never asked for. Also, if you answered the questions from top to bottom, your
+  answers about starting a conversation, asking for help and saying goodbye never
+  reached the app. Both are fixed.
 
 ## Version 0.13.4
 
