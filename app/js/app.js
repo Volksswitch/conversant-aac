@@ -137,6 +137,11 @@ let tour = null;
 // Raw, combined speech-to-text for the partner's current (uncommitted) turn.
 // Grows across silence periods until the user picks a response.
 let currentPartnerText = '';
+// The partner text whose classification the engine last took in (CR-079). A refresh
+// or a regenerate that would replace a reprompt still on its way checks this: if the
+// newest words were never classified, a goodbye, a "What?" or an offered menu would be
+// lost, so it runs the full generation instead.
+let lastIngestedPartnerText = '';
 /* Words in the partner's turn the model suspects the recognizer got wrong, from the
  * most recent generation for THIS turn (llm `heard_uncertain`). Recorded onto the
  * saved turn when it is committed, so the weekly report can say how often the
@@ -1807,6 +1812,7 @@ function startFreshListening() {
     metrics.turnBoundary();
     noteConversationStarted();
     currentPartnerText = '';
+    lastIngestedPartnerText = '';
     currentPartnerUncertain = [];
     setOfferedChoices([]);   // a new partner turn — last turn's choices are gone
     setOfferedRange(null);
@@ -1858,6 +1864,7 @@ async function generateOptions(partnerText) {
             { classification: { partner_action: 'CLOSING', turn_status: 'COMPLETE', is_repair_initiator: false }, responses: [] },
             partnerText,
         );
+        lastIngestedPartnerText = partnerText;
         ui.showEngineState(snap);
         lastPalette = snap.palette;
         // The PARTNER started closing, so offer the decline alongside the goodbyes.
@@ -1924,6 +1931,7 @@ async function generateOptions(partnerText) {
 
         // Engine ingests the classification and updates mode / stack / palette.
         const snap = engine.ingestClassification(result, partnerText);
+        lastIngestedPartnerText = partnerText;
         ui.showEngineState(snap);
         lastPalette = snap.palette;
 
@@ -3559,6 +3567,10 @@ async function handleRegenerate() {
         prefetchRepairOptions(++generationToken);
         return;
     }
+    if (currentPartnerText && currentPartnerText !== lastIngestedPartnerText) {
+        generateOptions(currentPartnerText);   // the newest words were never classified (CR-079)
+        return;
+    }
     if (!currentPartnerText || !lastPalette.length) return;
     const token = ++generationToken;
     placeholders.stop();
@@ -4804,6 +4816,10 @@ async function refreshForContextChange() {
     // replacing it with response cards would answer a question nobody asked - the
     // user is mid-wind-down and would suddenly be offered replies.
     if (currentStatic.kind) return false;
+    if (currentPartnerText && currentPartnerText !== lastIngestedPartnerText) {
+        generateOptions(currentPartnerText);   // picks up the new context too
+        return true;
+    }
     if (!currentPartnerText || !lastPalette.length) return false;
     // The repair cards answer "What?", not the partner's situation; and bumping the
     // token here would throw away the repair wording still on its way (CR-040).

@@ -252,6 +252,10 @@ forgetting to tag one is only ever noise, never silence.
   reply reappear on the cleared screen, bring the goodbye cards back, record the other
   person's last words twice, or switch the microphone on after the conversation had
   ended.
+- Fixed: tapping who you are talking to, where you are, or how you feel just after the
+  other person said something new could make the app miss what they had said: a
+  goodbye answered with ordinary replies, a "What?" not bringing up the ways to repeat
+  yourself, or the choices they offered not appearing as buttons.
 
 ## Version 0.13.4
 

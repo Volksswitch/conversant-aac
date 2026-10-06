@@ -689,3 +689,13 @@ test('CR-078: every caller stops when the conversation ended under its speech', 
     const end = appSource.slice(appSource.indexOf('async function terminateConversation'));
     assert.match(end.slice(0, 200), /conversationEpoch\+\+/);
 });
+
+test('CR-079: a context refresh or regenerate never skips classifying the newest words', () => {
+    for (const name of ['async function refreshForContextChange', 'async function handleRegenerate']) {
+        const body = appSource.slice(appSource.indexOf(name));
+        const guard = body.indexOf('lastIngestedPartnerText');
+        assert.ok(guard > 0 && guard < body.indexOf('lastPalette.length'), name);
+    }
+    assert.equal((appSource.match(/lastIngestedPartnerText = partnerText/g) || []).length, 2,
+        'both places the engine takes in a classification record it');
+});
