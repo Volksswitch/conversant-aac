@@ -268,3 +268,14 @@ test('answering the whole bank in order puts every initiating answer in the prom
         assert.ok(block.includes(it.candidates[0]), `${it.id} is missing`);
     }
 });
+
+// CR-163. A removed correction stays removed when a later wording of it is shown.
+test('a removed correction does not come back under another wording', async () => {
+    await reset();
+    voice.recordSteer('Keep it short'); voice.recordSteer('Keep it short');
+    voice.recordSteer('keep it short!'); voice.recordSteer('keep it short!');
+    voice.dismissExemplar(voice.repeatedSteers()[0].text);
+    for (let i = 0; i < 200; i++) voice.recordSteer('other ' + i);   // the first wording ages out
+    voice.recordSteer('keep it short!'); voice.recordSteer('keep it short!');
+    assert.equal(voice.repeatedSteers().filter((g) => /keep it short/i.test(g.text)).length, 0);
+});

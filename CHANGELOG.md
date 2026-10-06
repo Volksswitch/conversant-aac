@@ -399,6 +399,11 @@ forgetting to tag one is only ever noise, never silence.
   speak if the Express Panel refreshed between the taps; and the weekly usage figures
   no longer count someone you only tapped, but never talked with, as a conversation
   partner.
+- Fixed: a correction you removed from what the app learned (such as "keep it short")
+  could come back later under a slightly different wording; cancelling the folder
+  window from "Choose data folder" in About Me left the button greyed out and logged
+  an error; and Back from a question that came up in conversation now returns to that
+  list rather than the start of About Me.
 
 ## Version 0.13.4
 

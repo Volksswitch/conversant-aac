@@ -197,14 +197,14 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-156](CR-156.md) | fixed (5435c90) | low | confirmed | bug | `app/js/storage.js:2749` | metrics.log flush can strand buffered lines with no timer (and skips them at page-hide) |
 | [CR-157](CR-157.md) | fixed (5435c90) | low | confirmed | bug | `app/js/stt-azure.js:482` | Azure's last-phrase submission when listening stops is paid for and then always thrown away |
 | [CR-158](CR-158.md) | fixed (5435c90) | low | confirmed | bug | `app/js/stt-deepgram.js:221` | Shown transcription seconds leave out the 1.2 seconds of lead-in audio sent with every phrase, and count clicks that were never sent |
-| [CR-159](CR-159.md) | fixed (pending) | low | confirmed | bug | `app/js/stt.js:263` | The echo filter throws away a partner's one-word answer that happens to begin the app's last sentence |
-| [CR-160](CR-160.md) | fixed (pending) | low | confirmed | bug | `app/js/stt.js:681` | The 'how long until the microphone hears something' diagnostic never records anything for paid hearing |
-| [CR-161](CR-161.md) | fixed (pending) | low | confirmed | bug | `app/js/tap-guard.js:86` | Two-tap mode: the first tap is forgotten whenever the Express Panel redraws between the taps |
-| [CR-162](CR-162.md) | fixed (pending) | low | confirmed | bug | `app/js/usage-summary.js:254` | Usage summary counts context and other non-turn records as partner turns and as conversations with a person |
-| [CR-163](CR-163.md) | open | low | confirmed | bug | `app/js/voice.js:203` | A dismissed repeated correction can come back once its first wording ages out of the steer history |
-| [CR-164](CR-164.md) | open | low | confirmed | bug | `app/js/weekly-send.js:84` | Local-copy guard misses machine names, .local addresses and IPv6 private addresses, so developer copies can still send reports |
-| [CR-165](CR-165.md) | open | low | confirmed | bug | `app/js/worldview-ui.js:157` | Cancelling the About Me folder picker throws on a null event target, leaves the button disabled and logs a false start-up error |
-| [CR-166](CR-166.md) | open | low | confirmed | bug | `app/js/worldview-ui.js:260` | Back from a 'question that came up in a conversation' skips the list it was opened from |
+| [CR-159](CR-159.md) | fixed (76f50c0) | low | confirmed | bug | `app/js/stt.js:263` | The echo filter throws away a partner's one-word answer that happens to begin the app's last sentence |
+| [CR-160](CR-160.md) | fixed (76f50c0) | low | confirmed | bug | `app/js/stt.js:681` | The 'how long until the microphone hears something' diagnostic never records anything for paid hearing |
+| [CR-161](CR-161.md) | fixed (76f50c0) | low | confirmed | bug | `app/js/tap-guard.js:86` | Two-tap mode: the first tap is forgotten whenever the Express Panel redraws between the taps |
+| [CR-162](CR-162.md) | fixed (76f50c0) | low | confirmed | bug | `app/js/usage-summary.js:254` | Usage summary counts context and other non-turn records as partner turns and as conversations with a person |
+| [CR-163](CR-163.md) | fixed (pending) | low | confirmed | bug | `app/js/voice.js:203` | A dismissed repeated correction can come back once its first wording ages out of the steer history |
+| [CR-164](CR-164.md) | fixed (pending) | low | confirmed | bug | `app/js/weekly-send.js:84` | Local-copy guard misses machine names, .local addresses and IPv6 private addresses, so developer copies can still send reports |
+| [CR-165](CR-165.md) | fixed (pending) | low | confirmed | bug | `app/js/worldview-ui.js:157` | Cancelling the About Me folder picker throws on a null event target, leaves the button disabled and logs a false start-up error |
+| [CR-166](CR-166.md) | fixed (pending) | low | confirmed | bug | `app/js/worldview-ui.js:260` | Back from a 'question that came up in a conversation' skips the list it was opened from |
 | [CR-167](CR-167.md) | open | low | confirmed | bug | `app/js/worldview-ui.js:1188` | Person/place auto-save name guard restores a stale name and silently drops other edits |
 | [CR-168](CR-168.md) | open | low | confirmed | bug | `app/js/worldview-ui.js:1212` | Picking 'Other…' in the relationship list immediately erases the saved relationship |
 | [CR-169](CR-169.md) | open | low | confirmed | data-loss | `app/js/app.js:2733` | Pausing and resuming the practice partner throws away the line it already spoke |

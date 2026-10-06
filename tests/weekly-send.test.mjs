@@ -344,3 +344,10 @@ test('CR-071: system info counts as changed only when the setup changes', () => 
     assert.equal(a.when, '2026-10-01T00:00:00Z');
     assert.equal(a.storage.usageMB, 1.5);
 });
+
+test('CR-164: plain http, machine names, .local and private IPv6 are development copies', () => {
+    assert.equal(isLocalOrigin({ protocol: 'http:', hostname: 'desktop-abc' }), true);
+    assert.equal(isLocalOrigin({ protocol: 'https:', hostname: 'kens-pc.local' }), true);
+    assert.equal(isLocalOrigin({ protocol: 'https:', hostname: '[fe80::1]' }), true);
+    assert.equal(isLocalOrigin({ protocol: 'https:', hostname: 'conversant.volksswitch.org' }), false);
+});

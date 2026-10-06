@@ -892,3 +892,11 @@ test('CR-160/161: paid listening is timed; a redrawn Express button keeps its ar
     const ui = readFileSync(new URL('../app/js/ui.js', import.meta.url), 'utf8');
     assert.match(ui, /cellEl\.dataset\.tapKey = /);
 });
+
+test('CR-163-166: dismissed corrections stay gone; dev copies stay silent; folder cancel; Back to the list', () => {
+    const wv = readFileSync(new URL('../app/js/worldview-ui.js', import.meta.url), 'utf8');
+    const re = /await [^;]+;[\s\S]{0,400}?e\.currentTarget/;
+    assert.doesNotMatch(wv, re, 'no event target read after a wait');
+    const ex = wv.slice(wv.indexOf('function renderExtra(name, back = renderHome)'));
+    assert.match(ex.slice(0, 900), /onclick: \(\) => back\(\)/);
+});

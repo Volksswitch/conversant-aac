@@ -93,6 +93,13 @@ export function isLocalOrigin(loc = (typeof location === 'undefined' ? null : lo
     if (/^192\.168\./.test(h)) return true;                 // private network
     if (/^172\.(1[6-9]|2\d|3[01])\./.test(h)) return true;  // private network
     if (/^169\.254\./.test(h)) return true;                 // link-local
+    // The real app is only ever served over https from its own domain, so plain http,
+    // a machine name with no dots, a .local name and the private IPv6 ranges are all a
+    // development copy (CR-164).
+    if (loc.protocol === 'http:') return true;
+    if (h.endsWith('.local')) return true;
+    if (!h.includes('.') && !h.includes(':')) return true;
+    if (/^f[cd][0-9a-f]{2}:/.test(h) || /^fe80:/.test(h)) return true;
     return false;
 }
 

@@ -192,16 +192,20 @@ export function recordSteer(text) {
  */
 export function repeatedSteers(min = STEER_REPEAT_MIN) {
     const p = current();
-    const gone = new Set(p.dismissed.map((s) => s.trim().toLowerCase()));
+    // Compared by the same normalized form the steers are grouped by (CR-163): a
+    // removed correction came back once its first wording aged out of the list and a
+    // later variant ("keep it short!") became the one shown.
+    const gone = new Set(p.dismissed.map(normalizeSteer));
     const groups = new Map();
     for (const s of p.steers) {
         const key = normalizeSteer(s.text);
         if (!key) continue;
-        if (!groups.has(key)) groups.set(key, { text: s.text, count: 0 });
+        if (!groups.has(key)) groups.set(key, { key, text: s.text, count: 0 });
         groups.get(key).count++;
     }
     return [...groups.values()]
-        .filter((g) => g.count >= min && !gone.has(g.text.trim().toLowerCase()))
+        .filter((g) => g.count >= min && !gone.has(g.key))
+        .map(({ text, count }) => ({ text, count }))
         .sort((a, b) => b.count - a.count);
 }
 

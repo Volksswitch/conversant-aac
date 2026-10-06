@@ -160,7 +160,10 @@ function renderFolderPrompt() {
             class: 'wv-folder-prompt-btn',
             text: 'Choose data folder',
             onclick: async (e) => {
-                e.currentTarget.disabled = true;
+                // Held before the first wait: the event forgets which button it came
+                // from once handling ends, and the cancel path then threw (CR-165).
+                const btn = e.currentTarget;
+                btn.disabled = true;
                 try {
                     await storage.pickDataFolder();
                     // File-in-folder wins (v0.2.25): adopt an existing
@@ -172,7 +175,7 @@ function renderFolderPrompt() {
                     }
                     renderHome();   // banner clears; progress reflects adopted data
                 } catch (err) {
-                    e.currentTarget.disabled = false;   // AbortError = user cancelled
+                    btn.disabled = false;   // AbortError = user cancelled
                 }
             }
         })
@@ -251,7 +254,7 @@ function renderExtras() {
     for (const e of all) {
         const meta = e.state === 'answered' && e.value ? formatValue(e.value)
             : e.state === 'declined' ? 'Prefer not to say' : 'Not answered yet';
-        contentEl.append(el('button', { class: 'wv-module-row', onclick: () => renderExtra(e.name) }, [
+        contentEl.append(el('button', { class: 'wv-module-row', onclick: () => renderExtra(e.name, renderExtras) }, [
             el('div', { class: 'wv-module-main' }, [
                 el('div', { class: 'wv-module-title', text: e.question }),
                 el('div', { class: 'wv-module-meta', text: meta })
@@ -268,14 +271,16 @@ function renderExtras() {
  * it IS an ordinary question. The only difference on screen is the line saying where
  * it came from, and Delete, which a built-in question does not have.
  */
-function renderExtra(name) {
+// `back` is where Back and Delete return to: the list the question was opened from,
+// or the About Me home (CR-166).
+function renderExtra(name, back = renderHome) {
     const e = wv.listAllExtras().find((x) => x.name === name);
-    if (!e) { renderHome(); return; }
+    if (!e) { back(); return; }
     contentEl.scrollTop = 0;
     contentEl.innerHTML = '';
     showDockKeyboard();
 
-    contentEl.append(el('button', { class: 'wv-back', text: '‹ Back', onclick: renderHome }));
+    contentEl.append(el('button', { class: 'wv-back', text: '‹ Back', onclick: () => back() }));
 
     const card = el('div', { class: 'wv-card' });
     const head = el('div', { class: 'wv-card-head' }, [el('div', { class: 'wv-question', id: 'wvq-extra', text: e.question })]);
@@ -291,7 +296,7 @@ function renderExtra(name) {
     if (e.state === 'declined') {
         card.append(el('div', { class: 'wv-actions' }, [
             el('button', { class: 'wv-btn wv-btn-link', text: 'Undo — ask me this again',
-                onclick: async () => { await wv.reopenExtra(name); renderExtra(name); } })
+                onclick: async () => { await wv.reopenExtra(name); renderExtra(name, back); } })
         ]));
         contentEl.append(card);
         return;
@@ -308,7 +313,7 @@ function renderExtra(name) {
     if (!(e.value || '').trim()) speakBtn.setAttribute('disabled', 'true');
     actions.append(speakBtn);
     actions.append(el('button', { class: 'wv-btn wv-btn-link', text: 'Prefer not to say',
-        onclick: async () => { await wv.declineExtra(name); renderExtra(name); } }));
+        onclick: async () => { await wv.declineExtra(name); renderExtra(name, back); } }));
     // Confirmed, because it is not a question we can put back — it only exists
     // because a conversation raised it, and deleting loses the answer with it.
     actions.append(el('button', { class: 'wv-btn wv-btn-link', text: 'Delete this question',
@@ -320,7 +325,7 @@ function renderExtra(name) {
             });
             if (!ok) return;
             await wv.removeExtra(name);
-            renderHome();
+            back();
         } }));
     card.append(actions);
     contentEl.append(card);
@@ -637,7 +642,8 @@ function buildHarvestSection() {
             class: 'wv-btn',
             text: harvestResult ? 'Read my conversations again' : 'Read my conversations',
             onclick: async (e) => {
-                e.currentTarget.disabled = true;
+                const btn = e.currentTarget;   // see CR-165
+                btn.disabled = true;
                 await refreshVoiceHarvest();
                 draw();
             },
