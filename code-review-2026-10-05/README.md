@@ -142,9 +142,9 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-101](CR-101.md) | fixed (6dbef13) | low | confirmed | accessibility | `app/css/styles.css:4335` | Folder-prompt button text becomes unreadable on hover/after tap |
 | [CR-102](CR-102.md) | fixed (6dbef13) | low | confirmed | accessibility | `app/css/styles.css:5426` | "Choice button #N" placeholder text is below text contrast minimum |
 | [CR-103](CR-103.md) | open | low | confirmed | accessibility | `app/index.html:54` | Transcript live region re-reads the whole conversation, every growing partial word, and every holding phrase |
-| [CR-104](CR-104.md) | fixed (pending) | low | confirmed | accessibility | `app/index.html:136` | aria-label placed on plain divs (Command Bar, Express Panel, composer) is ignored by assistive technology |
-| [CR-105](CR-105.md) | open | low | confirmed | accessibility | `app/index.html:159` | Response-card live region reads out all four (or eight) suggestions on every refresh |
-| [CR-106](CR-106.md) | fixed (pending) | low | confirmed | accessibility | `app/index.html:196` | The Settings dialog has no accessible name |
+| [CR-104](CR-104.md) | fixed (f38f6b6) | low | confirmed | accessibility | `app/index.html:136` | aria-label placed on plain divs (Command Bar, Express Panel, composer) is ignored by assistive technology |
+| [CR-105](CR-105.md) | fixed (pending) | low | confirmed | accessibility | `app/index.html:159` | Response-card live region reads out all four (or eight) suggestions on every refresh |
+| [CR-106](CR-106.md) | fixed (f38f6b6) | low | confirmed | accessibility | `app/index.html:196` | The Settings dialog has no accessible name |
 | [CR-107](CR-107.md) | open | low | confirmed | accessibility | `app/index.html:336` | Settings radio groups have no group name (no fieldset/legend or radiogroup label) |
 | [CR-108](CR-108.md) | open | low | confirmed | accessibility | `app/js/app.js:1346` | When a phrase-at-a-time speech service stops, the screen-reader status still says 'Listening...' |
 | [CR-109](CR-109.md) | open | low | confirmed | accessibility | `app/js/app.js:5452` | Settings tab panels are not tabpanels and are not linked to their tabs |

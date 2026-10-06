@@ -3145,7 +3145,8 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
 /* Status bar removed from view (Ken) — kept as a visually-hidden aria-live
    region so status/errors are still announced to screen readers and available
    for debugging, without occupying screen space. */
-#statusBar {
+#statusBar,
+.visually-hidden {
     position: absolute;
     width: 1px;
     height: 1px;

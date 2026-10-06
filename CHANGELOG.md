@@ -323,6 +323,9 @@ forgetting to tag one is only ever noise, never silence.
   faint.
 - For screen-reader users: the Command Bar, the Express Panel and "In my own words"
   are now announced by name, and opening Settings now announces "Settings".
+- For screen-reader users: each new set of suggestions is now announced as "New
+  suggestions" instead of every suggestion being read out at each pause. Moving onto a
+  card still reads its full wording.
 
 ## Version 0.13.4
 

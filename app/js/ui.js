@@ -5,6 +5,14 @@ import * as chime from './chime.js';
 import { focusMark, focusReturn } from './focus-keep.js';
 
 const responseOptions = document.getElementById('responseOptions');
+// Screen readers are told THAT the suggestions changed, not read every card again at
+// each pause (CR-105). The cards stay buttons whose names are the full wording.
+const paletteStatus = document.getElementById('paletteStatus');
+function announcePalette(msg) {
+    if (!paletteStatus) return;
+    paletteStatus.textContent = '';
+    if (msg) setTimeout(() => { paletteStatus.textContent = msg; }, 50);
+}
 const statusBar = document.getElementById('statusBar');
 const listenBtn = document.getElementById('listenBtn');
 const transcriptBox = document.getElementById('transcript');     // fixed-height scroller
@@ -336,6 +344,7 @@ function buildEmptyCell(slotCls, split = false) {
 // ON, which is right: a newer request is still running.
 export function setPaletteBusy(on) {
     responseOptions.classList.toggle('palette-refreshing', !!on);
+    responseOptions.setAttribute('aria-busy', on ? 'true' : 'false');
 }
 
 export function showResponses(palette, onSelect) {
@@ -401,6 +410,8 @@ export function showResponses(palette, onSelect) {
     }
     fitCardsAndCommands();
     focusReturn(responseOptions, focusWas, document.getElementById('regenerateBtn'));
+    responseOptions.setAttribute('aria-busy', 'false');
+    announcePalette('New suggestions');
 }
 
 export function clearResponseOptions() {
@@ -408,6 +419,7 @@ export function clearResponseOptions() {
     // line), so the region's size is held even with no options / no conversation.
     const focusWas = focusMark(responseOptions);
     responseOptions.classList.remove('is-empty', 'palette-enter', 'has-error', 'palette-refreshing');
+    responseOptions.setAttribute('aria-busy', 'false');
     responseOptions.innerHTML = '';
     const split = cardsPerCategory === 2;
     for (let i = 0; i < RESERVED_SLOTS; i++) responseOptions.appendChild(buildEmptyCell(SLOT_ORDER[i], split));
@@ -420,6 +432,7 @@ export function clearResponseOptions() {
 // which reads as "no response options for no reason". This surfaces the reason and
 // a Try again action right where the options would have been.
 export function showResponseError(message, onRetry) {
+    responseOptions.setAttribute('aria-busy', 'false');
     responseOptions.classList.remove('is-empty', 'palette-enter', 'palette-refreshing');
     responseOptions.classList.add('has-error');
     responseOptions.innerHTML = '';

@@ -156,7 +156,9 @@
                  words" input box overlays exactly this space. -->
             <section id="responsesSection" class="region" aria-label="Response options" data-prestart-inert inert>
                 <div id="responseArea">
-                    <div id="responseOptions" class="palette-grid" aria-live="polite">
+                    <!-- Announces that the set changed, not every card (CR-105). Out of layout. -->
+                    <p id="paletteStatus" class="visually-hidden" role="status" aria-live="polite"></p>
+                    <div id="responseOptions" class="palette-grid">
                         <p class="placeholder">Response options will appear here</p>
                     </div>
                     <button id="regenerateBtn" type="button" class="regenerate-btn" aria-label="New 4 — different options">New 4</button>

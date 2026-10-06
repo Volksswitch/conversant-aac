@@ -757,3 +757,11 @@ test('CR-104/CR-106: named regions carry a role, and Settings is named', () => {
     }
     assert.match(html, /<dialog id="settingsDialog" aria-labelledby="settingsTitle">/);
 });
+
+test('CR-105: the cards are not a live region; a status line says they changed', () => {
+    const html = readFileSync(new URL('../app/index.html', import.meta.url), 'utf8');
+    assert.match(html, /<div id="responseOptions" class="palette-grid">/);
+    assert.match(html, /id="paletteStatus" class="visually-hidden" role="status"/);
+    const ui = readFileSync(new URL('../app/js/ui.js', import.meta.url), 'utf8');
+    assert.match(ui, /announcePalette\('New suggestions'\)/);
+});
