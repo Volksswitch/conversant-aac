@@ -209,14 +209,14 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-168](CR-168.md) | fixed (b989257) | low | confirmed | bug | `app/js/worldview-ui.js:1212` | Picking 'Other…' in the relationship list immediately erases the saved relationship |
 | [CR-169](CR-169.md) | fixed (b989257) | low | confirmed | data-loss | `app/js/app.js:2733` | Pausing and resuming the practice partner throws away the line it already spoke |
 | [CR-170](CR-170.md) | fixed (b989257) | low | confirmed | data-loss | `app/js/data-transfer.js:101` | Learned word-prediction vocabulary is not in the backup, despite 'everything travels' |
-| [CR-171](CR-171.md) | fixed (pending) | low | confirmed | data-loss | `app/js/practice-editor.js:300` | Cancel on the new-scenario form throws away everything typed without asking |
-| [CR-172](CR-172.md) | fixed (pending) | low | confirmed | data-loss | `app/js/review-ui.js:468` | Review saves fail silently - a failed review write is never logged or shown |
-| [CR-173](CR-173.md) | fixed (pending) | low | confirmed | data-loss | `app/js/storage.js:2069` | Two conversations started in the same second share one file name, and the second one erases the first |
-| [CR-174](CR-174.md) | fixed (pending) | low | confirmed | data-loss | `app/js/worldview-ui.js:527` | 'Change my answer' in How I Sound deletes the answer at once instead of on re-answer |
-| [CR-175](CR-175.md) | open | low | confirmed | dead-code | `app/css/styles.css:2962` | About 40 rules style elements and classes that no longer exist |
-| [CR-176](CR-176.md) | open | low | confirmed | dead-code | `app/js/app.js:2870` | windDownShown is written but never read |
-| [CR-177](CR-177.md) | open | low | confirmed | dead-code | `app/js/keyboard.js:279` | Dead toolbar/Hide code and comments still describe a keyboard Hide button that no longer exists |
-| [CR-178](CR-178.md) | open | low | confirmed | dead-code | `app/js/storage.js:689` | activeProfileUnsaved is dead code, and would report unsaved changes forever for a profile saved before the September layout migration |
+| [CR-171](CR-171.md) | fixed (65d5e76) | low | confirmed | data-loss | `app/js/practice-editor.js:300` | Cancel on the new-scenario form throws away everything typed without asking |
+| [CR-172](CR-172.md) | fixed (65d5e76) | low | confirmed | data-loss | `app/js/review-ui.js:468` | Review saves fail silently - a failed review write is never logged or shown |
+| [CR-173](CR-173.md) | fixed (65d5e76) | low | confirmed | data-loss | `app/js/storage.js:2069` | Two conversations started in the same second share one file name, and the second one erases the first |
+| [CR-174](CR-174.md) | fixed (65d5e76) | low | confirmed | data-loss | `app/js/worldview-ui.js:527` | 'Change my answer' in How I Sound deletes the answer at once instead of on re-answer |
+| [CR-175](CR-175.md) | fixed (pending) | low | confirmed | dead-code | `app/css/styles.css:2962` | About 40 rules style elements and classes that no longer exist |
+| [CR-176](CR-176.md) | fixed (pending) | low | confirmed | dead-code | `app/js/app.js:2870` | windDownShown is written but never read |
+| [CR-177](CR-177.md) | fixed (pending) | low | confirmed | dead-code | `app/js/keyboard.js:279` | Dead toolbar/Hide code and comments still describe a keyboard Hide button that no longer exists |
+| [CR-178](CR-178.md) | fixed (pending) | low | confirmed | dead-code | `app/js/storage.js:689` | activeProfileUnsaved is dead code, and would report unsaved changes forever for a profile saved before the September layout migration |
 | [CR-179](CR-179.md) | open | low | confirmed | dead-code | `app/js/ui.js:13` | Dead mode-chip and diagnostic engine-panel code in ui.js targets elements that no longer exist |
 | [CR-180](CR-180.md) | open | low | confirmed | design-violation | `app/css/styles.css:1924` | Read-only report views on Troubleshooting use three typefaces and three sizes, contrary to §13 |
 | [CR-181](CR-181.md) | open | low | confirmed | design-violation | `app/css/styles.css:4524` | Confirmation dialog has no themed background (uses the browser's Canvas color) |

@@ -317,3 +317,16 @@ test('a data file that cannot be read is never overwritten by the browser copy (
     await root.removeEntry('places.json');
     assert.equal(await places.syncToFolder(), 'wrote', 'a genuinely missing file is still created');
 });
+
+// CR-178. A profile saved before a setting was migrated is not "changed" just by loading it.
+test('an older profile is not reported as changed just after loading it', async () => {
+    await storage.restoreDataFolder();
+    const dir = await settingsDir();
+    const fh = await dir.getFileHandle('Old.json', { create: true });
+    const w = await fh.createWritable();
+    await w.write(JSON.stringify({ name: 'Old', settings: { voiceURI: 'Karen', buttonSizePos: 70, minGapPos: 40 } }));
+    await w.close();
+    await storage.applySettingsProfile('Old');
+    storage.saveActiveSettingsProfile('Old');
+    assert.equal((await storage.activeProfileUnsaved()).differs, false);
+});

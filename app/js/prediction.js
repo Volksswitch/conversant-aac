@@ -24,7 +24,6 @@
 const FREQ_KEY = 'aac_word_freq';
 
 let words = [];                 // frequency-ordered dictionary (file order = rank)
-let rank = new Map();           // word -> dictionary index (lower = more common)
 let userFreq = null;            // { word: count } personalized, lazy-loaded
 
 function loadUserFreq() {
@@ -44,7 +43,6 @@ export async function load() {
         const data = await fetch('data/words.json').then((r) => r.json());
         if (Array.isArray(data)) {
             words = data.map((w) => String(w).toLowerCase());
-            rank = new Map(words.map((w, i) => [w, i]));
         }
     } catch { /* prediction simply yields nothing until the list loads */ }
     loadUserFreq();

@@ -56,6 +56,20 @@ outlives a "Don't save" conversation.
 
 **Why not now:** the review was the task; fixing is separate work, one item per commit.
 
+### The mode chip's styling: delete it, or is it coming back?
+
+**Raised:** October 5 2026, from code review item CR-175.
+
+**What is wrong:** the conversation screen once showed a small "mode chip" naming what the
+app was doing. It is no longer on the screen, but its styling and the code that draws it
+are still in the app, and two notes (in the color settings and in CLAUDE.md) still treat
+it as live. The other dead styling the review found has been removed.
+
+**What is wanted:** Ken's answer: is the mode chip meant to return? If not, its styling
+and drawing code can go, and the notes that mention it can be corrected.
+
+**Why not now:** it may be a feature on hold rather than leftover code, which is Ken's call.
+
 ### A second tap while the first reply is still being spoken
 
 **Raised:** October 5 2026, from code review item CR-077.

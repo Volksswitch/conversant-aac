@@ -953,7 +953,6 @@
     --pred-ghost-bg: rgba(21, 101, 192, 0.14);
 }
 
-
 /* ⚠ A FORM CONTROL DOES NOT INHERIT THE PAGE FONT UNLESS TOLD TO, and this said so in
    seven separate places — so every control anybody remembered was in the house font and
    every one they did not was in the browser's, which is the same "whatever somebody
@@ -2073,7 +2072,6 @@ body.conv-bottom .palette-grid {
     to   { opacity: 1; }
 }
 
-
 /* The response card (§4). Slot color: tinted fill and a hued left border. */
 .response-card {
     display: flex;
@@ -2099,24 +2097,8 @@ body.conv-bottom .palette-grid {
 }
 .response-card:active { transform: translateY(1px); }
 
-.response-card-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-}
-
 /* Latency dot — filled = speaks instantly; hollow = a generation round-trip on
    selection (the user never taps into an unexpected wait, §4). */
-.response-latency {
-    width: 0.7rem;
-    height: 0.7rem;
-    border-radius: 50%;
-    flex-shrink: 0;
-    border: 2px solid currentColor;
-}
-.latency-instant .response-latency { background: currentColor; }
-.latency-roundtrip .response-latency { background: transparent; }
 
 /* Response text — the LARGE, easy-to-read primary element (no separate hint —
    Ken). It IS the words TTS will speak, big enough to read at a glance. Fills the
@@ -2807,7 +2789,6 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
    to it and silently does nothing. The .slider-step exception avoids this by being
    excluded in the :not() instead — not an option here, because the ↑ and ↓ buttons
    carry no class of their own to exclude by. */
-#settingsContent .ee-row .ee-swatch,
 #controlEditor .ee-row .ee-tools button,
 #placeholderEditor .ee-row .ee-tools button {
     min-width: var(--btn-min-dim);
@@ -2838,9 +2819,6 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
    short — "No thank you", "See you later" — so a cap costs nothing and leaves the
    row slack instead of stretching one field across the panel. The partner/place
    pickers are exempt: they carry full names and already declare their own width. */
-#settingsContent .ee-fields input {
-    max-width: 20rem;
-}
 
 /* Let action rows wrap rather than overflow: with a wide side dock the Settings
    panel gets genuinely narrow, and a clipped button is an unreachable one. */
@@ -2882,9 +2860,6 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
 #expressEditor { display: flex; flex-direction: column; gap: 0.5rem; }
 /* The invitation shown until a button is tapped, and the whole-panel Reset that has
    nowhere else to live once the tab shows one button at a time. */
-.ee-prompt { display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; }
-.ee-prompt .ee-reset { background: var(--surface-raised); color: var(--danger); border: 1px solid var(--danger); border-radius: 6px; padding: 0.4rem 0.7rem; cursor: pointer; }
-.ee-prompt .ee-reset:hover { background: var(--danger); color: var(--ink-inverse); }
 
 /* ⚠ .ee-row AND .ee-tools ARE SHARED WITH THE CONTROLS EDITOR (control-phrases-editor
    .js), which still builds a horizontal row of one text field plus ↑ ↓ ✕. So the base
@@ -2900,9 +2875,7 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
    Ken photographed. Stacked, each part gets the full width and wraps within it, so the
    card gets taller as the tab narrows and never wider. */
 #expressEditor .ee-row { flex-direction: column; align-items: stretch; padding: 0.5rem; }
-.ee-card-head { display: flex; align-items: center; gap: 0.5rem; }
-.ee-card-pos { font-size: 0.85rem; color: var(--ink-muted); }
-.ee-badge { flex: 0 0 auto; font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-inverse); border-radius: 4px; padding: 0.25rem 0.4rem; min-width: 4.2rem; text-align: center; }
+
 .ee-badge-phrase  { background: var(--edge-strong); }
 .ee-badge-partner { background: var(--infl-partner); }
 .ee-badge-feeling { background: var(--infl-feeling); }
@@ -2912,13 +2885,11 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
    same slot looks in the panel itself. */
 .ee-badge-empty   { background: var(--surface-pressed); }
 .ee-row.ee-empty { border-style: dashed; background: var(--surface-raised); }
-.ee-empty-label { flex: 0 0 auto; align-self: center; color: var(--ink-faint); font-size: 0.9rem; }
+
 /* The row a panel tap just chose. Thirty-odd rows look alike, so a scroll alone is
    easy to miss — this says which one the tap landed on. */
 .ee-row.ee-row-picked { border-color: var(--ok); box-shadow: 0 0 0 2px var(--ok); }
-.ee-fields { display: flex; flex: 1 1 auto; gap: 0.4rem; flex-wrap: wrap; min-width: 0; }
-.ee-fields input, .ee-fields select { flex: 1 1 8rem; min-width: 0; padding: 0.35rem 0.5rem; border: 1px solid var(--edge); border-radius: 6px; font-size: 0.95rem; }
-.ee-fields .ee-name-select { flex: 2 1 16rem; } /* the "Choose a name" dropdown — twice as wide */
+
 .ee-tools { flex: 0 0 auto; display: flex; gap: 0.25rem; }
 .ee-tools button { width: 2rem; height: 2rem; border: 1px solid var(--edge); background: var(--surface-raised-alt); border-radius: 6px; cursor: pointer; font-size: 1rem; line-height: 1; }
 /* The Express card's actions WRAP, which the old fixed row of icon tools did not —
@@ -2934,8 +2905,7 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
 /* The speak-aloud button: its label says what it does, so it needs no color. */
 /* Done closes the card, so it reads as the primary way out — and sits last, away from
    Delete, which is the one button here that cannot be undone. */
-.ee-tools .ee-done { font-weight: 600; }
-.ee-tools .ee-done:hover { filter: brightness(1.1); }
+
 .ee-tools .ee-add { font-weight: 600; }
 .ee-tools .ee-add:disabled { background: var(--ink-faint); }
 /* Button-color picker — pick by color, not by (meaningless) category name. */
@@ -2947,7 +2917,7 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
    420px editor: seven swatches at the larger button sizes overflowed by 5px before
    this and by nothing after. */
 #expressEditor .ee-swatches { flex: 1 1 100%; }
-.ee-swatch { width: 1.7rem; height: 1.7rem; padding: 0; border-radius: 5px; border: 2px solid var(--edge); cursor: pointer; }
+
 .ee-swatch-on { outline: 3px solid var(--accent); outline-offset: 1px; border-color: var(--surface-raised); }
 /* The color on a Partner / Feeling / Place card is a SAMPLE, not a control — those
    types have one fixed color each. It used to be drawn at the full touch-target size
@@ -2967,8 +2937,6 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
 }
 /* The four type buttons an undefined slot offers ("Not set yet — Phrase / Partner /
    Feeling / Place"). They sit in .ee-fields, so they wrap with everything else. */
-.ee-fields .ee-add { border-radius: 6px; padding: 0.4rem 0.7rem; font-weight: 600; cursor: pointer; }
-.ee-fields .ee-add:hover { filter: brightness(1.1); }
 
 /* Control-phrases editor (Settings → Controls) and the placeholder editor (Settings →
    Placeholders), which are the same shape: a text field per phrase with icon tools.
@@ -2994,29 +2962,7 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
 
 /* Engine diagnostics — collapsed <details> for development / bug reports. The
    user-facing inference is the mode chip in Region A. */
-#engineDetails {
-    margin-top: 0.5rem;
-}
-#engineDetails summary {
-    font-size: 0.8rem;
-    color: var(--ink-faint);
-    cursor: pointer;
-    padding: 0.25rem 0;
-}
-#enginePanel {
-    font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
-    font-size: 0.9rem;
-    background: var(--surface-raised-alt);
-}
-.engine-row {
-    display: flex;
-    gap: 0.75rem;
-    padding: 0.15rem 0;
-}
-.engine-label {
-    flex: 0 0 9rem;
-    color: var(--ink-faint);
-}
+
 .engine-val {
     font-weight: 600;
     color: var(--ink-strong);
@@ -3042,58 +2988,12 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
    always this order, in every mode, slate (quiet, recognized by position not
    salience). These are the user's escape hatch when the inference is wrong, so
    they must never move. */
-#overrideControls {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-}
-.persist-btn {
-    flex: 1 1 0;
-    min-width: 6rem;
-    /* Height comes from the shared control-row height (--btn-min-dim) via stretch,
-       NOT vertical padding — otherwise this row would grow taller than the
-       keyboard's toolbar and misalign the grids beneath them. Horizontal padding
-       only; the button centers its text. */
-    min-height: var(--btn-min-dim);
-    background: var(--surface-raised);
-    border: 2px solid var(--slot-persistent);
-    color: var(--slot-persistent);
-    border-radius: 8px;
-    padding: 0 0.8rem;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.12s, box-shadow 0.12s, transform 0.05s;
-}
+
 /* Same treatment as .cmd-btn above — shadow and nudge, never a fill. */
-.persist-btn:focus-visible {
-    box-shadow: 0 2px 10px var(--shadow);
-    /* A RING, never a fill (a fill means "on" here). The shadow alone was invisible
-       in the dark schemes - black on black - and faint in the light ones (CR-014).
-       An outline is paint only, so no keyguard hole moves. */
-    outline: 3px solid var(--link);
-    outline-offset: 2px;
-}
-.persist-btn:active { transform: translateY(1px); }
 
 /* Session-level controls — start / end the conversation. Separated from the CA
    overrides so the four overrides keep their stable identity. */
-#sessionControls {
-    display: flex;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
-}
-.session-btn {
-    flex: 1 1 0;
-    background: var(--accent);
-    color: var(--ink-inverse);
-    border: none;
-    border-radius: 8px;
-    padding: 0.65rem 0.8rem;
-    font-size: 0.95rem;
-    font-weight: 600;
-    cursor: pointer;
-}
+
 .session-btn-end {
     background: var(--surface-raised);
     color: var(--danger);
@@ -3101,7 +3001,6 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
 }
 
 /* Region D — composer access. */
-.composer-panel { padding: 0.85rem; }
 
 #composerInput {
     width: 100%;
@@ -4471,15 +4370,6 @@ label.radio-label input[type="radio"] {
     margin-bottom: 0.75rem;
 }
 
-.wv-card.wv-flash {
-    animation: wv-flash 1.2s ease-out;
-}
-
-@keyframes wv-flash {
-    0% { border-color: var(--slot-dispreferred); box-shadow: 0 0 0 3px var(--warn); }
-    100% { border-color: var(--edge); box-shadow: none; }
-}
-
 .wv-card-head {
     display: flex;
     align-items: flex-start;
@@ -5204,8 +5094,7 @@ body.conv-bottom     .danger-dialog {
        response cards (Ken, August 20 2026) — no fill, so a filled button on this
        bar always means "this control is on". */
     .cmd-btn:hover,
-    .cmd-btn-end:hover,
-    .persist-btn:hover {
+    .cmd-btn-end:hover {
         box-shadow: 0 2px 10px var(--shadow);
         outline: none;
     }
@@ -5243,7 +5132,7 @@ body.conv-bottom     .danger-dialog {
         color: var(--ink-inverse);
         outline-color: var(--ep-color);
     }
-    .session-btn:hover { filter: brightness(1.1); }
+    
     .session-btn-end:hover {
         background: var(--danger);
         color: var(--ink-inverse);
@@ -5269,7 +5158,6 @@ body.conv-bottom     .danger-dialog {
     .reset-sizing-btn:hover { background: var(--surface-panel); }
     .key-row button:hover { background: var(--surface-panel); }
 }
-
 
 /* --- How I Sound (Sound Check) ------------------------------------------------
    Forced-choice voice elicitation in About Me. The candidates are full sentences,
@@ -5677,5 +5565,5 @@ body.reviewing .response-card { position: relative; }
         animation: none;
         opacity: 0.85;
     }
-    .wv-card.wv-flash { animation: none; }
+    
 }

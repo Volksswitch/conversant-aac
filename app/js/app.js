@@ -3138,7 +3138,6 @@ function showHeldForComposer() {
     ui.setStatus('Select a response');
     return true;
 }
-let windDownShown = false;                       // has Wrap up been shown this conversation?
 let shownCards = { cards: [], kind: 'ai' };      // what is on the Response Panel right now
 
 /* TEMPORARY PALETTE OVERLAYS — Wrap up and Start conversation (Ken, August 26 2026).
@@ -3384,7 +3383,6 @@ function resetStaticPaging() {
     staticOffsets.windDown = 0;
     staticOffsets.closing = 0;
     currentStatic = { kind: null, full: [], pin: [] };
-    windDownShown = false;
     overlayClearLatch();
     pendingNewConversation = false;
 }
@@ -3966,7 +3964,6 @@ function handleWindDown() {
     const snap = engine.windDown();
     ui.showEngineState(snap);
     renderStaticPalette('windDown', snap.palette, 'Signal you\'d like to wrap up');
-    windDownShown = true;
 }
 
 // End conversation — hard terminate (Ken, June 18 2026). Tears everything down
@@ -6232,8 +6229,8 @@ function handleSettingsTab(tabName) {
  *
  * Driven by which section is open rather than by a toggle the user has to find and
  * remember to put back. A toggle would be a mode, and being stuck in a mode with no
- * obvious way out is the failure this is fixing. The keyboard's own Hide icon remains
- * the manual override, and opening any other section puts the panel back.
+ * obvious way out is the failure this is fixing. Leaving the field or opening any other
+ * section puts the panel back; the keyboard has no Hide key (CR-177).
  */
 let expressAutoFocusedBox = false;
 

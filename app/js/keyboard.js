@@ -231,71 +231,6 @@ function consumeShift() {
     if (shiftState === 'shift') { shiftState = 'off'; applyShiftVisual(); }
 }
 
-// --- clipboard (cut / copy / paste toolbar) --------------------------------
-// A fixed Cut/Copy/Paste strip above the keys, the same for every layout. The
-// app keyboard suppresses the OS keyboard, so these give back the clipboard
-// affordances the OS keyboard would have provided (notably paste for the API
-// key). Buttons act on pointerdown + preventDefault so the field keeps focus
-// and its selection. localhost and https are secure contexts, so the async
-// Clipboard API is available.
-
-function selectedText() {
-    const f = activeField;
-    if (!f) return '';
-    return f.value.slice(f.selectionStart ?? 0, f.selectionEnd ?? 0);
-}
-
-function deleteSelection() {
-    const f = activeField;
-    if (!f) return;
-    const s = f.selectionStart ?? 0;
-    const e = f.selectionEnd ?? 0;
-    if (s === e) return;
-    f.value = f.value.slice(0, s) + f.value.slice(e);
-    f.setSelectionRange(s, s);
-    f.dispatchEvent(new Event('input', { bubbles: true }));
-}
-
-// Explicitly dismiss the keyboard (the toolbar's Hide button) while leaving any
-// open panel (e.g. Settings) in place. Blurs the field so a later tap re-opens
-// it; ends preview mode so it stays down until re-triggered.
-function dismiss() {
-    previewing = false;
-    const f = activeField;
-    hide();                       // clears activeField + hides
-    if (f) { try { f.blur(); } catch { /* ignore */ } }
-    // Hide runs on pointerdown; the tap's trailing CLICK fires afterwards.
-    // Hiding frees the keyboard's reserved space, so the page reflows and
-    // another control (e.g. About Me's "Done" button) can slide under the
-    // pointer — the ghost click would then hit it (closing About Me). Swallow
-    // that one click.
-    suppressNextClick();
-}
-
-function suppressNextClick() {
-    const onClick = (e) => { e.stopPropagation(); e.preventDefault(); cleanup(); };
-    const cleanup = () => { document.removeEventListener('click', onClick, true); clearTimeout(timer); };
-    const timer = setTimeout(cleanup, 400);   // in case no click follows (e.g. keyboard nav)
-    document.addEventListener('click', onClick, true);   // capture: intercept before it reaches the moved control
-}
-
-async function handleTool(tool) {
-    if (!fieldStillThere()) return;   // CR-045
-    if (tool === 'hide') { dismiss(); return; }
-    if (!activeField) return;
-    if (tool === 'copy' || tool === 'cut') {
-        const text = selectedText();
-        if (!text) return;
-        try { await navigator.clipboard.writeText(text); } catch { /* clipboard blocked */ }
-        if (tool === 'cut') deleteSelection();
-    } else if (tool === 'paste') {
-        try {
-            const text = await navigator.clipboard.readText();
-            if (text) insert(text);   // insert() replaces any selection at the caret
-        } catch { /* clipboard read blocked/denied */ }
-    }
-}
-
 // --- key handling -----------------------------------------------------------
 
 // The field the keys type into may have been removed by a redraw (an editor list
@@ -508,8 +443,6 @@ function build() {
     // Act on pointerdown and preventDefault so the target field keeps focus
     // and the caret never moves (the standard on-screen-keyboard trick).
     rootEl.addEventListener('pointerdown', (e) => {
-        const tool = e.target.closest('.kbd-tool');
-        if (tool) { e.preventDefault(); handleTool(tool.dataset.tool); return; }
         const keyEl = e.target.closest('.kbd-key');
         if (!keyEl) return;
         e.preventDefault();
@@ -669,10 +602,6 @@ function show(field) {
     // The API key is case-sensitive and lowercase ("sk-ant-…"), so leave it off.
     // A key is case-sensitive, so no box marked data-no-autocap starts capitalized.
     shiftState = (field.dataset && field.dataset.noAutocap !== undefined) ? 'off' : 'shift';
-    // Suppress the toolbar Hide button during the "In my own words" modal
-    // (#composerInput): there, Speak/Reframe/Cancel are the only exits and they
-    // dismiss the keyboard, so Hide is redundant. Keep it for About Me/Settings.
-    rootEl.classList.toggle('kbd-no-hide', field.id === 'composerInput');
     setDock(dockFor(field));
     // A modal <dialog> (Settings) lives in the top layer and renders above —
     // and makes inert — anything in normal flow. So when the focused field is
@@ -797,7 +726,7 @@ export function init() {
         // - it must not reflow the layout out from under the tap, which steals
         //   the first click and forces a second Save press (Ken's bug 3).
         // The panels' explicit close paths (worldview close(), Settings
-        // Close/Escape, renderHome) and the Hide button take it down.
+        // Close/Escape, renderHome) take it down; there is no Hide key.
         // The Settings layout preview owns the dock deliberately - there is no focused
         // field to lose - so nothing about blur may take it down. Checked before the
         // rules below, which are all about a field that HAD focus.
@@ -862,7 +791,7 @@ export function setMode(next) {
 // Show the keyboard as a non-typing preview in the given dock (no focused
 // field) so layouts can be tried on the Speech & Input tab without the keyboard
 // vanishing. Hosted in the open Settings dialog so it shares the modal's top
-// layer. previewHide() takes it down again (unless a real field is focused).
+// layer. hideKeyboard() takes it down again.
 
 export function previewShow(dock) {
     if (!rootEl || mode !== 'onscreen') return;
@@ -875,7 +804,6 @@ export function previewShow(dock) {
     clearGhost();
     page = 'letters';
     shiftState = 'off';
-    rootEl.classList.remove('kbd-no-hide'); // Settings preview keeps Hide
     setDock(dock);
     const dlg = document.getElementById('settingsDialog');
     const host = (dlg && dlg.open) ? dlg : document.body;
@@ -885,16 +813,9 @@ export function previewShow(dock) {
     document.body.classList.add('kbd-open');
 }
 
-export function previewHide() {
-    if (!previewing) return;
-    previewing = false;
-    if (!activeField) hide();
-}
-
 // Programmatically dismiss the keyboard (used by a panel's close path, where we
 // keep the keyboard up when focus moves to in-panel buttons but must take it
-// down once the panel itself closes). Unlike the toolbar Hide button this does
-// not suppress the next click — the caller is already closing the panel.
+// down once the panel itself closes).
 export function hideKeyboard() {
     previewing = false;
     hide();
@@ -928,11 +849,6 @@ export function showFor(field, opts = {}) {
     // symbols with no way back to the letters (CR-044).
     if (opts.page === 'symbols' && layoutHasPageKey()) page = opts.page;
     show(field);
-}
-
-/** Which page the keyboard is showing. Physical mode never has one. */
-export function currentPage() {
-    return mode === 'onscreen' ? page : null;
 }
 
 export function getMode() {

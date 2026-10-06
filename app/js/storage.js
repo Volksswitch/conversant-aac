@@ -782,12 +782,16 @@ export async function activeProfileUnsaved() {
     if (!dir) return { name, differs: false };
     let saved;
     try {
-        const fh = await dir.getFileHandle(`${sanitizeProfileName(name)}.json`);
+        const fh = await dir.getFileHandle(await existingProfileFile(dir, name));
         saved = JSON.parse(await (await fh.getFile()).text());
     } catch {
         return { name, differs: false };     // no file to be out of step with
     }
-    const a = (saved && saved.settings) || {};
+    // Compared like with like (CR-178): the live bundle has been through the setting
+    // migrations and lacks the device-only keys, so the saved side is put through the
+    // same, or an older profile would read as changed forever.
+    const a = migrateBundle({ ...((saved && saved.settings) || {}) });
+    for (const k of PROFILE_EXCLUDE) delete a[k];
     const b = exportSettingsBundle();
     const keys = [...new Set([...Object.keys(a), ...Object.keys(b)])].sort();
     const differs = keys.some((k) => JSON.stringify(a[k]) !== JSON.stringify(b[k]));
