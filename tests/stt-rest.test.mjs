@@ -241,7 +241,7 @@ test('the status this source reports on stopping is one the app knows', async ()
     // EXPLAINS the fix rather than on the code that is the fix - which is exactly what
     // happened when this test was written, and it went green against a deliberately
     // broken handler.
-    const body = stripComments(app.slice(at, at + 1800));
+    const body = stripComments(app.slice(at, app.indexOf('\n}\n', at)));
 
     // Every status this module can emit has to be one the handler accounts for, or it
     // is logged as an error. Read them out of this file rather than listing them here,

@@ -396,7 +396,9 @@ function afterIngest(heardPartner, sawFinal) {
         resetSilenceTimer(sawFinal);
         if (onPartnerActivity) onPartnerActivity();
     }
-    if (onTranscript) onTranscript(joinParts([accumulatedText, currentInterim]));
+    // The second argument says whether this delivery carried the partner's speech,
+    // rather than only the app's own words coming back (CR-125).
+    if (onTranscript) onTranscript(joinParts([accumulatedText, currentInterim]), heardPartner && !speechActive());
 }
 
 /*

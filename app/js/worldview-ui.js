@@ -278,7 +278,7 @@ function renderExtra(name) {
     contentEl.append(el('button', { class: 'wv-back', text: '‹ Back', onclick: renderHome }));
 
     const card = el('div', { class: 'wv-card' });
-    const head = el('div', { class: 'wv-card-head' }, [el('div', { class: 'wv-question', text: e.question })]);
+    const head = el('div', { class: 'wv-card-head' }, [el('div', { class: 'wv-question', id: 'wvq-extra', text: e.question })]);
     if (e.state === 'answered') head.append(el('span', { class: 'wv-badge wv-badge-answered', text: '✓ Answered' }));
     else if (e.state === 'declined') head.append(el('span', { class: 'wv-badge wv-badge-declined', text: 'Prefer not to say' }));
     card.append(head);
@@ -297,7 +297,7 @@ function renderExtra(name) {
         return;
     }
 
-    const input = el('input', { class: 'wv-text', type: 'text', value: e.value || '' });
+    const input = el('input', { class: 'wv-text', type: 'text', value: e.value || '', 'aria-labelledby': 'wvq-extra' });
     input.addEventListener('change', () => wv.setExtra(name, input.value.trim()));
     input.addEventListener('blur', () => wv.setExtra(name, input.value.trim()));
     card.append(input);
@@ -556,7 +556,7 @@ function buildSoundCheckCard(item) {
             // Hearing a candidate spoken is how you judge whether you would say it —
             // this user's whole output channel is a synthesizer, so reading it on
             // screen is not the same test. Same idea as "Speak my answer" elsewhere.
-            el('button', { class: 'wv-btn-speak sc-speak', text: '🔊', title: 'Hear this',
+            el('button', { class: 'wv-btn-speak sc-speak', text: '🔊', title: 'Hear this', 'aria-label': 'Hear: ' + text,
                 onclick: () => speak(text) }),
         ]));
     }
@@ -836,7 +836,7 @@ function buildGoalEditor(saved, opts = {}) {
     let goals = Array.isArray(saved) ? saved.map((g) => ({ ...g })) : [];
     const goalList = el('div', { class: 'wv-goal-list' });
 
-    const goalAdd = el('select', { class: 'wv-select' });
+    const goalAdd = el('select', { class: 'wv-select', 'aria-label': 'Add a goal' });
     const fillAdd = () => {
         goalAdd.textContent = '';
         goalAdd.append(el('option', { value: '' }, 'Add a goal…'));
@@ -1128,7 +1128,7 @@ function buildPersonForm(existing) {
         existing ? existing.nicknamePronunciation : '');
 
     // Relationship — standard list + "Other…" (free text).
-    const relSelect = el('select', { class: 'wv-select' });
+    const relSelect = el('select', { class: 'wv-select', 'aria-label': 'Relationship' });
     relSelect.append(el('option', { value: '' }, 'Relationship…'));
     for (const g of REL_GROUPS) {
         const og = el('optgroup', { label: g.label });
@@ -1621,7 +1621,7 @@ function buildCard(field) {
     const card = el('div', { class: 'wv-card', id: 'wvcard-' + field.key });
 
     const head = el('div', { class: 'wv-card-head' }, [
-        el('div', { class: 'wv-question', text: field.q })
+        el('div', { class: 'wv-question', id: 'wvq-' + field.key, text: field.q })
     ]);
     if (state === 'answered') head.append(el('span', { class: 'wv-badge wv-badge-answered', text: '✓ Answered' }));
     else if (state === 'declined') head.append(el('span', { class: 'wv-badge wv-badge-declined', text: 'Prefer not to say' }));
@@ -1648,7 +1648,14 @@ function buildCard(field) {
         return card;
     }
 
-    card.append(buildInput(field));
+    // Every answer box and choice in the card is named by its question, for a screen
+    // reader (CR-123); the placeholder alone said only "Type your answer".
+    const input = buildInput(field);
+    input.querySelectorAll('input, select, textarea').forEach((c) => {
+        if (c.hasAttribute('aria-label') || (c.labels && c.labels.length)) return;   // already named
+        c.setAttribute('aria-labelledby', 'wvq-' + field.key);
+    });
+    card.append(input);
 
     const actions = el('div', { class: 'wv-actions' });
     const current = wv.getField(field.key);
@@ -1689,6 +1696,7 @@ function buildChoice(field, current) {
     for (const opt of field.options) {
         chips.append(el('button', {
             class: 'wv-chip' + (current === opt ? ' wv-chip-on' : ''),
+            'aria-pressed': String(current === opt),   // CR-124
             text: opt,
             onclick: () => saveAndRefresh(field, opt)
         }));
@@ -1715,6 +1723,7 @@ function buildMultiChips(field, current) {
     for (const opt of all) {
         chips.append(el('button', {
             class: 'wv-chip' + (selected.includes(opt) ? ' wv-chip-on' : ''),
+            'aria-pressed': String(selected.includes(opt)),   // CR-124
             text: opt,
             onclick: () => {
                 const next = selected.includes(opt) ? selected.filter((s) => s !== opt) : [...selected, opt];

@@ -1300,10 +1300,15 @@ function reflectApiKeyFormat() {
 
 let lastSpeechResultAt = 0;
 
-function handleSpeechResult(liveText) {
-    const now = Date.now();
-    if (lastSpeechResultAt) metrics.sttGap(now - lastSpeechResultAt);
-    lastSpeechResultAt = now;
+function handleSpeechResult(liveText, partnerHeard = true) {
+    // The gap between deliveries WHILE THE PARTNER IS SPEAKING (CR-125). The app's own
+    // words coming back are not partner speech, and a gap that spans a stop is not a
+    // gap in delivery, so neither is counted; the clock restarts when listening stops.
+    if (partnerHeard && liveText) {
+        const now = Date.now();
+        if (lastSpeechResultAt) metrics.sttGap(now - lastSpeechResultAt);
+        lastSpeechResultAt = now;
+    }
     // Live transcript while the partner is speaking — provisional, not yet
     // confirmed. Confirmation happens implicitly when the user picks a response.
     updatePartnerLive(liveText);
@@ -1384,7 +1389,10 @@ function handleSttStatus(status, detail) {
     // function only knew 'stopped'. So every ordinary stop on those services logged
     // `unknown status "idle"` as an error, which trips the transcript's red wash — the
     // app telling the user something had gone wrong at the moment nothing had.
-    if (status === 'stopped' || status === 'idle' || status === 'error') isListening = false;
+    if (status === 'stopped' || status === 'idle' || status === 'error') {
+        isListening = false;
+        lastSpeechResultAt = 0;   // no delivery gap spans a stop (CR-125)
+    }
     else if (status === 'listening') isListening = true;
     // 'capturing' — the voice gate opened, i.e. someone is speaking right now. It
     // reports activity WITHIN a listening session, so it must leave the state alone:
@@ -1879,6 +1887,11 @@ async function generateOptions(partnerText) {
         lastIngestedPartnerText = partnerText;
         ui.showEngineState(snap);
         lastPalette = snap.palette;
+        // A goodbye ends any choice they offered earlier in the turn: drop the choice
+        // buttons and the steering, as the AI path does for a closing (CR-126).
+        clearTurnSteering();
+        setOfferedChoices([]);
+        setOfferedRange(null);
         // The PARTNER started closing, so offer the decline alongside the goodbyes.
         // Held, not drawn, while "In my own words" is open (CR-020).
         if (composerOpen) holdClosingsForComposer(snap.palette);

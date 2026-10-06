@@ -812,3 +812,12 @@ test('CR-119-122: Review quiets the log, empty slots leave the Tab order, latch 
     const wn = readFileSync(new URL('../app/js/whats-new.js', import.meta.url), 'utf8');
     assert.match(wn, /okBtn\.setAttribute\('aria-describedby', list\.id\)/);
 });
+
+test('CR-123-126: About Me named, chips pressed, gap metric honest, goodbyes drop choices', () => {
+    const wv = readFileSync(new URL('../app/js/worldview-ui.js', import.meta.url), 'utf8');
+    assert.match(wv, /c\.setAttribute\('aria-labelledby', 'wvq-' \+ field\.key\)/);
+    assert.equal((wv.match(/'aria-pressed': String\(/g) || []).length >= 2, true);
+    assert.match(appSource, /function handleSpeechResult\(liveText, partnerHeard = true\)/);
+    const fast = appSource.slice(appSource.indexOf('if (windingDown && convLogic.looksLikeClosing(partnerText))'));
+    assert.ok(fast.indexOf('setOfferedChoices([])') < fast.indexOf("renderStaticPalette('closing'"));
+});

@@ -349,6 +349,11 @@ forgetting to tag one is only ever noise, never silence.
   moving with the Tab key; the "Don't save", Wrap up, Start conversation and New
   buttons keep a name that matches whether they are on; and the "What's new" notes are
   read out with the Close button, with your place kept after closing it.
+- In About Me, each answer box is now named by its question for screen readers, chosen
+  answers are announced as chosen and show an inner ring as well as a color, and the
+  "Hear this" buttons in How I Sound say what they will read. If the other person
+  offered choices and then says goodbye, the choice buttons now go away with the
+  goodbye cards.
 
 ## Version 0.13.4
 
