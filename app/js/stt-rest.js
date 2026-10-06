@@ -126,6 +126,17 @@ export function createSource({ provider, getKey, getModel, onText, onStatus, onB
     let sourceNode = null;
     let gate = null;
     let running = false;
+    // CR-083: start() awaits the microphone with `running` still false. `starting`
+    // stops a second tap opening a second microphone in that window, and `wanted` lets a
+    // stop() during it be honored once the microphone arrives.
+    let starting = false;
+    let wanted = false;
+    function releaseHalfOpen() {
+        try { if (stream) stream.getTracks().forEach((t) => t.stop()); } catch { /* gone */ }
+        stream = null;
+        try { if (audioCtx) audioCtx.close(); } catch { /* gone */ }
+        audioCtx = null;
+    }
     let rate = 48000;
 
     let span = [];
@@ -297,12 +308,17 @@ export function createSource({ provider, getKey, getModel, onText, onStatus, onB
                 if (onStatus) onStatus('error', `No ${provider.label} key is set.`);
                 return;
             }
+            if (starting) return;
+            starting = true;
+            wanted = true;
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             } catch {
+                starting = false;
                 if (onStatus) onStatus('error', 'The microphone could not be opened.');
                 return;
             }
+            if (!wanted) { starting = false; releaseHalfOpen(); return false; }
             const Ctor = window.AudioContext || window.webkitAudioContext;
             audioCtx = new Ctor();
             rate = audioCtx.sampleRate || 48000;
@@ -317,6 +333,7 @@ export function createSource({ provider, getKey, getModel, onText, onStatus, onB
             if (onBilled) onBilled(0);
             failures = 0;
             generation++;
+            starting = false;
             running = true;
             processor.onaudioprocess = (e) => {
                 if (!running) return;
@@ -328,6 +345,7 @@ export function createSource({ provider, getKey, getModel, onText, onStatus, onB
         },
 
         stop() {
+            wanted = false;
             if (!running) return;
             running = false;
             generation++;                    // abandon anything still in flight

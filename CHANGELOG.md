@@ -267,6 +267,9 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: pressing Escape or Android's Back gesture could close the "Please wait" box
   during a restore, letting Restore be pressed again, or close the "the app will now
   restart" box. Neither can be dismissed that way now.
+- Fixed: with a paid listening service, tapping Listen twice quickly could open the
+  microphone twice and send everything twice, and turning listening off while it was
+  still starting up could leave the microphone on anyway.
 
 ## Version 0.13.4
 

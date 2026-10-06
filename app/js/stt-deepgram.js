@@ -181,6 +181,17 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
     let keepAliveTimer = null;
     let gate = null;
     let running = false;
+    // CR-083: start() awaits the microphone with `running` still false. `starting`
+    // stops a second tap opening a second microphone in that window, and `wanted` lets a
+    // stop() during it be honored once the microphone arrives.
+    let starting = false;
+    let wanted = false;
+    function releaseHalfOpen() {
+        try { if (stream) stream.getTracks().forEach((t) => t.stop()); } catch { /* gone */ }
+        stream = null;
+        try { if (audioCtx) audioCtx.close(); } catch { /* gone */ }
+        audioCtx = null;
+    }
 
     // Rolling buffer of recent frames, so the syllable before the gate opened is not
     // lost. Sized from the gate's pre-roll and the actual sample rate at start().
@@ -276,6 +287,9 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
                 if (onStatus) onStatus('error', 'no-key');
                 return false;
             }
+            if (starting) return true;
+            starting = true;
+            wanted = true;
             try {
                 stream = await navigator.mediaDevices.getUserMedia({
                     audio: {
@@ -288,6 +302,7 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
                     },
                 });
             } catch {
+                starting = false;
                 if (onStatus) onStatus('error', 'not-allowed');
                 return false;
             }
@@ -298,6 +313,7 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
                 try { await audioCtx.resume(); } catch { /* a gesture is needed; capture still works */ }
             }
             const rate = audioCtx.sampleRate;
+            if (!wanted) { starting = false; releaseHalfOpen(); return false; }
 
             // Shared with testKey, so the Test button cannot pass while this fails.
             const params = listenParams(rate);
@@ -315,6 +331,7 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
             try {
                 ws = new WebSocket(`${ENDPOINT}?${params}`, ['token', key]);
             } catch {
+                starting = false;
                 if (onStatus) onStatus('error', 'connect-failed');
                 return false;
             }
@@ -378,11 +395,13 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
             // `running` still goes true here, so the audio graph captures and the
             // pre-roll buffer fills while the handshake completes — only the STATUS
             // moved to ws.onopen above.
+            starting = false;
             running = true;
             return true;
         },
 
         stop() {
+            wanted = false;
             if (!running) return;
             running = false;
             // Close the gate first so a span in progress is still counted.

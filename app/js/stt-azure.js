@@ -279,6 +279,17 @@ export function createSource({ getKey, getRegion, onText, onStatus, onBilled }) 
     let sourceNode = null;
     let gate = null;
     let running = false;
+    // CR-083: start() awaits the microphone with `running` still false. `starting`
+    // stops a second tap opening a second microphone in that window, and `wanted` lets a
+    // stop() during it be honored once the microphone arrives.
+    let starting = false;
+    let wanted = false;
+    function releaseHalfOpen() {
+        try { if (stream) stream.getTracks().forEach((t) => t.stop()); } catch { /* gone */ }
+        stream = null;
+        try { if (audioCtx) audioCtx.close(); } catch { /* gone */ }
+        audioCtx = null;
+    }
     let rate = 48000;
 
     // The current stretch of speech, at the microphone's own rate; downsampled once
@@ -434,6 +445,9 @@ export function createSource({ getKey, getRegion, onText, onStatus, onBilled }) 
                 if (onStatus) onStatus('error', 'no-key');
                 return false;
             }
+            if (starting) return true;
+            starting = true;
+            wanted = true;
             try {
                 stream = await navigator.mediaDevices.getUserMedia({
                     audio: {
@@ -446,6 +460,7 @@ export function createSource({ getKey, getRegion, onText, onStatus, onBilled }) 
                     },
                 });
             } catch {
+                starting = false;
                 if (onStatus) onStatus('error', 'not-allowed');
                 return false;
             }
@@ -456,6 +471,7 @@ export function createSource({ getKey, getRegion, onText, onStatus, onBilled }) 
                 try { await audioCtx.resume(); } catch { /* a gesture is needed; capture still works */ }
             }
             rate = audioCtx.sampleRate;
+            if (!wanted) { starting = false; releaseHalfOpen(); return false; }
 
             gate = vad.createGate({ hangMs: HANG_MS });
             const FRAME_SAMPLES = 4096;
@@ -486,6 +502,7 @@ export function createSource({ getKey, getRegion, onText, onStatus, onBilled }) 
             mute.gain.value = 0;
             processor.connect(mute).connect(audioCtx.destination);
 
+            starting = false;
             running = true;
             // Reported once capture is genuinely up, so the button does not claim to be
             // listening before anything can be heard. There is no handshake to wait for
@@ -495,6 +512,7 @@ export function createSource({ getKey, getRegion, onText, onStatus, onBilled }) 
         },
 
         stop() {
+            wanted = false;
             if (!running) return;
             running = false;
             // Submit whatever is in hand before tearing down: the partner's last words
