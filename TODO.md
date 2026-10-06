@@ -56,6 +56,23 @@ outlives a "Don't save" conversation.
 
 **Why not now:** the review was the task; fixing is separate work, one item per commit.
 
+### Manual corrections from the code review, for the next "sync docs"
+
+**Raised:** October 5 2026, from code review items whose fix is a document edit.
+
+**What is wanted:** apply these in the next document sync.
+- **CR-202, all three User Manuals:** the sentence telling the reader to close Settings
+  by "tap outside the panel" is wrong; only the X (or Esc on a keyboard) closes it.
+  Tapping beside the panel does nothing, and on the Express Panel tab it picks a button
+  to edit. Change it to "Tap the X at the right of the Settings title bar to dismiss
+  it." Also check the API-key sentence that begins "Tap elsewhere, or tap the X": keep
+  "tap elsewhere" if it means leaving the field, remove it if it implies closing
+  Settings. Do NOT add tap-outside-to-close to the app instead: the area beside
+  Settings is a live editing surface and sits under a keyguard.
+
+**Why not now:** the manuals are edited only in a document sync, which runs when Ken
+chooses.
+
 ### Bottom Layout 6 has two Backspace keys
 
 **Raised:** October 5 2026, from code review item CR-189.
