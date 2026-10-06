@@ -413,7 +413,17 @@ function saveSettings(settings) {
     // imported backup, a restored one - so this is the one place a removed
     // setting can be carried forward without a route being missed.
     settings = migrateBundle(settings);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    // A full browser store must not throw out of here (CR-094): this runs inside the
+    // AI reply (the usage count), the paid voice, the listening audio and every Settings
+    // change, and a throw there cost the user a reply that had already arrived. Not
+    // logged through logError, which also writes here and could recurse.
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+        return true;
+    } catch (err) {
+        try { console.error('[settings] could not save', err); } catch { /* ignore */ }
+        return false;
+    }
 }
 
 // --- Named settings profiles (data folder) ---

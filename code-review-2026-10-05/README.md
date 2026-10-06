@@ -131,8 +131,8 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-090](CR-090.md) | fixed (66d4272) | medium | confirmed | ui-inconsistency | `app/js/app.js:2122` | After picking a response card with automatic listening off, the old cards stay on screen and can be tapped again |
 | [CR-091](CR-091.md) | fixed (09a237b) | medium | confirmed | ui-inconsistency | `app/js/ui.js:245` | Switching 'What a response card shows' mid-conversation leaves the full wording visible in 'short version' mode |
 | [CR-092](CR-092.md) | fixed (9f84314) | medium | plausible | bug | `app/index.html:1277` | A browser background update can reload the page in the middle of a conversation |
-| [CR-093](CR-093.md) | fixed (pending) | medium | plausible | bug | `app/js/app.js:1133` | Practice partner and spoken help can be read in a foreign-language Google voice |
-| [CR-094](CR-094.md) | open | medium | plausible | bug | `app/js/storage.js:403` | A full browser storage makes every AI suggestion request fail, because saving the usage counter can throw |
+| [CR-093](CR-093.md) | fixed (61e1e4f) | medium | plausible | bug | `app/js/app.js:1133` | Practice partner and spoken help can be read in a foreign-language Google voice |
+| [CR-094](CR-094.md) | fixed (pending) | medium | plausible | bug | `app/js/storage.js:403` | A full browser storage makes every AI suggestion request fail, because saving the usage counter can throw |
 | [CR-095](CR-095.md) | open | medium | plausible | bug | `scripts/weekly-report-endpoint.gs:110` | Endpoint reports failure after it has already written the row, so the app re-sends and the Sheet and inbox get duplicates |
 | [CR-096](CR-096.md) | open | medium | plausible | data-loss | `app/js/data-transfer.js:403` | A data file whose folder write fails is reported as restored, but the old folder file wins on restart |
 | [CR-097](CR-097.md) | open | medium | plausible | data-loss | `app/js/storage.js:369` | A failed or partial read of a data file is treated as 'no file', so the browser copy can overwrite the folder copy |

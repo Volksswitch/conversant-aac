@@ -300,6 +300,9 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: with a Google Cloud voice, the practice partner and the spoken help in
   Settings could pick a voice made for another language, which can be hard to
   understand. They now pick another voice in your own language.
+- Fixed: if the browser's storage for the app filled up, every request for suggestions
+  could fail even though the AI had answered, and paid voices fell back to the device
+  voice on every sentence. The app now carries on when a setting cannot be saved.
 
 ## Version 0.13.4
 

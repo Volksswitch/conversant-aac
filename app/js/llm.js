@@ -37,7 +37,10 @@ async function ask(args) {
  */
 async function askDetailed({ system, messages, maxTokens, schema }) {
     const { text, usage, stopReason } = await provider.complete({ system, messages, maxTokens, schema });
-    if (usage && onUsageUpdate) onUsageUpdate(usage);
+    if (usage && onUsageUpdate) {
+        // A counter must never cost the user their suggestions (CR-094).
+        try { onUsageUpdate(usage); } catch { /* ignore */ }
+    }
     return { text, stopReason: stopReason || null };
 }
 
