@@ -277,6 +277,7 @@ function suppressNextClick() {
 }
 
 async function handleTool(tool) {
+    if (!fieldStillThere()) return;   // CR-045
     if (tool === 'hide') { dismiss(); return; }
     if (!activeField) return;
     if (tool === 'copy' || tool === 'cut') {
@@ -294,8 +295,21 @@ async function handleTool(tool) {
 
 // --- key handling -----------------------------------------------------------
 
+// The field the keys type into may have been removed by a redraw (an editor list
+// re-rendered under it). Typing into a detached box writes where nobody can see and
+// saves nothing, so re-attach to whatever now has focus, or put the keyboard away
+// (CR-045). Returns false when there is nothing to type into.
+function fieldStillThere() {
+    if (!activeField || activeField.isConnected) return true;
+    const now = document.activeElement;
+    if (isScoped(now)) { show(now); return true; }
+    hide();
+    return false;
+}
+
 function handleKey(keyEl) {
     const action = keyEl.dataset.action;
+    if (action !== 'shift' && action !== 'page' && !fieldStillThere()) return;
     if (action === 'shift') { onShift(); return; }
     if (action === 'page') { page = page === 'symbols' ? 'letters' : 'symbols'; renderRows(); return; }
     // Backspace deletes; it must NOT re-show an inline ghost. Re-completing a word
@@ -420,6 +434,7 @@ function updateGhost() {
 function renderGhost() {
     const f = activeField;
     if (!f || !ghostWord) return;
+    if (!f.isConnected) return;   // the box was redrawn away (CR-045)
     ensureGhostEl();
     // Host in the same top-layer as the field when it's inside an open modal
     // dialog (Settings), so the overlay isn't hidden behind the dialog.
@@ -783,6 +798,11 @@ export function init() {
         // The Settings layout preview owns the dock deliberately - there is no focused
         // field to lose - so nothing about blur may take it down. Checked before the
         // rules below, which are all about a field that HAD focus.
+        // Focus has gone to a text box the keyboard does not serve: it must never go on
+        // typing into the box the user has just left (CR-045).
+        const editable = next && (next instanceof HTMLTextAreaElement
+            || (next instanceof HTMLInputElement && /^(text|search|email|url|tel|password|number)$/.test(next.type)));
+        if (editable && !isScoped(next)) { hide(); return; }
         if (previewing) return;
         if (servingPanelOpen()) {
             if (!hideOnBlur) return;

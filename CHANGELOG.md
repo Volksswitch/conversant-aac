@@ -157,6 +157,9 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: on Side Layout 10, the number button opened the keyboard on a page of symbols
   with no way back to the letters. It now opens on the letters page, which on that
   layout already has the numbers.
+- Fixed: in Settings, after moving or deleting a phrase, or after tapping a box the
+  app's keyboard does not serve, the keyboard stayed up but its letters went nowhere
+  or into the previous box. It now types into the box you are in, or puts itself away.
 
 ## Version 0.13.4
 
