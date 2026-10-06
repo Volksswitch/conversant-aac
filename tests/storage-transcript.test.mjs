@@ -911,6 +911,25 @@ test('settleRestore clears its timer when the restore finishes first', async () 
     } finally { globalThis.clearTimeout = realClear; }
 });
 
+// CR-296. Starting the log from two places at once writes the starting situation once.
+test('two starts at the same moment give one starting situation', async () => {
+    storage.resetConversationId();
+    storage.setContextProvider(() => ({ partner: { id: 'p', label: 'Sam' }, feeling: null, place: null, goals: null }));
+    try {
+        await Promise.all([
+            storage.startConversationLog(),
+            storage.logUserResponse({ selectedText: 'Hello', selectedIndex: -1, allOptions: [] }),
+            storage.startConversationLog(),
+        ]);
+        await storage.whenLogWritten();
+        const log = await readLog(storage.getConversationId());
+        assert.equal(log.exchanges.filter((e) => e.role === 'context').length, 1);
+        assert.equal(log.exchanges[0].role, 'context', 'and it is still the first entry');
+    } finally {
+        storage.setContextProvider(null);
+    }
+});
+
 // CR-288. Choosing a different folder in the middle of a conversation moves the
 // conversation, whole, into the new folder; the old one gets nothing more.
 // (Last in this file: it leaves the module pointed at the second folder.)

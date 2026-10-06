@@ -2278,6 +2278,7 @@ export function resetConversationId() {
     pendingOffer = null;
     partnerTurnTainted = false;
     skipNullFinalize = false;
+    logStarting = null;
 }
 
 async function getConversationsDir() {
@@ -2310,9 +2311,18 @@ export async function readConversationLog(id) {
 // enters Listen mode / starts a conversation (Ken — the file should exist as soon
 // as capture begins) as well as lazily on the first turn. A fresh conversation
 // (after resetConversationId) starts a new file.
-export async function startConversationLog() {
-    if (!conversationSaving) return null; // this conversation is private — don't record
-    if (currentLogData) return currentLogName; // already started for this conversation
+// One start at a time (CR-296). Two callers in the same moment - listening starting
+// while the first turn starts the log lazily - both passed the "already started" check
+// before either had finished, and the file began with the situation two or three times.
+let logStarting = null;
+export function startConversationLog() {
+    if (!conversationSaving) return Promise.resolve(null); // this conversation is private — don't record
+    if (currentLogData) return Promise.resolve(currentLogName); // already started for this conversation
+    if (!logStarting) logStarting = doStartConversationLog().finally(() => { logStarting = null; });
+    return logStarting;
+}
+
+async function doStartConversationLog() {
     const dir = await getConversationsDir();
     if (!dir) return null;
 

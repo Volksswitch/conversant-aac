@@ -146,7 +146,9 @@ export async function enter(entry) {
     if (!entry || !entry.id || !entry.data) return false;
     const turns = model.buildTurns(entry.data);
     if (!turns.length) return false;
-    const raw = entry.review !== undefined ? entry.review : await storage.readReview(entry.id);
+    // Always read fresh (CR-295): the list's copy can be older than a save that
+    // finished after the list was drawn.
+    const raw = await storage.readReview(entry.id);
     conv = {
         id: entry.id,
         data: entry.data,
@@ -480,16 +482,27 @@ function scheduleSave() {
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(() => { saveTimer = null; void writeNow(); }, 400);
 }
+// A save already under way is waited for too (CR-295): flushSave used to wait only for
+// one still pending, so leaving during a write let the list - and a quick reopen -
+// read the older review, which was then saved back over the newer one.
+let writing = null;
 async function flushSave() {
     if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; await writeNow(); }
+    if (writing) await writing;
 }
-async function writeNow() {
-    if (!conv || !review) return;
+function writeNow() {
+    if (!conv || !review) return Promise.resolve();
+    const id = conv.id;
     const out = { ...review, updated: new Date().toISOString() };
     // A save that fails is said, not swallowed (CR-172); nothing of what was written
     // goes in the message.
-    const ok = await storage.writeReview(conv.id, out);
-    if (!ok) storage.logError('review save', `could not write the review for ${conv.id}`);
+    const job = (async () => {
+        const ok = await storage.writeReview(id, out);
+        if (!ok) storage.logError('review save', `could not write the review for ${id}`);
+    })();
+    const tracked = job.finally(() => { if (writing === tracked) writing = null; });
+    writing = tracked;
+    return job;
 }
 
 function change(next) {

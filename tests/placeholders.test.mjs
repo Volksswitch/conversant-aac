@@ -1126,3 +1126,15 @@ test('Azure voices refetch once typing stops; panel writes queue; practice butto
     assert.match(pe, /if \(this\.disabled\) return;/);
     assert.match(appSource, /await voiceHarvestIdle\(\);\s*const done = await dataTransfer\.applyPackage/);
 });
+
+// CR-295 / CR-297 / CR-298 guards.
+test('review waits for a save in progress and reads fresh; a delayed restart checks background and recognizer', async () => {
+    const { readFileSync } = await import('node:fs');
+    const rv = readFileSync(new URL('../app/js/review-ui.js', import.meta.url), 'utf8');
+    const st = readFileSync(new URL('../app/js/stt.js', import.meta.url), 'utf8');
+    assert.match(rv, /if \(writing\) await writing;/);
+    assert.match(rv, /const raw = await storage\.readReview\(entry\.id\);/);
+    assert.match(st, /if \(!listeningIntent \|\| suspendedForHidden\) return;/);
+    assert.match(st, /if \(recognition !== rec\) return;/);
+    assert.match(st, /recognition\.abort\(\);/);
+});

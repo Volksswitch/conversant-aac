@@ -588,10 +588,16 @@ export function init({ onResult, onSilence, onStatus, onPartnerSpeech, source,
             // synchronously into an immediately-ending session spins a tight loop.
             if (typeof document !== 'undefined' && document.hidden) noteListen('restartsWhileHidden');
             if (speechCfg.restartDelayMs > 0) {
+                // The recognizer this session belonged to, so a timer cannot start a
+                // different one after a change of service (CR-298); and not while the
+                // app has gone to the background meanwhile - the visibility guard
+                // restarts it on return (CR-297).
+                const rec = recognition;
                 setTimeout(() => {
-                    if (!listeningIntent) return;      // stopped while we waited
+                    if (!listeningIntent || suspendedForHidden) return;   // stopped, or backgrounded, while we waited
+                    if (recognition !== rec) return;
                     noteListen('sessions');
-                    try { recognition.start(); } catch { /* already starting */ }
+                    try { rec.start(); } catch { /* already starting */ }
                 }, speechCfg.restartDelayMs);
             } else {
                 noteListen('sessions');
@@ -669,7 +675,12 @@ export function setSource(source) {
     externalSource = null;
     // Detach the old recognizer first, so a result it sends after stopping cannot
     // reach the new service's transcript (CR-098).
-    if (recognition) { recognition.onresult = recognition.onend = recognition.onerror = null; }
+    if (recognition) {
+        recognition.onresult = recognition.onend = recognition.onerror = null;
+        // Abort rather than wait for it to finish stopping: pending results from the
+        // old service are thrown away, which is what a switch wants (CR-298).
+        try { if (typeof recognition.abort === 'function') recognition.abort(); } catch { /* not running */ }
+    }
     recognition = null;
     // The words heard by the previous service belong to the previous service, and a
     // half-captured turn spanning two of them is a record nobody can read.
