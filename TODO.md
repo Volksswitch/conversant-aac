@@ -70,6 +70,24 @@ outlives a "Don't save" conversation.
   Settings. Do NOT add tap-outside-to-close to the app instead: the area beside
   Settings is a live editing surface and sits under a keyguard.
 
+- **CR-203, all three User Manuals:** "Text size" says four parts of the screen; there
+  are five. The missing one is the short version shown on a response option. Change
+  "four parts" to "five parts" and "Each of the four offers four sizes" to "Each offers
+  four sizes", and split the response-options entry into the full wording and the short
+  version.
+- **CR-204, all three User Manuals (Voice row, section 6.3):** "unless you tick Show
+  this device's joke voices" should read "unless you check" with the name in quotes.
+- **CR-205, all three User Manuals:** two quoted names do not match the screen.
+  "Don't save conversations to my data folder" is now "Do not save my conversations"
+  (in the 4.5 note and the 6.5 row), and "Auto-resume listening" is "Resume listening
+  automatically after speaking a response". **Needs Ken's choice for two more:** the
+  manual says "Response options per category" and "What a response option shows",
+  while the screen says "Suggestions per category" and "What a response card shows"
+  (and the text-size labels say "Response cards"). Either the screen moves to the
+  manual's words (the house word list calls "card" a development word), or the manual
+  quotes the screen as it is. Lean: change the screen, since "response option" is the
+  word the manuals already teach.
+
 **Why not now:** the manuals are edited only in a document sync, which runs when Ken
 chooses.
 
