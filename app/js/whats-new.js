@@ -22,6 +22,19 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.13.5": [
+    "Your saved conversations are safer. Ending a conversation, or starting a new one, no longer wipes the record of the one you just finished. A data file the app cannot read (for example one OneDrive has not finished syncing) is no longer replaced with an older or empty copy. And choosing a data folder from About Me now brings in your people, places and Express Panel too, instead of writing over them.",
+    "\"Don't save this conversation\" now keeps the whole conversation private: what the other person said, the words you typed and the card you chose are not kept anywhere, including in problem reports.",
+    "The automatic weekly report no longer includes the names of the people you talk with or the places you go. It carries only counts.",
+    "If you chose OpenAI, Google Cloud or ElevenLabs to hear the other person, the app now keeps using it after you reopen the app, instead of quietly going back to the device's own listening.",
+    "Listening with a paid service is more reliable. A lost connection no longer leaves the microphone on and hearing nothing, and on an Android tablet or an installed iPad, switching to another app and back no longer leaves the app unable to hear.",
+    "When the other person says \"What?\" and you choose a card to repeat, reword or expand what you said, it is now added to the conversation and listening comes back on.",
+    "The app no longer restarts itself to update in the middle of a conversation. It waits until you are done.",
+    "Your About Me answers now reach the AI under the right headings, so suggestions no longer say untrue things, such as calling the store where you work your \"school\".",
+    "Restoring a backup now tells you if any part did not come across, and asks you to reconnect your data folder first when that is needed.",
+    "Sentences you type in \"In my own words\" now help the app learn how you talk.",
+    "Many smaller fixes, including better support for keyboards, switches and screen readers."
+  ],
   "0.13.4": [
     "Fixed: in Conversation Review, one tap on the response option you used at the time opened its words for editing. It now takes two taps, like every other response option: the first chooses it, the second lets you change its words."
   ],

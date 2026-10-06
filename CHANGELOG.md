@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.13.5
+
 - Your saved conversations are safer. Ending a conversation, or starting a new one,
   no longer wipes the record of the one you just finished. A data file the app cannot
   read (for example one OneDrive has not finished syncing) is no longer replaced with
