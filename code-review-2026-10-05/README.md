@@ -225,10 +225,10 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-184](CR-184.md) | fixed (b874129) | low | confirmed | design-violation | `app/js/app.js:1267` | With no AI key set, every pause logs an error, keeps the transcript red and shows an error box |
 | [CR-185](CR-185.md) | fixed (b874129) | low | confirmed | design-violation | `app/js/app.js:4101` | A switched-on partner, place or feeling disappears while its band is paged |
 | [CR-186](CR-186.md) | fixed (b874129) | low | confirmed | design-violation | `app/js/app.js:7788` | Choosing OpenAI, Google Cloud or ElevenLabs as the speaking voice with no key gives no warning |
-| [CR-187](CR-187.md) | fixed (pending) | low | confirmed | design-violation | `app/js/express-bands.js:122` | In 'rows' mode a large Flex band can shrink the Context band below its floor of four |
-| [CR-188](CR-188.md) | fixed (pending) | low | confirmed | design-violation | `app/js/express-panel.js:207` | Removing a person or place leaves their Flex phrase lists behind as 'Someone at somewhere' |
+| [CR-187](CR-187.md) | fixed (76e8303) | low | confirmed | design-violation | `app/js/express-bands.js:122` | In 'rows' mode a large Flex band can shrink the Context band below its floor of four |
+| [CR-188](CR-188.md) | fixed (76e8303) | low | confirmed | design-violation | `app/js/express-panel.js:207` | Removing a person or place leaves their Flex phrase lists behind as 'Someone at somewhere' |
 | [CR-189](CR-189.md) | open - awaits Ken (TODO.md: two Backspace keys) | low | confirmed | design-violation | `app/js/keyboard-layouts.js:120` | Bottom Layout 6 ships with two Backspace keys, which the layout document said to resolve before building |
-| [CR-190](CR-190.md) | fixed (pending) | low | confirmed | design-violation | `app/js/llm.js:773` | Speakability and no-empty-interjection rules are missing from the other prompts that write the user's words |
+| [CR-190](CR-190.md) | fixed (76e8303) | low | confirmed | design-violation | `app/js/llm.js:773` | Speakability and no-empty-interjection rules are missing from the other prompts that write the user's words |
 | [CR-191](CR-191.md) | open | low | confirmed | design-violation | `app/js/sound-check-items.js:108` | Sound Check replies use British phrasing, and the chosen ones become the user's voice in every prompt |
 | [CR-192](CR-192.md) | open | low | confirmed | design-violation | `app/js/storage.js:1081` | Android hearing default switches to a paid service only for a Deepgram key, not the recommended Azure key |
 | [CR-193](CR-193.md) | open | low | confirmed | design-violation | `app/js/storage.js:2708` | errors.log gets fancy punctuation through the error's extra detail, breaking the plain-ASCII log rule |
