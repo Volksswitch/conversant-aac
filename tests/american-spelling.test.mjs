@@ -76,16 +76,19 @@ const rx = new RegExp(`\\b(?:${alternatives.join('|')})\\b`, 'gi');
  *
  * Whitespace is flexible so a phrase broken across a line still matches -- which is
  * where one would otherwise hide, since this project's prose wraps at 90 columns. */
+// (CR-056) The phrase is built word by word, joined by \s+. The old version replaced a
+// literal backslash-s that never occurs, so a phrase wrapped across a line slipped by.
+const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const phraseRx = BRITISH_PHRASES.length
-    ? new RegExp(`\\b(?:${BRITISH_PHRASES.map(([b]) => b.replace(/\\s+/g, '\\\\s+')).join('|')})\\b`, 'gi')
+    ? new RegExp(`\\b(?:${BRITISH_PHRASES.map(([b]) => b.trim().split(/\s+/).map(escapeRegExp).join('\\s+')).join('|')})\\b`, 'gi')
     : null;
 const AMERICAN_PHRASE = new Map(BRITISH_PHRASES.map(([b, a]) => [b.toLowerCase(), a]));
 
 function findPhrases(text, where) {
     if (!phraseRx) return [];
     return [...text.matchAll(phraseRx)].map((m) => {
-        const key = m[0].toLowerCase().replace(/\\s+/g, ' ');
-        return `${where}: "${m[0].replace(/\\s+/g, ' ')}" -> "${AMERICAN_PHRASE.get(key) || '(American form)'}"`;
+        const key = m[0].toLowerCase().replace(/\s+/g, ' ');
+        return `${where}: "${m[0].replace(/\s+/g, ' ')}" -> "${AMERICAN_PHRASE.get(key) || '(American form)'}"`;
     });
 }
 
@@ -304,4 +307,11 @@ test('the project records carry no British vocabulary', () => {
     assert.deepEqual(hits, [],
         `\nBritish vocabulary in the project records. These are words or phrases with no\n`
         + `American reading, so none of them is the rule quoting its own examples.\n${hits.join('\n')}\n`);
+});
+
+// CR-056. A phrase wrapped across a line, or with a double space, is still a phrase.
+test('the phrase detector matches a phrase wrapped across a line', () => {
+    assert.equal(findPhrases('please tick\nthe box', 'x').length, 1);
+    assert.equal(findPhrases('please tick  the box', 'x').length, 1);
+    assert.equal(findPhrases('please tick the box', 'x').length, 1);
 });

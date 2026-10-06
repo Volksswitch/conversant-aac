@@ -449,7 +449,9 @@ def l1_spelling(doc):
     # "a ticket" are correct; "tick the box" has no American reading. Whitespace is
     # flexible so a phrase wrapped across a line still matches.
     for brit, amer in CONV.get('britishPhrases', []):
-        pat = r'\b%s\b' % re.sub(r'\s+', r'\\s+', re.escape(brit))
+        # Built from the words: re.escape escapes a space, so substituting into the
+        # escaped whole left a stray backslash and the pattern never matched (CR-056).
+        pat = r'\b%s\b' % r'\s+'.join(re.escape(w) for w in brit.split())
         for p_, m in _hits(doc, pat):
             if any(x.search(p_.text) for x in exempt):
                 continue
