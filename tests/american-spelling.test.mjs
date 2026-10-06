@@ -192,6 +192,28 @@ test('the app\'s on-screen text is in American English', () => {
         `\nBritish spellings in text the user sees. Code comments are exempt; these are strings.\n${hits.join('\n')}\n`);
 });
 
+// CR-209. The bundled data the user sees: every About Me question and answer option
+// (also sent to the AI as labels), the word-completion list (offered as suggestions),
+// and the install description. Only string VALUES are read, never keys or ids.
+function stringValues(v, out = []) {
+    if (typeof v === 'string') out.push(v);
+    else if (Array.isArray(v)) v.forEach((x) => stringValues(x, out));
+    else if (v && typeof v === 'object') Object.values(v).forEach((x) => stringValues(x, out));
+    return out;
+}
+
+test('the bundled questions, word list and install description are in American English', () => {
+    let hits = [];
+    for (const f of ['worldview-questions.json', 'words.json']) {
+        const data = JSON.parse(readFileSync(join(root, 'app', 'data', f), 'utf8'));
+        hits = hits.concat(findBritish(stringValues(data).join('\n'), `app/data/${f}`));
+    }
+    const m = JSON.parse(readFileSync(join(root, 'app', 'manifest.webmanifest'), 'utf8'));
+    hits = hits.concat(findBritish([m.name, m.short_name, m.description].filter(Boolean).join('\n'),
+        'app/manifest.webmanifest'));
+    assert.deepEqual(hits, [], `\n${hits.join('\n')}\n`);
+});
+
 // ⚠ THE SCOPE ABOVE WAS TOO NARROW AND IT SHOWED (Ken, August 23 2026, finding
 // "colour" eight times in a prototype and a figure source written an hour earlier).
 // The scan covered the app and the changelog, so every OTHER thing a person reads —

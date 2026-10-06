@@ -38,7 +38,7 @@ const ACTION_NAMES = {
 // Credential boxes are matched by ATTRIBUTE, not by id (CR-066): listing them by id
 // missed every key box added after the first two, exactly as listing providers by name
 // had done before. A new key box carries data-key-field and is served automatically.
-const IN_SCOPE = '#composerInput, #reviewWordInput, .wv-text, input[data-key-field], #controlEditor input, #expressEditor input, #settingsProfileNameInput, #problemNoteInput, #testerNameInput, #placeholderEditor input, #practicePanel input[type="text"], #practicePanel textarea';
+export const IN_SCOPE = '#composerInput, #reviewWordInput, .wv-text, input[data-key-field], #controlEditor input, #expressEditor input, #settingsProfileNameInput, #problemNoteInput, #testerNameInput, #placeholderEditor input, #practicePanel input[type="text"], #practicePanel textarea';
 
 // Controls that must NOT dismiss the keyboard when tapped, even though tapping
 // them blurs the composer textarea. The composer (unlike About Me / Settings)

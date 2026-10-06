@@ -387,3 +387,73 @@ test('the conversation surface is icons with names, and content with words', asy
     const unnamed = rows.filter((b) => !b.name).map((b) => b.id);
     assert.deepEqual(unnamed, [], 'Command Bar buttons with no accessible name: ' + unnamed.join(', '));
 });
+
+/*
+ * CR-207. Every text box in Settings is served by the app's own keyboard, or is named
+ * here with the reason it is not. The list of boxes the keyboard serves is kept by hand,
+ * so without this check each new box repeats the omission and, on a touch tablet, the
+ * system keyboard pops up over the panel instead.
+ */
+const KEYBOARD_OUTSIDE = [
+    // A number box exposes no caret position, so the keyboard cannot insert into it;
+    // the device's own number pad serves it.
+    ['input[type="number"]', 'number box: no caret to insert at'],
+];
+
+test('every Settings text box is served by the app keyboard, or says why not', async (t) => {
+    if (skip) return t.skip(skip);
+    const missing = await page.evaluate(async (outside) => {
+        const { IN_SCOPE } = await import('./js/keyboard.js');
+        const dlg = document.getElementById('settingsDialog');
+        if (!dlg.open) { document.getElementById('settingsBtn').click(); await new Promise((r) => setTimeout(r, 400)); }
+        const out = [];
+        for (const tab of document.querySelectorAll('#settingsDialog .settings-tab[data-tab]')) {
+            tab.click();
+            await new Promise((r) => setTimeout(r, 60));
+            for (const d of document.querySelectorAll('#settingsDialog details')) d.open = true;
+            await new Promise((r) => setTimeout(r, 60));
+            for (const el of document.querySelectorAll('#settingsDialog input, #settingsDialog textarea')) {
+                const type = (el.getAttribute('type') || 'text').toLowerCase();
+                if (el.tagName === 'INPUT' && !['text', 'search', 'number', 'password'].includes(type)) continue;
+                if (el.readOnly || el.disabled) continue;
+                const r = el.getBoundingClientRect();
+                if (!r.width || !r.height) continue;
+                if (el.matches(IN_SCOPE) || outside.some((sel) => el.matches(sel))) continue;
+                out.push(`${tab.dataset.tab}: ${el.id || el.name || el.className || el.tagName}`);
+            }
+        }
+        return out;
+    }, KEYBOARD_OUTSIDE.map(([sel]) => sel));
+    assert.deepEqual(missing, [], 'add the box to IN_SCOPE in keyboard.js, or to KEYBOARD_OUTSIDE here WITH the reason');
+});
+
+/*
+ * CR-210. Every collapsible section heading in Settings speaks under the "?". This walks
+ * the running panel, so a section an editor builds at run time is covered without anyone
+ * remembering to add its builder to the source scan in settings-help.test.mjs.
+ */
+test('every Settings section heading speaks under the help button', async (t) => {
+    if (skip) return t.skip(skip);
+    const silent = await page.evaluate(async () => {
+        const { resolveTap } = await import('./js/help-mode.js');
+        const { lookup } = await import('./js/settings-help.js');
+        const dlg = document.getElementById('settingsDialog');
+        if (!dlg.open) { document.getElementById('settingsBtn').click(); await new Promise((r) => setTimeout(r, 400)); }
+        const out = [];
+        for (const tab of document.querySelectorAll('#settingsDialog .settings-tab[data-tab]')) {
+            tab.click();
+            await new Promise((r) => setTimeout(r, 120));
+            for (const d of document.querySelectorAll('#settingsDialog details')) d.open = true;
+            await new Promise((r) => setTimeout(r, 60));
+            for (const sum of document.querySelectorAll('#settingsDialog .setting-group summary')) {
+                const r = sum.getBoundingClientRect();
+                if (!r.width || !r.height) continue;
+                const hit = resolveTap(sum);
+                const key = hit && hit.key;
+                if (!key || !lookup(key)) out.push(`${tab.dataset.tab}: ${(sum.textContent || '').trim().slice(0, 40)}`);
+            }
+        }
+        return out;
+    });
+    assert.deepEqual(silent, [], 'give the section a data-help key and an entry in settings-help.json');
+});

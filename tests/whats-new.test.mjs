@@ -155,3 +155,21 @@ test('asking for every note, with no platform, still returns them all', () => {
     assert.ok(!all.some((n) => /There were also improvements/.test(n)),
         'the other-platform line belongs to a scoped reader, not to the full list');
 });
+
+// CR-208. The bundled notes must match CHANGELOG.md for every RELEASED version, the same
+// guard settings-help has. The "## Unreleased" bullets (keyed to APP_VERSION) are left
+// out: they are added during the dev cycle and bundled only at release.
+test('the bundled release notes match CHANGELOG.md (generator was run)', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { buildReleaseNotes, readAppVersion } = await import('../scripts/apply-release-notes.mjs');
+    const read = (rel) => readFileSync(new URL('../' + rel, import.meta.url), 'utf8');
+    const appVersion = readAppVersion(read('app/js/app.js'));
+    const built = buildReleaseNotes(read('CHANGELOG.md'), appVersion);
+    const src = read('app/js/whats-new.js');
+    const block = src.slice(src.indexOf('// @@RELEASE_NOTES_START@@'), src.indexOf('// @@RELEASE_NOTES_END@@'));
+    const json = block.slice(block.indexOf('{'), block.lastIndexOf('}') + 1);
+    const bundled = JSON.parse(json);
+    delete built[appVersion];
+    delete bundled[appVersion];
+    assert.deepEqual(bundled, built, 'run: node scripts/apply-release-notes.mjs');
+});

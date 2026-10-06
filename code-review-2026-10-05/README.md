@@ -244,11 +244,11 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-203](CR-203.md) | open - manual edit waits for the next sync docs (TODO.md) | low | confirmed | doc-mismatch | `Documents/Conversant AAC User Manual (Windows Chromebook Mac).docx:343` | Manual describes four text-size controls; the app has five and the short-version size is undocumented |
 | [CR-204](CR-204.md) | open - manual edit waits for the next sync docs (TODO.md) | low | confirmed | doc-mismatch | `Documents/Conversant AAC User Manual (Windows Chromebook Mac).docx:369` | Manual uses British 'tick' for the joke-voices checkbox |
 | [CR-205](CR-205.md) | open - manual edits wait for sync docs; two labels await Ken (TODO.md) | low | confirmed | doc-mismatch | `Documents/Conversant AAC User Manual (Windows Chromebook Mac).docx:381` | Manual's Conversation tab names four controls by labels that are not on screen |
-| [CR-206](CR-206.md) | fixed (pending) | low | confirmed | other | `app/js/app.js:8456` | Every uncaught error during a conversation is logged as a 'startup' failure |
-| [CR-207](CR-207.md) | open | low | confirmed | other | `app/js/keyboard.js:38` | No test ties Settings text fields to the on-screen keyboard's scope list |
-| [CR-208](CR-208.md) | open | low | confirmed | other | `app/js/whats-new.js:23` | No drift test between CHANGELOG.md and the bundled What's-new notes, unlike settings-help |
-| [CR-209](CR-209.md) | open | low | confirmed | other | `tests/american-spelling.test.mjs:177` | American-spelling test does not scan the shipped data files the user sees |
-| [CR-210](CR-210.md) | open | low | confirmed | other | `tests/settings-help.test.mjs:61` | Spoken-help coverage test misses sections built at runtime by the Express Panel editor |
+| [CR-206](CR-206.md) | fixed (4427f2b) | low | confirmed | other | `app/js/app.js:8456` | Every uncaught error during a conversation is logged as a 'startup' failure |
+| [CR-207](CR-207.md) | fixed (pending) | low | confirmed | other | `app/js/keyboard.js:38` | No test ties Settings text fields to the on-screen keyboard's scope list |
+| [CR-208](CR-208.md) | fixed (pending) | low | confirmed | other | `app/js/whats-new.js:23` | No drift test between CHANGELOG.md and the bundled What's-new notes, unlike settings-help |
+| [CR-209](CR-209.md) | fixed (pending) | low | confirmed | other | `tests/american-spelling.test.mjs:177` | American-spelling test does not scan the shipped data files the user sees |
+| [CR-210](CR-210.md) | fixed (pending) | low | confirmed | other | `tests/settings-help.test.mjs:61` | Spoken-help coverage test misses sections built at runtime by the Express Panel editor |
 | [CR-211](CR-211.md) | open | low | confirmed | performance | `app/js/app.js:7924` | Typing a key for OpenAI, Google Cloud or ElevenLabs fires a voice-list request on every keystroke and keeps the old account's list |
 | [CR-212](CR-212.md) | open | low | confirmed | performance | `app/js/llm.js:606` | The cached prompt prefix changes mid-conversation (new extra fact names, and the active place) |
 | [CR-213](CR-213.md) | open | low | confirmed | performance | `app/js/tts-azure.js:474` | Voice caches are capped by count only and store every unique AI sentence, which can use hundreds of megabytes |

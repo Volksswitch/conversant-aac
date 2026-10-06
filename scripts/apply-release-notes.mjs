@@ -34,29 +34,13 @@
 //   "0.6.1": [ "a note everyone sees", { "for": "ipad", "note": "..." } ]
 
 import { readFileSync, writeFileSync } from 'fs';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import { dirname, join } from 'path';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));   // project root
 const appJsPath = join(root, 'app', 'js', 'app.js');
 const targetPath = join(root, 'app', 'js', 'whats-new.js');
 const changelogPath = join(root, 'CHANGELOG.md');
-
-const appJs = readFileSync(appJsPath, 'utf8');
-const verMatch = appJs.match(/const\s+APP_VERSION\s*=\s*['"]([\d.]+)['"]/);
-if (!verMatch) {
-  console.error('ERROR: APP_VERSION not found in app/js/app.js');
-  process.exit(1);
-}
-const APP_VERSION = verMatch[1];
-
-const START = '// @@RELEASE_NOTES_START@@';
-const END = '// @@RELEASE_NOTES_END@@';
-const target = readFileSync(targetPath, 'utf8');
-if (!target.includes(START) || !target.includes(END)) {
-  console.error(`ERROR: RELEASE_NOTES markers not found in app/js/whats-new.js (${START} / ${END})`);
-  process.exit(1);
-}
 
 // ---- parse CHANGELOG.md -------------------------------------------------------
 // Strip markdown emphasis to plain text (the modal renders with textContent).
@@ -87,12 +71,14 @@ const asNote = (text, scope) => (scope === 'all' ? text : { for: scope, note: te
 const textOf = (n) => (typeof n === 'string' ? n : n.note);
 const setText = (n, t) => { if (typeof n === 'string') return t; n.note = t; return n; };
 
+/** CHANGELOG.md text -> the RELEASE_NOTES object. Pure: reads and writes nothing. */
+export function buildReleaseNotes(changelogText, APP_VERSION) {
 const notes = {};                 // { versionString: [note, …] }
 let key = null;                   // current version key, or null to ignore
 let lastArr = null;               // array we're appending bullets to (for wrapping)
 let scope = 'all';                // current "###" platform scope
 
-for (const raw of readFileSync(changelogPath, 'utf8').split('\n')) {
+for (const raw of changelogText.split('\n')) {
   const line = raw.replace(/\s+$/, '');
   let m;
   if ((m = line.match(/^##\s+Version\s+([\d.]+)/i))) {
@@ -121,6 +107,32 @@ for (const k of Object.keys(notes)) {
   delete notes[k].__skip;
   if (!notes[k].length) delete notes[k];
 }
+return notes;
+}
+
+/** The APP_VERSION the bundled notes are built against, read as the app declares it. */
+export function readAppVersion(appJs) {
+  const m = appJs.match(/const\s+APP_VERSION\s*=\s*['"]([\d.]+)['"]/);
+  return m ? m[1] : null;
+}
+
+function main() {
+const appJs = readFileSync(appJsPath, 'utf8');
+const APP_VERSION = readAppVersion(appJs);
+if (!APP_VERSION) {
+  console.error('ERROR: APP_VERSION not found in app/js/app.js');
+  process.exit(1);
+}
+
+const START = '// @@RELEASE_NOTES_START@@';
+const END = '// @@RELEASE_NOTES_END@@';
+const target = readFileSync(targetPath, 'utf8');
+if (!target.includes(START) || !target.includes(END)) {
+  console.error(`ERROR: RELEASE_NOTES markers not found in app/js/whats-new.js (${START} / ${END})`);
+  process.exit(1);
+}
+
+const notes = buildReleaseNotes(readFileSync(changelogPath, 'utf8'), APP_VERSION);
 
 // ---- inject -------------------------------------------------------------------
 const body = `const RELEASE_NOTES = ${JSON.stringify(notes, null, 2)};`;
@@ -138,3 +150,6 @@ const keys = Object.keys(notes).sort((a, b) => {
 });
 console.log(`Wrote RELEASE_NOTES to app/js/whats-new.js — ${keys.length} version(s): ${keys.join(', ')}`);
 console.log(`(APP_VERSION=${APP_VERSION}; "## Unreleased" mapped to ${APP_VERSION} if it had bullets.)`);
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main();
