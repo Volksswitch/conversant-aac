@@ -729,3 +729,9 @@ test('CR-085: leaving the Express tab or Settings stops a sound being previewed'
     const h = appSource.slice(appSource.indexOf('function hostExpressPanel'));
     assert.match(h.slice(0, 1500), /if \(!inSettings\) \{ expressEditor\.stopPreview\(\);/);
 });
+
+test('CR-090: a spoken card clears the cards before returning to rest', () => {
+    const body = appSource.slice(appSource.indexOf('async function handleResponseSelected'));
+    const end = body.indexOf('\n}\n');
+    assert.match(body.slice(0, end), /clearPalette\(\);\n\s*resumeOrIdle\(\);\n\s*\}$/);
+});

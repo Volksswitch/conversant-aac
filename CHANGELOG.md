@@ -288,6 +288,9 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: in the Dark, High contrast dark and Yellow on black color schemes, typing
   boxes were gray with hard-to-read gray hints, and in Yellow on black they were not
   yellow on black at all. They now take the scheme's own colors.
+- Fixed: with automatic listening off, the suggestion cards stayed on screen after one
+  was spoken, so a stray tap could say an out-of-date answer aloud. They now go back
+  to empty, as they already did after an Express Panel phrase.
 
 ## Version 0.13.4
 

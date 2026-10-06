@@ -2253,6 +2253,9 @@ async function handleResponseSelected(response, index) {
         // (the partner may say bye back). Listening still resumes if armed (Ken).
         offerClosings();
     } else {
+        // What was said has been said: the cards go back to empty outlines, so a stray
+        // tap cannot speak a stale answer (CR-090). Listening may redraw them anyway.
+        clearPalette();
         resumeOrIdle();
     }
 }
@@ -2328,6 +2331,7 @@ async function handleRepairOfSelf(response, index = -1) {
     const wasListening = isListening;
     placeholders.stop();
     generationToken++;
+    ui.setPaletteBusy(false);   // the repair cards in flight are abandoned (CR-090)
     stt.stopListening();
 
     // "Sorry, let me try that again." -- the card that hands the turn back to the
