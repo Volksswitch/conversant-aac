@@ -251,8 +251,8 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-210](CR-210.md) | fixed (074233a) | low | confirmed | other | `tests/settings-help.test.mjs:61` | Spoken-help coverage test misses sections built at runtime by the Express Panel editor |
 | [CR-211](CR-211.md) | fixed (edb50bd) | low | confirmed | performance | `app/js/app.js:7924` | Typing a key for OpenAI, Google Cloud or ElevenLabs fires a voice-list request on every keystroke and keeps the old account's list |
 | [CR-212](CR-212.md) | fixed (edb50bd) | low | confirmed | performance | `app/js/llm.js:606` | The cached prompt prefix changes mid-conversation (new extra fact names, and the active place) |
-| [CR-213](CR-213.md) | fixed (pending) | low | confirmed | performance | `app/js/tts-azure.js:474` | Voice caches are capped by count only and store every unique AI sentence, which can use hundreds of megabytes |
-| [CR-214](CR-214.md) | open | low | confirmed | privacy | `app/js/storage.js:2167` | Turning saving back on mid-turn writes the other person's words that were spoken while the conversation was private |
+| [CR-213](CR-213.md) | fixed (eded12b) | low | confirmed | performance | `app/js/tts-azure.js:474` | Voice caches are capped by count only and store every unique AI sentence, which can use hundreds of megabytes |
+| [CR-214](CR-214.md) | fixed (pending) | low | confirmed | privacy | `app/js/storage.js:2167` | Turning saving back on mid-turn writes the other person's words that were spoken while the conversation was private |
 | [CR-215](CR-215.md) | open | low | confirmed | race-condition | `app/js/app.js:1518` | The Start button stays tappable for up to 14 seconds with no feedback, and a second tap runs the start-up twice |
 | [CR-216](CR-216.md) | open | low | confirmed | race-condition | `app/js/storage.js:2704` | Two errors close together: one line is lost from errors.log |
 | [CR-217](CR-217.md) | open | low | confirmed | race-condition | `app/js/tts-azure.js:459` | Stopping speech does not stop a sentence already waiting in a paid voice's queue; it plays afterwards unannounced |

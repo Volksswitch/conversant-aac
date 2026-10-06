@@ -245,6 +245,7 @@ test('"Don\'t save this conversation" really does stop the write', async () => {
 });
 
 test('turning "Don\'t save" on part-way marks the saved turns private, without deleting them (CR-074)', async () => {
+    storage.detachPendingPartnerTurn();   // a fresh partner turn (CR-214 holds back one heard in private)
     await storage.logPartnerInterim({ rawTranscript: 'the diagnosis was not what we hoped' });
     const id = storage.getConversationId();
     storage.setConversationSaving(false);
@@ -277,6 +278,41 @@ test('a card picked after going private is not recorded (CR-076)', async () => {
     assert.equal(last.outcome ?? null, null);
     assert.equal(last.selectedIndex ?? null, null);
     storage.setConversationSaving(true);
+});
+
+// CR-214. The partner's words arrive as the whole turn so far, so a turn heard partly
+// while the conversation was private must not be written out complete once saving
+// resumes - neither at the next pause nor when the user answers.
+test('words heard while private never reach the file after saving resumes (CR-214)', async () => {
+    storage.detachPendingPartnerTurn();
+    await storage.logPartnerInterim({ rawTranscript: 'my test results came back' });
+    const id = storage.getConversationId();
+    storage.setConversationSaving(false);
+    await storage.logPartnerInterim({ rawTranscript: 'my test results came back and it is serious' });
+    storage.setConversationSaving(true);
+    await storage.logPartnerInterim({ rawTranscript: 'my test results came back and it is serious but treatable' });
+    const h = storage.detachPendingPartnerTurn();
+    await storage.finalizePartnerTurn(h, { rawTranscript: 'my test results came back and it is serious but treatable',
+        cleanedTranscript: 'My test results came back and it is serious but treatable.' });
+    await storage.whenLogWritten();
+    const text = JSON.stringify(await readLog(id));
+    assert.ok(text.includes('my test results came back'), 'what was saved before stays');
+    assert.ok(!text.includes('serious'), 'nothing heard in private is written');
+    // The next turn records normally.
+    await storage.logPartnerInterim({ rawTranscript: 'see you next week' });
+    await storage.whenLogWritten();
+    assert.ok(JSON.stringify(await readLog(id)).includes('see you next week'));
+});
+
+test('a turn that never reached the file before going private is not appended whole (CR-214)', async () => {
+    storage.detachPendingPartnerTurn();
+    const id = storage.getConversationId();
+    storage.setConversationSaving(false);
+    storage.setConversationSaving(true);
+    const h = storage.detachPendingPartnerTurn();
+    await storage.finalizePartnerTurn(h, { rawTranscript: 'something private', cleanedTranscript: 'Something private.' });
+    await storage.whenLogWritten();
+    assert.ok(!JSON.stringify(await readLog(id)).includes('omething private'));
 });
 
 test('the written file is valid JSON with the shape a later reader expects', async () => {

@@ -444,6 +444,10 @@ forgetting to tag one is only ever noise, never silence.
   lining up.
 - If deleting a saved settings profile fails, Settings now says so instead of saying
   nothing.
+- Fixed: if you turned "Do not save" on while the other person was talking and then
+  turned saving back on before they finished, the saved conversation could include
+  what they said during the private stretch. That turn now keeps only what was saved
+  before you went private.
 
 ## Version 0.13.4
 

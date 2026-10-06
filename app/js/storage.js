@@ -2120,6 +2120,14 @@ export function saveHintFontScale(v) {
 let conversationSaving = true;
 export function setConversationSaving(on) {
     conversationSaving = !!on;
+    // The partner's words reach here as the WHOLE turn so far, so a turn that was in
+    // progress while the conversation was private would, once saving resumed, be
+    // written out complete - including what was said in the private stretch
+    // (CR-214). That turn is therefore never written past what was already on disk.
+    if (!conversationSaving) {
+        partnerTurnTainted = true;
+        if (pendingPartnerTurn) taintedTurns.add(pendingPartnerTurn);
+    }
     // Turned private part-way through (CR-074): what was already written stays on
     // disk, so mark it - in the file and in a short list here - so a problem report
     // withholds its transcript and the speech in its errors even after the
@@ -2196,6 +2204,13 @@ let currentLogData = null;
 // (fills the cleaned line). Null between partner turns. (Ken, July 2026 — the
 // transcript mirrors the conversation pane.)
 let pendingPartnerTurn = null;
+// CR-214: the partner turn in progress when "Don't save" was used, which is not
+// written to (see setConversationSaving). `taintedTurns` holds an entry already on
+// disk that must not be updated; `skipNullFinalize` covers a tainted turn that never
+// reached the file and would otherwise be appended whole at the next boundary.
+let partnerTurnTainted = false;
+const taintedTurns = new WeakSet();
+let skipNullFinalize = false;
 
 // One ID per conversation, shared by the conversation log file AND any error-log
 // entries in that conversation, so the two can be correlated (Ken, July 2026).
@@ -2235,6 +2250,8 @@ export function resetConversationId() {
     currentLogName = null;
     pendingPartnerTurn = null;
     pendingOffer = null;
+    partnerTurnTainted = false;
+    skipNullFinalize = false;
 }
 
 async function getConversationsDir() {
@@ -2316,6 +2333,7 @@ export function setSttBackend(name) { sttBackend = name || null; }
 // finalizePartnerTurn, when the user responds.
 export async function logPartnerInterim({ rawTranscript, partner = null }) {
     if (!conversationSaving) return; // private conversation — nothing is written
+    if (partnerTurnTainted) return;  // this turn was heard partly in private (CR-214)
     if (!currentLogData) await startConversationLog();
     if (!currentLogData) return;
     // The timestamp is passed explicitly so each revision is stamped with the pause
@@ -2516,6 +2534,12 @@ export async function reviseOffer(options = []) {
 export function detachPendingPartnerTurn() {
     const t = pendingPartnerTurn;
     pendingPartnerTurn = null;
+    // A turn boundary: the tainted turn ends here, and the finalize that follows this
+    // detach belongs to it, so it is skipped whichever form it takes (CR-214).
+    skipNullFinalize = partnerTurnTainted && !t;
+    if (partnerTurnTainted && t) taintedTurns.add(t);
+    // A turn that begins while the conversation is still private is tainted too.
+    partnerTurnTainted = !conversationSaving;
     return t;
 }
 
@@ -2526,6 +2550,8 @@ export function detachPendingPartnerTurn() {
 // written). Creates the log lazily if needed.
 export async function finalizePartnerTurn(handle, { rawTranscript, cleanedTranscript, partner = null, place = null, uncertain = [] }) {
     if (!conversationSaving) return; // private conversation — nothing is written
+    if (handle && taintedTurns.has(handle)) return;            // CR-214
+    if (!handle && skipNullFinalize) { skipNullFinalize = false; return; }
     if (!handle) {
         if (!currentLogData) await startConversationLog();
         if (!currentLogData) return;
