@@ -80,3 +80,28 @@ test('every start reports that the billed total restarted at zero', async () => 
     await source.start();
     assert.equal(billed.filter((s) => s === 0).length, 2, 'one zero per start');
 });
+
+// CR-049. Stopping while the socket is still connecting is not a failure.
+test('stopping during the handshake reports no error', async () => {
+    const statuses = [];
+    source = createSource({ getKey: () => 'k', onText() {}, onStatus: (s) => statuses.push(s), onBilled() {} });
+    await source.start();
+    const ws = FakeWS.last;
+    const onerror = ws.onerror, onclose = ws.onclose;
+    source.stop();
+    // The browser fires these after close() on a connecting socket.
+    if (onerror) onerror();
+    if (onclose) onclose({ code: 1006 });
+    assert.ok(!statuses.includes('error'), `got ${statuses}`);
+    source = null;
+});
+
+test('a dropped connection while listening is reported once', async () => {
+    const statuses = [];
+    source = createSource({ getKey: () => 'k', onText() {}, onStatus: (s) => statuses.push(s), onBilled() {} });
+    await source.start();
+    const ws = FakeWS.last;
+    ws.readyState = FakeWS.OPEN; ws.onopen();
+    ws.onerror(); ws.onclose({ code: 1006 });
+    assert.equal(statuses.filter((s) => s === 'error').length, 1);
+});

@@ -170,6 +170,9 @@ forgetting to tag one is only ever noise, never silence.
   that would not send) could quietly start a saved "conversation" holding only that
   error, and your next real conversation was then filed under that earlier time with
   the wrong length. Errors now join only a conversation that is actually under way.
+- Fixed: with Deepgram listening, ending a conversation or switching away from the app
+  just after tapping Listen could show the red "something went wrong" wash for no
+  reason, and listening might not come back when you returned. Fixed.
 
 ## Version 0.13.4
 

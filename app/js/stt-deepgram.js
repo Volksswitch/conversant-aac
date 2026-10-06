@@ -320,7 +320,11 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
             }
             ws.binaryType = 'arraybuffer';
             ws.onmessage = handleMessage;
-            ws.onerror = () => { pending = []; if (onStatus) onStatus('error', 'network'); };
+            // A failure fires 'error' AND 'close'. Only the close reports, and only while
+            // running: closing a socket that is still connecting fires 'error' too, and
+            // reporting it turned an ordinary stop into a false failure - red wash, and
+            // the background guard then never reopened listening (CR-049).
+            ws.onerror = () => { pending = []; };
             ws.onclose = (e) => {
                 pending = [];
                 // CARRY THE CLOSE CODE. A rejected key, a refused subprotocol and a
@@ -389,6 +393,9 @@ export function createSource({ getKey, onText, onStatus, onBilled }) {
             if (gate) gate.reset();
             if (keepAliveTimer) { clearInterval(keepAliveTimer); keepAliveTimer = null; }
             if (ws) {
+                // Detached first: a stopped source must report nothing more, and a late
+                // onopen must not start a KeepAlive for it (CR-049).
+                ws.onmessage = null; ws.onerror = null; ws.onclose = null; ws.onopen = null;
                 // CloseStream asks Deepgram to flush any pending transcript before
                 // hanging up, so the partner's last words are not lost.
                 try {
