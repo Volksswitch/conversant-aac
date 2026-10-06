@@ -23,7 +23,7 @@
  * wording that carries the safety line in section 5.3 has one home and is tested.
  */
 
-import { readFile, readPortableFile, writeFile, hasDataFolder } from './storage.js';
+import { readFile, readPortableFile, writeFile, hasDataFolder, logError } from './storage.js';
 
 const FILE = 'practice-scenarios.json';
 const CACHE_KEY = 'aac_practice_scenarios';
@@ -132,7 +132,12 @@ function ensureLoaded() {
 async function save() {
     model.updated = new Date().toISOString();
     writeCache(model);
-    await writeFile(FILE, JSON.stringify(model, null, 2));
+    // A disk failure is logged, not thrown, as for the other user-owned lists (CR-275):
+    // thrown, it stopped the editor moving on, was filed as a start-up failure, and a
+    // second tap made a second copy. The cache is the working copy until the folder
+    // can be written again.
+    try { await writeFile(FILE, JSON.stringify(model, null, 2)); }
+    catch (e) { try { logError('practice-library', (e && e.message) || String(e)); } catch { /* best effort */ } }
 }
 
 export async function syncToFolder() {

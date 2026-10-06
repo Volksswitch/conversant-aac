@@ -341,6 +341,17 @@ function resendsLastStatement(transcript) {
     return next === prev || next.startsWith(prev + ' ');
 }
 
+// What has been heard so far, live. An in-progress phrase that re-sends the last
+// settled one (the Android "ladder") replaces it here too, as commitSegment does when
+// it settles - joined as-is, "this is" and "this is a" read "this is this is a" in the
+// pane and in what the AI was asked about (CR-277).
+function currentText() {
+    if (currentInterim && resendsLastStatement(currentInterim)) {
+        return joinParts([...segments.slice(0, -1), currentInterim]);
+    }
+    return joinParts([accumulatedText, currentInterim]);
+}
+
 // Record a settled statement. Segment boundaries are what let Pardon drop just the
 // last thing the partner said, so a re-sent statement must overwrite the rung it
 // grew from rather than becoming a boundary of its own.
@@ -402,7 +413,7 @@ function afterIngest(heardPartner, sawFinal) {
     }
     // The second argument says whether this delivery carried the partner's speech,
     // rather than only the app's own words coming back (CR-125).
-    if (onTranscript) onTranscript(joinParts([accumulatedText, currentInterim]), heardPartner && !speechActive());
+    if (onTranscript) onTranscript(currentText(), heardPartner && !speechActive());
 }
 
 /*
@@ -548,6 +559,16 @@ export function init({ onResult, onSilence, onStatus, onPartnerSpeech, source,
         // stays open across silences. accumulatedText persists across restarts.
         // While suspended for backgrounding, do NOT restart: the visibility guard
         // owns the restart and will do it when the page comes back.
+        //
+        // The words shown but not yet settled are kept whenever listening is meant to
+        // carry on - INCLUDING when the app has just gone to the background. They used
+        // to be kept only on the restart path, so a trip to the home screen in the
+        // middle of the other person's sentence lost them (CR-278). The reasons for
+        // keeping them, and for commitSegment rather than a bare push, are below.
+        if (listeningIntent && currentInterim.trim()) {
+            commitSegment(currentInterim);
+            currentInterim = '';
+        }
         if (listeningIntent && !suspendedForHidden) {
             // currentInterim holds words the recognizer has NOT finalized yet.
             // Ending the session discards them and the restarted session does not
@@ -561,8 +582,7 @@ export function init({ onResult, onSilence, onStatus, onPartnerSpeech, source,
             // commitSegment, not a bare push: where a session ends between rungs of a
             // re-sent utterance (see resendsLastStatement), the flushed interim is a
             // fuller copy of the statement already recorded, not a new one.
-            if (currentInterim.trim()) commitSegment(currentInterim);
-            currentInterim = '';
+            // (Done just above this branch, so the background path keeps them too.)
             // A short beat before restarting where the platform needs it: with
             // continuous off, sessions end constantly by design, and restarting
             // synchronously into an immediately-ending session spins a tight loop.
@@ -699,7 +719,7 @@ function fireSilenceCheckpoint() {
         silenceTimer = setTimeout(fireSilenceCheckpoint, 200);
         return;
     }
-    const text = joinParts([accumulatedText, currentInterim]);
+    const text = currentText();
     if (text && onSilencePeriod) onSilencePeriod(text);
 }
 
@@ -822,7 +842,7 @@ export function stopListening() {
 // had said the instant the user interrupts them (before a silence checkpoint has
 // pushed it to the app), so an interruption doesn't lose their partial speech (Ken).
 export function getCurrentTranscript() {
-    return joinParts([accumulatedText, currentInterim]);
+    return currentText();
 }
 
 // Discard the speech collected so far without stopping recording. Used when the

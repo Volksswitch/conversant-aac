@@ -314,7 +314,11 @@ export function createSource({ provider, getKey, getModel, onText, onStatus, onB
             starting = true;
             wanted = true;
             try {
-                stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                // The same cleanup as the other paid recognizers (CR-276): the app speaks
+                // through the device it listens with.
+                stream = await navigator.mediaDevices.getUserMedia({
+                    audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+                });
             } catch {
                 starting = false;
                 if (onStatus) onStatus('error', 'The microphone could not be opened.');
@@ -323,6 +327,12 @@ export function createSource({ provider, getKey, getModel, onText, onStatus, onB
             if (!wanted) { starting = false; releaseHalfOpen(); return false; }
             const Ctor = window.AudioContext || window.webkitAudioContext;
             audioCtx = new Ctor();
+            // Created after an await, so outside the tap: on an iPad it starts suspended
+            // and would hear nothing while reporting that it was listening (CR-276).
+            if (audioCtx.state !== 'running') {
+                try { await audioCtx.resume(); } catch { /* needs a gesture */ }
+                if (!wanted) { starting = false; releaseHalfOpen(); return false; }
+            }
             rate = audioCtx.sampleRate || 48000;
             sourceNode = audioCtx.createMediaStreamSource(stream);
             processor = audioCtx.createScriptProcessor(4096, 1, 1);
@@ -342,7 +352,11 @@ export function createSource({ provider, getKey, getModel, onText, onStatus, onB
                 handleFrame(e.inputBuffer.getChannelData(0), Date.now());
             };
             sourceNode.connect(processor);
-            processor.connect(audioCtx.destination);
+            // Through a silent gain, never straight to the speakers: the microphone wired
+            // toward them would howl wherever the engine plays the output (CR-276).
+            const mute = audioCtx.createGain();
+            mute.gain.value = 0;
+            processor.connect(mute).connect(audioCtx.destination);
             if (onStatus) onStatus('listening');
         },
 

@@ -31,9 +31,10 @@ function fakeAudioWorld(sampleRate = 48000) {
         close: async () => {},
         createMediaStreamSource: () => ({ connect() {} }),
         createScriptProcessor: () => {
-            processor = { onaudioprocess: null, connect: (n) => n, disconnect() {} };
+            processor = { onaudioprocess: null, connect: (n) => { processor.target = n; return n; }, disconnect() {} };
             return processor;
         },
+        createGain: () => ({ gain: { value: 1 }, connect: (n) => n }),
         destination: {},
     };
     return {
@@ -52,6 +53,8 @@ function fakeAudioWorld(sampleRate = 48000) {
             processor.onaudioprocess({ inputBuffer: { getChannelData: () => shared } });
         },
         restore() { Date.now = realNow; },
+        ctx,
+        get processor() { return processor; },
     };
 }
 
@@ -344,5 +347,32 @@ test('switching to a recognizer the browser does not have is refused, not thrown
     } finally {
         globalThis.window.SpeechRecognition = savedSR;
         if (savedWSR) globalThis.window.webkitSpeechRecognition = savedWSR;
+    }
+});
+
+// CR-276. A context that starts suspended (an iPad, outside a tap) is resumed, and the
+// microphone reaches the output only through a silent node.
+test('capture resumes a suspended audio context and routes through a muted node', async () => {
+    const world = fakeAudioWorld();
+    const realNav = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+    const realAudio = globalThis.window.AudioContext;
+    world.install();
+    let resumed = false;
+    world.ctx.state = 'suspended';
+    world.ctx.resume = async () => { resumed = true; world.ctx.state = 'running'; };
+    try {
+        const src = createSource({
+            provider: STT_PROVIDERS.openai, getKey: () => 'k', getModel: () => 'gpt-4o-transcribe',
+            onText() {}, onStatus() {},
+        });
+        await src.start();
+        assert.ok(resumed, 'the context was resumed');
+        assert.equal(world.processor.target && world.processor.target.gain && world.processor.target.gain.value, 0,
+            'the processor feeds a silent node, not the speakers');
+        src.stop();
+    } finally {
+        globalThis.window.AudioContext = realAudio;
+        world.restore();
+        if (realNav) Object.defineProperty(globalThis, 'navigator', realNav);
     }
 });

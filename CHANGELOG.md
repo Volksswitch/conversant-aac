@@ -541,6 +541,12 @@ forgetting to tag one is only ever noise, never silence.
   automatically" on, the listening tone now still sounds later in the conversation if
   the sound was not ready the first time (common on an iPad); and after Reframe, a
   chatty reply from the AI can no longer turn into a card you could speak.
+- Hearing and practice fixes: if the data folder cannot be written, practice edits now
+  carry on instead of appearing to do nothing; OpenAI, Google Cloud and ElevenLabs
+  hearing now wake the device's audio properly on a tablet, so listening that restarts
+  on its own still hears; on Android, words the other person is still saying no longer
+  show doubled for a moment; and words shown but not yet settled are no longer lost if
+  you switch away from the app in the middle of the other person's sentence.
 
 ## Version 0.13.4
 

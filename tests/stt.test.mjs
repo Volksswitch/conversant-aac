@@ -9,7 +9,7 @@
  * Uses real timers with a tiny silence threshold (40 ms) and short awaits; the
  * one exception is the echo-tail expiry, which is a real 1.5 s constant.
  */
-import { recognitions } from './env.mjs';
+import { recognitions, setHidden } from './env.mjs';
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -576,4 +576,28 @@ test('a short settled reply that begins like our phrase is kept; our own echo st
     await sleep(THRESHOLD_S * 1000 + 60);
     assert.equal(stt.getCurrentTranscript(), 'No.');
     assert.equal(silences.length, 1, 'the reply fires a checkpoint');
+});
+
+// CR-277. An in-progress phrase that re-sends the last settled one (Android) is not
+// shown or sent twice.
+test('a re-sent statement in progress is not doubled in the live text', () => {
+    stt.startListening();
+    rec.emitFinal('this is');
+    rec.emitInterim('this is a');
+    assert.equal(stt.getCurrentTranscript(), 'this is a');
+    rec.emitInterim('test of it');
+    assert.equal(stt.getCurrentTranscript(), 'this is test of it', 'new words still add on');
+});
+
+// CR-278. Words shown but not yet settled survive a trip to the home screen.
+test('unsettled words are kept when the app goes to the background', async () => {
+    stt.startListening();
+    rec.emitInterim('I was going to the');
+    setHidden(true);
+    await sleep(20);                      // the session ends on the next tick
+    setHidden(false);
+    await sleep(20);
+    rec.emitInterim('store later');
+    assert.equal(stt.getCurrentTranscript(), 'I was going to the store later');
+    stt.stopListening();
 });

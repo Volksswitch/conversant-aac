@@ -1094,3 +1094,10 @@ test('Import tries the plain chooser when the picker fails; error-log Copy says 
     const cp = appSource.slice(appSource.indexOf("document.getElementById('copyErrorLogBtn').onclick"));
     assert.match(cp.slice(0, 900), /show\('Copy blocked'\)/);
 });
+
+// CR-275. A practice-library disk failure is logged, not thrown.
+test('practice library logs a disk failure instead of throwing', async () => {
+    const { readFileSync } = await import('node:fs');
+    const pl = readFileSync(new URL('../app/js/practice-library.js', import.meta.url), 'utf8');
+    assert.match(pl, /catch \(e\) \{ try \{ logError\('practice-library'/);
+});
