@@ -420,14 +420,32 @@ test('a goal that will not fit is REPORTED, not silently dropped', () => {
     assert.ok(!c.items.some((x) => x && x.type === 'goal'), 'and none of them is drawn');
 });
 
-test('a switched-on goal moves to the front of the goals', () => {
+// Ken, October 6 2026: a switched-on goal STAYS WHERE IT IS, and moves to the front
+// only when its own place would put it behind More.
+test('a switched-on goal that is already showing stays where it is', () => {
     const c = bands.composePanel(GRID, {
         sizes: { shape: 'counts', context: 4, flex: 3 },
         always: [], context: [],
         flex: { [bands.flexKey(null, null)]: phrases('General') },
     }, { goals: goals('Making peace', 'Being upbeat'), litIds: ['Being upbeat'] });
     assert.deepEqual(c.items.slice(9).map((x) => x && (x.label || x.text)),
-        ['Being upbeat', 'Making peace', 'General']);
+        ['Making peace', 'Being upbeat', 'General']);
+});
+
+test('a switched-on goal that would be behind More comes to the front', () => {
+    const c = bands.composePanel(GRID, {
+        sizes: { shape: 'counts', context: 4, flex: 3 },
+        always: [], context: [],
+        flex: {},
+    }, { goals: goals('One', 'Two', 'Three', 'Four'), litIds: ['Three'] });
+    // Three positions: two for goals, the last for More.
+    assert.deepEqual(c.items.slice(9, 11).map((x) => x && x.label), ['Three', 'One']);
+    // The next page still shows the rest, with the switched-on goal kept in view.
+    const p1 = bands.composePanel(GRID, {
+        sizes: { shape: 'counts', context: 4, flex: 3 }, always: [], context: [], flex: {},
+    }, { goals: goals('One', 'Two', 'Three', 'Four'), litIds: ['Three'],
+        paging: { band: 'flex', page: 1 } });
+    assert.deepEqual(p1.items.slice(9, 11).map((x) => x && x.label), ['Three', 'Two']);
 });
 
 test('no goals changes nothing about the Flex band', () => {

@@ -3740,6 +3740,11 @@ button that opens another set of buttons chosen by topic, no hierarchy.
 - **Setting "Tapping More shows the rest"** (Express Panel & Keyboard tab,
   `expressMoreScope`, default `band`): the rest appear in that band's own positions, or
   across every position except "In my own words" (extras keep their own band's color).
+- **⚠ AMENDED (Ken, October 6 2026): AN ALWAYS-BAND BUTTON DOES NOT PUT IT BACK.** The
+  reset happened on the tap itself, before the phrase was spoken, so the button pressed
+  vanished while the user waited to hear it. Ken chose "don't go back at all" over
+  "go back after it is spoken". Accepted cost: the user may be left on page 2 until
+  Close or another button resets it. Every other button still resets as below.
 - **ANY BUTTON TAP PUTS IT BACK, EXCEPT "Hold on" (Ken).** One capture-phase listener in
   `app.js`, so a button added later obeys the rule without anyone remembering it. Two
   deliberate exceptions: taps inside Settings (paging there is for reaching buttons to
@@ -3751,7 +3756,10 @@ button that opens another set of buttons chosen by topic, no hierarchy.
 - **A SWITCHED-ON button always shows** (Ken): a lit partner, place, feeling or goal moves
   to the front of its band and returns to its own place in the order when switched off.
   Accepted cost: buttons move when toggled. Otherwise a lit button could sit on a later
-  page, steering the AI with nothing on screen saying so.
+  page, steering the AI with nothing on screen saying so. **⚠ GOALS EXCEPTED (Ken,
+  October 6 2026): a lit goal keeps its own place and moves to the front only when that
+  place is behind More** (`keepInPlace` in express-bands.js). Partner, place and feeling
+  buttons still move.
 - **The old overflow rule is GONE**: Always phrases never spill into the Flex band.
 - **A band of ONE position cannot page** (More needs a neighbor to show anything), so
   only there is an entry genuinely unreachable, and the editor still says so.

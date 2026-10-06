@@ -26,6 +26,8 @@ const RELEASE_NOTES = {
     "Bigger writing in Settings. Text & Color → Text size now has a \"Settings panel\" choice. It enlarges the labels, the section headings, what you type in a box, and the choices in a list.",
     "Choices in a Settings list are easier to tap. When you open a list, each choice is now as tall as a button, with a line between them.",
     "Opening a section in Settings keeps its heading in view. The heading you tapped stays where it was, instead of sliding off the top of the panel.",
+    "A goal button you switch on stays where it is. It moves to the front only when its place would otherwise be hidden behind More.",
+    "The Always band stays on the page you chose. Tapping a button on its second page no longer jumps the panel back to the first page. Press Close to go back.",
     "The box in Troubleshooting → Report a problem now just asks for a few words describing what you experienced."
   ],
   "0.13.5": [

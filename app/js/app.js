@@ -697,6 +697,10 @@ function initApp() {
         const btn = e.target && e.target.closest ? e.target.closest('button') : null;
         if (!btn) return;
         if (btn.classList.contains('ep-more') || btn.id === 'holdOnBtn') return;
+        // An Always button keeps the page it is on (Ken, October 6 2026): it used to put
+        // the first page back before the phrase had even been said, so the button the
+        // user pressed vanished while they waited to hear it.
+        if (btn.classList.contains('ep-band-always')) return;
         if (btn.closest('#settingsDialog')) return;
         if (tapGuard.isArmingTap(btn)) return;   // a first tap of two has not acted yet
         resetExpressPaging();
@@ -4603,6 +4607,13 @@ function reconcileInfluencers() {
     if (activeFeeling) activeFeeling = find(activeFeeling);
 }
 
+// An Always-band button leaves the panel on whatever page it is showing (Ken, October 6
+// 2026). Other buttons still put it back.
+function isAlwaysItem(item) {
+    const always = expressPanel.getModel().always || [];
+    return !!item && always.some((x) => x && x.id === item.id);
+}
+
 function resetExpressPaging() {
     if (!expressPaging) return false;
     expressPaging = null;
@@ -5776,7 +5787,7 @@ async function handleSpeakExpressItem(phrase) {
     if (!String(phrase.text || '').trim() && !String(phrase.speak || '').trim()) return;
     // In double-tap mode the general "any tap goes back" rule deliberately lets the
     // arming tap through, so the phrase that actually speaks puts the panel back here.
-    if (resetExpressPaging()) renderExpressPanel();
+    if (!isAlwaysItem(phrase) && resetExpressPaging()) renderExpressPanel();
     await speakAsUserTurn(phrase.text, phrase.speak || phrase.text, 'express');
 }
 
@@ -5863,7 +5874,7 @@ function handlePlayAudioItem(item) {
         stopExpressAudio();
     }
     if (!item.file) return;
-    resetExpressPaging();
+    if (!isAlwaysItem(item)) resetExpressPaging();
     const turn = playAudioTurn(item, inherit);
     audioTurnDone = turn;
     turn.finally(() => { if (audioTurnDone === turn) audioTurnDone = null; });

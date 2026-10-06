@@ -34,7 +34,9 @@
  * A SWITCHED-ON BUTTON ALWAYS SHOWS (Ken): a lit partner, place, feeling or goal is
  * moved to the front of its band, and returns to its own place in the user's order
  * when switched off. Otherwise a lit button could sit on a later page, still steering
- * the AI with nothing on screen saying so.
+ * the AI with nothing on screen saying so. GOALS ARE THE EXCEPTION (Ken, October 6
+ * 2026): a lit goal keeps its own place and moves to the front only when that place
+ * is behind More (keepInPlace). Partner, place and feeling buttons still move.
  *
  * THE CONTEXT BAND'S FLOOR OF FOUR IS UNCONDITIONAL, including for a user who has
  * defined no context buttons at all. If the band could collapse when empty, a menu
@@ -264,8 +266,13 @@ export function composePanel(layoutRows, model = {}, situation = {}) {
     // FIRST WITHIN THE BAND because they are the most specific thing in it - they
     // belong to this one person - and because a goal not reachable is a goal that
     // cannot steer anything, where a phrase not reachable can still be typed.
-    const allGoals = litFirst((situation.goals || []).filter(Boolean), situation.litIds);
+    const ownGoals = (situation.goals || []).filter(Boolean);
+    const allGoals = litFirst(ownGoals, situation.litIds);
     const flex = flexFill(model.flex || {}, situation.partnerId, situation.placeId, Infinity);
+    // A switched-on GOAL stays where it is (Ken, October 6 2026): it moves to the front
+    // only when its own place would put it behind More. litFirst above is still what
+    // later pages use; it shows the same buttons on the first page, in another order.
+    const flexOwn = ownGoals.concat(flex);
     const lists = {
         [BAND.ALWAYS]: always,
         [BAND.CONTEXT]: context,
@@ -295,7 +302,8 @@ export function composePanel(layoutRows, model = {}, situation = {}) {
         // More needs a position to stand on AND at least one to show beside it, so a
         // band of one position cannot page: its extras are genuinely unreachable.
         if (L.length <= n || n < 2) {
-            P.forEach((cell, k) => { items[cell] = L[k]; });
+            const shown = band === BAND.FLEX ? keepInPlace(flexOwn, situation.litIds, n) : L;
+            P.forEach((cell, k) => { items[cell] = shown[k]; });
             firstPage[band] = Math.min(n, L.length);
             behindMore[band] = 0;
             unreachableOf[band] = Math.max(0, L.length - n);
@@ -326,7 +334,9 @@ export function composePanel(layoutRows, model = {}, situation = {}) {
             const start = litN + page * perRest;
             for (let k = litN; k < per; k++) items[P[k]] = L[start + (k - litN)];
         } else {
-            for (let k = 0; k < per; k++) items[P[k]] = L[k];
+            const first = band === BAND.FLEX && page === 0 && litN === countLit(L, situation.litIds)
+                ? keepInPlace(flexOwn, situation.litIds, per) : L;
+            for (let k = 0; k < per; k++) items[P[k]] = first[k];
         }
         more.push({ index: moreAt, band, page, label: page >= lastPageOf[band] ? 'Close' : 'More' });
     }
@@ -408,6 +418,25 @@ function countLit(list, litIds) {
     let n = 0;
     while (n < list.length && list[n] && lit.has(list[n].id)) n++;
     return n;
+}
+
+/**
+ * The user's own order, except that a switched-on entry whose place is past the first
+ * `visible` positions is brought to the front, so nothing switched on is ever hidden.
+ * Bringing one forward pushes the rest along, which can push another switched-on entry
+ * out of view, so this repeats until none is.
+ */
+export function keepInPlace(list, litIds, visible) {
+    const lit = new Set((litIds || []).filter(Boolean));
+    if (!lit.size) return list;
+    const moved = [];
+    for (;;) {
+        const order = moved.concat(list.filter((x) => !moved.includes(x)));
+        const hidden = order.find((x, i) => i >= visible && x && lit.has(x.id));
+        if (!hidden) return order;
+        moved.push(hidden);
+        if (moved.length >= visible) return litFirst(list, litIds);
+    }
 }
 
 export function litFirst(list, litIds) {
