@@ -248,6 +248,10 @@ forgetting to tag one is only ever noise, never silence.
   Nothing is added after you go private.
 - Fixed: if a second reply interrupted the first, a holding phrase such as "I'm
   thinking" could start talking over the second reply.
+- Fixed: tapping End conversation while a reply was still being spoken could make that
+  reply reappear on the cleared screen, bring the goodbye cards back, record the other
+  person's last words twice, or switch the microphone on after the conversation had
+  ended.
 
 ## Version 0.13.4
 

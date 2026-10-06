@@ -683,3 +683,9 @@ test('CR-077: an earlier statement cut off by a later one cannot clear the speak
     const body = appSource.slice(appSource.indexOf('async function speakUserStatement'));
     assert.match(body.slice(0, 400), /mine === statementSeq/);
 });
+
+test('CR-078: every caller stops when the conversation ended under its speech', () => {
+    assert.doesNotMatch(appSource, /^\s*await speakUserStatement\(/m, 'no caller ignores the answer');
+    const end = appSource.slice(appSource.indexOf('async function terminateConversation'));
+    assert.match(end.slice(0, 200), /conversationEpoch\+\+/);
+});

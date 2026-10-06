@@ -267,7 +267,14 @@ let announcingUserStatement = false;
 // first statement off, the first call's ending must not declare the user silent
 // while the second is still playing - that let a placeholder start over it.
 let statementSeq = 0;
+// Bumped by terminateConversation (CR-078). speakUserStatement RETURNS whether the
+// conversation it spoke into is still the current one: ending a conversation cuts the
+// speech short and clears everything, so a caller that carried on would put the
+// cut-off reply back on the empty screen, record the partner's line twice, bring the
+// goodbye cards back, or turn the microphone on after End. Every caller stops on false.
+let conversationEpoch = 0;
 async function speakUserStatement(text, { announce = false } = {}) {
+    const epoch = conversationEpoch;
     const mine = ++statementSeq;
     speakingUserStatement = true;
     announcingUserStatement = announce;
@@ -275,6 +282,7 @@ async function speakUserStatement(text, { announce = false } = {}) {
     finally {
         if (mine === statementSeq) { speakingUserStatement = false; announcingUserStatement = false; }
     }
+    return epoch === conversationEpoch;
 }
 
 // Spoken help in Settings: arm the "?", then tap a control, its label, or a tab to
@@ -2123,7 +2131,7 @@ async function handleResponseSelected(response, index) {
         generationToken++;
         ui.setPaletteBusy(false);
         ui.setStatus('Speaking...');
-        await speakUserStatement(response.text);
+        if (!(await speakUserStatement(response.text))) return;
         logSpokenUserTurn(response.text);   // append AFTER speaking (Ken)
         ui.showEngineState(engine.deferAnswer(response.text));
         ui.setStatus('Say it in your own words when you are ready');
@@ -2180,7 +2188,8 @@ async function handleResponseSelected(response, index) {
     currentPartnerUncertain = [];
 
     ui.setStatus('Speaking...');
-    await speakUserStatement(response.text);
+    if (wasOpener) relockLayoutForConversation();
+    if (!(await speakUserStatement(response.text))) return;
 
     // Append the exchange to the transcript AFTER it has been spoken (Ken). The
     // now-playing line is suppressed for user statements (speakUserStatement), so
@@ -2318,7 +2327,7 @@ async function handleRepairOfSelf(response, index = -1) {
         const phrase = (response.text || '').trim();
         if (!phrase) return;
         ui.setStatus('Speaking...');
-        await speakUserStatement(phrase);
+        if (!(await speakUserStatement(phrase))) return;
         logSpokenUserTurn(phrase);         // append AFTER speaking (Ken)
         openComposer({ text: engine.getLastUserUtterance() });
         return;
@@ -2364,7 +2373,7 @@ async function handleRepairOfSelf(response, index = -1) {
     metrics.paletteTaken({ slot: response.slot || null, index, decideMs });
 
     ui.setStatus('Speaking...');
-    await speakUserStatement(text);
+    if (!(await speakUserStatement(text))) return;
 
     // Append to the transcript AFTER speaking (Ken); the now-playing line stays
     // suppressed during the speech, so there's no pre-text preview.
@@ -2934,6 +2943,7 @@ function practiceResumeOrIdle() {
 // CLEAR the conversation window (transcript history) and ALL cards, and reset the
 // engine to STANDBY. Shared by End conversation and Start conversation.
 async function terminateConversation() {
+    conversationEpoch++;
     stopExpressAudio({ abort: true });
     placeholders.stop();
     tts.cancel();
@@ -3437,7 +3447,7 @@ async function handleSayAgain() {
     // one (Ken) — without discarding the partner turn's response options.
     abortPlaceholders();
     ui.setStatus('Speaking...');
-    await speakUserStatement(text);
+    if (!(await speakUserStatement(text))) return;
     logSpokenUserTurn(text);          // append to the transcript AFTER speaking (Ken)
     ui.setStatus(isListening ? 'Listening...' : 'Ready');
 }
@@ -3473,7 +3483,7 @@ async function handleHoldOn() {
     // Hence `announce: true`: with no transcript entry, the now-playing line is the
     // only place this speech is visible, and nothing the app says in the user's voice
     // may be invisible.
-    await speakUserStatement(text, { announce: true });
+    if (!(await speakUserStatement(text, { announce: true }))) return;
     ui.setStatus(isListening ? 'Listening...' : 'Ready');
 }
 
@@ -3508,7 +3518,7 @@ async function handlePardon() {
     // running (Settings → Commands).
     const text = controlPhrases.pickPhrase('pardon');
     ui.setStatus('Speaking...');
-    await speakUserStatement(text);
+    if (!(await speakUserStatement(text))) return;
     logSpokenUserTurn(text);          // commits the partner's kept turn, then the pardon after it
     // Finalize the partner's kept turn and RESET capture so their re-speak becomes a
     // fresh turn after this pardon — not appended to the earlier one.
@@ -3952,7 +3962,7 @@ async function speakAsUserTurn(historyText, spokenText = historyText, source = '
 
     ui.setStatus('Speaking...');
     clearPalette();               // any AI palette shown is now stale
-    await speakUserStatement(spokenText);
+    if (!(await speakUserStatement(spokenText))) return;
 
     // Append to the transcript AFTER speaking (Ken); now-playing stays suppressed
     // during the speech, so there's no pre-text preview.
@@ -5167,6 +5177,11 @@ function layoutGrabbable() {
  */
 function noteConversationStarted() {
     metrics.conversationStarted({ practice: practiceMode });
+    relockLayoutForConversation();
+}
+// Split out so an opener can re-lock the moment it starts being SAID (CR-078): the
+// conversation exists from then, even if End cuts the opener off before it finishes.
+function relockLayoutForConversation() {
     if (practiceMode || !storage.loadLayoutUnlocked()) return;
     storage.saveLayoutUnlocked(false);
     refreshLayoutMode();

@@ -555,6 +555,11 @@ test('a border cannot be dragged while a conversation is under way', { timeout: 
     // ending the conversation does NOT hand the borders back - you unlock again.
     await page.click('#endConversationBtn');
     await new Promise((r) => setTimeout(r, 400));
+    // CR-078: End cut the opener short (no speech engine here, so it never finished).
+    // It must not come back onto the cleared screen.
+    assert.equal(await page.evaluate(() =>
+        document.getElementById('transcriptLog').textContent.trim()), '',
+    'a reply cut short by End reappeared on the cleared screen');
     await dragBorder('dock', 0, -70);
     assert.deepEqual(await regionRects(), before,
         'the layout should still be locked after a conversation - starting one re-locks it');
