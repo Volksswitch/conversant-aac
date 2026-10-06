@@ -314,6 +314,9 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: after you answered or ended a conversation, the last few words the other
   person had been saying could reappear on screen and be carried into the next
   exchange as if just said.
+- Fixed: with the Deepgram voice, cutting a sentence off and starting another straight
+  away could put a scrap of the old sentence at the start of the new one, and that
+  same wrong audio could then play every time the phrase was used.
 
 ## Version 0.13.4
 

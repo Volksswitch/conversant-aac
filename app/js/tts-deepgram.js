@@ -207,6 +207,9 @@ export function createVoice({ getKey, onBilled } = {}) {
     function closeSocket() {
         stopKeepAlive();          // before the early return: the timer outlives a null socket
         if (!socket) return;
+        // Detach first (CR-099): a socket being dropped must not deliver late audio,
+        // a late "Flushed" or a late close into the NEXT utterance.
+        socket.onmessage = socket.onerror = socket.onclose = null;
         try { socket.close(); } catch { /* already gone */ }
         socket = null;
         socketModel = null;
@@ -661,6 +664,7 @@ export function createVoice({ getKey, onBilled } = {}) {
     }
 
     function cancel() {
+        const inFlight = !!pending || !!player;
         playToken++;               // a play() waiting on resume() must not start now
         // The player first: it must stop handing out new nodes before the live ones
         // are stopped, or a chunk arriving in between would schedule itself and speak
@@ -670,11 +674,13 @@ export function createVoice({ getKey, onBilled } = {}) {
             try { node.stop(); } catch { /* already stopped */ }
         }
         sources.clear();
-        // Drop anything the server has queued for us, so a cancelled sentence does
-        // not arrive on top of the next one.
-        if (socket && socket.readyState === WebSocket.OPEN) {
-            try { socket.send(JSON.stringify({ type: 'Clear' })); } catch { /* ignore */ }
-        }
+        // ⚠ A SENTENCE CUT OFF MID-STREAM DROPS ITS CONNECTION (CR-099). Asking the
+        // server to clear its queue was not enough: audio already on its way kept
+        // arriving and landed at the start of the NEXT sentence - which was then cached,
+        // so the same wrong audio played every time that phrase was used. A fresh
+        // connection costs a few hundred milliseconds, and only on this path; with
+        // nothing in flight the connection is kept.
+        if (inFlight) closeSocket();
         failPending('Canceled.');
     }
 

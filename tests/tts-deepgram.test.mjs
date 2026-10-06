@@ -280,7 +280,8 @@ function fakeSocketFactory() {
         }
         send(m) { this.sent.push(m); }
         close() { this.readyState = 3; }
-        chunk(buf) { this.onmessage({ data: buf }); }
+        // A detached socket (CR-099) has no handler; late audio simply goes nowhere.
+        chunk(buf) { if (this.onmessage) this.onmessage({ data: buf }); }
         flushed() { this.onmessage({ data: JSON.stringify({ type: 'Flushed' }) }); }
     }
     FakeWS.OPEN = 1;
@@ -547,4 +548,27 @@ test('choosing another voice releases the backends no longer in use (CR-086)', (
     const src = readFileSync(new URL('../app/js/tts.js', import.meta.url), 'utf8');
     const body = src.slice(src.indexOf('export function setProvider('));
     assert.match(body.slice(0, 600), /id !== provider && b\.release\) b\.release\(\)/);
+});
+
+// CR-099. Audio still arriving for a cancelled sentence must not start the next one.
+test('a sentence cut off mid-stream cannot leak into the next one', async (t) => {
+    const { ctx, made, voice } = setup(t);
+    const a = voice.speak('Alpha sentence').catch(() => {});
+    await tick(); await tick();
+    for (let i = 0; i < 3; i++) made[0].chunk(chunk40ms(1000));
+    voice.cancel();
+    await a;
+    assert.equal(made[0].readyState, 3, 'the cut-off connection is dropped');
+    assert.equal(made[0].onmessage, null, 'and can deliver nothing more');
+
+    const b = voice.speak('Bravo');
+    await tick(); await tick();
+    assert.equal(made.length, 2, 'the next sentence has its own connection');
+    made[1].chunk(chunk40ms(500));
+    made[1].flushed();
+    await tick(); await tick();
+    ctx.finishAll();
+    await b;
+    const last = ctx.scheduled.at(-1).samples;
+    assert.ok(last.length === 960 && Math.abs(last[0] - 500 / 32768) < 1e-6, 'only Bravo\'s own audio');
 });
