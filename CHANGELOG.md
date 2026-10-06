@@ -176,6 +176,8 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: if the other person added something while the app was saying a holding
   phrase, the suggestions stayed based on what they had said before. A short addition
   like that now gets fresh suggestions once the app stops talking.
+- Fixed: with the Deepgram voice, a long sentence stopped partway and was then said
+  again from the beginning in the device's own voice. It now plays through once.
 
 ## Version 0.13.4
 

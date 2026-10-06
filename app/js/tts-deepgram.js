@@ -64,6 +64,13 @@ const SAMPLE_RATE = 24000;
 // to the browser's voice. Generous enough for a cold socket on tablet wifi, short
 // enough that a dead network does not leave the user standing in silence.
 const SYNTH_TIMEOUT_MS = 6000;
+// ⚠ THE 6 SECONDS IS A DEAD-CONNECTION LIMIT, NOT A SENTENCE-LENGTH LIMIT (CR-051).
+// Audio streams in at about twice real time, so a long sentence is still arriving well
+// after 6 seconds - and the old single timer cut it off mid-word, after which the
+// device voice said the whole sentence again. Each chunk now re-arms the timer, so it
+// fires only when the audio STOPS arriving. A generous overall cap still catches a
+// connection that trickles forever.
+const SYNTH_TOTAL_MS = 60000;
 
 // Cached utterances, newest last (Map preserves insertion order, so the oldest key
 // is the first). Capped by count rather than bytes: entries are short phrases, and
@@ -270,6 +277,10 @@ export function createVoice({ getKey, onBilled } = {}) {
                 }
                 pending.chunks.push(e.data);
                 if (pending.onChunk) pending.onChunk(e.data);
+                // Audio is still arriving, so the connection is alive (CR-051).
+                clearTimeout(pending.timer);
+                pending.timer = setTimeout(() => failPending('The voice service took too long.'),
+                    Math.min(SYNTH_TIMEOUT_MS, Math.max(0, pending.deadline - Date.now())));
             };
             ws.onerror = () => {
                 clearTimeout(openTimer);
@@ -296,6 +307,7 @@ export function createVoice({ getKey, onBilled } = {}) {
                 resolve,
                 reject,
                 timer: setTimeout(() => failPending('The voice service took too long.'), SYNTH_TIMEOUT_MS),
+                deadline: Date.now() + SYNTH_TOTAL_MS,
             };
             try {
                 ws.send(JSON.stringify({ type: 'Speak', text }));

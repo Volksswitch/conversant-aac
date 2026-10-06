@@ -473,3 +473,35 @@ test('a service that returns no audio throws, so the browser voice takes over',
     await assert.rejects(speaking, /no audio/i);
     assert.equal(ctx.scheduled.length, 0);
 });
+
+// CR-051. The time limit is for a connection that has gone quiet, not for a long
+// sentence: audio that keeps arriving for longer than 6 seconds must not be cut off.
+test('a long sentence that keeps arriving is not cut off at six seconds', async (t) => {
+    const { ctx, made, voice } = setup(t);
+    const speaking = voice.speak('a long sentence');
+    await tick(); await tick();
+    t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: Date.now() });
+    let failed = null;
+    speaking.catch((e) => { failed = e; });
+    for (let i = 0; i < 16; i++) {            // 8 seconds of arrival, a chunk every 0.5 s
+        made[0].chunk(chunk40ms(800));
+        t.mock.timers.tick(500);
+    }
+    made[0].flushed();
+    t.mock.timers.reset();
+    await tick(); await tick();
+    ctx.finishAll();
+    await speaking.catch(() => {});
+    assert.equal(failed, null, failed && failed.message);
+});
+
+test('audio that stops arriving still times out', async (t) => {
+    const { made, voice } = setup(t);
+    const speaking = voice.speak('a sentence that stalls');
+    await tick(); await tick();
+    t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: Date.now() });
+    made[0].chunk(chunk40ms(800));
+    t.mock.timers.tick(7000);
+    t.mock.timers.reset();
+    await assert.rejects(speaking, /took too long/);
+});
