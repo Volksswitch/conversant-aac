@@ -22,7 +22,7 @@
  *     (compact, and it lets week-by-week be computed at the far end);
  *   - a short in-memory ring of the most recent events, which is the reproduction
  *     context attached to a problem report — "what was happening just before";
- *   - one line per event appended to metrics.log in the data folder, the permanent
+ *   - one line per event appended to metrics-YYYY-MM.log (one file a month) in the data folder, the permanent
  *     detailed record for offline analysis. Best-effort and absent without a folder.
  *
  * ⚠ IT MUST NEVER BREAK WHAT IT MEASURES. Every entry point swallows its own errors.

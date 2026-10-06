@@ -91,9 +91,27 @@ function supportsDeviceStorage() {
 
 // Point the seam at a root and invalidate anything cached from the previous one.
 function setRoot(handle, kind) {
+    const changed = handle !== dirHandle;
     dirHandle = handle;
     backend = handle ? kind : BACKEND.NONE;
     conversationDirHandle = null;   // cached from the OLD root — must not leak across
+    // The conversation in progress follows the folder (CR-288). Its file handle pointed
+    // into the old folder, so the rest of the conversation went on being written there.
+    // It is written WHOLE into the new folder - starting a new file there would split
+    // the conversation - and nothing more goes to the old one.
+    if (changed && currentLogData && currentLogName) {
+        currentLogHandle = null;
+        if (handle) moveLogToNewRoot();
+    }
+}
+
+async function moveLogToNewRoot() {
+    try {
+        const dir = await getConversationsDir();
+        if (!dir || !currentLogData || !currentLogName) return;
+        currentLogHandle = await dir.getFileHandle(currentLogName, { create: true });
+        await flushLog();
+    } catch { /* the next write tries again through the usual path */ }
 }
 
 export function getStorageBackend() {
@@ -2201,6 +2219,11 @@ export function saveLastSeenVersion(version) {
 
 let currentLogHandle = null;
 let currentLogName = null;
+
+/** metrics-YYYY-MM.log for the current month (CR-290). */
+export function metricsFileName(now = new Date()) {
+    return `metrics-${now.toISOString().slice(0, 7)}.log`;
+}
 let currentLogData = null;
 // The partner's in-progress ("pending") turn in currentLogData.exchanges, so each
 // pause OVERWRITES it (rather than appending) and the user's response FINALIZES it
@@ -2368,11 +2391,13 @@ export async function logPartnerInterim({ rawTranscript, partner = null }) {
 export async function logEvent(kind, extra = {}) {
     if (!conversationSaving) return;
     if (!currentLogData) return;
+    // The fixed fields come LAST, so a detail that happens to be called role,
+    // timestamp or kind can never relabel the entry or move it in time (CR-289).
     currentLogData.exchanges.push({
+        ...extra,
         timestamp: new Date().toISOString(),
         role: 'event',
         kind,
-        ...extra,
     });
     await flushLog();
 }
@@ -3005,7 +3030,10 @@ export async function flushMetricsFile() {
     const lines = metricsBuffer;
     metricsBuffer = [];
     try {
-        const fh = await dirHandle.getFileHandle('metrics.log', { create: true });
+        // One file per month (CR-290). Appending copies the whole file, so a single
+        // file that grows for the life of the install made every save heavier, and
+        // OneDrive uploaded all of it each time. Older months are kept as they are.
+        const fh = await dirHandle.getFileHandle(metricsFileName(), { create: true });
         const writable = await fh.createWritable({ keepExistingData: true });
         const file = await fh.getFile();
         await writable.seek(file.size);   // append

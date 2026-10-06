@@ -1107,3 +1107,11 @@ test('a key box saves its value on leaving, before showing the short form', () =
     const fn = appSource.slice(appSource.indexOf('function wireKeyField('));
     assert.match(fn.slice(0, 2200), /if \(v !== \(ld\(\) \|\| ''\)\.trim\(\)\) \{ sv\(v\); if \(ch\) ch\(v\); \}/);
 });
+
+// CR-287. Help is disarmed explicitly wherever Settings closes and when it opens.
+test('spoken help is reset on every Settings close path and on open', () => {
+    assert.match(appSource, /spokenHelp = helpMode\.init\(\{/);
+    assert.equal((appSource.match(/resetSpokenHelp\(\); document\.getElementById\('settingsDialog'\)\.close\(\);/g) || []).length, 3);
+    const open = appSource.slice(appSource.indexOf('function openSettings() {'));
+    assert.match(open.slice(0, 300), /resetSpokenHelp\(\);/);
+});

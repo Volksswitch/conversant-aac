@@ -556,6 +556,12 @@ forgetting to tag one is only ever noise, never silence.
   one has a newer version of the app, the older one no longer replaces your Express
   Panel with the starting set. If the device's browser storage is full, a weekly
   report that could not be prepared is tried again later instead of being lost.
+- If you choose a different data folder in the middle of a conversation, the whole
+  conversation now moves to the new folder instead of the rest of it going on being
+  saved in the old one. The Settings "?" help button is now always switched off when
+  Settings closes, so it is never still armed the next time you open Settings. The
+  detailed usage log in your data folder is now kept as one file per month, so saving
+  it stays quick.
 
 ## Version 0.13.4
 

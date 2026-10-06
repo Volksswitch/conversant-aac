@@ -910,3 +910,37 @@ test('settleRestore clears its timer when the restore finishes first', async () 
         assert.ok(cleared >= 1, 'the grace timer was cleared');
     } finally { globalThis.clearTimeout = realClear; }
 });
+
+// CR-288. Choosing a different folder in the middle of a conversation moves the
+// conversation, whole, into the new folder; the old one gets nothing more.
+// (Last in this file: it leaves the module pointed at the second folder.)
+test('the conversation in progress follows a change of folder, whole', async () => {
+    storage.detachPendingPartnerTurn();
+    await storage.logPartnerInterim({ rawTranscript: 'before the move' });
+    const id = storage.getConversationId();
+    await storage.whenLogWritten();
+    const oldText = JSON.stringify(await readLog(id));
+
+    const root2 = makeDir('root2');
+    Object.defineProperty(globalThis, 'navigator', {
+        value: { storage: { getDirectory: async () => root2 } }, configurable: true, writable: true,
+    });
+    assert.ok(await storage.restoreDataFolder());
+    await new Promise((r) => setTimeout(r, 30));
+    await storage.logUserResponse({ selectedText: 'after the move', selectedIndex: -1, allOptions: [] });
+    await storage.whenLogWritten();
+
+    const dir2 = await root2.getDirectoryHandle('conversations');
+    const moved = JSON.parse(await (await (await dir2.getFileHandle(`${id}.json`)).getFile()).text());
+    const text2 = JSON.stringify(moved);
+    assert.ok(text2.includes('before the move') && text2.includes('after the move'), 'the new folder has it all');
+    assert.equal(JSON.stringify(await readLog(id)), oldText, 'the old folder got nothing more');
+});
+
+// CR-289 / CR-290.
+test('an event keeps its own kind and time; the usage log is one file a month', async () => {
+    assert.equal(storage.metricsFileName(new Date('2026-10-06T12:00:00Z')), 'metrics-2026-10.log');
+    const { readFileSync } = await import('node:fs');
+    const src = readFileSync(new URL('../app/js/storage.js', import.meta.url), 'utf8');
+    assert.match(src, /\.\.\.extra,\s*timestamp: new Date\(\)\.toISOString\(\),\s*role: 'event',\s*kind,/);
+});

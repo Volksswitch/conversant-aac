@@ -298,8 +298,14 @@ async function speakUserStatement(text, { announce = false, display = null } = {
 // intercepted before the control sees it.
 let speakingHelp = false;
 
+// Kept so help can be disarmed EXPLICITLY wherever Settings closes (CR-287): the
+// dialog's own close event is not reliable here (see the v0.2.17 finding), and a
+// missed reset left the "?" armed on the next visit.
+let spokenHelp = null;
+function resetSpokenHelp() { try { if (spokenHelp) spokenHelp.reset(); } catch { /* best effort */ } }
+
 function initSpokenHelp() {
-    helpMode.init({
+    spokenHelp = helpMode.init({
         dialog: document.getElementById('settingsDialog'),
         helpBtn: document.getElementById('settingsHelpBtn'),
         speak: async (text) => {
@@ -893,7 +899,7 @@ function initApp() {
         closeSettings: () => {
             keyboard.hideKeyboard();
             hostExpressPanel(false);
-            document.getElementById('settingsDialog').close();
+            resetSpokenHelp(); document.getElementById('settingsDialog').close();
         },
         openSettingsAt: (tab) => {
             openSettings();
@@ -2806,7 +2812,7 @@ function renderPracticePanel() {
                 await endPractice();
                 renderPracticePanel();
                 hostExpressPanel(false);   // the panel must not close inside the dialog
-                document.getElementById('settingsDialog').close();
+                resetSpokenHelp(); document.getElementById('settingsDialog').close();
             },
             onGoToKey: () => activateSettingsTab(document.querySelector('#settingsTabs .settings-tab[data-tab="general"]'), true),
             voiceChoices: () => practiceVoiceChoices(),
@@ -2828,7 +2834,7 @@ async function startPractice(scenario) {
     const isTour = Array.isArray(scenario.steps) && scenario.steps.length > 0;
     keyboard.hideKeyboard();
     hostExpressPanel(false);       // the panel must not close inside the dialog
-    document.getElementById('settingsDialog').close();
+    resetSpokenHelp(); document.getElementById('settingsDialog').close();
     // ⚠ THE REAL CONVERSATION IS ENDED FIRST, while practice is still off. The
     // teardown commits the partner's unanswered words with the CURRENT stamp, and with
     // practice already on that stamp read "Practice: <title>" - which filed the whole
@@ -7649,6 +7655,7 @@ async function buildErrorReport() {
 
 function openSettings() {
     const dialog = document.getElementById('settingsDialog');
+    resetSpokenHelp();   // never open with the "?" still armed from last time (CR-287)
     // "Auto chose ..." describes a test run earlier; it is not true on a new visit (CR-246).
     const partnerNote = document.getElementById('partnerVoiceStatus');
     if (partnerNote) { partnerNote.hidden = true; partnerNote.textContent = ''; }
@@ -9252,6 +9259,7 @@ function openSettings() {
         // dialog on the Express tab, so closing without putting it back would take
         // the dock with it and leave an empty band.
         hostExpressPanel(false);
+        resetSpokenHelp();
         dialog.close();
     };
 }
