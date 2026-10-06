@@ -135,12 +135,14 @@ export function getProvider() {
  * larger and quieter failure.
  */
 function belongsToAnotherService(name, voice) {
-    const listFor = (id) => (id === 'deepgram'
-        ? aura.VOICES.map((v) => v.id)
-        : (TTS_PROVIDERS[id] && TTS_PROVIDERS[id].voices || []).map((v) => v.id));
+    // Azure's starter list counts too (CR-194): its catalog is fetched, so a name it
+    // does not list is still allowed, but one it DOES list is plainly Azure's.
+    const listFor = (id) => (id === 'deepgram' ? aura.VOICES.map((v) => v.id)
+        : id === 'azure' ? (azure.VOICES || []).map((v) => v.id)
+            : (TTS_PROVIDERS[id] && TTS_PROVIDERS[id].voices || []).map((v) => v.id));
     const mine = listFor(name);
     if (mine.includes(voice)) return false;              // its own, whatever else says
-    for (const id of ['deepgram', ...Object.keys(TTS_PROVIDERS)]) {
+    for (const id of ['deepgram', 'azure', ...Object.keys(TTS_PROVIDERS)]) {
         if (id !== name && listFor(id).includes(voice)) return id;
     }
     return false;

@@ -220,6 +220,17 @@ test('a private conversation keeps the error but not the AI\'s unreadable reply'
     assert.ok(!JSON.stringify(kept).includes('Card, please'), 'and the stored copy carries neither');
 });
 
+// CR-193. Log text is plain ASCII in every sink, and that includes the extra fields:
+// the AI's reply and the recognizer's text often carry dashes and curly quotes.
+test('error extras are written as plain text, keeping accented letters', async () => {
+    const entry = storage.logError('generateOptions', 'x', { reply: 'a — “b”…', partner: 'José' });
+    const stored = JSON.stringify(storage.loadErrorLog().at(-1));
+    for (const ch of ['—', '“', '”', '…']) {
+        assert.ok(!JSON.stringify(entry).includes(ch) && !stored.includes(ch), ch);
+    }
+    assert.equal(entry.extra.partner, 'José', 'a name is not stripped');
+});
+
 test('"Don\'t save this conversation" really does stop the write', async () => {
     // ⚠ The gate is asserted against the FILE, not against a return value: this is
     // the promise both manuals make, and the only proof is that nothing landed.

@@ -183,6 +183,15 @@ test('a voice belonging to another service is refused, not sent', () => {
     assert.equal(tts.getPaidVoice('deepgram'), 'aura-2-thalia-en');
 });
 
+test('an Azure voice is refused for another service (CR-194)', () => {
+    tts.setPaidVoice('google', 'en-US-Neural2-F');
+    const before = tts.getPaidVoice('google');
+    tts.setPaidVoice('google', 'en-US-JennyNeural');     // Azure's
+    assert.equal(tts.getPaidVoice('google'), before, 'Google kept its own voice');
+    tts.setPaidVoice('azure', 'en-US-JennyNeural');      // its own - allowed
+    assert.equal(tts.getPaidVoice('azure'), 'en-US-JennyNeural');
+});
+
 test('the same guard covers the provider switch, which is how it got in', () => {
     // setProvider used to write opts.model straight into the table, bypassing every
     // check. This is the exact call app.js was making.

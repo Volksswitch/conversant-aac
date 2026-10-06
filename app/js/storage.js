@@ -2855,6 +2855,12 @@ export function logError(context, message, extra = null) {
         context: asciiForLog(context),
         message: asciiForLog(message),
     };
+    // Plain text in every sink, extra included (CR-193): the AI's reply and the
+    // recognizer's text often carry dashes and curly quotes. Punctuation only, so
+    // accented letters in a name survive.
+    if (extra && typeof extra === 'object' && !Array.isArray(extra)) {
+        extra = Object.fromEntries(Object.entries(extra).map(([k, v]) => [k, typeof v === 'string' ? asciiForLog(v) : v]));
+    }
     if (extra != null) entry.extra = extra;
     try {
         const log = loadErrorLog();
