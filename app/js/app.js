@@ -4192,7 +4192,18 @@ function handleDefineCell(index) {
     if (!dialog.open) openSettings();
     const tab = document.querySelector('#settingsTabs .settings-tab[data-tab="express"]');
     if (tab) activateSettingsTab(tab, false);   // renders the editor and hosts the panel
-    expressEditor.addToBand(band);
+    // Which cell was tapped is the point (CR-065): the Always band takes the phrase in
+    // that very position (first page only), and Flex goes to the situation on screen.
+    const pos = composed.paging ? undefined
+        : composed.bands.slice(0, index).filter((b) => b === band).length;
+    expressEditor.addToBand(band, {
+        fromCell: true,
+        pos: band === 'always' ? pos : undefined,
+        situation: {
+            partnerId: activePartner ? (activePartner.personId || null) : null,
+            placeId: activePlace ? (activePlace.placeId || null) : null,
+        },
+    });
 }
 
 // A tap on a DEFINED button while the panel is live in Settings edits it rather

@@ -215,6 +215,10 @@ forgetting to tag one is only ever noise, never silence.
   the microphone back on while the recording was still audible, and could save the
   other person's last line twice. The sound now stops first and is recorded in the
   right order.
+- Fixed: in Settings, tapping an empty spot on the Express Panel to add a phrase did
+  not put it there; if you had just selected another phrase, the new one was slipped
+  in after it and every phrase below moved down. It now goes in the spot you tapped,
+  and nothing else moves.
 
 ## Version 0.13.4
 

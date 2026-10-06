@@ -26,7 +26,7 @@
 import * as expressPanel from './express-panel.js';
 import * as relationships from './relationships.js';
 import * as places from './places.js';
-import { makeId } from './express-items.js';
+import { makeId, newEmptyItem } from './express-items.js';
 import {
     ANYONE, ANYPLACE, flexKey, parseFlexKey, composePanel, CONTEXT_ORDER,
 } from './express-bands.js';
@@ -102,12 +102,24 @@ export function focusItem(id) {
 }
 
 /** A tap on an UNDEFINED panel cell: add an entry to the band that owns that cell. */
-export function addToBand(band) {
+/* `opts` comes from a tap on an empty cell (CR-065), which must never splice a
+ * phrase into the middle of a band and move every learned button after it:
+ *   pos        - Always band only: the cell's position in the band; the new phrase
+ *                goes exactly there, earlier gaps held by empty slots.
+ *   situation  - Flex band: the partner and place the live panel is showing, so the
+ *                phrase goes into the list that panel is drawn from.
+ *   fromCell   - ignore the row last selected; append instead.
+ */
+export function addToBand(band, opts = {}) {
     const key = band === 'context' ? 'context' : band === 'flex' ? 'flex' : 'always';
     openAfterRender = key;
+    if (key === 'flex' && opts.situation) {
+        flexPartner = opts.situation.partnerId || ANYONE;
+        flexPlace = opts.situation.placeId || ANYPLACE;
+    }
     if (key === 'context') addContext('feeling');
-    else if (key === 'flex') addPhrase('flex');
-    else addPhrase('always');
+    else if (key === 'flex') addPhrase('flex', opts);
+    else addPhrase('always', opts);
 }
 
 // ---------------------------------------------------------------- model helpers
@@ -125,11 +137,20 @@ function saveBand(band, list) {
     if (onChangeCb) onChangeCb();
 }
 
-function addPhrase(band) {
+function addPhrase(band, opts = {}) {
     const list = bandList(band).slice();
     const item = { id: makeId(), type: 'phrase', text: '' };
-    const at = list.findIndex((x) => x.id === pickedId);
-    if (at >= 0) list.splice(at + 1, 0, item); else list.push(item);
+    if (band === 'always' && Number.isInteger(opts.pos) && opts.pos >= 0) {
+        // Into the tapped cell. An empty slot already there is replaced; otherwise the
+        // gap up to it is held by empty slots, so nothing else moves.
+        while (list.length < opts.pos) list.push(newEmptyItem());
+        if (list[opts.pos] && list[opts.pos].type === 'empty') list[opts.pos] = item;
+        else if (opts.pos >= list.length) list.push(item);
+        else list.splice(opts.pos, 0, item);
+    } else {
+        const at = opts.fromCell ? -1 : list.findIndex((x) => x.id === pickedId);
+        if (at >= 0) list.splice(at + 1, 0, item); else list.push(item);
+    }
     pickedId = item.id;
     saveBand(band, list);
     render();

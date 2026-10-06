@@ -670,3 +670,11 @@ test('the chip choice and the Reframe steer are sent together', () => {
     const chip = appSource.indexOf('async function handleChoiceChip(');
     assert.match(appSource.slice(chip, chip + 3000), /focusChoice: pick,\s*steer: activeSteer\.steer/);
 });
+
+// CR-065. A tap on an empty cell in Settings says which cell; the Always band uses it.
+test('a tapped empty cell passes its position to the editor', () => {
+    const at = appSource.indexOf('function handleDefineCell(');
+    assert.match(appSource.slice(at, at + 2000), /expressEditor\.addToBand\(band, \{\s*fromCell: true,\s*pos:/);
+    const ed = readFileSync(new URL('../app/js/express-editor.js', import.meta.url), 'utf8');
+    assert.match(ed, /while \(list\.length < opts\.pos\) list\.push\(newEmptyItem\(\)\)/);
+});
