@@ -497,6 +497,14 @@ export function createVoice({ getKey, onBilled } = {}) {
         }
 
         return {
+            // Throw away audio queued but not yet playing, for a retry (CR-281): the
+            // retried sentence starts from the top, so the first try's opening
+            // fragment would otherwise play in front of it as a stutter.
+            reset() {
+                if (started) return;
+                queue = [];
+                queued = 0;
+            },
             push(chunk) {
                 if (aborted) return;
                 const f = pcm16ToFloat32([chunk]);
@@ -590,7 +598,7 @@ export function createVoice({ getKey, onBilled } = {}) {
             let chunks;
             try {
                 chunks = await synthesizeWithRetry(model, trimmed,
-                    (buf) => p.push(buf), p.hasStarted);
+                    (buf) => p.push(buf), p.hasStarted, () => p.reset());
             } catch (err) {
                 // (!) STOP OUR OWN FRAGMENT BEFORE HANDING THE ERROR ON. tts.js answers
                 // a failure by speaking the whole sentence in the browser voice, so
@@ -639,7 +647,7 @@ export function createVoice({ getKey, onBilled } = {}) {
      */
     const RETRYABLE = /closed|did not respond|took too long|refused the connection/i;
 
-    async function synthesizeWithRetry(model, text, onChunk, hasStarted) {
+    async function synthesizeWithRetry(model, text, onChunk, hasStarted, onRetry) {
         try {
             return await synthesize(model, text, onChunk);
         } catch (err) {
@@ -654,6 +662,7 @@ export function createVoice({ getKey, onBilled } = {}) {
             // Drop the dead connection so the retry cannot reuse it — without this the
             // second attempt would hand back the same broken one and fail the same way.
             closeSocket();
+            if (onRetry) onRetry();
             return synthesize(model, text, onChunk);
         }
     }

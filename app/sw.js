@@ -153,11 +153,27 @@ self.addEventListener('activate', (event) => {
 // retry at the end of networkFirst, which covers the first-ever load on a slow link.
 const NETWORK_TIMEOUT_MS = 6000;
 
-async function networkFirst(request) {
+/*
+ * ONE PAGE, ONE VERSION (CR-282). The deadline is decided per request, so on a slow
+ * link right after an update a page could get some files new and some from the
+ * previous version's cache - and a module asking another for a name only the other
+ * version has stops the app starting. So the page's own load decides for the files it
+ * then asks for: a page served from the cache gets its files from the cache too, and a
+ * page that came fresh from the network waits for the network for its files rather
+ * than mixing in old ones (an outright failure still falls back to the cache).
+ * Remembered per page by its client id; the worker can forget between launches, in
+ * which case each request decides on its own as before.
+ */
+const pagesFromCache = new Set();
+const pagesFromNetwork = new Set();
+const servedFromCache = new WeakSet();   // responses networkFirst read from the cache
+
+async function networkFirst(request, { noDeadline = false } = {}) {
   let response = null;
   let timedOut = false;
   const controller = new AbortController();
-  const timer = setTimeout(() => { timedOut = true; controller.abort(); }, NETWORK_TIMEOUT_MS);
+  const timer = noDeadline ? null
+    : setTimeout(() => { timedOut = true; controller.abort(); }, NETWORK_TIMEOUT_MS);
   try {
     // `cache: 'no-cache'` forces revalidation with the server (ETag) instead of
     // letting the browser's HTTP cache serve a stale copy within GitHub Pages'
@@ -166,7 +182,7 @@ async function networkFirst(request) {
   } catch {
     response = null;            // offline, DNS failure, or aborted at the deadline
   } finally {
-    clearTimeout(timer);
+    if (timer) clearTimeout(timer);
   }
 
   // ⚠ AN ERROR RESPONSE IS A FAILURE, NOT AN ANSWER. This used to return whatever the
@@ -185,11 +201,11 @@ async function networkFirst(request) {
   }
 
   const cached = await caches.match(request);
-  if (cached) return cached;
+  if (cached) { servedFromCache.add(cached); return cached; }
   // Navigation requests fall back to the cached app shell.
   if (request.mode === 'navigate') {
     const shell = await caches.match('./index.html');
-    if (shell) return shell;
+    if (shell) { servedFromCache.add(shell); return shell; }
   }
 
   // Nothing cached to fall back on, so the deadline bought nothing and cost a load:
@@ -213,5 +229,23 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   if (new URL(request.url).origin !== self.location.origin) return;
 
-  event.respondWith(networkFirst(request));
+  if (request.mode === 'navigate') {
+    event.respondWith((async () => {
+      const res = await networkFirst(request);
+      const id = event.resultingClientId;
+      if (id) {
+        // A response the worker fetched just now is fresh; one read from the cache is not.
+        const fresh = !!(res && res.ok && !servedFromCache.has(res));
+        (fresh ? pagesFromNetwork : pagesFromCache).add(id);
+      }
+      return res;
+    })());
+    return;
+  }
+  if (event.clientId && pagesFromCache.has(event.clientId)) {
+    event.respondWith((async () => (await caches.match(request)) || networkFirst(request))());
+    return;
+  }
+  const noDeadline = !!(event.clientId && pagesFromNetwork.has(event.clientId));
+  event.respondWith(networkFirst(request, { noDeadline }));
 });

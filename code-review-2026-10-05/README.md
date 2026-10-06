@@ -317,10 +317,10 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-276](CR-276.md) | fixed (042f1ef) | low | plausible | bug | `app/js/stt-rest.js:307` | OpenAI, Google and ElevenLabs hearing never wakes its audio engine and is wired straight to the speakers |
 | [CR-277](CR-277.md) | fixed (042f1ef) | low | plausible | bug | `app/js/stt.js:368` | On Android the live text and a checkpoint can repeat words while a re-sent sentence is still in progress |
 | [CR-278](CR-278.md) | fixed (042f1ef) | low | plausible | bug | `app/js/stt.js:474` | Backgrounding the app loses the words the partner was in the middle of saying |
-| [CR-279](CR-279.md) | fixed (pending) | low | plausible | bug | `app/js/suggest-anthropic.js:234` | A reply with no text block (e.g. a refusal) loses both its token usage and its stop reason |
-| [CR-280](CR-280.md) | fixed (pending) | low | plausible | bug | `app/js/tts-azure.js:463` | A stuck audio wake-up can leave the paid voice 'speaking' forever and block every later sentence |
-| [CR-281](CR-281.md) | open | low | plausible | bug | `app/js/tts-deepgram.js:606` | A Deepgram retry reuses the same player, so the failed attempt's first fragment plays before the retried sentence |
-| [CR-282](CR-282.md) | open | low | plausible | bug | `app/sw.js:151` | Per-file network timeout can mix old cached modules with new ones right after a deploy |
+| [CR-279](CR-279.md) | fixed (4d78005) | low | plausible | bug | `app/js/suggest-anthropic.js:234` | A reply with no text block (e.g. a refusal) loses both its token usage and its stop reason |
+| [CR-280](CR-280.md) | fixed (4d78005) | low | plausible | bug | `app/js/tts-azure.js:463` | A stuck audio wake-up can leave the paid voice 'speaking' forever and block every later sentence |
+| [CR-281](CR-281.md) | fixed (pending) | low | plausible | bug | `app/js/tts-deepgram.js:606` | A Deepgram retry reuses the same player, so the failed attempt's first fragment plays before the retried sentence |
+| [CR-282](CR-282.md) | fixed (pending) | low | plausible | bug | `app/sw.js:151` | Per-file network timeout can mix old cached modules with new ones right after a deploy |
 | [CR-283](CR-283.md) | open | low | plausible | data-loss | `app/js/app.js:981` | Key fields discard text that arrived without an input event when focus leaves, and Close/Escape only re-check the Claude key |
 | [CR-284](CR-284.md) | open | low | plausible | data-loss | `app/js/express-panel.js:71` | An older copy of the app reseeds the panel from defaults if it reads a newer-version panel file |
 | [CR-285](CR-285.md) | open | low | plausible | data-loss | `app/js/weekly-send.js:295` | Weekly report bookkeeping is advanced before the report is safely queued, so a storage-full failure loses the report and its errors silently |

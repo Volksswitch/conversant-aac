@@ -37,3 +37,13 @@ test('the offline cache name carries the app version', () => {
     const version = /const APP_VERSION = '([^']+)'/.exec(app)[1];
     assert.match(sw, new RegExp(`CACHE_VERSION = 'aac-v${version.replace(/\./g, '\\.')}-`));
 });
+
+// CR-282. A page's own files follow how the page itself loaded, so a slow link after an
+// update cannot mix old and new files in one page.
+test('a page served from the cache gets its files from the cache; a fresh one waits for the network', async () => {
+    const { readFileSync } = await import('node:fs');
+    const sw = readFileSync(new URL('../app/sw.js', import.meta.url), 'utf8');
+    assert.match(sw, /pagesFromCache\.has\(event\.clientId\)/);
+    assert.match(sw, /networkFirst\(request, \{ noDeadline \}\)/);
+    assert.match(sw, /if \(cached\) \{ servedFromCache\.add\(cached\); return cached; \}/);
+});

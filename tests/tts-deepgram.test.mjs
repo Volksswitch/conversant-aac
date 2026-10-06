@@ -433,6 +433,27 @@ test('a failure BEFORE any audio is still retried on a fresh connection', async 
     assert.ok(ctx.scheduled.length > 0, 'the retry speaks');
 });
 
+// CR-281. Audio the first try delivered but had not started playing is thrown away
+// before the retry, or its opening fragment plays in front of the retried sentence.
+test('a retry does not play the first try\'s unplayed fragment', async (t) => {
+    const { ctx, made, voice } = setup(t);
+    const speaking = voice.speak('I want to go now');
+    await tick(); await tick();
+    for (let i = 0; i < 3; i++) made[0].chunk(chunk40ms(111));   // under the lead-in
+    made[0].onclose({ code: 1006 });
+    await tick(); await tick();
+    assert.equal(made.length, 2, 'retried on a fresh connection');
+    for (let i = 0; i < 10; i++) made[1].chunk(chunk40ms(900));
+    made[1].flushed();
+    await tick(); await tick();
+    ctx.finishAll();
+    await speaking;
+    const first = 111 / 32768;
+    const heard = ctx.scheduled.flatMap((x) => Array.from(x.samples));
+    assert.ok(heard.length > 0);
+    assert.ok(!heard.some((v) => Math.abs(v - first) < 1e-4), 'none of the first try is played');
+});
+
 test('the audio device is woken before any audio can arrive', async (t) => {
     const { ctx, made, voice } = setup(t, { suspended: true });
     const speaking = voice.speak('hello');
