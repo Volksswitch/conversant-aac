@@ -254,6 +254,20 @@ test('turning "Don\'t save" on part-way marks the saved turns private, without d
     assert.match(body, /e\.extra && !isPrivate/);
 });
 
+test('a card picked after going private is not recorded (CR-076)', async () => {
+    await storage.logOffer({ options: [{ text: 'first' }, { text: 'second' }] });
+    const id = storage.getConversationId();
+    storage.setConversationSaving(false);
+    assert.equal(storage.hasPendingOffer(), false);
+    await storage.finalizeOffer({ outcome: 'card', selectedIndex: 1 });
+    await storage.whenLogWritten();
+    const offers = (await readLog(id)).exchanges.filter((e) => e.role === 'offer');
+    const last = offers[offers.length - 1];
+    assert.equal(last.outcome ?? null, null);
+    assert.equal(last.selectedIndex ?? null, null);
+    storage.setConversationSaving(true);
+});
+
 test('the written file is valid JSON with the shape a later reader expects', async () => {
     const log = await readLog(storage.getConversationId());
     assert.equal(typeof log.started, 'string');

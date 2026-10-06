@@ -2043,7 +2043,9 @@ export function setConversationSaving(on) {
     // disk, so mark it - in the file and in a short list here - so a problem report
     // withholds its transcript and the speech in its errors even after the
     // conversation has ended. The earlier turns are NOT deleted; that is Ken's call.
-    if (conversationSaving || !currentConversationId) return;
+    if (conversationSaving) return;
+    pendingOffer = null;   // can no longer be recorded (CR-076)
+    if (!currentConversationId) return;
     markConversationPrivate(currentConversationId);
     if (currentLogData && !currentLogData.private) { currentLogData.private = true; flushLog(); }
 }
@@ -2395,6 +2397,9 @@ export async function logOffer({ kind = 'ai', options = [] }) {
  * before whatever followed it - the same arrangement as finalizePartnerTurn, and for
  * the same reason: the file has to read in the order things happened. */
 export async function finalizeOffer({ outcome, selectedIndex = null, shownMs = null }) {
+    // A set that ends while the conversation is private records nothing (CR-076):
+    // which card was picked IS what was said.
+    if (!conversationSaving) { pendingOffer = null; return; }
     if (!pendingOffer) return;
     const entry = pendingOffer;
     pendingOffer = null;
@@ -2410,6 +2415,7 @@ export function hasPendingOffer() { return !!pendingOffer; }
  * moment after the cards did. Rewritten in the open offer so the file shows what was
  * actually offered (CR-022), not the blank it started as. */
 export async function reviseOffer(options = []) {
+    if (!conversationSaving) { pendingOffer = null; return; }
     if (!pendingOffer) return;
     pendingOffer.options = (options || []).map((c) => ({
         slot: (c && c.slot) || null,

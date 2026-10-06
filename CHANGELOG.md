@@ -243,6 +243,9 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: loading an older settings profile, or restoring a backup, could quietly turn
   automatic weekly reports back on after you had turned them off. That switch now
   belongs to the device and is left alone.
+- Fixed: if you turned on "Don't save this conversation" while suggestion cards were
+  showing and then tapped one, the saved file still recorded which card you chose.
+  Nothing is added after you go private.
 
 ## Version 0.13.4
 

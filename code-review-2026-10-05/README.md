@@ -113,8 +113,8 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-072](CR-072.md) | fixed (52efaff) | medium | confirmed | other | `app/js/app.js:2249` | No undeclared-identifier check: the handleRepairOfSelf ReferenceError shipped with every test green |
 | [CR-073](CR-073.md) | fixed (25397ba) | medium | confirmed | other | `app/sw.js:39` | No test checks that the service worker precaches every module the app imports (how tap-guard.js slipped) |
 | [CR-074](CR-074.md) | fixed (aa08405) | medium | confirmed | privacy | `app/js/app.js:6856` | Problem report includes the saved transcript of the current conversation even after it was marked Don't save |
-| [CR-075](CR-075.md) | fixed (pending) | medium | confirmed | privacy | `app/js/storage.js:465` | Loading a settings profile or restoring a backup can silently switch automatic reporting back on |
-| [CR-076](CR-076.md) | open | medium | confirmed | privacy | `app/js/storage.js:2338` | "Don't save this conversation" does not stop the app recording which card was chosen afterwards |
+| [CR-075](CR-075.md) | fixed (0690195) | medium | confirmed | privacy | `app/js/storage.js:465` | Loading a settings profile or restoring a backup can silently switch automatic reporting back on |
+| [CR-076](CR-076.md) | fixed (pending) | medium | confirmed | privacy | `app/js/storage.js:2338` | "Don't save this conversation" does not stop the app recording which card was chosen afterwards |
 | [CR-077](CR-077.md) | open | medium | confirmed | race-condition | `app/js/app.js:265` | A second card or Express tap while the first is still being spoken cuts the first off but records it as said, and clears the 'user is speaking' guard early |
 | [CR-078](CR-078.md) | open | medium | confirmed | race-condition | `app/js/app.js:2077` | Ending the conversation while a chosen card is still being spoken puts that turn into the conversation after it has ended |
 | [CR-079](CR-079.md) | open | medium | confirmed | race-condition | `app/js/app.js:4507` | Tapping a partner, place, feeling or goal while a reprompt is running discards that reprompt's classification |
