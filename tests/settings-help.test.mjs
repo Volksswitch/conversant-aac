@@ -63,10 +63,12 @@ function runtimeSectionKeys() {
         ['control-phrases-editor.js', /(?:single|list)Section\([^,]+,\s*'([^']+)'\)/g],
         ['placeholder-editor.js', /poolSection\([^,]+,\s*'([^']+)'\)/g],
         ['practice-editor.js', /(?:helpGroup\([^,]+,|textField\(|selectField\()\s*'([^']+)'/g],
+        // The Express Panel editor's bands (CR-114): section('always', ...) -> expressAlways.
+        ['express-editor.js', /section\('([a-z]+)'/g, (k) => 'express' + k[0].toUpperCase() + k.slice(1)],
     ];
-    return sources.flatMap(([file, re]) => {
+    return sources.flatMap(([file, re, map = (k) => k]) => {
         const src = readFileSync(join(root, 'app', 'js', file), 'utf8');
-        return [...src.matchAll(re)].map(m => m[1]);
+        return [...src.matchAll(re)].map(m => map(m[1]));
     });
 }
 

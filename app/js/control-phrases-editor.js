@@ -34,11 +34,13 @@ function commit(rerender) {
     if (rerender) render();
 }
 
-function mkBtn(label, cls) {
+function mkBtn(label, cls, title) {
     const b = document.createElement('button');
     b.type = 'button';
     b.textContent = label;
     if (cls) b.className = cls;
+    // An arrow or an X needs words for a screen reader and a tooltip (CR-111).
+    if (title) { b.title = title; b.setAttribute('aria-label', title); }
     return b;
 }
 
@@ -77,11 +79,11 @@ function listSection(title, key) {
 
         const tools = document.createElement('div');
         tools.className = 'ee-tools';
-        const up = mkBtn('↑'); up.disabled = i === 0;
+        const up = mkBtn('↑', null, 'Move up'); up.disabled = i === 0;
         up.addEventListener('click', () => { [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]]; commit(true); });
-        const down = mkBtn('↓'); down.disabled = i === arr.length - 1;
+        const down = mkBtn('↓', null, 'Move down'); down.disabled = i === arr.length - 1;
         down.addEventListener('click', () => { [arr[i + 1], arr[i]] = [arr[i], arr[i + 1]]; commit(true); });
-        const del = mkBtn('✕', 'ee-del');
+        const del = mkBtn('✕', 'ee-del', 'Delete this phrase');
         del.disabled = arr.length <= 1; // never leave the list empty (no cards to show)
         del.addEventListener('click', () => { arr.splice(i, 1); commit(true); });
         tools.append(up, down, del);

@@ -208,7 +208,10 @@ const HELP = {
     "practiceDetails": "Facts for this practice, like names and what happened. The other person knows them, and your suggested replies can use them.",
     "practiceVoice": "The voice this person speaks in when you practice. Leave it on the general practice voice to use the one from the Speech settings.",
     "practicePerson": "Start a scenario from someone you added in About Me. While you practice, how you talk with them is used too.",
-    "reviewList": "Your saved conversations, newest first. Tap one to go back over it. A mark means you asked for something different at the time."
+    "reviewList": "Your saved conversations, newest first. Tap one to go back over it. A mark means you asked for something different at the time.",
+    "expressAlways": "The phrases that are always on the panel, in the same place every time. Put the words you use most here.",
+    "expressFlex": "Phrases that change with who you are talking with and where you are. Choose a person and a place, then add phrases for them.",
+    "expressContext": "Buttons that describe the conversation: who you are with, where you are, and how you feel. They never speak; they guide the suggestions."
   }
 };
 // @@SETTINGS_HELP_END@@

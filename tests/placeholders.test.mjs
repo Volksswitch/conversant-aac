@@ -783,3 +783,13 @@ test('CR-107-110: choice groups, tabs, dialogs and the idle status are all named
     const dlg = readFileSync(new URL('../app/js/confirm-dialog.js', import.meta.url), 'utf8');
     assert.match(dlg, /dlg\.setAttribute\('aria-describedby', p\.id\)/);
 });
+
+test('CR-111-114: editor buttons and pickers are named; rows select on focus; bands speak', () => {
+    const ee = readFileSync(new URL('../app/js/express-editor.js', import.meta.url), 'utf8');
+    assert.equal((ee.match(/row\.addEventListener\('focusin', \(\) => markPicked\(row, item\.id\)\)/g) || []).length, 3);
+    assert.match(ee, /'Which person this button is for'/);
+    assert.match(ee, /'Which partner the Flex phrases are for'/);
+    assert.match(ee, /wrap\.dataset\.help = 'express' \+ key\[0\]\.toUpperCase\(\) \+ key\.slice\(1\)/);
+    const cp = readFileSync(new URL('../app/js/control-phrases-editor.js', import.meta.url), 'utf8');
+    assert.match(cp, /mkBtn\('✕', 'ee-del', 'Delete this phrase'\)/);
+});

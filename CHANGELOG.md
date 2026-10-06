@@ -333,6 +333,11 @@ forgetting to tag one is only ever noise, never silence.
   answers; each Settings tab is tied to its page; warning boxes read their title and
   message, not just "Cancel"; and after you stop listening with OpenAI, Google Cloud
   or ElevenLabs, the app no longer says it is still listening.
+- In Settings: the up, down and delete buttons beside each phrase now say what they
+  do; the person and place pickers in the Express Panel editor are named for screen
+  readers; moving to a phrase with the Tab key now selects it, so Move and Delete act
+  on that phrase; and the "?" help now speaks for the Always, Flex and Context
+  sections.
 
 ## Version 0.13.4
 

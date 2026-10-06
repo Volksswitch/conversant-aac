@@ -267,6 +267,7 @@ function textInput(value, placeholder, oninput, opts = {}) {
     i.type = 'text';
     i.value = value || '';
     i.placeholder = placeholder || '';
+    if (placeholder) i.setAttribute('aria-label', placeholder);   // CR-113
     i.className = 'ee-input';
     // A respelling must not be word-completed - see predictionOff in keyboard.js.
     if (opts.noPredict) i.dataset.noPredict = '';
@@ -284,6 +285,9 @@ function phraseRow(band, item) {
     const row = el('div', 'ee-row');
     if (item.id === pickedId) row.classList.add('ee-row-picked');
     row.addEventListener('pointerdown', () => markPicked(row, item.id));
+    // Reaching a row by Tab selects it too, or the toolbar's Move and Delete act on
+    // the last row that was TAPPED (CR-112).
+    row.addEventListener('focusin', () => markPicked(row, item.id));
 
     row.appendChild(textInput(item.text, 'What the button says', (v) => {
         const list = bandList(band).slice();
@@ -338,6 +342,9 @@ function audioRow(band, item) {
     const row = el('div', 'ee-row ee-audio-row');
     if (item.id === pickedId) row.classList.add('ee-row-picked');
     row.addEventListener('pointerdown', () => markPicked(row, item.id));
+    // Reaching a row by Tab selects it too, or the toolbar's Move and Delete act on
+    // the last row that was TAPPED (CR-112).
+    row.addEventListener('focusin', () => markPicked(row, item.id));
 
     const save = (patch) => {
         const list = bandList(band).slice();
@@ -457,6 +464,9 @@ function contextRow(item) {
     const row = el('div', 'ee-row');
     if (item.id === pickedId) row.classList.add('ee-row-picked');
     row.addEventListener('pointerdown', () => markPicked(row, item.id));
+    // Reaching a row by Tab selects it too, or the toolbar's Move and Delete act on
+    // the last row that was TAPPED (CR-112).
+    row.addEventListener('focusin', () => markPicked(row, item.id));
     row.appendChild(el('span', 'ee-kind', item.type === 'partner' ? 'Partner'
         : item.type === 'place' ? 'Place' : 'Feeling'));
 
@@ -474,10 +484,10 @@ function contextRow(item) {
         // asking a second time let the two disagree with nothing to say which was
         // right. The button's face comes from relationships.displayName.
         row.appendChild(pickerFor(relationships.listPeople().map((p) => ({ id: p.id, name: p.name })),
-            item.personId, item.name, (id, name) => save({ personId: id, name })));
+            item.personId, item.name, (id, name) => save({ personId: id, name }), 'Which person this button is for'));
     } else if (item.type === 'place') {
         row.appendChild(pickerFor(places.listPlaces().map((p) => ({ id: p.id, name: p.name })),
-            item.placeId, item.name, (id, name) => save({ placeId: id, name })));
+            item.placeId, item.name, (id, name) => save({ placeId: id, name }), 'Which place this button is for'));
     } else {
         // A plain text box: a feeling is TYPED, never chosen from a list (Ken, August
         // 25 2026). The reasoning is a design decision rather than an implementation
@@ -492,9 +502,10 @@ function contextRow(item) {
 }
 
 /** A select over the people or places the user has entered, plus a free-text name. */
-function pickerFor(options, currentId, currentName, onPick) {
+function pickerFor(options, currentId, currentName, onPick, label = '') {
     const sel = document.createElement('select');
     sel.className = 'ee-name-select';
+    if (label) sel.setAttribute('aria-label', label);   // CR-113
     const none = document.createElement('option');
     none.value = '';
     none.textContent = '— choose —';
@@ -526,6 +537,9 @@ function pickerFor(options, currentId, currentName, onPick) {
 function section(key, title, build) {
     const wrap = el('div', 'setting-group ee-section');
     wrap.dataset.band = key;
+    // Spoken help for the heading under the "?" (CR-114): the controls inside have no
+    // ids, so without this the heading said nothing.
+    wrap.dataset.help = 'express' + key[0].toUpperCase() + key.slice(1);
     wrap.appendChild(el('label', null, title));
     build(wrap);
     return wrap;
@@ -585,11 +599,11 @@ function flexSection(composed) {
         const spots = places.listPlaces();
         pickRow.appendChild(scopeSelect(
             [{ id: ANYONE, name: 'Anyone' }, ...people.map((p) => ({ id: p.id, name: p.name }))],
-            flexPartner, (v) => { flexPartner = v; render(); }));
+            flexPartner, (v) => { flexPartner = v; render(); }, 'Which partner the Flex phrases are for'));
         pickRow.appendChild(el('span', 'ee-scope-lead', 'at'));
         pickRow.appendChild(scopeSelect(
             [{ id: ANYPLACE, name: 'Anyplace' }, ...spots.map((p) => ({ id: p.id, name: p.name }))],
-            flexPlace, (v) => { flexPlace = v; render(); }));
+            flexPlace, (v) => { flexPlace = v; render(); }, 'Which place the Flex phrases are for'));
         body.appendChild(pickRow);
 
         // What has already been made. Without it there is no screen anywhere that says
@@ -722,9 +736,10 @@ async function deleteSituation() {
     render();
 }
 
-function scopeSelect(options, current, onPick) {
+function scopeSelect(options, current, onPick, label = '') {
     const sel = document.createElement('select');
     sel.className = 'ee-scope-select';
+    if (label) sel.setAttribute('aria-label', label);   // CR-113
     for (const o of options) {
         const op = document.createElement('option');
         op.value = o.id;

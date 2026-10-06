@@ -860,11 +860,11 @@ function buildGoalEditor(saved, opts = {}) {
         queueMicrotask(() => focusReturn(goalList, focusWas));
         goals.forEach((g, i) => {
             const up = el('button', { type: 'button', class: 'wv-icon-btn',
-                'aria-label': 'Move up' }, '↑');
+                'aria-label': 'Move up', title: 'Move up' }, '↑');
             const down = el('button', { type: 'button', class: 'wv-icon-btn',
-                'aria-label': 'Move down' }, '↓');
+                'aria-label': 'Move down', title: 'Move down' }, '↓');
             const del = el('button', { type: 'button', class: 'wv-icon-btn',
-                'aria-label': 'Remove this goal' }, '✕');
+                'aria-label': 'Remove this goal', title: 'Remove this goal' }, '✕');
             // Disabled at the ends rather than a no-op: a button that does nothing
             // when pressed is indistinguishable from one that is not working.
             if (i === 0) up.disabled = true;
@@ -1776,7 +1776,7 @@ function buildRepeat(field, current) {
         entries.forEach((entry, i) => {
             list.append(el('div', { class: 'wv-entry' }, [
                 el('span', { text: formatValue(entry) }),
-                el('button', { class: 'wv-entry-remove', text: '✕', 'aria-label': 'Remove',
+                el('button', { class: 'wv-entry-remove', text: '✕', 'aria-label': 'Remove', title: 'Remove',
                     onclick: () => {
                         const next = entries.filter((_, j) => j !== i);
                         if (next.length) saveAndRefresh(field, next);
