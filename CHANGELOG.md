@@ -228,6 +228,11 @@ forgetting to tag one is only ever noise, never silence.
   brought over settings that belong to the old device, such as how the app hears and
   the screen edge margin, which could leave an iPad unable to hear. Those settings now
   stay as they are, as they already did when restoring a backup.
+- Fixed: with Azure doing the listening, a single "too busy" answer from Microsoft
+  switched listening off mid-conversation, while a connection that was completely down
+  left the microphone lit and hearing nothing. Azure now behaves like the other paid
+  services: it keeps going through one bad moment and stops, with a clear message,
+  after three failures in a row. A refused key also explains the likely causes.
 
 ## Version 0.13.4
 

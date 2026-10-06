@@ -357,3 +357,51 @@ test('a pasted region is reduced to the form Azure uses', async () => {
     assert.equal(normalizeAzureRegion('(US) East US 2'), 'eastus2');
     assert.equal(normalizeAzureRegion(''), '');
 });
+
+// CR-068. Azure follows the same rules as the other phrase-at-a-time services: one
+// busy answer is a warning, three failures in a row are fatal, a refused key is fatal
+// at once and says why.
+async function azurePhrases(count, reply) {
+    const world = fakeAudioWorld(48000);
+    const realFetch = globalThis.fetch;
+    const realNav = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+    const realAudio = globalThis.window.AudioContext;
+    world.install();
+    let n = 0;
+    globalThis.fetch = async () => reply(n++);
+    const statuses = [];
+    try {
+        const src = azure.createSource({ getKey: () => 'k', getRegion: () => 'eastus',
+            onText: () => {}, onStatus: (s, d) => statuses.push([s, d]), onBilled: () => {} });
+        await src.start();
+        for (let p = 0; p < count; p++) {
+            for (let i = 0; i < 30; i++) world.frame(0.3);
+            for (let i = 0; i < 12; i++) world.frame(0);
+            await new Promise((r) => setTimeout(r, 20));
+        }
+        src.stop();
+    } finally {
+        globalThis.fetch = realFetch;
+        globalThis.window.AudioContext = realAudio;
+        world.restore();
+        if (realNav) Object.defineProperty(globalThis, 'navigator', realNav);
+    }
+    return statuses.filter(([s]) => s === 'error' || s === 'warning');
+}
+const ok = () => ({ ok: true, status: 200, json: async () => ({ RecognitionStatus: 'Success', DisplayText: 'Hi.' }) });
+
+test('one busy answer from Azure is a warning, not the end of listening', async () => {
+    const s = await azurePhrases(2, (n) => (n === 0 ? { ok: false, status: 429 } : ok()));
+    assert.deepEqual(s.map(([k]) => k), ['warning']);
+});
+
+test('three failed Azure phrases in a row switch listening off', async () => {
+    const s = await azurePhrases(3, () => { throw new Error('offline'); });
+    assert.deepEqual(s.map(([k]) => k), ['warning', 'warning', 'error']);
+});
+
+test('a refused Azure key is fatal at once and explains why', async () => {
+    const s = await azurePhrases(1, () => ({ ok: false, status: 401 }));
+    assert.equal(s[0][0], 'error');
+    assert.match(s[0][1], /deleted/);
+});

@@ -75,6 +75,11 @@ export const TARGET_RATE = 16000;
  * simply an earlier update, since stt.js joins the pieces.
  */
 const HANG_MS = 450;
+// Same rules as the other phrase-at-a-time services (stt-rest.js): only a RUN of
+// failures switches listening off, a refused key does at once, and a span with
+// less than this much speech in it is not sent (CR-068).
+const FAILURES_BEFORE_FATAL = 3;
+const MIN_SPEECH_MS = 250;
 
 // The service refuses a single request longer than a minute. A conversational phrase
 // never approaches that, but a stuck-open gate would — so a span is cut and submitted
@@ -283,6 +288,7 @@ export function createSource({ getKey, getRegion, onText, onStatus, onBilled }) 
     let spanSamples = 0;
     let openedAt = 0;
     let billedMs = 0;
+    let failures = 0;
 
     // Rolling buffer of recent frames, so the syllable BEFORE the gate opened is not
     // lost. Without it, every phrase would be submitted with its first sound missing —
@@ -298,6 +304,16 @@ export function createSource({ getKey, getRegion, onText, onStatus, onBilled }) 
         span = [];
         spanSamples = 0;
         preRoll = [];
+    }
+
+    // One phrase failed. A refused key is fatal at once; anything else only when it is
+    // the third in a row - one busy answer must not switch listening off, and a
+    // connection that is down must not leave the microphone lit forever (CR-068).
+    function phraseFailed(status, fallback, where) {
+        failures++;
+        const fatal = status === 401 || status === 403 || failures >= FAILURES_BEFORE_FATAL;
+        const detail = status ? describeFailure(status, where) : fallback;
+        if (onStatus) onStatus(fatal ? 'error' : 'warning', detail);
     }
 
     async function submit(frames, sampleRate, mine) {
@@ -330,14 +346,12 @@ export function createSource({ getKey, getRegion, onText, onStatus, onBilled }) 
                 signal: controller.signal,
             });
             if (mine !== generation) return;    // listening stopped while this was in flight
-            if (!res.ok) {
-                if (onStatus) onStatus('error', `http ${res.status}`);
-                return;
-            }
+            if (!res.ok) { phraseFailed(res.status, null, where); return; }
             const body = await res.json().catch(() => null);
             if (mine !== generation) return;
             const { text, error } = readRecognition(body);
-            if (error) { if (onStatus) onStatus('error', error); return; }
+            if (error) { phraseFailed(0, error, where); return; }
+            failures = 0;
             // Every phrase is final by construction: there is nothing provisional
             // here, because nothing is sent until the speaker has paused.
             if (text && onText) onText(text, true);
@@ -348,23 +362,26 @@ export function createSource({ getKey, getRegion, onText, onStatus, onBilled }) 
             // rejected key and wrong for one request that timed out on a flaky
             // connection — the next phrase would very likely have worked. So a
             // transport failure is logged as a status and capture keeps running.
-            if (onStatus) {
-                onStatus('warning', err && err.name === 'AbortError'
-                    ? 'a phrase took too long to transcribe'
-                    : 'a phrase could not be sent');
-            }
+            phraseFailed(0, err && err.name === 'AbortError'
+                ? 'phrases took too long to transcribe'
+                : 'phrases could not be sent - check the internet connection', where);
         } finally {
             clearTimeout(timer);
         }
     }
 
-    function closeSpan(now, mine) {
+    function closeSpan(now, mine, { ceiling = false } = {}) {
         if (!span.length) return;
         const frames = span;
         span = [];
         spanSamples = 0;
-        billedMs += Math.max(0, now - openedAt);
+        const openMs = Math.max(0, now - openedAt);
+        billedMs += openMs;
         if (onBilled) onBilled(billedMs / 1000);
+        // A cough or a click is not sent (and not billed as a phrase): speech is the
+        // open time less the hang (CR-068, as in stt-rest.js). A span cut by the
+        // length ceiling is long speech by definition.
+        if (!ceiling && openMs - HANG_MS < MIN_SPEECH_MS) return;
         submit(frames, rate, mine);
     }
 
@@ -391,7 +408,7 @@ export function createSource({ getKey, getRegion, onText, onStatus, onBilled }) 
             // being refused whole when it eventually closes.
             if (spanSamples / rate >= MAX_SPAN_MS / 1000) {
                 const carry = generation;
-                closeSpan(now, carry);
+                closeSpan(now, carry, { ceiling: true });
                 openedAt = now;              // the gate is still open; a new span begins
             }
         } else {
@@ -445,6 +462,7 @@ export function createSource({ getKey, getRegion, onText, onStatus, onBilled }) 
             preRollFrames = Math.max(1, Math.ceil((gate.preRollMs() / 1000) * rate / FRAME_SAMPLES));
             reset();
             billedMs = 0;
+            failures = 0;
             // Tell the app the running total restarted, or its next report reads as a
             // decrease and that whole first burst is never counted (CR-019).
             if (onBilled) onBilled(0);
