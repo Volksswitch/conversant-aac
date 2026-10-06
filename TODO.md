@@ -1122,6 +1122,11 @@ about to fall by an order of magnitude is the trap.
 - **What is wanted:** watch for them in problem reports and reviewed conversations. If
   they recur, tighten the American-English instruction the AI is given.
 - **Why not now:** three words in 64 options is not yet a pattern.
+- **Found 2026-10-06 in the instructions themselves:** the honesty rules give "What do
+  you fancy doing?" as an example question, and the offered-options rule uses "what do
+  you fancy?". Both are British phrasings the AI may copy. Change both to "want to".
+  The instructions test in `scripts/voice-eval/TEST-PLAN-instructions-and-review.md`
+  makes this change in both of its conditions; the app still has the old wording.
 
 #### 27. Sounds Like Me: a citation and section 5.3
 - **Raised:** 2026-10-06 - the evaluation's citation audit and its reading of the plan.
