@@ -478,6 +478,12 @@ forgetting to tag one is only ever noise, never silence.
   between buttons" (its spoken help no longer mentions a button-size setting that was
   removed). In Conversation Review, paging the Express Panel with More now stays put
   when you tap Hear it, Undo or a word step.
+- Three conversation fixes: with an Azure voice, the practice partner's voice now
+  comes from your account's own voice list, like the Settings list does; if you tap
+  who you are talking with after pressing Start conversation, the openers on screen
+  change to that person's own openers and name; and when the screen layout is
+  unlocked, the round drag handles now leave as soon as the openers appear, so they no
+  longer sit on top of buttons.
 
 ## Version 0.13.4
 

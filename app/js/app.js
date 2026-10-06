@@ -1216,8 +1216,15 @@ function pickAuraPartnerVoice(chosen = storage.loadAuraPartnerVoice()) {
 function pickAzurePartnerVoice(chosen = storage.loadAzurePartnerVoice()) {
     if (chosen) return chosen;
     const own = storage.loadAzureVoice() || ttsAzure.DEFAULT_VOICE;
-    const other = ttsAzure.VOICES.find((v) => v.id !== own);
+    const other = azureVoiceList().find((v) => v.id !== own);
     return other ? other.id : own;
+}
+
+// The account's own voice list when it has been fetched, as the Settings pickers use;
+// the shipped short list only until then (CR-235).
+function azureVoiceList() {
+    const cat = storage.loadAzureVoiceCatalog();
+    return (cat && Array.isArray(cat.voices) && cat.voices.length) ? cat.voices : ttsAzure.VOICES;
 }
 
 // The same rule again for a catalog service (OpenAI, Google Cloud, ElevenLabs): the
@@ -1274,7 +1281,7 @@ function practiceVoiceChoices() {
     const service = storage.loadTtsProvider();
     const named = (v) => [v.id, v.detail ? `${v.name} — ${v.detail}` : (v.name || v.id)];
     if (service === 'deepgram') return { service, options: ttsDeepgram.VOICES.map(named) };
-    if (service === 'azure') return { service, options: ttsAzure.VOICES.map(named) };
+    if (service === 'azure') return { service, options: azureVoiceList().map(named) };
     if (TTS_PROVIDERS[service]) {
         const p = TTS_PROVIDERS[service];
         return { service, options: (storage.loadServiceVoiceCatalog(service) || p.voices || []).map(named) };
@@ -2375,7 +2382,8 @@ async function prefetchRepairOptions(token) {
     }
     // Bail if a newer turn superseded this, or the user already left repair-of-self.
     if (token !== generationToken) return;
-    if (engine.getMode() !== engine.MODE.REPAIR_OF_SELF) return;
+    // Left repair already: nothing will replace these cards' "on the way" look (CR-236).
+    if (engine.getMode() !== engine.MODE.REPAIR_OF_SELF) { ui.setPaletteBusy(false); return; }
     const snap = engine.setRepairOptions(opts);
     // The engine's snapshots are COPIES, so every record that holds the earlier,
     // hint-only cards is updated here too - otherwise Wrap up's cancel, the composer's
@@ -3333,6 +3341,7 @@ function clearPalette() {
     // No static set is on screen any more, so New N must not page one back (CR-029).
     // The per-kind offsets stay: paging continues where it left off within a conversation.
     currentStatic = { kind: null, full: [] };
+    refreshLayoutMode();   // whether the drag handles belong on screen may have changed (CR-238)
 }
 
 /* The error box has replaced the cards (a request failed). The records must say so,
@@ -3398,6 +3407,10 @@ function renderStaticPalette(kind, full, statusMsg, { advance = false, pin = [] 
     const cards = [...pageWindow(currentStatic.full, staticOffsets[kind], window), ...pin];
     showPalette(cards, kind);
     if (statusMsg) ui.setStatus(statusMsg);
+    // Openers or goodbyes on screen are a conversation in progress, so the layout's
+    // drag handles leave; they were left showing over the buttons, where a tap on one
+    // did nothing (CR-238).
+    refreshLayoutMode();
 }
 
 // The "Actually, before you go —" card, offered when the PARTNER starts closing.
@@ -5044,6 +5057,14 @@ async function handleTogglePartner(item) {
     // Switching partner has to re-run this in both directions — selecting one adds
     // their phrases, clearing one has to take them back out again.
     applyControlPhrases();
+    // The openers already on screen were built for the previous partner (or none), so
+    // they are rebuilt with this person's own openers and name (CR-237). Only the
+    // cards: the Start-conversation backout keeps what it captured.
+    if (currentStatic.kind === 'opener') {
+        const snap = engine.initiate({ partnerName: partnerLabel(activePartner) });
+        ui.showEngineState(snap);
+        renderStaticPalette('opener', snap.palette, 'Pick an opener');
+    }
     storage.logContext('partner');
     ui.setStatus(activePartner ? `Talking with ${partnerLabel(activePartner)}` : 'Partner cleared');
     await noteContextSet('partner', !!activePartner);

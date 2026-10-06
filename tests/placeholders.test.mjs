@@ -982,3 +982,15 @@ test('review keeps its own Express Panel paging, and leaving it resets the panel
     const fn = appSource.slice(appSource.indexOf('function restoreConversationScreen() {'));
     assert.match(fn.slice(0, 200), /resetExpressPaging\(\)/);
 });
+
+// CR-235..238 guards (app.js cannot be unit-tested).
+test('Azure partner voices come from the account list; openers follow a partner change; handles follow the palette', () => {
+    assert.match(appSource, /const other = azureVoiceList\(\)\.find/);
+    assert.match(appSource, /if \(service === 'azure'\) return \{ service, options: azureVoiceList\(\)\.map\(named\) \}/);
+    const tog = appSource.slice(appSource.indexOf('async function handleTogglePartner'));
+    assert.match(tog.slice(0, 1600), /if \(currentStatic\.kind === 'opener'\) \{/);
+    const rsp = appSource.slice(appSource.indexOf('function renderStaticPalette('));
+    assert.match(rsp.slice(0, 1200), /refreshLayoutMode\(\);/);
+    const pre = appSource.slice(appSource.indexOf('async function prefetchRepairOptions'));
+    assert.match(pre.slice(0, 1400), /REPAIR_OF_SELF\) \{ ui\.setPaletteBusy\(false\); return; \}/);
+});
