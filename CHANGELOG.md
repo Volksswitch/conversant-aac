@@ -280,6 +280,11 @@ forgetting to tag one is only ever noise, never silence.
   (and billing) on the old key for the rest of the session. Choosing a different voice
   service also now closes the Deepgram connection instead of leaving it open in the
   background.
+- Fixed: with "One tap or two" set to two taps, the first tap on a switched-on
+  partner, place, feeling or goal button, an offered choice, or "In my own words"
+  showed no change, so it looked like the tap had missed; and with a mouse resting on
+  it, a phrase could go white on white. The first tap now always shows a blue line
+  inside the button.
 
 ## Version 0.13.4
 

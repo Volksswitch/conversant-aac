@@ -2507,12 +2507,7 @@ body.conv-bottom .palette-grid {
     outline-offset: -1px;
 }
 .ep-btn:active { transform: translateY(1px); }
-/* Armed: first tap of a required double-tap — clearly "waiting for confirm". */
-.ep-btn.ep-armed {
-    background: var(--ep-color);
-    color: var(--ink-inverse);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ep-color) 35%, transparent);
-}
+/* Armed: see #epGrid .ep-btn.ep-armed below the switched-on rules (CR-088). */
 /* "In my own words" — the space-cell counterpart, distinct (dark) background. */
 .ep-btn.ep-imow {
     --ep-color: var(--accent);
@@ -2626,6 +2621,27 @@ body.conv-bottom .palette-grid {
 }
 .ep-btn.ep-on.ep-picked {
     box-shadow: inset 0 0 0 3px var(--surface-sunken), 0 0 0 3px var(--info);
+}
+
+/* Armed: the first tap of a required double-tap - "waiting for the second tap"
+   (CR-088). Id-qualified and placed after every state rule, so a switched-on button,
+   a choice, the compose cell and the hover rules cannot paint over it. The blue line
+   is drawn INSIDE the box, so neither the switched-on ring nor a neighbouring cell
+   covers it, and so armed is never mistaken for switched on. Paint only: no size,
+   padding or border changes, so no keyguard hole moves. */
+#epGrid .ep-btn.ep-armed {
+    background: var(--ep-color);
+    color: var(--ink-inverse);
+    outline: 4px solid var(--info);
+    outline-offset: -4px;
+}
+/* A button that is already filled inverts to the plain surface when armed, so the
+   first tap always changes something visible. */
+#epGrid .ep-btn.ep-armed.ep-on,
+#epGrid .ep-btn.ep-armed.ep-choice,
+#epGrid .ep-btn.ep-armed.ep-imow {
+    background: var(--surface-raised);
+    color: var(--ink);
 }
 
 /* Inert grid spacer (matches a blank/pred or leftover key cell). */

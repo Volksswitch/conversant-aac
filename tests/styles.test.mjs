@@ -355,3 +355,14 @@ test('Settings tabs, option rows and the switch use the button floor', () => {
     assert.match(rule('dialog label.checkbox-label'), /min-height:\s*var\(--btn-min-dim\)/);
     assert.match(rule('.switch'), /--sw-h:\s*var\(--btn-min-dim\)/);
 });
+
+test('CR-088: the armed look outranks every switched-on and hover rule', () => {
+    const css = readFileSync(new URL('../app/css/styles.css', import.meta.url), 'utf8');
+    const armed = css.indexOf('#epGrid .ep-btn.ep-armed {');
+    assert.ok(armed > 0, 'id-qualified');
+    assert.ok(armed > css.indexOf('.ep-btn.ep-band-context.ep-on'));
+    assert.ok(armed > css.indexOf('.ep-btn.ep-on {'));
+    assert.doesNotMatch(css, /^\.ep-btn\.ep-armed\s*\{/m, 'no weaker copy left behind');
+    const block = css.slice(armed, css.indexOf('}', armed));
+    assert.doesNotMatch(block, /padding|border-width|margin|width|height/, 'paint only');
+});
