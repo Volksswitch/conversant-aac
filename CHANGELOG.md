@@ -357,6 +357,11 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: if you tapped "Repeat what I said" or "Ask them to repeat" while the other
   person was still talking, the next suggestions were asked for as if they had said
   the same thing twice.
+- Fixed: if the other person was saying goodbye and you tapped Wrap up by mistake and
+  then cancelled it, the app forgot they were saying goodbye, so their next "bye"
+  waited for the AI instead of bringing up the goodbyes at once. The weekly usage
+  figures also now count practice conversations the pretend partner starts, and no
+  longer run a goodbye into the next turn.
 
 ## Version 0.13.4
 

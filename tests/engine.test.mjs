@@ -683,3 +683,15 @@ test('a refresh with no responses keeps the repair cards', () => {
     assert.ok(before >= 4);
     assert.equal(engine.refreshPalette([]).palette.length, before);
 });
+
+// CR-130. Cancelling Wrap up over a closing puts the closing back, floor left open.
+test('restorePhase puts back a closing and leaves the floor open', () => {
+    engine.reset();
+    engine.showClosings();
+    const before = engine.getSnapshot();
+    engine.windDown();
+    const snap = engine.restorePhase({ phase: before.phase, mode: before.mode });
+    assert.equal(snap.mode, engine.MODE.PRE_CLOSING_CLOSING);
+    assert.equal(snap.phase, before.phase);
+    assert.equal(snap.floor, engine.FLOOR.OPEN);
+});

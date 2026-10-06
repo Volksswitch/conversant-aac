@@ -622,6 +622,21 @@ export function resumeConversation() {
     return getSnapshot();
 }
 
+/*
+ * Put back the phase and mode a cancelled Wrap up or Start conversation interrupted,
+ * when that was a closing or a "What?" (CR-130), so the engine agrees with the cards
+ * restored on screen. The floor is NOT reconstructed - it is a best-effort reading and
+ * resumeConversation deliberately leaves it open too.
+ */
+export function restorePhase({ phase, mode } = {}) {
+    state.userLeading = false;
+    if (phase) state.phase = phase;
+    if (mode) state.mode = mode;
+    state.floor = FLOOR.OPEN;
+    state.palette = [];
+    return getSnapshot();
+}
+
 /** The closing-specific name, kept because it says what that caller means. */
 export function reopenFromClosing() {
     return resumeConversation();

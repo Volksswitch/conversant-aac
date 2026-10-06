@@ -2294,6 +2294,12 @@ function offerClosings() {
         generationToken++;
         ui.setLiveTranscript('');
         ui.setTranscriptState('idle');
+        // The same new-turn bookkeeping startFreshListening and resumeOrIdle do, so the
+        // usage counts see the partner's reply as a new turn (CR-128).
+        metrics.paletteAbandoned('new turn');
+        metrics.turnBoundary();
+        metrics.event(metrics.EV.LISTEN, { auto: true, status: 'start' });
+        pendingPartnerHistoryIdx = -1;
         stt.startListening();
     }
     const snap = engine.showClosings();
@@ -2800,6 +2806,8 @@ function endPracticeCue(token) {
 async function advancePracticePartner() {
     // Never during the button tour: it has no partner and needs no AI key (CR-028).
     if (!practiceMode || tour) return;
+    // A rehearsal the partner opens is a conversation too, for the usage counts (CR-129).
+    noteConversationStarted();
     const token = ++generationToken;   // aborts if the user ends/pauses mid-generation
     practiceCueToken = token;
     ui.setPaletteBusy(true);   // the cards showing may be replaced — say so (Ken)
@@ -3141,6 +3149,9 @@ function overlayEnter(which) {
         paletteOverlay = {
             which, cards: shownCards.cards, kind: shownCards.kind,
             static: currentStatic, status: ui.getStatus(),
+            // The engine's phase and mode, so cancelling puts back a closing or a
+            // "What?" exactly as it was (CR-130).
+            phase: engine.getSnapshot().phase, mode: engine.getMode(),
         };
     }
     paletteOverlay.which = which;
@@ -3155,7 +3166,9 @@ function overlayCancel() {
     ui.setWrapUpState(false);
     ui.setStartConversationState(false);
     // The general "we are staying in this conversation after all" transition.
-    ui.showEngineState(engine.resumeConversation());
+    const keep = back.mode === engine.MODE.PRE_CLOSING_CLOSING || back.mode === engine.MODE.REPAIR_OF_SELF;
+    ui.showEngineState(keep ? engine.restorePhase({ phase: back.phase, mode: back.mode })
+        : engine.resumeConversation());
     currentStatic = back.static;
     // An empty panel is put back as an empty panel, not as an empty "offer" (CR-021).
     if (back.cards && back.cards.length) showPalette(back.cards, back.kind);
