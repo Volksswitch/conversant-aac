@@ -321,3 +321,17 @@ test('resetting a band deletes its sound files, keeping any still in use', async
     assert.ok(!names.includes('gone-1.mp3'), 'the reset band\'s clip is deleted');
     assert.ok(names.includes('shared-1.mp3'), 'a clip another button still uses is kept');
 });
+
+// CR-284. A file written by a NEWER copy of the app is read, and never overwritten,
+// by this one. (Last in this file: it leaves the module refusing to write.)
+test('a panel from a newer version of the app is kept, not reseeded or overwritten', async () => {
+    await writePanelFile({ version: 3, seed: 99, sizes: {}, always: [{ id: 'w', type: 'phrase', text: 'mine' }], context: [], flex: {} });
+    store.clear();
+    await panel.load();
+    assert.ok(panel.getModel().always.some((x) => x.text === 'mine'), 'the user\'s phrase is read');
+    panel.setModel(panel.getModel());
+    await settle(); await settle();
+    const disk = await readPanelFile();
+    assert.equal(disk.version, 3);
+    assert.ok(disk.always.some((x) => x.text === 'mine'));
+});

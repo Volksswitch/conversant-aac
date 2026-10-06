@@ -154,6 +154,21 @@ touches every Settings tab.
 
 **Why not now:** a large change for a small benefit to this population.
 
+### The "×" beside a sentence in "What the app has picked up"
+
+**Raised:** October 6 2026, from code review item CR-286.
+
+**What is wanted:** Ken's decision. In About Me, each sentence the app has learned from
+the user's own conversations has a small "×". One tap stops the app using that sentence
+as an example of how the user talks, for good; there is no undo. The sentence itself
+stays in the saved conversation. Options: (1) ask first with the red confirmation card
+("Stop using this?") - lean, since this population taps imprecisely and these sentences
+are the scarcest evidence of how the user talks; (2) offer Undo until the screen is
+left; (3) leave it as it is, since the standing rule asks for confirmation only for
+"significant work".
+
+**Why not now:** whether this counts as significant work is Ken's call.
+
 ### The mode chip's styling: delete it, or is it coming back?
 
 **Raised:** October 5 2026, from code review items CR-175 and CR-179.

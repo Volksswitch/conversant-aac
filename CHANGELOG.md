@@ -551,6 +551,11 @@ forgetting to tag one is only ever noise, never silence.
   and a half, the sentence is now said in the device's own voice instead of the app
   going silent and stopping new suggestions until you tap something. When the AI
   declines to answer, what that request cost is now counted in Settings > About.
+- A speech-service key or region filled in by a password manager is now saved when you
+  leave the box, instead of being thrown away. If two devices share a data folder and
+  one has a newer version of the app, the older one no longer replaces your Express
+  Panel with the starting set. If the device's browser storage is full, a weekly
+  report that could not be prepared is tried again later instead of being lost.
 
 ## Version 0.13.4
 

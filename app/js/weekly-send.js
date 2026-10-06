@@ -359,24 +359,31 @@ async function gatherPayload({ appVersion, build, now }) {
     const allErrors = storage.loadErrorLog();
     const fresh = errorsSince(allErrors, storage.loadWeeklyErrorMark());
     const errors = redactErrors(fresh);
-    storage.saveWeeklyErrorMark(newestErrorTs(fresh, storage.loadWeeklyErrorMark()));
+    // Recorded only once the report is safely queued (CR-285) - see commit below.
+    const nextErrorMark = newestErrorTs(fresh, storage.loadWeeklyErrorMark());
+    let nextInfoHash = null;
     let systemInfo = null;
     try {
         const info = await diagnostics.collectSystemInfo({ appVersion, buildId: build });
         const h = hashOf(stableInfo(info));
         if (h !== storage.loadWeeklyInfoHash()) {
             systemInfo = info;
-            storage.saveWeeklyInfoHash(h);
+            nextInfoHash = h;
         }
     } catch { /* leave null */ }
     const lastAt = storage.loadWeeklySendLastAt();
-    return assemblePayload({
+    const payload = assemblePayload({
         testerName: storage.loadTesterName(),
         installId: storage.loadInstallId(),
         appVersion, build, now,
         coversDays: lastAt ? Math.round((now - lastAt) / 86400000) : null,
         usage, weeks, events, personalization, errors, systemInfo,
     });
+    const commit = () => {
+        storage.saveWeeklyErrorMark(nextErrorMark);
+        if (nextInfoHash) storage.saveWeeklyInfoHash(nextInfoHash);
+    };
+    return { payload, commit };
 }
 
 /* Hand one report to the endpoint and find out what it did with it.
@@ -476,8 +483,16 @@ export async function maybeSend({ appVersion, build, now = Date.now() } = {}) {
             // Still flush anything stranded from a previous week.
             return await flush();
         }
-        const payload = await gatherPayload({ appVersion, build, now });
-        storage.saveWeeklyQueue(enqueue(storage.loadWeeklyQueue(), payload));
+        const { payload, commit } = await gatherPayload({ appVersion, build, now });
+        // ⚠ ONLY A QUEUED REPORT COUNTS AS HANDLED (CR-285). With browser storage full
+        // the queue write fails; marking the week, the errors and the system info as
+        // sent anyway lost all three for good. Left unmarked, the next launch tries again.
+        if (!storage.saveWeeklyQueue(enqueue(storage.loadWeeklyQueue(), payload))) {
+            storage.appendWeeklySendLog({ at: new Date().toISOString(),
+                bytes: JSON.stringify(payload).length, outcome: 'could not be queued (storage full)' });
+            return await flush();
+        }
+        commit();
         // Mark the week done on ENQUEUE, not on send: the queue owns delivery from
         // here, and re-marking on every launch while offline would build one payload
         // per launch instead of one per week.

@@ -2803,9 +2803,11 @@ export function loadWeeklyQueue() {
     try { return JSON.parse(localStorage.getItem(WEEKLY_QUEUE_KEY)) || []; }
     catch { return []; }
 }
+// Returns whether the queue was written, so a report that could not be queued is not
+// marked as sent (CR-285).
 export function saveWeeklyQueue(q) {
-    try { localStorage.setItem(WEEKLY_QUEUE_KEY, JSON.stringify(q)); }
-    catch { /* quota — the queue is best-effort by design */ }
+    try { localStorage.setItem(WEEKLY_QUEUE_KEY, JSON.stringify(q)); return true; }
+    catch { return false; /* quota — the queue is best-effort by design */ }
 }
 
 // What has been sent, for the tester to read back. Dates, sizes and outcomes only

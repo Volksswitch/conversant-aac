@@ -1101,3 +1101,9 @@ test('practice library logs a disk failure instead of throwing', async () => {
     const pl = readFileSync(new URL('../app/js/practice-library.js', import.meta.url), 'utf8');
     assert.match(pl, /catch \(e\) \{ try \{ logError\('practice-library'/);
 });
+
+// CR-283. A key placed in a box without an input event is saved when the box is left.
+test('a key box saves its value on leaving, before showing the short form', () => {
+    const fn = appSource.slice(appSource.indexOf('function wireKeyField('));
+    assert.match(fn.slice(0, 2200), /if \(v !== \(ld\(\) \|\| ''\)\.trim\(\)\) \{ sv\(v\); if \(ch\) ch\(v\); \}/);
+});

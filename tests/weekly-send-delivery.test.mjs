@@ -99,3 +99,28 @@ test('a report kept back is sent on a later run, once the endpoint accepts it', 
     assert.equal(res.sent, 1);
     assert.equal(storage.loadWeeklyQueue().length, 0, 'and it leaves the queue only once accepted');
 });
+
+// CR-285. With browser storage full the weekly report cannot be queued, and then
+// nothing is marked as sent: not the week, not the errors, not the system info.
+test('a weekly report that cannot be queued leaves everything to be tried again', async () => {
+    store.clear();
+    offline();
+    const now = Date.now();
+    storage.saveWeeklySendLastAt(now - 10 * 86400000);
+    storage.logError('test', 'something went wrong');
+    const lastAt = storage.loadWeeklySendLastAt();
+    const mark = storage.loadWeeklyErrorMark();
+    const realSet = globalThis.localStorage.setItem;
+    globalThis.localStorage.setItem = (k, v) => {
+        if (k === 'aac_weekly_queue') throw new Error('QuotaExceededError');
+        return realSet(k, v);
+    };
+    try {
+        await weekly.maybeSend({ appVersion: '0.0.0', build: 'test', now });
+    } finally {
+        globalThis.localStorage.setItem = realSet;
+    }
+    assert.equal(storage.loadWeeklySendLastAt(), lastAt, 'the week is not marked done');
+    assert.equal(storage.loadWeeklyErrorMark(), mark, 'the errors are not marked sent');
+    assert.ok(storage.loadWeeklySendLog().some((e) => /could not be queued/.test(e.outcome)));
+});

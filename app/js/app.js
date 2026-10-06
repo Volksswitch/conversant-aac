@@ -1003,7 +1003,18 @@ function wireKeyField(input, { load, save, onChange }) {
                 input.classList.remove('key-redacted');
             }
         });
-        input.addEventListener('blur', () => showRedactedKey(input, cb().load()));
+        input.addEventListener('blur', () => {
+            // A key placed in the box without an input event (some password managers
+            // and extensions) is saved here, before the box is put back to the stored
+            // key's short form - which used to throw it away, for every key box
+            // (CR-283). Never saves the short form itself.
+            const { load: ld, save: sv, onChange: ch } = cb();
+            if (!input.dataset.redacted) {
+                const v = input.value.trim();
+                if (v !== (ld() || '').trim()) { sv(v); if (ch) ch(v); }
+            }
+            showRedactedKey(input, ld());
+        });
         input.addEventListener('input', () => {
             // Never save the redacted placeholder back over the real key.
             if (input.dataset.redacted) return;
@@ -8241,7 +8252,9 @@ function openSettings() {
     if (azureRegionInput) {
         azureRegionInput.value = storage.loadAzureRegionSetting();
         // Property handlers, so re-opening Settings replaces rather than adds (CR-084).
+        let regionTyped = azureRegionInput.value;
         azureRegionInput.oninput = () => {
+            regionTyped = azureRegionInput.value;
             storage.saveAzureRegion(azureRegionInput.value);
             showAzureStatus(null, '');
             reflectAzureTestAvailability();
@@ -8253,7 +8266,10 @@ function openSettings() {
         // Show the stored form on blur - "(US) East US" becomes "eastus" - so the box
         // says exactly what the app will use.
         azureRegionInput.onblur = () => {
+            // Saved first if it changed without an input event (CR-283).
+            if (azureRegionInput.value !== regionTyped) azureRegionInput.oninput();
             azureRegionInput.value = storage.loadAzureRegionSetting();
+            regionTyped = azureRegionInput.value;
         };
     }
     const pasteAzureBtn = document.getElementById('pasteAzureKeyBtn');

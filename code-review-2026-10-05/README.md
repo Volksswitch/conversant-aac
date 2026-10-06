@@ -319,12 +319,12 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-278](CR-278.md) | fixed (042f1ef) | low | plausible | bug | `app/js/stt.js:474` | Backgrounding the app loses the words the partner was in the middle of saying |
 | [CR-279](CR-279.md) | fixed (4d78005) | low | plausible | bug | `app/js/suggest-anthropic.js:234` | A reply with no text block (e.g. a refusal) loses both its token usage and its stop reason |
 | [CR-280](CR-280.md) | fixed (4d78005) | low | plausible | bug | `app/js/tts-azure.js:463` | A stuck audio wake-up can leave the paid voice 'speaking' forever and block every later sentence |
-| [CR-281](CR-281.md) | fixed (pending) | low | plausible | bug | `app/js/tts-deepgram.js:606` | A Deepgram retry reuses the same player, so the failed attempt's first fragment plays before the retried sentence |
-| [CR-282](CR-282.md) | fixed (pending) | low | plausible | bug | `app/sw.js:151` | Per-file network timeout can mix old cached modules with new ones right after a deploy |
-| [CR-283](CR-283.md) | open | low | plausible | data-loss | `app/js/app.js:981` | Key fields discard text that arrived without an input event when focus leaves, and Close/Escape only re-check the Claude key |
-| [CR-284](CR-284.md) | open | low | plausible | data-loss | `app/js/express-panel.js:71` | An older copy of the app reseeds the panel from defaults if it reads a newer-version panel file |
-| [CR-285](CR-285.md) | open | low | plausible | data-loss | `app/js/weekly-send.js:295` | Weekly report bookkeeping is advanced before the report is safely queued, so a storage-full failure loses the report and its errors silently |
-| [CR-286](CR-286.md) | open | low | plausible | data-loss | `app/js/worldview-ui.js:576` | Removing a learned voice example in About Me is permanent and has no confirmation or undo |
+| [CR-281](CR-281.md) | fixed (f083218) | low | plausible | bug | `app/js/tts-deepgram.js:606` | A Deepgram retry reuses the same player, so the failed attempt's first fragment plays before the retried sentence |
+| [CR-282](CR-282.md) | fixed (f083218) | low | plausible | bug | `app/sw.js:151` | Per-file network timeout can mix old cached modules with new ones right after a deploy |
+| [CR-283](CR-283.md) | fixed (pending) | low | plausible | data-loss | `app/js/app.js:981` | Key fields discard text that arrived without an input event when focus leaves, and Close/Escape only re-check the Claude key |
+| [CR-284](CR-284.md) | fixed (pending) | low | plausible | data-loss | `app/js/express-panel.js:71` | An older copy of the app reseeds the panel from defaults if it reads a newer-version panel file |
+| [CR-285](CR-285.md) | fixed (pending) | low | plausible | data-loss | `app/js/weekly-send.js:295` | Weekly report bookkeeping is advanced before the report is safely queued, so a storage-full failure loses the report and its errors silently |
+| [CR-286](CR-286.md) | open - awaits Ken (TODO.md: confirm before removing a learned sentence) | low | plausible | data-loss | `app/js/worldview-ui.js:576` | Removing a learned voice example in About Me is permanent and has no confirmation or undo |
 | [CR-287](CR-287.md) | open | low | plausible | design-violation | `app/js/help-mode.js:287` | Spoken-help cleanup depends on the Settings dialog 'close' event, against the standing rule |
 | [CR-288](CR-288.md) | open | low | plausible | design-violation | `app/js/storage.js:93` | Changing or forgetting the data folder mid-conversation keeps writing the conversation into the old folder |
 | [CR-289](CR-289.md) | open | low | plausible | other | `app/js/storage.js:2204` | logEvent lets a caller field overwrite the entry's role, timestamp or kind (latent - no current caller does) |

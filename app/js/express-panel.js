@@ -65,13 +65,22 @@ function defaults() {
     };
 }
 
+/*
+ * A file written by a NEWER copy of the app (CR-284). Two devices share one folder, and
+ * one may be updated before the other; the older copy used to read a newer file as
+ * version 1, reseed, and write the starting set back over the user's panel at the
+ * first edit. Now it reads the parts it knows and never writes the file.
+ */
+let newerOnDisk = false;
+
 /** Coerce whatever was on disk into the current shape. */
 function normalize(raw) {
     const d = defaults();
-    if (!raw || typeof raw !== 'object' || Array.isArray(raw) || raw.version !== MODEL_VERSION) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw) || !(raw.version >= MODEL_VERSION)) {
         // Version 1 (a bare array, or { items: [...] }) — or nothing at all. Reseed.
         return d;
     }
+    if (raw.version > MODEL_VERSION) newerOnDisk = true;
     const sizes = raw.sizes || {};
     const flex = {};
     for (const [key, list] of Object.entries(raw.flex || {})) {
@@ -83,7 +92,8 @@ function normalize(raw) {
     // set takes the current one; the Context band comes with it ONLY if the user has
     // never touched it. Everything else - sizes, Flex lists, a Context band with any
     // of the user's own buttons in it - is left exactly as they had it.
-    const stale = num(raw.seed, 0) !== SEED_REVISION;
+    // Older than this build's set only: a newer build's revision is not "stale" here.
+    const stale = num(raw.seed, 0) < SEED_REVISION;
     // ⚠ Judge "untouched" AFTER stamping provenance, not before. A file written before
     // the origin field existed carries none at all, and a bare `!x.origin` would read
     // a partner button the user added as ours and throw it away - which is precisely
@@ -122,6 +132,7 @@ function writeCache(m) {
 }
 function writeDisk(m) {
     // Best-effort; never blocks the UI. No-op without a data folder.
+    if (newerOnDisk) return;   // never overwrite a newer copy's file (CR-284)
     writeFile(FILE, JSON.stringify({ ...m, updated: new Date().toISOString() }, null, 2))
         .catch(() => { /* disk write is best-effort */ });
 }
