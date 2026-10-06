@@ -3019,7 +3019,9 @@ async function terminateConversation() {
     // Raises "it ended" only if one had actually begun — see conversationBoundary.
     metrics.conversationBoundary({ turns: conversationHistory.length, practice: practiceMode });
     manualListenArmed = false;
-    stt.stopListening();
+    // Practice never opened a microphone, so it must not record one going off (CR-136).
+    if (!practiceMode) stt.stopListening();
+    else { isListening = false; ui.setListenButtonState(false); }
     // Capture the partner's pending (uncommitted) turn BEFORE we discard the STT
     // buffer / history. If the partner spoke but the user ended / restarted before
     // choosing a reply, commit their words to THIS conversation instead of dropping
@@ -3841,6 +3843,12 @@ async function handleReframe() {
      *
      * The in-flight case is already handled by the token bump below; this drops one
      * that had finished and was waiting for the cancel path. */
+    // The held refresh's CHOICE buttons are still this turn's: Reframe wins over its
+    // cards, not over what the partner offered (CR-135).
+    if (heldForComposer) {
+        setOfferedChoices(heldForComposer.offered || []);
+        setOfferedRange(heldForComposer.range || null);
+    }
     dropHeldForComposer();
 
     // A steer is the user saying the suggestion was wrong and how. Recorded so a
@@ -4051,7 +4059,8 @@ async function speakAsUserTurn(historyText, spokenText = historyText, source = '
     // mid-utterance (an instant Express phrase / composed statement) still records
     // what they'd said up to the interruption (Ken).
     const raw = heardPartnerText();
-    stt.stopListening();
+    if (!practiceMode) stt.stopListening();   // no microphone in practice (CR-136)
+    else { isListening = false; ui.setListenButtonState(false); }
     // Speaking IS a floor change, so the partner turn just captured is consumed.
     // stopListening() keeps the buffer, and with auto-resume off nothing else empties
     // it - so the next Listen tap took the "paused mid-turn" branch and glued their
@@ -4871,7 +4880,8 @@ function goalStamp() {
     // `id` joins back to the twelve, or is the text key for one the user typed; and
     // `source` is which of the three lists it came from, so a goal that vanished at
     // a partner change can be told from one the user switched off.
-    return on.map((g) => ({ id: g.id, text: g.text, source: g.source || 'general' }));
+    // Where it was switched on from, not where its button happens to come from now (CR-137).
+    return on.map((g) => ({ id: g.id, text: g.text, source: activeGoals.get(g.id) || g.source || 'general' }));
 }
 // Where the turn happened. Keeps the stable placeId (when the Express item points at
 // a recorded place) so a reviewed conversation can join back to My Places, plus the
@@ -5745,6 +5755,15 @@ async function playAudioTurn(item, inherit = null) {
     const opensConversation = !inherit && conversationHistory.length === 0;
     const raw = inherit ? '' : heardPartnerText();
     stt.stopListening();   // the mute
+    // The decision is the TAP, not the end of the sound (CR-138): stop the reading
+    // clock and anything still on its way now. None of this waits, so the sound still
+    // starts inside the tap, as an iPad requires.
+    noteUserAction('express');
+    metrics.paletteAbandoned('express sound');
+    metrics.event(metrics.EV.EXPRESS_PHRASE);
+    placeholders.stop();
+    generationToken++;
+    ui.setPaletteBusy(false);
     const result = await playClip(item, { wasListening });
     if (!result.played) {
         storage.logError('express-audio', `A sound button could not play: ${result.why}`);
@@ -5757,13 +5776,8 @@ async function playAudioTurn(item, inherit = null) {
     // and the partner turn captured above is consumed (CR-003). Not before the
     // played check: a clip that failed resumes the SAME turn and must keep it.
     if (!practiceMode) stt.resetTranscript();
-    // It played, so the user has taken the floor exactly as a spoken phrase does.
-    noteUserAction('express');
-    metrics.paletteAbandoned('express sound');
-    metrics.event(metrics.EV.EXPRESS_PHRASE);
-    placeholders.stop();
-    generationToken++;
-    ui.setPaletteBusy(false);
+    // It played, so the user has taken the floor exactly as a spoken phrase does
+    // (the bookkeeping for the tap was done before the sound started).
     currentPartnerText = '';
     currentPartnerUncertain = [];
     clearPalette();

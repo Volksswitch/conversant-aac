@@ -365,6 +365,10 @@ forgetting to tag one is only ever noise, never silence.
 - Fixed: after you used Reframe on your own turn to get statements that steer the
   conversation, the New button did nothing. It now brings a different set of
   statements in the same direction.
+- Fixed: if the other person offered a list while you were typing in "In my own words"
+  and you then tapped Reframe, the buttons for that list never appeared on the Express
+  Panel. And playing a sound now stops any new suggestion cards from popping in while
+  it plays.
 
 ## Version 0.13.4
 

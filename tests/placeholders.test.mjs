@@ -847,3 +847,12 @@ test('CR-134: New N over steering statements asks for different statements', () 
     assert.match(rg, /if \(!currentPartnerText && activeSteer\.lead && lastPalette\.length\)/);
     assert.match(appSource, /activeSteer = \{ focusChoice: null, steer: null, lead: null \};\n\}/);
 });
+
+test('CR-135-138: held choices survive Reframe, practice logs no mic, goal source kept, sound decision at the tap', () => {
+    const rf = appSource.slice(appSource.indexOf('async function handleReframe'));
+    assert.ok(rf.indexOf('setOfferedChoices(heldForComposer.offered') < rf.indexOf('dropHeldForComposer();'));
+    assert.match(appSource, /source: activeGoals\.get\(g\.id\) \|\| g\.source/);
+    const pa = appSource.slice(appSource.indexOf('async function playAudioTurn'));
+    assert.ok(pa.indexOf("noteUserAction('express')") < pa.indexOf('await playClip('));
+    assert.equal((pa.slice(0, 3000).match(/noteUserAction\('express'\)/g) || []).length, 1);
+});
