@@ -430,8 +430,8 @@ forgetting to tag one is only ever noise, never silence.
   you made for them, and the warning says so; and rephrased repeats, practice openers
   and steering statements now follow the same rules as suggestions, so no texting
   shorthand, symbols, or empty "Well," at the start.
-- Several answers in About Me's "How I Sound" questions sounded British ("lovely",
-  "mind you", "a bit of a queue"), and the one you picked was used to shape your
+- Several answers in About Me's "How I Sound" questions sounded British (words like
+  "lovely" and "mind you"), and the one you picked was used to shape your
   suggestions. They now read as American English; if you already answered, your answer
   carries over to the new wording.
 - On an Android device, pasting an Azure key and region now switches hearing to Azure

@@ -231,8 +231,8 @@ How the raw findings fared: 391 reported, 332 confirmed, 54 plausible, 0 unverif
 | [CR-190](CR-190.md) | fixed (76e8303) | low | confirmed | design-violation | `app/js/llm.js:773` | Speakability and no-empty-interjection rules are missing from the other prompts that write the user's words |
 | [CR-191](CR-191.md) | fixed (e84534d) | low | confirmed | design-violation | `app/js/sound-check-items.js:108` | Sound Check replies use British phrasing, and the chosen ones become the user's voice in every prompt |
 | [CR-192](CR-192.md) | fixed (c087809) | low | confirmed | design-violation | `app/js/storage.js:1081` | Android hearing default switches to a paid service only for a Deepgram key, not the recommended Azure key |
-| [CR-193](CR-193.md) | fixed (pending) | low | confirmed | design-violation | `app/js/storage.js:2708` | errors.log gets fancy punctuation through the error's extra detail, breaking the plain-ASCII log rule |
-| [CR-194](CR-194.md) | fixed (pending) | low | confirmed | design-violation | `app/js/tts.js:133` | The voice crossover guard does not know Azure's voices |
+| [CR-193](CR-193.md) | fixed (1b08e12) | low | confirmed | design-violation | `app/js/storage.js:2708` | errors.log gets fancy punctuation through the error's extra detail, breaking the plain-ASCII log rule |
+| [CR-194](CR-194.md) | fixed (1b08e12) | low | confirmed | design-violation | `app/js/tts.js:133` | The voice crossover guard does not know Azure's voices |
 | [CR-195](CR-195.md) | open | low | confirmed | design-violation | `app/js/tts.js:337` | An Express phrase's respelling is announced to the echo filter and 'now playing' line instead of its display text |
 | [CR-196](CR-196.md) | open | low | confirmed | design-violation | `app/js/ui.js:424` | The 'Try again' button in the response area is not covered by the two-tap safeguard |
 | [CR-197](CR-197.md) | open | low | confirmed | design-violation | `app/js/ui.js:611` | Goal buttons reference an undefined --goal-tint token |
