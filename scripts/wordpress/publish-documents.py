@@ -3,6 +3,8 @@
     python scripts/wordpress/publish-documents.py            # show what would change
     python scripts/wordpress/publish-documents.py --apply    # do it
     python scripts/wordpress/publish-documents.py --apply --force   # ignore the dates
+    python scripts/wordpress/publish-documents.py --apply --force --only "User Manual"
+                                    # only documents whose file name contains the text
 
 For every document in user-documents.json whose "Last updated" date differs from the
 one already published (or that has never been published): export a fresh PDF through
@@ -58,11 +60,17 @@ def build_table(docs):
 def main():
     apply = '--apply' in sys.argv
     force = '--force' in sys.argv
+    # --only <text>: limit to documents whose file name contains the text. A sync of
+    # some documents must not publish others that were edited the same day and
+    # deliberately left unpublished (October 6 2026).
+    only = sys.argv[sys.argv.index('--only') + 1] if '--only' in sys.argv else None
     cfg = json.load(open(LIST, encoding='utf-8'))
     docs = cfg['documents']
     replaced, plan = [], []
 
     for d in docs:
+        if only and only.lower() not in d['file'].lower():
+            continue
         path = os.path.join(DOCS, d['file'])
         said = stamp.byline_date(path)
         if said is None:
