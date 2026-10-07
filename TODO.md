@@ -759,6 +759,13 @@ about to fall by an order of magnitude is the trap.
     draft also once invented an event about his dog; the rewording fixed that. Also seen:
     asked "So what happened to you?", 7 of 10 sets offered his About Me line "My body
     doesn't cooperate, but my mind is sharp" to a stranger.
+  - **Ken's check by eye (2026-10-06):** all six sets turning down a stranger's favor
+    were OK, current and new. All three "Coffee or tea?" sets under today's instructions
+    were wrong, all three under the new ones OK. The fault was the fourth option, "What
+    are you having?", which is out of place at a café counter. That is one of the sample
+    wordings the change takes out of the rule about turning the question back, and with
+    it gone the AI offered "What kind of tea do you have?" instead. He agreed with the
+    judge on only 5 of 8 blind pairs, so the judge's numbers are weak.
   - **What it means:** taking the sample wordings out changes how declines sound, but by
     itself the rearrangement did not make Marc sound more like himself, and it loosened
     one profile limit on teasing. Test B (under item 8) found that the new instructions
@@ -924,8 +931,11 @@ about to fall by an order of magnitude is the trap.
     not one per conversation. That argues for making rewriting cheap enough to do often,
     rather than asking for the single worst turn.
   - **Limits:** invented personas and rewrites, nobody really typed them, two partners,
-    and the judge is the same kind of AI that wrote the options. Ken's 10-minute check of
-    the judge (the plan's Part 5) is pending.
+    and the judge is the same kind of AI that wrote the options.
+  - **Ken's check of the judge (2026-10-06): he agreed with it on 5 of 8 blind pairs**,
+    which the plan set in advance as "the judge's numbers are weak". Two of his three
+    disagreements were review pairs the judge had scored as wins for review, so the
+    judge's numbers above should be read as rough.
 
 #### 9. Register per person
 - **Raised:** 2026-10-06 - the evaluation's avenue 9.
