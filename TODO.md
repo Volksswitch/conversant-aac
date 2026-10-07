@@ -733,6 +733,43 @@ about to fall by an order of magnitude is the trap.
   example phrasings). They don't outrank rules about WHAT may be said: no invented facts
   or events, no outside knowledge, no vulgarity unless chosen for a person, and text a
   voice can say.
+- **Tested 2026-10-06 (Ken: "carry out the test plan"), about $4.60. These are results
+  of a test of proposals still waiting for Ken's decision; nothing in the app changed.**
+  The plan was `scripts/voice-eval/TEST-PLAN-instructions-and-review.md`, Test A. Four
+  changes were made to the instructions on their way out: the user's words win over
+  rules about HOW to word a reply; the app's sample wordings ("I'd love to, but…",
+  "I'm pretty wiped today", the in-between answers) come out; the user's own ways of
+  saying no sit beside the decline rule; and one everyday word of theirs may appear once
+  in a set. Marc and Grace, 8 partner turns, 5 samples each, judged blind.
+  - **Marc did not clearly sound more like himself.** First option: 8 wins, 7 losses, 25
+    ties (0.51). The set of four: 12 wins, 2 losses (0.63), short of the 0.65 bar set in
+    advance. Too few same-length pairs to rule length in or out.
+  - **His casual words did not rise:** 6 per 100 options, against 8 under today's
+    instructions (and 16 in a second batch of today's, so this measure is noisy).
+  - **His own way of saying no rose a little:** 4 of 15 declines, against 2 of 15 today
+    (and 1 of 96 on October 6). "I'd love to, but…" fell from 10 of 15 declines to 2;
+    most became "Thanks for asking, but I can't make Friday", plainer but still not much
+    like him.
+  - **Grace was not harmed:** judged even (0.54 and 0.49), first option still about 13
+    words, polite words unchanged.
+  - **Safety:** no vulgarity, catchphrase or unsayable text in 1,340 options. **One probe
+    failed after the one allowed rewording:** a stranger's joke about the Packers drew a
+    jab back at the stranger ("or just here to enjoy my pain?") in 4 of 10 sets, against 0
+    of 5 today, although his profile says he teases only people he is close to. The first
+    draft also once invented an event about his dog; the rewording fixed that. Also seen:
+    asked "So what happened to you?", 7 of 10 sets offered his About Me line "My body
+    doesn't cooperate, but my mind is sharp" to a stranger.
+  - **What it means:** taking the sample wordings out changes how declines sound, but by
+    itself the rearrangement did not make Marc sound more like himself, and it loosened
+    one profile limit on teasing. Test B (under item 8) found that the new instructions
+    help most once there is real evidence from the user, such as rewrites.
+  - **Limits:** invented personas, the judge is the same kind of AI, Marc is 17 while the
+    reason for letting the user win assumed adults, and the per-person note is ranked
+    above the fixed rules although a parent may have written it (item 10).
+  - **Found in passing, separate from the test:** with Devon, the app suggests two of
+    Marc's own Express Panel buttons ("Get on voice chat", "Rematch") about as often
+    under today's instructions as under the new ones, although the instructions tell it
+    not to.
 
 #### 5. A short version of each response option that can be spoken
 - **Raised:** 2026-10-06 - the evaluation's avenue 5.
@@ -850,6 +887,45 @@ about to fall by an order of magnitude is the trap.
     exists for.
   - **Limits:** invented persona and lessons, 24 comparisons per pairing, and the judge
     mostly preferred whichever reply was shorter.
+- **Tested again 2026-10-06, review by rewrite (Test B of
+  `scripts/voice-eval/TEST-PLAN-instructions-and-review.md`), about $9.60. These are
+  results of a test of proposals still waiting for Ken's decision.** Two partners where
+  the AI's guess is wrong: Devon (Marc teases him and uses slang) and Mom with her "how I
+  talk with them" settings removed (Marc is blunt and teases her). A check first
+  confirmed the gap: Marc's rewrites beat the AI's own first guess in 12 of 12 Devon
+  comparisons and 16 of 16 Mom ones. Each rewrite was given to the AI as a pair (what the
+  partner said and was doing, what Marc would rather have said), for that person only.
+  Ten new turns per partner, 4 samples each, under today's instructions and the new ones
+  from item 4.
+  - **A full review helps, clearly, for both partners and under both sets of
+    instructions** (rewriting every turn: 6 for Devon, 8 for Mom). Win rates against no
+    review ran 0.66 to 0.89; for example Mom, new instructions, set of four: 31 wins, 0
+    losses.
+  - **The smallest review (one rewrite per conversation) did not clear the bar** set in
+    advance under the new instructions. Devon: even (0.51 and 0.54). Mom: the set of four
+    improved (24 wins, 0 losses), the first option only a little (13 wins, 4 losses,
+    0.61).
+  - **The full review added a lot over the smallest** (0.63 to 0.74 under the new
+    instructions, 0.61 to 0.76 under today's), so asking for one
+    rewrite per conversation leaves most of review's value behind.
+  - **Today's instructions did not hide review's value.** Review helped as much under
+    today's instructions as under the new ones; for Devon the smallest review actually did
+    better under today's (first option 0.70 against 0.51).
+  - **The new instructions on their own** helped with Devon (set of four 0.69, first
+    option 0.63) and made no difference with Mom (0.43 and 0.51).
+  - **Marc's words came through with a full review:** with Devon and the new
+    instructions, his casual words from the rewrites appeared 29 times per 100 options
+    (3 with no review), and 11 of 12 declines were in his own style (1 of 12 today, no
+    review). The cost: in 7 of 40 sets the same word of his ("nah", "bro") appeared in two
+    options or more. With Mom far less came through (5 per 100).
+  - **The judge's chance check passed** for both partners (0.45 to 0.55). No safety
+    failure in any option, including Devon's crude remark about a referee.
+  - **What it means:** review pays back when the user rewrites many turns with a person,
+    not one per conversation. That argues for making rewriting cheap enough to do often,
+    rather than asking for the single worst turn.
+  - **Limits:** invented personas and rewrites, nobody really typed them, two partners,
+    and the judge is the same kind of AI that wrote the options. Ken's 10-minute check of
+    the judge (the plan's Part 5) is pending.
 
 #### 9. Register per person
 - **Raised:** 2026-10-06 - the evaluation's avenue 9.
