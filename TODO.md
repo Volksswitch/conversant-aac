@@ -936,6 +936,14 @@ about to fall by an order of magnitude is the trap.
     which the plan set in advance as "the judge's numbers are weak". Two of his three
     disagreements were review pairs the judge had scored as wins for review, so the
     judge's numbers above should be read as rough.
+  - **Review's value over About Me is unproven (Ken, 2026-10-06).** Ken: *"I can't see
+    where conversation review adds any value over and above the About me survey
+    content."* The test did not give About Me a fair chance. Devon's "how I talk with
+    them" settings name no words, so "nah", "bro" and "dude" reached the AI only through
+    the rewrites; and Mom's settings were removed, so review was compared with nothing.
+    A note saying "With Devon I say nah, bro and dude a lot" might do much the same for a
+    minute's typing instead of about ten. Ken chose not to test that now; recorded so a
+    future review design is not justified by these numbers.
 
 #### 9. Register per person
 - **Raised:** 2026-10-06 - the evaluation's avenue 9.
