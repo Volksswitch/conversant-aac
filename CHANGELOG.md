@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.13.7
+
 - Conversation Review is simpler. Pick a turn that didn't sound like you, and the typing
   box opens with what you said at the time. Write the whole reply the way you'd have said
   it, and save it. Your rewrites with a person are used only when you talk with that
@@ -38,8 +40,8 @@ forgetting to tag one is only ever noise, never silence.
 - Settings now calls the suggested replies "response options" everywhere, the same word the
   User Manuals use, instead of sometimes calling them "cards".
 - **Keep a Reframe instruction with one tap.** About Me → How I Sound → "What the app has
-  picked up" now lists the instructions you typed with Reframe, in conversations and in
-  Conversation Review. Tap "Keep for everyone", or "Keep for" the person you were talking
+  picked up" now lists the instructions you typed with Reframe in your conversations.
+  Tap "Keep for everyone", or "Keep for" the person you were talking
   with. A kept instruction is used every time, or only while that person's partner button
   is on.
 - **Asking for the same thing in different words now counts.** "Shorter" and "keep it to
