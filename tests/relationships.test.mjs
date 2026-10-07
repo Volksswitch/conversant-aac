@@ -447,3 +447,24 @@ test('a person\'s topics are split on commas, survive a reload, and reach the pa
     await rel.updatePerson(id, { topicsAvoid: '' });
     assert.doesNotMatch(rel.buildPartnerBlock(id), /rather not talk about/);
 });
+
+// --- Words used with one person (Ken, October 6 2026) ---------------------------
+
+test('words the user uses with a person reach that person\'s block, and only when set', async () => {
+    const id = await rel.addPerson({ name: 'Devon', relationship: 'friend' });
+    await rel.setPartnerProfile(id, { words: '  nah, bro, dude  ' });
+    assert.equal(rel.getPartnerProfile(id).words, 'nah, bro, dude');
+    const block = rel.buildPartnerBlock(id);
+    assert.match(block, /How this user speaks WITH Devon/);
+    assert.match(block, /Words this user often uses with Devon: nah, bro, dude\./);
+    assert.match(block, /at most once in a set of options/, 'a word of theirs must not become a tic');
+    await rel.setPartnerProfile(id, { words: '' });
+    assert.equal(rel.buildPartnerBlock(id), '', 'cleared, it adds nothing');
+});
+
+test('the words are kept with everything else on the person', async () => {
+    const id = await rel.addPerson({ name: 'Devon', relationship: 'friend' });
+    await rel.setPartnerProfile(id, { words: 'nah', note: 'Best friend.' });
+    await rel.setPartnerProfile(id, { note: 'Best friend since fourth grade.' });
+    assert.equal(rel.getPartnerProfile(id).words, 'nah', 'saving another field leaves the words alone');
+});

@@ -224,9 +224,20 @@ function finishTurn(t, index, practice) {
             partnerId: (t.context.partner && typeof t.context.partner === 'object' && t.context.partner.id) || null,
             place: labelOf(t.context.place),
             feeling: labelOf(t.context.feeling),
+            goals: Array.isArray(t.context.goals) ? t.context.goals.map(labelOf).filter(Boolean) : null,
         },
+        // What the other person was doing (asking, inviting, ...), as the AI read it when
+        // it wrote the options. Saved with each set of options since October 6 2026;
+        // older files have none.
+        partnerAction: partnerActionOf(t.offers, offer),
         errors: t.errors.map((e) => String(e.message || e.context || 'error')),
     };
+}
+
+function partnerActionOf(offers, shown) {
+    if (shown && shown.partnerAction) return shown.partnerAction;
+    for (let i = offers.length - 1; i >= 0; i--) if (offers[i] && offers[i].partnerAction) return offers[i].partnerAction;
+    return null;
 }
 
 /**
@@ -271,6 +282,17 @@ export function durationLabel(ms) {
 }
 
 // --- The review file ----------------------------------------------------------
+//
+// ONE KIND OF ANSWER: A REWRITE (Ken, October 6 2026: "Let's simplify everything").
+// The user picks a turn, the Composition Pane opens with what was said at the time,
+// and they write the whole reply they would rather have said. Tests the same day found
+// that the other answers review used to offer (a closer response option, an Express
+// button, New 4, the context marks, the "wrong words" flag, a steer) changed nothing
+// measurable, while rewrites with one person changed how the app spoke with them.
+//
+// Files written before this keep their old answers on disk until the turn is touched
+// again. Only the two kinds that were the user's own words are read: a typed sentence
+// and a reworded response option, both as rewrites. The rest are dropped on reading.
 
 export function emptyReview(conversationId) {
     return { kind: 'conversant-review', version: REVIEW_VERSION, conversationId: conversationId || null, updated: null, turns: {} };
@@ -291,144 +313,59 @@ export function normalizeReview(raw, conversationId) {
 }
 
 function emptyEntry() {
-    return { answer: null, reframers: [], steer: null, misheard: null };
+    return { answer: null };
 }
 
 // An entry that says nothing is dropped, so the file only ever holds turns the user
-// actually touched (§13.2).
+// actually rewrote.
 function cleanEntry(entry) {
     if (!entry || typeof entry !== 'object') return null;
-    const e = {
-        answer: entry.answer && typeof entry.answer === 'object' ? { ...entry.answer } : null,
-        reframers: Array.isArray(entry.reframers) ? entry.reframers.filter((r) => r && r.kind && (r.id || r.label)) : [],
-        steer: typeof entry.steer === 'string' && entry.steer.trim() ? entry.steer.trim() : null,
-        steerAt: typeof entry.steerAt === 'string' ? entry.steerAt : null,
-        misheard: entry.misheard && typeof entry.misheard === 'object' ? { ...entry.misheard } : null,
-    };
-    if (e.answer && e.answer.kind === 'card') {
-        // Leaving the spoken card as it was records nothing (§6.1): from the outside it
-        // looks exactly like leaving the turn alone, and the app never guesses.
-        if (e.answer.unchangedSpoken) e.answer = null;
-    }
-    if (e.answer && (e.answer.kind === 'typed') && !String(e.answer.text || '').trim()) e.answer = null;
-    if (e.misheard && typeof e.misheard.said === 'string' && !e.misheard.said.trim()) e.misheard.said = null;
-    if (!e.answer && !e.reframers.length && !e.steer && !e.misheard) return null;
-    return e;
+    const a = entry.answer && typeof entry.answer === 'object' ? entry.answer : null;
+    if (!a) return null;
+    let text = '';
+    if (a.kind === 'rewrite' || a.kind === 'typed') text = String(a.text || '').trim();
+    else if (a.kind === 'card' && a.rewritten) text = String(a.text || '').trim();
+    if (!text) return null;
+    return { answer: { kind: 'rewrite', text, moment: a.moment && typeof a.moment === 'object' ? { ...a.moment } : null } };
 }
 
 export function getEntry(review, key) {
     return (review && review.turns && review.turns[key]) || emptyEntry();
 }
 
-function withEntry(review, key, fn) {
+/** The moment a rewrite belongs to: who, where, how they felt, the goals on, what the
+ *  other person was doing and said, and what kind of reply was given at the time. */
+export function momentOf(turn) {
+    const c = turn.context || {};
+    return {
+        partner: c.partner || null,
+        partnerId: c.partnerId || null,
+        place: c.place || null,
+        feeling: c.feeling || null,
+        goals: Array.isArray(c.goals) && c.goals.length ? c.goals.slice() : null,
+        action: turn.partnerAction || null,
+        partnerText: turn.partnerText || '',
+        spokenSlot: (turn.user && turn.user.slot) || null,
+    };
+}
+
+/**
+ * Record the reply the user would rather have said. Writing back exactly what was said
+ * at the time, or nothing, records nothing.
+ */
+export function setRewrite(review, turn, text) {
+    const words = String(text || '').trim();
+    const spoken = String((turn.user && turn.user.text) || '').trim();
     const next = { ...review, turns: { ...review.turns } };
-    const entry = JSON.parse(JSON.stringify(getEntry(review, key)));
-    fn(entry);
-    const clean = cleanEntry(entry);
-    if (clean) next.turns[key] = clean; else delete next.turns[key];
+    if (!words || words === spoken) delete next.turns[turn.key];
+    else next.turns[turn.key] = { answer: { kind: 'rewrite', text: words, moment: momentOf(turn) } };
     return next;
 }
 
-/**
- * Record a card as the answer, with the words as they now stand.
- *
- * Choosing ONE ANSWER CLEARS THE OTHERS: a card, a phrase, a typed sentence and New 4
- * all answer the same question, and two answers to one question mean neither.
- */
-export function setCardAnswer(review, turn, index, text) {
-    const original = (turn.cards[index] && turn.cards[index].text) || '';
-    const words = String(text == null ? original : text).trim();
-    return withEntry(review, turn.key, (e) => {
-        e.answer = {
-            kind: 'card',
-            index,
-            slot: (turn.cards[index] && turn.cards[index].slot) || null,
-            text: words,
-            original,
-            rewritten: words !== original.trim(),
-            unchangedSpoken: index === turn.took && words === original.trim(),
-        };
-    });
-}
-
-export function setPhraseAnswer(review, turn, { itemId = null, text = '', sound = false, needed = null, speak = null } = {}) {
-    return withEntry(review, turn.key, (e) => {
-        e.answer = {
-            kind: sound ? 'sound' : 'phrase',
-            itemId,
-            text: String(text || ''),
-            // The phrase's own "how to say it", so Hear it sounds the way the panel does
-            // (CR-258). Kept only when it differs from the words.
-            speak: !sound && speak && String(speak) !== String(text || '') ? String(speak) : null,
-            // WHAT HAD TO BE SWITCHED ON TO REACH IT. A Flex phrase exists only because a
-            // person or place is on, so the answer is the pair (§6, Figure 4).
-            needed: Array.isArray(needed) && needed.length ? needed.slice() : null,
-        };
-    });
-}
-
-export function setTypedAnswer(review, turn, text) {
-    return withEntry(review, turn.key, (e) => { e.answer = { kind: 'typed', text: String(text || '').trim() }; });
-}
-
-/** New 4 in review: "I would have asked for a different set." Pressing it again clears it. */
-export function toggleMoreOptions(review, turn) {
-    return withEntry(review, turn.key, (e) => {
-        e.answer = (e.answer && e.answer.kind === 'more') ? null : { kind: 'more' };
-    });
-}
-
 export function clearAnswer(review, turn) {
-    return withEntry(review, turn.key, (e) => { e.answer = null; });
-}
-
-/**
- * Mark or unmark a reframer (partner, place, feeling or goal): what the app SHOULD HAVE
- * BEEN TOLD. It sits alongside whatever answer the user gives, and several can be marked.
- * Partner, place and feeling are one-at-a-time, as they are in a conversation.
- */
-export function toggleReframer(review, turn, { kind, id = null, label = '' }) {
-    return withEntry(review, turn.key, (e) => {
-        const at = e.reframers.findIndex((r) => r.kind === kind && (r.id || r.label) === (id || label));
-        if (at >= 0) {
-            e.reframers.splice(at, 1);
-        } else {
-            if (kind !== 'goal') e.reframers = e.reframers.filter((r) => r.kind !== kind);
-            e.reframers.push({ kind, id, label });
-        }
-        // Switching a context button off can empty the band a chosen phrase came out
-        // of, and an answer pointing at a button that is no longer there means nothing.
-        if (e.answer && Array.isArray(e.answer.needed)) {
-            const still = e.answer.needed.every((n) => e.reframers.some((r) => (r.id || r.label) === (n.id || n.label)));
-            if (!still) e.answer = null;
-        }
-    });
-}
-
-/** Reframe in review's Composition Pane: the direction they would have steered the AI in. */
-export function setSteer(review, turn, text) {
-    // When it was typed, so a later "newer request wins" compares it by when the user
-    // asked, not by when the conversation happened.
-    return withEntry(review, turn.key, (e) => {
-        e.steer = String(text || '').trim() || null;
-        e.steerAt = e.steer ? new Date().toISOString() : null;
-    });
-}
-
-/**
- * "It wrote down the wrong words." The flag comes first and stands on its own; what the
- * user says was actually said is optional and asked for after it (§6.4).
- */
-export function setMisheard(review, turn, said) {
-    const heard = turn.partnerText || '';
-    return withEntry(review, turn.key, (e) => {
-        const s = typeof said === 'string' ? said.trim() : null;
-        e.misheard = { heard, said: s && s !== heard.trim() ? s : null };
-    });
-}
-
-export function clearMisheard(review, turn) {
-    return withEntry(review, turn.key, (e) => { e.misheard = null; });
+    const next = { ...review, turns: { ...review.turns } };
+    delete next.turns[turn.key];
+    return next;
 }
 
 /** Record that the user has reached turn `i`. Only ever moves forward. */

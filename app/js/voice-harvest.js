@@ -271,100 +271,84 @@ export function measureLengthLean(turns, opts = {}) {
 }
 
 /**
- * What the app learns from each kind of review answer. ONE ENTRY PER KIND, ON PURPOSE
- * (Ken, October 3 2026): "we should, as part of the design, modularize these
- * input/action pairs so that some can be abandoned without shredding the code."
- * Each one is a guess about what an answer means, and some of the guesses will turn
- * out to be wrong. Deleting an entry removes that lesson completely and touches
- * nothing else: an answer with no entry leaves the live turn exactly as it was.
+ * What the app learns from a review answer. Since October 6 2026 there is ONE kind,
+ * the rewrite (Ken: "Let's simplify everything"): the whole reply the user would rather
+ * have said. Kept as a table of one, so a lesson can still be removed without touching
+ * anything else.
  *
- * Each lesson has:
  *   withdraw  - the live choice for that turn stops counting
- *   turn(a,t) - a user turn to count in its place, or null for none
+ *   pair(a,t) - a pair kept for ONE person: what they said and were doing, and what the
+ *               user would rather have said. Used only when talking with that person.
+ *   turn(a,t) - a user turn to count with everyone, or null for none
  *
- * The turn a lesson returns is read by the rest of this module like any other:
- * source 'composed' (or `reworded`) makes it a voice example, and source 'card' with
- * the offered set in `allOptions` makes it a choice in the length measure. Every turn
- * is stamped with its lesson id, so the harvest can report how much each lesson
- * contributed - the first step towards measuring which guesses are right.
+ * WITH A KNOWN PERSON, A REWRITE IS A PAIR FOR THEM, NOT A SHARED EXAMPLE. Before this a
+ * sentence written for Mom went into the examples sent with every partner, so it shaped
+ * how the user spoke to a store clerk. The October 6 test gave rewrites to the AI as
+ * pairs for one person and they changed how it spoke with that person.
+ * With nobody named, there is no one to keep it for, so it is one of the user's own
+ * sentences, as a sentence typed in a live conversation is.
  */
 export const REVIEW_LESSONS = {
-    // A sentence typed in review is the user's own words: a voice example, exactly like
-    // a sentence typed during a live conversation.
-    typed: {
+    rewrite: {
         withdraw: true,
-        turn: (a) => (a.text ? { source: 'composed', selectedText: a.text } : null),
+        pair: (a, t) => {
+            const personId = (t.context && t.context.partnerId) || (a.moment && a.moment.partnerId) || null;
+            if (!personId || !a.text) return null;
+            return {
+                personId,
+                person: (t.context && t.context.partner) || (a.moment && a.moment.partner) || null,
+                action: t.partnerAction || (a.moment && a.moment.action) || null,
+                partnerText: t.partnerText || (a.moment && a.moment.partnerText) || '',
+                text: a.text,
+                at: (t.user && t.user.at) || (t.partner && t.partner.at) || null,
+            };
+        },
+        turn: (a, t) => {
+            const personId = (t.context && t.context.partnerId) || (a.moment && a.moment.partnerId) || null;
+            return personId || !a.text ? null : { source: 'composed', selectedText: a.text };
+        },
     },
-    // A response option marked closer is the user's CHOICE, in place of the live one.
-    // The words are still the model's, so it is a choice only, never a voice example -
-    // the same rule that keeps a live card out of the examples. A reworded option is
-    // both: the user's choice, and the user's words.
-    card: {
-        withdraw: true,
-        turn: (a, t) => (a.text ? {
-            source: 'card', selectedText: a.text, selectedIndex: a.index,
-            selectedSlot: (t.cards[a.index] && t.cards[a.index].slot) || null,
-            allOptions: t.cards.map((c) => c.text), reworded: !!a.rewritten,
-        } : null),
-    },
-    // An Express button instead of any of the four: a choice of a short, ready-made
-    // reply over the offered set, so it counts in the length measure. The phrase is a
-    // button label, short for that reason alone, so it is never a voice example.
-    phrase: {
-        withdraw: true,
-        turn: (a, t) => (a.text && t.cards.length ? {
-            source: 'card', selectedText: a.text, allOptions: t.cards.map((c) => c.text),
-            viaExpress: true,
-        } : null),
-    },
-    // "I would have played a sound": the live choice was not what they wanted, and a
-    // sound says nothing about how they word things.
-    sound: { withdraw: true, turn: () => null },
-    // "I would have asked for a different set": the four missed, for a reason the
-    // answer does not say. Nothing to learn about the voice, only that the live choice
-    // was not really their choice.
-    more: { withdraw: true, turn: () => null },
 };
 
 /**
- * What a conversation's REVIEW says the user would rather have done, as user turns the
- * rest of this module already understands (Conversation Review, Ken, October 3 2026:
- * "We need to ensure that the work a user goes through to review a conversation
- * genuinely impacts the system's ability to sound like them"). The meaning of each
- * kind of answer lives in REVIEW_LESSONS above.
- *
- * `replaced` holds the timestamps of the live user turns a review answer overrides.
+ * What a conversation's REVIEW says the user would rather have said. `replaced` holds
+ * the timestamps of the live user turns a rewrite overrides; `pairs` are the rewrites
+ * kept for one person; `turns` are rewrites counted with everyone.
  */
 export function reviewedTurns(data, rawReview, lessons = REVIEW_LESSONS) {
-    const out = { replaced: new Set(), turns: [], steers: [] };
+    const out = { replaced: new Set(), turns: [], pairs: [], steers: [] };
     if (!data || !rawReview) return out;
     const review = normalizeReview(rawReview);
     let turns;
     try { turns = buildTurns(data); } catch { return out; }
     for (const t of turns) {
         const entry = review.turns[t.key];
-        // A Reframe instruction typed in review: the direction the user would have
-        // steered the AI on this turn. It used to be saved and never read. It now joins
-        // the instructions About Me offers to keep, with the person this turn was
-        // with, and counts toward a repeated instruction (October 6 2026).
-        if (entry && entry.steer) {
-            // The partner the user marked in review as who it really was wins over the
-            // one the live conversation had.
-            const marked = (entry.reframers || []).find((r) => r && r.kind === 'partner');
-            out.steers.push({
-                text: entry.steer,
-                at: entry.steerAt || (t.user && t.user.at) || (t.partner && t.partner.at) || null,
-                personId: marked ? (marked.id || null) : ((t.context && t.context.partnerId) || null),
-                label: marked ? (marked.label || null) : ((t.context && t.context.partner) || null),
-                fromReview: true,
-            });
-        }
         const a = entry && entry.answer;
         const lesson = a && lessons[a.kind];
         if (!lesson) continue;
+        const ans = { ...a, text: String(a.text || '').trim() };
         if (lesson.withdraw && t.user && t.user.at) out.replaced.add(t.user.at);
-        const turn = lesson.turn({ ...a, text: String(a.text || '').trim() }, t);
+        const pair = lesson.pair ? lesson.pair(ans, t) : null;
+        if (pair) out.pairs.push({ ...pair, lesson: a.kind });
+        const turn = lesson.turn ? lesson.turn(ans, t) : null;
         if (turn) out.turns.push({ role: 'user', ...turn, fromReview: true, lesson: a.kind });
+    }
+    return out;
+}
+
+// Newest first, at most MAX_PAIRS_PER_PERSON for each person, so one long review of
+// one conversation cannot crowd out what the user said with them later.
+const MAX_PAIRS_PER_PERSON = 12;
+function newestPairs(pairs) {
+    const sorted = pairs.slice().sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')));
+    const per = new Map();
+    const out = [];
+    for (const p of sorted) {
+        const n = per.get(p.personId) || 0;
+        if (n >= MAX_PAIRS_PER_PERSON) continue;
+        per.set(p.personId, n + 1);
+        const { lesson, ...rest } = p;
+        out.push(rest);
     }
     return out;
 }
@@ -382,15 +366,16 @@ function countByLesson(turns) {
  * a sentence the harvest would drop.
  */
 export function reviewContributions(data, rawReview) {
-    const { turns } = reviewedTurns(data, rawReview);
+    const { turns, pairs } = reviewedTurns(data, rawReview);
     const own = turns.filter((t) => t.source === 'composed' || t.reworded)
         .map((t) => t.selectedText);
     return {
         exemplars: own.filter((t) => words(t).length >= MIN_EXEMPLAR_WORDS),
         // Kept as short replies rather than dropped (see collectShortReplies).
         shortReplies: own.filter((t) => words(t).length > 0 && words(t).length < MIN_EXEMPLAR_WORDS),
-        choices: turns.filter((t) => t.source === 'card' && !t.reworded).length,
+        choices: 0,
         byLesson: countByLesson(turns),
+        pairs: pairs.length,
     };
 }
 
@@ -409,6 +394,7 @@ export function harvest(conversations, opts = {}) {
     const live = [];
     const fromReview = [];
     const reviewSteers = [];
+    const reviewPairs = [];
     let practiceSkipped = 0;
     for (const convo of conversations || []) {
         // storage.listConversationLogs() returns { id, data }; a bare log object is
@@ -424,6 +410,7 @@ export function harvest(conversations, opts = {}) {
         }
         fromReview.push(...reviewed.turns);
         reviewSteers.push(...reviewed.steers);
+        reviewPairs.push(...reviewed.pairs);
     }
     const all = live.concat(fromReview);
     const pool = { ...opts, max: MAX_POOL };
@@ -438,6 +425,9 @@ export function harvest(conversations, opts = {}) {
         // Reframe instructions typed in review. Live ones are recorded as they happen
         // (voice.recordSteer); these are rebuilt from the review files each time.
         steers: reviewSteers,
+        // Review rewrites kept for one person each, newest first. voice.reviewPairsFor
+        // hands a person's to the AI only while talking with them.
+        pairs: newestPairs(reviewPairs),
         counts: {
             userTurns: live.length,
             composed: live.filter((t) => classifyTurn(t, opts) === 'composed').length,
@@ -447,6 +437,7 @@ export function harvest(conversations, opts = {}) {
             // How much each review lesson contributed, so its effect can be measured
             // and a lesson that turns out to be wrong can be found and removed.
             byLesson: countByLesson(fromReview),
+            reviewPairs: reviewPairs.length,
         },
     };
 }

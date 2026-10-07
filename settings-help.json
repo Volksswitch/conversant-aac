@@ -39,7 +39,7 @@
         "input": "Screen Layout. Resize the areas of the conversation screen by dragging the borders, and set how far apart the buttons sit.",
         "conversation": "Whether conversations are saved, how many responses you are offered and how they are shown, and how the app listens.",
         "practice": "Practice a conversation with the AI playing the other person. You do not need a microphone.",
-        "review": "Go back over a conversation you have already had, one turn at a time, and say what you would rather have said.",
+        "review": "Go back over a conversation and rewrite the replies that did not sound like you. Rewriting several turns with one person does the most.",
         "express": "Change the buttons on the Express Panel: the phrases you speak, the people you talk to, and how you are feeling.",
         "commands": "Change the words spoken by the command buttons, and your conversation starters and goodbyes.",
         "keyguard": "Spacing settings for fitting a physical keyguard, and a file listing where every button sits.",
@@ -98,7 +98,7 @@
         "practiceDetails": "Facts for this practice, like names and what happened. The other person knows them, and your suggested replies can use them.",
         "practiceVoice": "The voice this person speaks in when you practice. Leave it on the general practice voice to use the one from the Speech settings.",
         "practicePerson": "Start a scenario from someone you added in About Me. While you practice, how you talk with them is used too.",
-        "reviewList": "Your saved conversations, newest first. Tap one to go back over it. A mark means you asked for something different at the time.",
+        "reviewList": "Your saved conversations, newest first. Tap one to go back over it. A mark means you and the app struggled at the time.",
         "expressAlways": "The phrases that are always on the panel, in the same place every time. Put the words you use most here.",
         "expressFlex": "Phrases that change with who you are talking with and where you are. Choose a person and a place, then add phrases for them.",
         "expressContext": "Buttons that describe the conversation: who you are with, where you are, and how you feel. They never speak; they guide the suggestions."

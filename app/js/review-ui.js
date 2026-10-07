@@ -1,45 +1,51 @@
 /* Conversation Review — the screen and the Settings list.
  *
- * Design: "Conversant AAC Conversation Review.docx". This is the second controller for
- * the conversation screen (§13.4): the same markup, with the Command Bar rebound and the
- * Express Panel put into a mode where tapping MARKS instead of speaking. NOTHING ON THE
- * SCREEN MOVES - the response cards, the Command Bar and the panel keep their exact
- * geometry, because one keyguard has to fit both a conversation and its review. Every
- * mark here is paint (a class), never a box.
+ * ONE ACTION: REWRITE A TURN (Ken, October 6 2026: "Let's simplify everything"). The
+ * user steps through a conversation, picks a turn that did not sound like them, and the
+ * Composition Pane opens with the words said at the time. They write the whole reply
+ * they would rather have said and save it. That is all review records.
+ *
+ * Tested the same day (scripts/voice-eval/TEST-PLAN-instructions-and-review.md, and
+ * TODO.md "Rebuild review around tapping"): rewriting every turn with one person
+ * clearly changed how the app spoke with them; one rewrite per conversation barely did;
+ * and the earlier answers (a closer response option, an Express button, New 4, the
+ * context marks, the "wrong words" flag, a steer) changed nothing measurable. They are
+ * gone, and so is the word-by-word editor.
+ *
+ * Turns where the user and the app struggled at the time - a different set asked for,
+ * the Composition Pane opened, the AI steered - are marked in the pane, and Jump goes
+ * to the next one.
+ *
+ * NOTHING ON THE SCREEN MOVES. The response cards, the Command Bar and the Express
+ * Panel keep their exact geometry, because one keyguard has to fit both a conversation
+ * and its review. Every mark here is paint (a class), never a box.
  *
  * The nine Command Bar buttons, by position:
  *   Listen -> Previous Turn      Start conversation -> Next Turn
- *   End conversation -> Next turn where you asked for something else (Ken, October 3
- *     2026; it took the place of "Play it back", which stays on the to-do list unbuilt)
- *   Repeat what I said -> Previous Word      Hold on -> Next Word
+ *   End conversation -> Jump: the next turn where you and the app struggled
+ *   Repeat what I said -> Rewrite this turn      Hold on -> Clear this rewrite
  *   Ask them to repeat -> Undo   Wrap up -> Redo   Don't save -> Hear it
- *   Settings -> Settings, which is also how the user leaves review (§5).
+ *   Settings -> Settings, which is also how the user leaves review.
  *
- * The app.js half is deliberately thin and passed in through init(): this module owns
- * no conversation state and never touches the live conversation's.
+ * In the Composition Pane, Speak becomes Save and Reframe becomes Clear: the same two
+ * boxes, so the keyguard still fits.
  */
 
 import * as ui from './ui.js';
 import * as storage from './storage.js';
 import * as keyboard from './keyboard.js';
 import * as model from './review-model.js';
-import * as wed from './word-editor.js';
 import { refreshVoiceHarvest } from './voice-refresh.js';
 
 let deps = null;
 let active = false;
-let conv = null;          // { id, data, turns, practice, partnerName }
+let conv = null;          // { id, data, turns, practice }
 let review = null;        // the review record (review-model)
 let at = 0;               // which turn is outlined
-let editing = null;       // null | { target: 'card', index } | { target: 'heard' }
-let ed = null;            // word-editor state while editing
 let history = model.createHistory();
 let saveTimer = null;
-let wordInput = null;
-let lastComposed = null;  // what the panel was last drawn with: { items, bands }
 let composerOpen = false;
 let listShowsPractice = false;   // which list the Review tab shows
-let cardTapped = -1;      // the card the user last tapped on this visit to the turn
 // How far back the list goes, in days, or 'all'. Starts at a week every session (Ken,
 // October 3 2026): most users review only now and then, and a short list is quicker
 // to read and to open. A note below the list says when older ones are hidden.
@@ -49,9 +55,9 @@ let listRange = '7';
 const BAR = [
     { id: 'listenBtn',          act: 'prevTurn', icon: 'prevTurn', label: 'Previous turn', face: 'Previous' },
     { id: 'initiateBtn',        act: 'nextTurn', icon: 'nextTurn', label: 'Next turn',     face: 'Next' },
-    { id: 'endConversationBtn', act: 'nextFlag', icon: 'nextFlag', label: 'Next turn where you asked for something else', face: 'Jump' },
-    { id: 'sayAgainBtn',        act: 'prevWord', icon: 'prevWord', label: 'Previous word', face: 'Prev word' },
-    { id: 'holdOnBtn',          act: 'nextWord', icon: 'nextWord', label: 'Next word',     face: 'Next word' },
+    { id: 'endConversationBtn', act: 'nextFlag', icon: 'nextFlag', label: 'Next turn where you and the app struggled', face: 'Jump' },
+    { id: 'sayAgainBtn',        act: 'rewrite',  icon: 'compose',  label: 'Rewrite this turn', face: 'Rewrite' },
+    { id: 'holdOnBtn',          act: 'clear',    icon: 'erase',    label: 'Clear this rewrite', face: 'Clear' },
     { id: 'pardonBtn',          act: 'undo',     icon: 'undo',     label: 'Undo',          face: 'Undo' },
     { id: 'windDownBtn',        act: 'redo',     icon: 'redo',     label: 'Redo',          face: 'Redo' },
     { id: 'privacyBtn',         act: 'hear',     icon: 'speak',    label: 'Hear it',       face: 'Hear it' },
@@ -75,69 +81,33 @@ function esc(s) {
  *   openSettingsAt(tab)                       open Settings on a tab
  *   conversationBusy() -> bool                 a live conversation is under way
  *   speak(text)                               say it in the user's own voice
- *   goalButtons(partnerItem, placeItem)       the goals a panel would offer
  *   panelItems()                              every Express item, for finding a phrase
  */
 export function init(d) {
     deps = d;
-    ensureWordInput();
     // ONE listener per surface, in the CAPTURE phase, so the live conversation's own
     // handlers never see a tap while review owns the screen. Registered once; each one
     // does nothing unless review is active.
     const bar = $('listenControls');
     if (bar) bar.addEventListener('click', onBarClick, true);
     const regen = $('regenerateBtn');
-    if (regen) regen.addEventListener('click', onNewClick, true);
+    if (regen) regen.addEventListener('click', swallow, true);
     const cards = $('responseOptions');
     if (cards) cards.addEventListener('click', onCardsClick, true);
     const log = $('transcriptLog');
     if (log) log.addEventListener('click', onPaneClick, true);
     const comp = $('composerOverlay');
     if (comp) comp.addEventListener('click', onComposerClick, true);
-    // While a word is being edited, a tap on the bar, a card or the pane must not take
-    // focus away from the word box, or the on-screen keyboard drops and comes back on
-    // every press of Next Word.
-    for (const id of ['listenControls', 'responsesSection', 'transcriptSection']) {
-        const el = $(id);
-        if (!el) continue;
-        for (const ev of ['pointerdown', 'mousedown']) {
-            el.addEventListener(ev, (e) => {
-                if (!active || !editing) return;
-                if (e.target === wordInput) return;
-                if (e.target.closest && e.target.closest('#composerOverlay')) return;
-                e.preventDefault();
-            }, true);
-        }
-    }
 }
 
 export function isActive() { return active; }
 
-function ensureWordInput() {
-    if (wordInput) return;
-    const host = $('responsesSection');
-    if (!host) return;
-    wordInput = document.createElement('input');
-    wordInput.type = 'text';
-    wordInput.id = 'reviewWordInput';
-    wordInput.className = 'review-word-input';
-    wordInput.autocomplete = 'off';
-    wordInput.spellcheck = false;
-    wordInput.setAttribute('data-no-predict', '');
-    wordInput.setAttribute('aria-label', 'The highlighted word');
-    wordInput.tabIndex = -1;
-    host.appendChild(wordInput);
-    wordInput.addEventListener('input', onWordInput);
-    // Leaving the word box - a tap anywhere review does not keep focus - ends editing,
-    // so the Express Panel comes back.
-    wordInput.addEventListener('blur', () => {
-        setTimeout(() => {
-            if (!active || !editing || document.activeElement === wordInput) return;
-            stopEditing();
-            render();
-        }, 0);
-    });
-    wordInput.addEventListener('keydown', onWordKey);
+// New 4 does nothing in review: there is no set to fetch, and review no longer records
+// "I would have asked for a different set".
+function swallow(e) {
+    if (!active) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
 }
 
 // --- Entering and leaving ---------------------------------------------------------
@@ -161,15 +131,11 @@ export async function enter(entry) {
     scheduleSave();
     history = model.createHistory();
     at = 0;
-    editing = null;
-    ed = null;
     composerOpen = false;
-    userPaged = false;
-    cardTapped = -1;
     active = true;
     document.body.classList.add('reviewing');
-    // Review redraws the pane on every keystroke while a word is edited, so it must
-    // not be a live region here or the whole conversation is re-read each time (CR-119).
+    // Review redraws the pane on every change, so it must not be a live region here or
+    // the whole conversation is re-read each time (CR-119).
     $('transcriptLog')?.setAttribute('aria-live', 'off');
     for (const id of ['liveTurn', 'coachLine', 'nowPlaying']) { const el = $(id); if (el) el.hidden = true; }
     render();
@@ -178,7 +144,6 @@ export async function enter(entry) {
 
 async function leave() {
     if (!active) return;
-    stopEditing();
     closeComposer();
     await flushSave();
     // The review only counts if the voice examples are rebuilt from it. Not awaited:
@@ -187,11 +152,8 @@ async function leave() {
     active = false;
     conv = null;
     review = null;
-    lastComposed = null;
     document.body.classList.remove('reviewing');
     $('transcriptLog')?.setAttribute('aria-live', 'polite');
-    const regen = $('regenerateBtn');
-    if (regen) { regen.classList.remove('review-want'); regen.removeAttribute('aria-pressed'); }
     // Review made every bar button a toggle; outside Review most are not, so the
     // attribute goes - the three real toggles get theirs back from their own setters
     // in restoreConversationScreen (CR-118).
@@ -207,11 +169,12 @@ async function leave() {
 
 function turn() { return conv ? conv.turns[at] : null; }
 function entry() { return model.getEntry(review, turn().key); }
-
-function partnerName(t) {
-    const p = t && t.context && t.context.partner;
-    return p && !String(p).startsWith('Practice:') ? p : 'The other person';
+function rewriteOf(t) {
+    const a = model.getEntry(review, t.key).answer;
+    return a && a.kind === 'rewrite' ? a.text : '';
 }
+// A turn can be rewritten only where the user said something, or was offered something.
+function rewritable(t) { return !!(t && (t.user || t.cards.length || t.partner)); }
 
 function render() {
     if (!active) return;
@@ -219,22 +182,19 @@ function render() {
     renderPane();
     renderCards();
     renderPanel();
-    renderNew();
-    syncWordInput();
 }
 
 function renderBar() {
-    const e = entry();
-    const hearable = !!hearText();
+    const t = turn();
     const state = {
         prevTurn: at > 0,
         nextTurn: at < conv.turns.length - 1,
         nextFlag: nextFlagged() >= 0,
-        prevWord: !!editing,
-        nextWord: !!editing,
+        rewrite: rewritable(t),
+        clear: !!rewriteOf(t),
         undo: history.canUndo(),
         redo: history.canRedo(),
-        hear: hearable,
+        hear: !!hearText(),
         leave: true,
     };
     for (const b of BAR) {
@@ -247,29 +207,16 @@ function renderBar() {
     }
 }
 
-function answerText(e) {
-    const a = e && e.answer;
-    if (!a) return '';
-    return a.text || '';
-}
-
 function fromLabel(t) {
     const u = t.user;
     if (!u) return '';
     if (u.audio) return 'played a sound';
     switch (u.source) {
-        case 'express': return findItemId(u.text) ? 'tapped on your Express Panel' : 'no longer on your Express Panel';
+        case 'express': return 'tapped on your Express Panel';
         case 'composed': return 'typed in the Composition Pane';
         case 'control': return 'a command button';
         default: return '';
     }
-}
-
-function wordsHtml() {
-    return ed.words.map((w, i) => {
-        const cls = 'review-word' + (i === ed.sel ? ' review-word-on' : '') + (w === '' ? ' review-word-hole' : '');
-        return `<span class="${cls}" data-w="${i}">${esc(w === '' ? ' ' : w)}</span>`;
-    }).join(' ');
 }
 
 function renderPane() {
@@ -278,24 +225,14 @@ function renderPane() {
     const html = [];
     conv.turns.forEach((t, i) => {
         const here = i === at;
-        const e = model.getEntry(review, t.key);
         const cur = here ? ' review-current' : '';
+        // The turns where the user and the app struggled at the time get a mark that
+        // shows on every line of the turn, not only on the one outlined (Ken, October 6
+        // 2026: "there's still value in highlighting the turns where the user/AI
+        // struggled").
+        const hard = t.flags.length ? ' review-struggled' : '';
         if (t.partner) {
-            const editingHeard = here && editing && editing.target === 'heard';
-            const body = editingHeard ? wordsHtml() : esc(t.partnerText || '(nothing written down)');
-            const title = here && !conv.practice
-                ? `Tap again to say the app wrote down the wrong words`
-                : 'Tap to go to this turn';
-            html.push(`<div class="turn turn-partner review-line${cur}${editingHeard ? ' review-editing' : ''}" data-turn="${i}" data-part="partner" title="${esc(title)}">${body}</div>`);
-            if (e.misheard) {
-                const said = e.misheard.said
-                    ? ` You say ${esc(partnerName(t))} said: “${esc(e.misheard.said)}”`
-                    : '';
-                // The note can be taken back (CR-259): one stray tap set it, and nothing
-                // removed it once review had been left and Undo had gone.
-                const removable = i === at && !(editing && editing.target === 'heard');
-                html.push(`<div class="review-note review-note-left" data-turn="${i}" data-part="misheard"${removable ? ' title="Tap to remove this note"' : ''}>Your note: the app wrote down the wrong words.${said}${removable ? ' <span class="review-note-remove">Tap to remove this note.</span>' : ''}</div>`);
-            }
+            html.push(`<div class="turn turn-partner review-line${cur}${hard}" data-turn="${i}" data-part="partner" title="Tap to go to this turn">${esc(t.partnerText || '(nothing written down)')}</div>`);
         }
         if (here) {
             const notes = [];
@@ -307,32 +244,18 @@ function renderPane() {
             if (t.errors.length) notes.push(`The app had ${t.errors.length === 1 ? 'a problem' : `${t.errors.length} problems`} here.`);
             for (const n of notes) html.push(`<div class="review-note">${n}</div>`);
         }
+        const title = here ? 'Tap to rewrite this turn' : 'Tap to go to this turn';
         if (t.user) {
             const from = fromLabel(t);
-            html.push(`<div class="turn turn-user review-line${cur}" data-turn="${i}" data-part="user" title="Tap to go to this turn">${esc(t.user.text)}${from ? `<span class="review-from"> (${esc(from)})</span>` : ''}</div>`);
+            html.push(`<div class="turn turn-user review-line${cur}${hard}" data-turn="${i}" data-part="user" title="${title}">${esc(t.user.text)}${from ? `<span class="review-from"> (${esc(from)})</span>` : ''}</div>`);
         } else {
-            html.push(`<div class="turn turn-user review-line review-none${cur}" data-turn="${i}" data-part="user">(nothing said)</div>`);
+            html.push(`<div class="turn turn-user review-line review-none${cur}${hard}" data-turn="${i}" data-part="user" title="${title}">(nothing said)</div>`);
         }
-        if (e.answer) html.push(`<div class="review-note review-note-right" data-turn="${i}">${esc(answerLine(e))}</div>`);
-        if (e.reframers && e.reframers.length) {
-            html.push(`<div class="review-note review-note-right" data-turn="${i}">The app should have known: ${esc(e.reframers.map((r) => r.label).join(', '))}.</div>`);
-        }
-        if (e.steer) html.push(`<div class="review-note review-note-right" data-turn="${i}">You would have steered the AI: “${esc(e.steer)}”</div>`);
+        const rw = rewriteOf(t);
+        if (rw) html.push(`<div class="review-note review-note-right" data-turn="${i}">You would rather have said: “${esc(rw)}”</div>`);
     });
     log.innerHTML = html.join('');
     scrollToCurrent();
-}
-
-function answerLine(e) {
-    const a = e.answer;
-    switch (a.kind) {
-        case 'card': return a.rewritten ? `You would rather have said: “${a.text}”` : `This response option would have suited you better: “${a.text}”`;
-        case 'phrase': return `You would rather have tapped “${a.text}”${a.needed ? ` with ${a.needed.map((n) => n.label).join(' and ')} switched on` : ''}.`;
-        case 'sound': return `You would rather have played “${a.text}”.`;
-        case 'typed': return `You would rather have said: “${a.text}”`;
-        case 'more': return 'You would have asked for a different set.';
-        default: return '';
-    }
 }
 
 function scrollToCurrent() {
@@ -366,96 +289,58 @@ function paletteFor(t) {
     }));
 }
 
+// The cards are shown as they were, to look at. The one spoken at the time is marked,
+// dashed once the turn has a rewrite. A tap on any of them opens the rewrite.
 function renderCards() {
     const t = turn();
     const palette = paletteFor(t);
     if (palette.length) ui.showResponses(palette, () => {});
     else ui.clearResponseOptions();
-    const e = entry();
-    const answerIdx = e.answer && e.answer.kind === 'card' ? e.answer.index : -1;
+    const replaced = !!rewriteOf(t);
     const box = $('responseOptions');
     if (!box) return;
     box.querySelectorAll('.response-card[data-index]').forEach((card) => {
         const i = Number(card.dataset.index);
         const spoken = i === t.took;
-        // Solid means "this one"; the card spoken at the time turns dashed once anything
-        // else has been chosen in its place (Ken, October 1 2026).
         card.classList.toggle('review-spoken', spoken);
-        card.classList.toggle('review-spoken-replaced', spoken && !!e.answer && answerIdx !== i);
-        card.classList.toggle('review-want', i === answerIdx && !spoken);
-        const text = card.querySelector('.response-text');
-        if (editing && editing.target === 'card' && editing.index === i && text) {
-            card.classList.add('review-editing');
-            text.innerHTML = wordsHtml();
-        } else if (text && answerIdx === i && e.answer.rewritten) {
-            text.textContent = e.answer.text;
-        }
-        // A rewritten card is named by its new words - what would have been said (CR-119).
-        const bits = [answerIdx === i && e.answer && e.answer.rewritten ? e.answer.text : (card.getAttribute('aria-label') || '')];
+        card.classList.toggle('review-spoken-replaced', spoken && replaced);
+        const bits = [card.getAttribute('aria-label') || ''];
         if (spoken) bits.push('(you said this)');
-        if (i === answerIdx && !spoken) bits.push('(would have suited you better)');
         card.setAttribute('aria-label', bits.join(' ').trim());
-        card.title = editing && editing.target === 'card' && editing.index === i
-            ? 'Tap a word to change it, or tap the response option to finish'
-            : i === selectedCard()
-            ? 'Tap again to change its words'
-            : 'Tap to say this one would have suited you better';
+        card.title = 'Tap to rewrite this turn';
     });
 }
 
-function renderNew() {
-    const e = entry();
-    const regen = $('regenerateBtn');
-    const want = !!(e.answer && e.answer.kind === 'more');
-    if (regen) {
-        regen.classList.toggle('review-want', want);
-        regen.setAttribute('aria-pressed', String(want));   // CR-119
-    }
-}
-
-// The Express Panel, drawn with this turn's marks. Lit buttons are what the user marked
-// "should have been on"; the Flex band fills from them exactly as it would have.
+// The Express Panel is drawn as it stands, to keep the screen the same shape, and only
+// its "In my own words" key does anything: it opens the rewrite. The button tapped at
+// the time is marked, dashed once the turn has a rewrite.
 function renderPanel() {
     if (!active) return;
     const t = turn();
-    const e = entry();
-    const marked = (kind) => (e.reframers || []).find((r) => r.kind === kind) || null;
-    const partner = marked('partner');
-    const place = marked('place');
-    const feeling = marked('feeling');
-    const goalIds = (e.reframers || []).filter((r) => r.kind === 'goal').map((r) => r.id);
     const usedText = t.user && t.user.source === 'express' ? t.user.text : null;
     const usedId = usedText ? findItemId(usedText) : null;
-    const wantId = e.answer && (e.answer.kind === 'phrase' || e.answer.kind === 'sound') ? e.answer.itemId : null;
-    lastComposed = deps.drawExpressPanel({
-        partner, place, feeling, goalIds,
-        // Solid = the current choice; what the user did at the time turns dashed once
-        // anything replaces it - the same rule as the response cards (Ken, October 1 2026).
+    const none = () => {};
+    deps.drawExpressPanel({
+        partner: null, place: null, feeling: null, goalIds: [],
         reviewMarks: {
             usedId,
             usedText,
-            wantId,
-            usedReplaced: !!e.answer,
+            wantId: null,
+            usedReplaced: !!rewriteOf(t),
             composeUsed: !!(t.user && t.user.source === 'composed'),
-            composeWant: !!(e.answer && e.answer.kind === 'typed'),
+            composeWant: !!rewriteOf(t),
         },
-        onPhrase: (item) => answerWithPhrase(item, false),
-        onAudio: (item) => answerWithPhrase(item, true),
-        onTogglePartner: (item) => toggleMark('partner', item),
-        onTogglePlace: (item) => toggleMark('place', item),
-        onToggleFeeling: (item) => toggleMark('feeling', item),
-        onToggleGoal: (item) => toggleMark('goal', item),
+        onPhrase: none,
+        onAudio: none,
+        onTogglePartner: none,
+        onTogglePlace: none,
+        onToggleFeeling: none,
+        onToggleGoal: none,
         onInMyOwnWords: openComposer,
-        // Show the page holding the current choice, or failing that the button tapped at
-        // the time - unless the user is paging through the panel themselves.
-        reveal: userPaged ? null : [{ id: wantId }, { id: usedId, text: usedText }],
-        onMore: () => { userPaged = true; },
+        reveal: [{ id: usedId, text: usedText }],
+        onMore: none,
     });
 }
-
-// True while the user is turning the panel's pages themselves. Cleared when they move to
-// another turn or give an answer, which is when review shows the turn's own button again.
-let userPaged = false;
 
 /** Called by app.js whenever something would normally redraw the panel. */
 export function refreshPanel() { renderPanel(); }
@@ -468,16 +353,10 @@ function findItemId(text) {
     return hit ? hit.id : null;
 }
 
-function bandOf(itemId) {
-    if (!lastComposed || !itemId) return null;
-    const i = lastComposed.items.findIndex((it) => it && it.id === itemId);
-    return i >= 0 ? lastComposed.bands[i] : null;
-}
-
 // --- Saving -----------------------------------------------------------------------
 
-// Stored as the user writes, so there is nothing to save and no way out to look for
-// (§5). A short delay folds a run of keystrokes into one write.
+// Stored as the user writes, so there is nothing to save and no way out to look for.
+// A short delay folds a run of changes into one write.
 function scheduleSave() {
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(() => { saveTimer = null; void writeNow(); }, 400);
@@ -506,7 +385,6 @@ function writeNow() {
 }
 
 function change(next) {
-    userPaged = false;
     history.push(review, turn().key);
     review = next;
     scheduleSave();
@@ -526,12 +404,16 @@ function onBarClick(e) {
     switch (def.act) {
         case 'prevTurn': goTo(at - 1); break;
         case 'nextTurn': goTo(at + 1); break;
-        case 'prevWord': if (ed) { ed = wed.moveWord(ed, -1); afterEdit(false); } break;
-        case 'nextWord': if (ed) { ed = wed.moveWord(ed, 1); afterEdit(false); } break;
+        case 'nextFlag': goTo(nextFlagged()); break;
+        case 'rewrite': openComposer(); break;
+        case 'clear':
+            closeComposer();
+            change(model.clearAnswer(review, turn()));
+            render();
+            break;
         case 'undo': stepHistory('undo'); break;
         case 'redo': stepHistory('redo'); break;
         case 'hear': hear(); break;
-        case 'nextFlag': goTo(nextFlagged()); break;
         case 'leave': void leave(); break;
         default: break;
     }
@@ -539,11 +421,8 @@ function onBarClick(e) {
 
 function goTo(i) {
     if (!conv || i < 0 || i >= conv.turns.length || i === at) return;
-    stopEditing();
     closeComposer();
     at = i;
-    userPaged = false;
-    cardTapped = -1;
     review = model.markReached(review, i);
     scheduleSave();
     render();
@@ -554,14 +433,11 @@ function stepHistory(which) {
     if (!got) return;
     // Undo takes back an answer, never how far the user has got.
     review = { ...got.state, reached: Math.max(got.state.reached ?? -1, review.reached ?? -1) };
-    stopEditing();
     // As goTo does: an open typing box would otherwise file its sentence under the
     // turn Undo just moved to (CR-047).
     closeComposer();
-    userPaged = false;
     const i = conv.turns.findIndex((t) => t.key === got.turnKey);
     if (i >= 0) at = i;
-    cardTapped = -1;
     review = model.markReached(review, at);
     scheduleSave();
     render();
@@ -572,123 +448,40 @@ function hear() {
     if (text) deps.speak(text);
 }
 
-/*
- * What Hear it says, or '' when it should say nothing (CR-258): never a sound
- * button's NAME (that would read the label out as though the user said it), never the
- * other person's words in the user's voice while correcting what was heard, and a
- * phrase in its own respelling, as the panel says it.
- */
+// What Hear it says: the rewrite, or what was said at the time when there is none.
+// Never a sound button's NAME (CR-258), which would read a label out as though the
+// user said it.
 function hearText() {
-    if (editing) return editing.target === 'heard' ? '' : wed.editorText(ed);
-    const a = entry() && entry().answer;
-    if (!a || a.kind === 'sound') return '';
-    return (a.kind === 'phrase' && a.speak) || answerText(entry());
+    const t = turn();
+    if (!t) return '';
+    const rw = rewriteOf(t);
+    if (rw) return rw;
+    if (!t.user || t.user.audio) return '';
+    return t.user.text || '';
 }
 
-// The next turn, after the one outlined, that carries one of the marks the list counts
-// ("turns you asked for something else"): -1 when none is left, which disables the button.
+// The next turn, after the one outlined, where the user and the app struggled: -1 when
+// none is left, which disables the button.
 function nextFlagged() {
     if (!conv) return -1;
     for (let i = at + 1; i < conv.turns.length; i++) if (conv.turns[i].flags.length) return i;
     return -1;
 }
 
-// New 4 in review fetches nothing: it records that the user would have asked for a
-// different set (§5).
-function onNewClick(e) {
-    if (!active) return;
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    stopEditing();
-    change(model.toggleMoreOptions(review, turn()));
-    render();
-}
+// --- Picking a turn ---------------------------------------------------------------
 
-// --- Cards ------------------------------------------------------------------------
-
+// A tap on a card of the outlined turn opens its rewrite. With "two taps" on, the
+// first tap never reaches here: tap-guard.js arms the card and swallows it.
 function onCardsClick(e) {
     if (!active) return;
-    const card = e.target.closest && e.target.closest('.response-card[data-index]');
     e.preventDefault();
     e.stopImmediatePropagation();
-    if (!card) return;
-    const i = Number(card.dataset.index);
-    const word = e.target.closest('[data-w]');
-    if (word && editing && editing.target === 'card' && editing.index === i) {
-        ed = wed.selectWord(ed, Number(word.dataset.w));
-        afterEdit(false);
-        return;
-    }
-    // The card being edited: a tap anywhere but a word finishes editing and brings the
-    // Express Panel back. The keyboard on this screen has no Hide key, so this is the
-    // way out besides moving to another turn.
-    if (editing && editing.target === 'card' && editing.index === i) {
-        stopEditing();
-        render();
-        return;
-    }
-    // With "two taps" on, the first tap never reaches here: tap-guard.js arms the card
-    // and swallows it, for this screen as for the rest of the app.
-    // EVERY card takes two taps to edit, the one spoken at the time included (Ken,
-    // October 3 2026). That card already shows as chosen, but the user has not tapped
-    // it yet, so the first tap only chooses it. Editing needs a tap on a card the user
-    // has ALREADY tapped on this visit to the turn.
-    if (cardTapped === i && selectedCard() === i) { startCardEdit(i); return; }
-    if (selectedCard() !== i) chooseCard(i);
-    cardTapped = i;
+    const card = e.target.closest && e.target.closest('.response-card[data-index]');
+    if (card) openComposer();
 }
 
-// Which card counts as chosen right now: the one the user picked in review, or, until
-// they pick another answer, the one they spoke at the time.
-function selectedCard() {
-    const e = entry();
-    if (e.answer) return e.answer.kind === 'card' ? e.answer.index : -1;
-    return turn().took;
-}
-
-// CHOOSING a card is one step and EDITING it is another (Ken, October 1 2026): opening
-// the editor on the first tap hid the Express Panel under the keyboard before the user
-// had asked to type anything, with no obvious way back. Choosing the card spoken at the
-// time puts the turn back as it was.
-function chooseCard(i) {
-    stopEditing();
-    const t = turn();
-    if (i === t.took) change(model.clearAnswer(review, t));
-    else change(model.setCardAnswer(review, t, i, (t.cards[i] && t.cards[i].text) || ''));
-    render();
-}
-
-// A second tap on the chosen card makes its words editable where they are (§6.2).
-// Editing the card that was spoken, and leaving it unchanged, records nothing.
-function startCardEdit(i) {
-    const t = turn();
-    const e = entry();
-    const keep = e.answer && e.answer.kind === 'card' && e.answer.index === i;
-    const text = keep ? e.answer.text : (t.cards[i] && t.cards[i].text) || '';
-    // Only a real change is an Undo step: an identical one made the next Undo press
-    // appear to do nothing (CR-153).
-    const next = model.setCardAnswer(review, t, i, text);
-    if (JSON.stringify(model.getEntry(next, t.key)) !== JSON.stringify(e)) change(next);
-    else review = next;
-    editing = { target: 'card', index: i };
-    ed = wed.createWordEditor(text);
-    render();
-}
-
-function stopEditing() {
-    editing = null;
-    ed = null;
-    // The next edit starts its own Undo step, so one press never removes two edits
-    // (CR-153).
-    wordSnapshotTaken = false;
-    if (wordInput && document.activeElement === wordInput) wordInput.blur();
-}
-
-// --- The pane ---------------------------------------------------------------------
-
-// One rule for the whole screen: tap the thing you want to say something about. A tap
-// on a line from another turn moves the outline there; a tap on the other person's line
-// of the turn already showing opens it for correction (§6.4).
+// One rule for the pane: a tap on another turn moves the outline there; a tap on the
+// outlined turn opens its rewrite.
 function onPaneClick(e) {
     if (!active) return;
     const line = e.target.closest && e.target.closest('[data-turn]');
@@ -697,164 +490,35 @@ function onPaneClick(e) {
     e.stopImmediatePropagation();
     const i = Number(line.dataset.turn);
     if (i !== at) { goTo(i); return; }
-    if (line.dataset.part === 'misheard') {
-        if (editing && editing.target === 'heard') return;
-        change(model.clearMisheard(review, turn()));
-        render();
-        return;
-    }
-    if (line.dataset.part !== 'partner') return;
-    // Nothing can have been misheard in practice: the app spoke those lines itself.
-    if (conv.practice) return;
-    const word = e.target.closest('[data-w]');
-    if (word && editing && editing.target === 'heard') {
-        ed = wed.selectWord(ed, Number(word.dataset.w));
-        afterEdit(false);
-        return;
-    }
-    if (editing && editing.target === 'heard') return;
-    const t = turn();
-    const prior = entry().misheard;
-    // The flag first, on its own; the words are optional and come after it, so somebody
-    // who only remembers that a line was wrong can still say so.
-    change(model.setMisheard(review, t, prior && prior.said ? prior.said : t.partnerText));
-    editing = { target: 'heard' };
-    ed = wed.createWordEditor(prior && prior.said ? prior.said : t.partnerText);
-    render();
+    openComposer();
 }
 
-// --- The word editor's input --------------------------------------------------------
+// --- The rewrite ------------------------------------------------------------------
 
-function syncWordInput() {
-    if (!wordInput) return;
-    if (!editing || !ed) return;
-    if (ed.fresh) {
-        wordInput.value = wed.currentWord(ed);
-    }
-    if (document.activeElement !== wordInput) {
-        try { wordInput.focus({ preventScroll: true }); } catch { wordInput.focus(); }
-        keyboard.showFor(wordInput);
-    }
-    // A capital only for the first word or one after a sentence ends (CR-255): the
-    // field keeps focus between words, so the capital armed for word 0 used to land
-    // on whichever word was replaced next.
-    const prev = ed.sel > 0 ? String(ed.words[ed.sel - 1] || '') : '';
-    // Only on a freshly highlighted word: typing runs this too, and re-arming then
-    // would capitalize every letter of the first word.
-    if (ed.fresh) keyboard.setShift(ed.sel === 0 || /[.!?]$/.test(prev));
-    if (ed.fresh) {
-        try { wordInput.setSelectionRange(0, wordInput.value.length); } catch { /* not focusable yet */ }
-    }
-}
-
-let wordSnapshotTaken = false;
-
-function onWordInput() {
-    if (!active || !ed) return;
-    // Undo steps back a WORD, not a letter: one snapshot when a word starts changing.
-    if (ed.fresh && !wordSnapshotTaken) { history.push(review, turn().key); wordSnapshotTaken = true; }
-    ed = wed.typeInto(ed, wordInput.value);
-    afterEdit(true);
-}
-
-function onWordKey(e) {
-    if (!active || !ed) return;
-    if (e.key === 'Backspace') {
-        const next = wed.backspace(ed);
-        if (next === null) return;            // part way through a word: delete a letter
-        e.preventDefault();
-        history.push(review, turn().key);
-        ed = next;
-        afterEdit(true);
-        return;
-    }
-    // Enter is a key like any other here: typing never moves the highlight (Ken).
-    if (e.key === 'Enter') { e.preventDefault(); return; }
-    if (e.key === 'ArrowRight' && wordInput.selectionStart === wordInput.value.length) {
-        e.preventDefault(); ed = wed.moveWord(ed, 1); afterEdit(false); return;
-    }
-    if (e.key === 'ArrowLeft' && wordInput.selectionStart === 0) {
-        e.preventDefault(); ed = wed.moveWord(ed, -1); afterEdit(false);
-    }
-}
-
-// Write the sentence as it now stands into the review, then redraw only what shows it.
-function afterEdit(textChanged) {
-    if (ed && ed.fresh) wordSnapshotTaken = false;
-    if (textChanged) {
-        const text = wed.editorText(ed);
-        const t = turn();
-        if (editing && editing.target === 'card') review = model.setCardAnswer(review, t, editing.index, text);
-        else if (editing && editing.target === 'heard') review = model.setMisheard(review, t, text);
-        scheduleSave();
-    }
-    renderBar();
-    if (editing && editing.target === 'heard') renderPane();
-    else renderCards();
-    if (textChanged) renderPane();
-    syncWordInput();
-}
-
-// --- The Express Panel --------------------------------------------------------------
-
-// A phrase tapped in review says "I would rather have said this" (§6). Tapping it again
-// takes it back. A Flex phrase only exists because a person or a place is on, so the
-// answer records what had to be switched on to reach it.
-function answerWithPhrase(item, sound) {
-    if (!item) return;
-    stopEditing();
-    const e = entry();
-    if (e.answer && (e.answer.kind === 'phrase' || e.answer.kind === 'sound') && e.answer.itemId === item.id) {
-        change(model.clearAnswer(review, turn()));
-    } else {
-        const needed = bandOf(item.id) === 'flex'
-            ? (e.reframers || []).filter((r) => r.kind === 'partner' || r.kind === 'place')
-            : null;
-        change(model.setPhraseAnswer(review, turn(), {
-            itemId: item.id,
-            text: sound ? (item.label || 'Sound') : (item.text || ''),
-            sound,
-            needed,
-            speak: sound ? null : (item.speak || null),
-        }));
-    }
-    render();
-}
-
-// Partner, place, feeling and goal buttons say what the app SHOULD HAVE BEEN TOLD, not
-// what the user would have said, so they sit alongside any answer.
-function toggleMark(kind, item) {
-    if (!item) return;
-    stopEditing();
-    const label = kind === 'partner' ? (item.label || item.nickname || item.name || 'Partner')
-        : kind === 'place' ? (item.name || 'Place')
-            : kind === 'feeling' ? (item.text || 'Feeling')
-                : (item.label || item.text || 'Goal');
-    change(model.toggleReframer(review, turn(), {
-        kind, id: item.id, label,
-        ...(item.personId ? { personId: item.personId } : {}),
-        ...(item.placeId ? { placeId: item.placeId } : {}),
-    }));
-    render();
-}
-
-// --- My own words -------------------------------------------------------------------
-
-// The Composition Pane opens as it always does. Speak records the sentence as what the
-// user would have said; Reframe records the direction they would have steered the AI
-// in. Neither speaks, and neither asks the AI for anything.
+// The Composition Pane opens with the words said at the time, or with the rewrite
+// already made, and Clear empties it. Save records the whole reply; it speaks nothing
+// and asks the AI for nothing.
 function openComposer() {
-    if (!active) return;
-    stopEditing();
-    const e = entry();
+    if (!active || !rewritable(turn())) return;
+    const t = turn();
     composerOpen = true;
     ui.showComposerOverlay();
-    ui.setComposerText(e.answer && e.answer.kind === 'typed' ? e.answer.text : (e.steer || ''));
+    // Same two boxes, new jobs: Speak saves, Reframe clears. Drawn in the user's own
+    // choice of pictures or words, like every other button.
+    ui.setCommandBarFace('speakBtn', 'save', 'Save this as what I would rather have said', 'Save');
+    ui.setCommandBarFace('reframeBtn', 'erase', 'Clear the box', 'Clear');
+    const start = rewriteOf(t) || (t.user && !t.user.audio ? t.user.text : '') || '';
+    ui.setComposerText(start);
+    const box = $('composerInput');
+    if (box) { try { box.focus({ preventScroll: true }); } catch { box.focus(); } keyboard.showFor(box); }
+    renderBar();
 }
 
 function closeComposer() {
     if (!composerOpen) return;
     composerOpen = false;
+    // Every button's usual face comes back; review redraws its own bar straight after.
+    ui.applyControlIcons();
     ui.clearComposer();
     ui.hideComposerOverlay();
     keyboard.hideKeyboard();
@@ -866,12 +530,14 @@ function onComposerClick(e) {
     if (!btn || !['speakBtn', 'reframeBtn', 'cancelComposerBtn'].includes(btn.id)) return;
     e.preventDefault();
     e.stopImmediatePropagation();
-    const text = ui.getComposerText();
+    if (btn.id === 'reframeBtn') {
+        ui.setComposerText('');
+        $('composerInput')?.focus();
+        return;
+    }
     if (btn.id === 'speakBtn') {
-        // A turn where nothing gets typed records nothing (§6.2).
-        if (text) change(model.setTypedAnswer(review, turn(), text));
-    } else if (btn.id === 'reframeBtn') {
-        if (text) change(model.setSteer(review, turn(), text));
+        // Saving what was said at the time, or an empty box, records nothing.
+        change(model.setRewrite(review, turn(), ui.getComposerText()));
     }
     closeComposer();
     render();
@@ -882,7 +548,7 @@ function onComposerClick(e) {
 /**
  * Draw the list into the Review tab. Real conversations or practice ones, never both
  * (§4), newest first, each row saying when, who, where and how long - with a mark on
- * one holding a turn where the user asked for something different at the time.
+ * one holding a turn where the user and the app struggled at the time.
  */
 export async function renderList(panel) {
     if (!panel) return;
@@ -1010,7 +676,7 @@ function drawTable(wrap, rows, status) {
         }) : r.id;
         const length = `${model.durationLabel(r.durationMs)}, ${r.replies} ${r.replies === 1 ? 'reply' : 'replies'}`;
         const flag = r.flagged
-            ? `<span class="review-row-flag">${r.flagged} ${r.flagged === 1 ? 'turn' : 'turns'} you asked for something else</span>`
+            ? `<span class="review-row-flag">${r.flagged} ${r.flagged === 1 ? 'turn' : 'turns'} where you and the app struggled</span>`
             : '';
         const who = r.practice
             ? `<span class="review-practice-badge">Practice</span>${esc(r.who || '')}`

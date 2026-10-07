@@ -299,7 +299,7 @@ export function count() {
 // `goals` is an ORDERED LIST, most important to the user first (Ken, September 10
 // 2026). It replaced a single `goal`, and the legacy key is still READ so a profile
 // written by an earlier release keeps its goal; it is removed on the next save.
-const PROFILE_KEYS = ['register', 'goals', 'note', 'openers', 'windDowns', 'closings'];
+const PROFILE_KEYS = ['register', 'goals', 'note', 'words', 'openers', 'windDowns', 'closings'];
 
 /**
  * Normalize either stored shape into the ordered list.
@@ -344,6 +344,7 @@ export function getPartnerProfile(personId) {
         register: { ...(a.register || {}) },
         goals: readGoals(a),
         note: a.note || '',
+        words: a.words || '',
         openers: Array.isArray(a.openers) ? a.openers.slice() : [],
         windDowns: Array.isArray(a.windDowns) ? a.windDowns.slice() : [],
         closings: Array.isArray(a.closings) ? a.closings.slice() : []
@@ -391,8 +392,8 @@ export async function setPartnerProfile(personId, patch = {}) {
             // The legacy single-goal key goes now that the list is authoritative;
             // leaving both would let a stale value outlive the goal it replaced.
             delete edge.attrs.goal;
-        } else if (key === 'note') {
-            edge.attrs.note = (v || '').trim();
+        } else if (key === 'note' || key === 'words') {
+            edge.attrs[key] = (v || '').trim();
         } else {
             edge.attrs[key] = (Array.isArray(v) ? v : [])
                 .map((s) => (s || '').trim())
@@ -498,13 +499,14 @@ export function buildPartnerBlock(personId, label = '') {
     const clauses = registerClauses(profile.register);
     const goals = goalTexts(profile.goals);
     const note = (profile.note || '').trim();
+    const words = (profile.words || '').trim();
     // Topics are the one part of this block that IS about subject matter, so they are
     // kept out from under the "wording only" header and follow it on their own.
     const topics = topicLines(person.topicsWelcome, person.topicsAvoid, `with ${name}`);
-    if (!clauses.length && !goals.length && !note && !topics.length) return '';
+    if (!clauses.length && !goals.length && !note && !words && !topics.length) return '';
 
     const lines = [];
-    if (clauses.length || goals.length || note) {
+    if (clauses.length || goals.length || note || words) {
         lines.push(`How this user speaks WITH ${name}. This shapes the WORDING of your suggestions only — none of it is a topic to raise.`);
     }
 
@@ -528,6 +530,15 @@ export function buildPartnerBlock(personId, label = '') {
             ? `Over time, what this user wants from their relationship with ${name} is: ${list}.`
             : `Over time, what this user wants from their relationship with ${name}, in their own order of importance and most important first: ${list}. Let the earlier ones win where they pull against a later one.`;
         lines.push(`${preamble} Let ${goals.length === 1 ? 'that' : 'those'} steer which of several possible responses feels right — never mention ${goals.length === 1 ? 'it' : 'any of them'}, and never suggest a response that is ABOUT ${goals.length === 1 ? 'it' : 'one of them'} unless the partner raises it first.`);
+    }
+    if (words) {
+        // WORDS THIS USER USES WITH THIS PERSON (Ken, October 6 2026). In the October 6
+        // test, words like "nah" and "bro" reached the AI only through review rewrites,
+        // because nothing in About Me asked for them. Single words, not catchphrases:
+        // a whole phrase they say often belongs on an Express Panel button, and the AI
+        // is told elsewhere never to produce those (August 5 2026). At most once in a
+        // set, so a word of theirs does not become a tic.
+        lines.push(`Words this user often uses with ${name}: ${words}. Use one where it fits naturally, at most once in a set of options. They are how the user talks, not a topic, so never build a reply around them.`);
     }
     if (note) {
         // The user's own words about the relationship, so they outrank the menu

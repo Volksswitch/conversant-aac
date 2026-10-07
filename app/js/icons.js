@@ -42,6 +42,10 @@ export const ICONS = {
     close: SVG('<line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>'),
     // Compose / "In my own words" — a pencil (write your own words).
     compose: SVG('<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>'),
+    // Save a rewrite in Conversation Review — a check mark (keep this).
+    save: SVG('<polyline points="4 12 10 18 20 6"/>'),
+    // Clear words out — a backspace key, so it is not mistaken for Cancel's X.
+    erase: SVG('<path d="M21 5H9l-6 7 6 7h12z"/><line x1="11" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="11" y2="15"/>'),
     // Spoken help — a question mark in a circle. Arms "tap a control to hear what it
     // does" in Settings. Drawn as a filled glyph rather than the stroked helper: a
     // stroked "?" at this size reads as a smudge, the same problem the gear had.

@@ -2533,7 +2533,7 @@ export async function logPlaceholder({ text, n = null, ttsUsed = null }) {
  */
 let pendingOffer = null;
 
-export async function logOffer({ kind = 'ai', options = [] }) {
+export async function logOffer({ kind = 'ai', options = [], partnerAction = null }) {
     if (!conversationSaving) return null;   // private conversation - nothing is written
     // A set of cards can be the FIRST thing in a conversation: the openers behind
     // Start conversation are offered before anybody has said a word. Lazily starting
@@ -2551,6 +2551,10 @@ export async function logOffer({ kind = 'ai', options = [] }) {
             slot: (c && c.slot) || null,
             text: (c && c.text) || '',
         })),
+        // What the other person was doing as the AI read it (asking, inviting, ...).
+        // Saved since October 6 2026 (Ken: "add it"), so a review rewrite can be tagged
+        // with the moment and so it can be measured.
+        partnerAction: partnerAction || null,
         outcome: null,           // filled in by finalizeOffer when the set goes away
         selectedIndex: null,
         shownMs: null,

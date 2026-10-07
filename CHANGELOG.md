@@ -26,6 +26,15 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Conversation Review is simpler. Pick a turn that didn't sound like you, and the typing
+  box opens with what you said at the time. Write the whole reply the way you'd have said
+  it, and save it. Your rewrites with a person are used only when you talk with that
+  person, and rewriting several turns with them does the most. Turns where you and the app
+  struggled at the time are marked with a bar. Choosing a different response option,
+  marking Express buttons, and correcting what the app heard are gone from review.
+- About Me → People → "How I talk with them" has a new box for words you use a lot with
+  that person, like "nah" or "dude". The app may use one of them in your suggestions when
+  you're talking with that person.
 - Settings now calls the suggested replies "response options" everywhere, the same word the
   User Manuals use, instead of sometimes calling them "cards".
 - **Keep a Reframe instruction with one tap.** About Me → How I Sound → "What the app has

@@ -151,88 +151,81 @@ test('a malformed or empty log does not throw', () => {
     assert.equal(out.lengthLean, null);
 });
 
-// --- Conversation Review answers reach the voice (Ken, October 3 2026) ------------
+// --- Conversation Review rewrites reach the voice (Ken, October 3 and 6 2026) ------
 //
 // The review half is written by the REAL review model, not by hand, so these tests
-// cross the link between "the user answered in review" and "the voice examples change".
+// cross the link between "the user rewrote a turn in review" and what the AI is given.
+// Since October 6 2026 a rewrite is the only review answer.
 import * as reviewModel from '../app/js/review-model.js';
-import { reviewContributions } from '../app/js/voice-harvest.js';
+import { reviewContributions, REVIEW_LESSONS, reviewedTurns } from '../app/js/voice-harvest.js';
+import { readFileSync } from 'node:fs';
 
-function reviewedConversation() {
+function reviewedConversation({ person = null } = {}) {
     const opts = (texts) => texts.map((t, i) => ({ slot: ['PREFERRED', 'DISPREFERRED', 'INITIATIVE', 'REPAIR'][i], text: t }));
     const setA = ['It was great, thanks for asking.', 'Not bad.', 'Busy! How was yours?', 'My weekend?'];
     const setB = ['Sure, sounds good to me.', 'Maybe another time.', 'Sure, what time works?', 'Lunch when?'];
-    return {
-        exchanges: [
-            { timestamp: '2026-10-01T10:00:00.000Z', role: 'partner', rawTranscript: 'How was your weekend?' },
-            { timestamp: '2026-10-01T10:00:02.000Z', role: 'offer', options: opts(setA), outcome: 'card', selectedIndex: 0 },
-            { timestamp: '2026-10-01T10:00:05.000Z', role: 'user', source: 'card', selectedText: setA[0], selectedIndex: 0, allOptions: setA },
-            { timestamp: '2026-10-01T10:01:00.000Z', role: 'partner', rawTranscript: 'Want to get lunch Friday?' },
-            { timestamp: '2026-10-01T10:01:02.000Z', role: 'offer', options: opts(setB), outcome: 'card', selectedIndex: 0 },
-            { timestamp: '2026-10-01T10:01:05.000Z', role: 'user', source: 'card', selectedText: setB[0], selectedIndex: 0, allOptions: setB },
-        ],
-    };
+    const ex = [
+        { timestamp: '2026-10-01T10:00:00.000Z', role: 'partner', rawTranscript: 'How was your weekend?' },
+        { timestamp: '2026-10-01T10:00:02.000Z', role: 'offer', options: opts(setA), outcome: 'card', selectedIndex: 0, partnerAction: 'QUESTION' },
+        { timestamp: '2026-10-01T10:00:05.000Z', role: 'user', source: 'card', selectedText: setA[0], selectedIndex: 0, allOptions: setA },
+        { timestamp: '2026-10-01T10:01:00.000Z', role: 'partner', rawTranscript: 'Want to get lunch Friday?' },
+        { timestamp: '2026-10-01T10:01:02.000Z', role: 'offer', options: opts(setB), outcome: 'card', selectedIndex: 0, partnerAction: 'INVITATION' },
+        { timestamp: '2026-10-01T10:01:05.000Z', role: 'user', source: 'card', selectedText: setB[0], selectedIndex: 0, allOptions: setB },
+    ];
+    if (person) for (const e of ex) if (e.role === 'user') e.partner = person;
+    return { exchanges: ex };
 }
 
-test('REVIEW: a sentence typed in review becomes a voice example', () => {
+test('REVIEW: a rewrite with nobody named becomes one of the user’s own sentences', () => {
     const data = reviewedConversation();
     const [first] = reviewModel.buildTurns(data);
-    const review = reviewModel.setTypedAnswer(reviewModel.emptyReview('c1'), first, 'Honestly it was pretty quiet, I mostly slept.');
+    const review = reviewModel.setRewrite(reviewModel.emptyReview('c1'), first, 'Honestly it was pretty quiet, I mostly slept.');
     const out = harvest([{ id: 'c1', data, review }], OPTS);
     assert.deepEqual(out.exemplars, ['Honestly it was pretty quiet, I mostly slept.']);
+    assert.deepEqual(out.pairs, []);
     assert.equal(out.counts.reviewed, 1);
 });
 
-test('REVIEW: a reworded response option is the user’s words; an unchanged one is not', () => {
-    const data = reviewedConversation();
-    const [first, second] = reviewModel.buildTurns(data);
-    let review = reviewModel.setCardAnswer(reviewModel.emptyReview('c1'), first, 2, 'Busy, but good. How was yours?');
-    review = reviewModel.setCardAnswer(review, second, 1);
+test('REVIEW: a rewrite with a known person is kept for that person, not shared with everyone', () => {
+    const data = reviewedConversation({ person: { id: 'p-devon', label: 'Devon' } });
+    const [, second] = reviewModel.buildTurns(data);
+    const review = reviewModel.setRewrite(reviewModel.emptyReview('c1'), second, 'Nah, comic shop first. After that I am down.');
     const out = harvest([{ id: 'c1', data, review }], OPTS);
-    assert.deepEqual(out.exemplars, ['Busy, but good. How was yours?']);
-    assert.ok(!out.exemplars.includes('Maybe another time.'), 'the model’s words never become an example');
-    const c = reviewContributions(data, review);
-    assert.equal(c.choices, 1);
-    assert.deepEqual(c.exemplars, ['Busy, but good. How was yours?']);
+    assert.deepEqual(out.exemplars, [], 'a sentence written for Devon does not shape how the user talks to everyone');
+    assert.equal(out.pairs.length, 1);
+    const p = out.pairs[0];
+    assert.equal(p.personId, 'p-devon');
+    assert.equal(p.person, 'Devon');
+    assert.equal(p.action, 'INVITATION', 'what the other person was doing comes from the saved set of options');
+    assert.equal(p.partnerText, 'Want to get lunch Friday?');
+    assert.equal(p.text, 'Nah, comic shop first. After that I am down.');
 });
 
-test('REVIEW: a review answer replaces the live choice, it does not add to it', () => {
+test('REVIEW: a rewrite replaces the live choice, it does not add to it', () => {
     const data = reviewedConversation();
     const [first] = reviewModel.buildTurns(data);
-    const review = reviewModel.setCardAnswer(reviewModel.emptyReview('c1'), first, 1);
-    const out = harvest([{ id: 'c1', data, review }], OPTS);
-    // Two live card turns, one of them overridden by the review: still two choices.
-    assert.equal(out.counts.cards + out.counts.reviewed, 2);
-    assert.equal(out.counts.userTurns, 1);
-});
-
-test('REVIEW: "a different set" withdraws the live choice and adds nothing', () => {
-    const data = reviewedConversation();
-    const [first] = reviewModel.buildTurns(data);
-    const review = reviewModel.toggleMoreOptions(reviewModel.emptyReview('c1'), first);
+    const review = reviewModel.setRewrite(reviewModel.emptyReview('c1'), first, 'Pretty quiet, I slept a lot.');
     const out = harvest([{ id: 'c1', data, review }], OPTS);
     assert.equal(out.counts.userTurns, 1);
-    assert.equal(out.counts.reviewed, 0);
 });
 
-test('REVIEW: words written in review come before words composed live', () => {
-    const data = reviewedConversation();
-    data.exchanges.push({ timestamp: '2026-10-01T10:02:00.000Z', role: 'user', source: 'composed', selectedText: 'I will bring the forms on Friday.' });
-    const [first] = reviewModel.buildTurns(data);
-    const review = reviewModel.setTypedAnswer(reviewModel.emptyReview('c1'), first, 'Quiet one, mostly caught up on sleep.');
-    const out = harvest([{ id: 'c1', data, review }], OPTS);
-    assert.equal(out.exemplars[0], 'Quiet one, mostly caught up on sleep.');
-    assert.equal(out.exemplars.length, 2);
+test('REVIEW: writing back what was said at the time, or nothing, records nothing', () => {
+    const [first] = reviewModel.buildTurns(reviewedConversation());
+    let r = reviewModel.setRewrite(reviewModel.emptyReview('c1'), first, 'It was great, thanks for asking.');
+    assert.equal(reviewModel.touchedCount(r), 0);
+    r = reviewModel.setRewrite(r, first, 'Quiet one.');
+    assert.equal(reviewModel.touchedCount(r), 1);
+    r = reviewModel.setRewrite(r, first, '   ');
+    assert.equal(reviewModel.touchedCount(r), 0);
 });
 
-test('REVIEW: a short answer is kept as a short reply, not dropped', () => {
+test('REVIEW: a short rewrite is kept as a short reply, not dropped', () => {
     const data = reviewedConversation();
     const [first] = reviewModel.buildTurns(data);
-    const review = reviewModel.setTypedAnswer(reviewModel.emptyReview('c1'), first, 'Pretty quiet.');
+    const review = reviewModel.setRewrite(reviewModel.emptyReview('c1'), first, 'Pretty quiet.');
     const c = reviewContributions(data, review);
     assert.deepEqual(c.exemplars, []);
     assert.deepEqual(c.shortReplies, ['Pretty quiet.']);
-    assert.deepEqual(harvest([{ id: 'c1', data, review }], OPTS).shortReplies, ['Pretty quiet.']);
 });
 
 test('REVIEW: a conversation with no review harvests exactly as before', () => {
@@ -240,38 +233,50 @@ test('REVIEW: a conversation with no review harvests exactly as before', () => {
     assert.deepEqual(harvest([{ id: 'c1', data }], OPTS), harvest([data], OPTS));
 });
 
-import { REVIEW_LESSONS, reviewedTurns } from '../app/js/voice-harvest.js';
-import { readFileSync } from 'node:fs';
-
-test('REVIEW: an Express button chosen in review is a length choice, never a voice example', () => {
-    const data = reviewedConversation();
-    const [first] = reviewModel.buildTurns(data);
-    const review = reviewModel.setPhraseAnswer(reviewModel.emptyReview('c1'), first, { itemId: 'x', text: 'Pretty good weekend thanks' });
-    const { turns } = reviewedTurns(data, review);
-    assert.equal(turns.length, 1);
-    assert.equal(turns[0].source, 'card');
-    assert.equal(turns[0].allOptions.length, 4, 'compared against the four it was chosen over');
-    const out = harvest([{ id: 'c1', data, review }], OPTS);
-    assert.deepEqual(out.exemplars, []);
-    assert.deepEqual(out.counts.byLesson, { phrase: 1 });
-});
-
-test('REVIEW: removing a lesson leaves that kind of answer with no effect at all', () => {
-    // The point of keeping the lessons apart: a guess that proves wrong can be dropped
-    // without touching anything else.
+test('REVIEW: an older review file keeps only the answers that were the user’s own words', () => {
+    // Typed sentences and reworded response options become rewrites; a closer option,
+    // an Express button, New 4, the marks and steers changed nothing measurable and are
+    // dropped (October 6 2026).
     const data = reviewedConversation();
     const [first, second] = reviewModel.buildTurns(data);
-    let review = reviewModel.setPhraseAnswer(reviewModel.emptyReview('c1'), first, { itemId: 'x', text: 'Pretty good weekend thanks' });
-    review = reviewModel.setTypedAnswer(review, second, 'Friday works, see you at noon.');
-    const { phrase, ...withoutPhrase } = REVIEW_LESSONS;
-    const out = reviewedTurns(data, review, withoutPhrase);
-    assert.equal(out.replaced.size, 1, 'only the typed answer replaces its live turn');
-    assert.deepEqual(out.turns.map((t) => t.lesson), ['typed']);
+    const old = { turns: {
+        [first.key]: { answer: { kind: 'card', index: 2, text: 'Busy, but good. How was yours?', rewritten: true }, reframers: [{ kind: 'feeling', id: 'f', label: 'Tired' }] },
+        [second.key]: { answer: { kind: 'phrase', itemId: 'x', text: 'Sure' }, steer: 'warmer' },
+    } };
+    const r = reviewModel.normalizeReview(old, 'c1');
+    assert.deepEqual(Object.keys(r.turns), [first.key]);
+    assert.equal(r.turns[first.key].answer.kind, 'rewrite');
+    const out = harvest([{ id: 'c1', data, review: old }], OPTS);
+    assert.deepEqual(out.exemplars, ['Busy, but good. How was yours?']);
+    assert.deepEqual(out.steers, [], 'a steer typed in old review is no longer read');
+    const typed = reviewModel.normalizeReview({ turns: { [first.key]: { answer: { kind: 'typed', text: 'Mostly slept.' } } } }, 'c1');
+    assert.equal(typed.turns[first.key].answer.text, 'Mostly slept.');
+});
+
+test('REVIEW: each person keeps their own newest rewrites, at most twelve', () => {
+    const convos = [];
+    for (let i = 0; i < 15; i++) {
+        const data = reviewedConversation({ person: { id: 'p-mom', label: 'Mom' } });
+        for (const e of data.exchanges) e.timestamp = e.timestamp.replace('2026-10-01', `2026-09-${String(10 + i).padStart(2, '0')}`);
+        const [first] = reviewModel.buildTurns(data);
+        convos.push({ id: `c${i}`, data, review: reviewModel.setRewrite(reviewModel.emptyReview(`c${i}`), first, `Rewrite number ${i} for Mom.`) });
+    }
+    const out = harvest(convos, OPTS);
+    assert.equal(out.pairs.length, 12);
+    assert.equal(out.pairs[0].text, 'Rewrite number 14 for Mom.', 'newest first');
+});
+
+test('REVIEW: removing the lesson leaves a rewrite with no effect at all', () => {
+    const data = reviewedConversation();
+    const [first] = reviewModel.buildTurns(data);
+    const review = reviewModel.setRewrite(reviewModel.emptyReview('c1'), first, 'Friday works, see you at noon.');
+    const out = reviewedTurns(data, review, {});
+    assert.equal(out.replaced.size, 0);
+    assert.deepEqual(out.turns, []);
+    assert.deepEqual(out.pairs, []);
 });
 
 test('REVIEW: every kind of review answer has a lesson, so none is ignored by accident', () => {
-    // A new kind of answer must decide what it teaches. If it does not, this fails and
-    // says which one.
     // The kinds are read out of the review model's own source, so a kind added there
     // is checked here without anyone remembering to list it.
     const src = readFileSync(new URL('../app/js/review-model.js', import.meta.url), 'utf8');
@@ -279,8 +284,7 @@ test('REVIEW: every kind of review answer has a lesson, so none is ignored by ac
     for (const m of src.matchAll(/kind:\s*([^,\n}]+)/g)) {
         for (const q of m[1].matchAll(/'(\w+)'/g)) kinds.add(q[1]);
     }
-    assert.deepEqual([...kinds].sort(), ['card', 'more', 'phrase', 'sound', 'typed'],
-        'found the answer kinds in review-model.js');
+    assert.deepEqual([...kinds].sort(), ['rewrite'], 'found the answer kinds in review-model.js');
     for (const k of kinds) assert.ok(REVIEW_LESSONS[k], `no lesson for review answer "${k}"`);
 });
 
@@ -329,26 +333,7 @@ test('short replies the user typed are kept, newest first', () => {
     assert.deepEqual(harvest([{ exchanges: turns }], OPTS).shortReplies, ['Sure thing.', 'Nah.']);
 });
 
-test('a Reframe instruction typed in review is kept with the person that turn was with', () => {
-    const data = reviewedConversation();
-    for (const e of data.exchanges) if (e.role === 'user') e.partner = { id: 'p1', label: 'Mom' };
-    const [first] = reviewModel.buildTurns(data);
-    const review = reviewModel.setSteer(reviewModel.emptyReview('c1'), first, 'warmer, she was upset');
-    const out = harvest([{ id: 'c1', data, review }], OPTS);
-    assert.equal(out.steers.length, 1);
-    assert.equal(out.steers[0].text, 'warmer, she was upset');
-    assert.equal(out.steers[0].personId, 'p1');
-    assert.equal(out.steers[0].label, 'Mom');
-    assert.equal(out.steers[0].fromReview, true);
-});
 
-test('a response option marked closer in review is measured within its own kind', () => {
-    const data = reviewedConversation();
-    const [first] = reviewModel.buildTurns(data);
-    const review = reviewModel.setCardAnswer(reviewModel.emptyReview('c1'), first, 1);
-    const { turns } = reviewedTurns(data, review);
-    assert.equal(turns[0].selectedSlot, 'DISPREFERRED', 'the kind travels with the choice');
-});
 
 test('the length lean in a real harvest uses the offered sets of real conversations only', () => {
     // Eight offers give PREFERRED a typical length of 6 words; the user's best-guess
@@ -363,17 +348,6 @@ test('the length lean in a real harvest uses the offered sets of real conversati
 });
 
 
-test('a Reframe instruction typed in review is dated when typed, and takes the partner marked in review', () => {
-    const data = reviewedConversation();
-    for (const e of data.exchanges) if (e.role === 'user') e.partner = { id: 'p1', label: 'Mom' };
-    const [first] = reviewModel.buildTurns(data);
-    let review = reviewModel.setSteer(reviewModel.emptyReview('c1'), first, 'ask about the trip');
-    review = reviewModel.toggleReframer(review, first, { kind: 'partner', id: 'p2', label: 'Dad' });
-    const out = harvest([{ id: 'c1', data, review }], OPTS);
-    assert.equal(out.steers[0].personId, 'p2');
-    assert.equal(out.steers[0].label, 'Dad');
-    assert.ok(out.steers[0].at > '2026-10-01T10:00:05.000Z', 'dated when typed, not by the old conversation');
-});
 
 test('the harvest says which version wrote it', () => {
     assert.equal(harvest([], OPTS).version, 2);

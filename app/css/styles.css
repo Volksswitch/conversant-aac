@@ -5539,6 +5539,13 @@ body.reviewing .review-line { cursor: pointer; }
     outline: 3px solid var(--info);
     outline-offset: 2px;
 }
+/* A turn where the user and the app struggled at the time (Ken, October 6 2026): a
+   thick bar down the inside edge of every line of the turn, so it shows while scrolling
+   and not only on the turn outlined. Paint only - an inset shadow takes no space. */
+.review-line.review-struggled {
+    box-shadow: inset 6px 0 0 var(--warn-ink);
+    padding-left: 0.6rem;
+}
 .review-line.review-none {
     color: var(--ink-muted);
     font-style: italic;
@@ -5558,10 +5565,8 @@ body.reviewing .review-line { cursor: pointer; }
 .review-note-left { text-align: left; }
 .review-note-right { text-align: right; }
 
-/* The card the user spoke, and the one they now say would have suited them better.
-   Two marks, because under a four-second clock the two often do not agree. */
-.response-card.review-spoken,
-.response-card.review-want {
+/* The card the user spoke at the time; dashed once the turn has a rewrite. */
+.response-card.review-spoken {
     outline: 4px solid var(--ink);
     outline-offset: -4px;
 }
@@ -5573,8 +5578,7 @@ body.reviewing .review-line { cursor: pointer; }
 /* Drawn INSIDE the box (CR-231): an outer ring was covered by the next button with
    the default gap of 0, so a first tap often looked as though it had not landed. */
 .tap-armed { box-shadow: inset 0 0 0 4px var(--info) !important; }
-.response-card.review-spoken::after,
-.response-card.review-want::after {
+.response-card.review-spoken::after {
     position: absolute;
     right: 0.5rem;
     bottom: 0.35rem;
@@ -5585,39 +5589,10 @@ body.reviewing .review-line { cursor: pointer; }
 }
 body.reviewing .response-card { position: relative; }
 .response-card.review-spoken::after { content: 'You said this'; }
-.response-card.review-want::after { content: 'Would suit you better'; color: var(--ink); }
-
-/* A sentence being rewritten scrolls INSIDE its card; the card never changes size and
-   the type is never shrunk - the text size is the user's setting. */
-.response-card.review-editing .response-text {
-    display: block;
-    overflow-y: auto;
-    -webkit-line-clamp: unset;
-}
-.review-word { border-radius: 4px; cursor: pointer; }
-.review-word-on {
-    background: var(--info-tint);
-    color: var(--info-ink);
-    outline: 2px solid var(--info);
-}
-.review-word-hole { display: inline-block; min-width: 1.5em; }
-
-/* Holds the highlighted word for whichever keyboard is in use. Out of sight on purpose:
-   the word on the card IS the thing being edited. */
-.review-word-input {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 1px;
-    height: 1px;
-    opacity: 0;
-    pointer-events: none;
-}
 
 /* New 4 and the Express Panel follow the cards' rule (Ken, October 1 2026): a SOLID dark
    border is the current choice, and what the user did at the time turns DASHED once
    something replaces it. Outlines drawn inside the box, so nothing moves. */
-#regenerateBtn.review-want,
 .ep-btn.ep-review-used,
 .ep-btn.ep-review-want {
     outline: 4px solid var(--ink);

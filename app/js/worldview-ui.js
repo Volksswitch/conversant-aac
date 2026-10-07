@@ -1071,6 +1071,14 @@ function buildPartnerProfileSection(existing, opts = {}) {
         onChange: changed,
     });
 
+    // Single words they use a lot with this person (October 6 2026). Asked for directly,
+    // because nobody thinks to list words in the open note below.
+    const wordsIn = el('input', { type: 'text', class: 'wv-text',
+        'aria-label': 'Words I use a lot with them',
+        placeholder: 'Words I use a lot with them, like "nah" or "dude" (optional)',
+        value: saved ? saved.words : '' });
+    wordsIn.addEventListener('change', changed);
+
     const noteIn = el('input', { type: 'text', class: 'wv-text',
         placeholder: 'Anything else about how you talk with them (optional)',
         value: saved ? saved.note : '' });
@@ -1134,6 +1142,7 @@ function buildPartnerProfileSection(existing, opts = {}) {
             el('span', { class: 'wv-disclosure-title', text: 'How I talk with them' }),
         ]),
         el('div', { class: 'wv-dim-grid' }, dimRows),
+        wordsIn,
         noteIn,
         openersIn, windIn, closeIn
     ]);
@@ -1144,7 +1153,7 @@ function buildPartnerProfileSection(existing, opts = {}) {
     // controls, and leaving the goals section shut because only wording is set would
     // hide the goals again.
     if (saved && saved.goals.length) goalsNode.open = true;
-    if (saved && (Object.keys(saved.register).length || saved.note ||
+    if (saved && (Object.keys(saved.register).length || saved.note || saved.words ||
         saved.openers.length || saved.windDowns.length || saved.closings.length)) {
         node.open = true;
     }
@@ -1155,6 +1164,7 @@ function buildPartnerProfileSection(existing, opts = {}) {
         return {
             register, goals: goalEd.read(),
             note: noteIn.value.trim(),
+            words: wordsIn.value.trim(),
             openers: splitLines(openersIn.value),
             windDowns: splitLines(windIn.value),
             closings: splitLines(closeIn.value)

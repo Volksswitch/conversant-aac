@@ -22,6 +22,18 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.13.7": [
+    "Conversation Review is simpler. Pick a turn that didn't sound like you, and the typing box opens with what you said at the time. Write the whole reply the way you'd have said it, and save it. Your rewrites with a person are used only when you talk with that person, and rewriting several turns with them does the most. Turns where you and the app struggled at the time are marked with a bar. Choosing a different response option, marking Express buttons, and correcting what the app heard are gone from review.",
+    "About Me → People → \"How I talk with them\" has a new box for words you use a lot with that person, like \"nah\" or \"dude\". The app may use one of them in your suggestions when you're talking with that person.",
+    "Settings now calls the suggested replies \"response options\" everywhere, the same word the User Manuals use, instead of sometimes calling them \"cards\".",
+    "Keep a Reframe instruction with one tap. About Me → How I Sound → \"What the app has picked up\" now lists the instructions you typed with Reframe, in conversations and in Conversation Review. Tap \"Keep for everyone\", or \"Keep for\" the person you were talking with. A kept instruction is used every time, or only while that person's partner button is on.",
+    "Asking for the same thing in different words now counts. \"Shorter\" and \"keep it to five words\" are the same request, so asking twice either way makes it a standing instruction. A request you make only with one person is kept for that person.",
+    "Switching a partner button off now takes effect at once. The next suggestions no longer treat that person as still being there.",
+    "Better at how long you like your replies. The app now compares the response option you pick only with others of the same kind, and leaves out the openers and goodbyes. It also uses your How I Sound answers about length.",
+    "Short replies you type yourself are kept. A reply of one to three words used to be thrown away. Now it helps show how briefly you like to answer.",
+    "Practice conversations are no longer used to learn how you talk. The other person there is the app playing a part.",
+    "In How I Sound, choosing \"No idea, sorry.\" no longer tells the app you'd like joking replies."
+  ],
   "0.13.6": [
     "Bigger writing in Settings. Text & Color → Text size now has a \"Settings panel\" choice. It enlarges the labels, the section headings, what you type in a box, and the choices in a list.",
     "Choices in a Settings list are easier to tap. When you open a list, each choice is now as tall as a button, with a line between them.",

@@ -63,7 +63,6 @@ const SHELL = [
   './js/practice-editor.js',
   './js/review-model.js',
   './js/review-ui.js',
-  './js/word-editor.js',
   './js/engine.js',
   './js/conversation-logic.js',
   './js/conv-layout.js',

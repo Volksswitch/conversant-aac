@@ -1,4 +1,4 @@
-/* Conversation Review — the reading half, the answer record, the word editor, and ONE
+/* Conversation Review — the reading half, the answer record (one rewrite per turn), and ONE
  * check that runs the whole chain (design document §13.5): a conversation written by
  * the real storage layer, read back, split into turns, a correction recorded, and the
  * correction read back off disk. Three checks that each exercised one layer would all
@@ -8,7 +8,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as model from '../app/js/review-model.js';
-import * as wed from '../app/js/word-editor.js';
 
 /* ── A small conversation file, in the shape storage writes ─────────────────────── */
 
@@ -126,67 +125,34 @@ test('a file with nothing in it gives no turns and no row', () => {
     assert.deepEqual(model.buildTurns(null), []);
 });
 
-/* ── The review record ──────────────────────────────────────────────────────────── */
+/* ── The review record: one rewrite per turn (Ken, October 6 2026) ─────────────── */
 
-test('leaving the spoken card as it was records nothing (§6.1)', () => {
+test('a rewrite is recorded with the moment it belongs to', () => {
     const [first] = model.buildTurns(sampleConversation());
-    let r = model.emptyReview('c');
-    r = model.setCardAnswer(r, first, 0, 'Pretty good, thanks.');
+    const r = model.setRewrite(model.emptyReview('c'), first, 'Long, honestly. Glad it is over.');
+    const a = model.getEntry(r, first.key).answer;
+    assert.equal(a.kind, 'rewrite');
+    assert.equal(a.text, 'Long, honestly. Glad it is over.');
+    assert.equal(a.moment.partner, 'Mom');
+    assert.equal(a.moment.partnerId, 'p1');
+    assert.equal(a.moment.place, 'Home');
+    assert.equal(a.moment.partnerText, 'How was your week?');
+    assert.equal(a.moment.spokenSlot, 'PREFERRED');
+});
+
+test('writing back what was said at the time records nothing; clearing takes a rewrite back', () => {
+    const [first] = model.buildTurns(sampleConversation());
+    let r = model.setRewrite(model.emptyReview('c'), first, 'Pretty good, thanks.');
     assert.equal(model.touchedCount(r), 0);
-});
-
-test('a different card, or new words, is recorded', () => {
-    const [first] = model.buildTurns(sampleConversation());
-    let r = model.setCardAnswer(model.emptyReview('c'), first, 1, 'Not my best week.');
-    assert.equal(model.getEntry(r, first.key).answer.index, 1);
-    assert.equal(model.getEntry(r, first.key).answer.rewritten, false);
-    r = model.setCardAnswer(r, first, 0, 'Pretty good, but tiring.');
-    assert.equal(model.getEntry(r, first.key).answer.rewritten, true);
-});
-
-test('one answer per turn: a phrase replaces a card, New 4 replaces a phrase', () => {
-    const [first] = model.buildTurns(sampleConversation());
-    let r = model.setCardAnswer(model.emptyReview('c'), first, 2, 'Better now you are here.');
-    r = model.setPhraseAnswer(r, first, { itemId: 'e1', text: 'Thank you' });
-    assert.equal(model.getEntry(r, first.key).answer.kind, 'phrase');
-    r = model.toggleMoreOptions(r, first);
-    assert.equal(model.getEntry(r, first.key).answer.kind, 'more');
-    r = model.toggleMoreOptions(r, first);
+    r = model.setRewrite(r, first, 'Good, but tiring.');
+    assert.equal(model.touchedCount(r), 1);
+    r = model.clearAnswer(r, first);
     assert.equal(model.touchedCount(r), 0);
-});
-
-test('reframers sit alongside an answer, and partner/place/feeling are one at a time', () => {
-    const [first] = model.buildTurns(sampleConversation());
-    let r = model.setTypedAnswer(model.emptyReview('c'), first, 'I am tired today.');
-    r = model.toggleReframer(r, first, { kind: 'feeling', id: 'f1', label: 'Happy' });
-    r = model.toggleReframer(r, first, { kind: 'feeling', id: 'f2', label: 'Tired' });
-    r = model.toggleReframer(r, first, { kind: 'goal', id: 'g1', label: 'Make plans' });
-    r = model.toggleReframer(r, first, { kind: 'goal', id: 'g2', label: 'Stay close' });
-    const e = model.getEntry(r, first.key);
-    assert.equal(e.answer.kind, 'typed');
-    assert.deepEqual(e.reframers.map((x) => x.label), ['Tired', 'Make plans', 'Stay close']);
-});
-
-test('switching off the person a Flex phrase needed takes the phrase answer with it', () => {
-    const [first] = model.buildTurns(sampleConversation());
-    let r = model.toggleReframer(model.emptyReview('c'), first, { kind: 'partner', id: 'mom', label: 'Mom' });
-    r = model.setPhraseAnswer(r, first, { itemId: 'x', text: 'Love you', needed: [{ kind: 'partner', id: 'mom', label: 'Mom' }] });
-    assert.equal(model.getEntry(r, first.key).answer.kind, 'phrase');
-    r = model.toggleReframer(r, first, { kind: 'partner', id: 'mom', label: 'Mom' });
-    assert.equal(model.getEntry(r, first.key).answer, null);
-});
-
-test('a mishearing is a flag first; the words are optional', () => {
-    const [first] = model.buildTurns(sampleConversation());
-    let r = model.setMisheard(model.emptyReview('c'), first, first.partnerText);
-    assert.deepEqual(model.getEntry(r, first.key).misheard, { heard: 'How was your week?', said: null });
-    r = model.setMisheard(r, first, 'How was your weekend?');
-    assert.equal(model.getEntry(r, first.key).misheard.said, 'How was your weekend?');
 });
 
 test('the review never carries the conversation\'s own record, only the turn key', () => {
     const [first] = model.buildTurns(sampleConversation());
-    const r = model.setMisheard(model.emptyReview('c'), first, 'How was your weekend?');
+    const r = model.setRewrite(model.emptyReview('c'), first, 'Good, but tiring.');
     assert.deepEqual(Object.keys(r.turns), [first.key]);
     const back = model.normalizeReview(JSON.parse(JSON.stringify(r)), 'c');
     assert.deepEqual(back.turns, r.turns);
@@ -196,8 +162,8 @@ test('undo steps back one action at a time, and redo puts it back', () => {
     const [first] = model.buildTurns(sampleConversation());
     const h = model.createHistory();
     let r = model.emptyReview('c');
-    h.push(r, first.key); r = model.setCardAnswer(r, first, 1, 'Not my best week.');
-    h.push(r, first.key); r = model.setCardAnswer(r, first, 1, 'Not my best week, honestly.');
+    h.push(r, first.key); r = model.setRewrite(r, first, 'Not my best week.');
+    h.push(r, first.key); r = model.setRewrite(r, first, 'Not my best week, honestly.');
     let u = h.undo(r, first.key); r = u.state;
     assert.equal(model.getEntry(r, first.key).answer.text, 'Not my best week.');
     u = h.undo(r, first.key); r = u.state;
@@ -207,81 +173,12 @@ test('undo steps back one action at a time, and redo puts it back', () => {
     assert.equal(model.getEntry(r, first.key).answer.text, 'Not my best week.');
 });
 
-/* ── The word editor ────────────────────────────────────────────────────────────── */
-
-test('typing over an untouched word replaces it', () => {
-    let ed = wed.createWordEditor('Pretty good thanks');
-    ed = wed.typeInto(ed, 'R');
-    ed = wed.typeInto(ed, 'Really');
-    assert.equal(wed.editorText(ed), 'Really good thanks');
-});
-
-test('typing never moves the highlight, a space included (Ken, October 1 2026)', () => {
-    let ed = wed.createWordEditor('Let me think about it.');
-    ed = wed.selectWord(ed, 1);
-    ed = wed.typeInto(ed, 'need ');
-    assert.equal(ed.sel, 1);
-    ed = wed.typeInto(ed, 'need to');
-    assert.equal(ed.sel, 1);
-    assert.equal(wed.editorText(ed), 'Let need to think about it.');
-});
-
-test("Ken's case: 'Let me think' becomes 'I need to think', and the new words split apart afterwards", () => {
-    let ed = wed.createWordEditor('Let me think about it.');
-    ed = wed.typeInto(ed, 'I');                 // "Let" -> "I"
-    ed = wed.moveWord(ed, 1);
-    ed = wed.typeInto(ed, 'need to');           // "me" -> "need to"
-    assert.equal(wed.editorText(ed), 'I need to think about it.');
-    ed = wed.moveWord(ed, 1);
-    assert.deepEqual(ed.words, ['I', 'need', 'to', 'think', 'about', 'it.']);
-    assert.equal(wed.currentWord(ed), 'think');
-    ed = wed.moveWord(ed, -1);
-    assert.equal(wed.currentWord(ed), 'to');
-});
-
-test('tapping a later word after typing two words lands on the word that was tapped', () => {
-    let ed = wed.createWordEditor('Let me think about it.');
-    ed = wed.selectWord(ed, 1);
-    ed = wed.typeInto(ed, 'need to');
-    ed = wed.selectWord(ed, 3);                 // "about", as it was on screen
-    assert.equal(wed.currentWord(ed), 'about');
-});
-
-test('three backspaces take out three words, going the way backspace goes', () => {
-    let ed = wed.createWordEditor('one two three four');
-    ed = wed.selectWord(ed, 3);
-    ed = wed.backspace(ed);
-    ed = wed.backspace(ed);
-    ed = wed.backspace(ed);
-    assert.equal(wed.editorText(ed), 'one');
-    // ...and the highlight sits on the gap, so the next word typed goes into it.
-    assert.equal(wed.currentWord(ed), '');
-    ed = wed.typeInto(ed, 'more');
-    assert.equal(wed.editorText(ed), 'one more');
-});
-
-test('backspace part way through a word deletes a letter, not the word', () => {
-    let ed = wed.createWordEditor('cat');
-    ed = wed.typeInto(ed, 'dogs');
-    assert.equal(wed.backspace(ed), null);
-});
-
-test('stepping past the end opens a slot to add a word, and an unused slot collapses', () => {
-    let ed = wed.createWordEditor('Hi there');
-    ed = wed.moveWord(ed, 1);
-    ed = wed.moveWord(ed, 1);
-    assert.equal(ed.words.length, 3);
-    assert.equal(wed.currentWord(ed), '');
-    ed = wed.moveWord(ed, -1);
-    assert.deepEqual(ed.words, ['Hi', 'there']);
-});
-
-test('pasting several words over one puts them all in', () => {
-    let ed = wed.createWordEditor('a b');
-    ed = wed.typeInto(ed, 'x y z');
-    assert.equal(wed.editorText(ed), 'x y z b');
-    ed = wed.moveWord(ed, 1);
-    assert.equal(wed.currentWord(ed), 'b');
+test('what the other person was doing is read from the saved set of options', () => {
+    const data = sampleConversation();
+    data.exchanges.find((e) => e.role === 'offer').partnerAction = 'QUESTION';
+    const [first] = model.buildTurns(data);
+    assert.equal(first.partnerAction, 'QUESTION');
+    assert.equal(model.buildTurns(sampleConversation())[0].partnerAction, null, 'older files have none');
 });
 
 /* ── The whole chain, through the REAL storage layer ────────────────────────────── */
@@ -347,11 +244,11 @@ test('the whole chain: a conversation saved by storage, reviewed, and the correc
         { slot: 'INITIATIVE', text: 'Better now.' },
         { slot: 'REPAIR', text: 'Say again?' },
     ];
-    await storage.logOffer({ kind: 'ai', options: offer });
+    await storage.logOffer({ kind: 'ai', options: offer, partnerAction: 'QUESTION' });
     await storage.finalizeOffer({ outcome: 'card', selectedIndex: 0, shownMs: 1200 });
     const handle = storage.detachPendingPartnerTurn();
     await storage.finalizePartnerTurn(handle, { rawTranscript: 'how was your week', cleanedTranscript: 'How was your week?' });
-    await storage.logUserResponse({ selectedText: 'Pretty good.', selectedIndex: 0, allOptions: offer.map((o) => o.text), selectedSlot: 'PREFERRED', source: 'card' });
+    await storage.logUserResponse({ selectedText: 'Pretty good.', selectedIndex: 0, allOptions: offer.map((o) => o.text), selectedSlot: 'PREFERRED', source: 'card', partner: { id: 'p-mom', label: 'Mom' } });
     const id = storage.getConversationId();
     storage.resetConversationId();
 
@@ -363,22 +260,21 @@ test('the whole chain: a conversation saved by storage, reviewed, and the correc
     assert.equal(turns[0].partnerText, 'How was your week?');
     assert.equal(turns[0].took, 0);
 
-    // Record a correction and write it where review writes it.
+    // Record a rewrite and write it where review writes it.
     let review = model.normalizeReview(await storage.readReview(id), id);
-    review = model.setCardAnswer(review, turns[0], 1, 'Not great, if I am honest.');
-    review = model.setMisheard(review, turns[0], 'How was your weekend?');
+    review = model.setRewrite(review, turns[0], 'Not great, if I am honest.');
     assert.ok(await storage.writeReview(id, review));
 
-    // Off disk again: the correction is there, the conversation file is untouched, and
+    // Off disk again: the rewrite is there, the conversation file is untouched, and
     // the review file is never mistaken for a conversation.
     const back = model.normalizeReview(await storage.readReview(id), id);
     const e = model.getEntry(back, turns[0].key);
     assert.equal(e.answer.text, 'Not great, if I am honest.');
-    assert.equal(e.misheard.said, 'How was your weekend?');
+    assert.equal(e.answer.moment.partnerId, 'p-mom');
     logs = await storage.listConversationLogs();
     assert.equal(logs.length, 1, 'the review file must not appear as a second conversation');
-    assert.equal(logs[0].data.exchanges.some((x) => x.misheard || x.answer), false, 'the record of what happened is never rewritten');
-    assert.equal(model.getEntry(model.normalizeReview(logs[0].review, id), turns[0].key).answer.index, 1, 'a backup carries the review with its conversation');
+    assert.equal(logs[0].data.exchanges.some((x) => x.answer), false, 'the record of what happened is never rewritten');
+    assert.equal(model.getEntry(model.normalizeReview(logs[0].review, id), turns[0].key).answer.text, 'Not great, if I am honest.', 'a backup carries the review with its conversation');
 
     // An import puts both back.
     const files = root._dirs.get('conversations')._files;
@@ -386,11 +282,17 @@ test('the whole chain: a conversation saved by storage, reviewed, and the correc
     assert.ok(await storage.writeConversationLog(id, logs[0].data, logs[0].review));
     assert.ok(files.has(`${id}.json`) && files.has(`${id}.review.json`));
 
-    // And on to the voice (Ken, October 3 2026): the reworded card read back off disk
-    // becomes a voice example, through the same listing the app uses.
+    // And on to the AI (Ken, October 6 2026): the rewrite read back off disk becomes a
+    // pair kept for Mom, through the same listing, the same voice profile and the same
+    // block builder the app uses - and nothing for anyone else.
     const { harvest } = await import('../app/js/voice-harvest.js');
-    const voice = harvest(await storage.listConversationLogs());
-    assert.deepEqual(voice.exemplars, ['Not great, if I am honest.']);
+    const result = harvest(await storage.listConversationLogs());
+    assert.deepEqual(result.exemplars, [], 'a sentence written for Mom is not shared with everyone');
+    const voiceProfile = await import('../app/js/voice.js');
+    await voiceProfile.setHarvest(result);
+    const block = voiceProfile.buildReviewBlock('Mom', voiceProfile.reviewPairsFor('p-mom'));
+    assert.match(block, /Mom asked a question: "How was your week\?" This user would rather have said: "Not great, if I am honest\."/);
+    assert.equal(voiceProfile.buildReviewBlock('Devon', voiceProfile.reviewPairsFor('p-devon')), '');
 
     // The list's date range: an old conversation is skipped by its name, unopened, and
     // counted, while one with no date in its name is always read.
@@ -438,28 +340,7 @@ test('undo and redo close the composition pane', async () => {
     const { readFileSync } = await import('node:fs');
     const src = readFileSync(new URL('../app/js/review-ui.js', import.meta.url), 'utf8');
     const at = src.indexOf('function stepHistory(');
-    assert.match(src.slice(at, at + 900), /stopEditing\(\);[\s\S]{0,300}closeComposer\(\);/);
+    assert.match(src.slice(at, at + 900), /closeComposer\(\);/);
 });
 
-// CR-258. A phrase answer keeps its own respelling, so Hear it says it as the panel
-// does; a sound answer never carries one.
-test('a phrase answer keeps its respelling; a sound answer does not', () => {
-    const [first] = model.buildTurns(sampleConversation());
-    let r = model.setPhraseAnswer(model.emptyReview('c'), first, { itemId: 'v', text: 'Volksswitch', speak: 'Folks-switch' });
-    assert.equal(model.getEntry(r, first.key).answer.speak, 'Folks-switch');
-    r = model.setPhraseAnswer(r, first, { itemId: 's', text: 'Birthday song', sound: true, speak: 'x' });
-    assert.equal(model.getEntry(r, first.key).answer.speak, null);
-    r = model.setPhraseAnswer(r, first, { itemId: 'p', text: 'Yes', speak: 'Yes' });
-    assert.equal(model.getEntry(r, first.key).answer.speak, null, 'the same words need no respelling');
-});
 
-// CR-259. The "misheard" note can be taken back, and a turn with nothing else on it
-// then leaves the review file entirely.
-test('clearing the misheard note drops an otherwise empty entry', () => {
-    const [first] = model.buildTurns(sampleConversation());
-    let r = model.setMisheard(model.emptyReview('c'), first, 'something');
-    assert.ok(model.getEntry(r, first.key).misheard);
-    r = model.clearMisheard(r, first);
-    const e = model.getEntry(r, first.key);
-    assert.ok(!e || !e.misheard);
-});

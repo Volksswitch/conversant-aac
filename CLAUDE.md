@@ -653,86 +653,68 @@ Ken: *"I thought I was experiencing this but I doubted myself."* He was right, a
 
 **Follow-up — the conversation PANE was out of order relative to the (correct) transcript (Ken, July 13 2026).** Ken's on-device catch: after the partner replied, tapping **Repeat what I said** showed the user's re-spoken line ABOVE the partner's reply in the pane, though the transcript had it correctly after. Root cause: the pane rendered the partner's in-progress turn as a bottom-pinned **live line** (`ui.setLiveTranscript`), while a spoken-command user turn (`logSpokenUserTurn` — Say again / Hold on / Ask-them-to-repeat) was appended into the committed history *above* that live line; the transcript was already correct because it writes the partner turn at its pause. Fix (app.js, pane-only — storage untouched): when a command user turn is logged mid-partner-turn, **promote** the live partner turn into `conversationHistory` first (`flushLivePartnerToHistory`, tracked by `pendingPartnerHistoryIdx`) so the user turn renders after it; `commitExchange` / repair now use `placePartnerTurn` (update the promoted entry in place, else append) and `updatePartnerLive` keeps a promoted turn updating in place instead of re-showing the bottom live line. `logSpokenUserTurn` also calls `storage.logPartnerInterim` first so pane and transcript stay identical even if the command precedes the partner's first pause. Traced through the reported sequence (partner1→user1→partner2→say-again→response) → pane and transcript both order partner2 before the say-again. Verified boot-clean; the live mic ordering is the usual on-device retest boundary.
 
-## Conversation Review — first build (Ken, October 1 2026), BUILT
+## Conversation Review — one action: rewrite a turn (Ken, October 6 2026), BUILT
 
-Design: `Documents/Conversant AAC Conversation Review.docx`. Settings → **Conversation
-Review** (tab name Ken's, October 1 2026) is a table laid out as the document's Figure 1 —
-When, Who, Where, How long, Where you got to — sortable by tapping any heading, real or
-practice conversations, never both. "Where you got to" comes from `reached`, the furthest
-turn opened, kept in the review file; Undo never takes it back. A row opens the review
-screen.
-What is NOT built yet is in [TODO.md](TODO.md) ("Conversation Review: what the first
-build left out") — playback at real speed, and sending answers on to voice examples,
-Express buttons or About Me.
+**This replaces the October 1 2026 first build.** Ken: *"Let's simplify everything."* The
+user steps through a conversation, picks a turn that did not sound like them, and the
+Composition Pane opens with what was said at the time. They write the whole reply they
+would rather have said and save it. Nothing else is recorded: choosing a different
+response option, Express buttons, New 4, the context marks, the "wrong words" flag, review
+steers and the word-by-word editor are all gone (`word-editor.js` deleted).
 
-- **IT IS A SECOND CONTROLLER ON THE SAME SCREEN, NOT A NEW SCREEN** (`review-ui.js`).
-  Capture-phase click listeners on the Command Bar, New 4, the cards, the pane and the
-  composer stop the live handlers ever seeing a tap. **Every review mark is paint** —
-  measured: 48 boxes identical in review and out of it, so one keyguard fits both. The
-  Listen button's "outlined" look in review is an inset shadow, because a real border
-  would widen it and move the eight buttons after it.
-- **`renderExpressPanel()` hands off to review while it is active.** Every path that
-  redraws the panel goes through it, so none can put the live, speaking panel back
-  under a review. `composedPanel(ctx)` and `goalButtons(partner, place)` take review's
-  marks instead of the live partner/place/feeling/goals.
-- **THE CONVERSATION FILE IS NEVER WRITTEN BY REVIEW.** Answers go in
-  `conversations/<id>.review.json`. `listConversationLogs()` sets those aside and
-  attaches each to its conversation, so a backup carries both and an import writes both
-  (`writeConversationLog(id, data, review)`). **Any new reader of the conversations
-  folder must go through `listConversationLogs`**, or it will read a review file as a
-  conversation.
-- **A turn is keyed by the timestamp of its first real entry** (partner, offer or user —
-  not a "listen on" event), so a review stays attached to the right turn.
-- **The word editor types into a hidden input** (`#reviewWordInput`, in the keyboard's
-  scope, prediction off). The on-screen keyboard's Backspace now dispatches a cancelable
-  keydown first, which is how review takes a whole word on one press. While a word is
-  being edited, pointer-downs on the bar, cards and pane are prevented so focus — and
-  the keyboard — stay put.
-- **CHOOSING A CARD AND EDITING IT ARE TWO TAPS (Ken, October 1 2026).** The first build
-  opened the editor on the first tap, which hid the Express Panel under the keyboard
-  before the user asked to type, with Undo the only visible way back. Now a tap chooses;
-  a SECOND tap on the same card edits - including the card spoken at the time, which
-  shows as chosen but still needs its own first tap (Ken, October 3 2026); a tap on the edited card away from its words finishes. Card taps follow the
-  user's single/double-tap setting. **Solid dark border = the current choice; the card
-  spoken at the time turns DASHED once something replaces it** — the first build gave
-  both the same border and they could not be told apart. **The same rule covers New 4 and
-  every Express Panel button, My own words included** (Ken, October 1 2026).
-- **ARRIVING ON A TURN TURNS THE PANEL TO THE PAGE HOLDING ITS BUTTON** — the current choice
-  first, else the one tapped at the time — even behind More (Ken, October 1 2026). Not
-  while the user is paging themselves; that stops at their next answer or turn change.
-  Review finds buttons in the whole panel model, never only what is on screen (the first
-  cut did, and could not find anything behind More). **A phrase deleted since the
-  conversation leaves the panel where it is** and the pane says "no longer on your Express Panel"
-  (Ken). **The conversation screen's
-  keyboard has no Hide key** (removed June 2026), so do not offer it as an exit.
-- **TYPING NEVER MOVES THE HIGHLIGHT (Ken, October 1 2026).** Only Previous/Next Word or
-  tapping a word does. A space is just typed, so "need to" can replace "me" in one go;
-  the slot splits into separate words when the highlight leaves it. The first build moved
-  on at a space, which made replacing one word with two impossible — the second word
-  landed on top of the next one.
-- **⚠ A REVIEW MUST CHANGE HOW THE APP SOUNDS, OR IT IS WASTED WORK (Ken, October 3
-  2026).** Review is the app's main answer to "it doesn't sound like me", and Ken keeps it
-  even though an SLP expects clients to use it rarely. So `voice-harvest.reviewedTurns`
-  reads each conversation's review: a typed sentence or a reworded card is an EXEMPLAR
-  (ahead of live composed words), a card marked closer replaces the live choice as
-  PREFERENCE only (the words are still the model's), and any other answer withdraws the
-  live choice. **Each kind of answer is its own entry in `REVIEW_LESSONS` (Ken: these are
-  guesses, so each must be removable without touching the rest)**, and an Express button
-  chosen in review counts as a length choice, never an exemplar. A test reads the answer
-  kinds out of review-model.js and fails if one has no lesson.
-  `voice-refresh.refreshVoiceHarvest` is the one place the harvest runs; it
-  runs when the user leaves a review. The unbuilt Play button's place holds **Jump**: the
-  next turn after the current one that carries a list mark, grayed out when none is left
-  (Ken: keep it simple). A "what this review taught the app" view was built and removed
-  the same day - **the app must get better at deciding what it learns before it
-  announces it**; the light-bulb idea is in TODO.md. **The list shows the last week by
-  default** and skips older files by their name (which starts with the date), without
-  opening them. **Express buttons and About
-  Me facts from review wait for beta feedback.** Any new kind of review answer must say
-  what it does to the voice, or the review screen's summary will say it does nothing.
-- **Verified end to end**: `tests/review.test.mjs` writes a conversation through the
-  real storage calls, reads it back, records a correction and reads it off disk; and in
-  the browser with both keyboards.
+**Why, and it is measured rather than assumed:** the October 6 tests
+(`scripts/voice-eval/2026-10-06/`, results in TODO.md items 4 and 8) found the old
+answers changed nothing measurable, while rewrites with one person changed how the AI
+spoke with that person. **One rewrite per conversation barely helped; rewriting most
+turns with a person clearly did**, so the tab's description says several rewrites do the
+most. The judge behind those numbers is rough (Ken agreed with it on 5 of 8 pairs), and
+review's value over a good About Me note is unproven, since that comparison was never
+run fairly.
+
+The list (Settings → **Conversation Review**) is unchanged: When, Who, Where, How long,
+Where you got to, sortable, real or practice never both, last week by default.
+
+- **A REWRITE WITH A KNOWN PERSON IS A PAIR KEPT FOR THAT PERSON, NOT A SHARED EXAMPLE.**
+  `voice-harvest.REVIEW_LESSONS.rewrite` turns it into `{personId, action, partnerText,
+  text}`; `voice.reviewPairsFor(id)` and `voice.buildReviewBlock()` put the newest 12 in
+  the SITUATION block (`buildSituationBlock` in app.js) only while that person is the
+  partner. Before, a sentence written for Mom went into the examples sent with every
+  partner. A rewrite with nobody named is still one of the user's own sentences, shared.
+  **The situation block, not the voice block**: the voice block is the same for every
+  partner and cached.
+- **Each rewrite is tagged with the moment** (`review-model.momentOf`): person, place,
+  feeling, goals, what the partner was doing and said, and the kind of reply given.
+  **What the partner was doing is now saved with every AI set of options**
+  (`partnerAction` on the offer entry, from the engine's classification), so the pair can
+  say "Devon invited them".
+- **Struggled turns are marked** (Ken: still worth highlighting): an inset bar on every
+  line of a turn where the user asked for a different set, opened the Composition Pane,
+  or steered the AI. **Jump** goes to the next one.
+- **Command Bar in review:** Previous, Next, Jump, Rewrite, Clear (this rewrite), Undo,
+  Redo, Hear it, Settings (the way out). In the Composition Pane, Speak becomes **Save**
+  and Reframe becomes **Clear** (empties the box): same boxes, so one keyguard still fits.
+  A tap on the outlined turn or any of its cards also opens the rewrite.
+- **IT IS STILL A SECOND CONTROLLER ON THE SAME SCREEN** (`review-ui.js`), with
+  capture-phase listeners, and **every review mark is paint**. The Express Panel is drawn
+  for shape only; only "In my own words" does anything.
+- **THE CONVERSATION FILE IS NEVER WRITTEN BY REVIEW.** Rewrites go in
+  `conversations/<id>.review.json`; `listConversationLogs()` attaches each to its
+  conversation. **Any new reader of the conversations folder must go through
+  `listConversationLogs`**, or it will read a review file as a conversation.
+- **Older review files:** typed sentences and reworded response options are read as
+  rewrites; every other old answer is dropped when read.
+- **A turn is keyed by the timestamp of its first real entry** (partner, offer or user).
+- **Verified end to end**: `tests/review.test.mjs` saves a conversation through the real
+  storage calls, records a rewrite with Mom, reads it off disk, harvests it, and checks
+  the text the AI is given for Mom and that Devon gets nothing; and in the browser.
+
+## Words the user uses with one person (Ken, October 6 2026), BUILT
+
+About Me → People → "How I talk with them" has a box for **words** the user uses a lot
+with that person (`edge.attrs.words`). Sent in `buildPartnerBlock`, at most once in a set
+of options. Prompted by the October 6 test, where "nah" and "bro" reached the AI only
+through review rewrites because nothing asked for them. **Single words only**: a whole
+phrase they say often belongs on an Express Panel button (August 5 2026).
 
 ## "Sounds like me" — the October 6 2026 evaluation and the fixes that followed
 

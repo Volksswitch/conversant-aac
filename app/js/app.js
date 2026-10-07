@@ -883,10 +883,9 @@ function initApp() {
     // ONE TAP OR TWO, for the whole conversation screen (Ken, October 1 2026). See
     // tap-guard.js for the rule. Installed after the button tour's and the panel
     // paging's own listeners, which ask it whether a tap only armed something.
-    tapGuard.addRule('#listenControls > button', {
-        // Previous Word and Next Word only move the highlight in review, like the words.
-        exempt: (el) => reviewUI.isActive() && (el.id === 'sayAgainBtn' || el.id === 'holdOnBtn'),
-    });
+    // In review, those two positions are Rewrite and Clear, which change what review
+    // records, so they follow the setting like every other button (October 6 2026).
+    tapGuard.addRule('#listenControls > button');
     tapGuard.addRule('#regenerateBtn');
     tapGuard.addRule('#composerOverlay button');
     tapGuard.addRule('#epGrid .ep-btn', {
@@ -894,13 +893,11 @@ function initApp() {
         exempt: (el) => el.classList.contains('ep-undefined')
             || (el.classList.contains('ep-audio') && el.classList.contains('ep-on')),   // stopping a sound
     });
-    tapGuard.addRule('#responseOptions .response-card[data-index]', {
-        exempt: (el, target) => !!target.closest('[data-w]'),                          // a word being edited
-    });
+    tapGuard.addRule('#responseOptions .response-card[data-index]');
     // The error box's Try again replaces what is in the response area (CR-196).
     tapGuard.addRule('#responseOptions .response-error-retry');
     tapGuard.addRule('#transcriptLog [data-turn]', {
-        exempt: (el, target) => !reviewUI.isActive() || !!target.closest('[data-w]'),
+        exempt: () => !reviewUI.isActive(),
     });
     tapGuard.install();
 
@@ -3452,7 +3449,10 @@ function showPalette(cards, kind = 'ai') {
     if (storage.hasPendingOffer()) {
         storage.finalizeOffer({ outcome: 'superseded', shownMs: shownSpanMs() });
     }
-    storage.logOffer({ kind, options: cards });
+    // Only an AI set has a reading of what the other person was doing; the openers,
+    // wind-downs and goodbyes are ours and were not written in answer to anything.
+    const cls = kind === 'ai' ? engine.getSnapshot().lastClassification : null;
+    storage.logOffer({ kind, options: cards, partnerAction: (cls && cls.partner_action) || null });
     noteCardsShown(cards, kind);
 }
 
@@ -4930,6 +4930,9 @@ function buildSituationBlock() {
             // or asked for repeatedly only with them. Here rather than in the voice
             // block because that block is cached and the same for every partner
             // (October 6 2026).
+            // Their own rewrites from Conversation Review, with this person only.
+            const rewrites = voiceProfile.buildReviewBlock(label, voiceProfile.reviewPairsFor(activePartner.personId));
+            if (rewrites) lines.push(rewrites);
             const mine = voiceProfile.instructionsFor(activePartner.personId);
             if (mine.length) {
                 lines.push(`When talking with ${label || 'this person'}, this user has asked you to keep to these instructions: ${mine.join('; ')}`);

@@ -877,11 +877,6 @@ test('the same holding phrase is never said twice in a row across pauses', async
     for (let i = 1; i < said.length; i++) assert.notEqual(said[i], said[i - 1], `repeat at ${i}`);
 });
 
-test('CR-153: each Review edit is its own Undo step', () => {
-    const rv = readFileSync(new URL('../app/js/review-ui.js', import.meta.url), 'utf8');
-    const stop = rv.slice(rv.indexOf('function stopEditing'));
-    assert.match(stop.slice(0, 400), /wordSnapshotTaken = false;/);
-});
 
 test('CR-160/161: paid listening is timed; a redrawn Express button keeps its armed state', () => {
     const stt = readFileSync(new URL('../app/js/stt.js', import.meta.url), 'utf8');
@@ -1042,9 +1037,7 @@ test('the Flex situations dropdown shows "choose" when the edited situation has 
 test('the one-shot capital follows the start of a sentence', async () => {
     const { readFileSync } = await import('node:fs');
     const kb = readFileSync(new URL('../app/js/keyboard.js', import.meta.url), 'utf8');
-    const rv = readFileSync(new URL('../app/js/review-ui.js', import.meta.url), 'utf8');
     assert.match(kb, /: startsSentence\(field\) \? 'shift' : 'off';/);
-    assert.match(rv, /if \(ed\.fresh\) keyboard\.setShift\(ed\.sel === 0 \|\| \/\[\.!\?\]\$\/\.test\(prev\)\);/);
 });
 
 // CR-257. The tour calls the button by its name, and names the word when the command
@@ -1062,8 +1055,6 @@ test('review note removable, older-list wording, command icons cleared of word f
     const { readFileSync } = await import('node:fs');
     const rv = readFileSync(new URL('../app/js/review-ui.js', import.meta.url), 'utf8');
     const ui = readFileSync(new URL('../app/js/ui.js', import.meta.url), 'utf8');
-    assert.match(rv, /if \(line\.dataset\.part === 'misheard'\) \{/);
-    assert.match(rv, /model\.clearMisheard\(review, turn\(\)\)/);
     assert.ok(!/real and practice together\)/.test(rv));
     assert.match(rv, /olderNote\.after\(more\);/);
     const face = ui.slice(ui.indexOf('function setCommandFace('));
@@ -1147,4 +1138,17 @@ test('backing up asks with the plain card, not the red one', () => {
     const before = appSource.slice(Math.max(0, at - 120), at);
     assert.match(before, /confirmNeutral\(/);
     assert.doesNotMatch(appSource, /title: 'Back up your settings\?'/);
+});
+
+// October 6 2026. app.js cannot be loaded by a test, so the two links it owns in the
+// review-by-rewrite chain are checked at source level: a person's rewrites go out only
+// while talking with that person, and each AI set of options records what the other
+// person was doing.
+test('review rewrites are sent for the active person only, and offers record the partner action', () => {
+    const sit = appSource.slice(appSource.indexOf('function buildSituationBlock()'));
+    const body = sit.slice(0, sit.indexOf('\n}\n'));
+    assert.match(body, /voiceProfile\.reviewPairsFor\(activePartner\.personId\)/);
+    assert.ok(body.indexOf('reviewPairsFor') > body.indexOf('if (activePartner.personId)'), 'only inside the known-person branch');
+    const show = appSource.slice(appSource.indexOf('function showPalette('));
+    assert.match(show.slice(0, 2400), /partnerAction: \(cls && cls\.partner_action\) \|\| null/);
 });

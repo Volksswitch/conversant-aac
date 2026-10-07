@@ -478,6 +478,49 @@ export function setHarvest(result) {
 
 export function getHarvest() { return current().harvest; }
 
+/*
+ * REVIEW REWRITES, KEPT FOR ONE PERSON (Ken, October 6 2026). A rewrite made in review
+ * of a turn with a known person reaches the AI only while the user is talking with
+ * that person, as a pair: what the person said and was doing, and the whole reply the
+ * user would rather have said. Tested the same day: rewriting every turn of the
+ * conversations with one person clearly changed how the AI spoke with them; one rewrite
+ * per conversation barely did.
+ *
+ * In the SITUATION part of the instructions, not the voice block: the voice block is
+ * the same for every partner and is cached, so putting one person's lines there would
+ * both shape the user's voice with everyone and spoil the cache on every change.
+ */
+const ACTION_WORDS = {
+    INVITATION: 'invited them', QUESTION: 'asked a question', REQUEST: 'asked for something',
+    STATEMENT: 'told them something', GREETING: 'greeted them', ASSESSMENT: 'gave an opinion',
+    CLOSING: 'was wrapping up',
+};
+
+/** This person's review rewrites, newest first. */
+export function reviewPairsFor(personId) {
+    if (!personId) return [];
+    const h = current().harvest;
+    const all = h && Array.isArray(h.pairs) ? h.pairs : [];
+    return all.filter((p) => p && p.personId === personId && p.text);
+}
+
+/** The text that carries them to the AI, or '' when there are none. */
+export function buildReviewBlock(label, pairs) {
+    const name = String(label || 'this person').trim() || 'this person';
+    const list = (pairs || []).filter((p) => p && p.text);
+    if (!list.length) return '';
+    const rows = list.map((p) => {
+        const doing = ACTION_WORDS[p.action] || 'said';
+        const said = p.partnerText ? `: "${p.partnerText}"` : '';
+        return `- ${name} ${doing}${said} This user would rather have said: "${p.text}"`;
+    });
+    return [
+        `How this user answers ${name}, from their own review of earlier conversations with them. Each line shows what ${name} was doing and saying, and the whole reply this user wrote afterward as what they would rather have said.`,
+        ...rows,
+        `Use these as evidence of how this user talks with ${name}: their words, length, tone, and what comes first. Draw most on the ones where ${name} was doing what they are doing now. Do not reuse their wording; this turn is about something else.`,
+    ].join('\n');
+}
+
 /**
  * The harvested sentences that are actually in play — everything found, minus what
  * the user has removed. "Here is what I think you sound like" cannot be a black box,

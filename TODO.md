@@ -850,7 +850,15 @@ about to fall by an order of magnitude is the trap.
   because the app should not announce lessons it is not sure of (the light-bulb entry
   above). It waits on the measure in item 1. About Me's "What the app has picked up"
   list also does not mark which lines came from a review.
-- **DECIDED by Ken, 2026-10-06 (not built): review becomes one action, a complete
+- **BUILT 2026-10-06 (Ken: "Simplify the review process as described").** Review is now
+  one action: pick a turn, the Composition Pane opens with what was said at the time (Save
+  and Clear in place of Speak and Reframe), and the whole reply is saved. A rewrite with a
+  known person is a pair kept for that person only and sent while talking with them;
+  struggled turns carry a bar; what the partner was doing is saved with every set of
+  options; the tab says several rewrites do the most. Also built: an About Me box for
+  words the user uses a lot with one person. Not built from the list below: using each
+  pair as a test item for item 1. The User Manuals still describe the old review screen.
+- **DECIDED by Ken, 2026-10-06: review becomes one action, a complete
   rewrite.** *"Let's simplify everything."* This replaces (a), (b) and an earlier
   same-day plan of eight restyled versions to tap.
   - **The user picks the turn they want to change, and the Composition Pane opens.** It
