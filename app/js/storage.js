@@ -1655,10 +1655,14 @@ export function loadBottomLayout() {
 // keyboard, one row above a bottom one. A tall phone needs two by two with the
 // keyboard at the bottom, so it became its own setting. Unset means the old rule, so
 // nobody's screen changes.
+// Kept PER KEYBOARD POSITION, like the layout and the screen proportions, so changing
+// where the keyboard sits brings that position's arrangement with it (Ken, October 8
+// 2026). An older single value applies to both positions.
 export const OPTIONS_ARRANGEMENTS = ['row', 'grid', 'grid-below'];
 export function loadOptionsArrangement(dock = loadKeyboardDock()) {
     const v = loadSettings().optionsArrangement;
-    if (OPTIONS_ARRANGEMENTS.includes(v)) return v;
+    const mine = v && typeof v === 'object' ? v[dock === 'side' ? 'side' : 'bottom'] : v;
+    if (OPTIONS_ARRANGEMENTS.includes(mine)) return mine;
     return dock === 'side' ? 'grid' : 'row';
 }
 // Hold the screen upright or sideways, or let it turn (Ken, October 8 2026). See
@@ -1672,9 +1676,13 @@ export function saveScreenOrientation(v) {
     settings.screenOrientation = v === 'portrait' || v === 'landscape' ? v : 'any';
     saveSettings(settings);
 }
-export function saveOptionsArrangement(v) {
+export function saveOptionsArrangement(v, dock = loadKeyboardDock()) {
     const settings = loadSettings();
-    settings.optionsArrangement = OPTIONS_ARRANGEMENTS.includes(v) ? v : 'row';
+    const was = settings.optionsArrangement;
+    const both = was && typeof was === 'object' ? { ...was }
+        : OPTIONS_ARRANGEMENTS.includes(was) ? { bottom: was, side: was } : {};
+    both[dock === 'side' ? 'side' : 'bottom'] = OPTIONS_ARRANGEMENTS.includes(v) ? v : 'row';
+    settings.optionsArrangement = both;
     saveSettings(settings);
 }
 

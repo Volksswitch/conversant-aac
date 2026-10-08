@@ -26,6 +26,15 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- The suggested layout now covers both keyboard positions. Move the keyboard from the
+  bottom to the side, or back, and you get the layout suggested for that position:
+  on a sideways tablet, the alphabet in four columns down the side, the response
+  options two by two with "New 4" beside them, and more room for the conversation.
+  How the response options are arranged is now kept separately for each keyboard
+  position, like the keyboard layout. If you have already used the suggested layout,
+  tap "Use the suggested layout for this screen" once more to fill in the other
+  position.
+
 ## Version 0.13.12
 
 - Reporting a problem from Conversation Review no longer puts boxes across a keyguard.

@@ -22,6 +22,9 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.13.13": [
+    "The suggested layout now covers both keyboard positions. Move the keyboard from the bottom to the side, or back, and you get the layout suggested for that position: on a sideways tablet, the alphabet in four columns down the side, the response options two by two with \"New 4\" beside them, and more room for the conversation. How the response options are arranged is now kept separately for each keyboard position, like the keyboard layout. If you have already used the suggested layout, tap \"Use the suggested layout for this screen\" once more to fill in the other position."
+  ],
   "0.13.12": [
     "Reporting a problem from Conversation Review no longer puts boxes across a keyguard. The box for your note sits where the last response option you didn't use was, so the conversation and the option you spoke stay in view. The report itself, and the message after it, sit where the conversation is shown."
   ],

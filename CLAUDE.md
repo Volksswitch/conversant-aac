@@ -573,6 +573,13 @@ and `Conversant AAC Layout Suggestions.docx`.
   old rule (two by two beside a side keyboard, a row otherwise), so nobody's screen
   changed. New 4 does not need to sit in the same place in every arrangement: people
   choose how they hold or mount a device long before they meet the app.
+  **Kept PER KEYBOARD POSITION** (Ken, October 8 2026), like the layout and the screen
+  proportions; an older single value applies to both.
+- **A suggestion fills in BOTH keyboard positions** and puts the keyboard where it
+  suggests. Ken accepted the sideways-tablet suggestion, moved the keyboard to the
+  side, and got the old side layout with the options still in a row, because only the
+  bottom position had been filled in and the arrangement was shared. Nothing changes
+  on its own: switching position just finds that position's own settings waiting.
 - **First launch starts with the suggested layout for the screen**
   (layout-suggestions.js; phone if the shorter side is under 600 points). A sideways
   tablet starts with the keyboard at the bottom and QWERTY, which is what the app did

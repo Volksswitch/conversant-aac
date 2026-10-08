@@ -10,9 +10,12 @@
  * height for its rows at a comfortable size, the Command Bar about one row of the same
  * height, the response options about a third, and the transcript what is left.
  *
- * A sideways tablet has two suggestions in that document (keyboard at the side or the
- * bottom). The app starts with the keyboard at the bottom and QWERTY, which is what it
- * did before suggestions existed (Ken, October 8 2026).
+ * EACH SUGGESTION COVERS BOTH KEYBOARD POSITIONS (Ken, October 8 2026). The app
+ * starts with the one that suits the screen, and the other is filled in too, so
+ * changing "Where it sits" afterwards lands on a layout that suits that position
+ * rather than on whatever the other position had. A sideways tablet starts with the
+ * keyboard at the bottom and QWERTY, which is what the app did before suggestions
+ * existed.
  *
  * Pure: give it the screen size and it returns settings. Nothing here reads or writes
  * storage, so it can be tested without a browser.
@@ -22,26 +25,38 @@
 // are about 360-430; the smallest iPad (mini) is 744.
 export const PHONE_MAX_SHORT_SIDE = 600;
 
+// For a side keyboard, `dock` is a share of the WIDTH, and `command` and `response`
+// are shares of the height of the column beside it; the transcript gets the rest.
+const SIDEWAYS_SIDE = { layout: 'S2', optionsArrangement: 'grid',
+    convLayout: { command: 0.10, response: 0.50, dock: 0.30 } };
+
 export const SUGGESTIONS = {
     'phone-upright': {
-        label: 'Phone, upright',
-        keyboardDock: 'bottom', layout: 'S1', optionsArrangement: 'grid-below',
-        convLayout: { command: 0.07, response: 0.30, dock: 0.45 },
+        label: 'Phone, upright', keyboardDock: 'bottom',
+        bottom: { layout: 'S1', optionsArrangement: 'grid-below',
+            convLayout: { command: 0.07, response: 0.30, dock: 0.45 } },
+        side: { layout: 'S2', optionsArrangement: 'grid-below',
+            convLayout: { command: 0.07, response: 0.45, dock: 0.40 } },
     },
     'tablet-upright': {
-        label: 'Tablet, upright',
-        keyboardDock: 'bottom', layout: 'S1', optionsArrangement: 'grid-below',
-        convLayout: { command: 0.06, response: 0.30, dock: 0.42 },
+        label: 'Tablet, upright', keyboardDock: 'bottom',
+        bottom: { layout: 'S1', optionsArrangement: 'grid-below',
+            convLayout: { command: 0.06, response: 0.30, dock: 0.42 } },
+        side: { layout: 'S2', optionsArrangement: 'grid-below',
+            convLayout: { command: 0.06, response: 0.45, dock: 0.40 } },
     },
     'tablet-sideways': {
-        label: 'Tablet, sideways',
-        keyboardDock: 'bottom', layout: 'B11', optionsArrangement: 'row',
-        convLayout: { command: 0.10, response: 0.30, dock: 0.30 },
+        label: 'Tablet, sideways', keyboardDock: 'bottom',
+        bottom: { layout: 'B11', optionsArrangement: 'row',
+            convLayout: { command: 0.10, response: 0.30, dock: 0.30 } },
+        side: SIDEWAYS_SIDE,
     },
     'phone-sideways': {
-        label: 'Phone, sideways',
-        keyboardDock: 'side', layout: 'S2', optionsArrangement: 'grid-below',
-        convLayout: { command: 0.14, response: 0.56, dock: 0.40 },
+        label: 'Phone, sideways', keyboardDock: 'side',
+        bottom: { layout: 'B11', optionsArrangement: 'row',
+            convLayout: { command: 0.12, response: 0.30, dock: 0.40 } },
+        side: { layout: 'S2', optionsArrangement: 'grid-below',
+            convLayout: { command: 0.14, response: 0.56, dock: 0.40 } },
     },
 };
 
@@ -60,18 +75,22 @@ export function suggestionFor(width, height) {
 }
 
 /**
- * The suggestion as changes to a settings object. The layout goes to the slot for its
- * keyboard position, and the screen proportions to that position's entry, leaving the
- * other position's entries as they were.
+ * The suggestion as changes to a settings object: both keyboard positions get their
+ * layout, their response options arrangement and their screen proportions, and the
+ * keyboard goes where the suggestion puts it. Everything else is left alone.
  */
 export function applyToSettings(settings, suggestion) {
     const s = { ...(settings || {}) };
-    const side = suggestion.keyboardDock === 'side';
     s.keyboardDock = suggestion.keyboardDock;
-    if (side) s.sideLayout = suggestion.layout; else s.bottomLayout = suggestion.layout;
-    s.optionsArrangement = suggestion.optionsArrangement;
+    s.bottomLayout = suggestion.bottom.layout;
+    s.sideLayout = suggestion.side.layout;
+    s.optionsArrangement = {
+        bottom: suggestion.bottom.optionsArrangement,
+        side: suggestion.side.optionsArrangement,
+    };
     const all = s.convLayout && typeof s.convLayout === 'object' ? { ...s.convLayout } : {};
-    all[side ? 'side' : 'bottom'] = { ...suggestion.convLayout };
+    all.bottom = { ...suggestion.bottom.convLayout };
+    all.side = { ...suggestion.side.convLayout };
     s.convLayout = all;
     s.layoutSuggestion = suggestion.id;
     return s;
