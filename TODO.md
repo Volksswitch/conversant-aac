@@ -48,11 +48,10 @@ BUILT (see CLAUDE.md, "Layouts: one list, suggested starting layouts").
   in both User Manuals (setting-up-the-screen section), update the layout names and the
   new Screen Layout controls in both manuals, and bring `Conversant AAC Keyboard Layout
   Options.docx` up to the fifteen layouts.
-- **Measure the "Screen orientation" setting (built October 8 2026) on Ken's devices:**
-  Android phone and tablet (installed, and in a tab with "Use the whole screen" on and
-  off), and the Surface in full screen. Record what the status line said on each in
-  CLAUDE.md, and fix the "On a computer" release note if a device behaves differently.
-  The manuals need the setting and each device's own rotation lock at the same sync.
+- **"Screen orientation" (built October 8 2026, released 0.13.9):** measured October 8 -
+  Android installed holds, Surface refuses even installed. Decide which computers still
+  show the setting (Ken), then correct it in the next release notes. The manuals need
+  the setting and each device's own rotation lock at the same sync.
 
 **Why not now:** documents wait for Ken's sync; the measurement needs Ken's devices.
 

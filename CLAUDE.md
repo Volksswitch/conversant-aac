@@ -590,6 +590,8 @@ and `Conversant AAC Layout Suggestions.docx`.
   "not in this state", so the message is chosen from the state. The lock ends when the
   app leaves the screen, so it is asked for again on Start, on return to view and when
   full screen starts. Screen-bound on restore.
+  **MEASURED by Ken, October 8 2026: Android installed app - holds. Surface - refused,
+  even installed.** MacBooks do not rotate. Chromebooks: not measured.
 
 ## ⚠ LOCALLY, THE SERVICE WORKER SERVES A STALE APP AND NOTHING SAYS SO (August 23 2026)
 
