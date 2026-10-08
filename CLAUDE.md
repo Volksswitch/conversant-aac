@@ -690,10 +690,16 @@ Where you got to, sortable, real or practice never both, last week by default.
 - **Struggled turns are marked** (Ken: still worth highlighting): an inset bar on every
   line of a turn where the user asked for a different set, opened the Composition Pane,
   or steered the AI. **Jump** goes to the next one.
-- **Command Bar in review:** Previous, Next, Jump, Rewrite, Clear (this rewrite), Undo,
+- **Command Bar in review:** Previous, Next, Jump, (two blank, disabled positions), Undo,
   Redo, Hear it, Settings (the way out). In the Composition Pane, Speak becomes **Save**
-  and Reframe becomes **Clear** (empties the box): same boxes, so one keyguard still fits.
-  A tap on the outlined turn or any of its cards also opens the rewrite.
+  (a disk icon: a check mark read as "already saved") and Reframe becomes **Clear**
+  (empties the box): same boxes, so one keyguard still fits. The rewrite opens from a tap
+  on the outlined turn, the card that was spoken (the others are disabled and faded), or
+  "In my own words" (Ken, October 7 2026).
+- **Rewrite and Clear-this-rewrite were removed because Undo covers them (Ken, October 7
+  2026).** While the pane is open, Undo/Redo step through the TYPING a word at a time and
+  Hear it reads the box; once it is closed they step through saved rewrites. Leaving the
+  pane with unsaved changes (Cancel, Previous/Next/Jump, Settings) asks first.
 - **IT IS STILL A SECOND CONTROLLER ON THE SAME SCREEN** (`review-ui.js`), with
   capture-phase listeners, and **every review mark is paint**. The Express Panel is drawn
   for shape only; only "In my own words" does anything.

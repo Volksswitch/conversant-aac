@@ -47,6 +47,11 @@ export const IN_SCOPE = '#composerInput, .wv-text, input[data-key-field], #contr
 // steals the first click — so Speak only worked on the second press (Ken, June
 // 19 2026). Keeping the keyboard up keeps the layout stable so the tap lands.
 const KEEP_OPEN_CONTROLS = '#speakBtn, #reframeBtn, #cancelComposerBtn';
+// More controls that keep the keyboard up, for as long as a caller needs them.
+// Conversation Review sets its Undo, Redo and Hear it buttons here while its
+// Composition Pane is open, since those are pressed in the middle of typing.
+let extraKeepOpen = '';
+export function setExtraKeepOpen(selector) { extraKeepOpen = selector || ''; }
 
 // The element under the most recent pointerdown. On touch a tapped <button> is
 // frequently NOT reported as focusout.relatedTarget, so relatedTarget alone
@@ -781,6 +786,7 @@ export function init() {
         // desktop; lastPointerDownEl covers touch where the button isn't reported.
         const tapTarget = next || lastPointerDownEl;
         if (tapTarget && tapTarget.closest && tapTarget.closest(KEEP_OPEN_CONTROLS)) return;
+        if (extraKeepOpen && tapTarget && tapTarget.closest && tapTarget.closest(extraKeepOpen)) return;
         hide();
     });
 

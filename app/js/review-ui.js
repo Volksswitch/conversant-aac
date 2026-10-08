@@ -23,12 +23,16 @@
  * The nine Command Bar buttons, by position:
  *   Listen -> Previous Turn      Start conversation -> Next Turn
  *   End conversation -> Jump: the next turn where you and the app struggled
- *   Repeat what I said -> Rewrite this turn      Hold on -> Clear this rewrite
+ *   Repeat what I said, Hold on -> blank and unused (Ken, October 7 2026: a rewrite is
+ *     opened by tapping the turn, its card or "In my own words", and Undo takes one
+ *     back, so "Rewrite this turn" and "Clear this rewrite" were removed)
  *   Ask them to repeat -> Undo   Wrap up -> Redo   Don't save -> Hear it
  *   Settings -> Settings, which is also how the user leaves review.
  *
  * In the Composition Pane, Speak becomes Save and Reframe becomes Clear: the same two
- * boxes, so the keyguard still fits.
+ * boxes, so the keyguard still fits. While the pane is open, Undo and Redo step through
+ * the typing in the box and Hear it says what is in the box; leaving it with unsaved
+ * changes asks first.
  */
 
 import * as ui from './ui.js';
@@ -36,6 +40,7 @@ import * as storage from './storage.js';
 import * as keyboard from './keyboard.js';
 import * as model from './review-model.js';
 import { refreshVoiceHarvest } from './voice-refresh.js';
+import { confirmDanger } from './confirm-dialog.js';
 
 let deps = null;
 let active = false;
@@ -56,8 +61,8 @@ const BAR = [
     { id: 'listenBtn',          act: 'prevTurn', icon: 'prevTurn', label: 'Previous turn', face: 'Previous' },
     { id: 'initiateBtn',        act: 'nextTurn', icon: 'nextTurn', label: 'Next turn',     face: 'Next' },
     { id: 'endConversationBtn', act: 'nextFlag', icon: 'nextFlag', label: 'Next turn where you and the app struggled', face: 'Jump' },
-    { id: 'sayAgainBtn',        act: 'rewrite',  icon: 'compose',  label: 'Rewrite this turn', face: 'Rewrite' },
-    { id: 'holdOnBtn',          act: 'clear',    icon: 'erase',    label: 'Clear this rewrite', face: 'Clear' },
+    { id: 'sayAgainBtn',        act: 'none' },
+    { id: 'holdOnBtn',          act: 'none' },
     { id: 'pardonBtn',          act: 'undo',     icon: 'undo',     label: 'Undo',          face: 'Undo' },
     { id: 'windDownBtn',        act: 'redo',     icon: 'redo',     label: 'Redo',          face: 'Redo' },
     { id: 'privacyBtn',         act: 'hear',     icon: 'speak',    label: 'Hear it',       face: 'Hear it' },
@@ -98,6 +103,8 @@ export function init(d) {
     if (log) log.addEventListener('click', onPaneClick, true);
     const comp = $('composerOverlay');
     if (comp) comp.addEventListener('click', onComposerClick, true);
+    const input = $('composerInput');
+    if (input) input.addEventListener('input', onDraftInput);
 }
 
 export function isActive() { return active; }
@@ -144,6 +151,7 @@ export async function enter(entry) {
 
 async function leave() {
     if (!active) return;
+    if (!(await okToLeaveComposer())) return;
     closeComposer();
     await flushSave();
     // The review only counts if the voice examples are rebuilt from it. Not awaited:
@@ -185,26 +193,38 @@ function render() {
 }
 
 function renderBar() {
-    const t = turn();
+    // While the Composition Pane is open, Undo and Redo work on the typing in the box.
     const state = {
         prevTurn: at > 0,
         nextTurn: at < conv.turns.length - 1,
         nextFlag: nextFlagged() >= 0,
-        rewrite: rewritable(t),
-        clear: !!rewriteOf(t),
-        undo: history.canUndo(),
-        redo: history.canRedo(),
+        undo: composerOpen ? draft.back.length > 0 : history.canUndo(),
+        redo: composerOpen ? draft.fwd.length > 0 : history.canRedo(),
         hear: !!hearText(),
         leave: true,
+        none: false,
     };
     for (const b of BAR) {
-        ui.setCommandBarFace(b.id, b.icon, b.label, b.face);
         const el = $(b.id);
+        if (b.act === 'none') blankButton(el);
+        else ui.setCommandBarFace(b.id, b.icon, b.label, b.face);
         if (!el) continue;
         el.disabled = !state[b.act];
         el.classList.remove('listening', 'private-on', 'ep-on');
         el.setAttribute('aria-pressed', 'false');
     }
+}
+
+// A Command Bar button review does not use: an empty face, disabled. The box is left
+// exactly as it is, so no keyguard hole moves.
+function blankButton(el) {
+    if (!el) return;
+    el.textContent = '';
+    el.classList.remove('cmd-worded');
+    ['-webkit-line-clamp', 'display', '-webkit-box-orient', 'align-items']
+        .forEach((p) => el.style.removeProperty(p));
+    el.setAttribute('aria-label', 'Not used in review');
+    el.title = '';
 }
 
 function fromLabel(t) {
@@ -408,25 +428,22 @@ function onBarClick(e) {
     e.stopImmediatePropagation();
     if (btn.disabled) return;
     switch (def.act) {
-        case 'prevTurn': goTo(at - 1); break;
-        case 'nextTurn': goTo(at + 1); break;
-        case 'nextFlag': goTo(nextFlagged()); break;
-        case 'rewrite': openComposer(); break;
-        case 'clear':
-            closeComposer();
-            change(model.clearAnswer(review, turn()));
-            render();
-            break;
-        case 'undo': stepHistory('undo'); break;
-        case 'redo': stepHistory('redo'); break;
+        case 'prevTurn': void goTo(at - 1); break;
+        case 'nextTurn': void goTo(at + 1); break;
+        case 'nextFlag': void goTo(nextFlagged()); break;
+        case 'undo': if (composerOpen) stepDraft('undo'); else stepHistory('undo'); break;
+        case 'redo': if (composerOpen) stepDraft('redo'); else stepHistory('redo'); break;
         case 'hear': hear(); break;
         case 'leave': void leave(); break;
         default: break;
     }
+    // The box keeps the caret, so the user carries on typing after Undo, Redo or Hear it.
+    if (composerOpen && ['undo', 'redo', 'hear'].includes(def.act)) refocusComposer();
 }
 
-function goTo(i) {
+async function goTo(i) {
     if (!conv || i < 0 || i >= conv.turns.length || i === at) return;
+    if (!(await okToLeaveComposer())) return;
     closeComposer();
     at = i;
     review = model.markReached(review, i);
@@ -454,12 +471,14 @@ function hear() {
     if (text) deps.speak(text);
 }
 
-// What Hear it says: the rewrite, or what was said at the time when there is none.
-// Never a sound button's NAME (CR-258), which would read a label out as though the
-// user said it.
+// What Hear it says: what is in the box while the Composition Pane is open (Ken,
+// October 7 2026); otherwise the rewrite, or what was said at the time when there is
+// none. Never a sound button's NAME (CR-258), which would read a label out as though
+// the user said it.
 function hearText() {
     const t = turn();
     if (!t) return '';
+    if (composerOpen) return ui.getComposerText();
     const rw = rewriteOf(t);
     if (rw) return rw;
     if (!t.user || t.user.audio) return '';
@@ -495,7 +514,7 @@ function onPaneClick(e) {
     e.preventDefault();
     e.stopImmediatePropagation();
     const i = Number(line.dataset.turn);
-    if (i !== at) { goTo(i); return; }
+    if (i !== at) { void goTo(i); return; }
     openComposer();
 }
 
@@ -505,24 +524,31 @@ function onPaneClick(e) {
 // already made, and Clear empties it. Save records the whole reply; it speaks nothing
 // and asks the AI for nothing.
 function openComposer() {
-    if (!active || !rewritable(turn())) return;
+    // Already open: a second tap on the turn must not throw away what is being typed.
+    if (!active || composerOpen || !rewritable(turn())) return;
     const t = turn();
     composerOpen = true;
     ui.showComposerOverlay();
     // Same two boxes, new jobs: Speak saves, Reframe clears. Drawn in the user's own
-    // choice of pictures or words, like every other button.
+    // choice of pictures or words, like every other button. Save is a disk, not a
+    // check mark: a check reads as "already saved" (Ken, October 7 2026).
     ui.setCommandBarFace('speakBtn', 'save', 'Save this as what I would rather have said', 'Save');
     ui.setCommandBarFace('reframeBtn', 'erase', 'Clear the box', 'Clear');
     const start = rewriteOf(t) || (t.user && !t.user.audio ? t.user.text : '') || '';
     ui.setComposerText(start);
-    const box = $('composerInput');
-    if (box) { try { box.focus({ preventScroll: true }); } catch { box.focus(); } keyboard.showFor(box); }
+    resetDraft(start);
+    // Undo, Redo and Hear it are pressed while typing, so tapping them must not take
+    // the on-screen keyboard down.
+    keyboard.setExtraKeepOpen('#pardonBtn, #windDownBtn, #privacyBtn');
+    refocusComposer();
     renderBar();
 }
 
 function closeComposer() {
     if (!composerOpen) return;
     composerOpen = false;
+    keyboard.setExtraKeepOpen('');
+    resetDraft('');
     // Every button's usual face comes back; review redraws its own bar straight after.
     ui.applyControlIcons();
     ui.clearComposer();
@@ -530,18 +556,86 @@ function closeComposer() {
     keyboard.hideKeyboard();
 }
 
-function onComposerClick(e) {
+function refocusComposer() {
+    const box = $('composerInput');
+    if (!box) return;
+    try { box.focus({ preventScroll: true }); } catch { box.focus(); }
+    keyboard.showFor(box);
+}
+
+// The typing in the box has its own Undo and Redo while the pane is open. A step is a
+// word, not a letter: a new step starts when a word starts, when typing turns into
+// deleting or back, on a paste or an accepted prediction, and after a pause.
+const draft = { back: [], fwd: [], last: '', start: '', kind: 0, at: 0 };
+function resetDraft(text) {
+    draft.back = []; draft.fwd = []; draft.last = text; draft.start = text; draft.kind = 0; draft.at = 0;
+}
+function onDraftInput() {
+    if (!active || !composerOpen) return;
+    const now = $('composerInput').value;
+    if (now === draft.last) return;
+    const grew = now.length - draft.last.length;
+    const kind = grew > 0 ? 1 : -1;
+    const newWord = grew === 1 && /\s$/.test(draft.last) && !/\s$/.test(now);
+    if (draft.kind === 0 || kind !== draft.kind || Math.abs(grew) > 1 || newWord
+        || Date.now() - draft.at > 1500) {
+        draft.back.push(draft.last);
+        if (draft.back.length > 100) draft.back.shift();
+        draft.fwd = [];
+    }
+    draft.last = now;
+    draft.kind = kind;
+    draft.at = Date.now();
+    renderBar();
+}
+function setDraftText(text) {
+    ui.setComposerText(text);
+    draft.last = text;
+    draft.kind = 0;
+    renderBar();
+}
+function stepDraft(which) {
+    const from = which === 'undo' ? draft.back : draft.fwd;
+    const to = which === 'undo' ? draft.fwd : draft.back;
+    if (!from.length) return;
+    to.push($('composerInput').value);
+    setDraftText(from.pop());
+}
+
+// Unsaved work in the box is asked about before it is thrown away (Ken, October 7
+// 2026): a rewrite can be a lot of typing.
+function composerDirty() {
+    return composerOpen && ui.getComposerText() !== draft.start.trim();
+}
+async function okToLeaveComposer() {
+    if (!composerDirty()) return true;
+    const ok = await confirmDanger({
+        title: 'Leave without saving?',
+        body: 'What you have written in the box has not been saved. If you leave now, it is lost.',
+        confirmLabel: 'Leave without saving',
+        cancelLabel: 'Keep writing',
+    });
+    if (!ok && composerOpen) refocusComposer();
+    return ok;
+}
+
+async function onComposerClick(e) {
     if (!active || !composerOpen) return;
     const btn = e.target.closest && e.target.closest('button');
     if (!btn || !['speakBtn', 'reframeBtn', 'cancelComposerBtn'].includes(btn.id)) return;
     e.preventDefault();
     e.stopImmediatePropagation();
     if (btn.id === 'reframeBtn') {
-        ui.setComposerText('');
+        // Clear is one step Undo can take back.
+        const now = $('composerInput').value;
+        if (now) { draft.back.push(now); draft.fwd = []; }
+        setDraftText('');
         $('composerInput')?.focus();
         return;
     }
-    if (btn.id === 'speakBtn') {
+    if (btn.id === 'cancelComposerBtn') {
+        if (!(await okToLeaveComposer())) return;
+    } else {
         // Saving what was said at the time, or an empty box, records nothing.
         change(model.setRewrite(review, turn(), ui.getComposerText()));
     }

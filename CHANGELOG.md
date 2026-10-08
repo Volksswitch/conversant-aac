@@ -28,6 +28,15 @@ forgetting to tag one is only ever noise, never silence.
 
 - In Conversation Review, only the response option you actually said can be tapped to
   rewrite it. The other options are grayed out.
+- In Conversation Review, Undo and Redo now step back and forward through what you type
+  in the box, a word at a time. Once the box is closed, Undo takes back a saved rewrite.
+- The "Rewrite this turn" and "Clear this rewrite" buttons are gone from review. Tap the
+  turn, the option you said, or "In my own words" to rewrite, and use Undo to take a
+  rewrite back.
+- "Hear it" reads out what is in the box while you are writing.
+- The Save button in review shows a disk instead of a check mark.
+- If you leave the box with changes you haven't saved, the app asks before throwing them
+  away.
 
 ## Version 0.13.7
 
