@@ -37,21 +37,6 @@ the one that quietly waits forever.
 
 ## Open
 
-### Layouts for tall screens: what is left after the October 8 2026 build
-
-**Raised:** October 8 2026, by Ken. The layouts, the single list, the response options
-setting, the first-launch suggestion, the Settings button and the restore rule are
-BUILT (see CLAUDE.md, "Layouts: one list, suggested starting layouts").
-
-**Still to do:**
-- **Documents: DONE, sync of October 8 2026** (all three manuals, Product Overview,
-  Backup Compatibility, Keyboard Layout Options and three design records).
-- **"Screen orientation" (built October 8 2026, released 0.13.9):** measured October 8 -
-  Android installed holds, Surface refuses even installed. Now shown on Android only
-  (built October 8 2026, in the next release notes).
-
-**Why not now:** documents wait for Ken's sync; the measurement needs Ken's devices.
-
 ### Fix the problems found in the October 5 2026 code review
 
 **Raised:** October 5 2026, by Ken, who asked for a review of the whole app that a later
@@ -1805,6 +1790,12 @@ about to fall by an order of magnitude is the trap.
   for it, because an import replaces the whole data set.
 
 ## Done
+
+### Layouts for tall screens (done October 8 2026)
+- Fifteen layouts in one list, the response options setting, the suggested layout at
+  first launch and its Settings button, and the screen-bound restore rule shipped in
+  0.13.9; "Screen orientation" on Android only in 0.13.10. Documents synced the same
+  day. See CLAUDE.md, "Layouts: one list, suggested starting layouts".
 
 ### Product Overview: what a saved conversation holds
 - **Raised:** 2026-09-27 - Ken's comment on the Conversation Review document, section 3:
