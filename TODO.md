@@ -64,6 +64,19 @@ so they rarely see a second arrangement).
 sideways with the keyboard at the side on Alphabet 4 × 9; sideways with the keyboard at
 the bottom on QWERTY 12 × 3.
 
+**Decided October 8 2026 — how the suggestions are used:**
+- The app STARTS with the suggested layout for the screen at first launch; no picker, no
+  pictures in the app. A sideways tablet starts with the keyboard at the bottom and
+  QWERTY (today's behavior). Existing users keep their settings.
+- The suggestion pictures go in BOTH User Manuals (setting-up-the-screen section), at the
+  next "sync docs" after this is built.
+- One button in Settings, beside button size: "Use the suggested layout for this
+  screen", with a confirmation.
+- Restore / settings profile from a DIFFERENT screen keeps this device's layout. Today
+  only the screen edge margin is held back that way (`SCREEN_BOUND` in platform.js); the
+  keyboard position, layout choice, pane proportions, button size and response options
+  arrangement all travel. They join that list.
+
 **Still to decide:** the remaining parts of the suggested starting layouts per screen shape, in
 `Documents/Conversant AAC Layout Suggestions.docx` (drafted October 8 2026, waiting on Ken's review), and a
 "Screen orientation" setting (locks on Android; iPad has no lock; Windows untested).

@@ -91,7 +91,7 @@ const children = [
 
     heading1('1. What This Is For'),
     para('Setting up the conversation screen means choosing where the keyboard sits, which layout it uses, how the response options are arranged, and how much of the screen each part gets. That is a lot to decide before you know the app. This document suggests a starting point for each common screen shape.'),
-    para('A suggestion is offered, not applied. The user picks one or skips, and every part of it stays an ordinary setting they can change later. The app never switches to a different suggestion by itself.'),
+    para('The app starts with the suggestion that fits the screen, and every part of it stays an ordinary setting the user can change later. The app never switches to a different suggestion by itself.'),
     para('Each suggestion has a picture drawn at the device’s real size with the app’s real text size, so the buttons and words look the way they would on the screen.'),
 
     heading1('2. The Four Panes'),
@@ -125,10 +125,12 @@ S.forEach((s, i) => {
 });
 
 children.push(
-    heading1('5. How the Suggestions Would Be Offered'),
-    bullet('At setup. ', 'The app knows the shape of the screen, so it shows the suggestions that fit it as small pictures. The user taps one or skips. On a tablet that means two sideways choices and one upright; on a phone, upright first.'),
-    bullet('From Settings, any time. ', 'The same pictures sit beside the layout settings, so a user can start again from a suggestion later.'),
-    bullet('Everything stays adjustable. ', 'Picking a suggestion sets the dock, the layout, the response options arrangement and the four proportions. Each can then be changed on its own, and the borders between the panes can still be dragged.'),
+    heading1('5. How the Suggestions Are Used'),
+    bullet('At first launch. ', 'The app looks at the screen and starts with the suggested layout for it. A tablet held sideways starts with the keyboard at the bottom and QWERTY, which is what the app does today. Nobody is asked anything, and existing users keep their settings.'),
+    bullet('In the User Manuals. ', 'The pictures in this document go in the section on setting up the screen, each with its settings listed beneath it. Pictures of whole screens would be too small to read inside the app on a phone.'),
+    bullet('One button in Settings. ', '"Use the suggested layout for this screen" applies the same choice first launch would make, for the screen as it is now. It is for a device that has been re-mounted, or for getting back to a starting point after experimenting. It sits with button size and asks before it changes anything.'),
+    bullet('Restoring onto a different screen. ', 'A backup or settings profile from a different screen leaves this device’s layout as it is. The device keeps the layout it started with, or the one its user has since chosen.'),
+    bullet('Everything stays adjustable. ', 'A suggestion sets the dock, the layout, the response options arrangement and the four proportions. Each can then be changed on its own, and the borders between the panes can still be dragged.'),
     bullet('Turning the device. ', 'Turning a device doesn’t switch suggestions. The app keeps the same choices and fits them to the new shape, as it does today.'),
     bullet('Holding the screen still. ', 'A "Screen orientation" setting would keep the screen upright or sideways. On Android it can hold the screen in place when the app is installed or full screen. On an iPad it can only point the user to the iPad’s own rotation lock. On a Windows tablet it hasn’t been tested yet.'),
     bullet('The keyguard. ', 'A suggestion is a starting point. A keyguard is cut after the user has settled on their layout, from the Keyguard Design tab, as it is today.'),
