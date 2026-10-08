@@ -38,7 +38,7 @@ const ACTION_NAMES = {
 // Credential boxes are matched by ATTRIBUTE, not by id (CR-066): listing them by id
 // missed every key box added after the first two, exactly as listing providers by name
 // had done before. A new key box carries data-key-field and is served automatically.
-export const IN_SCOPE = '#composerInput, .wv-text, input[data-key-field], #controlEditor input, #expressEditor input, #settingsProfileNameInput, #problemNoteInput, #testerNameInput, #placeholderEditor input, #practicePanel input[type="text"], #practicePanel textarea';
+export const IN_SCOPE = '#composerInput, .wv-text, input[data-key-field], #controlEditor input, #expressEditor input, #settingsProfileNameInput, #problemNoteInput, #askTextInput, #testerNameInput, #placeholderEditor input, #practicePanel input[type="text"], #practicePanel textarea';
 
 // Controls that must NOT dismiss the keyboard when tapped, even though tapping
 // them blurs the composer textarea. The composer (unlike About Me / Settings)
@@ -845,6 +845,18 @@ export function previewShow(dock) {
 export function hideKeyboard() {
     previewing = false;
     hide();
+}
+
+// Take the keyboard back out of a dialog that is about to be REMOVED (not just
+// closed). show() moves the keyboard into whichever dialog is open, so removing that
+// dialog would remove the keyboard with it, and no field could summon it again
+// (October 8 2026, found with the review report's note box).
+export function rescueFrom(container) {
+    if (!container) return;
+    hideKeyboard();
+    for (const el of [rootEl, ghostEl]) {
+        if (el && container.contains(el)) document.body.appendChild(el);
+    }
 }
 
 // Explicitly summon the keyboard for a field, without relying on a `focusin`

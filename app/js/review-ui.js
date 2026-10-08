@@ -23,7 +23,8 @@
  * The nine Command Bar buttons, by position:
  *   Listen -> Previous Turn      Start conversation -> Next Turn
  *   End conversation -> Jump: the next turn where you and the app struggled
- *   Repeat what I said, Hold on -> blank and unused (Ken, October 7 2026: a rewrite is
+ *   Repeat what I said -> Report a problem with this turn (Ken, October 8 2026)
+ *   Hold on -> blank and unused (Ken, October 7 2026: a rewrite is
  *     opened by tapping the turn, its card or "In my own words", and Undo takes one
  *     back, so "Rewrite this turn" and "Clear this rewrite" were removed)
  *   Ask them to repeat -> Undo   Wrap up -> Redo   Don't save -> Hear it
@@ -61,7 +62,9 @@ const BAR = [
     { id: 'listenBtn',          act: 'prevTurn', icon: 'prevTurn', label: 'Previous turn', face: 'Previous' },
     { id: 'initiateBtn',        act: 'nextTurn', icon: 'nextTurn', label: 'Next turn',     face: 'Next' },
     { id: 'endConversationBtn', act: 'nextFlag', icon: 'nextFlag', label: 'Next turn where you and the app struggled', face: 'Jump' },
-    { id: 'sayAgainBtn',        act: 'none' },
+    // Report a problem with the turn outlined (Ken, October 8 2026): review is where a
+    // user has time to say what went wrong, and the report can name the exact turn.
+    { id: 'sayAgainBtn',        act: 'report',   icon: 'reportProblem', label: 'Report a problem with this turn', face: 'Report' },
     { id: 'holdOnBtn',          act: 'none' },
     { id: 'pardonBtn',          act: 'undo',     icon: 'undo',     label: 'Undo',          face: 'Undo' },
     { id: 'windDownBtn',        act: 'redo',     icon: 'redo',     label: 'Redo',          face: 'Redo' },
@@ -201,6 +204,9 @@ function renderBar() {
         undo: composerOpen ? draft.back.length > 0 : history.canUndo(),
         redo: composerOpen ? draft.fwd.length > 0 : history.canRedo(),
         hear: !!hearText(),
+        // Not while typing a rewrite: one thing at a time, and the report's note box
+        // would bring up the keyboard over the one already in use.
+        report: !composerOpen && !!deps.reportProblem,
         leave: true,
         none: false,
     };
@@ -434,6 +440,7 @@ function onBarClick(e) {
         case 'undo': if (composerOpen) stepDraft('undo'); else stepHistory('undo'); break;
         case 'redo': if (composerOpen) stepDraft('redo'); else stepHistory('redo'); break;
         case 'hear': hear(); break;
+        case 'report': void report(); break;
         case 'leave': void leave(); break;
         default: break;
     }
@@ -464,6 +471,20 @@ function stepHistory(which) {
     review = model.markReached(review, at);
     scheduleSave();
     render();
+}
+
+// Send a problem report about the conversation being reviewed, naming the turn
+// outlined. app.js asks for a note, shows the whole report and sends it on a yes.
+function report() {
+    const t = turn();
+    if (!t || !deps.reportProblem) return;
+    const said = t.user && t.user.text ? `you said "${t.user.text}"` : 'nothing said';
+    const heard = t.partnerText ? `they said "${t.partnerText}"` : '';
+    deps.reportProblem({
+        id: conv.id,
+        data: conv.data,
+        turnText: `turn ${at + 1} of ${conv.turns.length}: ${[heard, said].filter(Boolean).join('; ')}`,
+    });
 }
 
 function hear() {

@@ -259,7 +259,7 @@ export function formatSystemInfo(info) {
  * `errorReport` and `usageText` are passed in rather than gathered here so this
  * module stays free of app.js's conversation state; app.js owns the SEC-2 decision
  * about whether a live private transcript may be included. */
-export async function buildProblemReport({ note, appVersion, buildId, errorReport = '', usageText = '', recentEvents = '' }) {
+export async function buildProblemReport({ note, appVersion, buildId, conversationText = '', errorReport = '', usageText = '', recentEvents = '' }) {
     const info = await collectSystemInfo({ appVersion, buildId });
     const trimmed = (note || '').trim();
     return [
@@ -269,6 +269,10 @@ export async function buildProblemReport({ note, appVersion, buildId, errorRepor
         '',
         'WHAT HAPPENED (in the tester\'s words)',
         trimmed ? trimmed.split('\n').map(l => '  ' + l).join('\n') : '  (nothing written)',
+        '',
+        // Second, because it is what the note is about (Ken, October 8 2026).
+        '════════ THE CONVERSATION THIS REPORT IS ABOUT ════════',
+        conversationText || '(none)',
         '',
         '════════ USAGE SUMMARY ════════',
         usageText || '(none)',

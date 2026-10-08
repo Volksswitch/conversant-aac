@@ -58,7 +58,7 @@ const SPEECH_COMPANY = {
     ...Object.fromEntries(Object.entries(TTS_PROVIDERS).map(([id, p]) => [id, p.label])),
 };
 import * as sttAzure from './stt-azure.js';
-import { confirmDanger, confirmNeutral, showBusy, showNotice } from './confirm-dialog.js';
+import { confirmDanger, confirmNeutral, showBusy, showNotice, askForText } from './confirm-dialog.js';
 import * as helpMode from './help-mode.js';
 import * as usageSummary from './usage-summary.js';
 import * as diagnostics from './diagnostics.js';
@@ -939,6 +939,7 @@ function initApp() {
         // In the user's own voice, as Hear it promises; nothing is logged, because
         // review is not a conversation.
         speak: (text) => tts.speak(text).catch(() => {}),
+        reportProblem: (about) => oneReportAtATime(() => sendProblemReportFromReview(about)),
         // EVERY button the user has, not only those on screen: a phrase behind More is
         // still on their panel, and review has to find it to turn to its page.
         panelItems: () => {
@@ -2952,6 +2953,7 @@ async function advancePracticePartner() {
     // continues from, and the new line is added to it rather than replacing it.
     const prior = currentPartnerText;
     let line;
+    const askedAt = Date.now();
     try {
         line = await llm.generatePartnerUtterance(practiceScenario,
             prior ? [...conversationHistory, { role: 'partner', text: prior }] : conversationHistory);
@@ -2966,7 +2968,22 @@ async function advancePracticePartner() {
     // practice, so there's no echo to filter.
     // Both voices are passed; tts.js uses whichever matches the active provider, so
     // the partner stays distinct from the user on either one.
+    const writtenAt = Date.now();
     await tts.speak(line, partnerVoiceOptions(practiceScenario));
+    // How long the AI took to write the line and how long the voice took to say it,
+    // in the conversation file (Ken, October 8 2026: a line showed on screen at once and
+    // was not heard for 20 to 30 seconds, and nothing recorded which step was slow).
+    // "speechMs" includes the playing itself; a 100-character line plays for about 6s.
+    try {
+        await storage.startConversationLog();
+        void storage.logEvent('practice partner line', {
+            aiMs: writtenAt - askedAt,
+            speechMs: Date.now() - writtenAt,
+            chars: line.length,
+            voice: tts.lastVoiceUsed().provider,
+            fellBack: !!tts.lastVoiceUsed().fellBack,
+        });
+    } catch { /* a record that cannot be written must not stop the rehearsal */ }
     if (token !== generationToken || !practiceMode) {
         // Interrupted after the line was heard (Wrap up, Start conversation, a pause).
         // It was SAID, so it goes in the record - it used to vanish - but no new cards
@@ -7060,17 +7077,75 @@ function renderTroubleshooting() {
 // The whole report. `buildErrorReport` already withholds a private conversation's
 // transcript (SEC-2) and `storage.reportableSettings` already strips both API keys
 // (SEC-6), so neither rule is re-implemented here.
-async function buildProblemReportText() {
+/* THE CONVERSATION A REPORT IS ABOUT (Ken, October 8 2026).
+ *
+ * His report about a slow partner line arrived without that conversation in it: only
+ * conversations with an ERROR were attached, and "it was slow" or "it said the wrong
+ * thing" usually has none. He sent it straight away, expecting the conversation he was
+ * in to go with it. So the rule is his: if a conversation is in progress, the report
+ * carries it up to the moment Send was pressed; otherwise it carries the last one.
+ * A report sent from Conversation Review carries the conversation being reviewed and
+ * names the turn the user was on (`about`).
+ *
+ * Every line carries its time, because the question a report most often asks is how
+ * long something took. A conversation marked "Don't save" is withheld, as everywhere. */
+async function aboutConversation(about = null) {
+    let id = null, data = null, how = '';
+    if (about && about.id) {
+        id = about.id; data = about.data || await storage.readConversationLog(id);
+        how = 'The conversation open in Conversation Review';
+    } else if (storage.getConversationId()) {
+        id = storage.getConversationId();
+        data = storage.currentConversationLog() || await storage.readConversationLog(id);
+        how = 'In progress when the report was sent';
+    } else if (conversationHistory.length) {
+        // A conversation is on screen but nothing is recording it: no data folder, or
+        // it was marked "Don't save". The first can go from the screen; the second never.
+        if (!storage.isConversationSaving()) {
+            return 'In progress when the report was sent, marked "Don’t save" - transcript withheld.';
+        }
+        return ['In progress when the report was sent (not saved - no data folder):',
+            ...conversationHistory.map((t) => `  ${t.role}: ${t.text}`)].join('\n');
+    } else {
+        try {
+            const logs = await storage.listConversationLogs();
+            const newest = logs.filter((l) => l && l.id).sort((a, b) => (a.id < b.id ? 1 : -1))[0];
+            if (newest) { id = newest.id; data = newest.data; }
+        } catch { /* no folder */ }
+        how = 'The most recent conversation (none was in progress)';
+    }
+    if (!id) return 'No conversation to include - none in progress and none saved.';
+    const out = [`${how}: ${id}`];
+    if (storage.isConversationPrivate(id, data)) {
+        out.push('Transcript: [private conversation — transcript withheld]');
+        return out.join('\n');
+    }
+    const exchanges = (data && data.exchanges) || [];
+    if (!exchanges.length) {
+        out.push('Transcript: [nothing recorded yet, or there is no data folder]');
+        return out.join('\n');
+    }
+    if (about && about.turnText) out.push(`Turn being reviewed: ${about.turnText}`);
+    out.push(`Started: ${data.started || '?'}   (times below are UTC)`, 'Transcript:');
+    for (const ex of exchanges) out.push(transcriptLine(ex, true));
+    return out.join('\n');
+}
+
+async function buildProblemReportText({ note = null, about = null } = {}) {
     const noteEl = document.getElementById('problemNoteInput');
     let usageText = '';
     try { usageText = await buildUsageText(); }
     catch { usageText = '(unavailable)'; }
     let errorReport = '';
     try { errorReport = await buildErrorReport(); } catch { errorReport = '(unavailable)'; }
+    let conversationText = '';
+    try { conversationText = await aboutConversation(about); }
+    catch (e) { conversationText = `(could not read it: ${e && e.message ? e.message : e})`; }
     return diagnostics.buildProblemReport({
-        note: noteEl ? noteEl.value : '',
+        note: note != null ? note : (noteEl ? noteEl.value : ''),
         appVersion: APP_VERSION,
         buildId: BUILD_ID,
+        conversationText,
         errorReport,
         usageText,
         recentEvents: metrics.formatRecent(),
@@ -7173,6 +7248,43 @@ async function sendProblemReportFromStartNow() {
     }
 }
 
+/* The problem report from CONVERSATION REVIEW (Ken, October 8 2026). Review is where a
+ * user has the time to say what went wrong, and the report names the turn they were on.
+ * Same two steps as everywhere else - the whole report is shown, then sent on a yes -
+ * with a note asked for first, because the Settings note box is not on this screen. */
+async function sendProblemReportFromReview(about) {
+    const note = await askForText({
+        title: 'Report a problem with this turn',
+        body: 'What went wrong here? You can leave this empty.',
+        confirmLabel: 'Next',
+        cancelLabel: 'Cancel',
+    });
+    if (note === null) return;
+    let text;
+    try {
+        text = await buildProblemReportText({ note, about });
+    } catch (e) {
+        await showNotice({ title: 'Could not build the report', body: e && e.message ? e.message : String(e) });
+        return;
+    }
+    if (!(await confirmDanger({
+        title: 'Send this report?',
+        body: REPORT_DISCLOSURE,
+        preview: text,
+        confirmLabel: 'Send it',
+        cancelLabel: 'Not now'
+    }))) return;
+    let res = null;
+    try {
+        res = await weeklySend.sendProblemReport({ note, report: text, appVersion: APP_VERSION, build: BUILD_ID });
+    } catch { /* reported below as not sent */ }
+    await showNotice({
+        title: res && res.sent ? 'Sent' : 'Not sent yet',
+        body: res && res.sent ? 'Sent and received. Thank you.'
+            : 'It is saved and will go by itself next time you open the app.',
+    });
+}
+
 /* THE ONE DISCLOSURE, used by both places a report can be sent from.
  *
  * (!) EVERY CLAIM IN IT WAS CHECKED AGAINST WHAT IS ACTUALLY SENT (Ken, August 31
@@ -7193,8 +7305,9 @@ async function sendProblemReportFromStartNow() {
 const REPORT_DISCLOSURE =
     'It goes to the Conversant AAC team. You can read the whole report below before it '
     + 'leaves. It contains what you typed, your settings, your device, how you have been '
-    + 'using the app - including the names of people you have talked to - and the errors '
-    + 'it recorded, along with what was said in any conversation those errors happened in. '
+    + 'using the app - including the names of people you have talked to - what was said in '
+    + 'the conversation you are in (or the last one you had, or the one you are reviewing), '
+    + 'and the errors it recorded, along with what was said in any conversation those errors happened in. '
     + 'A conversation you marked "Don\u2019t save" has no transcript here, though an error '
     + 'from it may still be listed. Your API keys are never included.';
 
@@ -7666,9 +7779,25 @@ function setProfileStatus(msg) {
     if (status) status.textContent = msg || '';
 }
 
-// Format one exchange of a saved conversation log as a transcript line.
-function transcriptLine(ex) {
+// Format one exchange of a saved conversation log as a transcript line. `withTime`
+// puts the time of day (UTC, matching the rest of the report) in front of it.
+function transcriptLine(ex, withTime = false) {
+    const line = transcriptLineBody(ex);
+    if (!withTime) return line;
+    const t = ex && typeof ex.timestamp === 'string' ? ex.timestamp.slice(11, 19) : '        ';
+    return `  ${t}${line}`;
+}
+function transcriptLineBody(ex) {
     if (ex.role === 'partner') return `  partner: ${ex.cleanedTranscript || ex.rawTranscript || ''}`;
+    // ⚠ Events used to fall through to the last line and print as an empty "user:",
+    // which read as the user saying nothing - the microphone going on, the Composition
+    // Pane opening and so on all looked like blank turns (October 8 2026).
+    if (ex.role === 'event') {
+        const bits = Object.entries(ex)
+            .filter(([k, v]) => !['role', 'kind', 'timestamp'].includes(k) && v != null && typeof v !== 'object')
+            .map(([k, v]) => `${k}=${v}`);
+        return `  [${ex.kind || 'event'}]${bits.length ? ' ' + bits.join(', ') : ''}`;
+    }
     if (ex.role === 'error') return `  [error: ${ex.context || ''}] ${ex.message || ''}`;
     // A set of cards and how it ended. Shown in a problem report because a set the
     // user turned away from is usually the thing they are writing in about.

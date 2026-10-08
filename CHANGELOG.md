@@ -26,6 +26,12 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- A problem report now includes the conversation you're in, up to the moment you
+  press Send. If you aren't in one, it includes your last conversation.
+- In Conversation Review, a new Report button sends a problem report about the turn
+  you're looking at. You can add a note first, and you see the whole report before
+  it goes.
+
 ## Version 0.13.10
 
 ### On a computer

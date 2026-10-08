@@ -2337,6 +2337,16 @@ function ensureConversationId() {
     return currentConversationId;
 }
 export function getConversationId() { return currentConversationId; }
+
+/* The conversation being recorded right now, as it stands in memory - a copy, so a
+ * reader can never change it. The file on disk can lag a write behind; a problem
+ * report sent mid-conversation must carry what has happened up to the moment Send was
+ * pressed (Ken, October 8 2026). Null when nothing is being recorded, which includes
+ * a conversation marked "Don't save". */
+export function currentConversationLog() {
+    if (!conversationSaving || !currentLogData || !currentConversationId) return null;
+    try { return JSON.parse(JSON.stringify(currentLogData)); } catch { return null; }
+}
 export function resetConversationId() {
     currentConversationId = null;
     // Also drop the per-conversation log target, so the NEXT conversation writes a

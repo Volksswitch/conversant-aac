@@ -75,6 +75,8 @@ export const ICONS = {
     nextFlag: SVG('<path d="M6 5l6 6 6-6"/><path d="M6 13l6 6 6-6"/>'),
     prevWord: SVG('<path d="M8 7l-5 5 5 5"/><line x1="11" y1="12" x2="21" y2="12"/>'),
     nextWord: SVG('<path d="M16 7l5 5-5 5"/><line x1="3" y1="12" x2="13" y2="12"/>'),
+    // Conversation Review: report a problem with this turn - a flag on a pole.
+    reportProblem: SVG('<line x1="5" y1="21" x2="5" y2="4"/><path d="M5 4h12l-3 4 3 4H5"/>'),
     undo: SVG('<path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>'),
     redo: SVG('<path d="M15 14l5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h3"/>'),
 

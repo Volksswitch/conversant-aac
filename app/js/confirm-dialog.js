@@ -13,6 +13,7 @@
  *
  * Use via: if (!(await confirmDanger({ title, body, confirmLabel }))) return;
  */
+import { rescueFrom } from './keyboard.js';
 
 /* `preview` renders the exact text an action is about to send, in a scrollable
  * read-only box between the explanation and the buttons (August 31 2026).
@@ -182,6 +183,57 @@ export function confirmNeutral({
 
         document.body.append(dlg);
         dlg.showModal();
+        cancelBtn.focus();
+    });
+}
+
+/* A question with a text box (October 8 2026), for the problem report sent from
+ * Conversation Review, where the Settings note box is not on screen. Resolves with
+ * the text (possibly empty) on confirm, or null on cancel. The box is in the on-screen
+ * keyboard's scope (keyboard.js IN_SCOPE), and that keyboard moves into whichever
+ * dialog is open, so it types here like anywhere else. */
+export function askForText({
+    title = '',
+    body = '',
+    confirmLabel = 'OK',
+    cancelLabel = 'Cancel'
+} = {}) {
+    return new Promise((resolve) => {
+        const { dlg, p } = neutralCard(title);
+        p.textContent = body;
+        const box = document.createElement('textarea');
+        box.id = 'askTextInput';
+        box.className = 'ask-text-input';
+        box.rows = 3;
+        box.setAttribute('aria-labelledby', p.id);
+        const actions = document.createElement('div');
+        actions.className = 'danger-actions';
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'danger-cancel';
+        cancelBtn.textContent = cancelLabel;
+        const confirmBtn = document.createElement('button');
+        confirmBtn.className = 'danger-confirm neutral-confirm';
+        confirmBtn.textContent = confirmLabel;
+        actions.append(cancelBtn, confirmBtn);
+        dlg.append(box, actions);
+
+        let settled = false;
+        const done = (val) => {
+            if (settled) return;
+            settled = true;
+            rescueFrom(dlg);   // the keyboard moved in here; it must not leave with the box
+            try { dlg.close(); } catch { /* already closing */ }
+            dlg.remove();
+            resolve(val);
+        };
+        cancelBtn.addEventListener('click', () => done(null));
+        confirmBtn.addEventListener('click', () => done(box.value.trim()));
+        dlg.addEventListener('cancel', (e) => { e.preventDefault(); done(null); });
+
+        document.body.append(dlg);
+        dlg.showModal();
+        // Focus the button, not the box: focusing the box would raise the on-screen
+        // keyboard before the user has decided to type anything.
         cancelBtn.focus();
     });
 }

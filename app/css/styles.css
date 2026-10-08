@@ -4691,6 +4691,21 @@ body.conv-bottom     .danger-dialog {
     overflow: auto;
 }
 
+/* The note box on the problem report sent from Conversation Review (askForText). */
+.ask-text-input {
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0 0 1.25rem;
+    padding: 0.5rem;
+    font: inherit;
+    font-size: 1rem;
+    color: var(--ink);
+    background: var(--surface-raised);
+    border: 1px solid var(--edge);
+    border-radius: 4px;
+    resize: vertical;
+}
+
 /* A NEUTRAL card, for a job that is not dangerous (Ken, September 9 2026). It reuses
    the danger card's box, its dock clearance and its backdrop - everything that makes a
    modal sit correctly on this layout - and takes back only the three things that carry
