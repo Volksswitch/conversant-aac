@@ -61,12 +61,12 @@ const NOTES = {
         'The Command Bar buttons are the narrowest on the screen. They show icons rather than words, so they still work at this width.',
     ],
     'ls-2': [
-        'An iPad or other tablet held upright. With more width than a phone, six across still gives wide buttons, so the Express Panel needs less of the height.',
-        'The transcript gets a quarter of the screen, which is room for several turns of the conversation.',
+        'An iPad or other tablet held upright, with the same layout as the upright phone. The extra width makes the Express Panel buttons more than twice as wide as they are tall.',
+        'The transcript gets just over a fifth of the screen, which is room for several turns of the conversation.',
     ],
     'ls-3': [
         'A Surface or iPad on its side, with the keyboard down one edge. The response options are two by two with New 4 to their right. The transcript gets the extra height, 40% of the column, which is room for several turns of the conversation.',
-        'The Express Panel buttons come out taller than they are wide, because a sideways tablet has more height in that column than the buttons need. Six across would make them squarer.',
+        'Four across and nine down makes the Express Panel buttons roughly square in this column.',
     ],
     'ls-4': [
         'The same tablet with the keyboard along the bottom, for somebody who types on QWERTY. These are the app’s current proportions, and the response options stay in one row.',
@@ -74,6 +74,7 @@ const NOTES = {
     ],
     'ls-5': [
         'A phone on its side is the tightest of the five. There is so little height that only a keyboard at the side works, and the transcript has room for about three lines.',
+        'Nine rows in that little height makes the Express Panel buttons short: about 39 points, close to the smallest the app allows.',
         'It is included so a user who turns the phone gets something usable. For a phone, upright is the better choice, and the orientation setting in section 5 is what holds it there.',
     ],
 };
@@ -138,9 +139,9 @@ children.push(
     bullet('A different layout. ', 'Choosing a layout with more rows makes the Express Panel buttons shorter at the same share of the screen. The suggestion would need its Express Panel share raised to match.'),
 
     heading1('7. Decisions'),
+    para('Decided October 8 2026: upright screens start on Alphabet, 5 × 7; sideways screens with the keyboard at the side on Alphabet, 4 × 9; and sideways screens with the keyboard at the bottom on QWERTY, 12 × 3.'),
     bullet('', 'Whether these five screens are the right set, and whether a phone on its side should be offered.'),
     bullet('', 'The four proportions for each screen.'),
-    bullet('', 'Which Express Panel layout each suggestion starts on. For example, the upright phone could start on Alphabet, 5 × 7 or QWERTY in halves, 5 × 7.'),
 );
 
 const doc = new Document({

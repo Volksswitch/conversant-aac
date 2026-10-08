@@ -60,7 +60,11 @@ height (40 / 10 / 50). New 4 does NOT have to sit in the same place across sugge
 (Ken: people decide how they hold or mount the device long before they meet Conversant,
 so they rarely see a second arrangement).
 
-**Still to decide:** the suggested starting layouts per screen shape, in
+**Starting layouts decided October 8 2026:** upright screens start on Alphabet 5 × 7;
+sideways with the keyboard at the side on Alphabet 4 × 9; sideways with the keyboard at
+the bottom on QWERTY 12 × 3.
+
+**Still to decide:** the remaining parts of the suggested starting layouts per screen shape, in
 `Documents/Conversant AAC Layout Suggestions.docx` (drafted October 8 2026, waiting on Ken's review), and a
 "Screen orientation" setting (locks on Android; iPad has no lock; Windows untested).
 

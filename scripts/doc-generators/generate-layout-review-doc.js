@@ -72,8 +72,10 @@ const LAYOUTS = [
       note: 'Four across. The space bar has a whole row to itself.' },
     { id: 'S1',  name: 'Alphabet', was: 'Side Layout 1',
       note: 'Five across, which puts the alphabet in neat blocks of five. Four other layouts share this exact shape; see section 5.' },
+    { id: 'S7',  name: 'Alphabet down the columns', was: 'Side Layout 7',
+      note: 'The same shape as the one above, with the alphabet running down each column instead of across each row. Kept for people who find letters easier to find that way. On the Express Panel the two look the same.' },
     { id: 'QW5', name: 'QWERTY in halves', was: 'New, not in the app',
-      note: 'A proposal for review, covered in section 6.' },
+      note: 'New, and not in the app yet. Section 6 shows it beside the standard QWERTY.' },
     { id: 'S8',  name: 'Alphabet, wide punctuation', was: 'Side Layout 8',
       note: 'The only layout with buttons of more than one width in its letter area: the comma, period and Enter take two columns each.' },
     { id: 'S10', name: 'Alphabet with numbers', was: 'Side Layout 10',
@@ -112,7 +114,7 @@ const children = [
     para('The proposal behind it has three parts. Every layout is offered whichever side of the screen the keyboard is on. Each layout gets a name that says what it looks like. And layouts that only repeat another shape are removed.'),
 
     heading1('2. How to Read the Figures'),
-    bullet('Same width, same row height. ', 'Every figure is drawn at the same width with rows of the same height. So you can compare how wide the buttons are by eye, from one figure to the next.'),
+    bullet('Same width, same row height. ', 'Every figure is drawn at the same width with rows of the same height, so you can compare how wide the buttons are by eye, from one figure to the next.'),
     bullet('Real buttons will be taller or shorter. ', 'In the app, button height depends on the button size setting and on how much room the screen has. The figures keep it fixed so that width is the only thing that changes.'),
     bullet('The dark button is the space bar. ', 'On the Express Panel the same position holds the "In my own words" button.'),
     bullet('Gray buttons are actions. ', 'They are Shift, Backspace, Enter, and 123, which opens the numbers and symbols.'),
@@ -145,21 +147,20 @@ children.push(
         ['Bottom Layout 7', 'Alphabet, 10 × 4', 'The space bar sits at the right of the bottom row, after y and z.'],
         ['Side Layout 4', 'Alphabet, 6 × 6', 'The action keys run down the right-hand column.'],
         ['Side Layout 5', 'Alphabet, 5 × 7', 'A shorter space bar and an empty space.'],
-        ['Side Layout 7', 'Alphabet, 5 × 7', 'The alphabet runs DOWN the columns instead of across the rows.'],
         ['Side Layout 9', 'Alphabet, 5 × 7', 'A double-width Backspace in the bottom row.'],
     ], [2400, 2400, 4560]),
     new Paragraph({ spacing: { before: 0, after: 160 }, children: [] }),
-    lead('Side Layout 7 is the one worth a second look. ', 'For typing, letters running down the columns is a real difference, not just a different shape, and somebody who learned the alphabet in columns may find it easier. It makes no difference at all to the Express Panel.'),
 
     heading1('6. A Narrow QWERTY'),
     para('Somebody who touch-types wants QWERTY. Today the only QWERTY layout is 12 across, which on a phone gives buttons narrower than the layout that started this review.'),
-    para('Figure 4 puts the left-hand half of the keyboard on top and the right-hand half underneath, in five columns. Each half keeps its familiar shape, so q, a and z still line up down the left edge. A five-column QWERTY was turned down in September because it lost the overall shape of the keyboard. It is drawn here so you can judge it again now that a phone is involved.'),
-    para('It is a landscape arrangement squeezed into a portrait shape, and that will feel wrong to some people. Offering it costs nothing for anybody who never chooses it.'),
+    para('The narrow QWERTY puts the left-hand half of the keyboard on top and the right-hand half underneath, in five columns. Each half keeps its familiar shape, so q, a and z still line up down the left edge, and y, h and n line up below them.'),
+    para('Here it is above the standard QWERTY, so the two can be compared key by key.'),
+    ...figure('QW5', 'QWERTY in halves, 5 × 7'),
+    ...figure('B11', 'QWERTY, 12 × 3, for comparison'),
+    para('It is a landscape arrangement squeezed into a portrait shape. It is offered for people who type on QWERTY and use a narrow screen.'),
 
     heading1('7. Decisions'),
-    bullet('', 'Which of the fourteen layouts in section 4 stay.'),
-    bullet('', 'Whether the narrow QWERTY in section 6 is offered.'),
-    bullet('', 'Whether Side Layout 7, the alphabet running down the columns, comes back for its typing value.'),
+    para('Decided October 8 2026: all fifteen layouts in section 4 are kept, including the narrow QWERTY and the alphabet running down the columns. The remaining layouts in section 5 are removed, and anybody using one moves to the kept layout of the same shape.'),
 );
 
 const doc = new Document({

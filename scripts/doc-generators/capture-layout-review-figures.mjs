@@ -40,6 +40,7 @@ export const SHAPES = [
     { id: 'B4', fig: 'lr-8' },  { id: 'B1', fig: 'lr-9' },  { id: 'B8', fig: 'lr-10' },
     { id: 'B2', fig: 'lr-11' }, { id: 'B9', fig: 'lr-12' }, { id: 'B11', fig: 'lr-13' },
     { id: 'B3', fig: 'lr-14' },
+    { id: 'S7', fig: 'lr-15' },
 ];
 
 const W = 640, ROW_H = 46;

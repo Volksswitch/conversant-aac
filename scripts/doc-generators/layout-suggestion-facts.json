@@ -36,21 +36,21 @@
     "w": 820,
     "h": 1180,
     "dock": "bottom",
-    "layout": "S3",
-    "layoutName": "Alphabet, 6 × 6",
+    "layout": "S1",
+    "layoutName": "Alphabet, 5 × 7",
     "options": "2x2",
-    "t": 0.26,
+    "t": 0.22,
     "c": 0.06,
     "r": 0.3,
-    "e": 0.38,
+    "e": 0.42,
     "size": [
       820,
       1180
     ],
     "id": "ls-2",
     "ep": [
-      129,
-      69
+      155,
+      65
     ],
     "opt": [
       394,
@@ -67,8 +67,8 @@
     "w": 1368,
     "h": 912,
     "dock": "side",
-    "layout": "S1",
-    "layoutName": "Alphabet, 5 × 7",
+    "layout": "S2",
+    "layoutName": "Alphabet, 4 × 9",
     "options": "2x2r",
     "t": 0.4,
     "c": 0.1,
@@ -80,8 +80,8 @@
     ],
     "id": "ls-3",
     "ep": [
-      77,
-      123
+      97,
+      95
     ],
     "opt": [
       422,
@@ -129,8 +129,8 @@
     "w": 915,
     "h": 412,
     "dock": "side",
-    "layout": "QW5",
-    "layoutName": "QWERTY in halves, 5 × 7",
+    "layout": "S2",
+    "layoutName": "Alphabet, 4 × 9",
     "options": "2x2",
     "t": 0.3,
     "c": 0.14,
@@ -142,8 +142,8 @@
     ],
     "id": "ls-5",
     "ep": [
-      67,
-      51
+      85,
+      39
     ],
     "opt": [
       263,
