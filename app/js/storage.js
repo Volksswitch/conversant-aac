@@ -2227,13 +2227,82 @@ export function setConversationSaving(on) {
     // Turned private part-way through (CR-074): what was already written stays on
     // disk, so mark it - in the file and in a short list here - so a problem report
     // withholds its transcript and the speech in its errors even after the
-    // conversation has ended. The earlier turns are NOT deleted; that is Ken's call.
+    // conversation has ended. The app then DELETES the earlier turns too
+    // (expungeCurrentConversation, Ken, October 8 2026); the mark stays, so anything
+    // written about this conversation later is still withheld from a report.
     if (conversationSaving) return;
     pendingOffer = null;   // can no longer be recorded (CR-076)
     if (!currentConversationId) return;
     markConversationPrivate(currentConversationId);
     if (currentLogData && !currentLogData.private) { currentLogData.private = true; flushLog(); }
 }
+/* "Don't save" pressed mid-conversation DELETES THE WHOLE CONVERSATION (Ken, October 8
+ * 2026): "the user will realize that this conversation shouldn't be written to disk.
+ * They're not thinking 'from this point on it shouldn't be written to disk'." Before
+ * this, only what came after the press went unsaved and the earlier turns stayed on
+ * disk, marked private.
+ *
+ * Removes the conversation's file and any review of it, and takes the other person's
+ * words out of the errors already recorded for it - in the app's own list and in
+ * errors.log. The errors themselves stay (that something failed carries no words).
+ * Recording stops here; if saving is turned back on, a new file starts from then.
+ * Call AFTER setConversationSaving(false). */
+export async function expungeCurrentConversation() {
+    const id = currentConversationId;
+    if (!id) return false;
+    markConversationPrivate(id);
+    currentLogData = null;
+    currentLogHandle = null;
+    currentLogName = null;
+    pendingPartnerTurn = null;
+    pendingOffer = null;
+    logStarting = null;
+    // A write already under way must land before the file is removed, or it would
+    // put the file straight back.
+    try { await logWriteChain; } catch { /* nothing to wait for */ }
+    try {
+        const dir = await getConversationsDir();
+        if (dir) {
+            for (const name of [`${id}.json`, `${id}${REVIEW_SUFFIX}`]) {
+                try { await dir.removeEntry(name); } catch { /* not there */ }
+            }
+        }
+    } catch { /* no folder */ }
+    try {
+        const log = loadErrorLog();
+        let changed = false;
+        for (const e of log) {
+            if (e && e.conversation === id && e.extra) { delete e.extra; changed = true; }
+        }
+        if (changed) localStorage.setItem(ERROR_LOG_KEY, JSON.stringify(log));
+    } catch { /* ignore */ }
+    errorFileChain = errorFileChain.then(() => scrubErrorFile(id)).catch(() => {});
+    await errorFileChain;
+    return true;
+}
+
+// errors.log keeps one line per error; a line from this conversation loses its
+// " | {...}" detail, which is where the other person's words were.
+async function scrubErrorFile(id) {
+    if (!dirHandle) return;
+    let fh;
+    try { fh = await dirHandle.getFileHandle('errors.log'); } catch { return; }
+    const text = await (await fh.getFile()).text();
+    const marker = ` conv=${id} `;
+    let changed = false;
+    const out = text.split('\n').map((line) => {
+        if (!line.includes(marker)) return line;
+        const cut = line.indexOf(' | ');
+        if (cut < 0) return line;
+        changed = true;
+        return line.slice(0, cut);
+    }).join('\n');
+    if (!changed) return;
+    const writable = await fh.createWritable();
+    await writable.write(out);
+    await writable.close();
+}
+
 const PRIVATE_IDS_KEY = 'aac_private_conversations';
 function markConversationPrivate(id) {
     try {

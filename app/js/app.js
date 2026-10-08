@@ -438,7 +438,27 @@ function finalizePendingPartnerTurn() {
     if (h) storage.finalizePartnerTurn(h, { rawTranscript: h.rawTranscript, cleanedTranscript: h.rawTranscript, partner: partnerStamp() });
 }
 
-function handlePrivacyToggle() {
+/* "Don't save" mid-conversation deletes the WHOLE conversation, not just what follows
+ * (Ken, October 8 2026: the user realises partway through that this conversation
+ * should not be kept at all). The conversation itself carries on - the AI still has
+ * it on screen - only the copy on the device goes. Deleting a record is the kind of
+ * action that asks first (the standing confirm-before-destroying rule); with nothing
+ * recorded yet there is nothing to lose, so it does not. Turning saving back on
+ * deletes nothing and does not ask. */
+async function handlePrivacyToggle() {
+    if (!conversationPrivate && storage.getConversationId()) {
+        if (!(await confirmDanger({
+            title: 'Delete this conversation?',
+            body: 'Everything in this conversation so far will be deleted from this device, '
+                + 'and nothing more will be saved. You can keep talking.',
+            confirmLabel: 'Delete it',
+            cancelLabel: 'Keep it',
+        }))) return;
+        conversationPrivate = true;
+        applyPrivacyState();
+        await storage.expungeCurrentConversation();
+        return;
+    }
     conversationPrivate = !conversationPrivate;
     applyPrivacyState();
 }

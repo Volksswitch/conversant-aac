@@ -963,3 +963,55 @@ test('an event keeps its own kind and time; the usage log is one file a month', 
     const src = readFileSync(new URL('../app/js/storage.js', import.meta.url), 'utf8');
     assert.match(src, /\.\.\.extra,\s*timestamp: new Date\(\)\.toISOString\(\),\s*role: 'event',\s*kind,/);
 });
+
+// Ken, October 8 2026: "when the user presses the button, the entire conversation is
+// expunged." Asserted against the folder, because the promise is about what is left on it.
+test('"Don\'t save" mid-conversation deletes the whole conversation from the folder', async () => {
+    // A folder of its own, so what is left on it can be read directly.
+    const root3 = makeDir('root3');
+    Object.defineProperty(globalThis, 'navigator', {
+        value: { storage: { getDirectory: async () => root3 } }, configurable: true, writable: true,
+    });
+    storage.resetConversationId();
+    assert.ok(await storage.restoreDataFolder());
+    storage.setConversationSaving(true);
+    await storage.startConversationLog();
+    const id = storage.getConversationId();
+    await storage.logPartnerInterim({ rawTranscript: 'the biopsy came back positive' });
+    storage.logError('generateOptions', 'API error 529', { partner: 'the biopsy came back positive' });
+    await new Promise(r => setTimeout(r, 30));
+    await storage.whenLogWritten();
+    const conv = await root3.getDirectoryHandle('conversations');
+    assert.ok(conv._files.has(`${id}.json`), 'the file was there before the press');
+
+    storage.setConversationSaving(false);
+    await storage.expungeCurrentConversation();
+
+    assert.ok(!conv._files.has(`${id}.json`), 'the conversation file is gone');
+    const mine = storage.loadErrorLog().filter(e => e.conversation === id);
+    assert.ok(mine.length, 'the error itself is still listed');
+    assert.ok(!JSON.stringify(mine).includes('biopsy'), 'but not the words in it');
+    const errorsLog = root3._files.get('errors.log')?.data || '';
+    assert.ok(errorsLog.includes(`conv=${id}`), 'errors.log still has the line');
+    assert.ok(!errorsLog.includes('biopsy'), 'without the words');
+    assert.equal(storage.isConversationPrivate(id, null), true, 'and it stays marked private');
+
+    // Turning saving back on starts again from there - the words heard before are not
+    // written back, and the turn that was in progress is not finished in the new file.
+    storage.setConversationSaving(true);
+    await storage.logPartnerInterim({ rawTranscript: 'the biopsy came back positive, so' });
+    storage.detachPendingPartnerTurn();
+    await storage.logPartnerInterim({ rawTranscript: 'anyway, lunch?' });
+    await storage.whenLogWritten();
+    const fresh = JSON.parse(await (await (await conv.getFileHandle(`${id}.json`)).getFile()).text());
+    assert.ok(!JSON.stringify(fresh).includes('biopsy'), 'nothing from before comes back');
+    assert.ok(JSON.stringify(fresh).includes('lunch'), 'what is said afterwards is saved');
+});
+
+test('the Don\'t save button deletes the conversation, and asks first', async () => {
+    const app = (await import('node:fs')).readFileSync(new URL('../app/js/app.js', import.meta.url), 'utf8');
+    const body = app.slice(app.indexOf('async function handlePrivacyToggle'), app.indexOf('async function handlePrivacyToggle') + 1500);
+    assert.ok(body.indexOf('confirmDanger') >= 0, 'it asks before deleting');
+    assert.ok(body.indexOf('applyPrivacyState') < body.indexOf('expungeCurrentConversation'),
+        'recording stops before the file is deleted, so nothing writes it back');
+});

@@ -31,6 +31,9 @@ forgetting to tag one is only ever noise, never silence.
 - In Conversation Review, a new Report button sends a problem report about the turn
   you're looking at. You can add a note first, and you see the whole report before
   it goes.
+- "Don't save this conversation," pressed partway through a conversation, now deletes
+  the whole conversation from this device, not just what comes after. It asks first.
+  The conversation itself carries on.
 
 ## Version 0.13.10
 
