@@ -1015,3 +1015,42 @@ test('the Don\'t save button deletes the conversation, and asks first', async ()
     assert.ok(body.indexOf('applyPrivacyState') < body.indexOf('expungeCurrentConversation'),
         'recording stops before the file is deleted, so nothing writes it back');
 });
+
+// Ken, October 8 2026: Delete in Conversation Review removes a saved conversation and
+// anything rewritten in it, and leaves the others alone.
+test('deleting a saved conversation removes it and its review, and nothing else', async () => {
+    const root4 = makeDir('root4');
+    Object.defineProperty(globalThis, 'navigator', {
+        value: { storage: { getDirectory: async () => root4 } }, configurable: true, writable: true,
+    });
+    storage.resetConversationId();
+    assert.ok(await storage.restoreDataFolder());
+    storage.setConversationSaving(true);
+    await storage.startConversationLog();
+    const keep = storage.getConversationId();
+    await storage.logPartnerInterim({ rawTranscript: 'keep this one' });
+    await storage.whenLogWritten();
+    storage.resetConversationId();
+    await new Promise(r => setTimeout(r, 1100));   // a different second, so a different id
+    await storage.startConversationLog();
+    const gone = storage.getConversationId();
+    await storage.logPartnerInterim({ rawTranscript: 'delete this one' });
+    await storage.whenLogWritten();
+    storage.resetConversationId();
+    assert.ok(await storage.writeReview(gone, { answers: {} }));
+
+    const conv = await root4.getDirectoryHandle('conversations');
+    assert.ok(conv._files.has(`${gone}.json`) && conv._files.has(`${gone}.review.json`));
+    await storage.deleteConversation(gone);
+    assert.ok(!conv._files.has(`${gone}.json`), 'the conversation is gone');
+    assert.ok(!conv._files.has(`${gone}.review.json`), 'and so are the rewrites');
+    assert.ok(conv._files.has(`${keep}.json`), 'the other conversation is untouched');
+});
+
+test('Delete in review asks first and stops a waiting save from writing the review back', async () => {
+    const src = (await import('node:fs')).readFileSync(new URL('../app/js/review-ui.js', import.meta.url), 'utf8');
+    const body = src.slice(src.indexOf('async function deleteConversation'));
+    assert.ok(body.indexOf('confirmDanger') < body.indexOf('storage.deleteConversation'));
+    assert.ok(body.indexOf('clearTimeout(saveTimer)') < body.indexOf('storage.deleteConversation'));
+    assert.ok(body.indexOf('review = null') < body.indexOf('storage.deleteConversation'));
+});

@@ -34,6 +34,8 @@ forgetting to tag one is only ever noise, never silence.
 - "Don't save this conversation," pressed partway through a conversation, now deletes
   the whole conversation from this device, not just what comes after. It asks first.
   The conversation itself carries on.
+- In Conversation Review, a new Delete button removes the conversation you're looking
+  at, and anything you rewrote in it, from this device. It asks first.
 
 ## Version 0.13.10
 

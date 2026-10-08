@@ -2248,15 +2248,25 @@ export function setConversationSaving(on) {
  * Recording stops here; if saving is turned back on, a new file starts from then.
  * Call AFTER setConversationSaving(false). */
 export async function expungeCurrentConversation() {
-    const id = currentConversationId;
+    return deleteConversation(currentConversationId);
+}
+
+/* Delete one conversation: its file, any review of it, and the other person's words in
+ * the errors recorded for it. Used by "Don't save" mid-conversation (the conversation
+ * in progress) and by Delete in Conversation Review (Ken, October 8 2026), which may
+ * be any saved conversation. If it is the one being recorded, the copy held in memory
+ * goes too, or the next write would put the whole file back. */
+export async function deleteConversation(id) {
     if (!id) return false;
     markConversationPrivate(id);
-    currentLogData = null;
-    currentLogHandle = null;
-    currentLogName = null;
-    pendingPartnerTurn = null;
-    pendingOffer = null;
-    logStarting = null;
+    if (id === currentConversationId) {
+        currentLogData = null;
+        currentLogHandle = null;
+        currentLogName = null;
+        pendingPartnerTurn = null;
+        pendingOffer = null;
+        logStarting = null;
+    }
     // A write already under way must land before the file is removed, or it would
     // put the file straight back.
     try { await logWriteChain; } catch { /* nothing to wait for */ }

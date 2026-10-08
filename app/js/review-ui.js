@@ -24,9 +24,7 @@
  *   Listen -> Previous Turn      Start conversation -> Next Turn
  *   End conversation -> Jump: the next turn where you and the app struggled
  *   Repeat what I said -> Report a problem with this turn (Ken, October 8 2026)
- *   Hold on -> blank and unused (Ken, October 7 2026: a rewrite is
- *     opened by tapping the turn, its card or "In my own words", and Undo takes one
- *     back, so "Rewrite this turn" and "Clear this rewrite" were removed)
+ *   Hold on -> Delete this conversation (Ken, October 8 2026)
  *   Ask them to repeat -> Undo   Wrap up -> Redo   Don't save -> Hear it
  *   Settings -> Settings, which is also how the user leaves review.
  *
@@ -65,7 +63,8 @@ const BAR = [
     // Report a problem with the turn outlined (Ken, October 8 2026): review is where a
     // user has time to say what went wrong, and the report can name the exact turn.
     { id: 'sayAgainBtn',        act: 'report',   icon: 'reportProblem', label: 'Report a problem with this turn', face: 'Report' },
-    { id: 'holdOnBtn',          act: 'none' },
+    // Delete this conversation (Ken, October 8 2026), asked first.
+    { id: 'holdOnBtn',          act: 'delete',   icon: 'trash',         label: 'Delete this conversation', face: 'Delete' },
     { id: 'pardonBtn',          act: 'undo',     icon: 'undo',     label: 'Undo',          face: 'Undo' },
     { id: 'windDownBtn',        act: 'redo',     icon: 'redo',     label: 'Redo',          face: 'Redo' },
     { id: 'privacyBtn',         act: 'hear',     icon: 'speak',    label: 'Hear it',       face: 'Hear it' },
@@ -206,7 +205,8 @@ function renderBar() {
         hear: !!hearText(),
         // Not while typing a rewrite: one thing at a time, and the report's note box
         // would bring up the keyboard over the one already in use.
-        report: !composerOpen && !!deps.reportProblem,
+        report: !composerOpen && !!(deps && deps.reportProblem),
+        delete: !composerOpen,
         leave: true,
         none: false,
     };
@@ -441,6 +441,7 @@ function onBarClick(e) {
         case 'redo': if (composerOpen) stepDraft('redo'); else stepHistory('redo'); break;
         case 'hear': hear(); break;
         case 'report': void report(); break;
+        case 'delete': void deleteConversation(); break;
         case 'leave': void leave(); break;
         default: break;
     }
@@ -471,6 +472,28 @@ function stepHistory(which) {
     review = model.markReached(review, at);
     scheduleSave();
     render();
+}
+
+/* Delete the conversation being reviewed (Ken, October 8 2026): its file, anything
+ * rewritten in it, and the other person's words in its errors. Asked first, in the red
+ * card every destructive action uses. Then back to the list, which no longer shows it.
+ * The voice examples are rebuilt on the way out, so rewrites from it stop counting. */
+async function deleteConversation() {
+    if (!conv) return;
+    if (!(await confirmDanger({
+        title: 'Delete this conversation?',
+        body: 'This conversation, and anything you rewrote in it, will be deleted from this '
+            + 'device. This cannot be undone.',
+        confirmLabel: 'Delete it',
+        cancelLabel: 'Keep it',
+    }))) return;
+    const id = conv.id;
+    // A save waiting to happen would write the review straight back after the delete.
+    if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+    if (writing) { try { await writing; } catch { /* already reported */ } }
+    review = null;
+    await storage.deleteConversation(id);
+    await leave();
 }
 
 // Send a problem report about the conversation being reviewed, naming the turn
