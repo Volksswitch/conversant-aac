@@ -44,14 +44,11 @@ setting, the first-launch suggestion, the Settings button and the restore rule a
 BUILT (see CLAUDE.md, "Layouts: one list, suggested starting layouts").
 
 **Still to do:**
-- **Documents, at the next "sync docs" Ken asks for:** put the five suggestion pictures
-  in both User Manuals (setting-up-the-screen section), update the layout names and the
-  new Screen Layout controls in both manuals, and bring `Conversant AAC Keyboard Layout
-  Options.docx` up to the fifteen layouts.
+- **Documents: DONE, sync of October 8 2026** (all three manuals, Product Overview,
+  Backup Compatibility, Keyboard Layout Options and three design records).
 - **"Screen orientation" (built October 8 2026, released 0.13.9):** measured October 8 -
   Android installed holds, Surface refuses even installed. Now shown on Android only
-  (built October 8 2026, in the next release notes). The manuals need
-  the setting and each device's own rotation lock at the same sync.
+  (built October 8 2026, in the next release notes).
 
 **Why not now:** documents wait for Ken's sync; the measurement needs Ken's devices.
 
