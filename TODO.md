@@ -54,6 +54,12 @@ layout leaves the Express Panel buttons very narrow.
 - **A setting for the response options: one row, or two by two with New 4 underneath.**
   It moves keyguard holes, so it sits with button size.
 
+**Decided October 8 2026 on the suggestions:** the sideways tablet with the keyboard at the
+side puts New 4 to the RIGHT of the two-by-two options, and the transcript gets the extra
+height (40 / 10 / 50). New 4 does NOT have to sit in the same place across suggestions
+(Ken: people decide how they hold or mount the device long before they meet Conversant,
+so they rarely see a second arrangement).
+
 **Still to decide:** the suggested starting layouts per screen shape, in
 `Documents/Conversant AAC Layout Suggestions.docx` (drafted October 8 2026, waiting on Ken's review), and a
 "Screen orientation" setting (locks on Android; iPad has no lock; Windows untested).

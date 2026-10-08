@@ -65,7 +65,7 @@ const NOTES = {
         'The transcript gets a quarter of the screen, which is room for several turns of the conversation.',
     ],
     'ls-3': [
-        'A Surface or iPad on its side, with the keyboard down one edge. This matches the app’s current side layout, except that the response options are two by two with New 4 underneath.',
+        'A Surface or iPad on its side, with the keyboard down one edge. The response options are two by two with New 4 to their right. The transcript gets the extra height, 40% of the column, which is room for several turns of the conversation.',
         'The Express Panel buttons come out taller than they are wide, because a sideways tablet has more height in that column than the buttons need. Six across would make them squarer.',
     ],
     'ls-4': [
@@ -106,7 +106,7 @@ const children = [
     para('For the two sideways layouts with the keyboard at the side, the Express Panel figure is a share of the width. The other three figures are shares of the height of the column beside it.'),
     table(['Screen', 'Keyboard', 'Layout', 'Options', 'Transcript', 'Command Bar', 'Options', 'Express Panel'],
         S.map((s) => [s.title, s.dock === 'side' ? 'Side' : 'Bottom', s.layoutName,
-            s.options === '2x2' ? '2 by 2' : 'One row', pct(s.t), pct(s.c), pct(s.r),
+            s.options === 'row' ? 'One row' : '2 by 2', pct(s.t), pct(s.c), pct(s.r),
             pct(s.e) + (s.dock === 'side' ? ' of width' : '')]),
         [1700, 900, 1400, 900, 1100, 1100, 1000, 1260]),
     new Paragraph({ spacing: { before: 0, after: 160 }, children: [] }),
@@ -140,8 +140,7 @@ children.push(
     heading1('7. Decisions'),
     bullet('', 'Whether these five screens are the right set, and whether a phone on its side should be offered.'),
     bullet('', 'The four proportions for each screen.'),
-    bullet('', 'Which layout each suggestion uses. For example, the upright phone could start on Alphabet, 5 × 7 or QWERTY in halves, 5 × 7.'),
-    bullet('', 'Whether New 4 goes under the two-by-two options on a sideways tablet too, so it sits in the same place wherever the options are two by two.'),
+    bullet('', 'Which Express Panel layout each suggestion starts on. For example, the upright phone could start on Alphabet, 5 × 7 or QWERTY in halves, 5 × 7.'),
 );
 
 const doc = new Document({

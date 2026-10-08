@@ -38,8 +38,8 @@ export const SUGGESTIONS = [
       layout: 'S3', layoutName: 'Alphabet, 6 × 6', options: '2x2',
       t: 0.26, c: 0.06, r: 0.30, e: 0.38 },
     { fig: 'ls-3', title: 'Tablet, sideways, keyboard at the side', w: 1368, h: 912, dock: 'side',
-      layout: 'S1', layoutName: 'Alphabet, 5 × 7', options: '2x2',
-      t: 0.30, c: 0.10, r: 0.60, e: 0.30 },
+      layout: 'S1', layoutName: 'Alphabet, 5 × 7', options: '2x2r',
+      t: 0.40, c: 0.10, r: 0.50, e: 0.30 },
     { fig: 'ls-4', title: 'Tablet, sideways, keyboard at the bottom', w: 1368, h: 912, dock: 'bottom',
       layout: 'B11', layoutName: 'QWERTY, 12 × 3', options: 'row',
       t: 0.30, c: 0.10, r: 0.30, e: 0.30 },
@@ -62,7 +62,7 @@ function expressHtml(rows) {
             row.map((c) => {
                 if (c.kind === 'blank') return `<div style="grid-column: span ${c.span || 1}"></div>`;
                 if (c.kind === 'space') return `<div class="b compose" style="grid-column: span ${c.span}">✎</div>`;
-                return `<div class="b ph">${PHRASES[n++ % PHRASES.length]}</div>`;
+                return `<div class="b ph" style="grid-column: span ${c.span || 1}">${PHRASES[n++ % PHRASES.length]}</div>`;
             }).join('') + '</div>';
     }).join('') + '</div>';
 }
@@ -75,6 +75,7 @@ const OPTS = [
 ];
 function optionsHtml(kind) {
     const cards = OPTS.map(([k, t]) => `<div class="opt ${k}">${t}</div>`).join('');
+    if (kind === '2x2r') return `<div class="resp row1"><div class="grid4">${cards}</div><div class="b new4">New 4</div></div>`;
     if (kind === '2x2') return `<div class="resp two"><div class="grid4">${cards}</div><div class="b new4">New 4</div></div>`;
     return `<div class="resp row1"><div class="row4">${cards}</div><div class="b new4">New 4</div></div>`;
 }
