@@ -22,6 +22,9 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.13.12": [
+    "Reporting a problem from Conversation Review no longer puts boxes across a keyguard. The box for your note sits where the last response option you didn't use was, so the conversation and the option you spoke stay in view. The report itself, and the message after it, sit where the conversation is shown."
+  ],
   "0.13.11": [
     "A problem report now includes the conversation you're in, up to the moment you press Send. If you aren't in one, it includes your last conversation.",
     "In Conversation Review, a new Report button sends a problem report about the turn you're looking at. You can add a note first, and you see the whole report before it goes.",
