@@ -44,6 +44,18 @@ forgetting to tag one is only ever noise, never silence.
 - Restoring a backup or settings profile from a device with a different screen no
   longer changes this device's screen layout.
 
+### On an Android phone or tablet
+
+- A new "Screen orientation" setting in Settings > Screen Layout keeps the screen
+  upright or sideways when you turn the device. It works when "Use the whole screen" is
+  on or the app is installed on your home screen.
+
+### On a computer
+
+- A new "Screen orientation" setting in Settings > Screen Layout can keep the screen
+  upright or sideways on a computer that turns, such as a tablet. Not every device
+  allows it; a line under the setting says whether yours did.
+
 ## Version 0.13.8
 
 - In Conversation Review, only the response option you actually said can be tapped to

@@ -15,6 +15,7 @@ import * as keyboard from './keyboard.js';
 import * as prediction from './prediction.js';
 import { LAYOUT_LIST, LAYOUTS } from './keyboard-layouts.js';
 import * as layoutSuggestions from './layout-suggestions.js';
+import * as orientationLock from './orientation-lock.js';
 import * as viewport from './viewport.js';
 import * as convLayout from './conv-layout.js';
 import * as expressItems from './express-items.js';
@@ -754,6 +755,12 @@ function initApp() {
     // And entering fullscreen from inside Settings buries the panel under the whole
     // conversation screen until it is re-promoted — see repromoteSettingsOverFullscreen.
     document.addEventListener('fullscreenchange', repromoteSettingsOverFullscreen);
+    // A lock asked for before full screen arrived is refused, so ask again once it has.
+    document.addEventListener('fullscreenchange', () => { if (isReallyFullscreen()) applyScreenOrientation(); });
+    // The lock ends when the user switches away; ask again when the app comes back.
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') applyScreenOrientation();
+    });
     document.addEventListener('webkitfullscreenchange', repromoteSettingsOverFullscreen);
     blockZoomGestures();
     // The controls tour watches for the press it just asked for. Capture phase, and
@@ -1696,6 +1703,7 @@ async function handleStart() {
     // on a dialog would leave a dead-looking button while the user reads it.
     storage.requestFolderPermissionNow();
     requestAppFullscreen();
+    applyScreenOrientation();
     // Check for a newer deployed version when the session starts. If one is
     // found the worker activates and the controllerchange handler in index.html
     // reloads the page; when nothing is new this is a cheap no-op.
@@ -6251,6 +6259,22 @@ function requestAppFullscreen() {
 // setting asks for it. The two come apart in both directions: a request can be
 // refused (no user activation, or policy), and Esc leaves fullscreen without
 // changing the setting. Anything that measures the screen must use this one.
+// Hold the screen upright or sideways, as Settings says (orientation-lock.js). The
+// lock only lasts while the app is on screen, so this runs on the Start tap, when
+// full screen starts, and when the app comes back into view. Never on an iPad, where
+// no web page can do it. The status line in Settings reports what the device did.
+async function applyScreenOrientation() {
+    if (platform.isIOS()) return;
+    const setting = storage.loadScreenOrientation();
+    const outcome = await orientationLock.apply(setting);
+    const status = document.getElementById('screenOrientationStatus');
+    if (!status) return;
+    const text = orientationLock.describeResult(setting, outcome,
+        isReallyFullscreen() || platform.isStandalone());
+    status.textContent = text;
+    status.hidden = !text;
+}
+
 function isReallyFullscreen() {
     return !!(document.fullscreenElement || document.webkitFullscreenElement);
 }
@@ -7842,6 +7866,18 @@ function openSettings() {
     // there too, so a stored `true` is inert rather than stranded behind a hidden control.
     const fullscreenInput = document.getElementById('fullscreenInput');
     document.getElementById('fullscreenGroup').hidden = platform.isIOS();
+    // Screen orientation: hidden on an iPad, where no web page can hold the screen.
+    document.getElementById('screenOrientationGroup').hidden = platform.isIOS();
+    const orientRadio = document.querySelector(
+        `input[name="screenOrientation"][value="${storage.loadScreenOrientation()}"]`);
+    if (orientRadio) orientRadio.checked = true;
+    document.querySelectorAll('input[name="screenOrientation"]').forEach((radio) => {
+        radio.onchange = () => {
+            storage.saveScreenOrientation(
+                document.querySelector('input[name="screenOrientation"]:checked')?.value || 'any');
+            applyScreenOrientation();
+        };
+    });
     fullscreenInput.checked = storage.loadFullscreen();
     fullscreenInput.onchange = () => {
         storage.saveFullscreen(fullscreenInput.checked);

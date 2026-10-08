@@ -1661,6 +1661,17 @@ export function loadOptionsArrangement(dock = loadKeyboardDock()) {
     if (OPTIONS_ARRANGEMENTS.includes(v)) return v;
     return dock === 'side' ? 'grid' : 'row';
 }
+// Hold the screen upright or sideways, or let it turn (Ken, October 8 2026). See
+// orientation-lock.js for which devices allow it.
+export function loadScreenOrientation() {
+    const v = loadSettings().screenOrientation;
+    return v === 'portrait' || v === 'landscape' ? v : 'any';
+}
+export function saveScreenOrientation(v) {
+    const settings = loadSettings();
+    settings.screenOrientation = v === 'portrait' || v === 'landscape' ? v : 'any';
+    saveSettings(settings);
+}
 export function saveOptionsArrangement(v) {
     const settings = loadSettings();
     settings.optionsArrangement = OPTIONS_ARRANGEMENTS.includes(v) ? v : 'row';

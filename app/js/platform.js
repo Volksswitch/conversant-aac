@@ -281,6 +281,7 @@ export const SCREEN_BOUND = {
     bottomLayout: 'the keyboard layout at the bottom',
     convLayout: 'how much of the screen each part gets',
     optionsArrangement: 'how the response options are arranged',
+    screenOrientation: 'whether the screen is held upright or sideways',
 };
 
 /*

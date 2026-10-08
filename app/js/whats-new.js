@@ -29,7 +29,15 @@ const RELEASE_NOTES = {
     "You can now choose how the response options are laid out: in one row, or two by two with New 4 beside or below them. Look in Settings > Screen Layout.",
     "A new button in Settings > Screen Layout, \"Use the suggested layout for this screen\", sets up the screen to suit your device: a phone or tablet held upright, or one on its side.",
     "When you install the app on a new device, it now starts with the layout suggested for that screen.",
-    "Restoring a backup or settings profile from a device with a different screen no longer changes this device's screen layout."
+    "Restoring a backup or settings profile from a device with a different screen no longer changes this device's screen layout.",
+    {
+      "for": "android",
+      "note": "A new \"Screen orientation\" setting in Settings > Screen Layout keeps the screen upright or sideways when you turn the device. It works when \"Use the whole screen\" is on or the app is installed on your home screen."
+    },
+    {
+      "for": "computer",
+      "note": "A new \"Screen orientation\" setting in Settings > Screen Layout can keep the screen upright or sideways on a computer that turns, such as a tablet. Not every device allows it; a line under the setting says whether yours did."
+    }
   ],
   "0.13.8": [
     "In Conversation Review, only the response option you actually said can be tapped to rewrite it. The other options are grayed out.",

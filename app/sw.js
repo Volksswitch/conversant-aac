@@ -81,6 +81,7 @@ const SHELL = [
   './js/keyboard.js',
   './js/keyboard-layouts.js',
   './js/layout-suggestions.js',
+  './js/orientation-lock.js',
   './js/viewport.js',
   './js/express-items.js',
   './js/express-panel.js',

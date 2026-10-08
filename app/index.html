@@ -785,6 +785,28 @@
                         <label>Suggested layout</label>
                         <button id="suggestedLayoutBtn" type="button" class="reset-sizing-btn">Use the suggested layout for this screen</button>
                     </div>
+                    <!-- Hidden on an iPad, where no web page can hold the screen still.
+                         The status line says what the device actually did (Rule 14
+                         allows it: it reports what is happening, not what the control
+                         is). See orientation-lock.js. -->
+                    <div class="setting-group" id="screenOrientationGroup" data-help="screenOrientationGroup">
+                        <label id="screenOrientationLabel">Screen orientation</label>
+                        <div class="radio-row" role="radiogroup" aria-labelledby="screenOrientationLabel">
+                            <label class="radio-label">
+                                <input type="radio" name="screenOrientation" value="any">
+                                Turn with the device
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="screenOrientation" value="portrait">
+                                Keep it upright
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="screenOrientation" value="landscape">
+                                Keep it sideways
+                            </label>
+                        </div>
+                        <p class="setting-status" id="screenOrientationStatus" role="status" aria-live="polite" hidden></p>
+                    </div>
                     <div class="setting-group" data-help="optionsArrangementGroup">
                         <label id="optionsArrangementLabel">Response options</label>
                         <div class="radio-row" role="radiogroup" aria-labelledby="optionsArrangementLabel">

@@ -582,6 +582,14 @@ and `Conversant AAC Layout Suggestions.docx`.
   or profile from a different screen leaves this device's layout alone, INCLUDING
   layout settings the backup never had. Before, a key absent from the backup was
   dropped by the restore, because restore replaces rather than merges.
+- **"Screen orientation" setting** (any / portrait / landscape; orientation-lock.js),
+  hidden on an iPad, where no web page can hold the screen (measured July 30 2026).
+  Android allows it only when full screen or installed. Windows, Chromebook and Mac were
+  unknown when built: the status line under the setting reports what the device did,
+  so trying it on each device IS the measurement. The browser cannot tell "never" from
+  "not in this state", so the message is chosen from the state. The lock ends when the
+  app leaves the screen, so it is asked for again on Start, on return to view and when
+  full screen starts. Screen-bound on restore.
 
 ## ⚠ LOCALLY, THE SERVICE WORKER SERVES A STALE APP AND NOTHING SAYS SO (August 23 2026)
 

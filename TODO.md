@@ -48,11 +48,13 @@ BUILT (see CLAUDE.md, "Layouts: one list, suggested starting layouts").
   in both User Manuals (setting-up-the-screen section), update the layout names and the
   new Screen Layout controls in both manuals, and bring `Conversant AAC Keyboard Layout
   Options.docx` up to the fifteen layouts.
-- **A "Screen orientation" setting** (hold the screen upright or sideways). Locks on
-  Android when installed or full screen; an iPad has no lock (it can only point to the
-  iPad's own rotation lock); untested on a Windows tablet. Not decided.
+- **Measure the "Screen orientation" setting (built October 8 2026) on Ken's devices:**
+  Android phone and tablet (installed, and in a tab with "Use the whole screen" on and
+  off), and the Surface in full screen. Record what the status line said on each in
+  CLAUDE.md, and fix the "On a computer" release note if a device behaves differently.
+  The manuals need the setting and each device's own rotation lock at the same sync.
 
-**Why not now:** documents wait for Ken's sync; the orientation setting is undecided.
+**Why not now:** documents wait for Ken's sync; the measurement needs Ken's devices.
 
 ### Fix the problems found in the October 5 2026 code review
 
