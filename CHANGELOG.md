@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.13.10
+
 ### On a computer
 
 - The "Screen orientation" setting is gone from computers. A Windows tablet won't let
