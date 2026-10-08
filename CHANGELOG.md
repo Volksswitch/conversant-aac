@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.13.9
+
 - Every keyboard and Express Panel layout can now be used whether the keyboard sits at
   the side or the bottom of the screen. Each layout's name says what it looks like, for
   example "Alphabet, 5 × 7, 32 buttons".
