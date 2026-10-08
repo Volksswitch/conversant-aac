@@ -22,6 +22,14 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.13.8": [
+    "In Conversation Review, only the response option you actually said can be tapped to rewrite it. The other options are grayed out.",
+    "In Conversation Review, Undo and Redo now step back and forward through what you type in the box, a word at a time. Once the box is closed, Undo takes back a saved rewrite.",
+    "The \"Rewrite this turn\" and \"Clear this rewrite\" buttons are gone from review. Tap the turn, the option you said, or \"In my own words\" to rewrite, and use Undo to take a rewrite back.",
+    "\"Hear it\" reads out what is in the box while you are writing.",
+    "The Save button in review shows a disk instead of a check mark.",
+    "If you leave the box with changes you haven't saved, the app asks before throwing them away."
+  ],
   "0.13.7": [
     "Conversation Review is simpler. Pick a turn that didn't sound like you, and the typing box opens with what you said at the time. Write the whole reply the way you'd have said it, and save it. Your rewrites with a person are used only when you talk with that person, and rewriting several turns with them does the most. Turns where you and the app struggled at the time are marked with a bar. Choosing a different response option, marking Express buttons, and correcting what the app heard are gone from review.",
     "About Me → People → \"How I talk with them\" has a new box for words you use a lot with that person, like \"nah\" or \"dude\". The app may use one of them in your suggestions when you're talking with that person.",

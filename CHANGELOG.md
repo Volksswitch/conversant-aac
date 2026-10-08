@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.13.8
+
 - In Conversation Review, only the response option you actually said can be tapped to
   rewrite it. The other options are grayed out.
 - In Conversation Review, Undo and Redo now step back and forward through what you type
