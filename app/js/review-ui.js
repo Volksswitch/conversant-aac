@@ -611,7 +611,7 @@ async function okToLeaveComposer() {
     if (!composerDirty()) return true;
     const ok = await confirmDanger({
         title: 'Leave without saving?',
-        body: 'What you have written in the box has not been saved. If you leave now, it is lost.',
+        body: 'What you have written in the box has not been saved. If you leave now, it will be lost.',
         confirmLabel: 'Leave without saving',
         cancelLabel: 'Keep writing',
     });
