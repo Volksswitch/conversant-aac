@@ -49,8 +49,8 @@ BUILT (see CLAUDE.md, "Layouts: one list, suggested starting layouts").
   new Screen Layout controls in both manuals, and bring `Conversant AAC Keyboard Layout
   Options.docx` up to the fifteen layouts.
 - **"Screen orientation" (built October 8 2026, released 0.13.9):** measured October 8 -
-  Android installed holds, Surface refuses even installed. Decide which computers still
-  show the setting (Ken), then correct it in the next release notes. The manuals need
+  Android installed holds, Surface refuses even installed. Now shown on Android only
+  (built October 8 2026, in the next release notes). The manuals need
   the setting and each device's own rotation lock at the same sync.
 
 **Why not now:** documents wait for Ken's sync; the measurement needs Ken's devices.

@@ -6,11 +6,10 @@
  * WHAT THE PLATFORMS ALLOW, so nobody re-derives it:
  *   - Android: the browser holds the screen still only when the app is installed on
  *     the home screen or the page is full screen. In an ordinary tab it refuses.
- *   - iPad: no web page can do it (measured July 30 2026; Apple's notes agree). The
- *     setting is hidden there, as "Use the whole screen" is.
- *   - Windows, Chromebook, Mac: unknown when this was written. Laptops refuse; a
- *     tablet may accept it in full screen. The status line under the setting reports
- *     what the device did, which is how it gets measured.
+ *   - iPad: no web page can do it (measured July 30 2026; Apple's notes agree).
+ *   - Surface: refused even as an installed app (measured by Ken, October 8 2026).
+ *     MacBooks do not rotate. Chromebooks were not measured.
+ *   So the setting is shown on Android only (Ken, October 8 2026); app.js gates it.
  *
  * THE LOCK ONLY LASTS WHILE THE APP IS ON SCREEN. It ends when the user switches to
  * another app or leaves full screen, so app.js asks again on the Start tap, when the

@@ -44,3 +44,13 @@ test('the status line points at the right fix', () => {
     // Refused even in full screen: the device cannot do it.
     assert.match(describeResult('portrait', 'refused', true), /own rotation lock/);
 });
+
+// Ken, October 8 2026: Android only. The gate lives in app.js, which no test can load,
+// so it is checked in the source. Showing it elsewhere puts a control on screen that
+// can never work (measured: a Surface refuses even installed).
+test('the setting is shown and applied on Android only', async () => {
+    const { readFileSync } = await import('node:fs');
+    const src = readFileSync(new URL('../app/js/app.js', import.meta.url), 'utf8');
+    assert.match(src, /async function applyScreenOrientation\(\) \{\s*if \(!platform\.isAndroid\(\)\) return;/);
+    assert.match(src, /getElementById\('screenOrientationGroup'\)\.hidden = !platform\.isAndroid\(\);/);
+});

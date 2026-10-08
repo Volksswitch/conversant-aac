@@ -591,7 +591,9 @@ and `Conversant AAC Layout Suggestions.docx`.
   app leaves the screen, so it is asked for again on Start, on return to view and when
   full screen starts. Screen-bound on restore.
   **MEASURED by Ken, October 8 2026: Android installed app - holds. Surface - refused,
-  even installed.** MacBooks do not rotate. Chromebooks: not measured.
+  even installed.** MacBooks do not rotate. Chromebooks: not measured. **So the
+  setting is shown and applied on Android only (Ken, October 8 2026)**; a fold-flat
+  Chromebook might allow it, and that is the case that would reopen this.
 
 ## ⚠ LOCALLY, THE SERVICE WORKER SERVES A STALE APP AND NOTHING SAYS SO (August 23 2026)
 

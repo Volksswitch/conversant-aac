@@ -22,6 +22,12 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.13.10": [
+    {
+      "for": "computer",
+      "note": "The \"Screen orientation\" setting is gone from computers. A Windows tablet won't let the app hold the screen still, and laptops don't turn, so it never worked there."
+    }
+  ],
   "0.13.9": [
     "Every keyboard and Express Panel layout can now be used whether the keyboard sits at the side or the bottom of the screen. Each layout's name says what it looks like, for example \"Alphabet, 5 × 7, 32 buttons\".",
     "Two new layouts: QWERTY in two halves, five buttons across, for narrow screens; and the alphabet running down the columns is back.",

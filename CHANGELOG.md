@@ -26,6 +26,11 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+### On a computer
+
+- The "Screen orientation" setting is gone from computers. A Windows tablet won't let
+  the app hold the screen still, and laptops don't turn, so it never worked there.
+
 ## Version 0.13.9
 
 - Every keyboard and Express Panel layout can now be used whether the keyboard sits at

@@ -6261,10 +6261,12 @@ function requestAppFullscreen() {
 // changing the setting. Anything that measures the screen must use this one.
 // Hold the screen upright or sideways, as Settings says (orientation-lock.js). The
 // lock only lasts while the app is on screen, so this runs on the Start tap, when
-// full screen starts, and when the app comes back into view. Never on an iPad, where
-// no web page can do it. The status line in Settings reports what the device did.
+// full screen starts, and when the app comes back into view. ANDROID ONLY (Ken,
+// October 8 2026): it was measured working there as an installed app, an iPad has no
+// way to do it, a Surface refused even installed, and MacBooks do not rotate. The
+// status line in Settings reports what the device did.
 async function applyScreenOrientation() {
-    if (platform.isIOS()) return;
+    if (!platform.isAndroid()) return;
     const setting = storage.loadScreenOrientation();
     const outcome = await orientationLock.apply(setting);
     const status = document.getElementById('screenOrientationStatus');
@@ -7866,8 +7868,8 @@ function openSettings() {
     // there too, so a stored `true` is inert rather than stranded behind a hidden control.
     const fullscreenInput = document.getElementById('fullscreenInput');
     document.getElementById('fullscreenGroup').hidden = platform.isIOS();
-    // Screen orientation: hidden on an iPad, where no web page can hold the screen.
-    document.getElementById('screenOrientationGroup').hidden = platform.isIOS();
+    // Screen orientation: Android only - see applyScreenOrientation.
+    document.getElementById('screenOrientationGroup').hidden = !platform.isAndroid();
     const orientRadio = document.querySelector(
         `input[name="screenOrientation"][value="${storage.loadScreenOrientation()}"]`);
     if (orientRadio) orientRadio.checked = true;
