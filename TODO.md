@@ -37,6 +37,19 @@ the one that quietly waits forever.
 
 ## Open
 
+### Rewrite the Conversation Review design document for the October 6 2026 simplification
+
+- **Raised:** October 8 2026, during "sync docs - all appropriate documents" for 0.13.11.
+- **What:** `Conversant AAC Conversation Review.docx` still describes review as it was
+  before Ken's October 6 2026 "Let's simplify everything": Previous Word and Next Word,
+  answers that change the response options, reframe steers and the word editor. The
+  Command Bar section also predates the Report and Delete buttons added in 0.13.11. It
+  needs a rewrite to the one-action design (rewrite a turn) described in CLAUDE.md under
+  "Conversation Review - one action".
+- **Why not now:** it is a design record, not published, and nine releases behind. A
+  0.13.11 patch would have put two new buttons into a description of a screen that no
+  longer exists. It needs its own pass.
+
 ### Fix the problems found in the October 5 2026 code review
 
 **Raised:** October 5 2026, by Ken, who asked for a review of the whole app that a later
