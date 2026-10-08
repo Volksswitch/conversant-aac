@@ -29,7 +29,8 @@ export function confirmDanger({
     body = 'This cannot be undone.',
     preview = '',
     confirmLabel = 'Delete',
-    cancelLabel = 'Cancel'
+    cancelLabel = 'Cancel',
+    over = null
 } = {}) {
     return new Promise((resolve) => {
         const dlg = document.createElement('dialog');
@@ -77,10 +78,12 @@ export function confirmDanger({
         }
         dlg.append(head, p, ...(pre ? [pre] : []), actions);
 
+        let unplace = () => {};
         let settled = false;
         const done = (val) => {
             if (settled) return;
             settled = true;
+            unplace();
             try { dlg.close(); } catch { /* already closing */ }
             dlg.remove();
             resolve(val);
@@ -94,6 +97,7 @@ export function confirmDanger({
         dlg.addEventListener('click', (e) => { if (e.target === dlg) done(false); });
 
         document.body.append(dlg);
+        unplace = placeOver(dlg, over);
         dlg.showModal();   // top layer — sits above the full-screen overlays
         cancelBtn.focus();
     });
@@ -187,16 +191,41 @@ export function confirmNeutral({
     });
 }
 
+/* Put a dialog exactly over another element instead of centering it (Ken, October 8
+ * 2026). A centered card lands across a keyguard's rails; over a region the keyguard
+ * already leaves open - the Conversation Pane, or one response option - it does not.
+ * `over` is an element or an element id. Follows the element through a resize; the
+ * returned function stops that. With no element on screen the card stays centered.
+ * Inline styles, because the dock rules that limit a card outrank a class. */
+function placeOver(dlg, over) {
+    const target = typeof over === 'string' ? document.getElementById(over) : over;
+    if (!target) return () => {};
+    const place = () => {
+        const r = target.getBoundingClientRect();
+        if (!r.width || !r.height) return;
+        dlg.classList.add('over-region');
+        Object.assign(dlg.style, {
+            top: `${r.top}px`, left: `${r.left}px`, width: `${r.width}px`, height: `${r.height}px`,
+            right: 'auto', bottom: 'auto', margin: '0', maxWidth: 'none', maxHeight: 'none',
+        });
+    };
+    place();
+    window.addEventListener('resize', place);
+    return () => window.removeEventListener('resize', place);
+}
+
 /* A question with a text box (October 8 2026), for the problem report sent from
  * Conversation Review, where the Settings note box is not on screen. Resolves with
  * the text (possibly empty) on confirm, or null on cancel. The box is in the on-screen
  * keyboard's scope (keyboard.js IN_SCOPE), and that keyboard moves into whichever
  * dialog is open, so it types here like anywhere else. */
+/* `over`: see placeOver. */
 export function askForText({
     title = '',
     body = '',
     confirmLabel = 'OK',
-    cancelLabel = 'Cancel'
+    cancelLabel = 'Cancel',
+    over = null
 } = {}) {
     return new Promise((resolve) => {
         const { dlg, p } = neutralCard(title);
@@ -217,10 +246,12 @@ export function askForText({
         actions.append(cancelBtn, confirmBtn);
         dlg.append(box, actions);
 
+        let unplace = () => {};
         let settled = false;
         const done = (val) => {
             if (settled) return;
             settled = true;
+            unplace();
             rescueFrom(dlg);   // the keyboard moved in here; it must not leave with the box
             try { dlg.close(); } catch { /* already closing */ }
             dlg.remove();
@@ -231,6 +262,7 @@ export function askForText({
         dlg.addEventListener('cancel', (e) => { e.preventDefault(); done(null); });
 
         document.body.append(dlg);
+        unplace = placeOver(dlg, over);
         dlg.showModal();
         // Focus the button, not the box: focusing the box would raise the on-screen
         // keyboard before the user has decided to type anything.
@@ -280,7 +312,7 @@ export function showBusy({ title = 'Please wait', body = '' } = {}) {
  * to restart and make them the one who starts it — the restart used to happen on its
  * own, which on a slow device is indistinguishable from the crash they were already
  * worried about. Resolves when the button is pressed. */
-export function showNotice({ title = '', body = '', buttonLabel = 'OK' } = {}) {
+export function showNotice({ title = '', body = '', buttonLabel = 'OK', over = null } = {}) {
     return new Promise((resolve) => {
         const { dlg, p } = neutralCard(title);
         p.textContent = body;
@@ -293,10 +325,12 @@ export function showNotice({ title = '', body = '', buttonLabel = 'OK' } = {}) {
         actions.append(btn);
         dlg.append(actions);
 
+        let unplace = () => {};
         let settled = false;
         const done = () => {
             if (settled) return;
             settled = true;
+            unplace();
             try { dlg.close(); } catch { /* already closing */ }
             dlg.remove();
             resolve();
@@ -311,6 +345,7 @@ export function showNotice({ title = '', body = '', buttonLabel = 'OK' } = {}) {
         dlg.addEventListener('close', () => { if (!settled) { try { dlg.showModal(); } catch { /* removed */ } } });
 
         document.body.append(dlg);
+        unplace = placeOver(dlg, over);
         dlg.showModal();
         btn.focus();
     });

@@ -507,7 +507,19 @@ function report() {
         id: conv.id,
         data: conv.data,
         turnText: `turn ${at + 1} of ${conv.turns.length}: ${[heard, said].filter(Boolean).join('; ')}`,
+        noteOver: noteCell(),
     });
+}
+
+// Where the note box goes (Ken, October 8 2026): over the LAST response option the user
+// did not speak - usually Repair, the least used - so the Conversation Pane and the
+// option they spoke stay in view while they describe the problem, and the box sits in a
+// keyguard opening rather than across a rail. A cell, not a card, because the cell is
+// the opening (a cell can hold two cards).
+function noteCell() {
+    const cells = [...document.querySelectorAll('#responseOptions .response-cell')];
+    const free = cells.filter((c) => !c.querySelector('.review-spoken'));
+    return free[free.length - 1] || cells[cells.length - 1] || null;
 }
 
 function hear() {

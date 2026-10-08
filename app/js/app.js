@@ -7278,13 +7278,16 @@ async function sendProblemReportFromReview(about) {
         body: 'What went wrong here? You can leave this empty.',
         confirmLabel: 'Next',
         cancelLabel: 'Cancel',
+        // In a keyguard opening, not across its rails (Ken, October 8 2026): over the last
+        // response option the user did not speak (review-ui.js noteCell).
+        over: about && about.noteOver,
     });
     if (note === null) return;
     let text;
     try {
         text = await buildProblemReportText({ note, about });
     } catch (e) {
-        await showNotice({ title: 'Could not build the report', body: e && e.message ? e.message : String(e) });
+        await showNotice({ title: 'Could not build the report', body: e && e.message ? e.message : String(e), over: 'transcript' });
         return;
     }
     if (!(await confirmDanger({
@@ -7292,7 +7295,10 @@ async function sendProblemReportFromReview(about) {
         body: REPORT_DISCLOSURE,
         preview: text,
         confirmLabel: 'Send it',
-        cancelLabel: 'Not now'
+        cancelLabel: 'Not now',
+        // The report and the message after it go over the Conversation Pane, the one
+        // opening big enough to read a report in (Ken, October 8 2026).
+        over: 'transcript',
     }))) return;
     let res = null;
     try {
@@ -7302,6 +7308,7 @@ async function sendProblemReportFromReview(about) {
         title: res && res.sent ? 'Sent' : 'Not sent yet',
         body: res && res.sent ? 'Sent and received. Thank you.'
             : 'It is saved and will go by itself next time you open the app.',
+        over: 'transcript',
     });
 }
 

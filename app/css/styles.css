@@ -4691,6 +4691,43 @@ body.conv-bottom     .danger-dialog {
     overflow: auto;
 }
 
+/* A box placed exactly over another region (askForText `over`), so it sits in space the
+   keyguard already leaves open rather than across its rails. Position and size come
+   from the region, set inline; these rules only stop the card's own limits fighting
+   them. The flex layout is scoped to [open] - on the base selector it would override
+   the browser's hiding of a closed dialog. */
+.danger-dialog.over-region {
+    margin: 0;
+    max-width: none;
+    max-height: none;
+    box-sizing: border-box;
+    padding: 0.75rem 1rem;
+    overflow: auto;
+}
+.danger-dialog.over-region[open] {
+    display: flex;
+    flex-direction: column;
+}
+.danger-dialog.over-region { border-top-width: 4px; padding-top: 0.5rem; padding-bottom: 0.5rem; }
+.danger-dialog.over-region .danger-head { margin-bottom: 0.2rem; }
+/* Smaller words here: the report's own explanation is long, and on a short Conversation
+   Pane it would otherwise leave the report itself two lines to show in. */
+.danger-dialog.over-region .danger-body { margin: 0 0 0.4rem; font-size: 0.85rem; line-height: 1.3; }
+.danger-dialog.over-region .danger-actions { flex: 0 0 auto; }
+.danger-dialog.over-region .ask-text-input {
+    flex: 1 1 auto;
+    min-height: 2.5rem;
+    margin-bottom: 0.5rem;
+    resize: none;
+}
+.danger-dialog.over-region .danger-actions { margin-top: 0; }
+.danger-dialog.over-region .danger-preview {
+    flex: 1 1 auto;
+    min-height: 2.5rem;
+    margin-bottom: 0.4rem;
+    resize: none;
+}
+
 /* The note box on the problem report sent from Conversation Review (askForText). */
 .ask-text-input {
     width: 100%;

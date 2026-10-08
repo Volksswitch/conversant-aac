@@ -26,6 +26,11 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Reporting a problem from Conversation Review no longer puts boxes across a keyguard.
+  The box for your note sits where the last response option you didn't use was, so the
+  conversation and the option you spoke stay in view. The report itself, and the
+  message after it, sit where the conversation is shown.
+
 ## Version 0.13.11
 
 - A problem report now includes the conversation you're in, up to the moment you
