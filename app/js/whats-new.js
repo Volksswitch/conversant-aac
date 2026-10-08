@@ -22,6 +22,12 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.13.11": [
+    "A problem report now includes the conversation you're in, up to the moment you press Send. If you aren't in one, it includes your last conversation.",
+    "In Conversation Review, a new Report button sends a problem report about the turn you're looking at. You can add a note first, and you see the whole report before it goes.",
+    "\"Don't save this conversation,\" pressed partway through a conversation, now deletes the whole conversation from this device, not just what comes after. It asks first. The conversation itself carries on.",
+    "In Conversation Review, a new Delete button removes the conversation you're looking at, and anything you rewrote in it, from this device. It asks first."
+  ],
   "0.13.10": [
     {
       "for": "computer",
