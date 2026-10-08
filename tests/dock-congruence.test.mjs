@@ -218,7 +218,7 @@ test('with a wide gap and a screen edge margin, the two surfaces still agree',
         if (skip) { t.skip(skip); return; }
         await page.evaluateOnNewDocument(() => {
             localStorage.setItem('aac_settings', JSON.stringify({
-                keyboardMode: 'onscreen', keyboardDock: 'bottom', bottomLayout: 'B10',
+                keyboardMode: 'onscreen', keyboardDock: 'bottom', bottomLayout: 'B1',
                 buttonGapPos: 80, minGapPos: 60, appMarginPos: 55, dockSepPos: 40,
             }));
         });
@@ -239,7 +239,7 @@ test('with a wide gap and a screen edge margin, the two surfaces still agree',
         const gap = await page.evaluate(() =>
             getComputedStyle(document.documentElement).getPropertyValue('--grid-gap'));
         assert.ok(parseFloat(gap) > 1, `expected a wide gap to be in force, got "${gap}"`);
-        compare(t, 'B10 with wide gap + margin', panel, keyboard);
+        compare(t, 'B1 with wide gap + margin', panel, keyboard);
     });
 
 // A label too long for its button must be TRIMMED far enough to leave room for a
@@ -253,7 +253,7 @@ test('with a wide gap and a screen edge margin, the two surfaces still agree',
 // on screen that reads as a short phrase rather than as a truncated one. The clamp
 // therefore has to match the box, and this is what says it does.
 const LABEL_CASES = [
-    ['bottom dock, default', { keyboardMode: 'onscreen', keyboardDock: 'bottom', bottomLayout: 'B10' }],
+    ['bottom dock, default', { keyboardMode: 'onscreen', keyboardDock: 'bottom', bottomLayout: 'B1' }],
     ['side dock, default', { keyboardMode: 'onscreen', keyboardDock: 'side', sideLayout: 'S2' }],
     ['side dock, narrow cells', { keyboardMode: 'onscreen', keyboardDock: 'side', sideLayout: 'S6' }],
     ['big text in a tight dock', { keyboardMode: 'onscreen', keyboardDock: 'side', sideLayout: 'S2',
@@ -352,7 +352,7 @@ for (const [label, extra, viewport] of TEXT_CASES) {
             }, {
                 openers: LONG_OPENERS,
                 settings: Object.assign({
-                    keyboardMode: 'onscreen', keyboardDock: 'bottom', bottomLayout: 'B10',
+                    keyboardMode: 'onscreen', keyboardDock: 'bottom', bottomLayout: 'B1',
                     commandLabels: 'words',
                 }, extra),
             });
@@ -416,7 +416,7 @@ for (const [label, extra, viewport] of TEXT_CASES) {
 async function conv(settings) {
     await page.evaluateOnNewDocument((s) => {
         localStorage.setItem('aac_settings', JSON.stringify(s));
-    }, Object.assign({ keyboardMode: 'onscreen', keyboardDock: 'bottom', bottomLayout: 'B10',
+    }, Object.assign({ keyboardMode: 'onscreen', keyboardDock: 'bottom', bottomLayout: 'B1',
                        sideLayout: 'S2' }, settings));
     await page.setViewport({ width: 1280, height: 800 });
     await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'networkidle0' });

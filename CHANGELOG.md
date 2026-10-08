@@ -26,6 +26,24 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Every keyboard and Express Panel layout can now be used whether the keyboard sits at
+  the side or the bottom of the screen. Each layout's name says what it looks like, for
+  example "Alphabet, 5 × 7, 32 buttons".
+- Two new layouts: QWERTY in two halves, five buttons across, for narrow screens; and
+  the alphabet running down the columns is back.
+- Seven layouts that only repeated another layout's shape are gone. If you used one,
+  the app has switched you to the layout with the same shape, so your Express Panel
+  buttons are where they were.
+- You can now choose how the response options are laid out: in one row, or two by two
+  with New 4 beside or below them. Look in Settings > Screen Layout.
+- A new button in Settings > Screen Layout, "Use the suggested layout for this screen",
+  sets up the screen to suit your device: a phone or tablet held upright, or one on its
+  side.
+- When you install the app on a new device, it now starts with the layout suggested for
+  that screen.
+- Restoring a backup or settings profile from a device with a different screen no
+  longer changes this device's screen layout.
+
 ## Version 0.13.8
 
 - In Conversation Review, only the response option you actually said can be tapped to

@@ -555,6 +555,34 @@ Ken is establishing the rules **every conversation-screen layout must obey, BEFO
 
 *(More rules to come. Where these conflict with the UI-Design.docx defaults — notably icon-only buttons vs. the doc's text-badge move cards, and the move-card text-hint anatomy — these field-driven rules win for the control surface; reconcile fully when we pick the first concrete layout.)*
 
+## Layouts: one list, suggested starting layouts (Ken, October 8 2026), BUILT
+
+Prompted by a tall Android phone, where ten buttons across left the Express Panel
+buttons very narrow. **This reopens UI Layout Rule 2 (landscape only): phones held
+upright are a real case now.** Review documents: `Conversant AAC Layout Review.docx`
+and `Conversant AAC Layout Suggestions.docx`.
+
+- **Fifteen layouts, one list, either side of the screen** (`LAYOUT_LIST` in
+  keyboard-layouts.js), narrowest first. Names are computed from the grid ("Alphabet,
+  5 × 7, 32 buttons") so they cannot drift. Seven layouts that repeated a shape were
+  removed; `LAYOUT_ALIASES` moves a stored id to the kept layout of the SAME SHAPE, so
+  the Express Panel and keyguard do not move (Bottom Layout 6 had 33 positions and
+  lands on 32). New: "QWERTY in halves" (Q5).
+- **The response options arrangement is its own setting** (`optionsArrangement`:
+  row / grid / grid-below), no longer read off the keyboard position. Unset means the
+  old rule (two by two beside a side keyboard, a row otherwise), so nobody's screen
+  changed. New 4 does not need to sit in the same place in every arrangement: people
+  choose how they hold or mount a device long before they meet the app.
+- **First launch starts with the suggested layout for the screen**
+  (layout-suggestions.js; phone if the shorter side is under 600 points). A sideways
+  tablet starts with the keyboard at the bottom and QWERTY, which is what the app did
+  before. **No picker in the app** - pictures of whole screens are unreadable on a
+  phone, so they go in the User Manuals. One Settings button re-applies the suggestion.
+- **The layout settings are screen-bound** (`SCREEN_BOUND` in platform.js): a backup
+  or profile from a different screen leaves this device's layout alone, INCLUDING
+  layout settings the backup never had. Before, a key absent from the backup was
+  dropped by the restore, because restore replaces rather than merges.
+
 ## ⚠ LOCALLY, THE SERVICE WORKER SERVES A STALE APP AND NOTHING SAYS SO (August 23 2026)
 
 **`CACHE_VERSION` in `sw.js` is `aac-v<version>-@@BUILD@@`, and `@@BUILD@@` is only

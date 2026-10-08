@@ -1,6 +1,8 @@
 import * as tlog from './transcript-log.js';
 // platform.js imports nothing, so this cannot create a cycle.
 import * as platform from './platform.js';
+// keyboard-layouts.js imports nothing either.
+import { resolveLayoutId } from './keyboard-layouts.js';
 
 const STORAGE_KEY = 'aac_settings';
 const IDB_NAME = 'aac-db';
@@ -715,6 +717,13 @@ export async function applySettingsProfile(name) {
         merged[k] = incoming[k];
     }
     for (const k of held) if (current[k] !== undefined) merged[k] = current[k];
+    // A bound setting the PROFILE never had is kept as well, for the same reason as a
+    // backup restore: otherwise loading an older profile drops this device's layout.
+    if (payload && payload.device) {
+        for (const k of [...Object.keys(platform.OS_BOUND), ...Object.keys(platform.SCREEN_BOUND)]) {
+            if (keepHere(k) && !(k in incoming) && current[k] !== undefined) merged[k] = current[k];
+        }
+    }
     saveSettings(merged);
     return clean;
 }
@@ -1624,8 +1633,10 @@ export function saveKeyboardMode(mode) {
 // fit it: the dock's width is derived from the layout's column count, so twelve
 // columns would claim over half the screen to keep the keys usable -- see the note
 // in keyboard-layouts.js.
+// A layout removed on October 8 2026 resolves to the kept layout of the same shape,
+// so somebody using one keeps the same Express Panel and keyguard (LAYOUT_ALIASES).
 export function loadSideLayout() {
-    return loadSettings().sideLayout || 'S1';
+    return resolveLayoutId(loadSettings().sideLayout, 'S1');
 }
 
 export function saveSideLayout(id) {
@@ -1635,7 +1646,25 @@ export function saveSideLayout(id) {
 }
 
 export function loadBottomLayout() {
-    return loadSettings().bottomLayout || 'B11';
+    return resolveLayoutId(loadSettings().bottomLayout, 'B11');
+}
+
+// How the response options are arranged (Ken, October 8 2026): 'row' (four across,
+// New 4 to the right), 'grid' (two by two, New 4 to the right) or 'grid-below' (two
+// by two, New 4 underneath). It used to follow the keyboard: two by two beside a side
+// keyboard, one row above a bottom one. A tall phone needs two by two with the
+// keyboard at the bottom, so it became its own setting. Unset means the old rule, so
+// nobody's screen changes.
+export const OPTIONS_ARRANGEMENTS = ['row', 'grid', 'grid-below'];
+export function loadOptionsArrangement(dock = loadKeyboardDock()) {
+    const v = loadSettings().optionsArrangement;
+    if (OPTIONS_ARRANGEMENTS.includes(v)) return v;
+    return dock === 'side' ? 'grid' : 'row';
+}
+export function saveOptionsArrangement(v) {
+    const settings = loadSettings();
+    settings.optionsArrangement = OPTIONS_ARRANGEMENTS.includes(v) ? v : 'row';
+    saveSettings(settings);
 }
 
 export function saveBottomLayout(id) {
@@ -1967,6 +1996,18 @@ function migrateBundle(s) {
 
 // Migrate whatever is already in storage, at start-up. Everything arriving later is
 // caught by saveSettings itself.
+// Nothing has ever been saved on this device. Read BEFORE anything writes settings -
+// the migration below can save a bundle - so the first launch can start with the
+// layout suggested for the screen (Ken, October 8 2026).
+export function isFirstLaunch() {
+    try { return localStorage.getItem(STORAGE_KEY) === null; } catch { return false; }
+}
+
+// Apply a suggested starting layout (layout-suggestions.js) to the stored settings.
+export function applyLayoutSuggestion(suggestion, applyToSettings) {
+    saveSettings(applyToSettings(loadSettings(), suggestion));
+}
+
 export function migrateStoredSettings() {
     const before = loadSettings();
     const after = migrateBundle(before);

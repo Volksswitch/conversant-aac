@@ -1,19 +1,26 @@
-/* AAC Conversation Assistant — on-screen keyboard layouts (June 2026)
+/* AAC Conversation Assistant — on-screen keyboard and Express Panel layouts
  *
- * The twenty alphabetical layouts from `Keyboard-Layout-Options.docx`, encoded
- * as data so the keyboard renderer can switch between them and so a layout is a
- * user Setting (Settings → Speech & Input). Ten side-dock layouts (S1–S10) for
- * the About Me / Settings screens; ten bottom-dock layouts (B1–B10) for the
- * conversation composer.
+ * ONE LIST, OFFERED ON EITHER SIDE OF THE SCREEN (Ken, October 8 2026). The layouts
+ * used to come in two lists, ten for a keyboard at the side and eleven for one at the
+ * bottom. A tall phone held upright showed what that cost: the narrow shapes it
+ * needed existed, but only for the side. Now every layout can sit in either place,
+ * and the list is sorted narrowest first.
  *
- * Cell shapes (all carry a `span` = flex weight within the row):
+ * FIFTEEN LAYOUTS, ONE PER SHAPE plus two that differ in letter order (Ken, October 8
+ * 2026, after reviewing "Conversant AAC Layout Review.docx"). Seven layouts that only
+ * repeated another's shape were removed; LAYOUT_ALIASES moves anybody using one to
+ * the kept layout of the same shape, so their Express Panel and keyguard are
+ * unchanged.
+ *
+ * THE NAME IS WORKED OUT FROM THE LAYOUT ("Alphabet, 5 × 7, 32 buttons"), so it
+ * can never disagree with the grid it describes. The ids (S1, B11 ...) are internal and
+ * are what settings store; they no longer say which side a layout belongs on.
+ *
+ * Cell shapes (all carry a `span` = how many columns the cell takes):
  *   { kind:'char',  char, label }    — inserts the character (letters, digits, , .)
  *   { kind:'space', action:'space' } — space
  *   { kind:'action', action, label } — 'shift' | 'backspace' | 'enter' | 'page'
  *   { kind:'blank' }                 — inert spacer (grid filler / split gap)
- *
- * Span lets one cell occupy the width of several (e.g. a 3-wide space). Rows in
- * a layout all sum to the same total, so flex preserves the intended geometry.
  */
 
 // --- cell builders ----------------------------------------------------------
@@ -26,44 +33,25 @@ const PG = (label = '123', span = 1) => ({ kind: 'action', action: 'page', label
 const BL = (span = 1) => ({ kind: 'blank', label: '', span });
 const r  = (str) => str.split(' ').filter(Boolean).map((c) => C(c)); // a row of chars
 
-// --- side-dock layouts (S1–S10) --------------------------------------------
-const S = {
-  S1: { name: 'Side Layout 1', dock: 'side', rows: [
-    r('a b c d e'), r('f g h i j'), r('k l m n o'), r('p q r s t'), r('u v w x y'),
-    [C('z'), C(','), C('.'), BK(), SH()],
-    [PG(), SP(3), EN()],
-  ]},
-  S2: { name: 'Side Layout 2', dock: 'side', rows: [
-    r('a b c d'), r('e f g h'), r('i j k l'), r('m n o p'), r('q r s t'), r('u v w x'),
-    [C('y'), C('z'), C(','), C('.')],
-    [SH(), PG(), BK(), EN()],
-    [SP(4)],
-  ]},
-  S3: { name: 'Side Layout 3', dock: 'side', rows: [
-    r('a b c d e f'), r('g h i j k l'), r('m n o p q r'), r('s t u v w x'),
-    [C('y'), C('z'), C(','), C('.'), BK(), SH()],
-    [PG(), SP(4), EN()],
-  ]},
-  S4: { name: 'Side Layout 4', dock: 'side', rows: [
-    [C('a'), C('b'), C('c'), C('d'), C('e'), BK()],
-    [C('f'), C('g'), C('h'), C('i'), C('j'), SH()],
-    [C('k'), C('l'), C('m'), C('n'), C('o'), EN()],
-    [C('p'), C('q'), C('r'), C('s'), C('t'), PG()],
-    [C('u'), C('v'), C('w'), C('x'), C('y'), C(',')],
-    [C('z'), SP(4), C('.')],
-  ]},
-  S5: { name: 'Side Layout 5', dock: 'side', rows: [
-    r('a b c d e'), r('f g h i j'), r('k l m n o'), r('p q r s t'), r('u v w x y'),
-    [C('z'), C(','), C('.'), BK(), SH()],
-    [PG(), SP(2), EN(), BL(1)],
-  ]},
-  S6: { name: 'Side Layout 6', dock: 'side', rows: [
+const DEFS = {
+  S6: { arrangement: 'Alphabet', rows: [
     r('a b c'), r('d e f'), r('g h i'), r('j k l'), r('m n o'), r('p q r'), r('s t u'), r('v w x'),
     [C('y'), C('z'), BK()],
     [SH(), PG(), EN()],
     [C(','), SP(1), C('.')],
   ]},
-  S7: { name: 'Side Layout 7', dock: 'side', rows: [
+  S2: { arrangement: 'Alphabet', rows: [
+    r('a b c d'), r('e f g h'), r('i j k l'), r('m n o p'), r('q r s t'), r('u v w x'),
+    [C('y'), C('z'), C(','), C('.')],
+    [SH(), PG(), BK(), EN()],
+    [SP(4)],
+  ]},
+  S1: { arrangement: 'Alphabet', rows: [
+    r('a b c d e'), r('f g h i j'), r('k l m n o'), r('p q r s t'), r('u v w x y'),
+    [C('z'), C(','), C('.'), BK(), SH()],
+    [PG(), SP(3), EN()],
+  ]},
+  S7: { arrangement: 'Alphabet down the columns', rows: [
     [C('a'), C('g'), C('m'), C('s'), C('y')],
     [C('b'), C('h'), C('n'), C('t'), C('z')],
     [C('c'), C('i'), C('o'), C('u'), BK()],
@@ -72,104 +60,106 @@ const S = {
     [C('f'), C('l'), C('r'), C('x'), EN()],
     [C(','), SP(3), C('.')],
   ]},
-  S8: { name: 'Side Layout 8', dock: 'side', rows: [
+  // QWERTY for a narrow screen (Ken, October 8 2026): the left-hand half of the
+  // keyboard on top, the right-hand half underneath, so each half keeps its shape -
+  // q, a and z still line up down the left edge. A five-column QWERTY was turned down
+  // in September 2026 for the side dock; a tall phone reopened it.
+  Q5: { arrangement: 'QWERTY in halves', rows: [
+    r('q w e r t'), r('a s d f g'), r('z x c v b'),
+    r('y u i o p'), [C('h'), C('j'), C('k'), C('l'), C(',')],
+    [C('n'), C('m'), C('.'), BK(), SH()],
+    [PG(), SP(3), EN()],
+  ]},
+  S8: { arrangement: 'Alphabet, wide punctuation', rows: [
     r('a b c d e'), r('f g h i j'), r('k l m n o'), r('p q r s t'), r('u v w x y'),
     [C('z'), C(',', 2), C('.', 2)],
     [SH(), PG(), BK(), EN(2)],
     [SP(5)],
   ]},
-  S9: { name: 'Side Layout 9', dock: 'side', rows: [
-    r('a b c d e'), r('f g h i j'), r('k l m n o'), r('p q r s t'), r('u v w x y'),
-    [C('z'), C(','), C('.'), SH(), PG()],
-    [BK(2), SP(2), EN()],
-  ]},
-  S10: { name: 'Side Layout 10', dock: 'side', rows: [
+  S10: { arrangement: 'Alphabet with numbers', rows: [
     r('a b c d e'), r('f g h i j'), r('k l m n o'), r('p q r s t'), r('u v w x y'),
     [C('z'), C(','), C('.'), BK(), SH()],
     r('1 2 3 4 5'), r('6 7 8 9 0'),
     [SP(4), EN()],
   ]},
-};
-
-// --- bottom-dock layouts (B1–B10) ------------------------------------------
-const B = {
-  B1: { name: 'Bottom Layout 1', dock: 'bottom', rows: [
-    r('a b c d e f g h i'), r('j k l m n o p q r'),
-    [C('s'), C('t'), C('u'), C('v'), C('w'), C('x'), C('y'), C('z'), BK()],
-    [SH(), PG(), C(','), SP(4), C('.'), EN()],
+  S3: { arrangement: 'Alphabet', rows: [
+    r('a b c d e f'), r('g h i j k l'), r('m n o p q r'), r('s t u v w x'),
+    [C('y'), C('z'), C(','), C('.'), BK(), SH()],
+    [PG(), SP(4), EN()],
   ]},
-  B2: { name: 'Bottom Layout 2', dock: 'bottom', rows: [
-    r('a b c d e f g h i j'), r('k l m n o p q r s t'),
-    [C('u'), C('v'), C('w'), C('x'), C('y'), C('z'), C(','), C('.'), BK(), SH()],
-    [PG(), SP(8), EN()],
-  ]},
-  B3: { name: 'Bottom Layout 3', dock: 'bottom', rows: [
-    r('a b c d e f g h i j k l m'), r('n o p q r s t u v w x y z'),
-    [SH(), PG(), C(','), SP(7), C('.'), BK(), EN()],
-  ]},
-  B4: { name: 'Bottom Layout 4', dock: 'bottom', rows: [
+  B4: { arrangement: 'Alphabet', rows: [
     r('a b c d e f g'), r('h i j k l m n'), r('o p q r s t u'),
     [C('v'), C('w'), C('x'), C('y'), C('z'), C(','), C('.')],
     [SH(), PG(), BK(), SP(3), EN()],
   ]},
-  B5: { name: 'Bottom Layout 5', dock: 'bottom', rows: [
+  B1: { arrangement: 'Alphabet', rows: [
     r('a b c d e f g h i'), r('j k l m n o p q r'),
     [C('s'), C('t'), C('u'), C('v'), C('w'), C('x'), C('y'), C('z'), BK()],
-    [SH(), PG(), C(','), C('.'), SP(2), EN(), BL(1), BL(1)],
+    [SH(), PG(), C(','), SP(4), C('.'), EN()],
   ]},
-  B6: { name: 'Bottom Layout 6', dock: 'bottom', rows: [
-    r('a b c d e f g h i'), r('j k l m n o p q r'),
-    [C('s'), C('t'), C('u'), C('v'), C('w'), C('x'), C('y'), C('z'), BK()],
-    [SH(), PG(), C(','), SP(3), C('.'), BK(), EN()],
-  ]},
-  B7: { name: 'Bottom Layout 7', dock: 'bottom', rows: [
-    [C('a'), C('b'), C('c'), C('d'), C('e'), C('f'), C('g'), C('h'), BK(), SH()],
-    [C('i'), C('j'), C('k'), C('l'), C('m'), C('n'), C('o'), C('p'), EN(), PG()],
-    [C('q'), C('r'), C('s'), C('t'), C('u'), C('v'), C('w'), C('x'), C(','), C('.')],
-    [C('y'), C('z'), SP(8)],
-  ]},
-  B8: { name: 'Bottom Layout 8', dock: 'bottom', rows: [
+  B8: { arrangement: 'Alphabet split in two', rows: [
     [C('a'), C('b'), C('c'), C('d'), BL(1), C('n'), C('o'), C('p'), C('q')],
     [C('e'), C('f'), C('g'), C('h'), BL(1), C('r'), C('s'), C('t'), C('u')],
     [C('i'), C('j'), C('k'), C('l'), BL(1), C('v'), C('w'), C('x'), C('y')],
     [C('m'), C(','), C('.'), BK(), BL(1), C('z'), SH(), PG(), EN()],
     [SP(4), BL(1), SP(4)],
   ]},
-  B9: { name: 'Bottom Layout 9', dock: 'bottom', rows: [
+  B2: { arrangement: 'Alphabet', rows: [
+    r('a b c d e f g h i j'), r('k l m n o p q r s t'),
+    [C('u'), C('v'), C('w'), C('x'), C('y'), C('z'), C(','), C('.'), BK(), SH()],
+    [PG(), SP(8), EN()],
+  ]},
+  B9: { arrangement: 'Alphabet with numbers', rows: [
     r('1 2 3 4 5 6 7 8 9 0'),
     r('a b c d e f g h i j'), r('k l m n o p q r s t'),
     [C('u'), C('v'), C('w'), C('x'), C('y'), C('z'), C(','), C('.'), BK(), SH()],
     [PG(), SP(8), EN()],
   ]},
-  // Prediction slots removed (Ken, June 29 2026): the on-keyboard prediction
-  // display is dropped for now (v0.5.39), so this is a plain alphabetical layout.
-  B10: { name: 'Bottom Layout 10', dock: 'bottom', rows: [
-    r('a b c d e f g h i'), r('j k l m n o p q r'),
-    [C('s'), C('t'), C('u'), C('v'), C('w'), C('x'), C('y'), C('z'), BK()],
-    [SH(), PG(), C(','), SP(4), C('.'), EN()],
-  ]},
   // QWERTY for users with touch-typing skills (Ken). Three letter rows in the
   // standard QWERTY ORDER, aligned in a clean grid (q/a/z share column 1, etc.)
-  // so the letters are easy to find and never shift between rows; space is on the
-  // bottom row. Each row sums to 12 units so the columns line up. Infrequent
-  // special characters live on the shared symbols page (the 123 key).
-  // ⚠ THE DEFAULT BOTTOM LAYOUT (Ken, September 7 2026) -- see loadBottomLayout in
-  // storage.js for why. THERE IS DELIBERATELY NO SIDE-DOCK QWERTY: the side dock's
-  // width comes from --kbd-cols, so this layout's twelve columns would size the dock
-  // to roughly 55% of the screen to keep the keys at the user's chosen button size.
-  // A five-column SPLIT QWERTY (qwert / yuiop / asdfg / hjkl / zxcv / nm) would fit
-  // the existing grid exactly and was rejected: it keeps each row's letter order but
-  // loses the overall shape, which Ken judged as visually confusing as the alphabet
-  // and probably more so. A QWERTY typist on a side dock should move the keyboard to
-  // the bottom, where the real thing already works.
-  B11: { name: 'Bottom Layout 11 (QWERTY)', dock: 'bottom', rows: [
+  // so the letters are easy to find and never shift between rows. Each row sums to
+  // 12 units so the columns line up. The default for a keyboard at the bottom
+  // (Ken, September 7 2026) -- see loadBottomLayout in storage.js for why.
+  B11: { arrangement: 'QWERTY', rows: [
     [C('q'), C('w'), C('e'), C('r'), C('t'), C('y'), C('u'), C('i'), C('o'), C('p'), BK(2)],
     [C('a'), C('s'), C('d'), C('f'), C('g'), C('h'), C('j'), C('k'), C('l'), SH(), EN(2)],
     [C('z'), C('x'), C('c'), C('v'), C('b'), C('n'), C('m'), PG(), SP(2), C(','), C('.')],
   ]},
+  B3: { arrangement: 'Alphabet', rows: [
+    r('a b c d e f g h i j k l m'), r('n o p q r s t u v w x y z'),
+    [SH(), PG(), C(','), SP(7), C('.'), BK(), EN()],
+  ]},
 };
 
-export const LAYOUTS = { ...S, ...B };
+/** How many columns across (the widest row) and rows down a layout has. */
+export function layoutShape(rows) {
+  const across = Math.max(0, ...(rows || []).map((row) => (row || []).reduce((n, c) => n + (c.span || 1), 0)));
+  return { across, down: (rows || []).length };
+}
+
+// The name is computed so a layout's name can never disagree with its grid.
+for (const def of Object.values(DEFS)) {
+  const { across, down } = layoutShape(def.rows);
+  // panelPositionCount is a hoisted function declaration further down this file.
+  def.name = `${def.arrangement}, ${across} × ${down}, ${panelPositionCount(def.rows)} buttons`;
+}
+
+export const LAYOUTS = DEFS;
+
+/*
+ * The seven layouts removed October 8 2026, and the kept layout with the SAME SHAPE
+ * that replaces each. Same shape means the Express Panel and a keyguard cut for it
+ * are unchanged; only where the space bar or the action keys sit on the keyboard
+ * differs. Bottom Layout 10 was an exact copy of Bottom Layout 1.
+ */
+export const LAYOUT_ALIASES = { B5: 'B1', B6: 'B1', B10: 'B1', B7: 'B2', S4: 'S3', S5: 'S1', S9: 'S1' };
+
+/** A stored layout id, resolved to one that exists; `fallback` if it is unknown. */
+export function resolveLayoutId(id, fallback) {
+  if (id && DEFS[id]) return id;
+  if (id && LAYOUT_ALIASES[id]) return LAYOUT_ALIASES[id];
+  return fallback;
+}
 
 // --- symbols/numbers page (reached with the 123 key) ------------------------
 //
@@ -209,9 +199,13 @@ export function buildSymbolsPage(letterRows) {
   }));
 }
 
-// Ordered lists for the Settings select menus.
-export const SIDE_LAYOUTS = Object.keys(S).map((id) => ({ id, name: S[id].name }));
-export const BOTTOM_LAYOUTS = Object.keys(B).map((id) => ({ id, name: B[id].name }));
+// The Settings list: every layout, narrowest first (fewest columns across), then the
+// shorter of two the same width. The same list is offered whichever side of the screen
+// the keyboard sits on.
+export const LAYOUT_LIST = Object.keys(DEFS)
+  .map((id) => ({ id, name: DEFS[id].name, ...layoutShape(DEFS[id].rows) }))
+  .sort((a, b) => a.across - b.across || a.down - b.down)
+  .map(({ id, name }) => ({ id, name }));
 
 /**
  * How the Express Panel reads a keyboard layout, in one place because three callers

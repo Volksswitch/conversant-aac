@@ -110,14 +110,19 @@ test('different OS: the OS-bound settings stay behind, and are named', async () 
     assert.equal(settings.silenceThreshold, 0.5);
 });
 
-test('different screen: only the keyguard value stays behind', async () => {
+// Ken, October 8 2026: the conversation screen's layout stays with the screen too, so a
+// tablet backup restored onto a phone does not replace the phone's suggested layout.
+test('different screen: the keyguard value and the layout stay behind', async () => {
     seed();
     const pkg = dt.parsePackage(JSON.stringify(await dt.buildPackage('9.9.9')));
     const { settings, heldBack } = dt.settingsForThisDevice(pkg, OTHER_SCREEN);
 
-    assert.deepEqual(heldBack.map((h) => h.key), ['appMarginPos']);
-    assert.equal(heldBack[0].why, 'screen');
+    assert.deepEqual(heldBack.map((h) => h.key).sort(), ['appMarginPos', 'keyboardDock']);
+    assert.ok(heldBack.every((h) => h.why === 'screen'));
     assert.equal(settings.appMarginPos, undefined);
+    assert.equal(settings.keyboardDock, undefined);
+    // Not a layout setting, so it crosses.
+    assert.equal(settings.voiceURI, 'Daniel');
     // Same OS, so these cross.
     assert.equal(settings.keyboardMode, 'onscreen');
     assert.equal(settings.sttProvider, 'browser');
@@ -128,8 +133,8 @@ test('an unknown origin is treated as different on BOTH axes', async () => {
     const pkg = dt.parsePackage(JSON.stringify(await dt.buildPackage('9.9.9')));
     delete pkg.device;      // a file from before the signature existed
     const { settings, heldBack } = dt.settingsForThisDevice(pkg, HERE);
-    assert.equal(heldBack.length, 4, 'unknown is not the same as equal');
-    for (const k of ['fullscreen', 'keyboardMode', 'sttProvider', 'appMarginPos']) {
+    assert.equal(heldBack.length, 5, 'unknown is not the same as equal');
+    for (const k of ['fullscreen', 'keyboardMode', 'sttProvider', 'appMarginPos', 'keyboardDock']) {
         assert.equal(settings[k], undefined);
     }
 });
@@ -152,11 +157,29 @@ test('applying reports what came in and what did not', async () => {
     const pkg = dt.parsePackage(JSON.stringify(await dt.buildPackage('9.9.9')));
     pkg.device = OTHER_SCREEN;
     const done = await dt.applyPackage(pkg);
-    assert.equal(done.heldBack.length, 1);
-    assert.equal(done.heldBack[0].label, 'screen edge margin');
+    assert.deepEqual(done.heldBack.map((h) => h.label).sort(), ['screen edge margin', 'where the keyboard sits']);
     assert.ok(done.settings > 0);
     // The real keys on this device are untouched by any of it.
     assert.equal(JSON.parse(localStorage.getItem('aac_settings')).apiKey, 'secret-apiKey');
+});
+
+// A backup made before the layout settings existed has no optionsArrangement at all,
+// so nothing is "held back" - and the restore REPLACES the settings, which used to drop
+// this device's value instead of keeping it.
+test('a different screen keeps a layout setting the backup never had', async () => {
+    seed();
+    const pkg = dt.parsePackage(JSON.stringify(await dt.buildPackage('9.9.9')));
+    pkg.device = OTHER_SCREEN;
+    delete pkg.settings.optionsArrangement;
+    const live = JSON.parse(localStorage.getItem('aac_settings'));
+    live.optionsArrangement = 'grid-below';
+    live.convLayout = { bottom: { command: 0.07, response: 0.3, dock: 0.45 } };
+    localStorage.setItem('aac_settings', JSON.stringify(live));
+    delete pkg.settings.convLayout;
+    await dt.applyPackage(pkg);
+    const after = JSON.parse(localStorage.getItem('aac_settings'));
+    assert.equal(after.optionsArrangement, 'grid-below');
+    assert.deepEqual(after.convLayout, { bottom: { command: 0.07, response: 0.3, dock: 0.45 } });
 });
 
 test('a hand-pasted key in a backup still cannot install one', async () => {

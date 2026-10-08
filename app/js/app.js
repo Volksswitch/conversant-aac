@@ -13,7 +13,8 @@ import * as places from './places.js';
 import * as worldviewUI from './worldview-ui.js';
 import * as keyboard from './keyboard.js';
 import * as prediction from './prediction.js';
-import { SIDE_LAYOUTS, BOTTOM_LAYOUTS, LAYOUTS } from './keyboard-layouts.js';
+import { LAYOUT_LIST, LAYOUTS } from './keyboard-layouts.js';
+import * as layoutSuggestions from './layout-suggestions.js';
 import * as viewport from './viewport.js';
 import * as convLayout from './conv-layout.js';
 import * as expressItems from './express-items.js';
@@ -480,7 +481,18 @@ function initApp() {
     // Carry removed settings forward BEFORE anything reads them. Everything arriving
     // later - a named profile, an imported or restored backup - is migrated by
     // storage.saveSettings itself, which is the only way a bundle becomes live.
+    // First launch: start with the layout suggested for this screen (Ken, October 8
+    // 2026). Read before the migration below, which can save a bundle.
+    const firstLaunch = storage.isFirstLaunch();
     storage.migrateStoredSettings();
+    if (firstLaunch) {
+        try {
+            const el = document.documentElement;
+            storage.applyLayoutSuggestion(
+                layoutSuggestions.suggestionFor(el.clientWidth || window.innerWidth, el.clientHeight || window.innerHeight),
+                layoutSuggestions.applyToSettings);
+        } catch { /* a failed suggestion leaves the ordinary defaults, which work */ }
+    }
 
     // Counting rides on the SAME switch as the weekly report, so a tester who turns
     // reporting off is not still having their taps written to disk. Set before the
@@ -5248,8 +5260,8 @@ async function noteContextSet(kind, wasSet) {
 }
 
 // Body classes that place the dock area (Express Panel / keyboard) on the
-// chosen edge with the keyboard's real-estate, and select the 2×2 (side) vs 1×4
-// (bottom) response-card arrangement. Kept in sync with the keyboard dock choice.
+// chosen edge with the keyboard's real-estate, and the response options
+// arrangement. Kept in sync with both settings.
 function applyConversationDockClasses() {
     const dock = storage.loadKeyboardDock();
     const side = dock === 'side';
@@ -5258,6 +5270,10 @@ function applyConversationDockClasses() {
     document.body.classList.toggle('conv-side', side);
     document.body.classList.toggle('conv-side-right', side && right);
     document.body.classList.toggle('conv-side-left', side && !right);
+    // How the response options are arranged is its own setting (Ken, October 8 2026),
+    // no longer read off the keyboard position.
+    const opts = storage.loadOptionsArrangement(dock);
+    for (const v of storage.OPTIONS_ARRANGEMENTS) document.body.classList.toggle('opts-' + v, opts === v);
 }
 
 // --- Conversation layout solver (Ken, June 30 2026) -------------------------
@@ -5429,6 +5445,7 @@ function layoutContext(dock, VW, VH, rem, gap) {
         rem,
         gap,
         cards: storage.loadResponsesPerCategory() === 2 ? 8 : 4,
+        options: storage.loadOptionsArrangement(dock),
     };
 }
 
@@ -6546,6 +6563,32 @@ function wireExpressTabSections() {
 // Show only the controls relevant to the chosen dock: side → which-side + side
 // layout; bottom → bottom layout. Keeps Settings from implying both docks exist
 // at once now that it's a single choice.
+function reflectOptionsArrangement() {
+    const radio = document.querySelector(
+        `input[name="optionsArrangement"][value="${storage.loadOptionsArrangement()}"]`);
+    if (radio) radio.checked = true;
+}
+
+// After a suggested layout has been written to storage: bring every part of the
+// screen and the Settings controls into line with it.
+function applySuggestedLayoutLive() {
+    const dock = storage.loadKeyboardDock();
+    keyboard.setSideLayout(storage.loadSideLayout());
+    keyboard.setBottomLayout(storage.loadBottomLayout());
+    keyboard.setKeyboardDock(dock);
+    applyConversationDockClasses();
+    renderExpressPanel();
+    applyButtonSizing();
+    const dockRadio = document.querySelector(`input[name="keyboardDock"][value="${dock}"]`);
+    if (dockRadio) dockRadio.checked = true;
+    const b = document.getElementById('bottomLayoutSelect');
+    const sd = document.getElementById('sideLayoutSelect');
+    if (b) b.value = storage.loadBottomLayout();
+    if (sd) sd.value = storage.loadSideLayout();
+    updateKeyboardPositionGroups();
+    reflectOptionsArrangement();
+}
+
 function updateKeyboardPositionGroups() {
     const dock = storage.loadKeyboardDock();
     const side = dock === 'side';
@@ -7742,13 +7785,14 @@ function openSettings() {
     const bottomLayoutSelect = document.getElementById('bottomLayoutSelect');
     const sideLayoutSelect = document.getElementById('sideLayoutSelect');
     const sideDockPositionToggle = document.getElementById('sideDockPositionToggle');
-    fillLayoutSelect(bottomLayoutSelect, BOTTOM_LAYOUTS, storage.loadBottomLayout());
-    fillLayoutSelect(sideLayoutSelect, SIDE_LAYOUTS, storage.loadSideLayout());
+    fillLayoutSelect(bottomLayoutSelect, LAYOUT_LIST, storage.loadBottomLayout());
+    fillLayoutSelect(sideLayoutSelect, LAYOUT_LIST, storage.loadSideLayout());
     sideDockPositionToggle.checked = storage.loadSideDockPosition() === 'right';
     // Keyboard dock (side/bottom) — one choice for every typing context.
     const dockRadio = document.querySelector(`input[name="keyboardDock"][value="${storage.loadKeyboardDock()}"]`);
     if (dockRadio) dockRadio.checked = true;
     updateKeyboardPositionGroups();
+    reflectOptionsArrangement();
     updateUsageDisplay();
     const placeholderSettings = storage.loadPlaceholderSettings();
     initialDelayInput.value = placeholderSettings.initialDelay;
@@ -9163,11 +9207,42 @@ function openSettings() {
             storage.saveKeyboardDock(dock);
             keyboard.setKeyboardDock(dock);
             updateKeyboardPositionGroups();
-            applyConversationDockClasses(); // move the dock area + re-pick 2×2/1×4
+            applyConversationDockClasses(); // move the dock area (+ the options' default)
+            reflectOptionsArrangement();
             renderExpressPanel();        // mirror the now-current dock's layout
             if (storage.loadKeyboardMode() === 'onscreen') keyboard.previewShow(dock);
         };
     });
+    // Response options arrangement: one row, or two by two with New 4 beside or below.
+    // Moves keyguard holes in the response area, like the keyboard position does.
+    document.querySelectorAll('input[name="optionsArrangement"]').forEach((radio) => {
+        radio.onchange = () => {
+            const v = document.querySelector('input[name="optionsArrangement"]:checked')?.value || 'row';
+            storage.saveOptionsArrangement(v);
+            applyConversationDockClasses();
+            applyButtonSizing();
+        };
+    });
+    const suggestedLayoutBtn = document.getElementById('suggestedLayoutBtn');
+    if (suggestedLayoutBtn) {
+        suggestedLayoutBtn.onclick = async () => {
+            const el = document.documentElement;
+            const sugg = layoutSuggestions.suggestionFor(el.clientWidth || window.innerWidth,
+                el.clientHeight || window.innerHeight);
+            // It replaces four settings at once and moves every keyguard hole, so it asks.
+            if (!(await confirmDanger({
+                title: 'Use the suggested layout?',
+                body: `This changes where the keyboard sits, its layout, the response options `
+                    + `and how much of the screen each part gets, to the layout suggested for `
+                    + `this screen (${sugg.label.toLowerCase()}). A keyguard cut for your current `
+                    + `layout will no longer fit.`,
+                confirmLabel: 'Use it',
+                cancelLabel: 'Keep my layout',
+            }))) return;
+            storage.applyLayoutSuggestion(sugg, layoutSuggestions.applyToSettings);
+            applySuggestedLayoutLive();
+        };
+    }
     const persistPlaceholders = () => storage.savePlaceholderSettings(
         Number(initialDelayInput.value),
         Number(subsequentDelayInput.value),

@@ -777,6 +777,31 @@
                          is also why the tab is called "Screen Layout" and no longer
                          "Button Sizes", which by then named the one thing it did not
                          contain. -->
+                    <!-- The layout the app started with, for this screen (Ken, October 8
+                         2026). One button rather than a list of pictures: pictures of
+                         whole screens are too small to read on a phone, so they are in the
+                         User Manuals. See layout-suggestions.js. -->
+                    <div class="setting-group" data-help="suggestedLayout">
+                        <label>Suggested layout</label>
+                        <button id="suggestedLayoutBtn" type="button" class="reset-sizing-btn">Use the suggested layout for this screen</button>
+                    </div>
+                    <div class="setting-group" data-help="optionsArrangementGroup">
+                        <label id="optionsArrangementLabel">Response options</label>
+                        <div class="radio-row" role="radiogroup" aria-labelledby="optionsArrangementLabel">
+                            <label class="radio-label">
+                                <input type="radio" name="optionsArrangement" value="row">
+                                One row
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="optionsArrangement" value="grid">
+                                Two by two, New 4 beside
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="optionsArrangement" value="grid-below">
+                                Two by two, New 4 below
+                            </label>
+                        </div>
+                    </div>
                     <div class="setting-group" data-help="layoutBorders">
                         <label>Resizing the screen areas</label>
                         <label class="checkbox-label">

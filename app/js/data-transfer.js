@@ -440,6 +440,14 @@ export async function applyPackage(pkg, onProgress) {
         for (const h of heldBack) {
             if (mine[h.key] !== undefined) settings[h.key] = mine[h.key];
         }
+        // A bound setting the BACKUP never had is kept too. Without this, a phone that
+        // started with its suggested layout would lose it to a backup made before the
+        // layout settings existed - the key is absent there, so it was never "held
+        // back", and the replace above would drop it.
+        const bound = { ...(comparison.sameOs ? {} : OS_BOUND), ...(comparison.sameScreen ? {} : SCREEN_BOUND) };
+        for (const k of Object.keys(bound)) {
+            if (!(k in (pkg.settings || {})) && mine[k] !== undefined) settings[k] = mine[k];
+        }
         storage.applyPortableSettings(settings);
         restored.settings = Object.keys(settings).length;
         restored.heldBack = heldBack;

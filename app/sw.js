@@ -80,6 +80,7 @@ const SHELL = [
   './js/confirm-dialog.js',
   './js/keyboard.js',
   './js/keyboard-layouts.js',
+  './js/layout-suggestions.js',
   './js/viewport.js',
   './js/express-items.js',
   './js/express-panel.js',

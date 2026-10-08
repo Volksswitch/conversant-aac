@@ -148,7 +148,8 @@ const HELP = {
     "testGooglePartnerVoiceBtn": "Says a few words in the practice partner's Google Cloud voice.",
     "elevenlabsPartnerVoiceSelect": "Choose the ElevenLabs voice for the person you practice with.",
     "testElevenlabsPartnerVoiceBtn": "Says a few words in the practice partner's ElevenLabs voice.",
-    "reviewListRange": "Choose how far back the list goes. It starts at the last week each time, so the list stays short and quick to open."
+    "reviewListRange": "Choose how far back the list goes. It starts at the last week each time, so the list stays short and quick to open.",
+    "suggestedLayoutBtn": "Changes the keyboard position, layout, response options and screen areas to the ones suggested for this screen. Asks first."
   },
   "radioGroups": {
     "sttProvider": "Who turns the other person's speech into words. Your browser does it free. The paid services work where the browser cannot. Azure is the one we recommend.",
@@ -156,7 +157,8 @@ const HELP = {
     "keyboardMode": "Whether you type on a keyboard you plug in, or on the app's own keyboard on the screen.",
     "keyboardDock": "Whether the Express Panel and keyboard sit along the bottom of the screen, or down one side.",
     "expressTapMode": "One tap, or two so a stray touch cannot say something or change the screen by accident.",
-    "reviewListKind": "Choose whether the list shows conversations with real people, or the ones you practiced with the app."
+    "reviewListKind": "Choose whether the list shows conversations with real people, or the ones you practiced with the app.",
+    "optionsArrangement": "How the four response options are laid out: in one row, or two by two with the New 4 button beside or below them."
   },
   "sections": {
     "apiKey": "Your key from Anthropic. It is what lets the app suggest responses. Everything else still works without one.",
@@ -212,7 +214,9 @@ const HELP = {
     "reviewList": "Your saved conversations, newest first. Tap one to go back over it. A mark means you and the app struggled at the time.",
     "expressAlways": "The phrases that are always on the panel, in the same place every time. Put the words you use most here.",
     "expressFlex": "Phrases that change with who you are talking with and where you are. Choose a person and a place, then add phrases for them.",
-    "expressContext": "Buttons that describe the conversation: who you are with, where you are, and how you feel. They never speak; they guide the suggestions."
+    "expressContext": "Buttons that describe the conversation: who you are with, where you are, and how you feel. They never speak; they guide the suggestions.",
+    "suggestedLayout": "Puts back the layout the app suggests for this screen: where the keyboard sits, its layout, the response options and how big each part is.",
+    "optionsArrangementGroup": "How the four response options are laid out: in one row, or two by two with the New 4 button beside or below them."
   }
 };
 // @@SETTINGS_HELP_END@@

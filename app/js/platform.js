@@ -272,6 +272,15 @@ export const SCREEN_BOUND = {
     // clear the lip of a case opening on one particular device (Rule 16). A keyguard is
     // cut for one screen.
     appMarginPos: 'screen edge margin',
+    // The layout of the conversation screen (Ken, October 8 2026). The app starts with
+    // the layout suggested for its screen; a backup from a tablet restored onto a phone
+    // would otherwise replace the phone's layout with the tablet's.
+    keyboardDock: 'where the keyboard sits',
+    sideDockPosition: 'which side the keyboard sits on',
+    sideLayout: 'the keyboard layout at the side',
+    bottomLayout: 'the keyboard layout at the bottom',
+    convLayout: 'how much of the screen each part gets',
+    optionsArrangement: 'how the response options are arranged',
 };
 
 /*

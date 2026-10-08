@@ -37,51 +37,22 @@ the one that quietly waits forever.
 
 ## Open
 
-### Layouts for tall screens: one list, descriptive names, response options two by two
+### Layouts for tall screens: what is left after the October 8 2026 build
 
-**Raised:** October 8 2026, by Ken, from a tall Android phone where the ten-across bottom
-layout leaves the Express Panel buttons very narrow.
+**Raised:** October 8 2026, by Ken. The layouts, the single list, the response options
+setting, the first-launch suggestion, the Settings button and the restore rule are
+BUILT (see CLAUDE.md, "Layouts: one list, suggested starting layouts").
 
-**What is wanted (decided):**
-- **Keep all fourteen layouts** in `Documents/Conversant AAC Layout Review.docx`, **plus
-  the narrow QWERTY in halves (5 × 7) and Side Layout 7** (alphabet down the columns).
-  Fifteen layouts. The eight others listed in that document's section 5 go, and anybody
-  using one moves to the layout of the same shape.
-- **One layout list for both docks**, sorted narrowest to widest, every layout available
-  on either side of the screen.
-- **Names that describe the layout** ("Alphabet, 5 × 7, 32 buttons"), with the numbers
-  worked out from the layout itself. Saved choices keep working.
-- **A setting for the response options: one row, or two by two with New 4 underneath.**
-  It moves keyguard holes, so it sits with button size.
+**Still to do:**
+- **Documents, at the next "sync docs" Ken asks for:** put the five suggestion pictures
+  in both User Manuals (setting-up-the-screen section), update the layout names and the
+  new Screen Layout controls in both manuals, and bring `Conversant AAC Keyboard Layout
+  Options.docx` up to the fifteen layouts.
+- **A "Screen orientation" setting** (hold the screen upright or sideways). Locks on
+  Android when installed or full screen; an iPad has no lock (it can only point to the
+  iPad's own rotation lock); untested on a Windows tablet. Not decided.
 
-**Decided October 8 2026 on the suggestions:** the sideways tablet with the keyboard at the
-side puts New 4 to the RIGHT of the two-by-two options, and the transcript gets the extra
-height (40 / 10 / 50). New 4 does NOT have to sit in the same place across suggestions
-(Ken: people decide how they hold or mount the device long before they meet Conversant,
-so they rarely see a second arrangement).
-
-**Starting layouts decided October 8 2026:** upright screens start on Alphabet 5 × 7;
-sideways with the keyboard at the side on Alphabet 4 × 9; sideways with the keyboard at
-the bottom on QWERTY 12 × 3.
-
-**Decided October 8 2026 — how the suggestions are used:**
-- The app STARTS with the suggested layout for the screen at first launch; no picker, no
-  pictures in the app. A sideways tablet starts with the keyboard at the bottom and
-  QWERTY (today's behavior). Existing users keep their settings.
-- The suggestion pictures go in BOTH User Manuals (setting-up-the-screen section), at the
-  next "sync docs" after this is built.
-- One button in Settings, beside button size: "Use the suggested layout for this
-  screen", with a confirmation.
-- Restore / settings profile from a DIFFERENT screen keeps this device's layout. Today
-  only the screen edge margin is held back that way (`SCREEN_BOUND` in platform.js); the
-  keyboard position, layout choice, pane proportions, button size and response options
-  arrangement all travel. They join that list.
-
-**Still to decide:** the remaining parts of the suggested starting layouts per screen shape, in
-`Documents/Conversant AAC Layout Suggestions.docx` (drafted October 8 2026, waiting on Ken's review), and a
-"Screen orientation" setting (locks on Android; iPad has no lock; Windows untested).
-
-**Why not now:** Ken asked to review the suggestions document before anything is built.
+**Why not now:** documents wait for Ken's sync; the orientation setting is undecided.
 
 ### Fix the problems found in the October 5 2026 code review
 

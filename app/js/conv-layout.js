@@ -46,7 +46,10 @@ export const DEFAULTS = {
  * flat floor was too generous for one row and much too mean for four.
  */
 export function responseFloorPx(ctx) {
-    const rows = ctx.dock === 'side' ? (ctx.cards === 8 ? 4 : 2) : (ctx.cards === 8 ? 2 : 1);
+    // One row of cards for 'row', two for either two-by-two arrangement. Without an
+    // arrangement, the old rule: two by two beside a side keyboard, a row otherwise.
+    const twoByTwo = ctx.options ? ctx.options !== 'row' : ctx.dock === 'side';
+    const rows = twoByTwo ? (ctx.cards === 8 ? 4 : 2) : (ctx.cards === 8 ? 2 : 1);
     return rows * MIN_BTN_REM * ctx.rem + (rows + 1) * (ctx.gap || 0);
 }
 
