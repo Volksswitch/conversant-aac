@@ -1,0 +1,157 @@
+[
+  {
+    "fig": "ls-1",
+    "title": "Phone, upright",
+    "w": 412,
+    "h": 915,
+    "dock": "bottom",
+    "layout": "S1",
+    "layoutName": "Alphabet, 5 × 7",
+    "options": "2x2",
+    "t": 0.18,
+    "c": 0.07,
+    "r": 0.3,
+    "e": 0.45,
+    "size": [
+      412,
+      915
+    ],
+    "id": "ls-1",
+    "ep": [
+      74,
+      53
+    ],
+    "opt": [
+      190,
+      109
+    ],
+    "cmd": [
+      39,
+      61
+    ]
+  },
+  {
+    "fig": "ls-2",
+    "title": "Tablet, upright",
+    "w": 820,
+    "h": 1180,
+    "dock": "bottom",
+    "layout": "S3",
+    "layoutName": "Alphabet, 6 × 6",
+    "options": "2x2",
+    "t": 0.26,
+    "c": 0.06,
+    "r": 0.3,
+    "e": 0.38,
+    "size": [
+      820,
+      1180
+    ],
+    "id": "ls-2",
+    "ep": [
+      129,
+      69
+    ],
+    "opt": [
+      394,
+      143
+    ],
+    "cmd": [
+      84,
+      68
+    ]
+  },
+  {
+    "fig": "ls-3",
+    "title": "Tablet, sideways, keyboard at the side",
+    "w": 1368,
+    "h": 912,
+    "dock": "side",
+    "layout": "S1",
+    "layoutName": "Alphabet, 5 × 7",
+    "options": "2x2",
+    "t": 0.3,
+    "c": 0.1,
+    "r": 0.6,
+    "e": 0.3,
+    "size": [
+      1368,
+      912
+    ],
+    "id": "ls-3",
+    "ep": [
+      77,
+      123
+    ],
+    "opt": [
+      466,
+      222
+    ],
+    "cmd": [
+      100,
+      88
+    ]
+  },
+  {
+    "fig": "ls-4",
+    "title": "Tablet, sideways, keyboard at the bottom",
+    "w": 1368,
+    "h": 912,
+    "dock": "bottom",
+    "layout": "B11",
+    "layoutName": "QWERTY, 12 × 3",
+    "options": "row",
+    "t": 0.3,
+    "c": 0.1,
+    "r": 0.3,
+    "e": 0.3,
+    "size": [
+      1368,
+      912
+    ],
+    "id": "ls-4",
+    "ep": [
+      108,
+      85
+    ],
+    "opt": [
+      301,
+      262
+    ],
+    "cmd": [
+      145,
+      87
+    ]
+  },
+  {
+    "fig": "ls-5",
+    "title": "Phone, sideways",
+    "w": 915,
+    "h": 412,
+    "dock": "side",
+    "layout": "QW5",
+    "layoutName": "QWERTY in halves, 5 × 7",
+    "options": "2x2",
+    "t": 0.3,
+    "c": 0.14,
+    "r": 0.56,
+    "e": 0.4,
+    "size": [
+      915,
+      412
+    ],
+    "id": "ls-5",
+    "ep": [
+      67,
+      51
+    ],
+    "opt": [
+      263,
+      87
+    ],
+    "cmd": [
+      55,
+      53
+    ]
+  }
+]

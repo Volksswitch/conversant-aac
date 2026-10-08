@@ -37,6 +37,29 @@ the one that quietly waits forever.
 
 ## Open
 
+### Layouts for tall screens: one list, descriptive names, response options two by two
+
+**Raised:** October 8 2026, by Ken, from a tall Android phone where the ten-across bottom
+layout leaves the Express Panel buttons very narrow.
+
+**What is wanted (decided):**
+- **Keep all fourteen layouts** in `Documents/Conversant AAC Layout Review.docx`, **plus
+  the narrow QWERTY in halves (5 × 7) and Side Layout 7** (alphabet down the columns).
+  Fifteen layouts. The eight others listed in that document's section 5 go, and anybody
+  using one moves to the layout of the same shape.
+- **One layout list for both docks**, sorted narrowest to widest, every layout available
+  on either side of the screen.
+- **Names that describe the layout** ("Alphabet, 5 × 7, 32 buttons"), with the numbers
+  worked out from the layout itself. Saved choices keep working.
+- **A setting for the response options: one row, or two by two with New 4 underneath.**
+  It moves keyguard holes, so it sits with button size.
+
+**Still to decide:** the suggested starting layouts per screen shape, in
+`Documents/Conversant AAC Layout Suggestions.docx` (drafted October 8 2026, waiting on Ken's review), and a
+"Screen orientation" setting (locks on Android; iPad has no lock; Windows untested).
+
+**Why not now:** Ken asked to review the suggestions document before anything is built.
+
 ### Fix the problems found in the October 5 2026 code review
 
 **Raised:** October 5 2026, by Ken, who asked for a review of the whole app that a later
