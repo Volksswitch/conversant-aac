@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.13.13
+
 - The suggested layout now covers both keyboard positions. Move the keyboard from the
   bottom to the side, or back, and you get the layout suggested for that position:
   on a sideways tablet, the alphabet in four columns down the side, the response
