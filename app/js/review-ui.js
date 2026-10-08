@@ -290,7 +290,9 @@ function paletteFor(t) {
 }
 
 // The cards are shown as they were, to look at. The one spoken at the time is marked,
-// dashed once the turn has a rewrite. A tap on any of them opens the rewrite.
+// dashed once the turn has a rewrite, and is the only one a tap opens the rewrite from
+// (Ken, October 7 2026): only what was said can be rewritten, so the others are
+// disabled and washed out. A turn answered some other way has every card disabled.
 function renderCards() {
     const t = turn();
     const palette = paletteFor(t);
@@ -307,7 +309,11 @@ function renderCards() {
         const bits = [card.getAttribute('aria-label') || ''];
         if (spoken) bits.push('(you said this)');
         card.setAttribute('aria-label', bits.join(' ').trim());
-        card.title = 'Tap to rewrite this turn';
+        // A disabled button receives no click, so neither the tap guard nor
+        // onCardsClick ever sees a tap on one.
+        card.disabled = !spoken;
+        card.classList.toggle('review-not-spoken', !spoken);
+        card.title = spoken ? 'Tap to rewrite this turn' : '';
     });
 }
 

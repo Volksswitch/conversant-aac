@@ -5588,6 +5588,14 @@ body.reviewing .review-line { cursor: pointer; }
     pointer-events: none;
 }
 body.reviewing .response-card { position: relative; }
+/* In review only the card spoken at the time can be rewritten; the rest are disabled
+   and washed out (Ken, October 7 2026). Paint only, so no keyguard hole moves. */
+.response-card.review-not-spoken {
+    opacity: 0.35;
+    cursor: default;
+    box-shadow: none !important;
+}
+.response-card.review-not-spoken:active { transform: none; }
 .response-card.review-spoken::after { content: 'You said this'; }
 
 /* New 4 and the Express Panel follow the cards' rule (Ken, October 1 2026): a SOLID dark

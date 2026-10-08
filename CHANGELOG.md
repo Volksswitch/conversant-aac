@@ -26,6 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- In Conversation Review, only the response option you actually said can be tapped to
+  rewrite it. The other options are grayed out.
+
 ## Version 0.13.7
 
 - Conversation Review is simpler. Pick a turn that didn't sound like you, and the typing
