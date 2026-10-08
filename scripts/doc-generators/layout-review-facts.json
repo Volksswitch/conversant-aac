@@ -1,0 +1,156 @@
+[
+  {
+    "id": "S6",
+    "fig": "lr-1",
+    "across": 3,
+    "down": 11,
+    "buttons": 32,
+    "size": [
+      656,
+      562
+    ]
+  },
+  {
+    "id": "S2",
+    "fig": "lr-2",
+    "across": 4,
+    "down": 9,
+    "buttons": 32,
+    "size": [
+      656,
+      462
+    ]
+  },
+  {
+    "id": "S1",
+    "fig": "lr-3",
+    "across": 5,
+    "down": 7,
+    "buttons": 32,
+    "size": [
+      656,
+      362
+    ]
+  },
+  {
+    "id": "QW5",
+    "fig": "lr-4",
+    "across": 5,
+    "down": 7,
+    "buttons": 32,
+    "size": [
+      656,
+      362
+    ]
+  },
+  {
+    "id": "S8",
+    "fig": "lr-5",
+    "across": 5,
+    "down": 8,
+    "buttons": 32,
+    "size": [
+      656,
+      412
+    ]
+  },
+  {
+    "id": "S10",
+    "fig": "lr-6",
+    "across": 5,
+    "down": 9,
+    "buttons": 41,
+    "size": [
+      656,
+      462
+    ]
+  },
+  {
+    "id": "S3",
+    "fig": "lr-7",
+    "across": 6,
+    "down": 6,
+    "buttons": 32,
+    "size": [
+      656,
+      312
+    ]
+  },
+  {
+    "id": "B4",
+    "fig": "lr-8",
+    "across": 7,
+    "down": 5,
+    "buttons": 32,
+    "size": [
+      656,
+      262
+    ]
+  },
+  {
+    "id": "B1",
+    "fig": "lr-9",
+    "across": 9,
+    "down": 4,
+    "buttons": 32,
+    "size": [
+      656,
+      212
+    ]
+  },
+  {
+    "id": "B8",
+    "fig": "lr-10",
+    "across": 9,
+    "down": 5,
+    "buttons": 33,
+    "size": [
+      656,
+      262
+    ]
+  },
+  {
+    "id": "B2",
+    "fig": "lr-11",
+    "across": 10,
+    "down": 4,
+    "buttons": 32,
+    "size": [
+      656,
+      212
+    ]
+  },
+  {
+    "id": "B9",
+    "fig": "lr-12",
+    "across": 10,
+    "down": 5,
+    "buttons": 42,
+    "size": [
+      656,
+      262
+    ]
+  },
+  {
+    "id": "B11",
+    "fig": "lr-13",
+    "across": 12,
+    "down": 3,
+    "buttons": 32,
+    "size": [
+      656,
+      162
+    ]
+  },
+  {
+    "id": "B3",
+    "fig": "lr-14",
+    "across": 13,
+    "down": 3,
+    "buttons": 32,
+    "size": [
+      656,
+      162
+    ]
+  }
+]
