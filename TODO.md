@@ -37,6 +37,19 @@ the one that quietly waits forever.
 
 ## Open
 
+### Check whether an opener tap can speak from the set that was just replaced
+
+- **Raised:** October 8 2026, from Ken's conversation file `2026-10-08T21-15-47.json`.
+- **What:** Ken chose "Mom" while the generic openers were showing. At 21:15:51.812 the
+  openers were redrawn with Mom's ("Hey Mom, quick thing."), and 212 ms later the app
+  spoke "Hey. Got a second?" from the replaced set; the record files the old set as
+  chosen and the new one as cleared unused. Either a tap already under way landed as the
+  screen changed (harmless), or a tap on the new set spoke the old set's text (a fault:
+  the user hears words other than the ones under their finger). Ken does not remember
+  the timing. Reproduce in the browser: openers showing, tap a partner, then tap an
+  opener, and compare what is spoken with what was on screen.
+- **Why not now:** found during a release; it needs a reproduction before a fix.
+
 ### Rewrite the Conversation Review design document for the October 6 2026 simplification
 
 - **Raised:** October 8 2026, during "sync docs - all appropriate documents" for 0.13.11.
