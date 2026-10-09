@@ -30,6 +30,7 @@ import * as voiceProfile from './voice.js';
 import * as expressEditor from './express-editor.js';
 import * as controlPhrases from './control-phrases.js';
 import * as controlEditor from './control-phrases-editor.js';
+import * as spokenWordsEditor from './spoken-words-editor.js';
 import * as placeholderPhrases from './placeholder-phrases.js';
 import * as placeholderEditor from './placeholder-editor.js';
 import * as phraseAudio from './phrase-audio.js';
@@ -827,6 +828,7 @@ function initApp() {
         layoutRows: expressLayoutRows,
     });
     controlEditor.init(document.getElementById('controlEditor'), { onChange: applyControlPhrases });
+    spokenWordsEditor.init(document.getElementById('spokenWordsEditor'));
     // No onChange: placeholders.js reads the pools at the moment it speaks, so an
     // edit is in force on the next phrase with nothing to re-inject.
     placeholderEditor.init(document.getElementById('placeholderEditor'));
@@ -6558,6 +6560,7 @@ function handleSettingsTab(tabName) {
     }
     keyboard.setHideOnBlur(false);
     if (tabName === 'commands') { controlEditor.render(); keyboard.hideKeyboard(); return; }
+    if (tabName === 'speech') spokenWordsEditor.render();
     if (tabName === 'placeholders') { placeholderEditor.render(); return; }
     if (tabName === 'practice') { renderPracticePanel(); keyboard.hideKeyboard(); return; }
     // Reads every saved conversation off disk, so it is drawn when the tab opens rather

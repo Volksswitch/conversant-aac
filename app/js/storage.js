@@ -1849,6 +1849,22 @@ export function saveExpressTapMode(mode) {
 // What an Express Panel More button replaces (Ken, September 14 2026): 'band' shows
 // the band's next entries in that band's own positions; 'panel' uses every position on
 // the panel except the compose key. Default 'band', the smaller change.
+// "Words the voice gets wrong" (Speech tab, Ken, October 9 2026): [{ word, say }]. Read
+// by pronunciation.js on every utterance, so an edit applies to the next thing said.
+export function loadSpokenWords() {
+    const list = loadSettings().spokenWords;
+    if (!Array.isArray(list)) return [];
+    return list.filter((w) => w && typeof w === 'object')
+        .map((w) => ({ word: String(w.word || ''), say: String(w.say || '') }));
+}
+
+export function saveSpokenWords(list) {
+    const settings = loadSettings();
+    settings.spokenWords = (Array.isArray(list) ? list : [])
+        .map((w) => ({ word: String((w && w.word) || ''), say: String((w && w.say) || '') }));
+    saveSettings(settings);
+}
+
 export function loadExpressMoreScope() {
     return loadSettings().expressMoreScope === 'panel' ? 'panel' : 'band';
 }

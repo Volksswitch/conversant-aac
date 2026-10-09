@@ -2833,6 +2833,7 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
    excluded in the :not() instead — not an option here, because the ↑ and ↓ buttons
    carry no class of their own to exclude by. */
 #controlEditor .ee-row .ee-tools button,
+#spokenWordsEditor .ee-row .ee-tools button,
 #placeholderEditor .ee-row .ee-tools button {
     min-width: var(--btn-min-dim);
     width: var(--btn-min-dim);
@@ -2992,9 +2993,10 @@ button:not(.kbd-key):not(.kbd-tool):not(.ep-btn) {
    overflow the row and push the last one off the panel. Found exactly that way. */
 .cpe-section { margin-bottom: 1.1rem; }
 .cpe-section > label { display: block; font-weight: 600; margin-bottom: 0.2rem; }
-.cpe-section .ee-row { margin-top: 0.35rem; }
-.cpe-section .ee-row > input { flex: 1 1 auto; min-width: 0; padding: 0.4rem 0.5rem; border: 1px solid var(--edge); border-radius: 6px; font-size: 0.95rem; }
+.cpe-section .ee-row, #spokenWordsEditor .ee-row { margin-top: 0.35rem; }
+.cpe-section .ee-row > input, #spokenWordsEditor .ee-row > input { flex: 1 1 auto; min-width: 0; padding: 0.4rem 0.5rem; border: 1px solid var(--edge); border-radius: 6px; font-size: 0.95rem; }
 #controlEditor .ee-add,
+#spokenWordsEditor .ee-add,
 #placeholderEditor .ee-add { margin-top: 0.45rem; border-radius: 6px; padding: 0.4rem 0.7rem; font-weight: 600; cursor: pointer; }
 #controlEditor .ee-add:hover,
 #placeholderEditor .ee-add:hover { filter: brightness(1.1); }

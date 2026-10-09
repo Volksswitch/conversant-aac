@@ -18,7 +18,8 @@ import { setIconButton } from './icons.js';
 import * as model from './control-phrases.js';
 import { confirmDanger } from './confirm-dialog.js';
 import { makeCollapsible } from './sections.js';
-import { buildInsertRow } from './fill-ins.js';
+import { buildInsertRow, fillIn } from './fill-ins.js';
+import * as tts from './tts.js';
 
 let container = null;
 let onChangeCb = null;
@@ -81,6 +82,15 @@ function listSection(title, key) {
 
         const tools = document.createElement('div');
         tools.className = 'ee-tools';
+        // Hear it as it would be said with nobody selected and at this time of day
+        // (Ken, October 9 2026). Reads the box as it is now, not as it was drawn.
+        const hear = mkBtn('', null, 'Hear this phrase'); setIconButton(hear, 'speak', 'Hear this phrase');
+        hear.addEventListener('click', () => {
+            const box = row.querySelector('input');
+            const said = fillIn(box ? box.value.trim() : '');
+            if (said) tts.speak(said);
+        });
+        tools.appendChild(hear);
         const up = mkBtn('', null, 'Move up'); setIconButton(up, 'moveUp', 'Move up'); up.disabled = i === 0;
         up.addEventListener('click', () => { [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]]; commit(true); });
         const down = mkBtn('', null, 'Move down'); setIconButton(down, 'moveDown', 'Move down'); down.disabled = i === arr.length - 1;

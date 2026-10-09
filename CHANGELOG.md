@@ -26,6 +26,12 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- New in Settings > Speech: "Words the voice gets wrong". Type a word and spell it the
+  way it sounds, and the app says it that way everywhere: your Express Panel phrases,
+  the Commands phrases, and the suggested responses. A speaker button lets you hear it.
+- Each phrase in Settings > Commands has a speaker button, so you can hear how it will
+  sound before you use it.
+
 - Express Panel phrases and the Commands phrases can now include the person's name or
   the time of day. "Thank you, {name}." says "Thank you, Mom." when Mom is selected,
   and "Thank you." when nobody is. "{time of day}" says morning, afternoon or evening,

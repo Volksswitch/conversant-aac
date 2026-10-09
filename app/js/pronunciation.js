@@ -32,6 +32,7 @@
 import * as relationships from './relationships.js';
 import * as places from './places.js';
 import * as worldview from './worldview.js';
+import { loadSpokenWords } from './storage.js';
 
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -44,12 +45,12 @@ const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
  * and the nickname is the one spoken MORE often, since the openers use it in
  * preference to the name.
  */
-export function buildLexicon(people = [], placeList = [], self = null) {
+export function buildLexicon(people = [], placeList = [], self = null, words = []) {
     const out = [];
-    const add = (from, to) => {
+    const add = (from, to, anyCase = false) => {
         const f = (from || '').trim();
         const t = (to || '').trim();
-        if (f && t && f !== t) out.push({ from: f, to: t });
+        if (f && t && f !== t) out.push(anyCase ? { from: f, to: t, anyCase: true } : { from: f, to: t });
     };
     for (const p of people) {
         add(p.name, p.pronunciation);
@@ -60,6 +61,10 @@ export function buildLexicon(people = [], placeList = [], self = null) {
     // person and place could carry a respelling and the user could not, so a name the
     // voice got wrong was wrong every time the app introduced them.
     if (self) add(self.name, self.pronunciation);
+    // "Words the voice gets wrong" (Speech tab, Ken, October 9 2026). Unlike a name,
+    // an ordinary word is matched whatever its capitals, because it is as likely to
+    // start a sentence as to sit inside one.
+    for (const w of words || []) add(w && w.word, w && w.say, true);
     // Longest first: regex alternation takes the FIRST branch that matches, so without
     // this a person called "Ann" would claim the "Ann" inside "Annabel" and the longer
     // entry could never fire.
@@ -81,14 +86,23 @@ export function buildLexicon(people = [], placeList = [], self = null) {
  */
 export function substitute(text, lexicon) {
     if (!text || !lexicon || !lexicon.length) return text;
-    const map = new Map(lexicon.map((e) => [e.from, e.to]));
+    const map = new Map(lexicon.map((e) => [e.anyCase ? e.from.toLowerCase() : e.from, e.to]));
+    // A word from the word list matches in any capitals; names stay case-sensitive.
+    // JavaScript has no per-branch "ignore case", so such a word is spelled as letter
+    // pairs ([Tt][Yy]...) inside the one pattern, which keeps the single pass.
+    const pat = (e) => e.anyCase
+        ? [...e.from].map((ch) => {
+            const lo = ch.toLowerCase(), up = ch.toUpperCase();
+            return lo === up ? escapeRe(ch) : `[${escapeRe(lo)}${escapeRe(up)}]`;
+        }).join('')
+        : escapeRe(e.from);
     // Any letter counts as part of a word, accented ones included, so "Ana" is not
     // found inside "Anaïs" (CR-152).
     const rx = new RegExp(
-        '(?<![\\p{L}\\p{N}])(' + lexicon.map((e) => escapeRe(e.from)).join('|') + ')(?![\\p{L}\\p{N}])',
+        '(?<![\\p{L}\\p{N}])(' + lexicon.map(pat).join('|') + ')(?![\\p{L}\\p{N}])',
         'gu'
     );
-    return text.replace(rx, (m) => map.get(m) ?? m);
+    return text.replace(rx, (m) => map.get(m) ?? map.get(m.toLowerCase()) ?? m);
 }
 
 /* The name the user goes by, and how it should be said (About Me). The name they go
@@ -111,7 +125,7 @@ function selfName() {
  */
 export function apply(text) {
     try {
-        return substitute(text, buildLexicon(relationships.listPeople(), places.listPlaces(), selfName()));
+        return substitute(text, buildLexicon(relationships.listPeople(), places.listPlaces(), selfName(), loadSpokenWords()));
     } catch {
         // A pronouncer that throws would take the app's whole voice down with it. The
         // uncorrected name is a far better outcome than silence.

@@ -95,6 +95,7 @@ const SHELL = [
   './js/voice-store.js',
   './js/phrase-audio.js',
   './js/fill-ins.js',
+  './js/spoken-words-editor.js',
   './js/stt-rest.js',
   './js/platform.js',
   './js/express-editor.js',

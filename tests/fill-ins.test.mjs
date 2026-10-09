@@ -63,3 +63,21 @@ test('Express phrases and the Commands phrases are filled in where they are said
         assert.match(src, /buildInsertRow\(/, f);
     }
 });
+
+test('a word from the word list is said its way in any capitals; names stay exact', () => {
+    const lex = buildLexicon([{ name: 'Bill', pronunciation: 'Beel' }], [], null,
+        [{ word: 'acetaminophen', say: 'uh-see-tuh-MIN-uh-fen' }]);
+    assert.equal(substitute('Acetaminophen helps.', lex), 'uh-see-tuh-MIN-uh-fen helps.');
+    assert.equal(substitute('I took acetaminophen.', lex), 'I took uh-see-tuh-MIN-uh-fen.');
+    assert.equal(substitute('Pay the bill, Bill.', lex), 'Pay the bill, Beel.');
+});
+
+test('the word list is read from storage, and the Commands phrases can be heard', async () => {
+    const storage = await import('../app/js/storage.js');
+    const { apply } = await import('../app/js/pronunciation.js');
+    storage.saveSpokenWords([{ word: 'Tylenol', say: 'TIE-luh-nawl' }]);
+    try { assert.equal(apply('Some tylenol, please.'), 'Some TIE-luh-nawl, please.'); }
+    finally { storage.saveSpokenWords([]); }
+    const src = readFileSync(new URL('../app/js/control-phrases-editor.js', import.meta.url), 'utf8');
+    assert.match(src, /Hear this phrase/);
+});

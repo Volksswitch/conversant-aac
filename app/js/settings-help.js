@@ -163,6 +163,7 @@ const HELP = {
     "screenOrientation": "Choose whether the screen turns with the device, stays upright, or stays sideways."
   },
   "sections": {
+    "spokenWords": "Words the voice says wrong. Type the word, then spell it the way it sounds. The app says it that way everywhere.",
     "apiKey": "Your key from Anthropic. It is what lets the app suggest responses. Everything else still works without one.",
     "dataFolder": "The folder where your answers, your people, and your saved conversations are kept.",
     "settingsProfiles": "A saved copy of all your settings. With one saved you can put everything back after a reset, or set up another machine quickly.",
