@@ -22,6 +22,11 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.13.14": [
+    "Conversation Review can now show only the conversations where you and the app struggled. The new choice sits beside Real and Practice. It's grayed out when none of the conversations in the list had a struggle.",
+    "In the Conversation Review list, the Who column is now blank when you didn't say who you were talking with, the same as the Where column. It used to say \"Someone\".",
+    "When a conversation had more than one partner, the Who column now names all of them, in the order you talked with them."
+  ],
   "0.13.13": [
     "The suggested layout now covers both keyboard positions. Move the keyboard from the bottom to the side, or back, and you get the layout suggested for that position: on a sideways tablet, the alphabet in four columns down the side, the response options two by two with \"New 4\" beside them, and more room for the conversation. How the response options are arranged is now kept separately for each keyboard position, like the keyboard layout. If you have already used the suggested layout, tap \"Use the suggested layout for this screen\" once more to fill in the other position."
   ],
