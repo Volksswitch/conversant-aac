@@ -724,11 +724,25 @@ export async function renderList(panel) {
     });
 
     // All conversations, or only those holding a turn where the user and the app
-    // struggled at the time - the ones most worth going back over.
-    document.querySelectorAll('input[name="reviewListStruggle"]').forEach((r) => {
-        r.checked = (r.value === 'struggled') === listStruggledOnly;
-        r.onchange = () => { listStruggledOnly = r.value === 'struggled'; void renderList(panel); };
-    });
+    // struggled at the time - the ones most worth going back over. Struggling is
+    // greyed out until the list is read, and stays so when no conversation in the
+    // list has a struggle (Ken, October 9 2026): a choice that can only show an
+    // empty list is better unavailable than chosen.
+    const struggleRadios = [...document.querySelectorAll('input[name="reviewListStruggle"]')];
+    // `keep` greys it out without dropping the choice, for while the list is read.
+    const setStruggleChoice = (available, keep = false) => {
+        if (!available && !keep) listStruggledOnly = false;
+        struggleRadios.forEach((r) => {
+            r.checked = (r.value === 'struggled') === listStruggledOnly;
+            if (r.value === 'struggled') {
+                r.disabled = !available;
+                const lab = r.closest('label');
+                if (lab) lab.classList.toggle('radio-disabled', !available);
+            }
+            r.onchange = () => { listStruggledOnly = r.value === 'struggled'; void renderList(panel); };
+        });
+    };
+    setStruggleChoice(false, true);
 
     const range = document.getElementById('reviewListRange');
     if (range) {
@@ -773,19 +787,19 @@ export async function renderList(panel) {
         more.onclick = () => { listRange = 'all'; void renderList(panel); };
         olderNote.after(more);
     }
-    const rows = [];
+    const kindRows = [];
     for (const c of logs) {
         const s = model.summarize(c.id, c.data);
         if (!s || s.practice !== listShowsPractice) continue;
-        if (listStruggledOnly && !s.flagged) continue;
         const p = model.progressOf(model.normalizeReview(c.review, c.id), s.turns);
-        rows.push({ ...s, progress: p, progressRank: p.rank, entry: c });
+        kindRows.push({ ...s, progress: p, progressRank: p.rank, entry: c });
     }
+    setStruggleChoice(kindRows.some((r) => r.flagged));
+    const rows = listStruggledOnly ? kindRows.filter((r) => r.flagged) : kindRows;
     if (!rows.length) {
-        const kind = (listStruggledOnly ? 'struggling ' : '') + (listShowsPractice ? 'practice conversations' : 'conversations');
         status.textContent = logs.older
-            ? `No ${kind} from ${rangeText}.`
-            : (listStruggledOnly ? `No ${kind}.` : `No saved ${kind} yet.`);
+            ? (listShowsPractice ? `No practice conversations from ${rangeText}.` : `No conversations from ${rangeText}.`)
+            : (listShowsPractice ? 'No saved practice conversations yet.' : 'No saved conversations yet.');
         return;
     }
     status.textContent = '';

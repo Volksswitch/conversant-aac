@@ -3928,6 +3928,13 @@ label.radio-label input[type="radio"] {
     flex-shrink: 0;
 }
 
+/* A choice that cannot be made right now (Conversation Review's Struggling filter
+   when no conversation in the list has a struggle). */
+dialog label.radio-label.radio-disabled {
+    color: var(--ink-faint);
+    cursor: default;
+}
+
 /* About tab */
 
 .tab-panel[data-tab="about"] h3 {
