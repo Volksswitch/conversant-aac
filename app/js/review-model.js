@@ -394,7 +394,12 @@ export function progressOf(review, turnCount) {
 
 const SORT_KEYS = {
     when: (r) => Date.parse(r.started) || 0,
-    who: (r) => String(r.who || '').toLowerCase(),
+    // The partners in alphabetical order, so a conversation with Mom and Dad sorts with
+    // every other one with the same two people, whoever was talked with first (Ken,
+    // October 9 2026). The column itself still lists them in the order they appeared.
+    who: (r) => (Array.isArray(r.partners) && r.partners.length
+        ? r.partners.map((p) => String(p).toLowerCase()).sort().join(', ')
+        : String(r.who || '').toLowerCase()),
     where: (r) => String(r.where || '').toLowerCase(),
     length: (r) => r.durationMs || 0,
     progress: (r) => (r.progressRank || 0) * 1000 + (r.flagged ? 1 : 0),

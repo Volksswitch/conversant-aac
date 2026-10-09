@@ -117,6 +117,18 @@ test('a conversation with two partners names both, in the order they appeared', 
     assert.equal(s.who, 'Mom, Dad');
 });
 
+test('sorting by Who puts the same people together whatever order they were talked with', () => {
+    const rows = [
+        { id: 'a', who: 'Mom, Dad', partners: ['Mom', 'Dad'] },
+        { id: 'b', who: 'Carol', partners: ['Carol'] },
+        { id: 'c', who: 'Dad, Mom', partners: ['Dad', 'Mom'] },
+        { id: 'd', who: 'Dad', partners: ['Dad'] },
+    ];
+    const ids = model.sortRows(rows, 'who', true).map((r) => r.id).join('');
+    assert.equal(ids.slice(0, 2), 'bd');
+    assert.deepEqual(ids.slice(2).split('').sort(), ['a', 'c']);
+});
+
 test('a practice conversation is recognized from its stamp and named for its scenario', () => {
     const data = sampleConversation();
     data.exchanges.push({ timestamp: '2026-09-30T17:24:00.000Z', role: 'user', selectedText: 'Bye', partner: { id: null, label: 'Practice: Ordering coffee' }, source: 'card' });
