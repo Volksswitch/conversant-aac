@@ -5754,3 +5754,11 @@ body.reviewing .response-card { position: relative; }
     }
     
 }
+
+/* Insert buttons for the fill-ins (fill-ins.js, October 9 2026): a full-width line of
+ * their own inside an editor row or section, wrapping on a narrow panel. */
+.fill-in-row { display: flex; flex-wrap: wrap; gap: 0.4rem; flex: 1 1 100%; margin: 0.25rem 0; }
+
+/* Insert buttons for the fill-ins (fill-ins.js, October 9 2026): a full-width line of
+ * their own inside an editor row or section, wrapping on a narrow panel. */
+.fill-in-row { display: flex; flex-wrap: wrap; gap: 0.4rem; flex: 1 1 100%; margin: 0.25rem 0; }

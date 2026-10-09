@@ -31,6 +31,7 @@
 
 import * as relationships from './relationships.js';
 import * as places from './places.js';
+import * as worldview from './worldview.js';
 
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -43,7 +44,7 @@ const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
  * and the nickname is the one spoken MORE often, since the openers use it in
  * preference to the name.
  */
-export function buildLexicon(people = [], placeList = []) {
+export function buildLexicon(people = [], placeList = [], self = null) {
     const out = [];
     const add = (from, to) => {
         const f = (from || '').trim();
@@ -55,6 +56,10 @@ export function buildLexicon(people = [], placeList = []) {
         add(p.nickname, p.nicknamePronunciation);
     }
     for (const pl of placeList) add(pl.name, pl.pronunciation);
+    // The user's OWN name (Ken, October 9 2026: "That was a glaring hole!"). Every
+    // person and place could carry a respelling and the user could not, so a name the
+    // voice got wrong was wrong every time the app introduced them.
+    if (self) add(self.name, self.pronunciation);
     // Longest first: regex alternation takes the FIRST branch that matches, so without
     // this a person called "Ann" would claim the "Ann" inside "Annabel" and the longer
     // entry could never fire.
@@ -86,6 +91,16 @@ export function substitute(text, lexicon) {
     return text.replace(rx, (m) => map.get(m) ?? m);
 }
 
+/* The name the user goes by, and how it should be said (About Me). The name they go
+ * by, or the first word of their full name when they gave only that. */
+function selfName() {
+    const said = worldview.getField('name_pronunciation');
+    if (!said) return null;
+    let name = worldview.getField('name_preferred');
+    if (!name) { const full = worldview.getField('name_full'); name = full ? String(full).trim().split(/\s+/)[0] : ''; }
+    return name ? { name: String(name), pronunciation: String(said) } : null;
+}
+
 /**
  * The live pronouncer, wired into tts once at startup.
  *
@@ -96,7 +111,7 @@ export function substitute(text, lexicon) {
  */
 export function apply(text) {
     try {
-        return substitute(text, buildLexicon(relationships.listPeople(), places.listPlaces()));
+        return substitute(text, buildLexicon(relationships.listPeople(), places.listPlaces(), selfName()));
     } catch {
         // A pronouncer that throws would take the app's whole voice down with it. The
         // uncorrected name is a far better outcome than silence.

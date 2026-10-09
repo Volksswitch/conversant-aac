@@ -763,6 +763,10 @@ export function buildBlock() {
     if (registry) {
         for (const mod of registry.modules) {
             for (const f of mod.fields) {
+                // How the user's name is SAID never reaches the AI (Ken, October 9 2026):
+                // told the name is "Shiv-awn", a model writes that into responses. It is
+                // read only by the pronunciation list, on the way to the voice.
+                if (f.directive === 'speakOnly') continue;
                 const state = getState(f.key);
                 if (state === 'declined') {
                     phraseAround.add(labelFor(f.key).toLowerCase());

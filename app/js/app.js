@@ -33,6 +33,7 @@ import * as controlEditor from './control-phrases-editor.js';
 import * as placeholderPhrases from './placeholder-phrases.js';
 import * as placeholderEditor from './placeholder-editor.js';
 import * as phraseAudio from './phrase-audio.js';
+import * as fillIns from './fill-ins.js';
 import * as whatsNew from './whats-new.js';
 import * as chime from './chime.js';
 import * as practiceScenarios from './practice-scenarios.js';
@@ -654,6 +655,8 @@ function initApp() {
     // feel at the moment it is built, so a partner switched off since the last request
     // can never be described to the AI as present (October 6 2026).
     llm.setSituationProvider(buildSituationBlock);
+    // Openers, wrap-ups and goodbyes are filled in when shown (fill-ins.js).
+    engine.setFillInProvider(fillInValues);
     // What was selected when a conversation begins - see storage.setContextProvider.
     storage.setContextProvider(contextSnapshot);
 
@@ -3605,8 +3608,8 @@ function renderStaticPalette(kind, full, statusMsg, { advance = false, pin = [] 
 // this card to the next wording, which is how every version stays reachable without
 // the palette ever changing shape.
 function declineClosingCard({ advance = false } = {}) {
-    const text = advance ? controlPhrases.nextPhrase('declineClosing')
-                         : controlPhrases.pickPhrase('declineClosing');
+    const text = fillText(advance ? controlPhrases.nextPhrase('declineClosing')
+                                  : controlPhrases.pickPhrase('declineClosing'));
     if (!text) return [];
     return [{ slot: engine.SLOT.CLOSING_DECLINE, text, hint: text, priority: 2, latency: 'instant' }];
 }
@@ -3772,7 +3775,7 @@ async function handleHoldOn() {
     // Falls back to the old fixed phrase only if every pool has been emptied, because
     // the one outcome that is never acceptable is that the user pressed a button and
     // nothing was said.
-    const text = placeholders.phraseOnDemand() || controlPhrases.getPhrases().holdOn;
+    const text = placeholders.phraseOnDemand() || fillText(controlPhrases.getPhrases().holdOn);
     ui.setStatus('Speaking...');
     // ⚠ NOT RECORDED AS A TURN, and this follows from the phrase pool being shared
     // (Ken, August 27 2026). The ladder's own placeholders have never been written to
@@ -3816,7 +3819,7 @@ async function handlePardon() {
     // tap costs only the spoken phrase.
     if (!heardPartnerText() && conversationHistory.length === 0) {
         ui.setStatus('Speaking...');
-        if (!(await speakUserStatement(controlPhrases.pickPhrase('pardon')))) return;
+        if (!(await speakUserStatement(fillText(controlPhrases.pickPhrase('pardon'))))) return;
         ui.setStatus(isListening ? 'Listening...' : 'Ready');
         return;
     }
@@ -3832,7 +3835,7 @@ async function handlePardon() {
     clearPalette();
     // One of the user's own "ask them to repeat" phrases, never the same one twice
     // running (Settings → Commands).
-    const text = controlPhrases.pickPhrase('pardon');
+    const text = fillText(controlPhrases.pickPhrase('pardon'));
     ui.setStatus('Speaking...');
     if (!(await speakUserStatement(text))) return;
     logSpokenUserTurn(text);          // commits the partner's kept turn, then the pardon after it
@@ -4638,6 +4641,13 @@ function partnerLabel(item) {
     return relationships.displayName(item.personId, item.nickname || item.name);
 }
 
+// The values the fill-ins take right now (fill-ins.js, Ken, October 9 2026): the
+// person selected, as the user calls them.
+function fillInValues() {
+    return { name: partnerLabel(activePartner) };
+}
+function fillText(text) { return fillIns.fillIn(text, fillInValues()); }
+
 /**
  * THE CONVERSATION GOALS ON OFFER RIGHT NOW - three ranked sources, most specific
  * first, exactly as the Flex band's phrases are filled (Ken, September 10 2026:
@@ -4939,6 +4949,7 @@ function drawExpressPanel() {
     const composed = composedPanel();
     primeExpressAudio(composed.items);
     ui.renderExpressPanel(expressLayoutRows(), composed.items, {
+        fillText: expressPanelInSettings ? undefined : (t) => fillText(t),
         moreCells: composed.more,
         onMore: handleExpressMore,
         playingAudioId: audioPlayer ? audioPlayer.item.id : null,
@@ -5938,7 +5949,7 @@ async function handleSpeakExpressItem(phrase) {
     // In double-tap mode the general "any tap goes back" rule deliberately lets the
     // arming tap through, so the phrase that actually speaks puts the panel back here.
     if (!isAlwaysItem(phrase) && resetExpressPaging()) renderExpressPanel();
-    await speakAsUserTurn(phrase.text, phrase.speak || phrase.text, 'express');
+    await speakAsUserTurn(fillText(phrase.text), fillText(phrase.speak || phrase.text), 'express');
 }
 
 // --- Sound buttons (Ken, September 14 2026) ------------------------------------

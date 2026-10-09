@@ -25,6 +25,16 @@
           "defaultPrivacy": "shareable"
         },
         {
+          "key": "name_pronunciation",
+          "q": "If the voice says your name wrong, how should it be said? Spell it the way it sounds.",
+          "type": "text",
+          "options": [],
+          "fills": [],
+          "sensitive": false,
+          "defaultPrivacy": "shareable",
+          "directive": "speakOnly"
+        },
+        {
           "key": "name_full",
           "q": "What's your full name?",
           "type": "text",

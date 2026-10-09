@@ -1864,7 +1864,40 @@ Ken: *"Now add support for OpenAI, Google Cloud, and Eleven Labs (voices and whe
 
 - **⚠ AND ONE THE HYGIENE TEST MISSED BECAUSE OF ITS OWN GAP:** a raw NUL byte in `tts-rest.js`, the very mistake `tts-azure.js` carries a comment warning about (a literal NUL makes git treat the file as binary). `tests/source-hygiene.test.mjs` scanned only **git-tracked** files, so a brand-new file — exactly where a fresh mistake lives — was unguarded until after it was committed. It now scans untracked-but-not-ignored files too, verified to catch a planted byte in a new file.
 
-## Fixed phrases are kept in the paid voice between sessions (Ken, October 9 2026), BUILT
+## Fill-ins in fixed phrases: {name} and {greeting} (Ken, October 9 2026), BUILT
+
+Express Panel phrases and every Commands list (openers, wrap-ups, goodbyes, asking them
+to repeat, hold on, "before you go") may carry `{name}` (the selected person, as the
+user calls them) and `{greeting}` (Good morning / afternoon / evening). Rules in
+`fill-ins.js`; the engine's old `applyName` now calls it, through a provider the app
+sets (`engine.setFillInProvider`), so every list is filled when it is SHOWN.
+
+- **⚠ THE TEST FOR ANY NEW FILL-IN (Ken): it must change with the situation, and the
+  phrase must still make sense without a value.** The user's own name ({me}) was built
+  and taken out on both counts: it never changes, so typing it is no harder, and
+  "Hi, I'm {me}." with no name came out as "Hi, I'm." Place and About Me facts were
+  rejected for the same reasons.
+- **A missing name is dropped and the sentence tidied** ("Thank you, {name}." ->
+  "Thank you."), never left blank or grayed out: a button that works only sometimes
+  looks broken.
+- **The panel face shows the filled-in words; Settings shows the template**, because
+  there the template is what is being edited.
+- **"Insert" buttons, one pair per list, ABOVE the list** in both editors, so nobody
+  types curly brackets. They act on pointerdown and cancel it, so the text box keeps
+  focus and the on-screen keyboard stays up. A first cut put a pair on every Express
+  row (26 rows doubled the list) and one below each Commands list (out of reach of a
+  long list); both moved.
+- **Phrases with a fill-in are not among the recordings kept on the device**
+  (phrase-audio.js skips anything with a curly bracket), since their words vary.
+
+**And the hole this exposed (Ken: "That was a glaring hole!"): the user's OWN name had
+no "How to say it".** People and places could carry a respelling; the user could not.
+About Me -> About You now asks it (`name_pronunciation`, `directive: "speakOnly"`), the
+pronunciation list applies it to everything the app says - AI suggestions included -
+and `worldview.buildBlock` skips it, so the respelling never reaches the AI (told the
+name is "Shiv-awn", a model writes that into responses).
+
+ (Ken, October 9 2026), BUILT
 
 Holding phrases, the Commands phrases, openers without {name}, and Express Panel
 phrases (Ken chose this set, "option 2"; per-person openers were left out). Each paid

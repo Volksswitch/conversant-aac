@@ -34,6 +34,7 @@ import { confirmDanger } from './confirm-dialog.js';
 import { focusMark, focusReturn } from './focus-keep.js';
 import { makeCollapsible } from './sections.js';
 import * as tts from './tts.js';
+import { buildInsertRow, fillIn } from './fill-ins.js';
 import * as storage from './storage.js';
 import { setIconButton } from './icons.js';
 import {
@@ -314,6 +315,19 @@ function textInput(value, placeholder, oninput, opts = {}) {
  * One list row. Deliberately thin: the words, how they should be SAID, and a speaker.
  * Everything else is on the one toolbar above the list.
  */
+/* One pair of Insert buttons per list, above it (fill-ins.js, Ken, October 9 2026).
+ * Their name or the greeting goes into whichever box in the list was used last; with
+ * none used yet, the words box of the picked row, or of the first row. */
+function insertRowFor(list) {
+    let lastField = null;
+    list.addEventListener('focusin', (e) => { if (e.target.tagName === 'INPUT' && e.target.type === 'text') lastField = e.target; });
+    return buildInsertRow(() => {
+        if (lastField && lastField.isConnected) return lastField;
+        const row = list.querySelector('.ee-row-picked') || list.querySelector('.ee-row');
+        return row ? row.querySelector('input[type="text"]') : null;
+    });
+}
+
 function phraseRow(band, item) {
     const row = el('div', 'ee-row');
     if (item.id === pickedId) row.classList.add('ee-row-picked');
@@ -347,8 +361,9 @@ function phraseRow(band, item) {
     // is in the field now and not what was there when the row was drawn.
     row.appendChild(withIcon(mkBtn('', 'ee-hear', () => {
         const inputs = row.querySelectorAll('input');
-        const shown = inputs[0] && inputs[0].value.trim();
-        const said = (inputs[1] && inputs[1].value.trim()) || shown;
+        // Heard as it would be with nobody selected: "Thank you, {name}." is "Thank you."
+        const shown = inputs[0] && fillIn(inputs[0].value.trim());
+        const said = (inputs[1] && fillIn(inputs[1].value.trim())) || shown;
         if (said) tts.speak(said, shown && shown !== said ? { display: shown } : {});
     }, 'Hear this phrase'), 'speak'));
     return row;
@@ -626,6 +641,7 @@ function alwaysSection(composed) {
             list.appendChild(it.type === 'audio' ? audioRow('always', it) : phraseRow('always', it));
         });
         if (!items.length) list.appendChild(el('p', 'ee-empty', 'No phrases yet.'));
+        body.appendChild(insertRowFor(list));
         body.appendChild(list);
     });
 }
@@ -716,6 +732,7 @@ function flexSection(composed) {
             list.appendChild(el('p', 'ee-empty',
                 'No phrases for this situation yet. Whatever you do not fill is taken from the more general lists.'));
         }
+        body.appendChild(insertRowFor(list));
         body.appendChild(list);
         const spare = composed.counts.flex;
         body.appendChild(el('p', 'ee-note',

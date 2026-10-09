@@ -1,3 +1,4 @@
+import { fillIn } from './fill-ins.js';
 /* Conversation Engine — the CA (Conversation Analysis) core.
  *
  * Implements Conversation-Engine-Design.docx: a sequence stack (what is
@@ -154,27 +155,26 @@ function nextRetry() {
     const list = retries.filter((t) => (t || '').trim());
     if (!list.length) return DEFAULT_RETRIES[0];
     retryIndex = (retryIndex + 1) % list.length;
-    return list[retryIndex];
+    return applyName(list[retryIndex], '');
 }
 
 // Replace {name} with the active Partner's name; when there is no name, drop the
 // token AND an adjacent comma, repairing spacing/punctuation so the opener still
 // reads cleanly ("Hi {name}, got a minute?" → "Hi, got a minute?").
 function applyName(template, name) {
-    const n = (name || '').trim();
-    // A function, so a $ in a name is inserted as typed, not read as a pattern (CR-145).
-    if (n) return template.replace(/\{name\}/g, () => n).replace(/\s+/g, ' ').trim();
-    return template
-        .replace(/\s*,?\s*\{name\}\s*,?\s*/g, (m, offset, str) => {
-            const before = str.slice(0, offset).trimEnd();
-            const after = str.slice(offset + m.length).trimStart();
-            // Name sat between two words → keep a comma; otherwise just close the gap.
-            if (before && after && /[A-Za-z0-9]$/.test(before) && /^[A-Za-z0-9]/.test(after)) return ', ';
-            return after && !/^[?.!,;:]/.test(after) ? ' ' : '';
-        })
-        .replace(/\s+([?.!,;:])/g, '$1')
-        .replace(/\s+/g, ' ')
-        .trim();
+    // The fill-in rules live in fill-ins.js (Ken, October 9 2026): {name} and
+    // {greeting}, with a missing value dropped and the sentence tidied.
+    const vals = fillInValues();
+    return fillIn(template, { ...vals, name: (name || vals.name || '') });
+}
+
+// What the fill-ins are right now: the partner's name. The
+// app supplies them (setFillInProvider), so every list - openers, wrap-ups, goodbyes -
+// is filled at the moment it is shown, not when it was loaded.
+let fillInProvider = () => ({ name: '' });
+export function setFillInProvider(fn) { if (typeof fn === 'function') fillInProvider = fn; }
+function fillInValues() {
+    try { return fillInProvider() || {}; } catch { return {}; }
 }
 
 // Inject the user's edited openers / wind-downs / closings (control-phrases.js).
@@ -516,15 +516,17 @@ function openerPalette(partnerName = '') {
 }
 
 function windDownPalette() {
-    return windDowns.map((text, i) => ({
-        slot: SLOT.WIND_DOWN, text, hint: text, priority: i + 1, latency: 'instant',
-    }));
+    return windDowns.map((tpl, i) => {
+        const text = applyName(tpl, '');
+        return { slot: SLOT.WIND_DOWN, text, hint: text, priority: i + 1, latency: 'instant' };
+    });
 }
 
 function closingPalette() {
-    return closings.map((text, i) => ({
-        slot: SLOT.CLOSING, text, hint: text, priority: i + 1, latency: 'instant',
-    }));
+    return closings.map((tpl, i) => {
+        const text = applyName(tpl, '');
+        return { slot: SLOT.CLOSING, text, hint: text, priority: i + 1, latency: 'instant' };
+    });
 }
 
 // --- User actions on the palette ---

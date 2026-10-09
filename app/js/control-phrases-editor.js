@@ -18,6 +18,7 @@ import { setIconButton } from './icons.js';
 import * as model from './control-phrases.js';
 import { confirmDanger } from './confirm-dialog.js';
 import { makeCollapsible } from './sections.js';
+import { buildInsertRow } from './fill-ins.js';
 
 let container = null;
 let onChangeCb = null;
@@ -91,6 +92,15 @@ function listSection(title, key) {
         row.appendChild(tools);
         list.appendChild(row);
     });
+    // Their name and the greeting go into whichever phrase in this section was last
+    // used, or the last one if none has been (fill-ins.js, Ken, October 9 2026). Above
+    // the list, so they are near the phrase being edited however long the list grows.
+    let lastField = null;
+    list.addEventListener('focusin', (e) => { if (e.target.tagName === 'INPUT') lastField = e.target; });
+    sec.appendChild(buildInsertRow(() => {
+        const inputs = list.querySelectorAll('.ee-row input');
+        return lastField && lastField.isConnected ? lastField : inputs[inputs.length - 1];
+    }));
     sec.appendChild(list);
 
     const add = mkBtn('+ Add', 'ee-add');

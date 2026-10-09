@@ -574,6 +574,10 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         // Sound buttons: which one is playing right now (shown ON), and what a tap does.
         playingAudioId = null,
         onPlayAudio,
+        // Fill in {name}, {me} and {greeting} on a phrase's face (fill-ins.js), so the
+        // button shows what it will say. Left out in Settings, where the template is
+        // what is being edited.
+        fillText = (t) => t,
     } = opts;
     const moreAt = new Map((moreCells || []).map((m) => [m.index, m]));
     const goalOn = new Set(activeGoalIds || []);
@@ -696,9 +700,10 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         // double-tap mode the first tap only arms it, and must not send a paged band
         // back to its first set before the second tap arrives.
         b.classList.add('ep-phrase');
-        b.title = item.text;
-        b.setAttribute('aria-label', item.text);
-        b.innerHTML = `<span class="ep-text">${escapeHtml(item.text)}</span>`;
+        const face = fillText(item.text || '');
+        b.title = face;
+        b.setAttribute('aria-label', face);
+        b.innerHTML = `<span class="ep-text">${escapeHtml(face)}</span>`;
         // One tap or two is decided by tap-guard.js, for the whole screen.
         b.addEventListener('click', () => { onSpeak && onSpeak(item); });
         return b;
