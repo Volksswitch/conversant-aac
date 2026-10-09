@@ -22,6 +22,19 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.13.15": [
+    "New in Settings > Speech: \"Words the voice gets wrong\". Type a word and spell it the way it sounds, and the app says it that way everywhere: your Express Panel phrases, the Commands phrases, and the suggested responses. A speaker button lets you hear it.",
+    "Each phrase in Settings > Commands has a speaker button, so you can hear how it will sound before you use it.",
+    "Express Panel phrases and the Commands phrases can now include the person's name or the time of day. \"Thank you, {name}.\" says \"Thank you, Mom.\" when Mom is selected, and \"Thank you.\" when nobody is. \"{time of day}\" says morning, afternoon or evening, so \"Have a good {time of day}!\" works all day. Use the \"Insert: Their name\" and \"Insert: Time of day\" buttons in the editors, so there is nothing to type. The button on the panel shows the words it will say.",
+    "About Me has a new question: how your own name should be said, if the voice gets it wrong. Spell it the way it sounds, and the app says it that way everywhere, including in the suggested responses.",
+    "With a paid voice, the phrases the app says over and over are now kept on your device: holding phrases, \"Ask them to repeat\", \"Hold on\", the wrap-up and goodbye phrases, openers that don't use a name, and your Express Panel phrases. They play right away from the first time each day, and they still play if the internet drops. After you press Start they are fetched quietly in the background, a few at a time; choosing a different voice fetches them again in the new voice.",
+    "A holding phrase like \"I'm thinking about that\" now always finishes. Asking for different options, tapping one of the other person's choices, or using Reframe no longer cuts it off partway. When you tap something to say while one is playing, your words start half a second after it ends, so the two are never heard on top of each other or run together.",
+    "The keyboard's number page now has a decimal point, so you can type 98.6 without switching back to the letters. It takes the place of \"&\", which you can type as \"and\".",
+    "Tapping \"Ask them to repeat\" before anything has been heard still says the phrase, but no longer starts a saved conversation.",
+    "Turning Listen off while a holding phrase is playing lets the phrase finish before the microphone closes. The button goes off right away, and nothing more is heard.",
+    "If you turn \"Don't save this conversation\" on and then off again, what is saved afterward now shows normally in a problem report. Before, it was hidden as if it were private.",
+    "A problem report now includes the list of what you did just before, even when automatic weekly reports are switched off."
+  ],
   "0.13.14": [
     "Conversation Review can now show only the conversations where you and the app struggled. The new choice sits beside Real and Practice. It's grayed out when none of the conversations in the list had a struggle.",
     "In the Conversation Review list, the Who column is now blank when you didn't say who you were talking with, the same as the Where column. It used to say \"Someone\".",

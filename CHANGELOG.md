@@ -26,29 +26,28 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.13.15
+
 - New in Settings > Speech: "Words the voice gets wrong". Type a word and spell it the
   way it sounds, and the app says it that way everywhere: your Express Panel phrases,
   the Commands phrases, and the suggested responses. A speaker button lets you hear it.
 - Each phrase in Settings > Commands has a speaker button, so you can hear how it will
   sound before you use it.
-
 - Express Panel phrases and the Commands phrases can now include the person's name or
   the time of day. "Thank you, {name}." says "Thank you, Mom." when Mom is selected,
   and "Thank you." when nobody is. "{time of day}" says morning, afternoon or evening,
   so "Have a good {time of day}!" works all day. Use the "Insert: Their name" and
-  "Insert: Time of day" buttons in the editors, so there is nothing to type. The button on the panel shows the
-  words it will say.
+  "Insert: Time of day" buttons in the editors, so there is nothing to type. The
+  button on the panel shows the words it will say.
 - About Me has a new question: how your own name should be said, if the voice gets it
   wrong. Spell it the way it sounds, and the app says it that way everywhere, including
   in the suggested responses.
-
 - With a paid voice, the phrases the app says over and over are now kept on your
   device: holding phrases, "Ask them to repeat", "Hold on", the wrap-up and goodbye
   phrases, openers that don't use a name, and your Express Panel phrases. They play
   right away from the first time each day, and they still play if the internet drops.
   After you press Start they are fetched quietly in the background, a few at a time;
   choosing a different voice fetches them again in the new voice.
-
 - A holding phrase like "I'm thinking about that" now always finishes. Asking for
   different options, tapping one of the other person's choices, or using Reframe no
   longer cuts it off partway. When you tap something to say while one is playing,
