@@ -3905,6 +3905,14 @@ label.checkbox-label input[type="checkbox"] {
     margin-top: 0.25rem;
 }
 
+/* Conversation Review: real/practice and all/struggling side by side, to save height.
+   Wraps to one column when the panel is too narrow for both. */
+.review-filter-cols {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 1.5rem;
+}
+
 dialog label.radio-label {
     min-height: var(--btn-min-dim);   /* the whole row is the target (CR-061) */
     display: flex;

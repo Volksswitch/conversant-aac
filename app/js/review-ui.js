@@ -50,6 +50,7 @@ let history = model.createHistory();
 let saveTimer = null;
 let composerOpen = false;
 let listShowsPractice = false;   // which list the Review tab shows
+let listStruggledOnly = false;   // only conversations with a turn where you and the app struggled
 // How far back the list goes, in days, or 'all'. Starts at a week every session (Ken,
 // October 3 2026): most users review only now and then, and a short list is quicker
 // to read and to open. A note below the list says when older ones are hidden.
@@ -722,6 +723,13 @@ export async function renderList(panel) {
         r.onchange = () => { listShowsPractice = r.value === 'practice'; void renderList(panel); };
     });
 
+    // All conversations, or only those holding a turn where the user and the app
+    // struggled at the time - the ones most worth going back over.
+    document.querySelectorAll('input[name="reviewListStruggle"]').forEach((r) => {
+        r.checked = (r.value === 'struggled') === listStruggledOnly;
+        r.onchange = () => { listStruggledOnly = r.value === 'struggled'; void renderList(panel); };
+    });
+
     const range = document.getElementById('reviewListRange');
     if (range) {
         range.value = listRange;
@@ -769,13 +777,15 @@ export async function renderList(panel) {
     for (const c of logs) {
         const s = model.summarize(c.id, c.data);
         if (!s || s.practice !== listShowsPractice) continue;
+        if (listStruggledOnly && !s.flagged) continue;
         const p = model.progressOf(model.normalizeReview(c.review, c.id), s.turns);
         rows.push({ ...s, progress: p, progressRank: p.rank, entry: c });
     }
     if (!rows.length) {
+        const kind = (listStruggledOnly ? 'struggling ' : '') + (listShowsPractice ? 'practice conversations' : 'conversations');
         status.textContent = logs.older
-            ? (listShowsPractice ? `No practice conversations from ${rangeText}.` : `No conversations from ${rangeText}.`)
-            : (listShowsPractice ? 'No saved practice conversations yet.' : 'No saved conversations yet.');
+            ? `No ${kind} from ${rangeText}.`
+            : (listStruggledOnly ? `No ${kind}.` : `No saved ${kind} yet.`);
         return;
     }
     status.textContent = '';
@@ -836,13 +846,13 @@ function drawTable(wrap, rows, status) {
             : '';
         const who = r.practice
             ? `<span class="review-practice-badge">Practice</span>${esc(r.who || '')}`
-            : esc(r.who || 'Someone');
+            : esc(r.who || '');
         tr.innerHTML = `<td class="review-cell-when">${esc(when)}</td>`
             + `<td>${who}</td>`
             + `<td>${esc(r.where || '')}</td>`
             + `<td>${esc(length)}</td>`
             + `<td>${flag}<span class="review-progress review-progress-${r.progress.state}">${esc(r.progress.label)}</span></td>`;
-        tr.setAttribute('aria-label', `${when}, ${r.who || 'someone'}${r.where ? `, ${r.where}` : ''}, ${length}. ${r.progress.label}. Open to review.`);
+        tr.setAttribute('aria-label', `${when}${r.who ? `, ${r.who}` : ''}${r.where ? `, ${r.where}` : ''}, ${length}. ${r.progress.label}. Open to review.`);
         const open = async () => {
             if (deps.conversationBusy()) {
                 status.textContent = 'A conversation is under way. End it first, then come back to review.';

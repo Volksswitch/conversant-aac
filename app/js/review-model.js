@@ -253,17 +253,23 @@ export function summarize(id, data) {
     const started = Date.parse(data.started) || (stamps.length ? Math.min(...stamps) : NaN);
     const ended = stamps.length ? Math.max(...stamps) : started;
     const practice = practiceTitle(data);
-    let who = null;
+    // Every partner the conversation had, in the order they first appeared, so a
+    // conversation that moved from one person to another names both. Nobody named
+    // leaves the column blank, the same as Where.
+    const partners = [];
     let where = null;
     for (const t of turns) {
-        if (!who && t.context.partner && !String(t.context.partner).startsWith('Practice:')) who = t.context.partner;
+        const p = t.context.partner;
+        if (p && !String(p).startsWith('Practice:') && !partners.includes(p)) partners.push(p);
         if (!where && t.context.place) where = t.context.place;
     }
+    const who = partners.length ? partners.join(', ') : null;
     return {
         id,
         started: Number.isFinite(started) ? new Date(started).toISOString() : null,
         durationMs: Number.isFinite(started) && Number.isFinite(ended) ? Math.max(0, ended - started) : 0,
         who: practice || who,
+        partners,
         where: practice ? 'Practice' : where,
         practice: practice !== null,
         replies: turns.filter((t) => t.user).length,

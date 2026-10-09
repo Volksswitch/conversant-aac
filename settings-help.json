@@ -113,6 +113,7 @@
         "keyboardDock": "Whether the Express Panel and keyboard sit along the bottom of the screen, or down one side.",
         "expressTapMode": "One tap, or two so a stray touch cannot say something or change the screen by accident.",
         "reviewListKind": "Choose whether the list shows conversations with real people, or the ones you practiced with the app.",
+        "reviewListStruggle": "Choose whether the list shows every conversation, or only the ones where you and the app struggled at some point.",
         "optionsArrangement": "How the four response options are laid out: in one row, or two by two with the New 4 button beside or below them.",
         "screenOrientation": "Choose whether the screen turns with the device, stays upright, or stays sideways."
     },

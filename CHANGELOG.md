@@ -26,6 +26,13 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Conversation Review can now show only the conversations where you and the app
+  struggled. The new choice sits beside Real and Practice.
+- In the Conversation Review list, the Who column is now blank when you didn't say who
+  you were talking with, the same as the Where column. It used to say "Someone".
+- When a conversation had more than one partner, the Who column now names all of them,
+  in the order you talked with them.
+
 ## Version 0.13.13
 
 - The suggested layout now covers both keyboard positions. Move the keyboard from the

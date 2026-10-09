@@ -100,6 +100,23 @@ test('the list row says who, where, how long, and how many turns carry a mark', 
     assert.equal(model.durationLabel(s.durationMs), '32 sec');
 });
 
+test('Who is blank when nobody was named, like Where', () => {
+    const data = sampleConversation();
+    data.exchanges = data.exchanges.filter((e) => e.role !== 'context').map((e) => ({ ...e, partner: undefined, place: undefined }));
+    const s = model.summarize('x', data);
+    assert.equal(s.who, null);
+    assert.deepEqual(s.partners, []);
+});
+
+test('a conversation with two partners names both, in the order they appeared', () => {
+    const data = sampleConversation();
+    const at = data.exchanges.findIndex((e) => e.cleanedTranscript === 'What time works?');
+    data.exchanges.splice(at, 0, { timestamp: '2026-09-30T17:23:09.000Z', role: 'context', trigger: 'partner', partner: { id: 'p2', label: 'Dad' }, place: { id: 'h', label: 'Home' }, feeling: null, goals: null });
+    const s = model.summarize('x', data);
+    assert.deepEqual(s.partners, ['Mom', 'Dad']);
+    assert.equal(s.who, 'Mom, Dad');
+});
+
 test('a practice conversation is recognized from its stamp and named for its scenario', () => {
     const data = sampleConversation();
     data.exchanges.push({ timestamp: '2026-09-30T17:24:00.000Z', role: 'user', selectedText: 'Bye', partner: { id: null, label: 'Practice: Ordering coffee' }, source: 'card' });

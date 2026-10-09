@@ -994,9 +994,15 @@
                     <p class="tab-intro">Go back over a conversation you've already had, one turn at a time. When a reply didn't sound like you, tap it and write the whole reply the way you'd have said it. <strong>Rewriting several turns with the same person does the most</strong> to make the app's suggestions sound like you with them; one rewrite makes little difference. A bar marks the turns where you and the app struggled at the time. Settings takes you back out.</p>
                     <div class="setting-group" data-help="reviewList">
                         <label>Saved conversations</label>
-                        <div class="radio-row" role="radiogroup" aria-label="Saved conversations">
-                            <label class="radio-label"><input type="radio" name="reviewListKind" value="real" checked> Real conversations</label>
-                            <label class="radio-label"><input type="radio" name="reviewListKind" value="practice"> Practice conversations</label>
+                        <div class="review-filter-cols">
+                            <div class="radio-row" role="radiogroup" aria-label="Saved conversations">
+                                <label class="radio-label"><input type="radio" name="reviewListKind" value="real" checked> Real conversations</label>
+                                <label class="radio-label"><input type="radio" name="reviewListKind" value="practice"> Practice conversations</label>
+                            </div>
+                            <div class="radio-row" role="radiogroup" aria-label="Which conversations">
+                                <label class="radio-label"><input type="radio" name="reviewListStruggle" value="all" checked> All conversations</label>
+                                <label class="radio-label"><input type="radio" name="reviewListStruggle" value="struggled"> Struggling conversations</label>
+                            </div>
                         </div>
                         <label for="reviewListRange">Show conversations from</label>
                         <select id="reviewListRange">
