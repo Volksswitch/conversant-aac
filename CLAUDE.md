@@ -3272,6 +3272,16 @@ Maximum per turn, where **0 means none** and "No limit" exists). So they speak e
 when the AI is slow, failing, or absent.
 
 **FOUR THINGS SILENCE THEM, and each exists for its own reason:**
+
+**⚠ A PHRASE ALREADY PLAYING ALWAYS FINISHES (Ken, October 9 2026), superseding the
+July 2026 rule that a speaking button cuts it off.** Ken: *"one phrase stepped on by
+another makes both difficult to understand."* The four things below end the LADDER (no
+further phrase starts); none of them cuts off the phrase in progress. The user's own
+statement waits for it (`placeholders.whenDone`, capped at 4 seconds, read in
+`speakUserStatement`), and turning Listen off closes the microphone only when it ends.
+Buttons that say nothing (New 4, a choice button, Reframe) leave the ladder running.
+Only End conversation and pausing practice silence speech at once (`tts.cancel()`).
+
 1. **The user speaking.** Never over the user's own statement (July 2026).
 2. **The user acting at all** — a card, an Express phrase, Say again / Hold on /
    Wind down abort the ladder, because the floor has been taken.
