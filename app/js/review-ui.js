@@ -725,7 +725,7 @@ export async function renderList(panel) {
 
     // All conversations, or only those holding a turn where the user and the app
     // struggled at the time - the ones most worth going back over. Struggling is
-    // greyed out until the list is read, and stays so when no conversation in the
+    // grayed out until the list is read, and stays so when no conversation in the
     // list has a struggle (Ken, October 9 2026): a choice that can only show an
     // empty list is better unavailable than chosen.
     const struggleRadios = [...document.querySelectorAll('input[name="reviewListStruggle"]')];
