@@ -29,8 +29,8 @@ forgetting to tag one is only ever noise, never silence.
 - A holding phrase like "I'm thinking about that" now always finishes. Asking for
   different options, tapping one of the other person's choices, or using Reframe no
   longer cuts it off partway. When you tap something to say while one is playing,
-  your words start as soon as it ends, so the two are never heard on top of each
-  other.
+  your words start half a second after it ends, so the two are never heard on top
+  of each other or run together.
 - The keyboard's number page now has a decimal point, so you can type 98.6 without
   switching back to the letters. It takes the place of "&", which you can type as
   "and".

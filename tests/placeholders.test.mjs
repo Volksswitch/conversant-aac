@@ -1205,6 +1205,8 @@ test('the user statement waits for a holding phrase before it is spoken', () => 
     const fn = body.slice(0, end).replace(/\/\/.*$/gm, '');
     assert.ok(end > 0 && fn.indexOf('placeholders.whenDone(') > 0, 'it waits');
     assert.ok(fn.indexOf('placeholders.whenDone(') < fn.indexOf('tts.speak('), 'before speaking');
+    const gap = fn.indexOf('setTimeout(r, 500)');
+    assert.ok(gap > fn.indexOf('placeholders.whenDone(') && gap < fn.indexOf('tts.speak('), 'with a half-second gap');
 });
 
 // CR-270 (Ken, October 9 2026): "Ask them to repeat" with nothing heard and nothing

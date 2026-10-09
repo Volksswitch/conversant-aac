@@ -3278,7 +3278,8 @@ July 2026 rule that a speaking button cuts it off.** Ken: *"one phrase stepped o
 another makes both difficult to understand."* The four things below end the LADDER (no
 further phrase starts); none of them cuts off the phrase in progress. The user's own
 statement waits for it (`placeholders.whenDone`, capped at 4 seconds, read in
-`speakUserStatement`), and turning Listen off closes the microphone only when it ends.
+`speakUserStatement`) and then a further half second, or it sounds like the end of the
+holding phrase (Ken), and turning Listen off closes the microphone only when it ends.
 Buttons that say nothing (New 4, a choice button, Reframe) leave the ladder running.
 Only End conversation and pausing practice silence speech at once (`tts.cancel()`).
 

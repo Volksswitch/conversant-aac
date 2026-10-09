@@ -300,7 +300,12 @@ async function speakUserStatement(text, { announce = false, display = null } = {
     // two phrases on top of each other make both hard to understand. A holding phrase
     // is a second or so; whenDone is capped in case one never reports its end. If the
     // conversation ended or a later statement took over meanwhile, nothing is said.
-    try { await placeholders.whenDone(); } catch { /* never block the user's words */ }
+    // Then a half-second gap (Ken, October 9 2026), or the user's words sound like the
+    // end of the holding phrase. Only when there was a phrase to wait for.
+    if (placeholders.isPlaying()) {
+        try { await placeholders.whenDone(); } catch { /* never block the user's words */ }
+        await new Promise((r) => setTimeout(r, 500));
+    }
     if (epoch !== conversationEpoch || mine !== statementSeq) {
         if (mine === statementSeq) { speakingUserStatement = false; announcingUserStatement = false; }
         return false;
