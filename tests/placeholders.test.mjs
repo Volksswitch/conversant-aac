@@ -681,7 +681,7 @@ test('a tapped empty cell passes its position to the editor', () => {
 
 test('CR-077: an earlier statement cut off by a later one cannot clear the speaking flag', () => {
     const body = appSource.slice(appSource.indexOf('async function speakUserStatement'));
-    assert.match(body.slice(0, 400), /mine === statementSeq/);
+    assert.match(body.slice(0, 1500), /mine === statementSeq/);
 });
 
 test('CR-078: every caller stops when the conversation ended under its speech', () => {
@@ -1172,4 +1172,49 @@ test('silent option buttons leave a holding phrase alone; Listen off waits for i
     const tl = body('function toggleListening');
     assert.match(tl, /placeholders\.isPlaying\(\)/);
     assert.ok(tl.indexOf('placeholders.isPlaying()') < tl.lastIndexOf('stt.stopListening()'));
+});
+
+// A holding phrase already playing finishes, and the user's statement waits for it
+// (Ken, October 9 2026: two phrases on top of each other are both hard to understand).
+test('stop() lets a playing holding phrase finish; whenDone waits for it', async () => {
+    const tts = await import('../app/js/tts.js');
+    const synth = globalThis.window.speechSynthesis;
+    const realSpeak = synth.speak;
+    let pending = null;
+    synth.speak = (u) => { synth.speaking = true; spokenTexts.push(u.text); pending = u; };   // never ends by itself
+    try {
+        storage.savePlaceholderSettings(0.02, 5, 2);
+        placeholders.arm();
+        await sleep(80);
+        assert.equal(placeholders.isPlaying(), true, 'the phrase is playing');
+        placeholders.stop();
+        assert.equal(tts.isSpeaking(), true, 'stopping the ladder does not cut the phrase off');
+        let done = false;
+        const waiting = placeholders.whenDone(2000).then(() => { done = true; });
+        await sleep(120);
+        assert.equal(done, false, 'the user waits while it plays');
+        synth.speaking = false; pending.onend && pending.onend();   // the phrase ends
+        await waiting;
+        assert.equal(done, true);
+    } finally { synth.speak = realSpeak; tts.cancel(); }
+});
+
+test('the user statement waits for a holding phrase before it is spoken', () => {
+    const body = appSource.slice(appSource.indexOf('async function speakUserStatement'));
+    const end = body.search(/\r?\n\}\r?\n/);
+    const fn = body.slice(0, end).replace(/\/\/.*$/gm, '');
+    assert.ok(end > 0 && fn.indexOf('placeholders.whenDone(') > 0, 'it waits');
+    assert.ok(fn.indexOf('placeholders.whenDone(') < fn.indexOf('tts.speak('), 'before speaking');
+});
+
+// CR-270 (Ken, October 9 2026): "Ask them to repeat" with nothing heard and nothing
+// said yet still speaks, but records nothing and starts no conversation.
+test('a pardon at rest is spoken but not recorded', () => {
+    const body = appSource.slice(appSource.indexOf('async function handlePardon'));
+    const rest = body.indexOf("conversationHistory.length === 0");
+    assert.ok(rest > 0, 'the at-rest case is recognized');
+    const branch = body.slice(rest, body.indexOf('return;', body.indexOf('return;', rest) + 1));
+    assert.match(branch, /speakUserStatement\(/);
+    assert.doesNotMatch(branch, /logSpokenUserTurn|engine\.pardon/);
+    assert.ok(rest < body.indexOf('logSpokenUserTurn('), 'and it comes before anything is recorded');
 });

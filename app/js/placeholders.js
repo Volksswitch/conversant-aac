@@ -260,11 +260,26 @@ export function stop() {
         clearTimeout(timer);
         timer = null;
     }
-    // ⚠ ONLY THE LADDER'S OWN PHRASE. This used to cancel ANY speech, so suggestions
-    // arriving while "Hold on" or "Repeat what I said" was playing cut the user off
-    // mid-sentence. Callers that must silence everything call tts.cancel() themselves.
-    if (ownUtterance !== null && ownUtterance === tts.currentUtterance() && tts.isSpeaking()) tts.cancel();
-    ownUtterance = null;
+    // ⚠ A PHRASE ALREADY PLAYING IS LEFT TO FINISH (Ken, October 9 2026): "one phrase
+    // stepped on by another makes both difficult to understand." Stopping ends the
+    // ladder, so no further phrase starts; the user's own statement waits for this one
+    // (whenDone, read by app.js). ownUtterance is kept so isPlaying() stays true until
+    // it ends. Callers that must silence everything (End conversation, pausing
+    // practice) call tts.cancel() themselves.
+}
+
+/* Resolves when the phrase the ladder is speaking has finished, or after `capMs` if
+ * it never reports an end, so a stuck phrase cannot hold up the user's words. */
+export function whenDone(capMs = 4000) {
+    if (!isPlaying()) return Promise.resolve();
+    const started = Date.now();
+    return new Promise((resolve) => {
+        const check = () => {
+            if (!isPlaying() || Date.now() - started >= capMs) resolve();
+            else setTimeout(check, 50);
+        };
+        setTimeout(check, 50);
+    });
 }
 
 async function speakNext() {

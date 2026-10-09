@@ -177,11 +177,16 @@ export function resolveLayoutId(id, fallback) {
 // ones so even a large-grid layout (many letter cells) is filled. A layout with
 // more letter cells than pool symbols leaves the surplus cells blank (still in the
 // same position — geometry preserved); a layout with fewer simply uses a prefix.
+//
+// The DECIMAL POINT takes the place "&" had (Ken, October 9 2026), so a number like
+// 98.6 can be typed without going back to the letters page. "&" moves to where "."
+// was, so it still appears on the two largest layouts; the voice says "&" as "and",
+// so typing the word costs nothing. Swapping the two moves no other symbol.
 const SYMBOL_POOL = [
   '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
-  '@', '#', '$', '%', '&', '*', '(', ')', '-', '+',
+  '@', '#', '$', '%', '.', '*', '(', ')', '-', '+',
   '!', '?', "'", '"', ':', ';', '/', '=', '_', '~',
-  '.', ',', '<', '>', '[', ']', '{', '}', '\\', '|', '^', '`',
+  '&', ',', '<', '>', '[', ']', '{', '}', '\\', '|', '^', '`',
 ];
 
 // Build the symbols page for a given letters layout's rows, preserving geometry.

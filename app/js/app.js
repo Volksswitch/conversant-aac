@@ -296,6 +296,15 @@ async function speakUserStatement(text, { announce = false, display = null } = {
     const mine = ++statementSeq;
     speakingUserStatement = true;
     announcingUserStatement = announce;
+    // The user's words WAIT for a holding phrase already playing (Ken, October 9 2026):
+    // two phrases on top of each other make both hard to understand. A holding phrase
+    // is a second or so; whenDone is capped in case one never reports its end. If the
+    // conversation ended or a later statement took over meanwhile, nothing is said.
+    try { await placeholders.whenDone(); } catch { /* never block the user's words */ }
+    if (epoch !== conversationEpoch || mine !== statementSeq) {
+        if (mine === statementSeq) { speakingUserStatement = false; announcingUserStatement = false; }
+        return false;
+    }
     try { await tts.speak(text, display && display !== text ? { display } : {}); }
     finally {
         if (mine === statementSeq) { speakingUserStatement = false; announcingUserStatement = false; }
@@ -3791,6 +3800,16 @@ async function handlePardon() {
     noteUserAction('ask them to repeat');
     metrics.event(metrics.EV.COMMAND_BAR, { button: 'ask them to repeat' });
     metrics.paletteAbandoned('pardon');
+    // AT REST (Ken, October 9 2026): nothing heard and nothing said yet. The phrase is
+    // still spoken - the other person may have spoken before Listen was on, which the
+    // app cannot know - but it is not recorded and starts no conversation, so a stray
+    // tap costs only the spoken phrase.
+    if (!heardPartnerText() && conversationHistory.length === 0) {
+        ui.setStatus('Speaking...');
+        if (!(await speakUserStatement(controlPhrases.pickPhrase('pardon')))) return;
+        ui.setStatus(isListening ? 'Listening...' : 'Ready');
+        return;
+    }
     placeholders.stop();
     generationToken++;            // invalidate any in-flight generation on the garbled capture
     const snap = engine.pardon(); // push REPAIR* (dedups); floor → partner

@@ -126,6 +126,9 @@ symbols - no key moves, so a keyguard still fits; lean, since numbers with a dec
 point are common in medical answers; (2) leave it as it is.
 
 **Why not now:** it reverses a recorded keyboard decision.
+- **DONE 2026-10-09 (Ken: "Go for the & replacement"):** "." takes the place "&" had
+  on the number page and "&" moves to where "." was, so it still shows on the two
+  largest layouts. No other symbol moved. A test checks every layout.
 
 ### "Ask them to repeat" before anything has been heard
 
@@ -141,6 +144,9 @@ tap then costs only a spoken phrase; (2) leave it as it is.
 
 **Why not now:** whether a pardon at rest should count as the start of a conversation
 is a choice about the record, not a fault.
+- **DONE 2026-10-09 (Ken chose option 1):** at rest the phrase is spoken and nothing is
+  recorded or started. Ken asked whether to disable the button instead; not done,
+  because the other person may have spoken before Listen was on.
 
 ### Screen-reader heading navigation in Settings
 
@@ -292,6 +298,10 @@ hearing setting, to see which explanation it is.
   a second tap in that moment keeps listening. Buttons that SPEAK still cut a holding
   phrase off, under the July 2026 rule. **Not yet checked on the iPad**, which is where
   the Listen case was seen: confirm there, then close this entry.
+- **EXTENDED 2026-10-09 (Ken): the user's own words now WAIT for a holding phrase
+  already playing**, reversing the July 2026 rule that a speaking button cuts it off.
+  Ken: "one phrase stepped on by another makes both difficult to understand." The wait
+  is capped at 4 seconds; End conversation still silences everything at once.
 
 ### The monthly provider review, running on the desktop rather than this laptop
 

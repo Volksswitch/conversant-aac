@@ -125,3 +125,13 @@ test('only Side Layout 10 lacks a page key', async () => {
         .map(([id]) => id);
     assert.deepEqual(without, ['S10']);
 });
+
+// CR-254 (Ken, October 9 2026): every layout's number page carries a decimal point,
+// so 98.6 or 2.5 can be typed without switching back to the letters page.
+test('every number page has a decimal point', () => {
+    for (const { id } of LAYOUT_LIST) {
+        const rows = LAYOUTS[id].rows || LAYOUTS[id];
+        const page = buildSymbolsPage(rows).flat().filter((c) => c.kind === 'char');
+        assert.ok(page.some((c) => (c.ch ?? c.label ?? c.char) === '.'), id);
+    }
+});

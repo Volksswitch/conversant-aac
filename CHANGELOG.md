@@ -28,7 +28,14 @@ forgetting to tag one is only ever noise, never silence.
 
 - A holding phrase like "I'm thinking about that" now always finishes. Asking for
   different options, tapping one of the other person's choices, or using Reframe no
-  longer cuts it off partway.
+  longer cuts it off partway. When you tap something to say while one is playing,
+  your words start as soon as it ends, so the two are never heard on top of each
+  other.
+- The keyboard's number page now has a decimal point, so you can type 98.6 without
+  switching back to the letters. It takes the place of "&", which you can type as
+  "and".
+- Tapping "Ask them to repeat" before anything has been heard still says the phrase,
+  but no longer starts a saved conversation.
 - Turning Listen off while a holding phrase is playing lets the phrase finish before
   the microphone closes. The button goes off right away, and nothing more is heard.
 - If you turn "Don't save this conversation" on and then off again, what is saved
