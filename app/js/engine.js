@@ -163,7 +163,7 @@ function nextRetry() {
 // reads cleanly ("Hi {name}, got a minute?" → "Hi, got a minute?").
 function applyName(template, name) {
     // The fill-in rules live in fill-ins.js (Ken, October 9 2026): {name} and
-    // {greeting}, with a missing value dropped and the sentence tidied.
+    // {time of day}, with a missing value dropped and the sentence tidied.
     const vals = fillInValues();
     return fillIn(template, { ...vals, name: (name || vals.name || '') });
 }

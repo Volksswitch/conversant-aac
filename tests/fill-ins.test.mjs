@@ -5,7 +5,7 @@ import './env.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { fillIn, greetingFor, FILL_INS } from '../app/js/fill-ins.js';
+import { fillIn, timeOfDay, FILL_INS } from '../app/js/fill-ins.js';
 import { buildLexicon, substitute } from '../app/js/pronunciation.js';
 import * as engine from '../app/js/engine.js';
 
@@ -16,22 +16,23 @@ test('their name fills in, and the phrase still reads without it', () => {
     assert.equal(fillIn('See you, {name}!', { name: 'A$1' }), 'See you, A$1!');
 });
 
-test('the greeting follows the clock', () => {
-    assert.equal(greetingFor(new Date(2026, 9, 9, 9)), 'Good morning');
-    assert.equal(greetingFor(new Date(2026, 9, 9, 13)), 'Good afternoon');
-    assert.equal(greetingFor(new Date(2026, 9, 9, 18)), 'Good evening');
-    assert.equal(fillIn('{greeting}, {name}!', { name: 'Ramon', now: new Date(2026, 9, 9, 9) }), 'Good morning, Ramon!');
-    assert.equal(fillIn('{greeting}, {name}!', { now: new Date(2026, 9, 9, 19) }), 'Good evening!');
+test('the time of day follows the clock, in greetings and goodbyes', () => {
+    assert.equal(timeOfDay(new Date(2026, 9, 9, 9)), 'morning');
+    assert.equal(timeOfDay(new Date(2026, 9, 9, 13)), 'afternoon');
+    assert.equal(timeOfDay(new Date(2026, 9, 9, 18)), 'evening');
+    assert.equal(fillIn('Good {time of day}, {name}!', { name: 'Ramon', now: new Date(2026, 9, 9, 9) }), 'Good morning, Ramon!');
+    assert.equal(fillIn('Good {time of day}, {name}!', { now: new Date(2026, 9, 9, 19) }), 'Good evening!');
+    assert.equal(fillIn('Have a good {time of day}!', { now: new Date(2026, 9, 9, 15) }), 'Have a good afternoon!');
 });
 
 test('only two fill-ins: the user\'s own name was dropped (it never changes)', () => {
-    assert.deepEqual(FILL_INS.map((f) => f.token), ['{name}', '{greeting}']);
+    assert.deepEqual(FILL_INS.map((f) => f.token), ['{name}', '{time of day}']);
 });
 
 test('goodbyes and wrap-ups are filled in when shown, like the openers', () => {
     engine.setFillInProvider(() => ({ name: 'Devon' }));
     try {
-        engine.setConversationPhrases({ closings: ['Bye, {name}!'], windDowns: ['{greeting} was fun, {name}.'] });
+        engine.setConversationPhrases({ closings: ['Bye, {name}!'], windDowns: ['Have a good {time of day}, {name}.'] });
         const bye = engine.showClosings().palette.map((m) => m.text);
         assert.ok(bye.includes('Bye, Devon!'), bye.join(' | '));
         const wd = engine.windDown().palette.map((m) => m.text);

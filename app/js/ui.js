@@ -574,7 +574,7 @@ export function renderExpressPanel(layoutRows, items, opts = {}) {
         // Sound buttons: which one is playing right now (shown ON), and what a tap does.
         playingAudioId = null,
         onPlayAudio,
-        // Fill in {name}, {me} and {greeting} on a phrase's face (fill-ins.js), so the
+        // Fill in {name} and {time of day} on a phrase's face (fill-ins.js), so the
         // button shows what it will say. Left out in Settings, where the template is
         // what is being edited.
         fillText = (t) => t,

@@ -26,11 +26,11 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
-- Express Panel phrases and the Commands phrases can now include the person's name or a
-  greeting. "Thank you, {name}." says "Thank you, Mom." when Mom is selected, and
-  "Thank you." when nobody is. "{greeting}" says Good morning, Good afternoon or Good
-  evening by the time of day. Use the "Insert: Their name" and "Insert: Greeting"
-  buttons in the editors, so there is nothing to type. The button on the panel shows the
+- Express Panel phrases and the Commands phrases can now include the person's name or
+  the time of day. "Thank you, {name}." says "Thank you, Mom." when Mom is selected,
+  and "Thank you." when nobody is. "{time of day}" says morning, afternoon or evening,
+  so "Have a good {time of day}!" works all day. Use the "Insert: Their name" and
+  "Insert: Time of day" buttons in the editors, so there is nothing to type. The button on the panel shows the
   words it will say.
 - About Me has a new question: how your own name should be said, if the voice gets it
   wrong. Spell it the way it sounds, and the app says it that way everywhere, including

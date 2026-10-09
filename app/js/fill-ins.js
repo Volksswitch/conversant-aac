@@ -2,7 +2,9 @@
  * Words the app fills in when a fixed phrase is said (Ken, October 9 2026).
  *
  *   {name}      the person the user is talking with, as the user calls them ("Mom")
- *   {greeting}  Good morning / Good afternoon / Good evening, by the clock
+ *   {time of day}  morning / afternoon / evening, by the clock. Only the WORD, so it
+ *                  works in a greeting ("Good {time of day}, Mom.") and in a goodbye
+ *                  ("Have a good {time of day}!") - Ken, October 9 2026.
  *
  * ⚠ THE TEST FOR A FILL-IN (Ken, October 9 2026): it must CHANGE with the situation,
  * and the phrase must still make sense when it has no value. The user's own name was
@@ -24,15 +26,15 @@
 
 export const FILL_INS = [
     { token: '{name}', label: 'Their name' },
-    { token: '{greeting}', label: 'Greeting' },
+    { token: '{time of day}', label: 'Time of day' },
 ];
 
-/** The greeting for a time of day: before noon, before 5 pm, then evening. */
-export function greetingFor(date = new Date()) {
+/** The time of day: morning before noon, afternoon before 5 pm, then evening. */
+export function timeOfDay(date = new Date()) {
     const h = date.getHours();
-    if (h < 12) return 'Good morning';
-    if (h < 17) return 'Good afternoon';
-    return 'Good evening';
+    if (h < 12) return 'morning';
+    if (h < 17) return 'afternoon';
+    return 'evening';
 }
 
 /* Drop one fill-in with nothing to put in its place, tidying the punctuation and
@@ -50,17 +52,17 @@ function drop(text, token) {
 
 /** Does this phrase contain anything to fill in? */
 export function hasFillIns(text) {
-    return /\{(name|greeting)\}/.test(String(text || ''));
+    return /\{(name|time of day)\}/.test(String(text || ''));
 }
 
 /**
- * Fill in a phrase. `name` may be empty; the greeting always has a value.
+ * Fill in a phrase. `name` may be empty; the time of day always has a value.
  * A function replacement, so a "$" in a name is inserted as typed (CR-145).
  */
 export function fillIn(text, { name = '', now = new Date() } = {}) {
     let out = String(text || '');
     if (!hasFillIns(out)) return out;
-    const values = { '{name}': (name || '').trim(), '{greeting}': greetingFor(now) };
+    const values = { '{name}': (name || '').trim(), '{time of day}': timeOfDay(now) };
     for (const [token, value] of Object.entries(values)) {
         if (!out.includes(token)) continue;
         out = value ? out.split(token).join(value) : drop(out, token);

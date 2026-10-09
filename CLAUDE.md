@@ -1864,11 +1864,13 @@ Ken: *"Now add support for OpenAI, Google Cloud, and Eleven Labs (voices and whe
 
 - **⚠ AND ONE THE HYGIENE TEST MISSED BECAUSE OF ITS OWN GAP:** a raw NUL byte in `tts-rest.js`, the very mistake `tts-azure.js` carries a comment warning about (a literal NUL makes git treat the file as binary). `tests/source-hygiene.test.mjs` scanned only **git-tracked** files, so a brand-new file — exactly where a fresh mistake lives — was unguarded until after it was committed. It now scans untracked-but-not-ignored files too, verified to catch a planted byte in a new file.
 
-## Fill-ins in fixed phrases: {name} and {greeting} (Ken, October 9 2026), BUILT
+## Fill-ins in fixed phrases: {name} and {time of day} (Ken, October 9 2026), BUILT
 
 Express Panel phrases and every Commands list (openers, wrap-ups, goodbyes, asking them
 to repeat, hold on, "before you go") may carry `{name}` (the selected person, as the
-user calls them) and `{greeting}` (Good morning / afternoon / evening). Rules in
+user calls them) and `{time of day}` (morning / afternoon / evening). **Only the word,
+not "Good morning"** (Ken chose this over a whole-greeting fill-in), so the same button
+works in a goodbye: "Have a good {time of day}!". Rules in
 `fill-ins.js`; the engine's old `applyName` now calls it, through a provider the app
 sets (`engine.setFillInProvider`), so every list is filled when it is SHOWN.
 
