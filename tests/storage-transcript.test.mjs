@@ -1003,7 +1003,13 @@ test('"Don\'t save" mid-conversation deletes the whole conversation from the fol
     storage.detachPendingPartnerTurn();
     await storage.logPartnerInterim({ rawTranscript: 'anyway, lunch?' });
     await storage.whenLogWritten();
-    const fresh = JSON.parse(await (await (await conv.getFileHandle(`${id}.json`)).getFile()).text());
+    // A NEW NAME (October 9 2026): reusing the deleted one put the new file on the
+    // private list, so a problem report withheld it.
+    const id2 = storage.getConversationId();
+    assert.ok(id2 && id2 !== id, 'what is saved next has a new name');
+    assert.equal(storage.isConversationPrivate(id2, null), false, 'and is not withheld from a report');
+    assert.ok(!conv._files.has(`${id}.json`), 'the deleted file stays deleted');
+    const fresh = JSON.parse(await (await (await conv.getFileHandle(`${id2}.json`)).getFile()).text());
     assert.ok(!JSON.stringify(fresh).includes('biopsy'), 'nothing from before comes back');
     assert.ok(JSON.stringify(fresh).includes('lunch'), 'what is said afterwards is saved');
 });

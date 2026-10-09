@@ -249,11 +249,23 @@ export function flush() {
  * individual gap tells you nothing and would drown the reproduction context that the
  * ring exists to provide. */
 export function event(name, fields = {}, { quiet = false } = {}) {
-    if (!enabled || !name) return;
+    if (!name) return;
     try {
-        load();
         const clean = redactFields(fields);
         const t = Date.now();
+        // ⚠ THE SHORT IN-MEMORY LIST RUNS EVEN WITH AUTOMATIC REPORTS OFF (October 9
+        // 2026). That switch governs what the app SENDS; this list never leaves the
+        // device except inside a problem report the user sends and sees first. Gating
+        // it with the switch left "what happened just before" empty in exactly the
+        // report that needed it.
+        if (!enabled) {
+            if (!quiet) {
+                ring.push({ t: new Date(t).toISOString(), e: name, ...clean });
+                while (ring.length > RING_MAX) ring.shift();
+            }
+            return;
+        }
+        load();
         tally(store, name, clean, t);
         persistSoon();
         if (quiet) return;

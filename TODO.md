@@ -37,6 +37,22 @@ the one that quietly waits forever.
 
 ## Open
 
+### Ken's October 9 2026 report: "Hi" not spoken, and words heard in a quiet room
+- **Raised:** 2026-10-09, Ken's problem report from his laptop (0.13.14, OpenAI for both
+  hearing and speaking): after turning "Don't save this conversation" off, tapping
+  "Hi" said nothing, and a partner line appeared that nobody said.
+- **What was found:** the same sequence in the browser with this device's voice spoke
+  "Hi" both times, so the silence is not reproduced. The report could not help because
+  of two faults, both fixed the same day: the conversation saved after turning saving
+  back on reused the deleted conversation's name and was withheld as private, and the
+  "what happened just before" list was empty because automatic reports were off.
+- **The words from nowhere** look like the OpenAI transcription inventing text from
+  near-silence, as with "Katarzyna." on September 30. The app already drops sounds under
+  a quarter of a second; this one got past that.
+- **What is wanted:** a repeat of the sequence with OpenAI on 0.13.15 or later, and a
+  report sent right away; it will now carry the transcript and the event list.
+- **Why not now:** it needs the OpenAI voice and a real microphone to reproduce.
+
 ### Check whether an opener tap can speak from the set that was just replaced
 
 - **Raised:** October 8 2026, from Ken's conversation file `2026-10-08T21-15-47.json`.
@@ -93,6 +109,9 @@ blank also becomes one more empty spot rather than an Express Panel position. Th
 layouts document flagged this ("pick one in the build") and the build kept both.
 
 **Why not now:** which key a person reaches for is a choice for the people who use it.
+- **CLOSED 2026-10-09:** no longer true. Bottom Layout 6 was folded into Bottom
+  Layout 1 on October 8 2026, and no layout in the app has two Backspace keys
+  (checked by counting them in every layout).
 
 ### The keyboard's number page has no decimal point or comma
 
@@ -266,6 +285,13 @@ heard, and the iPad has nothing to cut off. If the cause is (b) instead, the fix
 ignore whatever the recognizer delivers after the user has turned listening off.
 **First step either way: try it on the computer** (one minute) and on the iPad with each
 hearing setting, to see which explanation it is.
+- **DONE 2026-10-09 (Ken: "A placeholder phrase should always complete"):** New 4, a
+  choice button and Reframe leave the ladder alone, like the Context buttons. Turning
+  Listen off while a holding phrase plays turns the button off at once, ignores what
+  is heard from then on, and closes the microphone when the phrase ends (8-second cap);
+  a second tap in that moment keeps listening. Buttons that SPEAK still cut a holding
+  phrase off, under the July 2026 rule. **Not yet checked on the iPad**, which is where
+  the Listen case was seen: confirm there, then close this entry.
 
 ### The monthly provider review, running on the desktop rather than this laptop
 
@@ -1527,6 +1553,10 @@ about to fall by an order of magnitude is the trap.
 - **Why not now:** found in a documents pass, which does not change app code. It reached
   testers in 0.11.1, so it gets a changelog bullet when fixed. A one-click task was also
   offered for it in that session.
+- **DONE:** events were already printed properly from October 8 2026 (Ken's October
+  9 report shows "[listen on]" and "[reframe] text=..."). On 2026-10-09 any other kind
+  of entry not taught to the report prints by its own name instead of "user:". The
+  composer text question was settled by the October 8 build, which prints it.
 
 ### How a Context-band button shows what it is doing: standing versus one-shot
 - **Raised:** 2026-09-10 - Ken: "Context should carry and hold a checkmark until tapped

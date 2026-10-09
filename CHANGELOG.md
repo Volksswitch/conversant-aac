@@ -26,6 +26,17 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- A holding phrase like "I'm thinking about that" now always finishes. Asking for
+  different options, tapping one of the other person's choices, or using Reframe no
+  longer cuts it off partway.
+- Turning Listen off while a holding phrase is playing lets the phrase finish before
+  the microphone closes. The button goes off right away, and nothing more is heard.
+- If you turn "Don't save this conversation" on and then off again, what is saved
+  afterward now shows normally in a problem report. Before, it was hidden as if it
+  were private.
+- A problem report now includes the list of what you did just before, even when
+  automatic weekly reports are switched off.
+
 ## Version 0.13.14
 
 - Conversation Review can now show only the conversations where you and the app

@@ -182,6 +182,9 @@ let activeSteer = { focusChoice: null, steer: null, lead: null };
 // response options it's still producing (that's why this is separate from
 // generationToken, which a response selection uses to cancel generation outright).
 let placeholderEpoch = 0;
+// Set while Listen has been turned off but the microphone waits for a holding phrase
+// to finish (see toggleListening). Holds a token so a later tap can cancel it.
+let micClosePending = null;
 // Cumulative audio (seconds) the paid transcription backend has uploaded since it
 // was last started — the source reports a running total, so this holds the last
 // value seen in order to store only the increment.
@@ -1191,10 +1194,12 @@ function sttKeyFor(provider) {
  * build the hearing the same way (CR-037). */
 function sttInitOptions(source) {
     return {
-        onResult: handleSpeechResult,
-        onSilence: handleSilencePeriod,
+        // While Listen is waiting for a holding phrase to finish before it closes the
+        // microphone, nothing more is taken in: the button already says it is off.
+        onResult: (...a) => { if (!micClosePending) handleSpeechResult(...a); },
+        onSilence: (...a) => { if (!micClosePending) handleSilencePeriod(...a); },
         onStatus: handleSttStatus,
-        onPartnerSpeech: handlePartnerResumed,
+        onPartnerSpeech: (...a) => { if (!micClosePending) handlePartnerResumed(...a); },
         source,
         // Read at start time, so a key pasted into Settings works on the next
         // Listen rather than needing a reload.
@@ -1923,9 +1928,37 @@ function toggleListening() {
     // symptom "tapping it does nothing" was really "it took the start branch because
     // the app thought it had stopped".
     metrics.event(metrics.EV.LISTEN, { auto: false, status: isListening ? 'stop' : 'start' });
+    // A tap while the microphone is waiting to close (below) changes the user's mind:
+    // it stays open and the button comes back on.
+    if (micClosePending) {
+        micClosePending = null;
+        manualListenArmed = true;
+        ui.setListenButtonState(true);
+        return;
+    }
     if (isListening) {
         // Manual stop: disarm auto-resume until the user starts again.
         manualListenArmed = false;
+        // A HOLDING PHRASE ALWAYS FINISHES (Ken, October 9 2026). On an iPad, closing
+        // the microphone changes the device's sound setup and cut off whatever was
+        // playing, so the phrase stopped mid-word. The button goes off at once and
+        // nothing more is heard (micClosePending gates the hearing callbacks), but the
+        // microphone itself closes when the phrase ends. Capped, so a phrase that never
+        // reports its end cannot hold the microphone open.
+        if (placeholders.isPlaying()) {
+            const pending = {};
+            micClosePending = pending;
+            ui.setListenButtonState(false);
+            const started = Date.now();
+            const waitThenClose = () => {
+                if (micClosePending !== pending) return;   // the user turned it back on
+                if (placeholders.isPlaying() && Date.now() - started < 8000) { setTimeout(waitThenClose, 100); return; }
+                micClosePending = null;
+                stt.stopListening();
+            };
+            setTimeout(waitThenClose, 100);
+            return;
+        }
         stt.stopListening();
     } else {
         // Never open the microphone while a recording is still audible (CR-064).
@@ -3843,7 +3876,8 @@ async function handleRegenerate() {
     }
     if (!currentPartnerText || !lastPalette.length) return;
     const token = ++generationToken;
-    placeholders.stop();
+    // The holding phrase is NOT touched (Ken, October 9 2026): asking for other options
+    // says nothing aloud, and the floor still needs holding while the user waits.
     ui.setPaletteBusy(true);   // the cards showing may be replaced — say so (Ken)
     ui.setStatus('Getting different options...');
 
@@ -3949,7 +3983,8 @@ async function handleChoiceChip(chip) {
 
     const token = ++generationToken;
     ui.setPaletteBusy(true);   // the cards showing may be replaced — say so (Ken)
-    abortPlaceholders();   // the user has acted — nothing may speak over the result
+    // The holding phrase is NOT touched (Ken, October 9 2026): a choice button says
+    // nothing aloud, so the floor still needs holding while the new options arrive.
     activeSteer.focusChoice = pick;   // "New N" must keep answering with this choice
     renderExpressPanel();             // ...and the chip shows as chosen from this moment
     llm.setWorldviewBlock(worldview.buildBlock());
@@ -4051,7 +4086,8 @@ async function handleReframe() {
     }
 
     const token = ++generationToken;
-    placeholders.stop();
+    // The holding phrase is NOT touched (Ken, October 9 2026): Reframe says nothing
+    // aloud, so the floor still needs holding while the new options arrive.
     ui.setPaletteBusy(true);   // the cards showing may be replaced — say so (Ken)
     llm.setWorldviewBlock(worldview.buildBlock());
     llm.setExtraNames(worldview.extraNames());
@@ -7841,6 +7877,9 @@ function transcriptLineBody(ex) {
         const what = (ex.options || []).map((o) => `${o.slot || '?'}: ${o.text}`).join(' | ');
         return `  [offered ${ex.kind || 'ai'} -> ${ex.outcome || 'unfinished'}] ${what}`;
     }
+    // Only a real user turn prints as one. A kind of entry added later and not taught
+    // to this function shows by its own name rather than as the user saying nothing.
+    if (ex.role && ex.role !== 'user') return `  [${ex.role}]`;
     return `  user: ${ex.selectedText || ''}`;
 }
 

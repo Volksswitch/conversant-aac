@@ -12,7 +12,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { redactFields, tally, trimDays, rollUp, dayKey, EV } from '../app/js/metrics.js';
+import { redactFields, tally, trimDays, rollUp, dayKey, EV, event, recent, setEnabled } from '../app/js/metrics.js';
 
 test('redaction: counts, durations and small categories pass', () => {
     const out = redactFields({ n: 3, ms: 1200, auto: true, slot: 'PREFERRED' });
@@ -92,4 +92,16 @@ test('rollUp survives an empty store rather than throwing', () => {
     const r = rollUp({ days: {} });
     assert.deepEqual(r.totals, {});
     assert.equal(r.days, 0);
+});
+
+// Automatic reports off must not empty the problem report's "what happened just before"
+// (October 9 2026): that list never leaves the device except in a report the user sees.
+test('the recent-events list still fills with automatic reports switched off', () => {
+    setEnabled(false);
+    try {
+        event('listen', { status: 'stop' });
+        const last = recent(1)[0];
+        assert.equal(last && last.e, 'listen');
+        assert.equal(last.status, 'stop');
+    } finally { setEnabled(true); }
 });

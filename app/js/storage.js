@@ -2268,6 +2268,11 @@ export async function deleteConversation(id) {
     if (!id) return false;
     markConversationPrivate(id);
     if (id === currentConversationId) {
+        // A NEW NAME for whatever is saved next (October 9 2026). Turning saving back
+        // on starts a new file, and it used to reuse this name - which is on the
+        // private list, so every later problem report withheld the new conversation's
+        // transcript as though it were the deleted one.
+        currentConversationId = null;
         currentLogData = null;
         currentLogHandle = null;
         currentLogName = null;

@@ -1152,3 +1152,24 @@ test('review rewrites are sent for the active person only, and offers record the
     const show = appSource.slice(appSource.indexOf('function showPalette('));
     assert.match(show.slice(0, 2400), /partnerAction: \(cls && cls\.partner_action\) \|\| null/);
 });
+
+// A holding phrase always finishes (Ken, October 9 2026). The three buttons that only
+// ask for other options say nothing aloud, so they must leave the phrase alone, and
+// turning Listen off waits for it before closing the microphone. Source-level, since
+// app.js cannot be loaded by a test.
+test('silent option buttons leave a holding phrase alone; Listen off waits for it', () => {
+    const body = (name) => {
+        const start = appSource.indexOf(name);
+        const next = appSource.indexOf('\nasync function ', start + 10);
+        const nextFn = appSource.indexOf('\nfunction ', start + 10);
+        const end = Math.min(...[next, nextFn].filter((i) => i > 0));
+        return appSource.slice(start, end).replace(/\/\/.*$/gm, '');
+    };
+    for (const fn of ['async function handleRegenerate', 'async function handleChoiceChip', 'async function handleReframe']) {
+        const b = body(fn);
+        assert.doesNotMatch(b, /placeholders\.stop\(\)|abortPlaceholders\(\)/, fn);
+    }
+    const tl = body('function toggleListening');
+    assert.match(tl, /placeholders\.isPlaying\(\)/);
+    assert.ok(tl.indexOf('placeholders.isPlaying()') < tl.lastIndexOf('stt.stopListening()'));
+});

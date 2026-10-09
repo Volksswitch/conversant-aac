@@ -247,6 +247,12 @@ export async function start() {
     timer = setTimeout(speakNext, Math.max(0, initialDelayFor(settings) * 1000 - (Date.now() - base)));
 }
 
+/* Is one of the ladder's own phrases being spoken right now? Read by the Listen
+ * button, which waits for the phrase to finish before closing the microphone. */
+export function isPlaying() {
+    return ownUtterance !== null && ownUtterance === tts.currentUtterance() && tts.isSpeaking();
+}
+
 export function stop() {
     active = false;
     armed = false;
