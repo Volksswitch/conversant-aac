@@ -57,6 +57,9 @@ the one that quietly waits forever.
   - **The number page's decimal point**, and "Ask them to repeat" at rest.
 - **Why not now:** documents wait until a feature has stopped moving, and Ken times
   "sync docs".
+- **DONE 2026-10-09 ("sync docs" for 0.13.15):** all of it is in the three User Manuals,
+  the word list with its uses; also the Product Overview, Backup Compatibility, Speech
+  Provider Guide and Architecture Overview.
 
 ### Ken's October 9 2026 report: "Hi" not spoken, and words heard in a quiet room
 - **Raised:** 2026-10-09, Ken's problem report from his laptop (0.13.14, OpenAI for both
