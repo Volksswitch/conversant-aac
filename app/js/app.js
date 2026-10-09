@@ -32,6 +32,7 @@ import * as controlPhrases from './control-phrases.js';
 import * as controlEditor from './control-phrases-editor.js';
 import * as placeholderPhrases from './placeholder-phrases.js';
 import * as placeholderEditor from './placeholder-editor.js';
+import * as phraseAudio from './phrase-audio.js';
 import * as whatsNew from './whats-new.js';
 import * as chime from './chime.js';
 import * as practiceScenarios from './practice-scenarios.js';
@@ -857,6 +858,7 @@ function initApp() {
         }
         keyboard.hideKeyboard();
         hostExpressPanel(false);   // Escape must return the panel to the dock too
+        refreshPhraseAudio();
     });
     // Release number with the build appended (Ken, July 30 2026) — "0.5.99 ·
     // 9e73383". A bug report needs the exact code, not just the version: several
@@ -1762,6 +1764,9 @@ async function handleStart() {
     // Storage is now reconnected, so the weekly report can count what is actually
     // on disk. See scheduleWeeklyReport for why it is not on a page-load timer.
     scheduleWeeklyReport();
+    // The phrase lists are loaded from the folder by now. A short delay keeps the first
+    // fetches clear of the pre-start screens and the first thing the user says.
+    setTimeout(refreshPhraseAudio, 2000);
     // Fresh conversation state for this session.
     engine.reset();
     ui.showEngineState(engine.getSnapshot());
@@ -7994,6 +7999,7 @@ async function buildErrorReport() {
 
 function openSettings() {
     const dialog = document.getElementById('settingsDialog');
+    phraseAudio.pause();   // nothing is fetched while Settings is open (Ken)
     resetSpokenHelp();   // never open with the "?" still armed from last time (CR-287)
     // "Auto chose ..." describes a test run earlier; it is not true on a new visit (CR-246).
     const partnerNote = document.getElementById('partnerVoiceStatus');
@@ -9657,6 +9663,7 @@ function openSettings() {
         hostExpressPanel(false);
         resetSpokenHelp();
         dialog.close();
+        refreshPhraseAudio();
     };
 }
 
@@ -9740,6 +9747,19 @@ try {
 // Called after storage is warm rather than awaited inside handleStart, so nothing
 // here can delay getting the user into their conversation. Guarded because Start
 // can be reached more than once in a session and this is a once-per-launch job.
+// Keep the fixed phrases ready in the paid voice (Ken, October 9 2026): after Start and
+// when Settings closes, never while Settings is open - so testing voices there fetches
+// nothing extra. See phrase-audio.js.
+function refreshPhraseAudio() {
+    try {
+        phraseAudio.refresh(phraseAudio.wantedPhrases({
+            placeholderPhrases: placeholderPhrases.allPhrases(),
+            controlPhrases: controlPhrases.allPhrases(),
+            expressItems: expressPanel.allItems(),
+        }));
+    } catch { /* a convenience: never in the way */ }
+}
+
 let weeklyReportScheduled = false;
 function scheduleWeeklyReport() {
     if (weeklyReportScheduled) return;

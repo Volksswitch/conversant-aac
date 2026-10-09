@@ -342,7 +342,7 @@ export function describeFailure(status, region) {
  *   onBilled(chars)   — characters actually sent (cache hits send none), so the app
  *                       can show what speaking cost.
  */
-export function createVoice({ getKey, getRegion, onBilled } = {}) {
+export function createVoice({ getKey, getRegion, onBilled, onAudio } = {}) {
     let ctx = null;
     const sources = new Set();   // playback nodes started but not yet finished
     let playToken = 0;           // bumped by cancel(), so a cancel during the
@@ -384,13 +384,13 @@ export function createVoice({ getKey, getRegion, onBilled } = {}) {
         } catch { /* no audio at all — speak() will report it */ }
     }
 
-    async function fetchAudio(voice, text) {
+    async function fetchAudio(voice, text, { track = true } = {}) {
         const key = currentKey();
         if (!key) throw new Error('No Azure Speech key is set.');
         const region = currentRegion();
 
         const controller = new AbortController();
-        inFlight = controller;
+        if (track) inFlight = controller;
         const timer = setTimeout(() => controller.abort(), SYNTH_TIMEOUT_MS);
         let res;
         try {
@@ -500,6 +500,7 @@ export function createVoice({ getKey, getRegion, onBilled } = {}) {
             if (!buffer) {
                 const bytes = await fetchAudio(model, trimmed);
                 if (mine !== playToken) return;
+                if (onAudio && !override) onAudio(model, trimmed, bytes.slice(0));
                 buffer = await decode(c, bytes);
                 if (mine !== playToken) return;
                 if (trimmed.length <= MAX_CACHED_CHARS) remember(key, buffer);   // instant next time
@@ -543,10 +544,31 @@ export function createVoice({ getKey, getRegion, onBilled } = {}) {
         }
     }
 
+    /*
+     * Fetch a phrase WITHOUT playing it, for keeping between sessions (phrase-audio.js).
+     * Its request is not tracked as the one in flight, so cancelling the user's speech
+     * never lands on it, and it never touches the queue of things being said.
+     */
+    async function fetchForStore(text, model = DEFAULT_VOICE) {
+        const trimmed = (text || '').trim();
+        if (!trimmed) return null;
+        const bytes = await fetchAudio(model, trimmed, { track: false });
+        const keep = bytes.slice(0);   // decoding takes ownership of the buffer it is given
+        remember(cacheKey(model, trimmed), await decode(audioContext(), bytes));
+        return keep;
+    }
+
+    /** Make a stored recording ready to play at once. */
+    async function preload(text, model, bytes) {
+        const trimmed = (text || '').trim();
+        if (!trimmed || !bytes) return;
+        remember(cacheKey(model, trimmed), await decode(audioContext(), bytes.slice(0)));
+    }
+
     function reset() {
         cancel();
         cache.clear();
     }
 
-    return { speak, cancel, isSpeaking, unlock, test, reset, cacheSize: () => cache.size };
+    return { speak, cancel, isSpeaking, unlock, test, reset, fetchForStore, preload, variant: () => '', cacheSize: () => cache.size };
 }

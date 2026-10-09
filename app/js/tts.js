@@ -68,6 +68,30 @@ function isPaid(name) {
     return name === 'deepgram' || name === 'azure' || !!TTS_PROVIDERS[name];
 }
 
+// Recordings of fixed phrases are kept between sessions (phrase-audio.js). A backend
+// hands every freshly fetched recording here; the keeper decides whether it is one of
+// the phrases worth keeping. Never allowed to break speaking.
+let audioKeeper = null;
+export function setAudioKeeper(fn) { audioKeeper = typeof fn === 'function' ? fn : null; }
+function keepAudio(name, voice, text, bytes) {
+    if (!audioKeeper) return;
+    try {
+        const b = backends[name];
+        audioKeeper(name, voice, b && b.variant ? b.variant() : '', text, bytes);
+    } catch { /* keeping a copy must never stop the voice */ }
+}
+
+/* The paid voice in use, for keeping recordings - or null for the device's own voice,
+ * which hands the app no recording to keep. */
+export function paidVoiceInfo() {
+    const backend = backendFor(provider);
+    if (!backend || !backend.fetchForStore) return null;
+    return { provider, voice: models[provider], variant: backend.variant ? backend.variant() : '', backend };
+}
+
+/** The words exactly as the voice is given them, after any "How to say it" respelling. */
+export function spokenForm(text) { return pronounce(text); }
+
 // Build on first use, so a user who never chooses a paid voice never constructs one.
 function backendFor(name) {
     if (!isPaid(name)) return null;
@@ -75,12 +99,14 @@ function backendFor(name) {
         if (name === 'deepgram') {
             backends[name] = aura.createVoice({
                 getKey: () => getKey(), onBilled: (n) => onBilled(n),
+                onAudio: (model, text, bytes) => keepAudio(name, model, text, bytes),
             });
         } else if (name === 'azure') {
             backends[name] = azure.createVoice({
                 getKey: () => getKey(),
                 getRegion: () => getRegion(),
                 onBilled: (n) => onBilled(n),
+                onAudio: (model, text, bytes) => keepAudio(name, model, text, bytes),
             });
         } else {
             // A catalog service. Its key reader is its own, falling back to the shared
@@ -90,6 +116,7 @@ function backendFor(name) {
                 getKey: () => (keyReaders[name] ? keyReaders[name]() : getKey()),
                 getModel: () => (modelReaders[name] ? modelReaders[name]() : ''),
                 onBilled: (n) => onBilled(n),
+                onAudio: (model, text, bytes) => keepAudio(name, model, text, bytes),
             });
         }
     }

@@ -164,7 +164,7 @@ export async function fetchVoices(provider, key, timeoutMs = 10000) {
  * tts-azure.js exactly — { speak, cancel, isSpeaking, unlock, test, reset } — so tts.js
  * routes to any of them without knowing which is which.
  */
-export function createVoice({ provider, getKey, getModel, onBilled } = {}) {
+export function createVoice({ provider, getKey, getModel, onBilled, onAudio } = {}) {
     let ctx = null;
     const sources = new Set();   // playback nodes started but not yet finished
     let playToken = 0;
@@ -202,13 +202,13 @@ export function createVoice({ provider, getKey, getModel, onBilled } = {}) {
         } catch { /* no audio at all — speak() will report it */ }
     }
 
-    async function fetchAudio(voice, text) {
+    async function fetchAudio(voice, text, { track = true } = {}) {
         const key = currentKey();
         if (!key) throw new Error(`No ${provider.label} key is set.`);
         const model = currentModel();
 
         const controller = new AbortController();
-        inFlight = controller;
+        if (track) inFlight = controller;
         const timer = setTimeout(() => controller.abort(), SYNTH_TIMEOUT_MS);
         let res;
         try {
@@ -317,6 +317,7 @@ export function createVoice({ provider, getKey, getModel, onBilled } = {}) {
             if (!buffer) {
                 const bytes = await fetchAudio(model, trimmed);
                 if (mine !== playToken) return;
+                if (onAudio && !override) onAudio(model, trimmed, bytes.slice(0));
                 buffer = await decode(c, bytes);
                 if (mine !== playToken) return;
                 if (trimmed.length <= MAX_CACHED_CHARS) remember(k, buffer);
@@ -362,6 +363,27 @@ export function createVoice({ provider, getKey, getModel, onBilled } = {}) {
         }
     }
 
+    /*
+     * Fetch a phrase WITHOUT playing it, for keeping between sessions (phrase-audio.js).
+     * Its request is not tracked as the one in flight, so cancelling the user's speech
+     * never lands on it, and it never touches the queue of things being said.
+     */
+    async function fetchForStore(text, model = provider.defaultVoice) {
+        const trimmed = (text || '').trim();
+        if (!trimmed) return null;
+        const bytes = await fetchAudio(model, trimmed, { track: false });
+        const keep = bytes.slice(0);   // decoding takes ownership of the buffer it is given
+        remember(cacheKey(model, trimmed), await decode(audioContext(), bytes));
+        return keep;
+    }
+
+    /** Make a stored recording ready to play at once. */
+    async function preload(text, model, bytes) {
+        const trimmed = (text || '').trim();
+        if (!trimmed || !bytes) return;
+        remember(cacheKey(model, trimmed), await decode(audioContext(), bytes.slice(0)));
+    }
+
     /** Drop the cache and any context — used when the key or provider changes. */
     function reset() {
         cancel();
@@ -369,5 +391,5 @@ export function createVoice({ provider, getKey, getModel, onBilled } = {}) {
         chain = Promise.resolve();
     }
 
-    return { speak, cancel, isSpeaking, unlock, test, reset };
+    return { speak, cancel, isSpeaking, unlock, test, reset, fetchForStore, preload, variant: () => currentModel() || '' };
 }

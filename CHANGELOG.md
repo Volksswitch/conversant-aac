@@ -26,6 +26,13 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- With a paid voice, the phrases the app says over and over are now kept on your
+  device: holding phrases, "Ask them to repeat", "Hold on", the wrap-up and goodbye
+  phrases, openers that don't use a name, and your Express Panel phrases. They play
+  right away from the first time each day, and they still play if the internet drops.
+  After you press Start they are fetched quietly in the background, a few at a time;
+  choosing a different voice fetches them again in the new voice.
+
 - A holding phrase like "I'm thinking about that" now always finishes. Asking for
   different options, tapping one of the other person's choices, or using Reframe no
   longer cuts it off partway. When you tap something to say while one is playing,

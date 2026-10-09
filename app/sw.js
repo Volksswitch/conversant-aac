@@ -92,6 +92,8 @@ const SHELL = [
   './js/tts-azure.js',
   './js/speech-catalog.js',
   './js/tts-rest.js',
+  './js/voice-store.js',
+  './js/phrase-audio.js',
   './js/stt-rest.js',
   './js/platform.js',
   './js/express-editor.js',

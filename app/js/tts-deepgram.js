@@ -159,6 +159,16 @@ export function pcm16ToFloat32(chunks) {
     return out.subarray(0, i);
 }
 
+// Join the PCM chunks into one buffer, for keeping between sessions (voice-store.js).
+export function joinChunks(chunks) {
+    let total = 0;
+    for (const c of chunks) total += c.byteLength;
+    const out = new Uint8Array(total);
+    let at = 0;
+    for (const c of chunks) { out.set(new Uint8Array(c), at); at += c.byteLength; }
+    return out.buffer;
+}
+
 export function cacheKey(model, text) {
     // The separator is a NUL, written as an ESCAPE rather than as a raw byte: a
     // literal NUL makes git and grep treat this whole file as binary, so its diffs
@@ -181,7 +191,7 @@ export function billableCharacters(text) {
  *   onBilled(chars)   — characters actually sent to Deepgram (cache hits send none),
  *                       so the app can show what speaking cost.
  */
-export function createVoice({ getKey, onBilled } = {}) {
+export function createVoice({ getKey, onBilled, onAudio } = {}) {
     let ctx = null;
     let socket = null;
     let socketModel = null;
@@ -620,6 +630,7 @@ export function createVoice({ getKey, onBilled } = {}) {
                 throw new Error('The voice service returned no audio.');
             }
             if (trimmed.length <= MAX_CACHED_CHARS) remember(key, samples);   // instant next time
+            if (onAudio && !keyOverride) onAudio(model, trimmed, joinChunks(chunks));
             p.end();
             await p.done;
             if (player === p) player = null;
@@ -755,8 +766,33 @@ export function createVoice({ getKey, onBilled } = {}) {
         cache.clear();
     }
 
+    /*
+     * Fetch a phrase WITHOUT playing it, for keeping between sessions (phrase-audio.js).
+     * It queues behind anything being spoken, because the connection carries one
+     * sentence at a time. Returns the raw audio, and keeps the phrase ready to play.
+     */
+    function fetchForStore(text, model = DEFAULT_VOICE) {
+        const run = async () => {
+            const trimmed = (text || '').trim();
+            if (!trimmed) return null;
+            const chunks = await synthesizeWithRetry(model, trimmed, () => {}, () => false, null);
+            if (!chunks || !chunks.length) return null;
+            remember(cacheKey(model, trimmed), pcm16ToFloat32(chunks));
+            return joinChunks(chunks);
+        };
+        const p = chain.then(run, run);
+        chain = p.catch(() => {});
+        return p;
+    }
+
+    /** Make a stored recording ready to play at once. */
+    async function preload(text, model, bytes) {
+        const trimmed = (text || '').trim();
+        if (trimmed && bytes) remember(cacheKey(model, trimmed), pcm16ToFloat32([bytes]));
+    }
+
     // Close the connection but keep the cache, for when another voice is chosen: the
     // cached phrases are still this voice's, and fetching them again would bill again.
     function release() { cancel(); closeSocket(); }
-    return { speak, cancel, isSpeaking, unlock, test, reset, release, cacheSize: () => cache.size };
+    return { speak, cancel, isSpeaking, unlock, test, reset, release, fetchForStore, preload, variant: () => '', cacheSize: () => cache.size };
 }

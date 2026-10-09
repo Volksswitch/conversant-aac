@@ -1864,7 +1864,34 @@ Ken: *"Now add support for OpenAI, Google Cloud, and Eleven Labs (voices and whe
 
 - **⚠ AND ONE THE HYGIENE TEST MISSED BECAUSE OF ITS OWN GAP:** a raw NUL byte in `tts-rest.js`, the very mistake `tts-azure.js` carries a comment warning about (a literal NUL makes git treat the file as binary). `tests/source-hygiene.test.mjs` scanned only **git-tracked** files, so a brand-new file — exactly where a fresh mistake lives — was unguarded until after it was committed. It now scans untracked-but-not-ignored files too, verified to catch a planted byte in a new file.
 
-## ⚠ NOTHING NOTICED THAT THE MODEL HAD AGED (Ken, September 30 2026), PARTLY FIXED
+## Fixed phrases are kept in the paid voice between sessions (Ken, October 9 2026), BUILT
+
+Holding phrases, the Commands phrases, openers without {name}, and Express Panel
+phrases (Ken chose this set, "option 2"; per-person openers were left out). Each paid
+voice already kept what it said in memory, which was lost on every close, so the first
+holding phrase of each session waited on the network. `phrase-audio.js` decides what is
+wanted and fills `voice-store.js` (browser storage, NOT the data folder: everything in it
+can be fetched again, so it never goes in a backup).
+
+- **Filed by service, voice, the service's model, and the exact words given to the
+  voice after any respelling.** A voice change finds nothing under the new voice and
+  fetches fresh; anything no longer wanted is deleted. No separate "recapture" step.
+- **Runs after Start and when Settings closes, never while Settings is open** (Ken's
+  condition: testing voices must not set it off). `phraseAudio.pause()` in openSettings.
+- **Slow on purpose: Azure one fetch every 4 seconds** (its free plan refuses past 20 a
+  minute and the refusal looks like a bad key), the others every 0.4 seconds, holding
+  phrases first, nothing fetched while the app is speaking. Any failure ends the run
+  quietly; a phrase not ready is fetched when first said, as before.
+- **A wanted phrase spoken live before the run reaches it is kept too**, through the
+  `onAudio` hook each backend calls after a fresh fetch (never during a Settings Test).
+  Nothing else is kept: AI-written suggestions and partner words never reach the store.
+- **The store requests are not tracked as "in flight"** in the Azure and REST voices, so
+  cancelling the user's speech can never land on a background fetch instead.
+- **Deepgram's background fetch queues behind live speech on its one connection**, so
+  a live sentence can wait for one short phrase. Verified with stand-ins only; not yet
+  run against Deepgram itself.
+
+ (Ken, September 30 2026), PARTLY FIXED
 
 **The app ran on Claude Sonnet 4.6 from February to September, while Sonnet 5 had been available since June 29 at two thirds the price.** Three months of every tester waiting about six seconds for suggestions instead of three, on the metric the product exists to move. **It surfaced only because Ken asked an unrelated question about providers.** Ken: *"a service just got better and cheaper and we didn't know."*
 
