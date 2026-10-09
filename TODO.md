@@ -37,6 +37,27 @@ the one that quietly waits forever.
 
 ## Open
 
+### The User Manuals: today's speech and fill-in features, with "how can I use it"
+- **Raised:** 2026-10-09 - Ken: *"ensure that user documentation includes these kinds of
+  'how can I use it' instructions."* Nothing below is in the three User Manuals yet.
+- **What is wanted, at the next "sync docs" that Ken calls once these have settled:**
+  - **"Words the voice gets wrong"** (Settings > Speech): what it is, and its uses -
+    a medical term or brand name, an abbreviation said letter by letter ("lol" as
+    "L O L"), and an abbreviation heard in full ("btw" heard as "by the way" while the
+    screen keeps "btw"). Say that it applies to everything the app says, AI
+    suggestions included, and that capitals do not matter.
+  - **The user's own name in About Me:** the "how should it be said" question.
+  - **Fill-ins:** their name and the time of day in Express and Commands phrases, the
+    Insert buttons, what happens with nobody selected, and examples ("Have a good
+    {time of day}!", "Thank you, {name}.").
+  - **Hear buttons** on Commands phrases and on each word in the list.
+  - **Holding phrases always finish**, and the user's words start half a second after.
+  - **Fixed phrases kept on the device** in a paid voice, and that they are fetched
+    after Start.
+  - **The number page's decimal point**, and "Ask them to repeat" at rest.
+- **Why not now:** documents wait until a feature has stopped moving, and Ken times
+  "sync docs".
+
 ### Ken's October 9 2026 report: "Hi" not spoken, and words heard in a quiet room
 - **Raised:** 2026-10-09, Ken's problem report from his laptop (0.13.14, OpenAI for both
   hearing and speaking): after turning "Don't save this conversation" off, tapping
