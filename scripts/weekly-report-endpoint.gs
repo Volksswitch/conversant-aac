@@ -113,7 +113,8 @@ function doPost(e) {
         try {
           MailApp.sendEmail(ALERT_EMAIL,
             'Conversant AAC - problem report from ' + (p.testerName || 'a tester'),
-            (p.note || '(no note)') + '\n\nSee the problems tab for the full report.');
+            (p.note || '(no note)') + '\n\nThe full report is on the problems tab:\n' +
+            _tabLink(PROBLEMS_SHEET_NAME));
         } catch (mailErr) { console.error(mailErr); }
       }
       return _out('ok');
@@ -195,7 +196,9 @@ function doPost(e) {
          '',
          'These are new since that tester last reported.',
          'Nothing about what anybody said is in here or in the Sheet.',
-         'Run "evaluate beta" on an export of the reports tab to see them in context.'
+         'Run "evaluate beta" on an export of the reports tab to see them in context.',
+         '',
+         'The reports tab: ' + _tabLink(SHEET_NAME)
         ].join('\n'));
       } catch (mailErr) { console.error(mailErr); }
     }
@@ -260,11 +263,22 @@ function _writeWeeks(p) {
  * Visiting the /exec URL in a browser now prints this, so a redeploy is confirmable in
  * two seconds with nothing written. The correct redeploy is:
  *   Deploy > Manage deployments > pencil > Version: New version > Deploy   (same URL) */
-var SCRIPT_VERSION = '2026-10-05c';
+var SCRIPT_VERSION = '2026-10-10a';
 
 // A GET is handy for confirming the deployment is live, and WHICH CODE is live.
 function doGet() {
   return _out('Conversant AAC report endpoint is running. Script version: ' + SCRIPT_VERSION);
+}
+
+/* A link straight to one tab of this Sheet, for the alert emails (Ken, October 10
+ * 2026). Built from the Sheet itself, so it stays right if the Sheet is ever copied.
+ * Never throws: an email without the link is better than no email. */
+function _tabLink(name) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName(name);
+    return ss.getUrl() + (sh ? '#gid=' + sh.getSheetId() : '');
+  } catch (e) { return '(link unavailable)'; }
 }
 
 function _out(msg) {
