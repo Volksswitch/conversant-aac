@@ -37,19 +37,6 @@ the one that quietly waits forever.
 
 ## Open
 
-### "OK" in the Deepgram voice spoke too fast to understand
-- **Raised:** 2026-10-10 - Ken's problem report from his iPad (0.13.16, Deepgram voice
-  aura-2-arcas-en, Home Screen app). The Express Panel button "OK" was hard to
-  understand. (The report's note said "bye"; Ken corrected it to "OK" the same day.)
-- **What the report shows:** the app plays the voice's recordings at the correct speed
-  on every path, so the likely cause is the voice reading "OK" as two quick letters.
-  "OK" is one of the shipped Always phrases.
-- **What is wanted:** Ken tries "Okay" in that button's "How to say it" box and listens.
-  If it fixes it, give the shipped "OK" button the spoken form "Okay" in
-  `ALWAYS_DEFAULTS` (express-items.js), so new panels get it. The words on the button
-  stay "OK".
-- **Why not now:** it needs an ear; there is no Deepgram key on this machine.
-
 ### Documents that read as though eye gaze does not work yet
 - **Raised:** 2026-10-10 - Ken: Conversant has been used with eye gaze and it worked; it
   should work wherever the eye-gaze equipment emulates a mouse. Recorded in `CLAUDE.md`

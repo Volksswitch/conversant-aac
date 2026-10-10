@@ -169,14 +169,17 @@ export const SEED_REVISION = 1;
 //
 // `cat` is not set. A phrase takes its color from the BAND it sits in, so a per-phrase
 // category has had no effect since bands shipped (ui.renderExpressPanel voids it).
+// Four carry a spoken form (Ken, October 10 2026): the Deepgram voice said them too
+// fast to understand, and these spellings fixed it by ear on his iPad. The words on
+// the button do not change.
 export const ALWAYS_DEFAULTS = [
   PH('Yes'), PH('No'),
-  PH("I don't know"), PH('Maybe'),
-  PH('OK'), PH('Excuse me'),
+  PH("I don't know"), PH('Maybe', 'cont', 'May be.'),
+  PH('OK', 'cont', 'Okay'), PH('Excuse me'),
   PH('Hey there'), PH('Come here please'),
-  PH('Hi'), PH('Bye'),
+  PH('Hi'), PH('Bye', 'cont', 'Bye,'),
   PH('Awesome'), PH('No way'),
-  PH('Please'), PH('Thank you'), PH("You're welcome"),
+  PH('Please'), PH('Thank you', 'cont', 'Thank you,'), PH("You're welcome"),
   PH('When?'), PH('Where?'), PH('Why?'), PH('Who?'), PH('What?'),
   PH('Wanna chat?'),
   PH('I need something for my care'),

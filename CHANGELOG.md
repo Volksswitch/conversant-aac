@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- On a new Express Panel, four buttons are now said more clearly in the paid voices: "OK", "Maybe", "Bye" and "Thank you". The words on the buttons are the same. If your panel is already set up, you can do the same yourself: tap the button in Settings and fill in its "How to say it" box (for example, "Okay" for "OK").
+
 ## Version 0.13.16
 
 - Only one copy of Conversant can be used at a time. If it is already open in another window or tab, the new one says so and waits; close the other one and it is ready right away. Two copies would hear each other's voices and overwrite each other's saved files.
