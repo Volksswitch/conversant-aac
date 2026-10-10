@@ -23,7 +23,7 @@ import * as platform from './platform.js';
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
   "0.13.16": [
-    "Only one copy of Conversant can be used at a time. If it is already open in another window or tab, the new one says so and waits; close the other one and it is ready straight away. Two copies would hear each other's voices and overwrite each other's saved files.",
+    "Only one copy of Conversant can be used at a time. If it is already open in another window or tab, the new one says so and waits; close the other one and it is ready right away. Two copies would hear each other's voices and overwrite each other's saved files.",
     "On a computer or an Android device, choosing a data folder now starts with a short note: if OneDrive, Google Drive, iCloud or Dropbox backs that folder up online, your conversations are copied there too. On Windows, Documents and Desktop are often kept in OneDrive."
   ],
   "0.13.15": [
