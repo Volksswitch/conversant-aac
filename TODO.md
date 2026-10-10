@@ -37,6 +37,23 @@ the one that quietly waits forever.
 
 ## Open
 
+### Documents that read as though eye gaze does not work yet
+- **Raised:** 2026-10-10 - Ken: Conversant has been used with eye gaze and it worked; it
+  should work wherever the eye-gaze equipment emulates a mouse. Recorded in `CLAUDE.md`
+  under the access-method decision.
+- **What is wanted:** reword these so "not built" plainly means a purpose-built eye-gaze
+  layout, and say eye gaze works today through mouse emulation:
+  - **Pragmatics:** "Scanning and eye gaze are planned and not built" (the worst one).
+  - **Architecture Overview:** "Subsequent versions will expand accessibility... (switch
+    access, eye gaze)".
+  - **Express Panel Design:** "the access methods we haven't built yet", under scanning
+    and eye gaze.
+  - **UI-Design:** four places calling eye gaze a "design target, not yet built"; correct
+    about the renderer, but needs the same clarification.
+  - **The three User Manuals** never mention eye gaze; the Product Overview's Access
+    Methods paragraph is the model for adding it.
+- **Why not now:** documents change at a "sync docs" Ken calls.
+
 ### The User Manuals: today's speech and fill-in features, with "how can I use it"
 - **Raised:** 2026-10-09 - Ken: *"ensure that user documentation includes these kinds of
   'how can I use it' instructions."* Nothing below is in the three User Manuals yet.
