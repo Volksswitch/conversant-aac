@@ -52,6 +52,10 @@ the one that quietly waits forever.
     about the renderer, but needs the same clarification.
   - **The three User Manuals** never mention eye gaze; the Product Overview's Access
     Methods paragraph is the model for adding it.
+  - **"One tap or two" (Ken, same day):** the manuals and the Product Overview should tell
+    an eye-gaze user to choose One tap and set how long they must look at a button in
+    their eye-gaze software instead. Two taps would mean two full looks within at most
+    1 second, which likely cannot be done.
 - **Why not now:** documents change at a "sync docs" Ken calls.
 
 ### The User Manuals: today's speech and fill-in features, with "how can I use it"
