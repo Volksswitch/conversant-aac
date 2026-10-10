@@ -37,6 +37,26 @@ the one that quietly waits forever.
 
 ## Open
 
+### Listen to the four new spoken forms on the other voice services
+- **Raised:** 2026-10-10 - Ken. The shipped "OK", "Maybe", "Bye" and "Thank you" buttons
+  now carry spoken forms ("Okay", "May be.", "Bye,", "Thank you,"), found by ear on the
+  Deepgram voice. A spoken form belongs to the button, so every voice service says it.
+- **What is wanted:** hear all four on Azure first (Ken has a key), then OpenAI, Google
+  Cloud, ElevenLabs and the device's own voice where keys allow. Settings > Speech to
+  switch the voice, then the speaker beside each button's "How to say it" box on the
+  Express Panel tab. Note any that sound worse than the plain word.
+- **Why not now:** it needs an ear on each service.
+
+### Possibly: spoken forms that apply to one voice service only
+- **Raised:** 2026-10-10 - Ken, from the same work. A spelling that fixes a word on one
+  service may make it worse on another, and today a button has one spoken form for all.
+- **What is wanted:** decide whether the shipped defaults (and perhaps the user's own
+  "How to say it" boxes and "Words the voice gets wrong" list) need a spoken form per
+  service, used only when that service is speaking.
+- **Why not now:** only worth building if the check above finds a word that one
+  spelling cannot fix on every service. It would add a box per service to the editor,
+  and the recordings kept on the device would need to follow it.
+
 ### Documents that read as though eye gaze does not work yet
 - **Raised:** 2026-10-10 - Ken: Conversant has been used with eye gaze and it worked; it
   should work wherever the eye-gaze equipment emulates a mouse. Recorded in `CLAUDE.md`
