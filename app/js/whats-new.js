@@ -22,6 +22,10 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.13.16": [
+    "Only one copy of Conversant can be used at a time. If it is already open in another window or tab, the new one says so and waits; close the other one and it is ready straight away. Two copies would hear each other's voices and overwrite each other's saved files.",
+    "On a computer or an Android device, choosing a data folder now starts with a short note: if OneDrive, Google Drive, iCloud or Dropbox backs that folder up online, your conversations are copied there too. On Windows, Documents and Desktop are often kept in OneDrive."
+  ],
   "0.13.15": [
     "New in Settings > Speech: \"Words the voice gets wrong\". Type a word and spell it the way it sounds, and the app says it that way everywhere: your Express Panel phrases, the Commands phrases, and the suggested responses. A speaker button lets you hear it.",
     "Each phrase in Settings > Commands has a speaker button, so you can hear how it will sound before you use it.",

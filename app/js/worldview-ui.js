@@ -27,7 +27,7 @@ import { refreshVoiceHarvest } from './voice-refresh.js';
 import { speak } from './tts.js';
 import * as storage from './storage.js';
 import * as keyboard from './keyboard.js';
-import { confirmDanger } from './confirm-dialog.js';
+import { confirmDanger, confirmFolderChoice } from './confirm-dialog.js';
 import { focusMark, focusReturn } from './focus-keep.js';
 
 let contentEl;
@@ -174,6 +174,7 @@ function renderFolderPrompt() {
                 const btn = e.currentTarget;
                 btn.disabled = true;
                 try {
+                    if (!(await confirmFolderChoice())) { btn.disabled = false; return; }
                     await storage.pickDataFolder();
                     // File-in-folder wins (v0.2.25): adopt an existing
                     // worldview.json, or promote cache-only answers to a new one.

@@ -191,6 +191,27 @@ export function confirmNeutral({
     });
 }
 
+/* Asked just before the folder picker opens (Ken, October 9 2026; SEC-6). The browser
+ * tells the app only a folder's NAME, never where it is, so the app cannot tell a
+ * OneDrive folder from a local one and warn about that one only. The warning is
+ * therefore given every time a folder is chosen - which is rare - at the one moment it
+ * can change the choice. Skipped where there is no folder picker (an iPad keeps its
+ * data inside the browser, so there is nothing to choose). Resolves true to go on. */
+export function confirmFolderChoice() {
+    if (typeof window === 'undefined' || !('showDirectoryPicker' in window)) return Promise.resolve(true);
+    return confirmNeutral({
+        title: 'Before you choose a folder',
+        body: 'This folder holds everything the app saves, including what you and the other person '
+            + 'said in your conversations. If OneDrive, Google Drive, iCloud or Dropbox keeps the '
+            + 'folder backed up online, all of that is copied to that company’s servers. To keep '
+            + 'conversations only on this device, choose a folder that is not backed up online. On '
+            + 'Windows, the Documents and Desktop folders are often kept in OneDrive, so check '
+            + 'before you choose a folder inside them.',
+        confirmLabel: 'Choose a folder',
+        cancelLabel: 'Cancel',
+    });
+}
+
 /* Put a dialog exactly over another element instead of centering it (Ken, October 8
  * 2026). A centered card lands across a keyguard's rails; over a region the keyguard
  * already leaves open - the Conversation Pane, or one response option - it does not.

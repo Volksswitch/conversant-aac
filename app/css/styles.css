@@ -5764,3 +5764,27 @@ body.reviewing .response-card { position: relative; }
 /* Insert buttons for the fill-ins (fill-ins.js, October 9 2026): a full-width line of
  * their own inside an editor row or section, wrapping on a narrow panel. */
 .fill-in-row { display: flex; flex-wrap: wrap; gap: 0.4rem; flex: 1 1 100%; margin: 0.25rem 0; }
+
+/* A second copy of the app is open (single-instance.js, SEC-9). Covers everything so
+   nothing on this copy can be tapped until the other one closes. Paint only: drawn
+   over the screen, never part of its layout. */
+#singleInstanceOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: var(--backdrop);
+}
+.single-instance-card {
+    background: var(--surface-raised);
+    color: var(--ink);
+    border-top: 6px solid var(--accent);
+    border-radius: 10px;
+    padding: 1.5rem;
+    max-width: 30rem;
+}
+.single-instance-card h2 { margin: 0 0 0.75rem; }
+.single-instance-card p { margin: 0 0 0.75rem; line-height: 1.4; }

@@ -61,7 +61,8 @@ const SPEECH_COMPANY = {
     ...Object.fromEntries(Object.entries(TTS_PROVIDERS).map(([id, p]) => [id, p.label])),
 };
 import * as sttAzure from './stt-azure.js';
-import { confirmDanger, confirmNeutral, showBusy, showNotice, askForText } from './confirm-dialog.js';
+import { confirmDanger, confirmNeutral, confirmFolderChoice, showBusy, showNotice, askForText } from './confirm-dialog.js';
+import * as singleInstance from './single-instance.js';
 import * as helpMode from './help-mode.js';
 import * as usageSummary from './usage-summary.js';
 import * as diagnostics from './diagnostics.js';
@@ -515,6 +516,10 @@ function initApp() {
         const startReportBtn = document.getElementById('startReportBtn');
         if (startReportBtn) startReportBtn.addEventListener('click', () => sendProblemReportFromStart());
     } catch { /* the report link must never be what stops the app starting */ }
+
+    // One copy at a time (SEC-9). A second copy covers its screen and waits; Start is
+    // refused while it waits (see handleStart), so it never opens a microphone.
+    singleInstance.claim();
 
     // Stamp the error log with this build's version (Ken, July 2026).
     storage.setAppVersion(APP_VERSION);
@@ -1720,6 +1725,7 @@ function setStartBusy(busy) {
 }
 
 async function handleStart() {
+    if (singleInstance.isBlocked()) return;   // another copy is open (SEC-9)
     if (startInProgress) return;
     setStartBusy(true);
     metrics.event(metrics.EV.START_PRESSED);
@@ -8155,6 +8161,7 @@ function openSettings() {
     document.getElementById('pickFolderBtn').onclick = async () => {
         setStatusLine('dataFolderStatus', null, '');
         try {
+            if (!(await confirmFolderChoice())) return;
             await storage.pickDataFolder();
             await adoptDataFolder();
         } catch (err) {
