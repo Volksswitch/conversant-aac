@@ -96,6 +96,8 @@ const SHELL = [
   './js/phrase-audio.js',
   './js/fill-ins.js',
   './js/single-instance.js',
+  './js/theme-init.js',
+  './js/sw-register.js',
   './js/spoken-words-editor.js',
   './js/stt-rest.js',
   './js/platform.js',

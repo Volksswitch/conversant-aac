@@ -2057,6 +2057,18 @@ function isRateLimit(err) {
     return /\b(429|529)\b/.test(m);
 }
 
+// Which kind of failure a generation error is, for the counts (Ken, October 9 2026).
+// A REFUSAL is the AI declining to write - nothing broke - and it is the one failure
+// that can stop a user saying something real, so it is counted on its own rather
+// than lost among dropped connections. The screen is unchanged: only the record knows.
+function isRefusal(err) {
+    return !!err && (err.stopReason === 'refusal' || /stop: refusal\b/.test(err.message || ''));
+}
+function failureEvent(err) {
+    if (isRefusal(err)) return metrics.EV.AI_REFUSED;
+    return isRateLimit(err) ? metrics.EV.RATE_LIMITED : metrics.EV.GENERATION_FAILED;
+}
+
 async function generateOptions(partnerText) {
     const token = ++generationToken;
     ui.setPaletteBusy(true);   // the cards showing may be replaced — say so (Ken)
@@ -2286,8 +2298,7 @@ async function generateOptions(partnerText) {
         // a product fault at all: it is several testers sharing one key, and the fix is
         // separate keys rather than anything in the app. Counted apart so a run of them
         // cannot be read as the app breaking.
-        metrics.event(isRateLimit(err) ? metrics.EV.RATE_LIMITED : metrics.EV.GENERATION_FAILED,
-            { ms: Date.now() - startedAt });
+        metrics.event(failureEvent(err), { ms: Date.now() - startedAt });
         // The AI's own reply is kept when it could not be read - it is the only way to
         // tell afterwards what went wrong. Private detail, like the partner's words:
         // stripped for a private conversation and never sent in a weekly report.
@@ -5281,7 +5292,7 @@ async function refreshForContextChange() {
         ui.setStatus('Select a response');
     } catch (err) {
         if (token !== generationToken) return true;
-        metrics.event(metrics.EV.GENERATION_FAILED, { reason: isRateLimit(err) ? 'rate_limit' : 'error' });
+        metrics.event(failureEvent(err), { reason: isRateLimit(err) ? 'rate_limit' : 'error' });
         storage.logError('contextRefresh', err.message);
         // No error card: the cards already showing are still perfectly usable, they
         // simply have not taken the new value into account. Replacing them with an

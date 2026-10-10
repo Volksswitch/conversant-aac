@@ -743,7 +743,8 @@ test('CR-091: changing what a card shows re-fits the cards', () => {
 });
 
 test('CR-092: a new version waits for a quiet moment before restarting the app', () => {
-    const html = readFileSync(new URL('../app/index.html', import.meta.url), 'utf8');
+    // Moved out of index.html into its own file (SEC-3, October 9 2026).
+    const html = readFileSync(new URL('../app/js/sw-register.js', import.meta.url), 'utf8');
     assert.match(html, /if \(window\.__aacReloadIfIdle\) window\.__aacReloadIfIdle\(\);/);
     assert.match(appSource, /window\.__aacReloadIfIdle = reloadForUpdateIfIdle;/);
     const f = appSource.slice(appSource.indexOf('function reloadForUpdateIfIdle'));

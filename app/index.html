@@ -2,6 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <!-- SEC-3 (October 9 2026): the only places this page may load code from or send
+         data to. A bug that let someone slip their own code in would be refused, and
+         nothing could be sent anywhere but the AI and the speech services listed here.
+         ⚠ A SERVICE MISSING FROM connect-src FAILS SILENTLY - add every new provider here
+         in the same change (tests/csp.test.mjs checks the ones the app knows about). -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; connect-src 'self' https://api.anthropic.com https://api.openai.com https://texttospeech.googleapis.com https://speech.googleapis.com https://api.elevenlabs.io https://api.deepgram.com wss://api.deepgram.com https://*.tts.speech.microsoft.com https://*.stt.speech.microsoft.com https://script.google.com https://script.googleusercontent.com">
     <!-- maximum-scale/user-scalable state the intent and are honoured by Android and
          desktop. iOS Safari deliberately IGNORES both for accessibility, so they are
          NOT the mechanism here — pinch is blocked by blockZoomGestures() in app.js and
@@ -15,25 +21,7 @@
     <link rel="icon" type="image/png" href="icons/icon-192.png">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <link rel="stylesheet" href="css/styles.css">
-    <script>
-        // Runs before the first paint on purpose -- see the note above. The colours
-        // here are only the browser-chrome tint per scheme; every colour the PAGE
-        // uses lives in styles.css. Deliberately tolerant: any failure leaves the
-        // app on Default.
-        try {
-            var CHROME = {
-                'bold': '#2c3e50', 'hc-light': '#000000', 'dark': '#15181b',
-                'hc-dark': '#000000', 'yellow': '#000000', 'cb': '#2c3e50'
-            };
-            var saved = JSON.parse(localStorage.getItem('aac_settings') || '{}');
-            var scheme = saved.colorScheme;
-            if (scheme && CHROME[scheme]) {
-                document.documentElement.setAttribute('data-theme', scheme);
-                var m = document.querySelector('meta[name="theme-color"]');
-                if (m) m.setAttribute('content', CHROME[scheme]);
-            }
-        } catch (e) { /* no stored settings, or storage is blocked: stay on Default */ }
-    </script>
+    <script src="js/theme-init.js"></script>
 </head>
 <body>
     <!-- Conversation screen: a MAIN area + a DOCK area. The dock area occupies
@@ -1340,36 +1328,7 @@
     </dialog>
 
     <script type="module" src="js/app.js"></script>
-    <script>
-        // Register the service worker for offline app-shell loading and PWA install,
-        // and auto-update the app on launch. A redeployed sw.js installs and (because
-        // the worker calls skipWaiting) activates immediately; when it takes control
-        // we reload once so the page runs the new version instead of the one it
-        // launched with. Guarded so the very first install (no prior controller)
-        // and repeat fires don't loop.
-        if ('serviceWorker' in navigator) {
-            const hadController = !!navigator.serviceWorker.controller;
-            let reloading = false;
-            navigator.serviceWorker.addEventListener('controllerchange', () => {
-                if (reloading || !hadController) return;
-                reloading = true;
-                // Once the app is running it decides when: never mid-conversation
-                // (CR-092). Before it has loaded, reload at once.
-                window.__aacUpdateReady = true;
-                if (window.__aacReloadIfIdle) window.__aacReloadIfIdle();
-                else window.location.reload();
-            });
-            window.addEventListener('load', async () => {
-                try {
-                    const reg = await navigator.serviceWorker.register('sw.js');
-                    // Check for a newer worker on every launch.
-                    reg.update();
-                } catch (err) {
-                    console.warn('Service worker registration failed:', err);
-                }
-            });
-        }
-    </script>
+    <script src="js/sw-register.js"></script>
 
     <!-- The three layout handles - the circles dragged to move the borders while the
          layout is unlocked.

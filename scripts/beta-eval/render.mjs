@@ -77,6 +77,7 @@ export function render({ testers, excluded, unnamed, problems, broken, asOf = Da
     L.push('  These five combine honestly across people because each is a count divided');
     L.push('  by a count. Typical waits do not - see the last section.');
     if (totals.rateLimited) L.push(`  (!) The AI refused ${totals.rateLimited} request(s) for being asked too often.`);
+    if (totals.aiRefused) L.push(`  (!) The AI declined to write suggestions ${totals.aiRefused} time(s). Ask for the conversation file.`);
     if (totals.voiceFellBack) L.push(`  (!) The paid voice dropped to the device voice ${totals.voiceFellBack} time(s).`);
 
     whereTheWaitGoes(L, testers, totals, r);

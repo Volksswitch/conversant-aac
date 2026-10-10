@@ -53,6 +53,9 @@ export const EV = {
     GENERATION_SUPERSEDED: 'generation_superseded',
     GENERATION_FAILED: 'generation_failed', // { reason }
     RATE_LIMITED: 'rate_limited',
+    // The AI declined to write the suggestions (Ken, October 9 2026). Its own name so a
+    // refusal is never read as the app or the network failing - see failureEvent.
+    AI_REFUSED: 'ai_refused',
     STT_GAP: 'stt_gap',                     // { ms } — between recognizer deliveries
     // Suggestions
     PALETTE_SHOWN: 'palette_shown',         // { kind, cards, words }

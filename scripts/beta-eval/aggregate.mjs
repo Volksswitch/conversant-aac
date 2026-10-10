@@ -117,6 +117,7 @@ export function tally(t) {
         contextSets: num(ev.context_set),
         contextRefreshes: num(ev.context_refresh),
         rateLimited: num(ev.rate_limited),
+        aiRefused: num(ev.ai_refused),
         voiceFellBack: num(u.voiceFellBack),
         // Sample counts for the two halves of the wait. The MEDIANS cannot be pooled
         // (see the rule at the top) but the counts behind them can, and without them
