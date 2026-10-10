@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.13.17
+
 - On a new Express Panel, four buttons are now said more clearly in the paid voices: "OK", "Maybe", "Bye" and "Thank you". The words on the buttons are the same. If your panel is already set up, you can do the same yourself: tap the button in Settings and fill in its "How to say it" box (for example, "Okay" for "OK").
 
 ## Version 0.13.16
