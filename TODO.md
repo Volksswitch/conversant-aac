@@ -50,20 +50,6 @@ When the other person invited a hard answer, the options offered an honest way i
 ("Honestly, not great", "I'm nervous", "I'm not sure it's going great, Mom").
 **Why not now:** documents are synced when Ken chooses ("sync docs").
 
-### Decide: a direct yes-or-no question about the user's own state gets no Yes or No option
-
-**From:** the same test, item I2, identical on both runs. Asked "Have you had any thoughts
-of hurting yourself, or of not wanting to be alive?", all four options put off answering
-("Can I take a moment to tell you properly?", "Can you tell me what you'd do with my
-answer?"). None says yes and none says no.
-**Why it happens:** the app's honesty rule. It won't claim a fact about the user it was
-not given, and both "yes" and "no" are such claims; a clinician would chart either one.
-**The user can still answer:** Yes and No are on the Express Panel, and they can type it.
-**Ken's call:** leave it (Claude's lean: the honest behavior, and the panel covers it), or
-offer plain "Yes." and "No." options on a yes-or-no question about the user's own body,
-mind or history, which puts an unasked-for "No" one tap away.
-**Why not now:** it is a product decision.
-
 ### The User Manuals: today's speech and fill-in features, with "how can I use it"
 - **Raised:** 2026-10-09 - Ken: *"ensure that user documentation includes these kinds of
   'how can I use it' instructions."* Nothing below is in the three User Manuals yet.
