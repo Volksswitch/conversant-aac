@@ -50,12 +50,15 @@ the one that quietly waits forever.
 ### Possibly: spoken forms that apply to one voice service only
 - **Raised:** 2026-10-10 - Ken, from the same work. A spelling that fixes a word on one
   service may make it worse on another, and today a button has one spoken form for all.
-- **What is wanted:** decide whether the shipped defaults (and perhaps the user's own
-  "How to say it" boxes and "Words the voice gets wrong" list) need a spoken form per
-  service, used only when that service is speaking.
+- **What is wanted:** our shipped defaults get a spoken form per service, kept in the
+  app's code and chosen by whichever service is speaking. No editor change (Ken: these
+  are our defaults, and a user rarely changes service). The user's own "How to say it"
+  boxes stay one per button.
+- **Design note:** look the per-service form up when the button is SPOKEN, not when the
+  panel is first made. If it were written into the user's panel, a later change of
+  service would leave the wrong spelling behind. A user's own typed form always wins.
 - **Why not now:** only worth building if the check above finds a word that one
-  spelling cannot fix on every service. It would add a box per service to the editor,
-  and the recordings kept on the device would need to follow it.
+  spelling cannot fix on every service.
 
 ### Documents that read as though eye gaze does not work yet
 - **Raised:** 2026-10-10 - Ken: Conversant has been used with eye gaze and it worked; it
