@@ -37,19 +37,18 @@ the one that quietly waits forever.
 
 ## Open
 
-### "Bye!" in the Deepgram voice spoke too fast to understand
+### "OK" in the Deepgram voice spoke too fast to understand
 - **Raised:** 2026-10-10 - Ken's problem report from his iPad (0.13.16, Deepgram voice
-  aura-2-arcas-en, Home Screen app). The goodbye card "Bye!" was hard to understand.
-- **What the report shows:** the app played the voice's recording at the correct speed
-  (the app requests and plays 24,000 samples a second on every path, including the
-  recordings kept between sessions), so the speed appears to be how the voice says a
-  single word. Not measured: there is no Deepgram key on this machine.
-- **Options for Ken:** (1) user-side today: change the goodbye in Settings > Commands to
-  a longer phrase ("Bye, take care!"), or add "Bye" to "Words the voice gets wrong" with
-  a longer spoken form; (2) measure one-word phrases on Aura-2 with
-  `scripts/deepgram-pronunciation-probe.mjs` once a key file is in the project, then
-  decide whether the app should change anything.
-- **Why not now:** whether it is the voice or the app needs an ear and a Deepgram key.
+  aura-2-arcas-en, Home Screen app). The Express Panel button "OK" was hard to
+  understand. (The report's note said "bye"; Ken corrected it to "OK" the same day.)
+- **What the report shows:** the app plays the voice's recordings at the correct speed
+  on every path, so the likely cause is the voice reading "OK" as two quick letters.
+  "OK" is one of the shipped Always phrases.
+- **What is wanted:** Ken tries "Okay" in that button's "How to say it" box and listens.
+  If it fixes it, give the shipped "OK" button the spoken form "Okay" in
+  `ALWAYS_DEFAULTS` (express-items.js), so new panels get it. The words on the button
+  stay "OK".
+- **Why not now:** it needs an ear; there is no Deepgram key on this machine.
 
 ### Documents that read as though eye gaze does not work yet
 - **Raised:** 2026-10-10 - Ken: Conversant has been used with eye gaze and it worked; it
