@@ -179,6 +179,42 @@ export function mergeErrorGroups(inApp = [], onDisk = [], clearedAt = '') {
     return { groups, added };
 }
 
+/*
+ * The errors a problem report carries: every one not yet sent to us in an earlier
+ * report, weekly or problem (Ken, October 11 2026: "What matters is have we heard about
+ * it and can we diagnose it"). `mark` is the time of the newest error already sent; the
+ * weekly report and the problem report share it, so each error reaches us once.
+ *
+ * An error with no time of its own is dated by its conversation, whose id is the time
+ * it started (UTC, "2026-10-11T19-21-06"). One that cannot be dated at all counts as
+ * not yet sent: sending a duplicate is noise, dropping an error loses the only record
+ * of it - the same rule as the weekly report.
+ *
+ * Returns { groups, newest }: newest is the mark to save once the report has gone.
+ */
+export function conversationIdTime(id) {
+    const m = /^(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})$/.exec(String(id || ''));
+    return m ? `${m[1]}T${m[2]}:${m[3]}:${m[4]}Z` : '';
+}
+
+export function unreportedErrorGroups(groups = [], mark = '') {
+    const out = [];
+    let newest = mark || '';
+    for (const [id, errs] of groups) {
+        const idTime = conversationIdTime(id);
+        const kept = (errs || []).filter((e) => {
+            const when = (e && e.ts) || idTime;
+            return !when || !mark || when > mark;
+        });
+        for (const e of kept) {
+            const when = (e && e.ts) || idTime;
+            if (when && when > newest) newest = when;
+        }
+        if (kept.length) out.push([id, kept]);
+    }
+    return { groups: out, newest };
+}
+
 export function historyForRequest(history, partnerText, promotedIdx = -1, promotedPrefix = '') {
     const base = Array.isArray(history) ? history : [];
     const moved = promotedIdx >= 0 ? base[promotedIdx] : null;

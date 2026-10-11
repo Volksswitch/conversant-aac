@@ -7254,7 +7254,7 @@ async function buildProblemReportText({ note = null, about = null } = {}) {
     try { usageText = await buildUsageText(); }
     catch { usageText = '(unavailable)'; }
     let errorReport = '';
-    try { errorReport = await buildErrorReport(); } catch { errorReport = '(unavailable)'; }
+    try { errorReport = await buildErrorReport({ unreportedOnly: true }); } catch { errorReport = '(unavailable)'; }
     let conversationText = '';
     try { conversationText = await aboutConversation(about); }
     catch (e) { conversationText = `(could not read it: ${e && e.message ? e.message : e})`; }
@@ -7356,7 +7356,7 @@ async function sendProblemReportFromStartNow() {
     }
     try {
         const res = await weeklySend.sendProblemReport({
-            note: '', report: text, appVersion: APP_VERSION, build: BUILD_ID,
+            note: '', report: text, appVersion: APP_VERSION, build: BUILD_ID, errorMark: reportErrorMark,
         });
         if (res && res.sent) say('Sent and received. Thank you.');
         else say('Not sent yet - it is saved and will go by itself next time.');
@@ -7399,7 +7399,7 @@ async function sendProblemReportFromReview(about) {
     }))) return;
     let res = null;
     try {
-        res = await weeklySend.sendProblemReport({ note, report: text, appVersion: APP_VERSION, build: BUILD_ID });
+        res = await weeklySend.sendProblemReport({ note, report: text, appVersion: APP_VERSION, build: BUILD_ID, errorMark: reportErrorMark });
     } catch { /* reported below as not sent */ }
     await showNotice({
         title: res && res.sent ? 'Sent' : 'Not sent yet',
@@ -7486,6 +7486,7 @@ async function sendProblemReportNow() {
             report: text,
             appVersion: APP_VERSION,
             build: BUILD_ID,
+            errorMark: reportErrorMark,
         });
         // (!) THESE THREE MESSAGES ARE NOW TRUE, WHICH THEY WERE NOT BEFORE. The app
         // used to be unable to read the reply, so "Sent" meant only that the request
@@ -7976,14 +7977,24 @@ async function errorsFromDisk() {
     return [...groups.keys()].sort().reverse().map(id => [id, groups.get(id)]);
 }
 
-async function buildErrorReport() {
+// `unreportedOnly` is the problem report: only errors not yet sent to us by an earlier
+// report, weekly or problem (Ken, October 11 2026). The Copy button in Troubleshooting
+// passes nothing and gets the full history. The newest error included is kept in
+// reportErrorMark, and saved as sent once the report has gone.
+let reportErrorMark = '';
+async function buildErrorReport({ unreportedOnly = false } = {}) {
     // ⚠ MERGED, NOT A FALLBACK (CR-142). The in-app list can lose errors (a cleared
     // browser, a new web address) while the saved conversations keep them, and one new
     // error used to hide every older one. Errors on disk that the list does not have
     // are added, except those from before the user last pressed Clear.
     const merged = convLogic.mergeErrorGroups(groupErrorsByConversation(), await errorsFromDisk(),
         storage.loadErrorLogClearedAt());
-    const groups = merged.groups;
+    let groups = merged.groups;
+    if (unreportedOnly) {
+        const unsent = convLogic.unreportedErrorGroups(merged.groups, storage.loadWeeklyErrorMark());
+        groups = unsent.groups;
+        reportErrorMark = unsent.newest;
+    }
     const fromDisk = merged.added > 0;
     const out = [
         'Conversant AAC — error report',
@@ -7991,7 +8002,13 @@ async function buildErrorReport() {
         `Generated: ${new Date().toISOString()}`,
         '',
     ];
-    if (!groups.length) { out.push('(no errors recorded)'); return out.join('\n'); }
+    if (unreportedOnly) {
+        out.push('(errors not sent in an earlier report - the full list is in Settings > Troubleshooting)', '');
+    }
+    if (!groups.length) {
+        out.push(unreportedOnly ? '(no errors since the last report)' : '(no errors recorded)');
+        return out.join('\n');
+    }
     if (fromDisk) {
         // Say where these came from. The in-app error list being empty while the
         // saved conversations are not is itself worth knowing when reading a report.

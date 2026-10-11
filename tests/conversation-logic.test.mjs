@@ -166,3 +166,24 @@ test('mergeErrorGroups adds errors only the saved conversations have', () => {
     assert.equal(after.added, 2, 'only the two after the clear');
     assert.deepEqual(after.groups.find(([id]) => id === 'c1')[1].map((e) => e.message), ['lost']);
 });
+
+// A problem report carries every error not yet sent (Ken, October 11 2026).
+test('unreportedErrorGroups keeps every error newer than the mark, dating an undated one by its conversation', () => {
+    const mark = '2026-10-04T19:00:00.000Z';
+    const groups = [
+        ['2026-10-11T19-21-06', [{ ts: '2026-10-11T19:22:00.000Z', message: 'new' }]],
+        ['2026-10-01T22-20-05', [{ ts: '2026-10-01T22:22:49.675Z', message: 'sent already' }, { message: 'sent already, no time' }]],
+        ['2026-09-20T08-00-00', [{ ts: '2026-09-20T08:01:00.000Z', message: 'two weeks old' }]],
+        ['(none)', [{ ts: '2026-10-10T04:41:02.927Z', message: 'startup' }, { message: 'cannot be dated' }]],
+    ];
+    const sent = cl.unreportedErrorGroups(groups, mark);
+    assert.deepEqual(sent.groups.map(([id]) => id), ['2026-10-11T19-21-06', '(none)']);
+    assert.deepEqual(sent.groups.find(([id]) => id === '(none)')[1].map((e) => e.message), ['startup', 'cannot be dated'],
+        'an error that cannot be dated is sent rather than lost');
+    assert.equal(sent.newest, '2026-10-11T19:22:00.000Z');
+    // Nothing sent yet: every error goes, however old.
+    const all = cl.unreportedErrorGroups(groups, '');
+    assert.ok(all.groups.some(([id]) => id === '2026-09-20T08-00-00'), 'a two-week-old error never sent is included');
+    assert.equal(cl.conversationIdTime('2026-10-11T19-21-06'), '2026-10-11T19:21:06Z');
+    assert.equal(cl.conversationIdTime('(none)'), '');
+});

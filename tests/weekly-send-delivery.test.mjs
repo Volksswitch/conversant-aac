@@ -138,3 +138,18 @@ test('overlapping deliveries post a report only once', async () => {
     assert.equal(posts, 1, 'the same report was not posted twice');
     assert.equal(storage.loadWeeklyQueue().length, 0);
 });
+
+// A problem report and the weekly report share one record of which errors have been
+// sent, so each error reaches us once (Ken, October 11 2026).
+test('sending a problem report marks its errors as sent, so the weekly report does not repeat them', async () => {
+    store.clear();
+    answer('ok');
+    storage.saveWeeklyErrorMark('2026-10-01T00:00:00.000Z');
+    await weekly.sendProblemReport({ note: 'x', report: 'body', appVersion: '0', build: 't', errorMark: '2026-10-11T19:22:00.000Z' });
+    assert.equal(storage.loadWeeklyErrorMark(), '2026-10-11T19:22:00.000Z');
+    const later = weekly.errorsSince([{ ts: '2026-10-11T19:22:00.000Z' }, { ts: '2026-10-12T08:00:00.000Z' }], storage.loadWeeklyErrorMark());
+    assert.deepEqual(later.map((e) => e.ts), ['2026-10-12T08:00:00.000Z'], 'only the newer error is left for the weekly report');
+    // An older mark never moves it backwards.
+    await weekly.sendProblemReport({ note: 'y', report: 'body', appVersion: '0', build: 't', errorMark: '2026-09-01T00:00:00.000Z' });
+    assert.equal(storage.loadWeeklyErrorMark(), '2026-10-11T19:22:00.000Z');
+});

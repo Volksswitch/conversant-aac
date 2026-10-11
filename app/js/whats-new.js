@@ -22,6 +22,9 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.13.20": [
+    "A problem report now carries only the errors we have not already been sent, each with its conversation, instead of every error since the app was first used. The full list is still in Settings > Troubleshooting."
+  ],
   "0.13.19": [
     "With a paid voice on a Bluetooth speaker, the start of what the app says is no longer cut off after a quiet spell. The app now wakes the speaker first. A phrase that would play instantly may start a fifth of a second later.",
     {

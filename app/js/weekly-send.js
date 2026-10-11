@@ -567,7 +567,7 @@ export function formatSendLog(entries) {
  * confirmed would be answering a question they did not ask, and the failure would look
  * like the button being broken. The Beta Test Plan says so in section 8.
  */
-export async function sendProblemReport({ note = '', report = '', appVersion = '', build = '', now = Date.now() } = {}) {
+export async function sendProblemReport({ note = '', report = '', appVersion = '', build = '', now = Date.now(), errorMark = '' } = {}) {
     // ⚠ THE LOCAL GUARD DOES APPLY HERE, and for a different reason than the one the
     // paragraph above refuses. That refusal is about a PREFERENCE: a tester who turned
     // background reporting off has not asked to be silenced when they choose to write to
@@ -591,5 +591,9 @@ export async function sendProblemReport({ note = '', report = '', appVersion = '
         report: String(report || ''),
     };
     storage.saveWeeklyQueue(enqueue(storage.loadWeeklyQueue(), payload));
+    // The errors this report carries are now on their way, so neither report sends
+    // them again (Ken, October 11 2026). Marked on enqueue, like the weekly report:
+    // the queue owns delivery from here. Never moves the mark backwards.
+    if (errorMark && errorMark > storage.loadWeeklyErrorMark()) storage.saveWeeklyErrorMark(errorMark);
     return await flush();
 }

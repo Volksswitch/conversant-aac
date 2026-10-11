@@ -3425,6 +3425,8 @@ accumulating**, and an alert threshold fires once and then every week after. Now
 - **It is a mark, not a purge:** the full list stays on the device, because that is
   what a problem report reads and what the tester sees in Settings.
 
+**⚠ A PROBLEM REPORT CARRIES ONLY ERRORS NOT YET SENT, BY EITHER REPORT (Ken, October 11 2026: *"A problem is a problem. What matters is have we heard about it and can we diagnose it."*).** It used to carry every error ever recorded, each with its conversation, so fixed errors from months back buried the new ones and old conversations with other people went along. A 7-day limit was considered and rejected: with weekly reports off, an older error would never reach us. **The weekly report and the problem report now share one mark (`weeklyErrorMark`, the newest error already sent)**: each sends only errors after it and moves it forward, so every error arrives once, with its conversation when it comes in a problem report. `convLogic.unreportedErrorGroups`; an error with no time is dated by its conversation id, and one that cannot be dated is sent. The Troubleshooting Copy button still gives the full history.
+
 **FIXED 2 — a problem report now falls back to the conversations on disk** when the
 browser list is empty, and says that it did. **The contradiction was never the real
 damage: transcripts hang off that list**, so an empty list attached NO transcript —
