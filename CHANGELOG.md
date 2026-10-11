@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.13.18
+
 - You can now share a single practice scenario. In Settings > Practice, tap "Export" beside one of your scenarios to save it to a file, and "Import a scenario" to add one from a file somebody gave you. Importing never replaces a scenario you already have.
 
 ## Version 0.13.17
