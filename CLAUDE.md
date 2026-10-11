@@ -2253,6 +2253,23 @@ Ken settled the vocabulary for talking about the two configurations, the shape o
 
 ---
 
+## Question sessions after a talk — answering in paragraphs from the user's own writing (Ken, October 11 2026), DECIDED, not built
+
+**The case (Ken):** the user presents a topic they have already written about in depth (a paper, their website), then opens the floor for questions and wants to answer in complete paragraphs, not one or two sentences. This is the first concrete use for the user's own writing as source material (Further Design Thoughts #7, and the "sounds like me" work).
+
+- **Why it is easier than general use of the user's writing:** the user chooses the source documents BEFORE the talk, so the app never has to work out which of their writing is relevant. A paper or a set of web pages is small enough to send whole with every request in the cached part of the prompt. **No automatic selection ("retrieval") is needed for this case.** That remains a separate, later question for a large general collection.
+- **Why longer answers are acceptable here:** in a question session the audience expects the presenter to answer at length and to pause before answering, so the four-second-silence pressure is much weaker. "Good question" is natural here, though it was removed from the general holding phrases.
+- **Switched on by a PLACE** (Ken): e.g. "At my talk". Tapping it puts the app in question-session mode with that talk's documents, and its Flex band carries the session's fixed phrases.
+- **All four cards are answers** (Ken). The clarifying move is already the "Ask them to repeat" Command Bar button, and "That's outside what I've worked on" / "Thank you, next question" are fixed phrases, so they go on the Express Panel (the place's Flex list), not on cards.
+- **The four answers are a MIX of different angles and different lengths** (Ken). Working proposal: three angles drawn from different parts of the material, plus one short version.
+- **Choosing a paragraph:** the user picks by the card's short label and hears the full paragraph (the existing short-label/full-wording card design). Needs a way to stop partway and probably "say more".
+- **Rule changes in this mode only:** "say what was asked and stop" relaxes to "answer fully, from your material". **The honesty rule stays:** answers come only from the chosen documents and the profile; a question beyond them gets a card saying so rather than an AI-supplied answer.
+- **Questions arrive by the microphone** (Ken). A moderator repeating a question is heard too and simply merges into the same partner turn.
+- **Preparing answers to expected questions is a lesser feature** (Ken): the range of possible questions is too wide; on-the-fly answers have to work.
+- **Documents: PDFs and web pages** (Ken). **Preparation may happen OUTSIDE the conversation, on a PC** (Ken), which handles the heavier work better than an iPad: read the PDFs and pages, turn them into plain text, and store the result with the place, so it travels to the iPad through the data folder or a backup. Web pages usually cannot be fetched by the app directly (the browser blocks reading another site), so the user may need to save a page as a file first. **Prefer keeping the user's own text over an AI-condensed version**; condense only if the material is too large to send, since condensing loses their wording.
+- **To measure before building far:** whether the cards come back fast enough with a whole paper in the prompt, and whether the answers are good. Ken's ATOB paper (in the project folder) is the natural first test, with questions he has actually been asked.
+- **Not yet decided:** the stop / "say more" controls; what the place stores and how documents are added on the PC; how a talk's documents are kept separate from the user's general writing.
+
 ## Further Design Thoughts (June 15 2026) — recorded, not built
 
 A batch of Ken's thoughts captured this session. **Status: recorded only — none are implemented.** Their document work was checked against the two overviews on October 11 2026: everything is covered except saying what the app is NOT (item 3) and the age requirement, both now on [TODO.md](TODO.md). **All to-do items live in TODO.md, one list (Ken, October 11 2026).**
