@@ -220,12 +220,8 @@ function renderList() {
             writeBtn.disabled = false;
         }
     });
-    // A scenario somebody exported - from another device, or a therapist's. The plain
-    // file chooser works everywhere, the iPad included, and opens where downloads land.
-    const picker = el('input', { type: 'file', accept: '.json,application/json', hidden: true });
-    picker.addEventListener('change', async () => {
-        const file = picker.files && picker.files[0];
-        picker.value = '';             // so choosing the same file again still fires
+    // A scenario somebody exported - from another device, or a therapist's.
+    const importFile = async (file) => {
         if (!file) return;
         let text;
         try { text = file.size > 1_000_000 ? null : await file.text(); } catch { text = null; }
@@ -235,11 +231,44 @@ function renderList() {
         const { id, added } = await library.importScenario(got.scenario, (pid) => !!relationships.getPerson(pid));
         if (!added) { note.textContent = `“${got.scenario.title}” is already in Your scenarios.`; return; }
         goTo({ mode: 'edit', id });
+    };
+    // The plain file chooser: the only route on an iPad, and the fallback elsewhere.
+    const picker = el('input', { type: 'file', accept: '.json,application/json', hidden: true });
+    picker.addEventListener('change', () => {
+        const file = picker.files && picker.files[0];
+        picker.value = '';             // so choosing the same file again still fires
+        importFile(file);
     });
+    // ⚠ WHERE THE BROWSER HAS A REAL PICKER IT OPENS IN DOWNLOADS (Ken, October 11 2026),
+    // which is where an exported scenario lands. showOpenFilePicker must be the FIRST
+    // thing the tap does: the browser only allows it while it still counts the tap as
+    // recent, and awaiting anything before it spends that.
+    const chooseFile = async () => {
+        note.textContent = '';
+        if (window.showOpenFilePicker) {
+            let file = null;
+            try {
+                const [handle] = await window.showOpenFilePicker({
+                    startIn: 'downloads',
+                    types: [{ description: 'Conversant scenario', accept: { 'application/json': ['.json'] } }],
+                    multiple: false,
+                });
+                file = await handle.getFile();
+            } catch (err) {
+                // Closing the chooser is not an error. Anything else falls back to the
+                // plain chooser, so Import never does nothing on a tap (as CR-271 did).
+                if (err && err.name === 'AbortError') return;
+                note.textContent = 'If no file chooser appears, tap Import a scenario again.';
+                file = null;
+            }
+            if (file) { await importFile(file); return; }
+        }
+        picker.click();
+    };
     fresh.append(sentence, el('div', { class: 'practice-tools' }, [
         writeBtn,
         button('Fill it in yourself', () => goTo({ mode: 'create', draft: library.emptyScenario() })),
-        button('Import a scenario', () => { note.textContent = ''; picker.click(); }),
+        button('Import a scenario', chooseFile),
     ]), picker, note);
 
     // Starting from someone already in About Me, so the same person is not described

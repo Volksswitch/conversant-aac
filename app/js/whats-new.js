@@ -22,6 +22,12 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.13.19": [
+    {
+      "for": "computer",
+      "note": "\"Import a scenario\" now opens in your Downloads folder, where an exported scenario is saved."
+    }
+  ],
   "0.13.18": [
     "You can now share a single practice scenario. In Settings > Practice, tap \"Export\" beside one of your scenarios to save it to a file, and \"Import a scenario\" to add one from a file somebody gave you. Importing never replaces a scenario you already have."
   ],
