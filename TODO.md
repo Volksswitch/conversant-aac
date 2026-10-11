@@ -48,6 +48,8 @@ the one that quietly waits forever.
   link to a person in About Me is kept only on a device that has that person.
 - **Why not now:** documents are synced when Ken says the feature is settled, not when
   it is built.
+- **DONE 2026-10-11 ("sync docs" for 0.13.18):** all three User Manuals (section 6.7)
+  and the Practice Scenarios document (new section 6.5); the Product Overview mentions it.
 
 ### Listen to the four new spoken forms on the other voice services
 - **Raised:** 2026-10-10 - Ken. The shipped "OK", "Maybe", "Bye" and "Thank you" buttons
@@ -92,6 +94,9 @@ the one that quietly waits forever.
     their eye-gaze software instead. Two taps would mean two full looks within at most
     1 second, which likely cannot be done.
 - **Why not now:** documents change at a "sync docs" Ken calls.
+- **DONE 2026-10-11 ("sync docs" for 0.13.18):** Pragmatics, Architecture Overview,
+  Express Panel Design and UI-Design reworded; the three User Manuals gain a "Pointing"
+  row and the one-tap advice; the Product Overview gains the one-tap advice.
 
 ### The User Manuals: today's speech and fill-in features, with "how can I use it"
 - **Raised:** 2026-10-09 - Ken: *"ensure that user documentation includes these kinds of
