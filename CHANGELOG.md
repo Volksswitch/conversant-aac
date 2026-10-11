@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- With a paid voice on a Bluetooth speaker, the start of what the app says is no longer cut off after a quiet spell. The app now wakes the speaker first. A phrase that would play instantly may start a fifth of a second later.
+
 ### On a computer
 
 - "Import a scenario" now opens in your Downloads folder, where an exported scenario is saved.

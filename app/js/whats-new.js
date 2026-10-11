@@ -23,6 +23,7 @@ import * as platform from './platform.js';
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
   "0.13.19": [
+    "With a paid voice on a Bluetooth speaker, the start of what the app says is no longer cut off after a quiet spell. The app now wakes the speaker first. A phrase that would play instantly may start a fifth of a second later.",
     {
       "for": "computer",
       "note": "\"Import a scenario\" now opens in your Downloads folder, where an exported scenario is saved."

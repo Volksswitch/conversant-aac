@@ -34,6 +34,7 @@
  * ⚠ NOTHING IN THIS FILE HAS BEEN RUN AGAINST A REAL KEY. There is none on this machine
  * for any of the three services. The Settings Test button is the confirmation.
  */
+import * as speakerWake from './speaker-wake.js';
 import { describeFailure } from './speech-catalog.js';
 
 // Wake the audio before anything plays, but never wait for ever (CR-280). On an iPad a
@@ -272,14 +273,17 @@ export function createVoice({ provider, getKey, getModel, onBilled, onAudio } = 
         });
     }
 
-    function play(c, buffer) {
+    // `at` is the earliest context time to start: speaker-wake.js holds the first
+    // sound after a quiet spell back a moment so a Bluetooth speaker can wake.
+    function play(c, buffer, at = 0) {
         return new Promise((resolve) => {
             const node = c.createBufferSource();
             node.buffer = buffer;
             node.connect(c.destination);
             sources.add(node);
-            node.onended = () => { sources.delete(node); resolve(); };
-            node.start();
+            speakerWake.soundStarted(c);
+            node.onended = () => { sources.delete(node); speakerWake.soundEnded(c); resolve(); };
+            node.start(Math.max(at, c.currentTime));
         });
     }
 
@@ -312,6 +316,8 @@ export function createVoice({ provider, getKey, getModel, onBilled, onAudio } = 
                 if (mine !== playToken) return;
             }
 
+            // Wake a sleeping Bluetooth speaker now; a fetch below outlasts the wait.
+            const at = speakerWake.wakeSpeaker(c);
             const k = cacheKey(model, trimmed);
             let buffer = cache.get(k);
             if (!buffer) {
@@ -322,7 +328,7 @@ export function createVoice({ provider, getKey, getModel, onBilled, onAudio } = 
                 if (mine !== playToken) return;
                 if (trimmed.length <= MAX_CACHED_CHARS) remember(k, buffer);
             }
-            await play(c, buffer);
+            await play(c, buffer, at);
         };
         chain = chain.then(run, run);      // one failure must not wedge the queue
         return chain;
@@ -332,6 +338,7 @@ export function createVoice({ provider, getKey, getModel, onBilled, onAudio } = 
         playToken++;
         cancelGen++;
         if (inFlight) { try { inFlight.abort(); } catch { /* already done */ } inFlight = null; }
+        if (ctx) speakerWake.stopWake(ctx);
         for (const node of sources) {
             try { node.stop(); } catch { /* already stopped */ }
         }

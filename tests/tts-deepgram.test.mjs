@@ -9,6 +9,7 @@ import './env.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as aura from '../app/js/tts-deepgram.js';
+import * as speakerWake from '../app/js/speaker-wake.js';
 
 // Build an ArrayBuffer of signed 16-bit little-endian samples, as Deepgram sends.
 function pcm(...samples) {
@@ -144,6 +145,8 @@ function fakeAudio(log) {
                 buffer: null, onended: null,
                 connect() {},
                 start() {
+                    // The hiss that wakes a Bluetooth speaker is not the speech.
+                    if (this.buffer && this.buffer.length > 48000) { setTimeout(() => this.onended && this.onended(), 0); return; }
                     // The heart of it: note the context's state AT THE MOMENT the
                     // audio is started. 'suspended' here is the dropped word.
                     log.push('start:' + ctx.state);
@@ -299,9 +302,10 @@ function chunk40ms(value) {
 const tick = () => new Promise((r) => setTimeout(r, 0));
 
 // One voice wired to one fake device and one fake network, cleaned up afterwards.
-function setup(t, { suspended = false } = {}) {
+function setup(t, { suspended = false, speakerAsleep = false } = {}) {
     const ctx = fakeContext();
     if (suspended) ctx.state = 'suspended';
+    if (!speakerAsleep) { speakerWake.soundStarted(ctx); speakerWake.soundEnded(ctx); }
     const { FakeWS, made } = fakeSocketFactory();
     global.WebSocket = FakeWS;
     global.window = { AudioContext: function () { return ctx; } };
@@ -538,6 +542,7 @@ test('audio that stops arriving still times out', async (t) => {
 // opened; release() closes the connection but keeps the cached phrases.
 test('a changed key opens a new connection rather than speaking on the old one', async (t) => {
     const ctx = fakeContext();
+    speakerWake.soundStarted(ctx); speakerWake.soundEnded(ctx);
     const { FakeWS, made } = fakeSocketFactory();
     global.WebSocket = FakeWS;
     global.window = { AudioContext: function () { return ctx; } };
@@ -592,4 +597,53 @@ test('a sentence cut off mid-stream cannot leak into the next one', async (t) =>
     await b;
     const last = ctx.scheduled.at(-1).samples;
     assert.ok(last.length === 960 && Math.abs(last[0] - 500 / 32768) < 1e-6, 'only Bravo\'s own audio');
+});
+
+/* --- waking a Bluetooth speaker (Ken, October 11 2026) -----------------------
+ * A Bluetooth speaker asleep after a quiet spell loses the start of the next sound.
+ * After a quiet spell the app plays a faint hiss at once and starts the speech
+ * WARM_MS later; when the speaker was busy a moment ago it does neither.
+ */
+test('after a quiet spell, a hiss starts at once and the speech waits for the speaker to wake', async (t) => {
+    const { ctx, made, voice } = setup(t, { speakerAsleep: true });
+    const speaking = voice.speak('hello there');
+    await tick(); await tick();
+    const hiss = ctx.scheduled.find((x) => x.seconds >= 1);
+    assert.ok(hiss, 'a hiss was started');
+    assert.equal(hiss.at, 0, 'the hiss starts at once, while the sentence is fetched');
+    assert.ok(hiss.samples.reduce((m, v) => Math.max(m, Math.abs(v)), 0) <= 0.001, 'the hiss is far too quiet to hear');
+    const ws = made[0];
+    for (let i = 0; i < 12; i++) ws.chunk(chunk40ms(1000));
+    ws.flushed();
+    await tick();
+    const speech = ctx.scheduled.filter((x) => x !== hiss);
+    assert.ok(speech.length > 0);
+    assert.ok(Math.abs(speech[0].at - speakerWake.WARM_MS / 1000) < 1e-9,
+        'the speech starts WARM_MS after the hiss, not on top of a sleeping speaker');
+    ctx.finishAll();
+    await speaking;
+});
+
+test('a speaker that played something a moment ago is not woken again', async (t) => {
+    const { ctx, made, voice } = setup(t);
+    const speaking = voice.speak('hello again');
+    await tick(); await tick();
+    const ws = made[0];
+    for (let i = 0; i < 12; i++) ws.chunk(chunk40ms(1000));
+    ws.flushed();
+    await tick();
+    assert.ok(!ctx.scheduled.some((x) => x.seconds >= 1), 'no hiss');
+    assert.equal(ctx.scheduled[0].at, 0, 'no delay either');
+    ctx.finishAll();
+    await speaking;
+});
+
+test('the hiss is not counted as the app speaking', async (t) => {
+    const { ctx, voice } = setup(t, { speakerAsleep: true });
+    voice.speak('quiet please').catch(() => { /* cancelled below */ });
+    await tick(); await tick();
+    assert.ok(ctx.scheduled.some((x) => x.seconds >= 1), 'the hiss is playing');
+    assert.equal(voice.isSpeaking(), false,
+        'the echo guard and the placeholders must not think the app is talking');
+    voice.cancel();
 });

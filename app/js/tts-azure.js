@@ -41,6 +41,8 @@
 // suggestions, and every later sentence queued behind it. "interrupted" (iOS) counts
 // as not running too. If the audio has not woken within the limit this throws, and
 // tts.js says the sentence in the device's own voice instead.
+import * as speakerWake from './speaker-wake.js';
+
 const WAKE_LIMIT_MS = 1500;
 async function wake(c) {
     if (c.state === 'running') return;
@@ -443,14 +445,17 @@ export function createVoice({ getKey, getRegion, onBilled, onAudio } = {}) {
         });
     }
 
-    function play(c, buffer) {
+    // `at` is the earliest context time to start: speaker-wake.js holds the first
+    // sound after a quiet spell back a moment so a Bluetooth speaker can wake.
+    function play(c, buffer, at = 0) {
         return new Promise((resolve) => {
             const node = c.createBufferSource();
             node.buffer = buffer;
             node.connect(c.destination);
             sources.add(node);
-            node.onended = () => { sources.delete(node); resolve(); };
-            node.start();
+            speakerWake.soundStarted(c);
+            node.onended = () => { sources.delete(node); speakerWake.soundEnded(c); resolve(); };
+            node.start(Math.max(at, c.currentTime));
         });
     }
 
@@ -495,6 +500,8 @@ export function createVoice({ getKey, getRegion, onBilled, onAudio } = {}) {
                 if (mine !== playToken) return;
             }
 
+            // Wake a sleeping Bluetooth speaker now; a fetch below outlasts the wait.
+            const at = speakerWake.wakeSpeaker(c);
             const key = cacheKey(model, trimmed);
             let buffer = cache.get(key);
             if (!buffer) {
@@ -505,7 +512,7 @@ export function createVoice({ getKey, getRegion, onBilled, onAudio } = {}) {
                 if (mine !== playToken) return;
                 if (trimmed.length <= MAX_CACHED_CHARS) remember(key, buffer);   // instant next time
             }
-            await play(c, buffer);
+            await play(c, buffer, at);
         };
         chain = chain.then(run, run);       // one failure must not wedge the queue
         return chain;
@@ -515,6 +522,7 @@ export function createVoice({ getKey, getRegion, onBilled, onAudio } = {}) {
         playToken++;                        // a speak() waiting on resume() must not start now
         cancelGen++;
         if (inFlight) { try { inFlight.abort(); } catch { /* already done */ } inFlight = null; }
+        if (ctx) speakerWake.stopWake(ctx);
         for (const node of sources) {
             try { node.stop(); } catch { /* already stopped */ }
         }

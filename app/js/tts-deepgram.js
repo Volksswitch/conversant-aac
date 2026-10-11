@@ -62,6 +62,8 @@
 // suggestions, and every later sentence queued behind it. "interrupted" (iOS) counts
 // as not running too. If the audio has not woken within the limit this throws, and
 // tts.js says the sentence in the device's own voice instead.
+import * as speakerWake from './speaker-wake.js';
+
 const WAKE_LIMIT_MS = 1500;
 async function wake(c) {
     if (c.state === 'running') return;
@@ -396,6 +398,9 @@ export function createVoice({ getKey, onBilled, onAudio } = {}) {
             if (mine !== playToken) return;
         }
         if (!samples.length) return;
+        // A Bluetooth speaker asleep after a quiet spell loses the start of the sound;
+        // see speaker-wake.js. Costs WARM_MS here, and only after a quiet spell.
+        const at = speakerWake.wakeSpeaker(c);
 
         return new Promise((resolve) => {
             const buffer = c.createBuffer(1, samples.length, SAMPLE_RATE);
@@ -404,11 +409,13 @@ export function createVoice({ getKey, onBilled, onAudio } = {}) {
             node.buffer = buffer;
             node.connect(c.destination);
             sources.add(node);
+            speakerWake.soundStarted(c);
             node.onended = () => {
                 sources.delete(node);
+                speakerWake.soundEnded(c);
                 resolve();
             };
-            node.start();
+            node.start(Math.max(at, c.currentTime));
         });
     }
 
@@ -448,7 +455,7 @@ export function createVoice({ getKey, onBilled, onAudio } = {}) {
      * cursor ever falls behind the clock the audio has already run out, and the only
      * thing left to do is carry on from the present rather than schedule into the past.
      */
-    function createStreamPlayer(c) {
+    function createStreamPlayer(c, earliest = 0) {
         let queue = [];            // Float32Array pieces not yet scheduled
         let queued = 0;            // samples in queue
         let cursor = 0;            // context time where the next batch begins
@@ -477,8 +484,10 @@ export function createVoice({ getKey, onBilled, onAudio } = {}) {
             if (cursor < c.currentTime) { if (started) underruns++; cursor = c.currentTime; }
             live++;
             sources.add(node);
+            speakerWake.soundStarted(c);
             node.onended = () => {
                 sources.delete(node);
+                speakerWake.soundEnded(c);
                 live--;
                 finishIfDone();
             };
@@ -522,7 +531,7 @@ export function createVoice({ getKey, onBilled, onAudio } = {}) {
                 queue.push(f);
                 queued += f.length;
                 if (!started) {
-                    if (queued >= leadInSamples()) { cursor = c.currentTime; drain(false); }
+                    if (queued >= leadInSamples()) { cursor = Math.max(c.currentTime, earliest); drain(false); }
                     return;
                 }
                 drain(false);
@@ -532,7 +541,7 @@ export function createVoice({ getKey, onBilled, onAudio } = {}) {
             end() {
                 if (aborted) return;
                 ended = true;
-                if (!started) cursor = c.currentTime;
+                if (!started) cursor = Math.max(c.currentTime, earliest);
                 drain(true);
                 finishIfDone();
             },
@@ -603,7 +612,9 @@ export function createVoice({ getKey, onBilled, onAudio } = {}) {
                 if (mine !== playToken) return;
             }
 
-            const p = createStreamPlayer(c);
+            // Wake a sleeping Bluetooth speaker now, while the sentence is fetched;
+            // the fetch outlasts WARM_MS, so this delays nothing (speaker-wake.js).
+            const p = createStreamPlayer(c, speakerWake.wakeSpeaker(c));
             player = p;
             let chunks;
             try {
@@ -722,6 +733,7 @@ export function createVoice({ getKey, onBilled, onAudio } = {}) {
         // are stopped, or a chunk arriving in between would schedule itself and speak
         // after the cancel.
         if (player) { player.abort(); player = null; }
+        if (ctx) speakerWake.stopWake(ctx);
         for (const node of sources) {
             try { node.stop(); } catch { /* already stopped */ }
         }
