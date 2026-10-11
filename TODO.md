@@ -37,6 +37,154 @@ the one that quietly waits forever.
 
 ## Open
 
+### Carried over from CLAUDE.md (2026-10-11)
+These were recorded only in `CLAUDE.md`. Each is listed here so the list is complete; the reasoning stays in `CLAUDE.md`.
+
+#### Interrupting the other person quickly
+- **Raised:** 2026-08-26 - Ken.
+- **What is wanted:** Speaking while the other person talks already works and is recorded correctly; what is missing is SPEED. An interruption that arrives ten seconds late is not one. Ideas: a Command Bar button that speaks at once ("Hang on -"), worded by the user like Hold on.
+- **Why not now:** Entangled with telling the app's own voice from the partner's, which waits on partner voice recognition (Phase 2).
+
+#### A view of what the app tells the AI about the user
+- **Raised:** 2026-08-30 - Ken (decided: yes).
+- **What is wanted:** A read-only page in Settings showing what is sent about the user, built by the same code that builds the real request so it cannot drift. Never editable there. Word personality lines in the first person.
+- **Why not now:** Not yet scheduled.
+
+#### A silence period that adjusts itself to the partner
+- **Raised:** 2026-08-29 - Ken.
+- **What is wanted:** Lengthen the silence period slowly when a partner keeps pausing and resuming, shorten it quickly when they stop, cap the change, and reset it at the end of each conversation. Decide whether the user can see it.
+- **Why not now:** Waits on evidence from testers that multi-pause turns are common.
+
+#### Measure the recognizer's lag and use it to set the silence trigger
+- **Raised:** 2026-08-07 - Ken.
+- **What is wanted:** Measure how late the recognizer delivers words (possible on Deepgram, not on the browser's own), then let the setting mean the real pause the partner leaves. Probably a one-time calibration rather than a moving number.
+- **Why not now:** Gated behind the checkpoint measurements; may never be needed.
+
+#### Watch for old partner words joining a new turn after a long pause
+- **Raised:** 2026-08-05 - Ken.
+- **What is wanted:** Stopping and restarting Listen keeps what the partner said. After a long stop, old words could join a new turn. If real cases appear, add a time limit, keyed to how long the microphone was off.
+- **Why not now:** Watch only; no number can be justified until it happens.
+
+#### A note when the settings in use differ from the saved profile
+- **Raised:** 2026-07-31 - Ken (deferred).
+- **What is wanted:** On opening Settings, say "unsaved changes" beside the profile in use when the live settings differ from it.
+- **Why not now:** Ken: it may be an unnecessary complication. Reopen if a stale profile actually causes a problem.
+
+#### The device voice can leave the app thinking it is still speaking
+- **Raised:** 2026-07-31 - found in testing.
+- **What is wanted:** If the device's own voice accepts a sentence and never reports finishing, the app believes it is still talking and stops responding to pauses. Decide whether to add a time limit scaled to the sentence's length.
+- **Why not now:** It changes timing on the core speech path; needs a deliberate decision.
+
+#### Voice list labels: two quality levels both read "Compact"
+- **Raised:** 2026-07-31 - measured on the iPad.
+- **What is wanted:** Apple's "super-compact" voices are labeled "Compact", the same as the better "compact" ones. Needs a label that does not sound like an upgrade.
+- **Why not now:** Low priority.
+
+#### The amber error box in the response area: decide before public release
+- **Raised:** 2026-07-08 - Ken.
+- **What is wanted:** A failed request still shows the error wording and a "Try again" button in place of the response options. Likely answer: remove it, and retry quietly instead.
+- **Why not now:** Before public release.
+
+#### What each Command Bar button does to whatever is open
+- **Raised:** 2026-06-29 - Ken.
+- **What is wanted:** For example, "Wrap up" pressed while "In my own words" is open should close it first. Write down, per button, what it cancels, and make it consistent.
+- **Why not now:** Not yet scheduled.
+
+#### Button spacing in the direction the keyboard cannot grow
+- **Raised:** 2026-06-29 - Ken (pinned).
+- **What is wanted:** Ken was to supply a simple rule for how gaps and button size share space in the direction the keyboard cannot grow. Check first whether later layout work (the draggable borders, the layout list) has made this moot.
+- **Why not now:** Waiting on Ken's rule.
+
+#### Automated browser tests of the real app
+- **Raised:** 2026-07-10 - Ken.
+- **What is wanted:** Decide whether to build tests that drive the real app in a browser with a stand-in microphone, to replace many of the manual test steps.
+- **Why not now:** Go or no-go deferred.
+
+#### Weekly reports must become opt-in at public release
+- **Raised:** 2026-08-09 - Ken.
+- **What is wanted:** They are on by default for the beta. The Beta Test Plan promises in writing that this ends with the beta, so the default must change before any public release.
+- **Why not now:** Scheduled for public release.
+
+#### A full check of the documents against the app before general release
+- **Raised:** 2026-08-31 - Ken (decided).
+- **What is wanted:** List everything the app does from its own code, then check every document against it in both directions. A "sync docs" only looks at what changed, so it never catches a sentence that was never recorded as changing.
+- **Why not now:** Before general release, as its own pass.
+
+#### The iPad save prompt on Export: say nothing leaves the device
+- **Raised:** 2026-08-01 - Ken.
+- **What is wanted:** Safari asks "Do you want to download ... on conversant.volksswitch.org?", which reads as if data were being sent. Explain in the manuals that the file is made on the device and nothing is sent. First check whether the installed app shows the same prompt.
+- **Why not now:** Waiting for a "sync docs" and a check on the iPad.
+
+#### A web page for reporting problems with a conversation attached
+- **Raised:** 2026-07-03 - Ken.
+- **What is wanted:** Mostly overtaken by in-app problem reports. What remains is a way to attach a saved conversation, which must stay a deliberate, previewed choice.
+- **Why not now:** Low priority now.
+
+#### Languages other than English
+- **Raised:** 2026-06-27 - Ken.
+- **What is wanted:** The places that would change are listed in CLAUDE.md under Open Questions.
+- **Why not now:** Not scoped yet.
+
+#### The rear camera's light as a signal to the other person
+- **Raised:** 2026-07-18 - Ken.
+- **What is wanted:** Slowly flash the rear light while listening, where the device allows it (mostly Android Chrome). Optional, off by default.
+- **Why not now:** Only after testing on real devices.
+
+#### Security items for beta and public release
+- **Raised:** 2026-07-08 - security review.
+- **What is wanted:** Write down in the overviews that private facts are protected by instruction, not isolation (SEC-5). Before public release: a supporter PIN on the key field (SEC-1), optional encryption of the data folder (SEC-6), and marking a response option that contains a private fact (SEC-5).
+- **Why not now:** Gated on beta and public release.
+
+#### A setting to move to a stronger or cheaper AI model
+- **Raised:** 2026-06-14 - Ken.
+- **What is wanted:** Let the user choose a stronger model if the suggestions are not good enough, or a cheaper one, in plain terms.
+- **Why not now:** Not yet scheduled.
+
+#### Speak a response option's short label aloud
+- **Raised:** June 2026 - original design.
+- **What is wanted:** The short label can be shown but not yet spoken (on highlight, or on the first of two taps).
+- **Why not now:** A user preference nobody has asked for yet.
+
+#### Suggestions that update while the other person is still talking
+- **Raised:** June 2026 - original vision.
+- **What is wanted:** Start working on response options from partial speech, refining them as more arrives.
+- **Why not now:** Advanced; not targeted for Phase 1 or 2.
+
+#### Longer-term ideas from June 2026
+- **Raised:** 2026-06-15 - Ken.
+- **What is wanted:** Conversations with more than one other person; email, messages and recorded speech as well as live talk; letting the user add their own writing about their views; a recommended-hardware sheet; an optional content filter for minors, locked by a supporter.
+- **Why not now:** Future phases.
+
+#### Retrieval for a large profile (worldview step 6)
+- **Raised:** June 2026 - plan.
+- **What is wanted:** Only needed once memory across conversations makes the profile large.
+- **Why not now:** Not needed yet.
+
+#### iPad open questions
+- **Raised:** 2026-07-30 - iPad probe.
+- **What is wanted:** Whether the audio unlock lasts a whole session; whether the iPad mini can be supported; the cellular data cost of paid transcription; and stopping the "listening may not work" notice once listening is seen to work.
+- **Why not now:** Need time on the devices.
+
+#### A practice scenario where the AI interviews the user for About Me
+- **Raised:** 2026-07-18 - Ken.
+- **What is wanted:** Use Practice Mode's machinery to fill in About Me as a conversation.
+- **Why not now:** Follow-on to Practice Mode.
+
+#### Test personas: an "as answered in the app" section for the newer Tier B modules
+- **Raised:** 2026-08-08.
+- **What is wanted:** Humor, beliefs, how you treat different people and emotional landscape have no such section yet, as values and personality do.
+- **Why not now:** Not yet scheduled.
+
+#### Re-measure on-device suggestions once a year
+- **Raised:** 2026-09-30.
+- **What is wanted:** Check yearly whether a small model running on the device can follow the app's rules, using the existing live tests.
+- **Why not now:** Yearly.
+
+#### CLAUDE.md points to an "Overview-Document To Do List" that does not exist
+- **Raised:** 2026-10-11 - found while checking.
+- **What is wanted:** Several June 2026 notes say their document edits are listed there. Decide whether the notes tagged "[-> Overview To Do]" still need work in the overviews, and remove the pointer.
+- **Why not now:** Found today.
+
 ### Explore: using Conversant in a Zoom call or other teleconference
 - **Raised:** 2026-08-26 - Ken; scoped 2026-08-30. Added to this list 2026-10-11 (it had
   been recorded only in `CLAUDE.md`, under Open Questions, "a strategy for using
