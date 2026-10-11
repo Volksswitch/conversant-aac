@@ -37,6 +37,11 @@ the one that quietly waits forever.
 
 ## Open
 
+### Documents: strongly recommend the Home Screen app on an iPad
+- **Raised:** 2026-10-11 - Ken: "the instructions should 'strongly suggest' that Conversant be installed as a Home Page app on an iPad even though that requires paying for a voice service and transcription service." Decision recorded in CLAUDE.md (iPad section, "SUPERSEDED (Ken, October 11 2026)").
+- **What is wanted:** the iPad User Manual (the mode choice and its table), the Beta Test Plan, the Speech Provider Guide's section 1, and the Product Overview where it describes iPad modes, all say to install on the Home Screen, and why: a Safari tab's data can be deleted after a week without use. Say plainly that hearing then needs a paid service, and that the iPad's own voices are poor, so most users will want a paid voice too. The Safari tab stays as a way to try the app.
+- **Why not now:** document changes wait for Ken's next "sync docs".
+
 ### The plain-speak check on chat replies is switched off
 - **Raised:** 2026-10-11 - Ken: "Turn it off for now. I'm not seeing any difference in your responses prior to and after the hook." It also sent back a whole reply to fix two phrases, so Ken saw the reply twice.
 - **What was done:** the `hooks` setting was removed from `.claude/settings.local.json` on this computer. The scripts in `scripts/writing-check/` are untouched; its README says how to switch it back on.
