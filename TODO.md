@@ -37,6 +37,31 @@ the one that quietly waits forever.
 
 ## Open
 
+### Explore: an Express Panel button that plays a stored video for the other person
+- **Raised:** 2026-10-11 - Ken.
+- **What is wanted:** explore a button that plays a video the user has stored, so they
+  can show it to the person they are talking with.
+- **Questions to answer when it is explored:**
+  - The screen faces the user, not the other person, so showing a video means turning
+    the device or showing it somewhere else. How does that work with a mounted device?
+  - Where it plays: full screen covers the keyguard-backed buttons, so the user needs a
+    sure way to stop it and get back.
+  - The microphone must be muted while it plays, as it is for sound buttons, or the
+    video's sound is heard as the other person talking.
+  - Videos are far larger than the 10 MB sound clips, which travel inside a backup.
+    Carrying videos the same way would make backups unmanageable.
+  - What the conversation record and the AI are told ("showed a video: ...").
+- **Why not now:** Ken asked for it to be explored in the future; nothing is decided.
+
+### Explore: using Conversant together with the Instruct app
+- **Raised:** 2026-10-11 - Ken.
+- **What is wanted:** explore how Conversant could be used in concert with the Instruct
+  app at https://instruct.aac-learning-center.org/.
+- **First step when it is picked up:** find out what Instruct does and who uses it, then
+  look for where the two meet (for example, shared practice material, or a therapist
+  using both with the same client).
+- **Why not now:** Ken asked for it to be explored in the future; nothing is decided.
+
 ### The User Manuals and Practice Scenarios document: exporting and importing a scenario
 - **Raised:** 2026-10-11 - from building it. Settings > Practice now has an "Export"
   button on each of your scenarios (saves that one scenario to a file) and an "Import a
