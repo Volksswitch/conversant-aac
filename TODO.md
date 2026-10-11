@@ -37,6 +37,35 @@ the one that quietly waits forever.
 
 ## Open
 
+### A Bluetooth speaker cuts off the first tenth of a second of speech
+- **Raised:** 2026-10-11 - Ken's problem report from the iPad (Home Screen app, 0.13.18, Deepgram voice).
+- **Likely cause:** a Bluetooth speaker goes quiet when nothing has played for a few seconds and takes a moment to wake, so the start of the next sound is lost. The app's audio is ready; the speaker is not. The app's own "wake the audio first" fix (September 2 2026) cannot help, because it wakes the browser's audio, not the speaker.
+- **Proposed fix:** play silence the moment the app starts to speak. While a fresh sentence is being fetched (a few tenths of a second) that silence costs nothing and gives the speaker time to wake. For a phrase already kept on the device, which plays at once, it would add about 0.2 seconds, and only after a quiet spell. Applies to every paid voice.
+- **Why not now:** waiting on Ken's go-ahead, since it adds a small delay to the instant phrases. Only testable on the iPad with the Bluetooth speaker.
+
+### The iPad sometimes fails to load the app's offline helper at start-up
+- **Raised:** 2026-10-11 - found in the same report.
+- **What:** "Script https://conversant.volksswitch.org/sw.js load failed" at start-up, seven times between August 11 and October 10 2026, across many versions, all on the iPad. CLAUDE.md had recorded it as seen once. When it fails, that launch cannot update itself or work offline.
+- **What is wanted:** find out when it happens (first launch after a release? a weak connection?) and whether a quiet retry would cover it.
+- **Why not now:** needs looking into on the iPad.
+
+### How long the app took to hear the first words (please confirm)
+- **Raised:** 2026-10-11 - same report.
+- **What:** in all three exchanges, 12 to 17 seconds passed between listening starting and the app first hearing the other person (Deepgram, iPad Home Screen app). The figure includes however long the other person waited before speaking.
+- **What is wanted:** Ken to say whether he answered straight away. If he did, the app was very slow to hear him and that needs investigating.
+- **Why not now:** needs Ken's answer.
+
+### Two small faults in the problem report itself
+- **Raised:** 2026-10-11 - same report.
+- **Fixed the same day:** "Where the words came from" listed "(not recorded)" under a heading that counts only recorded turns, so the lines added up to more than the heading said.
+- **Still open:** an error found both in the browser's list and in a saved conversation can appear twice, once with its time and once with "?" in place of the time.
+- **Why not now:** low priority.
+
+### The device voice choice carries over from Windows to the iPad
+- **Raised:** 2026-10-11 - same report. The iPad's settings name "Microsoft Mark" and "Microsoft David", which exist only on Windows, from a settings profile made there.
+- **What is wanted:** treat the device voice choices as belonging to the kind of device, like the keyboard choice, so loading a profile from Windows leaves the iPad's own choice alone. Harmless today: the iPad falls back to its default voice.
+- **Why not now:** low priority.
+
 ### Carried over from CLAUDE.md (2026-10-11)
 These were recorded only in `CLAUDE.md`. Each is listed here so the list is complete; the reasoning stays in `CLAUDE.md`.
 

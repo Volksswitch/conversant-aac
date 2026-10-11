@@ -611,7 +611,12 @@ export function formatSummary(s, personalization = null) {
         // real report showed 172 against 17 - and the reader has no way to tell which
         // is wrong. Neither is: they count different periods.
         L.push(`  Where the words came from (of ${s.sourcesRecorded} recent turns):`);
-        for (const [src, n] of topEntries(s.sourceCounts)) L.push(`    ${String(src).padEnd(20)} ${n}`);
+        // Turns saved before the source was recorded are not part of that count, so
+        // listing them here made the lines add up to more than the heading said.
+        for (const [src, n] of topEntries(s.sourceCounts)) {
+            if (src === '(not recorded)') continue;
+            L.push(`    ${String(src).padEnd(20)} ${n}`);
+        }
     }
     if (s.slotsRecorded) {
         L.push(`  Which kind of reply (of ${s.slotsRecorded} recent turns):`);
