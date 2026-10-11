@@ -37,6 +37,12 @@ the one that quietly waits forever.
 
 ## Open
 
+### The plain-speak check on chat replies is switched off
+- **Raised:** 2026-10-11 - Ken: "Turn it off for now. I'm not seeing any difference in your responses prior to and after the hook." It also sent back a whole reply to fix two phrases, so Ken saw the reply twice.
+- **What was done:** the `hooks` setting was removed from `.claude/settings.local.json` on this computer. The scripts in `scripts/writing-check/` are untouched; its README says how to switch it back on.
+- **If it comes back:** have a second pass send only the corrected sentences, not the whole reply again.
+- **Why not now:** Ken saw no improvement worth the repeated replies.
+
 ### An intermittent test failure, not yet identified
 - **Raised:** 2026-10-11 - during the 0.13.21 release. One test failed once (1,320 of 1,321 passed) and passed on the next seven runs; it did not come back long enough to be named.
 - **What is wanted:** when `npm test` fails once and then passes, keep the failing run's output so the test can be named and fixed. A test that fails at random gets ignored, and then it stops catching anything.
