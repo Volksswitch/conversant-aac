@@ -1124,6 +1124,41 @@ function setStatusLine(id, kind, msg) {
     el.className = 'api-key-status ' + (kind === 'ok' ? 'ok' : kind === 'checking' ? 'checking' : 'warn');
 }
 
+// A Clear button beside each paid speech service's key box (Ken, October 11 2026):
+// on an iPad there is no quick way to empty a text box, so replacing a key meant
+// deleting it a character at a time. Emptying goes through setKeyFieldValue, so the
+// box's own input listener saves the empty key and runs that service's onChange,
+// exactly as if the user had deleted it by hand.
+// It asks first when a key is saved, because several services show a key only once
+// when it is made; a key cleared by a stray tap may mean making a new one.
+function wireKeyClearButtons() {
+    const boxes = [
+        ['Deepgram', 'deepgram', 'Deepgram'],
+        ['Azure', 'azure', 'Azure Speech'],
+        ['Openai', 'openai', 'OpenAI'],
+        ['Google', 'google', 'Google Cloud'],
+        ['Elevenlabs', 'elevenlabs', 'ElevenLabs'],
+    ];
+    for (const [cap, id, label] of boxes) {
+        const btn = document.getElementById('clear' + cap + 'KeyBtn');
+        const input = document.getElementById(id + 'KeyInput');
+        if (!btn || !input) continue;
+        // Property handler, so re-opening Settings replaces rather than adds (CR-084).
+        btn.onclick = async () => {
+            const hasKey = !!input.dataset.redacted || !!input.value.trim();
+            if (!hasKey) return;
+            if (!(await confirmDanger({
+                title: `Clear your ${label} key?`,
+                body: `The key will be removed from this device. Some services show a key only once, so make sure you have a copy if you will need it again.`,
+                confirmLabel: 'Clear the key',
+                cancelLabel: 'Keep it',
+            }))) return;
+            setKeyFieldValue(input, '');
+            setStatusLine(id + 'KeyStatus', null, '');
+        };
+    }
+}
+
 function showDeepgramStatus(kind, msg) {
     setStatusLine('deepgramKeyStatus', kind, msg);
 }
@@ -8612,6 +8647,7 @@ function openSettings() {
             }
         };
     }
+    wireKeyClearButtons();
     const testDeepgramBtn = document.getElementById('testDeepgramKeyBtn');
     if (testDeepgramBtn) {
         // Opens the streaming socket and closes it again: it authenticates the key

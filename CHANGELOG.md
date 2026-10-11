@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Each paid speech service now has a "Clear" button beside its key box, so you can empty the box in one tap instead of deleting the key a letter at a time. It asks before it removes a saved key.
+
 ## Version 0.13.21
 
 - On a Bluetooth speaker, the wait before the app speaks is back to a fifth of a second, after a pause of two seconds or more. The longer wait in the last release did not help enough to be worth it.
