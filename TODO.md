@@ -37,6 +37,19 @@ the one that quietly waits forever.
 
 ## Open
 
+### Explore: using Conversant in a Zoom call or other teleconference
+- **Raised:** 2026-08-26 - Ken; scoped 2026-08-30. Added to this list 2026-10-11 (it had
+  been recorded only in `CLAUDE.md`, under Open Questions, "a strategy for using
+  Conversant in teleconferences", which has the full reasoning).
+- **What is wanted:** today AAC users can only watch a teleconference, not take part.
+  Find a way for them to take part. The hard part is answering a remark after the
+  meeting has moved on.
+- **Decided so far (Ken):** Conversant runs beside the meeting, never inside it. The
+  biggest prize is the meeting's own live transcript with speakers' names, not raising a
+  hand. Speaking out loud into the room's microphone already works with every meeting
+  app today; what is missing is timing.
+- **Why not now:** Ken's condition - revisit once face-to-face conversation is reliable.
+
 ### Explore: an Express Panel button that plays a stored video for the other person
 - **Raised:** 2026-10-11 - Ken.
 - **What is wanted:** explore a button that plays a video the user has stored, so they
