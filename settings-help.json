@@ -121,6 +121,7 @@
     "controls": {
         "apiKeyInput": "Paste your Anthropic key here. It stays on this device and is never put into a backup.",
         "pasteApiKeyBtn": "Pastes a key you have already copied, so you do not have to type it out.",
+        "clearApiKeyBtn": "Empties the AI key box, so you can paste in a new key. It asks first.",
         "testApiKeyBtn": "Checks your key with Anthropic and tells you whether it was accepted. It costs nothing.",
         "pickFolderBtn": "Choose the folder where your information is kept. Choose the same one each time you set the app up again.",
         "makeStorageDurableBtn": "Asks the browser not to throw your information away if it starts running short of room.",

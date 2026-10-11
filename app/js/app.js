@@ -1124,7 +1124,8 @@ function setStatusLine(id, kind, msg) {
     el.className = 'api-key-status ' + (kind === 'ok' ? 'ok' : kind === 'checking' ? 'checking' : 'warn');
 }
 
-// A Clear button beside each paid speech service's key box (Ken, October 11 2026):
+// A Clear button beside each key box - the five paid speech services and the AI key
+// (Ken, October 11 2026):
 // on an iPad there is no quick way to empty a text box, so replacing a key meant
 // deleting it a character at a time. Emptying goes through setKeyFieldValue, so the
 // box's own input listener saves the empty key and runs that service's onChange,
@@ -1138,8 +1139,10 @@ function wireKeyClearButtons() {
         ['Openai', 'openai', 'OpenAI'],
         ['Google', 'google', 'Google Cloud'],
         ['Elevenlabs', 'elevenlabs', 'ElevenLabs'],
+        // The AI key too (Ken, October 11 2026) - same box, same problem.
+        ['Api', 'api', 'AI', ' Until you add a key again, the app cannot suggest responses.'],
     ];
-    for (const [cap, id, label] of boxes) {
+    for (const [cap, id, label, extra = ''] of boxes) {
         const btn = document.getElementById('clear' + cap + 'KeyBtn');
         const input = document.getElementById(id + 'KeyInput');
         if (!btn || !input) continue;
@@ -1149,7 +1152,7 @@ function wireKeyClearButtons() {
             if (!hasKey) return;
             if (!(await confirmDanger({
                 title: `Clear your ${label} key?`,
-                body: `The key will be removed from this device. Some services show a key only once, so make sure you have a copy if you will need it again.`,
+                body: `The key will be removed from this device. Some services show a key only once, so make sure you have a copy if you will need it again.${extra}`,
                 confirmLabel: 'Clear the key',
                 cancelLabel: 'Keep it',
             }))) return;

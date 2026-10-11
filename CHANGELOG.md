@@ -26,7 +26,7 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
-- Each paid speech service now has a "Clear" button beside its key box, so you can empty the box in one tap instead of deleting the key a letter at a time. It asks before it removes a saved key.
+- The AI key and each paid speech service now have a "Clear" button beside the key box, so you can empty the box in one tap instead of deleting the key a letter at a time. It asks before it removes a saved key.
 
 ## Version 0.13.21
 
