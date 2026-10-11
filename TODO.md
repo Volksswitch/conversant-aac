@@ -37,6 +37,16 @@ the one that quietly waits forever.
 
 ## Open
 
+### Let "evaluate beta" read the beta Sheet directly, and move handled rows aside
+- **Raised:** 2026-10-11 - Ken. To review at a later date.
+- **What is wanted:** Claude reads the beta reports Sheet itself instead of Ken exporting it, and afterwards moves the rows that have been dealt with out of the way.
+- **What it would take:**
+  - Two new abilities in the receiving script (`scripts/weekly-report-endpoint.gs`): "send me the rows" and "move these rows to a Handled tab".
+  - A second password used only for those two. The current one is in the app's public code, so it can accept reports but must never read them. The new one lives in a file on this computer that never goes to GitHub, like `.wordpress-credentials`.
+  - Ken pastes the updated script in and redeploys it.
+- **Cleanup should MOVE rows to a Handled tab, never delete them:** deleting a tester's report cannot be undone. Claude lists the rows it considers handled and moves them after Ken says yes, unless Ken gives standing permission for moves.
+- **Why not now:** Ken wants to review it later.
+
 ### A Bluetooth speaker cuts off the first tenth of a second of speech
 - **Raised:** 2026-10-11 - Ken's problem report from the iPad (Home Screen app, 0.13.18, Deepgram voice).
 - **Likely cause:** a Bluetooth speaker goes quiet when nothing has played for a few seconds and takes a moment to wake, so the start of the next sound is lost. The app's audio is ready; the speaker is not. The app's own "wake the audio first" fix (September 2 2026) cannot help, because it wakes the browser's audio, not the speaker.
