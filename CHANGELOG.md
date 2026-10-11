@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.13.20
+
 - On a Bluetooth speaker, the app now gives the speaker a little longer to wake before it speaks, and does so after shorter pauses too. A phrase that would play instantly may start up to 0.4 seconds later.
 - A problem report now carries only the errors we have not already been sent, each with its conversation, instead of every error since the app was first used. The full list is still in Settings > Troubleshooting.
 
