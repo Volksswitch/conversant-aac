@@ -185,11 +185,13 @@ These were recorded only in `CLAUDE.md`. Each is listed here so the list is comp
 - **Raised:** 2026-06-15 - Ken (moved here from CLAUDE.md on 2026-10-11).
 - **What is wanted:** a short passage saying Conversant is not a personal assistant: it does not read or sort email, manage a calendar, take notes in class, prepare study material or do research. It is a conversation tool. "Not a Smart Speaker" covers facts about the world, not this.
 - **Why not now:** waits for a "sync docs".
+- **DONE 2026-10-11:** new section "What It Isn’t For" under "Who It’s For Right Now": not for long pieces of writing (Ken: a speech or presentation), and not a personal assistant.
 
 #### The documents disagree about the minimum age: 18 or 16
 - **Raised:** 2026-10-11 - found while checking the old document notes.
 - **What is wanted:** the Product Overview says users must be 18 or older and have legal capacity; the Architecture Overview and CLAUDE.md still say 16 or older. Ken to confirm which is current, then make the others agree.
 - **Why not now:** needs Ken's answer.
+- **DONE 2026-10-11:** Ken confirmed 18 or older is current. The Architecture Overview, Pragmatics and CLAUDE.md now agree with the Product Overview.
 
 ### Explore: using Conversant in a Zoom call or other teleconference
 - **Raised:** 2026-08-26 - Ken; scoped 2026-08-30. Added to this list 2026-10-11 (it had
