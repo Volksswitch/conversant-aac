@@ -45,8 +45,8 @@ the one that quietly waits forever.
   Find a way for them to take part. The hard part is answering a remark after the
   meeting has moved on.
 - **Decided so far (Ken):** Conversant runs beside the meeting, never inside it. The
-  biggest prize is the meeting's own live transcript with speakers' names, not raising a
-  hand. Speaking out loud into the room's microphone already works with every meeting
+  most useful thing is the meeting's own live transcript with speakers' names, not
+  raising a hand. Speaking out loud into the room's microphone already works with every meeting
   app today; what is missing is timing.
 - **Why not now:** Ken's condition - revisit once face-to-face conversation is reliable.
 
