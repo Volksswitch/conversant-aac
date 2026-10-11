@@ -22,6 +22,9 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.13.21": [
+    "On a Bluetooth speaker, the wait before the app speaks is back to a fifth of a second, after a pause of two seconds or more. The longer wait in the last release did not help enough to be worth it."
+  ],
   "0.13.20": [
     "On a Bluetooth speaker, the app now gives the speaker a little longer to wake before it speaks, and does so after shorter pauses too. A phrase that would play instantly may start up to 0.4 seconds later.",
     "A problem report now carries only the errors we have not already been sent, each with its conversation, instead of every error since the app was first used. The full list is still in Settings > Troubleshooting."

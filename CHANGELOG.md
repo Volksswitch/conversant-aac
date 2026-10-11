@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- On a Bluetooth speaker, the wait before the app speaks is back to a fifth of a second, after a pause of two seconds or more. The longer wait in the last release did not help enough to be worth it.
+
 ## Version 0.13.20
 
 - On a Bluetooth speaker, the app now gives the speaker a little longer to wake before it speaks, and does so after shorter pauses too. A phrase that would play instantly may start up to 0.4 seconds later.
