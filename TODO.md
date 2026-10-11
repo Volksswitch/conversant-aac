@@ -191,6 +191,783 @@ These were recorded only in `CLAUDE.md`. Each is listed here so the list is comp
 - **What is wanted:** the Product Overview says users must be 18 or older and have legal capacity; the Architecture Overview and CLAUDE.md still say 16 or older. Ken to confirm which is current, then make the others agree.
 - **Why not now:** needs Ken's answer.
 
+### Explore: using Conversant in a Zoom call or other teleconference
+- **Raised:** 2026-08-26 - Ken; scoped 2026-08-30. Added to this list 2026-10-11 (it had
+  been recorded only in `CLAUDE.md`, under Open Questions, "a strategy for using
+  Conversant in teleconferences", which has the full reasoning).
+- **What is wanted:** today AAC users can only watch a teleconference, not take part.
+  Find a way for them to take part. The hard part is answering a remark after the
+  meeting has moved on.
+- **Decided so far (Ken):** Conversant runs beside the meeting, never inside it. The
+  most useful thing is the meeting's own live transcript with speakers' names, not
+  raising a hand. Speaking out loud into the room's microphone already works with every meeting
+  app today; what is missing is timing.
+- **Why not now:** Ken's condition - revisit once face-to-face conversation is reliable.
+
+### Explore: an Express Panel button that plays a stored video for the other person
+- **Raised:** 2026-10-11 - Ken.
+- **What is wanted:** explore a button that plays a video the user has stored, so they
+  can show it to the person they are talking with.
+- **Questions to answer when it is explored:**
+  - The screen faces the user, not the other person, so showing a video means turning
+    the device or showing it somewhere else. How does that work with a mounted device?
+  - Where it plays: full screen covers the keyguard-backed buttons, so the user needs a
+    sure way to stop it and get back.
+  - The microphone must be muted while it plays, as it is for sound buttons, or the
+    video's sound is heard as the other person talking.
+  - Videos are far larger than the 10 MB sound clips, which travel inside a backup.
+    Carrying videos the same way would make backups unmanageable.
+  - What the conversation record and the AI are told ("showed a video: ...").
+- **Why not now:** Ken asked for it to be explored in the future; nothing is decided.
+
+### Explore: using Conversant together with the Instruct app
+- **Raised:** 2026-10-11 - Ken.
+- **What is wanted:** explore how Conversant could be used in concert with the Instruct
+  app at https://instruct.aac-learning-center.org/.
+- **First step when it is picked up:** find out what Instruct does and who uses it, then
+  look for where the two meet (for example, shared practice material, or a therapist
+  using both with the same client).
+- **Why not now:** Ken asked for it to be explored in the future; nothing is decided.
+
+### The User Manuals and Practice Scenarios document: exporting and importing a scenario
+- **Raised:** 2026-10-11 - from building it. Settings > Practice now has an "Export"
+  button on each of your scenarios (saves that one scenario to a file) and an "Import a
+  scenario" button under "New scenario" (adds one from such a file; never replaces
+  anything, and a scenario already on the list is not added twice).
+- **What is wanted:** describe both in all three User Manuals and in "Conversant AAC
+  Practice Scenarios", with what it is FOR: a therapist writing a scenario for a client,
+  moving one scenario to another device, or sharing one with another user. Say that a
+  link to a person in About Me is kept only on a device that has that person.
+- **Why not now:** documents are synced when Ken says the feature is settled, not when
+  it is built.
+- **DONE 2026-10-11 ("sync docs" for 0.13.18):** all three User Manuals (section 6.7)
+  and the Practice Scenarios document (new section 6.5); the Product Overview mentions it.
+
+### Listen to the four new spoken forms on the other voice services
+- **Raised:** 2026-10-10 - Ken. The shipped "OK", "Maybe", "Bye" and "Thank you" buttons
+  now carry spoken forms ("Okay", "May be.", "Bye,", "Thank you,"), found by ear on the
+  Deepgram voice. A spoken form belongs to the button, so every voice service says it.
+- **What is wanted:** hear all four on Azure first (Ken has a key), then OpenAI, Google
+  Cloud, ElevenLabs and the device's own voice where keys allow. Settings > Speech to
+  switch the voice, then the speaker beside each button's "How to say it" box on the
+  Express Panel tab. Note any that sound worse than the plain word.
+- **Why not now:** it needs an ear on each service.
+
+### Possibly: spoken forms that apply to one voice service only
+- **Raised:** 2026-10-10 - Ken, from the same work. A spelling that fixes a word on one
+  service may make it worse on another, and today a button has one spoken form for all.
+- **What is wanted:** our shipped defaults get a spoken form per service, kept in the
+  app's code and chosen by whichever service is speaking. No editor change (Ken: these
+  are our defaults, and a user rarely changes service). The user's own "How to say it"
+  boxes stay one per button.
+- **Design note:** look the per-service form up when the button is SPOKEN, not when the
+  panel is first made. If it were written into the user's panel, a later change of
+  service would leave the wrong spelling behind. A user's own typed form always wins.
+- **Why not now:** only worth building if the check above finds a word that one
+  spelling cannot fix on every service.
+
+### Documents that read as though eye gaze does not work yet
+- **Raised:** 2026-10-10 - Ken: Conversant has been used with eye gaze and it worked; it
+  should work wherever the eye-gaze equipment emulates a mouse. Recorded in `CLAUDE.md`
+  under the access-method decision.
+- **What is wanted:** reword these so "not built" plainly means a purpose-built eye-gaze
+  layout, and say eye gaze works today through mouse emulation:
+  - **Pragmatics:** "Scanning and eye gaze are planned and not built" (the worst one).
+  - **Architecture Overview:** "Subsequent versions will expand accessibility... (switch
+    access, eye gaze)".
+  - **Express Panel Design:** "the access methods we haven't built yet", under scanning
+    and eye gaze.
+  - **UI-Design:** four places calling eye gaze a "design target, not yet built"; correct
+    about the renderer, but needs the same clarification.
+  - **The three User Manuals** never mention eye gaze; the Product Overview's Access
+    Methods paragraph is the model for adding it.
+  - **"One tap or two" (Ken, same day):** the manuals and the Product Overview should tell
+    an eye-gaze user to choose One tap and set how long they must look at a button in
+    their eye-gaze software instead. Two taps would mean two full looks within at most
+    1 second, which likely cannot be done.
+- **Why not now:** documents change at a "sync docs" Ken calls.
+- **DONE 2026-10-11 ("sync docs" for 0.13.18):** Pragmatics, Architecture Overview,
+  Express Panel Design and UI-Design reworded; the three User Manuals gain a "Pointing"
+  row and the one-tap advice; the Product Overview gains the one-tap advice.
+
+### The User Manuals: today's speech and fill-in features, with "how can I use it"
+- **Raised:** 2026-10-09 - Ken: *"ensure that user documentation includes these kinds of
+  'how can I use it' instructions."* Nothing below is in the three User Manuals yet.
+- **What is wanted, at the next "sync docs" that Ken calls once these have settled:**
+  - **"Words the voice gets wrong"** (Settings > Speech): what it is, and its uses -
+    a medical term or brand name, an abbreviation said letter by letter ("lol" as
+    "L O L"), and an abbreviation heard in full ("btw" heard as "by the way" while the
+    screen keeps "btw"). Say that it applies to everything the app says, AI
+    suggestions included, and that capitals do not matter.
+  - **The user's own name in About Me:** the "how should it be said" question.
+  - **Fill-ins:** their name and the time of day in Express and Commands phrases, the
+    Insert buttons, what happens with nobody selected, and examples ("Have a good
+    {time of day}!", "Thank you, {name}.").
+  - **Hear buttons** on Commands phrases and on each word in the list.
+  - **Holding phrases always finish**, and the user's words start half a second after.
+  - **Fixed phrases kept on the device** in a paid voice, and that they are fetched
+    after Start.
+  - **The number page's decimal point**, and "Ask them to repeat" at rest.
+- **Why not now:** documents wait until a feature has stopped moving, and Ken times
+  "sync docs".
+- **DONE 2026-10-09 ("sync docs" for 0.13.15):** all of it is in the three User Manuals,
+  the word list with its uses; also the Product Overview, Backup Compatibility, Speech
+  Provider Guide and Architecture Overview.
+
+### Ken's October 9 2026 report: "Hi" not spoken, and words heard in a quiet room
+- **Raised:** 2026-10-09, Ken's problem report from his laptop (0.13.14, OpenAI for both
+  hearing and speaking): after turning "Don't save this conversation" off, tapping
+  "Hi" said nothing, and a partner line appeared that nobody said.
+- **What was found:** the same sequence in the browser with this device's voice spoke
+  "Hi" both times, so the silence is not reproduced. The report could not help because
+  of two faults, both fixed the same day: the conversation saved after turning saving
+  back on reused the deleted conversation's name and was withheld as private, and the
+  "what happened just before" list was empty because automatic reports were off.
+- **The words from nowhere** look like the OpenAI transcription inventing text from
+  near-silence, as with "Katarzyna." on September 30. The app already drops sounds under
+  a quarter of a second; this one got past that.
+- **What is wanted:** a repeat of the sequence with OpenAI on 0.13.15 or later, and a
+  report sent right away; it will now carry the transcript and the event list.
+- **Why not now:** it needs the OpenAI voice and a real microphone to reproduce.
+
+### Check whether an opener tap can speak from the set that was just replaced
+
+- **Raised:** October 8 2026, from Ken's conversation file `2026-10-08T21-15-47.json`.
+- **What:** Ken chose "Mom" while the generic openers were showing. At 21:15:51.812 the
+  openers were redrawn with Mom's ("Hey Mom, quick thing."), and 212 ms later the app
+  spoke "Hey. Got a second?" from the replaced set; the record files the old set as
+  chosen and the new one as cleared unused. Either a tap already under way landed as the
+  screen changed (harmless), or a tap on the new set spoke the old set's text (a fault:
+  the user hears words other than the ones under their finger). Ken does not remember
+  the timing. Reproduce in the browser: openers showing, tap a partner, then tap an
+  opener, and compare what is spoken with what was on screen.
+- **Why not now:** found during a release; it needs a reproduction before a fix.
+
+### Rewrite the Conversation Review design document for the October 6 2026 simplification
+
+- **Raised:** October 8 2026, during "sync docs - all appropriate documents" for 0.13.11.
+- **What:** `Conversant AAC Conversation Review.docx` still describes review as it was
+  before Ken's October 6 2026 "Let's simplify everything": Previous Word and Next Word,
+  answers that change the response options, reframe steers and the word editor. The
+  Command Bar section also predates the Report and Delete buttons added in 0.13.11. It
+  needs a rewrite to the one-action design (rewrite a turn) described in CLAUDE.md under
+  "Conversation Review - one action".
+- **Why not now:** it is a design record, not published, and nine releases behind. A
+  0.13.11 patch would have put two new buttons into a description of a screen that no
+  longer exists. It needs its own pass.
+
+### Fix the problems found in the October 5 2026 code review
+
+**Raised:** October 5 2026, by Ken, who asked for a review of the whole app that a later
+session could work from.
+
+**What is wanted:** fix the 303 problems listed in
+[code-review-2026-10-05/README.md](code-review-2026-10-05/README.md), most serious first.
+Each one has its own file in that folder, written so a separate session can fix it
+without reading the rest. The first thirteen (one critical, twelve high) matter most:
+a saved conversation that can be overwritten, a paid hearing service quietly swapped for
+the free one after a restart, a repair card that crashes, edits typed on the app's own
+keyboard that are never saved, and three ways private information leaves the device or
+outlives a "Don't save" conversation.
+
+**How to track it:** each item's Status column in the README goes from "open" to "fixed
+(commit)" or "dropped" with a reason. Close this entry when nothing is left open.
+
+**Why not now:** the review was the task; fixing is separate work, one item per commit.
+
+### Bottom Layout 6 has two Backspace keys
+
+**Raised:** October 5 2026, from code review item CR-189.
+
+**What is wanted:** Ken's decision on which Backspace to keep on Bottom Layout 6: the
+one at the end of the third letter row, or the one on the bottom row beside the period.
+The other would become a blank space, so no key moves and a keyguard still fits; the
+blank also becomes one more empty spot rather than an Express Panel position. The
+layouts document flagged this ("pick one in the build") and the build kept both.
+
+**Why not now:** which key a person reaches for is a choice for the people who use it.
+- **CLOSED 2026-10-09:** no longer true. Bottom Layout 6 was folded into Bottom
+  Layout 1 on October 8 2026, and no layout in the app has two Backspace keys
+  (checked by counting them in every layout).
+
+### The keyboard's number page has no decimal point or comma
+
+**Raised:** October 5 2026, from code review item CR-254.
+
+**What is wanted:** Ken's decision. The number button opens the keyboard on its symbols
+page so a number can be typed, but on the usual layouts that page has no "." or ",":
+answering "98.6" or "2.5" means switching back to the letters page in the middle of the
+number. The keyboard code records that comma and period stay on the letters page by his
+spec. Options: (1) put a decimal point on the symbols page in place of one of the rarer
+symbols - no key moves, so a keyguard still fits; lean, since numbers with a decimal
+point are common in medical answers; (2) leave it as it is.
+
+**Why not now:** it reverses a recorded keyboard decision.
+- **DONE 2026-10-09 (Ken: "Go for the & replacement"):** "." takes the place "&" had
+  on the number page and "&" moves to where "." was, so it still shows on the two
+  largest layouts. No other symbol moved. A test checks every layout.
+
+### "Ask them to repeat" before anything has been heard
+
+**Raised:** October 6 2026, from code review item CR-270.
+
+**What is wanted:** Ken's decision. Tapping "Ask them to repeat" when the app has heard
+nothing yet still says the phrase, writes it into the saved conversation as though a
+conversation had started, and treats the other person's next words as a repeat. The
+app cannot know whether the person spoke before listening was on, in which case this is
+right. Options: (1) still say the phrase, but when nothing has been heard and nothing
+has been said yet, do not record it or start a conversation file - lean, because a stray
+tap then costs only a spoken phrase; (2) leave it as it is.
+
+**Why not now:** whether a pardon at rest should count as the start of a conversation
+is a choice about the record, not a fault.
+- **DONE 2026-10-09 (Ken chose option 1):** at rest the phrase is spoken and nothing is
+  recorded or started. Ken asked whether to disable the button instead; not done,
+  because the other person may have spoken before Listen was on.
+
+### Screen-reader heading navigation in Settings
+
+**Raised:** October 6 2026, from code review item CR-269.
+
+**What is wanted:** Ken's decision on whether to rebuild how Settings sections are made
+so a screen reader's "next heading" key jumps between them. Today it finds nothing,
+because each section heading sits inside a part of the page that browsers flatten for
+screen readers. The fix is a rebuild of the section code that has to keep
+one-open-at-a-time, remembered open sections, and the spoken help. Lean: leave it, since
+the people this app serves rarely use a screen reader in Settings, and the rebuild
+touches every Settings tab.
+
+**Why not now:** a large change for a small benefit to this population.
+
+### The "×" beside a sentence in "What the app has picked up"
+
+**Raised:** October 6 2026, from code review item CR-286.
+
+**What is wanted:** Ken's decision. In About Me, each sentence the app has learned from
+the user's own conversations has a small "×". One tap stops the app using that sentence
+as an example of how the user talks, for good; there is no undo. The sentence itself
+stays in the saved conversation. Options: (1) ask first with the red confirmation card
+("Stop using this?") - lean, since this population taps imprecisely and these sentences
+are the scarcest evidence of how the user talks; (2) offer Undo until the screen is
+left; (3) leave it as it is, since the standing rule asks for confirmation only for
+"significant work".
+
+**Why not now:** whether this counts as significant work is Ken's call.
+
+### The mode chip's styling: delete it, or is it coming back?
+
+**Raised:** October 5 2026, from code review items CR-175 and CR-179.
+
+**What is wrong:** the conversation screen once showed a small "mode chip" naming what the
+app was doing. It is no longer on the screen, but its styling and the code that draws it
+are still in the app, and two notes (in the color settings and in CLAUDE.md) still treat
+it as live. The other dead styling the review found has been removed.
+
+**What is wanted:** Ken's answer: is the mode chip meant to return? If not, its styling
+and drawing code can go, and the notes that mention it can be corrected.
+
+**Why not now:** it may be a feature on hold rather than leftover code, which is Ken's call.
+
+### A second tap while the first reply is still being spoken
+
+**Raised:** October 5 2026, from code review item CR-077.
+
+**What is wanted:** Ken's decision. With one-tap speaking, a second tap on a reply card
+or an Express Panel phrase while the first is still being spoken cuts the first one off
+and speaks the second. Both are then recorded, and sent to the AI, as if both were said
+in full. Two choices: (1) ignore the second tap until the first has finished, which
+protects against a stray tap but means the user cannot change their mind mid-sentence;
+or (2) let the second replace the first and record the first as cut off. I lean to (1),
+because a stray tap is the commoner case for this population and the double-tap setting
+does not help someone who has it switched off. "Hold on" and stopping a sound stay
+exempt either way.
+
+**Why not now:** it changes what a tap does, which is Ken's call. The part that was wrong
+either way is fixed: the first reply's ending no longer lets a holding phrase start over
+the second.
+
+### Settings profiles saved before October 5 2026: hold back the device settings or not?
+
+**Raised:** October 5 2026, from code review item CR-067.
+
+**What is wanted:** Ken's decision. A settings profile now records which kind of device
+it was saved on, and loading it on a different kind of device leaves how the app hears,
+the keyboard type, full screen and the screen edge margin as they are, the same as
+restoring a backup does. Profiles saved before this change carry no such record, so the
+app cannot tell where they came from. Today they are loaded whole, as they always were.
+The other choice is to hold those four settings back for them too, which is safer on a
+device the profile did not come from but changes what loading an old profile does on
+the device that saved it.
+
+**Why not now:** it changes how existing profiles behave, which is Ken's call.
+
+### Side Layout 10 has no key to reach the symbols
+
+**Raised:** October 5 2026, from code review item CR-044.
+
+**What is wanted:** Ken's decision. On Side Layout 10 there is no key that switches to the
+symbols page, so a question mark, an apostrophe, an exclamation mark and every other
+symbol except comma and period cannot be typed. The fix the review suggests is to split
+the space key on the bottom row into a symbols key plus a shorter space key.
+
+**Why not now:** that changes where keys sit on Side Layout 10, so anyone with a keyguard
+cut for that layout would need a new one. The other half of the item is fixed: the
+number button no longer opens that layout on the symbols page with no way back.
+
+### Silent "get me other options" buttons must not cut off a placeholder
+
+**Raised:** October 1 2026, by Ken: *"pressing a 'reframe' button shouldn't interrupt a
+placeholder statement. It's a silent action that simply requests more options from the
+AI."*
+
+**What is wanted:** a button that only asks the AI for a fresh set of cards, and says
+nothing aloud, leaves a placeholder that is already playing alone. The placeholder is
+holding the floor for the user, and asking for better suggestions is exactly the moment
+the floor still needs holding.
+
+**Where it happens today (checked against the code):** three such buttons stop the
+placeholder ladder before asking the AI - "New N" (`handleRegenerate`,
+`placeholders.stop()`), a choice button (`handleChoiceChip`, `abortPlaceholders()`), and
+the compose window's Reframe (`handleReframe`, `placeholders.stop()`). The partner,
+place, feeling and goal buttons (`refreshForContextChange`) already leave it alone, so
+they are the pattern to follow.
+
+**Decide while doing it:** whether the ladder also keeps going AFTERWARDS (a later
+placeholder may still be due), or only the one already speaking is allowed to finish.
+Ken's words cover the one speaking; the "In my own words" decision of August 25 2026
+(composing is like reading the cards, so placeholders keep running) argues for the
+ladder continuing too. Check that the choice button's comment ("nothing may speak over
+the result") still holds - a placeholder is not the result, so the fix should not let
+one start over freshly arrived cards either.
+
+**Why not now:** Ken asked for it to be recorded, not built.
+
+**ALSO THE LISTEN BUTTON (Ken, same day): *"same with pressing a button like the
+'listen' button ... I pressed the button to turn listening off and the placeholder
+statement was cut off."*** Turning the microphone off is just as silent and must not
+cut off a placeholder either. **Unlike the three buttons above, nothing in the app's
+code stops the placeholder on this path** (checked: `toggleListening` ->
+`stt.stopListening` -> `handleSttStatus` calls neither `placeholders.stop()` nor
+`tts.cancel()`), so the cause has to be found before it can be fixed. Two candidates:
+(a) **the device** - on an iPad, closing the microphone changes the iPad's audio setup and
+can cut off whatever is playing; (b) **a final result from the recognizer** - stopping
+recognition makes it deliver what it last heard, and if that is the placeholder misheard
+and it slips past the echo filter, `handlePartnerResumed` stops the placeholder
+deliberately. **First step: reproduce on the computer and on the iPad.** Happens on the
+iPad only → (a), likely needing the microphone close to wait until the placeholder ends;
+happens on both → (b).
+**Ken confirmed it was the iPad, in the Home Screen app, with the DEVICE'S OWN
+recognizer doing the hearing** (he first thought it was Deepgram, then checked; his
+problem report agrees). That recognizer was measured to deliver no results at all in the
+Home Screen app (July 30 2026), so (b) has nothing to work with there, which points
+strongly at (a).
+**The fix to try first (Ken asked for it to be listed):** when listening is turned off
+while a placeholder is playing, stop taking in speech at once but CLOSE THE MICROPHONE
+ONLY AFTER THE PLACEHOLDER FINISHES. The button shows off immediately, nothing more is
+heard, and the iPad has nothing to cut off. If the cause is (b) instead, the fix is to
+ignore whatever the recognizer delivers after the user has turned listening off.
+**First step either way: try it on the computer** (one minute) and on the iPad with each
+hearing setting, to see which explanation it is.
+- **DONE 2026-10-09 (Ken: "A placeholder phrase should always complete"):** New 4, a
+  choice button and Reframe leave the ladder alone, like the Context buttons. Turning
+  Listen off while a holding phrase plays turns the button off at once, ignores what
+  is heard from then on, and closes the microphone when the phrase ends (8-second cap);
+  a second tap in that moment keeps listening. Buttons that SPEAK still cut a holding
+  phrase off, under the July 2026 rule. **Not yet checked on the iPad**, which is where
+  the Listen case was seen: confirm there, then close this entry.
+- **EXTENDED 2026-10-09 (Ken): the user's own words now WAIT for a holding phrase
+  already playing**, reversing the July 2026 rule that a speaking button cuts it off.
+  Ken: "one phrase stepped on by another makes both difficult to understand." The wait
+  is capped at 4 seconds; End conversation still silences everything at once.
+
+### The monthly provider review, running on the desktop rather than this laptop
+
+**Raised:** September 30 2026, by Ken, after the app was found to have spent three months
+on an AI model that was a generation behind and half again as expensive — noticed only
+because he asked an unrelated question. Ken: *"a service just got better and cheaper and
+we didn't know."*
+
+**What is wanted:** a recurring session, monthly, that checks the provider side and
+reports what changed. Four things: which models each provider now offers against the one
+in use; published prices against `pricing.json`, which is the only one of the four that
+cannot be automated at all; each service's real voice roster against the app's, which is
+what closes the OpenAI and Deepgram gap; and a re-run of the eleven-service browser
+reachability probe, since a vendor closing that door would silently end a configuration.
+It reports and recommends nothing — whether a model is BETTER is a judgment no endpoint
+answers, and a mechanical "newer and cheaper, switch" would have shipped the Sonnet 5.5
+thinking trap.
+
+**⚠ THE MODEL CHECK COVERS EVERY MODEL THE APP NAMES, NOT JUST THE AI ONE — and the
+first review got this wrong, which is the reason it is spelled out.** The September 30
+2026 review reported the AI model current and said nothing about the speech models, so
+it missed that **the app was asking ElevenLabs to transcribe with a model ElevenLabs had
+retired** — while pricing the replacement. It also passed over a whole new ElevenLabs
+voice generation, mentioning it only in passing as "its newest voice" inside a note
+about a sale. The app names a model for the AI, for each speech service that hears, and
+for each that speaks; **all of them age, and a deprecated one fails in the way this
+project keeps finding expensive — silently, looking like a refused key.**
+
+**⚠ AND USE `prototypes/speech-providers.html` FOR THE REACHABILITY CHECK RATHER THAN
+WRITING A PROBE. This is the trap, and it is not hypothetical: the first review wrote its
+own throwaway probe and lost most of the check to a mistake the bench does not make.** A
+fake key beginning `sk-` is discarded at OpenAI's edge before any permission header is
+attached, so it reads as OpenAI blocking the browser when it is not — and the review
+reported OpenAI blocked on every endpoint the app uses, including speaking, which was
+wrong. The bench's fake key deliberately looks nothing like a real one, and it carries
+the control case (AssemblyAI, expected to fail) without which "everything is reachable"
+is equally consistent with a probe that cannot detect a failure. **Writing a fresh probe
+rebuilds a worse version of a tool that already exists** — the same shape as every other
+time this project has rediscovered something the hard way because the step that needed
+the tool never named it.
+
+**⚠ IT IS NOT PART OF CONVERSANT.** Nothing about it ships, deploys, or reaches a
+tester. It runs on Ken's machine, for Ken. The part that IS in the app — the key Test
+naming the model and any newer one, and the model and rates riding in tester reports —
+shipped on September 30 2026 and is separate.
+
+**Why it is not being done now:** a scheduled session belongs to the machine it is created
+on, and this one is Ken's LAPTOP. He wants it on the desktop, which is always on: *"we'll
+talk later about how to get it to run on my desktop."* The setup itself is short — the
+same request made from Claude on the other machine — but it has to be made there.
+
+**⚠ AND DO NOT ATTACH IT TO A RELEASE INSTEAD, which is the obvious shortcut.** Ken
+ruled that out for a reason that only bites later: *"That may work well now given that
+there are frequent releases but it could be a problem when Conversant goes public and
+there are fewer releases."* Anchoring a time-based check to an event whose frequency is
+about to fall by an order of magnitude is the trap.
+
+### Nothing can check whether ElevenLabs transcription works at all
+
+- **Raised:** 2026-09-30, while correcting the app from the retired `scribe_v1` to
+  `scribe_v2` after the monthly provider review. Went looking for a way to confirm the
+  change and found there is none.
+- **What is wanted:** any route that proves a real key gets a transcript back from
+  ElevenLabs. The app's ElevenLabs Test button asks for the voice list, so it proves the
+  key and says nothing about transcription; the bench page does ElevenLabs speaking only;
+  and there is no transcription test anywhere in the app for any of the six services.
+- **Why it matters more than it looks:** ElevenLabs transcription has been in the app
+  since September 8 2026 and has **never** been run with a real key — its own entry in
+  the catalog says so, and says it was written from documentation, which this project
+  measures at about a 50% error rate. So a user who picks ElevenLabs to hear may be
+  getting nothing, and the app would bill them for it on screen either way.
+- **Why it is not being done now:** the cheap version is adding ElevenLabs transcription
+  to the bench, which needs a real ElevenLabs key — there is none on this machine. The
+  thorough version is a transcription Test button per service, which is a new control on
+  a panel Ken has deliberately decluttered, so it is his call.
+
+### Does a genuinely revoked key come back unreadable, and does the app then blame the service
+
+- **Raised:** 2026-09-30, by the monthly provider review, which found that a clearly-fake
+  key beginning `sk-` is discarded at OpenAI's edge with nothing the browser can read.
+- **What is wanted:** find out whether OpenAI's edge treats a real-looking-but-revoked key
+  the same way. If it does, a user who pastes a truncated or revoked OpenAI key gets
+  nothing the app can read, so the app tells them it could not reach the service when the
+  truth is the key was refused — which is the exact misdiagnosis the failure-message work
+  of September 30 2026 was aimed at.
+- **Why it is not being done now:** **not established, and a fake key is not evidence.** A
+  clearly-bogus `sk-` string and a genuine expired one are different things to an edge
+  that may be pattern-matching the shape. Settling it needs a real OpenAI key that has
+  been created and then revoked, which nobody here has.
+
+### Bold lead-in phrases: keep them or not
+- **Raised:** 2026-09-25 - Ken saw the Conversation Review document in bold from top to
+  bottom and asked for plain text. The bold was an accident of the rewrite, but 94 of
+  those paragraphs had carried a deliberate **bold lead-in phrase** before it, and
+  clearing the accident cleared those too. The document now has no bold in its prose at
+  all.
+- **What is wanted:** Ken's decision. Either the document stays fully plain, or the
+  opening phrase comes back on the list-style paragraphs so a reader can scan them.
+- **Why it is not being done now:** he asked for plain text and got it; putting bold back
+  is a change he has not asked for. The PLAIN STYLE rule in CLAUDE.md currently
+  recommends bold lead-ins, so **whichever way he decides, that line has to match** - the
+  rule and the documents cannot disagree.
+- **Cost either way:** small. One pass over the list-style paragraphs.
+
+### The rest of the documents still carry the old style
+- **Raised:** 2026-09-25, when the PLAIN STYLE rule was written and the checks added.
+- **The backlog, measured that day across roughly 40 documents:** 101 banned phrases as
+  errors and 163 to review (L11), 692 sentences over 40 words (L12), 221 headings too
+  long or carrying a colon (L13), 28 documents over the passive-voice limit (L14), and
+  63 paragraphs bold end to end (L15).
+- **Why it is not being done now:** a single sweep over every document is a large pass
+  with no reader waiting on it, and each document reads better when somebody rewrites it
+  rather than when a script clears its findings.
+- **What is wanted:** clear the findings for a document the next time that document is
+  touched for any reason. `check docs <name>` lists them.
+
+### The list tool adds numbering definitions that nothing uses
+- **Raised:** 2026-10-06 - found by the checker on the same day's wording pass over the
+  Product Overview, the Beta Test Plan and the three User Manuals.
+- **The finding:** each run of `scripts/doc-generators/fix-docx-lists.py` gives every list
+  run a NEW numbering definition and leaves the old one in place. One run took each
+  manual from 48 definitions to 72, with 24 in use; the Product Overview went from 74 to
+  78 with 4 in use, and the Beta Test Plan from 39 to 43 with 4 in use. Word opens all
+  five, and the integrity and numbering-id checks pass.
+- **What is wanted:** have the tool reuse a list's existing definition when that list is
+  already numbered on its own, or remove definitions nothing uses after it runs.
+- **Why it is not being done now:** it does no harm today and was found during a wording
+  pass. It only grows, so fix it before the definitions run into the hundreds.
+- **Until then:** run `fix-docx-lists.py --check` first, and skip the real run when it
+  reports 0 runs with items split across different numberings.
+
+### Beta Test Plan still tells testers to get a free Deepgram account for speech
+- **Raised:** 2026-09-21 - found while applying the public-release documents rule. Its
+  "What you need" and set-up steps say to create a free Deepgram account for the voice, and
+  to leave hearing on the free option everywhere except an installed iPad.
+- **Why it is wrong now:** Azure is the Recommended service (2026-09-21), and Android needs a
+  paid service to hear (Ken, 2026-08-31). Volksswitch has also not committed to paying for
+  speech services in the beta; it MAY obtain a speech key for a tester.
+- **What is wanted:** Ken's decision on the beta speech arrangement (tester signs up for
+  Azure themselves with the three buttons, or Volksswitch obtains the key), then rewrite those
+  passages to match.
+- **DONE 2026-09-21:** Ken decided Volksswitch obtains each tester's Anthropic key and any
+  speech key is arranged offline between him and the tester. The plan now names no speech
+  service: it says who needs one, points to section 1 of the guide, and says to talk to us
+  first. A duplicated half-sentence in set-up step 2 went with the rewrite.
+
+### Internal design documents still refer to "Ken"
+- **Raised:** 2026-09-21 - Ken's rule: in documents he is "the project" or "Volksswitch".
+  The published documents are done. Still carrying "Ken" (count): Architecture Overview (2),
+  Azure-Only Speech Proposal (1), Conversation Goals (6), Express Panel Design (5),
+  Measurement Plan (5, plus 4 beta/payment lines), Sounds Like Me (10), Strategic Assessment
+  (2, plus 1), UI-Design (1), Voice Files (2), Weekly Report Handling (1, plus 1),
+  Worldview Implementation Plan (5).
+- **What is wanted:** replace with "the project"/"Volksswitch" - but most are decision
+  attributions ("Ken decided..."), where a mechanical swap reads badly and loses who made the
+  call. Needs a per-sentence pass.
+- **Why not now:** none of these is published, and Ken asked about the published documents first.
+
+### Check that OpenAI, Google Cloud and ElevenLabs hearing are really used where hearing must be paid for
+- **Raised:** 2026-09-21 - noticed while making Azure the Recommended service. When the app
+  starts, the part that decides whether a paid hearing service is in use only looks for a
+  Deepgram or an Azure key. Someone who chose OpenAI, Google Cloud or ElevenLabs for hearing
+  may be treated as though they chose the free listening. On a computer that may not matter,
+  but on an installed iPad or on Android the app might then say it cannot hear, or
+  use the wrong one. Not confirmed; it may be handled somewhere else.
+- **What is wanted:** read the start-up path end to end, and if it is a real fault, try
+  each of the three on an installed iPad or Android with a real key.
+- **Why not now:** outside the Recommended/order change being made, and it needs a real key
+  for each service to confirm.
+- **Update, October 5 2026:** the code review read the start-up path and confirmed it is a
+  real fault: after every restart those three services are replaced by the free listening,
+  with nothing on screen saying so. It also found a second way in that affects Deepgram and
+  Azure too: a key pasted after choosing a service is not picked up until the next restart.
+  The fix is item [CR-002](code-review-2026-10-05/CR-002.md). Trying each service on a real
+  device with a real key is still wanted once it is fixed; close this entry then.
+- **Update, October 5 2026 (later):** CR-002 is fixed. Checked in the browser with a
+  made-up key: OpenAI hearing survives a restart, and a Google key pasted after a restart
+  is picked up at once. What remains is the real-device, real-key check above.
+
+### Speech Provider Guide and Azure set-up: the 19 September change list
+- **Raised:** 2026-09-19 - assembled over the Azure pricing review and Ken's fresh-account
+  Azure trial (a session run from the keyguard folder). **It was kept only in that
+  session's temporary folder and never reached this file** - found and moved here
+  2026-09-21, copied verbatim below.
+- **What is wanted:** the items below. Items 3, 13 and 14 are already standing rules in
+  `CLAUDE.md`; item 9 corrects something the guide gets wrong today on the recommended
+  (Azure) path.
+- **Why not now:** it was waiting on the SLP's view of the Azure-only proposal. That is
+  settled differently now - on 2026-09-21 Ken chose to make Azure the *Recommended* service
+  rather than the only one - so these are unblocked, and are Ken's call on timing.
+
+1. Azure speaking price: $16 -> $15 per 1M characters (section 3 table). $15 in every
+   commercial region since Feb 2024; only US Gov regions differ ($18.75). Update
+   "read on September 2 2026" to September 19 2026.
+2. Add note on Azure free-tier (F0) throttling: speaking capped at 20 requests per
+   minute, listening at 1 conversation at a time; neither can be raised. A burst of
+   pre-fetched phrases could be refused and look like a bad key. Paid (S0): 30/second.
+3. State plainly (section 2, "What a key is"): Conversant never sees or has access to
+   your password or credit card - those are typed only into the provider's own site.
+   The only thing Conversant stores is the API key(s), on your own device.
+   (Current text says Volksswitch never sees the key - true, but silent on passwords/cards.)
+4. Guide, Azure sign-up steps: replace the manual portal steps with the set-up link
+   (sign in -> pick Region -> Review + create -> Create -> Outputs -> copy key and region).
+   "Next" and "Review + create" go to the same place; tell people to press Review + create.
+   Leave the Subscription name as Azure gives it.
+5. Guide, new "Removing it" steps, as easy as setting up: (a) remove the speech service =
+   delete the conversant-speech-<region> resource group; (b) close the Azure account
+   entirely = cancel the subscription. Mention the deleted-service waiting period.
+6. Guide, Azure sign-up: say you need a Microsoft account; if you use Windows or Outlook
+   you probably have one, and if not, your ordinary email (Gmail etc.) becomes one during
+   sign-up.
+7. Guide, Azure sign-up: cutting Microsoft's promotional email - uncheck the offers box
+   during sign-up; use the unsubscribe link ("stop all") on the first one; billing,
+   security and retirement notices keep coming and should. WORDING TO CONFIRM FROM
+   KEN'S FRESH-ACCOUNT TRIAL (was the box there, was it pre-ticked, was "stop all" offered).
+8. Guide + wherever the app shows the set-up link: the Azure sign-up (phone, card,
+   agreement) must be FINISHED first. A Microsoft account alone can open the portal and the
+   form, but the Subscription box is then empty and Region says "Loading..." forever, with
+   no explanation. Say: "If the Subscription box is empty, you haven't finished signing up
+   for Azure - go to azure.microsoft.com/free." (Found in Ken's fresh-account trial.)
+9. Guide, CORRECTION: the ordinary Azure free trial DISABLES the whole subscription after
+   30 days (or when the $200 credit is used) unless upgraded to pay-as-you-go - and the F0
+   speech service stops with it (Microsoft Learn, "Avoid charges with your Azure free
+   account"). The guide's "survives after the introductory credit expires" is only true
+   after that upgrade. Recommend signing up DIRECTLY for pay-as-you-go
+   (azure.microsoft.com/pricing/purchase-options/pay-as-you-go): no 30-day cutoff, F0 still
+   free. Also: check the beta testers' accounts - Ken's shows "Upgrade", i.e. still a trial.
+
+10. Guide, Azure steps: the sign-up button is called "Pay as you go". Where to click in Azure
+    is inconsistent (sometimes a row in a table, sometimes a tab) - use pictures, dated, and
+    prefer DIRECT LINKS to the exact page (e.g. the resource-groups list) so there is less
+    to click through and less to break when Microsoft redesigns.
+11. Guide: after sign-up Azure shows a "Mandatory Azure MFA" pop-up. Say it can be closed;
+    it concerns developer tools, and a Conversant key is unaffected by it.
+12. Guide, "Removing it": there is no single "Azure account" to close. Microsoft account =
+    who you are; billing account = who pays (holds the credit card); subscription = where
+    services live and charges are made. Cancelling the subscription is enough to be sure of
+    no charges; removing the credit card and closing the Microsoft account are optional.
+13. Everywhere: say "credit card", never just "card" (Ken, 19 Sep 2026).
+14. Everywhere user-facing: no references to "the bench".
+
+(The Azure-only draft for SLP review is now `Documents/Conversant AAC Azure-Only Speech Proposal (draft for SLP review).docx`; the online draft was deleted.)
+
+- **DONE 2026-09-21 - items 1-14 (the guide):** all applied to the Speech Provider Guide;
+  the Azure price correction (1.5 cents per 1,000 characters) also went into the three User
+  Manuals. Two judgment calls: item 7 is written as "if the form asks... leave it unchecked",
+  because the fresh-account trial never confirmed the box or the "stop all" option; item 10's
+  pictures are left for Ken, who is reviewing the guide to insert screenshots from his run.
+  Direct links are used for the set-up link and the resource-group list. The testing page is
+  no longer mentioned; section 7 now tells people to compare voices inside Conversant.
+- **DONE 2026-09-21 - items A-C (the app):** A - the Region box is a plain box with a Paste
+  button, beside the key (Ken: "to the right of the Azure Speech box"), and Test is
+  unavailable until both are filled in; the silent "eastus" default no longer shows in the
+  box (an existing Azure user without a stored region gets "eastus" written down, so
+  nothing breaks). B - three buttons (Ken, 2026-09-21: nobody starts with an Azure
+  account, so the question is whether they have a MICROSOFT account): Microsoft account
+  sign-up, pay-as-you-go Azure sign-up, and the set-up link, each in a new tab. C - the refusal message names a deleted service and a
+  canceled or switched-off subscription.
+- **STILL OPEN from B:** whether Microsoft's sign-up can be made to land directly on the
+  set-up form when it finishes. Not tried; it would need a fresh-account run.
+
+### Public-facing documents move to a user-manual tone, with no justification
+- **Raised:** 2026-09-27 - Ken, on being told the Conversation Review generator has no
+  stated goals: *"These documents need to change to a 'user manual' tone and style. We no
+  longer need to include 'justification' statements in these documents."*
+- **What is wanted:** every public-facing document says what the thing is and how it
+  works, and stops arguing for it. A sentence whose job is to persuade the reader that a
+  decision was right comes out. The reasoning still lives in `CLAUDE.md`, which is where
+  a future session looks to avoid re-arguing a settled decision - it just stops being
+  printed for the reader.
+- **Why it is not being done now:** it is a pass over roughly thirteen documents and Ken
+  has asked for the Conversation Review first. Doing them one at a time, as each is next
+  touched, is the same rule already in force for the banned phrases and the long
+  sentences.
+- **Note:** this is a THIRD writing rule, alongside PLAIN LANGUAGE (vocabulary a
+  non-programmer can follow) and PLAIN STYLE (writing a reader gives up on). It removes
+  material the other two leave in place, so it needs its own line in CLAUDE.md.
+
+### Conversation Review: what the first build left out
+- **Raised:** 2026-10-01 - Ken asked for the feature in "Conversant AAC Conversation
+  Review.docx" to be implemented. The first build covers choosing a conversation,
+  moving through it, and recording every kind of answer to a file beside the
+  conversation. These parts of the design are not built yet:
+- **Revised 2026-10-03 after Sarah's comments on the prototype** (one SLP; her PDF is
+  "Sarah's input - original.pdf" on Ken's Desktop). Ken's decisions are folded in below.
+- **WHY THIS FEATURE MATTERS, and it decides the order of everything below (Ken,
+  2026-10-03):** review is Conversant's single biggest answer to "it doesn't sound like
+  me." Sarah expects clients to use it "one now and then", and Ken keeps it anyway. **The
+  condition is that a review must visibly change how the app sounds.** Today it does not:
+  answers are saved to the review file and nothing reads them. A user who reviews and
+  sees no difference has wasted their effort, and will not review again.
+- **DONE 2026-10-03: review answers feed the voice examples.** Typed sentences and
+  reworded response options become voice examples, ahead of words composed live; a
+  response option marked closer replaces the live choice; any other answer withdraws the
+  live choice. The voice examples are rebuilt when the user leaves a review.
+- **DONE 2026-10-03: an Express button chosen in review counts in the length measure**,
+  as a choice of a short, ready-made reply over the four offered. It is never a voice
+  example (it is a button label). "A different set" teaches nothing about the voice; it
+  only withdraws the live choice.
+- **Measure whether each review lesson is right** (Ken, 2026-10-03: *"It would be great if
+  we could actually measure some of these guesses to know which ones are correct, close,
+  or no ops."*). Each kind of review answer is now its own entry in `REVIEW_LESSONS`
+  (voice-harvest.js), can be removed alone, and the harvest counts what each one
+  contributed. Still wanted: a way to tell whether a lesson helped. Candidates: the
+  share of turns answered from a response option without asking for a different set,
+  before and after a lesson starts contributing; or showing two sets side by side, with
+  and without a lesson, in a practice conversation. Needs beta data first.
+- **Leaving a review may be slow with a long history.** It rebuilds the voice examples
+  from every saved conversation. If testers notice, update only the conversation just
+  reviewed instead. Not measured.
+- **LATER, after beta testers have used review: Express Panel buttons and About Me
+  facts** (§8, §13.3). Each still needs its own "do you want this?" step at the moment
+  it applies, not a separate screen; Sarah was confused by the "what comes of it"
+  screen. About Me facts only for clear, lasting facts (Sarah, agreed). **The practice
+  question** (§9, true or made up) belongs with the About Me offer.
+- **Play it back at real speed** (§7): stays on this list, last. Its button came off
+  the review bar on 2026-10-03; "Jump" (next turn where you asked for something else)
+  took its place, and is grayed out when no such turn is left.
+- **A light bulb on a reviewed turn** (Ken, 2026-10-03). Tapping it opens a dialog that
+  lists what the app learned from that turn and how it will change future
+  conversations. **First the app has to get better at deciding what it learns** - it
+  should not announce lessons it is not sure of. A first version, a whole-review summary
+  on the review bar, was built and taken out the same day.
+- **DONE 2026-10-03: the list can be cut by date** (last week by default each session,
+  last month, last three months, any time). Older conversations are skipped by file name
+  without being opened, and a line says how many are hidden, with a button to show them.
+- **The turn screen stays as it is** (Ken chose to wait for more reviewers or a tester).
+  Sarah called it "a lot"; Ken's view is that needing two taps to edit a card's wording
+  already keeps editing out of the way.
+- **The "turns you asked for something else" count on the conversation list stays**
+  (Ken, disagreeing with Sarah's "steers them too much"). It comes from what the user
+  did live (New 4, typing their own words), so it points at the turns where the app
+  missed their voice, which is where review is most worth the effort.
+- **The beta counts** (§8.1): how often review is used, in the weekly report. Wanted
+  before deciding how much more to put into review.
+- **2026-10-06, from the Sounds Like Me evaluation:** as wired before that day's
+  changes, review is expected to return less than it costs if voice is the return being
+  counted. At realistic amounts of reviewing the evaluation could detect no change in
+  the best-guess option, though it could not rule out a small gain. So the condition
+  above, that a review must visibly change how the app sounds, is not yet shown to be
+  met. The same day's changes made Reframe instructions typed in review count, and keep
+  typed answers of under four words as short replies. What remains is in "Sounds like
+  me: what the October 6 2026 evaluation left to do", below: its item 1 is the candidate
+  measure for "Measure whether each review lesson is right", and items 7, 8, 28 and 30
+  cover review. The beta counts above are still not built. Two parts of the design were
+  also found not built and were not on this list until now: turning a complaint about
+  timing into a setting, and the misheard "report to us" (item 28).
+- **Why not now:** the rest waits on beta feedback.
+
+### A clinician support tool
+- **Raised:** 2026-10-03 - Ken, from Sarah's answers on the review prototype: offering
+  to add a fact to About Me is "a requirement for a clinician tool", and summaries of how
+  a week went are "only for a clinician".
+- **What it is so far:** a separate tool for the user's SLP, alongside the app, not part
+  of it. Known contents: (a) weekly summaries for a client - how often they talked, how
+  often suggestions were used, what review found; (b) the "add this to About Me?" offer
+  for clear, lasting facts, with the clinician helping decide. It overlaps "An SLP
+  authoring practice conversations for a client to exercise" below, which is the same
+  person wanting a way in.
+- **What is wanted first:** a fuller description - who uses it, on what device, how a
+  client's data reaches it and with whose permission, and what it never sees (a real
+  conversation carries the words of a partner who never agreed to be reviewed).
+- **Why not now:** it is undescribed, and it should be shaped by what clinicians ask for
+  during the beta.
+
+### Sounds like me: what the October 6 2026 evaluation left to do
+- **Raised:** 2026-10-06 - Ken asked whether Conversant's suggestions can "sound like"
+  the user. The evaluation is written up as
+  `Documents/Conversant AAC Sounds Like Me Evaluation.docx` (being written the same day).
+  Ken then said "do all three": record the findings here, make the free fixes, and turn
+  the report into that document.
+- **What is listed here:** every finding and avenue the same day's changes did not
+  cover. Those changes are not repeated here. Among them, the length measure now
+  compares like with like and is checked against How I Sound, and practice conversations
+  are left out. Reframe instructions with the same meaning are grouped and can be kept
+  with one tap in About Me.
+- **Avenue numbers** refer to the evaluation's ranked list of other avenues. Avenue 2
+  and most of avenue 3 were done on October 6. Avenue 8, editing an option before
+  speaking it, is "I, Robot?" item 3, below.
+- **Why measurement comes first:** About Me is likely to make the suggestions fit the
+  user's life (facts appeared where questions invited them), but for a terse or slangy
+  user it changed the wording little and made options longer.
+  At realistic amounts of reviewing, no change in the best-guess option could be
+  detected. Nothing in the app measures whether suggestions sound like the user, so
+  nothing below can yet be shown to work.
+- **The order:** items 1-3 measure; 4-16 are other avenues; 17-19 are deferred, each
+  with a trigger; 20-31 are faults and gaps found and not fixed; 32-34 follow from the
+  October 6 changes.
+
 #### 1. Measure it: a blind "which would you say?" check, and a first-set count
 - **Raised:** 2026-10-06 - the evaluation's avenue 1, ranked first because without a
   measure nothing else here can be shown to work.
