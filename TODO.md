@@ -37,6 +37,18 @@ the one that quietly waits forever.
 
 ## Open
 
+### The User Manuals and Practice Scenarios document: exporting and importing a scenario
+- **Raised:** 2026-10-11 - from building it. Settings > Practice now has an "Export"
+  button on each of your scenarios (saves that one scenario to a file) and an "Import a
+  scenario" button under "New scenario" (adds one from such a file; never replaces
+  anything, and a scenario already on the list is not added twice).
+- **What is wanted:** describe both in all three User Manuals and in "Conversant AAC
+  Practice Scenarios", with what it is FOR: a therapist writing a scenario for a client,
+  moving one scenario to another device, or sharing one with another user. Say that a
+  link to a person in About Me is kept only on a device that has that person.
+- **Why not now:** documents are synced when Ken says the feature is settled, not when
+  it is built.
+
 ### Listen to the four new spoken forms on the other voice services
 - **Raised:** 2026-10-10 - Ken. The shipped "OK", "Maybe", "Bye" and "Thank you" buttons
   now carry spoken forms ("Okay", "May be.", "Bye,", "Thank you,"), found by ear on the

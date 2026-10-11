@@ -21,6 +21,7 @@ import { SCENARIOS as BUILT_IN } from './practice-scenarios.js';
 import * as llm from './llm.js';
 import { confirmDanger } from './confirm-dialog.js';
 import * as relationships from './relationships.js';
+import { downloadText } from './data-transfer.js';
 
 let container = null;
 let hooks = {};
@@ -173,6 +174,11 @@ function renderList() {
                         const id = await library.copyScenario(s);
                         if (id) goTo({ mode: 'edit', id });
                     }), `Make a copy of ${s.title || '(untitled)'}`),
+                    // One scenario per file, to hand to another device or person.
+                    named(button('Export', () => {
+                        downloadText(library.exportFilename(s),
+                            library.buildExport(s, hooks.appVersion ? hooks.appVersion() : ''));
+                    }), `Export ${s.title || '(untitled)'} to a file`),
                     named(button('Delete', async () => {
                         const ok = await confirmDanger({
                             title: 'Delete this scenario?',
@@ -214,10 +220,27 @@ function renderList() {
             writeBtn.disabled = false;
         }
     });
+    // A scenario somebody exported - from another device, or a therapist's. The plain
+    // file chooser works everywhere, the iPad included, and opens where downloads land.
+    const picker = el('input', { type: 'file', accept: '.json,application/json', hidden: true });
+    picker.addEventListener('change', async () => {
+        const file = picker.files && picker.files[0];
+        picker.value = '';             // so choosing the same file again still fires
+        if (!file) return;
+        let text;
+        try { text = file.size > 1_000_000 ? null : await file.text(); } catch { text = null; }
+        if (text === null) { note.textContent = 'That file could not be read as a scenario.'; return; }
+        const got = library.parseImport(text);
+        if (got.error) { note.textContent = got.error; return; }
+        const { id, added } = await library.importScenario(got.scenario, (pid) => !!relationships.getPerson(pid));
+        if (!added) { note.textContent = `“${got.scenario.title}” is already in Your scenarios.`; return; }
+        goTo({ mode: 'edit', id });
+    });
     fresh.append(sentence, el('div', { class: 'practice-tools' }, [
         writeBtn,
         button('Fill it in yourself', () => goTo({ mode: 'create', draft: library.emptyScenario() })),
-    ]), note);
+        button('Import a scenario', () => { note.textContent = ''; picker.click(); }),
+    ]), picker, note);
 
     // Starting from someone already in About Me, so the same person is not described
     // twice. Offered only when there is somebody to start from.

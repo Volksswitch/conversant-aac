@@ -2932,6 +2932,7 @@ function renderPracticePanel() {
             isPracticing: () => !!(practiceMode && practiceScenario),
             currentTitle: () => (practiceScenario ? practiceScenario.title : ''),
             hasKey: () => !!(storage.loadApiKey() || '').trim(),
+            appVersion: () => APP_VERSION,
             onStart: (scenario) => startPractice(scenario),
             onEnd: async () => {
                 await endPractice();

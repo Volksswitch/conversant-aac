@@ -329,3 +329,85 @@ export function parseDraft(text, sentence = '') {
     if (!s.title) s.title = str(sentence).slice(0, 60) || 'My scenario';
     return s;
 }
+
+// --- sharing one scenario: export and import (Ken, October 11 2026) -----------
+//
+// A scenario file holds ONE scenario, so a therapist, a supporter or the user can hand
+// a single conversation to another device or another person. It carries the scenario's
+// own words and choices and nothing else: no internal id (a fresh one is made on
+// import, so an import can never overwrite anything) and no `basedOn` (it names a
+// built-in or a copy on the sending device, which means nothing elsewhere).
+//
+// The person from About Me (`personId`) travels, but an import keeps it ONLY when that
+// person exists on this device - your own file on your own device keeps the link; a
+// file from somebody else cannot attach their scenario to an unrelated person.
+
+export const EXPORT_KIND = 'conversant-aac-practice-scenario';
+export const EXPORT_VERSION = 1;
+
+function portable(s) {
+    const n = normalizeScenario(s);
+    const out = {
+        category: n.category, title: n.title, description: n.description,
+        opensWith: n.opensWith, partnerPersona: n.partnerPersona, register: n.register,
+        behavior: n.behavior, behaviorText: n.behaviorText, details: n.details,
+    };
+    if (n.personId) out.personId = n.personId;
+    if (Object.keys(n.voices).length) out.voices = n.voices;
+    return out;
+}
+
+/** The text of a file holding one scenario. */
+export function buildExport(scenario, appVersion = '') {
+    return JSON.stringify({
+        kind: EXPORT_KIND,
+        version: EXPORT_VERSION,
+        appVersion: appVersion || '',
+        exportedAt: new Date().toISOString(),
+        scenario: portable(scenario),
+    }, null, 2);
+}
+
+/** "conversant-scenario-talking-with-mom.json" */
+export function exportFilename(scenario) {
+    const slug = str(scenario && scenario.title).toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
+    return `conversant-scenario-${slug || 'untitled'}.json`;
+}
+
+/**
+ * Read a scenario file. Returns { scenario } or { error }; the error is a sentence
+ * for the user.
+ */
+export function parseImport(text) {
+    const notOurs = { error: 'That file is not a Conversant practice scenario.' };
+    let parsed;
+    try { parsed = JSON.parse(text); } catch { return notOurs; }
+    if (!parsed || parsed.kind !== EXPORT_KIND || !parsed.scenario || typeof parsed.scenario !== 'object') return notOurs;
+    const scenario = portable({ ...parsed.scenario, id: 'x' });
+    // A scenario with nobody for the AI to play cannot be practiced.
+    if (!scenario.partnerPersona) return { error: 'That scenario does not say who the other person is, so it cannot be used.' };
+    return { scenario };
+}
+
+function sameScenario(a, b) {
+    return str(a.title) === str(b.title) && str(a.partnerPersona) === str(b.partnerPersona)
+        && str(a.details) === str(b.details) && a.behavior === b.behavior;
+}
+
+/**
+ * Add an imported scenario to the user's own. Never replaces anything. One already on
+ * the list unchanged is not added twice. `personExists(id)` decides whether an About Me
+ * link is kept. Returns { id, added } - id is the new scenario, or the existing match.
+ */
+export async function importScenario(raw, personExists = () => false) {
+    const m = ensureLoaded();
+    const s = normalizeScenario({ ...raw, id: newId(), basedOn: null });
+    if (s.personId && !personExists(s.personId)) s.personId = null;
+    if (!s.title) s.title = 'Imported scenario';
+    const match = m.scenarios.find((x) => sameScenario(x, s));
+    if (match) return { id: match.id, added: false };
+    m.scenarios.push(s);
+    await save();
+    return { id: s.id, added: true };
+}

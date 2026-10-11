@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- You can now share a single practice scenario. In Settings > Practice, tap "Export" beside one of your scenarios to save it to a file, and "Import a scenario" to add one from a file somebody gave you. Importing never replaces a scenario you already have.
+
 ## Version 0.13.17
 
 - On a new Express Panel, four buttons are now said more clearly in the paid voices: "OK", "Maybe", "Bye" and "Thank you". The words on the buttons are the same. If your panel is already set up, you can do the same yourself: tap the button in Settings and fill in its "How to say it" box (for example, "Okay" for "OK").

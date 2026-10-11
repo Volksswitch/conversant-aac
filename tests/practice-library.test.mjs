@@ -163,3 +163,60 @@ test('clearing who they are keeps the old description', async () => {
     await library.updateScenario(id, { partnerPersona: '   ' });
     assert.equal(library.getScenario(id).partnerPersona, before);
 });
+
+// --- exporting and importing one scenario ---------------------------------------
+
+test('a scenario exported and imported comes back the same, as a new scenario', async () => {
+    const id = await library.copyScenario(doctor());
+    await library.updateScenario(id, { details: 'Dr. Alvarez, my right knee.', behavior: 'skeptical', voices: { azure: 'en-US-AvaNeural' } });
+    const original = library.getScenario(id);
+    const text = library.buildExport(original, '0.13.18');
+    assert.ok(!text.includes(id), 'the internal id does not travel');
+    assert.ok(!text.includes('basedOn'));
+
+    await library.removeScenario(id);
+    const got = library.parseImport(text);
+    assert.ok(got.scenario, got.error);
+    const { id: newId, added } = await library.importScenario(got.scenario);
+    assert.equal(added, true);
+    assert.notEqual(newId, id);
+    await library.load();                       // read back from storage, not memory
+    const back = library.getScenario(newId);
+    for (const k of ['title', 'category', 'partnerPersona', 'details', 'behavior', 'opensWith', 'register']) {
+        assert.equal(back[k], original[k], k);
+    }
+    assert.deepEqual(back.voices, { azure: 'en-US-AvaNeural' });
+    assert.equal(back.basedOn, null);
+});
+
+test('importing never overwrites, and the same file twice is not added twice', async () => {
+    const id = await library.copyScenario(doctor());
+    const text = library.buildExport(library.getScenario(id));
+    const first = await library.importScenario(library.parseImport(text).scenario);
+    assert.equal(first.added, false);
+    assert.equal(first.id, id);
+    assert.equal(library.count(), 1);
+});
+
+test('an About Me link is kept only when that person is on this device', async () => {
+    const id = await library.copyScenario(doctor());
+    await library.updateScenario(id, { personId: 'p1', title: 'With Mom' });
+    const s = library.parseImport(library.buildExport(library.getScenario(id))).scenario;
+    await library.removeScenario(id);
+    const kept = await library.importScenario(s, (pid) => pid === 'p1');
+    assert.equal(library.getScenario(kept.id).personId, 'p1');
+    await library.removeScenario(kept.id);
+    const dropped = await library.importScenario(s, () => false);
+    assert.equal(library.getScenario(dropped.id).personId, null);
+});
+
+test('a file that is not a scenario, or has nobody to play, is refused with a sentence', () => {
+    assert.ok(library.parseImport('not json').error);
+    assert.ok(library.parseImport(JSON.stringify({ kind: 'conversant-aac-backup' })).error);
+    assert.ok(library.parseImport(JSON.stringify({ kind: library.EXPORT_KIND, scenario: { title: 'x' } })).error);
+});
+
+test('the file name comes from the scenario name', () => {
+    assert.equal(library.exportFilename({ title: 'Talking with Mom!' }), 'conversant-scenario-talking-with-mom.json');
+    assert.equal(library.exportFilename({ title: '' }), 'conversant-scenario-untitled.json');
+});
