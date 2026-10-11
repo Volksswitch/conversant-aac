@@ -26,8 +26,10 @@
  * through speechSynthesis, which owns its audio, so this cannot reach it.
  */
 
-export const IDLE_MS = 2000;      // quiet this long and the speaker may have gone to sleep
-export const WARM_MS = 200;       // how long it is given to wake
+// Ken, October 11 2026, after trying 2 s / 0.2 s on the iPad with his speaker: better,
+// not perfect. Raised to 0.4 s and triggered after 1 s of quiet.
+export const IDLE_MS = 1000;      // quiet this long and the speaker may have gone to sleep
+export const WARM_MS = 400;       // how long it is given to wake
 const HOLD_S = 3;                 // length of the hiss; covers a slow fetch
 const NOISE_LEVEL = 0.001;
 

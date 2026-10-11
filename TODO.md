@@ -53,6 +53,7 @@ the one that quietly waits forever.
 - **Proposed fix:** play silence the moment the app starts to speak. While a fresh sentence is being fetched (a few tenths of a second) that silence costs nothing and gives the speaker time to wake. For a phrase already kept on the device, which plays at once, it would add about 0.2 seconds, and only after a quiet spell. Applies to every paid voice.
 - **Why not now:** waiting on Ken's go-ahead, since it adds a small delay to the instant phrases. Only testable on the iPad with the Bluetooth speaker.
 - **BUILT 2026-10-11 (Ken: "yes, build the Bluetooth fix"):** `app/js/speaker-wake.js`, used by the Deepgram, Azure and other paid voices. Still to do: Ken to try it on the iPad with the Bluetooth speaker. Not covered: the device's own voice and sound buttons.
+- **Tuned 2026-10-11:** Ken found 0.2 s after 2 s of quiet better but not perfect; now 0.4 s after 1 s of quiet. Ken to try again after the next release.
 
 ### The iPad sometimes fails to load the app's offline helper at start-up
 - **Raised:** 2026-10-11 - found in the same report.
