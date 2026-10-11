@@ -132,7 +132,7 @@ These were recorded only in `CLAUDE.md`. Each is listed here so the list is comp
 
 #### Security items for beta and public release
 - **Raised:** 2026-07-08 - security review.
-- **What is wanted:** Write down in the overviews that private facts are protected by instruction, not isolation (SEC-5). Before public release: a supporter PIN on the key field (SEC-1), optional encryption of the data folder (SEC-6), and marking a response option that contains a private fact (SEC-5).
+- **What is wanted:** Write down in the overviews that private facts are protected by instruction, not isolation (SEC-5). Before public release: optional encryption of the data folder (SEC-6), and marking a response option that contains a private fact (SEC-5).
 - **Why not now:** Gated on beta and public release.
 
 #### A setting to move to a stronger or cheaper AI model
