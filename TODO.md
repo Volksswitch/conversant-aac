@@ -37,6 +37,11 @@ the one that quietly waits forever.
 
 ## Open
 
+### An intermittent test failure, not yet identified
+- **Raised:** 2026-10-11 - during the 0.13.21 release. One test failed once (1,320 of 1,321 passed) and passed on the next seven runs; it did not come back long enough to be named.
+- **What is wanted:** when `npm test` fails once and then passes, keep the failing run's output so the test can be named and fixed. A test that fails at random gets ignored, and then it stops catching anything.
+- **Why not now:** it could not be reproduced.
+
 ### Let "evaluate beta" read the beta Sheet directly, and move handled rows aside
 - **Raised:** 2026-10-11 - Ken. To review at a later date.
 - **What is wanted:** Claude reads the beta reports Sheet itself instead of Ken exporting it, and afterwards moves the rows that have been dealt with out of the way.
