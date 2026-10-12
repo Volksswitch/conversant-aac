@@ -129,8 +129,11 @@ function currentRows() {
 
 // --- field helpers ----------------------------------------------------------
 
+// A read-only field is out of scope: a saved API key's box is read-only so its full
+// text can never be revealed (Ken, October 11 2026), and the keys here assign the
+// value directly, which would type straight into it.
 function isScoped(node) {
-    return node instanceof Element && node.matches(IN_SCOPE);
+    return node instanceof Element && node.matches(IN_SCOPE) && !node.readOnly;
 }
 
 function applyInputMode(node) {

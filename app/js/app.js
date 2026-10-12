@@ -1057,21 +1057,36 @@ function setKeyFieldValue(input, value) {
     input.value = value;
     delete input.dataset.redacted;
     input.classList.remove('key-redacted');
+    input.readOnly = false;
     input.dispatchEvent(new Event('input', { bubbles: true }));
+    // A pasted key is saved by that input event; shorten it straight away rather
+    // than leaving the whole key on screen until the box is next left.
+    showRedactedKey(input, value);
 }
 
 // Show the redacted form (unless the user is typing in it right now).
+//
+// ⚠ A SAVED KEY IS NEVER SHOWN IN FULL AGAIN (Ken, October 11 2026). The box used to
+// put the whole key back when it was tapped, so anyone with the device could select
+// and copy it. Now a box holding a saved key is READ-ONLY and keeps the short form;
+// changing the key means "Clear" and then pasting or typing the new one. Read-only
+// also keeps the on-screen keyboard away (keyboard.js skips read-only fields).
 function showRedactedKey(input, key) {
     if (!input || document.activeElement === input) return;
     const k = (key || '').trim();
-    if (!k) { input.value = ''; input.classList.remove('key-redacted'); delete input.dataset.redacted; return; }
+    if (!k) {
+        input.value = ''; input.classList.remove('key-redacted');
+        delete input.dataset.redacted; input.readOnly = false;
+        return;
+    }
     input.value = redactKey(k);            // set directly: no input event, so nothing re-saves
     input.dataset.redacted = '1';
     input.classList.add('key-redacted');
+    input.readOnly = true;
 }
 
-// Reveal the real key for editing, and re-redact when focus leaves. `load`/`save`
-// keep this generic over both key fields.
+// Save what is typed, and shorten it when focus leaves. `load`/`save` keep this
+// generic over every key field.
 // Called on every Settings open. The listeners are attached ONCE and read the
 // callbacks from the box, which each open refreshes (CR-084): attaching them again
 // each time made one keystroke save N times and fetch the voice list N times.
@@ -1081,13 +1096,8 @@ function wireKeyField(input, { load, save, onChange }) {
     if (!input.dataset.keyWired) {
         input.dataset.keyWired = '1';
         const cb = () => input._keyField;
-        input.addEventListener('focus', () => {
-            if (input.dataset.redacted) {
-                input.value = cb().load() || '';
-                delete input.dataset.redacted;
-                input.classList.remove('key-redacted');
-            }
-        });
+        // No 'focus' handler: focusing a saved key's box used to reveal the whole key,
+        // and is exactly what must no longer happen (see showRedactedKey).
         input.addEventListener('blur', () => {
             // A key placed in the box without an input event (some password managers
             // and extensions) is saved here, before the box is put back to the stored

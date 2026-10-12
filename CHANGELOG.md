@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- A saved key now always shows only its first and last few characters, even when you tap its box, so nobody can copy the whole key from Settings. To change a key, tap "Clear" and then paste or type the new one.
+
 ## Version 0.13.22
 
 - The AI key and each paid speech service now have a "Clear" button beside the key box, so you can empty the box in one tap instead of deleting the key a letter at a time. It asks before it removes a saved key.
