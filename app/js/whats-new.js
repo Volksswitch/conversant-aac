@@ -22,6 +22,9 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.13.23": [
+    "A saved key now always shows only its first and last few characters, even when you tap its box, so nobody can copy the whole key from Settings. To change a key, tap \"Clear\" and then paste or type the new one."
+  ],
   "0.13.22": [
     "The AI key and each paid speech service now have a \"Clear\" button beside the key box, so you can empty the box in one tap instead of deleting the key a letter at a time. It asks before it removes a saved key."
   ],

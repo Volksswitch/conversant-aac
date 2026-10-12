@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.13.23
+
 - A saved key now always shows only its first and last few characters, even when you tap its box, so nobody can copy the whole key from Settings. To change a key, tap "Clear" and then paste or type the new one.
 
 ## Version 0.13.22
