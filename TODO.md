@@ -44,9 +44,9 @@ the one that quietly waits forever.
 - **DONE 2026-10-11 ("sync docs" for 0.13.22):** the iPad User Manual (3.1, its table, and 2.4), the Product Overview, the Beta Test Plan and section 1 of the Speech Provider Guide.
 
 ### Cloned voices: confirm in Conversant, then tell users and therapists
-- **Raised:** 2026-10-12 - Ken asked ElevenLabs whether his cloned voice works for live speech, and about the Impact Program. Researched the same day; findings are in the new section 12 of the Speech Provider Guide, marked as untested.
+- **Raised:** 2026-10-12 - Ken asked ElevenLabs' customer support assistant (an AI) whether a cloned voice can be used for live speech, and about the Impact Program. No testing has been done. Researched the same day; findings are in the new section 12 of the Speech Provider Guide, marked as untested.
 - **What is wanted:**
-  1. **Ken tests a cloned ElevenLabs voice in Conversant**: enter the key, find the voice in the Voice list, press Test Voice, then use it in a conversation. Note whether it is slow to start.
+  1. **Make a cloned ElevenLabs voice and test it in Conversant** (not yet started): enter the key, find the voice in the Voice list, press Test Voice, then use it in a conversation. Note whether it is slow to start.
   2. **Confirm with ElevenLabs, in writing or from a person**, that an Impact Program voice may be used through another app's API key (so far only their automated assistant has said so), and **how many credits a month the program grants**.
   3. **Once 1 works**: add a short passage to all three User Manuals on using a cloned or Impact Program voice (create the key with text-to-speech and read-voices permissions, paste it, pick the voice), and update section 12 of the Speech Provider Guide to say what was confirmed. Consider telling the beta therapists about the free clinician license.
   4. **Only if a cloned voice is slow to start**: play ElevenLabs audio as it arrives, as was done for Deepgram on September 5 2026.
