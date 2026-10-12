@@ -22,6 +22,9 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.13.22": [
+    "The AI key and each paid speech service now have a \"Clear\" button beside the key box, so you can empty the box in one tap instead of deleting the key a letter at a time. It asks before it removes a saved key."
+  ],
   "0.13.21": [
     "On a Bluetooth speaker, the wait before the app speaks is back to a fifth of a second, after a pause of two seconds or more. The longer wait in the last release did not help enough to be worth it."
   ],
