@@ -44,7 +44,8 @@ the one that quietly waits forever.
 - **DONE 2026-10-11 ("sync docs" for 0.13.22):** the iPad User Manual (3.1, its table, and 2.4), the Product Overview, the Beta Test Plan and section 1 of the Speech Provider Guide.
 
 ### Cloned voices: confirm in Conversant, then tell users and therapists
-- **Raised:** 2026-10-12 - Ken asked ElevenLabs' customer support assistant (an AI) whether a cloned voice can be used for live speech, and about the Impact Program. No testing has been done. Researched the same day; findings are in the new section 12 of the Speech Provider Guide, marked as untested.
+- **Raised:** 2026-10-12 - Ken asked ElevenLabs' customer support assistant (an AI) whether a cloned voice can be used for live speech, and about the Impact Program. No testing has been done. Findings are in the new section 12 of the Speech Provider Guide.
+- **Status (2026-10-12): research only, nothing tested.** Done so far: web reading (company pages, review sites, a developer forum) and three questions to ElevenLabs' automated customer support assistant. Not done: no cloned voice exists, no Impact Program account has been tried, no ElevenLabs key has been entered in Conversant, and no person at ElevenLabs has confirmed anything. Section 12 of the Speech Provider Guide says where each claim came from.
 - **What is wanted:**
   1. **Make a cloned ElevenLabs voice and test it in Conversant** (not yet started): enter the key, find the voice in the Voice list, press Test Voice, then use it in a conversation. Note whether it is slow to start.
   2. **Confirm with ElevenLabs, in writing or from a person**, that an Impact Program voice may be used through another app's API key (so far only their automated assistant has said so), and **how many credits a month the program grants**.
