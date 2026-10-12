@@ -3524,7 +3524,8 @@ dialog select {
  * that heuristic.
  *
  * A stored key is redacted in JS instead (see redactKey in app.js): at rest the
- * field shows "sk-ant-…4f2a", and the real value appears only while it has focus.
+ * field shows "sk-ant-…4f2a". Since October 11 2026 the real value never comes back:
+ * the box is read-only once a key is saved, and changing it means Clear (showRedactedKey).
  * That removes the password signal entirely, and is better anyway — a masked field
  * makes a truncated paste invisible, which is exactly the mistake the Test button
  * had to exist to catch.
