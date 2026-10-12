@@ -98,3 +98,6 @@ Reports/
 
 # Test data folder for local testing (rebuilt by scripts/make-test-data-folder.mjs)
 test-data-folder/
+
+# Conference demo material (Ken, October 11 2026)
+/Conference Demo/
