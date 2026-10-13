@@ -2081,6 +2081,13 @@ leaves the button dead with no error shown, which is the most likely explanation
 *(Not verified by typing one: creating accounts and entering passwords is a line this
 project's assistant does not cross.)*
 
+**SECOND CAUSE, CONFIRMED (Ken, October 13 2026): a browser extension crashes the page.**
+The console showed the page's own code failing ~980 times ("Cannot read properties of
+undefined (reading 'childNodes')") with Grammarly loaded, so the form never re-checked
+and the button stayed disabled. **A private window (Ctrl+Shift+N), where extensions are
+off, worked first time.** So the advice to a tester stuck on that page is, in order:
+private window, then Google/GitHub/Azure sign-in, then check the password has a number.
+
 
 ## Android — MEASURED, August 31 2026; a supported platform is Ken's call, not made
 

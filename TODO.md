@@ -43,6 +43,11 @@ the one that quietly waits forever.
 - **Why not now:** document changes wait for Ken's next "sync docs".
 - **DONE 2026-10-11 ("sync docs" for 0.13.22):** the iPad User Manual (3.1, its table, and 2.4), the Product Overview, the Beta Test Plan and section 1 of the Speech Provider Guide.
 
+### Documents: Deepgram sign-up tip - use a private window
+- **Raised:** 2026-10-13 - Ken's Deepgram sign-up stalled with Create Account disabled; the page was crashing (likely Grammarly). A private Chrome window (Ctrl+Shift+N) worked. Recorded in CLAUDE.md ("SECOND CAUSE, CONFIRMED").
+- **What is wanted:** wherever the Speech Provider Guide (and any manual) gives Deepgram sign-up steps, add: if Create Account stays grayed out, try a private window, or sign in with Google, GitHub or Azure; the password needs a number.
+- **Why not now:** document changes wait for Ken's next "sync docs".
+
 ### Cloned voices: confirm in Conversant, then tell users and therapists
 - **Raised:** 2026-10-12 - Ken asked ElevenLabs' customer support assistant (an AI) whether a cloned voice can be used for live speech, and about the Impact Program. No testing has been done. Findings are in the new section 12 of the Speech Provider Guide.
 - **Status (2026-10-12): research only, nothing tested.** Done so far: web reading (company pages, review sites, a developer forum) and three questions to ElevenLabs' automated customer support assistant. Not done: no cloned voice exists, no Impact Program account has been tried, no ElevenLabs key has been entered in Conversant, and no person at ElevenLabs has confirmed anything. Section 12 of the Speech Provider Guide says where each claim came from.
