@@ -43,6 +43,11 @@ the one that quietly waits forever.
 - **Why not now:** document changes wait for Ken's next "sync docs".
 - **DONE 2026-10-11 ("sync docs" for 0.13.22):** the iPad User Manual (3.1, its table, and 2.4), the Product Overview, the Beta Test Plan and section 1 of the Speech Provider Guide.
 
+### Beta: put at least one tester on Azure
+- **Raised:** 2026-10-13 - Ken agreed. Beta testers may be set up on Deepgram (simplest key, continuous hearing, the credit lasts), but public users are told to use Azure, so its sign-up and phrase-at-a-time hearing need trying by a real tester before release. Recorded in CLAUDE.md beside the Azure recommendation.
+- **What is wanted:** at least one beta tester whose speech service is Azure. Also check whether Deepgram's $200 credit expires.
+- **Why not now:** depends on which testers come on board and which devices they use.
+
 ### Documents: Deepgram sign-up tip - use a private window
 - **Raised:** 2026-10-13 - Ken's Deepgram sign-up stalled with Create Account disabled; the page was crashing (likely Grammarly). A private Chrome window (Ctrl+Shift+N) worked. Recorded in CLAUDE.md ("SECOND CAUSE, CONFIRMED").
 - **What is wanted:** wherever the Speech Provider Guide (and any manual) gives Deepgram sign-up steps, add: if Create Account stays grayed out, try a private window, or sign in with Google, GitHub or Azure; the password needs a number.
