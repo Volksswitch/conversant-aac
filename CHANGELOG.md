@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.13.24
+
 - In Settings, tapping a list near the bottom of the screen with your finger now opens the list. Before, the tap could land on the heading below it, which opened that section and closed the one you were in.
 
 ## Version 0.13.23
