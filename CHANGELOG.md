@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- In Settings, tapping a list near the bottom of the screen with your finger now opens the list. Before, the tap could land on the heading below it, which opened that section and closed the one you were in.
+
 ## Version 0.13.23
 
 - A saved key now always shows only its first and last few characters, even when you tap its box, so nobody can copy the whole key from Settings. To change a key, tap "Clear" and then paste or type the new one.

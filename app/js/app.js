@@ -6724,9 +6724,20 @@ function syncExpressTabDock() {
  *
  * Done on pointerdown rather than focus so the scroll lands BEFORE the popup is
  * positioned; a focus handler fires too late on some browsers.
+ *
+ * ⚠ MOUSE AND PEN ONLY, NEVER A FINGER (Ken's Android tablet report, October 15 2026:
+ * "When I tap on the list to choose a partner voice, the section closes"). A touch
+ * browser decides what a tap HIT when the finger lifts, by looking at what is under it
+ * then - so scrolling the panel between finger-down and finger-up moved the select out
+ * from under the finger and the tap landed on whatever slid into its place: here the
+ * next section's heading, which opened it and shut the one the user was in. Same shape
+ * as the v0.2.24 keyboard-hide ghost click. A mouse click goes to the element pressed,
+ * so it is unaffected. Android shows a select as a centered list anyway, so there is
+ * no direction to fix there.
  */
 function keepDropdownsOpeningDownward(scroller) {
     scroller.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'touch') return;
         const sel = e.target instanceof Element ? e.target.closest('select') : null;
         if (!sel) return;
         const box = scroller.getBoundingClientRect();
