@@ -3107,7 +3107,9 @@ function asciiForLog(text) {
 // Record an error. `context` is where it happened (e.g. 'generateOptions'),
 // `message` the error text, `extra` any small JSON-able detail (e.g. the partner
 // text). Best-effort and never throws — it must not itself break the flow.
-export function logError(context, message, extra = null) {
+// `{ quiet: true }` records the error everywhere as usual but asks the UI not to show
+// the pink wash - for a problem the user cannot see or act on (Ken, October 16 2026).
+export function logError(context, message, extra = null, { quiet = false } = {}) {
     // Backstop for the per-conversation privacy toggle (SEC-2): the conversation
     // log is gated on `conversationSaving`, but the error sinks (the localStorage
     // ring buffer AND errors.log on disk) are not. Partner speech reaches here via
@@ -3150,7 +3152,7 @@ export function logError(context, message, extra = null) {
     try { console.error(`[${entry.context}] ${entry.message}`, extra ?? ''); } catch { /* ignore */ }
     // Let the UI put up a non-verbal heads-up (faint-red transcript) without
     // storage depending on the UI layer. Any logged error trips it.
-    try { window.dispatchEvent(new CustomEvent('aac-error-logged', { detail: entry })); } catch { /* non-DOM context */ }
+    try { window.dispatchEvent(new CustomEvent('aac-error-logged', { detail: { ...entry, quiet } })); } catch { /* non-DOM context */ }
     return entry;
 }
 

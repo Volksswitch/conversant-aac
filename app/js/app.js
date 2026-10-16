@@ -561,7 +561,10 @@ function initApp() {
     // trips a faint-red wash on the transcript — a non-verbal heads-up that a
     // hiccup occurred and behavior may deviate; cleared on the next working
     // cycle (a real palette render) or on conversation reset.
-    window.addEventListener('aac-error-logged', () => ui.setTranscriptError(true));
+    // Except a QUIET one: recorded, but nothing the user would notice (slow storage).
+    window.addEventListener('aac-error-logged', (e) => {
+        if (!(e && e.detail && e.detail.quiet)) ui.setTranscriptError(true);
+    });
 
     // Log the display metrics (and re-log on every viewport change) so we — and
     // beta testers — can see the real pixel box the app is running in. Started
@@ -1678,7 +1681,17 @@ async function withTimeout(promise, ms, label) {
     // work "done" the moment we stopped waiting for it - and silence the hang watch
     // in exactly the case it exists for.
     let workDone = false;
-    const done = () => { workDone = true; if (hangTimer !== null) clearTimeout(hangTimer); };
+    let hangLogged = false;
+    const startedAt = Date.now();
+    const done = () => {
+        workDone = true;
+        if (hangTimer !== null) clearTimeout(hangTimer);
+        // Say how long it really took once it does finish, so a report can tell a slow
+        // folder (Google Drive on Android) from a stuck one (Ken, October 16 2026).
+        if (hangLogged) {
+            try { storage.logError('timeout', `${label} finished after ${Date.now() - startedAt}ms`, null, { quiet: true }); } catch { /* best-effort */ }
+        }
+    };
     Promise.resolve(promise).then(done, done);
 
     const hangMs = ms * HANG_FACTOR;
@@ -1687,7 +1700,12 @@ async function withTimeout(promise, ms, label) {
         // A folder-permission dialog on screen is not a hang: the storage layer is
         // waiting on the USER, who may take as long as they like.
         if (storage.isAwaitingPermission()) { hangTimer = setTimeout(watchForHang, hangMs); return; }
-        try { storage.logError('timeout', `${label} had still not finished after ${hangMs}ms`); } catch { /* best-effort */ }
+        // ⚠ QUIET (Ken, October 16 2026): no pink wash. On a tablet whose data folder is
+        // in Google Drive this fires at every Start while the app carries on normally
+        // from its own copy, so the wash told the user nothing and taught them to ignore
+        // it. It still goes in the error log and the reports, which is where it is used.
+        hangLogged = true;
+        try { storage.logError('timeout', `${label} had still not finished after ${hangMs}ms`, null, { quiet: true }); } catch { /* best-effort */ }
     };
     hangTimer = setTimeout(watchForHang, hangMs);
 

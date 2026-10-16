@@ -1060,3 +1060,17 @@ test('Delete in review asks first and stops a waiting save from writing the revi
     assert.ok(body.indexOf('clearTimeout(saveTimer)') < body.indexOf('storage.deleteConversation'));
     assert.ok(body.indexOf('review = null') < body.indexOf('storage.deleteConversation'));
 });
+
+// Slow storage is recorded but must not turn the conversation pane pink (Ken, Oct 16 2026).
+test('logError: a quiet error is recorded and tells the UI not to show the wash', () => {
+    const seen = [];
+    const before = window.dispatchEvent;
+    window.dispatchEvent = (ev) => { seen.push(ev.detail); return true; };
+    try {
+        storage.logError('timeout', 'storage warm-up had still not finished', null, { quiet: true });
+        storage.logError('generateOptions', 'a real failure');
+    } finally { window.dispatchEvent = before; }
+    assert.equal(seen[0].quiet, true);
+    assert.equal(seen[1].quiet, false);
+    assert.ok(storage.loadErrorLog().some((e) => e.message === 'storage warm-up had still not finished'), 'still in the log');
+});
