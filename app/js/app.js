@@ -7192,8 +7192,10 @@ function renderErrorLog() {
 // was picked, what else was offered — so this reads history rather than adding
 // capture. It has simply never had a reader.
 
-async function buildUsageText() {
-    const summary = usageSummary.summarize(await storage.listConversationLogs());
+// `logs` lets the problem report pass in the one copy it has already read (see
+// readLogsOnce); everyone else reads them fresh.
+async function buildUsageText(logs = null) {
+    const summary = usageSummary.summarize(logs || await storage.listConversationLogs());
     const personalization = usageSummary.summarizePersonalization({
         ...diagnostics.collectPersonalization(),
         settingsProfiles: await diagnostics.countSettingsProfiles(),
@@ -7265,7 +7267,7 @@ function renderTroubleshooting() {
  *
  * Every line carries its time, because the question a report most often asks is how
  * long something took. A conversation marked "Don't save" is withheld, as everywhere. */
-async function aboutConversation(about = null) {
+async function aboutConversation(about = null, logs = null) {
     let id = null, data = null, how = '';
     if (about && about.id) {
         id = about.id; data = about.data || await storage.readConversationLog(id);
@@ -7284,8 +7286,8 @@ async function aboutConversation(about = null) {
             ...conversationHistory.map((t) => `  ${t.role}: ${t.text}`)].join('\n');
     } else {
         try {
-            const logs = await storage.listConversationLogs();
-            const newest = logs.filter((l) => l && l.id).sort((a, b) => (a.id < b.id ? 1 : -1))[0];
+            const all = logs || await storage.listConversationLogs();
+            const newest = all.filter((l) => l && l.id).sort((a, b) => (a.id < b.id ? 1 : -1))[0];
             if (newest) { id = newest.id; data = newest.data; }
         } catch { /* no folder */ }
         how = 'The most recent conversation (none was in progress)';
@@ -7307,15 +7309,26 @@ async function aboutConversation(about = null) {
     return out.join('\n');
 }
 
+/* ⚠ READ THE SAVED CONVERSATIONS ONCE PER REPORT (Ken, October 16 2026). The usage
+ * summary, the errors and the latest conversation each read every file in the
+ * conversations folder, so a report read it three times. On an Android tablet one read
+ * of 114 conversations took about three minutes (Chrome reaches the folder through a
+ * slow layer), and a report took over ten. A failed read leaves `null`, so each part
+ * falls back to reading for itself, as before. */
+async function readLogsOnce() {
+    try { return await storage.listConversationLogs(); } catch { return null; }
+}
+
 async function buildProblemReportText({ note = null, about = null } = {}) {
     const noteEl = document.getElementById('problemNoteInput');
+    const logs = await readLogsOnce();
     let usageText = '';
-    try { usageText = await buildUsageText(); }
+    try { usageText = await buildUsageText(logs); }
     catch { usageText = '(unavailable)'; }
     let errorReport = '';
-    try { errorReport = await buildErrorReport({ unreportedOnly: true }); } catch { errorReport = '(unavailable)'; }
+    try { errorReport = await buildErrorReport({ unreportedOnly: true, logs }); } catch { errorReport = '(unavailable)'; }
     let conversationText = '';
-    try { conversationText = await aboutConversation(about); }
+    try { conversationText = await aboutConversation(about, logs); }
     catch (e) { conversationText = `(could not read it: ${e && e.message ? e.message : e})`; }
     return diagnostics.buildProblemReport({
         note: note != null ? note : (noteEl ? noteEl.value : ''),
@@ -7326,6 +7339,16 @@ async function buildProblemReportText({ note = null, about = null } = {}) {
         usageText,
         recentEvents: metrics.formatRecent(),
     });
+}
+
+/* "Preparing the report" with dots that grow and start again, so a long wait does not
+ * look like a hung app (Ken, October 16 2026: over ten minutes on an Android tablet).
+ * `show` puts the text wherever it belongs; the returned function stops it. */
+function workingDots(show, base) {
+    let n = 0;
+    show(base + '.');
+    const timer = setInterval(() => { n = (n + 1) % 5; show(base + '.'.repeat(n + 1)); }, 500);
+    return () => clearInterval(timer);
 }
 
 function setProblemReportStatus(msg) {
@@ -7390,12 +7413,16 @@ async function sendProblemReportFromStartNow() {
     if (btn) {
         // Remember the real label first, or say() would keep this as the label.
         btn.dataset.label = btn.dataset.label || btn.textContent;
-        btn.textContent = 'Preparing the report...';
     }
+    const stopDots = workingDots((t) => {
+        setProblemReportStatus(t);
+        if (btn) btn.textContent = t;
+    }, 'Preparing the report');
     let text;
     try {
         text = await buildProblemReportText();
     } catch (e) {
+        stopDots();
         const msg = e && e.message ? e.message : String(e);
         say(`Could not build the report: ${msg}`);
         // Deliberately not logged from here: the app may be mid-failure, and logError
@@ -7403,6 +7430,9 @@ async function sendProblemReportFromStartNow() {
         // and swallow the message the tester needs to see.
         return;
     }
+    stopDots();
+    if (btn) btn.textContent = btn.dataset.label;
+    setProblemReportStatus('');
     if (!(await confirmDanger({
         title: 'Send this report?',
         body: REPORT_DISCLOSURE,
@@ -7512,16 +7542,19 @@ const REPORT_DISCLOSURE =
  */
 function sendProblemReport() { return oneReportAtATime(sendProblemReportNow); }
 async function sendProblemReportNow() {
-    setProblemReportStatus('Preparing the report...');
+    const stopDots = workingDots(setProblemReportStatus, 'Preparing the report');
     let text;
     try {
         text = await buildProblemReportText();
     } catch (e) {
+        stopDots();
         const msg = e && e.message ? e.message : String(e);
         setProblemReportStatus(`Could not build the report: ${msg}`);
         storage.logError('problem report', msg);
         return;
     }
+    stopDots();
+    setProblemReportStatus('');
     /* No "read it through" line here (Ken, September 2 2026). It was written to the
      * status area under the Send button and the dialog then covered the panel, so the
      * one moment it applied was the one moment it could not be seen - and it was still
@@ -8022,10 +8055,10 @@ function transcriptLineBody(ex) {
  * complaint is missing exactly when the tester needed it most. Falling back to disk
  * recovers both, because that is where the errors and the transcripts already are.
  */
-async function errorsFromDisk() {
+async function errorsFromDisk(given = null) {
     const groups = new Map();
-    let logs = [];
-    try { logs = await storage.listConversationLogs(); } catch { return []; }
+    let logs = given || [];
+    if (!given) { try { logs = await storage.listConversationLogs(); } catch { return []; } }
     for (const { id, data } of logs) {
         const errs = ((data && data.exchanges) || []).filter(e => e && e.role === 'error');
         if (!errs.length) continue;
@@ -8041,12 +8074,12 @@ async function errorsFromDisk() {
 // passes nothing and gets the full history. The newest error included is kept in
 // reportErrorMark, and saved as sent once the report has gone.
 let reportErrorMark = '';
-async function buildErrorReport({ unreportedOnly = false } = {}) {
+async function buildErrorReport({ unreportedOnly = false, logs = null } = {}) {
     // ⚠ MERGED, NOT A FALLBACK (CR-142). The in-app list can lose errors (a cleared
     // browser, a new web address) while the saved conversations keep them, and one new
     // error used to hide every older one. Errors on disk that the list does not have
     // are added, except those from before the user last pressed Clear.
-    const merged = convLogic.mergeErrorGroups(groupErrorsByConversation(), await errorsFromDisk(),
+    const merged = convLogic.mergeErrorGroups(groupErrorsByConversation(), await errorsFromDisk(logs),
         storage.loadErrorLogClearedAt());
     let groups = merged.groups;
     if (unreportedOnly) {
@@ -8078,7 +8111,8 @@ async function buildErrorReport({ unreportedOnly = false } = {}) {
 
     for (const [id, errs] of groups) {
         out.push(`════════ Conversation ${id} ════════`);
-        const convLog = id !== '(none)' ? await storage.readConversationLog(id) : null;
+        const known = logs && logs.find((l) => l && l.id === id);
+        const convLog = id === '(none)' ? null : (known ? known.data : await storage.readConversationLog(id));
         // Checked FIRST (CR-074): a conversation turned private part-way through still
         // has its earlier turns on disk, and they must not reach a report.
         const isPrivate = storage.isConversationPrivate(id, convLog);
