@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.13.25
+
 - Sending a problem report is faster when you have many saved conversations, and while it is being prepared the message now shows moving dots, so you can see the app is still working.
 - Problem reports and weekly reports now include errors again on devices where they had stopped. A saved marker could get stuck and make every later error look as if it had already been sent.
 - The conversation pane no longer turns pink when your data folder is slow to open, for example when it is kept in Google Drive on an Android tablet. The app carries on normally in that case, so the pink only caused worry. The delay is still recorded for us.

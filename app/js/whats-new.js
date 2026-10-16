@@ -22,6 +22,11 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.13.25": [
+    "Sending a problem report is faster when you have many saved conversations, and while it is being prepared the message now shows moving dots, so you can see the app is still working.",
+    "Problem reports and weekly reports now include errors again on devices where they had stopped. A saved marker could get stuck and make every later error look as if it had already been sent.",
+    "The conversation pane no longer turns pink when your data folder is slow to open, for example when it is kept in Google Drive on an Android tablet. The app carries on normally in that case, so the pink only caused worry. The delay is still recorded for us."
+  ],
   "0.13.24": [
     "In Settings, tapping a list near the bottom of the screen with your finger now opens the list. Before, the tap could land on the heading below it, which opened that section and closed the one you were in."
   ],
