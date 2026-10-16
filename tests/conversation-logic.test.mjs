@@ -187,3 +187,16 @@ test('unreportedErrorGroups keeps every error newer than the mark, dating an und
     assert.equal(cl.conversationIdTime('2026-10-11T19-21-06'), '2026-10-11T19:21:06Z');
     assert.equal(cl.conversationIdTime('(none)'), '');
 });
+
+// Ken's Android tablet, October 16 2026: an error read off disk with no time was shown
+// as "?", that became the mark, and "?" sorts after every date - so no later error was
+// ever reported. A time that is not a date must never become, or beat, the mark.
+test('unreportedErrorGroups: a "?" time is treated as no time and never becomes the mark', () => {
+    const groups = [
+        ['2026-10-06T15-21-57', [{ ts: '?', message: 'old, no time' }]],
+        ['2026-10-16T15-40-00', [{ ts: '2026-10-16T15:41:00.000Z', message: 'pink pane' }]],
+    ];
+    const r = cl.unreportedErrorGroups(groups, '2026-10-10T00:00:00.000Z');
+    assert.deepEqual(r.groups.map(([id]) => id), ['2026-10-16T15-40-00']);
+    assert.equal(r.newest, '2026-10-16T15:41:00.000Z');
+});

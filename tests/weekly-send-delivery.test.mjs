@@ -153,3 +153,12 @@ test('sending a problem report marks its errors as sent, so the weekly report do
     await weekly.sendProblemReport({ note: 'y', report: 'body', appVersion: '0', build: 't', errorMark: '2026-09-01T00:00:00.000Z' });
     assert.equal(storage.loadWeeklyErrorMark(), '2026-10-11T19:22:00.000Z');
 });
+
+test('a mark that is not a date is ignored, so a device stuck on "?" reports again', () => {
+    storage.saveWeeklyErrorMark('?');
+    assert.equal(storage.loadWeeklyErrorMark(), '');
+    const s = JSON.parse(localStorage.getItem('aac_settings') || '{}');
+    s.weeklyErrorMark = '?';
+    localStorage.setItem('aac_settings', JSON.stringify(s));
+    assert.equal(storage.loadWeeklyErrorMark(), '', 'an old "?" already saved no longer hides errors');
+});

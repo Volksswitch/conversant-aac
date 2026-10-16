@@ -202,12 +202,15 @@ export function unreportedErrorGroups(groups = [], mark = '') {
     let newest = mark || '';
     for (const [id, errs] of groups) {
         const idTime = conversationIdTime(id);
+        // A time that is not a date ("?" from a record with none) counts as no time:
+        // as text it sorts after every date and became a mark that hid all later errors.
+        const timeOf = (e) => (e && typeof e.ts === 'string' && /^\d{4}-/.test(e.ts) ? e.ts : '') || idTime;
         const kept = (errs || []).filter((e) => {
-            const when = (e && e.ts) || idTime;
+            const when = timeOf(e);
             return !when || !mark || when > mark;
         });
         for (const e of kept) {
-            const when = (e && e.ts) || idTime;
+            const when = timeOf(e);
             if (when && when > newest) newest = when;
         }
         if (kept.length) out.push([id, kept]);

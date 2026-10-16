@@ -27,6 +27,7 @@ forgetting to tag one is only ever noise, never silence.
 ## Unreleased (next release)
 
 - Sending a problem report is faster when you have many saved conversations, and while it is being prepared the message now shows moving dots, so you can see the app is still working.
+- Problem reports and weekly reports now include errors again on devices where they had stopped. A saved marker could get stuck and make every later error look as if it had already been sent.
 
 ## Version 0.13.24
 

@@ -3017,10 +3017,19 @@ export function saveWeeklyEndpoint(url) {
  * ⚠ IT IS A MARK, NOT A PURGE. The full log stays on the device, because that is what
  * a problem report reads and what the tester sees in Settings. Only what LEAVES is
  * narrowed. */
-export function loadWeeklyErrorMark() { return loadSettings().weeklyErrorMark || ''; }
+/* ⚠ ONLY A REAL DATE MAY BE THE MARK (Ken's Android tablet, October 16 2026). An error
+ * read off disk with no time was shown as "?", which then became the mark - and as text
+ * "?" sorts after every date, so from then on every error looked already sent and no
+ * report carried any. A mark that is not a date is ignored, which also un-sticks a
+ * device that already saved one. */
+const MARK_DATE = /^\d{4}-\d{2}-\d{2}T/;
+export function loadWeeklyErrorMark() {
+    const m = loadSettings().weeklyErrorMark;
+    return typeof m === 'string' && MARK_DATE.test(m) ? m : '';
+}
 export function saveWeeklyErrorMark(ts) {
     const s = loadSettings();
-    s.weeklyErrorMark = ts || '';
+    s.weeklyErrorMark = typeof ts === 'string' && MARK_DATE.test(ts) ? ts : '';
     saveSettings(s);
 }
 

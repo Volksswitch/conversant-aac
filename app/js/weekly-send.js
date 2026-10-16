@@ -229,7 +229,7 @@ export function errorsSince(entries, mark) {
 export function newestErrorTs(entries, fallback = '') {
     let out = fallback;
     for (const e of entries || []) {
-        if (e && typeof e.ts === 'string' && e.ts > out) out = e.ts;
+        if (e && typeof e.ts === 'string' && /^\d{4}-/.test(e.ts) && e.ts > out) out = e.ts;
     }
     return out;
 }

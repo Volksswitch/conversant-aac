@@ -8063,7 +8063,7 @@ async function errorsFromDisk(given = null) {
         const errs = ((data && data.exchanges) || []).filter(e => e && e.role === 'error');
         if (!errs.length) continue;
         groups.set(id, errs.map(e => ({
-            ts: e.ts || e.time || '?', version: e.version, context: e.context, message: e.message, extra: e.extra,
+            ts: e.ts || e.time || null, version: e.version, context: e.context, message: e.message, extra: e.extra,
         })));
     }
     return [...groups.keys()].sort().reverse().map(id => [id, groups.get(id)]);
@@ -8132,7 +8132,7 @@ async function buildErrorReport({ unreportedOnly = false, logs = null } = {}) {
         }
         out.push('', `Errors (${errs.length}):`);
         for (const e of errs) {
-            out.push(`  ${e.ts} v${e.version || '?'} [${e.context}] ${e.message}` + (e.extra && !isPrivate ? ` | ${JSON.stringify(e.extra)}` : ''));
+            out.push(`  ${e.ts || '?'} v${e.version || '?'} [${e.context}] ${e.message}` + (e.extra && !isPrivate ? ` | ${JSON.stringify(e.extra)}` : ''));
         }
         out.push('');
     }
