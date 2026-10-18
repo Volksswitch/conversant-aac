@@ -37,6 +37,18 @@ the one that quietly waits forever.
 
 ## Open
 
+### Spanish: next steps after the first test
+- **Raised:** 2026-10-18 - Ken asked to explore Spanish support. Decided: bilingual users first; Mexican / US Latino Spanish; Ken will find a native-speaking reviewer. First test run (`scripts/spanish-eval.mjs`, report in `Reports/spanish-eval-2026-10-18.md`): 16 turns, no failures; the app's rules carried over with one added line.
+- **What is wanted, in order:**
+  1. **A native speaker reviews the report** (Ken is finding one). Nobody on the project can judge whether the Spanish sounds natural.
+  2. **Ask the user's gender in About Me.** With no gender given, the AI guessed "cansada" from the name Marisol. A wrong guess speaks as the wrong person.
+  3. **Language per partner.** An English-speaking friend got Spanish replies; the language must follow the person, not the whole app.
+  4. **Tú or usted per partner** in "How I talk with them". The AI already picks usted for a doctor and a stranger without being told; a setting is still needed for family elders and others it cannot guess.
+  5. **Watch the decline option inventing reasons.** In Spanish, "no puedo" twice came with an invented excuse ("ando bien cansada"); in English the same turns gave no reason. Small sample; recheck with more runs.
+  6. Then the staged build: Spanish holding phrases, Commands phrases, Express Panel starter phrases, keyboard accents (á é í ó ú ü ñ ¿ ¡), word list; later screens, spoken help, manuals.
+- **Found in passing, not Spanish-specific:** asked "how much does it hurt, 1 to 10", the agree option says it hurts a lot, in English and in Spanish. That states a fact about the user's body they never gave. Ken's call whether it matters.
+- **Why not now:** waits for the reviewer's verdict on the first test.
+
 ### Documents: strongly recommend the Home Screen app on an iPad
 - **Raised:** 2026-10-11 - Ken: "the instructions should 'strongly suggest' that Conversant be installed as a Home Page app on an iPad even though that requires paying for a voice service and transcription service." Decision recorded in CLAUDE.md (iPad section, "SUPERSEDED (Ken, October 11 2026)").
 - **What is wanted:** the iPad User Manual (the mode choice and its table), the Beta Test Plan, the Speech Provider Guide's section 1, and the Product Overview where it describes iPad modes, all say to install on the Home Screen, and why: a Safari tab's data can be deleted after a week without use. Say plainly that hearing then needs a paid service, and that the iPad's own voices are poor, so most users will want a paid voice too. The Safari tab stays as a way to try the app.
