@@ -2282,6 +2282,16 @@ Ken settled the vocabulary for talking about the two configurations, the shape o
 - **To measure before building far:** whether the cards come back fast enough with a whole paper in the prompt, and whether the answers are good. Ken's ATOB paper (in the project folder) is the natural first test, with questions he has actually been asked. **The real target is Ken's own talk with a Conversant demo, likely ATIA 2027 in January**, for which he would supply BOTH the ATOB article and the Conversant Product Overview, so the test uses both (about 22,000 words together).
 - **Not yet decided:** the stop / "say more" controls; what the place stores and how documents are added on the PC; how a talk's documents are kept separate from the user's general writing.
 
+## Spanish and other languages (Ken, October 18 2026), DECIDED, not built
+
+- **Bilingual users first, Mexican / US Latino Spanish.** Ken is finding a native-speaking reviewer; nobody on the project can judge Spanish quality, so nothing ships in Spanish without one.
+- **The first test passed** (`scripts/spanish-eval.mjs`): the English instructions plus one line asking for Spanish kept all the app's rules. Next steps are in [TODO.md](TODO.md).
+- **Screen language and conversation language are SEPARATE.** A therapist can set up in English for a user who talks in Spanish, and the conversation language will be per person for bilingual users.
+- **Screen language comes from the device's language on first launch, once**, like the suggested layout; after that it is a setting and never changes on its own.
+- **The setting's label is in the current language only** (Ken: "Language / Idioma" becomes unwieldy past two languages). Each choice is listed in its own language: "English", "Español".
+- **Gender needs more than two answers**, plus a separate choice of how to word things about the user (feminine, masculine, the "-e" forms, or avoiding gendered words). Spanish forces it far more than English.
+- **Respectful address is one per-person setting for both languages:** usted in Spanish, "sir" / "ma'am" in American English.
+
 ## Further Design Thoughts (June 15 2026) — recorded, not built
 
 A batch of Ken's thoughts captured this session. **Status: recorded only — none are implemented.** Their document work was checked against the two overviews on October 11 2026: everything is covered except saying what the app is NOT (item 3) and the age requirement, both now on [TODO.md](TODO.md). **All to-do items live in TODO.md, one list (Ken, October 11 2026).**

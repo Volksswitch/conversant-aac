@@ -41,7 +41,8 @@ the one that quietly waits forever.
 - **Raised:** 2026-10-18 - found in the first Spanish test, confirmed in English. A nurse asks "On a scale of one to ten, how much does it hurt?" and the first option, in both languages and in every run, says it hurts a lot ("It hurts quite a bit right now." / "Me duele bastante, es un dolor fuerte."). Ken asked for this item.
 - **What is wanted:** decide what the options should do when the partner asks about the user's pain, symptoms or body, where only the user knows the answer. Likely direction, matching the October 9 2026 decision on self-harm screening questions (no generated Yes or No): offer options that do not state a level ("Let me show you on the numbers", "It comes and goes"), and leave the actual number to the number button and the actual answer to the user. Then test with a set of medical questions (pain level, where it hurts, how long, how bad compared with yesterday) and check that no option asserts something the user did not say.
 - **Why it matters:** a nurse or doctor writes down what is said. A strong-pain answer the user did not mean is a wrong medical record, and the user may tap it because it was first.
-- **Why not now:** needs Ken's decision on the direction.
+- **Decided 2026-10-18 (Ken):** the direction above. Options never state a pain level or symptom the user did not give.
+- **Why not now:** not yet built; next medical-question work.
 
 ### Spanish: next steps after the first test
 - **Raised:** 2026-10-18 - Ken asked to explore Spanish support. Decided: bilingual users first; Mexican / US Latino Spanish; Ken will find a native-speaking reviewer. First test run (`scripts/spanish-eval.mjs`, report in `Reports/spanish-eval-2026-10-18.md`): 16 turns, no failures; the app's rules carried over with one added line.
@@ -51,7 +52,8 @@ the one that quietly waits forever.
   3. **Language per partner.** An English-speaking friend got Spanish replies; the language must follow the person, not the whole app.
   4. **Respectful address per partner** in "How I talk with them": usted in Spanish, and "sir" / "ma'am" in American English, which some families use with parents (Ken, 2026-10-18). One setting serves both languages. The AI already picks usted for a doctor and a stranger without being told; the setting is for family elders and others it cannot guess. The existing "More careful" choice says more formal but names no form of address.
   5. **Watch the decline option inventing reasons.** In Spanish, "no puedo" twice came with an invented excuse ("ando bien cansada"); in English the same turns gave no reason. Small sample; recheck with more runs.
-  6. Then the staged build: Spanish holding phrases, Commands phrases, Express Panel starter phrases, keyboard accents (á é í ó ú ü ñ ¿ ¡), word list; later screens, spoken help, manuals.
+  6. **Screen language** (Ken, 2026-10-18): on first launch the screens follow the device's language, once; after that a setting in Settings → General. The setting's own label is in the current language only (no "Language / Idioma"; that does not scale past two). Each choice is listed in its own language ("English", "Español"). Screen language and conversation language are separate settings.
+  7. Then the staged build: Spanish holding phrases, Commands phrases, Express Panel starter phrases, keyboard accents (á é í ó ú ü ñ ¿ ¡), word list; later screens, spoken help, manuals.
 - **Found in passing, not Spanish-specific:** the pain answer; now its own item, "Suggestions state facts about the user's body".
 - **Why not now:** waits for the reviewer's verdict on the first test.
 
