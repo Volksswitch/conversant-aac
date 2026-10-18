@@ -208,6 +208,7 @@ const doc = new Document({
             bullet("First launch follows the device. ", "A tablet set to Spanish opens Conversant in Spanish. This happens once, the same way the app suggests a starting layout, so the app never changes language on its own afterward."),
             bullet("After that, it's a setting. ", "It goes at the top of Settings, General. Its label is in the current language, and each language in the list is written in its own language, so a reader can always find theirs."),
             bullet("A globe icon may help. ", "People recognize a globe as \"language\" whatever they read. That helps the rare user whose device is set to a language they don't read."),
+            bullet("Nothing on the screen before Start. ", "The app already opens in the device's language, so a language choice there isn't needed. The user changes it in Settings if they want something else."),
             para("Changing the screen language changes only what the app's own text says. It never translates the user's words: About Me answers, phrases and saved conversations stay as the user wrote them."),
 
             // ===== 8 =====
@@ -258,7 +259,6 @@ const doc = new Document({
 
             // ===== 12 =====
             heading1("12. Open Questions"),
-            bullet("Should the language setting also appear on the screen before Start? ", "That's where someone who can't read the current language first gets stuck."),
             bullet("Should a place carry a language, ", "as the taco truck does for Mateo?"),
             bullet("Which way of hearing handles mixed speech best? ", "We need to measure it with real recordings."),
             bullet("How good are the multilingual voices in Mexican Spanish? ", "A user should sound like one person in both languages."),

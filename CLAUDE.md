@@ -2289,6 +2289,7 @@ Ken settled the vocabulary for talking about the two configurations, the shape o
 - **The first test passed** (`scripts/spanish-eval.mjs`): the English instructions plus one line asking for Spanish kept all the app's rules. Next steps are in [TODO.md](TODO.md).
 - **Screen language and conversation language are SEPARATE.** A therapist can set up in English for a user who talks in Spanish, and the conversation language will be per person for bilingual users.
 - **Screen language comes from the device's language on first launch, once**, like the suggested layout; after that it is a setting and never changes on its own.
+- **No language choice on the screen before Start** (Ken, October 18 2026): the app opens in the device's language, and the user changes it in Settings.
 - **The setting's label is in the current language only** (Ken: "Language / Idioma" becomes unwieldy past two languages). Each choice is listed in its own language: "English", "Español".
 - **Gender needs more than two answers**, plus a separate choice of how to word things about the user (feminine, masculine, the "-e" forms, or avoiding gendered words). Spanish forces it far more than English.
 - **Respectful address is one per-person setting for both languages:** usted in Spanish, "sir" / "ma'am" in American English.
