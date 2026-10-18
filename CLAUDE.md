@@ -2285,6 +2285,7 @@ Ken settled the vocabulary for talking about the two configurations, the shape o
 ## Spanish and other languages (Ken, October 18 2026), DECIDED, not built
 
 - **Bilingual users first, Mexican / US Latino Spanish.** Ken is finding a native-speaking reviewer; nobody on the project can judge Spanish quality, so nothing ships in Spanish without one.
+- **The full design is `Documents/Conversant AAC Language Support Design.docx`**, with two bilingual test personas, Mateo Salinas (English-dominant) and Ximena Ortega Ruiz (Spanish-dominant), in `Other/Personas/`.
 - **The first test passed** (`scripts/spanish-eval.mjs`): the English instructions plus one line asking for Spanish kept all the app's rules. Next steps are in [TODO.md](TODO.md).
 - **Screen language and conversation language are SEPARATE.** A therapist can set up in English for a user who talks in Spanish, and the conversation language will be per person for bilingual users.
 - **Screen language comes from the device's language on first launch, once**, like the suggested layout; after that it is a setting and never changes on its own.

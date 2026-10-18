@@ -24,6 +24,8 @@ const FILENAMES = {
     'noah-kim': 'Worldview-Test-Persona-Noah-Kim.docx',
     'priya-nair': 'Worldview-Test-Persona-Priya-Nair.docx',
     'sofia-reyes': 'Worldview-Test-Persona-Sofia-Reyes.docx',
+    'mateo-salinas': 'Worldview-Test-Persona-Mateo-Salinas.docx',
+    'ximena-ortega': 'Worldview-Test-Persona-Ximena-Ortega.docx',
 };
 
 function timestamp() {

@@ -733,6 +733,167 @@ const PERSONAS = [
     neverSay: [],
 },
 
+// ============================================================================
+// MATEO SALINAS (October 18 2026) - bilingual, ENGLISH-dominant. Written for the
+// Spanish design work; see "Conversant AAC Language Support Design.docx". Which
+// language he uses with each person goes in the People "Anything worth knowing"
+// field, because the app has no language setting per person yet.
+// ============================================================================
+{
+    id: 'mateo-salinas',
+    name: 'Mateo',
+    displayName: 'Mateo Salinas',
+    quickRead: [
+        'Mateo is a 19-year-old in Boyle Heights, Los Angeles, from a Mexican-American family. He was born in LA and grew up with English at school and a mix of English and Spanish at home. He has cerebral palsy, uses a power wheelchair, and doesn’t speak; he communicates by touching a screen and writes well in English.',
+        'His Spanish is the kind many US-born kids have: he understands everything, speaks it comfortably with family, and is less sure of himself writing it. He uses Spanish with his grandparents, who speak only Spanish, mixes the two with his parents, and uses English with his friends and at college. He’s easygoing, a little sarcastic, and lives for the Dodgers and old cars.',
+    ],
+    topics: {
+        name_preferred: 'Mateo', name_full: 'Mateo Andrés Salinas', nickname: 'Teo (family) / "Salinas" (friends)',
+        pronouns: 'he/him', age_birthyear: '19 (born 2007)',
+        languages: ['English (first language)', 'Spanish — understands it all, speaks it with family, less sure writing it'],
+        home_city: 'Los Angeles, California', home_region: 'California, USA', hometown: 'Boyle Heights — his whole life',
+        living_situation: 'With family',
+        occupation: 'I go to school', work_school: 'East Los Angeles College', grade_role: 'First year — taking general classes, thinking about graphic design',
+        typical_week: 'Classes three days a week; Dodgers games on TV with his dad; Saturday car shows with his tío when the weather’s good; Sunday lunch at his grandparents’ house',
+        regular_places: ['East Los Angeles College', 'his grandparents’ house', 'Mariachi Plaza', 'the taco truck on Cesar Chavez', 'Dodger Stadium a few times a year'],
+        phone: '(323) 555-0167', email: 'mateo.salinas07@example.com', home_address: '2310 E 1st St, Los Angeles, CA 90033',
+        fav_foods: ['Tacos al pastor', 'his abuela’s pozole', 'Tommy’s chili burgers', 'Hot Cheetos with lime'],
+        fav_drinks: ['Horchata', 'Jarritos (tamarind)', 'Mexican Coke'],
+        fav_team: ['Los Angeles Dodgers', 'LAFC'],
+        fav_sport: ['Watches baseball and soccer'],
+        fav_music: ['Hip-hop — Kendrick Lamar', 'oldies his dad plays', 'corridos his cousins play'],
+        fav_screen: ['Dodgers games', 'car restoration shows', 'Gentefied', 'Spider-Verse movies'],
+        fav_reading: ['Car magazines', 'graphic novels'],
+        fav_games: ['MLB The Show', 'Rocket League'],
+        fav_places: ['Dodger Stadium', 'his grandparents’ patio', 'the Whittier Boulevard car cruise'],
+        fav_color: 'Dodger blue',
+        passions: ['Sports — playing or watching', 'Art, making, or crafts', 'Gaming', 'Classic cars (added)'],
+        expertise: ['The Dodgers — players, stats, history', 'Classic lowriders'],
+        topics_welcome: ['The Dodgers', 'Lowriders and old cars', 'Video games', 'Food — tacos, his abuela’s cooking', 'Design and drawing'],
+        topics_avoid: ['His disability with people he just met', 'Being asked why his Spanish isn’t better'],
+        dislikes: ['People talking to whoever is pushing his chair instead of him', 'Being rushed', 'Strangers calling him "inspiring"', 'Being corrected on his Spanish in front of people'],
+        b1_extra_1: 'Somewhat like me', b1_extra_2: 'Mostly like me', b1_agree_1: 'Mostly like me',
+        b1_agree_2: 'Mostly like me', b1_consc_1: 'Somewhat like me', b1_consc_2: 'Not much like me',
+        b1_calm_1: 'Very much like me', b1_calm_2: 'Not much like me', b1_open_1: 'Mostly like me', b1_open_2: 'Mostly like me',
+        b2_style: ['Dry or deadpan', 'Sarcastic'], b2_teasing: 'I enjoy it', b2_cheeky: "Only with people I'm close to",
+        b4_selfdir: 'Very much like me', b4_stim: 'Somewhat like me', b4_hedon: 'Mostly like me', b4_achieve: 'Somewhat like me',
+        b4_power: 'Not much like me', b4_secure: 'Somewhat like me', b4_conform: 'Somewhat like me',
+        b4_trad: 'Mostly like me', b4_benev: 'Very much like me', b4_univ: 'Mostly like me',
+        b5_faith: 'Somewhat', b5_faith_tradition: 'Catholic (goes when his abuela asks)', b5_politics: 'Not really',
+        b5_outlook: 'Realist',
+        b6_family: 'More open and relaxed', b6_friends: 'More open and relaxed', b6_strangers: 'More guarded',
+        b6_kids: 'More open and relaxed', b6_authority: 'More formal',
+        b7_conflict: 'I use humor to take the heat out of it',
+        b7_understand: 'I understand everything, in both languages. Talk to me, not the person next to me, and give me a second to answer.',
+    },
+    people: [
+        { name: 'Patricia', relationship: 'Mother', nickname: 'Ma', livesWithMe: true, about: 'we mix English and Spanish', private: false },
+        { name: 'Rubén', relationship: 'Father', nickname: 'Pa', livesWithMe: true, about: 'we mix English and Spanish; watches the Dodgers with me', private: false },
+        { name: 'Alyssa', relationship: 'Sister', nickname: '', livesWithMe: true, about: 'younger (15); English only between us', private: false },
+        { name: 'Esperanza', relationship: 'Grandmother', nickname: 'Abuela', livesWithMe: false, about: 'speaks only Spanish; lives two blocks away', private: false },
+        { name: 'Ramón', relationship: 'Grandfather', nickname: 'Abuelo', livesWithMe: false, about: 'speaks only Spanish; I use usted with him', private: false },
+        { name: 'Beto', relationship: 'Uncle', nickname: 'Tío Beto', livesWithMe: false, about: 'takes me to car shows; mostly Spanish', private: false },
+        { name: 'Kevin', relationship: 'Best friend', nickname: '', livesWithMe: false, about: 'since middle school; English', private: false },
+        { name: 'Jasmine', relationship: 'Friend', nickname: 'Jaz', livesWithMe: false, about: 'from college; English', private: false },
+    ],
+    places: [
+        { name: 'Abuela’s house', private: false, facts: [
+            { key: 'Language', value: 'Spanish only' },
+            { key: 'What I usually do', value: 'Sunday lunch with the whole family' } ] },
+        { name: 'East Los Angeles College', private: false, facts: [
+            { key: 'Language', value: 'English' },
+            { key: 'Classes', value: 'English, math, intro to design' } ] },
+        { name: 'The taco truck on Cesar Chavez', private: false, facts: [
+            { key: 'What I usually order', value: 'three al pastor with everything' },
+            { key: 'Language', value: 'Spanish with the owner' } ] },
+    ],
+    soundCheck: {
+        'economy-weekend': 0, 'economy-decided': 1, 'economy-queue': 0, 'formality-late': 2, 'formality-sit': 0,
+        'affect-coffee': 0, 'affect-finished': 2, 'floor-busy': 0, 'floor-trip': 0, 'floor-decision': 1,
+        'warmth-next-week': 0, 'warmth-let-you-go': 1, 'initiate-opener': 1, 'initiate-help': 0, 'initiate-slow-down': 2,
+        'initiate-disagree': 2, 'initiate-leaving': 0, 'levity-dontknow': 2, 'levity-mishap': 0, 'levity-late': 2,
+    },
+    neverSay: [],
+},
+
+// ============================================================================
+// XIMENA ORTEGA (October 18 2026) - bilingual, SPANISH-dominant. Written for the
+// Spanish design work, as Mateo's opposite: Spanish first, English learned later.
+// ============================================================================
+{
+    id: 'ximena-ortega',
+    name: 'Ximena',
+    displayName: 'Ximena Ortega Ruiz',
+    quickRead: [
+        'Ximena is a 29-year-old in Little Village, Chicago. She was born in Michoacán, Mexico, and moved to Chicago with her family when she was ten. She has cerebral palsy, uses a manual wheelchair that someone else pushes on long trips, and doesn’t speak; she communicates by touching a screen and writes well in Spanish and reasonably well in English.',
+        'Spanish is her first language and the one she thinks in. She uses English at work and with English-speaking doctors, and Spanish everywhere else. In her family children say usted to their parents, so she says usted to her mother, and tú to her brother and friends. She’s warm, polite, devout, and quietly funny once she knows you.',
+    ],
+    topics: {
+        name_preferred: 'Ximena', name_full: 'Ximena Ortega Ruiz', name_pronunciation: 'He-MEH-nah',
+        nickname: 'Xime', pronouns: 'she/her', age_birthyear: '29 (born 1997)',
+        languages: ['Spanish (first language)', 'English (fluent, learned from age ten)'],
+        home_city: 'Chicago, Illinois', home_region: 'Illinois, USA', hometown: 'Zamora, Michoacán, Mexico, until age ten; Little Village since',
+        living_situation: 'With family',
+        occupation: 'I work', work_school: 'A community organization in Little Village', grade_role: 'Part-time data entry and helping with the Spanish newsletter',
+        typical_week: 'Work three mornings a week; cooking with her mother; Wednesday rosary group at church; video calls with cousins in Michoacán; Sunday Mass and a family meal',
+        regular_places: ['Her work', 'St. Agnes church', 'the 26th Street shops', 'the community health clinic'],
+        phone: '(773) 555-0128', email: 'ximena.ortega97@example.com', home_address: '3617 W 26th St, Chicago, IL 60623',
+        fav_foods: ['Her mother’s mole', 'corundas from Michoacán', 'tamales de elote', 'pan dulce — conchas'],
+        fav_drinks: ['Café de olla', 'atole de chocolate', 'agua de jamaica'],
+        fav_team: ['Chivas (Guadalajara)'],
+        fav_sport: ['Watches soccer with her brother'],
+        fav_music: ['Juan Gabriel', 'Los Bukis', 'banda music', 'church hymns'],
+        fav_screen: ['Telenovelas', 'Mexican movies from the golden age', 'cooking shows'],
+        fav_reading: ['Novels in Spanish — Laura Esquivel', 'the church bulletin'],
+        fav_games: ['Lotería', 'word search puzzles'],
+        fav_places: ['Her grandmother’s town in Michoacán', 'the lakefront in summer', 'the church garden'],
+        fav_color: 'Lavender',
+        passions: ['Cooking or food', 'Art, making, or crafts', 'Music', 'Faith and church (added)'],
+        expertise: ['Michoacán cooking'],
+        topics_welcome: ['Food and recipes', 'Family in Mexico', 'Her church and the rosary group', 'Telenovelas', 'Crochet'],
+        topics_avoid: ['Immigration status — hers or her family’s', 'Her disability with people she just met'],
+        dislikes: ['People speaking to her slowly and loudly in English', 'Being called "sweetie" by strangers', 'Being rushed', 'People assuming she doesn’t understand English'],
+        b1_extra_1: 'Not much like me', b1_extra_2: 'Somewhat like me', b1_agree_1: 'Very much like me',
+        b1_agree_2: 'Very much like me', b1_consc_1: 'Very much like me', b1_consc_2: 'Very much like me',
+        b1_calm_1: 'Mostly like me', b1_calm_2: 'Somewhat like me', b1_open_1: 'Somewhat like me', b1_open_2: 'Somewhat like me',
+        b2_style: ['Gentle and wholesome', 'Dry or deadpan'], b2_teasing: "Only with people I'm close to", b2_cheeky: "Only with people I'm close to",
+        b4_selfdir: 'Somewhat like me', b4_stim: 'Not much like me', b4_hedon: 'Somewhat like me', b4_achieve: 'Mostly like me',
+        b4_power: 'Not like me at all', b4_secure: 'Very much like me', b4_conform: 'Mostly like me',
+        b4_trad: 'Very much like me', b4_benev: 'Very much like me', b4_univ: 'Mostly like me',
+        b5_faith: "Yes — it's important to me", b5_faith_tradition: 'Catholic', b5_politics: 'Some', b5_politics_lean: 'Prefer not to say',
+        b5_outlook: 'Optimist — glass half full',
+        b6_family: 'About the same', b6_friends: 'More open and relaxed', b6_strangers: 'More formal',
+        b6_kids: 'More open and relaxed', b6_authority: 'More formal',
+        b7_conflict: 'I try to smooth it over',
+        b7_understand: 'Entiendo todo, en español y en inglés. Háblame a mí, con calma, y espérame un momento para contestar.',
+    },
+    people: [
+        { name: 'Rosa', relationship: 'Mother', nickname: 'Mamá', livesWithMe: true, about: 'Spanish only; I say usted to her', private: false },
+        { name: 'Javier', relationship: 'Brother', nickname: 'Javi', livesWithMe: true, about: 'younger (24); Spanish at home, sometimes English', private: false },
+        { name: 'Graciela', relationship: 'Friend', nickname: 'Doña Chela', livesWithMe: false, about: 'older lady from the rosary group; Spanish; I use usted with her', private: false },
+        { name: 'Lety', relationship: 'Cousin', nickname: '', livesWithMe: false, about: 'lives in Zamora; video calls; Spanish', private: false },
+        { name: 'Karina', relationship: 'Best friend', nickname: 'Kari', livesWithMe: false, about: 'since high school in Chicago; we mix Spanish and English', private: false },
+        { name: 'Ms. Patterson', relationship: 'Boss', nickname: '', livesWithMe: false, about: 'English only', private: false },
+        { name: 'Dr. Nguyen', relationship: 'Doctor', nickname: '', livesWithMe: false, about: 'English only, at the clinic', private: false },
+    ],
+    places: [
+        { name: 'St. Agnes church', private: false, facts: [
+            { key: 'Language', value: 'Spanish' },
+            { key: 'When I go', value: 'Sunday Mass and Wednesday rosary' } ] },
+        { name: 'Work', private: false, facts: [
+            { key: 'Language', value: 'English with my boss, Spanish with most coworkers' } ] },
+        { name: 'The health clinic', private: true, facts: [
+            { key: 'Language', value: 'English with Dr. Nguyen; an interpreter is available' } ] },
+    ],
+    soundCheck: {
+        'economy-weekend': 1, 'economy-decided': 1, 'economy-queue': 1, 'formality-late': 0, 'formality-sit': 2,
+        'affect-coffee': 2, 'affect-finished': 0, 'floor-busy': 2, 'floor-trip': 1, 'floor-decision': 2,
+        'warmth-next-week': 2, 'warmth-let-you-go': 0, 'initiate-opener': 2, 'initiate-help': 1, 'initiate-slow-down': 0,
+        'initiate-disagree': 0, 'initiate-leaving': 2, 'levity-dontknow': 1, 'levity-mishap': 2, 'levity-late': 0,
+    },
+    neverSay: [],
+},
+
 ];
 
 module.exports = { PERSONAS };
