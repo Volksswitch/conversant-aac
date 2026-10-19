@@ -14,18 +14,14 @@
 
 ## Before you film
 
-**Film on the Dell desktop, from the local test copy, not your real setup.** Start the local copy with `serve.bat` and open it in the browser. It keeps its own settings and data, so importing Marc there can't touch your own About Me, people, places or Express Panel. You'll need to paste your API key and speech key into it once, because it doesn't share them with your installed app.
-
-1. **Import Marc.** In the local copy, connect the test data folder, then import `Conference Demo/conversant-demo-marc.json` (Settings > General > "Settings backup" > "Import settings..."). This brings in Marc's About Me, his twelve people, nine places, Express Panel, his voice answers and seventeen saved conversations.
-2. **Make Marc 18.** The data file says 17, and the app is for people 18 or older. In About Me > About You, change his age to 18. Nothing else in the demo mentions his age or his school.
-3. **Add Ramon to the Express Panel.** Ramon is in Marc's people but not on his panel. On the "Express Panel and Keyboard" tab, add a partner button for Ramon in the Context band. Ramon's "how I talk with them" settings (relaxed, shorter) then shape the options when he's selected.
-4. **Check the Flex band at Pulp Comics.** Tap Ramon and Pulp Comics, and look at the Flex band. It should show the goal buttons ("Pull list" and the others) and the comic-shop phrases ("Anything in for me?", "Hold that one for me"). Make sure **"Keep it short"** is reachable. If it's behind the More button, either make the Flex band a row taller or plan to tap More in step 5 of Demo 1.
-5. **Voices.** Under Settings > Speech, pick a good paid voice for Marc (Azure is the best choice), and a clearly different voice for the practice partner.
-6. **Listening.** On Windows, the browser's own listening is free and works well. Turn on "Resume listening automatically after speaking a response" (Settings > Conversation) so you don't need to press Listen between exchanges.
-7. **Screen.** Turn on "Use the whole screen" (Settings > General) so the browser's address bar and the taskbar don't show. A wide desktop screen makes the panel very wide; if it looks odd, size the browser window closer to a tablet's shape (about 1280 by 800) and record just that window.
-8. **Clicks.** You'll be clicking with a mouse instead of tapping. Turn on click highlighting in Camtasia so viewers can see each tap.
-9. **Ramon's voice.** Anyone can read Ramon's lines from off camera, including you. Speak clearly toward the desktop microphone and pause after each line.
-10. **Practice once.** Run Demo 1 start to finish at least twice before recording.
+1. **Import Marc.** On the Dell, import `Conference Demo/conversant-demo-marc.json` (Settings > General > "Settings backup" > "Import settings..."). This brings in Marc's About Me, his people and places, his Express Panel, his voice answers and his saved conversations. The file is set up for this demo: Marc is 18, Ramon has a button in the Context band, and the "Keep it short" goal comes before Marc's other general goals.
+2. **Check the Flex band at Pulp Comics.** Tap Ramon and Pulp Comics. The Flex band should show four goal buttons, then the comic-shop phrases ("Anything in for me?", "Hold that one for me"). "Keep it short" is the fourth goal button. How many buttons fit depends on the keyboard layout, so if it's behind the More button, make the Flex band a row taller or plan to tap More in step 9 of Demo 1.
+3. **Voices.** Under Settings > Speech, pick a good paid voice for Marc (Azure is the best choice), and a clearly different voice for the practice partner.
+4. **Listening.** On Windows, the browser's own listening is free and works well. Turn on "Resume listening automatically after speaking a response" (Settings > Conversation) so you don't need to press Listen between exchanges.
+5. **Screen.** Turn on "Use the whole screen" (Settings > General) so the browser's address bar and the taskbar don't show. A wide desktop screen makes the panel very wide; if it looks odd, size the browser window closer to a tablet's shape (about 1280 by 800) and record just that window.
+6. **Clicks.** You'll be clicking with a mouse instead of tapping. Turn on click highlighting in Camtasia so viewers can see each tap.
+7. **Ramon's voice.** Anyone can read Ramon's lines from off camera, including you. Speak clearly toward the desktop microphone and pause after each line.
+8. **Practice once.** Run Demo 1 start to finish at least twice before recording.
 
 ---
 
@@ -208,4 +204,3 @@ The way to reach me is below."
 - **Film in any order.** The TO CAMERA shots, each DEMO shot, and each beat can be filmed separately and cut together.
 - **If it runs long,** cut in this order: Beat D, Beat C, then the montage. Keep Demo 1, Beat B (Reframe) and Beat E.
 - **Tone.** Cut anything that sounds like hype: "revolutionary," "life-changing," exclamation points. Say what it does and let the demo carry it.
-- **After filming,** nothing needs putting back. Your real installed app was never touched.
