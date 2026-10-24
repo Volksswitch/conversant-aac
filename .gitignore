@@ -112,3 +112,5 @@ Videos/**/*.mp3
 Videos/**/*.mp4
 Videos/**/*.wav
 Videos/**/*.png
+Videos/.work/
+Videos/.cache/

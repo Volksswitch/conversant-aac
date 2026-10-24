@@ -1,0 +1,6 @@
+{
+  "_note": "The three fixed voices for every how-to video (Ken, October 24 2026). Chosen by ear from Videos/voice-samples. Change a voice here and every video picks it up at its next render.",
+  "narrator": { "name": "Andrew", "azure": "en-US-Andrew:DragonHDLatestNeural" },
+  "partner":  { "name": "Ava",    "azure": "en-US-Ava:DragonHDLatestNeural" },
+  "user":     { "name": "Jason",  "azure": "en-US-JasonNeural" }
+}
