@@ -101,3 +101,8 @@ test-data-folder/
 
 # Conference demo material (Ken, October 11 2026)
 /Conference Demo/
+# Same again for the Azure Speech key used to make the narrated how-to videos.
+# Wide patterns for the same reason as the keys above.
+.azure-key
+.azure-key.*
+*azure*key*
