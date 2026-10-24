@@ -90,7 +90,7 @@ That's 31 topics. Counting device versions, it's 35 videos.
 
 ## Companion pages
 
-**Built (October 24 2026):** every video's page is made in the same run as the video, from the same pictures (`Videos/<id>.pdf`), and the course map is `Videos/Learning Conversant.pdf` (`node scripts/video/make-course-map.mjs`). Titles, summaries and the order live in `scripts/video/course.json`. The screenshot list for the by-hand videos is `Videos/Screenshots to take.md`.
+**Built (October 24 2026):** every video's page is made in the same run as the video, from the same pictures (`Videos/<id>.pdf`), and the course map is `Videos/Learning Conversant.pdf` (`node scripts/video/make-course-map.mjs`). Titles, summaries and the order live in `scripts/video/course.json`. The screenshot list for the by-hand videos is `Videos/Screenshots to Take.docx` (made by `scripts/video/make-screenshot-guide.py`, with real computer screenshots from `capture-computer-samples.mjs`).
 
 Each video gets a one-page guide with the same title, made from the same script so the two can't disagree:
 
