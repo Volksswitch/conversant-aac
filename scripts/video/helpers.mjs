@@ -98,3 +98,6 @@ export const panelButton = (words) => `::-p-xpath(//*[@id="expressPanel"]//butto
 // An Express Panel button whose label contains these words (Context buttons
 // carry a small mark before the name).
 export const panelButtonWith = (words) => `::-p-xpath(//*[@id="expressPanel"]//button[contains(normalize-space(.),${JSON.stringify(words)})])`;
+
+// Hold the app's speech open, or let it finish (see the renderer's stand-in voice).
+export const holdSpeech = (page, on) => page.evaluate((v) => { window.__holdSpeech = v; }, on);

@@ -25,8 +25,8 @@
       { "num": "3.5", "id": "3.5-change-button", "title": "Changing an Express Panel Button", "learn": "Change a button's words, add one, and move one." },
       { "num": "3.6", "title": "How the Express Panel Is Organized", "learn": "Use the three groups of buttons and the More button." },
       { "num": "3.7", "id": "3.7-who-where-feel", "title": "Telling Conversant Who, Where and How You Feel", "learn": "Tap a person, place or feeling button and see the options change." },
-      { "num": "3.8", "title": "Your Voice", "learn": "Choose a voice, and fix a name it says wrong." },
-      { "num": "3.9", "title": "Your Own Openers and Goodbyes", "learn": "Change the phrases behind the Command Bar buttons." },
+      { "num": "3.8", "id": "3.8-your-voice", "title": "Your Voice", "learn": "Choose a voice, and fix a name it says wrong." },
+      { "num": "3.9", "id": "3.9-openers-goodbyes", "title": "Your Own Openers and Goodbyes", "learn": "Change the phrases behind the Command Bar buttons." },
       { "num": "3.10", "title": "Looking Back at a Conversation", "learn": "Rewrite a reply so Conversant learns how you'd say it." }
     ] },
     { "name": "Fitting it to you", "items": [

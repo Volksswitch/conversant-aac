@@ -137,7 +137,13 @@ async function mark(page, selector, kind) {
 
 const clearMark = (page) => page.evaluate(() => document.getElementById('vid-mark')?.remove());
 
-async function settle(page) {
+async function settle(page, step = {}) {
+  // Wait until the app has finished speaking, so whether its "now saying" line is
+  // in the picture never depends on timing. A step that is about that moment
+  // (a holding phrase being said) sets whileSpeaking and skips the wait.
+  if (!step.whileSpeaking) {
+    await page.waitForFunction(() => !window.__speakingNow, { timeout: 6000 }).catch(() => {});
+  }
   // Wait for animations that end. The Listen button pulses forever while it is
   // on, so waiting for every animation would never return; and nothing waits
   // more than three seconds whatever happens.
@@ -239,7 +245,13 @@ async function openApp(browser, script) {
         window.__speakingNow = true;
         setTimeout(() => u.onstart?.(new Event('start')), 30);
         const ms = Math.min(3000, 400 + 55 * (u.text || '').length);
-        setTimeout(() => { window.__speakingNow = false; u.onend?.(new Event('end')); }, ms);
+        // A script can hold speech open (window.__holdSpeech) so a picture of the
+        // app mid-sentence does not depend on timing; it ends when released.
+        const finish = () => {
+          if (window.__holdSpeech) return setTimeout(finish, 50);
+          window.__speakingNow = false; u.onend?.(new Event('end'));
+        };
+        setTimeout(finish, ms);
       };
       synth.cancel = () => {};
     }
@@ -381,7 +393,7 @@ async function main() {
           await page.screenshot({ path: fail });
           throw new Error(`STOPPING - step ${i + 1} waited for ${step.waitFor}, which never appeared. The screen at that moment: ${fail}`);
         });
-      await settle(page);
+      await settle(page, step);
       const box = await mark(page, step.tap || step.highlight, step.tap ? 'tap' : 'ring');
       const shot = path.join(work, `${String(i).padStart(2, '0')}.png`);
       await page.screenshot({ path: shot });
