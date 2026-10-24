@@ -63,3 +63,38 @@ export const section = (name) => `::-p-xpath(//dialog[@open]//summary[.//*[norma
 
 // A Settings tab, by its name in the code (data-tab).
 export const settingsTab = (name) => `#settingsTabs .settings-tab[data-tab="${name}"]`;
+
+// Choose an item in a drop-down list by its words, as a person would.
+export async function choose(page, selector, words) {
+  const h = await page.$(selector);
+  if (!h) throw new Error(`STOPPING - nothing on screen matches ${selector}`);
+  const ok = await h.evaluate((el, w) => {
+    const o = [...el.options].find((x) => x.textContent.trim() === w);
+    if (!o) return false;
+    el.value = o.value;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    return true;
+  }, words);
+  if (!ok) throw new Error(`STOPPING - the list ${selector} has no "${words}"`);
+}
+
+// An About Me topic, and things found by their words.
+export const topic = (name) => `::-p-xpath(//button[contains(@class,"wv-module-row")][.//*[normalize-space(text())=${JSON.stringify(name)}]])`;
+export const fieldByHint = (hint) => `::-p-xpath(//*[(self::input or self::textarea) and starts-with(@placeholder,${JSON.stringify(hint)})])`;
+export const buttonText = (label) => `::-p-xpath(//dialog[@open]//button[normalize-space(text())=${JSON.stringify(label)}])`;
+
+// Replace whatever is in a text box with new words, as a person would.
+export async function replaceText(page, selector, text) {
+  await page.click(selector, { clickCount: 3 });
+  await page.keyboard.down('Control'); await page.keyboard.press('KeyA'); await page.keyboard.up('Control');
+  await page.keyboard.press('Backspace');
+  await page.type(selector, text, { delay: 20 });
+}
+
+// An Express Panel button, by its words.
+export const panelButton = (words) => `::-p-xpath(//*[@id="expressPanel"]//button[normalize-space(.)=${JSON.stringify(words)}])`;
+
+// An Express Panel button whose label contains these words (Context buttons
+// carry a small mark before the name).
+export const panelButtonWith = (words) => `::-p-xpath(//*[@id="expressPanel"]//button[contains(normalize-space(.),${JSON.stringify(words)})])`;

@@ -26,7 +26,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import puppeteer from 'puppeteer';
 import { ROOT, readAzureKey, synthesize, pace } from './azure.mjs';
-import { makeCompanion, placeInCourse } from './companion.mjs';
+import { makeCompanion, placeInCourse, MAX_PAGE_STEPS } from './companion.mjs';
 
 const PORT = 8123;
 const VIEW = { width: 1280, height: 720, deviceScaleFactor: 1.5 }; // 1920 x 1080 video
@@ -296,6 +296,14 @@ async function openApp(browser, script) {
       ...extra,
     }));
   }, script.settings || {});
+  // A script can start with things already saved (people, places, Express Panel
+  // buttons), written where the app keeps them in this browser, so a video can
+  // begin partway into using the app.
+  if (script.storage) {
+    await page.evaluate((stored) => {
+      for (const [k, v] of Object.entries(stored)) localStorage.setItem(k, JSON.stringify(v));
+    }, script.storage);
+  }
   await page.goto(url, { waitUntil: 'networkidle0' });
   // A script that shows the very first screens (before Start) opens the app and
   // leaves it there.
@@ -329,6 +337,13 @@ async function main() {
   // Lines written in the script are spoken first, so a missing voice or key
   // fails before the browser opens. A line given as a function is the app's own
   // words, and is spoken when the step reaches it.
+  // "{next}" in a line names the next video that exists, from course.json, so a
+  // closing line stays right when a video is added between two others. Until
+  // video 1.4 exists, 1.3 says "Next: Do You Need a Speech Service?"; once it
+  // exists, the next sync re-makes 1.3 to say "Keeping Your Information Safe".
+  const { next } = placeInCourse(script.id);
+  const nextLine = next ? `Next: ${next.title}${/[.?!]$/.test(next.title) ? '' : '.'}` : 'More videos are on the way.';
+  for (const step of script.steps) if (typeof step.say === 'string') step.say = step.say.replace('{next}', nextLine);
   for (const step of script.steps) if (typeof step.say === 'string') await speech(step.speaker, step.say);
 
   const server = await startServer();
@@ -347,6 +362,9 @@ async function main() {
   fs.rmSync(frameDir, { recursive: true, force: true });
   fs.mkdirSync(frameDir, { recursive: true });
   placeInCourse(script.id);   // a script missing from the course stops here, before any work
+  // The page's step limit is checked now, not after a two-minute render.
+  const pageSteps = script.steps.filter((s) => s.page).length;
+  if (pageSteps > MAX_PAGE_STEPS) throw new Error(`STOPPING - ${script.id} marks ${pageSteps} steps for its page; ${MAX_PAGE_STEPS} fit on one page`);
   let t = 0;
   try {
     const page = await openApp(browser, script);

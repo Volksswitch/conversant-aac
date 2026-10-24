@@ -66,6 +66,6 @@ export default {
       say: "Marc picks this one." },
     { speaker: 'user', waitFor: onScreen(REPLY), say: REPLY },
     { speaker: 'narrator',
-      say: "So: check what it heard, ask them to repeat if it's wrong, and ask for new options if none of them fit. Next: saying something in your own words." },
+      say: "So: check what it heard, ask them to repeat if it's wrong, and ask for new options if none of them fit. {next}" },
   ],
 };

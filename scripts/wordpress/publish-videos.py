@@ -217,8 +217,10 @@ def main():
             old = cfg['videos'].get(vid)
             if old:
                 replaced += [old['video'], old['guide']]
+            # Keep the watch page: it belongs to the video, not to this upload. Losing
+            # it made the publisher try to create the page again (October 24 2026).
             cfg['videos'][vid] = {'signature': made['signature'], 'seconds': made['seconds'],
-                                  'video': video, 'guide': guide}
+                                  'video': video, 'guide': guide, 'page': (old or {}).get('page')}
             print(f'  UPLOADED {video["url"]}')
 
     # The course map changes only when the list of published videos does.

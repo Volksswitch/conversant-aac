@@ -88,6 +88,6 @@ export default {
       say: "Marc picks this one." },
     { speaker: 'user', waitFor: onScreen(REPLY), say: REPLY },
     { speaker: 'narrator',
-      say: "So: Speak says your words exactly, and Reframe uses them to get better options. Next: starting and ending a conversation." },
+      say: "So: Speak says your words exactly, and Reframe uses them to get better options. {next}" },
   ],
 };

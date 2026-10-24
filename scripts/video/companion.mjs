@@ -141,7 +141,17 @@ export async function makeCompanion({ browser, script, frames, seconds, ffmpeg }
     ${nextLine}
   </body></html>`;
   const out = path.join(ROOT, 'Videos', `${script.id}.pdf`);
-  await printPdf(browser, html, out, { onePage: true });
+  // If the wording runs long, the pictures get smaller until the page fits on one
+  // sheet; past the smallest size, the render stops and says so.
+  const sizes = ['3.1in', '2.75in', '2.4in'];
+  for (const [n, w] of sizes.entries()) {
+    try {
+      await printPdf(browser, html.replace('ol.steps img { width: 3.1in;', `ol.steps img { width: ${w};`), out, { onePage: true });
+      return out;
+    } catch (e) {
+      if (n === sizes.length - 1 || !/pages long/.test(e.message)) throw e;
+    }
+  }
   return out;
 }
 

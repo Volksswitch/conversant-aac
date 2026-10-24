@@ -64,6 +64,6 @@ export default {
       page: "When the conversation's over, tap End conversation.",
       say: "When the conversation's over, tap End conversation. That clears the screen, ready for the next one." },
     { speaker: 'narrator',
-      say: "That's a conversation. Next: what to do when Conversant doesn't hear them right." },
+      say: "That's a conversation. {next}" },
   ],
 };

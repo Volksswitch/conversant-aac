@@ -54,6 +54,6 @@ export default {
       page: "The more you tell Conversant about yourself, in Settings, the more its suggestions sound like you.",
       say: "The more you tell Conversant about yourself, the more its suggestions sound like you." },
     { speaker: 'narrator',
-      say: "Next, let's get Conversant set up on your device." },
+      say: "Now let's get Conversant set up on your device. {next}" },
   ],
 };

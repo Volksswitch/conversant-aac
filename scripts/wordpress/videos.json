@@ -6,15 +6,15 @@
   "mediaFolder": 107,
   "videos": {
     "1.1-what-for": {
-      "signature": "86086694d6d795ab65f7d6f7861f7153f364fc6035970186b7936a74833fd50d",
-      "seconds": 57,
+      "signature": "fe93bd430ae0a3d3fad3888425364a5f490fdf8644f1e479a13235627a2eff73",
+      "seconds": 59,
       "video": {
-        "id": 24186,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-1-What-Conversant-Is-For.mp4"
+        "id": 24231,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-1-What-Conversant-Is-For-1.mp4"
       },
       "guide": {
-        "id": 24187,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-1-What-Conversant-Is-For-Guide.pdf"
+        "id": 24232,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-1-What-Conversant-Is-For-Guide-1.pdf"
       },
       "page": {
         "id": 24210,
@@ -22,15 +22,15 @@
       }
     },
     "1.3-ai-key": {
-      "signature": "78831e6eb4684967b96ff56ba21f0fc753cf4b1673987c4a9435edc8793604b0",
-      "seconds": 45,
+      "signature": "eca91cc89344cd9cf8de57f1d266125687fbaea6e595e9564ca261a4a7a9c8e9",
+      "seconds": 46,
       "video": {
-        "id": 24188,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-3-Adding-Your-AI-Key.mp4"
+        "id": 24233,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-3-Adding-Your-AI-Key-1.mp4"
       },
       "guide": {
-        "id": 24189,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-3-Adding-Your-AI-Key-Guide.pdf"
+        "id": 24234,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-3-Adding-Your-AI-Key-Guide-1.pdf"
       },
       "page": {
         "id": 24211,
@@ -38,15 +38,15 @@
       }
     },
     "1.5-speech-service": {
-      "signature": "29051a27a6254ec6611854cff23786c46dc9444fc72325983fcf3df14f6e90e7",
-      "seconds": 48,
+      "signature": "db6e7816a33186776d392b201c2f53f7835a6f1b512fef66c2cc2f8d3dc07791",
+      "seconds": 47,
       "video": {
-        "id": 24190,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-5-Do-You-Need-a-Speech-Service.mp4"
+        "id": 24235,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-5-Do-You-Need-a-Speech-Service-1.mp4"
       },
       "guide": {
-        "id": 24191,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-5-Do-You-Need-a-Speech-Service-Guide.pdf"
+        "id": 24236,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-5-Do-You-Need-a-Speech-Service-Guide-1.pdf"
       },
       "page": {
         "id": 24212,
@@ -54,15 +54,15 @@
       }
     },
     "2.1-screen-tour": {
-      "signature": "370de46aa47a4591606cc3abbac77996f1c1abc62715ab0666de32cbbad0b7f3",
-      "seconds": 91,
+      "signature": "8dc5efe0d28eab8a480f386332c82bbd93f7a230945534f15d7b45184c8712f9",
+      "seconds": 92,
       "video": {
-        "id": 24192,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-1-A-Tour-of-the-Screen.mp4"
+        "id": 24237,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-1-A-Tour-of-the-Screen-1.mp4"
       },
       "guide": {
-        "id": 24193,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-1-A-Tour-of-the-Screen-Guide.pdf"
+        "id": 24238,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-1-A-Tour-of-the-Screen-Guide-1.pdf"
       },
       "page": {
         "id": 24213,
@@ -70,15 +70,15 @@
       }
     },
     "2.2-practice": {
-      "signature": "fe0998a5be3178ba3d8b3097bfb9cd627713006a468284898d653c57adc82d70",
+      "signature": "4e7ffa01d2205b83b02a1144357b29d89aa4d2f29b227eeb7672966254126e43",
       "seconds": 70,
       "video": {
-        "id": 24194,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-2-A-Practice-Conversation.mp4"
+        "id": 24239,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-2-A-Practice-Conversation-1.mp4"
       },
       "guide": {
-        "id": 24195,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-2-A-Practice-Conversation-Guide.pdf"
+        "id": 24240,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-2-A-Practice-Conversation-Guide-1.pdf"
       },
       "page": {
         "id": 24214,
@@ -86,15 +86,15 @@
       }
     },
     "2.3-first-conversation": {
-      "signature": "5e566d5cfb9ca3abc136bc790e20d6b37afc46d71dad62a7bfff51ea43e5bc92",
-      "seconds": 72,
+      "signature": "717e12173846dff6b593e6d34f63bf03a206863756e0244f2eabe3dce5dc972f",
+      "seconds": 70,
       "video": {
-        "id": 24196,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-3-Your-First-Real-Conversation.mp4"
+        "id": 24241,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-3-Your-First-Real-Conversation-1.mp4"
       },
       "guide": {
-        "id": 24197,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-3-Your-First-Real-Conversation-Guide.pdf"
+        "id": 24242,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-3-Your-First-Real-Conversation-Guide-1.pdf"
       },
       "page": {
         "id": 24215,
@@ -102,15 +102,15 @@
       }
     },
     "2.4-hears-wrong": {
-      "signature": "56cf0653f558c3f84209f514949f05670deb38c12847bbc78e836838ee5c2a26",
+      "signature": "d276e61b10e10428e0b95997e86b6a858fe293aa20f9f9db8b0040360fcf5725",
       "seconds": 64,
       "video": {
-        "id": 24198,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-4-When-It-Hears-Wrong.mp4"
+        "id": 24243,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-4-When-It-Hears-Wrong-1.mp4"
       },
       "guide": {
-        "id": 24199,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-4-When-It-Hears-Wrong-Guide.pdf"
+        "id": 24244,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-4-When-It-Hears-Wrong-Guide-1.pdf"
       },
       "page": {
         "id": 24216,
@@ -118,15 +118,15 @@
       }
     },
     "2.5-own-words": {
-      "signature": "1a9043f0abcce54300c0c0f5368f0e3b8582ec2dd4323f49327a90dd7b833318",
-      "seconds": 80,
+      "signature": "66c6ea20fe1f9b2490d72c9fe20fb4fc3d6fcb35b034373eaaca672277d86d30",
+      "seconds": 79,
       "video": {
-        "id": 24200,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-5-In-Your-Own-Words.mp4"
+        "id": 24245,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-5-In-Your-Own-Words-1.mp4"
       },
       "guide": {
-        "id": 24201,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-5-In-Your-Own-Words-Guide.pdf"
+        "id": 24246,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-5-In-Your-Own-Words-Guide-1.pdf"
       },
       "page": {
         "id": 24217,
@@ -134,15 +134,15 @@
       }
     },
     "2.6-start-and-end": {
-      "signature": "fdc1e0c87ad85373ce0bd08c93b5ec6032ab2c9dcf178e9aa5b2b480c8f187bd",
+      "signature": "9dd4f7a96c3c956835aab18aed9c09abeff91adf227baa159dac879a755838aa",
       "seconds": 78,
       "video": {
-        "id": 24202,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-6-Starting-and-Ending-a-Conversation.mp4"
+        "id": 24247,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-6-Starting-and-Ending-a-Conversation-1.mp4"
       },
       "guide": {
-        "id": 24203,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-6-Starting-and-Ending-a-Conversation-Guide.pdf"
+        "id": 24248,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-6-Starting-and-Ending-a-Conversation-Guide-1.pdf"
       },
       "page": {
         "id": 24218,
@@ -150,15 +150,15 @@
       }
     },
     "2.7-buying-time": {
-      "signature": "83e021e21fa7905df1846472be5c4a41fde437ededb4a55da9a0b21d6ba00cc1",
-      "seconds": 73,
+      "signature": "79f2dddf9e16f39f9f08b4c6134c5504bb262139b6efc99fc7c566225d606e0d",
+      "seconds": 74,
       "video": {
-        "id": 24204,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-7-Buying-Yourself-Time.mp4"
+        "id": 24249,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-7-Buying-Yourself-Time-1.mp4"
       },
       "guide": {
-        "id": 24205,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-7-Buying-Yourself-Time-Guide.pdf"
+        "id": 24250,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-7-Buying-Yourself-Time-Guide-1.pdf"
       },
       "page": {
         "id": 24219,

@@ -32,6 +32,6 @@ export default {
       page: "If you need one, or want a better voice, talk to us before signing up for anything.",
       say: "If that's you, or if you'd like a better-sounding voice, please talk to us before you sign up for anything. We'll help you choose a service and set it up." },
     { speaker: 'narrator',
-      say: "That's everything you need to get started. Next: a tour of the screen." },
+      say: "That's everything you need to get started. {next}" },
   ],
 };

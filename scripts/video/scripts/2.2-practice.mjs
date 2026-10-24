@@ -77,6 +77,6 @@ export default {
       page: "When you're done, tap End conversation.",
       say: "When you're done, tap End conversation." },
     { speaker: 'narrator',
-      say: "That's a practice. Try the others too, and practice as often as you like. Next, your first real conversation." },
+      say: "That's a practice. Try the others too, and practice as often as you like. {next}" },
   ],
 };

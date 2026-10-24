@@ -62,6 +62,6 @@ export default {
       page: "Tap End conversation to clear the screen.",
       say: "Then tap End conversation to clear the screen." },
     { speaker: 'narrator',
-      say: "Start conversation to open, Wrap up to close, and End conversation when you're done. Next: buying yourself a little time." },
+      say: "Start conversation to open, Wrap up to close, and End conversation when you're done. {next}" },
   ],
 };

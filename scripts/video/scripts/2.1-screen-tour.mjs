@@ -80,6 +80,6 @@ export default {
     { speaker: 'narrator', highlight: '#settingsBtn',
       say: "And this is Settings. Other videos show you how to set Conversant up your way." },
     { speaker: 'narrator',
-      say: "That's the whole screen. Next, let's try a practice conversation." },
+      say: "That's the whole screen. {next}" },
   ],
 };

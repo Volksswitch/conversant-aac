@@ -53,6 +53,6 @@ export default {
       say: "And if they didn't catch what you said, tap Repeat what I said." },
     { speaker: 'user', until: untilNewSpeech, say: lastSpoken },
     { speaker: 'narrator',
-      say: "Holding phrases, Hold on, and Repeat what I said all keep the conversation going while you think. That's the end of the first conversations. Next, you can start making Conversant your own." },
+      say: "Holding phrases, Hold on, and Repeat what I said all keep the conversation going while you think. That's the end of the first conversations. {next}" },
   ],
 };
