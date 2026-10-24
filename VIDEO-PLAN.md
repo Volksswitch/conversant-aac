@@ -125,8 +125,8 @@ Screenshots for the by-hand videos can't be re-taken automatically. The report l
 
 Steps 1 to 4 are what a beta tester needs on day one.
 
-## Decisions for Ken
+## Decisions (Ken, October 24 2026)
 
-1. **Where the videos live.** The pilot is only 2.7 MB, so the website can hold them, and the same publishing route the PDFs use would keep the links current. YouTube is the alternative, but a replaced video there always gets a new link. Lean: the website.
-2. **The by-hand screenshots** for installing, sign-up and the iPad need someone holding each device. Lean: you take them on your iPad and Android devices from a short list I'll write, and the program does the rest.
-3. **Is 31 topics too many?** It's a menu, so nobody watches them all. But if you'd rather start smaller, groups 1 and 2 plus 3.1, 3.2 and 3.5 cover what most testers will ask about first.
+1. **The videos live on the website**, published the same way the PDFs are. The site can't stream them, so they're downloaded and played. That means each file has to stay small; the pilot is 2.7 MB for 91 seconds.
+2. **Ken takes the iPad and Android screenshots** for the by-hand videos, from a list the build provides.
+3. **All 31 topics are in scope.**

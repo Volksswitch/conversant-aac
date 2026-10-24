@@ -2533,6 +2533,17 @@ the accessible label only`: the badge is real but reaches only a screen reader, 
 VISIBLE coding is position + color and his deletion was correct. **Checking the code found
 a drift in CLAUDE.md as well as in the document.**
 
+## How-to videos are GENERATED from scripts, never recorded (Ken, October 24 2026), PILOT BUILT
+
+The plan, course order and decisions are in [VIDEO-PLAN.md](VIDEO-PLAN.md). Each video is a script in `scripts/video/scripts/`; `node scripts/video/render-video.mjs <script>` drives the real app in headless Chrome, rings each control as it is named, speaks the lines, and writes `Videos/<id>.mp4`.
+
+- **Why generated:** Ken wants the videos to stay current the way the documents do, without re-recording. So narration is synthesized (a human voice cannot be regenerated), and a step whose control no longer exists STOPS the render rather than showing the wrong screen.
+- **Three fixed Azure voices, in `scripts/video/voices.json`** (Ken chose by ear): narrator Andrew, partner Ava, user Jason. Key in the git-ignored `.azure-key` (key, then region).
+- **Only the app's own page is captured, never the desktop** (Ken's condition).
+- **Live videos fix the AI's answers in the script** (the app's request is answered by the renderer), and the device voice is replaced by a silent stand-in. An AI request the script did not plan for stops the render.
+- **Narration never names a position** ("top", "left"); it says "this button" and the ring points, because layouts differ by device and setting.
+- **Hosted on the website as downloads** (it cannot stream), so files must stay small. **No burned-in captions**; a caption file is written alongside.
+
 ## Keeping product documents in sync — trigger phrase "sync docs" (Ken, July 8 2026)
 
 Product-document currency is tracked by [`DOC-SYNC.md`](DOC-SYNC.md) (any root document named `Conversant AAC *`, each stamped with the git commit it was last reviewed against — never file modification date, which a format-only edit would bump).

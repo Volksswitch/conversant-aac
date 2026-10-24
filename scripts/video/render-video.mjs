@@ -21,6 +21,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import os from 'node:os';
 import { spawn, spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import puppeteer from 'puppeteer';
@@ -93,9 +94,11 @@ async function startServer() {
 async function mark(page, selector, kind) {
   await page.evaluate(() => document.getElementById('vid-mark')?.remove());
   if (!selector) return;
-  const ok = await page.evaluate((sel, kind) => {
-    const el = document.querySelector(sel);
-    if (!el) return false;
+  // Resolved through Puppeteer rather than querySelector, so a script can name a
+  // control by its words with ::-p-text(...), as a person would.
+  const handle = await page.$(selector);
+  const ok = handle && await handle.evaluate((el, kind) => {
+    el.scrollIntoView({ block: 'nearest' });
     const r = el.getBoundingClientRect();
     if (r.width < 2 || r.height < 2) return false;
     const m = document.createElement('div');
@@ -126,28 +129,102 @@ async function mark(page, selector, kind) {
     // when one is showing, or it would be drawn underneath it.
     (document.querySelector('dialog[open]') || document.body).appendChild(m);
     return true;
-  }, selector, kind);
+  }, kind);
   if (!ok) throw new Error(`STOPPING - nothing on screen matches ${selector}`);
 }
 
+const clearMark = (page) => page.evaluate(() => document.getElementById('vid-mark')?.remove());
+
 async function settle(page) {
-  await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => {}))));
+  // Wait for animations that end. The Listen button pulses forever while it is
+  // on, so waiting for every animation would never return; and nothing waits
+  // more than three seconds whatever happens.
+  await page.evaluate(() => Promise.race([
+    Promise.all(document.getAnimations()
+      .filter((a) => a.effect?.getComputedTiming?.().iterations !== Infinity)
+      .map((a) => a.finished.catch(() => {}))),
+    new Promise((r) => setTimeout(r, 3000)),
+  ]));
   await pace(300);
 }
 
-async function openApp(browser) {
+// Fixed AI answers. The app's request to the AI is answered here, from the
+// script, so the options on screen are always the ones the narration describes.
+// A request the script did not plan for stops the render rather than showing
+// something nobody wrote.
+function makeAI(ai = {}) {
+  const partnerLines = [...(ai.partnerLines || [])];
+  const responseSets = [...(ai.responseSets || [])];
+  return (bodyText) => {
+    const body = JSON.parse(bodyText);
+    const system = JSON.stringify(body.system || '');
+    if (system.includes('role-playing a communication partner')) {
+      if (!partnerLines.length) throw new Error('The app asked for a partner line the script does not have.');
+      console.log('  [ai] partner line');
+      return partnerLines.shift();
+    }
+    if (body.output_config) {
+      if (!responseSets.length) throw new Error('The app asked for options the script does not have.');
+      const set = responseSets.shift();
+      console.log('  [ai] response options');
+      return JSON.stringify({
+        partner_action: set.partnerAction || 'QUESTION', turn_status: 'COMPLETE',
+        is_repair_initiator: false, offered_options: set.offered || [], offered_range: null,
+        responses: set.responses, missing_facts: [], missing_other: [], heard_uncertain: [],
+      });
+    }
+    throw new Error(`The app made an AI request the script did not plan for: ${system.slice(0, 120)}`);
+  };
+}
+
+async function openApp(browser, script) {
   const page = await browser.newPage();
   await page.setViewport(VIEW);
+  const answer = makeAI(script.ai);
+  // A failure inside the page is otherwise invisible; show it, so a stalled
+  // render says why.
+  page.on('console', (m) => { if (m.type() === 'error') console.log(`  [page] ${m.text()}`); });
+  page.on('pageerror', (e) => console.log(`  [page] ${e.message}`));
+  await page.exposeFunction('__videoAI', (bodyText) => {
+    try { return answer(bodyText); }
+    catch (e) { console.log(`  [ai] ${e.message}`); throw e; }
+  });
+  await page.evaluateOnNewDocument(() => {
+    const realFetch = window.fetch.bind(window);
+    window.fetch = async (url, init = {}) => {
+      if (String(url).startsWith('https://api.anthropic.com/v1/messages')) {
+        const text = await window.__videoAI(init.body);
+        return new Response(JSON.stringify({
+          id: 'msg_video', type: 'message', role: 'assistant', model: 'video',
+          content: [{ type: 'text', text }], stop_reason: 'end_turn',
+          usage: { input_tokens: 1, output_tokens: 1 },
+        }), { status: 200, headers: { 'content-type': 'application/json' } });
+      }
+      return realFetch(url, init);
+    };
+    // The video supplies every voice itself, so the device's own speech is replaced
+    // by a silent stand-in that finishes at once. Without it the app waits on a
+    // voice the headless browser may never finish.
+    const synth = window.speechSynthesis;
+    if (synth) {
+      synth.speak = (u) => setTimeout(() => {
+        u.onstart?.(new Event('start'));
+        u.onend?.(new Event('end'));
+      }, 30);
+      synth.cancel = () => {};
+    }
+  });
   const url = `http://localhost:${PORT}/`;
   await page.goto(url, { waitUntil: 'domcontentloaded' });
-  await page.evaluate(() => {
+  await page.evaluate((extra) => {
     // A key must be present or Start stops on the "add your key" notice. It is
     // never used: the videos seed their own conversation and call no AI.
     localStorage.setItem('aac_settings', JSON.stringify({
       lastSeenVersion: '99.0.0',
       apiKey: 'sk-ant-video-only-never-sent-0000000000000000000000000',
+      ...extra,
     }));
-  });
+  }, script.settings || {});
   await page.goto(url, { waitUntil: 'networkidle0' });
   await page.click('#startBtn');
   await pace(1200);
@@ -169,7 +246,9 @@ async function main() {
   const scriptPath = process.argv[2];
   if (!scriptPath) throw new Error('Usage: node scripts/video/render-video.mjs <script.mjs>');
   const script = (await import(pathToFileURL(path.resolve(scriptPath)).href)).default;
-  const work = path.join(ROOT, 'Videos', '.work', script.id);
+  // Working pictures go in the system's temporary folder, not OneDrive, which
+  // would otherwise upload every intermediate frame.
+  const work = path.join(os.tmpdir(), 'conversant-video', script.id);
   fs.rmSync(work, { recursive: true, force: true });
   fs.mkdirSync(work, { recursive: true });
 
@@ -184,13 +263,25 @@ async function main() {
   const srt = [];
   let t = 0;
   try {
-    const page = await openApp(browser);
+    const page = await openApp(browser, script);
     for (const [i, step] of script.steps.entries()) {
       if (step.before) await step.before(page);
+      if (step.waitFor) await page.waitForSelector(step.waitFor, { visible: true, timeout: 15000 })
+        .catch(async () => {
+          const fail = path.join(work, 'failed.png');
+          await page.screenshot({ path: fail });
+          throw new Error(`STOPPING - step ${i + 1} waited for ${step.waitFor}, which never appeared. The screen at that moment: ${fail}`);
+        });
       await settle(page);
       await mark(page, step.tap || step.highlight, step.tap ? 'tap' : 'ring');
       const shot = path.join(work, `${String(i).padStart(2, '0')}.png`);
       await page.screenshot({ path: shot });
+      // A step with press: true then really taps what it pointed at, so the app
+      // does the work and the next picture shows the result.
+      if (step.press) {
+        await clearMark(page);
+        await page.click(step.tap || step.highlight);
+      }
 
       const speak = durationOf(clips[i]);
       const dur = LEAD_S + speak + TAIL_S;
