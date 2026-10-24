@@ -21,13 +21,13 @@
       { "num": "3.1", "id": "3.1-about-me", "title": "About Me: A Few Answers Go a Long Way", "learn": "Answer the questions that matter most first." },
       { "num": "3.2", "id": "3.2-people", "title": "The People in Your Life", "learn": "Add a person and say how you talk with them." },
       { "num": "3.3", "id": "3.3-places", "title": "Your Places", "learn": "Add a place and what's worth knowing about it." },
-      { "num": "3.4", "title": "Your Goals", "learn": "Set what you want from a person, a place, or any conversation." },
+      { "num": "3.4", "id": "3.4-goals", "title": "Your Goals", "learn": "Set what you want from a person, a place, or any conversation." },
       { "num": "3.5", "id": "3.5-change-button", "title": "Changing an Express Panel Button", "learn": "Change a button's words, add one, and move one." },
-      { "num": "3.6", "title": "How the Express Panel Is Organized", "learn": "Use the three groups of buttons and the More button." },
+      { "num": "3.6", "id": "3.6-panel-groups", "title": "How the Express Panel Is Organized", "learn": "Use the three groups of buttons and the More button." },
       { "num": "3.7", "id": "3.7-who-where-feel", "title": "Telling Conversant Who, Where and How You Feel", "learn": "Tap a person, place or feeling button and see the options change." },
       { "num": "3.8", "id": "3.8-your-voice", "title": "Your Voice", "learn": "Choose a voice, and fix a name it says wrong." },
       { "num": "3.9", "id": "3.9-openers-goodbyes", "title": "Your Own Openers and Goodbyes", "learn": "Change the phrases behind the Command Bar buttons." },
-      { "num": "3.10", "title": "Looking Back at a Conversation", "learn": "Rewrite a reply so Conversant learns how you'd say it." }
+      { "num": "3.10", "id": "3.10-looking-back", "title": "Looking Back at a Conversation", "learn": "Rewrite a reply so Conversant learns how you'd say it." }
     ] },
     { "name": "Fitting it to you", "items": [
       { "num": "4.1", "title": "Button Size and Spacing", "learn": "Make buttons easier to hit." },

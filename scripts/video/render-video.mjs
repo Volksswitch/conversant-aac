@@ -95,9 +95,23 @@ async function startServer() {
 async function mark(page, selector, kind) {
   await page.evaluate(() => document.getElementById('vid-mark')?.remove());
   if (!selector) return null;
-  // Resolved through Puppeteer rather than querySelector, so a script can name a
-  // control by its words with ::-p-text(...), as a person would.
-  const handle = await page.$(selector);
+  // "all:<css>" rings every visible match at once, as one box (a whole group of
+  // buttons). Otherwise the selector is resolved through Puppeteer, so a script
+  // can name a control by its words with ::-p-text(...), as a person would.
+  let handle;
+  if (selector.startsWith('all:')) {
+    handle = await page.evaluateHandle((css) => {
+      const els = [...document.querySelectorAll(css)].filter((e) => e.getClientRects().length);
+      if (!els.length) return null;
+      const rs = els.map((e) => e.getBoundingClientRect());
+      const box = { left: Math.min(...rs.map((r) => r.left)), top: Math.min(...rs.map((r) => r.top)),
+        right: Math.max(...rs.map((r) => r.right)), bottom: Math.max(...rs.map((r) => r.bottom)) };
+      return { scrollIntoView() {}, getBoundingClientRect: () => ({ ...box, width: box.right - box.left, height: box.bottom - box.top }) };
+    }, selector.slice(4));
+    if (!(await handle.jsonValue().catch(() => null)) && !(await handle.evaluate((h) => !!h))) handle = null;
+  } else {
+    handle = await page.$(selector);
+  }
   const ok = handle && await handle.evaluate((el, kind) => {
     el.scrollIntoView({ block: 'nearest' });
     const r = el.getBoundingClientRect();
@@ -298,6 +312,15 @@ async function openApp(browser, script) {
     };
   });
   const url = `http://localhost:${PORT}/`;
+  // A script that needs saved conversations (review) asks for the app's own
+  // in-browser storage, the way an iPad saves, since a folder can only be chosen
+  // through Windows' picker, which nothing here can click.
+  if (script.inBrowserStorage) {
+    await page.evaluateOnNewDocument(() => {
+      try { delete Window.prototype.showDirectoryPicker; } catch {}
+      try { delete window.showDirectoryPicker; } catch {}
+    });
+  }
   await page.goto(url, { waitUntil: 'domcontentloaded' });
   await page.evaluate((extra) => {
     // A key must be present or Start stops on the "add your key" notice. It is
