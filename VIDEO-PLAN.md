@@ -107,6 +107,8 @@ Pages are made as PDFs and published to the website the same way the other docum
 
 ## Keeping them current
 
+**Built (October 24 2026):** `node scripts/video/sync-videos.mjs` (add `--publish` to upload). The page it maintains is `conversant-videos`, made first as a draft.
+
 A trigger phrase, **"sync videos"**, works like "sync docs":
 
 1. Re-make every video. Speech already made is reused, so this costs nothing unless wording changed.

@@ -118,3 +118,6 @@ Videos/**/*.pdf
 Videos/**/*.srt
 Videos/*.pdf
 Videos/*.srt
+Videos/*.json
+Videos/.frames/
+Videos/.published/

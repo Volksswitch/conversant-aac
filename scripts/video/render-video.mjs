@@ -147,6 +147,16 @@ async function settle(page) {
       .map((a) => a.finished.catch(() => {}))),
     new Promise((r) => setTimeout(r, 3000)),
   ]));
+  // Animations that never end (the Listen button's pulse, the slow pulse on
+  // options that may still change) are switched off for the picture, so the
+  // screen shows its plain colors. Caught mid-pulse, each render would differ,
+  // and a still picture of a pulse at its faintest makes the options look
+  // disabled, which they are not.
+  await page.evaluate(() => {
+    for (const a of document.getAnimations()) {
+      if (a.effect?.getComputedTiming?.().iterations === Infinity) a.cancel();
+    }
+  });
   await pace(300);
 }
 
@@ -259,7 +269,9 @@ async function openApp(browser, script) {
     // nothing to a viewer, so it is hidden in every video.
     document.addEventListener('DOMContentLoaded', () => {
       const st = document.createElement('style');
-      st.textContent = '#startVersion { visibility: hidden !important; }';
+      // The blinking text cursor is hidden too: whether a picture catches it on or
+      // off is chance, and chance would make two renders of an unchanged video differ.
+      st.textContent = '#startVersion { visibility: hidden !important; } * { caret-color: transparent !important; }';
       document.head.appendChild(st);
     });
 
@@ -324,6 +336,16 @@ async function main() {
   const segments = [];
   const frames = [];
   const srt = [];
+  // What "sync videos" uses to tell whether a video changed: every word said
+  // or printed, and which voice said it (the "signature"), plus a small copy of
+  // each picture in Videos/.frames, compared with tolerance (see sync-videos.mjs).
+  // An exact fingerprint of the pictures cannot work: the browser draws the same
+  // screen with faintly different edges from run to run.
+  const signature = crypto.createHash('sha256');
+  signature.update(JSON.stringify({ trouble: script.trouble || [], course: placeInCourse(script.id), voices }));
+  const frameDir = path.join(ROOT, 'Videos', '.frames', script.id);
+  fs.rmSync(frameDir, { recursive: true, force: true });
+  fs.mkdirSync(frameDir, { recursive: true });
   placeInCourse(script.id);   // a script missing from the course stops here, before any work
   let t = 0;
   try {
@@ -365,6 +387,8 @@ async function main() {
         '-c:v', 'libx264', '-tune', 'stillimage', '-pix_fmt', 'yuv420p', '-r', '30',
         '-c:a', 'aac', '-b:a', '160k', '-ar', '48000', '-ac', '2', seg]);
       segments.push(seg);
+      signature.update(JSON.stringify({ speaker: step.speaker, said, page: step.page || null }));
+      run(FFMPEG, ['-y', '-v', 'error', '-i', shot, '-vf', 'scale=960:540', path.join(frameDir, `${String(i).padStart(2, '0')}.png`)]);
       srt.push(`${i + 1}\n${srtTime(t + LEAD_S)} --> ${srtTime(t + LEAD_S + speak)}\n${said}\n`);
       t += dur;
       console.log(`step ${i + 1}/${script.steps.length}  ${dur.toFixed(1)}s  ${step.speaker}`);
@@ -382,6 +406,10 @@ async function main() {
   const out = path.join(ROOT, 'Videos', `${script.id}.mp4`);
   run(FFMPEG, ['-y', '-f', 'concat', '-safe', '0', '-i', list, '-c', 'copy', '-movflags', '+faststart', out]);
   fs.writeFileSync(path.join(ROOT, 'Videos', `${script.id}.srt`), srt.join('\n'));
+  fs.writeFileSync(path.join(ROOT, 'Videos', `${script.id}.json`), JSON.stringify({
+    id: script.id, signature: signature.digest('hex'), pictures: frames.length,
+    seconds: Math.round(t), rendered: new Date().toISOString(),
+  }, null, 2));
   console.log(`\n${path.relative(ROOT, out)}  ${durationOf(out).toFixed(1)}s`);
 }
 
