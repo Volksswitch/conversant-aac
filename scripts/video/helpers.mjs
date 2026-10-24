@@ -101,3 +101,15 @@ export const panelButtonWith = (words) => `::-p-xpath(//*[@id="expressPanel"]//b
 
 // Hold the app's speech open, or let it finish (see the renderer's stand-in voice).
 export const holdSpeech = (page, on) => page.evaluate((v) => { window.__holdSpeech = v; }, on);
+
+// Drag something by a distance, as a finger would.
+export async function dragBy(page, selector, dx, dy) {
+  const h = await page.$(selector);
+  if (!h) throw new Error(`STOPPING - nothing on screen matches ${selector}`);
+  const b = await h.boundingBox();
+  const x = b.x + b.width / 2, y = b.y + b.height / 2;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  for (let i = 1; i <= 10; i++) await page.mouse.move(x + (dx * i) / 10, y + (dy * i) / 10);
+  await page.mouse.up();
+}

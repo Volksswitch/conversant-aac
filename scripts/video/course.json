@@ -30,17 +30,17 @@
       { "num": "3.10", "id": "3.10-looking-back", "title": "Looking Back at a Conversation", "learn": "Rewrite a reply so Conversant learns how you'd say it." }
     ] },
     { "name": "Fitting it to you", "items": [
-      { "num": "4.1", "title": "Button Size and Spacing", "learn": "Make buttons easier to hit." },
-      { "num": "4.2", "title": "Screen Layout", "learn": "Choose a layout and where the keyboard sits." },
-      { "num": "4.3", "title": "One Tap or Two", "learn": "Guard against taps you didn't mean." },
-      { "num": "4.4", "title": "Text Size and Colors", "learn": "Make the screen easier to read." },
-      { "num": "4.5", "title": "Timing", "learn": "Change how long Conversant waits, and its holding phrases." },
-      { "num": "4.6", "title": "Keyguards", "learn": "Get the measurements to have a keyguard made." }
+      { "num": "4.1", "id": "4.1-bigger-buttons", "title": "Bigger Buttons and Spacing", "learn": "Make buttons easier to hit." },
+      { "num": "4.2", "id": "4.2-screen-layout", "title": "Screen Layout", "learn": "Choose a layout and where the keyboard sits." },
+      { "num": "4.3", "id": "4.3-one-tap-or-two", "title": "One Tap or Two", "learn": "Guard against taps you didn't mean." },
+      { "num": "4.4", "id": "4.4-text-and-colors", "title": "Text Size and Colors", "learn": "Make the screen easier to read." },
+      { "num": "4.5", "id": "4.5-timing", "title": "Timing", "learn": "Change how long Conversant waits, and its holding phrases." },
+      { "num": "4.6", "id": "4.6-keyguards", "title": "Keyguards", "learn": "Get the measurements to have a keyguard made." }
     ] },
     { "name": "Keeping things running", "items": [
-      { "num": "5.1", "title": "Telling Us About a Problem", "learn": "Send a problem report." },
-      { "num": "5.2", "title": "Backups and Moving to a New Device", "learn": "Save everything, and bring it back." },
-      { "num": "5.3", "title": "Keeping a Conversation Private", "learn": "Use \"Don't save this conversation\"." }
+      { "num": "5.1", "id": "5.1-report-problem", "title": "Telling Us About a Problem", "learn": "Send a problem report." },
+      { "num": "5.2", "id": "5.2-backups", "title": "Backups and Moving to a New Device", "learn": "Save everything, and bring it back." },
+      { "num": "5.3", "id": "5.3-private", "title": "Keeping a Conversation Private", "learn": "Use \"Don't save this conversation\"." }
     ] }
   ]
 }
