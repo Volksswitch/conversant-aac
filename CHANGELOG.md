@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.13.26
+
 - The built-in goodbyes no longer end in exclamation points, so they're said calmly instead of excitedly: "Bye." instead of "Bye!". If you haven't changed a goodbye yourself, it's updated for you. Any you've reworded stay exactly as you wrote them.
 
 ## Version 0.13.25
