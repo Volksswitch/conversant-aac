@@ -49,7 +49,7 @@ export default {
     { speaker: 'narrator', highlight: ownWordsBtn, press: true,
       say: "Tap this button to open a box where you can type." },
     { speaker: 'narrator', waitFor: '#composerInput', before: (p) => typeInto(p, '#composerInput', TYPED), highlight: '#composerInput',
-      say: "Type what you want to say, with your keyboard or the one on the screen." },
+      say: "Marc has set Conversant to use his computer's own keyboard, so he types there. You can also choose a keyboard that appears on the screen." },
     { speaker: 'narrator', highlight: '#speakBtn', press: true,
       say: "Then tap Speak, and Conversant says your words exactly." },
     { speaker: 'user', waitFor: onScreen(TYPED), say: TYPED },

@@ -145,3 +145,21 @@ test('nextPhrase walks the list in order and wraps', async () => {
     assert.deepEqual(seen.slice(0, 3).sort(), ['one', 'three', 'two'], 'every entry is reachable');
     assert.equal(seen[3], seen[0], 'and it wraps back round');
 });
+
+test('goodbyes with the old exclamation points are updated in place; edited ones are left alone', async () => {
+    // A stored set from before October 24 2026: the old wording, one goodbye the
+    // user reworded, and the old watermark.
+    const old = ['Bye!', 'Take care!', 'See ya, pal!', "Let's talk again soon.", 'Talk soon!'];
+    seedCache({ openers: cp.DEFAULTS.openers, windDowns: cp.DEFAULTS.windDowns, closings: old,
+        seeded: { openers: cp.DEFAULTS.openers, windDowns: cp.DEFAULTS.windDowns,
+                  closings: ['Bye!', 'Take care!', 'See you later!', "Let's talk again soon.", 'Have a good day!', 'Talk soon!', 'Goodbye!', 'Catch you later.'] } });
+    const p = await cp.load();
+    assert.deepEqual(p.closings, ['Bye.', 'Take care.', 'See ya, pal!', "Let's talk again soon.", 'Talk soon.'],
+        'unedited old wording updated in place, the user\'s own wording untouched, nothing appended');
+    assert.ok(!p.closings.some((c) => c === 'Bye!'), 'no old wording left behind');
+    assert.ok(p.seeded.closings.includes('Bye.') && !p.seeded.closings.includes('Bye!'), 'watermark updated too');
+});
+
+test('no default goodbye carries an exclamation point', () => {
+    for (const c of cp.DEFAULTS.closings) assert.ok(!c.includes('!'), `"${c}" should not have an exclamation point`);
+});

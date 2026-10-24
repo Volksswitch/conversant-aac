@@ -125,13 +125,13 @@ const DEFAULT_WIND_DOWNS = [
     "I've got to run soon.",
 ];
 const DEFAULT_CLOSINGS = [
-    'Bye!',
-    'Take care!',
-    'See you later!',
+    'Bye.',
+    'Take care.',
+    'See you later.',
     "Let's talk again soon.",
-    'Have a good day!',
-    'Talk soon!',
-    'Goodbye!',
+    'Have a good day.',
+    'Talk soon.',
+    'Goodbye.',
     'Catch you later.',
 ];
 // Mirrors control-phrases.js DEFAULTS.retry, so the engine still works standalone.

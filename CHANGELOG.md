@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- The built-in goodbyes no longer end in exclamation points, so they're said calmly instead of excitedly: "Bye." instead of "Bye!". If you haven't changed a goodbye yourself, it's updated for you. Any you've reworded stay exactly as you wrote them.
+
 ## Version 0.13.25
 
 - Sending a problem report is faster when you have many saved conversations, and while it is being prepared the message now shows moving dots, so you can see the app is still working.

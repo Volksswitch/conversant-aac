@@ -25,7 +25,7 @@
  *                replaced with the active Partner's name, dropped when none)
  *   - windDowns: the cards shown by "Wind down" — signal an intent to end the
  *                conversation ("I should get going.") WITHOUT saying goodbye yet
- *   - closings : the actual goodbyes ("Bye!", "Take care!") that appear once the
+ *   - closings : the actual goodbyes ("Bye.", "Take care.") that appear once the
  *                user has selected a wind-down statement
  *   - declineClosing : the "one more thing" card offered when the PARTNER starts
  *                closing. Also a LIST — one is shown at a time and "New N" moves
@@ -114,17 +114,51 @@ export const DEFAULTS = {
         "I've got to run soon.",
     ],
     // Closing statements: the actual goodbyes, offered after a wind-down.
+    // No exclamation points (Ken, October 24 2026): the voices read "Bye!" as
+    // excited, and a goodbye is usually said calmly.
     closings: [
-        'Bye!',
-        'Take care!',
-        'See you later!',
+        'Bye.',
+        'Take care.',
+        'See you later.',
         "Let's talk again soon.",
-        'Have a good day!',
-        'Talk soon!',
-        'Goodbye!',
+        'Have a good day.',
+        'Talk soon.',
+        'Goodbye.',
         'Catch you later.',
     ],
 };
+
+// Defaults whose wording changed in a later release: old wording -> new wording.
+// A user who still has the old wording never edited it, so it is updated in
+// place, in the same position. Anything they reworded is left alone. Without
+// this, the merge below would add the new wording at the end and leave the old
+// one in place, so the list would hold both "Bye!" and "Bye.".
+const REWORDED = {
+    closings: {
+        'Bye!': 'Bye.',
+        'Take care!': 'Take care.',
+        'See you later!': 'See you later.',
+        'Have a good day!': 'Have a good day.',
+        'Talk soon!': 'Talk soon.',
+        'Goodbye!': 'Goodbye.',
+    },
+};
+
+// Returns true if anything changed (persist if so).
+function applyRewording(p) {
+    let changed = false;
+    for (const [key, map] of Object.entries(REWORDED)) {
+        const swap = (list) => list.map((x) => {
+            if (Object.prototype.hasOwnProperty.call(map, x)) { changed = true; return map[x]; }
+            return x;
+        });
+        p[key] = swap(p[key]);
+        // The watermark too, or the new wording would look never-offered and be
+        // appended a second time.
+        p.seeded[key] = swap(p.seeded[key]);
+    }
+    return changed;
+}
 
 let phrases = null; // in-memory working copy
 
@@ -218,7 +252,8 @@ export async function load() {
     if (raw) { try { loaded = JSON.parse(raw); } catch { loaded = null; } }
     if (!loaded) loaded = readCache();
     phrases = normalize(loaded);
-    const changed = mergeNewDefaults(phrases);   // append any new default cards
+    const reworded = applyRewording(phrases);      // update unedited old wording first
+    const changed = mergeNewDefaults(phrases) || reworded;   // then append any new default cards
     writeCache(phrases);
     if (changed) writeDisk(phrases);              // persist the appended defaults + watermark
     return phrases;

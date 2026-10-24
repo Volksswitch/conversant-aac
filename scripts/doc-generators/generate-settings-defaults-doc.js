@@ -262,8 +262,8 @@ const WIND_DOWNS = [
     'I\'ve got to run soon.',
 ];
 const CLOSINGS = [
-    'Bye!', 'Take care!', 'See you later!', 'Let\'s talk again soon.',
-    'Have a good day!', 'Talk soon!', 'Goodbye!', 'Catch you later.',
+    'Bye.', 'Take care.', 'See you later.', 'Let\'s talk again soon.',
+    'Have a good day.', 'Talk soon.', 'Goodbye.', 'Catch you later.',
 ];
 const SINGLE_PHRASES = [
     ['Hold on', 'Let me think about that.'],

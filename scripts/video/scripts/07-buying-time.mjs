@@ -35,7 +35,7 @@ export default {
     { speaker: 'narrator', highlight: '#transcriptSection',
       say: "That wasn't Marc tapping anything. A moment after the other person stops talking, Conversant says something like that, in Marc's voice, so they know he's thinking about his answer." },
     { speaker: 'narrator', waitFor: card(1) + ' .response-text', highlight: '#responseOptions',
-      say: "Then the options arrive. You can change the holding phrases, and how long it waits before saying one, in Settings." },
+      say: "Then the options arrive. In Settings, you can change the holding phrases, and how soon Conversant says them." },
     { speaker: 'narrator', highlight: '#holdOnBtn', press: true, before: markSpoken,
       say: "If you need more time, tap Hold on. Conversant tells them you're still thinking." },
     { speaker: 'user', until: untilNewSpeech, say: lastSpoken },
