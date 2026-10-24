@@ -32,11 +32,11 @@ Groups 1 and 2 are a path, watched in order. Together they take a new user from 
 
 | # | Video | You'll be able to | Method | Versions |
 |---|---|---|---|---|
-| 1.1 | What Conversant is for | Explain what the app does and why it suggests replies | Staged | One |
+| 1.1 | What Conversant is for | Explain what the app does and why it suggests replies | Staged (made) | One |
 | 1.2 | Installing Conversant | Open it from its own icon | By hand | Computer, iPad, Android |
-| 1.3 | Adding your AI key | Paste the key we gave you and test it | Staged | One |
+| 1.3 | Adding your AI key | Paste the key we gave you and test it | Staged (made) | One |
 | 1.4 | Keeping your information safe | Choose a data folder (computer, Android) or make a backup (iPad) | By hand | Computer and Android, iPad |
-| 1.5 | Do you need a speech service? | Tell whether your device needs one, and who to talk to if it does | Staged | One |
+| 1.5 | Do you need a speech service? | Tell whether your device needs one, and who to talk to if it does | Staged (made) | One |
 
 Video 1.5 is short on purpose. During the beta, speech keys are arranged with us directly, so it explains which setups need one and says to get in touch before signing up for anything.
 
@@ -89,6 +89,8 @@ Video 1.5 is short on purpose. During the beta, speech keys are arranged with us
 That's 31 topics. Counting device versions, it's 35 videos.
 
 ## Companion pages
+
+**Built (October 24 2026):** every video's page is made in the same run as the video, from the same pictures (`Videos/<id>.pdf`), and the course map is `Videos/Learning Conversant.pdf` (`node scripts/video/make-course-map.mjs`). Titles, summaries and the order live in `scripts/video/course.json`. The screenshot list for the by-hand videos is `Videos/Screenshots to take.md`.
 
 Each video gets a one-page guide with the same title, made from the same script so the two can't disagree:
 

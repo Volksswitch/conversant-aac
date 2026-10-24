@@ -13,7 +13,7 @@ const STEER = "we're going to a Brewers game";
 const REPLY = "We're going to a Brewers game! I can't wait.";
 
 export default {
-  id: '05-own-words',
+  id: '2.5-own-words',
   title: 'In Your Own Words',
   settings: { maxPlaceholders: 0 },
   ai: {
@@ -38,6 +38,9 @@ export default {
       ] },
     ],
   },
+  trouble: [
+    "To type on a keyboard that appears on the screen, choose it in Settings, Express Panel and Keyboard.",
+  ],
   steps: [
     { speaker: 'narrator',
       say: "Sometimes none of the options say what you want. Then you can type it yourself." },
@@ -47,10 +50,13 @@ export default {
     { speaker: 'narrator', highlight: '#responseOptions',
       say: "These are fine, but Marc has something specific to tell them." },
     { speaker: 'narrator', highlight: ownWordsBtn, press: true,
+      page: "Tap this button to open the box for your own words.",
       say: "Tap this button to open a box where you can type." },
     { speaker: 'narrator', waitFor: '#composerInput', before: (p) => typeInto(p, '#composerInput', TYPED), highlight: '#composerInput',
+      page: "Type what you want to say.",
       say: "Marc has set Conversant to use his computer's own keyboard, so he types there. You can also choose a keyboard that appears on the screen." },
     { speaker: 'narrator', highlight: '#speakBtn', press: true,
+      page: "Tap Speak, and Conversant says your words exactly.",
       say: "Then tap Speak, and Conversant says your words exactly." },
     { speaker: 'user', waitFor: onScreen(TYPED), say: TYPED },
     // ⚠ After a typed reply to the partner's FIRST line, the app turns listening
@@ -70,10 +76,13 @@ export default {
     { speaker: 'narrator', highlight: ownWordsBtn, press: true,
       say: "Open it again," },
     { speaker: 'narrator', waitFor: '#composerInput', before: (p) => typeInto(p, '#composerInput', STEER), highlight: '#composerInput',
+      page: "Or type a few words about what you want to get across,",
       say: "and type a few words about what you want to get across." },
     { speaker: 'narrator', highlight: '#reframeBtn', press: true,
+      page: "and tap Reframe. Conversant writes four new options built from your words.",
       say: "This time, tap Reframe. Instead of saying your words, Conversant writes four new options built from them." },
     { speaker: 'narrator', waitFor: cardSays(1, REPLY), highlight: '#responseOptions',
+      page: "Tap the new option you want.",
       say: "Now the options are about the game." },
     { speaker: 'narrator', tap: card(1), press: true,
       say: "Marc picks this one." },

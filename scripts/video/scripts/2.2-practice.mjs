@@ -15,7 +15,7 @@ const card = (n) => `#responseOptions > .response-cell:nth-child(${n})`;
 const onScreen = (text) => `#transcriptSection ::-p-text(${text})`;
 
 export default {
-  id: '02-practice',
+  id: '2.2-practice',
   title: 'A Practice Conversation',
   settings: {
     // Holding phrases would fire on a timer, at a different moment each render.
@@ -39,20 +39,28 @@ export default {
       ] },
     ],
   },
+  trouble: [
+    "Only \"A tour of the buttons\" is listed: practicing a conversation needs your AI key. Add it in Settings, General, then come back.",
+  ],
   steps: [
     { speaker: 'narrator',
       say: "Conversant can play the other person, so you can try out a whole conversation before you need one. Let's practice ordering a coffee." },
     { speaker: 'narrator', highlight: '#settingsBtn', press: true,
+      page: "Tap Settings.",
       say: "To start, tap Settings." },
     { speaker: 'narrator', waitFor: '#settingsDialog[open]',
       highlight: '#settingsTabs .settings-tab[data-tab="practice"]', press: true,
+      page: "Tap Practice.",
       say: "Then tap Practice." },
     { speaker: 'narrator', waitFor: '.practice-card', highlight: '::-p-xpath(//button[contains(@class,"practice-card")][.//*[text()="Ordering at a coffee shop"]])', press: true,
+      page: "Pick something to practice.",
       say: "Pick something to practice. Let's choose ordering at a coffee shop." },
     { speaker: 'narrator', highlight: '#listenBtn', press: true,
+      page: "Tap Listen to let the other person talk.",
       say: "In a practice, tapping Listen is how you let the other person talk. Tap it whenever it's their turn." },
     { speaker: 'partner', waitFor: card(1) + ' .response-text', say: PARTNER_1 },
     { speaker: 'narrator', highlight: '#responseOptions',
+      page: "Read your options, and tap the one you'd like to say. Tap Listen again when it's their turn.",
       say: "Here are your four options. Read them, and tap the one you'd like to say." },
     { speaker: 'narrator', tap: card(1), press: true,
       say: "Let's order a coffee." },
@@ -66,6 +74,7 @@ export default {
       say: "Hot sounds good." },
     { speaker: 'user', waitFor: onScreen(REPLY_2), say: REPLY_2 },
     { speaker: 'narrator', highlight: '#endConversationBtn', press: true,
+      page: "When you're done, tap End conversation.",
       say: "When you're done, tap End conversation." },
     { speaker: 'narrator',
       say: "That's a practice. Try the others too, and practice as often as you like. Next, your first real conversation." },

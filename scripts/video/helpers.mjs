@@ -57,3 +57,9 @@ export async function typeInto(page, selector, text) {
 
 // The button that opens "In my own words".
 export const ownWordsBtn = '#expressPanel button[aria-label*="own words" i]';
+
+// A Settings section heading, found by its words. Tapping it opens the section.
+export const section = (name) => `::-p-xpath(//dialog[@open]//summary[.//*[normalize-space(text())=${JSON.stringify(name)}]])`;
+
+// A Settings tab, by its name in the code (data-tab).
+export const settingsTab = (name) => `#settingsTabs .settings-tab[data-tab="${name}"]`;

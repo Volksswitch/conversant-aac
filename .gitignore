@@ -114,3 +114,7 @@ Videos/**/*.wav
 Videos/**/*.png
 Videos/.work/
 Videos/.cache/
+Videos/**/*.pdf
+Videos/**/*.srt
+Videos/*.pdf
+Videos/*.srt

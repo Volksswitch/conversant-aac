@@ -12,7 +12,7 @@ const P1 = "Hey, did you get a chance to read the one I recommended last week?";
 const REPLY = "Yes! I loved it. The ending was amazing.";
 
 export default {
-  id: '07-buying-time',
+  id: '2.7-buying-time',
   title: 'Buying Yourself Time',
   settings: { maxPlaceholders: 2, initialDelay: 2, subsequentDelay: 10 },
   ai: {
@@ -25,6 +25,9 @@ export default {
       ] },
     ],
   },
+  trouble: [
+    "Holding phrases feel like too much? In Settings, Placeholders, you can change them, have them come later, or turn them off.",
+  ],
   steps: [
     { speaker: 'narrator',
       say: "Choosing a reply takes time, and a long silence can feel awkward. Conversant helps fill it." },
@@ -33,16 +36,20 @@ export default {
     { speaker: 'partner', before: (p) => hear(p, P1), waitFor: onScreen('recommended last week'), say: P1 },
     { speaker: 'user', until: untilNewSpeech, say: lastSpoken },
     { speaker: 'narrator', highlight: '#transcriptSection',
+      page: "While you read, Conversant says a short holding phrase in your voice, so they know you're thinking.",
       say: "That wasn't Marc tapping anything. A moment after the other person stops talking, Conversant says something like that, in Marc's voice, so they know he's thinking about his answer." },
     { speaker: 'narrator', waitFor: card(1) + ' .response-text', highlight: '#responseOptions',
       say: "Then the options arrive. In Settings, you can change the holding phrases, and how soon Conversant says them." },
     { speaker: 'narrator', highlight: '#holdOnBtn', press: true, before: markSpoken,
+      page: "Need more time? Tap Hold on.",
       say: "If you need more time, tap Hold on. Conversant tells them you're still thinking." },
     { speaker: 'user', until: untilNewSpeech, say: lastSpoken },
     { speaker: 'narrator', tap: card(1), press: true,
+      page: "When you're ready, tap your reply.",
       say: "When you're ready, tap your reply." },
     { speaker: 'user', waitFor: onScreen(REPLY), say: REPLY },
     { speaker: 'narrator', highlight: '#sayAgainBtn', press: true, before: markSpoken,
+      page: "If they didn't catch it, tap Repeat what I said.",
       say: "And if they didn't catch what you said, tap Repeat what I said." },
     { speaker: 'user', until: untilNewSpeech, say: lastSpoken },
     { speaker: 'narrator',

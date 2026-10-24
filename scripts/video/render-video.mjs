@@ -1,6 +1,6 @@
 // Turns a how-to video script into a finished video.
 //
-//   node scripts/video/render-video.mjs scripts/video/scripts/01-screen-tour.mjs
+//   node scripts/video/render-video.mjs scripts/video/scripts/2.1-screen-tour.mjs
 //
 // Output: Videos/<id>.mp4 and Videos/<id>.srt (a caption file a player can show
 // on request; nothing is drawn over the picture).
@@ -26,6 +26,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import puppeteer from 'puppeteer';
 import { ROOT, readAzureKey, synthesize, pace } from './azure.mjs';
+import { makeCompanion, placeInCourse } from './companion.mjs';
 
 const PORT = 8123;
 const VIEW = { width: 1280, height: 720, deviceScaleFactor: 1.5 }; // 1920 x 1080 video
@@ -93,7 +94,7 @@ async function startServer() {
 // everything, positioned on the target's own box.
 async function mark(page, selector, kind) {
   await page.evaluate(() => document.getElementById('vid-mark')?.remove());
-  if (!selector) return;
+  if (!selector) return null;
   // Resolved through Puppeteer rather than querySelector, so a script can name a
   // control by its words with ::-p-text(...), as a person would.
   const handle = await page.$(selector);
@@ -128,9 +129,10 @@ async function mark(page, selector, kind) {
     // The top layer sits above any z-index, so the mark must live in an open dialog
     // when one is showing, or it would be drawn underneath it.
     (document.querySelector('dialog[open]') || document.body).appendChild(m);
-    return true;
+    return { left: L, top: T, right: R, bottom: B };
   }, kind);
   if (!ok) throw new Error(`STOPPING - nothing on screen matches ${selector}`);
+  return ok;
 }
 
 const clearMark = (page) => page.evaluate(() => document.getElementById('vid-mark')?.remove());
@@ -203,6 +205,12 @@ async function openApp(browser, script) {
           usage: { input_tokens: 1, output_tokens: 1 },
         }), { status: 200, headers: { 'content-type': 'application/json' } });
       }
+      // The key test asks for the list of models. Answered here, so "Test" says the
+      // key works without any real key existing.
+      if (String(url).startsWith('https://api.anthropic.com/v1/models')) {
+        return new Response(JSON.stringify({ data: [] }),
+          { status: 200, headers: { 'content-type': 'application/json' } });
+      }
       return realFetch(url, init);
     };
     // The video supplies every voice itself, so the device's own speech is replaced
@@ -247,6 +255,14 @@ async function openApp(browser, script) {
       },
     };
 
+    // The version line under Start reads "dev" on a local copy, which means
+    // nothing to a viewer, so it is hidden in every video.
+    document.addEventListener('DOMContentLoaded', () => {
+      const st = document.createElement('style');
+      st.textContent = '#startVersion { visibility: hidden !important; }';
+      document.head.appendChild(st);
+    });
+
     // A fixed sequence of "random" numbers, so anything the app picks at random
     // (which holding phrase to say) comes out the same on every render.
     let seed = 20261024;
@@ -269,6 +285,9 @@ async function openApp(browser, script) {
     }));
   }, script.settings || {});
   await page.goto(url, { waitUntil: 'networkidle0' });
+  // A script that shows the very first screens (before Start) opens the app and
+  // leaves it there.
+  if (script.start === false) return page;
   await page.click('#startBtn');
   await pace(1200);
   const started = await page.evaluate(() => {
@@ -303,7 +322,9 @@ async function main() {
   const server = await startServer();
   const browser = await puppeteer.launch({ headless: true, args: ['--mute-audio'] });
   const segments = [];
+  const frames = [];
   const srt = [];
+  placeInCourse(script.id);   // a script missing from the course stops here, before any work
   let t = 0;
   try {
     const page = await openApp(browser, script);
@@ -321,9 +342,10 @@ async function main() {
           throw new Error(`STOPPING - step ${i + 1} waited for ${step.waitFor}, which never appeared. The screen at that moment: ${fail}`);
         });
       await settle(page);
-      await mark(page, step.tap || step.highlight, step.tap ? 'tap' : 'ring');
+      const box = await mark(page, step.tap || step.highlight, step.tap ? 'tap' : 'ring');
       const shot = path.join(work, `${String(i).padStart(2, '0')}.png`);
       await page.screenshot({ path: shot });
+      frames.push({ file: shot, box, view: VIEW });
       // A step with press: true then really taps what it pointed at, so the app
       // does the work and the next picture shows the result.
       if (step.press) {
@@ -347,6 +369,9 @@ async function main() {
       t += dur;
       console.log(`step ${i + 1}/${script.steps.length}  ${dur.toFixed(1)}s  ${step.speaker}`);
     }
+    // The companion page, from the same pictures, while the browser is still open.
+    const pdf = await makeCompanion({ browser, script, frames, seconds: t, ffmpeg: FFMPEG });
+    console.log(`${path.relative(ROOT, pdf)}`);
   } finally {
     await browser.close();
     server.kill();

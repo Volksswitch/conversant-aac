@@ -2542,6 +2542,7 @@ The plan, course order and decisions are in [VIDEO-PLAN.md](VIDEO-PLAN.md). Each
 - **Only the app's own page is captured, never the desktop** (Ken's condition).
 - **Live videos fix the AI's answers in the script** (the app's request is answered by the renderer), and the device voice is replaced by a silent stand-in. An AI request the script did not plan for stops the render.
 - **Narration never names a position** ("top", "left"); it says "this button" and the ring points, because layouts differ by device and setting.
+- **Each video's one-page companion PDF is made in the same run, from the same pictures** (script steps carrying `page:`), and refuses to run past one page. Titles, summaries and order live in `scripts/video/course.json`, shared by videos, pages and the course map.
 - **Hosted on the website as downloads** (it cannot stream), so files must stay small. **No burned-in captions**; a caption file is written alongside.
 
 ## Keeping product documents in sync — trigger phrase "sync docs" (Ken, July 8 2026)

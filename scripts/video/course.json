@@ -1,0 +1,46 @@
+{
+  "_note": "The course: every video in viewing order. The video scripts, the companion pages and the course map all read their titles, one-line summaries and 'watch next' from here, so a title is changed in one place. 'id' is the script's id (scripts/video/scripts/<id>.mjs); an entry with no id has no script yet. 'path': true marks the two groups watched in order.",
+  "groups": [
+    { "name": "Getting started", "path": true, "items": [
+      { "num": "1.1", "id": "1.1-what-for", "title": "What Conversant Is For", "learn": "What Conversant does, and why it suggests replies for you." },
+      { "num": "1.2", "title": "Installing Conversant", "learn": "Open Conversant from its own icon." },
+      { "num": "1.3", "id": "1.3-ai-key", "title": "Adding Your AI Key", "learn": "Paste the key we gave you, and check that it works." },
+      { "num": "1.4", "title": "Keeping Your Information Safe", "learn": "Choose a data folder, or make a backup on an iPad." },
+      { "num": "1.5", "id": "1.5-speech-service", "title": "Do You Need a Speech Service?", "learn": "Whether your device needs one, and who to ask if it does." }
+    ] },
+    { "name": "Your first conversations", "path": true, "items": [
+      { "num": "2.1", "id": "2.1-screen-tour", "title": "A Tour of the Screen", "learn": "Name each part of the Conversant screen." },
+      { "num": "2.2", "id": "2.2-practice", "title": "A Practice Conversation", "learn": "Have a whole conversation with a pretend partner." },
+      { "num": "2.3", "id": "2.3-first-conversation", "title": "Your First Real Conversation", "learn": "Listen, read your options, and tap one." },
+      { "num": "2.4", "id": "2.4-hears-wrong", "title": "When It Hears Wrong", "learn": "Check what it heard, ask them to repeat, and get new options." },
+      { "num": "2.5", "id": "2.5-own-words", "title": "In Your Own Words", "learn": "Type what you want to say, or use your words to get better options." },
+      { "num": "2.6", "id": "2.6-start-and-end", "title": "Starting and Ending a Conversation", "learn": "Open a conversation yourself, and close one politely." },
+      { "num": "2.7", "id": "2.7-buying-time", "title": "Buying Yourself Time", "learn": "Keep the conversation going while you think." }
+    ] },
+    { "name": "Making it yours", "items": [
+      { "num": "3.1", "title": "About Me: A Few Answers Go a Long Way", "learn": "Answer the questions that matter most first." },
+      { "num": "3.2", "title": "The People in Your Life", "learn": "Add a person and say how you talk with them." },
+      { "num": "3.3", "title": "Your Places", "learn": "Add a place and what's worth knowing about it." },
+      { "num": "3.4", "title": "Your Goals", "learn": "Set what you want from a person, a place, or any conversation." },
+      { "num": "3.5", "title": "Changing an Express Panel Button", "learn": "Change a button's words, add one, and move one." },
+      { "num": "3.6", "title": "How the Express Panel Is Organized", "learn": "Use the three groups of buttons and the More button." },
+      { "num": "3.7", "title": "Telling Conversant Who, Where and How You Feel", "learn": "Tap a person, place or feeling button and see the options change." },
+      { "num": "3.8", "title": "Your Voice", "learn": "Choose a voice, and fix a name it says wrong." },
+      { "num": "3.9", "title": "Your Own Openers and Goodbyes", "learn": "Change the phrases behind the Command Bar buttons." },
+      { "num": "3.10", "title": "Looking Back at a Conversation", "learn": "Rewrite a reply so Conversant learns how you'd say it." }
+    ] },
+    { "name": "Fitting it to you", "items": [
+      { "num": "4.1", "title": "Button Size and Spacing", "learn": "Make buttons easier to hit." },
+      { "num": "4.2", "title": "Screen Layout", "learn": "Choose a layout and where the keyboard sits." },
+      { "num": "4.3", "title": "One Tap or Two", "learn": "Guard against taps you didn't mean." },
+      { "num": "4.4", "title": "Text Size and Colors", "learn": "Make the screen easier to read." },
+      { "num": "4.5", "title": "Timing", "learn": "Change how long Conversant waits, and its holding phrases." },
+      { "num": "4.6", "title": "Keyguards", "learn": "Get the measurements to have a keyguard made." }
+    ] },
+    { "name": "Keeping things running", "items": [
+      { "num": "5.1", "title": "Telling Us About a Problem", "learn": "Send a problem report." },
+      { "num": "5.2", "title": "Backups and Moving to a New Device", "learn": "Save everything, and bring it back." },
+      { "num": "5.3", "title": "Keeping a Conversation Private", "learn": "Use \"Don't save this conversation\"." }
+    ] }
+  ]
+}

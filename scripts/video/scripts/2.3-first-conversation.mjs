@@ -11,7 +11,7 @@ const R1 = "Yes please! I've been waiting all month for that one.";
 const R2 = "No, that's it for today. Thanks!";
 
 export default {
-  id: '03-first-conversation',
+  id: '2.3-first-conversation',
   title: 'Your First Real Conversation',
   settings: { maxPlaceholders: 0 },
   ai: {
@@ -30,20 +30,29 @@ export default {
       ] },
     ],
   },
+  trouble: [
+    "Nothing appears when they talk: check that Listen is red, and that you're online.",
+    "On an Android device, or an iPad using the Home Screen app, Conversant needs a speech service to hear. See video 1.5.",
+  ],
   steps: [
     { speaker: 'narrator',
       say: "Let's watch Marc have a real conversation at his favorite comic store." },
     { speaker: 'narrator', highlight: '#listenBtn', press: true,
+      page: "When someone starts talking to you, tap Listen. It turns red while Conversant is listening.",
       say: "When someone starts talking to you, tap Listen. The button turns red while Conversant is listening." },
     { speaker: 'partner', before: (p) => hear(p, P1), waitFor: card(1) + ' .response-text', say: P1 },
     { speaker: 'narrator', highlight: '#transcriptSection',
+      page: "Check what Conversant heard them say.",
       say: "Conversant writes down what they said, so you can check that it heard them right." },
     { speaker: 'narrator', highlight: '#responseOptions',
+      page: "When they stop talking, read your four options.",
       say: "As soon as they stop talking, your four options appear." },
     { speaker: 'narrator', tap: card(1), press: true,
+      page: "Tap the one you want to say.",
       say: "Tap the one you want to say." },
     { speaker: 'user', waitFor: onScreen(R1), say: R1 },
     { speaker: 'narrator', highlight: '#listenBtn', press: true,
+      page: "When it's their turn again, tap Listen.",
       say: "After you speak, Conversant stops listening. When it's their turn, tap Listen again. If you'd like it to start listening again by itself, there's a setting for that." },
     { speaker: 'partner', before: (p) => hear(p, P2), waitFor: onScreen('Anything else today'), until: (p) => p.waitForSelector(cardSays(1, R2)), say: P2 },
     { speaker: 'narrator', highlight: '#responseOptions',
@@ -52,6 +61,7 @@ export default {
       say: "Marc's done shopping, so he picks this one." },
     { speaker: 'user', waitFor: onScreen(R2), say: R2 },
     { speaker: 'narrator', highlight: '#endConversationBtn', press: true,
+      page: "When the conversation's over, tap End conversation.",
       say: "When the conversation's over, tap End conversation. That clears the screen, ready for the next one." },
     { speaker: 'narrator',
       say: "That's a conversation. Next: what to do when Conversant doesn't hear them right." },
