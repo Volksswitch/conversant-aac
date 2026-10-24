@@ -132,8 +132,11 @@ def build_watch(item, v, nxt, nxt_url, list_url):
             '<div id="cv-wrap" style="position:relative;max-width:960px;">'
             f'<video id="cv-video" src="{e(v["video"]["url"])}" controls playsinline preload="metadata" '
             'style="width:100%;display:block;background:#000;"></video>'
-            '<div id="cv-end" hidden style="position:absolute;inset:0;background:rgba(20,30,45,0.88);'
-            'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;">'
+            # Hidden by display:none, NOT the hidden attribute: an inline display
+            # value overrides that attribute, so the button showed before the video
+            # had even started (Ken, October 24 2026).
+            '<div id="cv-end" style="position:absolute;inset:0;background:rgba(20,30,45,0.88);'
+            'display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;">'
             f'<a id="cv-next" href="{e(target)}" style="background:#ff6d00;color:#fff;font-size:1.4em;'
             'font-weight:bold;padding:16px 28px;border-radius:10px;text-decoration:none;">'
             f'{e(label)} &rarr;</a>'
@@ -143,9 +146,9 @@ def build_watch(item, v, nxt, nxt_url, list_url):
             f'<p><a href="{e(v["guide"]["url"])}" target="_blank" rel="noopener">The guide for this video (PDF)</a></p>' + NL +
             f'<p><a href="{e(target)}">{e(label)} &rarr;</a> &nbsp;|&nbsp; <a href="{e(list_url)}">All the videos</a></p>' + NL +
             ('<script>(function(){var v=document.getElementById("cv-video"),end=document.getElementById("cv-end");'
-            'v.addEventListener("ended",function(){end.hidden=false;end.style.display="flex";'
+            'v.addEventListener("ended",function(){end.style.display="flex";'
             'document.getElementById("cv-next").focus();});'
-            'document.getElementById("cv-again").addEventListener("click",function(){end.hidden=true;'
+            'document.getElementById("cv-again").addEventListener("click",function(){'
             'end.style.display="none";v.currentTime=0;v.play();});'
             'if(/[?&]play=1/.test(location.search)){var p=v.play();if(p&&p.catch)p.catch(function(){});}'
             '})();</script>') + NL +
