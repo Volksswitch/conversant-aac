@@ -106,3 +106,9 @@ test-data-folder/
 .azure-key
 .azure-key.*
 *azure*key*
+# Rendered how-to video media. The scripts that make them are in scripts/video
+# and are tracked; the audio and video they produce can always be made again.
+Videos/**/*.mp3
+Videos/**/*.mp4
+Videos/**/*.wav
+Videos/**/*.png
