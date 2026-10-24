@@ -72,11 +72,11 @@ def safe_name(text):
 
 def build_page(cfg, course):
     out = ['<!-- wp:paragraph -->\n<p>Short videos, about two minutes each, that show you how to use '
-           'Conversant AAC. Each has a one-page guide with the same steps. The videos download to '
-           'your device and play there.</p>\n<!-- /wp:paragraph -->']
+           'Conversant AAC. Each has a one-page guide with the same steps. Each video opens in its '
+           'own tab, and when it finishes you can go straight on to the next one.</p>\n<!-- /wp:paragraph -->']
     if cfg.get('courseMap'):
         out.append('<!-- wp:paragraph -->\n<p>New to Conversant? Start with "Your first conversations" and '
-                   f'watch those in order. <a href="{html.escape(cfg["courseMap"]["url"])}">'
+                   f'watch those in order. <a href="{html.escape(cfg["courseMap"]["url"])}" target="_blank" rel="noopener">'
                    'The full list (PDF)</a>.</p>\n<!-- /wp:paragraph -->')
     for g in course['groups']:
         rows = []
@@ -86,10 +86,10 @@ def build_page(cfg, course):
                 continue
             rows.append(
                 f'<tr><td>{html.escape(item["num"])}</td>'
-                f'<td><a href="{html.escape(v["video"]["url"])}">{html.escape(item["title"])}</a> '
+                f'<td><a href="{html.escape((v.get("page") or v["video"])["url"])}" target="_blank" rel="noopener">{html.escape(item["title"])}</a> '
                 f'({length(v["seconds"])})</td>'
                 f'<td>{html.escape(item["learn"])}</td>'
-                f'<td><a href="{html.escape(v["guide"]["url"])}">Guide (PDF)</a></td></tr>')
+                f'<td><a href="{html.escape(v["guide"]["url"])}" target="_blank" rel="noopener">Guide (PDF)</a></td></tr>')
         if not rows:
             continue
         heading = g['name'] + (' (watch these in order)' if g.get('path') else '')
@@ -104,6 +104,81 @@ def course_map_signature(cfg, course):
     listed = [(i['num'], i['title'], i['learn']) for g in course['groups'] for i in g['items']
               if i.get('id') in cfg['videos']]
     return hashlib.sha256(json.dumps(listed).encode()).hexdigest()
+
+
+# One watch page per video, a child of the list page. The video plays in the page;
+# when it ends, a "Next" button covers the player and goes straight to the next
+# video's page, which tries to start playing at once (a browser may still ask for
+# a tap; that is the browser's rule, not ours). The same link also sits below the
+# player for anyone who wants it sooner. Pages are made public, like the list page,
+# which is reachable only once the site links to it.
+NL = chr(10)
+WATCH_SLUG = 'video-{num}'
+
+
+def watch_slug(item):
+    return WATCH_SLUG.format(num=item['num'].replace('.', '-'))
+
+
+def build_watch(item, v, nxt, nxt_url, list_url):
+    if nxt:
+        label = f'Next: {nxt["num"]} {nxt["title"]}'
+        target = nxt_url + '?play=1'
+    else:
+        label = 'Back to all the videos'
+        target = list_url
+    e = html.escape
+    return ('<!-- wp:html -->' + NL +
+            '<div id="cv-wrap" style="position:relative;max-width:960px;">'
+            f'<video id="cv-video" src="{e(v["video"]["url"])}" controls playsinline preload="metadata" '
+            'style="width:100%;display:block;background:#000;"></video>'
+            '<div id="cv-end" hidden style="position:absolute;inset:0;background:rgba(20,30,45,0.88);'
+            'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;">'
+            f'<a id="cv-next" href="{e(target)}" style="background:#ff6d00;color:#fff;font-size:1.4em;'
+            'font-weight:bold;padding:16px 28px;border-radius:10px;text-decoration:none;">'
+            f'{e(label)} &rarr;</a>'
+            '<button id="cv-again" type="button" style="font-size:1.1em;padding:10px 20px;border-radius:8px;">'
+            'Watch this one again</button></div></div>' + NL +
+            f'<p>{e(item["learn"])} ({length(v["seconds"])})</p>' + NL +
+            f'<p><a href="{e(v["guide"]["url"])}" target="_blank" rel="noopener">The guide for this video (PDF)</a></p>' + NL +
+            f'<p><a href="{e(target)}">{e(label)} &rarr;</a> &nbsp;|&nbsp; <a href="{e(list_url)}">All the videos</a></p>' + NL +
+            ('<script>(function(){var v=document.getElementById("cv-video"),end=document.getElementById("cv-end");'
+            'v.addEventListener("ended",function(){end.hidden=false;end.style.display="flex";'
+            'document.getElementById("cv-next").focus();});'
+            'document.getElementById("cv-again").addEventListener("click",function(){end.hidden=true;'
+            'end.style.display="none";v.currentTime=0;v.play();});'
+            'if(/[?&]play=1/.test(location.search)){var p=v.play();if(p&&p.catch)p.catch(function(){});}'
+            '})();</script>') + NL +
+            '<!-- /wp:html -->')
+
+
+def update_watch_pages(cfg, course, list_page, apply):
+    items = [i for g in course['groups'] for i in g['items'] if i.get('id') in cfg['videos']]
+    base = list_page['link'].rstrip('/') + '/'
+    url_of = {i['id']: base + watch_slug(i) + '/' for i in items}
+    for n, item in enumerate(items):
+        v = cfg['videos'][item['id']]
+        nxt = items[n + 1] if n + 1 < len(items) else None
+        content = build_watch(item, v, nxt, url_of[nxt['id']] if nxt else None, list_page['link'])
+        title = f'{item["num"]} {item["title"]}'
+        page = v.get('page')
+        if page:
+            current = call('GET', f'/wp/v2/pages/{page["id"]}?context=edit')
+            if current['content']['raw'].strip() == content.strip() and current['title']['raw'] == title:
+                continue
+            print(f'  WATCH PAGE {"UPDATED" if apply else "would be updated"}: {title}')
+            if apply:
+                call('POST', f'/wp/v2/pages/{page["id"]}', {'title': title, 'content': content})
+        else:
+            print(f'  WATCH PAGE {"MADE" if apply else "would be made"}: {title}')
+            if apply:
+                made = call('POST', '/wp/v2/pages', {'title': title, 'slug': watch_slug(item),
+                                                     'parent': list_page['id'], 'status': 'publish',
+                                                     'content': content})
+                v['page'] = {'id': made['id'], 'url': made['link']}
+                if made['link'] != url_of[item['id']]:
+                    raise SystemExit(f'The page for {title} landed at {made["link"]}, not {url_of[item["id"]]}; '
+                                     "the Next links on the pages beside it would be wrong. Nothing more has been changed.")
 
 
 def main():
@@ -157,8 +232,11 @@ def main():
                 replaced.append(cfg['courseMap'])
             cfg['courseMap'] = {'signature': sig, **up}
 
-    content = build_page(cfg, course)
     pages = call('GET', f'/wp/v2/pages?slug={cfg["page"]}&status=publish,draft,private&context=edit')
+    if pages:
+        # Watch pages first, so the list page can link to them.
+        update_watch_pages(cfg, course, pages[0], apply)
+    content = build_page(cfg, course)
     if not pages:
         print(f'  The page "{cfg["pageTitle"]}" does not exist yet; it will be made as a DRAFT.')
         if apply:
