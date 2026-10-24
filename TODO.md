@@ -37,6 +37,12 @@ the one that quietly waits forever.
 
 ## Open
 
+### A typed first reply turns listening back on; a tapped one does not
+- **Raised:** 2026-10-24 - found while making how-to video 2.5. The partner speaks first, nothing has been answered yet, and the user replies. If the reply is a tapped option, Listen goes off. If it is typed in "In my own words" and spoken (or is an Express phrase), Listen comes back on by itself.
+- **Cause:** `speakAsUserTurn` decides "this reply opens the conversation" from the conversation history being empty. The partner's first, unanswered words are not in the history yet, so a reply to them counts as opening the conversation, and opening one turns listening on (August 7 2026 decision). The option path has no such rule.
+- **What is wanted:** Ken decides which behavior is right for a reply to the partner's first line, and both paths do the same. Turning listening on may be the better of the two (a reply is coming); the inconsistency is the fault.
+- **Why not now:** found while working on videos; a behavior choice for Ken. Video 2.5 is written to work either way.
+
 ### Suggestions state facts about the user's body they never gave
 - **Raised:** 2026-10-18 - found in the first Spanish test, confirmed in English. A nurse asks "On a scale of one to ten, how much does it hurt?" and the first option, in both languages and in every run, says it hurts a lot ("It hurts quite a bit right now." / "Me duele bastante, es un dolor fuerte."). Ken asked for this item.
 - **What is wanted:** decide what the options should do when the partner asks about the user's pain, symptoms or body, where only the user knows the answer. Likely direction, matching the October 9 2026 decision on self-harm screening questions (no generated Yes or No): offer options that do not state a level ("Let me show you on the numbers", "It comes and goes"), and leave the actual number to the number button and the actual answer to the user. Then test with a set of medical questions (pain level, where it hurts, how long, how bad compared with yesterday) and check that no option asserts something the user did not say.

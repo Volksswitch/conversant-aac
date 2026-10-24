@@ -44,13 +44,13 @@ Video 1.5 is short on purpose. During the beta, speech keys are arranged with us
 
 | # | Video | You'll be able to | Method |
 |---|---|---|---|
-| 2.1 | A tour of the screen | Name each part of the screen | Staged (done) |
-| 2.2 | A practice conversation | Have a whole conversation with a pretend partner | Live |
-| 2.3 | Your first real conversation | Listen, read the options, and tap one | Live |
-| 2.4 | When it hears wrong | Check what it heard, ask them to repeat, and get new options | Live |
-| 2.5 | In your own words | Type what you want to say, or use your words to get better options | Live |
-| 2.6 | Starting and ending a conversation | Open with Start conversation, close with Wrap up and End conversation | Live |
-| 2.7 | Buying yourself time | Use Hold on and Repeat what I said, and know what the app says while you choose | Live |
+| 2.1 | A tour of the screen | Name each part of the screen | Staged (made) |
+| 2.2 | A practice conversation | Have a whole conversation with a pretend partner | Live (made) |
+| 2.3 | Your first real conversation | Listen, read the options, and tap one | Live (made) |
+| 2.4 | When it hears wrong | Check what it heard, ask them to repeat, and get new options | Live (made) |
+| 2.5 | In your own words | Type what you want to say, or use your words to get better options | Live (made) |
+| 2.6 | Starting and ending a conversation | Open with Start conversation, close with Wrap up and End conversation | Live (made) |
+| 2.7 | Buying yourself time | Use Hold on and Repeat what I said, and know what the app says while you choose | Live (made) |
 
 ### 3. Making it yours (menu)
 

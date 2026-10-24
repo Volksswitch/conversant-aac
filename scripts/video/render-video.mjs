@@ -155,7 +155,7 @@ async function settle(page) {
 function makeAI(ai = {}) {
   const partnerLines = [...(ai.partnerLines || [])];
   const responseSets = [...(ai.responseSets || [])];
-  return (bodyText) => {
+  return async (bodyText) => {
     const body = JSON.parse(bodyText);
     const system = JSON.stringify(body.system || '');
     if (system.includes('role-playing a communication partner')) {
@@ -167,6 +167,8 @@ function makeAI(ai = {}) {
       if (!responseSets.length) throw new Error('The app asked for options the script does not have.');
       const set = responseSets.shift();
       console.log('  [ai] response options');
+      // A set can arrive late on purpose, to show what the app does while it waits.
+      if (set.delayMs) await pace(set.delayMs);
       return JSON.stringify({
         partner_action: set.partnerAction || 'QUESTION', turn_status: 'COMPLETE',
         is_repair_initiator: false, offered_options: set.offered || [], offered_range: null,
@@ -178,6 +180,7 @@ function makeAI(ai = {}) {
 }
 
 async function openApp(browser, script) {
+  await browser.defaultBrowserContext().overridePermissions(`http://localhost:${PORT}`, ['microphone']);
   const page = await browser.newPage();
   await page.setViewport(VIEW);
   const answer = makeAI(script.ai);
@@ -185,8 +188,8 @@ async function openApp(browser, script) {
   // render says why.
   page.on('console', (m) => { if (m.type() === 'error') console.log(`  [page] ${m.text()}`); });
   page.on('pageerror', (e) => console.log(`  [page] ${e.message}`));
-  await page.exposeFunction('__videoAI', (bodyText) => {
-    try { return answer(bodyText); }
+  await page.exposeFunction('__videoAI', async (bodyText) => {
+    try { return await answer(bodyText); }
     catch (e) { console.log(`  [ai] ${e.message}`); throw e; }
   });
   await page.evaluateOnNewDocument(() => {
@@ -205,14 +208,54 @@ async function openApp(browser, script) {
     // The video supplies every voice itself, so the device's own speech is replaced
     // by a silent stand-in that finishes at once. Without it the app waits on a
     // voice the headless browser may never finish.
+    // Everything the app says is kept in window.__spoken, so a script can voice
+    // exactly the words the app chose.
+    window.__spoken = [];
     const synth = window.speechSynthesis;
     if (synth) {
-      synth.speak = (u) => setTimeout(() => {
-        u.onstart?.(new Event('start'));
-        u.onend?.(new Event('end'));
-      }, 30);
+      // It takes about as long as the words would take to say, so anything the
+      // app shows only while it is speaking is on screen long enough to capture.
+      window.__speakingNow = false;
+      synth.speak = (u) => {
+        window.__spoken.push(u.text);
+        window.__speakingNow = true;
+        setTimeout(() => u.onstart?.(new Event('start')), 30);
+        const ms = Math.min(3000, 400 + 55 * (u.text || '').length);
+        setTimeout(() => { window.__speakingNow = false; u.onend?.(new Event('end')); }, ms);
+      };
       synth.cancel = () => {};
     }
+
+    // A stand-in microphone. The app's own speech recognizer is replaced by one
+    // that hears only what the script tells it to (window.__videoMic.hear), so a
+    // "real" conversation can be shown with no microphone and no room noise.
+    let live = null;
+    class StandInRecognizer {
+      constructor() { this.continuous = true; this.interimResults = true; this.lang = 'en-US'; }
+      start() { live = this; setTimeout(() => this.onstart?.(new Event('start')), 10); }
+      stop() { if (live === this) live = null; setTimeout(() => this.onend?.(new Event('end')), 10); }
+      abort() { this.stop(); }
+    }
+    window.SpeechRecognition = StandInRecognizer;
+    window.webkitSpeechRecognition = StandInRecognizer;
+    window.__videoMic = {
+      isOn: () => !!live,
+      hear(text) {
+        if (!live) throw new Error('The microphone is not on');
+        const result = Object.assign([{ transcript: text, confidence: 0.95 }], { isFinal: true });
+        live.onresult?.({ resultIndex: 0, results: [result] });
+      },
+    };
+
+    // A fixed sequence of "random" numbers, so anything the app picks at random
+    // (which holding phrase to say) comes out the same on every render.
+    let seed = 20261024;
+    Math.random = () => {
+      seed = (seed + 0x6D2B79F5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
   });
   const url = `http://localhost:${PORT}/`;
   await page.goto(url, { waitUntil: 'domcontentloaded' });
@@ -252,10 +295,10 @@ async function main() {
   fs.rmSync(work, { recursive: true, force: true });
   fs.mkdirSync(work, { recursive: true });
 
-  // Speech first: it costs money and is slow, and every line must exist before
-  // any picture is worth taking.
-  const clips = [];
-  for (const step of script.steps) clips.push(await speech(step.speaker, step.say));
+  // Lines written in the script are spoken first, so a missing voice or key
+  // fails before the browser opens. A line given as a function is the app's own
+  // words, and is spoken when the step reaches it.
+  for (const step of script.steps) if (typeof step.say === 'string') await speech(step.speaker, step.say);
 
   const server = await startServer();
   const browser = await puppeteer.launch({ headless: true, args: ['--mute-audio'] });
@@ -266,6 +309,11 @@ async function main() {
     const page = await openApp(browser, script);
     for (const [i, step] of script.steps.entries()) {
       if (step.before) await step.before(page);
+      if (step.until) await step.until(page).catch(async (e) => {
+        const fail = path.join(work, 'failed.png');
+        await page.screenshot({ path: fail });
+        throw new Error(`STOPPING - step ${i + 1}: ${e.message}. The screen at that moment: ${fail}`);
+      });
       if (step.waitFor) await page.waitForSelector(step.waitFor, { visible: true, timeout: 15000 })
         .catch(async () => {
           const fail = path.join(work, 'failed.png');
@@ -283,16 +331,19 @@ async function main() {
         await page.click(step.tap || step.highlight);
       }
 
-      const speak = durationOf(clips[i]);
+      const said = typeof step.say === 'function' ? await step.say(page) : step.say;
+      if (!said) throw new Error(`STOPPING - step ${i + 1} has nothing to say`);
+      const clip = await speech(step.speaker, said);
+      const speak = durationOf(clip);
       const dur = LEAD_S + speak + TAIL_S;
       const seg = path.join(work, `${String(i).padStart(2, '0')}.mp4`);
-      run(FFMPEG, ['-y', '-loop', '1', '-framerate', '30', '-i', shot, '-i', clips[i],
+      run(FFMPEG, ['-y', '-loop', '1', '-framerate', '30', '-i', shot, '-i', clip,
         '-filter_complex', `[1:a]adelay=${Math.round(LEAD_S * 1000)}:all=1,apad[a]`,
         '-map', '0:v', '-map', '[a]', '-t', dur.toFixed(3),
         '-c:v', 'libx264', '-tune', 'stillimage', '-pix_fmt', 'yuv420p', '-r', '30',
         '-c:a', 'aac', '-b:a', '160k', '-ar', '48000', '-ac', '2', seg]);
       segments.push(seg);
-      srt.push(`${i + 1}\n${srtTime(t + LEAD_S)} --> ${srtTime(t + LEAD_S + speak)}\n${step.say}\n`);
+      srt.push(`${i + 1}\n${srtTime(t + LEAD_S)} --> ${srtTime(t + LEAD_S + speak)}\n${said}\n`);
       t += dur;
       console.log(`step ${i + 1}/${script.steps.length}  ${dur.toFixed(1)}s  ${step.speaker}`);
     }
