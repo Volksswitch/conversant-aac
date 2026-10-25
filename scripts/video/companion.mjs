@@ -25,9 +25,14 @@ export function placeInCourse(id) {
   const all = readCourse().groups.flatMap((g) => g.items);
   const i = all.findIndex((x) => x.id === id);
   if (i < 0) throw new Error(`STOPPING - ${id} is not in scripts/video/course.json`);
-  const next = all.slice(i + 1).find((x) => x.id && (made(x) || fs.existsSync(path.join(ROOT, 'scripts', 'video', 'scripts', `${x.id}.mjs`))));
+  // The other device versions of the same video are not "next": skip to a new number.
+  const next = all.slice(i + 1).find((x) => x.num !== all[i].num && x.id
+    && (made(x) || fs.existsSync(path.join(ROOT, 'scripts', 'video', 'scripts', `${x.id}.mjs`))));
   return { entry: all[i], next };
 }
+
+// "Installing Conversant (On an iPad)" for a device version, the title alone otherwise.
+export const fullTitle = (x) => x.version ? `${x.title} (${x.version})` : x.title;
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
@@ -133,7 +138,7 @@ export async function makeCompanion({ browser, script, frames, seconds, ffmpeg }
   const mins = Math.round(seconds);
   const html = `<!doctype html><html><head><meta charset="utf-8"><style>${STYLE}</style></head><body>
     <div class="kicker">Conversant AAC how-to video ${esc(entry.num)}</div>
-    <h1>${esc(entry.title)}</h1>
+    <h1>${esc(fullTitle(entry))}</h1>
     <p class="learn">${esc(entry.learn)}</p>
     <div class="meta">The video is ${mins} seconds long. Updated ${today()}.</div>
     <h2>Steps</h2><ol class="steps">${items}</ol>
@@ -160,16 +165,23 @@ export async function makeCourseMap(browser) {
   const course = readCourse();
   let body = '';
   for (const g of course.groups) {
-    const ready = g.items.filter(made);
+    // Device versions of one video share a row, with the devices listed.
+    const ready = [];
+    for (const x of g.items.filter(made)) {
+      const row = ready.find((r) => r.num === x.num);
+      if (row) { if (x.version) row.versions.push(x.version); }
+      else ready.push({ ...x, versions: x.version ? [x.version] : [] });
+    }
     if (!ready.length) continue;
-    const rows = ready.map((x) => `<tr><td class="n">${esc(x.num)}</td><td class="t">${esc(x.title)}</td><td>${esc(x.learn)}</td></tr>`).join('');
+    const rows = ready.map((x) => `<tr><td class="n">${esc(x.num)}</td><td class="t">${esc(x.title)}${x.versions.length
+      ? `<br><span class="note">${esc(x.versions.map((v) => v.replace(/^On /, 'on ')).join(', '))}</span>` : ''}</td><td>${esc(x.learn)}</td></tr>`).join('');
     body += `<h2>${esc(g.name)}${g.path ? ' <span class="note">(watch these in order)</span>' : ''}</h2><table class="map">${rows}</table>`;
   }
   const html = `<!doctype html><html><head><meta charset="utf-8"><style>${STYLE}</style></head><body>
     <div class="kicker">Conversant AAC how-to videos</div>
     <h1>Learning Conversant</h1>
     <p class="learn">Short videos, about two minutes each, that show you how to use Conversant. Each one has a one-page guide with the same steps.</p>
-    <div class="meta">Start with "Your first conversations" and watch those in order. After that, pick the ones you need. Updated ${today()}.</div>
+    <div class="meta">Start with "Getting started", then "Your first conversations", and watch those in order. After that, pick the ones you need. Updated ${today()}.</div>
     ${body}
     <p class="note">More videos are on the way.</p>
   </body></html>`;

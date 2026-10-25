@@ -358,6 +358,33 @@ async function openApp(browser, script) {
   return page;
 }
 
+// Videos made from hand-taken screenshots (the device's own screens, which the
+// program cannot reach: a browser's menus, the Home Screen, a file picker). A step
+// names its picture with `image` (a path inside Videos/), and `ring` is the box to
+// point at, in that picture's own pixels: [left, top, width, height]. `blur` lists
+// boxes to hide (an email address, a folder name). The picture is fitted onto the
+// video's frame, and the ring is drawn by the same code as in a live video.
+async function openPictures(browser) {
+  const page = await browser.newPage();
+  await page.setViewport(VIEW);
+  return page;
+}
+
+async function showPicture(page, step) {
+  const file = path.join(ROOT, 'Videos', step.image);
+  if (!fs.existsSync(file)) throw new Error(`STOPPING - the picture ${step.image} is missing`);
+  const data = `data:image/png;base64,${fs.readFileSync(file).toString('base64')}`;
+  const [iw, ih] = run(FFPROBE, ['-v', 'error', '-select_streams', 'v', '-show_entries', 'stream=width,height',
+    '-of', 'csv=p=0', file]).trim().split(',').map(Number);
+  const k = Math.min(VIEW.width / iw, VIEW.height / ih);
+  const ox = (VIEW.width - iw * k) / 2, oy = (VIEW.height - ih * k) / 2;
+  const box = ([x, y, w, h], extra) => `position:absolute;left:${ox + x * k}px;top:${oy + y * k}px;width:${w * k}px;height:${h * k}px;${extra}`;
+  const blurs = (step.blur || []).map((b) => `<div style="${box(b, 'backdrop-filter:blur(7px);background:rgba(240,240,240,0.35);')}"></div>`).join('');
+  await page.setContent(`<!doctype html><html><body style="margin:0;width:100vw;height:100vh;overflow:hidden;background:#1d2733;">
+    <img src="${data}" style="position:absolute;left:${ox}px;top:${oy}px;width:${iw * k}px;height:${ih * k}px;">
+    ${blurs}${step.ring ? `<div id="vid-target" style="${box(step.ring, '')}"></div>` : ''}</body></html>`, { waitUntil: 'load' });
+}
+
 function srtTime(s) {
   const ms = Math.round(s * 1000);
   const p = (n, w = 2) => String(n).padStart(w, '0');
@@ -386,7 +413,7 @@ async function main() {
   for (const step of script.steps) if (typeof step.say === 'string') step.say = step.say.replace('{next}', nextLine);
   for (const step of script.steps) if (typeof step.say === 'string') await speech(step.speaker, step.say);
 
-  const server = await startServer();
+  const server = script.pictures ? null : await startServer();
   const browser = await puppeteer.launch({ headless: true, args: ['--mute-audio'] });
   const segments = [];
   const frames = [];
@@ -407,8 +434,14 @@ async function main() {
   if (pageSteps > MAX_PAGE_STEPS) throw new Error(`STOPPING - ${script.id} marks ${pageSteps} steps for its page; ${MAX_PAGE_STEPS} fit on one page`);
   let t = 0;
   try {
-    const page = await openApp(browser, script);
+    const page = script.pictures ? await openPictures(browser) : await openApp(browser, script);
     for (const [i, step] of script.steps.entries()) {
+      if (script.pictures) {
+        if (!step.image) throw new Error(`STOPPING - step ${i + 1} has no picture`);
+        await showPicture(page, step);
+        if (step.ring) step[step.tap ? 'tap' : 'highlight'] = '#vid-target';
+        else delete step.tap;
+      }
       if (step.before) await step.before(page);
       if (step.until) await step.until(page).catch(async (e) => {
         const fail = path.join(work, 'failed.png');
@@ -428,7 +461,7 @@ async function main() {
       frames.push({ file: shot, box, view: VIEW });
       // A step with press: true then really taps what it pointed at, so the app
       // does the work and the next picture shows the result.
-      if (step.press) {
+      if (step.press && !script.pictures) {
         await clearMark(page);
         await page.click(step.tap || step.highlight);
       }
@@ -456,7 +489,7 @@ async function main() {
     console.log(`${path.relative(ROOT, pdf)}`);
   } finally {
     await browser.close();
-    server.kill();
+    server?.kill();
   }
 
   const list = path.join(work, 'list.txt');

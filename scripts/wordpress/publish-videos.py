@@ -70,26 +70,59 @@ def safe_name(text):
     return out.strip('-')
 
 
+def numbered(items, cfg):
+    """Published items grouped by number, in course order: device versions of one
+    video ("1.2 On an iPad", "1.2 On an Android device") share a number."""
+    out = []
+    for item in items:
+        if item.get('id') not in cfg['videos']:
+            continue
+        if out and out[-1][0] == item['num']:
+            out[-1][1].append(item)
+        else:
+            out.append((item['num'], [item]))
+    return out
+
+
+def device_word(item):
+    # "On an Android device" -> "Android device", for short labels.
+    v = item['version']
+    for lead in ('On an ', 'On a ', 'On '):
+        if v.startswith(lead):
+            return v[len(lead):]
+    return v
+
+
 def build_page(cfg, course):
     out = ['<!-- wp:paragraph -->\n<p>Short videos, about two minutes each, that show you how to use '
            'Conversant AAC. Each has a one-page guide with the same steps. Each video opens in its '
            'own tab, and when it finishes you can go straight on to the next one.</p>\n<!-- /wp:paragraph -->']
     if cfg.get('courseMap'):
-        out.append('<!-- wp:paragraph -->\n<p>New to Conversant? Start with "Your first conversations" and '
-                   f'watch those in order. <a href="{html.escape(cfg["courseMap"]["url"])}" target="_blank" rel="noopener">'
+        out.append('<!-- wp:paragraph -->\n<p>New to Conversant? Start with "Getting started", then '
+                   '"Your first conversations", and watch those in order. After that, pick the ones you need. <a href="{html.escape(cfg["courseMap"]["url"])}" target="_blank" rel="noopener">'
                    'The full list (PDF)</a>.</p>\n<!-- /wp:paragraph -->')
     for g in course['groups']:
         rows = []
-        for item in g['items']:
-            v = cfg['videos'].get(item.get('id') or '')
-            if not v:
+        for num, items in numbered(g['items'], cfg):
+            first, e = items[0], html.escape
+            if not first.get('version'):
+                v = cfg['videos'][first['id']]
+                rows.append(
+                    f'<tr><td>{e(num)}</td>'
+                    f'<td><a href="{e((v.get("page") or v["video"])["url"])}" target="_blank" rel="noopener">{e(first["title"])}</a> '
+                    f'({length(v["seconds"])})</td>'
+                    f'<td>{e(first["learn"])}</td>'
+                    f'<td><a href="{e(v["guide"]["url"])}" target="_blank" rel="noopener">Guide (PDF)</a></td></tr>')
                 continue
-            rows.append(
-                f'<tr><td>{html.escape(item["num"])}</td>'
-                f'<td><a href="{html.escape((v.get("page") or v["video"])["url"])}" target="_blank" rel="noopener">{html.escape(item["title"])}</a> '
-                f'({length(v["seconds"])})</td>'
-                f'<td>{html.escape(item["learn"])}</td>'
-                f'<td><a href="{html.escape(v["guide"]["url"])}" target="_blank" rel="noopener">Guide (PDF)</a></td></tr>')
+            # Device versions share one row: one link per device, and one guide each.
+            vids = [(i, cfg['videos'][i['id']]) for i in items]
+            links = '<br>'.join(
+                f'<a href="{e((v.get("page") or v["video"])["url"])}" target="_blank" rel="noopener">{e(i["version"])}</a> '
+                f'({length(v["seconds"])})' for i, v in vids)
+            guides = '<br>'.join(
+                f'<a href="{e(v["guide"]["url"])}" target="_blank" rel="noopener">Guide: {e(i["version"].replace("On ", "on ", 1))}</a>' for i, v in vids)
+            rows.append(f'<tr><td>{e(num)}</td><td>{e(first["title"])}<br>{links}</td>'
+                        f'<td>{e(first["learn"])}</td><td>{guides}</td></tr>')
         if not rows:
             continue
         heading = g['name'] + (' (watch these in order)' if g.get('path') else '')
@@ -101,7 +134,7 @@ def build_page(cfg, course):
 
 
 def course_map_signature(cfg, course):
-    listed = [(i['num'], i['title'], i['learn']) for g in course['groups'] for i in g['items']
+    listed = [(i['num'], i['title'], i['learn'], i.get('version')) for g in course['groups'] for i in g['items']
               if i.get('id') in cfg['videos']]
     return hashlib.sha256(json.dumps(listed).encode()).hexdigest()
 
@@ -117,17 +150,34 @@ WATCH_SLUG = 'video-{num}'
 
 
 def watch_slug(item):
-    return WATCH_SLUG.format(num=item['num'].replace('.', '-'))
+    slug = WATCH_SLUG.format(num=item['num'].replace('.', '-'))
+    if item.get('version'):
+        slug += '-' + device_word(item).split()[0].lower()   # video-1-2-ipad
+    return slug
 
 
-def build_watch(item, v, nxt, nxt_url, list_url):
-    if nxt:
-        label = f'Next: {nxt["num"]} {nxt["title"]}'
-        target = nxt_url + '?play=1'
-    else:
-        label = 'Back to all the videos'
-        target = list_url
+def watch_title(item):
+    return f'{item["num"]} {item["title"]}' + (f' ({item["version"]})' if item.get('version') else '')
+
+
+def build_watch(item, v, nxt, url_of, list_url):
+    """nxt is the list of items for the next number: one item, or one per device
+    version. Each device version gets its own button, and the viewer picks theirs."""
     e = html.escape
+    if not nxt:
+        heading, choices = None, [('Back to all the videos', list_url)]
+    elif nxt[0].get('version'):
+        heading = f'Next: {nxt[0]["num"]} {nxt[0]["title"]}'
+        choices = [(n['version'], url_of[n['id']] + '?play=1') for n in nxt]
+    else:
+        heading, choices = None, [(f'Next: {nxt[0]["num"]} {nxt[0]["title"]} →', url_of[nxt[0]['id']] + '?play=1')]
+    style = ('background:#ff6d00;color:#fff;font-size:1.3em;font-weight:bold;'
+             'padding:14px 24px;border-radius:10px;text-decoration:none;')
+    buttons = ''.join(
+        f'<a{" id=" + chr(34) + "cv-next" + chr(34) if n == 0 else ""} href="{e(t)}" style="{style}">{e(text)}</a>'
+        for n, (text, t) in enumerate(choices))
+    end_heading = f'<div style="color:#fff;font-size:1.3em;font-weight:bold;">{e(heading)}</div>' if heading else ''
+    below = (f'{e(heading)}: ' if heading else '') + ' | '.join(f'<a href="{e(t)}">{e(text)}</a>' for text, t in choices)
     return ('<!-- wp:html -->' + NL +
             '<div id="cv-wrap" style="position:relative;max-width:960px;">'
             f'<video id="cv-video" src="{e(v["video"]["url"])}" controls playsinline preload="metadata" '
@@ -137,14 +187,12 @@ def build_watch(item, v, nxt, nxt_url, list_url):
             # had even started (Ken, October 24 2026).
             '<div id="cv-end" style="position:absolute;inset:0;background:rgba(20,30,45,0.88);'
             'display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;">'
-            f'<a id="cv-next" href="{e(target)}" style="background:#ff6d00;color:#fff;font-size:1.4em;'
-            'font-weight:bold;padding:16px 28px;border-radius:10px;text-decoration:none;">'
-            f'{e(label)} &rarr;</a>'
+            f'{end_heading}<div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;">{buttons}</div>'
             '<button id="cv-again" type="button" style="font-size:1.1em;padding:10px 20px;border-radius:8px;">'
             'Watch this one again</button></div></div>' + NL +
             f'<p>{e(item["learn"])} ({length(v["seconds"])})</p>' + NL +
             f'<p><a href="{e(v["guide"]["url"])}" target="_blank" rel="noopener">The guide for this video (PDF)</a></p>' + NL +
-            f'<p><a href="{e(target)}">{e(label)} &rarr;</a> &nbsp;|&nbsp; <a href="{e(list_url)}">All the videos</a></p>' + NL +
+            f'<p>{below} &nbsp;|&nbsp; <a href="{e(list_url)}">All the videos</a></p>' + NL +
             ('<script>(function(){var v=document.getElementById("cv-video"),end=document.getElementById("cv-end");'
             'v.addEventListener("ended",function(){end.style.display="flex";'
             'document.getElementById("cv-next").focus();});'
@@ -161,9 +209,12 @@ def update_watch_pages(cfg, course, list_page, apply):
     url_of = {i['id']: base + watch_slug(i) + '/' for i in items}
     for n, item in enumerate(items):
         v = cfg['videos'][item['id']]
-        nxt = items[n + 1] if n + 1 < len(items) else None
-        content = build_watch(item, v, nxt, url_of[nxt['id']] if nxt else None, list_page['link'])
-        title = f'{item["num"]} {item["title"]}'
+        # The next video is the next NUMBER: the other device versions of this one
+        # are skipped, and all the versions of the next one are offered.
+        later = [i for i in items[n + 1:] if i['num'] != item['num']]
+        nxt = [i for i in later if i['num'] == later[0]['num']] if later else None
+        content = build_watch(item, v, nxt, url_of, list_page['link'])
+        title = watch_title(item)
         page = v.get('page')
         if page:
             current = call('GET', f'/wp/v2/pages/{page["id"]}?context=edit')
@@ -209,11 +260,14 @@ def main():
         for vid in ids:
             item = titles[vid]
             made = json.load(open(os.path.join(VIDEOS, f'{vid}.json'), encoding='utf-8'))
-            base = safe_name(f'Conversant {item["num"]} {item["title"]}')
+            # Device versions share a number and a title, so the device goes in the name.
+            label = item['title'] + (f' ({item["version"]})' if item.get('version') else '')
+            base = safe_name(f'Conversant {item["num"]} {item["title"]}'
+                             + (f' {device_word(item)}' if item.get('version') else ''))
             video = upload(os.path.join(VIDEOS, f'{vid}.mp4'), base + '.mp4', 'video/mp4',
-                           f'Conversant AAC video {item["num"]}: {item["title"]}', cfg['mediaFolder'])
+                           f'Conversant AAC video {item["num"]}: {label}', cfg['mediaFolder'])
             guide = upload(os.path.join(VIDEOS, f'{vid}.pdf'), base + '-Guide.pdf', 'application/pdf',
-                           f'Conversant AAC video {item["num"]} guide: {item["title"]}', cfg['mediaFolder'])
+                           f'Conversant AAC video {item["num"]} guide: {label}', cfg['mediaFolder'])
             old = cfg['videos'].get(vid)
             if old:
                 replaced += [old['video'], old['guide']]

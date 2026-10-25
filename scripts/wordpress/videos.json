@@ -6,15 +6,15 @@
   "mediaFolder": 107,
   "videos": {
     "1.1-what-for": {
-      "signature": "fe93bd430ae0a3d3fad3888425364a5f490fdf8644f1e479a13235627a2eff73",
+      "signature": "1bb03aac86cfbb3ed6443f2e4dcff10816189e0caf128544b36cea955ee82cb5",
       "seconds": 59,
       "video": {
-        "id": 24231,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-1-What-Conversant-Is-For-1.mp4"
+        "id": 24360,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-1-What-Conversant-Is-For-2.mp4"
       },
       "guide": {
-        "id": 24232,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-1-What-Conversant-Is-For-Guide-1.pdf"
+        "id": 24361,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-1-What-Conversant-Is-For-Guide-2.pdf"
       },
       "page": {
         "id": 24210,
@@ -22,15 +22,15 @@
       }
     },
     "1.3-ai-key": {
-      "signature": "eca91cc89344cd9cf8de57f1d266125687fbaea6e595e9564ca261a4a7a9c8e9",
+      "signature": "670e63a32f67f6f05cf9a86d1b115ba78b72efd36197f85ab5b1e1940ba0b406",
       "seconds": 46,
       "video": {
-        "id": 24233,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-3-Adding-Your-AI-Key-1.mp4"
+        "id": 24368,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-3-Adding-Your-AI-Key-2.mp4"
       },
       "guide": {
-        "id": 24234,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-3-Adding-Your-AI-Key-Guide-1.pdf"
+        "id": 24369,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-3-Adding-Your-AI-Key-Guide-2.pdf"
       },
       "page": {
         "id": 24211,
@@ -468,11 +468,107 @@
         "id": 24353,
         "url": "https://volksswitch.org/index.php/conversant-videos/video-5-3/"
       }
+    },
+    "1.2-install-computer": {
+      "signature": "c1bb978e0377035dc52fb07d5c067c3ee6f5271b78f240278bbc71585828273b",
+      "seconds": 26,
+      "video": {
+        "id": 24362,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-2-Installing-Conversant-computer.mp4"
+      },
+      "guide": {
+        "id": 24363,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-2-Installing-Conversant-computer-Guide.pdf"
+      },
+      "page": {
+        "id": 24378,
+        "url": "https://volksswitch.org/index.php/conversant-videos/video-1-2-computer/"
+      }
+    },
+    "1.2-install-ipad": {
+      "signature": "463f9bce1b0cbe95920785255c97cd4a1be2ce95643a6f6a634f587dc2dc00c3",
+      "seconds": 35,
+      "video": {
+        "id": 24364,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-2-Installing-Conversant-iPad.mp4"
+      },
+      "guide": {
+        "id": 24365,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-2-Installing-Conversant-iPad-Guide.pdf"
+      },
+      "page": {
+        "id": 24379,
+        "url": "https://volksswitch.org/index.php/conversant-videos/video-1-2-ipad/"
+      }
+    },
+    "1.2-install-android": {
+      "signature": "2b41ecc554a2f6110c13589c7682b6649f77a70279bfca08a3893b563f02a4ed",
+      "seconds": 37,
+      "video": {
+        "id": 24366,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-2-Installing-Conversant-Android-device.mp4"
+      },
+      "guide": {
+        "id": 24367,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-2-Installing-Conversant-Android-device-Guide.pdf"
+      },
+      "page": {
+        "id": 24380,
+        "url": "https://volksswitch.org/index.php/conversant-videos/video-1-2-android/"
+      }
+    },
+    "1.4-safe-computer": {
+      "signature": "b602602451e113ca143b742893eccf25ad97377b756cd3c9d61b57e9807b1ae4",
+      "seconds": 43,
+      "video": {
+        "id": 24370,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-4-Keeping-Your-Information-Safe-computer.mp4"
+      },
+      "guide": {
+        "id": 24371,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-4-Keeping-Your-Information-Safe-computer-Guide.pdf"
+      },
+      "page": {
+        "id": 24382,
+        "url": "https://volksswitch.org/index.php/conversant-videos/video-1-4-computer/"
+      }
+    },
+    "1.4-safe-ipad": {
+      "signature": "9458d1a89fbc255da212bb12bb3b006d288c7d1687edab79100365f827c95266",
+      "seconds": 36,
+      "video": {
+        "id": 24372,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-4-Keeping-Your-Information-Safe-iPad.mp4"
+      },
+      "guide": {
+        "id": 24373,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-4-Keeping-Your-Information-Safe-iPad-Guide.pdf"
+      },
+      "page": {
+        "id": 24383,
+        "url": "https://volksswitch.org/index.php/conversant-videos/video-1-4-ipad/"
+      }
+    },
+    "1.4-safe-android": {
+      "signature": "463c69ea68e7cf2a29119ece6a487d7ac7c10e6e500d3c7572d8b612af25ae6e",
+      "seconds": 68,
+      "video": {
+        "id": 24374,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-4-Keeping-Your-Information-Safe-Android-device.mp4"
+      },
+      "guide": {
+        "id": 24375,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-4-Keeping-Your-Information-Safe-Android-device-Guide.pdf"
+      },
+      "page": {
+        "id": 24384,
+        "url": "https://volksswitch.org/index.php/conversant-videos/video-1-4-android/"
+      }
     }
   },
   "courseMap": {
-    "signature": "e23ef442a508be7a105fd61f7842860d92f23daa4e1dbf9d5630086fb132b100",
-    "id": 24338,
-    "url": "https://volksswitch.org/wp-content/uploads/2026/10/Learning-Conversant-3.pdf"
+    "signature": "5373766130fdec42c5b484810e56bff83e43f178190695c843e982a549475ae1",
+    "id": 24376,
+    "url": "https://volksswitch.org/wp-content/uploads/2026/10/Learning-Conversant-4.pdf"
   }
 }

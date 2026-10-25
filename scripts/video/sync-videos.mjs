@@ -21,7 +21,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { ROOT } from './azure.mjs';
-import { readCourse } from './companion.mjs';
+import { readCourse, fullTitle } from './companion.mjs';
 
 const args = process.argv.slice(2);
 const PUBLISH = args.includes('--publish');
@@ -94,7 +94,7 @@ const items = readCourse().groups.flatMap((g) => g.items)
 const failed = [];
 if (RENDER) {
   for (const x of items) {
-    process.stdout.write(`Making ${x.num} ${x.title} ... `);
+    process.stdout.write(`Making ${x.num} ${fullTitle(x)} ... `);
     const r = spawnSync(process.execPath, [path.join(ROOT, 'scripts', 'video', 'render-video.mjs'),
       path.join(ROOT, 'scripts', 'video', 'scripts', `${x.id}.mjs`)], { encoding: 'utf8', cwd: ROOT });
     if (r.status === 0) console.log('done');
@@ -110,15 +110,15 @@ if (RENDER) {
 const toPublish = [];
 console.log('\nCompared with the website:');
 for (const x of items) {
-  if (failed.find((f) => f.x === x)) { console.log(`  ${x.num.padEnd(5)} NOT MADE  ${x.title}`); continue; }
+  if (failed.find((f) => f.x === x)) { console.log(`  ${x.num.padEnd(5)} NOT MADE  ${fullTitle(x)}`); continue; }
   const why = whatChanged(x.id);
-  console.log(`  ${x.num.padEnd(5)} ${why ? 'CHANGED  ' : 'same     '} ${x.title}${why ? `  (${why})` : ''}`);
+  console.log(`  ${x.num.padEnd(5)} ${why ? 'CHANGED  ' : 'same     '} ${fullTitle(x)}${why ? `  (${why})` : ''}`);
   if (why && why !== 'not made') toPublish.push(x.id);
 }
 
 if (failed.length) {
   console.log('\nThese could not be made, and will not be published:');
-  for (const { x, why } of failed) console.log(`  ${x.num} ${x.title}: ${why}`);
+  for (const { x, why } of failed) console.log(`  ${x.num} ${fullTitle(x)}: ${why}`);
 }
 
 if (!PUBLISH) {

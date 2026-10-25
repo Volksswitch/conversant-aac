@@ -1,11 +1,15 @@
 {
-  "_note": "The course: every video in viewing order. The video scripts, the companion pages and the course map all read their titles, one-line summaries and 'watch next' from here, so a title is changed in one place. 'id' is the script's id (scripts/video/scripts/<id>.mjs); an entry with no id has no script yet. 'path': true marks the two groups watched in order.",
+  "_note": "The course: every video in viewing order. The video scripts, the companion pages and the course map all read their titles, one-line summaries and 'watch next' from here, so a title is changed in one place. 'id' is the script's id (scripts/video/scripts/<id>.mjs); an entry with no id has no script yet. 'path': true marks the two groups watched in order. Entries sharing a 'num' are versions of one video for different devices ('version' names the device): they share one row on the videos page, and 'watch next' skips past the other versions.",
   "groups": [
     { "name": "Getting started", "path": true, "items": [
       { "num": "1.1", "id": "1.1-what-for", "title": "What Conversant Is For", "learn": "What Conversant does, and why it suggests replies for you." },
-      { "num": "1.2", "title": "Installing Conversant", "learn": "Open Conversant from its own icon." },
+      { "num": "1.2", "version": "On a computer", "id": "1.2-install-computer", "title": "Installing Conversant", "learn": "Open Conversant from its own icon." },
+      { "num": "1.2", "version": "On an iPad", "id": "1.2-install-ipad", "title": "Installing Conversant", "learn": "Open Conversant from its own icon." },
+      { "num": "1.2", "version": "On an Android device", "id": "1.2-install-android", "title": "Installing Conversant", "learn": "Open Conversant from its own icon." },
       { "num": "1.3", "id": "1.3-ai-key", "title": "Adding Your AI Key", "learn": "Paste the key we gave you, and check that it works." },
-      { "num": "1.4", "title": "Keeping Your Information Safe", "learn": "Choose a data folder, or make a backup on an iPad." },
+      { "num": "1.4", "version": "On a computer", "id": "1.4-safe-computer", "title": "Keeping Your Information Safe", "learn": "Choose a data folder, and make a backup." },
+      { "num": "1.4", "version": "On an iPad", "id": "1.4-safe-ipad", "title": "Keeping Your Information Safe", "learn": "Make a backup and keep it somewhere safe." },
+      { "num": "1.4", "version": "On an Android device", "id": "1.4-safe-android", "title": "Keeping Your Information Safe", "learn": "Choose a data folder, and make a backup." },
       { "num": "1.5", "id": "1.5-speech-service", "title": "Do You Need a Speech Service?", "learn": "Whether your device needs one, and who to ask if it does." }
     ] },
     { "name": "Your first conversations", "path": true, "items": [

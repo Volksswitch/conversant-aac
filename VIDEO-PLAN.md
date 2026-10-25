@@ -33,9 +33,9 @@ Groups 1 and 2 are a path, watched in order. Together they take a new user from 
 | # | Video | You'll be able to | Method | Versions |
 |---|---|---|---|---|
 | 1.1 | What Conversant is for | Explain what the app does and why it suggests replies | Staged (made) | One |
-| 1.2 | Installing Conversant | Open it from its own icon | By hand | Computer, iPad, Android |
+| 1.2 | Installing Conversant | Open it from its own icon | By hand (made) | Computer, iPad, Android |
 | 1.3 | Adding your AI key | Paste the key we gave you and test it | Staged (made) | One |
-| 1.4 | Keeping your information safe | Choose a data folder (computer, Android) or make a backup (iPad) | By hand | Computer and Android, iPad |
+| 1.4 | Keeping your information safe | Choose a data folder (computer, Android) or make a backup (iPad) | By hand (made) | Computer, iPad, Android |
 | 1.5 | Do you need a speech service? | Tell whether your device needs one, and who to talk to if it does | Staged (made) | One |
 
 Video 1.5 is short on purpose. During the beta, speech keys are arranged with us directly, so it explains which setups need one and says to get in touch before signing up for anything.
