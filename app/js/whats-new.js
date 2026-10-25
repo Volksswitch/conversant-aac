@@ -22,6 +22,16 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.13.27": [
+    "Fixed: the weekly usage report included your \"Words the voice gets wrong\" list. It now says only how many words are on the list, never the words themselves. The name of your saved settings profile is left out too.",
+    "Before you restore a backup or load a saved settings profile, the app now tells you if it would change whether conversations are saved, or whether a chime plays when listening starts.",
+    "A setting in a backup or profile that the app cannot use, for example one that was damaged or edited by hand, is no longer applied. Your own setting stays as it is, and the app tells you which one it was.",
+    "Restoring a backup now saves a copy of what was on your device first, so you can go back if it was the wrong file. The message after the restore says where the copy is. On an iPad, the copy appears in the list of backups under Settings > General > Settings backup.",
+    "Importing a practice scenario from a file now shows you the whole scenario first, and adds it only if you choose \"Add it\". A scenario from a file is also held to a sensible length, so a very long one can no longer run up your AI bill; the boxes where you write your own scenarios have the same limits.",
+    "New: typing suggestions now offer the names of the people and places in About Me, and the words in your \"Words the voice gets wrong\" list, from the start, instead of only after you have typed them twice. They come with their capital letters as you wrote them, even when you type in lowercase: type \"sio\" and accept, and you get \"Siobhan\". Anything you marked Private is never suggested.",
+    "New: Settings > Express Panel and Keyboard > Typing suggestions shows the words the keyboard suggests first because you use them. You can add a word, remove one, or clear the whole list.",
+    "New: typing suggestions now work with accented letters. Names like José, Ramírez and Zoë can be learned and suggested, and you don't need an accent key: type \"jos\" and the suggestion offers \"José\", with the accent put in when you accept it."
+  ],
   "0.13.26": [
     "The built-in goodbyes no longer end in exclamation points, so they're said calmly instead of excitedly: \"Bye.\" instead of \"Bye!\". If you haven't changed a goodbye yourself, it's updated for you. Any you've reworded stay exactly as you wrote them."
   ],
