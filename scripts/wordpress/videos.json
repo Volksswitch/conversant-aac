@@ -73,12 +73,12 @@
       "signature": "4e7ffa01d2205b83b02a1144357b29d89aa4d2f29b227eeb7672966254126e43",
       "seconds": 70,
       "video": {
-        "id": 24253,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-2-A-Practice-Conversation-2.mp4"
+        "id": 24286,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-2-A-Practice-Conversation-3.mp4"
       },
       "guide": {
-        "id": 24254,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-2-A-Practice-Conversation-Guide-2.pdf"
+        "id": 24287,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-2-A-Practice-Conversation-Guide-3.pdf"
       },
       "page": {
         "id": 24214,
@@ -137,12 +137,12 @@
       "signature": "9dd4f7a96c3c956835aab18aed9c09abeff91adf227baa159dac879a755838aa",
       "seconds": 78,
       "video": {
-        "id": 24255,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-6-Starting-and-Ending-a-Conversation-2.mp4"
+        "id": 24288,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-6-Starting-and-Ending-a-Conversation-3.mp4"
       },
       "guide": {
-        "id": 24256,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-6-Starting-and-Ending-a-Conversation-Guide-2.pdf"
+        "id": 24289,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-6-Starting-and-Ending-a-Conversation-Guide-3.pdf"
       },
       "page": {
         "id": 24218,
@@ -153,12 +153,12 @@
       "signature": "79f2dddf9e16f39f9f08b4c6134c5504bb262139b6efc99fc7c566225d606e0d",
       "seconds": 74,
       "video": {
-        "id": 24257,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-7-Buying-Yourself-Time-2.mp4"
+        "id": 24290,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-7-Buying-Yourself-Time-3.mp4"
       },
       "guide": {
-        "id": 24258,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-7-Buying-Yourself-Time-Guide-2.pdf"
+        "id": 24291,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-2-7-Buying-Yourself-Time-Guide-3.pdf"
       },
       "page": {
         "id": 24219,
@@ -198,15 +198,15 @@
       }
     },
     "3.3-places": {
-      "signature": "ba80896140f94cb725958e71033624445c37465daed08e2a43ba77fac89c7207",
+      "signature": "c65d3e793cf81d899262e20608d7cc3de589949404e8e0c1cd299250c40aa884",
       "seconds": 43,
       "video": {
-        "id": 24263,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-3-3-Your-Places.mp4"
+        "id": 24308,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-3-3-Your-Places-1.mp4"
       },
       "guide": {
-        "id": 24264,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-3-3-Your-Places-Guide.pdf"
+        "id": 24309,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-3-3-Your-Places-Guide-1.pdf"
       },
       "page": {
         "id": 24282,
@@ -214,15 +214,15 @@
       }
     },
     "3.5-change-button": {
-      "signature": "4b936f92c53b77b5f5daa5e68fabdca2b15fb8452e7f0e33eb6ce43631d75d90",
-      "seconds": 63,
+      "signature": "450f3a7b6d12240014b1b10226b8278f600284287fbb3b14a99708f8da821c3d",
+      "seconds": 62,
       "video": {
-        "id": 24265,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-3-5-Changing-an-Express-Panel-Button.mp4"
+        "id": 24312,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-3-5-Changing-an-Express-Panel-Button-1.mp4"
       },
       "guide": {
-        "id": 24266,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-3-5-Changing-an-Express-Panel-Button-Guide.pdf"
+        "id": 24313,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-3-5-Changing-an-Express-Panel-Button-Guide-1.pdf"
       },
       "page": {
         "id": 24283,
@@ -230,25 +230,249 @@
       }
     },
     "3.7-who-where-feel": {
-      "signature": "2286677bbf1aa2b7abe8da4aae6459000319d5d817e3de3240b40a001c5e553b",
+      "signature": "42a4e2825ab1df9a6f1d9f2b45a47f32717ee0ad0c9aaf4e48b643d5ad60d96f",
       "seconds": 87,
       "video": {
-        "id": 24267,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-3-7-Telling-Conversant-Who-Where-and-How-You-Feel.mp4"
+        "id": 24292,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-3-7-Telling-Conversant-Who-Where-and-How-You-Feel-1.mp4"
       },
       "guide": {
-        "id": 24268,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-3-7-Telling-Conversant-Who-Where-and-How-You-Feel-Guide.pdf"
+        "id": 24293,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-3-7-Telling-Conversant-Who-Where-and-How-You-Feel-Guide-1.pdf"
       },
       "page": {
         "id": 24284,
         "url": "https://volksswitch.org/index.php/conversant-videos/video-3-7/"
       }
+    },
+    "3.8-your-voice": {
+      "signature": "53f15617d3e9eac9dfa928b59386a1127c57f183c829708d1a93493969ac0ef8",
+      "seconds": 56,
+      "video": {
+        "id": 24294,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-3-8-Your-Voice.mp4"
+      },
+      "guide": {
+        "id": 24295,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-3-8-Your-Voice-Guide.pdf"
+      },
+      "page": {
+        "id": 24303,
+        "url": "https://volksswitch.org/index.php/conversant-videos/video-3-8/"
+      }
+    },
+    "3.9-openers-goodbyes": {
+      "signature": "1076ceb44ddfbae47a327894c1947bf986668140d6c94762f5ae3eabe7eafcbf",
+      "seconds": 53,
+      "video": {
+        "id": 24316,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-3-9-Your-Own-Openers-and-Goodbyes-1.mp4"
+      },
+      "guide": {
+        "id": 24317,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-3-9-Your-Own-Openers-and-Goodbyes-Guide-1.pdf"
+      },
+      "page": {
+        "id": 24304,
+        "url": "https://volksswitch.org/index.php/conversant-videos/video-3-9/"
+      }
+    },
+    "3.4-goals": {
+      "signature": "5c5b3e0570562ac5fc39194e91e6fc256ead05183e4202dbe4a80ab047d8583f",
+      "seconds": 71,
+      "video": {
+        "id": 24310,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-3-4-Your-Goals.mp4"
+      },
+      "guide": {
+        "id": 24311,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-3-4-Your-Goals-Guide.pdf"
+      },
+      "page": {
+        "id": 24340,
+        "url": "https://volksswitch.org/index.php/conversant-videos/video-3-4/"
+      }
+    },
+    "3.6-panel-groups": {
+      "signature": "6ebba5983632cc126cef313d1cedc7b3fd7ca7a6f9f5a49b21b43a4aafa01d71",
+      "seconds": 75,
+      "video": {
+        "id": 24314,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-3-6-How-the-Express-Panel-Is-Organized.mp4"
+      },
+      "guide": {
+        "id": 24315,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-3-6-How-the-Express-Panel-Is-Organized-Guide.pdf"
+      },
+      "page": {
+        "id": 24342,
+        "url": "https://volksswitch.org/index.php/conversant-videos/video-3-6/"
+      }
+    },
+    "3.10-looking-back": {
+      "signature": "df75dd84320e6d6a53b5869cd0fff989bd0b047e8d3f01b62f85a7205561d546",
+      "seconds": 82,
+      "video": {
+        "id": 24318,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-3-10-Looking-Back-at-a-Conversation.mp4"
+      },
+      "guide": {
+        "id": 24319,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-3-10-Looking-Back-at-a-Conversation-Guide.pdf"
+      },
+      "page": {
+        "id": 24344,
+        "url": "https://volksswitch.org/index.php/conversant-videos/video-3-10/"
+      }
+    },
+    "4.1-bigger-buttons": {
+      "signature": "6fa46a22895c718a85731b69459641feb7344afcf919f5096427774d7b0a8618",
+      "seconds": 55,
+      "video": {
+        "id": 24320,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-4-1-Bigger-Buttons-and-Spacing.mp4"
+      },
+      "guide": {
+        "id": 24321,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-4-1-Bigger-Buttons-and-Spacing-Guide.pdf"
+      },
+      "page": {
+        "id": 24345,
+        "url": "https://volksswitch.org/index.php/conversant-videos/video-4-1/"
+      }
+    },
+    "4.2-screen-layout": {
+      "signature": "b8a5629f884233b77191e8e0f3ff8658e4c1e152e8b8805870b64bf19f4d7219",
+      "seconds": 66,
+      "video": {
+        "id": 24322,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-4-2-Screen-Layout.mp4"
+      },
+      "guide": {
+        "id": 24323,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-4-2-Screen-Layout-Guide.pdf"
+      },
+      "page": {
+        "id": 24346,
+        "url": "https://volksswitch.org/index.php/conversant-videos/video-4-2/"
+      }
+    },
+    "4.3-one-tap-or-two": {
+      "signature": "cee27088783daac65a2ccc17d12dd14062ba6fcc2fb722e62652b8f4fde3312d",
+      "seconds": 43,
+      "video": {
+        "id": 24324,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-4-3-One-Tap-or-Two.mp4"
+      },
+      "guide": {
+        "id": 24325,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-4-3-One-Tap-or-Two-Guide.pdf"
+      },
+      "page": {
+        "id": 24347,
+        "url": "https://volksswitch.org/index.php/conversant-videos/video-4-3/"
+      }
+    },
+    "4.4-text-and-colors": {
+      "signature": "6c32825b796a8553f272b09de82268eb40419bd6a656d3616bfc9a3ae37ddc5c",
+      "seconds": 55,
+      "video": {
+        "id": 24326,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-4-4-Text-Size-and-Colors.mp4"
+      },
+      "guide": {
+        "id": 24327,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-4-4-Text-Size-and-Colors-Guide.pdf"
+      },
+      "page": {
+        "id": 24348,
+        "url": "https://volksswitch.org/index.php/conversant-videos/video-4-4/"
+      }
+    },
+    "4.5-timing": {
+      "signature": "d6490763ce56846d81bed10986ae4a29dbb4dacbfe9205081b6caa3253fda946",
+      "seconds": 57,
+      "video": {
+        "id": 24328,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-4-5-Timing.mp4"
+      },
+      "guide": {
+        "id": 24329,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-4-5-Timing-Guide.pdf"
+      },
+      "page": {
+        "id": 24349,
+        "url": "https://volksswitch.org/index.php/conversant-videos/video-4-5/"
+      }
+    },
+    "4.6-keyguards": {
+      "signature": "eb13562ef7c018aee7593d26bdfdf5b3148ad5ec3eef23025eaf9d22a344eba0",
+      "seconds": 49,
+      "video": {
+        "id": 24330,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-4-6-Keyguards.mp4"
+      },
+      "guide": {
+        "id": 24331,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-4-6-Keyguards-Guide.pdf"
+      },
+      "page": {
+        "id": 24350,
+        "url": "https://volksswitch.org/index.php/conversant-videos/video-4-6/"
+      }
+    },
+    "5.1-report-problem": {
+      "signature": "fedcc8b13df40387c65743e52d3983db66049c3d27000537df3e77dc68b55c11",
+      "seconds": 37,
+      "video": {
+        "id": 24332,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-5-1-Telling-Us-About-a-Problem.mp4"
+      },
+      "guide": {
+        "id": 24333,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-5-1-Telling-Us-About-a-Problem-Guide.pdf"
+      },
+      "page": {
+        "id": 24351,
+        "url": "https://volksswitch.org/index.php/conversant-videos/video-5-1/"
+      }
+    },
+    "5.2-backups": {
+      "signature": "078dfcbe569acd71ec1094cda9140b7472e03a7057fe02a70b35ef5ef2102ad6",
+      "seconds": 54,
+      "video": {
+        "id": 24334,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-5-2-Backups-and-Moving-to-a-New-Device.mp4"
+      },
+      "guide": {
+        "id": 24335,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-5-2-Backups-and-Moving-to-a-New-Device-Guide.pdf"
+      },
+      "page": {
+        "id": 24352,
+        "url": "https://volksswitch.org/index.php/conversant-videos/video-5-2/"
+      }
+    },
+    "5.3-private": {
+      "signature": "8c8f194a8d0a1336d47c30936ea0a7061baf68b2eb7b20aa669d1b24ac640eeb",
+      "seconds": 41,
+      "video": {
+        "id": 24336,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-5-3-Keeping-a-Conversation-Private.mp4"
+      },
+      "guide": {
+        "id": 24337,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-5-3-Keeping-a-Conversation-Private-Guide.pdf"
+      },
+      "page": {
+        "id": 24353,
+        "url": "https://volksswitch.org/index.php/conversant-videos/video-5-3/"
+      }
     }
   },
   "courseMap": {
-    "signature": "98506b00e590ac8267abee17f5a05e9ca1d373494bcc475b2452dde73d06b49a",
-    "id": 24269,
-    "url": "https://volksswitch.org/wp-content/uploads/2026/10/Learning-Conversant-1.pdf"
+    "signature": "e23ef442a508be7a105fd61f7842860d92f23daa4e1dbf9d5630086fb132b100",
+    "id": 24338,
+    "url": "https://volksswitch.org/wp-content/uploads/2026/10/Learning-Conversant-3.pdf"
   }
 }
