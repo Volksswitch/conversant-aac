@@ -133,7 +133,8 @@ Other pages, documents and emails link to the videos and name them. These rules 
 **Written by hand, so they can go wrong:**
 - **The beta emails.** `BETA-EMAILS.md` is the master. The Word copies in `Other/Beta Testing/Emails` are made from it with `python scripts/make-beta-emails.py`, so a change goes in the master and the copies are made again.
 - **The Conversant home page** on the website. The WordPress page is the copy now; its first draft (`Documents/Conversant AAC Website Home Page.docx`) is history and isn't updated.
-- **The other pages on the website** (the beta page, the Beta Test Plan, Known Issues, Documents) and **the documents** in `Documents/`. None of these links a video today.
+- **The three User Manuals.** Since October 25 2026 each section a video covers ends with a "Video:" line linking it, and the Introduction links the whole list. They're made by `python scripts/video/add-manual-links.py --apply`, whose list says which section gets which video, so they're not edited by hand.
+- **The other pages on the website** (the beta page, the Beta Test Plan, Known Issues, Documents) and **the other documents** in `Documents/`. None of these links a video today.
 - **Emails already sent.** They can't be changed, which is why rule 1 below matters.
 
 ### The checker
@@ -141,6 +142,7 @@ Other pages, documents and emails link to the videos and name them. These rules 
 `python scripts/video/check-video-references.py` reads everything in the hand-written list and reports:
 - a link to a video that doesn't exist or isn't published,
 - a link whose words are one video's title but which opens a different video,
+- a link in a User Manual whose words aren't its video's current title (a renamed video the manuals haven't caught up with),
 - a sentence naming a video by a title no video has,
 - "the six Getting Started videos" when a different number is linked beside it, and "about four minutes" when they add up to something else,
 - Word copies of the emails older than `BETA-EMAILS.md`,
@@ -162,16 +164,18 @@ Other pages, documents and emails link to the videos and name them. These rules 
 3. **A new title** goes in `course.json` and nowhere else by hand, except:
    - the link words and quoted titles in `BETA-EMAILS.md`, then make the Word copies again,
    - the Conversant home page in WordPress, if it names the video,
-   - the table in this plan.
+   - the table in this plan,
+   - the User Manuals: run `python scripts/video/add-manual-links.py --apply`, which puts the new title on their links. Then republish the manuals' PDFs.
    The video before it changes too, because its last line names this one; "sync videos" re-makes it.
 
 4. **A new video:**
    - Add it to `course.json` at the end of its group, and to the table in this plan.
    - "Sync videos" re-makes the video before it, whose last line now names the new one.
+   - Once it's published, add it to the list in `scripts/video/add-manual-links.py` under the manual section it belongs to, run that with `--apply`, and republish the manuals' PDFs. Nothing reports a video the manuals don't link, so this step is easy to miss.
    - If it's in Getting Started, decide which welcome emails should list it (each email lists only its own device's versions), then update their count and their "about N minutes". The checker catches a count that's wrong, but not a video that should be listed and isn't.
 
 5. **Removing a video:**
-   - First run the checker to find everything that links it, and point those links elsewhere.
+   - First run the checker to find everything that links it, and point those links elsewhere. In the User Manuals that means taking it out of the list in `add-manual-links.py` and deleting its "Video:" line from each manual by hand (the script adds links, it doesn't remove them).
    - Then take it out of `course.json`. "Sync videos" re-makes the video before it.
    - The checker then reports its watch page as still published. Unpublish it in WordPress (set it to Draft) rather than deleting it, so it can come back.
 

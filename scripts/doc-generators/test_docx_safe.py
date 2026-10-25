@@ -265,6 +265,25 @@ def t_insert_para_in_cell_stays_in_the_same_cell():
         [p.text for p in cell.paragraphs]
 
 
+def t_insert_link_para_adds_a_working_link_and_saves():
+    d, para = _mixed_para()
+    after = d.add_paragraph('The next paragraph.')
+    new = D.insert_link_para_before(d, after._element, para._element, 'Video:  ',
+                                    'A Tour of the Screen', 'https://example.org/video-2-1/')
+    from docx.text.paragraph import Paragraph
+    assert new.getnext() is after._element, 'not placed before the given paragraph'
+    links = new.findall(qn('w:hyperlink'))
+    assert len(links) == 1, 'no link'
+    rid = links[0].get(qn('r:id'))
+    assert d.part.rels[rid].target_ref == 'https://example.org/video-2-1/'
+    assert Paragraph(new, d).runs[0].bold is True, 'the label lost its bold'
+    path = _tmp()
+    D.save(d, path)
+    reopened = docx.Document(path)
+    assert any('https://example.org/video-2-1/' == r.target_ref for r in reopened.part.rels.values()
+               if r.is_external), 'the link did not survive a save'
+
+
 def t_insert_lead_para_keeps_the_lead_bold_and_the_body_plain():
     d, para = _mixed_para()
     new = D.insert_lead_para_after(d, para.text, 'Note: ', 'the rest is plain.')

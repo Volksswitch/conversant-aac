@@ -9,7 +9,7 @@ that names or links a video is written by hand, and this script checks it:
 
   - BETA-EMAILS.md, the master of the beta emails, and the Word copies made from it
   - the hand-edited pages on volksswitch.org (the Conversant home page and others)
-  - every document in Documents/ (none links a video today; this keeps it so)
+  - every document in Documents/ (the three User Manuals link the videos)
 
 What it checks, for each link to a watch page:
   1. the page exists - the video is in course.json and has been published;
@@ -172,7 +172,10 @@ def main():
             continue
         check_links(where, links, by_url, TITLES)
 
-    # 3. Documents: none links a video today, and a new link should be checked like the rest.
+    # 3. Documents. The User Manuals link a video at the end of each section it covers;
+    #    those links are made by add-manual-links.py, so their words are always the
+    #    video's title, and a link that says anything else is a renamed video the
+    #    manual has not caught up with.
     for f in sorted(glob.glob(os.path.join(DOCS_DIR, '*.docx'))):
         if os.path.basename(f).startswith('~$'):
             continue
@@ -184,6 +187,12 @@ def main():
         linked = check_links(where, links, by_url, TITLES)
         if linked:
             check_sentences(where, plain, linked)
+        if 'User Manual' in os.path.basename(f):
+            for text, url in links:
+                x = by_url.get(url if url.endswith('/') else url + '/')
+                if x and not x.get('chooser') and norm(text) != norm(x['title']):
+                    report('ERROR', where, f'"{text}" links to video {x["num"]}, now called "{x["title"]}"; '
+                           'run python scripts/video/add-manual-links.py --apply')
 
     # 4. The hand-edited web pages.
     if not offline:

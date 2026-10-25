@@ -169,6 +169,58 @@ def insert_lead_para_after(doc, anchor_text, lead, body):
     return new
 
 
+def insert_link_para_before(doc, before_el, template_el, lead, link_text, url):
+    """Add a body paragraph just before `before_el` reading `lead` then a web link.
+
+    The new paragraph takes `template_el`'s paragraph properties (minus any list
+    numbering) and its runs' formatting: `lead` in the template's first run's formatting
+    (a bold "Note:" label, say) and the link in its first differing run's formatting plus
+    the document's Hyperlink character style. Built from properties, never by copying
+    content, so no unique child can be duplicated. Refuses a position inside a table
+    cell or the contents listing.
+
+    Added for the how-to video links in the User Manuals (Ken, October 25 2026).
+    """
+    from docx.opc.constants import RELATIONSHIP_TYPE as RT
+    ancestors = {a.tag.split('}')[1] for a in before_el.iterancestors()}
+    if ancestors & {'tc', 'sdt'}:
+        raise DocxIntegrityError('position is inside a table cell or the contents listing')
+    runs = list(template_el.iterchildren(qn('w:r')))
+    lead_rpr = runs[0].find(qn('w:rPr')) if runs else None
+    lead_key = _rpr_key(runs[0]) if runs else ''
+    body_src = next((r for r in runs if _is_plain(r) and _rpr_key(r) != lead_key), None)
+    body_rpr = body_src.find(qn('w:rPr')) if body_src is not None else None
+
+    p = template_el.makeelement(qn('w:p'), {})
+    ppr = template_el.find(qn('w:pPr'))
+    if ppr is not None:
+        ppr = copy.deepcopy(ppr)
+        num = ppr.find(qn('w:numPr'))
+        if num is not None:
+            ppr.remove(num)
+        p.append(ppr)
+    r = p.makeelement(qn('w:r'), {})
+    if lead_rpr is not None:
+        r.append(copy.deepcopy(lead_rpr))
+    _set_run_text(r, lead)
+    p.append(r)
+
+    rid = doc.part.relate_to(url, RT.HYPERLINK, is_external=True)
+    link = p.makeelement(qn('w:hyperlink'), {qn('r:id'): rid, qn('w:history'): '1'})
+    lr = link.makeelement(qn('w:r'), {})
+    rpr = copy.deepcopy(body_rpr) if body_rpr is not None else lr.makeelement(qn('w:rPr'), {})
+    for old in rpr.findall(qn('w:rStyle')):
+        rpr.remove(old)
+    style = rpr.makeelement(qn('w:rStyle'), {qn('w:val'): 'Hyperlink'})
+    rpr.insert(0, style)
+    lr.append(rpr)
+    _set_run_text(lr, link_text)
+    link.append(lr)
+    p.append(link)
+    before_el.addprevious(p)
+    return p
+
+
 def _rpr_key(run_el):
     """A comparable signature for a run's direct formatting."""
     rpr = run_el.find(qn('w:rPr'))
