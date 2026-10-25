@@ -30,6 +30,7 @@ forgetting to tag one is only ever noise, never silence.
 - Before you restore a backup or load a saved settings profile, the app now tells you if it would change whether conversations are saved, or whether a chime plays when listening starts.
 - A setting in a backup or profile that the app cannot use, for example one that was damaged or edited by hand, is no longer applied. Your own setting stays as it is, and the app tells you which one it was.
 - Restoring a backup now saves a copy of what was on your device first, so you can go back if it was the wrong file. The message after the restore says where the copy is. On an iPad, the copy appears in the list of backups under Settings > General > Settings backup.
+- Importing a practice scenario from a file now shows you the whole scenario first, and adds it only if you choose "Add it". A scenario from a file is also held to a sensible length, so a very long one can no longer run up your AI bill; the boxes where you write your own scenarios have the same limits.
 
 ## Version 0.13.26
 

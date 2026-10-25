@@ -151,16 +151,29 @@ function neutralCard(title) {
 
 /* A plain two-button question for an action that cannot harm anything (CR-303).
  * The red card is kept for destructive actions, so it keeps reading as dangerous.
- * Cancel has focus; Escape and the backdrop cancel. Returns Promise<boolean>. */
+ * Cancel has focus; Escape and the backdrop cancel. Returns Promise<boolean>.
+ * `preview` shows text to read before deciding, in the same scrollable box the red card
+ * uses - for a practice scenario that came from a file (October 25 2026). */
 export function confirmNeutral({
     title = '',
     body = '',
+    preview = '',
     confirmLabel = 'OK',
     cancelLabel = 'Cancel'
 } = {}) {
     return new Promise((resolve) => {
         const { dlg, p } = neutralCard(title);
         p.textContent = body;
+        if (preview) {
+            dlg.classList.add('has-preview');
+            const pre = document.createElement('textarea');
+            pre.className = 'danger-preview';
+            pre.readOnly = true;
+            pre.rows = 10;
+            pre.value = preview;
+            pre.setAttribute('aria-label', title ? `${title} - what it says` : 'What it says');
+            dlg.append(pre);
+        }
         const actions = document.createElement('div');
         actions.className = 'danger-actions';
         const cancelBtn = document.createElement('button');

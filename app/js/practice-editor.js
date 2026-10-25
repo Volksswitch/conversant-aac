@@ -19,7 +19,7 @@
 import * as library from './practice-library.js';
 import { SCENARIOS as BUILT_IN } from './practice-scenarios.js';
 import * as llm from './llm.js';
-import { confirmDanger } from './confirm-dialog.js';
+import { confirmDanger, confirmNeutral } from './confirm-dialog.js';
 import * as relationships from './relationships.js';
 import { downloadText } from './data-transfer.js';
 
@@ -200,6 +200,7 @@ function renderList() {
     const fresh = helpGroup(container, 'practiceNew', 'New scenario');
     const sentence = el('textarea', {
         rows: 3,
+        maxLength: 1000,
         placeholder: 'Describe the conversation in a sentence. For example: “I need to tell my landlord the heating has been broken for two weeks.”',
         autocomplete: 'off',
     });
@@ -228,6 +229,22 @@ function renderList() {
         if (text === null) { note.textContent = 'That file could not be read as a scenario.'; return; }
         const got = library.parseImport(text);
         if (got.error) { note.textContent = got.error; return; }
+        if (library.alreadyHave(got.scenario)) { note.textContent = `“${got.scenario.title}” is already in Your scenarios.`; return; }
+        // ⚠ READ IT BEFORE IT IS ADDED (security review, October 25 2026). A scenario
+        // file can come from anyone - a therapist, or a stranger - and what it says is
+        // exactly what the practice partner is told to be, and its details are read by
+        // the AI as true facts about the user. So it is shown in full, in the form's own
+        // words, and added only on a yes.
+        const linked = got.scenario.personId ? relationships.getPerson(got.scenario.personId) : null;
+        const shortNote = got.shortened.length
+            ? `\n\nSome of it was too long to use, so it was shortened: ${got.shortened.map((k) => library.FIELD_NAMES[k] || k).join(', ')}.`
+            : '';
+        if (!(await confirmNeutral({
+            title: 'Add this practice scenario?',
+            body: 'It came from a file. The AI will play the person it describes, and will treat its details as true, as if you had written them. Only add a scenario you made yourself or got from someone you trust.' + shortNote,
+            preview: library.describeForPreview(got.scenario, linked ? (linked.nickname || linked.name) : ''),
+            confirmLabel: 'Add it',
+        }))) { note.textContent = 'Not added.'; return; }
         const { id, added } = await library.importScenario(got.scenario, (pid) => !!relationships.getPerson(pid));
         if (!added) { note.textContent = `“${got.scenario.title}” is already in Your scenarios.`; return; }
         goTo({ mode: 'edit', id });
@@ -307,9 +324,12 @@ function renderForm(scenario, creating) {
 
     const textField = (helpKey, heading, prop, multiline = false, placeholder = '') => {
         const g = helpGroup(container, helpKey, heading);
+        // The same limits an imported file is held to (October 25 2026), so a scenario
+        // written here can always be exported and imported again whole.
+        const limit = library.FIELD_LIMITS[prop] ? { maxLength: library.FIELD_LIMITS[prop] } : {};
         const f = multiline
-            ? el('textarea', { rows: 4, value: draft[prop] || '', placeholder, autocomplete: 'off' })
-            : el('input', { type: 'text', value: draft[prop] || '', placeholder, autocomplete: 'off' });
+            ? el('textarea', { rows: 4, value: draft[prop] || '', placeholder, autocomplete: 'off', ...limit })
+            : el('input', { type: 'text', value: draft[prop] || '', placeholder, autocomplete: 'off', ...limit });
         f.addEventListener('input', () => { draft[prop] = f.value; });
         f.addEventListener('change', () => save({ [prop]: f.value }));
         nameFrom(g, f);
@@ -350,7 +370,7 @@ function renderForm(scenario, creating) {
     const behaviorGroup = selectField('practiceBehavior', 'How they are behaving', 'behavior',
         library.BEHAVIORS.map((b) => [b.id, b.label]),
         (value) => { custom.hidden = value !== 'custom'; if (value === 'custom') custom.focus(); });
-    const custom = el('input', { type: 'text', value: draft.behaviorText || '', placeholder: 'Describe how they are being', autocomplete: 'off' });
+    const custom = el('input', { type: 'text', value: draft.behaviorText || '', placeholder: 'Describe how they are being', autocomplete: 'off', maxLength: library.FIELD_LIMITS.behaviorText });
     custom.hidden = draft.behavior !== 'custom';
     custom.addEventListener('input', () => { draft.behaviorText = custom.value; });
     custom.addEventListener('change', () => save({ behaviorText: custom.value }));

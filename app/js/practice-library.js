@@ -44,6 +44,54 @@ export const BEHAVIORS = [
     { id: 'custom',      label: 'In my own words',      prompt: '' },
 ];
 
+// ⚠ HOW LONG EACH PIECE OF A SCENARIO MAY BE (security review, October 25 2026). Every
+// word of a scenario is sent to the AI on every exchange of a practice, and a scenario
+// FILE could carry up to a megabyte - very roughly a dollar an exchange, on the user's
+// own bill. These are well above anything a person writes by hand (the longest built-in
+// "who they are" is under 300 characters) and are applied where text ENTERS: the editor's
+// boxes, an imported file, the AI's draft and a scenario started from About Me. Stored
+// scenarios are never cut when they are read, so nothing a user already has changes.
+export const FIELD_LIMITS = {
+    title: 100,
+    description: 300,
+    partnerPersona: 2000,
+    register: 200,
+    behaviorText: 300,
+    details: 3000,
+};
+
+// The editor's name for each piece, so the preview and any "shortened" note use the
+// words the user sees on the form.
+export const FIELD_NAMES = {
+    title: 'Name',
+    description: 'One-line summary',
+    partnerPersona: 'Who they are',
+    register: 'The kind of encounter',
+    behaviorText: 'How they are behaving',
+    details: 'Details for this practice',
+};
+
+/** Cut text to its limit at a word, marked with an ellipsis. Pure. */
+export function fitText(text, max) {
+    const t = str(text);
+    if (t.length <= max) return { text: t, cut: false };
+    let end = t.lastIndexOf(' ', max - 1);
+    if (end < max * 0.6) end = max - 1;
+    return { text: t.slice(0, end).trimEnd() + '…', cut: true };
+}
+
+/** Apply FIELD_LIMITS to a scenario. Returns { scenario, shortened: [field] }. Pure. */
+export function withinLimits(s) {
+    const out = { ...s };
+    const shortened = [];
+    for (const [k, max] of Object.entries(FIELD_LIMITS)) {
+        const r = fitText(out[k], max);
+        if (r.cut) shortened.push(k);
+        out[k] = r.text;
+    }
+    return { scenario: out, shortened };
+}
+
 let model = null;
 
 function defaultModel() {
@@ -213,7 +261,7 @@ export function scenarioFromPerson(person) {
         rel ? `${str(person.name)}, my ${rel.toLowerCase()}.` : `${str(person.name)}.`,
         str(person.about),
     ].filter(Boolean).join(' ');
-    return normalizeScenario({
+    return withinLimits(normalizeScenario({
         id: null,
         personId: person.id,
         title: `Talking with ${label}`,
@@ -222,7 +270,7 @@ export function scenarioFromPerson(person) {
         partnerPersona: persona,
         register: 'a conversation between two people who know each other',
         behavior: 'warm',
-    });
+    })).scenario;
 }
 
 /** The AI's suggested opening lines, as a clean list. Tolerates prose around the JSON. */
@@ -324,7 +372,7 @@ export function parseDraft(text, sentence = '') {
         if (m) { try { parsed = JSON.parse(m[0]); } catch { /* fall through */ } }
     }
     if (!parsed || typeof parsed !== 'object') return null;
-    const s = normalizeScenario({ ...parsed, id: null });
+    const s = withinLimits(normalizeScenario({ ...parsed, id: null })).scenario;
     if (!s.partnerPersona) return null;
     if (!s.title) s.title = str(sentence).slice(0, 60) || 'My scenario';
     return s;
@@ -384,10 +432,41 @@ export function parseImport(text) {
     let parsed;
     try { parsed = JSON.parse(text); } catch { return notOurs; }
     if (!parsed || parsed.kind !== EXPORT_KIND || !parsed.scenario || typeof parsed.scenario !== 'object') return notOurs;
-    const scenario = portable({ ...parsed.scenario, id: 'x' });
+    const { scenario, shortened } = withinLimits(portable({ ...parsed.scenario, id: 'x' }));
     // A scenario with nobody for the AI to play cannot be practiced.
     if (!scenario.partnerPersona) return { error: 'That scenario does not say who the other person is, so it cannot be used.' };
-    return { scenario };
+    return { scenario, shortened };
+}
+
+/** Is a scenario just like this one already among the user's own? */
+export function alreadyHave(raw) {
+    const s = normalizeScenario({ ...raw, id: 'x' });
+    return ensureLoaded().scenarios.some((x) => sameScenario(x, s));
+}
+
+/**
+ * The words shown before an imported scenario is added (security review, October 25
+ * 2026). A scenario file can come from anyone, and what it says is what the practice
+ * partner is told to be - so the user reads it first, in the form's own words, rather
+ * than meeting it partway through a practice. `personName` is the About Me person it
+ * stays linked to, when there is one on this device. Pure.
+ */
+export function describeForPreview(scenario, personName = '') {
+    const behavior = scenario.behavior === 'custom'
+        ? (str(scenario.behaviorText) || '(not described)')
+        : ((BEHAVIORS.find((b) => b.id === scenario.behavior) || BEHAVIORS[0]).label);
+    const lines = [
+        `${FIELD_NAMES.title}: ${scenario.title || '(none)'}`,
+        `Kind: ${scenario.category}`,
+        `Who speaks first: ${scenario.opensWith === 'user' ? 'I do' : 'They do'}`,
+    ];
+    if (personName) lines.push(`About: ${personName}, from your About Me`);
+    if (scenario.description) lines.push(`${FIELD_NAMES.description}: ${scenario.description}`);
+    lines.push('', `${FIELD_NAMES.partnerPersona}:`, scenario.partnerPersona);
+    if (scenario.register) lines.push('', `${FIELD_NAMES.register}: ${scenario.register}`);
+    lines.push('', `${FIELD_NAMES.behaviorText}: ${behavior}`);
+    if (scenario.details) lines.push('', `${FIELD_NAMES.details}:`, scenario.details);
+    return lines.join('\n');
 }
 
 function sameScenario(a, b) {

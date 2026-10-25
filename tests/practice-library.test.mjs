@@ -220,3 +220,52 @@ test('the file name comes from the scenario name', () => {
     assert.equal(library.exportFilename({ title: 'Talking with Mom!' }), 'conversant-scenario-talking-with-mom.json');
     assert.equal(library.exportFilename({ title: '' }), 'conversant-scenario-untitled.json');
 });
+
+/* ── Security review, October 25 2026: a scenario file can come from anyone ───── */
+
+test('an oversized scenario file is shortened to the limits, and says which parts', () => {
+    // A 1 MB file was accepted whole and its words were sent to the AI on every
+    // exchange of a practice, on the user's own bill.
+    const huge = 'word '.repeat(200000);
+    const text = JSON.stringify({
+        kind: library.EXPORT_KIND, version: 1,
+        scenario: { title: 'Big', partnerPersona: huge, details: huge, register: 'a chat' },
+    });
+    const got = library.parseImport(text);
+    assert.ok(!got.error);
+    assert.ok(got.scenario.partnerPersona.length <= library.FIELD_LIMITS.partnerPersona);
+    assert.ok(got.scenario.details.length <= library.FIELD_LIMITS.details);
+    assert.ok(got.scenario.partnerPersona.endsWith('…'), 'a shortened piece is marked');
+    assert.deepEqual(got.shortened.sort(), ['details', 'partnerPersona']);
+    // And the words that reach the AI are bounded too - the actual cost claim.
+    const brief = library.buildPartnerBrief(got.scenario) + library.buildUserSideBlock(got.scenario);
+    assert.ok(brief.length < 12000, `the prompt text stays small (${brief.length})`);
+});
+
+test('an ordinary scenario is never shortened, and every built-in fits the limits', () => {
+    for (const s of SCENARIOS) {
+        if (!s.partnerPersona) continue;
+        const got = library.parseImport(library.buildExport(s));
+        assert.deepEqual(got.shortened, [], s.id);
+        assert.equal(got.scenario.partnerPersona, s.partnerPersona);
+    }
+});
+
+test('the preview shows what the partner will be told, in the form\'s own words', () => {
+    const got = library.parseImport(library.buildExport({
+        ...doctor(), behavior: 'custom', behaviorText: 'mocking and cruel', details: 'They will ask about my scan.',
+    }));
+    const shown = library.describeForPreview(got.scenario, 'Dr. Patel');
+    assert.match(shown, /Who they are:/);
+    assert.ok(shown.includes(doctor().partnerPersona), 'the whole description is shown');
+    assert.match(shown, /How they are behaving: mocking and cruel/);
+    assert.match(shown, /Details for this practice:\nThey will ask about my scan\./);
+    assert.match(shown, /About: Dr\. Patel, from your About Me/);
+});
+
+test('a scenario already in the list is recognized before the preview is shown', async () => {
+    const id = await library.copyScenario(doctor());
+    const again = library.parseImport(library.buildExport(library.getScenario(id))).scenario;
+    assert.equal(library.alreadyHave(again), true);
+    assert.equal(library.alreadyHave({ ...again, details: 'something new' }), false);
+});
