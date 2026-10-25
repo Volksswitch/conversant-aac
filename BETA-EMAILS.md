@@ -2,12 +2,21 @@
 
 Drafts for answering the two forms on the beta page
 (volksswitch.org/index.php/conversant-beta). Words in [brackets] are filled in
-each time. Paragraphs marked "only if" are left out when they don't apply.
+each time.
 
-## 1. Welcome and next steps
+This file is the master. The Word copies in `Other/Beta Testing/Emails` are made
+from it by `python scripts/make-beta-emails.py`, so change the wording here and
+re-run that.
 
-**When:** a sign-up says 18 or older, or an invited person says yes.
-**To:** the tester. Copy their helper only if they asked for that.
+There is one welcome email per kind of device, so nothing has to be cut out
+before sending.
+
+## 1a. Welcome - Windows computer, Chromebook or Mac
+
+**When:** a sign-up says 18 or older and names a Windows computer or tablet, a
+Chromebook or a Mac. Also when an invited person answers yes with one of these.
+**To:** the tester. Copy their helper only if they asked for that, and then keep
+the sentence about the helper.
 
 > Subject: Welcome to the Conversant AAC beta
 >
@@ -15,38 +24,171 @@ each time. Paragraphs marked "only if" are left out when they don't apply.
 >
 > Thanks for signing up. I'm glad you'll be trying Conversant.
 >
-> *Only if a helper is copied:* I've copied [helper's name] on this email, as you
-> asked. If you'd ever like me to stop copying them, just tell me.
+> I've copied [helper's name] on this email, as you asked. If you'd ever like me
+> to stop copying them, just tell me.
 >
-> Here's how we'll get started:
+> Here's how to get started:
 >
-> - **The app.** Conversant runs at https://conversant.volksswitch.org. You don't
->   have to install anything from an app store.
-> - **The AI.** During the beta, we pay for the AI that writes the suggestions.
->   I'll set up a key for you and send it separately.
-> - *Only if iPad or Android:* **Hearing the other person.** On [an iPad / an
->   Android device], Conversant needs a speech service to hear the person you're
->   talking with. Please don't sign up for one yet. I'll work out the best option
->   with you.
-> - *Only if Windows, Chromebook or Mac:* **Hearing the other person.** On [a
->   Windows computer / a Chromebook / a Mac], Conversant can hear the other person
->   for free, using the browser.
-> - *Only if "Not sure yet":* **Your device.** Which device do you have? It
->   changes a couple of the setup steps, so let me know when you can.
-> - **Setup help.** I'm happy to go through setup with you. What days and times
->   work for you?
+> 1. **Watch the five Getting Started videos.** Together they take about four
+>    minutes. Start with [What Conversant Is For](https://volksswitch.org/index.php/conversant-videos/video-1-1/).
+>    When each video ends, a Next button takes you to the following one, so you
+>    don't need to come back here. If you'd rather pick one, here they are:
+>    [What Conversant Is For](https://volksswitch.org/index.php/conversant-videos/video-1-1/),
+>    [Installing Conversant](https://volksswitch.org/index.php/conversant-videos/video-1-2-computer/),
+>    [Adding Your AI Key](https://volksswitch.org/index.php/conversant-videos/video-1-3/),
+>    [Keeping Your Information Safe](https://volksswitch.org/index.php/conversant-videos/video-1-4-computer/)
+>    and [Do You Need a Speech Service?](https://volksswitch.org/index.php/conversant-videos/video-1-5/)
+> 2. **Open Conversant** at [conversant.volksswitch.org](https://conversant.volksswitch.org/).
+>    You don't have to install anything from an app store.
+> 3. **Add your AI key.** During the beta, we pay for the AI that writes the
+>    suggestions. Here is your key. Copy all of it, from "sk-ant" to the end:
 >
-> The Beta Test Plan explains what we'll ask of you and what we'll send back from
-> the app: https://volksswitch.org/index.php/beta-test-plan/
+>    **[AI key]**
+>
+>    The "Adding Your AI Key" video shows where to paste it.
+> 4. **Hearing the other person is free.** On [a Windows computer / a Chromebook /
+>    a Mac], Conversant uses the browser to hear the person you're talking with,
+>    so you don't need a speech service.
+> 5. **Setup help.** I'm happy to go through setup with you. What days and times
+>    work for you?
+>
+> When you're ready for more, here are [all the how-to videos](https://volksswitch.org/index.php/conversant-videos/).
+> The [Beta Test Plan](https://volksswitch.org/index.php/beta-test-plan/) explains
+> what we'll ask of you and what the app sends back to us.
+>
+> Thanks again,
+> Ken
+
+## 1b. Welcome - iPad
+
+**When:** a sign-up says 18 or older and names an iPad, or an invited person
+answers yes with an iPad.
+**To:** the tester. Copy their helper only if they asked for that, and then keep
+the sentence about the helper.
+
+> Subject: Welcome to the Conversant AAC beta
+>
+> Hi [first name],
+>
+> Thanks for signing up. I'm glad you'll be trying Conversant.
+>
+> I've copied [helper's name] on this email, as you asked. If you'd ever like me
+> to stop copying them, just tell me.
+>
+> Here's how to get started:
+>
+> 1. **Watch the five Getting Started videos.** Together they take about four
+>    minutes. Start with [What Conversant Is For](https://volksswitch.org/index.php/conversant-videos/video-1-1/).
+>    When each video ends, a Next button takes you to the following one, so you
+>    don't need to come back here. If you'd rather pick one, here they are:
+>    [What Conversant Is For](https://volksswitch.org/index.php/conversant-videos/video-1-1/),
+>    [Installing Conversant](https://volksswitch.org/index.php/conversant-videos/video-1-2-ipad/),
+>    [Adding Your AI Key](https://volksswitch.org/index.php/conversant-videos/video-1-3/),
+>    [Keeping Your Information Safe](https://volksswitch.org/index.php/conversant-videos/video-1-4-ipad/)
+>    and [Do You Need a Speech Service?](https://volksswitch.org/index.php/conversant-videos/video-1-5/)
+> 2. **Open Conversant** in Safari at [conversant.volksswitch.org](https://conversant.volksswitch.org/),
+>    then add it to your Home Screen. The "Installing Conversant" video shows how.
+>    You don't have to install anything from the App Store.
+> 3. **Add your AI key.** During the beta, we pay for the AI that writes the
+>    suggestions. Here is your key. Copy all of it, from "sk-ant" to the end:
+>
+>    **[AI key]**
+>
+>    The "Adding Your AI Key" video shows where to paste it.
+> 4. **Hearing the other person.** On an iPad, Conversant needs a speech service
+>    to hear the person you're talking with. Please don't sign up for one yet.
+>    I'll work out the best option with you.
+> 5. **Setup help.** I'm happy to go through setup with you. What days and times
+>    work for you?
+>
+> When you're ready for more, here are [all the how-to videos](https://volksswitch.org/index.php/conversant-videos/).
+> The [Beta Test Plan](https://volksswitch.org/index.php/beta-test-plan/) explains
+> what we'll ask of you and what the app sends back to us.
+>
+> Thanks again,
+> Ken
+
+## 1c. Welcome - Android
+
+**When:** a sign-up says 18 or older and names an Android tablet or phone, or an
+invited person answers yes with one.
+**To:** the tester. Copy their helper only if they asked for that, and then keep
+the sentence about the helper.
+
+> Subject: Welcome to the Conversant AAC beta
+>
+> Hi [first name],
+>
+> Thanks for signing up. I'm glad you'll be trying Conversant.
+>
+> I've copied [helper's name] on this email, as you asked. If you'd ever like me
+> to stop copying them, just tell me.
+>
+> Here's how to get started:
+>
+> 1. **Watch the five Getting Started videos.** Together they take about four
+>    minutes. Start with [What Conversant Is For](https://volksswitch.org/index.php/conversant-videos/video-1-1/).
+>    When each video ends, a Next button takes you to the following one, so you
+>    don't need to come back here. If you'd rather pick one, here they are:
+>    [What Conversant Is For](https://volksswitch.org/index.php/conversant-videos/video-1-1/),
+>    [Installing Conversant](https://volksswitch.org/index.php/conversant-videos/video-1-2-android/),
+>    [Adding Your AI Key](https://volksswitch.org/index.php/conversant-videos/video-1-3/),
+>    [Keeping Your Information Safe](https://volksswitch.org/index.php/conversant-videos/video-1-4-android/)
+>    and [Do You Need a Speech Service?](https://volksswitch.org/index.php/conversant-videos/video-1-5/)
+> 2. **Open Conversant** in Chrome at [conversant.volksswitch.org](https://conversant.volksswitch.org/),
+>    then install it. The "Installing Conversant" video shows how. You don't have
+>    to install anything from the Play Store.
+> 3. **Add your AI key.** During the beta, we pay for the AI that writes the
+>    suggestions. Here is your key. Copy all of it, from "sk-ant" to the end:
+>
+>    **[AI key]**
+>
+>    The "Adding Your AI Key" video shows where to paste it.
+> 4. **Hearing the other person.** On an Android device, Conversant needs a speech
+>    service to hear the person you're talking with. Please don't sign up for one
+>    yet. I'll work out the best option with you.
+> 5. **Setup help.** I'm happy to go through setup with you. What days and times
+>    work for you?
+>
+> When you're ready for more, here are [all the how-to videos](https://volksswitch.org/index.php/conversant-videos/).
+> The [Beta Test Plan](https://volksswitch.org/index.php/beta-test-plan/) explains
+> what we'll ask of you and what the app sends back to us.
+>
+> Thanks again,
+> Ken
+
+## 1d. Welcome - device not known yet
+
+**When:** a sign-up says 18 or older and answers "Not sure yet" for the device.
+**To:** the tester. Copy their helper only if they asked for that, and then keep
+the sentence about the helper.
+
+> Subject: Welcome to the Conversant AAC beta
+>
+> Hi [first name],
+>
+> Thanks for signing up. I'm glad you'll be trying Conversant.
+>
+> I've copied [helper's name] on this email, as you asked. If you'd ever like me
+> to stop copying them, just tell me.
+>
+> Before we start, which device will you use: an iPad, an Android tablet or phone,
+> a Windows computer or tablet, a Chromebook, or a Mac? A couple of the setup
+> steps depend on it. Once I know, I'll send your AI key and the setup steps for
+> that device.
+>
+> In the meantime, this one-minute video explains what Conversant does:
+> [What Conversant Is For](https://volksswitch.org/index.php/conversant-videos/video-1-1/).
+> The [Beta Test Plan](https://volksswitch.org/index.php/beta-test-plan/) explains
+> what we'll ask of you and what the app sends back to us.
 >
 > Thanks again,
 > Ken
 
 ## 2. The kind decline
 
-**When:** a sign-up, or an invited person, answers "No" to "Are you 18 or older and
-making your own decisions?"
-**To:** the person who answered. Write it personally; adjust as needed.
+**When:** a sign-up, or an invited person, answers "No" to "Are you 18 or older and making your own decisions?"
+**To:** the person who answered. Write it personally, and adjust as needed.
 
 > Subject: Your Conversant AAC beta sign-up
 >
@@ -101,9 +243,12 @@ making your own decisions?"
 > other person and offers four replies. You tap one and the app speaks it. If none
 > of them fit, you can type your own words.
 >
+> This one-minute video shows what it's for:
+> [What Conversant Is For](https://volksswitch.org/index.php/conversant-videos/video-1-1/).
+>
 > We're looking for people to test it, and you're very welcome to join. Whether
-> you do is entirely up to you. You can read more here:
-> https://volksswitch.org/index.php/conversant-beta/
+> you do is entirely up to you. You can read more on the
+> [beta page](https://volksswitch.org/index.php/conversant-beta/).
 >
 > If you'd like to join, you can fill in the "Sign up yourself" form on that page.
 > Or just reply to this email with your answers to these three questions:
@@ -121,5 +266,5 @@ making your own decisions?"
 
 ## 5. When the invited person answers
 
-**Yes, 18 or older:** send email 1, with that person's answers.
+**Yes, 18 or older:** send the welcome for their device (1a to 1d), with their answers.
 **No on the age question:** send email 2.
