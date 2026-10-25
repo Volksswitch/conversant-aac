@@ -19,7 +19,8 @@
  *
  * Run:  node --no-warnings scripts/spanish-eval.mjs
  * Needs the API key in .anthropic-key (or ANTHROPIC_API_KEY). About 16 requests,
- * well under a dollar. Writes Reports/spanish-eval-<date>.md (git-ignored).
+ * well under a dollar. Writes Reports/spanish-eval-<date>.md and .json (git-ignored);
+ * the .json feeds the native speaker's review page (scripts/spanish-review/).
  */
 import '../tests/env.mjs';
 import { loadApiKey } from '../tests/env.mjs';
@@ -112,6 +113,7 @@ async function run() {
         'The app\'s English instructions to the AI, plus one line asking for Mexican / US Latino Spanish.',
         'For each set: does every option sound like something a bilingual young woman from San Antonio would actually say? Note anything stiff, translated-sounding, from another region, or wrong.', ''];
     let ok = 0, failed = 0;
+    const sets = [];
 
     for (const s of SCENARIOS) {
         setupFor(s);
@@ -120,17 +122,38 @@ async function run() {
         for (const h of s.history || []) L.push(`**${h.role === 'user' ? 'Marisol' : s.who}:** ${h.text}`, '');
         L.push(`**${s.who}:** ${s.partner}`, '');
         if (s.steer) L.push(`**Marisol typed (Reframe):** ${s.steer}`, '');
+        const set = { id: s.id, who: s.who, what: s.what, history: s.history || [],
+            partner: s.partner, steer: s.steer || null, options: [], checks: [] };
         try {
             const r = await llm.generateResponses(history, {}, s.steer ? { steer: s.steer } : {});
             ok++;
-            for (const o of r.responses || []) L.push(`- **${o.slot}:** ${o.text}  *(button: ${o.hint})*`);
-            if (!(r.responses || []).length) L.push('- *(no options came back)*');
-            const n = checks(s, r);
-            if (n.length) L.push('', `Automatic check: ${n.join('; ')}`);
+            set.options = (r.responses || []).map(o => ({ slot: o.slot, text: o.text, hint: o.hint || null }));
+            // A "What?" turn comes back with no responses BY DESIGN: the app then offers
+            // the user's last words again, plus a reworded and a fuller version, from a
+            // second request. Make that request here, so the reviewer sees what the user
+            // would actually see. The short wording on those three is fixed English in
+            // the app, so there is no button wording to judge.
+            if (r.classification?.is_repair_initiator) {
+                const last = [...(s.history || [])].reverse().find(h => h.role === 'user');
+                if (last) {
+                    const rep = await llm.repairOptions(last.text, history);
+                    set.options = [
+                        { slot: 'REPAIR_RESPEAK', text: last.text, hint: null },
+                        { slot: 'REPAIR_REPHRASE', text: rep.rephrase, hint: null },
+                        { slot: 'REPAIR_EXPAND', text: rep.expand, hint: null },
+                    ].filter(o => o.text);
+                }
+            }
+            for (const o of set.options) L.push(`- **${o.slot}:** ${o.text}${o.hint ? `  *(button: ${o.hint})*` : ''}`);
+            if (!set.options.length) L.push('- *(no options came back)*');
+            set.checks = checks(s, r);
+            if (set.checks.length) L.push('', `Automatic check: ${set.checks.join('; ')}`);
         } catch (err) {
             failed++;
+            set.failed = err.message;
             L.push(`- **FAILED:** ${err.message}`);
         }
+        sets.push(set);
         L.push('');
         process.stdout.write(`${s.id} `);
     }
@@ -138,7 +161,11 @@ async function run() {
     mkdirSync('Reports', { recursive: true });
     const out = `Reports/spanish-eval-${date}.md`;
     writeFileSync(out, L.join('\n'), 'utf8');
-    console.log(`\n${out}`);
+    // The same results as data, for the reviewer's page
+    // (scripts/spanish-review/build-review-page.mjs).
+    const json = `Reports/spanish-eval-${date}.json`;
+    writeFileSync(json, JSON.stringify({ date, sets }, null, 2), 'utf8');
+    console.log(`\n${out}\n${json}`);
 }
 
 run().catch((e) => { console.error(e); process.exit(1); });

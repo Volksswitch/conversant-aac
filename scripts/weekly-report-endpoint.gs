@@ -49,6 +49,7 @@ var SECRET = 'u_mlqOZgElbxCB7732CAwSzC';
 var SHEET_NAME = 'reports';
 var WEEKS_SHEET_NAME = 'weeks';   // one row per tester per week - the retention curve
 var PROBLEMS_SHEET_NAME = 'problems';  // one row per 'Report a problem' the tester sent
+var REVIEW_SHEET_NAME = 'spanish review';  // one row per reply a native speaker graded
 /* MAIL ON TROUBLE. Ken, August 21 2026: "I need to hear about errors shortly after
  * they are reported." Reports arrive when a tester opens the app, so "shortly after"
  * is as soon as one lands - which is what this does, and it is the only part of the
@@ -115,6 +116,38 @@ function doPost(e) {
             'Conversant AAC - problem report from ' + (p.testerName || 'a tester'),
             (p.note || '(no note)') + '\n\nThe full report is on the problems tab:\n' +
             _tabLink(PROBLEMS_SHEET_NAME));
+        } catch (mailErr) { console.error(mailErr); }
+      }
+      return _out('ok');
+    }
+
+    // A native speaker's grades of the Spanish evaluation (Ken, October 25 2026), sent
+    // from the review page on volksswitch.org, not from the app. One row per reply
+    // graded, so the tab can be sorted and filtered by grade; the reviewer's details and
+    // their comments repeat on every row of their submission. Sending again adds a new
+    // set of rows - the newest "received" is the one to read.
+    if (p.kind === 'spanish-review') {
+      var who = p.reviewer || {};
+      var rows = [];
+      var received = new Date();
+      (p.sets || []).forEach(function (s) {
+        (s.options || []).forEach(function (o) {
+          rows.push([received, _txt(who.name || ''), _txt(who.region || ''), _txt(who.frequency || ''),
+            _txt(p.evalDate || ''), _txt(s.id || ''), _txt(s.who || ''), _txt(s.partner || ''),
+            _txt(o.kind || o.slot || ''), _txt(o.text || ''), _txt(o.grade || ''),
+            _txt(o.hint || ''), _txt(o.hintGrade || ''), _txt(_clip(o.rewrite)), _txt(_clip(s.comment))]);
+        });
+      });
+      rows.push([received, _txt(who.name || ''), _txt(who.region || ''), _txt(who.frequency || ''),
+        _txt(p.evalDate || ''), 'overall', '', '', '', '', '', '', '', '', _txt(_clip(p.overall))]);
+      var rsheet = _reviewSheet();
+      rsheet.getRange(rsheet.getLastRow() + 1, 1, rows.length, REVIEW_HEADER.length).setValues(rows);
+      if (ALERT_EMAIL) {
+        try {
+          MailApp.sendEmail(ALERT_EMAIL,
+            'Conversant AAC - Spanish review from ' + (who.name || 'a reviewer'),
+            (p.overall || '(no overall comment)') + '\n\nThe answers are on the ' + REVIEW_SHEET_NAME +
+            ' tab:\n' + _tabLink(REVIEW_SHEET_NAME));
         } catch (mailErr) { console.error(mailErr); }
       }
       return _out('ok');
@@ -263,7 +296,10 @@ function _writeWeeks(p) {
  * Visiting the /exec URL in a browser now prints this, so a redeploy is confirmable in
  * two seconds with nothing written. The correct redeploy is:
  *   Deploy > Manage deployments > pencil > Version: New version > Deploy   (same URL) */
-var SCRIPT_VERSION = '2026-10-10a';
+/* (!) The Spanish review page reads this before it sends, and refuses to send to a
+ * version older than 2026-10-25, which would file the answers as a weekly report. Keep
+ * the format date-first so a plain text comparison still orders correctly. */
+var SCRIPT_VERSION = '2026-10-25a';
 
 // A GET is handy for confirming the deployment is live, and WHICH CODE is live.
 function doGet() {
@@ -394,6 +430,16 @@ function _sheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(SHEET_NAME) || ss.insertSheet(SHEET_NAME);
   return _fit(sheet, REPORT_HEADER);
+}
+
+var REVIEW_HEADER = ['received', 'reviewer', 'their Spanish from', 'how often they speak it',
+      'evaluation of', 'situation', 'talking with', 'partner said', 'kind of reply', 'reply',
+      'grade', 'button wording', 'button grade', 'how they would say it', 'comment on situation'];
+
+function _reviewSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(REVIEW_SHEET_NAME) || ss.insertSheet(REVIEW_SHEET_NAME);
+  return _fit(sheet, REVIEW_HEADER);
 }
 
 var WEEKS_HEADER = ['install', 'week', 'tester', 'week starting', 'days used',
