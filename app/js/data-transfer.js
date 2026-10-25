@@ -120,7 +120,12 @@ async function readOne(entry) {
 // conversations is mostly the READING, so an export needs the same visible progress an
 // import already has, for the same reason: a card that never changes is indistinguishable
 // from a crash.
-export async function buildPackage(appVersion, onProgress) {
+//
+// `parts` leaves out what an import never replaces, for the safety copy made before an
+// import (October 25 2026): conversations, sound clips and saved profiles are ADDED by
+// an import, never removed, so copying them first would only make the copy slow.
+export async function buildPackage(appVersion, onProgress, parts = {}) {
+    const { conversations: withConversations = true, audio: withAudio = true, profiles: withProfiles = true } = parts;
     const data = {};
     let done = 0;
     // The files, plus one step each for the conversations, the sounds and the settings.
@@ -135,9 +140,11 @@ export async function buildPackage(appVersion, onProgress) {
         step(entry.label);
     }
     let conversations = [];
-    try {
-        conversations = await storage.listConversationLogs();
-    } catch { /* no folder, or unreadable — export the rest anyway */ }
+    if (withConversations) {
+        try {
+            conversations = await storage.listConversationLogs();
+        } catch { /* no folder, or unreadable — export the rest anyway */ }
+    }
     step('saved conversations');
 
     // THE SOUND-BUTTON CLIPS TRAVEL IN THE BACKUP (Ken, September 14 2026: "I'd prefer
@@ -146,7 +153,7 @@ export async function buildPackage(appVersion, onProgress) {
     // which is accepted for now and can be revisited if it becomes a problem.
     const audio = [];
     try {
-        for (const { name, file } of await storage.listAudioFiles()) {
+        for (const { name, file } of (withAudio ? await storage.listAudioFiles() : [])) {
             if (!isSafeAudioName(name)) continue;
             audio.push({ name, type: file.type || mimeForName(name), data: await blobToBase64(file) });
         }
@@ -164,7 +171,7 @@ export async function buildPackage(appVersion, onProgress) {
         // then has to be excluded again.
         device: platform.deviceSignature(),
         settings: storage.getPortableSettings(),
-        profiles: await profilesThenStep(step),
+        profiles: withProfiles ? await profilesThenStep(step) : (step('settings and profiles'), []),
         activeProfile: storage.loadActiveSettingsProfile(),
         data,
         conversations,
@@ -186,6 +193,9 @@ async function profilesThenStep(step) {
 // they are about to write out or overwrite rather than trusting a filename.
 export function summarize(pkg) {
     const lines = [];
+    if (pkg && pkg.safetyCopy) {
+        lines.push('A copy the app made by itself just before an import. It holds what that import replaced; saved conversations and sounds are not in it because an import never removes them');
+    }
     for (const entry of DATA_FILES) {
         const value = pkg && pkg.data ? pkg.data[entry.file] : undefined;
         if (value === undefined) continue;
@@ -211,7 +221,7 @@ export function summarize(pkg) {
         lines.push(entry.label + detail);
     }
     const convos = (pkg && Array.isArray(pkg.conversations)) ? pkg.conversations.length : 0;
-    lines.push(`${convos} saved conversation${convos === 1 ? '' : 's'}`);
+    if (!(pkg && pkg.safetyCopy)) lines.push(`${convos} saved conversation${convos === 1 ? '' : 's'}`);
     const sounds = (pkg && Array.isArray(pkg.audio)) ? pkg.audio.length : 0;
     if (sounds) lines.push(`${sounds} sound file${sounds === 1 ? '' : 's'}`);
     const learned = pkg && pkg.wordFreq && typeof pkg.wordFreq === 'object' ? Object.keys(pkg.wordFreq).length : 0;
@@ -252,8 +262,8 @@ export function isSafeConversation(c) {
     return !!c.data && typeof c.data === 'object' && !Array.isArray(c.data);
 }
 
-export function suggestedFilename(now = new Date()) {
-    return 'conversant-backup-' +
+export function suggestedFilename(now = new Date(), prefix = 'conversant-backup-') {
+    return prefix +
         now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) +
         '-' + pad(now.getHours()) + pad(now.getMinutes()) + '.json';
 }
@@ -294,6 +304,31 @@ export async function savePackageToFolder(appVersion, onProgress) {
     const pkg = await buildPackage(appVersion, onProgress);
     const path = await storage.saveBackup(suggestedFilename(), JSON.stringify(pkg, null, 2));
     return { pkg, path };
+}
+
+/*
+ * Save what is here now, before an import replaces it (security review, October 25
+ * 2026). The import screen shows counts, but if the file was the wrong one, damaged, or
+ * from someone else, the user's About Me, people, places, Express Panel and settings
+ * would otherwise be gone for good - and revertibility is the one absolute in the
+ * Configuration Model.
+ *
+ * Into <data folder>/backups/ wherever there is a folder, including the app's private
+ * storage on an iPad, where the backup list then shows it; with no folder at all it
+ * leaves by the download path, which is the only place left to put it. Returns
+ * { where: 'folder' | 'download', name }; throws if it could not be saved, and the
+ * caller asks before going on without it.
+ */
+export async function saveSafetyCopy(appVersion, onProgress) {
+    const pkg = await buildPackage(appVersion, onProgress, { conversations: false, audio: false, profiles: false });
+    pkg.safetyCopy = true;
+    const name = suggestedFilename(new Date(), 'conversant-before-import-');
+    const text = JSON.stringify(pkg, null, 2);
+    if (storage.hasDataFolder()) {
+        return { where: 'folder', name: await storage.saveBackup(name, text) };
+    }
+    downloadText(name, text);
+    return { where: 'download', name };
 }
 
 /* Which of a package's settings apply on THIS device.

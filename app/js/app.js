@@ -7694,6 +7694,12 @@ async function offerRestart(what, done) {
         bits.push(`The ${done.profilesInFile} saved profile${done.profilesInFile === 1 ? '' : 's'} in it ` +
                   'could not be restored: they need a data folder.');
     }
+    // Where the way back is (October 25 2026), said last so it is the thing remembered.
+    if (done && done.safety) {
+        bits.push(done.safety.where === 'folder'
+            ? `What was on this device before is saved as ${done.safety.name}. To go back, open Settings > General > Settings backup, choose it, and tap "Restore selected backup".`
+            : `What was on this device before was saved by your browser as ${done.safety.name}. To go back, import that file.`);
+    }
     bits.push('Conversant AAC needs to restart to use it.');
     await showNotice({ title: 'Restart to finish', body: bits.join(' '), buttonLabel: 'Restart now' });
     location.reload();
@@ -7758,6 +7764,7 @@ async function importPackageText(text, sourceLabel) {
         body: `${sourceLabel ? sourceLabel + '\n\n' : ''}This backup was made on ${when} and contains:\n\n• ` +
               summary.join('\n• ') + privacyText +
               `\n\nImporting REPLACES your About Me answers, people, places, Express Panel, phrases and settings. Saved profiles and conversations in the backup are ADDED to the ones already here; a profile with the same name as one of yours comes in with "(2)" after it. Your keys are left exactly as they are, and anything that belongs to the other device, like the screen edge margin, stays behind. The app will ask you to restart afterwards.` +
+              `\n\nBefore anything is replaced, the app saves a copy of what is on this device now, so you can go back.` +
               `\n\nOnly import a backup you made yourself or got from someone you trust. The AI reads what is in it as if you had written it.`,
         confirmLabel: 'Replace my data',
     }))) {
@@ -7766,14 +7773,37 @@ async function importPackageText(text, sourceLabel) {
     }
     setBackupStatus('Importing…');
     importInProgress = true;
+    // ⚠ A COPY OF WHAT IS HERE NOW, BEFORE ANYTHING IS REPLACED (security review,
+    // October 25 2026). Without it a wrong, damaged or untrusted file was a one-way
+    // trip, and revertibility is the one absolute. A voice update still running would
+    // save the old voice profile over the one this restores (CR-294), so it finishes
+    // first - and finishing first also means the copy holds the settled version.
+    let safety = null;
+    try {
+        await voiceHarvestIdle();
+        setBackupStatus('Saving a copy of what is on this device now…');
+        safety = await dataTransfer.saveSafetyCopy(APP_VERSION);
+    } catch (err) {
+        storage.logError('import', 'safety copy failed: ' + (err.message || String(err)));
+    }
+    if (!safety && !(await confirmDanger({
+        title: 'Import without a copy?',
+        body: 'The app could not save a copy of what is on this device now, so this import could not be undone.\n\nImport anyway?',
+        confirmLabel: 'Import anyway',
+    }))) {
+        importInProgress = false;
+        setBackupStatus('Import canceled — nothing was changed.');
+        return;
+    }
+    setBackupStatus('Importing…');
     const busy = showBusy({
         title: 'Please wait until the import completes',
         body: 'Your backup is being restored. This can take a while on a tablet, ' +
               'especially with a lot of saved conversations. Do not close the app.',
     });
     try {
-        // A voice update still running would save the old voice profile over the one
-        // this restores (CR-294), so it finishes first.
+        // Again, right before writing: one could have started while the question above
+        // was on screen (CR-294).
         await voiceHarvestIdle();
         const done = await dataTransfer.applyPackage(pkg, (p) => {
             busy.update(p.total ? `Restored ${p.done} of ${p.total} items…` : '');
@@ -7782,7 +7812,7 @@ async function importPackageText(text, sourceLabel) {
             storage.logError('import', 'partial restore, failed: ' + done.failed.join(', '));
         }
         busy.close();
-        await offerRestart('backup', { ...done, conversationsInFile: (pkg.conversations || []).length });
+        await offerRestart('backup', { ...done, conversationsInFile: (pkg.conversations || []).length, safety });
     } catch (err) {
         storage.logError('import', err.message || String(err));
         setBackupStatus('Import failed: ' + (err.message || 'unknown error'));
@@ -7803,17 +7833,21 @@ async function renderBackupList() {
     const restoreBtn = document.getElementById('restoreBackupBtn');
     if (!row || !select || !restoreBtn) return;
 
-    if (!storage.hasVisibleDataFolder()) {
+    // Every .json in the folder, whatever its name. One kind of file again, and an
+    // import validates the `kind` inside it - so a stray file can be picked and refused
+    // legibly, which is better than a backup that exists and cannot be seen.
+    const backups = storage.hasDataFolder() ? await storage.listBackups() : [];
+    // ⚠ ON AN iPAD THE LIST SHOWS ONCE IT HAS SOMETHING IN IT (October 25 2026). The
+    // app's private storage is no folder anyone can put a file into, so an empty list
+    // there would only puzzle; but the copy saved before an import lands there, and a
+    // way back nobody can reach is no way back.
+    if (!storage.hasVisibleDataFolder() && !backups.length) {
         row.hidden = true;
         return;
     }
     row.hidden = false;
     // Primed for the file picker - see the import button.
     try { primedBackupsDir = await storage.getBackupsDirHandle(); } catch { primedBackupsDir = null; }
-    // Every .json in the folder, whatever its name. One kind of file again, and an
-    // import validates the `kind` inside it - so a stray file can be picked and refused
-    // legibly, which is better than a backup that exists and cannot be seen.
-    const backups = await storage.listBackups();
     if (!backups.length) {
         select.innerHTML = '<option value="">— No backups in your data folder yet —</option>';
         select.disabled = true;

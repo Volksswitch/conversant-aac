@@ -356,3 +356,39 @@ test('a hand-edited profile is described before loading, and its unusable values
     assert.equal(storage.getPortableSettings().voiceURI, 'Karen', 'the rest of the profile applied');
     assert.equal(storage.loadNoSaveDefault(), false, 'a privacy change is applied once the user has seen it');
 });
+
+test('an import saves a copy of what is here first, and that copy puts it back', async () => {
+    // Security review, October 25 2026: an import replaced everything with no way back.
+    await storage.restoreDataFolder();
+    localStorage.setItem('aac_places', JSON.stringify({ places: [{ id: 'mine', name: 'My clinic' }] }));
+    await storage.writeFile('places.json', JSON.stringify({ places: [{ id: 'mine', name: 'My clinic' }] }));
+    storage.applyPortableSettings({ voiceURI: 'MINE', silenceThreshold: 1 });
+
+    const safety = await dt.saveSafetyCopy('9.9.9');
+    assert.equal(safety.where, 'folder');
+    assert.match(safety.name, /^backups\/conversant-before-import-\d{4}-\d{2}-\d{2}-\d{4}(-\d+)?\.json$/);
+    const listed = (await storage.listBackups()).map((b) => b.name);
+    assert.ok(listed.includes(safety.name.replace('backups/', '')), 'it shows in the backup list');
+
+    const copy = dt.parsePackage(await storage.readBackup(safety.name.replace('backups/', '')));
+    assert.equal(copy.safetyCopy, true);
+    assert.deepEqual(copy.conversations, [], 'conversations are not copied: an import never removes them');
+    assert.deepEqual(copy.audio, []);
+    assert.deepEqual(copy.profiles, []);
+    assert.ok(dt.summarize(copy)[0].startsWith('A copy the app made by itself'));
+    assert.ok(!dt.summarize(copy).some((l) => /^\d+ saved conversation/.test(l)), 'no misleading "0 saved conversations"');
+
+    // Somebody else's backup replaces it...
+    const theirs = dt.parsePackage(JSON.stringify(await dt.buildPackage('9.9.9')));
+    theirs.data['places.json'] = { places: [{ id: 'other', name: 'Their place' }] };
+    theirs.settings = { ...theirs.settings, voiceURI: 'THEIRS' };
+    await dt.applyPackage(theirs);
+    assert.equal(JSON.parse(await storage.readFile('places.json')).places[0].name, 'Their place');
+    assert.equal(storage.getPortableSettings().voiceURI, 'THEIRS');
+
+    // ...and restoring the copy puts this device back as it was.
+    await dt.applyPackage(copy);
+    assert.equal(JSON.parse(await storage.readFile('places.json')).places[0].name, 'My clinic');
+    assert.equal(storage.getPortableSettings().voiceURI, 'MINE');
+    assert.equal(storage.loadSilenceThreshold(), 1);
+});
