@@ -60,8 +60,10 @@ answers yes with a Windows computer or tablet.
 > 6. **Setup help.** I'm happy to go through setup with you. What days and times
 >    work for you?
 >
-> When you're ready for more, here are [all the how-to videos](https://volksswitch.org/index.php/conversant-videos/).
-> The [Beta Test Plan](https://volksswitch.org/index.php/beta-test-plan/) explains
+> Keep [this page](https://volksswitch.org/index.php/conversant/) handy. It has
+> everything in one place: a button to open Conversant, the how-to videos, the
+> known issues, how to tell us about a problem, and my email. The
+> [Beta Test Plan](https://volksswitch.org/index.php/beta-test-plan/) explains
 > what we'll ask of you and what the app sends back to us.
 >
 > Thanks again,
@@ -114,8 +116,10 @@ answers yes with a Chromebook.
 > 6. **Setup help.** I'm happy to go through setup with you. What days and times
 >    work for you?
 >
-> When you're ready for more, here are [all the how-to videos](https://volksswitch.org/index.php/conversant-videos/).
-> The [Beta Test Plan](https://volksswitch.org/index.php/beta-test-plan/) explains
+> Keep [this page](https://volksswitch.org/index.php/conversant/) handy. It has
+> everything in one place: a button to open Conversant, the how-to videos, the
+> known issues, how to tell us about a problem, and my email. The
+> [Beta Test Plan](https://volksswitch.org/index.php/beta-test-plan/) explains
 > what we'll ask of you and what the app sends back to us.
 >
 > Thanks again,
@@ -168,8 +172,10 @@ answers yes with a Mac.
 > 6. **Setup help.** I'm happy to go through setup with you. What days and times
 >    work for you?
 >
-> When you're ready for more, here are [all the how-to videos](https://volksswitch.org/index.php/conversant-videos/).
-> The [Beta Test Plan](https://volksswitch.org/index.php/beta-test-plan/) explains
+> Keep [this page](https://volksswitch.org/index.php/conversant/) handy. It has
+> everything in one place: a button to open Conversant, the how-to videos, the
+> known issues, how to tell us about a problem, and my email. The
+> [Beta Test Plan](https://volksswitch.org/index.php/beta-test-plan/) explains
 > what we'll ask of you and what the app sends back to us.
 >
 > Thanks again,
@@ -233,8 +239,10 @@ answers yes with an iPad.
 > 6. **Setup help.** I'm happy to go through setup with you. What days and times
 >    work for you?
 >
-> When you're ready for more, here are [all the how-to videos](https://volksswitch.org/index.php/conversant-videos/).
-> The [Beta Test Plan](https://volksswitch.org/index.php/beta-test-plan/) explains
+> Keep [this page](https://volksswitch.org/index.php/conversant/) handy. It has
+> everything in one place: a button to open Conversant, the how-to videos, the
+> known issues, how to tell us about a problem, and my email. The
+> [Beta Test Plan](https://volksswitch.org/index.php/beta-test-plan/) explains
 > what we'll ask of you and what the app sends back to us.
 >
 > Thanks again,
@@ -295,8 +303,10 @@ invited person answers yes with one.
 > 6. **Setup help.** I'm happy to go through setup with you. What days and times
 >    work for you?
 >
-> When you're ready for more, here are [all the how-to videos](https://volksswitch.org/index.php/conversant-videos/).
-> The [Beta Test Plan](https://volksswitch.org/index.php/beta-test-plan/) explains
+> Keep [this page](https://volksswitch.org/index.php/conversant/) handy. It has
+> everything in one place: a button to open Conversant, the how-to videos, the
+> known issues, how to tell us about a problem, and my email. The
+> [Beta Test Plan](https://volksswitch.org/index.php/beta-test-plan/) explains
 > what we'll ask of you and what the app sends back to us.
 >
 > Thanks again,
@@ -323,6 +333,9 @@ invited person answers yes with one.
 >
 > In the meantime, this one-minute video explains what Conversant does:
 > [What Conversant Is For](https://volksswitch.org/index.php/conversant-videos/video-1-1/).
+> Keep [this page](https://volksswitch.org/index.php/conversant/) handy too. It
+> has everything in one place: the how-to videos, the known issues, how to tell us
+> about a problem, and my email.
 > The [Beta Test Plan](https://volksswitch.org/index.php/beta-test-plan/) explains
 > what we'll ask of you and what the app sends back to us.
 >
