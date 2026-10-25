@@ -68,3 +68,57 @@ test('the learned list stays capped', () => {
     const stored = JSON.parse(localStorage.getItem('aac_word_freq'));
     assert.ok(Object.keys(stored).length <= 2500, `${Object.keys(stored).length}`);
 });
+
+// October 25 2026: there was no way to clear learned words, including one planted by
+// somebody else's backup with a huge count so it came first whenever its first letters
+// were typed.
+test('forgetting learned words clears them, keeps the dictionary, and starts learning again', () => {
+    prediction.importFrequencies({ thunderbolt: 1000000 });
+    assert.equal(prediction.predict('th', 1)[0], 'thunderbolt', 'the planted word comes first');
+    assert.equal(prediction.learnedCount(), 1);
+
+    prediction.clearLearned();
+    assert.equal(prediction.learnedCount(), 0);
+    assert.notEqual(prediction.predict('th', 1)[0], 'thunderbolt', 'it no longer comes first');
+    assert.ok(prediction.predict('th', 3).length > 0, 'the dictionary still suggests words');
+    assert.equal(localStorage.getItem('aac_word_freq'), null, 'nothing is left in storage');
+
+    for (let i = 0; i < 3; i++) prediction.learn('thunderbolt');
+    assert.equal(prediction.learnedCount(), 1, 'learning starts again from nothing');
+});
+
+// October 25 2026: names the app already holds are suggested from the start, and the
+// user can see the list, add a word and remove one.
+test('names from About Me are suggested at once, but not the ordinary words in them', () => {
+    prediction.clearLearned();   // the learned list is kept in memory between tests
+    prediction.setKnownWordsProvider(() => ['Siobhan', 'Pulp Comics', 'The Coffee Shop']);
+    try {
+        assert.equal(prediction.predict('sio', 1)[0], 'siobhan', 'a name comes first without being typed twice');
+        assert.equal(prediction.predict('pul', 1)[0], 'pulp');
+        // "the" and "coffee" are ordinary words; a place name must not push them ahead
+        // of the dictionary's order for everything else the user types.
+        const before = (() => { prediction.setKnownWordsProvider(() => []); return prediction.predict('th', 3); })();
+        prediction.setKnownWordsProvider(() => ['Siobhan', 'Pulp Comics', 'The Coffee Shop']);
+        assert.deepEqual(prediction.predict('th', 3), before);
+        assert.equal(prediction.learnedCount(), 0, 'names are not copied into the learned list');
+    } finally {
+        prediction.setKnownWordsProvider(() => []);
+    }
+});
+
+test('a name with a letter outside a-z is skipped whole, never stored as a fragment', () => {
+    assert.deepEqual(prediction.wordsIn(['José Ramírez', "O'Brien", 'Dr. Patel']).sort(), ["o'brien", 'dr', 'patel'].sort());
+});
+
+test('the list can be seen, added to and removed from', () => {
+    prediction.clearLearned();
+    for (let i = 0; i < 3; i++) prediction.learn('thunderbolt');
+    const r = prediction.addWords('Humira José');
+    assert.deepEqual(r.added, ['humira']);
+    assert.deepEqual(r.skipped, ['José'], 'a word that cannot be suggested is said back');
+    assert.equal(prediction.predict('hum', 1)[0], 'humira', 'an added word is suggested first at once');
+    assert.deepEqual(prediction.listLearned().map((w) => w.word), ['thunderbolt', 'humira']);
+    assert.equal(prediction.removeWord('humira'), true);
+    assert.deepEqual(prediction.listLearned().map((w) => w.word), ['thunderbolt']);
+    assert.notEqual(prediction.predict('hum', 1)[0], 'humira');
+});

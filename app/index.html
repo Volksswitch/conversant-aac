@@ -1122,6 +1122,25 @@
                             </select>
                         </div>
                     </div>
+                    <!-- The words the keyboard suggests first because the user types them
+                         (October 25 2026). Kept for good and carried in a backup, and until
+                         now invisible, with no way to add one, remove one or clear them.
+                         Names from About Me and My Places are suggested too, but live
+                         there, not in this list. -->
+                    <div class="setting-group" data-help="typingSuggestions">
+                        <label>Typing suggestions</label>
+                        <p class="setting-status" id="learnedWordsStatus" role="status" aria-live="polite"></p>
+                        <div class="profiles-row">
+                            <input id="addWordInput" type="text" placeholder="A word to suggest" aria-label="A word to suggest" maxlength="60" autocomplete="off" spellcheck="false" data-no-predict>
+                        </div>
+                        <div class="profiles-row profiles-actions">
+                            <button id="addWordBtn" type="button">Add this word</button>
+                        </div>
+                        <div id="learnedWordsList" class="ee-list"></div>
+                        <div class="profiles-row profiles-actions">
+                            <button id="forgetWordsBtn" type="button">Clear the whole list</button>
+                        </div>
+                    </div>
                 </div>
                 <div class="tab-panel" data-tab="commands">
                     <p class="tab-intro">Set the exact words spoken by the persistent control buttons, and the response options shown by <strong>Start conversation</strong> and <strong>Wrap up</strong> — so each sounds like something you would say.</p>

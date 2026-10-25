@@ -31,6 +31,8 @@ forgetting to tag one is only ever noise, never silence.
 - A setting in a backup or profile that the app cannot use, for example one that was damaged or edited by hand, is no longer applied. Your own setting stays as it is, and the app tells you which one it was.
 - Restoring a backup now saves a copy of what was on your device first, so you can go back if it was the wrong file. The message after the restore says where the copy is. On an iPad, the copy appears in the list of backups under Settings > General > Settings backup.
 - Importing a practice scenario from a file now shows you the whole scenario first, and adds it only if you choose "Add it". A scenario from a file is also held to a sensible length, so a very long one can no longer run up your AI bill; the boxes where you write your own scenarios have the same limits.
+- New: typing suggestions now offer the names of the people and places in About Me, and the words in your "Words the voice gets wrong" list, from the start, instead of only after you have typed them twice. Anything you marked Private is never suggested.
+- New: Settings > Express Panel and Keyboard > Typing suggestions shows the words the keyboard suggests first because you use them. You can add a word, remove one, or clear the whole list.
 
 ## Version 0.13.26
 

@@ -31,6 +31,7 @@ import * as expressEditor from './express-editor.js';
 import * as controlPhrases from './control-phrases.js';
 import * as controlEditor from './control-phrases-editor.js';
 import * as spokenWordsEditor from './spoken-words-editor.js';
+import * as learnedWordsEditor from './learned-words-editor.js';
 import * as placeholderPhrases from './placeholder-phrases.js';
 import * as placeholderEditor from './placeholder-editor.js';
 import * as phraseAudio from './phrase-audio.js';
@@ -837,6 +838,14 @@ function initApp() {
     });
     controlEditor.init(document.getElementById('controlEditor'), { onChange: applyControlPhrases });
     spokenWordsEditor.init(document.getElementById('spokenWordsEditor'));
+    learnedWordsEditor.init({
+        list: document.getElementById('learnedWordsList'),
+        status: document.getElementById('learnedWordsStatus'),
+        clear: document.getElementById('forgetWordsBtn'),
+        addInput: document.getElementById('addWordInput'),
+        add: document.getElementById('addWordBtn'),
+    });
+    prediction.setKnownWordsProvider(knownNamesForTyping);
     // No onChange: placeholders.js reads the pools at the moment it speaks, so an
     // edit is in force on the next phrase with nothing to re-inject.
     placeholderEditor.init(document.getElementById('placeholderEditor'));
@@ -6617,6 +6626,24 @@ function revealSetting(id) {
     el.scrollIntoView({ block: 'center' });
 }
 
+// The names the typing suggestions offer from the start (Ken, October 25 2026): the
+// people and places in About Me, the user's own names, and the "Words the voice gets
+// wrong" list - never the respellings, and never anything marked Private, since a
+// suggestion is on screen while someone else may be watching. Read on every prediction,
+// so an edit in About Me shows at once.
+function knownNamesForTyping() {
+    const read = (fn) => { try { return fn() || []; } catch { return []; } };
+    return learnedWordsEditor.namesForTyping({
+        people: read(() => relationships.listPeople()),
+        places: read(() => places.listPlaces()),
+        ownNames: read(() => ['name_preferred', 'name_full', 'nickname'].map((key) => ({
+            value: worldview.getField(key),
+            private: worldview.effectivePrivacy(key) === 'private',
+        }))),
+        spokenWords: read(() => storage.loadSpokenWords()),
+    });
+}
+
 // On the Buttons & Keyboard tab the user changes keyboard layout/position but
 // there's no text field to type into, so show the keyboard as a live preview of
 // the CHOSEN dock. Any other tab takes the preview down.
@@ -6635,6 +6662,7 @@ function handleSettingsTab(tabName) {
     if (tabName === 'express') {
         expressEditor.render();
         wireExpressTabSections();
+        learnedWordsEditor.render();
         // On this tab the Express Panel is the thing being worked on, so it must be
         // visible whenever the user is not actually typing (Ken, August 23 2026).
         // Focus leaving a phrase box now puts the panel back by itself.

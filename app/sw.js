@@ -100,6 +100,7 @@ const SHELL = [
   './js/theme-init.js',
   './js/sw-register.js',
   './js/spoken-words-editor.js',
+  './js/learned-words-editor.js',
   './js/stt-rest.js',
   './js/platform.js',
   './js/express-editor.js',

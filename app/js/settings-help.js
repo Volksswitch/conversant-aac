@@ -114,6 +114,9 @@ const HELP = {
     "bandShapeSelect": "Whether a band is measured in whole rows, which keeps a straight edge, or in buttons, which gives the exact size.",
     "contextMarkSelect": "What tells a partner button from a place or a feeling: a shape, the bar color, its thickness, or which side it is on.",
     "moreScopeSelect": "When a band has more buttons than fit, whether More shows the rest in that band alone, or across the whole panel.",
+    "addWordInput": "Type a word you want suggested from the start, like a name or a medicine, then tap Add this word.",
+    "addWordBtn": "Adds the word you typed, so the keyboard suggests it first from now on.",
+    "forgetWordsBtn": "Removes every word on the list. Suggestions keep working and learn your words again as you type.",
     "colorSchemeInput": "Changes the colors of the whole app. It takes effect at once, so you can try each one while this panel is open.",
     "layoutUnlockToggle": "Lets you drag the borders between the screen areas to resize them. Off while you are talking to someone, but available in Practice.",
     "resetLayoutBtn": "Puts every border back where it started, for both keyboard positions. Asks first.",
@@ -170,6 +173,7 @@ const HELP = {
   },
   "sections": {
     "spokenWords": "Words the voice says wrong. Type the word, then spell it the way it sounds. The app says it that way everywhere.",
+    "typingSuggestions": "The words the keyboard suggests first because you use them. Names from About Me and My Places are suggested too.",
     "apiKey": "Your key from Anthropic. It is what lets the app suggest responses. Everything else still works without one.",
     "dataFolder": "The folder where your answers, your people, and your saved conversations are kept.",
     "settingsProfiles": "A saved copy of all your settings. With one saved you can put everything back after a reset, or set up another machine quickly.",
