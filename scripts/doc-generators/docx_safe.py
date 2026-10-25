@@ -118,18 +118,22 @@ def replace_text(doc, old, new):
     return p
 
 
-def insert_para_after(doc, anchor_text, new_text):
+def insert_para_after(doc, anchor_text, new_text, in_cell=False):
     """Add a body paragraph after the one matching `anchor_text`, copying its style.
 
     Refuses inside a table cell or a content control: a paragraph placed in the wrong
     container is valid XML and renders as prose in the middle of the contents listing,
     which has happened and stood for three days.
+
+    `in_cell=True` says the anchor is MEANT to be in a table cell and the new paragraph
+    belongs in the same cell - a long Settings description split in two, for example.
+    The contents listing is still refused.
     """
     p = _one([x for x in body_paragraphs(doc) if x.text.strip() == anchor_text.strip()],
              anchor_text[:60])
     anchor = p._element
     ancestors = {a.tag.split('}')[1] for a in anchor.iterancestors()}
-    if ancestors & {'tc', 'sdt'}:
+    if 'sdt' in ancestors or ('tc' in ancestors and not in_cell):
         raise DocxIntegrityError('anchor is inside a table cell or the contents listing')
     new = copy.deepcopy(anchor)
     for r in list(new.iterchildren(qn('w:r')))[1:]:
@@ -138,6 +142,30 @@ def insert_para_after(doc, anchor_text, new_text):
     if runs:
         _set_run_text(runs[0], new_text)
     anchor.addnext(new)
+    return new
+
+
+def insert_lead_para_after(doc, anchor_text, lead, body):
+    """Add a paragraph after the one matching `anchor_text`, shaped like it: `lead` in
+    the anchor's FIRST run's formatting and `body` in the formatting of the anchor's
+    first run that differs from it (plain when every run agrees).
+
+    For a "Note:  ..." paragraph or a list item with a bold lead-in. insert_para_after
+    keeps only run 0, so used alone it would set the whole new paragraph in the lead's
+    bold - the September 2026 fault set_para_text guards against. Refuses inside a
+    table cell or the contents listing, as insert_para_after does.
+    """
+    anchor = _one([x for x in body_paragraphs(doc) if x.text.strip() == anchor_text.strip()],
+                  anchor_text[:60])
+    runs = [r._element for r in anchor.runs]
+    lead_key = _rpr_key(runs[0]) if runs else ''
+    body_src = next((r for r in runs if _is_plain(r) and _rpr_key(r) != lead_key), None)
+    new = insert_para_after(doc, anchor_text, lead)
+    r = new.makeelement(qn('w:r'), {})
+    if body_src is not None and body_src.find(qn('w:rPr')) is not None:
+        r.append(copy.deepcopy(body_src.find(qn('w:rPr'))))
+    _set_run_text(r, body)
+    new.append(r)
     return new
 
 

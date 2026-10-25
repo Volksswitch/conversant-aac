@@ -255,6 +255,27 @@ def t_set_para_text_allows_a_uniform_paragraph():
     assert para.text == 'replacement prose'
 
 
+def t_insert_para_in_cell_stays_in_the_same_cell():
+    d = _doc_with_table()
+    t = d.tables[0]
+    t.cell(0, 1).paragraphs[0].text = 'A long description.'
+    D.insert_para_after(d, 'A long description.', 'Its second paragraph.', in_cell=True)
+    cell = t.cell(0, 1)
+    assert [p.text for p in cell.paragraphs] == ['A long description.', 'Its second paragraph.'], \
+        [p.text for p in cell.paragraphs]
+
+
+def t_insert_lead_para_keeps_the_lead_bold_and_the_body_plain():
+    d, para = _mixed_para()
+    new = D.insert_lead_para_after(d, para.text, 'Note: ', 'the rest is plain.')
+    from docx.text.paragraph import Paragraph
+    p = Paragraph(new, d)
+    assert p.text == 'Note: the rest is plain.', p.text
+    assert p.runs[0].bold is True, 'the lead lost its bold'
+    assert not p.runs[1].bold, 'the body took the lead\'s bold'
+    assert p._element.getprevious() is para._element, 'not placed right after the anchor'
+
+
 if __name__ == '__main__':
     print('docx_safe self-test')
     for name, fn in sorted(globals().items()):
