@@ -104,9 +104,9 @@ const BODY = `<div id="sr">
 <div class="sr-card sr-about"><p><strong>About Marisol.</strong> She's 24 and lives in San Antonio, Texas, with her mother and grandmother. She has cerebral palsy and doesn't speak, so she uses the app to talk. She's bilingual: Spanish at home and with family, English at work and with most friends. She works part time at a community library and likes cumbia, telenovelas and the Spurs.</p>
 <p><strong>The question for every reply:</strong> would a young bilingual woman from San Antonio actually say this? Anything stiff, translated from English, from another country, or just wrong is worth marking.</p>
 <p>Each set of replies is meant to offer different <em>kinds</em> of answer (going along, politely saying no, adding something, asking to clarify), so they aren't supposed to agree with each other.</p>
-<p>The small "On her button" wording is a shortened form Marisol sees on her screen to find the reply quickly.</p></div>
+<p>The "Shortened version" under each reply is what Marisol sees on her screen to find the reply quickly.</p></div>
 <div class="sr-card"><h2 style="margin-top:0">About you</h2>
-<label class="sr-field" for="sr-name">Your name</label><input type="text" id="sr-name" autocomplete="name">
+<label class="sr-field" for="sr-name">Your name (optional)</label><input type="text" id="sr-name" autocomplete="name">
 <label class="sr-field" for="sr-region">Where your Spanish comes from (for example, San Antonio, or Monterrey)</label><input type="text" id="sr-region">
 <label class="sr-field" for="sr-freq">How often you speak Spanish these days</label><input type="text" id="sr-freq" placeholder="For example: every day at home"></div>
 <div id="sr-sets"></div>
@@ -159,7 +159,7 @@ C.sets.forEach(function(s,n){
     var rw=textBox('How would you say it? (optional)',key(s.id,i,'rewrite'),'sr-rw-'+s.id+'-'+i);
     function showRw(){rw.hidden=!(A[gk]==='off'||A[gk]==='wrong');}
     box.appendChild(btnRow('How natural is this reply?',GRADES,gk,showRw));
-    if(o.hint){box.appendChild(el('div','sr-hint','On her button: “'+o.hint+'”'));box.appendChild(btnRow('Is the button wording right?',HINTS,key(s.id,i,'hint')));}
+    if(o.hint){box.appendChild(el('div','sr-hint','Shortened version: “'+o.hint+'”'));box.appendChild(btnRow('Is the shortened version right?',HINTS,key(s.id,i,'hint')));}
     box.appendChild(rw);showRw();card.appendChild(box);});
   var ask=el('div','sr-ask');ask.appendChild(el('p',null,s.ask||'Anything to add about this situation?'));
   var cb=textBox('Your comment (optional)',s.id+'.comment','sr-c-'+s.id);ask.appendChild(cb);card.appendChild(ask);root.appendChild(card);});
@@ -174,12 +174,11 @@ function payload(){return{secret:C.secret,kind:'spanish-review',evalDate:C.evalD
   sets:C.sets.map(function(s){return{id:s.id,who:s.who,partner:s.partner,comment:A[s.id+'.comment']||'',
     options:s.options.map(function(o,i){return{slot:o.slot,kind:o.kind,text:o.text,hint:o.hint,grade:A[key(s.id,i,'grade')]||'',hintGrade:A[key(s.id,i,'hint')]||'',rewrite:A[key(s.id,i,'rewrite')]||''};})};})};}
 function readable(p){var L=['Spanish review, evaluation of '+C.evalDate,'Reviewer: '+p.reviewer.name+' | '+p.reviewer.region+' | '+p.reviewer.frequency,''];
-  p.sets.forEach(function(s){L.push(s.id+' ('+s.who+'): '+s.partner);s.options.forEach(function(o){L.push('  ['+(o.grade||'-')+'] '+o.text+(o.hint?' | button "'+o.hint+'": '+(o.hintGrade||'-'):'')+(o.rewrite?' | would say: '+o.rewrite:''));});if(s.comment)L.push('  Comment: '+s.comment);L.push('');});
+  p.sets.forEach(function(s){L.push(s.id+' ('+s.who+'): '+s.partner);s.options.forEach(function(o){L.push('  ['+(o.grade||'-')+'] '+o.text+(o.hint?' | shortened "'+o.hint+'": '+(o.hintGrade||'-'):'')+(o.rewrite?' | would say: '+o.rewrite:''));});if(s.comment)L.push('  Comment: '+s.comment);L.push('');});
   if(p.overall)L.push('Overall: '+p.overall);return L.join('\\n');}
 function fail(msg,p){sending=false;send.disabled=false;status.textContent=msg;document.getElementById('sr-copy').value=readable(p);document.getElementById('sr-fallback').hidden=false;}
 var send=document.getElementById('sr-send');
 send.addEventListener('click',function(){
-  if(!A['me.name']){status.textContent='Please add your name at the top first, so we know who to thank.';document.getElementById('sr-name').focus();return;}
   var g=graded();if(g<total){if(!confirm('You have graded '+g+' of '+total+' replies. Send anyway?'))return;}
   var p=payload();sending=true;send.disabled=true;status.textContent='Sending\\u2026';
   fetch(C.endpoint,{method:'GET'}).then(function(r){return r.text();}).then(function(v){
