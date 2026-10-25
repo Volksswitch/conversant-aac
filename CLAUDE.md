@@ -2920,6 +2920,17 @@ Source: `security issues.docx` in the project root (10 findings, SEC-1…SEC-10,
 - **SEC-6 (Medium) — optional passphrase-based data-folder encryption** (WebCrypto AES-GCM over the JSON files). Feature-sized; trades away the "just copy the file between PCs" simplicity. Warranted before any clinic/multi-user deployment.
 - **SEC-5 (Medium) — flag response cards that contain a Private-marked value.** The app knows the private values it injected, so it can badge any generated option that includes one — making a prompt-injection-induced disclosure conspicuous at selection time.
 
+## Files from outside the app: check, limit, show, keep a way back (Ken, October 25 2026), BUILT
+
+The rule for any file a user can hand the app (a backup, a saved profile, a scenario file, and any such door added later). Findings and what is still open are in [TODO.md](TODO.md), "Security and privacy review, October 25 2026".
+
+- **Why the risk is bounded, so a new door is judged against the right threat:** the page runs only its own code (CSP), everything is shown as plain text, nothing the AI writes is spoken without a tap, and the app can reach only the listed services. So a bad file cannot take over the app or steal keys. What it CAN do is cost the user money, change what the AI suggests in their name, and quietly change privacy choices. Each step below answers one of those.
+- **Check the shape and every value.** `storage.SETTING_RULES` holds the settings a bad value can hurt. **A setting with no rule passes, size permitting**: refusing unknown keys would silently drop a setting a newer version added. An unusable value keeps this device's own and is NAMED on the card. The timing readers use the same checks, because a negative or non-numeric silence period asked the AI after every scrap of speech.
+- **Limit any text the AI will read** (`practice-library.FIELD_LIMITS`), applied where text ENTERS (import, editor boxes, AI draft, a scenario started from About Me), **never when stored text is read**, so nothing a user already has changes. Editor and import limits must match, or a scenario the user wrote could not be exported and imported again whole.
+- **Show it before applying it.** A scenario file is shown in full and added only on "Add it". A restore or profile load names any change to the two privacy choices (`storage.privacyChanges`: saving conversations, the listening chime). Every such card says the AI reads the file as if the user wrote it.
+- **Keep a way back.** A restore saves a copy first (`dataTransfer.saveSafetyCopy`), without conversations, sounds or profiles, because an import only ADDS those. On an iPad the backup list appears once it holds something, since a way back nobody can reach is no way back.
+- **Reports leave by SHAPE, not by name:** in the weekly report every LIST setting becomes a count (`weekly-send.redactSystemInfo`), so a list added later is covered without anyone remembering. The "Words the voice gets wrong" list had been leaving the device every week until this rule existed.
+
 ---
 
 ## Settings persistence — data folder + per-device profiles (Ken, July 8 2026) — LARGELY SUPERSEDED July 31 2026, kept as the record of why
