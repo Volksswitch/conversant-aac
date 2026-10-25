@@ -137,8 +137,8 @@ test('names from About Me are suggested at once, but not the ordinary words in t
     prediction.clearLearned();   // the learned list is kept in memory between tests
     prediction.setKnownWordsProvider(() => ['Siobhan', 'Pulp Comics', 'The Coffee Shop']);
     try {
-        assert.equal(prediction.predict('sio', 1)[0], 'siobhan', 'a name comes first without being typed twice');
-        assert.equal(prediction.predict('pul', 1)[0], 'pulp');
+        assert.equal(prediction.predict('sio', 1)[0], 'Siobhan', 'a name comes first without being typed twice');
+        assert.equal(prediction.predict('pul', 1)[0], 'Pulp');
         // "the" and "coffee" are ordinary words; a place name must not push them ahead
         // of the dictionary's order for everything else the user types.
         const before = (() => { prediction.setKnownWordsProvider(() => []); return prediction.predict('th', 3); })();
@@ -166,4 +166,38 @@ test('the list can be seen, added to and removed from', () => {
     assert.equal(prediction.removeWord('humira'), true);
     assert.deepEqual(prediction.listLearned().map((w) => w.word), ['thunderbolt']);
     assert.notEqual(prediction.predict('hum', 1)[0], 'humira');
+});
+
+// October 25 2026 (Ken): names are suggested "with their capitals as written, even when
+// I type lowercase".
+test('a known name is suggested with its capitals as written, whatever case is typed', () => {
+    prediction.clearLearned();
+    prediction.setKnownWordsProvider(() => ['José Ramírez', 'McDonald', "O'Brien", 'lol', 'Mom', 'The Coffee Shop']);
+    try {
+        assert.equal(prediction.predict('jos', 1)[0], 'José');
+        assert.equal(prediction.predict('ram', 1)[0], 'Ramírez');
+        assert.equal(prediction.predict('mcd', 1)[0], 'McDonald', 'a capital inside the name is kept');
+        assert.equal(prediction.predict("o'b", 1)[0], "O'Brien");
+        assert.equal(prediction.predict('lo', 1)[0], 'lol', 'a word written in lowercase stays lowercase');
+        // Ordinary words keep the case the user types: "my mom" and "Mom said" are both right.
+        assert.ok(!prediction.predict('mo', 5).includes('Mom'));
+        assert.ok(!prediction.predict('co', 5).includes('Coffee'));
+        // Accepting it, then using it, keeps the capital: the learned copy is matched to
+        // the written form rather than replacing it.
+        prediction.learn('José');
+        prediction.learn('José');
+        assert.equal(prediction.predict('jos', 1)[0], 'José');
+        assert.deepEqual(prediction.listLearned().map((w) => w.word), ['josé'], 'the list itself is still stored in lowercase');
+    } finally {
+        prediction.setKnownWordsProvider(() => []);
+    }
+});
+
+test('when a name is written two ways, the form with a capital wins', () => {
+    prediction.setKnownWordsProvider(() => ['rose garden', 'Rose']);
+    try {
+        assert.equal(prediction.predict('ros', 1)[0], 'Rose');
+    } finally {
+        prediction.setKnownWordsProvider(() => []);
+    }
 });

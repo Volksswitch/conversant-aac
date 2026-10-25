@@ -69,7 +69,12 @@ export function setLearning(on) { learning = !!on; }
 // A word as stored: one standard form (NFC), lowercase, letters of any alphabet plus
 // the apostrophe. Pure.
 function cleanWord(text) {
-    return String(text || '').normalize('NFC').toLowerCase()
+    return writtenWord(text).toLowerCase();
+}
+
+// The same, keeping the capitals as written ("José", "McDonald", "O'Brien"). Pure.
+function writtenWord(text) {
+    return String(text || '').normalize('NFC')
         .replace(/[^\p{L}\p{M}']/gu, '').replace(/^'+|'+$/g, '');
 }
 
@@ -145,11 +150,31 @@ export function wordsIn(texts) {
     return [...out];
 }
 
+// The known names' words, each mapped to how it is WRITTEN (Ken, October 25 2026: names
+// are suggested "with their capitals as written, even when I type lowercase"). Typing
+// "sio" offers "Siobhan", and accepting puts the capital in. Where one word is written
+// two ways, the form with a capital wins, since these are names. A word written all in
+// lowercase in its source ("lol" in the words list) stays lowercase.
+//
+// ⚠ ORDINARY WORDS ARE LEFT OUT, and so keep the case the user types. "Mom" is in the
+// built-in list, and "my mom" and "Mom said" are both right, so forcing the capital
+// would be wrong as often as right; the same rule stops a place called "The Coffee
+// Shop" from capitalizing "coffee" everywhere.
 function knownWords() {
     let texts = [];
     try { texts = knownWordsProvider() || []; } catch { texts = []; }
     const dictionary = new Set(words);
-    return wordsIn(texts).filter((w) => !dictionary.has(w));
+    const forms = new Map();
+    for (const t of texts) {
+        for (const raw of String(t || '').split(/[\s\-\/.,;:!?()"]+/)) {
+            const written = writtenWord(raw);
+            const w = written.toLowerCase();
+            if ([...w].length < 2 || dictionary.has(w)) continue;
+            const had = forms.get(w);
+            if (!had || (had === w && written !== w)) forms.set(w, written);
+        }
+    }
+    return forms;
 }
 
 // --- The list the user can see and change (Ken, October 25 2026) -------------------
@@ -241,7 +266,8 @@ export function predict(prefix, limit = 3) {
     // Personalized matches, most-used first; exclude the exact prefix itself. A name the
     // app knows counts as used twice, so it comes first from the start.
     const counts = { ...uf };
-    for (const w of knownWords()) counts[w] = Math.max(counts[w] || 0, 2);
+    const known = knownWords();
+    for (const w of known.keys()) counts[w] = Math.max(counts[w] || 0, 2);
     const personal = Object.keys(counts)
         .filter(offers)
         .sort((a, b) => counts[b] - counts[a] || a.localeCompare(b));
@@ -262,5 +288,7 @@ export function predict(prefix, limit = 3) {
         }
     }
     personal.forEach(push);
-    return out.slice(0, limit);
+    // A known name comes back as written; everything else as stored, in lowercase, for
+    // the keyboard to capitalize if the user typed a capital.
+    return out.slice(0, limit).map((w) => known.get(w) || w);
 }
