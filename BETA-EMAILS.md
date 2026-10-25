@@ -47,9 +47,15 @@ answers yes with a Windows computer or tablet.
 >    **[AI key]**
 >
 >    The "Adding Your AI Key" video shows where to paste it.
-> 4. **Hearing the other person is free.** On a Windows computer or tablet, Conversant uses the browser to hear the person you're talking with,
+> 4. **Add your tester name.** This name tells us which weekly reports from the
+>    app are yours. In Conversant, open Settings, then the Troubleshooting tab,
+>    then "Who these reports come from". Type this into the "Tester name" box:
+>
+>    **[tester name]**
+>
+> 5. **Hearing the other person is free.** On a Windows computer or tablet, Conversant uses the browser to hear the person you're talking with,
 >    so you don't need a speech service.
-> 5. **Setup help.** I'm happy to go through setup with you. What days and times
+> 6. **Setup help.** I'm happy to go through setup with you. What days and times
 >    work for you?
 >
 > When you're ready for more, here are [all the how-to videos](https://volksswitch.org/index.php/conversant-videos/).
@@ -93,9 +99,15 @@ answers yes with a Chromebook.
 >    **[AI key]**
 >
 >    The "Adding Your AI Key" video shows where to paste it.
-> 4. **Hearing the other person is free.** On a Chromebook, Conversant uses the browser to hear the person you're talking with,
+> 4. **Add your tester name.** This name tells us which weekly reports from the
+>    app are yours. In Conversant, open Settings, then the Troubleshooting tab,
+>    then "Who these reports come from". Type this into the "Tester name" box:
+>
+>    **[tester name]**
+>
+> 5. **Hearing the other person is free.** On a Chromebook, Conversant uses the browser to hear the person you're talking with,
 >    so you don't need a speech service.
-> 5. **Setup help.** I'm happy to go through setup with you. What days and times
+> 6. **Setup help.** I'm happy to go through setup with you. What days and times
 >    work for you?
 >
 > When you're ready for more, here are [all the how-to videos](https://volksswitch.org/index.php/conversant-videos/).
@@ -139,9 +151,15 @@ answers yes with a Mac.
 >    **[AI key]**
 >
 >    The "Adding Your AI Key" video shows where to paste it.
-> 4. **Hearing the other person is free.** On a Mac, Conversant uses the browser to hear the person you're talking with,
+> 4. **Add your tester name.** This name tells us which weekly reports from the
+>    app are yours. In Conversant, open Settings, then the Troubleshooting tab,
+>    then "Who these reports come from". Type this into the "Tester name" box:
+>
+>    **[tester name]**
+>
+> 5. **Hearing the other person is free.** On a Mac, Conversant uses the browser to hear the person you're talking with,
 >    so you don't need a speech service.
-> 5. **Setup help.** I'm happy to go through setup with you. What days and times
+> 6. **Setup help.** I'm happy to go through setup with you. What days and times
 >    work for you?
 >
 > When you're ready for more, here are [all the how-to videos](https://volksswitch.org/index.php/conversant-videos/).
@@ -186,10 +204,16 @@ answers yes with an iPad.
 >    **[AI key]**
 >
 >    The "Adding Your AI Key" video shows where to paste it.
-> 4. **Hearing the other person.** On an iPad, Conversant needs a speech service
+> 4. **Add your tester name.** This name tells us which weekly reports from the
+>    app are yours. In Conversant, open Settings, then the Troubleshooting tab,
+>    then "Who these reports come from". Type this into the "Tester name" box:
+>
+>    **[tester name]**
+>
+> 5. **Hearing the other person.** On an iPad, Conversant needs a speech service
 >    to hear the person you're talking with. Please don't sign up for one yet.
 >    I'll work out the best option with you.
-> 5. **Setup help.** I'm happy to go through setup with you. What days and times
+> 6. **Setup help.** I'm happy to go through setup with you. What days and times
 >    work for you?
 >
 > When you're ready for more, here are [all the how-to videos](https://volksswitch.org/index.php/conversant-videos/).
@@ -234,10 +258,16 @@ invited person answers yes with one.
 >    **[AI key]**
 >
 >    The "Adding Your AI Key" video shows where to paste it.
-> 4. **Hearing the other person.** On an Android device, Conversant needs a speech
+> 4. **Add your tester name.** This name tells us which weekly reports from the
+>    app are yours. In Conversant, open Settings, then the Troubleshooting tab,
+>    then "Who these reports come from". Type this into the "Tester name" box:
+>
+>    **[tester name]**
+>
+> 5. **Hearing the other person.** On an Android device, Conversant needs a speech
 >    service to hear the person you're talking with. Please don't sign up for one
 >    yet. I'll work out the best option with you.
-> 5. **Setup help.** I'm happy to go through setup with you. What days and times
+> 6. **Setup help.** I'm happy to go through setup with you. What days and times
 >    work for you?
 >
 > When you're ready for more, here are [all the how-to videos](https://volksswitch.org/index.php/conversant-videos/).
@@ -263,8 +293,8 @@ invited person answers yes with one.
 >
 > Before we start, which device will you use: an iPad, an Android tablet or phone,
 > a Windows computer or tablet, a Chromebook, or a Mac? A couple of the setup
-> steps depend on it. Once I know, I'll send your AI key and the setup steps for
-> that device.
+> steps depend on it. Once I know, I'll send your AI key, your tester name and the
+> setup steps for that device.
 >
 > In the meantime, this one-minute video explains what Conversant does:
 > [What Conversant Is For](https://volksswitch.org/index.php/conversant-videos/video-1-1/).
