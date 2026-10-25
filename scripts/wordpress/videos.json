@@ -569,12 +569,12 @@
       "signature": "d62c8233a99dd7372078a9ad02370ba4043545b0d63eed4135952a12ae779add",
       "seconds": 70,
       "video": {
-        "id": 24427,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-6-Adding-Your-Deepgram-Key.mp4"
+        "id": 24440,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-6-Adding-Your-Deepgram-Key-1.mp4"
       },
       "guide": {
-        "id": 24428,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-6-Adding-Your-Deepgram-Key-Guide.pdf"
+        "id": 24441,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-6-Adding-Your-Deepgram-Key-Guide-1.pdf"
       },
       "page": {
         "id": 24433,
@@ -585,22 +585,38 @@
       "signature": "b5e034c7c295d3b3a9cd43e232171f62f0dcdfd2668e6dcecdbc56774fc814c8",
       "seconds": 31,
       "video": {
-        "id": 24429,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-7-Adding-Your-Tester-Name.mp4"
+        "id": 24442,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-7-Adding-Your-Tester-Name-1.mp4"
       },
       "guide": {
-        "id": 24430,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-7-Adding-Your-Tester-Name-Guide.pdf"
+        "id": 24443,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-7-Adding-Your-Tester-Name-Guide-1.pdf"
       },
       "page": {
         "id": 24434,
         "url": "https://volksswitch.org/index.php/conversant-videos/video-1-7/"
       }
+    },
+    "4.7-short-wording": {
+      "signature": "650567c25712ac44ec7c60b1d69202e46a3345a4bfa058bc931c19d5e2e063d6",
+      "seconds": 65,
+      "video": {
+        "id": 24444,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-4-7-Short-Wording-on-Your-Options.mp4"
+      },
+      "guide": {
+        "id": 24445,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-4-7-Short-Wording-on-Your-Options-Guide.pdf"
+      },
+      "page": {
+        "id": 24450,
+        "url": "https://volksswitch.org/index.php/conversant-videos/video-4-7/"
+      }
     }
   },
   "courseMap": {
-    "signature": "5fcbf8bd491f412590439dff9a3a9e2380b640d19db2c025ebe885ea7e986b10",
-    "id": 24431,
-    "url": "https://volksswitch.org/wp-content/uploads/2026/10/Learning-Conversant-3.pdf"
+    "signature": "d57a4f52bfc590df84bb4962651660efe9715b81d0d2e9b731efd013b7de3568",
+    "id": 24446,
+    "url": "https://volksswitch.org/wp-content/uploads/2026/10/Learning-Conversant-4.pdf"
   }
 }

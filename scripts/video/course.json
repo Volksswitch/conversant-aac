@@ -41,7 +41,8 @@
       { "num": "4.3", "id": "4.3-one-tap-or-two", "title": "One Tap or Two", "learn": "Guard against taps you didn't mean." },
       { "num": "4.4", "id": "4.4-text-and-colors", "title": "Text Size and Colors", "learn": "Make the screen easier to read." },
       { "num": "4.5", "id": "4.5-timing", "title": "Timing", "learn": "Change how long Conversant waits, and its holding phrases." },
-      { "num": "4.6", "id": "4.6-keyguards", "title": "Keyguards", "learn": "Get the measurements to have a keyguard made." }
+      { "num": "4.6", "id": "4.6-keyguards", "title": "Keyguards", "learn": "Get the measurements to have a keyguard made." },
+      { "num": "4.7", "id": "4.7-short-wording", "title": "Short Wording on Your Options", "learn": "Show the full response, a short version, or both." }
     ] },
     { "name": "Keeping things running", "items": [
       { "num": "5.1", "id": "5.1-report-problem", "title": "Telling Us About a Problem", "learn": "Send a problem report." },

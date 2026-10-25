@@ -77,6 +77,7 @@ Video 1.5 is short on purpose. During the beta, speech keys are arranged with us
 | 4.4 | Text size and colors | Make the screen easier to read | Staged |
 | 4.5 | Timing | Change how long the app waits, and its holding phrases | Staged |
 | 4.6 | Keyguards | Get the measurements to have a keyguard made | Staged |
+| 4.7 | Short Wording on Your Options | Show the full response, a short version, or both | Staged |
 
 ### 5. Keeping things running (menu)
 
