@@ -10,7 +10,7 @@ export default {
   title: 'Installing Conversant',
   pictures: true,
   trouble: [
-    "No Add to Home Screen? Tap the arrow button in the Share menu to see the whole list.",
+    "No Add to Home Screen? Tap View More at the end of the Share menu to see the whole list.",
     "Already using Conversant in Safari? Make a backup there first, and bring it into the installed app. The two don't share what they've saved.",
   ],
   steps: [
@@ -20,9 +20,9 @@ export default {
     { speaker: 'narrator', image: P + '01.PNG', ring: [2030, 160, 88, 92],
       page: 'Tap the Share button.',
       say: "Tap the Share button." },
-    { speaker: 'narrator', image: P + '02.PNG', ring: [2136, 740, 132, 192],
-      page: 'Tap the arrow button to see the whole list.',
-      say: "Tap the arrow button at the end of the second row to see the whole list." },
+    { speaker: 'narrator', image: P + '01a.PNG', ring: [2136, 740, 132, 192],
+      page: 'Tap View More to see the whole list.',
+      say: "Tap View More to see the whole list." },
     { speaker: 'narrator', image: P + '03.PNG', ring: [1612, 1040, 676, 96],
       page: 'Tap Add to Home Screen.',
       say: "Tap Add to Home Screen." },
