@@ -30,15 +30,16 @@ answers yes with a Windows computer or tablet.
 >
 > Here's how to get started:
 >
-> 1. **Watch the five Getting Started videos.** Together they take about four
+> 1. **Watch the six Getting Started videos.** Together they take about four
 >    minutes. Start with [What Conversant Is For](https://volksswitch.org/index.php/conversant-videos/video-1-1/).
 >    When each video ends, a Next button takes you to the following one, so you
 >    don't need to come back here. If you'd rather pick one, here they are:
 >    [What Conversant Is For](https://volksswitch.org/index.php/conversant-videos/video-1-1/),
 >    [Installing Conversant](https://volksswitch.org/index.php/conversant-videos/video-1-2-computer/),
 >    [Adding Your AI Key](https://volksswitch.org/index.php/conversant-videos/video-1-3/),
->    [Keeping Your Information Safe](https://volksswitch.org/index.php/conversant-videos/video-1-4-computer/)
->    and [Do You Need a Speech Service?](https://volksswitch.org/index.php/conversant-videos/video-1-5/)
+>    [Keeping Your Information Safe](https://volksswitch.org/index.php/conversant-videos/video-1-4-computer/),
+>    [Do You Need a Speech Service?](https://volksswitch.org/index.php/conversant-videos/video-1-5/)
+>    and [Adding Your Tester Name](https://volksswitch.org/index.php/conversant-videos/video-1-7/)
 > 2. **Open Conversant** at [conversant.volksswitch.org](https://conversant.volksswitch.org/).
 >    You don't have to install anything from an app store.
 > 3. **Add your AI key.** During the beta, we pay for the AI that writes the
@@ -53,6 +54,7 @@ answers yes with a Windows computer or tablet.
 >
 >    **[tester name]**
 >
+>    The "Adding Your Tester Name" video shows where to type it.
 > 5. **Hearing the other person is free.** On a Windows computer or tablet, Conversant uses the browser to hear the person you're talking with,
 >    so you don't need a speech service.
 > 6. **Setup help.** I'm happy to go through setup with you. What days and times
@@ -82,15 +84,16 @@ answers yes with a Chromebook.
 >
 > Here's how to get started:
 >
-> 1. **Watch the five Getting Started videos.** Together they take about four
+> 1. **Watch the six Getting Started videos.** Together they take about four
 >    minutes. Start with [What Conversant Is For](https://volksswitch.org/index.php/conversant-videos/video-1-1/).
 >    When each video ends, a Next button takes you to the following one, so you
 >    don't need to come back here. If you'd rather pick one, here they are:
 >    [What Conversant Is For](https://volksswitch.org/index.php/conversant-videos/video-1-1/),
 >    [Installing Conversant](https://volksswitch.org/index.php/conversant-videos/video-1-2-computer/),
 >    [Adding Your AI Key](https://volksswitch.org/index.php/conversant-videos/video-1-3/),
->    [Keeping Your Information Safe](https://volksswitch.org/index.php/conversant-videos/video-1-4-computer/)
->    and [Do You Need a Speech Service?](https://volksswitch.org/index.php/conversant-videos/video-1-5/)
+>    [Keeping Your Information Safe](https://volksswitch.org/index.php/conversant-videos/video-1-4-computer/),
+>    [Do You Need a Speech Service?](https://volksswitch.org/index.php/conversant-videos/video-1-5/)
+>    and [Adding Your Tester Name](https://volksswitch.org/index.php/conversant-videos/video-1-7/)
 > 2. **Open Conversant** at [conversant.volksswitch.org](https://conversant.volksswitch.org/).
 >    You don't have to install anything from an app store.
 > 3. **Add your AI key.** During the beta, we pay for the AI that writes the
@@ -105,6 +108,7 @@ answers yes with a Chromebook.
 >
 >    **[tester name]**
 >
+>    The "Adding Your Tester Name" video shows where to type it.
 > 5. **Hearing the other person is free.** On a Chromebook, Conversant uses the browser to hear the person you're talking with,
 >    so you don't need a speech service.
 > 6. **Setup help.** I'm happy to go through setup with you. What days and times
@@ -134,15 +138,16 @@ answers yes with a Mac.
 >
 > Here's how to get started:
 >
-> 1. **Watch the five Getting Started videos.** Together they take about four
+> 1. **Watch the six Getting Started videos.** Together they take about four
 >    minutes. Start with [What Conversant Is For](https://volksswitch.org/index.php/conversant-videos/video-1-1/).
 >    When each video ends, a Next button takes you to the following one, so you
 >    don't need to come back here. If you'd rather pick one, here they are:
 >    [What Conversant Is For](https://volksswitch.org/index.php/conversant-videos/video-1-1/),
 >    [Installing Conversant](https://volksswitch.org/index.php/conversant-videos/video-1-2-computer/),
 >    [Adding Your AI Key](https://volksswitch.org/index.php/conversant-videos/video-1-3/),
->    [Keeping Your Information Safe](https://volksswitch.org/index.php/conversant-videos/video-1-4-computer/)
->    and [Do You Need a Speech Service?](https://volksswitch.org/index.php/conversant-videos/video-1-5/)
+>    [Keeping Your Information Safe](https://volksswitch.org/index.php/conversant-videos/video-1-4-computer/),
+>    [Do You Need a Speech Service?](https://volksswitch.org/index.php/conversant-videos/video-1-5/)
+>    and [Adding Your Tester Name](https://volksswitch.org/index.php/conversant-videos/video-1-7/)
 > 2. **Open Conversant** at [conversant.volksswitch.org](https://conversant.volksswitch.org/).
 >    You don't have to install anything from an app store.
 > 3. **Add your AI key.** During the beta, we pay for the AI that writes the
@@ -157,6 +162,7 @@ answers yes with a Mac.
 >
 >    **[tester name]**
 >
+>    The "Adding Your Tester Name" video shows where to type it.
 > 5. **Hearing the other person is free.** On a Mac, Conversant uses the browser to hear the person you're talking with,
 >    so you don't need a speech service.
 > 6. **Setup help.** I'm happy to go through setup with you. What days and times
@@ -186,15 +192,17 @@ answers yes with an iPad.
 >
 > Here's how to get started:
 >
-> 1. **Watch the five Getting Started videos.** Together they take about four
+> 1. **Watch the seven Getting Started videos.** Together they take about six
 >    minutes. Start with [What Conversant Is For](https://volksswitch.org/index.php/conversant-videos/video-1-1/).
 >    When each video ends, a Next button takes you to the following one, so you
 >    don't need to come back here. If you'd rather pick one, here they are:
 >    [What Conversant Is For](https://volksswitch.org/index.php/conversant-videos/video-1-1/),
 >    [Installing Conversant](https://volksswitch.org/index.php/conversant-videos/video-1-2-ipad/),
 >    [Adding Your AI Key](https://volksswitch.org/index.php/conversant-videos/video-1-3/),
->    [Keeping Your Information Safe](https://volksswitch.org/index.php/conversant-videos/video-1-4-ipad/)
->    and [Do You Need a Speech Service?](https://volksswitch.org/index.php/conversant-videos/video-1-5/)
+>    [Keeping Your Information Safe](https://volksswitch.org/index.php/conversant-videos/video-1-4-ipad/),
+>    [Do You Need a Speech Service?](https://volksswitch.org/index.php/conversant-videos/video-1-5/),
+>    [Adding Your Deepgram Key](https://volksswitch.org/index.php/conversant-videos/video-1-6/)
+>    and [Adding Your Tester Name](https://volksswitch.org/index.php/conversant-videos/video-1-7/)
 > 2. **Open Conversant** in Safari at [conversant.volksswitch.org](https://conversant.volksswitch.org/),
 >    then add it to your Home Screen. The "Installing Conversant" video shows how.
 >    You don't have to install anything from the App Store.
@@ -210,9 +218,18 @@ answers yes with an iPad.
 >
 >    **[tester name]**
 >
-> 5. **Hearing the other person.** On an iPad, Conversant needs a speech service
->    to hear the person you're talking with. Please don't sign up for one yet.
->    I'll work out the best option with you.
+>    The "Adding Your Tester Name" video shows where to type it.
+> 5. **Add your Deepgram key.** On an iPad, Conversant needs a speech service to
+>    hear the person you're talking with. During the beta, we'll provide one
+>    called Deepgram. Here is your key. Copy all of it:
+>
+>    **[Deepgram key]**
+>
+>    The "Adding Your Deepgram Key" video shows where to paste it, and how to
+>    choose Deepgram to hear the other person. Both steps are needed.
+>
+>    We also suggest Deepgram's voice, because the iPad's own voices are hard to
+>    listen to. The same video shows how to choose it.
 > 6. **Setup help.** I'm happy to go through setup with you. What days and times
 >    work for you?
 >
@@ -240,15 +257,17 @@ invited person answers yes with one.
 >
 > Here's how to get started:
 >
-> 1. **Watch the five Getting Started videos.** Together they take about four
+> 1. **Watch the seven Getting Started videos.** Together they take about six
 >    minutes. Start with [What Conversant Is For](https://volksswitch.org/index.php/conversant-videos/video-1-1/).
 >    When each video ends, a Next button takes you to the following one, so you
 >    don't need to come back here. If you'd rather pick one, here they are:
 >    [What Conversant Is For](https://volksswitch.org/index.php/conversant-videos/video-1-1/),
 >    [Installing Conversant](https://volksswitch.org/index.php/conversant-videos/video-1-2-android/),
 >    [Adding Your AI Key](https://volksswitch.org/index.php/conversant-videos/video-1-3/),
->    [Keeping Your Information Safe](https://volksswitch.org/index.php/conversant-videos/video-1-4-android/)
->    and [Do You Need a Speech Service?](https://volksswitch.org/index.php/conversant-videos/video-1-5/)
+>    [Keeping Your Information Safe](https://volksswitch.org/index.php/conversant-videos/video-1-4-android/),
+>    [Do You Need a Speech Service?](https://volksswitch.org/index.php/conversant-videos/video-1-5/),
+>    [Adding Your Deepgram Key](https://volksswitch.org/index.php/conversant-videos/video-1-6/)
+>    and [Adding Your Tester Name](https://volksswitch.org/index.php/conversant-videos/video-1-7/)
 > 2. **Open Conversant** in Chrome at [conversant.volksswitch.org](https://conversant.volksswitch.org/),
 >    then install it. The "Installing Conversant" video shows how. You don't have
 >    to install anything from the Play Store.
@@ -264,9 +283,15 @@ invited person answers yes with one.
 >
 >    **[tester name]**
 >
-> 5. **Hearing the other person.** On an Android device, Conversant needs a speech
->    service to hear the person you're talking with. Please don't sign up for one
->    yet. I'll work out the best option with you.
+>    The "Adding Your Tester Name" video shows where to type it.
+> 5. **Add your Deepgram key.** On an Android device, Conversant needs a speech service to
+>    hear the person you're talking with. During the beta, we'll provide one
+>    called Deepgram. Here is your key. Copy all of it:
+>
+>    **[Deepgram key]**
+>
+>    The "Adding Your Deepgram Key" video shows where to paste it, and how to
+>    choose Deepgram to hear the other person. Both steps are needed.
 > 6. **Setup help.** I'm happy to go through setup with you. What days and times
 >    work for you?
 >

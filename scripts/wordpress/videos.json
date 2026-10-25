@@ -38,15 +38,15 @@
       }
     },
     "1.5-speech-service": {
-      "signature": "db6e7816a33186776d392b201c2f53f7835a6f1b512fef66c2cc2f8d3dc07791",
-      "seconds": 47,
+      "signature": "6cf4532cb6859f34cc8f74c7148028a3ec0de363c276c71bd32be2737e4ab2af",
+      "seconds": 48,
       "video": {
-        "id": 24235,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-5-Do-You-Need-a-Speech-Service-1.mp4"
+        "id": 24425,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-5-Do-You-Need-a-Speech-Service-2.mp4"
       },
       "guide": {
-        "id": 24236,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-5-Do-You-Need-a-Speech-Service-Guide-1.pdf"
+        "id": 24426,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-5-Do-You-Need-a-Speech-Service-Guide-2.pdf"
       },
       "page": {
         "id": 24212,
@@ -564,11 +564,43 @@
         "id": 24384,
         "url": "https://volksswitch.org/index.php/conversant-videos/video-1-4-android/"
       }
+    },
+    "1.6-deepgram": {
+      "signature": "d62c8233a99dd7372078a9ad02370ba4043545b0d63eed4135952a12ae779add",
+      "seconds": 70,
+      "video": {
+        "id": 24427,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-6-Adding-Your-Deepgram-Key.mp4"
+      },
+      "guide": {
+        "id": 24428,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-6-Adding-Your-Deepgram-Key-Guide.pdf"
+      },
+      "page": {
+        "id": 24433,
+        "url": "https://volksswitch.org/index.php/conversant-videos/video-1-6/"
+      }
+    },
+    "1.7-tester-name": {
+      "signature": "b5e034c7c295d3b3a9cd43e232171f62f0dcdfd2668e6dcecdbc56774fc814c8",
+      "seconds": 31,
+      "video": {
+        "id": 24429,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-7-Adding-Your-Tester-Name.mp4"
+      },
+      "guide": {
+        "id": 24430,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-1-7-Adding-Your-Tester-Name-Guide.pdf"
+      },
+      "page": {
+        "id": 24434,
+        "url": "https://volksswitch.org/index.php/conversant-videos/video-1-7/"
+      }
     }
   },
   "courseMap": {
-    "signature": "5373766130fdec42c5b484810e56bff83e43f178190695c843e982a549475ae1",
-    "id": 24376,
-    "url": "https://volksswitch.org/wp-content/uploads/2026/10/Learning-Conversant-4.pdf"
+    "signature": "5fcbf8bd491f412590439dff9a3a9e2380b640d19db2c025ebe885ea7e986b10",
+    "id": 24431,
+    "url": "https://volksswitch.org/wp-content/uploads/2026/10/Learning-Conversant-3.pdf"
   }
 }

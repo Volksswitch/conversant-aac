@@ -10,7 +10,9 @@
       { "num": "1.4", "version": "On a computer", "id": "1.4-safe-computer", "title": "Keeping Your Information Safe", "learn": "Choose a data folder, and make a backup." },
       { "num": "1.4", "version": "On an iPad", "id": "1.4-safe-ipad", "title": "Keeping Your Information Safe", "learn": "Make a backup and keep it somewhere safe." },
       { "num": "1.4", "version": "On an Android device", "id": "1.4-safe-android", "title": "Keeping Your Information Safe", "learn": "Choose a data folder, and make a backup." },
-      { "num": "1.5", "id": "1.5-speech-service", "title": "Do You Need a Speech Service?", "learn": "Whether your device needs one, and who to ask if it does." }
+      { "num": "1.5", "id": "1.5-speech-service", "title": "Do You Need a Speech Service?", "learn": "Whether your device needs one, and who to ask if it does." },
+      { "num": "1.6", "id": "1.6-deepgram", "title": "Adding Your Deepgram Key", "learn": "For an iPad or Android device: let Conversant hear the other person." },
+      { "num": "1.7", "id": "1.7-tester-name", "title": "Adding Your Tester Name", "learn": "Enter the name we gave you, so we know which reports are yours." }
     ] },
     { "name": "Your first conversations", "path": true, "items": [
       { "num": "2.1", "id": "2.1-screen-tour", "title": "A Tour of the Screen", "learn": "Name each part of the Conversant screen." },
