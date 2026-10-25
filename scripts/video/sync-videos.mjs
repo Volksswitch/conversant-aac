@@ -121,7 +121,20 @@ if (failed.length) {
   for (const { x, why } of failed) console.log(`  ${x.num} ${fullTitle(x)}: ${why}`);
 }
 
+// Everything OUTSIDE the videos that links or names them: the beta emails, the
+// hand-edited web pages and the documents. Run every time, because a change to a
+// title, a number or the Getting Started set breaks them silently. See the
+// "When a video changes" rules in VIDEO-PLAN.md.
+function checkReferences() {
+  console.log('\nPlaces that link to the videos:');
+  const c = spawnSync('python', [path.join(ROOT, 'scripts', 'video', 'check-video-references.py')],
+    { encoding: 'utf8', cwd: ROOT });
+  process.stdout.write((c.stdout || '') + (c.stderr || ''));
+  return c.status === 0;
+}
+
 if (!PUBLISH) {
+  checkReferences();
   console.log(toPublish.length
     ? `\n${toPublish.length} to publish. Run with --publish to put them on the website.`
     : '\nNothing to publish.');
@@ -140,4 +153,5 @@ for (const id of toPublish) {
   fs.rmSync(to, { recursive: true, force: true });
   fs.cpSync(from, to, { recursive: true });
 }
+checkReferences();
 process.exit(failed.length ? 1 : 0);

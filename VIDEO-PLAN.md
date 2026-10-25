@@ -119,6 +119,64 @@ A trigger phrase, **"sync videos"**, works like "sync docs":
 
 Screenshots for the by-hand videos can't be re-taken automatically. The report lists which by-hand videos show screens that have changed, if any.
 
+## When a video changes: what else to update
+
+Other pages, documents and emails link to the videos and name them. These rules keep them right when a video is re-made, renamed, added or removed.
+
+### Where the videos are mentioned
+
+**Kept right automatically**, because they're rebuilt from `scripts/video/course.json` every time:
+- the videos page and each video's watch page, with its Next buttons,
+- each one-page guide's "Watch next" line, and the course map,
+- the spoken "Next: ..." at the end of each video.
+
+**Written by hand, so they can go wrong:**
+- **The beta emails.** `BETA-EMAILS.md` is the master. The Word copies in `Other/Beta Testing/Emails` are made from it with `python scripts/make-beta-emails.py`, so a change goes in the master and the copies are made again.
+- **The Conversant home page** on the website. The WordPress page is the copy now; its first draft (`Documents/Conversant AAC Website Home Page.docx`) is history and isn't updated.
+- **The other pages on the website** (the beta page, the Beta Test Plan, Known Issues, Documents) and **the documents** in `Documents/`. None of these links a video today.
+- **Emails already sent.** They can't be changed, which is why rule 1 below matters.
+
+### The checker
+
+`python scripts/video/check-video-references.py` reads everything in the hand-written list and reports:
+- a link to a video that doesn't exist or isn't published,
+- a link whose words are one video's title but which opens a different video,
+- a sentence naming a video by a title no video has,
+- "the six Getting Started videos" when a different number is linked beside it, and "about four minutes" when they add up to something else,
+- Word copies of the emails older than `BETA-EMAILS.md`,
+- a watch page still published for a video no longer in the course.
+
+**It runs by itself at the end of every "sync videos"**, and can be run on its own with the trigger phrase **"check video links"**. Fix every ERROR before sending a beta email. It can't judge whether a sentence describing a video is still true; that's rule 2.
+
+### The rules
+
+1. **A watch page's address never changes once it's published.** The address comes from the video's number (`video-2-3`) and, for a device version, the device (`video-1-2-ipad`). Sent emails carry these addresses for good. So:
+   - **A new video goes at the end of its group**, with the next free number, never between two existing ones. (That's why "Short Wording on Your Options" is 4.7 rather than sitting beside 4.4.)
+   - **Don't renumber a published video, and don't split one into device versions after it's published.**
+   - If one must move anyway, change every link in the same sitting, and turn the old watch page into a short page pointing to the new one. **Don't count on a broken link being noticed:** the website guesses at an address it doesn't know. `video-1-2` quietly opens the Android version of 1.2, so a stale link sends a reader to the wrong video with no error.
+
+2. **A video re-made with the same number and title needs nothing changed elsewhere.** Its address stays the same. But if an email or page says what the video shows ("The Adding Your AI Key video shows where to paste it"), read that sentence again and check it's still true.
+
+3. **A new title** goes in `course.json` and nowhere else by hand, except:
+   - the link words and quoted titles in `BETA-EMAILS.md`, then make the Word copies again,
+   - the Conversant home page in WordPress, if it names the video,
+   - the table in this plan.
+   The video before it changes too, because its last line names this one; "sync videos" re-makes it.
+
+4. **A new video:**
+   - Add it to `course.json` at the end of its group, and to the table in this plan.
+   - "Sync videos" re-makes the video before it, whose last line now names the new one.
+   - If it's in Getting Started, decide which welcome emails should list it (each email lists only its own device's versions), then update their count and their "about N minutes". The checker catches a count that's wrong, but not a video that should be listed and isn't.
+
+5. **Removing a video:**
+   - First run the checker to find everything that links it, and point those links elsewhere.
+   - Then take it out of `course.json`. "Sync videos" re-makes the video before it.
+   - The checker then reports its watch page as still published. Unpublish it in WordPress (set it to Draft) rather than deleting it, so it can come back.
+
+6. **Changing the Getting Started set** (adding, removing, or making one much longer or shorter) changes the welcome emails' "six videos ... about four minutes". The checker catches it.
+
+7. **Old copies of the files stay in the website's media library** after each upload, because deleting there is permanent. The publisher lists them by name, and Ken deletes them when he wants to.
+
 ## Build order
 
 1. **The live method** (stand-in microphone and fixed AI answers), proved on 2.2, the practice conversation.
