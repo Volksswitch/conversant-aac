@@ -153,7 +153,9 @@ Other pages, documents and emails link to the videos and name them. These rules 
 1. **A watch page's address never changes once it's published.** The address comes from the video's number (`video-2-3`) and, for a device version, the device (`video-1-2-ipad`). Sent emails carry these addresses for good. So:
    - **A new video goes at the end of its group**, with the next free number, never between two existing ones. (That's why "Short Wording on Your Options" is 4.7 rather than sitting beside 4.4.)
    - **Don't renumber a published video, and don't split one into device versions after it's published.**
-   - If one must move anyway, change every link in the same sitting, and turn the old watch page into a short page pointing to the new one. **Don't count on a broken link being noticed:** the website guesses at an address it doesn't know. `video-1-2` quietly opens the Android version of 1.2, so a stale link sends a reader to the wrong video with no error.
+   - If one must move anyway, change every link in the same sitting, and turn the old watch page into a short page pointing to the new one.
+   - **A stale link now shows "page not found".** Until October 25 2026 the website guessed at an address it didn't know, so `video-1-2` quietly opened the Android version of 1.2 and nobody would have noticed. The plugin "Disable URL Autocorrect Guessing" (installed by Ken that day) stops the guessing on the whole site. Keep it installed: the rules and the checker reduce stale links, and can't guarantee there are none.
+   - **A video made in one version per device also has a page at its plain number** (`video-1-2`, `video-1-4`) that asks which device and links each version. The publisher makes and updates these by itself. They keep the addresses used before 1.2 and 1.4 were split working, and give an email that doesn't know the reader's device one address to link.
 
 2. **A video re-made with the same number and title needs nothing changed elsewhere.** Its address stays the same. But if an email or page says what the video shows ("The Adding Your AI Key video shows where to paste it"), read that sentence again and check it's still true.
 

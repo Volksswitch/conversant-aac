@@ -60,6 +60,12 @@ def load():
         if rec and rec.get('page', {}).get('url'):
             by_url[rec['page']['url']] = dict(x, seconds=rec.get('seconds', 0))
     titles = {norm(x['title']) for x in items}
+    # The choose-your-device page at a plain number (video-1-2) is a real page too;
+    # a link to it is right when its words are that video's title.
+    for num, rec in json.load(open(PUBLISHED, encoding='utf-8')).get('choosers', {}).items():
+        first = next((x for x in items if x['num'] == num), None)
+        if first and rec.get('url'):
+            by_url[rec['url']] = dict(first, seconds=0, chooser=True)
     for vid in pub:
         if vid not in {x['id'] for x in items}:
             report('ERROR', 'website', f'the watch page for "{vid}" is still published but the video is no longer in the course; '
@@ -80,7 +86,8 @@ def check_links(where, links, by_url, titles):
         if not x:
             report('ERROR', where, f'"{text}" links to {u}, which is not a published video')
             continue
-        linked.append(x)
+        if not x.get('chooser'):
+            linked.append(x)
         t = norm(text)
         if t in titles and t != norm(x['title']):
             report('ERROR', where, f'"{text}" links to video {x["num"]}, which is called "{x["title"]}"')

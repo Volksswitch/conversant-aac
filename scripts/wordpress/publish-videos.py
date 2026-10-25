@@ -233,6 +233,58 @@ def update_watch_pages(cfg, course, list_page, apply):
                 if made['link'] != url_of[item['id']]:
                     raise SystemExit(f'The page for {title} landed at {made["link"]}, not {url_of[item["id"]]}; '
                                      "the Next links on the pages beside it would be wrong. Nothing more has been changed.")
+    update_chooser_pages(cfg, items, url_of, list_page, apply)
+
+
+# A video made in one version per device also gets a page at its plain number
+# (video-1-2), asking which device. Two reasons: links made before 1.2 and 1.4 were
+# split into device versions point at the plain number, and the site no longer
+# guesses at an unknown address (Ken installed "Disable URL Autocorrect Guessing",
+# October 25 2026), so without this page those links would say "not found". It
+# also gives an email that doesn't know the reader's device one address to use.
+def build_chooser(versions, url_of, list_url):
+    e = html.escape
+    style = ('display:inline-block;background:#ff6d00;color:#fff;font-size:1.2em;font-weight:bold;'
+             'padding:12px 22px;border-radius:10px;text-decoration:none;margin:0 10px 10px 0;')
+    buttons = ''.join(f'<a href="{e(url_of[v["id"]])}" style="{style}">{e(v["version"])}</a>' for v in versions)
+    return ('<!-- wp:html -->' + NL +
+            f'<p>{e(versions[0]["learn"])}</p>' + NL +
+            '<p>This video comes in a version for each kind of device. Choose yours:</p>' + NL +
+            f'<p>{buttons}</p>' + NL +
+            f'<p><a href="{e(list_url)}">All the videos</a></p>' + NL +
+            '<!-- /wp:html -->')
+
+
+def update_chooser_pages(cfg, items, url_of, list_page, apply):
+    choosers = cfg.setdefault('choosers', {})
+    nums = []
+    for i in items:
+        if i.get('version') and i['num'] not in nums:
+            nums.append(i['num'])
+    for num in nums:
+        versions = [i for i in items if i['num'] == num]
+        slug = WATCH_SLUG.format(num=num.replace('.', '-'))
+        title = f'{num} {versions[0]["title"]}'
+        content = build_chooser(versions, url_of, list_page['link'])
+        rec = choosers.get(num)
+        if not rec:
+            found = call('GET', f'/wp/v2/pages?slug={slug}&parent={list_page["id"]}&status=publish,draft,private&context=edit')
+            if found:
+                rec = choosers[num] = {'id': found[0]['id'], 'url': found[0]['link']}
+        if rec:
+            current = call('GET', f'/wp/v2/pages/{rec["id"]}?context=edit')
+            if current['content']['raw'].strip() == content.strip() and current['title']['raw'] == title:
+                continue
+            print(f'  CHOOSE-YOUR-DEVICE PAGE {"UPDATED" if apply else "would be updated"}: {title}')
+            if apply:
+                call('POST', f'/wp/v2/pages/{rec["id"]}', {'title': title, 'content': content})
+        else:
+            print(f'  CHOOSE-YOUR-DEVICE PAGE {"MADE" if apply else "would be made"}: {title}')
+            if apply:
+                made = call('POST', '/wp/v2/pages', {'title': title, 'slug': slug, 'parent': list_page['id'],
+                                                     'status': 'publish', 'content': content})
+                choosers[num] = {'id': made['id'], 'url': made['link']}
+                print(f'    {made["link"]}')
 
 
 def main():

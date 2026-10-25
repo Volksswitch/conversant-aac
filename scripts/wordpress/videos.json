@@ -618,5 +618,15 @@
     "signature": "d57a4f52bfc590df84bb4962651660efe9715b81d0d2e9b731efd013b7de3568",
     "id": 24446,
     "url": "https://volksswitch.org/wp-content/uploads/2026/10/Learning-Conversant-4.pdf"
+  },
+  "choosers": {
+    "1.2": {
+      "id": 24452,
+      "url": "https://volksswitch.org/index.php/conversant-videos/video-1-2/"
+    },
+    "1.4": {
+      "id": 24453,
+      "url": "https://volksswitch.org/index.php/conversant-videos/video-1-4/"
+    }
   }
 }
