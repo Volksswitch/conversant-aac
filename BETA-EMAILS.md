@@ -8,15 +8,16 @@ This file is the master. The Word copies in `Other/Beta Testing/Emails` are made
 from it by `python scripts/make-beta-emails.py`, so change the wording here and
 re-run that.
 
-There is one welcome email per kind of device, so nothing has to be cut out
-before sending.
+There is one welcome email per kind of device. The script makes two Word copies
+of each: one for a tester who asked for their helper to be copied, and one for a
+tester who did not. In this file, {helper} marks the paragraph that appears only
+in the helper version, and {to-helper} marks where the address note differs.
 
 ## 1a. Welcome - Windows computer or tablet
 
 **When:** a sign-up says 18 or older and names a Windows computer or tablet. Also when an invited person
 answers yes with a Windows computer or tablet.
-**To:** the tester. Copy their helper only if they asked for that, and then keep
-the sentence about the helper.
+**To:** the tester{to-helper}.
 
 > Subject: Welcome to the Conversant AAC beta
 >
@@ -24,7 +25,7 @@ the sentence about the helper.
 >
 > Thanks for signing up. I'm glad you'll be trying Conversant.
 >
-> I've copied [helper's name] on this email, as you asked. If you'd ever like me
+> {helper}I've copied [helper's name] on this email, as you asked. If you'd ever like me
 > to stop copying them, just tell me.
 >
 > Here's how to get started:
@@ -62,8 +63,7 @@ the sentence about the helper.
 
 **When:** a sign-up says 18 or older and names a Chromebook. Also when an invited person
 answers yes with a Chromebook.
-**To:** the tester. Copy their helper only if they asked for that, and then keep
-the sentence about the helper.
+**To:** the tester{to-helper}.
 
 > Subject: Welcome to the Conversant AAC beta
 >
@@ -71,7 +71,7 @@ the sentence about the helper.
 >
 > Thanks for signing up. I'm glad you'll be trying Conversant.
 >
-> I've copied [helper's name] on this email, as you asked. If you'd ever like me
+> {helper}I've copied [helper's name] on this email, as you asked. If you'd ever like me
 > to stop copying them, just tell me.
 >
 > Here's how to get started:
@@ -109,8 +109,7 @@ the sentence about the helper.
 
 **When:** a sign-up says 18 or older and names a Mac. Also when an invited person
 answers yes with a Mac.
-**To:** the tester. Copy their helper only if they asked for that, and then keep
-the sentence about the helper.
+**To:** the tester{to-helper}.
 
 > Subject: Welcome to the Conversant AAC beta
 >
@@ -118,7 +117,7 @@ the sentence about the helper.
 >
 > Thanks for signing up. I'm glad you'll be trying Conversant.
 >
-> I've copied [helper's name] on this email, as you asked. If you'd ever like me
+> {helper}I've copied [helper's name] on this email, as you asked. If you'd ever like me
 > to stop copying them, just tell me.
 >
 > Here's how to get started:
@@ -156,8 +155,7 @@ the sentence about the helper.
 
 **When:** a sign-up says 18 or older and names an iPad, or an invited person
 answers yes with an iPad.
-**To:** the tester. Copy their helper only if they asked for that, and then keep
-the sentence about the helper.
+**To:** the tester{to-helper}.
 
 > Subject: Welcome to the Conversant AAC beta
 >
@@ -165,7 +163,7 @@ the sentence about the helper.
 >
 > Thanks for signing up. I'm glad you'll be trying Conversant.
 >
-> I've copied [helper's name] on this email, as you asked. If you'd ever like me
+> {helper}I've copied [helper's name] on this email, as you asked. If you'd ever like me
 > to stop copying them, just tell me.
 >
 > Here's how to get started:
@@ -205,8 +203,7 @@ the sentence about the helper.
 
 **When:** a sign-up says 18 or older and names an Android tablet or phone, or an
 invited person answers yes with one.
-**To:** the tester. Copy their helper only if they asked for that, and then keep
-the sentence about the helper.
+**To:** the tester{to-helper}.
 
 > Subject: Welcome to the Conversant AAC beta
 >
@@ -214,7 +211,7 @@ the sentence about the helper.
 >
 > Thanks for signing up. I'm glad you'll be trying Conversant.
 >
-> I've copied [helper's name] on this email, as you asked. If you'd ever like me
+> {helper}I've copied [helper's name] on this email, as you asked. If you'd ever like me
 > to stop copying them, just tell me.
 >
 > Here's how to get started:
@@ -253,8 +250,7 @@ the sentence about the helper.
 ## 1f. Welcome - device not known yet
 
 **When:** a sign-up says 18 or older and answers "Not sure yet" for the device.
-**To:** the tester. Copy their helper only if they asked for that, and then keep
-the sentence about the helper.
+**To:** the tester{to-helper}.
 
 > Subject: Welcome to the Conversant AAC beta
 >
@@ -262,7 +258,7 @@ the sentence about the helper.
 >
 > Thanks for signing up. I'm glad you'll be trying Conversant.
 >
-> I've copied [helper's name] on this email, as you asked. If you'd ever like me
+> {helper}I've copied [helper's name] on this email, as you asked. If you'd ever like me
 > to stop copying them, just tell me.
 >
 > Before we start, which device will you use: an iPad, an Android tablet or phone,

@@ -121,7 +121,32 @@ def main():
         if not m or not any(l.startswith('>') for l in lines):
             continue
         title = m.group(2).replace(' - ', ', ').replace('The kind decline', 'Decline')
-        print(build(m.group(1), title, lines))
+        if '{helper}' in sec:
+            print(build(m.group(1), title + ', with helper', variant(lines, True)))
+            print(build(m.group(1), title + ', no helper', variant(lines, False)))
+        else:
+            print(build(m.group(1), title, lines))
+
+
+def variant(lines, helper):
+    """The lines of one welcome email for a tester with or without a copied helper.
+
+    A quoted paragraph whose first line starts with {helper} appears only in the
+    helper version; {to-helper} in the notes becomes the matching address note."""
+    out, skipping = [], False
+    for ln in lines:
+        ln = ln.replace('{to-helper}', ', and copy their helper' if helper else ' only')
+        if ln.startswith('> {helper}'):
+            if helper:
+                ln = '> ' + ln[len('> {helper}'):]
+            else:
+                skipping = True
+        if skipping:
+            if ln.strip() == '>':
+                skipping = False
+            continue
+        out.append(ln)
+    return out
 
 
 main()
