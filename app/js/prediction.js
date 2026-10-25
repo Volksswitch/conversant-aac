@@ -55,19 +55,52 @@ export async function load() {
 let learning = true;
 export function setLearning(on) { learning = !!on; }
 
+// --- Accented letters (Ken, October 25 2026) ------------------------------------
+//
+// Words are kept as written, accents and all ("josé", "ramírez", "zoë"), in one
+// standard form so the same word typed two ways is one entry. Until now anything with a
+// letter outside a-z was skipped, so names like these could never be suggested.
+//
+// MATCHING IGNORES AN ACCENT THE USER DID NOT TYPE, and that is most of the value: the
+// on-screen keyboard has no accented keys, so typing "jos" now offers "José", and
+// accepting it puts the accent in. An accent the user DID type is kept: typing "jé"
+// does not offer "jet", or accepting would silently take their accent away.
+
+// A word as stored: one standard form (NFC), lowercase, letters of any alphabet plus
+// the apostrophe. Pure.
+function cleanWord(text) {
+    return String(text || '').normalize('NFC').toLowerCase()
+        .replace(/[^\p{L}\p{M}']/gu, '').replace(/^'+|'+$/g, '');
+}
+
+// The same letters with every accent taken off ("josé" -> "jose"). Pure.
+function bare(text) {
+    return String(text || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+}
+
+// Does `word` continue what was typed? A plain typed letter matches that letter with or
+// without an accent; an accented typed letter must match exactly. Both are in NFC
+// lowercase. Pure; exported for the tests.
+export function continuesTyped(word, typed) {
+    const w = [...word];
+    const t = [...typed];
+    if (t.length > w.length) return false;
+    for (let i = 0; i < t.length; i++) {
+        const plain = bare(t[i]) === t[i];
+        if (plain ? bare(w[i]) !== t[i] : w[i] !== t[i]) return false;
+    }
+    return true;
+}
+
 // Record that the user committed a word (on word boundary, or by picking a
 // prediction) — boosts it for next time. Words shorter than 2 chars are ignored.
-//
-// A word with a letter outside a-z is skipped rather than stored as a fragment ("José"
-// would have become "jos"). The list is capped, keeping the most used words, so it
-// cannot grow without limit in the shared browser storage (CR-151).
+// The list is capped, keeping the most used words, so it cannot grow without limit in
+// the shared browser storage (CR-151).
 const LEARNED_MAX = 2000;
 export function learn(word) {
     if (!learning) return;
-    const raw = String(word || '').toLowerCase();
-    if (/[^\x00-\x7f]/.test(raw)) return;
-    const w = raw.replace(/[^a-z']/g, '');
-    if (w.length < 2) return;
+    const w = cleanWord(word);
+    if ([...w].length < 2) return;
     const uf = loadUserFreq();
     uf[w] = (uf[w] || 0) + 1;
     const keys = Object.keys(uf);
@@ -99,16 +132,14 @@ export function setKnownWordsProvider(fn) {
     knownWordsProvider = typeof fn === 'function' ? fn : () => [];
 }
 
-// The words in a list of names, as the suggestions store them: lowercase a-z and the
-// apostrophe, two letters or more. A word with any other letter ("José") is skipped
-// whole rather than stored as a fragment, as learn() does. Pure.
+// The words in a list of names, as the suggestions store them (see cleanWord), two
+// letters or more. Pure.
 export function wordsIn(texts) {
     const out = new Set();
     for (const t of texts || []) {
-        for (const raw of String(t || '').toLowerCase().split(/[\s\-\/.,;:!?()"]+/)) {
-            if (!raw || /[^\x00-\x7f]/.test(raw)) continue;
-            const w = raw.replace(/[^a-z']/g, '').replace(/^'+|'+$/g, '');
-            if (w.length >= 2) out.add(w);
+        for (const raw of String(t || '').split(/[\s\-\/.,;:!?()"]+/)) {
+            const w = cleanWord(raw);
+            if ([...w].length >= 2) out.add(w);
         }
     }
     return [...out];
@@ -133,7 +164,7 @@ export function listLearned() {
 
 // Add words the user wants suggested. Each counts as used twice, which is what puts a
 // word ahead of the dictionary (CR-151), so it is suggested at once. Returns
-// { added: [word], skipped: [text] } - a word with a letter outside a-z cannot be
+// { added: [word], skipped: [text] } - a piece with fewer than two letters cannot be
 // suggested and is said back rather than dropped silently.
 export function addWords(text) {
     const added = [];
@@ -188,7 +219,9 @@ export function importFrequencies(obj) {
     if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return false;
     const clean = {};
     for (const [w, n] of Object.entries(obj)) {
-        if (/^[a-z']{2,}$/.test(w) && Number.isFinite(n) && n > 0) clean[w] = Math.floor(n);
+        // Only words already in the stored form; accented words are allowed since
+        // October 25 2026, so a backup made after that restores them.
+        if (cleanWord(w) === w && [...w].length >= 2 && Number.isFinite(n) && n > 0) clean[w] = Math.floor(n);
     }
     userFreq = clean;
     saveUserFreq();
@@ -196,16 +229,21 @@ export function importFrequencies(obj) {
 }
 
 export function predict(prefix, limit = 3) {
-    const p = String(prefix || '').toLowerCase().replace(/[^a-z']/g, '');
+    const p = cleanWord(prefix);
     if (!p) return [];
     const uf = loadUserFreq();
+    // A word only counts if it adds letters after what was typed: one that differs from
+    // the typed letters by an accent alone would draw an empty suggestion, which a tap
+    // could still accept with nothing on screen to show it.
+    const typedLength = [...p].length;
+    const offers = (w) => [...w].length > typedLength && continuesTyped(w, p);
 
     // Personalized matches, most-used first; exclude the exact prefix itself. A name the
     // app knows counts as used twice, so it comes first from the start.
     const counts = { ...uf };
     for (const w of knownWords()) counts[w] = Math.max(counts[w] || 0, 2);
     const personal = Object.keys(counts)
-        .filter((w) => w !== p && w.startsWith(p))
+        .filter(offers)
         .sort((a, b) => counts[b] - counts[a] || a.localeCompare(b));
 
     const out = [];
@@ -220,7 +258,7 @@ export function predict(prefix, limit = 3) {
     if (out.length < limit) {
         for (const w of words) {
             if (out.length >= limit) break;
-            if (w !== p && w.startsWith(p)) push(w);
+            if (offers(w)) push(w);
         }
     }
     personal.forEach(push);

@@ -58,9 +58,53 @@ test('a word typed once comes after the dictionary, a word used often comes firs
     assert.equal(prediction.predict('te', 1)[0], 'teh');
 });
 
-test('a word with an accented letter is not stored as a fragment', () => {
+test('a word with an accented letter is stored whole, never as a fragment', () => {
+    prediction.clearLearned();
+    prediction.learn('José');
     prediction.learn('José');
     assert.ok(!prediction.predict('jo', 10).includes('jos'));
+    assert.deepEqual(prediction.listLearned().map((w) => w.word), ['josé']);
+});
+
+// October 25 2026: accented names. The on-screen keyboard has no accented keys, so the
+// accent has to come from the suggestion.
+test('typing plain letters offers the accented word, and accepting puts the accent in', () => {
+    prediction.clearLearned();
+    prediction.addWords('Ramírez Zoë José');
+    assert.equal(prediction.predict('jos', 1)[0], 'josé', '"jos" offers "josé"');
+    assert.equal(prediction.predict('rami', 1)[0], 'ramírez', 'the accent can come before the end of what is typed');
+    assert.equal(prediction.predict('zo', 1)[0], 'zoë');
+    assert.equal(prediction.predict('ramí', 1)[0], 'ramírez', 'typing the accent yourself still matches');
+});
+
+test('an accent the user typed is never taken away', () => {
+    prediction.clearLearned();
+    // "jé" must not offer "jet": accepting would replace the typed "é" with "e".
+    assert.ok(!prediction.predict('jé', 5).some((w) => !w.startsWith('jé')));
+    assert.equal(prediction.continuesTyped('jet', 'jé'), false);
+    assert.equal(prediction.continuesTyped('josé', 'jos'), true);
+    assert.equal(prediction.continuesTyped('jose', 'josé'), false);
+});
+
+test('a word that adds nothing but an accent is not offered, so nothing invisible can be accepted', () => {
+    prediction.clearLearned();
+    prediction.addWords('José');
+    assert.ok(!prediction.predict('jose', 5).includes('josé'));
+});
+
+test('the same accented word typed two ways is one entry', () => {
+    prediction.clearLearned();
+    prediction.learn('Jos' + String.fromCharCode(0xe9));          // é as one character
+    prediction.learn('Jose' + String.fromCharCode(0x301));        // e plus a combining accent
+    assert.equal(prediction.listLearned().length, 1);
+    assert.equal(prediction.listLearned()[0].count, 2);
+});
+
+test('accented words travel in a backup and come back', () => {
+    prediction.clearLearned();
+    assert.equal(prediction.importFrequencies({ 'josé': 3, 'zoë': 2, 'Bad': 4 }), true);
+    assert.deepEqual(prediction.listLearned().map((w) => w.word).sort(), ['josé', 'zoë'].sort(),
+        'a word not in the stored form is left out');
 });
 
 test('the learned list stays capped', () => {
@@ -106,16 +150,17 @@ test('names from About Me are suggested at once, but not the ordinary words in t
     }
 });
 
-test('a name with a letter outside a-z is skipped whole, never stored as a fragment', () => {
-    assert.deepEqual(prediction.wordsIn(['José Ramírez', "O'Brien", 'Dr. Patel']).sort(), ["o'brien", 'dr', 'patel'].sort());
+test('names are split into words, accents kept', () => {
+    assert.deepEqual(prediction.wordsIn(['José Ramírez', "O'Brien", 'Dr. Patel']).sort(),
+        ['josé', 'ramírez', "o'brien", 'dr', 'patel'].sort());
 });
 
 test('the list can be seen, added to and removed from', () => {
     prediction.clearLearned();
     for (let i = 0; i < 3; i++) prediction.learn('thunderbolt');
-    const r = prediction.addWords('Humira José');
+    const r = prediction.addWords('Humira 7');
     assert.deepEqual(r.added, ['humira']);
-    assert.deepEqual(r.skipped, ['José'], 'a word that cannot be suggested is said back');
+    assert.deepEqual(r.skipped, ['7'], 'a word that cannot be suggested is said back');
     assert.equal(prediction.predict('hum', 1)[0], 'humira', 'an added word is suggested first at once');
     assert.deepEqual(prediction.listLearned().map((w) => w.word), ['thunderbolt', 'humira']);
     assert.equal(prediction.removeWord('humira'), true);

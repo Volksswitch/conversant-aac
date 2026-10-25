@@ -69,7 +69,7 @@ function addTyped() {
     render();
     const bits = [];
     if (added.length) bits.push(`Added: ${added.join(', ')}.`);
-    if (skipped.length) bits.push(`Not added, because only the letters a to z can be suggested: ${skipped.join(', ')}.`);
+    if (skipped.length) bits.push(`Not added, because a word needs two letters or more: ${skipped.join(', ')}.`);
     say(bits.join(' '));
 }
 

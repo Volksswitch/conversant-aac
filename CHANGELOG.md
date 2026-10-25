@@ -33,6 +33,7 @@ forgetting to tag one is only ever noise, never silence.
 - Importing a practice scenario from a file now shows you the whole scenario first, and adds it only if you choose "Add it". A scenario from a file is also held to a sensible length, so a very long one can no longer run up your AI bill; the boxes where you write your own scenarios have the same limits.
 - New: typing suggestions now offer the names of the people and places in About Me, and the words in your "Words the voice gets wrong" list, from the start, instead of only after you have typed them twice. Anything you marked Private is never suggested.
 - New: Settings > Express Panel and Keyboard > Typing suggestions shows the words the keyboard suggests first because you use them. You can add a word, remove one, or clear the whole list.
+- New: typing suggestions now work with accented letters. Names like José, Ramírez and Zoë can be learned and suggested, and you don't need an accent key: type "jos" and the suggestion offers "José", with the accent put in when you accept it.
 
 ## Version 0.13.26
 

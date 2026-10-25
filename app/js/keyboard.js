@@ -282,10 +282,12 @@ function handleKey(keyEl) {
     if (ch == null) return;
     // A non-word character (comma, period, etc.) is a word separator too — it
     // likewise does NOT accept the ghost; learn the typed word and dismiss it.
-    const isSeparator = !/[A-Za-z']/.test(ch);
+    // A letter of any alphabet is part of a word, so an accented key is not a separator
+    // (October 25 2026).
+    const isSeparator = !WORD_CHAR.test(ch);
     if (isSeparator) { learnCurrentWord(); clearGhost(); }
     const upper = shiftState !== 'off';
-    insert(upper && /[a-z]/i.test(ch) ? ch.toUpperCase() : ch);
+    insert(upper && /\p{L}/u.test(ch) ? ch.toUpperCase() : ch);
     consumeShift();
     updateGhost();
 }
@@ -316,13 +318,19 @@ function predictionOff(f) {
     return !f || (f.dataset && f.dataset.noPredict !== undefined);
 }
 
+// What counts as part of a word: a letter of any alphabet, a combining accent, or an
+// apostrophe. It was A-Z only, so a name like "José" was cut at the accent - the
+// suggestions could neither learn it nor offer it (Ken, October 25 2026).
+const WORD_CHAR = /[\p{L}\p{M}']/u;
+const WORD_AT_END = /[\p{L}\p{M}']+$/u;
+
 // The partial word immediately before the caret (letters/apostrophe). Empty where
 // prediction does not belong (see predictionOff) and when not on a word.
 function currentWordPrefix() {
     const f = activeField;
     if (predictionOff(f)) return '';
     const caret = f.selectionStart ?? f.value.length;
-    const m = f.value.slice(0, caret).match(/[A-Za-z']+$/);
+    const m = f.value.slice(0, caret).match(WORD_AT_END);
     return m ? m[0] : '';
 }
 
@@ -368,7 +376,11 @@ function updateGhost() {
     const prefix = currentWordPrefix();
     if (!prefix) { clearGhost(); return; }
     const pred = prediction.predict(prefix, 1)[0];
-    if (!pred || pred.toLowerCase() === prefix.toLowerCase()) { clearGhost(); return; }
+    // ⚠ NEVER AN INVISIBLE GHOST. A word that adds no letters after what was typed
+    // would draw nothing, and a tap in the box would still accept it - changing the
+    // word with nothing on screen to say so. predict() leaves those out; this is the
+    // guard if a word ever slips through.
+    if (!pred || [...pred].length <= [...prefix].length) { clearGhost(); return; }
     ghostWord = pred;
     renderGhost();
 }
@@ -399,8 +411,11 @@ function renderGhost() {
     s.overflowWrap = cs.overflowWrap;
 
     const typed = f.value;
-    const m = typed.match(/[A-Za-z']+$/);
+    const m = typed.match(WORD_AT_END);
     const out = caseMatch(ghostWord, m ? m[0] : '');
+    // The letters typed so far stay as the field shows them; only what comes after is
+    // drawn. Where the word differs from them only by an accent ("Rami" for
+    // "Ramírez"), accepting puts the accent in - see acceptGhost.
     const suffix = out.slice(m ? m[0].length : 0);
     ghostInner.textContent = '';
     ghostInner.appendChild(document.createTextNode(typed));   // transparent, reserves width
@@ -425,7 +440,7 @@ function acceptGhost() {
     if (!f) return false;
     const caret = f.selectionStart ?? f.value.length;
     const before = f.value.slice(0, caret);
-    const m = before.match(/[A-Za-z']+$/);
+    const m = before.match(WORD_AT_END);
     if (!m) { clearGhost(); return false; }
     const start = caret - m[0].length;
     const out = caseMatch(ghostWord, m[0]);
