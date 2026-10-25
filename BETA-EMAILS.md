@@ -11,10 +11,10 @@ re-run that.
 There is one welcome email per kind of device, so nothing has to be cut out
 before sending.
 
-## 1a. Welcome - Windows computer, Chromebook or Mac
+## 1a. Welcome - Windows computer or tablet
 
-**When:** a sign-up says 18 or older and names a Windows computer or tablet, a
-Chromebook or a Mac. Also when an invited person answers yes with one of these.
+**When:** a sign-up says 18 or older and names a Windows computer or tablet. Also when an invited person
+answers yes with a Windows computer or tablet.
 **To:** the tester. Copy their helper only if they asked for that, and then keep
 the sentence about the helper.
 
@@ -46,8 +46,7 @@ the sentence about the helper.
 >    **[AI key]**
 >
 >    The "Adding Your AI Key" video shows where to paste it.
-> 4. **Hearing the other person is free.** On [a Windows computer / a Chromebook /
->    a Mac], Conversant uses the browser to hear the person you're talking with,
+> 4. **Hearing the other person is free.** On a Windows computer or tablet, Conversant uses the browser to hear the person you're talking with,
 >    so you don't need a speech service.
 > 5. **Setup help.** I'm happy to go through setup with you. What days and times
 >    work for you?
@@ -59,7 +58,101 @@ the sentence about the helper.
 > Thanks again,
 > Ken
 
-## 1b. Welcome - iPad
+## 1b. Welcome - Chromebook
+
+**When:** a sign-up says 18 or older and names a Chromebook. Also when an invited person
+answers yes with a Chromebook.
+**To:** the tester. Copy their helper only if they asked for that, and then keep
+the sentence about the helper.
+
+> Subject: Welcome to the Conversant AAC beta
+>
+> Hi [first name],
+>
+> Thanks for signing up. I'm glad you'll be trying Conversant.
+>
+> I've copied [helper's name] on this email, as you asked. If you'd ever like me
+> to stop copying them, just tell me.
+>
+> Here's how to get started:
+>
+> 1. **Watch the five Getting Started videos.** Together they take about four
+>    minutes. Start with [What Conversant Is For](https://volksswitch.org/index.php/conversant-videos/video-1-1/).
+>    When each video ends, a Next button takes you to the following one, so you
+>    don't need to come back here. If you'd rather pick one, here they are:
+>    [What Conversant Is For](https://volksswitch.org/index.php/conversant-videos/video-1-1/),
+>    [Installing Conversant](https://volksswitch.org/index.php/conversant-videos/video-1-2-computer/),
+>    [Adding Your AI Key](https://volksswitch.org/index.php/conversant-videos/video-1-3/),
+>    [Keeping Your Information Safe](https://volksswitch.org/index.php/conversant-videos/video-1-4-computer/)
+>    and [Do You Need a Speech Service?](https://volksswitch.org/index.php/conversant-videos/video-1-5/)
+> 2. **Open Conversant** at [conversant.volksswitch.org](https://conversant.volksswitch.org/).
+>    You don't have to install anything from an app store.
+> 3. **Add your AI key.** During the beta, we pay for the AI that writes the
+>    suggestions. Here is your key. Copy all of it, from "sk-ant" to the end:
+>
+>    **[AI key]**
+>
+>    The "Adding Your AI Key" video shows where to paste it.
+> 4. **Hearing the other person is free.** On a Chromebook, Conversant uses the browser to hear the person you're talking with,
+>    so you don't need a speech service.
+> 5. **Setup help.** I'm happy to go through setup with you. What days and times
+>    work for you?
+>
+> When you're ready for more, here are [all the how-to videos](https://volksswitch.org/index.php/conversant-videos/).
+> The [Beta Test Plan](https://volksswitch.org/index.php/beta-test-plan/) explains
+> what we'll ask of you and what the app sends back to us.
+>
+> Thanks again,
+> Ken
+
+## 1c. Welcome - Mac
+
+**When:** a sign-up says 18 or older and names a Mac. Also when an invited person
+answers yes with a Mac.
+**To:** the tester. Copy their helper only if they asked for that, and then keep
+the sentence about the helper.
+
+> Subject: Welcome to the Conversant AAC beta
+>
+> Hi [first name],
+>
+> Thanks for signing up. I'm glad you'll be trying Conversant.
+>
+> I've copied [helper's name] on this email, as you asked. If you'd ever like me
+> to stop copying them, just tell me.
+>
+> Here's how to get started:
+>
+> 1. **Watch the five Getting Started videos.** Together they take about four
+>    minutes. Start with [What Conversant Is For](https://volksswitch.org/index.php/conversant-videos/video-1-1/).
+>    When each video ends, a Next button takes you to the following one, so you
+>    don't need to come back here. If you'd rather pick one, here they are:
+>    [What Conversant Is For](https://volksswitch.org/index.php/conversant-videos/video-1-1/),
+>    [Installing Conversant](https://volksswitch.org/index.php/conversant-videos/video-1-2-computer/),
+>    [Adding Your AI Key](https://volksswitch.org/index.php/conversant-videos/video-1-3/),
+>    [Keeping Your Information Safe](https://volksswitch.org/index.php/conversant-videos/video-1-4-computer/)
+>    and [Do You Need a Speech Service?](https://volksswitch.org/index.php/conversant-videos/video-1-5/)
+> 2. **Open Conversant** at [conversant.volksswitch.org](https://conversant.volksswitch.org/).
+>    You don't have to install anything from an app store.
+> 3. **Add your AI key.** During the beta, we pay for the AI that writes the
+>    suggestions. Here is your key. Copy all of it, from "sk-ant" to the end:
+>
+>    **[AI key]**
+>
+>    The "Adding Your AI Key" video shows where to paste it.
+> 4. **Hearing the other person is free.** On a Mac, Conversant uses the browser to hear the person you're talking with,
+>    so you don't need a speech service.
+> 5. **Setup help.** I'm happy to go through setup with you. What days and times
+>    work for you?
+>
+> When you're ready for more, here are [all the how-to videos](https://volksswitch.org/index.php/conversant-videos/).
+> The [Beta Test Plan](https://volksswitch.org/index.php/beta-test-plan/) explains
+> what we'll ask of you and what the app sends back to us.
+>
+> Thanks again,
+> Ken
+
+## 1d. Welcome - iPad
 
 **When:** a sign-up says 18 or older and names an iPad, or an invited person
 answers yes with an iPad.
@@ -108,7 +201,7 @@ the sentence about the helper.
 > Thanks again,
 > Ken
 
-## 1c. Welcome - Android
+## 1e. Welcome - Android
 
 **When:** a sign-up says 18 or older and names an Android tablet or phone, or an
 invited person answers yes with one.
@@ -157,7 +250,7 @@ the sentence about the helper.
 > Thanks again,
 > Ken
 
-## 1d. Welcome - device not known yet
+## 1f. Welcome - device not known yet
 
 **When:** a sign-up says 18 or older and answers "Not sure yet" for the device.
 **To:** the tester. Copy their helper only if they asked for that, and then keep
@@ -266,5 +359,5 @@ the sentence about the helper.
 
 ## 5. When the invited person answers
 
-**Yes, 18 or older:** send the welcome for their device (1a to 1d), with their answers.
+**Yes, 18 or older:** send the welcome for their device (1a to 1f), with their answers.
 **No on the age question:** send email 2.
