@@ -18,7 +18,7 @@
 const { docPath } = require('./doc-paths');
 const fs = require('fs');
 const { Document, Packer, Paragraph, TextRun, ExternalHyperlink, Table, TableRow,
-        TableCell, Footer, AlignmentType, LevelFormat, HeadingLevel, BorderStyle,
+        TableCell, ImageRun, Footer, AlignmentType, LevelFormat, HeadingLevel, BorderStyle,
         WidthType, ShadingType, PageNumber } = require('docx');
 
 const PAGE_W = 12240;
@@ -34,12 +34,11 @@ const URL = {
     videos: SITE + "conversant-videos/",
     v11: SITE + "conversant-videos/video-1-1/",
     v13: SITE + "conversant-videos/video-1-3/",
-    v15: SITE + "conversant-videos/video-1-5/",
+    v16: SITE + "conversant-videos/video-1-6/",
     v51: SITE + "conversant-videos/video-5-1/",
     docs: SITE + "conversant-documents/",
     issues: SITE + "conversant-aac-known-issues/",
-    code: "https://github.com/Volksswitch/conversant-aac",
-    contact: SITE + "contact-us/",
+    email: "mailto:ken@volksswitch.org",
 };
 
 const border = { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" };
@@ -70,8 +69,12 @@ const button = (text, link) => new Paragraph({
     shading: { type: ShadingType.CLEAR, fill: "DCE6F0" },
     border: { top: border, bottom: border, left: border, right: border },
     children: [new TextRun({ text: "Button:  ", color: GRAY }), ...runs([{ link, text, bold: true }])] });
-const picture = t => new Paragraph({ spacing: { before: 80, after: 200 },
-    children: [new TextRun({ text: `[Picture: ${t}]`, italics: true, color: GRAY })] });
+const PICTURE = require('path').join(__dirname, '..', '..', 'Other', 'Web Pages', 'conversant-home-screen.png');
+const picture = () => new Paragraph({ spacing: { before: 80, after: 200 },
+    children: [new ImageRun({ type: 'png', data: fs.readFileSync(PICTURE),
+        transformation: { width: 624, height: 351 },
+        altText: { name: 'Conversant screen', title: 'The Conversant screen',
+            description: 'The Conversant screen during a conversation with four response options showing' } })] });
 
 function table(headers, rows, widths) {
     const cell = (parts, w, bold, fill) => new TableCell({
@@ -84,7 +87,7 @@ function table(headers, rows, widths) {
         rows: [new TableRow({ tableHeader: true, cantSplit: true, children: headers.map((h, i) => cell([h], widths[i], true, "D5E8F0")) }),
                ...rows.map(r => new TableRow({ cantSplit: true, children: r.map((c, i) => cell(c, widths[i], false)) }))] });
 }
-const linkRow = (label, url) => [[label], [{ link: url, text: url.replace(/^https:\/\//, '') }]];
+const linkRow = (label, url) => [[label], [{ link: url, text: url.replace(/^(https:\/\/|mailto:)/, '') }]];
 
 const children = [
     new Paragraph({ spacing: { before: 0, after: 60 },
@@ -101,7 +104,7 @@ const children = [
     para("This is the text for one page, shared only with beta testers through the welcome email. No other page on the site links to it. It gives testers the app’s address, the videos that get them started, and the other pages they’ll want: the documents, the known issues and how to tell us about a problem."),
     para("A tester may read it alone or with a helper, a family member or a speech therapist. The page is written in plain words for all of them, and “you” means whoever is reading."),
     para("In the page below, a shaded box is a button and a note in brackets marks a picture. Every link in the text works, and the table at the end lists them all. Lines marked in orange describe the beta and come out at public release. The suggested address is volksswitch.org/index.php/conversant/."),
-    para("The picture near the top will be the conversation screen from the how-to videos, made at the size the page needs."),
+    para("The picture near the top is the Conversant screen partway through a conversation with Devon, using the buttons from our test data. Devon’s button is lit, so his own phrases show along the bottom row."),
 
     // ===== Part 2 =====
     h1("The Page"),
@@ -112,7 +115,7 @@ const children = [
     para("Conversant AAC is a free app that helps people who use AAC keep up in a real conversation. It listens to the other person, offers four ways to reply within a few seconds, and says the one the user taps."),
     button("Open Conversant", URL.app),
     button("Watch: What Conversant Is For (1 minute)", URL.v11),
-    picture("the conversation screen with four response options showing"),
+    picture(),
 
     h2("Thank You for Testing It"),
     para("Conversant is in beta, and you’re one of a small group of people trying it before anyone else. What you tell us decides what we fix and what we build next.", betaTag()),
@@ -140,7 +143,7 @@ const children = [
     bullet({ bold: "It keeps working without the AI. " }, "If the AI can’t be reached, saved phrases and typing still work, and the user can still see what the other person said."),
     bullet({ bold: "There’s a practice mode. " }, "The AI plays the other person, so the user can rehearse before a conversation that matters, like a doctor’s appointment."),
     bullet({ bold: "It’s private. " }, "The user’s information stays on their own device. Only what’s needed to suggest replies goes to the AI company."),
-    bullet({ bold: "It’s free and open source. " }, "There’s no subscription and no license, and the ", { link: URL.code, text: "source code is on GitHub" }, ". Users pay the AI company directly for what they use, usually a fraction of a cent per reply."),
+    bullet({ bold: "It’s free and open source. " }, "There’s no subscription and no license, and anyone is welcome to take it and build on it. Users pay the AI company directly for what they use, usually a fraction of a cent per reply."),
 
     h2("Who It’s For Right Now"),
     para("The first version is designed for someone who:"),
@@ -155,14 +158,13 @@ const children = [
     bullet("An internet connection."),
     bullet("An AI key, which lets Conversant ask an AI company for response options. The video ", { link: URL.v13, text: "“Adding Your AI Key”" }, " shows where it goes."),
     bullet("During the beta, we give you the AI key and cover its cost.", betaTag()),
-    bullet("On an Android device, or an iPad with Conversant on the Home Screen, a paid speech service so the app can hear the other person. The video ", { link: URL.v15, text: "“Do You Need a Speech Service?”" }, " helps you find out whether you need one."),
+    bullet("On an Android device, or an iPad with Conversant on the Home Screen, a speech service so the app can hear the other person. During the beta we set this up with you, using Deepgram, and the free credit that comes with it should last the whole beta. Afterward you can keep Deepgram or switch to Microsoft Azure, the service we recommend. The video ", { link: URL.v16, text: "“Adding Your Deepgram Key”" }, " shows where the key goes.", betaTag()),
 
     h2("Learn More"),
     bullet({ link: URL.videos, text: "How-to videos", bold: true }, ". Short videos, from installing Conversant to your first conversation and beyond."),
     bullet({ link: URL.docs, text: "Documents", bold: true }, ". The Product Overview, a user manual for each kind of device, and guides to privacy, costs and speech services."),
     bullet({ link: URL.issues, text: "Known issues", bold: true }, ". Problems we know about, and how to work around them."),
-    bullet({ link: URL.code, text: "Source code", bold: true }, ". Conversant is open source, and its code is on GitHub."),
-    bullet({ link: URL.contact, text: "Contact us", bold: true }, ". Questions, ideas or anything else."),
+    bullet({ link: URL.email, text: "Email Ken", bold: true }, " at ken@volksswitch.org with questions, ideas or anything else.", betaTag()),
     para("Conversant AAC is a Volksswitch project."),
 
     // ===== Links =====
@@ -175,10 +177,9 @@ const children = [
         linkRow("Known issues", URL.issues),
         linkRow("Tell us about them", URL.beta),
         linkRow("Adding Your AI Key", URL.v13),
-        linkRow("Do You Need a Speech Service?", URL.v15),
+        linkRow("Adding Your Deepgram Key", URL.v16),
         linkRow("Documents", URL.docs),
-        linkRow("Source code", URL.code),
-        linkRow("Contact us", URL.contact),
+        linkRow("Email Ken", URL.email),
     ], [3600, 5760]),
 ];
 
