@@ -556,6 +556,141 @@ const PROFILE_EXCLUDE = [...SECRET_KEYS, 'usageInputTokens', 'usageOutputTokens'
     // must never turn it back on.
     'weeklySendEnabled'];
 
+// --- Settings that arrive in a FILE (security review, October 25 2026) ---
+//
+// A backup or a saved profile is a file, and a file can be damaged, hand-edited or made
+// by somebody else. The Settings screen can only produce sensible values; a file can
+// carry anything. Most settings are already put right where they are read (a layout id,
+// a button size), but a few were not, and one of those is dangerous: a silence period
+// that is negative or a word makes the app ask the AI after every scrap of speech the
+// recognizer delivers - many paid requests per sentence, with nothing on screen to say so.
+//
+// So every setting in a file is checked against what the app can use. One that fails
+// is NOT applied - this device's own value is kept - and its name is handed back so the
+// user is told rather than left to find out. The readers of the timing settings use the
+// same checks, so a bad value that reached storage by any other route is ignored too.
+//
+// ⚠ A SETTING WITH NO RULE PASSES, SIZE PERMITTING. The rules cover the settings a bad
+// value can hurt and the ones whose values are easy to state; everything else is
+// already normalized where it is read. Refusing every key without a rule would quietly
+// drop a setting a newer version added - the failure the import design exists to avoid.
+// The size limit still applies to every key, so a file cannot fill the browser's storage
+// with one enormous value and leave the app unable to save its settings.
+const numberIn = (min, max) => (v) => {
+    if (typeof v === 'string' && v.trim() === '') return false;
+    if (typeof v !== 'number' && typeof v !== 'string') return false;
+    const n = Number(v);
+    return Number.isFinite(n) && n >= min && n <= max;
+};
+const wholeIn = (min, max) => (v) => numberIn(min, max)(v) && Number.isInteger(Number(v));
+const isBoolean = (v) => typeof v === 'boolean';
+const MAX_SETTING_CHARS = 20000;   // any one setting, as stored
+const MAX_SETTING_STRING = 500;    // a plain text setting: ids, names of choices
+const MAX_SPOKEN_WORDS = 1000;
+const MAX_SPOKEN_WORD_CHARS = 200;
+
+const SETTING_RULES = {
+    silenceThreshold:    { label: 'Silence period', check: numberIn(0, 10) },
+    initialDelay:        { label: 'Initial delay (placeholders)', check: numberIn(0, 60) },
+    subsequentDelay:     { label: 'Subsequent delay (placeholders)', check: numberIn(0.01, 120) },
+    maxPlaceholders:     { label: 'Maximum per turn (placeholders)', check: wholeIn(-1, 50) },
+    placeholderEaseOff:  { label: 'Wait longer each exchange', check: numberIn(0, 30) },
+    doubleTapMs:         { label: 'Time allowed between the two taps', check: numberIn(100, 5000) },
+    choiceChipMax:       { label: 'Most choice buttons in the Express Panel', check: wholeIn(0, 4) },
+    responsesPerCategory: { label: 'Suggestions per category', check: wholeIn(1, 2) },
+    buttonGapPos:        { label: 'Button spacing', check: numberIn(0, 100) },
+    buttonSizePos:       { label: 'Button size', check: numberIn(0, 100) },
+    appMarginPos:        { label: 'Screen edge margin', check: numberIn(0, 100) },
+    dockSepPos:          { label: 'Keyboard separation', check: numberIn(0, 100) },
+    transcriptSepPos:    { label: 'Transcript separation', check: numberIn(0, 100) },
+    responseFontScale:   { label: 'Text size: the full response', check: numberIn(0.6, 2) },
+    hintFontScale:       { label: 'Text size: the short version', check: numberIn(0.6, 2) },
+    transcriptFontScale: { label: 'Text size: conversation', check: numberIn(0.6, 2) },
+    composerFontScale:   { label: 'Text size: "In my own words"', check: numberIn(0.6, 2) },
+    expressFontScale:    { label: 'Text size: Express Panel', check: numberIn(0.6, 2) },
+    settingsFontScale:   { label: 'Text size: Settings panel', check: numberIn(0.6, 2) },
+    autoRelisten:        { label: 'Resume listening automatically', check: isBoolean },
+    listenChime:         { label: 'Play a chime when listening starts', check: isBoolean },
+    noSaveDefault:       { label: 'Do not save my conversations', check: isBoolean },
+    fullscreen:          { label: 'Use the whole screen', check: isBoolean },
+    layoutUnlocked:      { label: 'Layout borders unlocked', check: isBoolean },
+    showNoveltyVoices:   { label: "Show this device's joke voices", check: isBoolean },
+    convLayout:          { label: 'Screen layout', check: (v) => !!v && typeof v === 'object' && !Array.isArray(v) },
+    spokenWords:         { label: 'Words the voice gets wrong', check: (v) => Array.isArray(v)
+        && v.length <= MAX_SPOKEN_WORDS
+        && v.every((w) => w && typeof w === 'object'
+            && String(w.word ?? '').length <= MAX_SPOKEN_WORD_CHARS
+            && String(w.say ?? '').length <= MAX_SPOKEN_WORD_CHARS) },
+};
+
+/** Can the app use this value for this setting? */
+export function settingValueOk(key, value) {
+    if (value === undefined) return true;
+    let size;
+    try { size = JSON.stringify(value)?.length ?? 0; } catch { return false; }
+    // The words list has its own, larger limit (a long list of short entries).
+    if (key !== 'spokenWords' && size > MAX_SETTING_CHARS) return false;
+    const rule = SETTING_RULES[key];
+    if (rule) return value === null || rule.check(value);
+    if (typeof value === 'string') return value.length <= MAX_SETTING_STRING;
+    return true;
+}
+
+function settingLabel(key) {
+    return (SETTING_RULES[key] && SETTING_RULES[key].label) || 'A setting this version of the app does not use';
+}
+
+/**
+ * Split settings from a file into the ones that can be applied and the ones that
+ * cannot. Pure. Returns { ok, rejected: [{ key, label }] }.
+ */
+export function checkIncomingSettings(incoming) {
+    const ok = {};
+    const rejected = [];
+    for (const [k, v] of Object.entries(incoming || {})) {
+        if (settingValueOk(k, v)) ok[k] = v;
+        else rejected.push({ key: k, label: settingLabel(k) });
+    }
+    return { ok, rejected };
+}
+
+// The two settings that are PRIVACY choices rather than preferences, so a file that
+// would change them says so before it is applied. Automatic reporting, the third, never
+// travels at all (CR-075). Each value is described as it will read on the card.
+const PRIVACY_SETTINGS = {
+    noSaveDefault: {
+        fallback: false,
+        describe: (v) => (v
+            ? 'Conversations would NOT be saved unless you choose to save one'
+            : 'Conversations would be SAVED unless you choose not to save one'),
+    },
+    listenChime: {
+        fallback: true,
+        describe: (v) => (v
+            ? 'A chime WOULD play when listening starts, so the other person knows'
+            : 'NO chime would play when listening starts, so the other person is not told'),
+    },
+};
+
+/**
+ * Which privacy choices applying these settings would change on this device, as
+ * sentences for the confirmation card. An absent key counts as its default, because
+ * applying a file REPLACES the settings rather than merging into them. A value that
+ * fails its check is not counted: it will not be applied.
+ */
+export function privacyChanges(incoming) {
+    const current = loadSettings();
+    const out = [];
+    for (const [k, p] of Object.entries(PRIVACY_SETTINGS)) {
+        const raw = (incoming && k in incoming) ? incoming[k] : p.fallback;
+        if (!settingValueOk(k, raw)) continue;
+        const next = raw ?? p.fallback;
+        const now = current[k] ?? p.fallback;
+        if (next !== now) out.push(p.describe(next));
+    }
+    return out;
+}
+
 // The settings bundle with both API keys replaced by a presence marker, for a
 // problem report (Ken, August 7 2026). The redaction lives HERE rather than in
 // diagnostics.js deliberately: this module owns the keys, so the raw bundle is
@@ -682,18 +817,36 @@ export async function settingsProfileExists(name) {
 // This is a full replace (not a merge) of the portable keys, so the profile's
 // state is reproduced exactly — a key absent from the profile reverts to its
 // default. The caller reloads the app so every setting re-applies as at startup.
-export async function applySettingsProfile(name) {
-    const clean = sanitizeProfileName(name);
+async function readProfilePayload(name) {
     const dir = await getSettingsDir(false);
     if (!dir) throw new Error('Choose a data folder first.');
-    let payload;
     try {
         const fh = await dir.getFileHandle(await existingProfileFile(dir, name));
         const file = await fh.getFile();
-        payload = JSON.parse(await file.text());
+        return JSON.parse(await file.text());
     } catch {
         throw new Error('Could not read that profile.');
     }
+}
+
+/**
+ * What loading a profile would do that the user should hear about BEFORE it is loaded
+ * (security review, October 25 2026): settings in it the app cannot use, and privacy
+ * choices it would change. A profile is a file in the data folder, so it may have been
+ * edited or put there by somebody else. Changes nothing.
+ * Returns { rejected: [{ key, label }], privacy: [sentence] }.
+ */
+export async function inspectSettingsProfile(name) {
+    const payload = await readProfilePayload(name);
+    const incoming = (payload && payload.settings) || {};
+    const keep = {};
+    for (const [k, v] of Object.entries(incoming)) if (!PROFILE_EXCLUDE.includes(k)) keep[k] = v;
+    return { rejected: checkIncomingSettings(keep).rejected, privacy: privacyChanges(keep) };
+}
+
+export async function applySettingsProfile(name) {
+    const clean = sanitizeProfileName(name);
+    const payload = await readProfilePayload(name);
     const incoming = (payload && payload.settings) || {};
     const current = loadSettings();
     const merged = {};
@@ -713,7 +866,8 @@ export async function applySettingsProfile(name) {
     }
     for (const k of Object.keys(incoming)) {
         if (PROFILE_EXCLUDE.includes(k)) continue;
-        if (keepHere(k)) { held.push(k); continue; }
+        // A value the app cannot use keeps this device's own (October 25 2026).
+        if (keepHere(k) || !settingValueOk(k, incoming[k])) { held.push(k); continue; }
         merged[k] = incoming[k];
     }
     for (const k of held) if (current[k] !== undefined) merged[k] = current[k];
@@ -867,16 +1021,24 @@ export function getPortableSettings() {
 // excluded keys (API key, usage counters, lastSeenVersion, active profile) exactly
 // as applySettingsProfile does — importing someone's backup must not wipe the key
 // they just typed in on this device.
+// Returns the settings that could not be used ([{ key, label }]) - each one keeps this
+// device's own value rather than falling back to the default - so the caller can say so.
 export function applyPortableSettings(incoming) {
     const current = loadSettings();
+    const { ok, rejected } = checkIncomingSettings(incoming);
+    const refused = rejected.filter((r) => !PROFILE_EXCLUDE.includes(r.key));
     const merged = {};
     for (const k of PROFILE_EXCLUDE) {
         if (current[k] !== undefined) merged[k] = current[k];
     }
-    for (const k of Object.keys(incoming || {})) {
-        if (!PROFILE_EXCLUDE.includes(k)) merged[k] = incoming[k];
+    for (const k of Object.keys(ok)) {
+        if (!PROFILE_EXCLUDE.includes(k)) merged[k] = ok[k];
+    }
+    for (const r of refused) {
+        if (current[r.key] !== undefined) merged[r.key] = current[r.key];
     }
     saveSettings(merged);
+    return refused;
 }
 
 // --- Backups inside the data folder (Ken, July 31 2026) ---
@@ -1562,8 +1724,14 @@ export function saveVoiceURI(voiceURI) {
 // fires a generation checkpoint, and since the July 10 2026 decision each one
 // refines the SAME partner turn in place (latest-wins discards the superseded
 // call), so a short period costs tokens rather than correctness.
+// A stored value the app cannot use reads as the default (October 25 2026): a negative
+// or non-numeric silence period would otherwise ask the AI after every scrap of speech.
+function checkedNumber(key, v, dflt) {
+    return v == null || !settingValueOk(key, v) ? dflt : Number(v);
+}
+
 export function loadSilenceThreshold() {
-    return loadSettings().silenceThreshold ?? 0.5;
+    return checkedNumber('silenceThreshold', loadSettings().silenceThreshold, 0.5);
 }
 
 export function saveSilenceThreshold(seconds) {
@@ -3356,13 +3524,13 @@ export function loadPlaceholderSettings() {
         // 2s default (Ken, August 7 2026, was 4s): a set of suggestions takes about
         // 4 seconds to arrive, so a placeholder timed to land at 4s arrives with the
         // options rather than covering the wait for them.
-        initialDelay: settings.initialDelay ?? 2,
-        subsequentDelay: settings.subsequentDelay ?? 10,
+        initialDelay: checkedNumber('initialDelay', settings.initialDelay, 2),
+        subsequentDelay: checkedNumber('subsequentDelay', settings.subsequentDelay, 10),
         // Cap on placeholders spoken per choosing window. Default 2 so the user
         // hears at most one "I heard you" placeholder plus one "still thinking" placeholder
         // — two different roles, never two same-category placeholders back to back.
         // 0 = none (the user finds placeholders artificial/robotic); -1 = no limit.
-        maxPlaceholders: settings.maxPlaceholders ?? 2,
+        maxPlaceholders: checkedNumber('maxPlaceholders', settings.maxPlaceholders, 2),
         // Seconds added to the initial delay for each exchange already had in this
         // conversation, so the app eases off rather than piping up every single time
         // (Ken, September 8 2026: "it begins to sound overbearing after about the
@@ -3372,7 +3540,7 @@ export function loadPlaceholderSettings() {
         // all: a set of suggestions takes roughly 4-8 seconds, so at 2s a placeholder
         // is certain on every turn, and only from the third exchange (2 -> 4 -> 6) does
         // the wait pass the point where the cards usually arrive on their own.
-        placeholderEaseOff: settings.placeholderEaseOff ?? 2
+        placeholderEaseOff: checkedNumber('placeholderEaseOff', settings.placeholderEaseOff, 2)
     };
 }
 

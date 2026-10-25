@@ -330,3 +330,29 @@ test('an older profile is not reported as changed just after loading it', async 
     storage.saveActiveSettingsProfile('Old');
     assert.equal((await storage.activeProfileUnsaved()).differs, false);
 });
+
+/* ── Security review, October 25 2026: a profile is a file anyone could edit ──── */
+
+test('a hand-edited profile is described before loading, and its unusable values are not applied', async () => {
+    storage.applyPortableSettings({ silenceThreshold: 1, noSaveDefault: true, voiceURI: 'MINE' });
+    await storage.saveSettingsProfile('Edited');
+    // Damage the saved file the way a hand edit, or somebody else's file, would.
+    const fh = await (await settingsDir()).getFileHandle('Edited.json');
+    const payload = JSON.parse(await (await fh.getFile()).text());
+    payload.settings.silenceThreshold = -1;
+    payload.settings.noSaveDefault = false;
+    payload.settings.voiceURI = 'Karen';
+    const w = await fh.createWritable();
+    await w.write(JSON.stringify(payload));
+    await w.close();
+
+    const look = await storage.inspectSettingsProfile('Edited');
+    assert.deepEqual(look.rejected.map((r) => r.key), ['silenceThreshold']);
+    assert.equal(look.privacy.length, 1, 'turning saving back on is named');
+    assert.equal(storage.loadSilenceThreshold(), 1, 'looking changes nothing');
+
+    await storage.applySettingsProfile('Edited');
+    assert.equal(storage.loadSilenceThreshold(), 1, "the unusable value kept this device's own");
+    assert.equal(storage.getPortableSettings().voiceURI, 'Karen', 'the rest of the profile applied');
+    assert.equal(storage.loadNoSaveDefault(), false, 'a privacy change is applied once the user has seen it');
+});

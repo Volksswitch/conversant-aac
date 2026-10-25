@@ -317,3 +317,60 @@ test('a backup conversation with an unsafe name or no body is not written', asyn
     assert.equal(isSafeConversation({ id: 'x', data: [] }), false);
     assert.equal(isSafeConversation({ id: 7, data: {} }), false);
 });
+
+/* ── Security review, October 25 2026: a backup is a file anyone could edit ───── */
+
+test('a setting the app cannot use is not applied, keeps this device\'s value, and is named', async () => {
+    // A negative or non-numeric silence period made the app ask the AI after every
+    // scrap of speech. Built with the real export, then damaged the way a hand edit or
+    // a corrupt file would, then fed through the real import.
+    seed();
+    const pkg = dt.parsePackage(JSON.stringify(await dt.buildPackage('9.9.9')));
+    pkg.settings.silenceThreshold = -5;
+    pkg.settings.maxPlaceholders = 'lots';
+    pkg.settings.voiceURI = 'Karen';                 // an ordinary value still travels
+    pkg.settings.someFutureSetting = 'x'.repeat(30000);
+    const done = await dt.applyPackage(pkg);
+    assert.equal(storage.loadSilenceThreshold(), 0.5, "this device's silence period is kept");
+    assert.equal(storage.getPortableSettings().voiceURI, 'Karen');
+    assert.equal('someFutureSetting' in storage.getPortableSettings(), false, 'an oversized value is refused');
+    const named = done.rejected.map((r) => r.key).sort();
+    assert.deepEqual(named, ['maxPlaceholders', 'silenceThreshold', 'someFutureSetting']);
+    assert.ok(done.rejected.every((r) => r.label), 'each one has a name to show the user');
+});
+
+test('a bad timing value that reached storage some other way reads as the default', () => {
+    store.clear();
+    localStorage.setItem('aac_settings', JSON.stringify({ silenceThreshold: 'abc', subsequentDelay: 0, maxPlaceholders: 2.5 }));
+    assert.equal(storage.loadSilenceThreshold(), 0.5);
+    const p = storage.loadPlaceholderSettings();
+    assert.equal(p.subsequentDelay, 10, 'zero would speak placeholders back to back');
+    assert.equal(p.maxPlaceholders, 2);
+    // Every legitimate value the Settings screen offers still reads back as itself.
+    for (const v of [0, 0.5, 1, 1.5, 2, 2.5, 3]) {
+        localStorage.setItem('aac_settings', JSON.stringify({ silenceThreshold: v }));
+        assert.equal(storage.loadSilenceThreshold(), v);
+    }
+    localStorage.setItem('aac_settings', JSON.stringify({ maxPlaceholders: -1, initialDelay: 6, subsequentDelay: 15, placeholderEaseOff: 4 }));
+    assert.deepEqual(storage.loadPlaceholderSettings(),
+        { initialDelay: 6, subsequentDelay: 15, maxPlaceholders: -1, placeholderEaseOff: 4 });
+});
+
+test('a backup that would change a privacy choice says so before it is applied', async () => {
+    seed();
+    storage.saveNoSaveDefault(true);          // this device: do not save conversations
+    storage.saveListenChime(true);
+    const pkg = dt.parsePackage(JSON.stringify(await dt.buildPackage('9.9.9')));
+    assert.deepEqual(storage.privacyChanges(dt.settingsForThisDevice(pkg).settings), [],
+        'a backup of this very device changes nothing');
+    pkg.settings.noSaveDefault = false;
+    pkg.settings.listenChime = false;
+    const said = storage.privacyChanges(dt.settingsForThisDevice(pkg).settings);
+    assert.equal(said.length, 2);
+    assert.ok(said.some((t) => /SAVED/.test(t)));
+    assert.ok(said.some((t) => /NO chime/.test(t)));
+    // A key the file does not have counts as its default, because the import replaces.
+    delete pkg.settings.listenChime;
+    pkg.settings.noSaveDefault = true;
+    assert.deepEqual(storage.privacyChanges(dt.settingsForThisDevice(pkg).settings), []);
+});

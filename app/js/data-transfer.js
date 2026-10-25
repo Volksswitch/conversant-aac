@@ -386,7 +386,7 @@ export function parsePackage(text) {
 export async function applyPackage(pkg, onProgress) {
     const restored = {
         files: [], conversations: 0, failed: [],
-        settings: 0, heldBack: [], profiles: [], renamed: [], profilesInFile: 0, activeProfile: '',
+        settings: 0, heldBack: [], rejected: [], profiles: [], renamed: [], profilesInFile: 0, activeProfile: '',
         legacySettings: pkg.legacySettings ? Object.keys(pkg.legacySettings).length : 0,
     };
     restored.audio = 0;
@@ -448,8 +448,10 @@ export async function applyPackage(pkg, onProgress) {
         for (const k of Object.keys(bound)) {
             if (!(k in (pkg.settings || {})) && mine[k] !== undefined) settings[k] = mine[k];
         }
-        storage.applyPortableSettings(settings);
-        restored.settings = Object.keys(settings).length;
+        // Values the app cannot use stay as they are here, and are named on the restart
+        // card (security review, October 25 2026) - a backup is a file anyone could edit.
+        restored.rejected = storage.applyPortableSettings(settings) || [];
+        restored.settings = Object.keys(settings).length - restored.rejected.length;
         restored.heldBack = heldBack;
         restored.comparison = comparison;
     }

@@ -7674,6 +7674,13 @@ async function offerRestart(what, done) {
                   `${done.heldBack.length === 1 ? 'one setting was' : 'some settings were'} ` +
                   `left as they are here: ${names}.`);
     }
+    // A setting whose value in the file the app cannot use (October 25 2026).
+    if (done && done.rejected && done.rejected.length) {
+        const names = [...new Set(done.rejected.map((r) => r.label))].join(', ');
+        bits.push(`${done.rejected.length === 1 ? 'One setting in the file was' : 'Some settings in the file were'} ` +
+                  `not usable, so ${done.rejected.length === 1 ? 'it was' : 'they were'} left as ` +
+                  `${done.rejected.length === 1 ? 'it is' : 'they are'} here: ${names}.`);
+    }
     if (done && done.renamed && done.renamed.length) {
         bits.push('You already had ' + (done.renamed.length === 1 ? 'a profile' : 'profiles') +
                   ' with the same name, so nothing of yours was replaced: ' +
@@ -7736,11 +7743,22 @@ async function importPackageText(text, sourceLabel) {
     // Show what's in the file BEFORE replacing anything — the user is about to
     // overwrite everything and a filename is not enough to judge by.
     const when = pkg.exportedAt ? new Date(pkg.exportedAt).toLocaleString() : 'an unknown date';
+    // A privacy choice the file would change is named here, before anything is applied
+    // (security review, October 25 2026): it is easy to miss in a restore that replaces
+    // every setting, and it decides what is kept and what the other person is told.
+    let privacy = [];
+    try {
+        privacy = pkg.settings ? storage.privacyChanges(dataTransfer.settingsForThisDevice(pkg).settings) : [];
+    } catch { privacy = []; }
+    const privacyText = privacy.length
+        ? `\n\nIt would also change ${privacy.length === 1 ? 'a privacy choice' : 'privacy choices'} on this device:\n\n• ${privacy.join('\n• ')}`
+        : '';
     if (!(await confirmDanger({
         title: 'Replace everything with this backup?',
         body: `${sourceLabel ? sourceLabel + '\n\n' : ''}This backup was made on ${when} and contains:\n\n• ` +
-              summary.join('\n• ') +
-              `\n\nImporting REPLACES your About Me answers, people, places, Express Panel, phrases and settings. Saved profiles and conversations in the backup are ADDED to the ones already here; a profile with the same name as one of yours comes in with "(2)" after it. Your keys are left exactly as they are, and anything that belongs to the other device, like the screen edge margin, stays behind. The app will ask you to restart afterwards.`,
+              summary.join('\n• ') + privacyText +
+              `\n\nImporting REPLACES your About Me answers, people, places, Express Panel, phrases and settings. Saved profiles and conversations in the backup are ADDED to the ones already here; a profile with the same name as one of yours comes in with "(2)" after it. Your keys are left exactly as they are, and anything that belongs to the other device, like the screen edge margin, stays behind. The app will ask you to restart afterwards.` +
+              `\n\nOnly import a backup you made yourself or got from someone you trust. The AI reads what is in it as if you had written it.`,
         confirmLabel: 'Replace my data',
     }))) {
         setBackupStatus('Import canceled — nothing was changed.');
@@ -8467,9 +8485,23 @@ function openSettings() {
     document.getElementById('loadSettingsProfileBtn').onclick = async () => {
         const name = profileSelect.value;
         if (!name) return;
+        // A profile is a file in the data folder, so it may have been edited or put
+        // there by someone else. Say what it would do that matters BEFORE loading it
+        // (security review, October 25 2026).
+        let extra = '';
+        try {
+            const look = await storage.inspectSettingsProfile(name);
+            if (look.privacy.length) {
+                extra += `\n\nIt would also change ${look.privacy.length === 1 ? 'a privacy choice' : 'privacy choices'} on this device:\n\n• ${look.privacy.join('\n• ')}`;
+            }
+            if (look.rejected.length) {
+                const names = [...new Set(look.rejected.map((r) => r.label))].join(', ');
+                extra += `\n\n${look.rejected.length === 1 ? 'One setting in it is' : 'Some settings in it are'} not usable and will stay as ${look.rejected.length === 1 ? 'it is' : 'they are'} here: ${names}.`;
+            }
+        } catch { /* unreadable - the load below reports that */ }
         if (!(await confirmDanger({
             title: 'Load these settings?',
-            body: `This replaces all of your current settings with the “${name}” profile, then reloads the app. Your API key stays as it is.`,
+            body: `This replaces all of your current settings with the “${name}” profile, then reloads the app. Your API key stays as it is.${extra}`,
             confirmLabel: 'Load',
         }))) return;
         try {

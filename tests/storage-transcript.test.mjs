@@ -433,14 +433,14 @@ test('a profile or a backup cannot turn automatic reports back on (CR-075)', asy
 test('reloading a settings profile cannot blank the tester name', async () => {
     await storage.restoreDataFolder();
     // The sequence Ken described: settings saved as a profile BEFORE the name is typed.
-    storage.saveSilenceThreshold(2000);
+    storage.saveSilenceThreshold(2);
     await storage.saveSettingsProfile('before naming');
     storage.saveTesterName('SLP 2 - iPad');
 
     await storage.applySettingsProfile('before naming');
     assert.equal(storage.loadTesterName(), 'SLP 2 - iPad');
     // The profile still did its actual job.
-    assert.equal(storage.loadSilenceThreshold(), 2000);
+    assert.equal(storage.loadSilenceThreshold(), 2);
 
     // And a profile written now carries no name at all, so it cannot revive a stale
     // one later either — nor leak a tester's name into a file they share.
@@ -455,9 +455,9 @@ test('importing a backup cannot rename this device to somebody else', async () =
     await storage.restoreDataFolder();
     storage.saveTesterName('SLP 2 - iPad');
     // A backup made on a different machine, of the kind handed to a new tester.
-    storage.applyPortableSettings({ testerName: 'Ken - Laptop', silenceThreshold: 1500 });
+    storage.applyPortableSettings({ testerName: 'Ken - Laptop', silenceThreshold: 1.5 });
     assert.equal(storage.loadTesterName(), 'SLP 2 - iPad');
-    assert.equal(storage.loadSilenceThreshold(), 1500);
+    assert.equal(storage.loadSilenceThreshold(), 1.5);
 
     // A device that has never been named stays visibly unnamed rather than borrowing
     // one. '(not set)' in the Sheet is a question somebody asks; a wrong name is not.

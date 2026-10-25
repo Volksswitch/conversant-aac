@@ -27,6 +27,8 @@ forgetting to tag one is only ever noise, never silence.
 ## Unreleased (next release)
 
 - Fixed: the weekly usage report included your "Words the voice gets wrong" list. It now says only how many words are on the list, never the words themselves. The name of your saved settings profile is left out too.
+- Before you restore a backup or load a saved settings profile, the app now tells you if it would change whether conversations are saved, or whether a chime plays when listening starts.
+- A setting in a backup or profile that the app cannot use, for example one that was damaged or edited by hand, is no longer applied. Your own setting stays as it is, and the app tells you which one it was.
 
 ## Version 0.13.26
 
