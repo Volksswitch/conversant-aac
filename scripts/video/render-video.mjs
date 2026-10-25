@@ -177,6 +177,11 @@ async function settle(page, step = {}) {
       if (a.effect?.getComputedTiming?.().iterations === Infinity) a.cancel();
     }
   });
+  // After a click the mouse stays over the button, so it shows its hover look,
+  // which a touch screen never shows. Whether it still does by picture time
+  // depends on whether the app has redrawn that button since, so pictures
+  // differed between renders. Park the pointer off every control first.
+  await page.mouse.move(1, 1);
   await pace(300);
 }
 
