@@ -128,7 +128,7 @@ export const PAYLOAD_FIELDS = {
     events: 'Counts of what was tapped and how long things took. No words, ever.',
     personalization: 'How much you have filled in and made your own — counts only, never the content',
     errors: 'Which errors happened since the last report, and when — never what was being said at the time',
-    systemInfo: 'Your screen, browser and settings',
+    systemInfo: 'Your screen, browser and settings - never the words you have typed into them',
 };
 
 export function describeReport() {
@@ -333,6 +333,37 @@ export function redactUsage(u) {
     return out;
 }
 
+/*
+ * Take the user's own words out of the settings block before it is sent (security
+ * review, October 25 2026).
+ *
+ * ⚠ THE SAME LEAK AS CR-013 THROUGH A DOOR THAT FIX DID NOT COVER. The system
+ * information carries every setting with only the KEY VALUES masked, and one setting is
+ * a list the user writes: "Words the voice gets wrong", whose whole purpose is names,
+ * medicines and brand names. So the automatic report was sending it to the Sheet while
+ * describing itself as counts only.
+ *
+ * The rule is by SHAPE, not by name, so a list added to the settings later is covered
+ * without anyone remembering this function: every LIST becomes a count. The one free-
+ * text setting that is not a list, the saved profile's name, is named here. The problem
+ * report is deliberately untouched - the tester reads every word of it before Send.
+ * Pure: returns a new object and leaves the input alone.
+ */
+export function redactSystemInfo(info) {
+    if (!info || typeof info !== 'object' || !info.settings || typeof info.settings !== 'object') return info;
+    const settings = {};
+    for (const [k, v] of Object.entries(info.settings)) {
+        if (Array.isArray(v)) {
+            settings[k] = `(${v.length} item${v.length === 1 ? '' : 's'} - not included)`;
+        } else if (k === 'activeSettingsProfile') {
+            settings[k] = v ? '(a saved profile - name not included)' : '(none)';
+        } else {
+            settings[k] = v;
+        }
+    }
+    return { ...info, settings };
+}
+
 /* ── Effects ─────────────────────────────────────────────────────────────── */
 
 async function gatherPayload({ appVersion, build, now }) {
@@ -364,7 +395,9 @@ async function gatherPayload({ appVersion, build, now }) {
     let nextInfoHash = null;
     let systemInfo = null;
     try {
-        const info = await diagnostics.collectSystemInfo({ appVersion, buildId: build });
+        // Redacted BEFORE the hash, so a change to the words list neither travels nor
+        // makes the report think the system information has changed.
+        const info = redactSystemInfo(await diagnostics.collectSystemInfo({ appVersion, buildId: build }));
         const h = hashOf(stableInfo(info));
         if (h !== storage.loadWeeklyInfoHash()) {
             systemInfo = info;

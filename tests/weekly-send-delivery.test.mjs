@@ -162,3 +162,34 @@ test('a mark that is not a date is ignored, so a device stuck on "?" reports aga
     localStorage.setItem('aac_settings', JSON.stringify(s));
     assert.equal(storage.loadWeeklyErrorMark(), '', 'an old "?" already saved no longer hides errors');
 });
+
+// Security review, October 25 2026. The weekly report carried every setting with only
+// the key values masked, and one setting is the user's "Words the voice gets wrong"
+// list - names, medicines and brand names. Driven through the REAL maybeSend, so the
+// check covers the whole path from the stored setting to the bytes posted, not just the
+// redaction function on its own.
+test('the weekly report never carries the words the user typed into a setting', async () => {
+    store.clear();
+    globalThis.location = { href: 'https://conversant.volksswitch.org/', hostname: 'conversant.volksswitch.org', protocol: 'https:' };
+    storage.saveSpokenWords([{ word: 'Siobhan', say: 'Shiv-awn' }, { word: 'Humira', say: 'hyoo-MEER-uh' }]);
+    storage.saveActiveSettingsProfile('Grandma Rosa house');
+    storage.saveWeeklySendLastAt(1);       // long ago, so a report is due
+    const bodies = [];
+    globalThis.fetch = async (url, opts) => {
+        // The system information also asks for the price list, which is not a report.
+        if (opts && opts.method === 'POST') bodies.push(opts.body);
+        return { ok: true, status: 200, text: async () => 'ok', json: async () => ({}) };
+    };
+    try {
+        await weekly.maybeSend({ appVersion: '0.0.0', build: 'test' });
+    } finally {
+        delete globalThis.location;
+    }
+    assert.equal(bodies.length, 1, "a report was sent");
+    const sent = JSON.parse(bodies[0]);
+    assert.ok(sent.systemInfo && sent.systemInfo.settings, 'the settings block is in the report, so the check is not vacuous');
+    for (const word of ['Siobhan', 'Shiv-awn', 'Humira', 'hyoo-MEER-uh', 'Grandma Rosa']) {
+        assert.ok(!bodies[0].includes(word), `"${word}" must not leave the device`);
+    }
+    assert.equal(sent.systemInfo.settings.spokenWords, '(2 items - not included)');
+});

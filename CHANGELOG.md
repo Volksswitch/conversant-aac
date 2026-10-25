@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- Fixed: the weekly usage report included your "Words the voice gets wrong" list. It now says only how many words are on the list, never the words themselves. The name of your saved settings profile is left out too.
+
 ## Version 0.13.26
 
 - The built-in goodbyes no longer end in exclamation points, so they're said calmly instead of excitedly: "Bye." instead of "Bye!". If you haven't changed a goodbye yourself, it's updated for you. Any you've reworded stay exactly as you wrote them.
