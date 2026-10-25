@@ -99,7 +99,7 @@ def build_page(cfg, course):
            'own tab, and when it finishes you can go straight on to the next one.</p>\n<!-- /wp:paragraph -->']
     if cfg.get('courseMap'):
         out.append('<!-- wp:paragraph -->\n<p>New to Conversant? Start with "Getting started", then '
-                   '"Your first conversations", and watch those in order. After that, pick the ones you need. <a href="{html.escape(cfg["courseMap"]["url"])}" target="_blank" rel="noopener">'
+                   f'"Your first conversations", and watch those in order. After that, pick the ones you need. <a href="{html.escape(cfg["courseMap"]["url"])}" target="_blank" rel="noopener">'
                    'The full list (PDF)</a>.</p>\n<!-- /wp:paragraph -->')
     for g in course['groups']:
         rows = []
