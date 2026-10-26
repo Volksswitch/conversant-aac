@@ -31,6 +31,7 @@ import { makeCompanion, placeInCourse, MAX_PAGE_STEPS } from './companion.mjs';
 const PORT = 8123;
 const VIEW = { width: 1280, height: 720, deviceScaleFactor: 1.5 }; // 1920 x 1080 video
 const LEAD_S = 0.35;  // quiet before each line
+const VIDEO_CLOCK = '2026-10-24T17:54:00';  // local time every render starts at (see the page clock below)
 const TAIL_S = 0.65;  // quiet after each line
 
 function findTool(name) {
@@ -316,6 +317,20 @@ async function openApp(browser, script) {
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
   });
+  // Every render runs on the same clock, so a date or time the app shows (the
+  // review list's "Sat, Oct 24, 5:54 PM", a "{time of day}" phrase) comes out the
+  // same each time. Without it the change check calls a video changed every day it
+  // is re-made. The clock still ticks from that moment, so durations stay real.
+  // The default is when the published 3.10 was made; a script may give its own.
+  await page.evaluateOnNewDocument((startAt) => {
+    const RealDate = Date;
+    const offset = new RealDate(startAt).getTime() - RealDate.now();
+    class VideoDate extends RealDate {
+      constructor(...a) { if (a.length) super(...a); else super(RealDate.now() + offset); }
+      static now() { return RealDate.now() + offset; }
+    }
+    window.Date = VideoDate;
+  }, script.clock || VIDEO_CLOCK);
   const url = `http://localhost:${PORT}/`;
   // A script that needs saved conversations (review) asks for the app's own
   // in-browser storage, the way an iPad saves, since a folder can only be chosen
