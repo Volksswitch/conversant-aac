@@ -37,6 +37,15 @@ the one that quietly waits forever.
 
 ## Open
 
+### Website: what the broken-link repair on October 26 2026 left
+- **Raised:** 2026-10-26 - Ken asked for the site's broken links to be fixed after the "Disable URL Autocorrect Guessing" plugin (installed 2026-10-25) started showing "Page not found" for old addresses WordPress used to guess.
+- **Done the same day:** 536 links on 78 pages repointed (old page addresses, files later re-uploaded under another month's folder, and the main address of 198 Blissymbol pictures). Every link to the site's own pages and files now opens except the three files below. WordPress keeps the previous version of each page in its history.
+- **Left, needing Ken:**
+  1. **Three files were never uploaded:** `Fintie-NM-TC-WordPower-108-merged-LC.png` (Fintie Case Laser-Cut page), `Rug-Ed-ST-TC-WordPower-108-LC.png` (Rug-Ed Case Laser-Cut page), and `my-openings-and-additions.txt` (Providing Special Instructions to the Maker World Designer). Upload them under those names in the month folders the pages expect (2023/07, 2023/07, 2025/08), or say to drop the links.
+  2. **Links from OUTSIDE the site to the 118 old addresses now show "Page not found"** (Printables and Maker World descriptions, YouTube descriptions, handouts, old emails). The site cannot edit those. Redirects would fix them; the old-to-new list is `Reports/site-old-addresses-2026-10-26.json`. Needs a redirect plugin, which is Ken's call.
+  3. **About 25 links to other websites go to pages those sites removed** (Makers Making Change, SparkFun, Saltillo, Smartbox, Notepad++, several head-pointer sellers, and others). Each needs its new page found or the link dropped. The many Printables, Etsy and DigiKey links that answer "refused" were not counted: those sites block automated checks and open normally for a person.
+- **Why not now:** 1 and 2 are Ken's decisions; 3 is research per link, not asked for yet.
+
 ### Security and privacy review, October 25 2026: files from outside, and the rest
 - **Raised:** 2026-10-25 - Ken asked for a review of places where outside data enters the app (practice scenario files, backups, settings profiles), and then for a full review. Found by reading the code; nothing below was run in the app.
 - **Already sound, so the risk is bounded:** the page runs only its own code, everything shown is shown as plain text, nothing the AI writes is spoken without a tap, the app can only reach the listed services, keys never travel in any file or report, a file cannot redirect reports or switch them back on, and backup file names are checked. The 12 security and privacy items from the October 5 code review are all fixed.
