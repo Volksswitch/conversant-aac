@@ -88,23 +88,23 @@ new Paragraph({
 }),
 new Paragraph({
     spacing: { before: 0, after: 160 },
-    children: [new TextRun({ text: "Conversant AAC — your part in the beta, on one page", italics: true, color: "595959", size: 24, font: "Arial" })]
+    children: [new TextRun({ text: "Conversant AAC — an overview of your part in the beta", italics: true, color: "595959", size: 24, font: "Arial" })]
 }),
 new Paragraph({
     spacing: { before: 0, after: 240 },
     children: [new TextRun({ text: "Kenneth R. Hackbarth  |  Volksswitch.org  |  Last updated October 27, 2026", color: GRAY, size: 20, font: "Arial" })]
 }),
 
-para("Thank you for testing Conversant AAC. For six weeks, what you tell us decides what we fix, change, and drop. This page covers only the highlights. The full Beta Test Plan, linked at the bottom, explains setup, privacy, and why we ask what we ask. Please read it too."),
+para("Thank you for testing Conversant AAC. For six weeks, what you tell us will decide what we fix, change, and drop. This page covers only the highlights. The full Beta Test Plan, linked at the bottom, explains setup, privacy, and why we ask what we ask. Please read that document too."),
 
 heading1("What We Ask of You"),
-item("asks", "Set up, and enter your tester name. ", "Follow the setup in the User Manual for your device. Then type the tester name we gave you in Settings, then Troubleshooting, under “Tester name”, so we know whose reports are whose. Save your setup as a named settings profile, and tap “Update” after each change."),
+item("asks", "Set up and enter your tester name. ", "Follow the setup in the User Manual for your device. Then type the tester name we gave you in Settings, then Troubleshooting, under “Tester name”, so we know whose reports are whose."),
 item("asks", "Tell the people you talk with. ", "The app sends what they say to a transcription service and keeps the text. Tell them once, at the start. The Express Panel button “My device listens and speaks for me” says it for you."),
 item("asks", "Learn the buttons first. ", "Take the tour in Settings, then Practice, then “A tour of the buttons”. Then practice a conversation or two."),
 item("asks", "Use it when a conversation comes up. ", "There’s no daily quota. Practice in week 1. In week 2, make it yours: fill in About Me, add your people and places, and make the Express Panel phrases your own. Then have real conversations, at home first, then with new people and in new places."),
-item("asks", "Report problems, and good moments too. ", "In Settings, then Troubleshooting, write a line under “Report a problem” and tap “Send”. “I pressed Listen and nothing happened” is a perfect report. Always report a conversation panel that turns faintly red, or anything that should happen and doesn’t. The opening screen has a report button too."),
+item("asks", "Report problems, and good moments too. ", "In Settings, then Troubleshooting, write a line under “Report a problem” and tap “Send”. “I pressed Listen and nothing happened” is a perfect report. Always report a conversation panel that turns faintly red, or anything that should happen and doesn’t."),
 item("asks", "Leave automatic reporting on. ", "About once a week the app sends us counts and timings, never what anyone said. Each report carries your tester name."),
-item("asks", "Check the Known Issues page. ", "It lists the faults we already know about. Settings, then Troubleshooting, has a button for it. If one causes you real trouble, tell us anyway."),
+item("asks", "Check the Known Issues page. ", "It lists the faults we already know about and are investigating. Settings, then Troubleshooting, has a button for it. If one causes you real trouble, tell us anyway."),
 item("asks", "Talk with us at the end. ", "After six weeks, we’d like to talk with you in whatever form works for you. If you stop early, we’d still like five minutes to hear why."),
 
 heading1("What We’re Trying to Learn"),
@@ -114,7 +114,7 @@ item("questions", "Does it keep up? ", "Is the wait before you speak short enoug
 
 heading1("Good to Know"),
 item("know", "Any conversation can stay private. ", "Tap “Don’t save this conversation”, and nothing that was said is kept."),
-item("know", "Questions? ", "Our contact details are in your welcome pack. Mention the version line on the opening screen."),
+item("know", "Questions? ", "Our contact details are in your welcome packet."),
 item("know", "The full Beta Test Plan, and your User Manual: ", "https://volksswitch.org/index.php/conversant-documents/"),
 
         ]
