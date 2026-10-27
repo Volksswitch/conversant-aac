@@ -37,6 +37,15 @@ the one that quietly waits forever.
 
 ## Open
 
+### Lower literacy: what staying with text needs
+- **Raised:** 2026-10-27 - Ken, after the Closing the Gap 2026 talk "Rethinking Symbols in AAC": widen to younger and less literate users without ever adding picture symbols (decision in CLAUDE.md, "Lower literacy: stay with text").
+- **What is wanted:**
+  1. **Send the SLP note and fold in their answers.** `Documents/Conversant AAC Staying With Text (draft for SLP review).docx`, written 2026-10-27. Ken sends it; their answers may change items 2 to 4.
+  2. **A spoken short label before choosing a response option** (the unbuilt "auditory hint" under Response Option Display). This is the main build: a non-reader cannot read four new sentences.
+  3. **A private preview on the first of two taps**, so the user hears a button before the other person does. First check whether a browser can send speech to an earphone only.
+  4. **An optional outline around each word on a button**, off by default. Ask the SLPs first; the reading research gives reasons for caution.
+- **Why not now:** the target user is still a literate adult, the SLPs' view comes first, and items 2 and 3 change how the core palette works, which needs Ken's design decisions.
+
 ### Website: what the broken-link repair on October 26 2026 left
 - **Raised:** 2026-10-26 - Ken asked for the site's broken links to be fixed after the "Disable URL Autocorrect Guessing" plugin (installed 2026-10-25) started showing "Page not found" for old addresses WordPress used to guess.
 - **Done the same day:** 536 links on 78 pages repointed (old page addresses, files later re-uploaded under another month's folder, and the main address of 198 Blissymbol pictures). Every link to the site's own pages and files now opens except the three files below. WordPress keeps the previous version of each page in its history.

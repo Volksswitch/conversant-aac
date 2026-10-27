@@ -122,6 +122,16 @@ Build an AI-driven AAC system that gives non-speaking individuals access to **re
 ## Target User (Initial)
 Literate, non-speaking individual with cerebral palsy (CP), **18 or older and holding legal capacity** (confirmed current by Ken, October 11 2026; this line said 16+ until then), using **direct select** (touch/pointer) as the access method. Vision is to expand to wider range of ages, literacy levels, and accessibility profiles over time.
 
+## Lower literacy: stay with text, never add picture symbols (Ken, October 27 2026), DECIDED, not built
+
+Ken: *"we can gradually reduce the literacy requirements but never have to leave the world of text. By staying text based, there's no need for the child to ever have to make the transition from graphic symbols to text in order to become truly literate."* **Do not plan graphic symbols when widening to younger or less literate users.** Reopen only on field evidence from a tester or an SLP case, not on convention.
+
+- **Prompted by** the Closing the Gap 2026 talk "Rethinking Symbols in AAC" (Gylling, Grabiner, Alverson; Smartbox). The evidence it rests on: a picture's resemblance helps a first guess, not learning (arbitrary shapes were learned about as well, Barton et al. 2006, Sevcik et al. 2018); symbols above text lower comprehension and slow reading in adults with IDD (Benson-Goldberg 2025); a picture beside a new word slows learning the word (Samuels 1967; word alone fastest for 5 of 6 students, Didden et al. 2000). The talk also says symbols support face-to-face communication, so the strong evidence is against pictures on text someone READS.
+- **What carries a less literate user on fixed buttons: the printed word, a place that never moves (Rule 1), and hearing it on a tap.** A printed word is an arbitrary shape to a non-reader, and the only one that also leads to reading.
+- **⚠ THE RESPONSE OPTIONS ARE THE HARD PART, NOT THE BUTTONS.** They are new sentences every turn and position carries category, not content, so place and shape cannot help. A non-reader must HEAR them before choosing: the unbuilt spoken short label ("auditory hint", Response Option Display) becomes the main lower-literacy build, and a private preview on the first of two taps matters because a tap's sound reaches the partner. **So widening literacy is mainly a listening problem, not a picture problem.**
+- **The word outline (Ken's "bubble": one line hugging the tall and hanging letters) is an option, off by default, untested.** Risks: many short words share an outline ("cat"/"eat"/"oat"; Groff 1975), and learners lock onto the most visible feature (Gough 1993's thumbprint; Masonheimer et al. 1984's logos), so they may learn the outline, not the word. On a ~30-button panel of mostly phrases, finding the button is unlikely to suffer; the cost is to reading. Weaker readers do use word shape (Lavidor 2011).
+- **No study tests text-only AAC buttons for non-readers**; the case is inferred from the arbitrary-symbol studies plus reading research, all small. The SLP note is `Documents/Conversant AAC Staying With Text (draft for SLP review).docx`; follow-ups are in [TODO.md](TODO.md).
+
 ---
 
 ## Architecture Components (from the paper)
