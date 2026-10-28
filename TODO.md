@@ -37,6 +37,33 @@ the one that quietly waits forever.
 
 ## Open
 
+### Watch: a pasted key that shows in the box but Test says is missing (iPad)
+
+**Raised October 28 2026, Ken, on his iPad (iPadOS 26.7.1, 0.13.32).** He pasted his
+Anthropic key, the box showed it, and Test said "Enter your key first, then tap Test."
+It worked after 0.13.33, and he has not seen it again.
+
+- **Probable cause, NOT confirmed:** Paste shortened the box to "sk-ant-...xxxx" whether
+  or not the save had stuck, and Test reads the saved copy. A silent save failure gives
+  exactly this. The device was never examined, so the real cause is unknown.
+- **What 0.13.33 added** (`checkKeySaved` in app.js): every paste or typed key is read
+  back from storage. If it did not stick, the key is kept for the session (Test still
+  works), the user is told under the box, and the error log gets a `key-not-saved` entry
+  with lengths and the settings-store size, never the key. If Test finds no key while the
+  box shows text, it logs `key-test-empty` with the box's state.
+- **If it comes back:** look for `key-not-saved` or `key-test-empty` in that tester's
+  weekly report or problem report ("evaluate beta" / "evaluate reports"). A
+  `key-not-saved` entry means storage refused the write; check the settings-store size
+  it records against the browser's storage limit. A `key-test-empty` entry means the box
+  and the saved copy disagree for another reason, and its flags say which.
+- **Why nothing more now:** it has not recurred, and the logging is what is needed to
+  tell what happened if it does.
+
+**Related, unchanged:** the Paste buttons on an iPad are unreliable. Sometimes they
+paste at once, sometimes Safari shows its own Paste bubble (the app now says "Tap the
+Paste bubble."), and sometimes only the box's own touch-and-hold Paste works. The rule
+Safari uses is not published. Ken can live with it.
+
 ### Lower literacy: what staying with text needs
 - **Raised:** 2026-10-27 - Ken, after the Closing the Gap 2026 talk "Rethinking Symbols in AAC": widen to younger and less literate users without ever adding picture symbols (decision in CLAUDE.md, "Lower literacy: stay with text").
 - **What is wanted:**
