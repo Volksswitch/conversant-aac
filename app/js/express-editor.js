@@ -96,7 +96,13 @@ export function focusItem(id) {
         }
     }
     render();
-    // After the section toggles have settled, so the row is no longer inside a shut one.
+    revealPicked();
+}
+
+// Scroll the picked row into view. After the section toggles have settled, so the
+// row is no longer inside a shut one. An added row lands at the end of its band,
+// often below the bottom of the panel, where the tap that made it seems to do nothing.
+function revealPicked() {
     requestAnimationFrame(() => {
         const row = container && container.querySelector('.ee-row-picked');
         if (row) row.scrollIntoView({ block: 'nearest' });
@@ -175,6 +181,7 @@ function addAudio(band) {
     pickedId = item.id;
     saveBand(band, list);
     render();
+    revealPicked();
 }
 
 function addContext(type) {
@@ -186,6 +193,7 @@ function addContext(type) {
     pickedId = item.id;
     saveBand('context', list);   // setBand re-sorts into partners, places, feelings
     render();
+    revealPicked();
 }
 
 function move(band, dir) {

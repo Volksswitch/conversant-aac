@@ -65,16 +65,28 @@ fs.mkdirSync(cacheDir, { recursive: true });
 let creds = null;
 let lastCall = 0;
 
-async function speech(speaker, text) {
+// Words with pinned sounds (pronounce.json). A step with pronounce: true gets
+// every one that appears in its line; null otherwise, so the cache key of every
+// other line is exactly what it always was and its audio is never made again.
+const PRONOUNCE = JSON.parse(fs.readFileSync(path.join(ROOT, 'scripts', 'video', 'pronounce.json'), 'utf8')).words;
+function pinsFor(step, text) {
+  if (!step.pronounce) return null;
+  const pins = Object.fromEntries(Object.entries(PRONOUNCE).filter(([w]) => new RegExp(`\\b${w}\\b`).test(text)));
+  if (!Object.keys(pins).length) throw new Error(`STOPPING - a step asks for pronounce but its line has no word from pronounce.json: ${text}`);
+  return pins;
+}
+
+async function speech(speaker, text, pins = null) {
   const voice = voices[speaker]?.azure;
   if (!voice) throw new Error(`No voice for speaker "${speaker}" in voices.json`);
-  const hash = crypto.createHash('sha1').update(`${voice}\n${text}`).digest('hex').slice(0, 16);
+  const key = `${voice}\n${text}${pins ? `\n${JSON.stringify(pins)}` : ''}`;
+  const hash = crypto.createHash('sha1').update(key).digest('hex').slice(0, 16);
   const file = path.join(cacheDir, `${hash}.mp3`);
   if (!fs.existsSync(file)) {
     creds ??= readAzureKey();
     const wait = 4000 - (Date.now() - lastCall); // free tier: 20 a minute
     if (wait > 0) await pace(wait);
-    fs.writeFileSync(file, await synthesize(creds, voice, text));
+    fs.writeFileSync(file, await synthesize(creds, voice, text, pins));
     lastCall = Date.now();
   }
   return file;
@@ -423,10 +435,11 @@ async function main() {
   // closing line stays right when a video is added between two others. Until
   // video 1.4 exists, 1.3 says "Next: Do You Need a Speech Service?"; once it
   // exists, the next sync re-makes 1.3 to say "Keeping Your Information Safe".
+  // The last video in the course says nothing after its own last line.
   const { next } = placeInCourse(script.id);
-  const nextLine = next ? `Next: ${next.title}${/[.?!]$/.test(next.title) ? '' : '.'}` : 'More videos are on the way.';
-  for (const step of script.steps) if (typeof step.say === 'string') step.say = step.say.replace('{next}', nextLine);
-  for (const step of script.steps) if (typeof step.say === 'string') await speech(step.speaker, step.say);
+  const nextLine = next ? `Next: ${next.title}${/[.?!]$/.test(next.title) ? '' : '.'}` : '';
+  for (const step of script.steps) if (typeof step.say === 'string') step.say = step.say.replace('{next}', nextLine).trim();
+  for (const step of script.steps) if (typeof step.say === 'string') await speech(step.speaker, step.say, pinsFor(step, step.say));
 
   const server = script.pictures ? null : await startServer();
   const browser = await puppeteer.launch({ headless: true, args: ['--mute-audio'] });
@@ -483,7 +496,8 @@ async function main() {
 
       const said = typeof step.say === 'function' ? await step.say(page) : step.say;
       if (!said) throw new Error(`STOPPING - step ${i + 1} has nothing to say`);
-      const clip = await speech(step.speaker, said);
+      const pins = pinsFor(step, said);
+      const clip = await speech(step.speaker, said, pins);
       const speak = durationOf(clip);
       const dur = LEAD_S + speak + TAIL_S;
       const seg = path.join(work, `${String(i).padStart(2, '0')}.mp4`);
@@ -493,7 +507,8 @@ async function main() {
         '-c:v', 'libx264', '-tune', 'stillimage', '-pix_fmt', 'yuv420p', '-r', '30',
         '-c:a', 'aac', '-b:a', '160k', '-ar', '48000', '-ac', '2', seg]);
       segments.push(seg);
-      signature.update(JSON.stringify({ speaker: step.speaker, said, page: step.page || null }));
+      // pronounce is left out when there are no pins, so other videos' signatures do not move.
+      signature.update(JSON.stringify({ speaker: step.speaker, said, page: step.page || null, pronounce: pins || undefined }));
       run(FFMPEG, ['-y', '-v', 'error', '-i', shot, '-vf', 'scale=960:540', path.join(frameDir, `${String(i).padStart(2, '0')}.png`)]);
       srt.push(`${i + 1}\n${srtTime(t + LEAD_S)} --> ${srtTime(t + LEAD_S + speak)}\n${said}\n`);
       t += dur;

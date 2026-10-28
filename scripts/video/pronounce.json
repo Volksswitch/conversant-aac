@@ -1,0 +1,6 @@
+{
+  "_note": "Exact sounds for words a narration voice sometimes says wrong, in the IPA alphabet. The Azure HD voices vary from one synthesis to the next, so a word said right in most lines can come out wrong in one. A step opts in with pronounce: true, which pins every word below that appears in its line. Steps that do not opt in are unchanged, so their recorded audio is never made again. Conversant: the narrator said 'CAN-versant' in video 3.2 (October 28 2026); this is how it says the word everywhere else.",
+  "words": {
+    "Conversant": "kənˈvɝsənt"
+  }
+}

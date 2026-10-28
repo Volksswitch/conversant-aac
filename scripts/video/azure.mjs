@@ -25,8 +25,15 @@ const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&
 
 // Returns MP3 bytes. The free tier refuses past 20 requests a minute, so
 // callers making several in a row should pace them (see pace()).
-export async function synthesize({ key, region }, voice, text) {
-  const ssml = `<speak version="1.0" xml:lang="en-US"><voice name="${voice}">${esc(text)}</voice></speak>`;
+// `pins` maps a word to its exact sounds (IPA); each whole-word match is said
+// that way. Measured: the HD voices honor <phoneme>.
+export async function synthesize({ key, region }, voice, text, pins = null) {
+  let body = esc(text);
+  for (const [word, ipa] of Object.entries(pins || {})) {
+    body = body.replace(new RegExp(`\\b${word}\\b`, 'g'), `<phoneme alphabet="ipa" ph="${ipa}">${word}</phoneme>`);
+  }
+  const ns = pins ? ' xmlns="http://www.w3.org/2001/10/synthesis"' : '';
+  const ssml = `<speak version="1.0"${ns} xml:lang="en-US"><voice name="${voice}">${body}</voice></speak>`;
   const r = await fetch(`https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`, {
     method: 'POST',
     headers: {

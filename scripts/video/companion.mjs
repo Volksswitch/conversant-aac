@@ -134,7 +134,7 @@ export async function makeCompanion({ browser, script, frames, seconds, ffmpeg }
   const trouble = (script.trouble || []).map((t) => `<li>${esc(t)}</li>`).join('');
   const nextLine = next
     ? `<p class="next"><b>Watch next:</b> ${esc(next.num)} ${esc(next.title)}${/[.?!]$/.test(next.title) ? '' : '.'}</p>`
-    : `<p class="next">More videos are on the way.</p>`;
+    : '';
   const mins = Math.round(seconds);
   const html = `<!doctype html><html><head><meta charset="utf-8"><style>${STYLE}</style></head><body>
     <div class="kicker">Conversant AAC how-to video ${esc(entry.num)}</div>

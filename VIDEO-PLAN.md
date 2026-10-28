@@ -24,6 +24,8 @@ The live method needs two new pieces: the stand-in microphone and the fixed AI a
 
 **Narration never says where something is.** It says "this button" and lets the ring point. The layout changes with the device and the user's settings, so words like "top" or "left" would often be wrong.
 
+**When a voice says a word wrong in one line** (October 28 2026, "CAN-versant" in video 3.2): the narrator's voice varies a little each time it records a line, so a word it says right everywhere else can come out wrong once. Put the word's exact sounds in `scripts/video/pronounce.json` and add `pronounce: true` to that step. Only that line is recorded again; every other line keeps its approved recording. To find which line is wrong without listening to each one, Azure's pronunciation check reports the sounds it heard and how long each part of the word took: the wrong line in 3.2 had "æ" (as in "can") and a first part 250 ms long, against "ə" and 130 to 230 ms in twenty other lines.
+
 ## The course
 
 Groups 1 and 2 are a path, watched in order. Together they take a new user from nothing to a confident first conversation in about 25 minutes. Groups 3, 4 and 5 are a menu; viewers pick what they need.

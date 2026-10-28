@@ -37,7 +37,8 @@ export default {
       highlight: fieldByHint('Topics I'),
       page: "Add things you like to talk about with them, if you want.",
       say: "If you want, add things you like to talk about together." },
-    { speaker: 'narrator', highlight: talkWith, press: true,
+    // pronounce: this line came out "CAN-versant" (October 28 2026); see pronounce.json.
+    { speaker: 'narrator', highlight: talkWith, press: true, pronounce: true,
       say: "You can also tell Conversant how you talk with this person. Open How I talk with them." },
     { speaker: 'narrator', waitFor: dim('Formality'),
       before: async (p) => { await choose(p, dim('Formality'), 'More relaxed'); await choose(p, dim('Humor'), 'More playful'); },
