@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.13.30
+
 - When the app opens, it appears in your own layout straight away. A plain layout no
   longer flashes up for a moment first.
 
