@@ -102,6 +102,37 @@ export const panelButtonWith = (words) => `::-p-xpath(//*[@id="expressPanel"]//b
 // Hold the app's speech open, or let it finish (see the renderer's stand-in voice).
 export const holdSpeech = (page, on) => page.evaluate((v) => { window.__holdSpeech = v; }, on);
 
+// Make the newest saved conversation (in the browser's own storage) last exactly
+// `seconds`, by spacing its moments proportionally between its start and its last
+// moment. Its real length is however long the render took between steps, which
+// varies with how busy the computer is, so the review list's "How long" column
+// otherwise made video 3.10 look changed on most syncs (October 28 2026).
+export async function fixConversationLength(page, seconds) {
+  const problem = await page.evaluate(async (ms) => {
+    const root = await navigator.storage.getDirectory();
+    const dir = await root.getDirectoryHandle('conversations');
+    let newest = null;
+    for await (const [name, h] of dir.entries()) {
+      if (h.kind !== 'file' || !name.endsWith('.json') || name.endsWith('.review.json')) continue;
+      if (!newest || name > newest.name) newest = { name, h };
+    }
+    if (!newest) return 'there is no saved conversation to set the length of';
+    const data = JSON.parse(await (await newest.h.getFile()).text());
+    const start = Date.parse(data.started);
+    const stamps = (data.exchanges || []).map((e) => Date.parse(e && e.timestamp)).filter(Number.isFinite);
+    const last = Math.max(...stamps);
+    if (!Number.isFinite(start) || !(last > start)) return 'the saved conversation has no length to set';
+    const at = (iso) => new Date(start + (Date.parse(iso) - start) * (ms / (last - start))).toISOString();
+    for (const e of data.exchanges) if (e && Number.isFinite(Date.parse(e.timestamp))) e.timestamp = at(e.timestamp);
+    if (Number.isFinite(Date.parse(data.ended))) data.ended = at(data.ended);
+    const w = await newest.h.createWritable();
+    await w.write(JSON.stringify(data, null, 2));
+    await w.close();
+    return null;
+  }, seconds * 1000);
+  if (problem) throw new Error(`STOPPING - ${problem}`);
+}
+
 // Drag something by a distance, as a finger would.
 export async function dragBy(page, selector, dx, dy) {
   const h = await page.$(selector);

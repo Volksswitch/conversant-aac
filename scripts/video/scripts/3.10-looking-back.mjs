@@ -4,7 +4,7 @@
 // rewritten. Saved in the browser's own storage (as on an iPad), because a data
 // folder can only be chosen through Windows' picker.
 
-import { settingsTab, section, card, onScreen, hear, replaceText } from '../helpers.mjs';
+import { settingsTab, section, card, onScreen, hear, replaceText, fixConversationLength } from '../helpers.mjs';
 
 const P1 = "Hey Marc, how was your weekend?";
 const SAID = "It was good, thanks. Pretty relaxing.";
@@ -39,7 +39,8 @@ export default {
     { speaker: 'user', waitFor: onScreen(SAID), say: SAID },
     { speaker: 'narrator', highlight: '#endConversationBtn', press: true,
       say: "And ends the conversation. Later, he looks back at it." },
-    { speaker: 'narrator', highlight: '#settingsBtn', press: true,
+    // 8 seconds, as in the published video; the real length varies from render to render.
+    { speaker: 'narrator', before: (p) => fixConversationLength(p, 8), highlight: '#settingsBtn', press: true,
       say: "Open Settings," },
     { speaker: 'narrator', waitFor: '#settingsDialog[open]', highlight: settingsTab('review'), press: true,
       say: "then Conversation Review." },
