@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.13.28
+
 - In Settings, Express Panel and Keyboard, when you add a partner, place, feeling or sound, the list now scrolls so you can see the new one. Before, it could be added out of sight at the bottom, so it looked as if nothing had happened.
 
 ## Version 0.13.27

@@ -22,6 +22,9 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.13.28": [
+    "In Settings, Express Panel and Keyboard, when you add a partner, place, feeling or sound, the list now scrolls so you can see the new one. Before, it could be added out of sight at the bottom, so it looked as if nothing had happened."
+  ],
   "0.13.27": [
     "Fixed: the weekly usage report included your \"Words the voice gets wrong\" list. It now says only how many words are on the list, never the words themselves. The name of your saved settings profile is left out too.",
     "Before you restore a backup or load a saved settings profile, the app now tells you if it would change whether conversations are saved, or whether a chime plays when listening starts.",
