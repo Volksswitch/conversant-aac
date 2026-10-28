@@ -26,6 +26,10 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+### On an iPad
+
+- When a Paste button beside a key box can't paste, the message now gives the steps that work: tap the box, then touch and hold it until Paste appears, and choose Paste.
+
 ## Version 0.13.30
 
 - When the app opens, it appears in your own layout straight away. A plain layout no

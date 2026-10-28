@@ -8716,7 +8716,7 @@ function openSettings() {
             // what was pasted doesn't look like a key.
         } catch {
             showApiKeyStatus('warn',
-                'Could not read the clipboard. Touch and hold the box above, then choose Paste.');
+                'Could not paste. Tap the box above, then touch and hold it until Paste appears, and choose Paste.');
         }
     };
     // Test button — the only way to catch a subtly-wrong key (right format, wrong
@@ -8817,7 +8817,7 @@ function openSettings() {
                 setKeyFieldValue(deepgramKeyInput, text);
                 showDeepgramStatus(null, '');
             } catch {
-                showDeepgramStatus('warn', 'Could not read the clipboard. Touch and hold the box above, then choose Paste.');
+                showDeepgramStatus('warn', 'Could not paste. Tap the box above, then touch and hold it until Paste appears, and choose Paste.');
             }
         };
     }
@@ -8908,7 +8908,7 @@ function openSettings() {
                 setKeyFieldValue(azureKeyInput, text);
                 showAzureStatus(null, '');
             } catch {
-                showAzureStatus('warn', 'Could not read the clipboard. Touch and hold the key box, then choose Paste.');
+                showAzureStatus('warn', 'Could not paste. Tap the key box, then touch and hold it until Paste appears, and choose Paste.');
             }
         };
     }
@@ -8922,7 +8922,7 @@ function openSettings() {
                 azureRegionInput.dispatchEvent(new Event('input', { bubbles: true }));
                 azureRegionInput.value = storage.loadAzureRegionSetting();
             } catch {
-                showAzureStatus('warn', 'Could not read the clipboard. Touch and hold the region box, then choose Paste.');
+                showAzureStatus('warn', 'Could not paste. Tap the region box, then touch and hold it until Paste appears, and choose Paste.');
             }
         };
     }
@@ -9389,7 +9389,7 @@ function openSettings() {
                     // voices; doing both again here doubled the request (CR-084).
                     setKeyFieldValue(keyInput, text);
                 } catch {
-                    showStatus('warn', 'This browser would not let the app read the clipboard.');
+                    showStatus('warn', 'Could not paste. Tap the key box, then touch and hold it until Paste appears, and choose Paste.');
                 }
             };
         }
