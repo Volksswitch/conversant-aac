@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.13.33
+
 - If a key you paste or type can't be saved on this device, the app now says so under the box. The key still works until the app closes, and Test uses it instead of saying the box is empty.
 
 ## Version 0.13.32
