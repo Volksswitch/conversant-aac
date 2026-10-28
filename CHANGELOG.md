@@ -26,6 +26,10 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+### On an iPad
+
+- The "Tap the Paste bubble" hint is shorter, so Safari's bubble no longer covers part of it.
+
 ## Version 0.13.31
 
 ### On an iPad

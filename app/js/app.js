@@ -1201,11 +1201,13 @@ function showAzureStatus(kind, msg) {
 // back, while text copied from another app or site makes Safari put up its own
 // small "Paste" bubble, and the read waits until that bubble is tapped (or
 // fails if anything else is tapped). Nothing on the page says so, so after a
-// short wait the status line tells the user to tap the bubble. The hint is
+// short wait the status line tells the user to tap the bubble. Kept short:
+// Safari draws the bubble under the tapped button, on top of the end of this
+// line, so a longer hint is partly covered (Ken, October 28 2026). The hint is
 // iPad-only: elsewhere the browser's own prompt looks different.
 async function readClipboardText(show) {
     const hint = platform.isIOS()
-        ? setTimeout(() => show('checking', 'Tap the Paste bubble to finish pasting.'), 400)
+        ? setTimeout(() => show('checking', 'Tap the Paste bubble.'), 400)
         : null;
     try {
         return ((await navigator.clipboard.readText()) || '').trim();
