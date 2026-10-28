@@ -1196,6 +1196,24 @@ function showAzureStatus(kind, msg) {
     setStatusLine('azureKeyStatus', kind, msg);
 }
 
+// Reads the clipboard for a Paste button. On an iPad, Safari decides each time
+// whether to ask first: text copied from this app's own pages comes straight
+// back, while text copied from another app or site makes Safari put up its own
+// small "Paste" bubble, and the read waits until that bubble is tapped (or
+// fails if anything else is tapped). Nothing on the page says so, so after a
+// short wait the status line tells the user to tap the bubble. The hint is
+// iPad-only: elsewhere the browser's own prompt looks different.
+async function readClipboardText(show) {
+    const hint = platform.isIOS()
+        ? setTimeout(() => show('checking', 'Tap the Paste bubble to finish pasting.'), 400)
+        : null;
+    try {
+        return ((await navigator.clipboard.readText()) || '').trim();
+    } finally {
+        if (hint) { clearTimeout(hint); show(null, ''); }
+    }
+}
+
 // The status line beside whichever Azure voice picker is being tested.
 function showAzureVoiceStatus(which, kind, msg) {
     setStatusLine(which === 'partner' ? 'azurePartnerVoiceStatus' : 'azureVoiceStatus', kind, msg);
@@ -8706,7 +8724,7 @@ function openSettings() {
     // names the alternative instead of leaving the user with nothing.
     document.getElementById('pasteApiKeyBtn').onclick = async () => {
         try {
-            const text = (await navigator.clipboard.readText())?.trim();
+            const text = await readClipboardText(showApiKeyStatus);
             if (!text) {
                 showApiKeyStatus('warn', 'The clipboard is empty — copy your key first.');
                 return;
@@ -8812,7 +8830,7 @@ function openSettings() {
     if (pasteDeepgramBtn) {
         pasteDeepgramBtn.onclick = async () => {
             try {
-                const text = (await navigator.clipboard.readText())?.trim();
+                const text = await readClipboardText(showDeepgramStatus);
                 if (!text) { showDeepgramStatus('warn', 'The clipboard is empty — copy your key first.'); return; }
                 setKeyFieldValue(deepgramKeyInput, text);
                 showDeepgramStatus(null, '');
@@ -8903,7 +8921,7 @@ function openSettings() {
     if (pasteAzureBtn) {
         pasteAzureBtn.onclick = async () => {
             try {
-                const text = (await navigator.clipboard.readText())?.trim();
+                const text = await readClipboardText(showAzureStatus);
                 if (!text) { showAzureStatus('warn', 'The clipboard is empty — copy your key first.'); return; }
                 setKeyFieldValue(azureKeyInput, text);
                 showAzureStatus(null, '');
@@ -8916,7 +8934,7 @@ function openSettings() {
     if (pasteAzureRegionBtn && azureRegionInput) {
         pasteAzureRegionBtn.onclick = async () => {
             try {
-                const text = (await navigator.clipboard.readText())?.trim();
+                const text = await readClipboardText(showAzureStatus);
                 if (!text) { showAzureStatus('warn', 'The clipboard is empty — copy the region first.'); return; }
                 azureRegionInput.value = text;
                 azureRegionInput.dispatchEvent(new Event('input', { bubbles: true }));
@@ -9383,7 +9401,7 @@ function openSettings() {
         if (pasteBtn) {
             pasteBtn.onclick = async () => {
                 try {
-                    const text = (await navigator.clipboard.readText() || '').trim();
+                    const text = await readClipboardText(showStatus);
                     if (!text) { showStatus('warn', 'There was nothing to paste.'); return; }
                     // The input event this dispatches saves the key and refetches the
                     // voices; doing both again here doubled the request (CR-084).
