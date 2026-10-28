@@ -4,11 +4,12 @@ Drafts for answering the two forms on the beta page
 (volksswitch.org/index.php/conversant-beta). Words in [brackets] are filled in
 each time.
 
-This file is the master. The Word copies in `Other/Beta Testing/Emails` are made
-from it by `python scripts/make-beta-emails.py`, so change the wording here and
-re-run that.
+This file is the master. The Outlook messages in `Other/Beta Testing/Emails` are
+made from it by `python scripts/make-beta-emails.py`, so change the wording here
+and re-run that. Open a message, fill in the [brackets], add the address, and send.
+The welcome emails come with the Beta Tester Responsibilities PDF attached.
 
-There is one welcome email per kind of device. The script makes two Word copies
+There is one welcome email per kind of device. The script makes two copies
 of each: one for a tester who asked for their helper to be copied, and one for a
 tester who did not. In this file, {helper} marks the paragraph that appears only
 in the helper version, and {to-helper} marks where the address note differs.
@@ -23,7 +24,8 @@ answers yes with a Windows computer or tablet.
 >
 > Hi [first name],
 >
-> Thanks for signing up. I'm glad you'll be trying Conversant.
+> Thanks for signing up. I'm glad you'll be trying Conversant. I've attached a copy of
+> the Beta Tester Responsibilities overview.
 >
 > {helper}I've copied [helper's name] on this email, as you asked. If you'd ever like me
 > to stop copying them, just tell me.
@@ -47,14 +49,14 @@ answers yes with a Windows computer or tablet.
 >
 >    **[AI key]**
 >
->    The "Adding Your AI Key" video shows where to paste it.
+>    The [Adding Your AI Key](https://volksswitch.org/index.php/conversant-videos/video-1-3/) video shows where to paste it.
 > 4. **Add your tester name.** This name tells us which weekly reports from the
 >    app are yours. In Conversant, open Settings, then the Troubleshooting tab,
 >    then "Who these reports come from". Type this into the "Tester name" box:
 >
 >    **[tester name]**
 >
->    The "Adding Your Tester Name" video shows where to type it.
+>    The [Adding Your Tester Name](https://volksswitch.org/index.php/conversant-videos/video-1-7/) video shows where to type it.
 > 5. **Hearing the other person is free.** On a Windows computer or tablet, Conversant uses the browser to hear the person you're talking with,
 >    so you don't need a speech service.
 > 6. **Setup help.** I'm happy to go through setup with you. What days and times
@@ -65,6 +67,8 @@ answers yes with a Windows computer or tablet.
 > known issues, how to tell us about a problem, and my email. The
 > [Beta Test Plan](https://volksswitch.org/index.php/beta-test-plan/) explains
 > what we'll ask of you and what the app sends back to us.
+>
+> Let me know if you have **any** questions.
 >
 > Thanks again,
 > Ken
@@ -79,7 +83,8 @@ answers yes with a Chromebook.
 >
 > Hi [first name],
 >
-> Thanks for signing up. I'm glad you'll be trying Conversant.
+> Thanks for signing up. I'm glad you'll be trying Conversant. I've attached a copy of
+> the Beta Tester Responsibilities overview.
 >
 > {helper}I've copied [helper's name] on this email, as you asked. If you'd ever like me
 > to stop copying them, just tell me.
@@ -103,14 +108,14 @@ answers yes with a Chromebook.
 >
 >    **[AI key]**
 >
->    The "Adding Your AI Key" video shows where to paste it.
+>    The [Adding Your AI Key](https://volksswitch.org/index.php/conversant-videos/video-1-3/) video shows where to paste it.
 > 4. **Add your tester name.** This name tells us which weekly reports from the
 >    app are yours. In Conversant, open Settings, then the Troubleshooting tab,
 >    then "Who these reports come from". Type this into the "Tester name" box:
 >
 >    **[tester name]**
 >
->    The "Adding Your Tester Name" video shows where to type it.
+>    The [Adding Your Tester Name](https://volksswitch.org/index.php/conversant-videos/video-1-7/) video shows where to type it.
 > 5. **Hearing the other person is free.** On a Chromebook, Conversant uses the browser to hear the person you're talking with,
 >    so you don't need a speech service.
 > 6. **Setup help.** I'm happy to go through setup with you. What days and times
@@ -121,6 +126,8 @@ answers yes with a Chromebook.
 > known issues, how to tell us about a problem, and my email. The
 > [Beta Test Plan](https://volksswitch.org/index.php/beta-test-plan/) explains
 > what we'll ask of you and what the app sends back to us.
+>
+> Let me know if you have **any** questions.
 >
 > Thanks again,
 > Ken
@@ -135,7 +142,8 @@ answers yes with a Mac.
 >
 > Hi [first name],
 >
-> Thanks for signing up. I'm glad you'll be trying Conversant.
+> Thanks for signing up. I'm glad you'll be trying Conversant. I've attached a copy of
+> the Beta Tester Responsibilities overview.
 >
 > {helper}I've copied [helper's name] on this email, as you asked. If you'd ever like me
 > to stop copying them, just tell me.
@@ -159,14 +167,14 @@ answers yes with a Mac.
 >
 >    **[AI key]**
 >
->    The "Adding Your AI Key" video shows where to paste it.
+>    The [Adding Your AI Key](https://volksswitch.org/index.php/conversant-videos/video-1-3/) video shows where to paste it.
 > 4. **Add your tester name.** This name tells us which weekly reports from the
 >    app are yours. In Conversant, open Settings, then the Troubleshooting tab,
 >    then "Who these reports come from". Type this into the "Tester name" box:
 >
 >    **[tester name]**
 >
->    The "Adding Your Tester Name" video shows where to type it.
+>    The [Adding Your Tester Name](https://volksswitch.org/index.php/conversant-videos/video-1-7/) video shows where to type it.
 > 5. **Hearing the other person is free.** On a Mac, Conversant uses the browser to hear the person you're talking with,
 >    so you don't need a speech service.
 > 6. **Setup help.** I'm happy to go through setup with you. What days and times
@@ -177,6 +185,8 @@ answers yes with a Mac.
 > known issues, how to tell us about a problem, and my email. The
 > [Beta Test Plan](https://volksswitch.org/index.php/beta-test-plan/) explains
 > what we'll ask of you and what the app sends back to us.
+>
+> Let me know if you have **any** questions.
 >
 > Thanks again,
 > Ken
@@ -191,7 +201,8 @@ answers yes with an iPad.
 >
 > Hi [first name],
 >
-> Thanks for signing up. I'm glad you'll be trying Conversant.
+> Thanks for signing up. I'm glad you'll be trying Conversant. I've attached a copy of
+> the Beta Tester Responsibilities overview.
 >
 > {helper}I've copied [helper's name] on this email, as you asked. If you'd ever like me
 > to stop copying them, just tell me.
@@ -210,31 +221,31 @@ answers yes with an iPad.
 >    [Adding Your Deepgram Key](https://volksswitch.org/index.php/conversant-videos/video-1-6/)
 >    and [Adding Your Tester Name](https://volksswitch.org/index.php/conversant-videos/video-1-7/)
 > 2. **Open Conversant** in Safari at [conversant.volksswitch.org](https://conversant.volksswitch.org/),
->    then add it to your Home Screen. The "Installing Conversant" video shows how.
+>    then add it to your Home Screen. The [Installing Conversant](https://volksswitch.org/index.php/conversant-videos/video-1-2-ipad/) video shows how.
 >    You don't have to install anything from the App Store.
 > 3. **Add your AI key.** During the beta, we pay for the AI that writes the
 >    suggestions. Here is your key. Copy all of it, from "sk-ant" to the end:
 >
 >    **[AI key]**
 >
->    The "Adding Your AI Key" video shows where to paste it.
+>    The [Adding Your AI Key](https://volksswitch.org/index.php/conversant-videos/video-1-3/) video shows where to paste it.
 > 4. **Add your tester name.** This name tells us which weekly reports from the
 >    app are yours. In Conversant, open Settings, then the Troubleshooting tab,
 >    then "Who these reports come from". Type this into the "Tester name" box:
 >
 >    **[tester name]**
 >
->    The "Adding Your Tester Name" video shows where to type it.
+>    The [Adding Your Tester Name](https://volksswitch.org/index.php/conversant-videos/video-1-7/) video shows where to type it.
 > 5. **Add your Deepgram key.** On an iPad, Conversant needs a speech service to
 >    hear the person you're talking with. During the beta, we'll provide one
 >    called Deepgram. Here is your key. Copy all of it:
 >
 >    **[Deepgram key]**
 >
->    The "Adding Your Deepgram Key" video shows where to paste it, and how to
+>    The [Adding Your Deepgram Key](https://volksswitch.org/index.php/conversant-videos/video-1-6/) video shows where to paste it, and how to
 >    choose Deepgram to hear the other person. Both steps are needed.
 >
->    We also suggest Deepgram's voice, because the iPad's own voices are hard to
+>    We also suggest Deepgram's voice because the iPad's own voices are hard to
 >    listen to. The same video shows how to choose it.
 > 6. **Setup help.** I'm happy to go through setup with you. What days and times
 >    work for you?
@@ -244,6 +255,8 @@ answers yes with an iPad.
 > known issues, how to tell us about a problem, and my email. The
 > [Beta Test Plan](https://volksswitch.org/index.php/beta-test-plan/) explains
 > what we'll ask of you and what the app sends back to us.
+>
+> Let me know if you have **any** questions.
 >
 > Thanks again,
 > Ken
@@ -258,7 +271,8 @@ invited person answers yes with one.
 >
 > Hi [first name],
 >
-> Thanks for signing up. I'm glad you'll be trying Conversant.
+> Thanks for signing up. I'm glad you'll be trying Conversant. I've attached a copy of
+> the Beta Tester Responsibilities overview.
 >
 > {helper}I've copied [helper's name] on this email, as you asked. If you'd ever like me
 > to stop copying them, just tell me.
@@ -277,28 +291,28 @@ invited person answers yes with one.
 >    [Adding Your Deepgram Key](https://volksswitch.org/index.php/conversant-videos/video-1-6/)
 >    and [Adding Your Tester Name](https://volksswitch.org/index.php/conversant-videos/video-1-7/)
 > 2. **Open Conversant** in Chrome at [conversant.volksswitch.org](https://conversant.volksswitch.org/),
->    then install it. The "Installing Conversant" video shows how. You don't have
+>    then install it. The [Installing Conversant](https://volksswitch.org/index.php/conversant-videos/video-1-2-android/) video shows how. You don't have
 >    to install anything from the Play Store.
 > 3. **Add your AI key.** During the beta, we pay for the AI that writes the
 >    suggestions. Here is your key. Copy all of it, from "sk-ant" to the end:
 >
 >    **[AI key]**
 >
->    The "Adding Your AI Key" video shows where to paste it.
+>    The [Adding Your AI Key](https://volksswitch.org/index.php/conversant-videos/video-1-3/) video shows where to paste it.
 > 4. **Add your tester name.** This name tells us which weekly reports from the
 >    app are yours. In Conversant, open Settings, then the Troubleshooting tab,
 >    then "Who these reports come from". Type this into the "Tester name" box:
 >
 >    **[tester name]**
 >
->    The "Adding Your Tester Name" video shows where to type it.
+>    The [Adding Your Tester Name](https://volksswitch.org/index.php/conversant-videos/video-1-7/) video shows where to type it.
 > 5. **Add your Deepgram key.** On an Android device, Conversant needs a speech service to
 >    hear the person you're talking with. During the beta, we'll provide one
 >    called Deepgram. Here is your key. Copy all of it:
 >
 >    **[Deepgram key]**
 >
->    The "Adding Your Deepgram Key" video shows where to paste it, and how to
+>    The [Adding Your Deepgram Key](https://volksswitch.org/index.php/conversant-videos/video-1-6/) video shows where to paste it, and how to
 >    choose Deepgram to hear the other person. Both steps are needed.
 > 6. **Setup help.** I'm happy to go through setup with you. What days and times
 >    work for you?
@@ -308,6 +322,8 @@ invited person answers yes with one.
 > known issues, how to tell us about a problem, and my email. The
 > [Beta Test Plan](https://volksswitch.org/index.php/beta-test-plan/) explains
 > what we'll ask of you and what the app sends back to us.
+>
+> Let me know if you have **any** questions.
 >
 > Thanks again,
 > Ken
@@ -321,7 +337,8 @@ invited person answers yes with one.
 >
 > Hi [first name],
 >
-> Thanks for signing up. I'm glad you'll be trying Conversant.
+> Thanks for signing up. I'm glad you'll be trying Conversant. I've attached a copy of
+> the Beta Tester Responsibilities overview.
 >
 > {helper}I've copied [helper's name] on this email, as you asked. If you'd ever like me
 > to stop copying them, just tell me.
@@ -338,6 +355,8 @@ invited person answers yes with one.
 > about a problem, and my email.
 > The [Beta Test Plan](https://volksswitch.org/index.php/beta-test-plan/) explains
 > what we'll ask of you and what the app sends back to us.
+>
+> Let me know if you have **any** questions.
 >
 > Thanks again,
 > Ken

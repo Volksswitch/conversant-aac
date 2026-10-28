@@ -1,131 +1,118 @@
-"""Make the Word copies of the beta emails from BETA-EMAILS.md.
+"""Make the Outlook copies of the beta emails from BETA-EMAILS.md.
 
     python scripts/make-beta-emails.py
 
-BETA-EMAILS.md is the master; this rewrites every .docx in Other/Beta Testing/Emails.
-Each "## <id>. <name>" section becomes one file. The lines before the quoted email
-are the when/to notes; the quoted lines are the email. Markdown handled: **bold**,
-*italic*, [text](url) as a clickable link, "- " bullets and "1. " numbered items.
+BETA-EMAILS.md is the master; this rewrites every .msg in Other/Beta Testing/Emails.
+Each "## <id>. <name>" section becomes one unsent Outlook message: the subject line
+goes in the subject, the quoted lines become the body. The when/to notes above the
+quote are for Ken and are not put in the message. Markdown handled: **bold**,
+*italic*, [text](url) as a clickable link, and "1. " numbered items, with indented
+paragraphs kept under their numbered step.
+
+The body uses the layout Ken settled on in the first real welcome email (October
+28 2026): Arial 11pt, 1.15 line spacing, 10pt after each paragraph, keys and
+tester names in bold indented under their step. Welcome emails carry the Beta
+Tester Responsibilities PDF from Documents/ as an attachment.
+
+The messages are made by classic Outlook through scripts/make-outlook-messages.ps1,
+so this only runs on a Windows machine with Outlook installed.
 """
-import os, re
-from docx import Document
-from docx.oxml import OxmlElement
-from docx.oxml.ns import qn
-from docx.shared import Pt, RGBColor, Inches
+import html, json, os, re, subprocess, sys, tempfile
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 SRC = os.path.join(ROOT, 'BETA-EMAILS.md')
 OUT = os.path.join(ROOT, 'Other', 'Beta Testing', 'Emails')
+PS = os.path.join(ROOT, 'scripts', 'make-outlook-messages.ps1')
+ATTACH = os.path.join(ROOT, 'Documents', 'Conversant AAC Beta Tester Responsibilities.pdf')
 
 TOKEN = re.compile(r'(\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\))')
+FONT = 'font-family:Arial,sans-serif;font-size:11.0pt;line-height:115%'
+P = f'margin:0 0 10.0pt 0;{FONT}'
+STEP_P = f'margin:0 0 10.0pt 0;{FONT}'
+UNDER_P = f'margin:0 0 10.0pt .25in;{FONT}'
 
 
-def add_link(p, text, url, bold=False):
-    rid = p.part.relate_to(url, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink', is_external=True)
-    h = OxmlElement('w:hyperlink'); h.set(qn('r:id'), rid)
-    r = OxmlElement('w:r'); rpr = OxmlElement('w:rPr')
-    c = OxmlElement('w:color'); c.set(qn('w:val'), '0563C1'); rpr.append(c)
-    u = OxmlElement('w:u'); u.set(qn('w:val'), 'single'); rpr.append(u)
-    if bold:
-        rpr.append(OxmlElement('w:b'))
-    r.append(rpr)
-    t = OxmlElement('w:t'); t.text = text; t.set(qn('xml:space'), 'preserve'); r.append(t)
-    h.append(r); p._p.append(h)
-
-
-def add_runs(p, s):
+def inline(s):
+    out = []
     for part in TOKEN.split(s):
         if not part:
             continue
         m = re.fullmatch(r'\[([^\]]+)\]\(([^)]+)\)', part)
-        if m and not m.group(1).startswith(('first', 'helper', 'their', 'referrer', 'Referrer', 'AI key', 'a Windows', 'an iPad')):
-            add_link(p, m.group(1), m.group(2))
+        if m:
+            out.append(f'<a href="{html.escape(m.group(2))}"><span style="color:#0563C1">'
+                       f'{html.escape(m.group(1))}</span></a>')
         elif part.startswith('**'):
-            p.add_run(part[2:-2]).bold = True
+            out.append(f'<b>{html.escape(part[2:-2])}</b>')
         elif part.startswith('*'):
-            p.add_run(part[1:-1]).italic = True
+            out.append(f'<i>{html.escape(part[1:-1])}</i>')
         else:
-            p.add_run(part)
+            out.append(html.escape(part))
+    return ''.join(out)
 
 
-def build(num, title, lines):
-    doc = Document()
-    st = doc.styles['Normal']; st.font.name = 'Arial'; st.font.size = Pt(11)
-    doc.add_heading(f'Beta email {num}: {title}', level=1)
-
-    notes, body = [], []
-    for ln in lines:
-        if ln.startswith('>'):
-            body.append(ln[2:] if ln.startswith('> ') else ln[1:])
-        elif ln.strip() and not body:
-            if ln.startswith('**') or not notes:
-                notes.append(ln.strip())
-            else:
-                notes[-1] += ' ' + ln.strip()
-    for t in notes:
-        add_runs(doc.add_paragraph(), t)
-    doc.add_paragraph()
-
-    buf, kind = [], None
+def blocks(body):
+    """Split the quoted email into (kind, text) blocks: 'p', 'step' or 'under'."""
+    out, buf, kind = [], [], None
 
     def flush():
         nonlocal buf, kind
         if buf:
-            style = {'li': 'List Bullet', 'num': 'List Number'}.get(kind)
             text = ' '.join(buf)
-            if kind == 'num':
+            if kind == 'step':
                 text = re.sub(r'^\d+\.\s+', '', text)
-            p = doc.add_paragraph(style=style)
-            if kind == 'indent':
-                p.paragraph_format.left_indent = Inches(0.5)
-            add_runs(p, text)
+            out.append((kind or 'p', text))
         buf, kind = [], None
 
     for raw in body:
         ln = raw.strip()
-        indented = raw.startswith('   ')
         if not ln:
             flush(); continue
-        if ln.startswith('- '):
-            flush(); kind = 'li'; buf = [ln[2:]]
-        elif re.match(r'\d+\. ', ln):
-            flush(); kind = 'num'; buf = [ln]
-        elif ln.startswith('Subject:'):
-            flush(); add_runs(doc.add_paragraph(), '**' + ln + '**')
-        elif buf and buf[-1].endswith(',') and len(buf[-1]) < 40:
-            flush(); buf = [ln]
+        if re.match(r'\d+\. ', ln):
+            flush(); kind = 'step'; buf = [ln]
+        elif buf and buf[-1].endswith(',') and len(buf[-1]) < 40 and kind is None:
+            # a sign-off ("Thanks again," / "Ken") stays one paragraph, on two lines
+            buf[-1] += '\n'; buf.append(ln)
         elif buf:
             buf.append(ln)
         else:
-            # a paragraph indented under a numbered step stays indented under it
-            buf = [ln]; kind = 'indent' if indented else None
+            buf = [ln]; kind = 'under' if raw.startswith('   ') else None
     flush()
-
-    path = os.path.join(OUT, f'Beta email {num} - {title}.docx')
-    doc.save(path)
-    return path
+    return out
 
 
-def main():
-    os.makedirs(OUT, exist_ok=True)
-    for old in os.listdir(OUT):
-        if old.startswith('Beta email ') and old.endswith('.docx'):
-            try:
-                os.remove(os.path.join(OUT, old))
-            except PermissionError:
-                print(f'Could not remove "{old}" - it is open, probably in Word. Close it and run this again.')
-    text = open(SRC, encoding='utf-8').read()
-    for sec in re.split(r'^## ', text, flags=re.M)[1:]:
-        head, *lines = sec.splitlines()
-        m = re.match(r'(\d+[a-z]?)\. (.+)', head)
-        if not m or not any(l.startswith('>') for l in lines):
-            continue
-        title = m.group(2).replace(' - ', ', ').replace('The kind decline', 'Decline')
-        if '{helper}' in sec:
-            print(build(m.group(1), title + ', with helper', variant(lines, True)))
-            print(build(m.group(1), title + ', no helper', variant(lines, False)))
+def render(body):
+    parts, in_list = [], False
+    for kind, text in blocks(body):
+        h = inline(text).replace('\n ', '<br>')
+        if kind == 'step':
+            if not in_list:
+                parts.append('<ol style="margin-top:0;margin-bottom:0">'); in_list = True
+            else:
+                parts.append('</li>')
+            parts.append(f'<li style="{FONT}"><p style="{STEP_P}">{h}</p>')
+        elif kind == 'under' and in_list:
+            parts.append(f'<p style="{UNDER_P}">{h}</p>')
         else:
-            print(build(m.group(1), title, lines))
+            if in_list:
+                parts.append('</li></ol>'); in_list = False
+            parts.append(f'<p style="{P}">{h}</p>')
+    if in_list:
+        parts.append('</li></ol>')
+    return '<html><body>' + ''.join(parts) + '</body></html>'
+
+
+def message(num, title, lines):
+    body = [ln[2:] if ln.startswith('> ') else ln[1:] for ln in lines if ln.startswith('>')]
+    subject = ''
+    if body and body[0].startswith('Subject:'):
+        subject = body[0][len('Subject:'):].strip()
+        body = body[1:]
+    return {
+        'path': os.path.join(OUT, f'Beta email {num} - {title}.msg'),
+        'subject': subject,
+        'html': render(body),
+        'attach': ATTACH if num.startswith('1') else '',
+    }
 
 
 def variant(lines, helper):
@@ -147,6 +134,42 @@ def variant(lines, helper):
             continue
         out.append(ln)
     return out
+
+
+def main():
+    os.makedirs(OUT, exist_ok=True)
+    if not os.path.exists(ATTACH):
+        sys.exit(f'Missing attachment: {ATTACH}')
+    text = open(SRC, encoding='utf-8').read()
+    msgs = []
+    for sec in re.split(r'^## ', text, flags=re.M)[1:]:
+        head, *lines = sec.splitlines()
+        m = re.match(r'(\d+[a-z]?)\. (.+)', head)
+        if not m or not any(l.startswith('>') for l in lines):
+            continue
+        title = m.group(2).replace(' - ', ', ').replace('The kind decline', 'Decline')
+        if '{helper}' in sec:
+            msgs.append(message(m.group(1), title + ', with helper', variant(lines, True)))
+            msgs.append(message(m.group(1), title + ', no helper', variant(lines, False)))
+        else:
+            msgs.append(message(m.group(1), title, lines))
+
+    for old in os.listdir(OUT):
+        if old.startswith('Beta email ') and old.endswith(('.docx', '.msg')):
+            try:
+                os.remove(os.path.join(OUT, old))
+            except PermissionError:
+                sys.exit(f'Could not remove "{old}" - it is open, probably in Outlook or Word. '
+                         'Close it and run this again.')
+
+    with tempfile.NamedTemporaryFile('w', suffix='.json', delete=False, encoding='utf-8') as f:
+        json.dump(msgs, f)
+        manifest = f.name
+    try:
+        subprocess.run(['powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass',
+                        '-File', PS, manifest], check=True)
+    finally:
+        os.remove(manifest)
 
 
 main()

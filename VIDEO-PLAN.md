@@ -133,7 +133,7 @@ Other pages, documents and emails link to the videos and name them. These rules 
 - the spoken "Next: ..." at the end of each video.
 
 **Written by hand, so they can go wrong:**
-- **The beta emails.** `BETA-EMAILS.md` is the master. The Word copies in `Other/Beta Testing/Emails` are made from it with `python scripts/make-beta-emails.py`, so a change goes in the master and the copies are made again.
+- **The beta emails.** `BETA-EMAILS.md` is the master. The Outlook copies in `Other/Beta Testing/Emails` are made from it with `python scripts/make-beta-emails.py`, so a change goes in the master and the copies are made again.
 - **The Conversant home page** on the website. The WordPress page is the copy now; its first draft (`Documents/Conversant AAC Website Home Page.docx`) is history and isn't updated.
 - **The three User Manuals.** Since October 25 2026 each section a video covers ends with a "Video:" line linking it, and the Introduction links the whole list. They're made by `python scripts/video/add-manual-links.py --apply`, whose list says which section gets which video, so they're not edited by hand.
 - **The other pages on the website** (the beta page, the Beta Test Plan, Known Issues, Documents) and **the other documents** in `Documents/`. None of these links a video today.
@@ -147,7 +147,7 @@ Other pages, documents and emails link to the videos and name them. These rules 
 - a link in a User Manual whose words aren't its video's current title (a renamed video the manuals haven't caught up with),
 - a sentence naming a video by a title no video has,
 - "the six Getting Started videos" when a different number is linked beside it, and "about four minutes" when they add up to something else,
-- Word copies of the emails older than `BETA-EMAILS.md`,
+- Outlook copies of the emails older than `BETA-EMAILS.md`,
 - a watch page still published for a video no longer in the course.
 
 **It runs by itself at the end of every "sync videos"**, and can be run on its own with the trigger phrase **"check video links"**. Fix every ERROR before sending a beta email. It can't judge whether a sentence describing a video is still true; that's rule 2.
@@ -164,7 +164,7 @@ Other pages, documents and emails link to the videos and name them. These rules 
 2. **A video re-made with the same number and title needs nothing changed elsewhere.** Its address stays the same. But if an email or page says what the video shows ("The Adding Your AI Key video shows where to paste it"), read that sentence again and check it's still true.
 
 3. **A new title** goes in `course.json` and nowhere else by hand, except:
-   - the link words and quoted titles in `BETA-EMAILS.md`, then make the Word copies again,
+   - the link words and quoted titles in `BETA-EMAILS.md`, then make the Outlook copies again,
    - the Conversant home page in WordPress, if it names the video,
    - the table in this plan,
    - the User Manuals: run `python scripts/video/add-manual-links.py --apply`, which puts the new title on their links. Then republish the manuals' PDFs.

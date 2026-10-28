@@ -7,7 +7,7 @@ The videos page, the watch pages, the companion pages and the course map are all
 rebuilt from scripts/video/course.json, so they cannot go stale. Everything else
 that names or links a video is written by hand, and this script checks it:
 
-  - BETA-EMAILS.md, the master of the beta emails, and the Word copies made from it
+  - BETA-EMAILS.md, the master of the beta emails, and the Outlook copies made from it
   - the hand-edited pages on volksswitch.org (the Conversant home page and others)
   - every document in Documents/ (the three User Manuals link the videos)
 
@@ -16,7 +16,7 @@ What it checks, for each link to a watch page:
   2. the link's words, where they are a video title, are the title of THAT video;
   3. a sentence like "Watch the six Getting Started videos. Together they take
      about four minutes" still matches the videos linked beside it.
-It also checks that the Word copies of the emails are newer than BETA-EMAILS.md,
+It also checks that the Outlook copies of the emails are newer than BETA-EMAILS.md,
 that a quoted title in a sentence ("The "Adding Your AI Key" video") is a real
 title, and that every published watch page is still in the course.
 
@@ -157,20 +157,13 @@ def main():
         linked = check_links(where, links, by_url, TITLES)
         check_sentences(where, re.sub(r'\s+', ' ', sec), linked)
 
-    # 2. The Word copies: they must be made after the master was last changed.
+    # 2. The Outlook copies: they must be made after the master was last changed.
+    #    Their links are the master's, copied mechanically, so step 1 already checked them.
     md_time = os.path.getmtime(EMAILS_MD)
-    for f in sorted(glob.glob(os.path.join(EMAILS_DIR, '*.docx'))):
-        if os.path.basename(f).startswith('~$'):
-            continue
+    for f in sorted(glob.glob(os.path.join(EMAILS_DIR, 'Beta email *.msg'))):
         where = os.path.relpath(f, ROOT)
         if os.path.getmtime(f) < md_time - 2:
             report('ERROR', where, 'is older than BETA-EMAILS.md; run python scripts/make-beta-emails.py')
-        try:
-            links, plain = docx_links(f)
-        except OSError:
-            report('CHECK', where, 'could not be read (open in Word?); close it and run this again')
-            continue
-        check_links(where, links, by_url, TITLES)
 
     # 3. Documents. The User Manuals link a video at the end of each section it covers;
     #    those links are made by add-manual-links.py, so their words are always the
