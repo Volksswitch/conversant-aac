@@ -26,6 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- After an update, one tap on Start now takes you straight to the "What's new" notes.
+  The app no longer restarts after that first tap and asks you to tap Start again.
+
 ## Version 0.13.28
 
 - In Settings, Express Panel and Keyboard, when you add a partner, place, feeling or sound, the list now scrolls so you can see the new one. Before, it could be added out of sight at the bottom, so it looked as if nothing had happened.

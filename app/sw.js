@@ -138,6 +138,14 @@ self.addEventListener('install', (event) => {
   );
 });
 
+// The page asks which build this worker serves when it takes control, so it can
+// skip a reload when it is already running that build (see sw-register.js).
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'cache-version' && event.ports && event.ports[0]) {
+    event.ports[0].postMessage({ cacheVersion: CACHE_VERSION });
+  }
+});
+
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()

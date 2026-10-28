@@ -122,6 +122,10 @@ const APP_VERSION = '0.13.29';
 // anything can go wrong.
 const BUILD_STAMP = '@@BUILD@@';
 const BUILD_ID = BUILD_STAMP.startsWith('@@') ? 'dev' : BUILD_STAMP;
+// The cache name this page's code belongs to, in sw.js's CACHE_VERSION format.
+// sw-register.js compares it with the worker that takes control, so a page that
+// already runs the new release is not reloaded back to the Start screen.
+window.__aacPageBuild = `aac-v${APP_VERSION}-${BUILD_STAMP}`;
 
 // The known-issues list lives on the web, not in the app (Ken, August 9 2026), so
 // it stays current between releases and can be corrected without one. Named here
