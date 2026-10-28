@@ -182,15 +182,15 @@
       }
     },
     "3.2-people": {
-      "signature": "a9777a2e89c83d87870fbc851a259cab375e0dee5f83bfab8ba5fcc6c2d2a1bb",
-      "seconds": 51,
+      "signature": "c5b8ebe0a48471fe65a14a9a0f01d6264e4c257fc53fca256b97f08b65a6f0b1",
+      "seconds": 52,
       "video": {
-        "id": 24261,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-3-2-The-People-in-Your-Life.mp4"
+        "id": 24666,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-3-2-The-People-in-Your-Life-1.mp4"
       },
       "guide": {
-        "id": 24262,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-3-2-The-People-in-Your-Life-Guide.pdf"
+        "id": 24667,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-3-2-The-People-in-Your-Life-Guide-1.pdf"
       },
       "page": {
         "id": 24281,
@@ -233,12 +233,12 @@
       "signature": "42a4e2825ab1df9a6f1d9f2b45a47f32717ee0ad0c9aaf4e48b643d5ad60d96f",
       "seconds": 87,
       "video": {
-        "id": 24292,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-3-7-Telling-Conversant-Who-Where-and-How-You-Feel-1.mp4"
+        "id": 24668,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-3-7-Telling-Conversant-Who-Where-and-How-You-Feel-2.mp4"
       },
       "guide": {
-        "id": 24293,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-3-7-Telling-Conversant-Who-Where-and-How-You-Feel-Guide-1.pdf"
+        "id": 24669,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-3-7-Telling-Conversant-Who-Where-and-How-You-Feel-Guide-2.pdf"
       },
       "page": {
         "id": 24284,
@@ -454,15 +454,15 @@
       }
     },
     "5.3-private": {
-      "signature": "8c8f194a8d0a1336d47c30936ea0a7061baf68b2eb7b20aa669d1b24ac640eeb",
-      "seconds": 41,
+      "signature": "61f7a774ea4602656d440d3a380a7360d34d0eaaebd7c71c6461a98f1ddbdd0c",
+      "seconds": 40,
       "video": {
-        "id": 24336,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-5-3-Keeping-a-Conversation-Private.mp4"
+        "id": 24670,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-5-3-Keeping-a-Conversation-Private-1.mp4"
       },
       "guide": {
-        "id": 24337,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-5-3-Keeping-a-Conversation-Private-Guide.pdf"
+        "id": 24671,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Conversant-5-3-Keeping-a-Conversation-Private-Guide-1.pdf"
       },
       "page": {
         "id": 24353,
@@ -615,9 +615,9 @@
     }
   },
   "courseMap": {
-    "signature": "d57a4f52bfc590df84bb4962651660efe9715b81d0d2e9b731efd013b7de3568",
-    "id": 24446,
-    "url": "https://volksswitch.org/wp-content/uploads/2026/10/Learning-Conversant-4.pdf"
+    "signature": "58ed222b1e9e127a983fb5cc0c629f7f3572e29872258bd711faa73e3a00c8fe",
+    "id": 24672,
+    "url": "https://volksswitch.org/wp-content/uploads/2026/10/Learning-Conversant-3.pdf"
   },
   "choosers": {
     "1.2": {
