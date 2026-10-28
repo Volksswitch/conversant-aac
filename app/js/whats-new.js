@@ -22,6 +22,16 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.13.31": [
+    {
+      "for": "ipad",
+      "note": "When you tap a Paste button and Safari puts up its own small Paste bubble, the app now tells you to tap the bubble to finish."
+    },
+    {
+      "for": "ipad",
+      "note": "When a Paste button beside a key box can't paste, the message now gives the steps that work: tap the box, then touch and hold it until Paste appears, and choose Paste."
+    }
+  ],
   "0.13.30": [
     "When the app opens, it appears in your own layout straight away. A plain layout no longer flashes up for a moment first."
   ],
