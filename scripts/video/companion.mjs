@@ -9,6 +9,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { ROOT } from './azure.mjs';
 
@@ -177,15 +178,18 @@ export async function makeCourseMap(browser) {
       ? `<br><span class="note">${esc(x.versions.map((v) => v.replace(/^On /, 'on ')).join(', '))}</span>` : ''}</td><td>${esc(x.learn)}</td></tr>`).join('');
     body += `<h2>${esc(g.name)}${g.path ? ' <span class="note">(watch these in order)</span>' : ''}</h2><table class="map">${rows}</table>`;
   }
-  const html = `<!doctype html><html><head><meta charset="utf-8"><style>${STYLE}</style></head><body>
+  const page = `<!doctype html><html><head><meta charset="utf-8"><style>${STYLE}</style></head><body>
     <div class="kicker">Conversant AAC how-to videos</div>
     <h1>Learning Conversant</h1>
     <p class="learn">Short videos, about two minutes each, that show you how to use Conversant. Each one has a one-page guide with the same steps.</p>
-    <div class="meta">Start with "Getting started", then "Your first conversations", and watch those in order. After that, pick the ones you need. Updated ${today()}.</div>
+    <div class="meta">Start with "Getting started", then "Your first conversations", and watch those in order. After that, pick the ones you need. Updated @@DATE@@.</div>
     ${body}
-    <p class="note">More videos are on the way.</p>
   </body></html>`;
   const out = path.join(ROOT, 'Videos', 'Learning Conversant.pdf');
-  await printPdf(browser, html, out, { onePage: false });
+  await printPdf(browser, page.replace('@@DATE@@', today()), out, { onePage: false });
+  // The wording, without the date, so the publisher re-uploads the map when its
+  // words change and not only when the list of published videos does.
+  const signature = crypto.createHash('sha256').update(page).digest('hex');
+  fs.writeFileSync(out.replace(/\.pdf$/, '.json'), JSON.stringify({ signature }, null, 2) + '\n');
   return out;
 }

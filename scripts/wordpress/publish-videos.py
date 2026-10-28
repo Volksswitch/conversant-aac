@@ -136,7 +136,11 @@ def build_page(cfg, course):
 def course_map_signature(cfg, course):
     listed = [(i['num'], i['title'], i['learn'], i.get('version')) for g in course['groups'] for i in g['items']
               if i.get('id') in cfg['videos']]
-    return hashlib.sha256(json.dumps(listed).encode()).hexdigest()
+    # The map's own wording too (written by make-course-map.mjs), so a change to
+    # its fixed text is published even when no video was added (October 28 2026).
+    made = os.path.join(VIDEOS, MAP_PDF.replace('.pdf', '.json'))
+    wording = json.load(open(made, encoding='utf-8'))['signature'] if os.path.exists(made) else None
+    return hashlib.sha256(json.dumps([listed, wording] if wording else listed).encode()).hexdigest()
 
 
 # One watch page per video, a child of the list page. The video plays in the page;
