@@ -9951,6 +9951,8 @@ function reportStartupFailure(where, err) {
         started = !sb || sb.classList.contains('hidden');
     } catch { /* no DOM - call it started */ }
     try { storage.logError((started ? 'uncaught:' : 'startup:') + where, msg); } catch { /* logging is best-effort */ }
+    // A failure card on a page still hidden for start-up would say nothing (theme-init.js).
+    try { if (window.__aacReveal) window.__aacReveal(); } catch { /* best effort */ }
     try {
         const box = document.getElementById('startupError');
         if (!box || !box.hidden) return;   // first failure wins — it is the root cause
@@ -9982,6 +9984,11 @@ try {
 } catch (err) {
     reportStartupFailure('initApp', err);
 }
+// The layout is in place now, so the page can appear in its final form rather than
+// jumping from the stylesheet's bare layout to this one (see theme-init.js). Shown
+// whether or not initApp finished: a half-built screen with the failure card on it
+// is better than a blank one.
+if (window.__aacReveal) window.__aacReveal();
 
 // The weekly report (Ken, August 7 2026). Deliberately not awaited: it reads every
 // saved conversation off disk and then talks to the network, and a diagnostic that

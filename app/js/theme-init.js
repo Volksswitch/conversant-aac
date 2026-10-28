@@ -18,3 +18,21 @@ try {
         if (m) m.setAttribute('content', CHROME[scheme]);
     }
 } catch (e) { /* no stored settings, or storage is blocked: stay on Default */ }
+
+// Keep the page hidden until app.js has laid it out (Ken, October 28 2026). The
+// stylesheet alone draws a "primordial" screen - no dock, worded Command Bar, the
+// transcript across the whole width - and app.js, a module with ~80 imports, takes
+// about half a second to arrive and rearrange it, so every launch showed one layout
+// and then jumped to another. app.js calls __aacReveal once initApp has run.
+// ⚠ THE CLASS IS SET HERE, NOT IN THE MARKUP, so hiding and its safety nets travel
+// together: if this file never runs, nothing is hidden. The safety nets cover an
+// app.js that never runs at all - a failed module load or a throw while the imports
+// evaluate - which would otherwise leave a blank screen forever: any script or
+// resource error shows the page at once, and so does a deadline long enough for a
+// slow tablet's first load.
+try {
+    document.documentElement.classList.add('booting');
+    window.__aacReveal = function () { document.documentElement.classList.remove('booting'); };
+    setTimeout(window.__aacReveal, 8000);
+    window.addEventListener('error', window.__aacReveal, true);
+} catch (e) { /* never let this stop the page appearing */ }

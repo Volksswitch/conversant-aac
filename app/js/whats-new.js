@@ -22,6 +22,9 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.13.30": [
+    "When the app opens, it appears in your own layout straight away. A plain layout no longer flashes up for a moment first."
+  ],
   "0.13.29": [
     "After an update, one tap on Start now takes you straight to the \"What's new\" notes. The app no longer restarts after that first tap and asks you to tap Start again."
   ],

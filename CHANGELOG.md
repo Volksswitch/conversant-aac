@@ -26,6 +26,9 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- When the app opens, it appears in your own layout straight away. A plain layout no
+  longer flashes up for a moment first.
+
 ## Version 0.13.29
 
 - After an update, one tap on Start now takes you straight to the "What's new" notes.

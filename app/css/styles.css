@@ -990,6 +990,11 @@
     font-family: inherit;
 }
 
+/* Hidden until app.js has laid the screen out - see the note in theme-init.js, which
+   sets and clears the class. VISIBILITY, not display, so the layout solver can still
+   measure everything; and on the children, so the page background keeps its color. */
+html.booting body > * { visibility: hidden; }
+
 body {
     font-family: system-ui, -apple-system, sans-serif;
     background: var(--surface-page);
