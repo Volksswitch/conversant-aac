@@ -1097,7 +1097,19 @@ test('practice library logs a disk failure instead of throwing', async () => {
 // CR-283. A key placed in a box without an input event is saved when the box is left.
 test('a key box saves its value on leaving, before showing the short form', () => {
     const fn = appSource.slice(appSource.indexOf('function wireKeyField('));
-    assert.match(fn.slice(0, 2200), /if \(v !== \(ld\(\) \|\| ''\)\.trim\(\)\) \{ sv\(v\); if \(ch\) ch\(v\); \}/);
+    assert.match(fn.slice(0, 2400), /if \(v !== \(ld\(\) \|\| ''\)\.trim\(\)\) \{ sv\(v\); if \(ch\) ch\(v\); if \(v\) checkKeySaved\(input, v, 'typed'\); \}/);
+});
+
+// A key that did not save must not look saved (Ken, October 28 2026): every save is
+// read back, a paste included, and an unsaved key is still what Test uses.
+test('a key save is read back, and an unsaved key still reaches Test', () => {
+    const set = appSource.slice(appSource.indexOf('function setKeyFieldValue('));
+    assert.match(set.slice(0, 900), /if \(value\) checkKeySaved\(input, value\.trim\(\), 'paste'\);/);
+    const kfv = appSource.slice(appSource.indexOf('function keyFieldValue('));
+    assert.match(kfv.slice(0, 400), /if \(input\.dataset\.redacted\) return input\._unsavedKey \|\| null;/);
+    const chk = appSource.slice(appSource.indexOf('function checkKeySaved('));
+    assert.match(chk.slice(0, 1200), /storage\.logError\('key-not-saved'/);
+    assert.doesNotMatch(chk.slice(0, 1200), /\$\{value\}/);   // never the key itself
 });
 
 // CR-287. Help is disarmed explicitly wherever Settings closes and when it opens.

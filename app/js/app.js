@@ -1063,13 +1063,39 @@ function redactKey(key) {
 // placeholder (i.e. untouched). The persist-on-close paths must treat null as "no
 // change" — saving the placeholder would overwrite the real key with "sk-ant-…4f2a".
 function keyFieldValue(input) {
-    if (!input || input.dataset.redacted) return null;
+    if (!input) return null;
+    // A key that could not be saved is still the one the user entered: hand it
+    // back, or Test would report an empty box beside a box showing a key.
+    if (input.dataset.redacted) return input._unsavedKey || null;
     return input.value.trim();
+}
+
+// ⚠ A KEY IN THE BOX IS NOT NECESSARILY A SAVED KEY (Ken, October 28 2026). Paste
+// shortened the box to its "sk-ant-...xxxx" form straight after saving, whether or
+// not the save stuck, and Test reads the saved copy - so on Ken's iPad the box
+// showed a key and Test said "Enter your key first". Every save is now read back.
+// If it did not stick, the key is kept in memory for this session (so Test and the
+// app still work), the user is told it will not survive a restart, and an error is
+// logged with lengths only - never the key - so a report shows what happened.
+function checkKeySaved(input, value, where) {
+    const kf = input && input._keyField;
+    if (!kf) return true;
+    const stored = (kf.load() || '').trim();
+    if (stored === value) { delete input._unsavedKey; return true; }
+    input._unsavedKey = value;
+    let settingsChars = -1;
+    try { settingsChars = (localStorage.getItem('aac_settings') || '').length; } catch { /* unreadable */ }
+    storage.logError('key-not-saved',
+        `${input.id} (${where}): entered ${value.length} chars, saved copy ${stored.length} chars, settings store ${settingsChars} chars`);
+    setStatusLine(input.id.replace(/Input$/, 'Status'), 'warn',
+        'The key could not be saved on this device. It works until the app closes. Use Report a problem so we can see why.');
+    return false;
 }
 
 // Put a real value into a key field programmatically (a paste), leaving it in the
 // un-redacted state so it is saved and readable.
 function setKeyFieldValue(input, value) {
+    delete input._unsavedKey;
     input.value = value;
     delete input.dataset.redacted;
     input.classList.remove('key-redacted');
@@ -1078,6 +1104,7 @@ function setKeyFieldValue(input, value) {
     // A pasted key is saved by that input event; shorten it straight away rather
     // than leaving the whole key on screen until the box is next left.
     showRedactedKey(input, value);
+    if (value) checkKeySaved(input, value.trim(), 'paste');
 }
 
 // Show the redacted form (unless the user is typing in it right now).
@@ -1122,14 +1149,15 @@ function wireKeyField(input, { load, save, onChange }) {
             const { load: ld, save: sv, onChange: ch } = cb();
             if (!input.dataset.redacted) {
                 const v = input.value.trim();
-                if (v !== (ld() || '').trim()) { sv(v); if (ch) ch(v); }
+                if (v !== (ld() || '').trim()) { sv(v); if (ch) ch(v); if (v) checkKeySaved(input, v, 'typed'); }
             }
-            showRedactedKey(input, ld());
+            showRedactedKey(input, input._unsavedKey || ld());
         });
         input.addEventListener('input', () => {
             // Never save the redacted placeholder back over the real key.
             if (input.dataset.redacted) return;
             const { save: sv, onChange: ch } = cb();
+            delete input._unsavedKey;
             sv(input.value.trim());
             if (ch) ch(input.value.trim());
         });
@@ -8743,7 +8771,17 @@ function openSettings() {
     // characters). Verifies against the API (GET /v1/models, bills no tokens).
     document.getElementById('testApiKeyBtn').onclick = async () => {
         const key = keyFieldValue(apiKeyInput) ?? (storage.loadApiKey() || '');
-        if (!key) { showApiKeyStatus('warn', 'Enter your key first, then tap Test.'); return; }
+        if (!key) {
+            // The box should be empty here. If it is not, the box and the saved copy
+            // disagree, which is the failure Ken met on an iPad (October 28 2026):
+            // record the state - lengths and flags, never the key - so a report shows it.
+            if (apiKeyInput.value.trim()) {
+                storage.logError('key-test-empty',
+                    `apiKeyInput shows ${apiKeyInput.value.trim().length} chars, redacted=${!!apiKeyInput.dataset.redacted}, readOnly=${apiKeyInput.readOnly}, focused=${document.activeElement === apiKeyInput}, saved copy ${(storage.loadApiKey() || '').length} chars`);
+            }
+            showApiKeyStatus('warn', 'Enter your key first, then tap Test.');
+            return;
+        }
         const btn = document.getElementById('testApiKeyBtn');
         btn.disabled = true;
         showApiKeyStatus('checking', 'Checking your key…');
