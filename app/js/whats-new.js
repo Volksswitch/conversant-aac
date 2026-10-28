@@ -22,6 +22,12 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.13.32": [
+    {
+      "for": "ipad",
+      "note": "The \"Tap the Paste bubble\" hint is shorter, so Safari's bubble no longer covers part of it."
+    }
+  ],
   "0.13.31": [
     {
       "for": "ipad",
