@@ -22,6 +22,12 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.13.34": [
+    {
+      "for": "android",
+      "note": "If you set Conversant to stay upright, it now opens upright. Before, an installed copy opened sideways until you pressed Start, with the Start button partly off the screen. Your phone may take a day or so to pick up the change."
+    }
+  ],
   "0.13.33": [
     "If a key you paste or type can't be saved on this device, the app now says so under the box. The key still works until the app closes, and Test uses it instead of saying the box is empty."
   ],

@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.13.34
+
 ### On an Android phone or tablet
 
 - If you set Conversant to stay upright, it now opens upright. Before, an installed copy opened sideways until you pressed Start, with the Start button partly off the screen. Your phone may take a day or so to pick up the change.
