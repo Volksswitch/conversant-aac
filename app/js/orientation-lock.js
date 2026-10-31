@@ -12,8 +12,12 @@
  *   So the setting is shown on Android only (Ken, October 8 2026); app.js gates it.
  *
  * THE LOCK ONLY LASTS WHILE THE APP IS ON SCREEN. It ends when the user switches to
- * another app or leaves full screen, so app.js asks again on the Start tap, when the
- * app comes back into view, and when full screen starts.
+ * another app or leaves full screen, so app.js asks at launch, and again on the Start
+ * tap, when the app comes back into view, and when full screen starts.
+ *
+ * The install description (manifest.webmanifest) says "any", NOT "landscape" (Ken,
+ * October 31 2026): Android applies that line before the app runs, so "landscape"
+ * opened a phone set up upright sideways, with the Start button off the screen.
  *
  * The browser cannot tell "this device never can" from "not in this state", so the
  * message is chosen from the state instead: refused while neither full screen nor

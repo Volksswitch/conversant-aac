@@ -384,11 +384,13 @@ test('every var(--x) a script uses is defined somewhere', async () => {
     assert.deepEqual(missing, []);
 });
 
-// CR-198. Landscape only (UI Layout Rule 2); an installed Android app honors this and
-// would otherwise rotate into a portrait layout that moves every keyguard hole.
-test('the installed app is locked to landscape', () => {
+// CR-198 locked this to landscape. Reversed October 31 2026 (Ken): an installed Android
+// app honors this line BEFORE the app runs, so a phone set up upright opened sideways.
+// Holding the screen is now the "Screen orientation" setting's job, applied at launch
+// (applyScreenOrientation in app.js); a keyguard user who wants sideways sets it there.
+test('the installed app turns with the device until the setting says otherwise', () => {
     const manifest = JSON.parse(readFileSync(new URL('../app/manifest.webmanifest', import.meta.url), 'utf8'));
-    assert.equal(manifest.orientation, 'landscape');
+    assert.equal(manifest.orientation, 'any');
 });
 
 // CR-225: every button takes the app's typeface. CR-226: the response cell carries no tint.

@@ -816,6 +816,10 @@ function initApp() {
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') applyScreenOrientation();
     });
+    // And at launch: an installed Android app is allowed to hold the screen without a
+    // tap, and waiting for Start left the first screen in whatever way the phone was
+    // turned (Ken, October 31 2026). Never throws, so it cannot break start-up.
+    applyScreenOrientation();
     document.addEventListener('webkitfullscreenchange', repromoteSettingsOverFullscreen);
     blockZoomGestures();
     // The controls tour watches for the press it just asked for. Capture phase, and

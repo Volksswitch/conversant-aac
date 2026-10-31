@@ -26,6 +26,10 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+### On an Android phone or tablet
+
+- If you set Conversant to stay upright, it now opens upright. Before, an installed copy opened sideways until you pressed Start, with the Start button partly off the screen. Your phone may take a day or so to pick up the change.
+
 ## Version 0.13.33
 
 - If a key you paste or type can't be saved on this device, the app now says so under the box. The key still works until the app closes, and Test uses it instead of saying the box is empty.
