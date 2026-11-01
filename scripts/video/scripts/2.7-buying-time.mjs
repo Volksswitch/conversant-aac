@@ -1,8 +1,8 @@
 // How-to video 2.7: buying yourself time.
 //
 // LIVE, with holding phrases ON (the other videos switch them off). The options
-// are made to arrive late on purpose, so the holding phrase plays first, as it
-// does when the AI is slow. Which phrase plays is the app's own choice; the
+// are held back until the "Then the options arrive" step releases them, so the
+// holding phrase plays first, as it does when the AI is slow. Which phrase plays is the app's own choice; the
 // renderer fixes the app's random numbers, so it is the same on every render,
 // and the video says whatever the app actually said.
 
@@ -17,7 +17,7 @@ export default {
   settings: { maxPlaceholders: 2, initialDelay: 2, subsequentDelay: 10 },
   ai: {
     responseSets: [
-      { delayMs: 4500, responses: [
+      { untilReleased: true, responses: [
         { slot: 'PREFERRED', text: REPLY, hint: 'Loved it' },
         { slot: 'DISPREFERRED', text: "Not yet, sorry. It's been a busy week.", hint: 'Not yet' },
         { slot: 'INITIATIVE', text: 'Almost done! Do you have any others like it?', hint: 'Others like it?' },
@@ -38,7 +38,7 @@ export default {
     { speaker: 'narrator', highlight: '#transcriptSection', whileSpeaking: true,
       page: "While you read, Conversant says a short holding phrase in your voice, so they know you're thinking.",
       say: "That wasn't Marc tapping anything. A moment after the other person stops talking, Conversant says something like that, in Marc's voice, so they know he's thinking about his answer." },
-    { speaker: 'narrator', before: (p) => holdSpeech(p, false), waitFor: card(1) + ' .response-text', highlight: '#responseOptions',
+    { speaker: 'narrator', before: async (p) => { await holdSpeech(p, false); p.releaseOptions(); }, waitFor: card(1) + ' .response-text', highlight: '#responseOptions',
       say: "Then the options arrive. In Settings, you can change the holding phrases, and how soon Conversant says them." },
     { speaker: 'narrator', highlight: '#holdOnBtn', press: true, before: markSpoken,
       page: "Need more time? Tap Hold on.",

@@ -202,9 +202,18 @@ async function settle(page, step = {}) {
 // script, so the options on screen are always the ones the narration describes.
 // A request the script did not plan for stops the render rather than showing
 // something nobody wrote.
-function makeAI(ai = {}) {
+function makeAI(ai = {}, page) {
   const partnerLines = [...(ai.partnerLines || [])];
   const responseSets = [...(ai.responseSets || [])];
+  // A set marked untilReleased is held until a step calls page.releaseOptions().
+  // A fixed delay is not enough: how long the steps before it take varies from
+  // render to render, so the options could land a step early (October 31 2026,
+  // video 2.7 showed them while the narrator was still saying they had not come).
+  let release = null;
+  let released = false;
+  page.releaseOptions = () => {
+    if (release) { release(); release = null; } else released = true;
+  };
   return async (bodyText) => {
     const body = JSON.parse(bodyText);
     const system = JSON.stringify(body.system || '');
@@ -219,6 +228,10 @@ function makeAI(ai = {}) {
       console.log('  [ai] response options');
       // A set can arrive late on purpose, to show what the app does while it waits.
       if (set.delayMs) await pace(set.delayMs);
+      if (set.untilReleased) {
+        if (!released) await new Promise((r) => { release = r; });
+        released = false;
+      }
       return JSON.stringify({
         partner_action: set.partnerAction || 'QUESTION', turn_status: 'COMPLETE',
         is_repair_initiator: false, offered_options: set.offered || [], offered_range: null,
@@ -233,7 +246,7 @@ async function openApp(browser, script) {
   await browser.defaultBrowserContext().overridePermissions(`http://localhost:${PORT}`, ['microphone']);
   const page = await browser.newPage();
   await page.setViewport(VIEW);
-  const answer = makeAI(script.ai);
+  const answer = makeAI(script.ai, page);
   // A failure inside the page is otherwise invisible; show it, so a stalled
   // render says why.
   page.on('console', (m) => { if (m.type() === 'error') console.log(`  [page] ${m.text()}`); });
