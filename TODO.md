@@ -50,12 +50,12 @@ was dropped as a speech service"). The app change is done; these are not.
   `openai-retired` entry the first time the new version starts. It rides in the weekly
   report and the problem report, so "evaluate beta" will show it if any tester had it.
   If one did, tell them which service to move to.
-- **The monthly provider review:** stop checking OpenAI's voices and prices, and add
-  every remaining provider's retirement page (Azure, Google, Deepgram, ElevenLabs) to
-  its checklist; the September review missed an OpenAI retirement because it did not
-  look. (OpenAI stays among the AI providers the review probes for browser access.)
-- **Why not now:** the documents wait for a sync, the tester check needs a weekly report
-  from the new version, and the review checklist is updated when the review next runs.
+- **Done October 31 2026:** the monthly provider review (a scheduled task on this
+  computer) no longer checks OpenAI's voices or speech prices, and now checks every
+  vendor's retirement notices (Anthropic, Azure, Google, Deepgram, ElevenLabs) for
+  the models and voices the app uses, at the top of its report.
+- **Why not now:** the documents wait for a sync, and the tester check needs a weekly
+  report from the new version.
 
 ### Watch: a pasted key that shows in the box but Test says is missing (iPad)
 
