@@ -38,7 +38,7 @@ function world() {
 const makers = {
     deepgram: (onStatus) => deepgram({ getKey: () => 'k', onText() {}, onStatus, onBilled() {} }),
     azure: (onStatus) => azure({ getKey: () => 'k', getRegion: () => 'eastus', onText() {}, onStatus, onBilled() {} }),
-    rest: (onStatus) => rest({ provider: STT_PROVIDERS.openai, getKey: () => 'k', getModel: () => 'm',
+    rest: (onStatus) => rest({ provider: STT_PROVIDERS.elevenlabs, getKey: () => 'k', getModel: () => 'm',
         onText() {}, onStatus, onBilled() {} }),
 };
 

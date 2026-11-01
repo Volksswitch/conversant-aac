@@ -7,7 +7,7 @@
          nothing could be sent anywhere but the AI and the speech services listed here.
          ⚠ A SERVICE MISSING FROM connect-src FAILS SILENTLY - add every new provider here
          in the same change (tests/csp.test.mjs checks the ones the app knows about). -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; connect-src 'self' https://api.anthropic.com https://api.openai.com https://texttospeech.googleapis.com https://speech.googleapis.com https://api.elevenlabs.io https://api.deepgram.com wss://api.deepgram.com https://*.tts.speech.microsoft.com https://*.stt.speech.microsoft.com https://script.google.com https://script.googleusercontent.com">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; connect-src 'self' https://api.anthropic.com https://texttospeech.googleapis.com https://speech.googleapis.com https://api.elevenlabs.io https://api.deepgram.com wss://api.deepgram.com https://*.tts.speech.microsoft.com https://*.stt.speech.microsoft.com https://script.google.com https://script.googleusercontent.com">
     <!-- maximum-scale/user-scalable state the intent and are honoured by Android and
          desktop. iOS Safari deliberately IGNORES both for accessibility, so they are
          NOT the mechanism here — pinch is blocked by blockZoomGestures() in app.js and
@@ -459,7 +459,7 @@
                     <!-- ONE SECTION FOR EVERY PAID SERVICE'S CREDENTIALS, not a
                          section per service (Ken, September 8 2026). Two services is
                          already two near-identical sections doing the same job, and
-                         more are expected - ElevenLabs and OpenAI were both named -
+                         more were expected - ElevenLabs and others were named -
                          so a section each would grow the tab by a collapsible heading
                          per vendor while the user is looking for one thing: the place
                          keys go. What varies between services is the number of fields,
@@ -486,7 +486,7 @@
                         <!-- AZURE IS FIRST AND LABELED "(Recommended)" (Ken, September 21
                              2026). He chose to recommend it rather than make it the only
                              service. The order of the services here, and in both radio
-                             lists below, is his: Azure, OpenAI, Google Cloud, Deepgram,
+                             lists below, is his: Azure, Google Cloud, Deepgram,
                              ElevenLabs - with "this device" still first and still the
                              default in the radio lists. Keep the three lists in step.
                              The Speech Provider Guide uses the same order.
@@ -555,17 +555,6 @@
                         </div>
 
                         <div class="setting-item">
-                            <label for="openaiKeyInput">OpenAI</label>
-                            <div id="openaiKeyRow" class="key-row">
-                                <input type="text" id="openaiKeyInput" data-key-field data-no-predict data-no-autocap placeholder="Your OpenAI API key" autocomplete="off" spellcheck="false">
-                                <button id="pasteOpenaiKeyBtn" type="button" aria-label="Paste OpenAI key">Paste</button>
-                                <button id="clearOpenaiKeyBtn" type="button" aria-label="Clear OpenAI key">Clear</button>
-                                <button id="testOpenaiKeyBtn" type="button">Test</button>
-                            </div>
-                            <p id="openaiKeyStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
-                        </div>
-
-                        <div class="setting-item">
                             <label for="googleKeyInput">Google Cloud</label>
                             <div id="googleKeyRow" class="key-row">
                                 <input type="text" id="googleKeyInput" data-key-field data-no-predict data-no-autocap placeholder="Your Google Cloud API key" autocomplete="off" spellcheck="false">
@@ -613,7 +602,6 @@
                         <div class="radio-row" role="radiogroup" aria-label="Hearing the other person">
                             <label class="radio-label"><input type="radio" name="sttProvider" value="builtin"> This browser's own (free)</label>
                             <label class="radio-label"><input type="radio" name="sttProvider" value="azure"> Azure transcription (paid)</label>
-                            <label class="radio-label"><input type="radio" name="sttProvider" value="openai"> OpenAI transcription (paid)</label>
                             <label class="radio-label"><input type="radio" name="sttProvider" value="google"> Google Cloud transcription (paid)</label>
                             <label class="radio-label"><input type="radio" name="sttProvider" value="deepgram"> Deepgram transcription (paid)</label>
                             <label class="radio-label"><input type="radio" name="sttProvider" value="elevenlabs"> ElevenLabs transcription (paid)</label>
@@ -637,7 +625,6 @@
                         <div class="radio-row" role="radiogroup" aria-label="Your speaking voice">
                             <label class="radio-label"><input type="radio" name="ttsProvider" value="builtin"> This device's voices (free)</label>
                             <label class="radio-label"><input type="radio" name="ttsProvider" value="azure"> Azure voice (paid)</label>
-                            <label class="radio-label"><input type="radio" name="ttsProvider" value="openai"> OpenAI voice (paid)</label>
                             <label class="radio-label"><input type="radio" name="ttsProvider" value="google"> Google Cloud voice (paid)</label>
                             <label class="radio-label"><input type="radio" name="ttsProvider" value="deepgram"> Deepgram voice (paid)</label>
                             <label class="radio-label"><input type="radio" name="ttsProvider" value="elevenlabs"> ElevenLabs voice (paid)</label>
@@ -672,14 +659,6 @@
                                 <button id="testAzureVoiceBtn" type="button" class="voice-test-btn">Test</button>
                             </div>
                             <p id="azureVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
-                        </div>
-                        <div id="openaiVoiceRow" class="voice-row" hidden>
-                            <label for="openaiVoiceSelect">OpenAI voice</label>
-                            <select id="openaiVoiceSelect"></select>
-                            <div class="profiles-row profiles-actions">
-                                <button id="testOpenaiVoiceBtn" type="button" class="voice-test-btn">Test</button>
-                            </div>
-                            <p id="openaiVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
                         </div>
                         <div id="googleVoiceRow" class="voice-row" hidden>
                             <label for="googleVoiceSelect">Google Cloud voice</label>
@@ -732,17 +711,10 @@
                              This REPLACES the arrangement shipped in 0.10.10, which
                              showed the DEVICE partner picker for these three on the
                              reasoning that any device voice is audibly not-yours when
-                             your own is an OpenAI or ElevenLabs one. That is true and it
+                             your own is an ElevenLabs one. That is true and it
                              is not what the panel reads as: it showed "ElevenLabs voice"
                              above "Microsoft David", which looks like a setting that has
                              not caught up rather than a decision. -->
-                        <div id="openaiPartnerRow" class="voice-row" hidden>
-                            <select id="openaiPartnerVoiceSelect" aria-label="Practice partner's OpenAI voice"></select>
-                            <div class="profiles-row profiles-actions">
-                                <button id="testOpenaiPartnerVoiceBtn" type="button" class="voice-test-btn">Test</button>
-                            </div>
-                            <p id="openaiPartnerVoiceStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
-                        </div>
                         <div id="googlePartnerRow" class="voice-row" hidden>
                             <select id="googlePartnerVoiceSelect" aria-label="Practice partner's Google Cloud voice"></select>
                             <div class="profiles-row profiles-actions">

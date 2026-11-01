@@ -1,6 +1,6 @@
 /* Tier 2 - keeping the fixed phrases ready in the paid voice (app/js/phrase-audio.js).
  *
- * Driven end to end through the real voice path: tts.js wired to the OpenAI voice the
+ * Driven end to end through the real voice path: tts.js wired to the ElevenLabs voice the
  * way app.js wires it, a stand-in network and audio, and a stand-in store in place of
  * the browser database. What is asserted is what reached the network and the store.
  */
@@ -53,15 +53,15 @@ test('fetched once, kept, ready from storage next time; a new voice fetches fres
     globalThis.window.AudioContext = function () { return fakeAudio(); };
     const asked = [];
     globalThis.fetch = async (url, init) => {
-        asked.push(JSON.parse(init.body).input);
+        asked.push(JSON.parse(init.body).text);
         return new Response(new Uint8Array([1, 2, 3, 4]));
     };
     const store = fakeStore();
     phraseAudio.setStoreForTest(store);
     try {
-        tts.setProviderCredentials('openai', { getKey: () => 'a-key', getModel: () => 'gpt-4o-mini-tts' });
-        tts.setProvider('openai', { getKey: () => 'a-key' });
-        tts.setPaidVoice('openai', 'alloy');
+        tts.setProviderCredentials('elevenlabs', { getKey: () => 'a-key', getModel: () => 'eleven_multilingual_v2' });
+        tts.setProvider('elevenlabs', { getKey: () => 'a-key' });
+        tts.setPaidVoice('elevenlabs', 'voice-alloy');
         const phrases = ["I'm thinking.", 'Bye!'];
 
         // First Start: both fetched and kept.
@@ -81,11 +81,11 @@ test('fetched once, kept, ready from storage next time; a new voice fetches fres
         assert.deepEqual(asked, [], 'played from the kept recording');
 
         // A different voice: fetched fresh, and the old voice's recordings are gone.
-        tts.setPaidVoice('openai', 'nova');
+        tts.setPaidVoice('elevenlabs', 'voice-nova');
         await phraseAudio.refresh(phrases);
         assert.equal(asked.length, 2);
         assert.equal(store.m.size, 2);
-        for (const k of store.m.keys()) assert.ok(k.includes('nova'), k);
+        for (const k of store.m.keys()) assert.ok(k.includes('voice-nova'), k);
     } finally {
         globalThis.fetch = realFetch;
         globalThis.window.AudioContext = realAudio;
@@ -102,9 +102,9 @@ test('a wanted phrase said before the background run reaches it is kept; other s
     const store = fakeStore();
     phraseAudio.setStoreForTest(store);
     try {
-        tts.setProviderCredentials('openai', { getKey: () => 'a-key', getModel: () => 'gpt-4o-mini-tts' });
-        tts.setProvider('openai', { getKey: () => 'a-key' });
-        tts.setPaidVoice('openai', 'echo');
+        tts.setProviderCredentials('elevenlabs', { getKey: () => 'a-key', getModel: () => 'eleven_multilingual_v2' });
+        tts.setProvider('elevenlabs', { getKey: () => 'a-key' });
+        tts.setPaidVoice('elevenlabs', 'voice-echo');
         // A run that is stopped at once, so only the wanted list is set.
         const run = phraseAudio.refresh(['See you later!']);
         phraseAudio.pause();

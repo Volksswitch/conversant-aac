@@ -576,6 +576,15 @@ function initApp() {
     // first so the initial numbers are captured even if STT is unsupported.
     viewport.init();
 
+    // OpenAI was removed as a speech service (October 31 2026). A device that had it
+    // chosen goes back to this device's own hearing and voice, and its OpenAI key is
+    // deleted. Before anything reads the speech settings. The release notes say so.
+    try {
+        if (storage.retireOpenAI()) {
+            storage.logError('openai-retired', 'OpenAI speech settings were cleared; using this device instead', {}, { quiet: true });
+        }
+    } catch { /* never let a clean-up stop the app starting */ }
+
     // Can this environment actually capture the partner? platform.js answers from
     // MEASURED behavior, not feature detection — on iPadOS the API is present and
     // starts happily in a Home Screen app and in Chrome/Edge, then delivers nothing
@@ -1194,7 +1203,6 @@ function wireKeyClearButtons() {
     const boxes = [
         ['Deepgram', 'deepgram', 'Deepgram'],
         ['Azure', 'azure', 'Azure Speech'],
-        ['Openai', 'openai', 'OpenAI'],
         ['Google', 'google', 'Google Cloud'],
         ['Elevenlabs', 'elevenlabs', 'ElevenLabs'],
         // The AI key too (Ken, October 11 2026) - same box, same problem.

@@ -92,7 +92,7 @@ function listenParams(sampleRate) {
         mip_opt_out: 'true',
         model: MODEL,
         // English is Deepgram's default; stated anyway, so that no service is left to
-        // guess the language (see the OpenAI entry in speech-catalog.js).
+        // guess the language (see the ElevenLabs entry in speech-catalog.js).
         language: 'en',
         encoding: 'linear16',
         // Send at the capture device's own rate rather than resampling. Billing is

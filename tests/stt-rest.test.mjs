@@ -97,9 +97,9 @@ async function phrasesAgainst(count, reply) {
     const heard = [];
     try {
         const src = createSource({
-            provider: STT_PROVIDERS.openai,
+            provider: STT_PROVIDERS.elevenlabs,
             getKey: () => 'the-key',
-            getModel: () => 'gpt-4o-transcribe',
+            getModel: () => 'scribe_v2',
             onText: (t) => heard.push(t),
             onStatus: (s, detail) => statuses.push([s, detail]),
         });
@@ -201,9 +201,9 @@ test('a brief noise is not sent to be transcribed', async () => {
     const heard = [];
     try {
         const src = createSource({
-            provider: STT_PROVIDERS.openai,
+            provider: STT_PROVIDERS.elevenlabs,
             getKey: () => 'the-key',
-            getModel: () => 'gpt-4o-transcribe',
+            getModel: () => 'scribe_v2',
             onText: (t) => heard.push(t),
             onStatus: () => {},
         });
@@ -311,9 +311,9 @@ test('a fatal error shuts the paid source down, so nothing more is sent', async 
         stt.init({
             onResult() {}, onSilence() {}, onPartnerSpeech() {},
             onStatus: (s) => statuses.push(s),
-            source: 'openai',
+            source: 'elevenlabs',
             getRestKey: () => 'the-key',
-            getRestModel: () => 'gpt-4o-transcribe',
+            getRestModel: () => 'scribe_v2',
         });
         stt.startListening();
         await new Promise((r) => setTimeout(r, 10));
@@ -338,12 +338,12 @@ test('switching to a recognizer the browser does not have is refused, not thrown
     const savedWSR = globalThis.window.webkitSpeechRecognition;
     try {
         const stt = await import('../app/js/stt.js?cr037=' + Date.now());
-        stt.init({ onResult() {}, onSilence() {}, onStatus() {}, onPartnerSpeech() {}, source: 'openai',
+        stt.init({ onResult() {}, onSilence() {}, onStatus() {}, onPartnerSpeech() {}, source: 'elevenlabs',
             getRestKey: () => 'k', getRestModel: () => 'm' });
         delete globalThis.window.SpeechRecognition;
         delete globalThis.window.webkitSpeechRecognition;
         assert.equal(stt.setSource('builtin'), false);
-        assert.equal(stt.currentSource(), 'openai');
+        assert.equal(stt.currentSource(), 'elevenlabs');
     } finally {
         globalThis.window.SpeechRecognition = savedSR;
         if (savedWSR) globalThis.window.webkitSpeechRecognition = savedWSR;
@@ -362,7 +362,7 @@ test('capture resumes a suspended audio context and routes through a muted node'
     world.ctx.resume = async () => { resumed = true; world.ctx.state = 'running'; };
     try {
         const src = createSource({
-            provider: STT_PROVIDERS.openai, getKey: () => 'k', getModel: () => 'gpt-4o-transcribe',
+            provider: STT_PROVIDERS.elevenlabs, getKey: () => 'k', getModel: () => 'scribe_v2',
             onText() {}, onStatus() {},
         });
         await src.start();
@@ -382,10 +382,8 @@ test('capture resumes a suspended audio context and routes through a muted node'
 // and sound labels are removed before anything is written down.
 import { withoutSoundLabels } from '../app/js/stt-rest.js';
 
-test('OpenAI and ElevenLabs are told the language rather than left to guess it', () => {
+test('ElevenLabs is told the language rather than left to guess it', () => {
     const wav = new Blob([new Uint8Array(4)], { type: 'audio/wav' });
-    const oa = STT_PROVIDERS.openai.form(wav, { model: 'm' });
-    assert.equal(oa.get('language'), 'en');
     const el = STT_PROVIDERS.elevenlabs.form(wav, { model: 'm' });
     assert.equal(el.get('language_code'), 'en');
     assert.equal(el.get('tag_audio_events'), 'false');

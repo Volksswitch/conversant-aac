@@ -71,7 +71,7 @@ test('every key box is served by the app keyboard, never predicted, never capita
     const { readFileSync } = await import('node:fs');
     const html = readFileSync(new URL('../app/index.html', import.meta.url), 'utf8');
     const boxes = [...html.matchAll(/<input[^>]*id="([a-zA-Z]*KeyInput|azureRegionInput)"[^>]*>/g)];
-    assert.ok(boxes.length >= 7, `found ${boxes.length}`);
+    assert.ok(boxes.length >= 6, `found ${boxes.length}`);
     for (const [tag, id] of boxes) {
         for (const attr of ['data-key-field', 'data-no-predict', 'data-no-autocap']) {
             assert.ok(tag.includes(attr), `${id} lacks ${attr}`);

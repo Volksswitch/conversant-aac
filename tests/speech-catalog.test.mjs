@@ -3,7 +3,7 @@
  * WHAT THESE CAN AND CANNOT PROVE, stated up front because it is the whole point.
  * They check the SHAPE of every request the app will make — the address, the headers,
  * the body, and how a reply is read — against a fake fetch. They cannot check that a
- * real service accepts it; there is no OpenAI, Google or ElevenLabs key on this machine
+ * real service accepts it; there is no Google or ElevenLabs key on this machine
  * and no test can conjure one.
  *
  * What HAS been measured, from inside the running app on September 8 2026 with a
@@ -45,9 +45,6 @@ test('the voice id reaches the request, wherever that provider puts it', () => {
     // this wrong would silently speak in the default voice whatever the user picked.
     const el = TTS_PROVIDERS.elevenlabs;
     assert.match(el.url({ key: KEY, voice: 'VOICE-ID' }), /VOICE-ID/);
-
-    const oa = TTS_PROVIDERS.openai;
-    assert.match(oa.body({ voice: 'sage', text: 'x', model: 'm' }), /"voice":"sage"/);
 
     const go = TTS_PROVIDERS.google;
     assert.match(go.body({ voice: 'en-GB-Neural2-A', text: 'x' }), /"name":"en-GB-Neural2-A"/);
@@ -107,7 +104,7 @@ test('every voice provider can check a key without speaking', async () => {
 });
 
 test('a refused key is reported as refused, and a dead network is not', async () => {
-    const p = TTS_PROVIDERS.openai;
+    const p = TTS_PROVIDERS.elevenlabs;
     const realFetch = globalThis.fetch;
     try {
         globalThis.fetch = async () => ({ ok: false, status: 401 });
@@ -132,11 +129,6 @@ test('a fetched catalog is mapped into that same shape', () => {
         voices: [{ voice_id: 'abc', name: 'Rachel', labels: { accent: 'american' } }],
     });
     assert.deepEqual(el, [{ id: 'abc', name: 'Rachel', detail: 'american' }]);
-
-    // OpenAI publishes no list, and says so by having no catalog rather than by
-    // returning an empty one — so a caller can tell "nothing to fetch" from "fetch
-    // found nothing" and keep showing the built-in roster.
-    assert.equal(TTS_PROVIDERS.openai.catalog, null);
 });
 
 test('transcription builds the right body for each service, and reads the reply', async () => {
@@ -182,13 +174,13 @@ test('Google is asked for punctuation, which it does not add by default', () => 
 });
 
 test('a failure explains itself, and 400 is not read as our bug', () => {
-    assert.match(describeFailure(401, 'OpenAI'), /did not accept the key/);
+    assert.match(describeFailure(401, 'Azure'), /did not accept the key/);
     // ⚠ GOOGLE REPORTS A BAD KEY AS 400, measured both in the bench and from inside the
     // app. Reading it as "malformed request" sends somebody hunting a bug in the app
     // when the answer is almost always the key.
     assert.match(describeFailure(400, 'Google Cloud'), /key is wrong/);
     assert.match(describeFailure(429, 'ElevenLabs'), /rate limiting|out of credit/);
-    assert.match(describeFailure(503, 'OpenAI'), /at their end/);
+    assert.match(describeFailure(503, 'Azure'), /at their end/);
 });
 
 /*
@@ -202,15 +194,15 @@ test('a failure explains itself, and 400 is not read as our bug', () => {
  */
 test('a refusal carries what the service itself said', () => {
     const body = JSON.stringify({ error: { message: "Invalid value: 'nova'. Supported values are: 'alloy'." } });
-    const msg = describeFailure(400, 'OpenAI', body);
+    const msg = describeFailure(400, 'ElevenLabs', body);
     assert.match(msg, /key is wrong/, 'the guidance stays');
-    assert.match(msg, /OpenAI said:/, 'and names who is speaking');
+    assert.match(msg, /ElevenLabs said:/, 'and names who is speaking');
     assert.match(msg, /Invalid value: 'nova'/, 'and quotes the real reason');
 });
 
 test('the shapes the five services actually use are all read', () => {
     const cases = [
-        [JSON.stringify({ error: { message: 'openai and google shape' } }), /openai and google shape/],
+        [JSON.stringify({ error: { message: 'the error.message shape' } }), /the error\.message shape/],
         [JSON.stringify({ detail: { message: 'elevenlabs nested shape' } }), /elevenlabs nested shape/],
         [JSON.stringify({ detail: 'elevenlabs flat shape' }), /elevenlabs flat shape/],
         [JSON.stringify({ err_msg: 'deepgram shape' }), /deepgram shape/],
@@ -253,9 +245,9 @@ test('an unreadable body leaves the generic reason intact', () => {
     // A body that is absent, empty, or markup rather than a sentence must never produce
     // a mangled fragment in front of the user - the generic sentence is better.
     for (const body of ['', null, undefined, '<html><body>502</body></html>', '{"nothing":"useful"}']) {
-        const msg = describeFailure(400, 'OpenAI', body);
+        const msg = describeFailure(400, 'ElevenLabs', body);
         assert.match(msg, /key is wrong/);
-        assert.ok(!msg.includes('OpenAI said:'), `should not quote: ${body}`);
+        assert.ok(!msg.includes('ElevenLabs said:'), `should not quote: ${body}`);
     }
 });
 
@@ -263,7 +255,7 @@ test('a very long explanation is cut rather than burying the guidance', () => {
     // Real words with spaces, not one long run of characters - a 2000-character token
     // is key-shaped and is correctly eaten by the redaction above before it gets here.
     const long = 'the supplied value is not permitted for this account '.repeat(40);
-    const msg = describeFailure(400, 'OpenAI', JSON.stringify({ message: long }));
+    const msg = describeFailure(400, 'ElevenLabs', JSON.stringify({ message: long }));
     assert.ok(msg.length < 500, `message ran to ${msg.length} characters`);
     assert.match(msg, /\.\.\.$/);
 });

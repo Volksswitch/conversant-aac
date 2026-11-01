@@ -489,7 +489,13 @@ test('NO API KEY reaches a settings profile, a backup, or a problem report', asy
         apiKey: (v) => storage.saveApiKey(v),
         deepgramKey: (v) => storage.saveDeepgramKey(v),
         azureKey: (v) => storage.saveAzureKey(v),
-        openaiKey: (v) => storage.saveServiceKey('openai', v),
+        // A leftover from before OpenAI was removed (October 31 2026). Nothing saves it
+        // any more, but a device can still hold one, so it must stay excluded.
+        openaiKey: (v) => {
+            const st = JSON.parse(localStorage.getItem('aac_settings') || '{}');
+            st.openaiKey = v;
+            localStorage.setItem('aac_settings', JSON.stringify(st));
+        },
         googleKey: (v) => storage.saveServiceKey('google', v),
         elevenlabsKey: (v) => storage.saveServiceKey('elevenlabs', v),
     };
@@ -531,10 +537,10 @@ test('NO API KEY reaches a settings profile, a backup, or a problem report', asy
 
     // And a backup arriving from another device cannot plant a key on this one.
     storage.applyPortableSettings({ azureKey: 'someone-elses-key',
-                                    openaiKey: 'someone-elses-openai-key',
+                                    googleKey: 'someone-elses-google-key',
                                     azureRegion: 'japaneast' });
     assert.equal(storage.loadAzureKey(), secrets.azureKey, 'the local key is untouched');
-    assert.equal(storage.loadServiceKey('openai'), secrets.openaiKey,
+    assert.equal(storage.loadServiceKey('google'), secrets.googleKey,
                  'a catalog service key is untouched too');
     assert.equal(storage.loadAzureRegion(), 'japaneast', 'but the region is adopted');
 });
@@ -871,10 +877,38 @@ test('a profile named with an accent can be loaded and deleted', async () => {
 
 // CR-155. The speaking model and the hearing model are separate settings.
 test('a speaking model and a hearing model are stored apart', () => {
-    storage.saveServiceTtsModel('openai', 'gpt-4o-mini-tts');
-    assert.equal(storage.loadServiceSttModel('openai'), null);
-    storage.saveServiceSttModel('openai', 'gpt-4o-transcribe');
-    assert.equal(storage.loadServiceTtsModel('openai'), 'gpt-4o-mini-tts');
+    storage.saveServiceTtsModel('elevenlabs', 'eleven_multilingual_v2');
+    assert.equal(storage.loadServiceSttModel('elevenlabs'), null);
+    storage.saveServiceSttModel('elevenlabs', 'scribe_v2');
+    assert.equal(storage.loadServiceTtsModel('elevenlabs'), 'eleven_multilingual_v2');
+});
+
+// OpenAI was removed as a speech service (October 31 2026). A device that had chosen it
+// goes back to this device's own hearing and voice, its key and choices are deleted,
+// and a choice brought back by restoring an older profile is not honored either.
+test('a device set to OpenAI is moved back to the device, and its key is deleted', () => {
+    const st = JSON.parse(localStorage.getItem('aac_settings') || '{}');
+    Object.assign(st, { sttProvider: 'openai', ttsProvider: 'openai', openaiKey: 'sk-old',
+                        openaiVoice: 'alloy', openaiPartnerVoice: 'nova',
+                        openaiTtsModel: 'gpt-4o-mini-tts', openaiSttModel: 'gpt-transcribe' });
+    localStorage.setItem('aac_settings', JSON.stringify(st));
+
+    assert.equal(storage.retireOpenAI(), true, 'it reports that it changed something');
+    const after = JSON.parse(localStorage.getItem('aac_settings'));
+    assert.equal(after.sttProvider, 'builtin');
+    assert.equal(after.ttsProvider, 'builtin');
+    for (const k of ['openaiKey', 'openaiVoice', 'openaiPartnerVoice', 'openaiTtsModel', 'openaiSttModel']) {
+        assert.equal(k in after, false, `${k} is deleted`);
+    }
+    assert.equal(storage.retireOpenAI(), false, 'a second run changes nothing');
+
+    // An older profile restored later can bring the choice back; it is not honored.
+    after.sttProvider = 'openai'; after.ttsProvider = 'openai';
+    localStorage.setItem('aac_settings', JSON.stringify(after));
+    assert.equal(storage.loadSttProvider(), 'builtin');
+    assert.equal(storage.loadTtsProvider(), 'builtin');
+    after.sttProvider = 'builtin'; after.ttsProvider = 'builtin';
+    localStorage.setItem('aac_settings', JSON.stringify(after));
 });
 
 // CR-173. Two conversations started in the same second keep separate files.

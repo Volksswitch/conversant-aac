@@ -343,8 +343,8 @@ test('the default is still the browser recognizer', () => {
  */
 test('the hearing service can be changed without restarting the app', () => {
     assert.equal(stt.currentSource(), 'browser', 'the harness starts on the free one');
-    assert.equal(stt.setSource('openai'), true, 'the change was made');
-    assert.equal(stt.currentSource(), 'openai');
+    assert.equal(stt.setSource('elevenlabs'), true, 'the change was made');
+    assert.equal(stt.currentSource(), 'elevenlabs');
     assert.equal(stt.setSource('browser'), true, 'and back again');
     assert.equal(stt.currentSource(), 'browser');
 });
@@ -363,7 +363,7 @@ test('choosing the service already in use changes nothing', () => {
 test('switching away stops the service that was listening', () => {
     stt.startListening();
     assert.equal(rec.capturing, true, 'the browser recognizer is running');
-    stt.setSource('openai');
+    stt.setSource('elevenlabs');
     assert.equal(rec.capturing, false,
         'a service change stops listening rather than carrying an open microphone across');
 });
@@ -377,7 +377,7 @@ test('a half-heard turn does not survive a service change', () => {
     stt.startListening();
     rec.emitFinal('the partner was saying this');
     assert.match(stt.getCurrentTranscript(), /the partner was saying this/);
-    stt.setSource('openai');
+    stt.setSource('elevenlabs');
     assert.equal(stt.getCurrentTranscript(), '');
 });
 

@@ -2,7 +2,7 @@
  * speech-catalog.js — one declarative description of every REST speech provider.
  *
  * WHY A TABLE AND NOT A MODULE EACH (Ken, September 8 2026, asking for OpenAI, Google
- * Cloud and ElevenLabs). Deepgram and Azure each got their own file, which was right
+ * Cloud and ElevenLabs; OpenAI was removed October 31 2026). Deepgram and Azure each got their own file, which was right
  * when there were two and one of them speaks a WebSocket protocol. Three more would
  * have made five files that differ only in a URL, a header name and where the audio
  * sits in the reply — and Ken expects more still. So the REST providers are DATA here,
@@ -17,7 +17,7 @@
  * headers and body shapes as that bench.
  *
  * ⚠ BUT NOTHING HERE HAS BEEN RUN FROM INSIDE THE APP, and no test can prove it: there
- * is no OpenAI, Google or ElevenLabs key on this machine. Each provider's Test button
+ * is no Google or ElevenLabs key on this machine. Each provider's Test button
  * in Settings is the confirmation, exactly as the Deepgram Aura path was settled by its
  * Test button speaking on the iPad (July 31 2026) rather than by any amount of reading.
  * Until a Test says otherwise, treat every entry below as plausible and unproven.
@@ -54,59 +54,6 @@
 const json = (o) => JSON.stringify(o);
 
 export const TTS_PROVIDERS = {
-    openai: {
-        id: 'openai',
-        label: 'OpenAI',
-        defaultVoice: 'alloy',
-        defaultModel: 'gpt-4o-mini-tts',
-        mimeType: 'audio/mpeg',
-        url: () => 'https://api.openai.com/v1/audio/speech',
-        headers: ({ key }) => ({
-            Authorization: 'Bearer ' + key,
-            'Content-Type': 'application/json',
-        }),
-        body: ({ voice, text, model }) => json({ model, voice, input: text }),
-        // The key Test. Same host and the same Authorization header as the speech call,
-        // so it exercises the credential the app actually presents - it just asks for a
-        // list instead of audio, which costs nothing and says nothing aloud.
-        verify: {
-            url: () => 'https://api.openai.com/v1/models',
-            headers: ({ key }) => ({ Authorization: 'Bearer ' + key }),
-        },
-        /*
-         * A fixed roster: OpenAI publishes no voice-list endpoint, so there is nothing
-         * to fetch and the list below IS the list. Re-checked September 30 2026 — the
-         * `/v1/audio/voices` endpoint you will find referenced belongs to third-party
-         * servers that imitate OpenAI, not to OpenAI.
-         *
-         * ⚠ SO THIS LIST GOES STALE SILENTLY, AND IT HAD. `marin` and `cedar` were
-         * added at OpenAI's end and the app did not offer them; we found out by reading
-         * a refusal quoted in a field report, while debugging something else. The only
-         * thing that catches this is somebody looking, which is what the monthly
-         * provider review is for. Deepgram's list has the same property.
-         */
-        catalog: null,
-        voices: [
-            { id: 'alloy', name: 'Alloy', detail: 'neutral' },
-            { id: 'ash', name: 'Ash', detail: 'warm' },
-            { id: 'ballad', name: 'Ballad', detail: 'expressive' },
-            // OpenAI's two newest, and the two it recommends for best quality. The same
-            // note on both because that is what is actually known about them: nothing
-            // published distinguishes the pair, and the Test button beside the picker
-            // settles it better than a word we made up would.
-            { id: 'cedar', name: 'Cedar', detail: 'most natural' },
-            { id: 'coral', name: 'Coral', detail: 'bright' },
-            { id: 'echo', name: 'Echo', detail: 'even' },
-            { id: 'fable', name: 'Fable', detail: 'storytelling' },
-            { id: 'marin', name: 'Marin', detail: 'most natural' },
-            { id: 'nova', name: 'Nova', detail: 'light' },
-            { id: 'onyx', name: 'Onyx', detail: 'deep' },
-            { id: 'sage', name: 'Sage', detail: 'calm' },
-            { id: 'shimmer', name: 'Shimmer', detail: 'soft' },
-            { id: 'verse', name: 'Verse', detail: 'varied' },
-        ],
-    },
-
     google: {
         id: 'google',
         label: 'Google Cloud',
@@ -202,33 +149,6 @@ export const TTS_PROVIDERS = {
  *   read(json)               → the transcript
  */
 export const STT_PROVIDERS = {
-    openai: {
-        id: 'openai',
-        label: 'OpenAI',
-        // Moved from gpt-4o-transcribe, which OpenAI removes on February 26 2027
-        // (provider review, October 31 2026). Same address, same request; only the
-        // model name changes. Nothing stores a per-user hearing model, so this one
-        // line moves every user.
-        defaultModel: 'gpt-transcribe',
-        url: () => 'https://api.openai.com/v1/audio/transcriptions',
-        headers: ({ key }) => ({ Authorization: 'Bearer ' + key }),
-        // ⚠ NO Content-Type HERE ON PURPOSE. The browser sets it for a FormData body
-        // and includes the multipart boundary; setting it by hand omits the boundary
-        // and the request is rejected as malformed.
-        form: (wav, { model }) => {
-            const fd = new FormData();
-            fd.append('file', wav, 'clip.wav');
-            fd.append('model', model);
-            // ⚠ THE LANGUAGE MUST BE STATED. Left to guess, the service decides a language
-            // per clip, and a clip of keyboard clicks came back as Amharic, Korean, Hebrew,
-            // Persian, German and Japanese in one turn (Ken, October 6 2026). English, as
-            // Google is told below; the app has no other language yet.
-            fd.append('language', 'en');
-            return fd;
-        },
-        read: (j) => j.text || '',
-    },
-
     google: {
         id: 'google',
         label: 'Google Cloud',
@@ -276,7 +196,9 @@ export const STT_PROVIDERS = {
             const fd = new FormData();
             fd.append('file', wav, 'clip.wav');
             fd.append('model_id', model);
-            // The language, for the reason given under OpenAI; and no sound labels such
+            // The language is stated because a service left to guess decides per clip: a
+            // clip of keyboard clicks once came back in six languages in one turn (Ken,
+            // October 6 2026). And no sound labels such
             // as "(laughter)", which would be written down as the other person talking.
             fd.append('language_code', 'en');
             fd.append('tag_audio_events', 'false');

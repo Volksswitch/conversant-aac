@@ -26,7 +26,7 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
-- If you use OpenAI to hear the other person, Conversant now uses OpenAI's newer transcription model. OpenAI is retiring the old one in February. The new one costs a little less, and the cost estimate in Settings now reflects that. You don't need to change anything.
+- OpenAI is no longer offered as a speech service. OpenAI is retiring the voices Conversant used in January, with no straightforward replacement. If you had chosen OpenAI to hear the other person or to speak for you, Conversant now uses this device's own hearing and voice, and your OpenAI key has been removed from this device. To use a paid service again, choose Azure (recommended), Google Cloud, Deepgram or ElevenLabs in Settings > Speech.
 
 ## Version 0.13.34
 

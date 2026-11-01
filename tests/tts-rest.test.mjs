@@ -34,7 +34,9 @@ function fakeAudio() {
 }
 
 /** Speak one phrase through a provider whose service answers with `reply`. */
-async function speakAgainst(reply, { voice = 'alloy', model = 'gpt-4o-mini-tts' } = {}) {
+// ElevenLabs stands in for every REST voice service (OpenAI was the stand-in until it
+// was removed, October 31 2026). The path under test is shared by all of them.
+async function speakAgainst(reply, { voice = 'voice-a', model = 'eleven_multilingual_v2' } = {}) {
     const realFetch = globalThis.fetch;
     const realAudio = globalThis.window.AudioContext;
     globalThis.window.AudioContext = function () { return fakeAudio(); };
@@ -42,8 +44,8 @@ async function speakAgainst(reply, { voice = 'alloy', model = 'gpt-4o-mini-tts' 
     let reported = null;
     try {
         tts.onFallbackToBrowser((msg) => { reported = msg; });
-        tts.setProvider('openai', { getKey: () => 'a-key', getModel: () => model });
-        tts.setPaidVoice('openai', voice);
+        tts.setProvider('elevenlabs', { getKey: () => 'a-key', getModel: () => model });
+        tts.setPaidVoice('elevenlabs', voice);
         await tts.speak('hello there');
         return reported;
     } finally {
@@ -71,7 +73,7 @@ test('a refused utterance reports what the service actually said', async () => {
     });
     assert.ok(reported, 'the downgrade was reported');
     assert.match(reported, /Invalid value: 'nova'/, 'the real reason reaches the user');
-    assert.match(reported, /OpenAI said:/, 'and is attributed to the service');
+    assert.match(reported, /ElevenLabs said:/, 'and is attributed to the service');
 });
 
 /*
@@ -85,10 +87,10 @@ test('a refused utterance reports what the service actually said', async () => {
 test('a refused utterance names the voice and model it was refused for', async () => {
     const reported = await speakAgainst(
         { ok: false, status: 400, text: async () => '{}' },
-        { voice: 'shimmer', model: 'gpt-4o-mini-tts' },
+        { voice: 'voice-b', model: 'eleven_multilingual_v2' },
     );
-    assert.match(reported, /voice shimmer/);
-    assert.match(reported, /model gpt-4o-mini-tts/);
+    assert.match(reported, /voice voice-b/);
+    assert.match(reported, /model eleven_multilingual_v2/);
 });
 
 /*
@@ -145,16 +147,15 @@ test('an accepted utterance sends the chosen voice and key', async () => {
         return { ok: true, status: 200, blob: async () => ({ arrayBuffer: async () => new ArrayBuffer(64) }) };
     };
     try {
-        tts.setProvider('openai', { getKey: () => 'the-key', getModel: () => 'gpt-4o-mini-tts' });
-        tts.setPaidVoice('openai', 'echo');
+        tts.setProvider('elevenlabs', { getKey: () => 'the-key', getModel: () => 'eleven_multilingual_v2' });
+        tts.setPaidVoice('elevenlabs', 'voice-c');
         await tts.speak('hello there');
         assert.equal(calls.length, 1, 'exactly one request went out');
-        assert.match(calls[0].url, /^https:\/\/api\.openai\.com/);
-        assert.equal(calls[0].init.headers.Authorization, 'Bearer the-key');
+        assert.equal(calls[0].url, 'https://api.elevenlabs.io/v1/text-to-speech/voice-c');
+        assert.equal(calls[0].init.headers['xi-api-key'], 'the-key');
         const body = JSON.parse(calls[0].init.body);
-        assert.equal(body.voice, 'echo');
-        assert.equal(body.model, 'gpt-4o-mini-tts');
-        assert.deepEqual(tts.lastVoiceUsed(), { provider: 'openai', voice: 'echo' });
+        assert.equal(body.model_id, 'eleven_multilingual_v2');
+        assert.deepEqual(tts.lastVoiceUsed(), { provider: 'elevenlabs', voice: 'voice-c' });
     } finally {
         globalThis.fetch = realFetch;
         globalThis.window.AudioContext = realAudio;
@@ -175,9 +176,9 @@ test('an accepted utterance sends the chosen voice and key', async () => {
  * return voices the starter list does not carry.
  */
 test('a voice belonging to another service is refused, not sent', () => {
-    tts.setPaidVoice('openai', 'alloy');
-    tts.setPaidVoice('openai', 'aura-2-thalia-en');      // Deepgram's
-    assert.equal(tts.getPaidVoice('openai'), 'alloy', "OpenAI kept its own voice");
+    tts.setPaidVoice('elevenlabs', 'voice-a');
+    tts.setPaidVoice('elevenlabs', 'aura-2-thalia-en');  // Deepgram's
+    assert.equal(tts.getPaidVoice('elevenlabs'), 'voice-a', 'ElevenLabs kept its own voice');
 
     tts.setPaidVoice('deepgram', 'aura-2-thalia-en');    // its own - allowed
     assert.equal(tts.getPaidVoice('deepgram'), 'aura-2-thalia-en');
@@ -195,9 +196,9 @@ test('an Azure voice is refused for another service (CR-194)', () => {
 test('the same guard covers the provider switch, which is how it got in', () => {
     // setProvider used to write opts.model straight into the table, bypassing every
     // check. This is the exact call app.js was making.
-    tts.setPaidVoice('openai', 'echo');
-    tts.setProvider('openai', { model: 'aura-2-thalia-en', getKey: () => 'k' });
-    assert.equal(tts.getPaidVoice('openai'), 'echo', 'the crossover was refused here too');
+    tts.setPaidVoice('elevenlabs', 'voice-c');
+    tts.setProvider('elevenlabs', { model: 'aura-2-thalia-en', getKey: () => 'k' });
+    assert.equal(tts.getPaidVoice('elevenlabs'), 'voice-c', 'the crossover was refused here too');
     tts.setProvider('builtin');
 });
 
@@ -206,8 +207,8 @@ test('a voice no service claims is still allowed through', () => {
     // A guard that refused anything unrecognized would be the larger, quieter failure.
     tts.setPaidVoice('azure', 'en-GB-SoniaNeural');
     assert.equal(tts.getPaidVoice('azure'), 'en-GB-SoniaNeural');
-    tts.setPaidVoice('openai', 'some-voice-added-after-this-was-written');
-    assert.equal(tts.getPaidVoice('openai'), 'some-voice-added-after-this-was-written');
+    tts.setPaidVoice('elevenlabs', 'some-voice-added-after-this-was-written');
+    assert.equal(tts.getPaidVoice('elevenlabs'), 'some-voice-added-after-this-was-written');
 });
 
 /*

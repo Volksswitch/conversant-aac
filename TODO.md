@@ -37,45 +37,25 @@ the one that quietly waits forever.
 
 ## Open
 
-### OpenAI is removing the speaking model the app uses, on January 6 2027
+### OpenAI removed as a speech service: what is left
 
-**Raised October 31 2026, by the monthly provider review
-(`Reports/provider-review-2026-10-31.md`).** `gpt-4o-mini-tts` is removed January 6.
-OpenAI's suggested replacement is a live-session service, not "send text, get audio",
-and nobody knows whether it works from a browser with no server.
+**Raised October 31 2026.** Ken dropped OpenAI entirely (decision in CLAUDE.md, "OpenAI
+was dropped as a speech service"). The app change is done; these are not.
 
-- **If nothing changes:** after January 6 an OpenAI user's voice falls back to the
-  device voice on every sentence, with nothing on screen saying why.
-- **Step (1) is ANSWERED, October 31 2026: there is no ordinary speaking model left.**
-  OpenAI's deprecations page (announced October 1 2026) removes EVERY model the speech
-  address accepts on January 6 2027: `tts-1`, `tts-1-hd`, `gpt-4o-mini-tts` and both its
-  dated versions. The speech address's own reference lists only those four, all marked
-  for removal, and names `gpt-realtime-2.1-mini` "through the Realtime API" as the
-  replacement. So there is no model-name swap; the choice is between:
-  - **(a) drop OpenAI speaking** and point OpenAI users to Azure (recommended:
-    proven, about the same price, and no new work on the user's voice), or
-  - **(b) build the live-session path** (WebRTC or WebSocket, a short-lived token from
-    `/v1/realtime/client_secrets`). Only the first step is known to be reachable from a
-    browser; the rest is untested, and it is new work on the most delicate part of the
-    app.
-- **Either way:** tell OpenAI users in the release notes, and ideally in the Speech
-  settings, before January 6.
-- **Deadline:** must ship in a release well before January 6 2027.
-- **Why not now:** choosing (a) or (b) is Ken's call.
-
-**Hearing was moved the same day** (`gpt-4o-transcribe` -> `gpt-transcribe`, removed
-February 26 2027). It is untested with a real key: run
-`node scripts/test-openai-speech.mjs` on the laptop, which now tries `gpt-transcribe`
-first, and confirm OpenAI hearing in the app before releasing. OpenAI's reference confirms
-the transcription address accepts `gpt-transcribe`. One thing to watch in that test: the
-app sends `language=en` (without it, a clip of keyboard clicks came back in six
-languages), and the reference now also has a plural `languages` that names
-`gpt-transcribe` while the singular names no model. Nothing says the singular is ignored,
-but if the test shows non-English text from noise, send `languages` as well.
-
-**Also from the same review:** add every provider's retirement page (OpenAI, Deepgram,
-Azure, Google, ElevenLabs) to the monthly review's checklist; last month's review missed
-the hearing retirement because it did not look.
+- **Documents, at the next "sync docs":** the three User Manuals, the Speech Provider
+  Guide (it still prices OpenAI hearing at $0.36 an hour and ranks it), and any other
+  document that lists the speech services. The order is now Azure, Google Cloud,
+  Deepgram, ElevenLabs.
+- **Check that nobody was using it:** a device that had OpenAI chosen logs a quiet
+  `openai-retired` entry the first time the new version starts. It rides in the weekly
+  report and the problem report, so "evaluate beta" will show it if any tester had it.
+  If one did, tell them which service to move to.
+- **The monthly provider review:** stop checking OpenAI's voices and prices, and add
+  every remaining provider's retirement page (Azure, Google, Deepgram, ElevenLabs) to
+  its checklist; the September review missed an OpenAI retirement because it did not
+  look. (OpenAI stays among the AI providers the review probes for browser access.)
+- **Why not now:** the documents wait for a sync, the tester check needs a weekly report
+  from the new version, and the review checklist is updated when the review next runs.
 
 ### Watch: a pasted key that shows in the box but Test says is missing (iPad)
 

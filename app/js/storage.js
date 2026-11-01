@@ -1361,7 +1361,7 @@ export function saveApiKey(apiKey) {
 // sign up for anything to try the app, and on Windows the built-in one works.
 export function loadSttProvider() {
     const chosen = loadSettings().sttProvider;
-    if (chosen) return chosen;
+    if (chosen) return normalizeProvider(chosen);
     // Android defaults to the paid transcription, because it is REQUIRED there (Ken,
     // August 31 2026): the built-in recognizer works but drops words and makes the
     // device play a tone at each of its many restarts. A default rather than a forced
@@ -1398,7 +1398,38 @@ export function loadSttProvider() {
 // exactly wrong for a service somebody forgot to add: the radio button appears to work,
 // the choice is discarded on save, and the app goes on using the free voice. Found that
 // way when the catalog services were added, September 8 2026.
-const SPEECH_PROVIDERS = ['builtin', 'deepgram', 'azure', 'openai', 'google', 'elevenlabs'];
+const SPEECH_PROVIDERS = ['builtin', 'deepgram', 'azure', 'google', 'elevenlabs'];
+
+/*
+ * OPENAI WAS REMOVED October 31 2026 (Ken). OpenAI retires every model its ordinary
+ * speaking address accepts on January 6 2027, with only a live-session service as the
+ * replacement, and paid hearing is needed on two setups only (Android and an installed
+ * iPad), where Azure, Deepgram, Google and ElevenLabs each cover both halves with one
+ * key. So it was dropped entirely rather than kept for hearing alone.
+ *
+ * A device that had chosen it is moved back to this device's own hearing and voice,
+ * and its OpenAI key and choices are deleted, once, at start-up. `openaiKey` stays in
+ * SECRET_KEYS on purpose: a settings bundle written before this release can still
+ * carry it, and it must never leave the device in a profile, a backup or a report.
+ * The loaders also refuse 'openai', because restoring an older profile or backup can
+ * bring the choice back after the clean-up has run.
+ */
+const RETIRED_SERVICE_SETTINGS = ['openaiKey', 'openaiVoice', 'openaiPartnerVoice',
+                                  'openaiTtsModel', 'openaiSttModel'];
+
+/** Returns true when it changed something, so the caller can say so once. */
+export function retireOpenAI() {
+    const settings = loadSettings();
+    let changed = false;
+    for (const k of ['sttProvider', 'ttsProvider']) {
+        if (settings[k] === 'openai') { settings[k] = 'builtin'; changed = true; }
+    }
+    for (const k of RETIRED_SERVICE_SETTINGS) {
+        if (k in settings) { delete settings[k]; changed = true; }
+    }
+    if (changed) saveSettings(settings);
+    return changed;
+}
 
 function normalizeProvider(provider) {
     return SPEECH_PROVIDERS.includes(provider) ? provider : 'builtin';
@@ -1443,18 +1474,18 @@ export function saveAzureKey(key) {
 }
 
 /*
- * The catalog speech services (OpenAI, Google Cloud, ElevenLabs), September 8 2026.
+ * The catalog speech services (Google Cloud, ElevenLabs; OpenAI until October 31 2026).
  *
  * ONE PAIR OF ACCESSORS FOR ALL OF THEM rather than three pairs each: Ken expects more
  * services, and a hand-written pair per vendor is six more functions every time. The id
- * is the catalog id, so `openaiKey`, `googleKey`, `elevenlabsKey` are the stored names
+ * is the catalog id, so `googleKey` and `elevenlabsKey` are the stored names
  * and each is listed in SECRET_KEYS above.
  *
  * ⚠ THE KEY NAME IS BUILT FROM THE ID, so an id that is not in SECRET_KEYS would store a
  * key nothing excludes. loadServiceKey refuses an unknown id for exactly that reason -
  * failing loudly beats writing a key into a file that gets synced.
  */
-const SERVICE_KEY_NAMES = { openai: 'openaiKey', google: 'googleKey', elevenlabs: 'elevenlabsKey' };
+const SERVICE_KEY_NAMES = { google: 'googleKey', elevenlabs: 'elevenlabsKey' };
 
 function serviceKeyName(id) {
     const name = SERVICE_KEY_NAMES[id];
@@ -1663,7 +1694,7 @@ export function saveAzurePartnerVoice(voice) {
 // ordinary en-US voice on offer there is Samantha, the rest being novelty voices or
 // one-per-language minimum-quality voices, with no upgrade reachable from the web.
 export function loadTtsProvider() {
-    return loadSettings().ttsProvider || 'builtin';
+    return normalizeProvider(loadSettings().ttsProvider || 'builtin');
 }
 
 export function saveTtsProvider(provider) {

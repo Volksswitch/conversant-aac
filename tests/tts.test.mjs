@@ -146,7 +146,6 @@ test('a per-utterance voice override reaches its own service and no other', () =
     const voiceFor = {
         deepgram: 'aura-2-thalia-en',
         azure: 'en-US-JennyNeural',
-        openai: 'sage',
         google: 'en-GB-Neural2-A',
         elevenlabs: 'VOICE-ID-XYZ',
     };
