@@ -46,20 +46,32 @@ and nobody knows whether it works from a browser with no server.
 
 - **If nothing changes:** after January 6 an OpenAI user's voice falls back to the
   device voice on every sentence, with nothing on screen saying why.
-- **What is wanted, in order:** (1) find out whether OpenAI still offers an ordinary
-  speaking model at the same address (`tts-1` is the likely one;
-  `scripts/test-openai-speech.mjs` already tries it) and which of our voices it has;
-  if so, swap the model name, as was done for hearing. (2) If not, drop OpenAI speaking
-  and point users to Azure rather than build the live-session path. (3) Either way,
-  tell OpenAI users in the release notes, and ideally in the Speech settings, before
-  January 6.
+- **Step (1) is ANSWERED, October 31 2026: there is no ordinary speaking model left.**
+  OpenAI's deprecations page (announced October 1 2026) removes EVERY model the speech
+  address accepts on January 6 2027: `tts-1`, `tts-1-hd`, `gpt-4o-mini-tts` and both its
+  dated versions. The speech address's own reference lists only those four, all marked
+  for removal, and names `gpt-realtime-2.1-mini` "through the Realtime API" as the
+  replacement. So there is no model-name swap; the choice is between:
+  - **(a) drop OpenAI speaking** and point OpenAI users to Azure (recommended:
+    proven, about the same price, and no new work on the user's voice), or
+  - **(b) build the live-session path** (WebRTC or WebSocket, a short-lived token from
+    `/v1/realtime/client_secrets`). Only the first step is known to be reachable from a
+    browser; the rest is untested, and it is new work on the most delicate part of the
+    app.
+- **Either way:** tell OpenAI users in the release notes, and ideally in the Speech
+  settings, before January 6.
 - **Deadline:** must ship in a release well before January 6 2027.
-- **Why not now:** step (1) needs a real OpenAI key, and the choice in (2) is Ken's.
+- **Why not now:** choosing (a) or (b) is Ken's call.
 
 **Hearing was moved the same day** (`gpt-4o-transcribe` -> `gpt-transcribe`, removed
 February 26 2027). It is untested with a real key: run
 `node scripts/test-openai-speech.mjs` on the laptop, which now tries `gpt-transcribe`
-first, and confirm OpenAI hearing in the app before releasing.
+first, and confirm OpenAI hearing in the app before releasing. OpenAI's reference confirms
+the transcription address accepts `gpt-transcribe`. One thing to watch in that test: the
+app sends `language=en` (without it, a clip of keyboard clicks came back in six
+languages), and the reference now also has a plural `languages` that names
+`gpt-transcribe` while the singular names no model. Nothing says the singular is ignored,
+but if the test shows non-English text from noise, send `languages` as well.
 
 **Also from the same review:** add every provider's retirement page (OpenAI, Deepgram,
 Azure, Google, ElevenLabs) to the monthly review's checklist; last month's review missed
