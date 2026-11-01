@@ -59,7 +59,9 @@ test('CAUTION 2: the model is told never to reproduce the user idiom it is shown
     // Given a catchphrase list, models over-apply it, and idiolect used slightly
     // wrong reads as impersonation — worse than idiolect absent. The user says those
     // words themselves, by tapping the button.
-    assert.match(block, /Do NOT put these exact phrases into responses/i);
+    assert.match(block, /NEVER offer one of these phrases as a response/);
+    // Near-copies were the commoner failure in the October 31 2026 trial.
+    assert.match(block, /never a near-copy of one/);
 });
 
 test('negative constraints are stated as absolute', async () => {

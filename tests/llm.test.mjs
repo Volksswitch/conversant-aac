@@ -885,3 +885,51 @@ test('a situation provider is read at request time and wins over the last block 
     llm.setSituationProvider(null);
     llm.setSituationBlock('');
 });
+
+/* ── October 31 2026: three problems both Sonnet 5.5 and Haiku 5.5 shared in a
+ * blind trial (scripts/model-trial). ─────────────────────────────────────── */
+
+// The rule against an empty opening was broken in about one set in twenty, so a
+// mechanical backstop takes it off the front. Narrow on purpose: a wrong cut changes
+// what the user says.
+test('an empty opening is taken off a response, and a meaningful one is left alone', async () => {
+    const w = llm.withoutEmptyOpener;
+    assert.equal(w('Oh, great. Thanks.'), 'Great. Thanks.');
+    assert.equal(w('So what have you been up to?'), 'What have you been up to?');
+    assert.equal(w('Hmm, maybe.'), 'Maybe.');
+    assert.equal(w("Well, I'd love to, but I'm wiped."), "I'd love to, but I'm wiped.");
+    for (const keep of ['Oh no, that is awful.', 'Oh, no, not again.', 'Well done!', 'So far so good.',
+        'So am I.', 'Sounds good.', 'So,']) {
+        assert.equal(w(keep), keep, `"${keep}" must be left as it is`);
+    }
+});
+
+test('the clean-up reaches the options the user sees', async () => {
+    mockFetch(JSON.stringify({
+        partner_action: 'QUESTION', turn_status: 'COMPLETE', is_repair_initiator: false,
+        responses: [
+            { slot: 'PREFERRED', text: 'Oh, great. Thanks.' },
+            { slot: 'DISPREFERRED', text: 'Not really.' },
+            { slot: 'INITIATIVE', text: 'So how was yours?' },
+            { slot: 'REPAIR', text: 'Sorry?' },
+        ],
+    }));
+    const r = await llm.generateResponses([{ role: 'partner', text: 'Good weekend?' }]);
+    assert.deepEqual(r.responses.map(x => x.text), ['Great. Thanks.', 'Not really.', 'How was yours?', 'Sorry?']);
+});
+
+// Asked for a pain score, both models offered one ("Probably a five", "Pretty bad
+// today"), and the app's own instruction for a scale had given "pretty bad today" as
+// the example of how people answer. Decided October 18 2026 (Ken): options never
+// state a pain level or symptom the user did not give.
+test('the AI is told never to state a pain level or symptom the user did not give', async () => {
+    mockFetch(structured);
+    await llm.generateResponses([{ role: 'partner', text: 'On a scale of one to ten, how bad is the pain?' }]);
+    const sys = sysText(getFetchCalls()[0]);
+    assert.match(sys, /THEIR BODY RIGHT NOW/);
+    assert.match(sys, /NONE of them may give the answer/);
+    assert.doesNotMatch(sys, /answer a scale in words \("pretty bad today"/,
+        'the old example invited exactly the made-up answer');
+    // ...without making the user evasive with family.
+    assert.match(sys, /everyday questions from family or friends/);
+});

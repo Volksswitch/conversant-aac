@@ -216,6 +216,8 @@ So: if the profile does not contain it, NO option may answer the question -- not
 
 PLAIN, EVERYDAY AMERICAN SPEECH THROUGHOUT. "I don't have that to hand" is not a phrase most people say; "I don't know" and "I don't have it with me" are. Write what somebody would actually say out loud at a counter or in a waiting room. For anything clinical this is absolute, because it is acted on -- and it covers THEIR FAMILY as well as them: "any heart trouble in the family?" is asked precisely because it changes what the clinician does, so "not that I know of" about a relative's health is as invented, and as consequential, as one about their own.
 
+THEIR BODY RIGHT NOW. Pain (how much, where, since when, better or worse than before), any other symptom, an injury, whether they have fallen, how a treatment or a dose is working -- and, when a doctor, nurse or therapist is asking, anything at all about their body or health, sleep and eating included. Only the user knows these, and a clinician writes the answer down and acts on it. So NO option may state one -- not a number, not a word for a level ("pretty bad", "not too bad", "about the same"), not a yes or a no, not a comparison, not hedged. This holds even though it is the most natural reply, and even when the answer looks obvious from the conversation. Every option must be a way of GETTING to the answer: say they will give a number or show where ("Let me give you a number." / "Let me show you where."), mark that one "defers"; ask what the scale means or what exactly is being asked ("Is ten the worst?"); say it is hard to rate ("It's hard to put a number on it."); or offer to describe it instead ("Can I describe it instead?"). PREFERRED may be the plain admission that it is hard to say, since a promise cannot go first. This is about the partner ASKING. If the user has already said something about their body in this conversation, or it is in their profile, it may be repeated plainly. And everyday questions from family or friends that are not about pain or symptoms ("Did you sleep okay?", "Are you hungry?") are ordinary questions: answer them with the usual spread of options, so the user can pick yes or no.
+
 HANDING IT OVER IS ONLY EVER FOR A DISPOSABLE DETAIL. Never offer it where anything turns on the answer being right: identity checks, anything medical or clinical, legal or official records, money, safety, or anything being written down and kept. There the moves are to promise it, to point at where it lives, or to narrow it -- never to invent, and never to invite the partner to invent.
 
 REGISTER, which applies even when the user IS answering: say what was asked and stop. No unrequested elaboration, no background, no explaining what the answer means or why it is interesting, no teaching. A person asked for three names gives three names; the extra paragraph is your voice, not theirs.`;
@@ -597,7 +599,7 @@ Classification (commit to these BEFORE writing responses):
 
 - "offered_range": set ONLY when the partner has asked for a NUMBER rather than a choice between named things - a scale ("on a scale of one to ten", "how would you rate it out of five") or a count ("how many would you like?", "how many sugars?"). Return {"min": 1, "max": 10} for a scale, or {"min": null, "max": null} for an open count with no stated top. Use null when no number is being asked for.
   A SCALE IS NOT A CLOSED SET. Do not put its values in "offered_options" - ten buttons reading 1 to 10 is not something a person can scan mid-conversation, and the app has a number pad for this. Keep "offered_options" [] whenever "offered_range" is set. A scale whose points are WORDS ("poor, fair, good, excellent") is the opposite case: that IS a closed set, it goes in "offered_options", and "offered_range" stays null.
-  Still return the normal four responses. Most people answer a scale in words ("pretty bad today", "about the same as last time"), and the number pad is there for the user who wants to be exact.
+  Still return the normal four responses, but NONE of them may give the answer: the number, or a word standing in for it ("pretty bad", "about a five", "better than yesterday", "the same as usual"). Only the user knows it, and the number pad is there for them to give it. Offer ways to GET to the answer instead -- see the rule on the user's own body below.
 
 CLOSED-SET TURNS override the slot structure. When "offered_options" is NOT empty, the four structural slots are the wrong shape for this turn: the user needs to be able to pick ANY of the offered alternatives, not four variations on one of them. Returning four takes on a single option is a FAILURE — it silently strips away the choices the partner actually offered. So when "offered_options" is not empty, do NOT use PREFERRED/DISPREFERRED/INITIATIVE/REPAIR at all. Instead return at most ${paletteCap} responses total, in this order:
 
@@ -1037,7 +1039,9 @@ function parseGeneration(text) {
             .filter((o) => o.name && o.question);
         // Preferred shape: typed responses.
         if (Array.isArray(parsed.responses)) {
-            return { classification, responses: parsed.responses, missingFacts: arr(parsed.missing_facts), missingOther, heardUncertain };
+            const responses = parsed.responses.map((r) => (r && typeof r.text === 'string'
+                ? { ...r, text: withoutEmptyOpener(r.text) } : r));
+            return { classification, responses, missingFacts: arr(parsed.missing_facts), missingOther, heardUncertain };
         }
         // Legacy {options:[...]}.
         if (Array.isArray(parsed.options)) {
@@ -1054,3 +1058,29 @@ function parseGeneration(text) {
 }
 
 function arr(v) { return Array.isArray(v) ? v : []; }
+
+/*
+ * Take an empty interjection off the front of a response ("Oh, great." -> "Great.").
+ *
+ * The prompt already forbids these (NO_EMPTY_INTERJECTION) and the model still opened
+ * about one option in twenty with one: measured October 31 2026, five in 88 sets
+ * across Sonnet 5.5 and Haiku 5.5. A rule the model breaks at that rate needs a
+ * backstop, and this one is mechanical, so it holds every time.
+ *
+ * ⚠ DELIBERATELY NARROW, because a wrong cut changes what the user says:
+ *   - a word from the forbidden list followed by a COMMA ("Oh, I haven't seen it");
+ *   - "So" followed by a question word or a pronoun ("So how have you been?").
+ * It leaves alone the cases where the word carries meaning: "Oh no", "Oh, no",
+ * "Well done", "So far so good", "So am I". If the cut would leave nothing, the
+ * original is kept.
+ */
+const EMPTY_WITH_COMMA = /^(?:oh|ah|um+|uh+|er+|hmm+|well|so|you know)\s*,(?!\s*no\b)\s*/i;
+const EMPTY_SO = /^so\s+(?=(?:what|how|where|when|who|why|which|are|is|do|did|does|have|has|was|were|can|could|will|would|you|i|we|it|that|anyway)\b)/i;
+
+export function withoutEmptyOpener(text) {
+    const t = String(text || '');
+    const trimmed = t.replace(/^\s+/, '');
+    const cut = trimmed.replace(EMPTY_WITH_COMMA, '').replace(EMPTY_SO, '');
+    if (cut === trimmed || !cut.trim()) return t;
+    return cut.charAt(0).toUpperCase() + cut.slice(1);
+}

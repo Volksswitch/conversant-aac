@@ -775,7 +775,14 @@ export function buildBlock(idiom = []) {
     if (idiom.length) {
         lines.push('');
         lines.push(`Words and turns of phrase this user actually uses: ${idiom.slice(0, 20).map((s) => `"${s}"`).join(', ')}.`);
-        lines.push('Use these ONLY to judge their vocabulary and level of formality. They are button labels, so they are short for that reason alone — do NOT treat them as evidence that this user prefers short replies. Do NOT put these exact phrases into responses; the user says those themselves.');
+        // ⚠ "Do not put these exact phrases" was followed only loosely: on October 31
+        // 2026 both models copied a button word for word ("That was luck and you know
+        // it") or nearly so ("Give me a second, I'm typing"), about once in ten sets.
+        // Near-copies were the commoner form, so the rule names them, and it says what
+        // to do instead, because a model told only what not to do reaches for the
+        // nearest wording it has, which is the button.
+        lines.push('Use these ONLY to judge their vocabulary and level of formality. They are button labels, so they are short for that reason alone — do NOT treat them as evidence that this user prefers short replies.');
+        lines.push('They are the user\'s own buttons, and they tap them when they want them. So NEVER offer one of these phrases as a response, and never a near-copy of one: the same words with small changes, a shortened or lengthened form, or the same sentence reworded. This includes a promise to answer in a moment. If a response would naturally say what one of these buttons says, word it clearly differently.');
     }
 
     // Instructions the user chose to keep for everyone (About Me). Their own words,

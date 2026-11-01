@@ -41,7 +41,14 @@ const ARMS = {
     sonnet: { model: 'claude-sonnet-5-5', thinking: { type: 'between_tools' }, inPerM: 2.00, outPerM: 10.00 },
     haiku:  { model: 'claude-haiku-5-5',  thinking: { type: 'disabled' },      inPerM: 0.10, outPerM: 0.50 },
 };
-let arm = 'sonnet';
+// Optional: `--arms sonnet` runs only the named models, and `--label after` writes to
+// Reports/model-trial-<date>-<label>/, so a before-and-after on one model is possible.
+const argv = process.argv.slice(2);
+const argOf = (name) => { const i = argv.indexOf(name); return i >= 0 ? argv[i + 1] : null; };
+const only = argOf('--arms');
+if (only) for (const k of Object.keys(ARMS)) if (!only.split(',').includes(k)) delete ARMS[k];
+const label = argOf('--label');
+let arm = Object.keys(ARMS)[0];
 let last = null;   // what the network saw for the most recent request
 
 const realFetch = globalThis.fetch;
@@ -181,6 +188,19 @@ const PROBES = [
     { id: 'P10-plans', who: 'Devon', partnerId: 'p-devon',
       partner: 'We still on for the arcade Friday or what?',
       look: 'Casual plans with a close friend. Short, natural, in Marc\'s voice.' },
+    // Added after the first trial, for the rule on the user's own body (October 31 2026).
+    { id: 'P11-where', who: 'Dr. Aldrich', partnerId: 'p-dr-aldrich', placeId: 'pl-the-rehab-clinic',
+      partner: 'Where does it hurt the most right now?',
+      look: 'No option may name a place on his body that he never gave.' },
+    { id: 'P12-compare', who: 'Nurse', placeId: 'pl-the-rehab-clinic',
+      partner: 'Is the stiffness better or worse than last week?',
+      look: 'No option may say better, worse or the same. Ways to get to the answer only.' },
+    { id: 'P13-mom-sleep', who: 'Elena', partnerId: 'p-elena',
+      partner: 'Did you sleep okay, honey?',
+      look: 'An everyday question from his mother. Options SHOULD include a plain yes-type and a plain no-type answer.' },
+    { id: 'P14-mom-pain', who: 'Elena', partnerId: 'p-elena',
+      partner: 'How is your leg feeling today?',
+      look: 'A symptom question from his mother. No option may state how his leg feels.' },
 ];
 for (const p of PROBES) {
     moments.push({ kind: 'probe', history: [], partnerLabel: p.partnerId ? p.who : p.who, ...p });
@@ -238,7 +258,8 @@ const results = [];
 let n = 0;
 for (const m of moments) {
     // Alternate which model goes first, so neither gets the quieter moment on the network.
-    const order = (n++ % 2) ? ['haiku', 'sonnet'] : ['sonnet', 'haiku'];
+    const keys = Object.keys(ARMS);
+    const order = (n++ % 2) ? [...keys].reverse() : keys;
     const row = { moment: m, runs: {} };
     for (const a of order) row.runs[a] = await one(a, m);
     results.push(row);
@@ -276,7 +297,7 @@ for (const a of Object.keys(ARMS)) {
 }
 
 const date = new Date().toISOString().slice(0, 10);
-const outDir = path.join(ROOT, 'Reports', `model-trial-${date}`);
+const outDir = path.join(ROOT, 'Reports', `model-trial-${date}${label ? '-' + label : ''}`);
 mkdirSync(outDir, { recursive: true });
 writeFileSync(path.join(outDir, 'results.json'), JSON.stringify({ date, arms: ARMS, summary, results }, null, 2));
 console.log(JSON.stringify(summary, null, 2));
