@@ -22,6 +22,9 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.13.35": [
+    "If you use OpenAI to hear the other person, Conversant now uses OpenAI's newer transcription model. OpenAI is retiring the old one in February. The new one costs a little less, and the cost estimate in Settings now reflects that. You don't need to change anything."
+  ],
   "0.13.34": [
     {
       "for": "android",

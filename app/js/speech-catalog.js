@@ -205,7 +205,11 @@ export const STT_PROVIDERS = {
     openai: {
         id: 'openai',
         label: 'OpenAI',
-        defaultModel: 'gpt-4o-transcribe',
+        // Moved from gpt-4o-transcribe, which OpenAI removes on February 26 2027
+        // (provider review, October 31 2026). Same address, same request; only the
+        // model name changes. Nothing stores a per-user hearing model, so this one
+        // line moves every user.
+        defaultModel: 'gpt-transcribe',
         url: () => 'https://api.openai.com/v1/audio/transcriptions',
         headers: ({ key }) => ({ Authorization: 'Bearer ' + key }),
         // ⚠ NO Content-Type HERE ON PURPOSE. The browser sets it for a FormData body

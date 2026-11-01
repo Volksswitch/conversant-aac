@@ -37,6 +37,34 @@ the one that quietly waits forever.
 
 ## Open
 
+### OpenAI is removing the speaking model the app uses, on January 6 2027
+
+**Raised October 31 2026, by the monthly provider review
+(`Reports/provider-review-2026-10-31.md`).** `gpt-4o-mini-tts` is removed January 6.
+OpenAI's suggested replacement is a live-session service, not "send text, get audio",
+and nobody knows whether it works from a browser with no server.
+
+- **If nothing changes:** after January 6 an OpenAI user's voice falls back to the
+  device voice on every sentence, with nothing on screen saying why.
+- **What is wanted, in order:** (1) find out whether OpenAI still offers an ordinary
+  speaking model at the same address (`tts-1` is the likely one;
+  `scripts/test-openai-speech.mjs` already tries it) and which of our voices it has;
+  if so, swap the model name, as was done for hearing. (2) If not, drop OpenAI speaking
+  and point users to Azure rather than build the live-session path. (3) Either way,
+  tell OpenAI users in the release notes, and ideally in the Speech settings, before
+  January 6.
+- **Deadline:** must ship in a release well before January 6 2027.
+- **Why not now:** step (1) needs a real OpenAI key, and the choice in (2) is Ken's.
+
+**Hearing was moved the same day** (`gpt-4o-transcribe` -> `gpt-transcribe`, removed
+February 26 2027). It is untested with a real key: run
+`node scripts/test-openai-speech.mjs` on the laptop, which now tries `gpt-transcribe`
+first, and confirm OpenAI hearing in the app before releasing.
+
+**Also from the same review:** add every provider's retirement page (OpenAI, Deepgram,
+Azure, Google, ElevenLabs) to the monthly review's checklist; last month's review missed
+the hearing retirement because it did not look.
+
 ### Watch: a pasted key that shows in the box but Test says is missing (iPad)
 
 **Raised October 28 2026, Ken, on his iPad (iPadOS 26.7.1, 0.13.32).** He pasted his

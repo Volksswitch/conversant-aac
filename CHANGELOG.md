@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+- If you use OpenAI to hear the other person, Conversant now uses OpenAI's newer transcription model. OpenAI is retiring the old one in February. The new one costs a little less, and the cost estimate in Settings now reflects that. You don't need to change anything.
+
 ## Version 0.13.34
 
 ### On an Android phone or tablet

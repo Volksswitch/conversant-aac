@@ -128,7 +128,9 @@ async function main() {
     if (!spoken) {
         console.log('  skipped - there is no audio to transcribe, because speaking failed.');
     } else {
-        for (const model of ['gpt-4o-transcribe', 'whisper-1']) {
+        // gpt-transcribe is what the app uses (from October 31 2026); the other two
+        // are here to compare against while gpt-4o-transcribe still exists.
+        for (const model of ['gpt-transcribe', 'gpt-4o-transcribe', 'whisper-1']) {
             const r = await transcribe(key, model, spoken);
             console.log(r.ok
                 ? `  ${model.padEnd(18)} ${(r.ms / 1000).toFixed(2)}s  "${r.text}"`
