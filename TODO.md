@@ -136,7 +136,7 @@ Safari uses is not published. Ken can live with it.
 - **Why it matters:** a nurse or doctor writes down what is said. A strong-pain answer the user did not mean is a wrong medical record, and the user may tap it because it was first.
 - **Decided 2026-10-18 (Ken):** the direction above. Options never state a pain level or symptom the user did not give.
 - **BUILT 2026-10-31** (rule "THEIR BODY RIGHT NOW" in `llm.js`, and the scale instruction no longer gives "pretty bad today" as an example). Re-run with `node --no-warnings scripts/model-trial/run.mjs --arms sonnet --label <name>`: no option stated a pain number, where it hurts, a fall, or how a dose is working, and Mom's "Did you sleep okay?" still got a yes and a no.
-- **Still open (Ken's call):** asked "Is the stiffness better or worse than last week?", the options are better / worse / about the same. That is the app's menu rule (every choice the partner offered, for the user to pick), so nothing is asserted for the user, but it is what the rule's wording forbids. Leave it, or make body questions never show the choices as cards?
+- **Decided 2026-10-31 (Ken): keep the choices.** When the partner names the choices themselves ("better or worse than last week?"), every choice is shown, one card each. That is the user picking, not the AI answering. The rule now says so.
 
 ### Spanish: next steps after the first test
 - **Raised:** 2026-10-18 - Ken asked to explore Spanish support. Decided: bilingual users first; Mexican / US Latino Spanish; Ken will find a native-speaking reviewer. First test run (`scripts/spanish-eval.mjs`, report in `Reports/spanish-eval-2026-10-18.md`): 16 turns, no failures; the app's rules carried over with one added line.

@@ -932,4 +932,6 @@ test('the AI is told never to state a pain level or symptom the user did not giv
         'the old example invited exactly the made-up answer');
     // ...without making the user evasive with family.
     assert.match(sys, /everyday questions from family or friends/);
+    // ...and choices the partner names are still shown, one each (Ken, October 31 2026).
+    assert.match(sys, /the closed-set rule still applies: offer every choice they named/);
 });
