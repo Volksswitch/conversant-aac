@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.13.36
+
 - On a narrow screen, the box for an API key keeps its full width and its Paste, Clear and Test buttons move to the line below, so you can see what you pasted.
 
 ## Version 0.13.35

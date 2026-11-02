@@ -22,6 +22,9 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.13.36": [
+    "On a narrow screen, the box for an API key keeps its full width and its Paste, Clear and Test buttons move to the line below, so you can see what you pasted."
+  ],
   "0.13.35": [
     "When a doctor, nurse or therapist asks about your pain or other symptoms, the suggestions no longer answer for you. Asked how bad your pain is from one to ten, you'll see options like \"It's hard to put a number on it\", \"Let me give you a number\" or \"Is ten the worst?\", and the number button gives the number itself. Before, a suggestion could say \"Pretty bad today\", which is easy to tap by mistake and would be written down as your answer. Everyday questions from family and friends, like \"Did you sleep okay?\", still get the usual yes and no answers.",
     "Suggestions no longer start with an empty \"So\" or \"Oh\", and they copy your own Express Panel buttons less often. You tap those buttons yourself when you want them.",
