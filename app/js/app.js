@@ -1250,10 +1250,24 @@ async function readClipboardText(show) {
         ? setTimeout(() => show('checking', 'Tap the Paste bubble.'), 400)
         : null;
     try {
-        return ((await navigator.clipboard.readText()) || '').trim();
+        const text = ((await navigator.clipboard.readText()) || '').trim();
+        pasteRefusedOnce = false;
+        return text;
     } finally {
         if (hint) { clearTimeout(hint); show(null, ''); }
     }
+}
+
+// What to say when Paste is refused. On an iPhone the first tap was refused and the
+// second brought up the bubble, for both keys (Ken, November 1 2026), so the first
+// refusal asks for another tap rather than sending the user to the long way round.
+let pasteRefusedOnce = false;
+function pasteRefusedMessage(box) {
+    if (platform.isIOS() && !pasteRefusedOnce) {
+        pasteRefusedOnce = true;
+        return 'Tap Paste again.';
+    }
+    return `Could not paste. Tap ${box}, then touch and hold it until Paste appears, and choose Paste.`;
 }
 
 // The status line beside whichever Azure voice picker is being tested.
@@ -8775,8 +8789,7 @@ function openSettings() {
             // The input handler runs the format check, which reports on its own if
             // what was pasted doesn't look like a key.
         } catch {
-            showApiKeyStatus('warn',
-                'Could not paste. Tap the box above, then touch and hold it until Paste appears, and choose Paste.');
+            showApiKeyStatus('warn', pasteRefusedMessage('the box above'));
         }
     };
     // Test button — the only way to catch a subtly-wrong key (right format, wrong
@@ -8887,7 +8900,7 @@ function openSettings() {
                 setKeyFieldValue(deepgramKeyInput, text);
                 showDeepgramStatus(null, '');
             } catch {
-                showDeepgramStatus('warn', 'Could not paste. Tap the box above, then touch and hold it until Paste appears, and choose Paste.');
+                showDeepgramStatus('warn', pasteRefusedMessage('the box above'));
             }
         };
     }
@@ -8978,7 +8991,7 @@ function openSettings() {
                 setKeyFieldValue(azureKeyInput, text);
                 showAzureStatus(null, '');
             } catch {
-                showAzureStatus('warn', 'Could not paste. Tap the key box, then touch and hold it until Paste appears, and choose Paste.');
+                showAzureStatus('warn', pasteRefusedMessage('the key box'));
             }
         };
     }
@@ -8992,7 +9005,7 @@ function openSettings() {
                 azureRegionInput.dispatchEvent(new Event('input', { bubbles: true }));
                 azureRegionInput.value = storage.loadAzureRegionSetting();
             } catch {
-                showAzureStatus('warn', 'Could not paste. Tap the region box, then touch and hold it until Paste appears, and choose Paste.');
+                showAzureStatus('warn', pasteRefusedMessage('the region box'));
             }
         };
     }
@@ -9459,7 +9472,7 @@ function openSettings() {
                     // voices; doing both again here doubled the request (CR-084).
                     setKeyFieldValue(keyInput, text);
                 } catch {
-                    showStatus('warn', 'Could not paste. Tap the key box, then touch and hold it until Paste appears, and choose Paste.');
+                    showStatus('warn', pasteRefusedMessage('the key box'));
                 }
             };
         }

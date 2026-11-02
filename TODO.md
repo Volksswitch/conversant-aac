@@ -37,6 +37,33 @@ the one that quietly waits forever.
 
 ## Open
 
+### iPhone: tapping a response says nothing and records nothing
+
+**Raised November 1 2026, from Ken's remote test** on an iPhone 16 Pro, iOS 26.6.2,
+version 0.13.35, installed on the Home Screen, Deepgram hearing and voice. iPhone is not
+a supported platform; this was a first look.
+
+- **What worked:** install, both keys, the Deepgram voice Test, hearing the partner,
+  four response options, holding phrases.
+- **What failed:** tapping a response option or an Always phrase was not heard and did
+  not reach the transcript. Stopping Listen and pressing it again recorded nothing.
+- **Best guess, unproven:** every failure comes after the microphone closes, so the
+  iPhone's sound may stall at that moment. The app writes a turn only after the speech
+  ends, and nothing limits that wait, so a stalled voice loses the turn and leaves the
+  app believing it is still talking, which by itself stops new options. The Listen
+  failure may be that same stall or a separate fault reopening the microphone.
+- **Test wanted on his phone, no new version needed:** send a problem report; try the
+  "This device" voice with Listen on; try Deepgram after a fresh start without pressing
+  Listen. Also ask whether the Listen button went off and the options cleared on the tap.
+- **Likely fix, once the test says which:** a time limit on speech so a stall can never
+  lose the turn (the same watchdog already considered in CLAUDE.md for the device voice),
+  and waking or rebuilding the sound on the tap.
+- **Why not now:** a fix built before that test would be a guess on the app's main speech
+  path, which every platform uses.
+- **Also watch on the next run:** in Ken's photo the response options read as cut off
+  ("Sure, I'll grab a… screenshot of"). He and the tester were talking over each other,
+  so the sentence itself may have been unfinished. Not treated as a fault yet.
+
 ### OpenAI removed as a speech service: what is left
 
 **Raised October 31 2026.** Ken dropped OpenAI entirely (decision in CLAUDE.md, "OpenAI
