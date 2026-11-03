@@ -72,7 +72,10 @@ def main():
         if only and only.lower() not in d['file'].lower():
             continue
         path = os.path.join(DOCS, d['file'])
-        said = stamp.byline_date(path)
+        # A document marked noByline has no date printed on it on purpose (the Partner
+        # Card: a date would print on the card itself), so its file date stands in.
+        said = (datetime.date.fromtimestamp(os.path.getmtime(path)) if d.get('noByline')
+                else stamp.byline_date(path))
         if said is None:
             raise SystemExit(f'No "Last updated" date found in {d["file"]} - fix the byline first.')
         # ⚠ THE DATE CANNOT SEE A SECOND CHANGE ON THE SAME DAY. The byline is the

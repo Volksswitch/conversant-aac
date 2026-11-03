@@ -38,16 +38,25 @@ the one that quietly waits forever.
 ## Open
 
 ### Stale statements found while writing the FAQ
-- **Raised:** 2026-11-03 - while checking the FAQ against the documents. The FAQ avoids each of these, but the published pages still say them.
-- **What is wanted, each needing Ken's word first:**
-  1. **Your Security and Privacy:** section 4.2 says a PIN is planned (dropped October 11 2026); 4.7 says the fix for two open copies isn't built, and 4.8 says the limit on where the app may send data isn't on (both built October 9 2026).
-  2. **Known Issues page:** still lists OpenAI as a speech service, says one-copy-at-a-time is being worked on, and was last updated September 14 2026.
-  3. **Product Overview:** its roadmap lists symbol and pictographic support, against the October 27 2026 decision to stay with text. "Private by Design" says nothing goes to an outside server except the AI, leaving out speech services.
-  4. **Keeping Costs Down:** lists only Deepgram and Azure for speech, and quotes a holding phrase the app no longer uses.
-  5. **Cost wording:** the home page, At a Glance and the Product Overview say a fraction of a cent per reply. The September 30 2026 measurement was about half a cent per set of options, and one turn can write several sets. The FAQ uses the measured figure.
-  6. **No license file:** the code repository is public but has no license, so "free and open source" and "anyone is welcome to take it and build on it" have nothing legal behind them yet. Choosing a license is Ken's decision.
-  7. **Partner Card:** it isn't on the documents page, so the FAQ can't point anyone to it.
-- **Why not now:** Ken asked only for the FAQ, and each of these changes a published page.
+- **Raised:** 2026-11-03 - while checking the FAQ against the documents. Ken asked for these to stay on the list. The FAQ already avoids each of them, but the published pages still say them.
+- **What is wanted:**
+  1. **Known Issues page:** still lists OpenAI as a speech service, says one-copy-at-a-time is being worked on (built October 9 2026), and was last updated September 14 2026.
+  2. **Product Overview, "Private by Design":** says nothing goes to an outside server except the AI, leaving out speech services.
+  3. **Keeping Costs Down:** lists only Deepgram and Azure for speech, and quotes a holding phrase the app no longer uses.
+  4. **Cost wording:** the home page, At a Glance and the Product Overview say a fraction of a cent per reply. The September 30 2026 measurement was about half a cent per set of options, and one turn can write several sets. The FAQ uses the measured figure.
+  5. **Staying with text is now a hypothesis (Ken, November 3 2026):** the Product Overview roadmap promises symbol support, and the Staying With Text draft says we plan to get there without symbols. Both should say the question is open and will be tested.
+  6. **"No license" wording:** the home page and Product Overview say "no license", meaning no fee. Now that the code has an Apache 2.0 license, that should read "no license fee". The home page's "anyone is welcome to take it and build on it" could also mention the credit requirement.
+- **Why not now:** Ken asked for them to be listed. Each changes a published page, and they fit the next "sync docs" pass.
+
+### PIN or password when the app extends to younger users
+- **Raised:** 2026-11-03 - Ken, on the Your Security and Privacy document: a PIN or password is still an issue for younger users.
+- **What is wanted:** decide how settings and the profile are protected for a younger user, and who holds the PIN or password. It connects to guardian approval, which the per-partner vulgarity setting also needs.
+- **Why not now:** the app is for adults who make their own decisions until younger users are supported.
+
+### Validate staying with text
+- **Raised:** 2026-11-03 - Ken: "right now 'always text' is a hypothesis that will need to be validated."
+- **What is wanted:** decide what evidence would validate it, starting with the SLP review of the Staying With Text draft, and test it before any lower-literacy build commits to it.
+- **Why not now:** the first version is for people who read, and the SLP review has not happened.
 
 ### iPhone: tapping a response says nothing and records nothing
 

@@ -95,7 +95,7 @@ FAQ = [
         ]),
         ('Does it use picture symbols?', 'symbols', [
             p('No. Every button shows words, so today’s app is for people who read. '
-              'We plan to reach people who read less by lowering the reading needed a step at a time, and staying with print throughout.'),
+              'We think people who read less may also do better with print than with pictures, and we’ll test that before deciding.'),
         ]),
     ]),
     ('In a Conversation', [
@@ -214,7 +214,7 @@ FAQ = [
         ('Is the other person being recorded?', 'partner', [
             p('The sound isn’t saved. An online service turns it into text, and the app keeps those words with the saved conversation on the user’s device. The words also go to the AI.'),
             p('The other person doesn’t need an app, training or any special knowledge. The app can’t ask for their agreement, so telling them is up to the user. '
-              'An Express Panel button says “My device listens and speaks for me” with one tap, and a short chime plays when listening starts.'),
+              'An Express Panel button says “My device listens and speaks for me” with one tap, and a short chime plays when listening starts. The Partner Card, on the documents page, is a card to print and keep on the back of the device.'),
             p(f'Recording laws differ from place to place, and we can’t give legal advice. Partner Privacy, on the {a("docs", "documents page")}, covers what we’ve decided and why.'),
         ]),
         ('How is the user’s information backed up?', 'backup', [
@@ -230,7 +230,7 @@ FAQ = [
               'What goes in, and what’s said, stays the user’s choice.'),
         ]),
         ('Who makes it, and who can help?', 'contact', [
-            p('Conversant AAC is a free and open source project from Volksswitch.'),
+            p('Conversant AAC is a free and open source project from Volksswitch. Its code is under the Apache 2.0 license, so anyone can use it and build on it, as long as they keep the notice saying their work is based on Conversant AAC by Volksswitch.'),
             ul([f'<strong>Something went wrong?</strong> Check the {a("issues", "known issues")}, then use Settings → Troubleshooting → “Report a problem”. Watch: {a("v51", "Telling Us About a Problem")}.',
                 f'<strong>Learning the app?</strong> See the {a("videos", "how-to videos")} and the {a("docs", "documents")}, which include a user manual for each kind of device.',
                 f'<strong>Anything else?</strong> Email {a("email", "ken@volksswitch.org")}.']),
