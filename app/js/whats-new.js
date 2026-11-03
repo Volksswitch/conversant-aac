@@ -22,6 +22,9 @@ import * as platform from './platform.js';
 // (major.minor.patch). Versions with no user-visible change simply have no key.
 // @@RELEASE_NOTES_START@@
 const RELEASE_NOTES = {
+  "0.13.37": [
+    "On a narrow screen, Azure's key box now fills the width like the other speech services, with its buttons on the line below. Azure's key and region now sit on separate lines on every screen."
+  ],
   "0.13.36": [
     "On a narrow screen, the box for an API key keeps its full width and its Paste, Clear and Test buttons move to the line below, so you can see what you pasted."
   ],

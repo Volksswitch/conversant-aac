@@ -514,25 +514,19 @@
                                  suggestion list, which Chrome draws as a dropdown and which behaved like a
                                  menu, worst of all on an iPad - the wrong control for a value the set-up link
                                  hands the user to copy. -->
-                            <div id="azureKeyRow" class="key-row wrap align-end">
-                                <div class="field-group">
-                                    <div class="region-field key-field">
-                                        <label for="azureKeyInput">Key</label>
-                                        <input type="text" id="azureKeyInput" data-key-field data-no-predict data-no-autocap placeholder="Your Azure Speech key" autocomplete="off" spellcheck="false">
-                                    </div>
-                                    <button id="pasteAzureKeyBtn" type="button" aria-label="Paste Azure Speech key">Paste</button>
-                                    <button id="clearAzureKeyBtn" type="button" aria-label="Clear Azure Speech key">Clear</button>
-                                </div>
-                                <div class="field-group">
-                                    <!-- The label sits ABOVE the box (Ken, September 21 2026), so the row keeps its
-                                         line of boxes and buttons; the row aligns to the bottom to allow for it. The
-                                         key box gets a matching caption, or it sits under an empty band. -->
-                                    <div class="region-field">
-                                        <label for="azureRegionInput">Region</label>
-                                        <input type="text" id="azureRegionInput" data-key-field data-no-predict data-no-autocap class="region-input" placeholder="e.g. eastus" autocomplete="off" spellcheck="false">
-                                    </div>
-                                    <button id="pasteAzureRegionBtn" type="button" aria-label="Paste Azure region">Paste</button>
-                                </div>
+                            <!-- Built like every other service's row, so the box behaves the same on a
+                                 narrow screen (Ken, November 3 2026): full width, buttons on the line below.
+                                 The earlier layout grouped each box with its buttons, which squeezed the box. -->
+                            <label for="azureKeyInput">Key</label>
+                            <div id="azureKeyRow" class="key-row">
+                                <input type="text" id="azureKeyInput" data-key-field data-no-predict data-no-autocap placeholder="Your Azure Speech key" autocomplete="off" spellcheck="false">
+                                <button id="pasteAzureKeyBtn" type="button" aria-label="Paste Azure Speech key">Paste</button>
+                                <button id="clearAzureKeyBtn" type="button" aria-label="Clear Azure Speech key">Clear</button>
+                            </div>
+                            <label for="azureRegionInput">Region</label>
+                            <div id="azureRegionRow" class="key-row">
+                                <input type="text" id="azureRegionInput" data-key-field data-no-predict data-no-autocap placeholder="e.g. eastus" autocomplete="off" spellcheck="false">
+                                <button id="pasteAzureRegionBtn" type="button" aria-label="Paste Azure region">Paste</button>
                                 <button id="testAzureKeyBtn" type="button">Test</button>
                             </div>
                             <p id="azureKeyStatus" class="api-key-status" role="status" aria-live="polite" hidden></p>
