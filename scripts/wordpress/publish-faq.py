@@ -1,4 +1,5 @@
 """Create the Conversant AAC FAQ page on volksswitch.org, as a DRAFT, once.
+Published November 3 2026 as page 24894, so this now only refuses; it is kept as the record.
 
 ONCE IT EXISTS, THE WORDPRESS PAGE IS THE COPY, as with the home page and the Known
 Issues page. Ken edits in WordPress, so this script refuses to run if a page with the

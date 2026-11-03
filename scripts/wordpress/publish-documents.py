@@ -52,7 +52,8 @@ def build_table(docs):
         f'<tr><td><a href="{html.escape(d["url"])}">{html.escape(d["title"])}</a></td>'
         f'<td>{long_date(datetime.date.fromisoformat(d["date"]))}</td></tr>'
         for d in docs if d.get('url'))   # a listed document not yet uploaded has no link
-    return ('<!-- wp:paragraph -->\n<p>These Conversant AAC documents are available as downloadable PDF files:</p>\n<!-- /wp:paragraph -->\n\n'
+    return ('<!-- wp:paragraph -->\n<p>Looking for a quick answer? See the <a href="https://volksswitch.org/index.php/conversant-faq/">frequently asked questions</a>.</p>\n<!-- /wp:paragraph -->\n\n'
+            '<!-- wp:paragraph -->\n<p>These Conversant AAC documents are available as downloadable PDF files:</p>\n<!-- /wp:paragraph -->\n\n'
             '<!-- wp:table -->\n<figure class="wp-block-table"><table><thead><tr><th>Document</th><th>Last updated</th></tr></thead>'
             f'<tbody>{rows}</tbody></table></figure>\n<!-- /wp:table -->')
 
