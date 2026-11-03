@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.13.37
+
 - On a narrow screen, Azure's key box now fills the width like the other speech services, with its buttons on the line below. Azure's key and region now sit on separate lines on every screen.
 
 ## Version 0.13.36
