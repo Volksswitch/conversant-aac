@@ -37,6 +37,18 @@ the one that quietly waits forever.
 
 ## Open
 
+### Stale statements found while writing the FAQ
+- **Raised:** 2026-11-03 - while checking the FAQ against the documents. The FAQ avoids each of these, but the published pages still say them.
+- **What is wanted, each needing Ken's word first:**
+  1. **Your Security and Privacy:** section 4.2 says a PIN is planned (dropped October 11 2026); 4.7 says the fix for two open copies isn't built, and 4.8 says the limit on where the app may send data isn't on (both built October 9 2026).
+  2. **Known Issues page:** still lists OpenAI as a speech service, says one-copy-at-a-time is being worked on, and was last updated September 14 2026.
+  3. **Product Overview:** its roadmap lists symbol and pictographic support, against the October 27 2026 decision to stay with text. "Private by Design" says nothing goes to an outside server except the AI, leaving out speech services.
+  4. **Keeping Costs Down:** lists only Deepgram and Azure for speech, and quotes a holding phrase the app no longer uses.
+  5. **Cost wording:** the home page, At a Glance and the Product Overview say a fraction of a cent per reply. The September 30 2026 measurement was about half a cent per set of options, and one turn can write several sets. The FAQ uses the measured figure.
+  6. **No license file:** the code repository is public but has no license, so "free and open source" and "anyone is welcome to take it and build on it" have nothing legal behind them yet. Choosing a license is Ken's decision.
+  7. **Partner Card:** it isn't on the documents page, so the FAQ can't point anyone to it.
+- **Why not now:** Ken asked only for the FAQ, and each of these changes a published page.
+
 ### iPhone: tapping a response says nothing and records nothing
 
 **Raised November 1 2026, from Ken's remote test** on an iPhone 16 Pro, iOS 26.6.2,
