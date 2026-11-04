@@ -37,6 +37,11 @@ the one that quietly waits forever.
 
 ## Open
 
+### Switch access: proposal waiting on Ken's review
+- **Raised:** 2026-11-03 - Ken asked for research and a proposal on switch control, with attention to speed, trimming what gets scanned, and a more powerful Express Panel.
+- **What is wanted:** Ken reviews `Documents/Conversant AAC Switch Access Proposal.docx` and settles the six decisions in its section 10. The device checks in its section 8 come first, and need to know which switches and interfaces are on hand.
+- **Why not now:** nothing is built or decided until the review. Decisions go in `CLAUDE.md` once made.
+
 ### Stale statements found while writing the FAQ
 - **Raised:** 2026-11-03 - while checking the FAQ against the documents. Ken asked for these to stay on the list. The FAQ already avoids each of them, but the published pages still say them.
 - **What is wanted:**

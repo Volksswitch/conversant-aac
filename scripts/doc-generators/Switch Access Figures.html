@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Switch Access Figures</title>
+<style>
+  body { margin: 0; padding: 20px; font-family: Arial, sans-serif; background: #fff; color: #1a2733; }
+  .fig { width: 820px; box-sizing: border-box; padding: 14px; background: #f4f6f8; border: 1px solid #8795a1; }
+  .region { background: #fff; border: 1px solid #5c6b78; border-radius: 4px; margin-bottom: 8px; padding: 8px; position: relative; }
+  .label { font-size: 12px; color: #4a5763; margin-bottom: 14px; }
+  .transcript { height: 58px; font-size: 13px; color: #4a5763; }
+  .row { display: flex; gap: 6px; }
+  .b { flex: 1 1 0; min-width: 0; box-sizing: border-box; border: 1px solid #5c6b78; border-radius: 3px; background: #fff; font-size: 12px; line-height: 1.2;
+       height: 38px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 2px 3px; }
+  .b.blank { border: 1px dashed #aab4bd; background: transparent; color: transparent; }
+  .opt { height: 74px; font-size: 13px; border-left-width: 5px; }
+  .o1 { border-left-color: #2e7d32; }
+  .o2 { border-left-color: #a86300; }
+  .o3 { border-left-color: #1565c0; }
+  .o4 { border-left-color: #6a1b9a; }
+  .new4 { flex: 0 0 74px; height: 74px; }
+  .ctx { background: #eef2f5; }
+  .stop { position: absolute; width: 26px; height: 26px; border-radius: 50%; background: #c62828; color: #fff; font-size: 14px; font-weight: bold;
+          display: flex; align-items: center; justify-content: center; z-index: 2; box-shadow: 0 0 0 2px #fff; }
+  .wrap { position: relative; }
+  .opt-wrap { flex: 1 1 0; min-width: 0; position: relative; display: flex; }
+  .opt-wrap .stop { top: -9px; left: -9px; }
+  .new-wrap { flex: 0 0 74px; position: relative; display: flex; }
+  .new-wrap .stop { top: -9px; left: -9px; }
+  .rowwrap { position: relative; padding-left: 30px; margin-bottom: 6px; }
+  .rowwrap .stop { left: 0; top: 6px; }
+  .barwrap { position: relative; padding-left: 30px; }
+  .barwrap .stop { left: 0; top: 6px; }
+  .none { font-size: 12px; color: #4a5763; }
+</style>
+</head>
+<body>
+<div class="fig" id="f1">
+  <div class="region transcript">
+    <div class="label">Conversation pane (the scan doesn&rsquo;t stop here)</div>
+    Partner: Do you want to come to dinner on Friday?
+  </div>
+
+  <div class="region">
+    <div class="label">Response options, visited one at a time, then &ldquo;New 4&rdquo;</div>
+    <div class="row">
+      <div class="opt-wrap"><span class="stop">1</span><div class="b opt o1">Sure, I&rsquo;d love to</div></div>
+      <div class="opt-wrap"><span class="stop">2</span><div class="b opt o2">Friday&rsquo;s hard for me</div></div>
+      <div class="opt-wrap"><span class="stop">3</span><div class="b opt o3">What are you making?</div></div>
+      <div class="opt-wrap"><span class="stop">4</span><div class="b opt o4">Did you say Friday?</div></div>
+      <div class="new-wrap"><span class="stop">7</span><div class="b new4">New 4</div></div>
+    </div>
+  </div>
+
+  <div class="region">
+    <div class="label">Express Panel: each stop is a row; a press moves along that row one button at a time. Blank positions are skipped.</div>
+    <div class="rowwrap"><span class="stop">5</span>
+      <div class="row">
+        <div class="b">Yes</div><div class="b">No</div><div class="b">Ask them to repeat</div><div class="b">Hold on</div><div class="b">Thank you</div><div class="b">I need help</div>
+        <div class="b blank">.</div><div class="b blank">.</div><div class="b blank">.</div><div class="b blank">.</div>
+      </div>
+    </div>
+    <div class="rowwrap"><span class="stop">6</span>
+      <div class="row">
+        <div class="b">Tyler</div><div class="b">therapy</div><div class="b">my shoulder</div><div class="b">Shorter</div><div class="b">Say no</div><div class="b">Tell them more</div>
+        <div class="b blank">.</div><div class="b blank">.</div><div class="b blank">.</div><div class="b blank">.</div>
+      </div>
+    </div>
+    <div class="rowwrap" style="margin-bottom:0"><span class="stop">8</span>
+      <div class="row">
+        <div class="b ctx">In my own words</div><div class="b ctx">Mom</div><div class="b ctx">Devon</div><div class="b ctx">At home</div><div class="b ctx">Tired</div><div class="b ctx">Happy</div>
+        <div class="b blank">.</div><div class="b blank">.</div><div class="b blank">.</div><div class="b blank">.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="region" style="margin-bottom:0">
+    <div class="label">Command Bar</div>
+    <div class="barwrap"><span class="stop">9</span>
+      <div class="row">
+        <div class="b">Listen</div><div class="b">Start</div><div class="b">End</div><div class="b">Repeat</div><div class="b">Hold on</div><div class="b">Ask to repeat</div><div class="b">Wrap up</div><div class="b">Don&rsquo;t save</div><div class="b">Settings</div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
