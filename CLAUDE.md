@@ -2587,7 +2587,7 @@ The plan, course order and decisions are in [VIDEO-PLAN.md](VIDEO-PLAN.md). Each
 
 `scripts/video/demo/conversant-demo.mjs`; how to make it is in [VIDEO-PLAN.md](VIDEO-PLAN.md), "The demonstration video". Two versions from one run: public (ATIA, promotion; no beta references) and beta (tester ending).
 - **Ken chose real-then-fixed over hand-written options**, because promotional material must not show suggestions the app never produced. `--capture` records every AI answer and its real wait; normal renders replay them. A request that does not line up with the recording stops the render rather than showing something the AI never wrote.
-- **Voices (Ken):** his ElevenLabs clone narrates; Eric is Marc, Charlie is Ramon, River is the barista. Narration only over title cards; the app parts carry real sound and captions, as the filming script designed.
+- **Voices (Ken):** his ElevenLabs clone narrates; Eric is Marc, Charlie is Ramon, River is the barista. **The narrator says what is about to happen, then the app does it; nothing is printed under the picture** (Ken, second pass: the captions went by too fast to read). Slower voices, pauses between the narrator's sentences, the holding phrase two seconds after the partner stops, and the options after the AI's real wait. Twice as long is fine (Ken).
 - **Picks are by the words of an answer, never the "Sorry, what?" card**, since the real AI decides positions. After any re-recording, watch the video: a pick with no match falls back to a fixed position.
 
 ## Keeping product documents in sync — trigger phrase "sync docs" (Ken, July 8 2026)

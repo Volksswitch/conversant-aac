@@ -86,11 +86,34 @@ async function speech(speaker, text, pins = null) {
   const eleven = cast[speaker]?.eleven;
   if (eleven) {
     if (pins) throw new Error(`STOPPING - pinned sounds work only with Azure voices (speaker "${speaker}")`);
-    const id = `eleven:${eleven.id}:${eleven.model || ''}:${JSON.stringify(eleven.settings || null)}\n${text}`;
+    const one = async (t) => {
+      const id = `eleven:${eleven.id}:${eleven.model || ''}:${JSON.stringify(eleven.settings || null)}:${eleven.speed ?? ''}\n${t}`;
+      const file = path.join(cacheDir, `${crypto.createHash('sha1').update(id).digest('hex').slice(0, 16)}.mp3`);
+      if (!fs.existsSync(file)) {
+        elevenKey ??= readElevenKey();
+        fs.writeFileSync(file, await synthesizeEleven(elevenKey, eleven, t));
+      }
+      return file;
+    };
+    // A voice with `gap` says each sentence on its own and joins them with that
+    // much quiet, so a narrator does not run one sentence into the next (Ken,
+    // November 7 2026: "put more natural, relaxed delays between sentences").
+    // A title's full stop ("Ms. Marvel") is not the end of a sentence.
+    const kept = text.replace(/\b(Ms|Mr|Mrs|Dr|St)\./g, '$1\u0001');
+    const sentences = eleven.gap
+      ? kept.match(/[^.?!]+[.?!]+["'\u2019\u201d]*\s*|[^.?!]+$/g).map((x) => x.replace(/\u0001/g, '.').trim()).filter(Boolean)
+      : [text];
+    if (sentences.length < 2) return one(text);
+    const parts = [];
+    for (const t of sentences) parts.push(await one(t));
+    const id = `joined:${eleven.gap}:${parts.join('|')}`;
     const file = path.join(cacheDir, `${crypto.createHash('sha1').update(id).digest('hex').slice(0, 16)}.mp3`);
     if (!fs.existsSync(file)) {
-      elevenKey ??= readElevenKey();
-      fs.writeFileSync(file, await synthesizeEleven(elevenKey, eleven, text));
+      const gap = silence(eleven.gap, path.join(cacheDir, `gap-${eleven.gap.toFixed(2)}-44k.mp3`), 44100);
+      const inputs = parts.flatMap((f, i) => (i ? [gap, f] : [f]));
+      run(FFMPEG, ['-y', '-v', 'error', ...inputs.flatMap((f) => ['-i', f]),
+        '-filter_complex', `${inputs.map((_, i) => `[${i}:a]`).join('')}concat=n=${inputs.length}:v=0:a=1[a]`,
+        '-map', '[a]', '-c:a', 'libmp3lame', '-b:a', '128k', '-ar', '44100', file]);
     }
     return file;
   }
@@ -131,9 +154,21 @@ async function mark(page, selector, kind) {
   let handle;
   if (selector.startsWith('all:')) {
     handle = await page.evaluateHandle((css) => {
-      const els = [...document.querySelectorAll(css)].filter((e) => e.getClientRects().length);
-      if (!els.length) return null;
-      const rs = els.map((e) => e.getBoundingClientRect());
+      const clip = (e) => {
+        let r = e.getBoundingClientRect();
+        let box = { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
+        for (let a = e.parentElement; a; a = a.parentElement) {
+          const o = getComputedStyle(a).overflowY + getComputedStyle(a).overflowX;
+          if (!/auto|scroll|hidden/.test(o)) continue;
+          const c = a.getBoundingClientRect();
+          box = { left: Math.max(box.left, c.left), top: Math.max(box.top, c.top),
+            right: Math.min(box.right, c.right), bottom: Math.min(box.bottom, c.bottom) };
+        }
+        return box;
+      };
+      const rs = [...document.querySelectorAll(css)].filter((e) => e.getClientRects().length)
+        .map(clip).filter((b) => b.right - b.left > 2 && b.bottom - b.top > 2);
+      if (!rs.length) return null;
       const box = { left: Math.min(...rs.map((r) => r.left)), top: Math.min(...rs.map((r) => r.top)),
         right: Math.max(...rs.map((r) => r.right)), bottom: Math.max(...rs.map((r) => r.bottom)) };
       return { scrollIntoView() {}, getBoundingClientRect: () => ({ ...box, width: box.right - box.left, height: box.bottom - box.top }) };
@@ -248,10 +283,17 @@ function makeRecordedAI(file, capture, page) {
   const answer = async (bodyText) => {
     const body = JSON.parse(bodyText);
     const kind = kindOf(body);
+    // A step can wait for the request a tap set off and learn how long its answer
+    // took (page.aiRequests counts requests begun; page.lastAIms is that wait in
+    // ms), so the video holds a picture exactly as long as the real wait.
+    let tell;
+    page.aiRequests = (page.aiRequests || 0) + 1;
+    page.lastAIms = new Promise((r) => { tell = r; });
     if (!capture) {
       const a = recording.answers[next++];
       if (!a) throw new Error(`STOPPING - the app asked for ${kind} beyond the recording. Re-record with --capture.`);
       if (a.kind !== kind) throw new Error(`STOPPING - request ${next} is ${kind} but the recording has ${a.kind}. Re-record with --capture.`);
+      tell(a.kind === 'response options' ? Math.max(a.ms, MIN_WAIT_MS) : a.ms);
       // The real wait, so a holding phrase plays exactly where it did for real. A
       // floor keeps the first holding phrase (spoken 2 seconds after the pause)
       // from depending on a lucky fast answer; real waits are 3 to 8 seconds.
@@ -274,6 +316,7 @@ function makeRecordedAI(file, capture, page) {
     const text = await r.text();
     if (!r.ok) throw new Error(`The real AI refused: ${r.status} ${text.slice(0, 300)}`);
     const ms = Date.now() - t0;
+    tell(kind === 'response options' ? Math.max(ms, MIN_WAIT_MS) : ms);
     const response = JSON.parse(text);
     const words = (response.content || []).find((c) => c.type === 'text')?.text || '';
     recording.answers.push({ kind, ms, response, words });
@@ -493,6 +536,8 @@ async function openApp(browser, script) {
   // also ask for inBrowserStorage). The file-to-storage list is data-transfer.js's.
   if (script.backup) {
     const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, script.backup), 'utf8'));
+    // Changes for the video only; the backup file itself is never touched.
+    if (script.adjustBackup) script.adjustBackup(pkg);
     const CACHES = {
       'worldview.json': 'aac_worldview', 'relationships.json': 'aac_relationships',
       'places.json': 'aac_places', 'practice-scenarios.json': 'aac_practice_scenarios',
@@ -572,9 +617,9 @@ function srtTime(s) {
 
 // A silent stretch of audio, for a step that shows something without a word said
 // (a caption-only moment in the demo).
-function silence(seconds, file) {
+function silence(seconds, file, rate = 48000) {
   if (!fs.existsSync(file)) {
-    run(FFMPEG, ['-y', '-v', 'error', '-f', 'lavfi', '-i', 'anullsrc=r=48000:cl=stereo',
+    run(FFMPEG, ['-y', '-v', 'error', '-f', 'lavfi', '-i', `anullsrc=r=${rate}:cl=${rate === 48000 ? 'stereo' : 'mono'}`,
       '-t', seconds.toFixed(3), '-c:a', 'libmp3lame', '-b:a', '64k', file]);
   }
   return file;
@@ -705,7 +750,10 @@ async function main() {
       throw new Error(`STOPPING - step ${label} has nothing to say and no hold time`);
     }
     if (step.caption || step.card) signature.update(JSON.stringify({ caption: step.caption || null, card: step.card || null }));
-    const lead = step.lead ?? LEAD_S, tail = step.tail ?? TAIL_S;
+    // A script may set its own quiet before and after every line, and a step's
+    // tail may be worked out at the moment (how long the real AI took to answer).
+    const lead = typeof step.lead === 'function' ? await step.lead(page) : (step.lead ?? script.lead ?? LEAD_S);
+    const tail = typeof step.tail === 'function' ? await step.tail(page, { lead, speak }) : (step.tail ?? script.tail ?? TAIL_S);
     const dur = lead + speak + tail;
     const seg = path.join(work, `${n}.mp4`);
     run(FFMPEG, ['-y', '-loop', '1', '-framerate', '30', '-i', shot, '-i', clip,

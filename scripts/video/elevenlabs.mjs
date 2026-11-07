@@ -24,15 +24,30 @@ export async function listElevenVoices(key) {
   return (await r.json()).voices || [];
 }
 
-// Returns MP3 bytes. `voice` is { id, model, settings }.
+// A voice's own saved settings (stability and the rest), so a script can change
+// only its speed and leave everything else as the voice's owner set it.
+const savedSettings = new Map();
+async function settingsOf(key, id) {
+  if (!savedSettings.has(id)) {
+    const r = await fetch(`${API}/voices/${id}/settings`, { headers: headers(key) });
+    if (!r.ok) throw new Error(`ElevenLabs refused the settings of voice ${id}: ${r.status}`);
+    savedSettings.set(id, await r.json());
+  }
+  return savedSettings.get(id);
+}
+
+// Returns MP3 bytes. `voice` is { id, model, settings, speed }. `speed` (0.7 to
+// 1.2) slows or quickens the voice and keeps its other saved settings.
 export async function synthesizeEleven(key, voice, text) {
+  let settings = voice.settings || null;
+  if (voice.speed) settings = { ...(settings || await settingsOf(key, voice.id)), speed: voice.speed };
   const r = await fetch(`${API}/text-to-speech/${voice.id}?output_format=mp3_44100_128`, {
     method: 'POST',
     headers: headers(key, { 'Content-Type': 'application/json', Accept: 'audio/mpeg' }),
     body: JSON.stringify({
       text,
       model_id: voice.model || 'eleven_multilingual_v2',
-      ...(voice.settings ? { voice_settings: voice.settings } : {}),
+      ...(settings ? { voice_settings: settings } : {}),
     }),
   });
   if (!r.ok) throw new Error(`ElevenLabs refused ${voice.name || voice.id}: ${r.status} ${(await r.text()).slice(0, 300)}`);

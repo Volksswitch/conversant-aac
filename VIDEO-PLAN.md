@@ -204,7 +204,7 @@ Steps 1 to 4 are what a beta tester needs on day one.
 
 ## The demonstration video (November 7 2026)
 
-One six-minute video that shows what Conversant does, made from `Conversant-AAC-Demo-Script.docx`. It's for Ken's talk at ATIA 2027, for people thinking about joining the beta, and later for promotion. It isn't part of the course.
+One ten-minute video that shows what Conversant does, made from `Conversant-AAC-Demo-Script.docx`. It's for Ken's talk at ATIA 2027, for people thinking about joining the beta, and later for promotion. It isn't part of the course.
 
 **To make it:** `node scripts/video/render-video.mjs scripts/video/demo/conversant-demo.mjs`
 
@@ -212,14 +212,16 @@ That makes two files in `Videos/Demo`:
 
 | File | Ending | Length |
 |---|---|---|
-| `Conversant AAC Demo.mp4` | Where to find Conversant. No mention of the beta. Use this one at ATIA and for promotion. | 6:18 |
-| `Conversant AAC Demo - Beta.mp4` | Asks for testers and says we cover the AI during the beta. | 6:32 |
+| `Conversant AAC Demo.mp4` | Where to find Conversant. No mention of the beta. Use this one at ATIA and for promotion. | 10:43 |
+| `Conversant AAC Demo - Beta.mp4` | Asks for testers and says we cover the AI during the beta. | 10:58 |
 
 Everything except the ending is shared, so the two can't drift apart. Each has a caption file (`.srt`) beside it.
 
 **How it differs from the how-to videos:**
 - **Voices** come from ElevenLabs: Ken's own cloned voice narrates, Eric is Marc, Charlie is Ramon, and River is the coffee-shop barista in the practice scene. The key is in `.elevenlabs-key` (git ignores it).
-- **The narration speaks only over title cards.** The app parts have no narration, only the real sound (Ramon, Marc, the barista) and a short caption under the picture, as the filming script designed.
+- **Ken narrates the demos too (Ken, November 7 2026).** Nothing is printed under the picture: the narrator says what is about to happen, then the app does it. The voices are slowed a little (`speed` in the script) and the narrator's sentences are said one at a time with a pause between them (`gap`).
+- **The timing follows the real app.** The holding phrase starts two seconds after Ramon stops, and the options appear after the AI's real wait, never sooner than a second after the holding phrase ends.
+- **For the video only**, the script changes Marc's data as it loads (`adjustBackup`): one row each of Always, Flex and Context, and no "Keep it short" goal. Marc's Express Panel is also made taller than it ships, as a QWERTY user would, and the keyboard is set to on-screen so choosing a layout shows the keyboard. The backup file itself is unchanged.
 - **Marc is loaded from `Conference Demo/conversant-demo-marc.json`**, the same file used to set up a live demo.
 - **The AI's words are real.** The first run with `--capture` sends every request to the real AI and saves its exact answers, and how long each took, in `scripts/video/demo/demo-ai-recording.json`. Every later run replays them, so the video comes out the same each time. A run that no longer lines up with the recording stops and says to record again.
 
