@@ -2583,6 +2583,13 @@ The plan, course order and decisions are in [VIDEO-PLAN.md](VIDEO-PLAN.md). Each
 - **The User Manuals link the videos section by section (Ken, October 25 2026):** a "Video:" line at the end of each section a video covers, and the whole list in the Introduction. `scripts/video/add-manual-links.py` holds which section gets which video and makes the links; run it with `--apply` after a video is added (put it in its list first) or renamed, then republish the manuals' PDFs. Never edit those links by hand.
 - **Trigger phrase "check video links"** -> `python scripts/video/check-video-references.py`. It checks the hand-written places that link or name the videos (BETA-EMAILS.md and its Outlook copies, the hand-edited web pages, Documents/), and runs by itself at the end of every "sync videos". Verified to catch a wrong video behind a title, an unpublished address, an unknown quoted title, and a wrong count or running time beside the Getting Started links.
 
+## The demonstration video is generated too, with REAL AI answers fixed by recording (Ken, November 7 2026), BUILT
+
+`scripts/video/demo/conversant-demo.mjs`; how to make it is in [VIDEO-PLAN.md](VIDEO-PLAN.md), "The demonstration video". Two versions from one run: public (ATIA, promotion; no beta references) and beta (tester ending).
+- **Ken chose real-then-fixed over hand-written options**, because promotional material must not show suggestions the app never produced. `--capture` records every AI answer and its real wait; normal renders replay them. A request that does not line up with the recording stops the render rather than showing something the AI never wrote.
+- **Voices (Ken):** his ElevenLabs clone narrates; Eric is Marc, Charlie is Ramon, River is the barista. Narration only over title cards; the app parts carry real sound and captions, as the filming script designed.
+- **Picks are by the words of an answer, never the "Sorry, what?" card**, since the real AI decides positions. After any re-recording, watch the video: a pick with no match falls back to a fixed position.
+
 ## Keeping product documents in sync — trigger phrase "sync docs" (Ken, July 8 2026)
 
 Product-document currency is tracked by [`DOC-SYNC.md`](DOC-SYNC.md) (any root document named `Conversant AAC *`, each stamped with the git commit it was last reviewed against — never file modification date, which a format-only edit would bump).

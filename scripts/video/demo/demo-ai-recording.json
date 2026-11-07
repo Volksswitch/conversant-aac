@@ -1,0 +1,538 @@
+{
+  "note": "Real AI answers recorded by render-video.mjs --capture. Do not edit by hand.",
+  "recorded": "2026-11-07T17:19:04.158Z",
+  "answers": [
+    {
+      "kind": "response options",
+      "ms": 3537,
+      "response": {
+        "model": "claude-sonnet-5-5",
+        "id": "msg_011Cgox5rrvS9uqVZjukqkee",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"partner_action\":\"STATEMENT\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"Great, thanks. Can I see it?\",\"hint\":\"see the pull list\"},{\"slot\":\"DISPREFERRED\",\"text\":\"Good timing, but I can't stay long today.\",\"hint\":\"short on time\",\"account\":true},{\"slot\":\"INITIATIVE\",\"text\":\"Anything good come in besides my stuff?\",\"hint\":\"ask what else\",\"format\":\"return-question\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, what came in?\",\"hint\":\"say again\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 824,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 17265,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 265,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      },
+      "words": "{\"partner_action\":\"STATEMENT\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"Great, thanks. Can I see it?\",\"hint\":\"see the pull list\"},{\"slot\":\"DISPREFERRED\",\"text\":\"Good timing, but I can't stay long today.\",\"hint\":\"short on time\",\"account\":true},{\"slot\":\"INITIATIVE\",\"text\":\"Anything good come in besides my stuff?\",\"hint\":\"ask what else\",\"format\":\"return-question\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, what came in?\",\"hint\":\"say again\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+    },
+    {
+      "kind": "response options",
+      "ms": 2505,
+      "response": {
+        "model": "claude-sonnet-5-5",
+        "id": "msg_011Cgox6qqvQrfGuqQpZECfC",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"partner_action\":\"QUESTION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[\"regular cover\",\"variant\"],\"offered_range\":null,\"responses\":[{\"slot\":\"CHOICE\",\"text\":\"The regular cover is fine.\",\"hint\":\"regular\"},{\"slot\":\"CHOICE\",\"text\":\"I'll take the variant.\",\"hint\":\"variant\"},{\"slot\":\"CHOICE_ASK\",\"text\":\"What does the variant look like?\",\"hint\":\"ask about it\"},{\"slot\":\"CHOICE_REPAIR\",\"text\":\"Sorry, which one was the variant?\",\"hint\":\"say again\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 886,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 17265,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 243,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      },
+      "words": "{\"partner_action\":\"QUESTION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[\"regular cover\",\"variant\"],\"offered_range\":null,\"responses\":[{\"slot\":\"CHOICE\",\"text\":\"The regular cover is fine.\",\"hint\":\"regular\"},{\"slot\":\"CHOICE\",\"text\":\"I'll take the variant.\",\"hint\":\"variant\"},{\"slot\":\"CHOICE_ASK\",\"text\":\"What does the variant look like?\",\"hint\":\"ask about it\"},{\"slot\":\"CHOICE_REPAIR\",\"text\":\"Sorry, which one was the variant?\",\"hint\":\"say again\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+    },
+    {
+      "kind": "response options",
+      "ms": 2510,
+      "response": {
+        "model": "claude-sonnet-5-5",
+        "id": "msg_011Cgox7ti6FGQHtjJvQpKWD",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"partner_action\":\"QUESTION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"Yeah, still want it.\",\"hint\":\"still want it\"},{\"slot\":\"DISPREFERRED\",\"text\":\"Eight bucks more, huh. Then I'll stick with the regular.\",\"hint\":\"regular cover\",\"account\":true},{\"slot\":\"INITIATIVE\",\"text\":\"Can you hold it for me until next week?\",\"hint\":\"hold it\",\"format\":\"return-question\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, eight more than the regular?\",\"hint\":\"say again\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 916,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 17265,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 270,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      },
+      "words": "{\"partner_action\":\"QUESTION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"Yeah, still want it.\",\"hint\":\"still want it\"},{\"slot\":\"DISPREFERRED\",\"text\":\"Eight bucks more, huh. Then I'll stick with the regular.\",\"hint\":\"regular cover\",\"account\":true},{\"slot\":\"INITIATIVE\",\"text\":\"Can you hold it for me until next week?\",\"hint\":\"hold it\",\"format\":\"return-question\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, eight more than the regular?\",\"hint\":\"say again\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+    },
+    {
+      "kind": "response options",
+      "ms": 3414,
+      "response": {
+        "model": "claude-sonnet-5-5",
+        "id": "msg_011Cgox8ixFBGLeUHp6jRcoi",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"partner_action\":\"QUESTION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"Yeah, still want it.\",\"hint\":\"yes, variant\"},{\"slot\":\"DISPREFERRED\",\"text\":\"Eight more is steep. Regular cover, please.\",\"hint\":\"switch to regular\",\"account\":true},{\"slot\":\"INITIATIVE\",\"text\":\"Is the variant a one-time thing, or will it come back?\",\"hint\":\"ask about it\",\"format\":\"return-question\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, eight more for what?\",\"hint\":\"say again\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 1065,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 17265,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 271,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      },
+      "words": "{\"partner_action\":\"QUESTION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"Yeah, still want it.\",\"hint\":\"yes, variant\"},{\"slot\":\"DISPREFERRED\",\"text\":\"Eight more is steep. Regular cover, please.\",\"hint\":\"switch to regular\",\"account\":true},{\"slot\":\"INITIATIVE\",\"text\":\"Is the variant a one-time thing, or will it come back?\",\"hint\":\"ask about it\",\"format\":\"return-question\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, eight more for what?\",\"hint\":\"say again\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+    },
+    {
+      "kind": "response options",
+      "ms": 4141,
+      "response": {
+        "model": "claude-sonnet-5-5",
+        "id": "msg_011CgoxC1F83dbcsNEoo5peu",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"partner_action\":\"INVITATION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"Sure, add it. Thanks.\",\"hint\":\"yes, add it\"},{\"slot\":\"DISPREFERRED\",\"text\":\"Thanks, but Batman isn't really my thing. I'll pass.\",\"hint\":\"pass\",\"account\":true},{\"slot\":\"INITIATIVE\",\"text\":\"Anything else new in for me this week?\",\"hint\":\"ask what else\",\"format\":\"return-question\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, which Batman one-shot?\",\"hint\":\"which one\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 832,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 17265,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 274,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      },
+      "words": "{\"partner_action\":\"INVITATION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"Sure, add it. Thanks.\",\"hint\":\"yes, add it\"},{\"slot\":\"DISPREFERRED\",\"text\":\"Thanks, but Batman isn't really my thing. I'll pass.\",\"hint\":\"pass\",\"account\":true},{\"slot\":\"INITIATIVE\",\"text\":\"Anything else new in for me this week?\",\"hint\":\"ask what else\",\"format\":\"return-question\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, which Batman one-shot?\",\"hint\":\"which one\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+    },
+    {
+      "kind": "response options",
+      "ms": 3221,
+      "response": {
+        "model": "claude-sonnet-5-5",
+        "id": "msg_011CgoxCR7K7v2j12kL1SAai",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"partner_action\":\"INVITATION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"Yeah, put it on the pile. Spidey's still the one, though.\",\"hint\":\"add it\",\"defers\":false},{\"slot\":\"DISPREFERRED\",\"text\":\"I'd say yes, but I'm saving up for the next Ms. Marvel. Maybe next week.\",\"hint\":\"not this time\",\"account\":true,\"defers\":false},{\"slot\":\"INITIATIVE\",\"text\":\"Who's writing it? If it's good, I might break my Spider-Man loyalty.\",\"hint\":\"who's writing it\",\"format\":\"return-question\",\"defers\":false},{\"slot\":\"REPAIR\",\"text\":\"Sorry, did you say a Batman one-shot? Which one?\",\"hint\":\"which one?\",\"trigger\":\"none\",\"defers\":false}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 1031,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 17265,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 336,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      },
+      "words": "{\"partner_action\":\"INVITATION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"Yeah, put it on the pile. Spidey's still the one, though.\",\"hint\":\"add it\",\"defers\":false},{\"slot\":\"DISPREFERRED\",\"text\":\"I'd say yes, but I'm saving up for the next Ms. Marvel. Maybe next week.\",\"hint\":\"not this time\",\"account\":true,\"defers\":false},{\"slot\":\"INITIATIVE\",\"text\":\"Who's writing it? If it's good, I might break my Spider-Man loyalty.\",\"hint\":\"who's writing it\",\"format\":\"return-question\",\"defers\":false},{\"slot\":\"REPAIR\",\"text\":\"Sorry, did you say a Batman one-shot? Which one?\",\"hint\":\"which one?\",\"trigger\":\"none\",\"defers\":false}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+    },
+    {
+      "kind": "response options",
+      "ms": 3377,
+      "response": {
+        "model": "claude-sonnet-5-5",
+        "id": "msg_011CgoxDKidnyn7FrjrZo2Ti",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"partner_action\":\"INVITATION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"Yeah, add it. Thanks.\",\"hint\":\"yes, add it\",\"account\":false},{\"slot\":\"DISPREFERRED\",\"text\":\"Not this time, I'm saving up for the Packers game.\",\"hint\":\"skip, saving up\",\"account\":true},{\"slot\":\"INITIATIVE\",\"text\":\"Hold on, how much is it? I'm saving for the Packers game.\",\"hint\":\"ask price\",\"format\":\"return-question\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, which Batman one-shot?\",\"hint\":\"which one?\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 1062,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 17265,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 288,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      },
+      "words": "{\"partner_action\":\"INVITATION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"Yeah, add it. Thanks.\",\"hint\":\"yes, add it\",\"account\":false},{\"slot\":\"DISPREFERRED\",\"text\":\"Not this time, I'm saving up for the Packers game.\",\"hint\":\"skip, saving up\",\"account\":true},{\"slot\":\"INITIATIVE\",\"text\":\"Hold on, how much is it? I'm saving for the Packers game.\",\"hint\":\"ask price\",\"format\":\"return-question\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, which Batman one-shot?\",\"hint\":\"which one?\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+    },
+    {
+      "kind": "response options",
+      "ms": 1523,
+      "response": {
+        "model": "claude-sonnet-5-5",
+        "id": "msg_011CgoxELkgRE7wnzT9N3tyN",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"partner_action\":\"OTHER\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":true,\"offered_options\":[],\"offered_range\":null,\"responses\":[],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 881,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 17265,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 89,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      },
+      "words": "{\"partner_action\":\"OTHER\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":true,\"offered_options\":[],\"offered_range\":null,\"responses\":[],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+    },
+    {
+      "kind": "other",
+      "ms": 1646,
+      "response": {
+        "model": "claude-sonnet-5-5",
+        "id": "msg_011CgoxESp4GQP5nxQ8dxaY8",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"rephrase\": \"Not now, I'm saving my money for the Packers game.\", \"expand\": \"No, skip it this time. I'm saving my money for the Packers game, so I'm holding off on extras.\", \"guessed\": false}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 7055,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 75,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      },
+      "words": "{\"rephrase\": \"Not now, I'm saving my money for the Packers game.\", \"expand\": \"No, skip it this time. I'm saving my money for the Packers game, so I'm holding off on extras.\", \"guessed\": false}"
+    },
+    {
+      "kind": "response options",
+      "ms": 2803,
+      "response": {
+        "model": "claude-sonnet-5-5",
+        "id": "msg_011CgoxFSSWZGevdtXmecWF1",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"partner_action\":\"QUESTION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"Just the usual. Anything in for me?\",\"hint\":\"anything in\",\"defers\":false},{\"slot\":\"DISPREFERRED\",\"text\":\"Nope, that's all today, thanks.\",\"hint\":\"that's all\",\"account\":true},{\"slot\":\"INITIATIVE\",\"text\":\"What's coming out next week?\",\"hint\":\"next week\",\"format\":\"return-question\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, anything else of what?\",\"hint\":\"say again\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 915,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 17265,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 260,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      },
+      "words": "{\"partner_action\":\"QUESTION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"Just the usual. Anything in for me?\",\"hint\":\"anything in\",\"defers\":false},{\"slot\":\"DISPREFERRED\",\"text\":\"Nope, that's all today, thanks.\",\"hint\":\"that's all\",\"account\":true},{\"slot\":\"INITIATIVE\",\"text\":\"What's coming out next week?\",\"hint\":\"next week\",\"format\":\"return-question\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, anything else of what?\",\"hint\":\"say again\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+    },
+    {
+      "kind": "response options",
+      "ms": 2744,
+      "response": {
+        "model": "claude-sonnet-5-5",
+        "id": "msg_011CgoxH7X2j2wsZEaYwa8Ce",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"partner_action\":\"STATEMENT\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"Awesome, thanks Ramon. I'll grab it.\",\"hint\":\"thanks, grab it\"},{\"slot\":\"DISPREFERRED\",\"text\":\"I'd take it, but I'm skipping this week. Hold it for me?\",\"hint\":\"hold it\",\"account\":true},{\"slot\":\"INITIATIVE\",\"text\":\"Any Spider-Man news you're excited about?\",\"hint\":\"ask news\",\"format\":\"return-question\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, which Spider-Man was that?\",\"hint\":\"which issue\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 960,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 17265,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 291,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      },
+      "words": "{\"partner_action\":\"STATEMENT\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"Awesome, thanks Ramon. I'll grab it.\",\"hint\":\"thanks, grab it\"},{\"slot\":\"DISPREFERRED\",\"text\":\"I'd take it, but I'm skipping this week. Hold it for me?\",\"hint\":\"hold it\",\"account\":true},{\"slot\":\"INITIATIVE\",\"text\":\"Any Spider-Man news you're excited about?\",\"hint\":\"ask news\",\"format\":\"return-question\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, which Spider-Man was that?\",\"hint\":\"which issue\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+    },
+    {
+      "kind": "partner line",
+      "ms": 2481,
+      "response": {
+        "model": "claude-sonnet-5-5",
+        "id": "msg_011CgoxKy48GNGiFPqsejWX4",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "Hi there, welcome in! What can I get started for you today?"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 774,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 21,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      },
+      "words": "Hi there, welcome in! What can I get started for you today?"
+    },
+    {
+      "kind": "response options",
+      "ms": 2768,
+      "response": {
+        "model": "claude-sonnet-5-5",
+        "id": "msg_011CgoxLHYMuSQCWtrnRDkAD",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"partner_action\":\"INVITATION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"Hi, can I get a venti iced black tea, unsweetened?\",\"hint\":\"usual iced tea\"},{\"slot\":\"DISPREFERRED\",\"text\":\"Actually, I'm still deciding. Can you give me a minute?\",\"hint\":\"need a minute\",\"account\":true},{\"slot\":\"INITIATIVE\",\"text\":\"I'm thinking about a Java Chip Frappuccino. Is the Frappuccino machine working today?\",\"hint\":\"ask about treat\",\"format\":\"return-question\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, could you say that again?\",\"hint\":\"say again\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 248,
+          "cache_creation_input_tokens": 17353,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 17353,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 306,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      },
+      "words": "{\"partner_action\":\"INVITATION\",\"turn_status\":\"COMPLETE\",\"is_repair_initiator\":false,\"offered_options\":[],\"offered_range\":null,\"responses\":[{\"slot\":\"PREFERRED\",\"text\":\"Hi, can I get a venti iced black tea, unsweetened?\",\"hint\":\"usual iced tea\"},{\"slot\":\"DISPREFERRED\",\"text\":\"Actually, I'm still deciding. Can you give me a minute?\",\"hint\":\"need a minute\",\"account\":true},{\"slot\":\"INITIATIVE\",\"text\":\"I'm thinking about a Java Chip Frappuccino. Is the Frappuccino machine working today?\",\"hint\":\"ask about treat\",\"format\":\"return-question\"},{\"slot\":\"REPAIR\",\"text\":\"Sorry, could you say that again?\",\"hint\":\"say again\",\"trigger\":\"none\"}],\"missing_facts\":[],\"missing_other\":[],\"heard_uncertain\":[]}"
+    },
+    {
+      "kind": "partner line",
+      "ms": 1196,
+      "response": {
+        "model": "claude-sonnet-5-5",
+        "id": "msg_011CgoxM49Ef8uy1y32EcKFK",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "You got it, one venti iced black tea, no sweetener. Is that for here or to go?"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 821,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 30,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      },
+      "words": "You got it, one venti iced black tea, no sweetener. Is that for here or to go?"
+    }
+  ]
+}

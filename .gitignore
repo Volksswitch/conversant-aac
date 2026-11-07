@@ -119,5 +119,12 @@ Videos/**/*.srt
 Videos/*.pdf
 Videos/*.srt
 Videos/*.json
+Videos/**/*.json
 Videos/.frames/
 Videos/.published/
+
+# Same again for the ElevenLabs key used to voice the demo video (Ken's cloned
+# narrator voice). Wide patterns for the same reason as the keys above.
+.elevenlabs-key
+.elevenlabs-key.*
+*elevenlabs*key*

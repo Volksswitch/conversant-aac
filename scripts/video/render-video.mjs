@@ -27,6 +27,8 @@ import { pathToFileURL } from 'node:url';
 import puppeteer from 'puppeteer';
 import { ROOT, readAzureKey, synthesize, pace } from './azure.mjs';
 import { makeCompanion, placeInCourse, MAX_PAGE_STEPS } from './companion.mjs';
+import { readElevenKey, synthesizeEleven } from './elevenlabs.mjs';
+import { makeFramer } from './frame.mjs';
 
 const PORT = 8123;
 const VIEW = { width: 1280, height: 720, deviceScaleFactor: 1.5 }; // 1920 x 1080 video
@@ -60,6 +62,10 @@ function run(cmd, args) {
 const durationOf = (f) => Number(run(FFPROBE, ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', f]));
 
 const voices = JSON.parse(fs.readFileSync(path.join(ROOT, 'scripts', 'video', 'voices.json'), 'utf8'));
+// A script may bring its own cast (the demo video: Ken's cloned voice and three
+// ElevenLabs voices). Speakers it does not name keep their voices.json voice.
+let cast = voices;
+let elevenKey = null;
 const cacheDir = path.join(ROOT, 'Videos', '.cache');
 fs.mkdirSync(cacheDir, { recursive: true });
 let creds = null;
@@ -77,7 +83,18 @@ function pinsFor(step, text) {
 }
 
 async function speech(speaker, text, pins = null) {
-  const voice = voices[speaker]?.azure;
+  const eleven = cast[speaker]?.eleven;
+  if (eleven) {
+    if (pins) throw new Error(`STOPPING - pinned sounds work only with Azure voices (speaker "${speaker}")`);
+    const id = `eleven:${eleven.id}:${eleven.model || ''}:${JSON.stringify(eleven.settings || null)}\n${text}`;
+    const file = path.join(cacheDir, `${crypto.createHash('sha1').update(id).digest('hex').slice(0, 16)}.mp3`);
+    if (!fs.existsSync(file)) {
+      elevenKey ??= readElevenKey();
+      fs.writeFileSync(file, await synthesizeEleven(elevenKey, eleven, text));
+    }
+    return file;
+  }
+  const voice = cast[speaker]?.azure;
   if (!voice) throw new Error(`No voice for speaker "${speaker}" in voices.json`);
   const key = `${voice}\n${text}${pins ? `\n${JSON.stringify(pins)}` : ''}`;
   const hash = crypto.createHash('sha1').update(key).digest('hex').slice(0, 16);
@@ -202,7 +219,88 @@ async function settle(page, step = {}) {
 // script, so the options on screen are always the ones the narration describes.
 // A request the script did not plan for stops the render rather than showing
 // something nobody wrote.
+// REAL answers, recorded once and then fixed (the demo video, Ken November 7 2026).
+// With --capture every request the app makes goes to the real AI with the key in
+// .anthropic-key, and the whole answer, plus how long it took, is saved to the
+// script's recording file. Every later render answers from that file in the same
+// order, after the same wait, so the video repeats exactly and still shows only
+// words the AI actually wrote. A request that does not line up with the recording
+// (a different kind, or one too many) stops the render: the script has changed
+// and needs a fresh --capture.
+const kindOf = (body) => {
+  const system = JSON.stringify(body.system || '');
+  if (system.includes('role-playing a communication partner')) return 'partner line';
+  if (body.output_config) return 'response options';
+  return 'other';
+};
+const MIN_WAIT_MS = 2600;  // see the replay below
+function makeRecordedAI(file, capture, page) {
+  // A step can hold the next set of options back (page.holdNextOptions()) until it
+  // calls page.releaseOptions(), so a picture taken while a holding phrase plays
+  // never depends on how fast the answer came.
+  let hold = false, release = null, released = false;
+  page.holdNextOptions = () => { hold = true; released = false; };
+  page.releaseOptions = () => { if (release) { release(); release = null; } else released = true; };
+  const saved = !capture && fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : null;
+  if (!capture && !saved) throw new Error(`STOPPING - no recorded AI answers yet. Run once with --capture to record them: ${path.relative(ROOT, file)}`);
+  const recording = capture ? { note: 'Real AI answers recorded by render-video.mjs --capture. Do not edit by hand.', recorded: new Date().toISOString(), answers: [] } : saved;
+  let next = 0;
+  const answer = async (bodyText) => {
+    const body = JSON.parse(bodyText);
+    const kind = kindOf(body);
+    if (!capture) {
+      const a = recording.answers[next++];
+      if (!a) throw new Error(`STOPPING - the app asked for ${kind} beyond the recording. Re-record with --capture.`);
+      if (a.kind !== kind) throw new Error(`STOPPING - request ${next} is ${kind} but the recording has ${a.kind}. Re-record with --capture.`);
+      // The real wait, so a holding phrase plays exactly where it did for real. A
+      // floor keeps the first holding phrase (spoken 2 seconds after the pause)
+      // from depending on a lucky fast answer; real waits are 3 to 8 seconds.
+      await pace(a.kind === 'response options' ? Math.max(a.ms, MIN_WAIT_MS) : a.ms);
+      if (hold && a.kind === 'response options') {
+        hold = false;
+        if (!released) await new Promise((r) => { release = r; });
+        released = false;
+      }
+      console.log(`  [ai] ${kind} (recorded)`);
+      return { full: JSON.stringify(a.response) };
+    }
+    const key = fs.readFileSync(path.join(ROOT, '.anthropic-key'), 'utf8').split(/\r?\n/)[0].trim();
+    const t0 = Date.now();
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+      body: bodyText,
+    });
+    const text = await r.text();
+    if (!r.ok) throw new Error(`The real AI refused: ${r.status} ${text.slice(0, 300)}`);
+    const ms = Date.now() - t0;
+    const response = JSON.parse(text);
+    const words = (response.content || []).find((c) => c.type === 'text')?.text || '';
+    recording.answers.push({ kind, ms, response, words });
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, JSON.stringify(recording, null, 2));
+    console.log(`  [ai] ${kind} (live, ${ms} ms)`);
+    if (hold && kind === 'response options') {
+      hold = false;
+      if (!released) await new Promise((r) => { release = r; });
+      released = false;
+    }
+    return { full: text };
+  };
+  answer.check = () => {
+    if (!capture && next !== recording.answers.length) {
+      throw new Error(`STOPPING - the recording holds ${recording.answers.length} answers but the app asked for ${next}. Re-record with --capture.`);
+    }
+  };
+  return answer;
+}
+
 function makeAI(ai = {}, page) {
+  if (ai.recording) {
+    const answer = makeRecordedAI(path.join(ROOT, ai.recording), process.argv.includes('--capture'), page);
+    page.checkAI = answer.check;
+    return answer;
+  }
   const partnerLines = [...(ai.partnerLines || [])];
   const responseSets = [...(ai.responseSets || [])];
   // A set marked untilReleased is held until a step calls page.releaseOptions().
@@ -252,7 +350,9 @@ async function openApp(browser, script) {
   page.on('console', (m) => { if (m.type() === 'error') console.log(`  [page] ${m.text()}`); });
   page.on('pageerror', (e) => console.log(`  [page] ${e.message}`));
   await page.exposeFunction('__videoAI', async (bodyText) => {
-    try { return await answer(bodyText); }
+    // page.aiCount lets a script wait for an answer to land (a refresh after New 4,
+    // Reframe or a goal button, where the old options stay on screen meanwhile).
+    try { const r = await answer(bodyText); page.aiCount = (page.aiCount || 0) + 1; return r; }
     catch (e) { console.log(`  [ai] ${e.message}`); throw e; }
   });
   await page.evaluateOnNewDocument(() => {
@@ -260,6 +360,9 @@ async function openApp(browser, script) {
     window.fetch = async (url, init = {}) => {
       if (String(url).startsWith('https://api.anthropic.com/v1/messages')) {
         const text = await window.__videoAI(init.body);
+        if (text && typeof text === 'object' && text.full) {
+          return new Response(text.full, { status: 200, headers: { 'content-type': 'application/json' } });
+        }
         return new Response(JSON.stringify({
           id: 'msg_video', type: 'message', role: 'assistant', model: 'video',
           content: [{ type: 'text', text }], stop_reason: 'end_turn',
@@ -384,6 +487,42 @@ async function openApp(browser, script) {
       for (const [k, v] of Object.entries(stored)) localStorage.setItem(k, JSON.stringify(v));
     }, script.storage);
   }
+  // A script can start from a whole backup file (the demo's Marc), written where an
+  // import would put it: each data file into the app's own storage, and the saved
+  // conversations into the in-browser conversations folder (so the script must
+  // also ask for inBrowserStorage). The file-to-storage list is data-transfer.js's.
+  if (script.backup) {
+    const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, script.backup), 'utf8'));
+    const CACHES = {
+      'worldview.json': 'aac_worldview', 'relationships.json': 'aac_relationships',
+      'places.json': 'aac_places', 'practice-scenarios.json': 'aac_practice_scenarios',
+      'control-phrases.json': 'aac_control_phrases', 'placeholders.json': 'aac_placeholders',
+      'express-panel.json': 'aac_express_items', 'voice.json': 'aac_voice',
+    };
+    const data = {};
+    for (const [file, value] of Object.entries(pkg.data || {})) {
+      if (!CACHES[file]) throw new Error(`STOPPING - the backup holds ${file}, which the video does not know how to load`);
+      data[CACHES[file]] = value;
+    }
+    if ((pkg.conversations || []).length && !script.inBrowserStorage) {
+      throw new Error('STOPPING - a backup with conversations needs inBrowserStorage: true');
+    }
+    await page.evaluate(async (stored, convos) => {
+      for (const [k, v] of Object.entries(stored)) localStorage.setItem(k, JSON.stringify(v));
+      if (!convos.length) return;
+      const root = await navigator.storage.getDirectory();
+      const dir = await root.getDirectoryHandle('conversations', { create: true });
+      const put = async (name, value) => {
+        const w = await (await dir.getFileHandle(name, { create: true })).createWritable();
+        await w.write(JSON.stringify(value, null, 2));
+        await w.close();
+      };
+      for (const c of convos) {
+        await put(`${c.id}.json`, c.data);
+        if (c.review && typeof c.review === 'object') await put(`${c.id}.review.json`, c.review);
+      }
+    }, data, pkg.conversations || []);
+  }
   await page.goto(url, { waitUntil: 'networkidle0' });
   // A script that shows the very first screens (before Start) opens the app and
   // leaves it there.
@@ -431,15 +570,35 @@ function srtTime(s) {
   return `${p(Math.floor(ms / 3600000))}:${p(Math.floor(ms / 60000) % 60)}:${p(Math.floor(ms / 1000) % 60)},${p(ms % 1000, 3)}`;
 }
 
+// A silent stretch of audio, for a step that shows something without a word said
+// (a caption-only moment in the demo).
+function silence(seconds, file) {
+  if (!fs.existsSync(file)) {
+    run(FFMPEG, ['-y', '-v', 'error', '-f', 'lavfi', '-i', 'anullsrc=r=48000:cl=stereo',
+      '-t', seconds.toFixed(3), '-c:a', 'libmp3lame', '-b:a', '64k', file]);
+  }
+  return file;
+}
+
 async function main() {
   const scriptPath = process.argv[2];
-  if (!scriptPath) throw new Error('Usage: node scripts/video/render-video.mjs <script.mjs>');
+  if (!scriptPath) throw new Error('Usage: node scripts/video/render-video.mjs <script.mjs> [--capture]');
   const script = (await import(pathToFileURL(path.resolve(scriptPath)).href)).default;
+  // A STANDALONE video (the demo) is not part of the course: no "Next:" line, no
+  // companion page, no change-check pictures, and it is written to its own folder.
+  const standalone = !!script.standalone;
+  cast = { ...voices, ...(script.voices || {}) };
   // Working pictures go in the system's temporary folder, not OneDrive, which
   // would otherwise upload every intermediate frame.
   const work = path.join(os.tmpdir(), 'conversant-video', script.id);
   fs.rmSync(work, { recursive: true, force: true });
   fs.mkdirSync(work, { recursive: true });
+
+  const endings = script.endings || null;
+  const endingSteps = endings ? Object.values(endings).flatMap((e) => e.steps) : [];
+  for (const step of endingSteps) {
+    if (!step.card) throw new Error('STOPPING - an ending may only hold title cards, so every version shares one app run');
+  }
 
   // Lines written in the script are spoken first, so a missing voice or key
   // fails before the browser opens. A line given as a function is the app's own
@@ -449,14 +608,17 @@ async function main() {
   // video 1.4 exists, 1.3 says "Next: Do You Need a Speech Service?"; once it
   // exists, the next sync re-makes 1.3 to say "Keeping Your Information Safe".
   // The last video in the course says nothing after its own last line.
-  const { next } = placeInCourse(script.id);
+  const { next } = standalone ? { next: null } : placeInCourse(script.id);
   const nextLine = next ? `Next: ${next.title}${/[.?!]$/.test(next.title) ? '' : '.'}` : '';
-  for (const step of script.steps) if (typeof step.say === 'string') step.say = step.say.replace('{next}', nextLine).trim();
-  for (const step of script.steps) if (typeof step.say === 'string') await speech(step.speaker, step.say, pinsFor(step, step.say));
+  const allSteps = [...script.steps, ...endingSteps];
+  for (const step of allSteps) if (typeof step.say === 'string') step.say = step.say.replace('{next}', nextLine).trim();
+  for (const step of allSteps) if (typeof step.say === 'string') await speech(step.speaker, step.say, pinsFor(step, step.say));
 
   const server = script.pictures ? null : await startServer();
   const browser = await puppeteer.launch({ headless: true, args: ['--mute-audio'] });
-  const segments = [];
+  // The framer is its own browser, so drawing a caption never touches the app's page.
+  const framerBrowser = (script.framed || allSteps.some((s) => s.card)) ? await puppeteer.launch({ headless: true }) : null;
+  const framer = framerBrowser ? await makeFramer(framerBrowser, VIEW) : null;
   const frames = [];
   const srt = [];
   // What "sync videos" uses to tell whether a video changed: every word said
@@ -465,20 +627,31 @@ async function main() {
   // An exact fingerprint of the pictures cannot work: the browser draws the same
   // screen with faintly different edges from run to run.
   const signature = crypto.createHash('sha256');
-  signature.update(JSON.stringify({ trouble: script.trouble || [], course: placeInCourse(script.id), voices }));
+  signature.update(JSON.stringify({ trouble: script.trouble || [], course: standalone ? null : placeInCourse(script.id), voices: cast }));
   const frameDir = path.join(ROOT, 'Videos', '.frames', script.id);
-  fs.rmSync(frameDir, { recursive: true, force: true });
-  fs.mkdirSync(frameDir, { recursive: true });
-  placeInCourse(script.id);   // a script missing from the course stops here, before any work
-  // The page's step limit is checked now, not after a two-minute render.
-  const pageSteps = script.steps.filter((s) => s.page).length;
-  if (pageSteps > MAX_PAGE_STEPS) throw new Error(`STOPPING - ${script.id} marks ${pageSteps} steps for its page; ${MAX_PAGE_STEPS} fit on one page`);
-  let t = 0;
-  try {
-    const page = script.pictures ? await openPictures(browser) : await openApp(browser, script);
-    for (const [i, step] of script.steps.entries()) {
+  if (!standalone) {
+    fs.rmSync(frameDir, { recursive: true, force: true });
+    fs.mkdirSync(frameDir, { recursive: true });
+    // The page's step limit is checked now, not after a two-minute render.
+    const pageSteps = script.steps.filter((s) => s.page).length;
+    if (pageSteps > MAX_PAGE_STEPS) throw new Error(`STOPPING - ${script.id} marks ${pageSteps} steps for its page; ${MAX_PAGE_STEPS} fit on one page`);
+  }
+
+  // One step: its picture, its sound, and its stretch of video.
+  let counter = 0;
+  const makeSegment = async (page, step, i, label) => {
+    const n = String(counter++).padStart(3, '0');
+    let shot = path.join(work, `${n}.png`);
+    let box = null;
+    if (step.card) {
+      // A title card can still act on the app behind it (end a conversation, set
+      // something up) before or after it is shown.
+      if (step.before && !script.pictures) await step.before(page);
+      await framer.card(step.card, shot);
+      if (step.after && !script.pictures) await step.after(page);
+    } else {
       if (script.pictures) {
-        if (!step.image) throw new Error(`STOPPING - step ${i + 1} has no picture`);
+        if (!step.image) throw new Error(`STOPPING - step ${label} has no picture`);
         await showPicture(page, step);
         if (step.ring) step[step.tap ? 'tap' : 'highlight'] = '#vid-target';
         else delete step.tap;
@@ -487,64 +660,116 @@ async function main() {
       if (step.until) await step.until(page).catch(async (e) => {
         const fail = path.join(work, 'failed.png');
         await page.screenshot({ path: fail });
-        throw new Error(`STOPPING - step ${i + 1}: ${e.message}. The screen at that moment: ${fail}`);
+        throw new Error(`STOPPING - step ${label}: ${e.message}. The screen at that moment: ${fail}`);
       });
-      if (step.waitFor) await page.waitForSelector(step.waitFor, { visible: true, timeout: 15000 })
+      if (step.waitFor) await page.waitForSelector(step.waitFor, { visible: true, timeout: 20000 })
         .catch(async () => {
           const fail = path.join(work, 'failed.png');
           await page.screenshot({ path: fail });
-          throw new Error(`STOPPING - step ${i + 1} waited for ${step.waitFor}, which never appeared. The screen at that moment: ${fail}`);
+          throw new Error(`STOPPING - step ${label} waited for ${step.waitFor}, which never appeared. The screen at that moment: ${fail}`);
         });
       await settle(page, step);
-      const box = await mark(page, step.tap || step.highlight, step.tap ? 'tap' : 'ring');
-      const shot = path.join(work, `${String(i).padStart(2, '0')}.png`);
+      // A tap can be worked out at the moment (the demo picks the option whose
+      // words fit, since the real AI decides which position it lands in).
+      const tap = typeof step.tap === 'function' ? await step.tap(page) : step.tap;
+      box = await mark(page, tap || step.highlight, tap ? 'tap' : 'ring');
       await page.screenshot({ path: shot });
-      frames.push({ file: shot, box, view: VIEW });
+      if (script.framed) {
+        const raw = shot;
+        shot = path.join(work, `${n}-framed.png`);
+        await framer.framed(raw, step.caption || '', shot);
+      }
       // A step with press: true then really taps what it pointed at, so the app
       // does the work and the next picture shows the result.
       if (step.press && !script.pictures) {
         await clearMark(page);
-        await page.click(step.tap || step.highlight);
+        await page.click(tap || step.highlight);
       }
+      if (step.after) await step.after(page);
+    }
+    frames.push({ file: shot, box, view: VIEW });
 
-      const said = typeof step.say === 'function' ? await step.say(page) : step.say;
-      if (!said) throw new Error(`STOPPING - step ${i + 1} has nothing to say`);
+    const said = typeof step.say === 'function' ? await step.say(page) : step.say;
+    let clip;
+    let speak = 0;
+    if (said) {
       const pins = pinsFor(step, said);
-      const clip = await speech(step.speaker, said, pins);
-      const speak = durationOf(clip);
-      const dur = LEAD_S + speak + TAIL_S;
-      const seg = path.join(work, `${String(i).padStart(2, '0')}.mp4`);
-      run(FFMPEG, ['-y', '-loop', '1', '-framerate', '30', '-i', shot, '-i', clip,
-        '-filter_complex', `[1:a]adelay=${Math.round(LEAD_S * 1000)}:all=1,apad[a]`,
-        '-map', '0:v', '-map', '[a]', '-t', dur.toFixed(3),
-        '-c:v', 'libx264', '-tune', 'stillimage', '-pix_fmt', 'yuv420p', '-r', '30',
-        '-c:a', 'aac', '-b:a', '160k', '-ar', '48000', '-ac', '2', seg]);
-      segments.push(seg);
-      // pronounce is left out when there are no pins, so other videos' signatures do not move.
+      clip = await speech(step.speaker, said, pins);
+      speak = durationOf(clip);
       signature.update(JSON.stringify({ speaker: step.speaker, said, page: step.page || null, pronounce: pins || undefined }));
-      run(FFMPEG, ['-y', '-v', 'error', '-i', shot, '-vf', 'scale=960:540', path.join(frameDir, `${String(i).padStart(2, '0')}.png`)]);
-      srt.push(`${i + 1}\n${srtTime(t + LEAD_S)} --> ${srtTime(t + LEAD_S + speak)}\n${said}\n`);
-      t += dur;
-      console.log(`step ${i + 1}/${script.steps.length}  ${dur.toFixed(1)}s  ${step.speaker}`);
+    } else if (step.hold) {
+      clip = silence(step.hold, path.join(cacheDir, `silence-${step.hold.toFixed(2)}.mp3`));
+      speak = step.hold;
+      signature.update(JSON.stringify({ hold: step.hold, caption: step.caption || null, card: step.card || null }));
+    } else {
+      throw new Error(`STOPPING - step ${label} has nothing to say and no hold time`);
+    }
+    if (step.caption || step.card) signature.update(JSON.stringify({ caption: step.caption || null, card: step.card || null }));
+    const lead = step.lead ?? LEAD_S, tail = step.tail ?? TAIL_S;
+    const dur = lead + speak + tail;
+    const seg = path.join(work, `${n}.mp4`);
+    run(FFMPEG, ['-y', '-loop', '1', '-framerate', '30', '-i', shot, '-i', clip,
+      '-filter_complex', `[1:a]adelay=${Math.round(lead * 1000)}:all=1,apad[a]`,
+      '-map', '0:v', '-map', '[a]', '-t', dur.toFixed(3),
+      '-c:v', 'libx264', '-tune', 'stillimage', '-pix_fmt', 'yuv420p', '-r', '30',
+      '-c:a', 'aac', '-b:a', '160k', '-ar', '48000', '-ac', '2', seg]);
+    if (!standalone) {
+      run(FFMPEG, ['-y', '-v', 'error', '-i', shot, '-vf', 'scale=960:540', path.join(frameDir, `${n.slice(1)}.png`)]);
+    }
+    console.log(`step ${label}  ${dur.toFixed(1)}s  ${step.speaker || (step.card ? 'card' : 'silent')}`);
+    return { seg, dur, lead, speak, said };
+  };
+
+  const main = [];
+  const variants = {};
+  try {
+    const page = script.pictures ? await openPictures(browser) : await openApp(browser, script);
+    for (const [i, step] of script.steps.entries()) {
+      main.push(await makeSegment(page, step, i, `${i + 1}/${script.steps.length}`));
+    }
+    page.checkAI?.();
+    for (const [name, ending] of Object.entries(endings || {})) {
+      variants[name] = [];
+      for (const [i, step] of ending.steps.entries()) variants[name].push(await makeSegment(page, step, i, `${name} ${i + 1}/${ending.steps.length}`));
     }
     // The companion page, from the same pictures, while the browser is still open.
-    const pdf = await makeCompanion({ browser, script, frames, seconds: t, ffmpeg: FFMPEG });
-    console.log(`${path.relative(ROOT, pdf)}`);
+    if (!standalone) {
+      const seconds = main.reduce((a, s) => a + s.dur, 0);
+      const pdf = await makeCompanion({ browser, script, frames, seconds, ffmpeg: FFMPEG });
+      console.log(`${path.relative(ROOT, pdf)}`);
+    }
   } finally {
     await browser.close();
+    await framerBrowser?.close();
     server?.kill();
   }
 
-  const list = path.join(work, 'list.txt');
-  fs.writeFileSync(list, segments.map((s) => `file '${s.replace(/\\/g, '/')}'`).join('\n'));
-  const out = path.join(ROOT, 'Videos', `${script.id}.mp4`);
-  run(FFMPEG, ['-y', '-f', 'concat', '-safe', '0', '-i', list, '-c', 'copy', '-movflags', '+faststart', out]);
-  fs.writeFileSync(path.join(ROOT, 'Videos', `${script.id}.srt`), srt.join('\n'));
-  fs.writeFileSync(path.join(ROOT, 'Videos', `${script.id}.json`), JSON.stringify({
+  // Each version is the shared main run plus its own ending (or the main run alone).
+  const outDir = path.join(ROOT, 'Videos', ...(script.outDir ? [script.outDir] : []));
+  fs.mkdirSync(outDir, { recursive: true });
+  const versions = endings
+    ? Object.entries(endings).map(([name, e]) => ({ name: e.file || `${script.id}-${name}`, segs: [...main, ...variants[name]] }))
+    : [{ name: script.id, segs: main }];
+  for (const v of versions) {
+    const list = path.join(work, `list-${v.name.replace(/[^\w-]/g, '_')}.txt`);
+    fs.writeFileSync(list, v.segs.map((s) => `file '${s.seg.replace(/\\/g, '/')}'`).join('\n'));
+    const out = path.join(outDir, `${v.name}.mp4`);
+    run(FFMPEG, ['-y', '-f', 'concat', '-safe', '0', '-i', list, '-c', 'copy', '-movflags', '+faststart', out]);
+    // The caption file: every spoken line at the moment it is heard.
+    let t = 0, k = 0;
+    const lines = [];
+    for (const s of v.segs) {
+      if (s.said) lines.push(`${++k}\n${srtTime(t + s.lead)} --> ${srtTime(t + s.lead + s.speak)}\n${s.said}\n`);
+      t += s.dur;
+    }
+    fs.writeFileSync(path.join(outDir, `${v.name}.srt`), lines.join('\n'));
+    console.log(`\n${path.relative(ROOT, out)}  ${durationOf(out).toFixed(1)}s`);
+  }
+  // The how-to videos' change check reads this; one signature covers every version.
+  fs.writeFileSync(path.join(outDir, `${script.id}.json`), JSON.stringify({
     id: script.id, signature: signature.digest('hex'), pictures: frames.length,
-    seconds: Math.round(t), rendered: new Date().toISOString(),
+    seconds: Math.round(main.reduce((a, s) => a + s.dur, 0)), rendered: new Date().toISOString(),
   }, null, 2));
-  console.log(`\n${path.relative(ROOT, out)}  ${durationOf(out).toFixed(1)}s`);
 }
 
 main().catch((e) => { console.error(e.message); process.exit(1); });

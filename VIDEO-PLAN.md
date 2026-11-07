@@ -201,3 +201,26 @@ Steps 1 to 4 are what a beta tester needs on day one.
 1. **The videos live on the website**, published the same way the PDFs are. The site can't stream them, so they're downloaded and played. That means each file has to stay small; the pilot is 2.7 MB for 91 seconds.
 2. **Ken takes the iPad and Android screenshots** for the by-hand videos, from a list the build provides.
 3. **All 31 topics are in scope.**
+
+## The demonstration video (November 7 2026)
+
+One six-minute video that shows what Conversant does, made from `Conversant-AAC-Demo-Script.docx`. It's for Ken's talk at ATIA 2027, for people thinking about joining the beta, and later for promotion. It isn't part of the course.
+
+**To make it:** `node scripts/video/render-video.mjs scripts/video/demo/conversant-demo.mjs`
+
+That makes two files in `Videos/Demo`:
+
+| File | Ending | Length |
+|---|---|---|
+| `Conversant AAC Demo.mp4` | Where to find Conversant. No mention of the beta. Use this one at ATIA and for promotion. | 6:18 |
+| `Conversant AAC Demo - Beta.mp4` | Asks for testers and says we cover the AI during the beta. | 6:32 |
+
+Everything except the ending is shared, so the two can't drift apart. Each has a caption file (`.srt`) beside it.
+
+**How it differs from the how-to videos:**
+- **Voices** come from ElevenLabs: Ken's own cloned voice narrates, Eric is Marc, Charlie is Ramon, and River is the coffee-shop barista in the practice scene. The key is in `.elevenlabs-key` (git ignores it).
+- **The narration speaks only over title cards.** The app parts have no narration, only the real sound (Ramon, Marc, the barista) and a short caption under the picture, as the filming script designed.
+- **Marc is loaded from `Conference Demo/conversant-demo-marc.json`**, the same file used to set up a live demo.
+- **The AI's words are real.** The first run with `--capture` sends every request to the real AI and saves its exact answers, and how long each took, in `scripts/video/demo/demo-ai-recording.json`. Every later run replays them, so the video comes out the same each time. A run that no longer lines up with the recording stops and says to record again.
+
+**When Conversant changes:** run the command above. If it stops and asks for a new recording (the prompt, Marc's data or the steps changed), add `--capture`, then **watch the result**. The AI may word things differently, and a tap that looks for an answer by its words falls back to a fixed position if nothing fits. Recording costs a few cents of AI use. Speech already made is reused, so ElevenLabs is only charged for lines whose words changed.
