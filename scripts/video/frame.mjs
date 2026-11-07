@@ -38,12 +38,13 @@ export async function makeFramer(browser, view) {
           ${caption ? `<span style="border-left:6px solid ${ACCENT};padding-left:16px;">${esc(caption)}</span>` : ''}
         </div>`, out);
     },
-    // A title card: a heading and up to a few short lines.
-    async card({ title, lines = [], foot = '' }, out) {
+    // A title card: a heading, an optional web address shown large (on one line, smaller when long), and up to a few short lines.
+    async card({ title, lines = [], url = '', foot = '' }, out) {
       return shoot(`
         <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:0 120px;">
           <div style="width:90px;height:8px;background:${ACCENT};border-radius:4px;margin-bottom:34px;"></div>
           <div style="font-size:60px;font-weight:700;line-height:1.15;">${esc(title)}</div>
+          ${url ? `<div style="font-size:${url.length > 28 ? 50 : 64}px;font-weight:700;margin-top:34px;white-space:nowrap;color:${ACCENT};">${esc(url)}</div>` : ''}
           ${lines.map((l) => `<div style="font-size:32px;line-height:1.4;margin-top:22px;color:#d9e2ec;">${esc(l)}</div>`).join('')}
         </div>
         ${foot ? `<div style="position:absolute;left:120px;bottom:48px;font-size:22px;color:#9fb3c8;">${esc(foot)}</div>` : ''}`, out);
