@@ -14,8 +14,8 @@
 
 ## Before you film
 
-1. **Import Marc.** On the Dell, import `Conference Demo/conversant-demo-marc.json` (Settings > General > "Settings backup" > "Import settings..."). This brings in Marc's About Me, his people and places, his Express Panel, his voice answers and his saved conversations. The file is set up for this demo: Marc is 18, Ramon has a button in the Context band, and the "Keep it short" goal comes before Marc's other general goals.
-2. **Check the Flex band at Pulp Comics.** Tap Ramon and Pulp Comics. The Flex band should show four goal buttons, then the comic-shop phrases ("Anything in for me?", "Hold that one for me"). "Keep it short" is the fourth goal button. How many buttons fit depends on the keyboard layout, so if it's behind the More button, make the Flex band a row taller or plan to tap More in step 9 of Demo 1.
+1. **Import Marc.** On the Dell, import `Conference Demo/conversant-demo-marc.json` (Settings > General > "Settings backup" > "Import settings..."). This brings in Marc's About Me, his people and places, his Express Panel, his voice answers and his saved conversations. The file is set up for this demo: Marc is 18, and Ramon has a button in the Context band.
+2. **Check the Flex band at Pulp Comics.** Tap Ramon and Pulp Comics. The Flex band should show five goal buttons, then the comic-shop phrases ("Anything in for me?", "Hold that one for me"). "Just chatting" is the second goal button. How many buttons fit depends on the keyboard layout, so if it's behind the More button, make the Flex band a row taller or plan to tap More in step 9 of Demo 1.
 3. **Voices.** Under Settings > Speech, pick a good paid voice for Marc (Azure is the best choice), and a clearly different voice for the practice partner.
 4. **Listening.** On Windows, the browser's own listening is free and works well. Turn on "Resume listening automatically after speaking a response" (Settings > Conversation) so you don't need to press Listen between exchanges.
 5. **Screen.** Turn on "Use the whole screen" (Settings > General) so the browser's address bar and the taskbar don't show. A wide desktop screen makes the panel very wide; if it looks odd, size the browser window closer to a tablet's shape (about 1280 by 800) and record just that window.
@@ -68,10 +68,10 @@ Conversant AAC is a free, open-source app that uses AI to close that gap. Here's
 8. **Ramon:** *"Variant's eight bucks more, just so you know. Still want it?"*
    - The options appear.
 
-9. **Tap the "Keep it short" goal button.** Nothing is spoken. The button lights up and a new, shorter set of options replaces the old one.
+9. **Tap the "Just chatting" goal button.** Nothing is spoken. The button lights up and a new, more chatty set of options replaces the old one.
    - **Caption:** "Goals steer the options. Nothing is said out loud."
 
-10. **Tap a short option** (e.g. *"Yeah, worth it."*). The app speaks it.
+10. **Tap an option** (e.g. *"Yeah, still want it."*). The app speaks it.
     - **Caption (hold to the end):** "Same positions, every time"
 
 ---

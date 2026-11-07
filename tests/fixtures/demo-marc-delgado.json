@@ -935,11 +935,6 @@
           "label": "Talk to me"
         },
         {
-          "id": "",
-          "text": "Keep this short - I am running out of steam",
-          "label": "Keep it short"
-        },
-        {
           "id": "sociable"
         }
       ]

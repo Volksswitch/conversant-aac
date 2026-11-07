@@ -40,7 +40,7 @@ const R6 = "No problem. Anything else today?";
 const R7 = "Already on there. I set aside the new Spider-Man too.";
 const R8 = "See you next Saturday.";
 
-// The goal Marc switches on with Ramon (Ken did not want "Keep it short").
+// The goal Marc switches on with Ramon.
 const GOAL = 'Just chatting';
 
 // ---- Timing ----
@@ -164,12 +164,10 @@ export default {
     convLayout: { bottom: { command: 0.10, response: 0.20, dock: 0.42 } },
   },
   // For the video only (the backup file is not changed): one row each of Always,
-  // Flex and Context, and no "Keep it short" goal.
+  // Flex and Context.
   adjustBackup(pkg) {
     const ep = pkg.data['express-panel.json'];
     ep.sizes = { ...ep.sizes, shape: 'rows', contextRows: 1, flexRows: 1 };
-    const rel = pkg.data['relationships.json'];
-    rel.goals = (rel.goals || []).filter((g) => g.label !== 'Keep it short');
   },
   voices: {
     narrator: { name: 'Ken Hackbarth (cloned)', eleven: { id: 'UjNdMHnAjJXQL1HGr4ry', model: 'eleven_multilingual_v2', speed: 0.9, gap: 0.7 } },
@@ -233,7 +231,7 @@ export default {
     { before: setSelect('#colorSchemeInput', "() => 'light'"), ...tapIt(settingsTab('express'), { hold: 1.4 }) },
     // Opening this section shows the keyboard, the thing a layout changes.
     tapIt(section('Express Panel and Keyboard selection'), { hold: 1.4 }),
-    narrate("Marc can choose the keyboard layout that works for him. He uses QWERTY. There are alphabet layouts as well, with larger or smaller keys.",
+    narrate("Marc types on the screen, so he can choose the layout of the on-screen keyboard. He uses QWERTY, and there are alphabet layouts as well, with larger or smaller keys.",
       { before: async (p) => { await p.evaluate(() => { window.__layoutWas = document.getElementById('bottomLayoutSelect').value; }); },
         highlight: '#bottomLayoutSelect' }),
     { before: setSelect('#bottomLayoutSelect', "() => 'B2'"), highlight: '#bottomLayoutSelect', hold: 3 },

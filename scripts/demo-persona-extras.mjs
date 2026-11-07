@@ -306,7 +306,6 @@ const marc = {
         { id: 'information' },
         { id: 'help' },
         { id: '', text: 'Be taken seriously as the person answering', label: 'Talk to me' },
-        { id: '', text: 'Keep this short - I am running out of steam', label: 'Keep it short' },
         { id: 'sociable' },
     ],
 
