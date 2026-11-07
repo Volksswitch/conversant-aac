@@ -381,7 +381,7 @@ export default {
 
     // ===== TO CAMERA 4: where it stands =====
     narrate("All of this works today, in a web browser, on a Windows computer or tablet, a MacBook, a Chromebook, an iPad, or an Android tablet or phone.",
-      { card: { title: 'Where it stands', lines: ['Windows, Mac, Chromebook, iPad and Android, in a web browser.', 'Works with keyguards, and with eye gaze that moves the pointer.'] } }),
+      { card: { title: 'Where it stands', lines: ['Windows, Mac, Chromebook, iPad and Android, in a web browser.'] } }),
     narrate("It's free and open source and always will be. Each user pays the AI company directly and only for as much as they use. On some devices they also pay for a speech service. There's no subscription, and no company sitting in the middle holding their conversations. What's ahead: having the app recognize where you are and who you're talking to on its own, and learning more from your own words over time.",
       { card: { title: 'Where it stands', lines: ['Free and open source. No subscription.', 'You pay the AI company directly, only for what you use.'] } }),
   ],
