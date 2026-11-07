@@ -170,7 +170,7 @@ export default {
     ep.sizes = { ...ep.sizes, shape: 'rows', contextRows: 1, flexRows: 1 };
   },
   voices: {
-    narrator: { name: 'Ken Hackbarth (cloned)', eleven: { id: 'UjNdMHnAjJXQL1HGr4ry', model: 'eleven_multilingual_v2', speed: 0.9, gap: 0.7 } },
+    narrator: { name: 'Ken Hackbarth (cloned)', eleven: { id: 'UjNdMHnAjJXQL1HGr4ry', model: 'eleven_multilingual_v2', speed: 0.9, gap: 1.1, clause: 0.5 } },
     user: { name: 'Eric', eleven: { id: 'cjVigY5qzO86Huf0OWal', model: 'eleven_multilingual_v2', speed: 0.92 } },
     partner: { name: 'Charlie', eleven: { id: 'IKne3meq5aSn9XLyUdCD', model: 'eleven_multilingual_v2', speed: 0.92 } },
     barista: { name: 'River', eleven: { id: 'SAz9YHcvj6GT2YYXdXww', model: 'eleven_multilingual_v2', speed: 0.92 } },
@@ -179,7 +179,7 @@ export default {
 
   steps: [
     // ===== TO CAMERA 1: the problem =====
-    narrate("Real conversation has a deadline nobody talks about: about four seconds. Wait longer than that to answer, and the other person starts to fill the silence, change the subject, or give up.",
+    narrate("Real conversation has a deadline nobody talks about: roughly four seconds. Wait longer than that to answer, and the other person starts to fill the silence, change the subject, or give up.",
       { card: { title: 'Four seconds', lines: ['Real conversation has a deadline nobody talks about.'] } }),
     narrate("Most AAC can't meet that deadline, so the people who use it end up limited to short, practical exchanges instead of real conversation. Conversant AAC is a free, open-source app that uses AI to close that gap. Here's what it does.",
       { card: { title: TITLE, lines: ['Free and open source.', 'AI suggests replies within seconds, and you choose what is said.'] } }),
@@ -202,21 +202,21 @@ export default {
     ramon(R2, 'regular cover or the variant'),
     holding(),
     optionsArrive({ waitFor: '#expressPanel .ep-choice', highlight: 'all:#expressPanel .ep-choice', hold: undefined,
-      ...narrate("When Ramon offers a choice, the choices become buttons too, and the options answer with each one.") }),
+      ...narrate("When Ramon offers a choice, each choice becomes a button too. Tapping one brings up options about that choice.") }),
     tapIt(optionWhere(/variant/), { before: markSpoken }),
     marcSays(),
     ramon(R3, 'eight bucks more'),
     holding(),
     optionsArrive(),
-    narrate(`Goals steer the options, and they never say anything out loud. Marc is in no hurry today, so he taps "${GOAL}", and the options are written again.`,
+    narrate(`Goals steer the options, and they never say anything out loud. Marc is in no hurry today, so he taps "${GOAL}", and the options change to match.`,
       { tap: panelButtonWith(GOAL), press: true, before: markBoth, tail: waitForAI() }),
     newOptions(),
-    narrate("Notice that each kind of answer stays in the same place every time. Only the words change.",
+    narrate("Each kind of answer stays in the same place every time. Only the words change.",
       { tap: optionWhere(/worth|yeah|yes|still|sure/), press: true, before: markSpoken }),
     marcSays(),
 
     // ===== TO CAMERA 2: nothing on the screen moves =====
-    narrate("Notice that nothing on that screen moved. Only the words changed. That's on purpose. Many people who could use this rely on a keyguard, a plastic sheet with a hole over each button, so a hand with limited control doesn't hit the wrong one. If the buttons moved, the keyguard would be useless. What people can change is how it looks, without moving anything.",
+    narrate("Nothing on that screen moved, and that's on purpose. Many people who could use this rely on a keyguard, a plastic sheet with a hole over each button, so a hand with limited control doesn't hit the wrong one. If the buttons moved, the keyguard would be useless. What people can change is how it looks.",
       { card: { title: 'Nothing on the screen moves', lines: ['Only the words change.', 'So a keyguard keeps working.'] },
         after: (p) => p.click('#endConversationBtn') }),
 
@@ -246,7 +246,7 @@ export default {
         await p.click(section('One tap or two'));
         await pause(400);
       },
-      ...narrate("For anyone who hits buttons by accident, buttons can be set to need two taps.",
+      ...narrate("For anyone who hits buttons by accident, each button can be set to need two taps.",
         { tap: 'input[name="expressTapMode"][value="double"]', press: true }),
       after: async (p) => {
         const mode = await p.evaluate(() => JSON.parse(localStorage.getItem('aac_settings')).expressTapMode);
@@ -279,7 +279,7 @@ export default {
       { tap: '#regenerateBtn', press: true, before: markBoth, tail: waitForAI() }),
     newOptions(),
     // Beat B: Reframe
-    narrate("Or he can type a hint, and the options are written again around it.", { tap: ownWordsBtn, press: true }),
+    narrate("Or he can type a hint, and the options change to fit it.", { tap: ownWordsBtn, press: true }),
     { waitFor: '#composerInput', before: (p) => typeInto(p, '#composerInput', 'saving up for the Packers game'),
       highlight: '#composerInput', hold: 3.2 },
     tapIt('#reframeBtn', { before: markBoth, hold: 1.2, tail: waitForAI() }),
@@ -313,7 +313,7 @@ export default {
       { tap: panelButton('Hold that one for me'), press: true, before: markSpoken }),
     marcSays(),
     // Beat F: wrapping up
-    narrate("Ending a conversation takes two taps. Wrap up brings up ways to bring it to a close.", { tap: '#windDownBtn', press: true }),
+    narrate("Ending a conversation takes two taps. Wrap up offers ways to bring it to a close.", { tap: '#windDownBtn', press: true }),
     { waitFor: card(1) + ' .response-text', highlight: '#responseOptions', lead: 0.1, hold: 3.6 },
     tapIt(card(1), { before: markSpoken }),
     marcSays(),
@@ -336,9 +336,9 @@ export default {
     marcSays({ after: async (p) => { await p.click('#endConversationBtn'); await pause(600); } }),
 
     // ===== TO CAMERA 3: sounding like you =====
-    narrate("The options sound like Marc because Marc told it who he is. There's a set of questions he answers at his own pace: his interests, what matters to him, his sense of humor, the people in his life and the places he goes. For each person, he can say how he talks with them. He's relaxed and brief with Ramon, and more careful with his doctor.",
+    narrate("The options sound like Marc because he has told the app about himself. There's a set of questions he answers at his own pace: his interests, what matters to him, his sense of humor, the people in his life and the places he goes. For each person, he can say how he talks with them. He's relaxed and brief with Ramon, and more careful with his doctor.",
       { card: { title: 'Sounding like you', lines: ['It speaks as him, not for him.'] } }),
-    narrate("He can also go back over a saved conversation and rewrite anything that didn't sound like him. The more he does that with someone, the more the options sound like him with that person. And it won't make things up. If someone asks what Marc did last night, it won't invent an answer, and it won't answer trivia as though he knew it. It speaks as him, not for him.",
+    narrate("He can also go back over a saved conversation and rewrite anything that wasn't how he'd say it. The more he does that with someone, the more the options sound like him with that person. And it won't make things up. If someone asks what Marc did last night, it won't invent an answer, and it won't answer trivia as though he knew it. It speaks as him, not for him.",
       { card: { title: 'Sounding like you', lines: ['Rewrite what didn’t sound like you.', 'It won’t invent your life, or answer trivia as though you knew it.'] } }),
 
     // ===== DEMO 3: where that comes from =====
@@ -382,19 +382,21 @@ export default {
     // ===== TO CAMERA 4: where it stands =====
     narrate("All of this works today, in a web browser, on a Windows computer or tablet, a Mac, a Chromebook, an iPad, or an Android tablet. It works with a keyguard, and with eye gaze that moves the pointer.",
       { card: { title: 'Where it stands', lines: ['Windows, Mac, Chromebook, iPad and Android, in a web browser.', 'Works with keyguards, and with eye gaze that moves the pointer.'] } }),
-    narrate("It's free and open source. Each user pays the AI company directly, only for what they use, and on some devices a speech service too. There's no subscription, and no company sitting in the middle holding their conversations. What's ahead: having the app recognize where you are and who you're talking to on its own, and learning more from your own words over time.",
+    narrate("It's free and open source. Each user pays the AI company directly, only for what they use. On some devices they also pay for a speech service. There's no subscription, and no company sitting in the middle holding their conversations. What's ahead: having the app recognize where you are and who you're talking to on its own, and learning more from your own words over time.",
       { card: { title: 'Where it stands', lines: ['Free and open source. No subscription.', 'You pay the AI company directly, only for what you use.'] } }),
   ],
 
   // Everything above is shared. Each version adds its own last segment.
   endings: {
+    // ===== ENDING: PUBLIC VERSION (ATIA and promotion) =====
     public: {
       file: 'Conversant AAC Demo',
       steps: [
-        narrate("Conversant is free to use. You'll find it at conversant dot volksswitch dot org. If you try it, or know someone who might want to, I'd like to hear what you think.",
+        narrate("You'll find Conversant at conversant dot volksswitch dot org. If you try it, or know someone who might want to, I'd like to hear what you think.",
           { card: { title: 'Try Conversant AAC', lines: ['conversant.volksswitch.org'], foot: 'volksswitch.org' } }),
       ],
     },
+    // ===== ENDING: BETA VERSION =====
     beta: {
       file: 'Conversant AAC Demo - Beta',
       steps: [

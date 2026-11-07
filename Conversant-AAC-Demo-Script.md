@@ -27,7 +27,7 @@
 
 ## TO CAMERA 1 — The problem (0:00–0:30)
 
-"Real conversation has a deadline nobody talks about: about four seconds. Wait longer than that to answer, and the other person starts to fill the silence, change the subject, or give up. Most AAC can't meet that deadline, so the people who use it end up limited to short, practical exchanges instead of real conversation.
+"Real conversation has a deadline nobody talks about: roughly four seconds. Wait longer than that to answer, and the other person starts to fill the silence, change the subject, or give up. Most AAC can't meet that deadline, so the people who use it end up limited to short, practical exchanges instead of real conversation.
 
 Conversant AAC is a free, open-source app that uses AI to close that gap. Here's what it does."
 
@@ -78,9 +78,9 @@ Conversant AAC is a free, open-source app that uses AI to close that gap. Here's
 
 ## TO CAMERA 2 — Nothing on the screen moves (2:00–2:25)
 
-"Notice that nothing on that screen moved. Only the words changed. That's on purpose. Many people who could use this rely on a keyguard, a plastic sheet with a hole over each button, so a hand with limited control doesn't hit the wrong one. If the buttons moved, the keyguard would be useless.
+"Nothing on that screen moved, and that's on purpose. Many people who could use this rely on a keyguard, a plastic sheet with a hole over each button, so a hand with limited control doesn't hit the wrong one. If the buttons moved, the keyguard would be useless.
 
-What people can change is how it looks, without moving anything."
+What people can change is how it looks."
 
 ---
 
@@ -144,9 +144,9 @@ What people can change is how it looks, without moving anything."
 
 ## TO CAMERA 3 — Sounding like you (4:15–4:45)
 
-"The options sound like Marc because Marc told it who he is. There's a set of questions he answers at his own pace: his interests, what matters to him, his sense of humor, the people in his life and the places he goes. For each person, he can say how he talks with them. He's relaxed and brief with Ramon, and more careful with his doctor.
+"The options sound like Marc because he has told the app about himself. There's a set of questions he answers at his own pace: his interests, what matters to him, his sense of humor, the people in his life and the places he goes. For each person, he can say how he talks with them. He's relaxed and brief with Ramon, and more careful with his doctor.
 
-He can also go back over a saved conversation and rewrite anything that didn't sound like him. The more he does that with someone, the more the options sound like him with that person.
+He can also go back over a saved conversation and rewrite anything that wasn't how he'd say it. The more he does that with someone, the more the options sound like him with that person.
 
 And it won't make things up. If someone asks what Marc did last night, it won't invent an answer, and it won't answer trivia as though he knew it. It speaks as him, not for him."
 
@@ -169,7 +169,7 @@ And it won't make things up. If someone asks what Marc did last night, it won't 
 
 "All of this works today, in a web browser, on a Windows computer or tablet, a Mac, a Chromebook, an iPad, or an Android tablet. It works with a keyguard, and with eye gaze that moves the pointer.
 
-It's free and open source. Each user pays the AI company directly, only for what they use, and on some devices a speech service too. There's no subscription, and no company sitting in the middle holding their conversations.
+It's free and open source. Each user pays the AI company directly, only for what they use. On some devices they also pay for a speech service. There's no subscription, and no company sitting in the middle holding their conversations.
 
 What's ahead: having the app recognize where you are and who you're talking to on its own, and learning more from your own words over time."
 

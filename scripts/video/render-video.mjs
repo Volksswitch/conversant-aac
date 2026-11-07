@@ -99,18 +99,26 @@ async function speech(speaker, text, pins = null) {
     // much quiet, so a narrator does not run one sentence into the next (Ken,
     // November 7 2026: "put more natural, relaxed delays between sentences").
     // A title's full stop ("Ms. Marvel") is not the end of a sentence.
+    // A colon, semicolon or dash inside a sentence gets a shorter pause (`clause`),
+    // so "nobody talks about: about four seconds" is not run together.
     const kept = text.replace(/\b(Ms|Mr|Mrs|Dr|St)\./g, '$1\u0001');
     const sentences = eleven.gap
       ? kept.match(/[^.?!]+[.?!]+["'\u2019\u201d]*\s*|[^.?!]+$/g).map((x) => x.replace(/\u0001/g, '.').trim()).filter(Boolean)
       : [text];
-    if (sentences.length < 2) return one(text);
-    const parts = [];
-    for (const t of sentences) parts.push(await one(t));
-    const id = `joined:${eleven.gap}:${parts.join('|')}`;
+    const pieces = [];
+    for (const [i, sen] of sentences.entries()) {
+      const clauses = eleven.clause ? sen.split(/(?<=[:;])\s+|\s+(?=[\u2014\u2013]\s)/).map((c) => c.trim()).filter(Boolean) : [sen];
+      for (const [j, c] of clauses.entries()) pieces.push({ text: c, before: j ? eleven.clause : i ? eleven.gap : 0 });
+    }
+    if (pieces.length < 2) return one(text);
+    const inputs = [];
+    for (const p of pieces) {
+      if (p.before) inputs.push(silence(p.before, path.join(cacheDir, `gap-${p.before.toFixed(2)}-44k.mp3`), 44100));
+      inputs.push(await one(p.text));
+    }
+    const id = `joined:${inputs.join('|')}`;
     const file = path.join(cacheDir, `${crypto.createHash('sha1').update(id).digest('hex').slice(0, 16)}.mp3`);
     if (!fs.existsSync(file)) {
-      const gap = silence(eleven.gap, path.join(cacheDir, `gap-${eleven.gap.toFixed(2)}-44k.mp3`), 44100);
-      const inputs = parts.flatMap((f, i) => (i ? [gap, f] : [f]));
       run(FFMPEG, ['-y', '-v', 'error', ...inputs.flatMap((f) => ['-i', f]),
         '-filter_complex', `${inputs.map((_, i) => `[${i}:a]`).join('')}concat=n=${inputs.length}:v=0:a=1[a]`,
         '-map', '[a]', '-c:a', 'libmp3lame', '-b:a', '128k', '-ar', '44100', file]);
