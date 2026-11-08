@@ -26,6 +26,8 @@ forgetting to tag one is only ever noise, never silence.
 
 ## Unreleased (next release)
 
+## Version 0.13.38
+
 ### Everyone
 - On the Speech tab, the voice list and its Test button now appear right under the speech service you chose, instead of below all of them.
 - If the app asks for an API key when you start it, adding the key in Settings and closing Settings now takes you straight into the app. Before, it asked for the key again.
