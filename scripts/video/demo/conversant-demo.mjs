@@ -408,7 +408,8 @@ export default {
         narrate("None of this gets better without people using it in real conversations and telling me what's wrong. I'm looking for a small group of adults, 18 or older, who read, use AAC, and tap a screen or use eye gaze. I want them to try it, break it, and push back on it.",
           { card: { title: 'Help us test it', lines: ['Adults 18 or older who read, use AAC,', 'and tap a screen or use eye gaze.'], foot: 'volksswitch.org' } }),
         narrate("During the beta, we cover the cost of the AI. If you're interested, or you know someone who might be, the way to reach me is on the screen.",
-          { card: { title: 'Get in touch', url: 'volksswitch.org/index.php/contact-us', foot: 'During the beta, we cover the cost of the AI.' } }),
+          // The beta sign-up page, held on screen long enough to write down (Ken).
+          { card: { title: 'Get in touch', url: 'volksswitch.org/index.php/conversant-beta/', foot: 'During the beta, we cover the cost of the AI.' }, tail: 10 }),
       ],
     },
   },

@@ -213,7 +213,7 @@ That makes two files in `Videos/Demo`:
 | File | Ending | Length |
 |---|---|---|
 | `Conversant AAC Demo.mp4` | Where to find Conversant. No mention of the beta. Use this one at ATIA and for promotion. | 10:57 |
-| `Conversant AAC Demo - Beta.mp4` | Asks for testers and says we cover the AI during the beta. | 11:16 |
+| `Conversant AAC Demo - Beta.mp4` | Asks for testers and says we cover the AI during the beta. | 11:25 |
 
 Everything except the ending is shared, so the two can't drift apart. Each has a caption file (`.srt`) beside it.
 
