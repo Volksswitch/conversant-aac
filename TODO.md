@@ -80,8 +80,12 @@ the one that quietly waits forever.
 - **Still open: Listen taps that "did not take".** The reports do not show it: every
   Listen tap that reached the app worked first time. Two things seen instead: the iPhone's
   own listening stopped by itself twice, and the first words took 20-25 seconds to appear
-  on both the iPhone's listening and Deepgram. Asked Ken whether the button stayed dark or
-  lit with nothing appearing, and whether he hears the tone when Listen turns on.
+  on both the iPhone's listening and Deepgram. **Ken's answer: both happened.** Once the
+  button turned red and nothing he said was heard; other times, starting a conversation,
+  the button did not light at all. Worth knowing for the second: with Deepgram hearing the
+  button lights only once the connection is up, so a slow or failed connection looks like
+  a tap that did nothing. Next test: note which hearing service is on when each happens,
+  whether the iPhone's microphone indicator is lit, and whether the tone sounds at the tap.
 - **Not yet verified on the iPhone.** Both fixes were checked in tests only.
 - **Decided (Ken, November 8 2026): an iPhone gets the iPad's recommendation.** Install it
   as a Home Screen app and use a paid service for hearing, never the device's own. The
